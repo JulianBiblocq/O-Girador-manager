@@ -44,7 +44,13 @@ const testScripts = [
   'scripts/test_season_cycles_config.mjs',
   'scripts/test_agenda_temporal_season_filtering.mjs',
   'scripts/test_treasury_secretariat_season_wiring.mjs',
-  'scripts/test_repertoire_reactive_architecture.mjs'
+  'scripts/test_repertoire_reactive_architecture.mjs',
+  'scripts/test_repertoire_multi_culture.mjs',
+  'scripts/test_forum_chat_attachments.mjs',
+  'scripts/test_speed_trainer_aisance.mjs',
+  'scripts/test_reflex_game_engine.mjs',
+  'scripts/test_conductor_game_engine.mjs',
+  'scripts/test_repertoire_adherents_mission.mjs'
 ];
 
 console.log("===============================================================");

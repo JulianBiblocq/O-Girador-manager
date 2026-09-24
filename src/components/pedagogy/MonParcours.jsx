@@ -22,6 +22,7 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
   
   const [songs, setSongs] = useState([]);
   const [educationalSheets, setEducationalSheets] = useState([]);
+  const [repertoire, setRepertoire] = useState([]);
   
   const [evaluations, setEvaluations] = useState({}); // { [docId]: 'level' }
   const [revisionsDemandees, setRevisionsDemandees] = useState({});
@@ -112,11 +113,22 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
       }
     };
 
+    // 6. Récupérer les morceaux du Répertoire en temps réel
+    const qRepertoire = collection(db, 'associations', groupId, 'repertoire');
+    const unsubRepertoire = onSnapshot(qRepertoire, (snap) => {
+      const fetched = [];
+      snap.forEach(d => fetched.push({ id: d.id, ...d.data() }));
+      setRepertoire(fetched);
+    });
+
     fetchMetadata();
     fetchSongs();
     fetchFiches();
 
-    return () => unsubEval();
+    return () => {
+      unsubEval();
+      unsubRepertoire();
+    };
   }, [groupId, userId]);
 
   const handleSetEvaluation = async (itemId, level) => {
@@ -219,6 +231,7 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
             rhythmsMetadata={rhythmsMetadata}
             songs={songs}
             educationalSheets={educationalSheets}
+            repertoire={repertoire}
             sequenceurUrl={sequenceurUrl}
             enabledModules={enabledModules}
             profileData={profileData}

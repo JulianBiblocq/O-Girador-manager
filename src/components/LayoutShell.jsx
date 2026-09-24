@@ -212,6 +212,11 @@ export default function LayoutShell({
       if (enabledModules.monParcoursGlobal === false) return false;
     }
 
+    if (tabId === 'repertoire') {
+      const hasAccessMestreLocal = isMasterKeyActive || currentProfile?.role === 'mestre' || currentProfile?.role === 'super-admin' || currentProfile?.role === 'admin' || currentProfile?.isSystemAdmin === true;
+      if (associationData?.features?.repertoireEleves !== true && !hasAccessMestreLocal) return false;
+    }
+
     return true;
   };
 

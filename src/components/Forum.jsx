@@ -290,7 +290,6 @@ export default function Forum({
   const handleSelectChannel = useCallback((channelId) => {
     setActiveChannelId(channelId);
     setMobileView('discussion');
-    setIsDrawerOpen(false);
   }, []);
 
   const isModeratorOrAdmin = isUserModeratorOrAdmin(profileData);

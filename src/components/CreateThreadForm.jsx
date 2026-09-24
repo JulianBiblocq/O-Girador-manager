@@ -268,7 +268,7 @@ export default function CreateThreadForm({ groupId, channelId, user, profileData
             onChange={setMessage}
             disabled={saving}
             placeholder={t('forum.messagePlaceholder')}
-            groupId={groupId}
+            groupId={groupId || profileData?.groupId || user?.groupId || 'Samambaia'}
             lienDepotForum={lienDepotForum}
             consignesDepotForum={consignesDepotForum}
             allUsers={allUsers}

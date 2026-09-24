@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { useSequencerRhythms } from '../../hooks/useSequencerRhythms';
@@ -8,6 +8,9 @@ import useMestreSignals from '../../hooks/useMestreSignals';
 import RepertoireVideoModal from '../mestre/RepertoireVideoModal';
 import SignalZoomModal from '../mestre/SignalZoomModal';
 import { buildSequencerUrl } from '../../utils/sequencerUrlUtils';
+import { subscribeGroupTrainings } from '../../services/aisanceService';
+import { resolvePieceTrainings } from '../../utils/repertoireMatcher';
+import TrainingCompactCard from '../pedagogy/TrainingCompactCard';
 
 export default function EventRevisionProgram({
   setlist,
@@ -28,12 +31,25 @@ export default function EventRevisionProgram({
   dancadorChoreoIds,
   handleAddDancadorChoreo,
   handleRemoveDancadorChoreo,
-  linkedPatterns = []
+  linkedPatterns = [],
+  trainingsList: externalTrainingsList
 }) {
   const [activeTab, setActiveTab] = useState('filConducteur'); // 'filConducteur' | 'danse'
   const [selectedChoreoToAdd, setSelectedChoreoToAdd] = useState('');
   const [activeVideoToWatch, setActiveVideoToWatch] = useState(null);
   const [activeSignalToZoom, setActiveSignalToZoom] = useState(null);
+
+  // Entraînements Speed Trainer du groupe (écoute réactive si non fournis par le parent)
+  const [internalTrainingsList, setInternalTrainingsList] = useState([]);
+
+  useEffect(() => {
+    if (externalTrainingsList) return;
+    if (!groupId) return;
+    const unsub = subscribeGroupTrainings(groupId, setInternalTrainingsList);
+    return () => unsub();
+  }, [groupId, externalTrainingsList]);
+
+  const effectiveTrainingsList = externalTrainingsList || internalTrainingsList;
 
   // Bibliothèque des Signes du Mestre
   const { signals } = useMestreSignals(groupId);
@@ -199,6 +215,22 @@ export default function EventRevisionProgram({
                           💡 {morceau.notes}
                         </p>
                       )}
+
+                      {/* Entraînement Speed Trainer recommandé pour la séance si rattaché au morceau */}
+                      {(() => {
+                        const seqId = morceau.sequenceurId || morceau.presetId || morceau.preset?.id || (morceau.sequenceurType === 'presets' ? morceau.sequenceurId : null);
+                        const pieceTrainings = resolvePieceTrainings(seqId, effectiveTrainingsList);
+                        if (pieceTrainings.length === 0) return null;
+                        return (
+                          <div className="w-full mt-1">
+                            <TrainingCompactCard
+                              trainings={pieceTrainings}
+                              sequenceurUrl={assocSequenceurUrl}
+                              mode="rehearsal"
+                            />
+                          </div>
+                        );
+                      })()}
 
                       {/* Vidéos associées au morceau */}
                       {Array.isArray(morceau.videos) && morceau.videos.length > 0 && (

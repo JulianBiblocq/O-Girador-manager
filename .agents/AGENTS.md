@@ -20,6 +20,28 @@ These are the core architectural and design system rules for the O-Girador-manag
 - **Rouge Terre Cuite (`#8b2a1a` / `--color-cordel-rouge` / `--cordel-wood`)** : À utiliser impérativement pour toutes les fonctions de suppression, désactivation, refus, statut "Absent" et actions destructives.
 - **Ocre Ambré (`#c05621` / `--color-cordel-ocre`)** : À utiliser impérativement pour tout ce qui est en attente, le statut "À confirmer", les avertissements neutres et la modération temporaire.
 
+## 5. Gouvernance Pédagogique & Passerelle Séquenciad'Or (Speed Trainer & Aisance)
+- **Collection racine partagée `/trainings` (Lecture seule dans Organizad'Or)** :
+  * Les entraînements sont créés et configurés exclusivement depuis Séquenciad'Or.
+  * Dans Organizad'Or, ils sont résolus dynamiquement via la fonction utilitaire `resolvePieceTrainings(piece.sequenceurId, trainingsList)` où `t.presetId === piece.sequenceurId`.
+  * Requêtes Firestore : filtrer impérativement avec `where('groupId', '==', groupId.trim().toLowerCase())`.
+- **Sous-collection d'Aisance `/users/${userId}/aisance`** :
+  * Les paliers Speed Trainer sont enregistrés sous le document `${trainingId}` (`stagesCompleted: number[]`).
+  * Les scores du Défi Réflexe « Temps 1 » sont enregistrés sous le document réservé `reflexes` (clé `${pieceId}_${pupitre}`).
+  * Les validations du Conducteur à trous sont enregistrées sous le document réservé `conducteurs` (clé `${pieceId}_conductor`).
+  * **Règle d'exclusion impérative** : Lors de l'écoute des paliers d'aisance généraux dans `subscribeUserAisance`, ignorer systématiquement les documents techniques (`id === 'reflexes' || id === 'conducteurs'`).
+- **Passerelle SSO Transversale (`launchTrainingStage`)** :
+  * Tout lancement d'exercice pré-paramétré vers Séquenciad'Or doit transiter par `launchTrainingStage(presetId, trainingId, stageIndex, { baseUrl })`.
+  * Ne jamais utiliser de simple balise `<a href target="_blank">` non sécurisée pour les paliers afin d'éviter le blocage des pop-ups sur mobile.
+
+## 6. Standard d'Arbitrage & Surcharges Mestre (`signalOverrides`)
+- Pour les fonctionnalités pédagogiques interactives (Défi Réflexe, repères, leurres), les arbitrages du Mestre sont stockés dans le morceau sous `piece.signalOverrides = { [signalId]: { isInteractive: boolean, mode: 'pause' | 'repere', distractors: string[] } }`.
+- L'algorithme client (`reflexGameUtils.js`, `conductorGameUtils.js`) doit impérativement respecter la priorité des surcharges Mestre sur les réglages calculés par défaut.
+
+## 7. Composants d'Entraînement & Règle « Zéro Bloc Vide »
+- **Composant Réutilisable Unique** : Tout affichage d'un défi Speed Trainer (sur la fiche morceau du Répertoire ou dans le Fil Conducteur de l'Agenda) doit impérativement être encapsulé dans `TrainingCompactCard.jsx` (mode `'repertoire'` ou `'rehearsal'`).
+- **Règle Zéro Bloc Vide** : Si aucun entraînement n'est associé à un morceau (`resolvePieceTrainings(...)` vide), le composant doit impérativement retourner `null` sans aucun placeholder, contour ni encart fantôme.
+
 ---
 ### 🛡️ Gouvernance Centralisée des Règles Firebase & Sécurité (Strict)
 - **Autorité unique :** Les règles d'accès (`firestore.rules` et `storage.rules`) sont exclusivement pilotées, modifiées et déployées par le projet maître (**Orchestrad'Or** / backend commun).

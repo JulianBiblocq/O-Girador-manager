@@ -1,4 +1,5 @@
 import { formatPieceTablature } from './tablatureFormatter.js';
+import { computeTrainingStages } from './aisanceStagesUtils.js';
 
 /**
  * Normalise une chaîne de caractères pour une comparaison souple et tolérante :
@@ -100,7 +101,11 @@ export function findMatchingCultureDoc(pieceOrTitle, cultureDocsList = []) {
   if (!Array.isArray(cultureDocsList) || cultureDocsList.length === 0) return null;
 
   const isPieceObj = typeof pieceOrTitle === 'object' && pieceOrTitle !== null;
-  const cultureId = isPieceObj ? pieceOrTitle.cultureDocId : null;
+  const cultureId = isPieceObj
+    ? (Array.isArray(pieceOrTitle.cultureDocIds) && pieceOrTitle.cultureDocIds.length > 0
+        ? pieceOrTitle.cultureDocIds[0]
+        : pieceOrTitle.cultureDocId)
+    : null;
   const rawTitle = isPieceObj ? pieceOrTitle.titre : pieceOrTitle;
   const normTitle = normalizeString(rawTitle);
 
@@ -289,13 +294,20 @@ export function resolvePieceLiveTechnicalData(piece, dicts) {
     activeToada = toadasByNormTitle.get(normTitre);
   }
 
-  // 3. Résolution de la Fiche Culturelle du Varal
-  let activeCultureDoc = null;
-  if (piece.cultureDocId && cultureById?.has(piece.cultureDocId)) {
-    activeCultureDoc = cultureById.get(piece.cultureDocId);
+  // 3. Résolution des Fiches Culturelles du Varal (multi-liaison dynamique avec rétrocompatibilité)
+  const ids = Array.isArray(piece.cultureDocIds)
+    ? piece.cultureDocIds
+    : (piece.cultureDocId ? [piece.cultureDocId] : []);
+
+  let activeCultureDocs = [];
+  if (ids.length > 0 && cultureById) {
+    activeCultureDocs = ids.map((id) => cultureById.get(id)).filter(Boolean);
   } else if (normTitre && cultureByNormTitle?.has(normTitre)) {
-    activeCultureDoc = cultureByNormTitle.get(normTitre);
+    const match = cultureByNormTitle.get(normTitre);
+    if (match) activeCultureDocs = [match];
   }
+
+  const activeCultureDoc = activeCultureDocs[0] || null;
 
   // 4. Résolution de la Chorégraphie Dançad'Or
   let activeChoreography = null;
@@ -348,7 +360,13 @@ export function resolvePieceLiveTechnicalData(piece, dicts) {
     (Array.isArray(piece.videos) && piece.videos[0]?.url ? piece.videos[0].url.trim() : null);
 
   // 10. Contexte Historique & Histoire (supporte fiches culture, metadata preset en fr/pt)
+  const cultureTexts = activeCultureDocs
+    .map((c) => (c?.texte || c?.description || '').trim())
+    .filter(Boolean)
+    .join('\n\n');
+
   const activeHistoire =
+    cultureTexts ||
     (activeCultureDoc?.texte || activeCultureDoc?.description || '').trim() ||
     (preset?.histoire || '').trim() ||
     (preset?.parsedData?.metadata?.histoire || '').trim() ||
@@ -365,6 +383,7 @@ export function resolvePieceLiveTechnicalData(piece, dicts) {
     preset,
     activeToada,
     activeCultureDoc,
+    activeCultureDocs,
     activeChoreography,
     // Données dérivées résolues
     activeAudioUrl,
@@ -381,7 +400,7 @@ export function resolvePieceLiveTechnicalData(piece, dicts) {
     hasAudio: Boolean(activeAudioUrl),
     hasChoreography: Boolean(activeChoreography || piece.dancadorChoreoId),
     hasToada: Boolean(activeToada || piece.toadaDocId),
-    hasCulture: Boolean(activeCultureDoc || piece.cultureDocId)
+    hasCulture: activeCultureDocs.length > 0 || Boolean(piece.cultureDocId) || (Array.isArray(piece.cultureDocIds) && piece.cultureDocIds.length > 0)
   };
 }
 
@@ -404,3 +423,65 @@ export function getPieceTablature(resolvedPiece) {
   }
   return resolvedPiece.tablature || '';
 }
+
+/**
+ * Résout dynamiquement les entraînements Speed Trainer associés à un morceau
+ * d'après son identifiant de preset Séquenceur (sequenceurId ou presetId).
+ *
+ * @param {string} sequenceurId - Identifiant du preset séquenceur associé (ex: piece.sequenceurId)
+ * @param {Array<Object>} trainingsList - Liste des entraînements du groupe
+ * @param {Array<string>} [trainingIds=[]] - Liste optionnelle d'identifiants d'entraînements rattachés manuellement
+ * @returns {Array<{ id: string, title: string, description: string, startBpm: number, targetBpm: number, stagesCount: number, stages: Array, presetId: string, rawTraining: Object }>}
+ */
+export function resolvePieceTrainings(sequenceurId, trainingsList = [], trainingIds = []) {
+  if (!Array.isArray(trainingsList) || trainingsList.length === 0) {
+    return [];
+  }
+
+  const cleanSeqId = sequenceurId ? String(sequenceurId).trim() : '';
+  const cleanTrainingIds = Array.isArray(trainingIds)
+    ? trainingIds.map((id) => String(id).trim()).filter(Boolean)
+    : [];
+
+  if (!cleanSeqId && cleanTrainingIds.length === 0) {
+    return [];
+  }
+
+  // Filtrer les entraînements dont t.presetId === sequenceurId OU dont l'id est inclus dans trainingIds
+  const seenIds = new Set();
+  const matched = [];
+
+  for (const t of trainingsList) {
+    if (!t || !t.id) continue;
+    const tid = String(t.id).trim();
+    if (seenIds.has(tid)) continue;
+
+    const tPresetId = String(t.presetId || t.sequenceurId || '').trim();
+    const matchesPreset = cleanSeqId && tPresetId && tPresetId === cleanSeqId;
+    const matchesExplicitId = cleanTrainingIds.includes(tid);
+
+    if (matchesPreset || matchesExplicitId) {
+      seenIds.add(tid);
+      matched.push(t);
+    }
+  }
+
+  return matched.map((t) => {
+    const stages = computeTrainingStages(t);
+    const startBpm = Number(t.startBpm ?? (stages.length > 0 ? stages[0].startBpm : 60));
+    const targetBpm = Number(t.targetBpm ?? (stages.length > 0 ? stages[stages.length - 1].targetBpm : 100));
+
+    return {
+      id: t.id,
+      title: t.title || t.titre || t.name || 'Entraînement Speed Trainer',
+      description: t.description || '',
+      startBpm,
+      targetBpm,
+      stagesCount: stages.length,
+      stages,
+      presetId: t.presetId || cleanSeqId,
+      rawTraining: t
+    };
+  });
+}
+

@@ -8,6 +8,7 @@ import EmojiPickerPopover, { EmojiQuickRow } from './forum/EmojiPickerPopover';
 import GroupMembersModal from './forum/GroupMembersModal';
 import ChatFramaspaceImageModal from './forum/ChatFramaspaceImageModal';
 import { useConversationMessages } from '../hooks/useConversationMessages';
+import { uploadChatAttachment } from '../utils/attachmentUploadUtils';
 
 /**
  * Composant PrivateChatView
@@ -37,9 +38,11 @@ export default function PrivateChatView({
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
   const [isFramaspaceModalOpen, setIsFramaspaceModalOpen] = useState(false);
+  const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState(null);
   const [replyingTo, setReplyingTo] = useState(null);
   const messagesEndRef = useRef(null);
+  const attachmentInputRef = useRef(null);
 
 
   const isGroup = conversation?.type === 'group';
@@ -275,6 +278,81 @@ export default function PrivateChatView({
     }
   };
 
+  // Envoi d'une photo ou d'un document directement depuis l'appareil de l'utilisateur
+  const handleDirectFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 30 * 1024 * 1024) {
+      alert("Le fichier est trop volumineux (maximum 30 Mo).");
+      return;
+    }
+
+    setIsUploadingAttachment(true);
+    try {
+      const effectiveGroupId = groupId || profileData?.groupId || 'Samambaia';
+      const result = await uploadChatAttachment({
+        file,
+        groupId: effectiveGroupId
+      });
+
+      if (result?.success && result?.url) {
+        if (result.isImage) {
+          if (conversationId) {
+            await sendConvMessage({
+              imageUrl: result.url,
+              thumbnailUrl: result.url,
+              mediaName: result.fileName,
+              replyTo: replyingTo
+            });
+          } else {
+            // Fallback envoi legacy 1-à-1
+            await addDoc(collection(db, 'private_messages'), {
+              senderId: user.uid,
+              recipientId: effectiveOtherUser.id,
+              content: '📷 Photo',
+              imageUrl: result.url,
+              thumbnailUrl: result.url,
+              mediaName: result.fileName,
+              timestamp: new Date().toISOString(),
+              read: false,
+              groupId: effectiveGroupId
+            });
+          }
+        } else {
+          // Document / Fichier joint (PDF, tableur, archive, etc.)
+          if (conversationId) {
+            await sendConvMessage({
+              content: `📎 ${result.fileName}`,
+              fileUrl: result.url,
+              fileName: result.fileName,
+              replyTo: replyingTo
+            });
+          } else {
+            // Fallback envoi legacy 1-à-1
+            await addDoc(collection(db, 'private_messages'), {
+              senderId: user.uid,
+              recipientId: effectiveOtherUser.id,
+              content: `📎 ${result.fileName}`,
+              fileUrl: result.url,
+              fileName: result.fileName,
+              timestamp: new Date().toISOString(),
+              read: false,
+              groupId: effectiveGroupId
+            });
+          }
+        }
+        setReplyingTo(null);
+      }
+    } catch (err) {
+      console.error("PrivateChatView - Erreur lors de l'envoi de la pièce jointe :", err);
+      alert("Erreur lors de l'envoi du fichier : " + (err.message || err));
+    } finally {
+      setIsUploadingAttachment(false);
+      if (attachmentInputRef.current) attachmentInputRef.current.value = '';
+    }
+  };
+
 
   const formatMessageTime = (isoString) => {
     const d = new Date(isoString);
@@ -397,7 +475,7 @@ export default function PrivateChatView({
                       </div>
                     )}
 
-                    {/* Image partagée depuis Framaspace Cloud */}
+                    {/* Image partagée depuis Framaspace Cloud ou Firebase Storage */}
                     {msg.imageUrl && (
                       <div 
                         className="mt-1 mb-1 rounded-[6px_8px_6px_7px] overflow-hidden border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] cursor-pointer bg-black/10 group/img relative max-w-[240px] sm:max-w-[300px]"
@@ -422,7 +500,30 @@ export default function PrivateChatView({
                       </div>
                     )}
 
-                    {msg.content && msg.content !== '📷 Photo' && (
+                    {/* Pièce jointe / Document joint (PDF, tableur, etc.) */}
+                    {msg.fileUrl && (
+                      <div className="mt-1 mb-1">
+                        <a
+                          href={msg.fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`inline-flex items-center gap-2 px-3 py-2 rounded-[6px] border-2 text-xs font-bold transition-all shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none ${
+                            isMe
+                              ? 'bg-amber-100/25 text-cordel-bg-light border-white/60 hover:bg-amber-100/35'
+                              : 'bg-cordel-bg text-encre-noire border-encre-noire hover:bg-amber-50'
+                          }`}
+                          title="Télécharger / Ouvrir la pièce jointe"
+                        >
+                          <span className="text-sm shrink-0">📄</span>
+                          <span className="truncate max-w-[190px] underline decoration-dashed">
+                            {msg.fileName || 'Document joint'}
+                          </span>
+                          <span className="text-[10px] opacity-75 shrink-0 font-mono">↗</span>
+                        </a>
+                      </div>
+                    )}
+
+                    {msg.content && msg.content !== '📷 Photo' && (!msg.fileUrl || msg.content !== `📎 ${msg.fileName}`) && (
                       <p className="text-xs font-semibold whitespace-pre-wrap leading-relaxed select-text">
                         {msg.content}
                       </p>
@@ -435,7 +536,7 @@ export default function PrivateChatView({
                         onClick={() => setReplyingTo({
                           id: msg.id,
                           senderName: isMe ? 'Vous' : senderDisplayName,
-                          content: msg.content
+                          content: msg.content || (msg.imageUrl ? '📷 Photo' : (msg.fileUrl ? `📎 ${msg.fileName || 'Fichier'}` : ''))
                         })}
                         className={`text-[9px] font-bold opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer ${
                           isMe ? 'text-white/80 hover:text-white' : 'text-cordel-master-dark/70 hover:text-encre-noire'
@@ -562,10 +663,34 @@ export default function PrivateChatView({
             😀
           </button>
 
+          {/* Sélecteur de fichier direct depuis l'appareil (photo ou document) */}
+          <input
+            ref={attachmentInputRef}
+            type="file"
+            accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.mp3,.ogg,.wav"
+            onChange={handleDirectFileUpload}
+            disabled={sending || isUploadingAttachment}
+            className="hidden"
+          />
+
+          <button
+            type="button"
+            onClick={() => attachmentInputRef.current?.click()}
+            disabled={sending || isUploadingAttachment}
+            className="w-9 h-[38px] flex items-center justify-center text-sm rounded border-2 bg-cordel-bg hover:bg-white border-encre-noire/40 transition-all cursor-pointer shrink-0 disabled:opacity-50"
+            title="Joindre une photo ou un fichier depuis votre appareil"
+          >
+            {isUploadingAttachment ? (
+              <span className="inline-block animate-spin text-xs">⏳</span>
+            ) : (
+              <span>📎</span>
+            )}
+          </button>
+
           <button
             type="button"
             onClick={() => setIsFramaspaceModalOpen(true)}
-            disabled={sending}
+            disabled={sending || isUploadingAttachment}
             className="w-9 h-[38px] flex items-center justify-center text-sm rounded border-2 bg-cordel-bg hover:bg-white border-encre-noire/40 transition-all cursor-pointer shrink-0 disabled:opacity-50"
             title="Partager une photo du Cloud Framaspace (0 Mo sur Firebase)"
           >

@@ -56,6 +56,7 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
   const [selectedSongsIds, setSelectedSongsIds] = useState([]);
   const [showBulkPrintModal, setShowBulkPrintModal] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
+  const [printSections, setPrintSections] = useState(null);
 
   useHardwareBack(isAdding, () => setIsAdding(false));
   useHardwareBack(!!documentToEdit, () => setDocumentToEdit(null));

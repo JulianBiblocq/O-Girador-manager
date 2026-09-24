@@ -63,14 +63,15 @@ export function useConversationMessages(conversationId, groupId, user, profileDa
     return () => unsubscribe();
   }, [conversationId, groupId, user?.uid]);
 
-  // 2. Envoyer un nouveau message (texte et/ou image Framaspace externe)
+  // 2. Envoyer un nouveau message (texte, image et/ou fichier joint)
   const sendMessage = useCallback(
-    async ({ content, replyTo = null, imageUrl = null, thumbnailUrl = null, mediaName = null }) => {
+    async ({ content, replyTo = null, imageUrl = null, thumbnailUrl = null, mediaName = null, fileUrl = null, fileName = null }) => {
       const trimmed = (content || '').trim();
       const hasImage = Boolean(imageUrl);
-      if ((!trimmed && !hasImage) || !conversationId || !groupId || !user?.uid) return null;
+      const hasFile = Boolean(fileUrl);
+      if ((!trimmed && !hasImage && !hasFile) || !conversationId || !groupId || !user?.uid) return null;
 
-      const effectiveContent = trimmed || (hasImage ? '📷 Photo' : '');
+      const effectiveContent = trimmed || (hasImage ? '📷 Photo' : (hasFile ? `📎 ${fileName || 'Fichier joint'}` : ''));
       const nowIso = new Date().toISOString();
       const senderFullName = profileData?.prenom
         ? `${profileData.prenom} ${profileData.nom || ''}`.trim()
@@ -91,6 +92,8 @@ export function useConversationMessages(conversationId, groupId, user, profileDa
         imageUrl: imageUrl || null,
         thumbnailUrl: thumbnailUrl || imageUrl || null,
         mediaName: mediaName || null,
+        fileUrl: fileUrl || null,
+        fileName: fileName || null,
         timestamp: nowIso,
         replyTo: replyTo ? {
           id: replyTo.id,
@@ -111,6 +114,8 @@ export function useConversationMessages(conversationId, groupId, user, profileDa
           lastMessage: {
             content: effectiveContent,
             imageUrl: imageUrl || null,
+            fileUrl: fileUrl || null,
+            fileName: fileName || null,
             senderId: user.uid,
             senderName: senderFullName,
             timestamp: nowIso

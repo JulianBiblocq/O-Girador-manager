@@ -77,6 +77,7 @@ const InstrumentModelsManager = lazyWithRetry(() => import('./components/varal/I
 const AtelierCouture = lazyWithRetry(() => import('./components/profile/AtelierCouture'));
 const MonParcours = lazyWithRetry(() => import('./components/pedagogy/MonParcours'));
 const MonAtelier = lazyWithRetry(() => import('./components/profile/MonAtelier'));
+const MemberRepertoireView = lazyWithRetry(() => import('./components/member/MemberRepertoireView'));
 
 const POLES_CONFIG = [
   {
@@ -93,6 +94,7 @@ const POLES_CONFIG = [
       { id: 'profil', label: 'Profil', labelKey: 'tabProfil' },
       { id: 'mon-parcours', label: 'Mon Parcours', labelKey: 'tabParcours' },
       { id: 'agenda', label: 'Agenda', labelKey: 'tabAgenda' },
+      { id: 'repertoire', label: '📜 Répertoire', labelKey: 'tabRepertoire' },
       { id: 'atelier', label: 'Atelier', labelKey: 'tabAtelier' },
       { id: 'materiel', label: 'Matériel', labelKey: 'tabMateriel' },
       { id: 'vestiaire', label: 'Vestiaire', labelKey: 'tabVestiaire' },
@@ -309,6 +311,7 @@ export default function App() {
   const [enabledModules, setEnabledModules] = useState(null);
   const [tagsDisponibles, setTagsDisponibles] = useState([]);
   const [activerPresenceEnLigne, setActiverPresenceEnLigne] = useState(true);
+  const [features, setFeatures] = useState(null);
   const [breakGlassActive, setBreakGlassActive] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('breakGlassActive') === 'true';
@@ -475,6 +478,7 @@ export default function App() {
         setEnabledModules(data.enabledModules || null);
         setTagsDisponibles(Array.isArray(data.tagsDisponibles) ? data.tagsDisponibles : []);
         setActiverPresenceEnLigne(data.activerPresenceEnLigne !== false);
+        setFeatures(data.features || null);
       } else {
         setAssociationData(null);
         setBranding(null);
@@ -485,6 +489,7 @@ export default function App() {
         setEnabledModules(null);
         setTagsDisponibles([]);
         setActiverPresenceEnLigne(true);
+        setFeatures(null);
       }
     }, (error) => {
       console.error("App - Erreur onSnapshot branding :", error);
@@ -495,6 +500,7 @@ export default function App() {
       setSequenceurUrl('');
       setPermissionsMatrice(null);
       setTagsDisponibles([]);
+      setFeatures(null);
     });
 
     return () => unsubscribe();
@@ -1339,6 +1345,13 @@ export default function App() {
 
   // 5. Utilisateur connecté avec profil valide -> Rendu de l'Espace Membre Privé (/app)
 
+  const hasAccessMestre = isMasterKeyActive || 
+    profileData?.role === 'mestre' || 
+    profileData?.role === 'super-admin' || 
+    profileData?.role === 'admin' || 
+    profileData?.isSystemAdmin === true ||
+    canAccessMestre(profileData, permissionsMatrice, userTags);
+
   const isModuleEnabled = (tabId, poleId) => {
     if (!enabledModules) return true;
 
@@ -1362,6 +1375,7 @@ export default function App() {
     if (['gigs-pipeline', 'ca-prestations'].includes(tabId) && enabledModules.diffusion === false) return false;
     if (['dashboard-finance', 'cotisations', 'events-finances', 'operations-diverses', 'frais-km', 'reports-exports', 'ca-finances'].includes(tabId) && enabledModules.tresorerie === false) return false;
     if (tabId === 'mon-parcours' && enabledModules.monParcoursGlobal === false) return false;
+    if (tabId === 'repertoire' && features?.repertoireEleves !== true && !hasAccessMestre) return false;
     if (tabId === 'inventory' && enabledModules.logistique === false) return false;
     if (['orders', 'orders-manager'].includes(tabId) && enabledModules.commandes === false) return false;
     if (['wardrobe-projects', 'wardrobe-models', 'wardrobe-pieces', 'wardrobe-supplies', 'wardrobe-tools', 'wardrobe-sizes', 'varal-costumerie', 'wardrobe', 'vestiaire', 'wardrobe-inventory', 'wardrobe-couture'].includes(tabId) && enabledModules.vestiaire === false && enabledModules.costumerie === false) return false;
@@ -1392,12 +1406,6 @@ export default function App() {
   const hasAccessLutherie = isMasterKeyActive || canAccessPole('lutherie', profileData, permissionsMatrice, userTags) || checkTabAccess('instrument-models', 'lutherie') || checkTabAccess('inventory-projects', 'lutherie') || checkTabAccess('inventory-parts', 'lutherie') || checkTabAccess('inventory-supplies', 'lutherie') || checkTabAccess('workshop-tools', 'lutherie') || checkTabAccess('varal-lutherie', 'lutherie');
   const hasAccessCostumerie = isMasterKeyActive || canAccessPole('costumerie', profileData, permissionsMatrice, userTags) || checkTabAccess('wardrobe-projects', 'costumerie') || checkTabAccess('wardrobe-models', 'costumerie') || checkTabAccess('wardrobe-pieces', 'costumerie') || checkTabAccess('wardrobe-supplies', 'costumerie') || checkTabAccess('wardrobe-tools', 'costumerie') || checkTabAccess('wardrobe-sizes', 'costumerie') || checkTabAccess('varal-costumerie', 'costumerie');
   const hasAccessStudio = isMasterKeyActive || canAccessPole('studio', profileData, permissionsMatrice, userTags) || checkTabAccess('studio-social', 'studio') || checkTabAccess('studio-lexique', 'studio') || checkTabAccess('newsletter', 'studio') || checkTabAccess('studio-communication', 'studio') || checkTabAccess('varal-photos', 'studio');
-  const hasAccessMestre = isMasterKeyActive || 
-    profileData?.role === 'mestre' || 
-    profileData?.role === 'super-admin' || 
-    profileData?.role === 'admin' || 
-    profileData?.isSystemAdmin === true ||
-    canAccessMestre(profileData, permissionsMatrice, userTags);
   const hasAccessPedagogie = isMasterKeyActive || canAccessPole('pedagogie', profileData, permissionsMatrice, userTags) || checkTabAccess('mestre-pedagogy-dashboard', 'pedagogie') || checkTabAccess('varal-manager', 'pedagogie') || checkTabAccess('mestre-pedagogy-qcm', 'pedagogie');
   const hasAccessVitrine = isMasterKeyActive || checkTabAccess('vitrine-general', 'vitrine') || checkTabAccess('vitrine-editor', 'vitrine');
   const hasAccessConfig = isSystemOrSuperAdminOrMestre || isMasterKeyActive || checkTabAccess('config-identity', 'config') || checkTabAccess('config-security', 'config') || checkTabAccess('config-layout', 'config') || checkTabAccess('config-member-layout', 'config') || checkTabAccess('config-profile', 'config') || checkTabAccess('config-modules', 'config') || checkTabAccess('config-tambours', 'config');
@@ -1511,6 +1519,10 @@ export default function App() {
       case 'varal':
         setCurrentPole('mon-espace');
         setCurrentTab('varal');
+        break;
+      case 'repertoire':
+        setCurrentPole('mon-espace');
+        setCurrentTab('repertoire');
         break;
       case 'export-annu':
         setCurrentPole('secretariat');
@@ -1898,6 +1910,13 @@ export default function App() {
                     profileData={profileData} 
                     onNavigateToView={handleNavigateToView} 
                     isFullPage={true}
+                  />
+                ) : currentTab === 'repertoire' ? (
+                  <MemberRepertoireView
+                    groupId={profileData?.groupId}
+                    user={user}
+                    profileData={profileData}
+                    sequenceurUrl={sequenceurUrl}
                   />
                 ) : currentTab === 'atelier' ? (
                   <MonAtelier 
@@ -2441,6 +2460,7 @@ export default function App() {
                     user={user}
                     profileData={profileData}
                     sequenceurUrl={sequenceurUrl}
+                    features={features}
                   />
                 ) : (currentTab === 'mestre-categories' && hasAccessMestre) ? (
                   <MestreCustomCategories 

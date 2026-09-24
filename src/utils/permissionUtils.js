@@ -327,6 +327,9 @@ export function canAccessMestre(profileData, permissionsMatrice = null, effectiv
  * Table de correspondance entre onglets d'administration et leurs pôles parents respectifs.
  */
 export const TAB_TO_POLE_MAP = {
+  // Mon Espace
+  repertoire: 'mon-espace',
+
   // Logistique
   inventory: 'logistique',
   'logistics-pupitres': 'logistique',
@@ -520,7 +523,7 @@ export function canAccessTabPermission(tabId, poleIdOrProfile, profileDataArg = 
   if (!profileData) return false;
 
   // Onglets publics Espace Membre : toujours autorisés
-  if (['profil', 'agenda', 'materiel', 'vestiaire', 'trombinoscope', 'forum', 'dashboard', 'varal'].includes(tabId)) {
+  if (['profil', 'agenda', 'atelier', 'materiel', 'vestiaire', 'trombinoscope', 'forum', 'dashboard', 'varal', 'repertoire'].includes(tabId)) {
     return true;
   }
 

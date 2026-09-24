@@ -9,6 +9,8 @@ import RepertoireVideoModal from './RepertoireVideoModal';
 import SignalZoomModal from './SignalZoomModal';
 import TablatureModal from './TablatureModal';
 import CreateCultureFicheModal from './CreateCultureFicheModal';
+import PieceReflexConfigModal from './PieceReflexConfigModal';
+import ConductorGameModal from '../pedagogy/ConductorGameModal';
 import CultureCard from '../CultureCard';
 import SongCard from '../SongCard';
 import RepertoireUnlinkedPresetsBanner from './RepertoireUnlinkedPresetsBanner';
@@ -24,8 +26,12 @@ import {
   buildResolutionDictionaries,
   resolvePieceLiveTechnicalData,
   getPieceTablature,
-  findMatchingPreset
+  findMatchingPreset,
+  resolvePieceTrainings
 } from '../../utils/repertoireMatcher';
+import { subscribeGroupTrainings, computeTrainingStages } from '../../services/aisanceService';
+import { launchTrainingStage } from '../../utils/trainingLauncher';
+import TrainingCompactCard from '../pedagogy/TrainingCompactCard';
 
 /**
  * Vue principale du Répertoire de la troupe (Direction Artistique & Mestria).
@@ -36,8 +42,9 @@ import {
  * @param {Object} user - Données utilisateur de session
  * @param {Object} profileData - Profil adhérent
  * @param {string} sequenceurUrl - URL de base du Séquenceur
+ * @param {Object} [features] - Fonctionnalités et options activées pour le groupe
  */
-export default function MestreRepertoireView({ groupId, user: _user, profileData: _profileData, sequenceurUrl }) {
+export default function MestreRepertoireView({ groupId, user: _user, profileData: _profileData, sequenceurUrl, features }) {
   const { confirm } = useConfirm();
   const [pieces, setPieces] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -66,7 +73,10 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
   const [activeTablaturePiece, setActiveTablaturePiece] = useState(null);
   const [pieceForCultureCreation, setPieceForCultureCreation] = useState(null);
   const [activeCultureDocToView, setActiveCultureDocToView] = useState(null);
+  const [culturePickerData, setCulturePickerData] = useState(null);
   const [activeToadaToView, setActiveToadaToView] = useState(null);
+  const [reflexConfigPiece, setReflexConfigPiece] = useState(null);
+  const [conductorGamePiece, setConductorGamePiece] = useState(null);
 
   // Synchronisation & Importation
   const [syncingPieceId, setSyncingPieceId] = useState(null);
@@ -78,6 +88,38 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
     setToastMsg(msg);
     setTimeout(() => setToastMsg(null), 4000);
   };
+
+  // Commutateur interactif d'ouverture du répertoire aux adhérents
+  const [togglingRepertoire, setTogglingRepertoire] = useState(false);
+  const isRepertoireOpen = Boolean(features?.repertoireEleves);
+
+  const handleToggleRepertoireEleves = async () => {
+    if (!groupId) return;
+    setTogglingRepertoire(true);
+    try {
+      const newValue = !isRepertoireOpen;
+      await updateDoc(doc(db, 'associations', groupId), {
+        'features.repertoireEleves': newValue
+      });
+      showToast(newValue ? '🟢 Répertoire ouvert aux adhérents !' : '🔒 Répertoire masqué aux adhérents.');
+    } catch (err) {
+      console.error('Erreur lors du basculement du statut du répertoire :', err);
+      showToast('Erreur lors de la modification du statut du répertoire.');
+    } finally {
+      setTogglingRepertoire(false);
+    }
+  };
+
+  // Entraînements Speed Trainer rattachés
+  const [trainings, setTrainings] = useState([]);
+  const [activeTrainingDetailsPieceId, setActiveTrainingDetailsPieceId] = useState(null);
+
+  // Écoute en temps réel des entraînements Speed Trainer du groupe
+  useEffect(() => {
+    if (!groupId) return;
+    const unsubTrainings = subscribeGroupTrainings(groupId, setTrainings);
+    return () => unsubTrainings();
+  }, [groupId]);
 
   // Écoute en temps réel de la collection repertoire
   useEffect(() => {
@@ -329,18 +371,59 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
           </p>
         </div>
 
-        <CordelButton
-          type="button"
-          variant="ocre"
-          useExtremeBorder={true}
-          onClick={() => {
-            setPieceToEdit(null);
-            setIsEditModalOpen(true);
-          }}
-          className="py-1.5 px-4 text-xs font-black uppercase tracking-wider shrink-0"
-        >
-          ➕ Ajouter un morceau
-        </CordelButton>
+        <div className="flex items-center gap-2.5 flex-wrap">
+          {/* Bandeau d'état interactif : Répertoire adhérents */}
+          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-[4px_6px_3px_5px] border-2 text-xs font-black shadow-[1.5px_1.5px_0px_0px_#181716] transition-all ${
+            isRepertoireOpen
+              ? 'bg-emerald-100 text-emerald-900 border-emerald-950'
+              : 'bg-stone-100 text-stone-700 border-stone-800'
+          }`}>
+            {isRepertoireOpen ? (
+              <>
+                <span className="flex items-center gap-1.5">
+                  <span className="animate-pulse">🟢</span>
+                  <span>Répertoire adhérents ouvert</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={handleToggleRepertoireEleves}
+                  disabled={togglingRepertoire}
+                  className="ml-2 text-[10px] font-black uppercase text-[var(--color-cordel-rouge,#8b2a1a)] hover:underline cursor-pointer disabled:opacity-50"
+                >
+                  Masquer
+                </button>
+              </>
+            ) : (
+              <>
+                <span className="flex items-center gap-1.5 text-stone-600">
+                  <span>🔒</span>
+                  <span>Répertoire adhérents masqué</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={handleToggleRepertoireEleves}
+                  disabled={togglingRepertoire}
+                  className="ml-2 text-[10px] font-black uppercase text-emerald-800 hover:text-emerald-950 hover:underline cursor-pointer disabled:opacity-50"
+                >
+                  Ouvrir au groupe
+                </button>
+              </>
+            )}
+          </div>
+
+          <CordelButton
+            type="button"
+            variant="ocre"
+            useExtremeBorder={true}
+            onClick={() => {
+              setPieceToEdit(null);
+              setIsEditModalOpen(true);
+            }}
+            className="py-1.5 px-4 text-xs font-black uppercase tracking-wider shrink-0"
+          >
+            ➕ Ajouter un morceau
+          </CordelButton>
+        </div>
       </div>
 
       {/* Barre de filtrage & Recherche */}
@@ -572,24 +655,42 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                     )}
 
                     {piece.hasCulture && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const docToOpen = piece.activeCultureDoc || {
-                            id: piece.cultureDocId,
-                            titre: piece.titre,
-                            videoUrl: piece.activeVideoUrl || piece.videoUrl,
-                            chapitres: piece.activeHistoire ? [{ sousTitre: 'Origines & Histoire', texte: piece.activeHistoire }] : []
-                          };
-                          setActiveCultureDocToView(docToOpen);
-                        }}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-300 transition-colors shadow-2xs cursor-pointer select-none"
-                        title={piece.activeCultureDoc?.titre ? `Consulter la fiche culturelle : ${piece.activeCultureDoc.titre}` : 'Consulter la fiche culturelle du Varal'}
-                      >
-                        <span>📖</span>
-                        <span className="truncate max-w-[130px]">{piece.activeCultureDoc?.titre ? piece.activeCultureDoc.titre : 'Culture'}</span>
-                        <span className="text-[8px] opacity-70">↗</span>
-                      </button>
+                      piece.activeCultureDocs && piece.activeCultureDocs.length > 1 ? (
+                        <div className="flex flex-wrap items-center gap-1">
+                          {piece.activeCultureDocs.map((cDoc, cIdx) => (
+                            <button
+                              key={cDoc.id || cIdx}
+                              type="button"
+                              onClick={() => setActiveCultureDocToView(cDoc)}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-300 transition-colors shadow-2xs cursor-pointer select-none"
+                              title={`Consulter la fiche culturelle : ${cDoc.titre || cDoc.name || 'Culture'}`}
+                            >
+                              <span>📖</span>
+                              <span className="truncate max-w-[120px]">{cDoc.titre || cDoc.name || 'Culture'}</span>
+                              <span className="text-[8px] opacity-70">↗</span>
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const docToOpen = piece.activeCultureDocs?.[0] || piece.activeCultureDoc || {
+                              id: piece.cultureDocId || (Array.isArray(piece.cultureDocIds) && piece.cultureDocIds[0]),
+                              titre: piece.titre,
+                              videoUrl: piece.activeVideoUrl || piece.videoUrl,
+                              chapitres: piece.activeHistoire ? [{ sousTitre: 'Origines & Histoire', texte: piece.activeHistoire }] : []
+                            };
+                            setActiveCultureDocToView(docToOpen);
+                          }}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-300 transition-colors shadow-2xs cursor-pointer select-none"
+                          title={piece.activeCultureDocs?.[0]?.titre || piece.activeCultureDoc?.titre ? `Consulter la fiche culturelle : ${piece.activeCultureDocs?.[0]?.titre || piece.activeCultureDoc?.titre}` : 'Consulter la fiche culturelle du Varal'}
+                        >
+                          <span>📖</span>
+                          <span className="truncate max-w-[130px]">{piece.activeCultureDocs?.[0]?.titre || piece.activeCultureDoc?.titre || 'Culture'}</span>
+                          <span className="text-[8px] opacity-70">↗</span>
+                        </button>
+                      )
                     )}
 
                     {piece.hasTablature && (
@@ -605,6 +706,25 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                         <span>{(piece.activeSinaisDoMestre?.length || piece.sinaisDoMestre?.length || (piece.sinaisDoMestre ? piece.sinaisDoMestre.length : 0))} Signe{(piece.activeSinaisDoMestre?.length || piece.sinaisDoMestre?.length) > 1 ? 's' : ''}</span>
                       </span>
                     )}
+
+                    {/* Badge Speed Trainer si des entraînements sont rattachés au morceau */}
+                    {(() => {
+                      const piecePresetId = piece.sequenceurId || piece.preset?.id;
+                      const pieceTrainings = resolvePieceTrainings(piecePresetId, trainings);
+                      if (pieceTrainings.length === 0) return null;
+                      return (
+                        <button
+                          type="button"
+                          onClick={() => setActiveTrainingDetailsPieceId(activeTrainingDetailsPieceId === piece.id ? null : piece.id)}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-400 transition-colors shadow-2xs cursor-pointer select-none"
+                          title="Afficher les défis Speed Trainer associés"
+                        >
+                          <span>⚡</span>
+                          <span>{pieceTrainings.length} défi{pieceTrainings.length > 1 ? 's' : ''} Speed Trainer</span>
+                          <span className="text-[8px] opacity-70">{activeTrainingDetailsPieceId === piece.id ? '▲' : '▼'}</span>
+                        </button>
+                      );
+                    })()}
 
                     {!piece.hasSequencer && !piece.hasAudio && !piece.hasTablature && !piece.hasToada && !piece.hasChoreography && !piece.hasCulture && (!piece.activeSinaisDoMestre || piece.activeSinaisDoMestre.length === 0) && (
                       <span className="text-[9.5px] italic text-encre-noire/50">
@@ -746,6 +866,32 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                       </div>
                     </div>
                   )}
+
+                  {/* Volet déplié : Défis et paliers Speed Trainer rattachés */}
+                  {(() => {
+                    const piecePresetId = piece.sequenceurId || piece.preset?.id;
+                    const pieceTrainings = resolvePieceTrainings(piecePresetId, trainings);
+                    if (activeTrainingDetailsPieceId !== piece.id || pieceTrainings.length === 0) return null;
+
+                    return (
+                      <div className="w-full mt-3 p-3 bg-amber-50/70 border border-dashed border-amber-300 rounded-[4px_6px_3px_5px] flex flex-col gap-2.5 text-left">
+                        <div className="flex items-center justify-between border-b border-dashed border-amber-300/60 pb-1.5">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-amber-950 flex items-center gap-1.5">
+                            <span>⚡</span>
+                            <span>Défis Speed Trainer ({pieceTrainings.length})</span>
+                          </span>
+                          <span className="text-[9px] text-amber-900/70 font-bold">
+                            Séquenciad'Or
+                          </span>
+                        </div>
+                        <TrainingCompactCard
+                          trainings={pieceTrainings}
+                          sequenceurUrl={sequenceurUrl}
+                          mode="repertoire"
+                        />
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Bas de la carte : Barre d'actions responsive */}
@@ -806,6 +952,44 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                       </CordelButton>
                     )}
 
+                    {/* Bouton Configuration Défi Réflexe « Temps 1 » (Arbitrage & Surcharges Mestre) */}
+                    {Boolean(
+                      (Array.isArray(piece.activeSinaisDoMestre) && piece.activeSinaisDoMestre.length > 0) ||
+                      (Array.isArray(piece.sinaisDoMestre) && piece.sinaisDoMestre.length > 0) ||
+                      (Array.isArray(piece.preset?.sinaisDoMestre) && piece.preset.sinaisDoMestre.length > 0)
+                    ) && (
+                      <CordelButton
+                        type="button"
+                        variant="default"
+                        useExtremeBorder={false}
+                        onClick={() => setReflexConfigPiece(piece)}
+                        className="py-1 px-2 text-[9.5px] uppercase tracking-wider font-black bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-950 flex items-center gap-1 shrink-0"
+                        title="Configurer le Défi Réflexe « Temps 1 » (arbitrage des pauses et des leurres)"
+                      >
+                        <span>🎯</span>
+                        <span>Défi Temps 1</span>
+                      </CordelButton>
+                    )}
+
+                    {/* Bouton Jeu du Conducteur à trous (Timeline) */}
+                    {Boolean(
+                      (Array.isArray(piece.activeSinaisDoMestre) && piece.activeSinaisDoMestre.length > 0) ||
+                      (Array.isArray(piece.sinaisDoMestre) && piece.sinaisDoMestre.length > 0) ||
+                      (Array.isArray(piece.preset?.sinaisDoMestre) && piece.preset.sinaisDoMestre.length > 0)
+                    ) && (
+                      <CordelButton
+                        type="button"
+                        variant="default"
+                        useExtremeBorder={false}
+                        onClick={() => setConductorGamePiece(piece)}
+                        className="py-1 px-2 text-[9.5px] uppercase tracking-wider font-black bg-purple-50 hover:bg-purple-100 border border-purple-300 text-purple-950 flex items-center gap-1 shrink-0"
+                        title="Lancer le jeu du Conducteur à trous (mémoriser la structure des signaux)"
+                      >
+                        <span>🗺️</span>
+                        <span>Conduire le morceau (Timeline)</span>
+                      </CordelButton>
+                    )}
+
                     {/* Bouton consultation Toada (Chant & Paroles) */}
                     {piece.hasToada && (
                       <CordelButton
@@ -829,26 +1013,40 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                     )}
 
                     {/* Bouton consultation Fiche Varal Culture liée ou passerelle de création */}
-                    {(piece.activeCultureDoc || piece.cultureDocId) ? (
-                      <CordelButton
-                        type="button"
-                        variant="default"
-                        useExtremeBorder={false}
-                        onClick={() => {
-                          const docToOpen = piece.activeCultureDoc || {
-                            id: piece.cultureDocId,
-                            titre: piece.titre,
-                            videoUrl: piece.activeVideoUrl || piece.videoUrl,
-                            chapitres: piece.activeHistoire ? [{ sousTitre: 'Origines & Histoire', texte: piece.activeHistoire }] : []
-                          };
-                          setActiveCultureDocToView(docToOpen);
-                        }}
-                        className="py-1 px-2 text-[9.5px] uppercase tracking-wider font-black bg-blue-50 hover:bg-blue-100 border border-blue-300 text-blue-950 flex items-center gap-1 shrink-0"
-                        title="Consulter la fiche culturelle du Varal associée"
-                      >
-                        <span>📖</span>
-                        <span>Fiche Culture</span>
-                      </CordelButton>
+                    {piece.hasCulture ? (
+                      piece.activeCultureDocs && piece.activeCultureDocs.length > 1 ? (
+                        <CordelButton
+                          type="button"
+                          variant="default"
+                          useExtremeBorder={false}
+                          onClick={() => setCulturePickerData({ piece, docs: piece.activeCultureDocs })}
+                          className="py-1 px-2 text-[9.5px] uppercase tracking-wider font-black bg-blue-50 hover:bg-blue-100 border border-blue-300 text-blue-950 flex items-center gap-1 shrink-0"
+                          title="Consulter les fiches culturelles associées"
+                        >
+                          <span>📖</span>
+                          <span>{piece.activeCultureDocs.length} fiches Culture</span>
+                        </CordelButton>
+                      ) : (
+                        <CordelButton
+                          type="button"
+                          variant="default"
+                          useExtremeBorder={false}
+                          onClick={() => {
+                            const docToOpen = piece.activeCultureDocs?.[0] || piece.activeCultureDoc || {
+                              id: piece.cultureDocId || (Array.isArray(piece.cultureDocIds) && piece.cultureDocIds[0]),
+                              titre: piece.titre,
+                              videoUrl: piece.activeVideoUrl || piece.videoUrl,
+                              chapitres: piece.activeHistoire ? [{ sousTitre: 'Origines & Histoire', texte: piece.activeHistoire }] : []
+                            };
+                            setActiveCultureDocToView(docToOpen);
+                          }}
+                          className="py-1 px-2 text-[9.5px] uppercase tracking-wider font-black bg-blue-50 hover:bg-blue-100 border border-blue-300 text-blue-950 flex items-center gap-1 shrink-0"
+                          title="Consulter la fiche culturelle du Varal associée"
+                        >
+                          <span>📖</span>
+                          <span>Fiche Culture</span>
+                        </CordelButton>
+                      )
                     ) : (
                       <CordelButton
                         type="button"
@@ -962,15 +1160,69 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
         onSuccess={(newCultureId) => {
           if (pieceForCultureCreation) {
             setPieces((prev) =>
-              prev.map((p) =>
-                p.id === pieceForCultureCreation.id ? { ...p, cultureDocId: newCultureId } : p
-              )
+              prev.map((p) => {
+                if (p.id !== pieceForCultureCreation.id) return p;
+                const existingIds = Array.isArray(p.cultureDocIds)
+                  ? p.cultureDocIds
+                  : (p.cultureDocId ? [p.cultureDocId] : []);
+                const updatedIds = Array.from(new Set([...existingIds, newCultureId]));
+                return {
+                  ...p,
+                  cultureDocIds: updatedIds,
+                  cultureDocId: updatedIds[0] || newCultureId
+                };
+              })
             );
             showToast(`Fiche culture créée sur le Varal et liée à « ${pieceForCultureCreation.titre} » !`);
           }
           setPieceForCultureCreation(null);
         }}
       />
+
+      {/* Modale de sélection lorsqu'un morceau possède plusieurs fiches culturelles */}
+      {culturePickerData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/60 backdrop-blur-xs select-none">
+          <div className="relative w-full max-w-[460px] bg-cordel-bg p-4 rounded-lg shadow-2xl border-2 border-encre-noire text-left">
+            <div className="flex justify-between items-center border-b-2 border-dashed border-cordel-master-dark/20 pb-2 mb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">📖</span>
+                <span className="text-xs font-black uppercase text-cordel-wood tracking-wider">
+                  Fiches Culturelles — {culturePickerData.piece?.titre}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCulturePickerData(null)}
+                className="w-6 h-6 rounded-full bg-encre-noire text-white font-bold text-xs flex items-center justify-center hover:bg-red-700 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="text-xs text-cordel-master-dark/80 mb-3 font-semibold">
+              Sélectionnez la fiche culturelle à consulter :
+            </p>
+            <div className="flex flex-col gap-2 max-h-[60vh] overflow-y-auto">
+              {culturePickerData.docs.map((docItem, idx) => (
+                <button
+                  key={docItem.id || idx}
+                  type="button"
+                  onClick={() => {
+                    setActiveCultureDocToView(docItem);
+                    setCulturePickerData(null);
+                  }}
+                  className="flex items-center justify-between p-2.5 rounded bg-blue-50 hover:bg-blue-100 border border-blue-300 text-blue-950 font-bold text-xs cursor-pointer transition-all shadow-xs text-left"
+                >
+                  <span className="flex items-center gap-2 truncate">
+                    <span>📖</span>
+                    <span className="truncate">{docItem.titre || docItem.name || 'Fiche Culture'}</span>
+                  </span>
+                  <span className="text-[10px] text-blue-700 underline shrink-0 font-black">Consulter ↗</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modale de consultation de la Fiche Culture du Varal */}
       {activeCultureDocToView && (
@@ -1024,6 +1276,30 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modale d'arbitrage Mestre pour le Défi Réflexe « Temps 1 » */}
+      <PieceReflexConfigModal
+        isOpen={Boolean(reflexConfigPiece)}
+        onClose={() => setReflexConfigPiece(null)}
+        piece={reflexConfigPiece}
+        presetData={reflexConfigPiece?.preset || (Array.isArray(catalogRhythms) ? catalogRhythms.find(r => r.id === reflexConfigPiece?.sequenceurId) : null)}
+        groupId={groupId}
+        onSaveSuccess={(updatedPiece) => {
+          setPieces((prev) => prev.map(p => p.id === updatedPiece.id ? { ...p, ...updatedPiece } : p));
+          showToast(`Réglages Défi Réflexe enregistrés pour « ${updatedPiece.titre} » !`);
+        }}
+      />
+
+      {/* Modale du jeu du Conducteur à trous */}
+      {conductorGamePiece && (
+        <ConductorGameModal
+          isOpen={Boolean(conductorGamePiece)}
+          onClose={() => setConductorGamePiece(null)}
+          piece={conductorGamePiece}
+          presetData={conductorGamePiece.preset || (Array.isArray(catalogRhythms) ? catalogRhythms.find(r => r.id === conductorGamePiece.sequenceurId) : null)}
+          profileData={_profileData}
+        />
       )}
     </div>
   );

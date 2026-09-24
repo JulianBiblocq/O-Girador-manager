@@ -42,6 +42,7 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
   const [newPointTitle, setNewPointTitle] = useState('');
   // Lieu et document de la réunion
   const [lieu, setLieu] = useState('Salle de réunion / En ligne');
+  const [lieuId, setLieuId] = useState(null);
   const [lieuxImportants, setLieuxImportants] = useState([]);
   const [lienDocument, setLienDocument] = useState('');
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -218,6 +219,7 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
       setTimeEnd('');
       setPointsOrdreDuJour([]);
       setLienDocument('');
+      setLieuId(null);
       setPollSlots([
         { date: '', timeStart: '19:00', timeEnd: '21:00' },
         { date: '', timeStart: '19:00', timeEnd: '21:00' }

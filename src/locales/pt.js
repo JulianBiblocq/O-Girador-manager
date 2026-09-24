@@ -1120,6 +1120,7 @@ export const pt = {
     tabMestreOrientation: "Casting",
     tabAccueil: "Início",
     tabParcours: "Minha Trajetória",
+    tabRepertoire: "📜 Repertório",
     tabPorteVoix: "Porta-voz",
     tabNewsletter: "Newsletter",
     tabVaralManager: "Varal",

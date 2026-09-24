@@ -26,6 +26,7 @@ import { canManageEvents } from '../utils/permissionUtils';
 import { resolveEffectiveUserTags } from '../utils/tagUtils';
 import { formatLocationShort } from '../utils/locationUtils';
 import useHardwareBack from '../hooks/useHardwareBack';
+import { calculateRoadDistance } from '../utils/googleMaps';
 
 const formatDateWithDay = (dateStr, includeYear = true, locale = 'fr') => {
   const date = new Date(dateStr);

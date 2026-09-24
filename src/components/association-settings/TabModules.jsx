@@ -296,6 +296,42 @@ export default function TabModules({
           </label>
         </div>
       </div>
+
+      {/* Accès Adhérent au Répertoire */}
+      <div className="mt-8 pt-6 border-t-2 border-dashed border-cordel-master-dark/30 text-left">
+        <h4 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-2.5 flex items-center gap-2">
+          <span>📜</span> Accès Adhérent au Répertoire
+        </h4>
+        <div className={`p-4 border-2 rounded-[6px_10px_6px_8px] flex items-center justify-between transition-all ${
+          formData.features?.repertoireEleves
+            ? 'border-encre-noire bg-cordel-bg-light shadow-[2.5px_2.5px_0px_0px_#181716]'
+            : 'border-dashed border-cordel-master-dark/30 bg-neutral-100/50 opacity-60'
+        }`}>
+          <div className="text-left pr-4">
+            <h5 className="text-xs font-black text-encre-noire flex items-center gap-2">
+              Ouvrir le répertoire aux adhérents
+            </h5>
+            <p className="text-[9px] text-cordel-master-dark/70 font-medium mt-0.5 leading-relaxed">
+              Permet aux membres de consulter le répertoire de la saison, leurs entraînements Speed Trainer et de formuler des demandes de révision.
+            </p>
+          </div>
+
+          <label className="relative inline-flex items-center cursor-pointer shrink-0 select-none">
+            <input
+              type="checkbox"
+              checked={formData.features?.repertoireEleves || false}
+              onChange={(e) => {
+                const currentFeatures = formData.features || {};
+                handleChange('features', { ...currentFeatures, repertoireEleves: e.target.checked });
+              }}
+              disabled={saving}
+              className="sr-only peer"
+            />
+            <div className="w-10 h-5 bg-neutral-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[var(--cordel-wood)]"></div>
+          </label>
+        </div>
+      </div>
+
       {/* Ecosystem Access Settings */}
       <div className="mt-8 pt-6 border-t-2 border-dashed border-cordel-master-dark/30 text-left">
         <h4 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-2.5 flex items-center gap-2">

@@ -113,7 +113,12 @@ export default function CreateCultureFicheModal({
       // 3. Liaison automatique dans associations/{groupId}/repertoire/{piece.id} si le morceau existe
       if (piece.id) {
         const pieceRef = doc(db, 'associations', groupId, 'repertoire', piece.id);
+        const existingIds = Array.isArray(piece.cultureDocIds)
+          ? piece.cultureDocIds
+          : (piece.cultureDocId ? [piece.cultureDocId] : []);
+        const updatedIds = Array.from(new Set([...existingIds, docRef.id]));
         await updateDoc(pieceRef, {
+          cultureDocIds: updatedIds,
           cultureDocId: docRef.id,
           updatedAt: new Date().toISOString()
         });

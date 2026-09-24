@@ -13,6 +13,19 @@ import QcmSequenceurBlindTest from './QcmSequenceurBlindTest';
 import DailyRevisionSession from './DailyRevisionSession';
 import ExamDashboard from './ExamDashboard';
 import { launchCrossApp } from '../../utils/crossAppAuth';
+import ReflexGameModal from './ReflexGameModal';
+import ConductorGameModal from './ConductorGameModal';
+import {
+  subscribeGroupTrainings,
+  subscribeUserAisance,
+  subscribeUserReflexes,
+  subscribeUserConducteurs,
+  toggleStageCompletion,
+  computeTrainingStages
+} from '../../services/aisanceService';
+import { calculatePauseTimes } from '../../utils/reflexGameUtils';
+import { launchTrainingStage } from '../../utils/trainingLauncher';
+import { normalizeString } from '../../utils/repertoireMatcher';
 
 // Icône catégorielle pour les fiches culture (xilo-gravure SVG)
 export const CultureCategoryIcon = ({ docItem }) => {
@@ -237,6 +250,7 @@ export default function MonCarnetAisance({
   rhythmsMetadata,
   songs,
   educationalSheets,
+  repertoire = [],
   sequenceurUrl,
   enabledModules = {},
   profileData
@@ -254,6 +268,7 @@ export default function MonCarnetAisance({
   // Onglets dynamiques selon les modules activés par le Mestre
   const subTabs = useMemo(() => {
     const tabs = [];
+    tabs.push({ id: 'defis', label: '⚡ Défis Rythmiques' });
     tabs.push({ id: 'revision', label: '🧠 Révisions' });
     tabs.push({ id: 'examens', label: '🏅 Examens' });
     
@@ -265,7 +280,7 @@ export default function MonCarnetAisance({
     return tabs;
   }, [enabledModules]);
 
-  const [activeSubTab, setActiveSubTab] = useState(subTabs.length > 0 ? subTabs[0].id : 'revision');
+  const [activeSubTab, setActiveSubTab] = useState(subTabs.length > 0 ? subTabs[0].id : 'defis');
 
   // Synchronisation si l'onglet actif n'existe plus dans la liste
   useEffect(() => {
@@ -273,6 +288,150 @@ export default function MonCarnetAisance({
       setActiveSubTab(subTabs[0].id);
     }
   }, [subTabs, activeSubTab]);
+
+  // Entraînements Speed Trainer et état d'aisance de l'élève
+  const [groupTrainings, setGroupTrainings] = useState([]);
+  const [userAisance, setUserAisance] = useState({});
+  const [togglingStage, setTogglingStage] = useState(null);
+
+  // Progrès de l'élève aux Défis Réflexes « Temps 1 »
+  const [userReflexes, setUserReflexes] = useState({});
+  const [activeReflexPiece, setActiveReflexPiece] = useState(null);
+  const [activeReflexPreset, setActiveReflexPreset] = useState(null);
+
+  // Progrès de l'élève au jeu du Conducteur à trous (Timeline)
+  const [userConducteurs, setUserConducteurs] = useState({});
+  const [activeConductorPiece, setActiveConductorPiece] = useState(null);
+  const [activeConductorPreset, setActiveConductorPreset] = useState(null);
+
+  useEffect(() => {
+    const groupId = profileData?.groupId;
+    const userId = profileData?.uid || profileData?.id;
+    if (!groupId) return;
+
+    const unsubTrainings = subscribeGroupTrainings(groupId, setGroupTrainings);
+    let unsubAisance = () => {};
+    let unsubReflexes = () => {};
+    let unsubConducteurs = () => {};
+
+    if (userId) {
+      unsubAisance = subscribeUserAisance(userId, setUserAisance);
+      unsubReflexes = subscribeUserReflexes(userId, setUserReflexes);
+      unsubConducteurs = subscribeUserConducteurs(userId, setUserConducteurs);
+    }
+    return () => {
+      unsubTrainings();
+      unsubAisance();
+      unsubReflexes();
+      unsubConducteurs();
+    };
+  }, [profileData?.groupId, profileData?.uid, profileData?.id]);
+
+  // Pupitre de prédilection de l'adhérent
+  const userPupitre = useMemo(() => {
+    const raw = (
+      profileData?.instrument ||
+      profileData?.instrumentPrincipal ||
+      profileData?.instrumentsJoues?.[0] ||
+      'caixa'
+    ).toLowerCase();
+    const list = [
+      { key: 'caixa', label: 'Caixa' },
+      { key: 'tarol', label: 'Tarol' },
+      { key: 'gongue', label: 'Gonguê' },
+      { key: 'alfaia', label: 'Alfaia' },
+      { key: 'marcante', label: 'Marcante' },
+      { key: 'agbe', label: 'Agbê' },
+      { key: 'mineiro', label: 'Mineiro' },
+      { key: 'timbal', label: 'Timbal' }
+    ];
+    const found = list.find((p) => raw.includes(p.key));
+    return found || { key: 'caixa', label: 'Caixa' };
+  }, [profileData]);
+
+  // Déclencheur du Défi Réflexe « Temps 1 »
+  const handleLaunchReflexGame = (targetPiece, targetPreset = null) => {
+    setActiveReflexPiece(targetPiece);
+    setActiveReflexPreset(targetPreset || targetPiece?.preset || null);
+  };
+
+  // Déclencheur du jeu du Conducteur à trous (Timeline)
+  const handleLaunchConductorGame = (targetPiece, targetPreset = null) => {
+    setActiveConductorPiece(targetPiece);
+    setActiveConductorPreset(targetPreset || targetPiece?.preset || null);
+  };
+
+  // Morceaux actifs de la saison avec leurs défis d'entraînement associés
+  const activeSeasonTrainings = useMemo(() => {
+    if (!groupTrainings || groupTrainings.length === 0) return [];
+
+    return groupTrainings
+      .map((t) => {
+        const matchedPiece = (repertoire || []).find(
+          (p) =>
+            (p.sequenceurId && p.sequenceurId === t.presetId) ||
+            (p.presetId && p.presetId === t.presetId) ||
+            (t.presetId && p.id === t.presetId) ||
+            (normalizeString(p.titre) && normalizeString(p.titre) === normalizeString(t.title || t.titre || t.name))
+        );
+        const isSeasonActive = !matchedPiece || !matchedPiece.statut || matchedPiece.statut === 'saison';
+        const repertoireTitle = matchedPiece?.titre || t.title || t.titre || 'Morceau du Répertoire';
+        const stages = computeTrainingStages(t);
+        const completedStages = userAisance[t.id] || [];
+        const isMastered = stages.length > 0 && stages.every((s) => completedStages.includes(s.index));
+
+        return {
+          ...t,
+          matchedPiece,
+          repertoireTitle,
+          isSeasonActive,
+          stages,
+          completedStages,
+          isMastered
+        };
+      })
+      .filter((t) => t.isSeasonActive);
+  }, [groupTrainings, repertoire, userAisance]);
+
+  // Morceaux actifs de la saison sans programme Speed Trainer (pour les Défis Réflexes autonomes)
+  const otherSeasonPieces = useMemo(() => {
+    if (!repertoire || repertoire.length === 0) return [];
+    const trainingPresetIds = new Set(
+      (activeSeasonTrainings || []).map((t) => t.presetId || t.matchedPiece?.id || t.matchedPiece?.sequenceurId).filter(Boolean)
+    );
+    const trainingTitles = new Set(
+      (activeSeasonTrainings || []).map((t) => normalizeString(t.repertoireTitle)).filter(Boolean)
+    );
+
+    return repertoire.filter((p) => {
+      const isSeason = !p.statutSaison || p.statutSaison === 'saison';
+      if (!isSeason) return false;
+      if (p.id && trainingPresetIds.has(p.id)) return false;
+      if (p.sequenceurId && trainingPresetIds.has(p.sequenceurId)) return false;
+      if (p.titre && trainingTitles.has(normalizeString(p.titre))) return false;
+      return true;
+    });
+  }, [repertoire, activeSeasonTrainings]);
+
+  // Bascule d'un palier d'entraînement
+  const handleToggleStage = async (trainingId, stageIndex, currentStages) => {
+    const userId = profileData?.uid || profileData?.id;
+    const groupId = profileData?.groupId;
+    if (!userId || !trainingId) return;
+
+    setTogglingStage(`${trainingId}_${stageIndex}`);
+    try {
+      const updated = await toggleStageCompletion(userId, trainingId, stageIndex, currentStages, groupId);
+      setUserAisance((prev) => ({
+        ...prev,
+        [trainingId]: updated
+      }));
+    } catch (err) {
+      console.error('[MonCarnetAisance] Erreur lors de la validation du palier :', err);
+    } finally {
+      setTogglingStage(null);
+    }
+  };
 
   // État pour le Blind Test inline (onglet Percussion)
   const [blindTestRhythm, setBlindTestRhythm] = useState(null);
@@ -429,10 +588,352 @@ export default function MonCarnetAisance({
       )}
 
       {/* ================================================================ */}
+      {/* ONGLET DÉFIS RYTHMIQUES (SPEED TRAINER)                          */}
+      {/* ================================================================ */}
+      {activeSubTab === 'defis' && (
+        <div className="flex flex-col gap-5">
+          <div className="bg-[var(--color-cordel-ocre,#c05621)]/10 border-l-4 border-[var(--color-cordel-ocre,#c05621)] p-3.5 rounded-r flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow-xs">
+            <div>
+              <h3 className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
+                <span>⚡</span>
+                <span>Speed Trainer — Programmes d'Aisance au Métronome</span>
+              </h3>
+              <p className="text-[11px] font-bold text-cordel-master-dark opacity-85 mt-0.5">
+                Validez progressivement vos paliers de tempo. Cochez les paliers maîtrisés pour votre carnet et lancez Séquenciad'Or pré-paramétré.
+              </p>
+            </div>
+            {activeSeasonTrainings.length > 0 && (
+              <span className="shrink-0 text-[10px] font-black uppercase px-2.5 py-1 rounded bg-white text-cordel-wood border border-cordel-wood/30 shadow-2xs">
+                {activeSeasonTrainings.filter(t => t.isMastered).length} / {activeSeasonTrainings.length} maîtrisé{activeSeasonTrainings.length > 1 ? 's' : ''}
+              </span>
+            )}
+          </div>
+
+          {activeSeasonTrainings.length === 0 ? (
+            <div className="text-center p-8 bg-[#fdfaf2] border border-dashed border-encre-noire/20 rounded-lg">
+              <span className="text-3xl block mb-2">⚡</span>
+              <p className="text-sm font-bold text-encre-noire/70">
+                Aucun défi d'entraînement Speed Trainer actif pour cette saison.
+              </p>
+              <p className="text-xs text-encre-noire/50 mt-1">
+                Les programmes configurés dans Séquenciad'Or pour vos morceaux apparaîtront automatiquement ici.
+              </p>
+            </div>
+          ) : (
+            activeSeasonTrainings.map((training) => {
+              const stages = training.stages || [];
+              const completedStages = training.completedStages || [];
+              const isMastered = training.isMastered;
+
+              return (
+                <CordelCard key={training.id} className="p-5 flex flex-col gap-4 bg-[#fdfaf2] border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716]">
+                  {/* En-tête du défi */}
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-dashed border-cordel-master-dark/20 pb-2.5 gap-2">
+                    <div className="flex flex-col gap-0.5">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="text-sm font-black uppercase tracking-wider text-encre-noire flex items-center gap-1.5">
+                          <span>🎵</span>
+                          <span>{training.repertoireTitle}</span>
+                        </h3>
+                        {training.title && training.title !== training.repertoireTitle && (
+                          <span className="text-[10px] font-extrabold text-cordel-wood bg-cordel-wood/10 px-2 py-0.5 rounded border border-cordel-wood/20">
+                            {training.title}
+                          </span>
+                        )}
+                        {isMastered ? (
+                          <span className="animate-fadeIn inline-flex items-center gap-1 px-2.5 py-0.5 text-[9.5px] font-black uppercase rounded bg-[var(--color-cordel-vert)] text-white shadow-xs">
+                            <span>👑</span>
+                            <span>Maîtrisé</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-amber-100 text-amber-950 border border-amber-300">
+                            <span>⚡</span>
+                            <span>{completedStages.length} / {stages.length} palier{stages.length > 1 ? 's' : ''}</span>
+                          </span>
+                        )}
+                      </div>
+                      {training.description && (
+                        <p className="text-[10px] text-encre-noire/70 italic mt-0.5">
+                          {training.description}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Accès rapide direct premier palier non validé ou palier 0 */}
+                    {stages.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const nextStageIdx = stages.find(s => !completedStages.includes(s.index))?.index ?? 0;
+                          launchTrainingStage(
+                            training.presetId || training.matchedPiece?.sequenceurId,
+                            training.id,
+                            nextStageIdx,
+                            { baseUrl: sequenceurUrl }
+                          );
+                        }}
+                        className="px-3 py-1 text-[9.5px] font-black uppercase rounded bg-cordel-wood text-white border border-encre-noire shadow-xs hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center gap-1 shrink-0"
+                        title="Ouvrir Séquenciad'Or sur votre prochain palier d'entraînement"
+                      >
+                        <span>⚡</span>
+                        <span>{isMastered ? 'Rejouer dans Séquenciad\'Or' : 'S\'entraîner maintenant'}</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Grille des paliers de l'entraînement */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                    {stages.map((stage) => {
+                      const isChecked = completedStages.includes(stage.index);
+                      const isBusy = togglingStage === `${training.id}_${stage.index}`;
+                      return (
+                        <div
+                          key={stage.index}
+                          className={`p-2.5 rounded border transition-all flex items-center justify-between gap-2 ${
+                            isChecked
+                              ? 'bg-[var(--color-cordel-vert)]/10 border-[var(--color-cordel-vert)]/40 shadow-xs'
+                              : 'bg-white border-encre-noire/20 hover:border-encre-noire/40'
+                          }`}
+                        >
+                          <label className="flex items-center gap-2 cursor-pointer select-none truncate">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              disabled={isBusy}
+                              onChange={() => handleToggleStage(training.id, stage.index, completedStages)}
+                              className="w-4 h-4 rounded border-encre-noire text-[var(--color-cordel-vert)] focus:ring-[var(--color-cordel-vert)] cursor-pointer"
+                            />
+                            <span className={`text-[10px] font-extrabold truncate ${isChecked ? 'text-[var(--color-cordel-vert)] line-through opacity-85' : 'text-encre-noire'}`}>
+                              {stage.label}
+                            </span>
+                          </label>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              launchTrainingStage(
+                                training.presetId || training.matchedPiece?.sequenceurId,
+                                training.id,
+                                stage.index,
+                                { baseUrl: sequenceurUrl }
+                              )
+                            }
+                            className="shrink-0 px-2 py-1 text-[8.5px] font-black uppercase rounded bg-[var(--theme-bg,#fdfaf2)] border border-encre-noire/30 hover:bg-[#ebdcc0] text-encre-noire shadow-2xs hover:scale-105 active:scale-95 transition-all flex items-center gap-1 cursor-pointer"
+                            title={`Lancer Séquenciad'Or au tempo de ce palier (${stage.startBpm} ➔ ${stage.targetBpm} BPM)`}
+                          >
+                            <span>⚡</span>
+                            <span>Pratiquer</span>
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Bloc « 🎯 Réflexes & Conventions » */}
+                  {(() => {
+                    const pieceForReflex = training.matchedPiece || {
+                      id: training.presetId || training.id,
+                      titre: training.repertoireTitle,
+                      sequenceurId: training.presetId,
+                      preset: training.presetData
+                    };
+                    const piecePreset = training.matchedPiece?.preset || training.presetData || (rhythmsJsonData ? rhythmsJsonData[training.presetId] : null);
+                    const piecePausePoints = calculatePauseTimes(pieceForReflex, piecePreset);
+                    const interactiveSignalsCount = piecePausePoints.filter((p) => p.isInteractive).length;
+                    const reflexRecord = userReflexes[`${pieceForReflex.id}_${userPupitre.key}`] || userReflexes[`${pieceForReflex.id}_general`];
+                    const reflexScore = reflexRecord?.score || 0;
+                    const reflexTotal = reflexRecord?.totalSignals !== undefined ? reflexRecord.totalSignals : interactiveSignalsCount;
+                    const isReflexMastered = reflexRecord?.perfectScore || (reflexTotal > 0 && reflexScore >= reflexTotal);
+                    const conductorRecord = userConducteurs[`${pieceForReflex.id}_conductor`];
+                    const isConductorMastered = Boolean(conductorRecord?.perfectScore);
+
+                    return (
+                      <div className="mt-1 pt-3 border-t border-dashed border-cordel-master-dark/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-amber-50/70 p-3 rounded-[4px_6px_3px_5px] border border-amber-300 shadow-2xs">
+                        <div className="flex flex-col gap-0.5">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
+                              <span>🎯</span>
+                              <span>Réflexes &amp; Conventions</span>
+                            </span>
+                            {isReflexMastered ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-[9.5px] font-black uppercase rounded bg-[var(--color-cordel-vert)] text-white shadow-xs">
+                                <span>👑</span>
+                                <span>{reflexScore} / {reflexTotal} signaux validés (Maîtrisé)</span>
+                              </span>
+                            ) : reflexRecord ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-amber-100 text-amber-950 border border-amber-300">
+                                <span>🎯</span>
+                                <span>{reflexScore} / {reflexTotal} signaux validés</span>
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-bold rounded bg-stone-100 text-stone-700 border border-stone-300">
+                                <span>{interactiveSignalsCount > 0 ? `0 / ${interactiveSignalsCount} signaux validés` : 'À découvrir'}</span>
+                              </span>
+                            )}
+                            {isConductorMastered && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-purple-100 text-purple-900 border border-purple-300 shadow-2xs">
+                                <span>🗺️</span>
+                                <span>Conducteur validé</span>
+                              </span>
+                            )}
+                            <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-white text-cordel-master-dark border border-encre-noire/25">
+                              {userPupitre.label}
+                            </span>
+                          </div>
+                          <p className="text-[10px] font-bold text-encre-noire/70 mt-0.5">
+                            Simulateur de signaux du Mestre avec arrêt au temps 1 et mémorisation de la structure chronologique.
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-2 flex-wrap shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleLaunchReflexGame(pieceForReflex, piecePreset)}
+                            className="px-3 py-1.5 text-[9.5px] font-black uppercase rounded bg-cordel-wood hover:brightness-110 active:scale-95 text-white border border-encre-noire shadow-xs transition-all cursor-pointer flex items-center gap-1"
+                            title="Lancer le Défi Réflexe « Temps 1 » pour ce morceau"
+                          >
+                            <span>▶</span>
+                            <span>Défi Réflexe</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleLaunchConductorGame(pieceForReflex, piecePreset)}
+                            className="px-3 py-1.5 text-[9.5px] font-black uppercase rounded bg-purple-900 hover:brightness-110 active:scale-95 text-white border border-encre-noire shadow-xs transition-all cursor-pointer flex items-center gap-1"
+                            title="Ouvrir la Timeline et compléter le conducteur à trous"
+                          >
+                            <span>🗺️</span>
+                            <span>Conduire le morceau (Timeline)</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </CordelCard>
+              );
+            })
+          )}
+
+          {/* Morceaux actifs de la saison sans Speed Trainer (Défi Réflexe & Conducteur disponibles) */}
+          {otherSeasonPieces.map((piece) => {
+            const piecePreset = piece.preset || (rhythmsJsonData ? rhythmsJsonData[piece.sequenceurId] : null);
+            const piecePausePoints = calculatePauseTimes(piece, piecePreset);
+            const interactiveSignalsCount = piecePausePoints.filter((p) => p.isInteractive).length;
+            const reflexRecord = userReflexes[`${piece.id}_${userPupitre.key}`] || userReflexes[`${piece.id}_general`];
+            const reflexScore = reflexRecord?.score || 0;
+            const reflexTotal = reflexRecord?.totalSignals !== undefined ? reflexRecord.totalSignals : interactiveSignalsCount;
+            const isReflexMastered = reflexRecord?.perfectScore || (reflexTotal > 0 && reflexScore >= reflexTotal);
+            const conductorRecord = userConducteurs[`${piece.id}_conductor`];
+            const isConductorMastered = Boolean(conductorRecord?.perfectScore);
+
+            return (
+              <CordelCard key={piece.id} className="p-5 flex flex-col gap-3 bg-[#fdfaf2] border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716]">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-dashed border-cordel-master-dark/20 pb-2.5 gap-2">
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-sm font-black uppercase tracking-wider text-encre-noire flex items-center gap-1.5">
+                        <span>🎵</span>
+                        <span>{piece.titre}</span>
+                      </h3>
+                      <span className="text-[9.5px] font-extrabold uppercase px-2 py-0.5 rounded bg-stone-100 text-stone-700 border border-stone-300">
+                        Répertoire de saison
+                      </span>
+                    </div>
+                    {piece.notes && (
+                      <p className="text-[10px] text-encre-noire/70 italic mt-0.5">
+                        {piece.notes}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Bloc « 🎯 Réflexes & Conventions » */}
+                <div className="mt-1 pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-amber-50/70 p-3 rounded-[4px_6px_3px_5px] border border-amber-300 shadow-2xs">
+                  <div className="flex flex-col gap-0.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
+                        <span>🎯</span>
+                        <span>Réflexes &amp; Conventions</span>
+                      </span>
+                      {isReflexMastered ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-[9.5px] font-black uppercase rounded bg-[var(--color-cordel-vert)] text-white shadow-xs">
+                          <span>👑</span>
+                          <span>{reflexScore} / {reflexTotal} signaux validés (Maîtrisé)</span>
+                        </span>
+                      ) : reflexRecord ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-amber-100 text-amber-950 border border-amber-300">
+                          <span>🎯</span>
+                          <span>{reflexScore} / {reflexTotal} signaux validés</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-bold rounded bg-stone-100 text-stone-700 border border-stone-300">
+                          <span>{interactiveSignalsCount > 0 ? `0 / ${interactiveSignalsCount} signaux validés` : 'À découvrir'}</span>
+                        </span>
+                      )}
+                      {isConductorMastered && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-purple-100 text-purple-900 border border-purple-300 shadow-2xs">
+                          <span>🗺️</span>
+                          <span>Conducteur validé</span>
+                        </span>
+                      )}
+                      <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-white text-cordel-master-dark border border-encre-noire/25">
+                        {userPupitre.label}
+                      </span>
+                    </div>
+                    <p className="text-[10px] font-bold text-encre-noire/70 mt-0.5">
+                      Testez vos départs au temps 1 sur les signaux du Mestre avec 4 choix de tablatures.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => handleLaunchReflexGame(piece, piecePreset)}
+                      className="px-3 py-1.5 text-[9.5px] font-black uppercase rounded bg-cordel-wood hover:brightness-110 active:scale-95 text-white border border-encre-noire shadow-xs transition-all cursor-pointer flex items-center gap-1"
+                      title="Lancer le Défi Réflexe « Temps 1 » pour ce morceau"
+                    >
+                      <span>▶</span>
+                      <span>Défi Réflexe</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleLaunchConductorGame(piece, piecePreset)}
+                      className="px-3 py-1.5 text-[9.5px] font-black uppercase rounded bg-purple-900 hover:brightness-110 active:scale-95 text-white border border-encre-noire shadow-xs transition-all cursor-pointer flex items-center gap-1"
+                      title="Ouvrir la Timeline et compléter le conducteur à trous"
+                    >
+                      <span>🗺️</span>
+                      <span>Conduire le morceau (Timeline)</span>
+                    </button>
+                  </div>
+                </div>
+              </CordelCard>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ================================================================ */}
       {/* ONGLET PERCUSSION                                                */}
       {/* ================================================================ */}
       {activeSubTab === 'rythmes' && (
         <div className="flex flex-col gap-4">
+          {/* Passerelle directe vers les défis Speed Trainer */}
+          {activeSeasonTrainings.length > 0 && (
+            <div className="p-3 bg-amber-50 border border-dashed border-amber-300 rounded-[4px_6px_3px_5px] flex items-center justify-between gap-2 shadow-2xs">
+              <div className="flex items-center gap-2">
+                <span className="text-base">⚡</span>
+                <span className="text-xs font-bold text-amber-950">
+                  <strong>{activeSeasonTrainings.length} défi(s) Speed Trainer</strong> disponible(s) pour vos morceaux.
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveSubTab('defis')}
+                className="px-2.5 py-1 text-[9.5px] font-black uppercase rounded bg-amber-200 hover:bg-amber-300 text-amber-950 border border-amber-400 cursor-pointer shadow-2xs transition-all active:scale-95"
+              >
+                Voir les défis ➔
+              </button>
+            </div>
+          )}
           {rhythms.length === 0 ? (
             <div className="text-center p-8 bg-[#fdfaf2] border border-dashed border-encre-noire/20 rounded-lg">
               <span className="text-3xl block mb-2">🥁</span>
@@ -759,6 +1260,35 @@ export default function MonCarnetAisance({
           targetStepIndex={targetedAtelierQuiz.stepIndex ?? null}
           profileData={profileData}
           onClose={() => setTargetedAtelierQuiz(null)}
+        />
+      )}
+
+      {/* Modale Défi Réflexe « Temps 1 » (Simulateur de Conventions) */}
+      {activeReflexPiece && (
+        <ReflexGameModal
+          isOpen={Boolean(activeReflexPiece)}
+          onClose={() => {
+            setActiveReflexPiece(null);
+            setActiveReflexPreset(null);
+          }}
+          piece={activeReflexPiece}
+          presetData={activeReflexPreset || activeReflexPiece.preset || (rhythmsJsonData ? rhythmsJsonData[activeReflexPiece.sequenceurId] : null)}
+          profileData={profileData}
+          groupId={profileData?.groupId}
+        />
+      )}
+
+      {/* Modale du jeu du Conducteur à trous (Timeline & Choix contextuel) */}
+      {activeConductorPiece && (
+        <ConductorGameModal
+          isOpen={Boolean(activeConductorPiece)}
+          onClose={() => {
+            setActiveConductorPiece(null);
+            setActiveConductorPreset(null);
+          }}
+          piece={activeConductorPiece}
+          presetData={activeConductorPreset || activeConductorPiece.preset || (rhythmsJsonData ? rhythmsJsonData[activeConductorPiece.sequenceurId] : null)}
+          profileData={profileData}
         />
       )}
     </div>

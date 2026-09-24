@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
@@ -7,6 +7,7 @@ import Image from '@tiptap/extension-image';
 import ForumImageInsertModal from './forum/ForumImageInsertModal';
 import EmojiPickerPopover, { EmojiQuickRow } from './forum/EmojiPickerPopover';
 import { MentionDropdown, filterUsersByMentionQuery } from './forum/MentionAutocomplete';
+import { uploadForumAttachment } from '../utils/attachmentUploadUtils';
 
 export default function RichTextEditor({ 
   value = '', 
@@ -29,6 +30,8 @@ export default function RichTextEditor({
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [isMentionListOpen, setIsMentionListOpen] = useState(false);
   const [mentionQuery, setMentionQuery] = useState(null); // { query, from, to }
+  const [isUploadingPasteDrop, setIsUploadingPasteDrop] = useState(false);
+  const editorRef = useRef(null);
   const [, forceUpdate] = useState({});
 
   // Insertion d'un émoticône à l'emplacement du curseur dans l'éditeur
@@ -90,6 +93,77 @@ export default function RichTextEditor({
         }
       })
     ],
+    editorProps: {
+      // Interception du collage pour téléverser sur Firebase Storage au lieu d'injecter du base64 géant
+      handlePaste: (view, event) => {
+        const items = Array.from(event.clipboardData?.items || []);
+        const fileItems = items.filter(item => item.kind === 'file');
+        if (fileItems.length === 0) return false;
+
+        const file = fileItems[0].getAsFile();
+        if (!file) return false;
+
+        event.preventDefault();
+        setIsUploadingPasteDrop(true);
+
+        uploadForumAttachment({ file, groupId: groupId || 'Samambaia' })
+          .then((res) => {
+            if (editorRef.current && res?.url) {
+              if (res.isImage) {
+                editorRef.current.chain().focus().setImage({ src: res.url, alt: res.fileName }).run();
+              } else {
+                editorRef.current
+                  .chain()
+                  .focus()
+                  .insertContent(`<p><a href="${res.url}" target="_blank" rel="noopener noreferrer">📎 ${res.fileName}</a></p>`)
+                  .run();
+              }
+            }
+          })
+          .catch((err) => {
+            console.error("Échec du téléversement au collage :", err);
+            alert("Erreur lors de l'envoi de la pièce jointe collée : " + (err.message || 'Erreur réseau'));
+          })
+          .finally(() => {
+            setIsUploadingPasteDrop(false);
+          });
+
+        return true;
+      },
+      // Interception du glisser-déposer de fichiers
+      handleDrop: (view, event) => {
+        const files = Array.from(event.dataTransfer?.files || []);
+        if (files.length === 0) return false;
+
+        const file = files[0];
+        event.preventDefault();
+        setIsUploadingPasteDrop(true);
+
+        uploadForumAttachment({ file, groupId: groupId || 'Samambaia' })
+          .then((res) => {
+            if (editorRef.current && res?.url) {
+              if (res.isImage) {
+                editorRef.current.chain().focus().setImage({ src: res.url, alt: res.fileName }).run();
+              } else {
+                editorRef.current
+                  .chain()
+                  .focus()
+                  .insertContent(`<p><a href="${res.url}" target="_blank" rel="noopener noreferrer">📎 ${res.fileName}</a></p>`)
+                  .run();
+              }
+            }
+          })
+          .catch((err) => {
+            console.error("Échec du téléversement au glisser-déposer :", err);
+            alert("Erreur lors de l'envoi du fichier déposé : " + (err.message || 'Erreur réseau'));
+          })
+          .finally(() => {
+            setIsUploadingPasteDrop(false);
+          });
+
+        return true;
+      }
+    },
     content: value,
     editable: !disabled,
     onUpdate: ({ editor }) => {
@@ -124,6 +198,9 @@ export default function RichTextEditor({
       forceUpdate({});
     }
   });
+
+  // Maintien de la référence mutable vers l'instance de l'éditeur
+  editorRef.current = editor;
 
   // Synchroniser value prop when changed externally (e.g. form resets)
   useEffect(() => {
@@ -291,9 +368,9 @@ export default function RichTextEditor({
                 type="button"
                 onClick={() => setIsImageModalOpen(true)}
                 className="px-2.5 py-1 text-xs font-bold rounded border bg-amber-50 hover:bg-amber-100 border-amber-600/40 text-amber-900 transition-all cursor-pointer flex items-center gap-1 shadow-sm"
-                title="Insérer une image dans la discussion"
+                title="Joindre une photo ou un fichier (PDF, document, audio...)"
               >
-                📷 <span className="hidden sm:inline text-[10px] font-black uppercase">Photo</span>
+                📎 <span className="hidden sm:inline text-[10px] font-black uppercase">Photo / Doc</span>
               </button>
             )}
 
@@ -399,6 +476,14 @@ export default function RichTextEditor({
         </div>
       )}
 
+      {/* Indicateur visuel pendant le téléversement au collage / glisser-déposer */}
+      {isUploadingPasteDrop && (
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 border-b border-amber-300 text-amber-900 text-xs font-bold animate-pulse">
+          <span className="inline-block animate-spin text-sm">⏳</span>
+          <span>Envoi et optimisation de la pièce jointe...</span>
+        </div>
+      )}
+
       {/* Editor Content Box */}
       <div className="p-3 bg-white/70 dark:bg-black/10 text-xs font-medium focus-within:ring-1 focus-within:ring-cordel-wood">
         <EditorContent 
@@ -408,13 +493,26 @@ export default function RichTextEditor({
         />
       </div>
 
-      {/* Modale d'insertion d'image (Upload Framaspace ou Lien Externe) */}
+      {/* Modale d'insertion de pièce jointe (Photo ou Document - Framaspace ou Firebase) */}
       <ForumImageInsertModal
         isOpen={isImageModalOpen}
         onClose={() => setIsImageModalOpen(false)}
         lienDepotForum={lienDepotForum}
         consignesDepotForum={consignesDepotForum}
-        groupId={groupId}
+        groupId={groupId || 'Samambaia'}
+        onInsertAttachment={({ url, type, name }) => {
+          if (!editor || !url) return;
+          if (type === 'image') {
+            editor.chain().focus().setImage({ src: url, alt: name || 'Photo forum' }).run();
+          } else {
+            const cleanName = name || 'Télécharger le document';
+            editor
+              .chain()
+              .focus()
+              .insertContent(`<p><a href="${url}" target="_blank" rel="noopener noreferrer">📎 ${cleanName}</a></p>`)
+              .run();
+          }
+        }}
         onInsertImage={(url) => {
           if (editor && url) {
             editor.chain().focus().setImage({ src: url }).run();

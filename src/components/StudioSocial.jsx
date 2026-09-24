@@ -212,8 +212,6 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
     const eventId = e.target.value;
     const ev = events.find(x => x.id === eventId);
     setSelectedEvent(ev || null);
-    setLocalImageFile(null);
-    setSelectedVaralImage('');
     setSocialVideoUrl(ev?.socialVideoUrl || ev?.videoUrl || '');
     
     if (ev) {
@@ -787,8 +785,11 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
         return;
       }
       try {
+        if (typeof window === 'undefined' || typeof window.ClipboardItem === 'undefined') {
+          throw new Error("Votre navigateur ne supporte pas la copie directe d'images dans le presse-papier.");
+        }
         await navigator.clipboard.write([
-          new ClipboardItem({ 'image/png': blob })
+          new window.ClipboardItem({ 'image/png': blob })
         ]);
         setImageCopied(true);
         setTimeout(() => setImageCopied(false), 2500);

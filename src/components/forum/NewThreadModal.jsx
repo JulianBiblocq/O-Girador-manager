@@ -59,6 +59,7 @@ export default function NewThreadModal({
             channels={channels}
             activeChannelId={activeChannelId}
             onCancel={onClose}
+            onClose={onClose}
             onSuccess={() => {
               if (onThreadCreated) onThreadCreated();
               onClose();

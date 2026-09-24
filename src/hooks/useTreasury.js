@@ -195,12 +195,6 @@ export function useTreasury(groupId) {
       if (docSnap.exists()) {
         const data = docSnap.data();
         setAssociationSettings(data);
-        if (data.cotisationAnnuelleMontant !== undefined) {
-          setCotisationAmount(data.cotisationAnnuelleMontant);
-        }
-        if (data.activeFiscalYear !== undefined) {
-          setActiveFiscalYear(data.activeFiscalYear);
-        }
       }
       setLoadingStates(prev => ({ ...prev, settings: false }));
     }, (err) => {

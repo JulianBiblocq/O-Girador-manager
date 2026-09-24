@@ -467,6 +467,7 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
     if (!event.id || !targetUserId) return;
     try {
       let memberFound = false;
+      const currentInscriptions = event.inscriptions || [];
       const updatedInscriptions = currentInscriptions.map(ins => {
         if (ins.userId === targetUserId) {
           memberFound = true;

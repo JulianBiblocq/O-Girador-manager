@@ -133,6 +133,15 @@ export default function ThreadReplyBar({
 
             <button
               type="button"
+              onClick={() => setIsReplyExpanded(true)}
+              className="w-7 h-7 flex items-center justify-center text-xs text-cordel-wood hover:text-encre-noire bg-cordel-bg hover:bg-white rounded border border-cordel-master-dark/30 cursor-pointer shrink-0 transition-all"
+              title="Ajouter une pièce jointe ou une photo (déplier l'éditeur)"
+            >
+              📎
+            </button>
+
+            <button
+              type="button"
               onClick={() => setIsCompactEmojiOpen(prev => !prev)}
               className={`w-7 h-7 flex items-center justify-center text-sm rounded border transition-all cursor-pointer shrink-0 ${
                 isCompactEmojiOpen
@@ -248,7 +257,7 @@ export default function ThreadReplyBar({
             onChange={setReplyText}
             disabled={sending}
             placeholder={t && t('forum.writeReplyPlaceholder')}
-            groupId={profileData?.groupId}
+            groupId={thread?.groupId || profileData?.groupId || user?.groupId || 'Samambaia'}
             lienDepotForum={lienDepotForum}
             allUsers={allUsers}
             minHeight="85px"

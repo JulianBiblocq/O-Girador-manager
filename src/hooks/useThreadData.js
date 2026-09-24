@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { doc, onSnapshot, updateDoc, arrayUnion, collection, addDoc, runTransaction, getDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, auth } from '../firebase';
 import { getFirstUnreadIndex, toTimestamp, getLocalReadThreads, saveLocalReadThread } from '../utils/forumUnreadUtils';
 import { useForumModeration } from './useForumModeration';
 import { getTagId, resolveEffectiveUserTags } from '../utils/tagUtils';

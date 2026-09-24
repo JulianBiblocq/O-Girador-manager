@@ -94,7 +94,12 @@ export default function MestreSequenceur({ groupId, sequenceurUrl }) {
   }, [groupId]);
 
   const allRhythms = React.useMemo(() => {
-    const fsMapped = firestoreRhythms.map(r => {
+    const storageMapped = (storageRhythms || []).map(r => ({
+      ...r,
+      source: 'storage'
+    }));
+
+    const fsMapped = (firestoreRhythms || []).map(r => {
       // Si les urls sont stockées dans le doc (ex: jsonUrl, audioUrl, fileUrl)
       const jUrl = r.jsonUrl || (r.fileUrl && /\.json$/i.test(r.fileUrl) ? r.fileUrl : null);
       const aUrl = r.audioUrl || (r.fileUrl && /\.(mp3|wav|ogg|m4a|aac)$/i.test(r.fileUrl) ? r.fileUrl : null);

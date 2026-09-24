@@ -124,8 +124,12 @@ export default function ProgramPieceModal({
       if (piece.dancadorChoreoId) {
         setlistItem.dancadorChoreoId = piece.dancadorChoreoId;
       }
-      if (piece.cultureDocId) {
+      if (Array.isArray(piece.cultureDocIds) && piece.cultureDocIds.length > 0) {
+        setlistItem.cultureDocIds = piece.cultureDocIds;
+        setlistItem.cultureDocId = piece.cultureDocIds[0];
+      } else if (piece.cultureDocId) {
         setlistItem.cultureDocId = piece.cultureDocId;
+        setlistItem.cultureDocIds = [piece.cultureDocId];
       }
       if (Array.isArray(piece.videos) && piece.videos.length > 0) {
         setlistItem.videos = piece.videos;
@@ -217,8 +221,10 @@ export default function ProgramPieceModal({
             )}
             {piece.toadaDocId && <span className="px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-200">🗣️ Toada liée</span>}
             {piece.dancadorChoreoId && <span className="px-1.5 py-0.5 rounded bg-pink-50 border border-pink-200">💃 Danse liée</span>}
-            {piece.cultureDocId && <span className="px-1.5 py-0.5 rounded bg-blue-50 border border-blue-200">📖 Culture liée</span>}
-            {!piece.sequenceurFileUrl && !piece.sequenceurId && !piece.audioUrl && !piece.toadaDocId && !piece.dancadorChoreoId && !piece.cultureDocId && (
+            {(piece.hasCulture || piece.cultureDocId || (Array.isArray(piece.cultureDocIds) && piece.cultureDocIds.length > 0)) && (
+              <span className="px-1.5 py-0.5 rounded bg-blue-50 border border-blue-200">📖 Culture liée</span>
+            )}
+            {!piece.sequenceurFileUrl && !piece.sequenceurId && !piece.audioUrl && !piece.toadaDocId && !piece.dancadorChoreoId && !piece.cultureDocId && (!piece.cultureDocIds || piece.cultureDocIds.length === 0) && (
               <span className="italic opacity-60">Morceau autonome (sans ressource externe)</span>
             )}
           </div>
