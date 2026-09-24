@@ -360,40 +360,30 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
         // - role doit être 'membre'
         // - tags doit être []
         // - statutActuel doit être 'active'
-        // - paymentStatus DOIT être 'unpaid' (la règle interdit formellement 'paid' à la création)
+        // - paymentStatus initialisé directement ('paid' si reconnu dans pending_payments, sinon 'unpaid')
         userDoc.role = "membre";
         userDoc.tags = [];
-        userDoc.paymentStatus = "unpaid";
+        userDoc.paymentStatus = pendingPaymentData ? "paid" : "unpaid";
 
         if (pendingPaymentData) {
           userDoc.helloAssoLastPayment = pendingPaymentData;
         }
 
-        // Création initiale autorisée par les règles de sécurité
+        // Création initiale autorisée par les règles de sécurité en un seul setDoc
         await setDoc(userRef, userDoc);
-
-        // Si un paiement HelloAsso préalable a été détecté, basculer le statut en 'paid'
-        // via une mise à jour (autorisée par la règle allow update pour le profil utilisateur)
-        if (pendingPaymentData) {
-          try {
-            await updateDoc(userRef, { paymentStatus: 'paid' });
-          } catch (payUpdateErr) {
-            console.warn("Onboarding - Erreur bascule paymentStatus en 'paid' :", payUpdateErr);
-          }
-        }
       } else {
         // --- 2. MISE À JOUR D'UN DOCUMENT EXISTANT ---
         // Les règles Firestore allow update interdisent aux membres non-admin
-        // de modifier les clés système (role, privilèges, etc.)
+        // de modifier les clés système (role, privilèges, paymentStatus, etc.)
         delete userDoc.role;
         delete userDoc.isSystemAdmin;
         delete userDoc.hasAccessLogistique;
         delete userDoc.canWriteSequenciador;
         delete userDoc.canWriteDansador;
         delete userDoc.canWriteOrchestrador;
+        delete userDoc.paymentStatus;
 
         if (pendingPaymentData) {
-          userDoc.paymentStatus = 'paid';
           userDoc.helloAssoLastPayment = pendingPaymentData;
         }
 
