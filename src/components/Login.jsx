@@ -46,9 +46,16 @@ export default function Login({ branding, onSuccess }) {
   const [resetSent, setResetSent] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
   const [inAppDismissed, setInAppDismissed] = useState(false);
+  const [googleNotice, setGoogleNotice] = useState(null);
 
   const getAuthErrorMessage = (error) => {
     switch (error.code) {
+      case 'auth/popup-closed-by-user':
+      case 'auth/cancelled-popup-request':
+        // Fermeture ou annulation normale de la fenêtre par l'utilisateur : pas d'alerte bloquante
+        return null;
+      case 'auth/popup-blocked':
+        return t('login.errorPopupBlocked') || "La fenêtre de connexion Google a été bloquée par votre navigateur. Veuillez autoriser les fenêtres pop-up ou utiliser l'inscription par e-mail ci-dessous.";
       case 'auth/operation-not-allowed':
         return t('login.errorOperationNotAllowed') || "L'inscription par e-mail et mot de passe n'est pas activée. Veuillez l'activer dans la console Firebase.";
       case 'auth/email-already-in-use':
@@ -73,13 +80,33 @@ export default function Login({ branding, onSuccess }) {
 
   const handleLogin = async () => {
     setAuthLoading(true);
+    setGoogleNotice(null);
     try {
       // Connect purely via popup to bypass sessionStorage partitioning on modern mobile browsers/PWAs
       await signInWithPopup(auth, googleProvider);
       if (onSuccess) onSuccess();
     } catch (error) {
+      if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
+        console.info("Connexion Google : fenêtre refermée ou annulée.");
+        setGoogleNotice({
+          type: 'info',
+          title: t('login.popupClosedTitle') || "Fenêtre Google fermée",
+          message: t('login.popupClosedDesc') || "L'authentification Google a été interrompue ou fermée. Vous pouvez réessayer ou créer votre compte avec votre adresse e-mail ci-dessous."
+        });
+        return;
+      }
+      if (error.code === 'auth/popup-blocked') {
+        console.warn("Connexion Google : popup bloquée par le navigateur.");
+        setGoogleNotice({
+          type: 'warning',
+          title: t('login.popupBlockedTitle') || "Fenêtre bloquée par votre navigateur",
+          message: t('login.popupBlockedDesc') || "Votre navigateur a bloqué l'ouverture de la fenêtre Google. Vous pouvez autoriser les pop-ups pour ce site, ou utiliser l'inscription par e-mail ci-dessous."
+        });
+        return;
+      }
       console.error("Erreur de connexion :", error);
-      alert(getAuthErrorMessage(error));
+      const msg = getAuthErrorMessage(error);
+      if (msg) alert(msg);
     } finally {
       setAuthLoading(false);
     }
@@ -264,7 +291,10 @@ export default function Login({ branding, onSuccess }) {
                 <div className="flex w-full mb-5 border-2 border-encre-noire rounded-[8px_5px_9px_6px] p-1 bg-amber-100/40 shadow-[2px_2px_0px_0px_#181716]">
                   <button
                     type="button"
-                    onClick={() => setIsSignUpMode(false)}
+                    onClick={() => {
+                      setIsSignUpMode(false);
+                      setGoogleNotice(null);
+                    }}
                     className={`flex-1 py-2 px-2 text-xs font-black uppercase tracking-wider rounded transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                       !isSignUpMode
                         ? 'bg-cordel-wood text-white shadow-[1px_1px_0px_0px_#181716]'
@@ -276,7 +306,10 @@ export default function Login({ branding, onSuccess }) {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setIsSignUpMode(true)}
+                    onClick={() => {
+                      setIsSignUpMode(true);
+                      setGoogleNotice(null);
+                    }}
                     className={`flex-1 py-2 px-2 text-xs font-black uppercase tracking-wider rounded transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                       isSignUpMode
                         ? 'bg-[var(--color-cordel-vert,#2d6a4f)] text-white shadow-[1px_1px_0px_0px_#181716]'
@@ -305,6 +338,27 @@ export default function Login({ branding, onSuccess }) {
                   <span>🌐</span>
                   <span>{isSignUpMode ? "S'inscrire avec Google" : (t('login.loginGoogle') || "Se connecter avec Google")}</span>
                 </CordelButton>
+
+                {/* Information douce en cas de fenêtre Google fermée ou bloquée */}
+                {googleNotice && (
+                  <div className={`p-3 my-2.5 rounded-[6px_8px_5px_7px] text-left text-xs border-2 shadow-2xs animate-fadeIn ${
+                    googleNotice.type === 'warning'
+                      ? 'bg-red-50/95 border-red-400 text-red-900'
+                      : 'bg-amber-50/95 border-amber-400 text-amber-900'
+                  }`}>
+                    <div className="flex items-start gap-2">
+                      <span className="text-base select-none">{googleNotice.type === 'warning' ? '🚫' : '💡'}</span>
+                      <div className="space-y-0.5">
+                        <p className="font-extrabold text-[11px] uppercase tracking-wide">
+                          {googleNotice.title}
+                        </p>
+                        <p className="text-[10px] leading-relaxed opacity-90">
+                          {googleNotice.message}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Divider */}
                 <div className="flex items-center gap-2 my-4 opacity-40">
