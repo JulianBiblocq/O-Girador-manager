@@ -39,7 +39,7 @@ export default function EventRevisionProgram({
   const [activeVideoToWatch, setActiveVideoToWatch] = useState(null);
   const [activeSignalToZoom, setActiveSignalToZoom] = useState(null);
 
-  // Entraînements Speed Trainer du groupe (écoute réactive si non fournis par le parent)
+  // Entraînements du groupe (écoute réactive si non fournis par le parent)
   const [internalTrainingsList, setInternalTrainingsList] = useState([]);
 
   useEffect(() => {
@@ -216,10 +216,9 @@ export default function EventRevisionProgram({
                         </p>
                       )}
 
-                      {/* Entraînement Speed Trainer recommandé pour la séance si rattaché au morceau */}
+                      {/* Entraînement recommandé pour la séance si rattaché au morceau */}
                       {(() => {
-                        const seqId = morceau.sequenceurId || morceau.presetId || morceau.preset?.id || (morceau.sequenceurType === 'presets' ? morceau.sequenceurId : null);
-                        const pieceTrainings = resolvePieceTrainings(seqId, effectiveTrainingsList);
+                        const pieceTrainings = resolvePieceTrainings(morceau, effectiveTrainingsList);
                         if (pieceTrainings.length === 0) return null;
                         return (
                           <div className="w-full mt-1">

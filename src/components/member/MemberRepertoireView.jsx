@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { collection, onSnapshot, doc, updateDoc, setDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
+import MemberRepertoireHeader from './MemberRepertoireHeader';
 import MemberPieceCard from './MemberPieceCard';
 import MemberMediaModals from './MemberMediaModals';
 import { useSequencerFirestoreData } from '../../hooks/useSequencerFirestoreData';
@@ -11,8 +12,8 @@ import { subscribeGroupTrainings, subscribeUserAisance } from '../../services/ai
 
 /**
  * Vue Répertoire côté Adhérent / Élève (< 220 lignes).
- * Permet la consultation des morceaux au programme, la formulation
- * des demandes de révision, le suivi du confort et la pratique Speed Trainer.
+ * Présentation en grille responsive 2 colonnes (PC) / 1 colonne (mobile)
+ * avec accordéons repliables et bascule globale Tout déplier / replier.
  */
 export default function MemberRepertoireView({ groupId, user, profileData, sequenceurUrl }) {
   const effectiveUserId = user?.uid || profileData?.uid || profileData?.id;
@@ -24,6 +25,7 @@ export default function MemberRepertoireView({ groupId, user, profileData, seque
   const [piecesProgress, setPiecesProgress] = useState({});
   const [trainings, setTrainings] = useState([]);
   const [aisanceMap, setAisanceMap] = useState({});
+  const [expandedPieces, setExpandedPieces] = useState(new Set());
 
   // Modales partagées
   const [activeTablaturePiece, setActiveTablaturePiece] = useState(null);
@@ -101,6 +103,30 @@ export default function MemberRepertoireView({ groupId, user, profileData, seque
       });
   }, [pieces, dicts, searchQuery]);
 
+  // Vérifie si tous les morceaux sont actuellement dépliés
+  const allExpanded = useMemo(() => {
+    return resolvedPieces.length > 0 && resolvedPieces.every((p) => expandedPieces.has(p.id));
+  }, [resolvedPieces, expandedPieces]);
+
+  // Bascule globale : tout déplier ou tout replier
+  const handleToggleAllExpanded = () => {
+    if (allExpanded) {
+      setExpandedPieces(new Set());
+    } else {
+      setExpandedPieces(new Set(resolvedPieces.map((p) => p.id)));
+    }
+  };
+
+  // Bascule individuelle de l'accordéon d'un morceau
+  const handleToggleExpand = (pieceId) => {
+    setExpandedPieces((prev) => {
+      const next = new Set(prev);
+      if (next.has(pieceId)) next.delete(pieceId);
+      else next.add(pieceId);
+      return next;
+    });
+  };
+
   // Mutation : Demande de révision
   const handleToggleRevision = async (pieceId) => {
     if (!effectiveUserId || !groupId || !pieceId) return;
@@ -127,50 +153,27 @@ export default function MemberRepertoireView({ groupId, user, profileData, seque
   };
 
   return (
-    <div className="flex flex-col gap-4 text-left select-none w-full max-w-4xl mx-auto pb-8">
-      {/* En-tête & Barre de recherche */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-3 border-b-2 border-dashed border-cordel-master-dark/30">
-        <div>
-          <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase flex items-center gap-2">
-            <span>📜</span>
-            <span>Répertoire de la Saison</span>
-          </h2>
-          <p className="text-[11px] font-bold text-encre-noire/70 mt-0.5">
-            Morceaux au programme, entraînements Speed Trainer et demandes de révision
-          </p>
-        </div>
+    <div className="flex flex-col gap-4 text-left select-none w-full max-w-5xl mx-auto pb-8">
+      {/* En-tête & Barre de recherche avec bascule Tout déplier / replier */}
+      <MemberRepertoireHeader
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        allExpanded={allExpanded}
+        onToggleAllExpanded={handleToggleAllExpanded}
+        hasPieces={resolvedPieces.length > 0}
+      />
 
-        <div className="relative w-full sm:w-64">
-          <input
-            type="text"
-            placeholder="🔍 Rechercher un morceau..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="theme-input w-full text-xs font-bold py-1.5 px-3 bg-cordel-bg-light border-2 border-encre-noire rounded"
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 font-bold text-xs"
-            >
-              ✕
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Liste des morceaux ou état vide */}
+      {/* Grille responsive 2 colonnes (PC) / 1 colonne (mobile) */}
       {loading ? (
         <div className="p-8 text-center text-xs font-bold text-stone-500 animate-pulse">
           Chargement du répertoire...
         </div>
       ) : resolvedPieces.length === 0 ? (
         <div className="p-8 text-center bg-white/70 border-2 border-dashed border-cordel-master-dark/30 rounded-lg text-xs font-bold text-stone-600">
-          {searchQuery ? 'Aucun morceau ne correspond à votre recherche.' : 'Aucun morceau n\'est actuellement au programme de la saison.'}
+          {searchQuery ? 'Aucun morceau ne correspond à votre recherche.' : "Aucun morceau n'est actuellement au programme de la saison."}
         </div>
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
           {resolvedPieces.map((piece) => (
             <MemberPieceCard
               key={piece.id}
@@ -181,6 +184,8 @@ export default function MemberRepertoireView({ groupId, user, profileData, seque
               aisanceMap={aisanceMap}
               isRevisionRequested={Boolean(revisionsDemandees[piece.id])}
               comfortLevel={piecesProgress[piece.id]?.confort || 0}
+              isExpanded={expandedPieces.has(piece.id)}
+              onToggleExpand={() => handleToggleExpand(piece.id)}
               onToggleRevision={handleToggleRevision}
               onSetComfortLevel={handleSetComfortLevel}
               onOpenTablature={(p) => setActiveTablaturePiece({ ...p, tablature: getPieceTablature(p) })}

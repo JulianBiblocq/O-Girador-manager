@@ -2,7 +2,7 @@ import React from 'react';
 import { launchTrainingStage } from '../../utils/trainingLauncher';
 
 /**
- * Carte compacte d'entraînement Speed Trainer réutilisable.
+ * Carte compacte d'entraînement réutilisable.
  * Conçue selon la charte graphique Cordel (papier kraft, contrastes encre noire, vert validation).
  *
  * Utilisée dans :
@@ -68,7 +68,7 @@ export default function TrainingCompactCard({
                   type="button"
                   onClick={() => launchTrainingStage(t.presetId, t.id, 0, { baseUrl: sequenceurUrl })}
                   className="px-2.5 py-1 text-[9px] font-black uppercase rounded bg-[var(--color-cordel-vert,#2d6a4f)] text-white hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center gap-1 self-start sm:self-auto shrink-0 shadow-xs select-none"
-                  title="Ouvrir Séquenciad'Or sur cet entraînement"
+                  title="Ouvrir sequenciador sur cet entraînement"
                 >
                   <span>⚡</span>
                   <span>Pratiquer</span>
@@ -141,7 +141,7 @@ export default function TrainingCompactCard({
                       type="button"
                       onClick={() => launchTrainingStage(t.presetId, t.id, stage.index, { baseUrl: sequenceurUrl })}
                       className="ml-1 px-1.5 py-0.5 text-[8.5px] font-black uppercase rounded bg-[var(--color-cordel-vert,#2d6a4f)] text-white hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center gap-0.5 select-none"
-                      title={`Lancer Séquenciad'Or sur le palier ${stage.index + 1}`}
+                      title={`Lancer sequenciador sur le palier ${stage.index + 1}`}
                     >
                       <span>⚡</span>
                       <span>Pratiquer</span>

@@ -1116,7 +1116,7 @@ export const fr = {
     tabMestreOrientation: "Casting",
     tabAccueil: "Accueil",
     tabParcours: "Mon Parcours",
-    tabRepertoire: "📜 Répertoire",
+    tabRepertoire: "Répertoire",
     tabPorteVoix: "Porte-voix",
     tabNewsletter: "Newsletter",
     tabVaralManager: "Varal",

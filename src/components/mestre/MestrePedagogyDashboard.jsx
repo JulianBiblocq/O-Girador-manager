@@ -40,7 +40,7 @@ export default function MestrePedagogyDashboard({ profileData }) {
   const [fiches, setFiches] = useState([]);
   const [rhythmMetaList, setRhythmMetaList] = useState([]);
 
-  // Entraînements Speed Trainer et état d'aisance des membres
+  // Entraînements et état d'aisance des membres
   const [groupTrainings, setGroupTrainings] = useState([]);
   const [userAisanceMap, setUserAisanceMap] = useState({}); // { [uid]: { [trainingId]: stagesCompleted[] } }
   const [repertoire, setRepertoire] = useState([]);
@@ -134,7 +134,7 @@ export default function MestrePedagogyDashboard({ profileData }) {
           console.error("Erreur récupération répertoire :", e);
         }
 
-        // 7. Récupérer l'état des paliers Speed Trainer de chaque membre
+        // 7. Récupérer l'état des paliers d'entraînement de chaque membre
         const aisance = {};
         await Promise.all(users.map(async (u) => {
           try {
@@ -160,7 +160,7 @@ export default function MestrePedagogyDashboard({ profileData }) {
     fetchData();
   }, [groupId, isAuthorized, refreshTrigger]);
 
-  // Écoute en temps réel des entraînements Speed Trainer du groupe
+  // Écoute en temps réel des entraînements du groupe
   useEffect(() => {
     if (!groupId || !isAuthorized) return;
     const unsub = subscribeGroupTrainings(groupId, setGroupTrainings);
@@ -851,15 +851,15 @@ export default function MestrePedagogyDashboard({ profileData }) {
 
           <button
             type="button"
-            onClick={() => setActiveAnalyseTab('speedtrainer')}
+            onClick={() => setActiveAnalyseTab('entrainement')}
             className={`px-5 py-2.5 text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all cursor-pointer flex items-center gap-2 ${
-              activeAnalyseTab === 'speedtrainer' 
+              activeAnalyseTab === 'entrainement' 
                 ? 'text-cordel-wood border-b-4 border-cordel-wood bg-cordel-wood/5' 
                 : 'text-cordel-master-dark/60 hover:text-cordel-master-dark hover:bg-encre-noire/5'
             }`}
           >
             <span>⚡</span>
-            <span>Speed Trainer ({resolvedTrainings.length})</span>
+            <span>Entraînements ({resolvedTrainings.length})</span>
           </button>
 
           <button
@@ -1061,18 +1061,18 @@ export default function MestrePedagogyDashboard({ profileData }) {
               />
             )}
 
-            {/* VUE : SUIVI DES PALIERS SPEED TRAINER (LECTURE SEULE) */}
-            {activeAnalyseTab === 'speedtrainer' && (
+            {/* VUE : SUIVI DES PALIERS D'ENTRAÎNEMENT (LECTURE SEULE) */}
+            {activeAnalyseTab === 'entrainement' && (
               <div className="flex flex-col gap-5">
                 {/* En-tête explicatif */}
                 <div className="bg-[var(--color-cordel-ocre,#c05621)]/10 border-l-4 border-[var(--color-cordel-ocre,#c05621)] p-4 rounded-r flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow-xs">
                   <div>
                     <h3 className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
                       <span>⚡</span>
-                      <span>Suivi Pédagogique des Paliers Speed Trainer (Lecture Seule)</span>
+                      <span>Suivi Pédagogique des Paliers d'Entraînement (Lecture Seule)</span>
                     </h3>
                     <p className="text-[11px] font-bold text-cordel-master-dark opacity-85 mt-0.5">
-                      Vue d'ensemble de l'avancement métronomique des adhérents sur chaque défi rythmique configuré depuis Séquenciad'Or.
+                      Vue d'ensemble de l'avancement métronomique des adhérents sur chaque défi rythmique configuré depuis sequenciador.
                     </p>
                   </div>
                   <span className="shrink-0 text-[10px] font-black uppercase px-2.5 py-1 rounded bg-white text-cordel-wood border border-cordel-wood/30 shadow-2xs">
@@ -1121,10 +1121,10 @@ export default function MestrePedagogyDashboard({ profileData }) {
                   <CordelCard className="p-8 text-center text-xs font-bold text-cordel-master-dark/60 bg-[#fdfaf2] border border-dashed border-encre-noire/20 rounded-lg">
                     <span className="text-3xl block mb-2">⚡</span>
                     <p className="text-sm font-black uppercase text-encre-noire mb-1">
-                      Aucun entraînement Speed Trainer synchronisé
+                      Aucun entraînement synchronisé
                     </p>
                     <p className="text-xs text-encre-noire/60">
-                      Les entraînements configurés depuis Séquenciad'Or pour ce groupe s'afficheront ici automatiquement en lecture seule.
+                      Les entraînements configurés depuis sequenciador pour ce groupe s'afficheront ici automatiquement en lecture seule.
                     </p>
                   </CordelCard>
                 ) : (

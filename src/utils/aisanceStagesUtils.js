@@ -1,5 +1,5 @@
 /**
- * Utilitaires purs pour le calcul et la normalisation des paliers d'entraînement Speed Trainer.
+ * Utilitaires purs pour le calcul et la normalisation des paliers d'entraînement.
  * Indépendant de Firebase pour une exécution ultra-rapide et testable sans dépendance runtime.
  */
 

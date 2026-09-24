@@ -4,12 +4,12 @@ import { toggleStageCompletion } from '../../services/aisanceService';
 import { launchTrainingStage } from '../../utils/trainingLauncher';
 
 /**
- * Bloc d'Aisance et Défis Speed Trainer pour la fiche morceau d'un élève.
+ * Bloc d'Aisance et Entraînements pour la fiche morceau d'un élève.
  * Respecte strictement la règle « Zéro bloc vide » (retourne null si aucun entraînement).
  *
  * @param {Object} props
  * @param {Object} props.piece - Objet morceau du répertoire
- * @param {Array<Object>} props.trainings - Liste des entraînements Speed Trainer du groupe
+ * @param {Array<Object>} props.trainings - Liste des entraînements du groupe
  * @param {Object} props.aisanceMap - Paliers validés par l'utilisateur { [trainingId]: number[] }
  * @param {string} props.userId - Identifiant de l'élève connecté
  * @param {string} props.groupId - Identifiant du groupe/association
@@ -23,11 +23,10 @@ export default function PieceAisanceSection({
   groupId,
   sequenceurUrl
 }) {
-  // Résolution dynamique des entraînements associés (par presetId ou raccordement manuel)
+  // Résolution dynamique des entraînements associés (par presetId ou raccordement manuel, exclusions incluses)
   const pieceTrainings = resolvePieceTrainings(
-    piece?.sequenceurId,
-    trainings,
-    piece?.trainingIds
+    piece,
+    trainings
   );
 
   // Règle Zéro bloc vide : aucun rendu s'il n'y a pas d'entraînement configuré
@@ -51,10 +50,10 @@ export default function PieceAisanceSection({
       <div className="flex items-center justify-between gap-2">
         <span className="text-[10px] font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
           <span>⚡</span>
-          <span>Entraînement au tempo (Speed Trainer)</span>
+          <span>Entraînement au tempo</span>
         </span>
         <span className="text-[9px] font-bold text-stone-600 bg-amber-100/70 border border-amber-300/80 px-1.5 py-0.5 rounded">
-          {pieceTrainings.length} défi{pieceTrainings.length > 1 ? 's' : ''}
+          {pieceTrainings.length} entraînement{pieceTrainings.length > 1 ? 's' : ''}
         </span>
       </div>
 
@@ -126,7 +125,7 @@ export default function PieceAisanceSection({
                             })
                           }
                           className="ml-1 px-1.5 py-0.5 text-[8px] font-black uppercase rounded bg-[var(--color-cordel-vert,#2d6a4f)] text-white hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center gap-0.5 shadow-2xs select-none"
-                          title={`Pratiquer le palier ${stage.index + 1} sur Séquenciad'Or`}
+                          title={`Pratiquer le palier ${stage.index + 1} sur sequenciador`}
                         >
                           <span>⚡</span>
                           <span>Pratiquer</span>

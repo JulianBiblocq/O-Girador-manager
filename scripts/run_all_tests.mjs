@@ -50,7 +50,9 @@ const testScripts = [
   'scripts/test_speed_trainer_aisance.mjs',
   'scripts/test_reflex_game_engine.mjs',
   'scripts/test_conductor_game_engine.mjs',
-  'scripts/test_repertoire_adherents_mission.mjs'
+  'scripts/test_repertoire_adherents_mission.mjs',
+  'scripts/test_mission_vocabulaire_dedoublonnage_culture.mjs',
+  'scripts/test_member_repertoire_accordion.mjs'
 ];
 
 console.log("===============================================================");

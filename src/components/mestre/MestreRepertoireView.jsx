@@ -110,11 +110,11 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
     }
   };
 
-  // Entraînements Speed Trainer rattachés
+  // Entraînements rattachés
   const [trainings, setTrainings] = useState([]);
   const [activeTrainingDetailsPieceId, setActiveTrainingDetailsPieceId] = useState(null);
 
-  // Écoute en temps réel des entraînements Speed Trainer du groupe
+  // Écoute en temps réel des entraînements du groupe
   useEffect(() => {
     if (!groupId) return;
     const unsubTrainings = subscribeGroupTrainings(groupId, setTrainings);
@@ -707,20 +707,19 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                       </span>
                     )}
 
-                    {/* Badge Speed Trainer si des entraînements sont rattachés au morceau */}
+                    {/* Badge Entraînement si des entraînements sont rattachés au morceau */}
                     {(() => {
-                      const piecePresetId = piece.sequenceurId || piece.preset?.id;
-                      const pieceTrainings = resolvePieceTrainings(piecePresetId, trainings);
+                      const pieceTrainings = resolvePieceTrainings(piece, trainings);
                       if (pieceTrainings.length === 0) return null;
                       return (
                         <button
                           type="button"
                           onClick={() => setActiveTrainingDetailsPieceId(activeTrainingDetailsPieceId === piece.id ? null : piece.id)}
                           className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-400 transition-colors shadow-2xs cursor-pointer select-none"
-                          title="Afficher les défis Speed Trainer associés"
+                          title="Afficher les entraînements associés"
                         >
                           <span>⚡</span>
-                          <span>{pieceTrainings.length} défi{pieceTrainings.length > 1 ? 's' : ''} Speed Trainer</span>
+                          <span>{pieceTrainings.length} entraînement{pieceTrainings.length > 1 ? 's' : ''}</span>
                           <span className="text-[8px] opacity-70">{activeTrainingDetailsPieceId === piece.id ? '▲' : '▼'}</span>
                         </button>
                       );
@@ -867,10 +866,9 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                     </div>
                   )}
 
-                  {/* Volet déplié : Défis et paliers Speed Trainer rattachés */}
+                  {/* Volet déplié : Entraînements rattachés */}
                   {(() => {
-                    const piecePresetId = piece.sequenceurId || piece.preset?.id;
-                    const pieceTrainings = resolvePieceTrainings(piecePresetId, trainings);
+                    const pieceTrainings = resolvePieceTrainings(piece, trainings);
                     if (activeTrainingDetailsPieceId !== piece.id || pieceTrainings.length === 0) return null;
 
                     return (
@@ -878,10 +876,10 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                         <div className="flex items-center justify-between border-b border-dashed border-amber-300/60 pb-1.5">
                           <span className="text-[10px] font-black uppercase tracking-wider text-amber-950 flex items-center gap-1.5">
                             <span>⚡</span>
-                            <span>Défis Speed Trainer ({pieceTrainings.length})</span>
+                            <span>Entraînements ({pieceTrainings.length})</span>
                           </span>
                           <span className="text-[9px] text-amber-900/70 font-bold">
-                            Séquenciad'Or
+                            sequenciador
                           </span>
                         </div>
                         <TrainingCompactCard

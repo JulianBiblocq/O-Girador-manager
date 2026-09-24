@@ -312,7 +312,7 @@ export default function TabModules({
               Ouvrir le répertoire aux adhérents
             </h5>
             <p className="text-[9px] text-cordel-master-dark/70 font-medium mt-0.5 leading-relaxed">
-              Permet aux membres de consulter le répertoire de la saison, leurs entraînements Speed Trainer et de formuler des demandes de révision.
+              Permet aux membres de consulter le répertoire de la saison, leurs fiches d'entraînement et de formuler des demandes de révision.
             </p>
           </div>
 

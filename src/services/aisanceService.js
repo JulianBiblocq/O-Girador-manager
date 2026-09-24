@@ -6,8 +6,8 @@ export { computeTrainingStages };
 export { resolvePieceTrainings } from '../utils/repertoireMatcher.js';
 
 /**
- * Service de gestion de l'aisance et des entraînements Speed Trainer.
- * Collection racine Firestore : /trainings (gérée par Séquenciad'Or)
+ * Service de gestion de l'aisance et des entraînements.
+ * Collection racine Firestore : /trainings (gérée par sequenciador)
  * Sous-collection utilisateur : /users/${userId}/aisance/${trainingId}
  */
 

@@ -11,6 +11,8 @@ import RepertoireVideosPicker from './RepertoireVideosPicker';
 import RepertoireSignalsPicker from './RepertoireSignalsPicker';
 import RepertoireSinaisDoMestreEditor from './RepertoireSinaisDoMestreEditor';
 import CreateCultureFicheModal from './CreateCultureFicheModal';
+import RepertoireCulturePicker from './RepertoireCulturePicker';
+import RepertoireTrainingsManager from './RepertoireTrainingsManager';
 import SongCard from '../SongCard';
 import { useDancadorChoreographies } from '../../hooks/useDancadorData';
 import { useRepertoireVaralDocs } from '../../hooks/useRepertoireVaralDocs';
@@ -61,9 +63,10 @@ export default function RepertoirePieceModal({
   const [selectedChoreoId, setSelectedChoreoId] = useState('');
   const [selectedCultureIds, setSelectedCultureIds] = useState([]);
   const [selectedTrainingIds, setSelectedTrainingIds] = useState([]);
+  const [excludedTrainingIds, setExcludedTrainingIds] = useState([]);
   const [groupTrainings, setGroupTrainings] = useState([]);
 
-  // Écoute des entraînements Speed Trainer du groupe
+  // Écoute des entraînements du groupe
   useEffect(() => {
     if (!isOpen || !groupId) return;
     const unsub = subscribeGroupTrainings(groupId, setGroupTrainings);
@@ -123,6 +126,7 @@ export default function RepertoirePieceModal({
         : (pieceToEdit.cultureDocId ? [pieceToEdit.cultureDocId] : []);
       setSelectedCultureIds(initialCultureIds);
       setSelectedTrainingIds(Array.isArray(pieceToEdit.trainingIds) ? pieceToEdit.trainingIds : []);
+      setExcludedTrainingIds(Array.isArray(pieceToEdit.excludedTrainingIds) ? pieceToEdit.excludedTrainingIds : []);
       setShowTabPreview(false);
       setVideoUrl(pieceToEdit.videoUrl || pieceToEdit.youtubeUrl || pieceToEdit.activeVideoUrl || (pieceToEdit.videos && pieceToEdit.videos[0]?.url) || '');
       setHistoire(pieceToEdit.contexteHistorique || pieceToEdit.histoire || pieceToEdit.activeHistoire || '');
@@ -144,6 +148,7 @@ export default function RepertoirePieceModal({
       setSelectedChoreoId('');
       setSelectedCultureIds([]);
       setSelectedTrainingIds([]);
+      setExcludedTrainingIds([]);
     }
     setErrorMsg(null);
   }, [isOpen, pieceToEdit]);
@@ -183,18 +188,6 @@ export default function RepertoirePieceModal({
     };
   }, [titre, selectedSeqUrl, selectedToadaId, selectedChoreoId, selectedCultureIds, catalogRhythms, toadasList, choreographies, cultureDocsList]);
 
-  // Entraînements du groupe non rattachés par défaut par le preset Séquenceur
-  const unlinkedDefaultTrainings = useMemo(() => {
-    const autoLinkedPresetId = selectedPreset?.id || (selectedSeqUrl && !selectedSeqUrl.startsWith('http') ? selectedSeqUrl : null);
-    return (groupTrainings || []).filter((t) => {
-      if (!t || !t.id) return false;
-      const tPreset = String(t.presetId || t.sequenceurId || '').trim();
-      if (autoLinkedPresetId && tPreset === String(autoLinkedPresetId).trim()) {
-        return false;
-      }
-      return true;
-    });
-  }, [groupTrainings, selectedPreset, selectedSeqUrl]);
 
   // Gestion de la saisie du titre avec auto-liaison NON DESTRUCTIVE (champs vides uniquement)
   const handleTitreChange = (e) => {
@@ -430,9 +423,12 @@ export default function RepertoirePieceModal({
         ? null
         : (customAudioUrl ? customAudioUrl.trim() : null);
 
-      // Nettoyage strict des entraînements rattachés manuellement
+      // Nettoyage strict des entraînements rattachés manuellement et exclus
       const cleanTrainingIds = Array.from(
         new Set((selectedTrainingIds || []).filter((id) => typeof id === 'string' && id.trim() !== ''))
+      );
+      const cleanExcludedTrainingIds = Array.from(
+        new Set((excludedTrainingIds || []).filter((id) => typeof id === 'string' && id.trim() !== ''))
       );
 
       // Payload strictement épuré : POINTEURS VIVANTS uniquement, tout vide converti en null
@@ -449,6 +445,7 @@ export default function RepertoirePieceModal({
         sequenceurType: matchedSeqType || null,
         sequenceurFileUrl: matchedSeqUrl || null,
         trainingIds: cleanTrainingIds.length > 0 ? cleanTrainingIds : null,
+        excludedTrainingIds: cleanExcludedTrainingIds.length > 0 ? cleanExcludedTrainingIds : null,
         audioUrl: audioToPersist || null,
         videoUrl: (videoUrl || '').trim() || null,
         contexteHistorique: (histoire || '').trim() || null,
@@ -920,139 +917,25 @@ export default function RepertoirePieceModal({
               </div>
 
               {/* 5. Fiches Culturelles Multi-liaison */}
-              <div className="flex flex-col gap-2 md:col-span-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center gap-1">
-                    <span>📖</span>
-                    <span>Fiche{selectedCultureIds.length > 1 ? 's' : ''} Culturelle{selectedCultureIds.length > 1 ? 's' : ''} associée{selectedCultureIds.length > 1 ? 's' : ''}</span>
-                    {selectedCultureIds.length > 0 && (
-                      <span className="text-[9px] font-black text-cordel-wood">
-                        ({selectedCultureIds.length} liée{selectedCultureIds.length > 1 ? 's' : ''})
-                      </span>
-                    )}
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setIsCultureModalOpen(true)}
-                    className="text-[9.5px] font-extrabold text-amber-900 hover:text-amber-950 underline cursor-pointer flex items-center gap-1"
-                    title="Créer une fiche sur le Varal Culture pré-remplie"
-                  >
-                    <span>📜</span>
-                    <span>Créer une fiche Varal Culture</span>
-                  </button>
-                </div>
+              {/* 5. Sélecteur Culture dynamique avec recherche et filtres (Rattacher une fiche culturelle, Détacher cette fiche culturelle) */}
+              <RepertoireCulturePicker
+                cultureDocsList={cultureDocsList}
+                selectedCultureIds={selectedCultureIds}
+                onChangeSelectedIds={setSelectedCultureIds}
+                onOpenCreateModal={() => setIsCultureModalOpen(true)}
+                disabled={submitting || loadingDocs}
+              />
 
-                {/* Liste des fiches déjà rattachées sous forme de badges Cordel amovibles */}
-                {selectedCultureIds.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-1.5 p-2 bg-cordel-bg-light/60 border border-encre-noire/20 rounded">
-                    {selectedCultureIds.map((cId) => {
-                      const docItem = cultureDocsList.find((c) => c.id === cId);
-                      const docTitle = docItem?.titre || docItem?.name || `Fiche Culture (${cId.slice(0, 6)}...)`;
-                      return (
-                        <span
-                          key={cId}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-[4px_6px_3px_5px] bg-blue-50 text-blue-950 border border-blue-300 shadow-2xs"
-                        >
-                          <span>📖</span>
-                          <span className="truncate max-w-[220px]">{docTitle}</span>
-                          <button
-                            type="button"
-                            onClick={() => setSelectedCultureIds((prev) => prev.filter((id) => id !== cId))}
-                            disabled={submitting}
-                            className="text-stone-500 hover:text-red-700 font-black text-xs p-0.5 ml-0.5 cursor-pointer leading-none"
-                            title="Détacher cette fiche culturelle"
-                          >
-                            ✕
-                          </button>
-                        </span>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* Menu déroulant pour ajouter une fiche supplémentaire parmi cultureDocsList (filtrer celles déjà sélectionnées) */}
-                <select
-                  value=""
-                  onChange={(e) => {
-                    const addedId = e.target.value;
-                    if (addedId) {
-                      setSelectedCultureIds((prev) => Array.from(new Set([...prev, addedId])));
-                    }
-                  }}
-                  disabled={submitting || loadingDocs}
-                  className="theme-input text-xs font-semibold p-2 bg-cordel-bg-light border border-encre-noire/30 rounded cursor-pointer"
-                >
-                  <option value="">➕ Rattacher une fiche culturelle...</option>
-                  {cultureDocsList
-                    .filter((docItem) => !selectedCultureIds.includes(docItem.id))
-                    .map((docItem) => (
-                      <option key={docItem.id} value={docItem.id}>
-                        📖 {docItem.titre || docItem.name || 'Fiche Culturelle'}
-                      </option>
-                    ))}
-                </select>
-              </div>
-
-              {/* 6. Entraînements Speed Trainer manuels */}
-              <div className="flex flex-col gap-2 md:col-span-2 pt-2.5 border-t border-dashed border-cordel-master-dark/15">
-                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center justify-between">
-                  <span className="flex items-center gap-1">
-                    <span>⚡</span>
-                    <span>Entraînements Speed Trainer rattachés manuellement</span>
-                  </span>
-                  {selectedTrainingIds.length > 0 && (
-                    <span className="text-[9px] font-black text-cordel-wood">
-                      ({selectedTrainingIds.length} sélectionné{selectedTrainingIds.length > 1 ? 's' : ''})
-                    </span>
-                  )}
-                </label>
-                <p className="text-[9.5px] text-encre-noire/60 leading-tight">
-                  Les entraînements du preset Séquenceur sont déjà résolus automatiquement. Cochez ci-dessous les exercices transversaux ou d'autres presets à associer à cette fiche morceau :
-                </p>
-
-                {unlinkedDefaultTrainings.length === 0 ? (
-                  <p className="text-[10px] text-stone-500 italic p-2 bg-cordel-bg-light/40 border border-encre-noire/10 rounded">
-                    Aucun entraînement externe disponible dans le groupe.
-                  </p>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 bg-cordel-bg-light/60 border border-encre-noire/20 rounded">
-                    {unlinkedDefaultTrainings.map((tr) => {
-                      const isChecked = selectedTrainingIds.includes(tr.id);
-                      return (
-                        <label
-                          key={tr.id}
-                          className={`flex items-start gap-2 p-2 rounded text-xs cursor-pointer border transition-all ${
-                            isChecked
-                              ? 'bg-amber-50 border-amber-500 font-bold'
-                              : 'bg-white border-stone-200 hover:bg-stone-50'
-                          }`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedTrainingIds((prev) => Array.from(new Set([...prev, tr.id])));
-                              } else {
-                                setSelectedTrainingIds((prev) => prev.filter((id) => id !== tr.id));
-                              }
-                            }}
-                            className="mt-0.5 accent-cordel-wood"
-                          />
-                          <div className="flex flex-col">
-                            <span className="text-[11px] text-encre-noire">
-                              ⚡ {tr.title || tr.titre || 'Entraînement'}
-                            </span>
-                            <span className="text-[9px] text-stone-500 font-normal">
-                              {tr.startBpm || 60} ➔ {tr.targetBpm || 100} BPM
-                            </span>
-                          </div>
-                        </label>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+              {/* 6. Gestionnaire des entraînements rattachés */}
+              <RepertoireTrainingsManager
+                allTrainings={groupTrainings}
+                currentSeqId={selectedPreset?.id || (selectedSeqUrl && !selectedSeqUrl.startsWith('http') ? selectedSeqUrl : null) || pieceToEdit?.sequenceurId || ''}
+                selectedTrainingIds={selectedTrainingIds}
+                onChangeTrainingIds={setSelectedTrainingIds}
+                excludedTrainingIds={excludedTrainingIds}
+                onChangeExcludedIds={setExcludedTrainingIds}
+                disabled={submitting}
+              />
             </div>
           </div>
 

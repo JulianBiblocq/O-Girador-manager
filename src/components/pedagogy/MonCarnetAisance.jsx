@@ -289,7 +289,7 @@ export default function MonCarnetAisance({
     }
   }, [subTabs, activeSubTab]);
 
-  // Entraînements Speed Trainer et état d'aisance de l'élève
+  // Entraînements et état d'aisance de l'élève
   const [groupTrainings, setGroupTrainings] = useState([]);
   const [userAisance, setUserAisance] = useState({});
   const [togglingStage, setTogglingStage] = useState(null);
@@ -393,7 +393,7 @@ export default function MonCarnetAisance({
       .filter((t) => t.isSeasonActive);
   }, [groupTrainings, repertoire, userAisance]);
 
-  // Morceaux actifs de la saison sans programme Speed Trainer (pour les Défis Réflexes autonomes)
+  // Morceaux actifs de la saison sans programme d'entraînement (pour les Défis Réflexes autonomes)
   const otherSeasonPieces = useMemo(() => {
     if (!repertoire || repertoire.length === 0) return [];
     const trainingPresetIds = new Set(
@@ -588,7 +588,7 @@ export default function MonCarnetAisance({
       )}
 
       {/* ================================================================ */}
-      {/* ONGLET DÉFIS RYTHMIQUES (SPEED TRAINER)                          */}
+      {/* ONGLET DÉFIS RYTHMIQUES (ENTRAÎNEMENTS)                          */}
       {/* ================================================================ */}
       {activeSubTab === 'defis' && (
         <div className="flex flex-col gap-5">
@@ -596,10 +596,10 @@ export default function MonCarnetAisance({
             <div>
               <h3 className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
                 <span>⚡</span>
-                <span>Speed Trainer — Programmes d'Aisance au Métronome</span>
+                <span>Entraînement — Programmes d'Aisance au Métronome</span>
               </h3>
               <p className="text-[11px] font-bold text-cordel-master-dark opacity-85 mt-0.5">
-                Validez progressivement vos paliers de tempo. Cochez les paliers maîtrisés pour votre carnet et lancez Séquenciad'Or pré-paramétré.
+                Validez progressivement vos paliers de tempo. Cochez les paliers maîtrisés pour votre carnet et lancez sequenciador pré-paramétré.
               </p>
             </div>
             {activeSeasonTrainings.length > 0 && (
@@ -613,10 +613,10 @@ export default function MonCarnetAisance({
             <div className="text-center p-8 bg-[#fdfaf2] border border-dashed border-encre-noire/20 rounded-lg">
               <span className="text-3xl block mb-2">⚡</span>
               <p className="text-sm font-bold text-encre-noire/70">
-                Aucun défi d'entraînement Speed Trainer actif pour cette saison.
+                Aucun défi d'entraînement actif pour cette saison.
               </p>
               <p className="text-xs text-encre-noire/50 mt-1">
-                Les programmes configurés dans Séquenciad'Or pour vos morceaux apparaîtront automatiquement ici.
+                Les programmes configurés dans sequenciador pour vos morceaux apparaîtront automatiquement ici.
               </p>
             </div>
           ) : (
@@ -673,10 +673,10 @@ export default function MonCarnetAisance({
                           );
                         }}
                         className="px-3 py-1 text-[9.5px] font-black uppercase rounded bg-cordel-wood text-white border border-encre-noire shadow-xs hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center gap-1 shrink-0"
-                        title="Ouvrir Séquenciad'Or sur votre prochain palier d'entraînement"
+                        title="Ouvrir sequenciador sur votre prochain palier d'entraînement"
                       >
                         <span>⚡</span>
-                        <span>{isMastered ? 'Rejouer dans Séquenciad\'Or' : 'S\'entraîner maintenant'}</span>
+                        <span>{isMastered ? 'Rejouer dans sequenciador' : 'S\'entraîner maintenant'}</span>
                       </button>
                     )}
                   </div>
@@ -719,7 +719,7 @@ export default function MonCarnetAisance({
                               )
                             }
                             className="shrink-0 px-2 py-1 text-[8.5px] font-black uppercase rounded bg-[var(--theme-bg,#fdfaf2)] border border-encre-noire/30 hover:bg-[#ebdcc0] text-encre-noire shadow-2xs hover:scale-105 active:scale-95 transition-all flex items-center gap-1 cursor-pointer"
-                            title={`Lancer Séquenciad'Or au tempo de ce palier (${stage.startBpm} ➔ ${stage.targetBpm} BPM)`}
+                            title={`Lancer sequenciador au tempo de ce palier (${stage.startBpm} ➔ ${stage.targetBpm} BPM)`}
                           >
                             <span>⚡</span>
                             <span>Pratiquer</span>
@@ -813,7 +813,7 @@ export default function MonCarnetAisance({
             })
           )}
 
-          {/* Morceaux actifs de la saison sans Speed Trainer (Défi Réflexe & Conducteur disponibles) */}
+          {/* Morceaux actifs de la saison sans entraînement (Défi Réflexe & Conducteur disponibles) */}
           {otherSeasonPieces.map((piece) => {
             const piecePreset = piece.preset || (rhythmsJsonData ? rhythmsJsonData[piece.sequenceurId] : null);
             const piecePausePoints = calculatePauseTimes(piece, piecePreset);
@@ -916,13 +916,13 @@ export default function MonCarnetAisance({
       {/* ================================================================ */}
       {activeSubTab === 'rythmes' && (
         <div className="flex flex-col gap-4">
-          {/* Passerelle directe vers les défis Speed Trainer */}
+          {/* Passerelle directe vers les entraînements */}
           {activeSeasonTrainings.length > 0 && (
             <div className="p-3 bg-amber-50 border border-dashed border-amber-300 rounded-[4px_6px_3px_5px] flex items-center justify-between gap-2 shadow-2xs">
               <div className="flex items-center gap-2">
                 <span className="text-base">⚡</span>
                 <span className="text-xs font-bold text-amber-950">
-                  <strong>{activeSeasonTrainings.length} défi(s) Speed Trainer</strong> disponible(s) pour vos morceaux.
+                  <strong>{activeSeasonTrainings.length} entraînement(s)</strong> disponible(s) pour vos morceaux.
                 </span>
               </div>
               <button
@@ -930,7 +930,7 @@ export default function MonCarnetAisance({
                 onClick={() => setActiveSubTab('defis')}
                 className="px-2.5 py-1 text-[9.5px] font-black uppercase rounded bg-amber-200 hover:bg-amber-300 text-amber-950 border border-amber-400 cursor-pointer shadow-2xs transition-all active:scale-95"
               >
-                Voir les défis ➔
+                Voir les entraînements ➔
               </button>
             </div>
           )}

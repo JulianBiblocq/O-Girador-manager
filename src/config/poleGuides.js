@@ -1312,7 +1312,7 @@ export const POLE_GUIDES = {
   'config-tambours': {
     titre: "🥁 Les Tambours & Nomenclature des Pupitres",
     title: "🥁 Les Tambours & Nomenclature des Pupitres",
-    description: "Personnalisation des dénominations des instruments pour toute l'association (Séquenciad'Or, plans de scène, carnets d'aisance).",
+    description: "Personnalisation des dénominations des instruments pour toute l'association (sequenciador, plans de scène, carnets d'aisance).",
     etapes: [
       "Choisissez une présélection rapide (Baque Virado Recife, Ketu / Tambores, Universel).",
       "Ajustez individuellement les dénominations des 13 rôles techniques d'instruments.",

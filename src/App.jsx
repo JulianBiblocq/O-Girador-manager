@@ -94,7 +94,7 @@ const POLES_CONFIG = [
       { id: 'profil', label: 'Profil', labelKey: 'tabProfil' },
       { id: 'mon-parcours', label: 'Mon Parcours', labelKey: 'tabParcours' },
       { id: 'agenda', label: 'Agenda', labelKey: 'tabAgenda' },
-      { id: 'repertoire', label: '📜 Répertoire', labelKey: 'tabRepertoire' },
+      { id: 'repertoire', label: 'Répertoire', labelKey: 'tabRepertoire' },
       { id: 'atelier', label: 'Atelier', labelKey: 'tabAtelier' },
       { id: 'materiel', label: 'Matériel', labelKey: 'tabMateriel' },
       { id: 'vestiaire', label: 'Vestiaire', labelKey: 'tabVestiaire' },

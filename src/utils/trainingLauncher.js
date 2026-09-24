@@ -1,7 +1,7 @@
 import { launchCrossApp } from './crossAppAuth';
 
 /**
- * Lanceur SSO vers Séquenciad'Or pour un palier d'entraînement spécifique.
+ * Lanceur SSO vers sequenciador pour un palier d'entraînement spécifique.
  * Construit l'URL pré-paramétrée et l'ouvre via la passerelle SSO sans blocage pop-up.
  *
  * @param {string} presetId - Identifiant du preset séquenceur (ex: piece.sequenceurId)
@@ -16,7 +16,7 @@ import { launchCrossApp } from './crossAppAuth';
 export async function launchTrainingStage(presetId, trainingId, stageIndex = 0, options = {}) {
   const {
     baseUrl = 'https://sequenciador.o-girador.com',
-    appLabel = "Séquenciad'Or",
+    appLabel = 'sequenciador',
     forceSameTab = false
   } = options;
 
@@ -25,10 +25,11 @@ export async function launchTrainingStage(presetId, trainingId, stageIndex = 0, 
     return;
   }
 
-  const cleanBase = (baseUrl || 'https://sequenciador.o-girador.com').trim().replace(/\/+$/, '');
-  const separator = cleanBase.includes('?') ? '&' : '?';
+  const cleanBase = (baseUrl || 'https://sequenciador.o-girador.com').trim();
+  const baseWithSlash = cleanBase.includes('?') || cleanBase.endsWith('/') ? cleanBase : `${cleanBase}/`;
+  const separator = baseWithSlash.includes('?') ? '&' : '?';
 
-  const targetUrl = `${cleanBase}${separator}presetId=${encodeURIComponent(presetId)}&trainingId=${encodeURIComponent(trainingId || '')}&stage=${encodeURIComponent(stageIndex ?? 0)}`;
+  const targetUrl = `${baseWithSlash}${separator}presetId=${encodeURIComponent(presetId)}&trainingId=${encodeURIComponent(trainingId || '')}&stage=${encodeURIComponent(stageIndex ?? 0)}`;
 
   return launchCrossApp(targetUrl, {
     appLabel,

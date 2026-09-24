@@ -97,7 +97,7 @@ export default function TabTambours({
               <span>Les Tambours : Nomenclature des Pupitres</span>
             </h3>
             <p className="text-[10px] text-cordel-master-dark/70 font-medium mt-0.5">
-              Personnalisez les noms d'affichage de vos instruments pour toute votre structure (Séquenciad'Or, plans de scène, carnets d'aisance).
+              Personnalisez les noms d'affichage de vos instruments pour toute votre structure (sequenciador, plans de scène, carnets d'aisance).
             </p>
           </div>
           <button

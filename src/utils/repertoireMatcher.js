@@ -425,55 +425,94 @@ export function getPieceTablature(resolvedPiece) {
 }
 
 /**
- * Résout dynamiquement les entraînements Speed Trainer associés à un morceau
- * d'après son identifiant de preset Séquenceur (sequenceurId ou presetId).
+ * Résout dynamiquement les entraînements associés à un morceau
+ * d'après son identifiant de preset ou son objet morceau.
+ * Garantit un dédoublonnage strict par identifiant et respecte les exclusions.
  *
- * @param {string} sequenceurId - Identifiant du preset séquenceur associé (ex: piece.sequenceurId)
+ * @param {string|Object} sequenceurIdOrPiece - Identifiant du preset ou objet morceau complet
  * @param {Array<Object>} trainingsList - Liste des entraînements du groupe
  * @param {Array<string>} [trainingIds=[]] - Liste optionnelle d'identifiants d'entraînements rattachés manuellement
+ * @param {Array<string>} [excludedTrainingIds=[]] - Liste optionnelle d'identifiants d'entraînements exclus
  * @returns {Array<{ id: string, title: string, description: string, startBpm: number, targetBpm: number, stagesCount: number, stages: Array, presetId: string, rawTraining: Object }>}
  */
-export function resolvePieceTrainings(sequenceurId, trainingsList = [], trainingIds = []) {
+export function resolvePieceTrainings(sequenceurIdOrPiece, trainingsList = [], trainingIds = [], excludedTrainingIds = []) {
   if (!Array.isArray(trainingsList) || trainingsList.length === 0) {
     return [];
   }
 
-  const cleanSeqId = sequenceurId ? String(sequenceurId).trim() : '';
-  const cleanTrainingIds = Array.isArray(trainingIds)
-    ? trainingIds.map((id) => String(id).trim()).filter(Boolean)
-    : [];
+  let cleanSeqId = '';
+  let cleanTrainingIds = [];
+  let cleanExcludedIds = [];
+
+  if (sequenceurIdOrPiece && typeof sequenceurIdOrPiece === 'object') {
+    cleanSeqId = String(
+      sequenceurIdOrPiece.sequenceurId ||
+      sequenceurIdOrPiece.presetId ||
+      sequenceurIdOrPiece.preset?.id ||
+      ''
+    ).trim();
+    cleanTrainingIds = Array.isArray(sequenceurIdOrPiece.trainingIds)
+      ? sequenceurIdOrPiece.trainingIds.map((id) => String(id).trim()).filter(Boolean)
+      : [];
+    cleanExcludedIds = Array.isArray(sequenceurIdOrPiece.excludedTrainingIds)
+      ? sequenceurIdOrPiece.excludedTrainingIds.map((id) => String(id).trim()).filter(Boolean)
+      : [];
+  } else {
+    cleanSeqId = sequenceurIdOrPiece ? String(sequenceurIdOrPiece).trim() : '';
+    cleanTrainingIds = Array.isArray(trainingIds)
+      ? trainingIds.map((id) => String(id).trim()).filter(Boolean)
+      : [];
+    cleanExcludedIds = Array.isArray(excludedTrainingIds)
+      ? excludedTrainingIds.map((id) => String(id).trim()).filter(Boolean)
+      : [];
+  }
 
   if (!cleanSeqId && cleanTrainingIds.length === 0) {
     return [];
   }
 
-  // Filtrer les entraînements dont t.presetId === sequenceurId OU dont l'id est inclus dans trainingIds
-  const seenIds = new Set();
+  // Dédoublonnage préalable strict des entraînements de la liste par identifiant unique
+  const uniqueTrainings = Array.from(
+    new Map(
+      trainingsList
+        .filter((t) => t && t.id)
+        .map((t) => [String(t.id).trim(), t])
+    ).values()
+  );
+
+  const excludedSet = new Set(cleanExcludedIds);
   const matched = [];
 
-  for (const t of trainingsList) {
-    if (!t || !t.id) continue;
+  for (const t of uniqueTrainings) {
     const tid = String(t.id).trim();
-    if (seenIds.has(tid)) continue;
+
+    // Règle d'exclusion : ne pas inclure si marqué comme ignoré/exclu pour ce morceau
+    if (excludedSet.has(tid)) {
+      continue;
+    }
 
     const tPresetId = String(t.presetId || t.sequenceurId || '').trim();
     const matchesPreset = cleanSeqId && tPresetId && tPresetId === cleanSeqId;
     const matchesExplicitId = cleanTrainingIds.includes(tid);
 
     if (matchesPreset || matchesExplicitId) {
-      seenIds.add(tid);
       matched.push(t);
     }
   }
 
-  return matched.map((t) => {
+  // Dédoublonnage final strict par identifiant
+  const finalUniqueTrainings = Array.from(
+    new Map(matched.map((t) => [String(t.id).trim(), t])).values()
+  );
+
+  return finalUniqueTrainings.map((t) => {
     const stages = computeTrainingStages(t);
     const startBpm = Number(t.startBpm ?? (stages.length > 0 ? stages[0].startBpm : 60));
     const targetBpm = Number(t.targetBpm ?? (stages.length > 0 ? stages[stages.length - 1].targetBpm : 100));
 
     return {
       id: t.id,
-      title: t.title || t.titre || t.name || 'Entraînement Speed Trainer',
+      title: t.title || t.titre || t.name || 'Entraînement',
       description: t.description || '',
       startBpm,
       targetBpm,
@@ -484,4 +523,5 @@ export function resolvePieceTrainings(sequenceurId, trainingsList = [], training
     };
   });
 }
+
 

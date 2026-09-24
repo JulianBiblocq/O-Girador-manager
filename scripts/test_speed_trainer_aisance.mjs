@@ -114,10 +114,10 @@ console.log("\n▶️ Test 4 : Contrôle statique des composants modifiés");
 
 const repViewPath = path.resolve('src/components/mestre/MestreRepertoireView.jsx');
 const repViewContent = fs.readFileSync(repViewPath, 'utf8');
-assert.ok(repViewContent.includes('Speed Trainer'), "MestreRepertoireView doit afficher le badge Speed Trainer");
+assert.ok(repViewContent.includes('Speed Trainer') || repViewContent.includes('entraînement'), "MestreRepertoireView doit afficher le badge d'entraînement");
 assert.ok(repViewContent.includes('resolvePieceTrainings'), "MestreRepertoireView doit utiliser resolvePieceTrainings");
 assert.ok(repViewContent.includes('TrainingCompactCard'), "MestreRepertoireView doit intégrer TrainingCompactCard");
-console.log("  ✅ [PASS] MestreRepertoireView.jsx intègre Speed Trainer et TrainingCompactCard");
+console.log("  ✅ [PASS] MestreRepertoireView.jsx intègre l'entraînement et TrainingCompactCard");
 
 const eventProgPath = path.resolve('src/components/event-details/EventRevisionProgram.jsx');
 const eventProgContent = fs.readFileSync(eventProgPath, 'utf8');
@@ -134,7 +134,7 @@ console.log("  ✅ [PASS] TrainingCompactCard.jsx opérationnel et conforme à l
 
 const carnetPath = path.resolve('src/components/pedagogy/MonCarnetAisance.jsx');
 const carnetContent = fs.readFileSync(carnetPath, 'utf8');
-assert.ok(carnetContent.includes('Défis Rythmiques'), "MonCarnetAisance doit comporter l'onglet Défis Rythmiques");
+assert.ok(carnetContent.includes('Défis Rythmiques') || carnetContent.includes('DÉFIS RYTHMIQUES'), "MonCarnetAisance doit comporter l'onglet Défis Rythmiques");
 assert.ok(carnetContent.includes('toggleStageCompletion'), "MonCarnetAisance doit appeler toggleStageCompletion");
 assert.ok(carnetContent.includes('👑'), "MonCarnetAisance doit comporter le badge Maîtrisé");
 assert.ok(carnetContent.includes('launchTrainingStage'), "MonCarnetAisance doit appeler launchTrainingStage");
@@ -142,7 +142,7 @@ console.log("  ✅ [PASS] MonCarnetAisance.jsx intègre le Carnet d'Aisance et l
 
 const dashboardPath = path.resolve('src/components/mestre/MestrePedagogyDashboard.jsx');
 const dashboardContent = fs.readFileSync(dashboardPath, 'utf8');
-assert.ok(dashboardContent.includes('speedtrainer'), "MestrePedagogyDashboard doit disposer de l'onglet speedtrainer");
+assert.ok(dashboardContent.includes('speedtrainer') || dashboardContent.includes('entrainement'), "MestrePedagogyDashboard doit disposer de l'onglet entrainement");
 assert.ok(dashboardContent.includes('userAisanceMap'), "MestrePedagogyDashboard doit suivre userAisanceMap");
 console.log("  ✅ [PASS] MestrePedagogyDashboard.jsx intègre le suivi Mestre en lecture seule");
 
