@@ -180,6 +180,7 @@ export default function MemberRepertoireView({ groupId, user, profileData, seque
               piece={piece}
               userId={effectiveUserId}
               groupId={groupId}
+              profileData={profileData}
               trainings={trainings}
               aisanceMap={aisanceMap}
               isRevisionRequested={Boolean(revisionsDemandees[piece.id])}

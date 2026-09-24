@@ -1744,3 +1744,148 @@ export const generateQuizFromDancador = (stepsData = [], config = {}) => {
 
   return sanitizeQuizQuestions(shuffleArray(questions)).slice(0, questionCount);
 };
+
+/**
+ * Générateur de QCM spécialisé sur les Signes du Mestre d'un morceau du Répertoire.
+ * Génère 2 types de questions ciblées :
+ * 1. Question Visuelle : Reconnaître le bon geste parmi 4 vignettes pour l'appel demandé.
+ * 2. Question Consigne : Identifier l'action musicale / le break déclenché par l'image affichée.
+ *
+ * @param {Object} piece - Morceau du répertoire
+ * @param {Array} resolvedSignals - Liste des signaux du morceau
+ * @param {Array} catalogSignals - Bibliothèque globale des signaux
+ * @param {Object} config - Configuration (t, etc.)
+ * @returns {Array} Liste des questions QCM
+ */
+export const generateQuizFromPieceSignals = (piece, resolvedSignals = [], catalogSignals = [], config = {}) => {
+  const t = config.t || ((k, fallback, params) => {
+    let str = fallback || k;
+    if (params) {
+      Object.keys(params).forEach(p => {
+        str = str.replace(new RegExp(`{{${p}}}`, 'g'), params[p]);
+      });
+    }
+    return str;
+  });
+
+  const questions = [];
+
+  const rawList = Array.isArray(resolvedSignals) && resolvedSignals.length > 0
+    ? resolvedSignals
+    : (Array.isArray(piece?.sinaisDoMestre) && piece.sinaisDoMestre.length > 0
+        ? piece.sinaisDoMestre
+        : (Array.isArray(piece?.activeSinaisDoMestre) ? piece.activeSinaisDoMestre : []));
+
+  if (!rawList || rawList.length === 0) return [];
+
+  // Résolution avec le catalogue mestre_signals
+  const signals = rawList.map((sig, idx) => {
+    if (typeof sig === 'string') {
+      const matched = (catalogSignals || []).find(cs => cs.id === sig || cs.name?.toLowerCase() === sig.toLowerCase() || cs.nom?.toLowerCase() === sig.toLowerCase());
+      return {
+        id: matched?.id || `sig_${idx}`,
+        mesure: idx + 1,
+        nom: matched?.name || matched?.nom || sig,
+        name: matched?.name || matched?.nom || sig,
+        consigne: matched?.consigne || matched?.action || matched?.description || sig,
+        imageUrl: matched?.imageUrl || null
+      };
+    }
+    const matched = (catalogSignals || []).find(cs => 
+      (sig.signalId && cs.id === sig.signalId) ||
+      (sig.id && cs.id === sig.id) ||
+      (sig.name && cs.name && cs.name.toLowerCase() === sig.name.toLowerCase()) ||
+      (sig.nom && cs.nom && cs.nom.toLowerCase() === sig.nom.toLowerCase()) ||
+      (sig.nom && cs.name && cs.name.toLowerCase() === sig.nom.toLowerCase()) ||
+      (sig.name && cs.nom && cs.nom.toLowerCase() === sig.name.toLowerCase())
+    );
+    return {
+      id: sig.id || matched?.id || `sig_${idx}`,
+      mesure: sig.mesure ?? sig.bar ?? sig.barIndex ?? (idx + 1),
+      nom: sig.nom || sig.name || matched?.name || matched?.nom || `Signe ${idx + 1}`,
+      name: sig.name || sig.nom || matched?.name || matched?.nom || `Signe ${idx + 1}`,
+      consigne: sig.consigne || sig.action || matched?.consigne || matched?.action || matched?.description || (sig.nom || sig.name || 'Action musicale'),
+      imageUrl: sig.imageUrl || matched?.imageUrl || null
+    };
+  });
+
+  // Rassembler toutes les images uniques disponibles
+  const allImages = Array.from(new Set([
+    ...signals.map(s => s.imageUrl).filter(Boolean),
+    ...(catalogSignals || []).map(cs => cs.imageUrl).filter(Boolean)
+  ]));
+
+  // Pool de textes de consignes et actions
+  const defaultActions = [
+    "Départ du morceau",
+    "Appel de Virada 1",
+    "Appel de Virada 2",
+    "Break d'arrêt complet",
+    "Coupure générale",
+    "Relance en tempo rapide",
+    "Ralentissement du baque",
+    "Solo de Gonguê",
+    "Reprise du baque continu"
+  ];
+  const allActions = Array.from(new Set([
+    ...signals.map(s => s.consigne || s.nom).filter(Boolean),
+    ...(catalogSignals || []).map(cs => cs.consigne || cs.action || cs.name || cs.nom).filter(Boolean),
+    ...defaultActions
+  ]));
+
+  signals.forEach((sig, idx) => {
+    const signalName = sig.nom || sig.name;
+    const consigne = sig.consigne || signalName;
+    const mesureStr = sig.mesure ? ` (Mesure ${sig.mesure})` : '';
+
+    // 1. QUESTION VISUELLE : Reconnaître le bon geste parmi 4 vignettes
+    if (sig.imageUrl) {
+      const otherImages = allImages.filter(img => img !== sig.imageUrl);
+      const wrongImages = shuffleArray(otherImages).slice(0, 3);
+      
+      if (wrongImages.length > 0) {
+        const choices = shuffleArray([
+          { text: sig.imageUrl, isCorrect: true, label: signalName },
+          ...wrongImages.map(img => ({ text: img, isCorrect: false }))
+        ]);
+
+        questions.push({
+          id: `qcm_signe_visuel_${sig.id || idx}`,
+          type: 'image_options',
+          instruction: t('pedagogyQuiz.signalsVisualInstruction', 'Reconnaissance Visuelle du Geste'),
+          questionText: t('pedagogyQuiz.whichGestureForSignal', `Quel est le geste du Mestre pour l'appel : "${signalName}"${mesureStr} ?`, { name: signalName }),
+          choices: choices,
+          correctAnswer: signalName,
+          correctAnswerExplanation: `Ce geste correspond à "${signalName}".`,
+          feedback: `Ce geste correspond bien à l'appel "${signalName}".`
+        });
+      }
+    }
+
+    // 2. QUESTION CONSIGNE : Identifier l'action musicale / break déclenché
+    const otherActions = allActions.filter(a => a.toLowerCase() !== consigne.toLowerCase());
+    const wrongActions = shuffleArray(otherActions).slice(0, 3);
+
+    const choices = shuffleArray([
+      { text: consigne, isCorrect: true },
+      ...wrongActions.map(txt => ({ text: txt, isCorrect: false }))
+    ]);
+
+    questions.push({
+      id: `qcm_signe_consigne_${sig.id || idx}`,
+      type: 'mestre_signal_consigne',
+      instruction: t('pedagogyQuiz.signalsConsigneInstruction', 'Consigne & Direction Musicale'),
+      questionText: sig.imageUrl
+        ? t('pedagogyQuiz.whatActionForGesture', `Quelle action musicale ou consigne est annoncée par ce geste du Mestre${mesureStr} ?`)
+        : t('pedagogyQuiz.whatActionForSignalName', `Quelle action musicale déclenche l'appel "${signalName}"${mesureStr} ?`, { name: signalName }),
+      questionImage: sig.imageUrl || null,
+      imageUrl: sig.imageUrl || null,
+      choices: choices,
+      correctAnswer: consigne,
+      correctAnswerExplanation: `L'action déclenchée est : "${consigne}".`,
+      feedback: `Exact ! L'action déclenchée est bien "${consigne}".`
+    });
+  });
+
+  return shuffleArray(questions);
+};

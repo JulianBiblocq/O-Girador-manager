@@ -28,15 +28,18 @@ export default function AutoEvalQuiz({ sheetData, allSheetsData, profileData, on
     if (parsedSequencerJson || customQuizData) {
       let finalQuestions = [];
       
-      // 1. Questions personnalisées du Mestre
+      // 1. Questions personnalisées du Mestre ou modules spécialisés (Signes)
       if (customQuizData) {
         const processed = customQuizData.map(q => {
+          if (Array.isArray(q.choices)) {
+            return q;
+          }
           const choices = [
             { text: q.bonneReponse, isCorrect: true },
-            ...q.mauvaisesReponses.map(mr => ({ text: mr, isCorrect: false }))
+            ...(q.mauvaisesReponses || []).map(mr => ({ text: typeof mr === 'object' ? mr.text : mr, isCorrect: false }))
           ];
           return {
-            questionText: q.texte,
+            questionText: q.texte || q.questionText,
             choices: choices.sort(() => Math.random() - 0.5),
             audioUrl: q.audioUrl || null
           };
@@ -250,9 +253,9 @@ export default function AutoEvalQuiz({ sheetData, allSheetsData, profileData, on
                 {currentQuestion.instruction || "Question"}
               </span>
               
-              {currentQuestion.questionImage && (
+              {(currentQuestion.questionImage || currentQuestion.imageUrl) && (
                 <div className="w-full flex justify-center mb-4 mt-2">
-                  <img src={currentQuestion.questionImage} alt="Illustration de la question" className="max-h-48 rounded-lg shadow-md border-2 border-cordel-master-dark/20 object-contain bg-white/50 p-2" />
+                  <img src={currentQuestion.questionImage || currentQuestion.imageUrl} alt="Illustration de la question" className="max-h-48 rounded-lg shadow-md border-2 border-cordel-master-dark/20 object-contain bg-white/50 p-2" />
                 </div>
               )}
 

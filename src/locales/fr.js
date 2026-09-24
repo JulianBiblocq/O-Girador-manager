@@ -48,7 +48,11 @@ export const fr = {
     saving: "Enregistrement...",
     deleteConfirmTitle: "Confirmer la suppression",
     deleteConfirmMessage: "Êtes-vous sûr de vouloir supprimer cet élément ? Cette action est irréversible.",
-    deleteError: "Erreur lors de la suppression."
+    deleteError: "Erreur lors de la suppression.",
+    signes: "Signes",
+    signesTitle: "Signes du Mestre",
+    aideMemoire: "Aide-mémoire",
+    defiSignes: "Défi des signes"
   },
   tags: {
     managerTitle: "Gestion des étiquettes",
@@ -1573,6 +1577,11 @@ export const fr = {
     mestreSignModCInstruction: "Signes du Mestre (Modèle C)",
     mestreSignQuestion: "Quel est le signe du Mestre pour annoncer : {{titre}} ?",
     mestreSignFeedback: "Le bon signe pour \"{{titre}}\" est celui affiché en vert.",
+    signalsVisualInstruction: "Reconnaissance Visuelle du Geste",
+    signalsConsigneInstruction: "Consigne & Direction Musicale",
+    whichGestureForSignal: "Quel est le geste du Mestre pour l'appel : \"{{name}}\" ?",
+    whatActionForGesture: "Quelle action musicale ou consigne est annoncée par ce geste du Mestre ?",
+    whatActionForSignalName: "Quelle action musicale déclenche l'appel \"{{name}}\" ?",
     rhythmPatternInstruction: "Pattern Rythmique",
     rhythmPatternQuestion: "Identifiez le pattern rythmique correct pour : {{titre}}",
     rhythmPatternFeedback: "Le bon pattern pour \"{{titre}}\" est celui affiché en vert.",

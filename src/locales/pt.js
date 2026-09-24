@@ -48,7 +48,11 @@ export const pt = {
     saving: "Salvando...",
     deleteConfirmTitle: "Confirmar exclusão",
     deleteConfirmMessage: "Tem certeza de que deseja excluir este item? Esta ação é irreversível.",
-    deleteError: "Erro ao excluir."
+    deleteError: "Erro ao excluir.",
+    signes: "Sinais",
+    signesTitle: "Sinais do Mestre",
+    aideMemoire: "Lembrete",
+    defiSignes: "Desafio dos sinais"
   },
   tags: {
     managerTitle: "Gerenciador de etiquetas",
@@ -1577,6 +1581,11 @@ export const pt = {
     mestreSignModCInstruction: "Sinais do Mestre (Modelo C)",
     mestreSignQuestion: "Qual é o sinal do Mestre para anunciar: {{titre}}?",
     mestreSignFeedback: "O sinal correto para \"{{titre}}\" é aquele exibido em verde.",
+    signalsVisualInstruction: "Reconhecimento Visual do Gesto",
+    signalsConsigneInstruction: "Instrução & Direção Musical",
+    whichGestureForSignal: "Qual é o gesto do Mestre para a chamada: \"{{name}}\"?",
+    whatActionForGesture: "Qual ação musical ou instrução é anunciada por este gesto do Mestre?",
+    whatActionForSignalName: "Qual ação musical é disparada pela chamada \"{{name}}\"?",
     rhythmPatternInstruction: "Padrão Rítmico",
     rhythmPatternQuestion: "Identifique o padrão rítmico correto para: {{titre}}",
     rhythmPatternFeedback: "O padrão correto para \"{{titre}}\" é aquele exibido em verde.",

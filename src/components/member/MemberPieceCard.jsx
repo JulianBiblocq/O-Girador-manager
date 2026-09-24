@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import CordelCard from '../CordelCard';
 import MemberPieceUnfoldedContent from './MemberPieceUnfoldedContent';
+import PieceSignalsModal from './PieceSignalsModal';
 
 // Échelle des 4 niveaux de confort personnel de l'adhérent
 export const COMFORT_LEVELS = [
@@ -13,12 +14,13 @@ export const COMFORT_LEVELS = [
 /**
  * Carte individuelle repliable d'un morceau du Répertoire (< 200 lignes).
  * Mode replié : En-tête avec titre, indicateur, curseur de confort et demande de révision.
- * Mode déplié : Ressources multimédias via MemberPieceUnfoldedContent.
+ * Mode déplié : Ressources multimédias via MemberPieceUnfoldedContent et PieceSignalsModal.
  */
 export default function MemberPieceCard({
   piece,
   userId,
   groupId,
+  profileData = null,
   trainings = [],
   aisanceMap = {},
   isRevisionRequested = false,
@@ -30,8 +32,11 @@ export default function MemberPieceCard({
   onOpenTablature,
   onOpenToada,
   onOpenCulture,
+  onOpenSignals = null,
   sequenceurUrl
 }) {
+  const [isSignalsModalOpen, setIsSignalsModalOpen] = useState(false);
+
   if (!piece) return null;
 
   return (
@@ -124,7 +129,19 @@ export default function MemberPieceCard({
           onOpenTablature={onOpenTablature}
           onOpenToada={onOpenToada}
           onOpenCulture={onOpenCulture}
+          onOpenSignals={(p) => (onOpenSignals ? onOpenSignals(p) : setIsSignalsModalOpen(true))}
           sequenceurUrl={sequenceurUrl}
+        />
+      )}
+
+      {/* 3. Modale dédiée des Signes du Mestre (Option A Aide-mémoire & Option B Défi) */}
+      {isSignalsModalOpen && (
+        <PieceSignalsModal
+          isOpen={isSignalsModalOpen}
+          onClose={() => setIsSignalsModalOpen(false)}
+          piece={piece}
+          groupId={groupId}
+          profileData={profileData}
         />
       )}
     </CordelCard>

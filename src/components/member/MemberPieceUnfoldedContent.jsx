@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import PieceAisanceSection from './PieceAisanceSection';
 import { parseYouTubeMedia } from '../../utils/mediaUrlUtils';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Contenu déplié de la carte morceau pour adhérents (lecture seule stricte).
@@ -16,8 +17,10 @@ export default function MemberPieceUnfoldedContent({
   onOpenTablature,
   onOpenToada,
   onOpenCulture,
+  onOpenSignals,
   sequenceurUrl
 }) {
+  const { t } = useTranslation();
   const audioUrl = piece.activeAudioUrl || piece.audioUrl;
   const videoUrl = piece.activeVideoUrl || piece.videoUrl || piece.youtubeUrl;
   const cultureDocs = Array.isArray(piece.activeCultureDocs) && piece.activeCultureDocs.length > 0
@@ -37,12 +40,8 @@ export default function MemberPieceUnfoldedContent({
       return { type: 'drive', embedUrl: `https://drive.google.com/file/d/${driveMatch[1]}/preview` };
     }
     const vimeoMatch = trimmed.match(/(?:vimeo\.com\/)(\d+)/);
-    if (vimeoMatch && vimeoMatch[1]) {
-      return { type: 'vimeo', embedUrl: `https://player.vimeo.com/video/${vimeoMatch[1]}` };
-    }
-    if (trimmed.match(/\.(mp4|webm|ogg)(\?.*)?$/i)) {
-      return { type: 'direct', embedUrl: trimmed };
-    }
+    if (vimeoMatch && vimeoMatch[1]) return { type: 'vimeo', embedUrl: `https://player.vimeo.com/video/${vimeoMatch[1]}` };
+    if (trimmed.match(/\.(mp4|webm|ogg)(\?.*)?$/i)) return { type: 'direct', embedUrl: trimmed };
     return null;
   }, [videoUrl]);
 
@@ -112,6 +111,19 @@ export default function MemberPieceUnfoldedContent({
             <span>Culture : {cDoc.titre || cDoc.name || 'Fiche'}</span>
           </button>
         ))}
+
+        {/* Passerelle Signes du Mestre */}
+        {((Array.isArray(piece.sinaisDoMestre) && piece.sinaisDoMestre.length > 0) || (Array.isArray(piece.activeSinaisDoMestre) && piece.activeSinaisDoMestre.length > 0)) && (
+          <button
+            type="button"
+            onClick={() => onOpenSignals && onOpenSignals(piece)}
+            className="px-2.5 py-1 text-xs font-bold rounded bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-950 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all select-none"
+            title="Consulter les signes du Mestre ou s'entraîner au quiz"
+          >
+            <span>🖐️</span>
+            <span>{t('signes', 'Signes')}</span>
+          </button>
+        )}
       </div>
 
       {/* 4. Lecteur vidéo intégré direct sans quitter l'application */}
