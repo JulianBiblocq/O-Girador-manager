@@ -189,6 +189,9 @@ export function useDocumentUploadPipeline({
           if (typeof lyricsInput === 'string') return lyricsInput;
           if (Array.isArray(lyricsInput)) {
             return lyricsInput.map(block => {
+              if (block?.isMixed && Array.isArray(block.segments)) {
+                return block.segments.map(seg => seg.isBold ? `<b>${seg.text}</b>` : seg.text).join('');
+              }
               const parts = [];
               if (block.puxador) parts.push(`<b>${block.puxador}</b>`);
               if (block.coro) parts.push(`${block.coro}`);

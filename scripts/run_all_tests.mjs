@@ -52,7 +52,8 @@ const testScripts = [
   'scripts/test_conductor_game_engine.mjs',
   'scripts/test_repertoire_adherents_mission.mjs',
   'scripts/test_mission_vocabulaire_dedoublonnage_culture.mjs',
-  'scripts/test_member_repertoire_accordion.mjs'
+  'scripts/test_member_repertoire_accordion.mjs',
+  'scripts/test_toada_mixed_line_lyrics.mjs'
 ];
 
 console.log("===============================================================");

@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import PrintConfigModal from './PrintConfigModal';
+import { parseLyricsString } from '../utils/lyricsParser';
 
 /**
  * Modèle de données attendu pour une chanson (Fiche de Chant)
@@ -146,79 +147,6 @@ function SongCard({
     return <div className={`whitespace-pre-wrap ${extraClass}`}>{content}</div>;
   };
 
-  const parseLyricsString = (htmlString) => {
-    if (!htmlString || typeof htmlString !== 'string') return htmlString;
-    
-    const isHtml = /<[a-z][\s\S]*>/i.test(htmlString);
-    if (!isHtml) return htmlString;
-    
-    const div = document.createElement('div');
-    div.innerHTML = htmlString
-      .replace(/<\/?(p|div)[^>]*>/gi, (match) => match.startsWith('</') ? '<br/>' : '')
-      .replace(/&nbsp;/gi, ' ');
-      
-    const blocks = [];
-    let currentLineText = "";
-    let currentLineHasBold = false;
-    let hasAnyPuxador = false;
-
-    const traverse = (node, isBold) => {
-      if (node.nodeType === Node.TEXT_NODE) {
-        const text = node.textContent;
-        if (text) {
-          currentLineText += text;
-          if (isBold && text.trim().length > 0) {
-            currentLineHasBold = true;
-          }
-        }
-      } else if (node.nodeType === Node.ELEMENT_NODE) {
-        if (node.tagName.toLowerCase() === 'br') {
-          commitLine();
-        } else {
-          const tagName = node.tagName.toLowerCase();
-          const isNodeBold = isBold || 
-                             tagName === 'b' || 
-                             tagName === 'strong' ||
-                             (node.style && node.style.fontWeight && (node.style.fontWeight === 'bold' || parseInt(node.style.fontWeight, 10) >= 600)) ||
-                             (node.classList && (node.classList.contains('font-bold') || node.classList.contains('font-black')));
-
-          for (let i = 0; i < node.childNodes.length; i++) {
-            traverse(node.childNodes[i], isNodeBold);
-          }
-        }
-      }
-    };
-
-    const commitLine = () => {
-      const textContent = currentLineText.trim();
-      if (!textContent) {
-        blocks.push(' ');
-      } else {
-        if (currentLineHasBold) {
-          blocks.push({ puxador: textContent });
-          hasAnyPuxador = true;
-        } else {
-          blocks.push({ coro: textContent });
-        }
-      }
-      currentLineText = "";
-      currentLineHasBold = false;
-    };
-
-    traverse(div, false);
-    commitLine();
-    
-    if (!hasAnyPuxador) {
-      return htmlString; // Fallback to raw string if no bold found
-    }
-    
-    while (blocks.length > 0 && (typeof blocks[blocks.length - 1] === 'string' && blocks[blocks.length - 1].trim() === '')) {
-      blocks.pop(); // Clean trailing empty spaces
-    }
-    
-    return blocks;
-  };
-
   const renderLyricsArray = (rawLyrics, sectionKey) => {
     let lyrics = rawLyrics;
     
@@ -268,7 +196,42 @@ function SongCard({
               return <div key={index} className="whitespace-pre-wrap text-encre-noire font-medium">{block}</div>;
             }
             
-            // On vérifie la clé JSON pour distinguer formellement le puxador du coro
+            // Cas 1 : Ligne mixte Puxador et Chœur sur la MÊME ligne
+            if (block?.isMixed && Array.isArray(block.segments)) {
+              return (
+                <div key={index} className={`w-full ${isRevealedMode ? 'leading-tight' : 'leading-relaxed'}`}>
+                  <p className="whitespace-pre-wrap">
+                    {block.segments.map((seg, sIdx) => {
+                      if (!seg.text) return null;
+                      if (seg.isBold) {
+                        return (
+                          <span
+                            key={sIdx}
+                            className={`font-black text-encre-noire print:text-black transition-opacity duration-300 ${
+                              activePuxador || isRevealedMode ? 'opacity-100' : 'opacity-0'
+                            }`}
+                          >
+                            {seg.text}
+                          </span>
+                        );
+                      }
+                      return (
+                        <span
+                          key={sIdx}
+                          className={`font-medium text-encre-noire/90 print:text-black/90 italic transition-opacity duration-300 ${
+                            activeChoeur || isRevealedMode ? 'opacity-100' : 'opacity-0'
+                          }`}
+                        >
+                          {seg.text}
+                        </span>
+                      );
+                    })}
+                  </p>
+                </div>
+              );
+            }
+
+            // Cas 2 : Ligne standard séparée Puxador / Coro
             const puxadorText = block?.puxador;
             const coroText = block?.coro || block?.choeur;
 

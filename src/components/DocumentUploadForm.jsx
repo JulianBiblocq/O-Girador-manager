@@ -103,10 +103,33 @@ export default function DocumentUploadForm({
   const [batchFile, setBatchFile] = useState(null);
 
   // 4. Sous-états Chants / Toadas
+  const normalizeLyricsToHtml = (lyrics) => {
+    if (!lyrics) return '';
+    if (typeof lyrics === 'string') return lyrics;
+    if (Array.isArray(lyrics)) {
+      return lyrics.map(block => {
+        if (typeof block === 'string') return `<p>${block}</p>`;
+        if (block?.isMixed && Array.isArray(block.segments)) {
+          return `<p>${block.segments.map(seg => seg.isBold ? `<strong>${seg.text}</strong>` : seg.text).join('')}</p>`;
+        }
+        const parts = [];
+        if (block?.puxador) parts.push(`<strong>${block.puxador}</strong>`);
+        if (block?.coro) parts.push(`${block.coro}`);
+        if (block?.choeur) parts.push(`${block.choeur}`);
+        return `<p>${parts.join(' ')}</p>`;
+      }).join('');
+    }
+    return '';
+  };
+
   const [nacao, setNacao] = useState(documentToEdit ? documentToEdit.nacao || '' : '');
   const [rythme, setRythme] = useState(documentToEdit ? documentToEdit.rythme || '' : '');
-  const [parolesOriginales, setParolesOriginales] = useState(documentToEdit ? documentToEdit.parolesOriginales || '' : '');
-  const [parolesPhonetiques, setParolesPhonetiques] = useState(documentToEdit ? documentToEdit.parolesPhonetiques || '' : '');
+  const [parolesOriginales, setParolesOriginales] = useState(() =>
+    documentToEdit ? normalizeLyricsToHtml(documentToEdit.parolesOriginales) : ''
+  );
+  const [parolesPhonetiques, setParolesPhonetiques] = useState(() =>
+    documentToEdit ? normalizeLyricsToHtml(documentToEdit.parolesPhonetiques) : ''
+  );
   const [traduction, setTraduction] = useState(documentToEdit ? documentToEdit.traduction || '' : '');
   const [anecdoteSong, setAnecdoteSong] = useState(documentToEdit ? documentToEdit.anecdote || '' : '');
   const [audioUploadType, setAudioUploadType] = useState('file');
