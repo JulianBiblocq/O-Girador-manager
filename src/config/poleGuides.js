@@ -317,8 +317,8 @@ export const POLE_GUIDES = {
     ]
   },
   'mestre-forum-channels': {
-    titre: "📢 Administration des Salons Porte-voix",
-    title: "📢 Administration des Salons Porte-voix",
+    titre: "Administration des Salons Porte-voix",
+    title: "Administration des Salons Porte-voix",
     description: "Gestion des canaux de discussion thématiques et modération des espaces d'échange.",
     etapes: [
       "Créez de nouveaux salons par pupitre ou projet associatif spécial.",
@@ -1092,8 +1092,8 @@ export const POLE_GUIDES = {
     ]
   },
   'mestre-mot-mestre': {
-    titre: "📣 Directives & Annonces de la Mestria",
-    title: "📣 Directives & Annonces de la Mestria",
+    titre: "Directives & Annonces de la Mestria",
+    title: "Directives & Annonces de la Mestria",
     description: "Canal direct d'annonces de la direction artistique vers l'ensemble des musiciens.",
     etapes: [
       "Rédigez un mot d'orientation artistique ou un rappel de consigne.",

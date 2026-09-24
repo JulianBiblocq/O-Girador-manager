@@ -2,6 +2,7 @@ import React from 'react';
 import { useAssociationSettings } from '../../hooks/useAssociationSettings';
 import TabCommunication from '../association-settings/TabCommunication';
 import CordelButton from '../CordelButton';
+import { XiloMegaphone } from '../XiloIcons';
 import { useTranslation } from '../LanguageContext';
 
 /**
@@ -42,7 +43,7 @@ export default function StudioCommunication({ groupId, onBack }) {
             <span className="text-[var(--color-cordel-vert)] dark:text-emerald-400">Communication & Brevo</span>
           </div>
           <h2 className="text-xl font-black text-cordel-wood uppercase flex items-center gap-2">
-            <span>📢</span> Configuration de la Communication & Envois
+            <XiloMegaphone size={20} className="text-cordel-wood" /> Configuration de la Communication & Envois
           </h2>
           <p className="text-xs text-cordel-master-dark/75 mt-0.5">
             Configurez votre compte emailing (clé API Brevo), les adresses d'expédition et exportez la liste des abonnés newsletter.

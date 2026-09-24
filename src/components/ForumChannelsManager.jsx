@@ -534,8 +534,9 @@ export default function ForumChannelsManager({ groupId, role, isSystemAdmin, onB
                           onChange={(e) => setReadOnlyForMembers(e.target.checked)}
                           className="w-4 h-4 rounded border-encre-noire text-cordel-wood focus:ring-cordel-wood cursor-pointer"
                         />
-                        <span className="flex items-center gap-1">
-                          📢 Salon en lecture seule pour les membres (Annonces)
+                        <span className="flex items-center gap-1.5">
+                          <XiloMegaphone size={14} className="text-cordel-wood" />
+                          Salon en lecture seule pour les membres (Annonces)
                         </span>
                       </label>
                       <p className="text-[9px] italic text-cordel-master-dark opacity-70 mt-1 pl-6">

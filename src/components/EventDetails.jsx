@@ -4,6 +4,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { httpsCallable } from 'firebase/functions';
 import { db, storage, functions } from '../firebase';
 import CordelButton from './CordelButton';
+import { XiloMegaphone } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
 
 import { useEventRSVP, checkRegistrationDeadlinePassed } from '../hooks/useEventRSVP';
@@ -1550,7 +1551,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                             }}
                             className="w-full px-3.5 py-2 text-[10px] font-black uppercase tracking-wider text-encre-noire hover:bg-orange-50 cursor-pointer text-left flex items-center gap-2"
                           >
-                            <span>📢</span>
+                            <XiloMegaphone size={14} className="text-cordel-wood shrink-0" />
                             <span>Préparer la publication</span>
                           </button>
                         </>

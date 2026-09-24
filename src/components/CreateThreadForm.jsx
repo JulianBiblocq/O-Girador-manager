@@ -3,19 +3,26 @@ import { collection, addDoc, doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
+import { XiloMegaphone } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
 import RichTextEditor from './RichTextEditor';
+import { canUserReadForumChannel } from '../utils/permissionUtils';
+import { dispatchInAppAndPushNotification, NOTIFICATION_TYPES } from '../utils/inAppNotificationService';
 
 import { getTagId } from '../utils/tagUtils';
 
-export default function CreateThreadForm({ groupId, channelId, user, profileData, allUsers = [], onClose, inModal = false }) {
+export default function CreateThreadForm({ groupId, channelId, channels = [], user, profileData, allUsers = [], onClose, inModal = false }) {
   const { t } = useTranslation();
   const [title, setTitle] = useState('');
-  const [category, setCategory] = useState('Général');
   const [message, setMessage] = useState('');
   const [availableTargets, setAvailableTargets] = useState([]);
   const [selectedTarget, setSelectedTarget] = useState('');
   const [saving, setSaving] = useState(false);
+
+  // Résolution du salon actif de destination
+  const targetChannelId = channelId || `${groupId}_general`;
+  const currentChannel = (channels || []).find((c) => c.id === targetChannelId);
+  const currentChannelName = currentChannel?.name || 'Général';
 
   // État de notification Push FCM
   const [sendPushNotification, setSendPushNotification] = useState(false);
@@ -105,7 +112,8 @@ export default function CreateThreadForm({ groupId, channelId, user, profileData
 
       const docRef = await addDoc(collection(db, 'forum'), {
         titre: cleanTitle,
-        categorie: category,
+        categorie: currentChannelName,
+        channelName: currentChannelName,
         groupId: groupId,
         channelId: targetChannelId,
         auteurId: user.uid,
@@ -133,23 +141,37 @@ export default function CreateThreadForm({ groupId, channelId, user, profileData
         return regex.test(cleanMessage);
       });
 
-      if (mentions.length > 0) {
-        for (const tag of mentions) {
-          try {
-            await addDoc(collection(db, 'notifications_queue'), {
-              groupId: groupId,
-              title: `Mention dans le forum (${cleanTitle})`,
-              body: `${authorName} vous a mentionné : "${cleanMessage.slice(0, 100)}${cleanMessage.length > 100 ? '...' : ''}"`,
-              targetTag: tag,
-              senderId: user.uid,
-              threadId: docRef.id,
-              channelId: targetChannelId,
-              createdAt: nowIso
-            });
-          } catch (err) {
-            console.error("Error writing notification queue doc from thread creator:", err);
+      // Notifications automatiques pour tous les membres ayant accès au salon de discussion
+      try {
+        const notifRecipientIds = new Set();
+        const targetChannel = (channels || []).find((c) => c.id === targetChannelId);
+
+        (allUsers || []).forEach((u) => {
+          if (!u.id || u.id === user.uid) return;
+          if (targetChannel && !canUserReadForumChannel(targetChannel, u, u.tags || [])) {
+            return;
           }
-        }
+          notifRecipientIds.add(u.id);
+        });
+
+        const snippet = cleanMessage.length > 80 ? `${cleanMessage.slice(0, 80)}...` : cleanMessage;
+        const channelLabel = currentChannelName || 'Porte-voix';
+
+        await Promise.allSettled(
+          Array.from(notifRecipientIds).map((recipientId) => {
+            return dispatchInAppAndPushNotification({
+              recipientId,
+              groupId: groupId,
+              type: NOTIFICATION_TYPES.FORUM_NEW_THREAD,
+              titre: `${authorName} dans "${channelLabel}" : "${cleanTitle}"`,
+              message: `"${snippet}"`,
+              targetUrl: `/forum?threadId=${docRef.id}`,
+              sendPush: true
+            });
+          })
+        );
+      } catch (notifErr) {
+        console.warn("CreateThreadForm - Erreur envoi notifications nouveau sujet :", notifErr);
       }
 
       if (onClose) onClose();
@@ -181,23 +203,14 @@ export default function CreateThreadForm({ groupId, channelId, user, profileData
           />
         </div>
 
-        {/* Category Select */}
-        <div className="flex flex-col gap-1">
-          <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-            {t('forum.categoryLabel')}
-          </label>
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            required
-            disabled={saving}
-            className="theme-input w-full disabled:opacity-50"
-          >
-            <option value="Général">{t('forum.Général')} (Apéros, actus, etc.)</option>
-            <option value="Costumes">{t('forum.Costumes')} (Ateliers, couture)</option>
-            <option value="Covoiturage">{t('forum.Covoiturage')} (Trajets)</option>
-            <option value="Autre">{t('forum.Autre')}</option>
-          </select>
+        {/* Salon de destination */}
+        <div className="flex items-center justify-between px-3 py-2 bg-cordel-bg-light/60 border border-dashed border-encre-noire/20 rounded-[4px] select-none">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-cordel-wood">
+            Salon de publication :
+          </span>
+          <span className="text-xs font-black text-encre-noire flex items-center gap-1.5">
+            📁 {currentChannelName}
+          </span>
         </div>
 
         {/* Targeting & Mentions (Collapsible) */}
@@ -368,7 +381,10 @@ export default function CreateThreadForm({ groupId, channelId, user, profileData
               disabled={saving}
               className="w-4 h-4 border border-encre-noire rounded accent-cordel-wood cursor-pointer"
             />
-            <span>📢 Alerter les membres par notification Push</span>
+            <span className="flex items-center gap-1.5">
+              <XiloMegaphone size={14} className="text-cordel-wood" />
+              Alerter les membres par notification Push
+            </span>
           </label>
         </div>
       </div>

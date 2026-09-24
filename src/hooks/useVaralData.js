@@ -11,7 +11,6 @@ import useConfirm from './useConfirm';
  */
 export const DEFAULT_VARAL_CATEGORIES = [
   { id: 'Toadas', nom: 'Toadas', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
-  { id: 'TutorielsVideo', nom: 'Tutoriels Vidéo', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
   { id: 'TutosFabrication', nom: 'Tutos Fabrication', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
   { id: 'Costumerie', nom: 'Costumerie & Patrons', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
   { id: 'Culture', nom: 'Culture', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
@@ -24,7 +23,7 @@ export const DEFAULT_VARAL_CATEGORIES = [
  * Table de correspondance par défaut reliant chaque pôle métier à ses cordes natives du Varal.
  */
 export const DEFAULT_POLE_ROPES = {
-  pedagogie: ['Toadas', 'Culture', 'TutorielsVideo'],
+  pedagogie: ['Toadas', 'Culture'],
   secretariat: ['Administratif', 'ComptesRendus'],
   studio: ['PhotosPrestations'],
   lutherie: ['TutosFabrication'],

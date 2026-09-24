@@ -56,8 +56,14 @@ export function extractYouTubeVideoId(url) {
 export function extractYouTubePlaylistId(url) {
   if (!url || typeof url !== 'string') return null;
   const trimmed = url.trim();
+  // 1. Extraction depuis une URL contenant le paramètre ?list= ou &list=
   const match = trimmed.match(/[?&]list=([a-zA-Z0-9_-]+)/i);
-  return match ? match[1] : null;
+  if (match) return match[1];
+  // 2. Format direct d'un identifiant de playlist YouTube (généralement préfixé par PL, UU, FL, RD, OL, etc.)
+  if (/^[a-zA-Z0-9_-]{12,}$/.test(trimmed)) {
+    return trimmed;
+  }
+  return null;
 }
 
 /**

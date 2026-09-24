@@ -4,9 +4,12 @@ import { httpsCallable } from 'firebase/functions';
 import { db, functions } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
+import { XiloMegaphone } from '../XiloIcons';
 import EmailConfigSection from './email/EmailConfigSection';
 import BrevoIntegrationBlock from './blocks/BrevoIntegrationBlock';
 import FramaspaceIntegrationBlock from './blocks/FramaspaceIntegrationBlock';
+import YouTubePlaylistsBlock from './blocks/YouTubePlaylistsBlock';
+import YouTubeVideoPickerModal from '../common/YouTubeVideoPickerModal';
 import { extractYouTubeVideoId } from '../common/LiteYouTubeEmbed';
 
 /**
@@ -22,6 +25,15 @@ export default function TabCommunication({ formData, handleChange, groupId, savi
   const [newsletterStatusMsg, setNewsletterStatusMsg] = useState('');
   const [savingVideo, setSavingVideo] = useState(false);
   const [savingVideoMsg, setSavingVideoMsg] = useState('');
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
+
+  // Remplissage automatique lors du choix d'une vidéo via la modale
+  const handleSelectVideoForUne = ({ title, url }) => {
+    handleChange('videoALaUne.url', url);
+    if (!formData?.videoALaUne?.titre?.trim() && title) {
+      handleChange('videoALaUne.titre', title);
+    }
+  };
 
   // Sauvegarde atomique dédiée pour la vidéo à la une
   const handleSaveVideoDirectly = async () => {
@@ -227,9 +239,19 @@ export default function TabCommunication({ formData, handleChange, groupId, savi
 
           {/* Champ Lien YouTube */}
           <div>
-            <label className="block text-[10px] font-black uppercase tracking-wider text-cordel-master-dark mb-1">
-              Lien de la vidéo YouTube *
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-[10px] font-black uppercase tracking-wider text-cordel-master-dark">
+                Lien de la vidéo YouTube *
+              </label>
+              <button
+                type="button"
+                onClick={() => setIsPickerOpen(true)}
+                className="text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 bg-[var(--color-cordel-ocre,#c05621)] text-white rounded hover:brightness-110 cursor-pointer flex items-center gap-1 shadow-2xs"
+                title="Choisir parmi les playlists YouTube configurées"
+              >
+                <span>🎬 Choisir parmi nos vidéos</span>
+              </button>
+            </div>
             <input
               type="text"
               name="videoALaUne.url"
@@ -287,10 +309,17 @@ export default function TabCommunication({ formData, handleChange, groupId, savi
         </div>
       </CordelCard>
 
+      {/* SECTION : Playlists YouTube de l'association */}
+      <YouTubePlaylistsBlock
+        formData={formData}
+        handleChange={handleChange}
+        disabled={saving}
+      />
+
       {/* En-tête de la section Communication & Newsletter */}
       <CordelCard variant="default" useExtremeBorder={true} className="p-5 bg-cordel-bg">
         <div className="flex items-center gap-2.5 mb-2">
-          <span className="text-xl">📢</span>
+          <XiloMegaphone size={20} className="text-cordel-wood" />
           <h3 className="text-sm font-extrabold uppercase tracking-wider text-cordel-wood">
             Communication & Diffusion Newsletter
           </h3>
@@ -372,6 +401,15 @@ export default function TabCommunication({ formData, handleChange, groupId, savi
         handleChange={handleChange}
         saving={saving}
         isStandalone={false}
+      />
+
+      {/* Modale de sélection vidéo contextuelle */}
+      <YouTubeVideoPickerModal
+        isOpen={isPickerOpen}
+        onClose={() => setIsPickerOpen(false)}
+        onSelectVideo={handleSelectVideoForUne}
+        playlists={formData?.youtubePlaylists}
+        groupId={formData?.groupId || groupId}
       />
     </div>
   );

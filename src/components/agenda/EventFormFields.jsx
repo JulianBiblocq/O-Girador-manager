@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import CordelAccordion from '../CordelAccordion';
+import { XiloMegaphone } from '../XiloIcons';
 import EventBudgetEditor from '../event-details/EventBudgetEditor';
 import { calculateRoadDistance } from '../../utils/googleMaps';
 import ManualMapMarkerModal from './ManualMapMarkerModal';
@@ -673,7 +674,10 @@ export default function EventFormFields({
                   disabled={saving}
                   className="w-4 h-4 rounded accent-cordel-wood cursor-pointer"
                 />
-                <span>📢 Envoyer une notification Push aux membres</span>
+                <span className="flex items-center gap-1.5">
+                  <XiloMegaphone size={14} className="text-cordel-wood" />
+                  Envoyer une notification Push aux membres
+                </span>
               </label>
             </div>
           )}

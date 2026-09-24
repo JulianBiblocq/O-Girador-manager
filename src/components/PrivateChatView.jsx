@@ -1,14 +1,17 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { collection, query, where, onSnapshot, addDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, addDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelButton from './CordelButton';
+import CordelCard from './CordelCard';
 import XiloAvatar from './XiloAvatar';
 import { useTerminologie } from '../hooks/useTerminologie';
+import useConfirm from '../hooks/useConfirm';
 import EmojiPickerPopover, { EmojiQuickRow } from './forum/EmojiPickerPopover';
 import GroupMembersModal from './forum/GroupMembersModal';
 import ChatFramaspaceImageModal from './forum/ChatFramaspaceImageModal';
 import { useConversationMessages } from '../hooks/useConversationMessages';
 import { uploadChatAttachment } from '../utils/attachmentUploadUtils';
+import { dispatchInAppAndPushNotification, NOTIFICATION_TYPES } from '../utils/inAppNotificationService';
 
 /**
  * Composant PrivateChatView
@@ -33,6 +36,7 @@ export default function PrivateChatView({
   isSystemAdmin = false
 }) {
   const { tRole } = useTerminologie();
+  const { confirm } = useConfirm();
   const [inputText, setInputText] = useState(initialText || '');
   const [sending, setSending] = useState(false);
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
@@ -41,6 +45,9 @@ export default function PrivateChatView({
   const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState(null);
   const [replyingTo, setReplyingTo] = useState(null);
+  const [editingMessage, setEditingMessage] = useState(null);
+  const [editText, setEditText] = useState('');
+  const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
   const messagesEndRef = useRef(null);
   const attachmentInputRef = useRef(null);
 
@@ -66,21 +73,84 @@ export default function PrivateChatView({
     return `${effectiveOtherUser?.prenom || ''} ${effectiveOtherUser?.nom || ''}`.trim() || effectiveOtherUser?.email || "Membre";
   }, [isGroup, conversation?.name, effectiveOtherUser]);
 
-  // 2. Gestion des messages via le nouveau hook si conversationId est disponible
+  // 2. Gestion des messages via le hook useConversationMessages
   const conversationId = conversation?.id;
   const groupId = profileData?.groupId || conversation?.groupId || '';
 
   const { 
     messages: convMessages, 
     sendMessage: sendConvMessage, 
-    toggleReaction: toggleConvReaction 
+    toggleReaction: toggleConvReaction,
+    deleteMessage: deleteConvMessage,
+    editMessage: editConvMessage
   } = useConversationMessages(
     conversationId,
     groupId,
     user,
     profileData,
-    conversation?.participantIds || []
+    conversation?.participantIds || [],
+    conversation
   );
+
+  // Suppression d'un de ses propres messages
+  const handleDeleteMessage = async (msg) => {
+    if (!msg || msg.senderId !== user?.uid) return;
+
+    const ok = await confirm({
+      title: "Supprimer le message",
+      message: "Êtes-vous sûr de vouloir supprimer définitivement ce message ?",
+      confirmText: "Supprimer",
+      cancelText: "Annuler",
+      confirmVariant: "danger"
+    });
+    if (!ok) return;
+
+    try {
+      if (msg.isLegacy || !conversationId) {
+        await deleteDoc(doc(db, 'private_messages', msg.id));
+      } else {
+        await deleteConvMessage(msg.id);
+      }
+    } catch (err) {
+      console.error("PrivateChatView - Erreur lors de la suppression du message :", err);
+      alert("Erreur lors de la suppression du message : " + (err.message || err));
+    }
+  };
+
+  // Début d'édition d'un de ses propres messages
+  const handleStartEdit = (msg) => {
+    if (!msg || msg.senderId !== user?.uid) return;
+    setEditingMessage(msg);
+    setEditText(msg.content || '');
+  };
+
+  // Enregistrement de l'édition
+  const handleSaveEdit = async (e) => {
+    if (e) e.preventDefault();
+    const trimmed = editText.trim();
+    if (!editingMessage || !trimmed || isSubmittingEdit) return;
+
+    setIsSubmittingEdit(true);
+    try {
+      const nowIso = new Date().toISOString();
+      if (editingMessage.isLegacy || !conversationId) {
+        await updateDoc(doc(db, 'private_messages', editingMessage.id), {
+          content: trimmed,
+          isEdited: true,
+          editedAt: nowIso
+        });
+      } else {
+        await editConvMessage(editingMessage.id, trimmed);
+      }
+      setEditingMessage(null);
+      setEditText('');
+    } catch (err) {
+      console.error("PrivateChatView - Erreur lors de la modification du message :", err);
+      alert("Erreur lors de la modification du message : " + (err.message || err));
+    } finally {
+      setIsSubmittingEdit(false);
+    }
+  };
 
   // 3. Récupération résiliente des messages privés historiques (1-à-1 legacy)
   const [legacyMessages, setLegacyMessages] = useState([]);
@@ -206,6 +276,28 @@ export default function PrivateChatView({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [activeMessages]);
 
+  // Notification Push et In-App pour les messages legacy 1-à-1
+  const notifyLegacyRecipient = async (textSnippet) => {
+    if (!effectiveOtherUser?.id) return;
+    try {
+      const senderFullName = profileData?.prenom
+        ? `${profileData.prenom} ${profileData.nom || ''}`.trim()
+        : user.displayName || 'Membre';
+      const cleanSnippet = (textSnippet || '').length > 80 ? `${textSnippet.slice(0, 80)}...` : (textSnippet || '');
+      await dispatchInAppAndPushNotification({
+        recipientId: effectiveOtherUser.id,
+        groupId: groupId || profileData?.groupId || '',
+        type: NOTIFICATION_TYPES.CHAT_DIRECT,
+        titre: `✉️ ${senderFullName}`,
+        message: `"${cleanSnippet}"`,
+        targetUrl: `/forum?tab=inbox&chatUserId=${user.uid}`,
+        sendPush: true
+      });
+    } catch (notifErr) {
+      console.warn("PrivateChatView - Erreur envoi notification legacy :", notifErr);
+    }
+  };
+
   // Gestion de l'envoi d'un message
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -230,6 +322,7 @@ export default function PrivateChatView({
           read: false,
           groupId
         });
+        await notifyLegacyRecipient(trimmed);
       }
       setInputText('');
       setReplyingTo(null);
@@ -268,6 +361,7 @@ export default function PrivateChatView({
           read: false,
           groupId
         });
+        await notifyLegacyRecipient(caption || '📷 Photo');
       }
       setReplyingTo(null);
     } catch (err) {
@@ -318,6 +412,7 @@ export default function PrivateChatView({
               read: false,
               groupId: effectiveGroupId
             });
+            await notifyLegacyRecipient('📷 Photo');
           }
         } else {
           // Document / Fichier joint (PDF, tableur, archive, etc.)
@@ -340,6 +435,7 @@ export default function PrivateChatView({
               read: false,
               groupId: effectiveGroupId
             });
+            await notifyLegacyRecipient(`📎 ${result.fileName}`);
           }
         }
         setReplyingTo(null);
@@ -530,27 +626,60 @@ export default function PrivateChatView({
                     )}
 
                     <div className="flex items-center justify-between gap-2 mt-0.5">
-                      {/* Bouton pour citer en réponse */}
-                      <button
-                        type="button"
-                        onClick={() => setReplyingTo({
-                          id: msg.id,
-                          senderName: isMe ? 'Vous' : senderDisplayName,
-                          content: msg.content || (msg.imageUrl ? '📷 Photo' : (msg.fileUrl ? `📎 ${msg.fileName || 'Fichier'}` : ''))
-                        })}
-                        className={`text-[9px] font-bold opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer ${
-                          isMe ? 'text-white/80 hover:text-white' : 'text-cordel-master-dark/70 hover:text-encre-noire'
-                        }`}
-                        title="Répondre à ce message"
-                      >
-                        ↩️ Répondre
-                      </button>
+                      {/* Actions sur le message */}
+                      <div className="flex items-center gap-1.5 opacity-80 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                        <button
+                          type="button"
+                          onClick={() => setReplyingTo({
+                            id: msg.id,
+                            senderName: isMe ? 'Vous' : senderDisplayName,
+                            content: msg.content || (msg.imageUrl ? '📷 Photo' : (msg.fileUrl ? `📎 ${msg.fileName || 'Fichier'}` : ''))
+                          })}
+                          className={`text-[9px] font-bold cursor-pointer ${
+                            isMe ? 'text-white/80 hover:text-white' : 'text-cordel-master-dark/70 hover:text-encre-noire'
+                          }`}
+                          title="Répondre à ce message"
+                        >
+                          ↩️ Répondre
+                        </button>
 
-                      <span className={`text-[8px] font-black uppercase text-right opacity-60 ${
-                        isMe ? 'text-cordel-bg-light' : 'text-encre-noire'
-                      }`}>
-                        {formatMessageTime(msg.timestamp)}
-                      </span>
+                        {/* Édition et suppression réservées exclusivement à l'auteur du message */}
+                        {isMe && (
+                          <>
+                            {msg.content && msg.content !== '📷 Photo' && (!msg.fileUrl || msg.content !== `📎 ${msg.fileName}`) && (
+                              <button
+                                type="button"
+                                onClick={() => handleStartEdit(msg)}
+                                className="text-[9px] font-bold cursor-pointer text-amber-200 hover:text-white transition-colors"
+                                title="Modifier ce message"
+                              >
+                                ✏️ Éditer
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteMessage(msg)}
+                              className="text-[9px] font-bold cursor-pointer text-red-200 hover:text-red-100 transition-colors"
+                              title="Supprimer ce message"
+                            >
+                              🗑️ Supprimer
+                            </button>
+                          </>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1 shrink-0">
+                        {msg.isEdited && (
+                          <span className={`text-[7px] italic font-semibold ${isMe ? 'text-white/70' : 'text-encre-noire/60'}`}>
+                            (modifié)
+                          </span>
+                        )}
+                        <span className={`text-[8px] font-black uppercase text-right opacity-60 ${
+                          isMe ? 'text-cordel-bg-light' : 'text-encre-noire'
+                        }`}>
+                          {formatMessageTime(msg.timestamp)}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
@@ -771,6 +900,71 @@ export default function PrivateChatView({
                 ✕ Fermer
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* Modale d'édition d'un message */}
+      {editingMessage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-encre-noire/70 backdrop-blur-sm animate-fade-in select-none">
+          <div className="relative w-full max-w-md">
+            <CordelCard variant="default" useExtremeBorder={true} className="p-5 flex flex-col gap-4 text-left bg-cordel-bg">
+              <div className="flex justify-between items-start border-b-2 border-dashed border-cordel-master-dark/25 pb-2">
+                <h3 className="font-heading font-black text-base text-encre-noire tracking-wider uppercase">
+                  ✏️ Modifier mon message
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingMessage(null);
+                    setEditText('');
+                  }}
+                  className="text-base font-extrabold text-cordel-wood hover:text-red-600 cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveEdit} className="flex flex-col gap-4">
+                <div className="flex flex-col gap-1 text-left">
+                  <label className="text-[10px] font-black uppercase text-cordel-master-dark">
+                    Nouveau texte *
+                  </label>
+                  <textarea
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                    disabled={isSubmittingEdit}
+                    placeholder="Votre message..."
+                    rows={4}
+                    className="theme-input text-xs font-medium p-2.5 bg-cordel-bg-light resize-none w-full"
+                    autoFocus
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 pt-3 border-t border-dashed border-cordel-master-dark/20">
+                  <CordelButton
+                    type="button"
+                    variant="default"
+                    onClick={() => {
+                      setEditingMessage(null);
+                      setEditText('');
+                    }}
+                    disabled={isSubmittingEdit}
+                    className="py-2 px-4 text-xs font-bold uppercase"
+                  >
+                    Annuler
+                  </CordelButton>
+                  <CordelButton
+                    type="submit"
+                    variant="ocre"
+                    useExtremeBorder={true}
+                    disabled={isSubmittingEdit || !editText.trim()}
+                    className="py-2 px-4 text-xs font-black uppercase tracking-wider"
+                  >
+                    {isSubmittingEdit ? "Enregistrement..." : "Enregistrer"}
+                  </CordelButton>
+                </div>
+              </form>
+            </CordelCard>
           </div>
         </div>
       )}

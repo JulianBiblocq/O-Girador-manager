@@ -11,7 +11,7 @@ import EmptyState from './EmptyState';
 import AgendaFilterBar from './agenda/AgendaFilterBar';
 import EventDisciplineBadges from './agenda/EventDisciplineBadges';
 import { useTranslation } from './LanguageContext';
-import { XiloCalendar } from './XiloIcons';
+import { XiloCalendar, XiloMegaphone } from './XiloIcons';
 import { splitEventsByTime } from '../utils/dateUtils';
 import {
   getSeasonFromDate,
@@ -1007,7 +1007,7 @@ export default function WidgetAgenda({
                       </td>
                       <td className="p-1.5 md:p-2.5 text-center font-bold whitespace-nowrap">
                         {(() => {
-                          if (event.enableInscriptions === false) return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-bold bg-neutral-200 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">📢 {t('widgetAgenda.informative', 'Informatif') || 'Informatif'}</span>;
+                          if (event.enableInscriptions === false) return <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] uppercase font-bold bg-neutral-200 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"><XiloMegaphone size={11} className="text-cordel-wood" /> {t('widgetAgenda.informative', 'Informatif') || 'Informatif'}</span>;
                           if (userStatus === 'present') return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-black badge-status-present">{t('common.present', 'Présent') || 'Présent'} ({presentCount})</span>;
                           if (userStatus === 'absent') return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-black badge-status-absent">{t('common.absent', 'Absent') || 'Absent'} ({presentCount})</span>;
                           if (userStatus === 'confirm') return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-black badge-status-confirm">{t('common.toConfirm', 'À confirmer') || 'À confirmer'} ({presentCount})</span>;
@@ -1141,7 +1141,7 @@ export default function WidgetAgenda({
                             {/* Connected User Attendance Badge */}
                             {(() => {
                               if (event.enableInscriptions === false) {
-                                return <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider bg-neutral-200 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 leading-none select-none">📢 {t('widgetAgenda.informative', 'Informatif') || 'Informatif'}</span>;
+                                return <span className="inline-flex items-center gap-1 text-[8px] font-bold px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider bg-neutral-200 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 leading-none select-none"><XiloMegaphone size={10} className="text-cordel-wood" /> {t('widgetAgenda.informative', 'Informatif') || 'Informatif'}</span>;
                               }
                               const userInscription = (event.inscriptions || []).find(ins => ins.userId === user.uid);
                               const userStatus = userInscription ? userInscription.status : null;

@@ -49,9 +49,9 @@ const ChevronDown = ({ size = 10, className = '' }) => (
  */
 const WIDGET_DEFINITIONS = {
   annonces: {
-    title: "Le Mégaphone (Annonces) 📢",
+    title: "Le Mégaphone (Annonces)",
     desc: "Annonces officielles de l'association ciblées par étiquettes et badges.",
-    icon: "📢"
+    icon: ""
   },
   videoALaUne: {
     title: "Vidéo à la une (YouTube) 🎬",

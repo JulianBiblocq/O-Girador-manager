@@ -18,6 +18,7 @@ import PublicMaintenancePage from './public/PublicMaintenancePage';
 import PublicBookingModal from './public/PublicBookingModal';
 import TenantNotFound from './TenantNotFound';
 import { canPreviewVitrineDraft } from '../utils/permissionUtils';
+import { XiloMegaphone } from './XiloIcons';
 
 /**
  * Convertit une URL YouTube ou Vimeo classique en URL embed sécurisée pour iframe.
@@ -366,7 +367,10 @@ export default function PublicHome({
                 onClick={() => { scrollToSection('recrutement'); setMobileMenuOpen(false); }}
                 className="text-xs font-bold uppercase tracking-wider text-stone-700 hover:text-[var(--public-primary,#D32F2F)] text-left py-1.5 border-b border-stone-200/60 cursor-pointer"
               >
-                📣 {vitrineTexts.titreRecrutement || publicTheme?.titreRecrutement || "Recrutement"}
+                <span className="flex items-center gap-1.5">
+                  <XiloMegaphone size={14} className="text-cordel-wood shrink-0" />
+                  <span>{vitrineTexts.titreRecrutement || publicTheme?.titreRecrutement || "Recrutement"}</span>
+                </span>
               </button>
             )}
             {publicTheme?.afficherGalerie !== false && (

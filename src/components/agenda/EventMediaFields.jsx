@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../firebase';
 import { parseYouTubeMedia, isValidHttpUrl } from '../../utils/mediaUrlUtils';
+import YouTubeVideoPickerModal from '../common/YouTubeVideoPickerModal';
 
 /**
  * EventMediaFields - Section « Médias & Captations » des formulaires d'événements :
@@ -19,6 +20,16 @@ export default function EventMediaFields({
 }) {
   const [provisioning, setProvisioning] = useState(false);
   const [provisionMsg, setProvisionMsg] = useState(null);
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
+
+  // Remplissage automatique lors du choix d'une vidéo via la modale
+  const handleSelectVideo = ({ url }) => {
+    if (setFormData) {
+      setFormData(prev => ({ ...prev, videoUrl: url }));
+    } else if (handleChange) {
+      handleChange({ target: { name: 'videoUrl', value: url } });
+    }
+  };
 
   // Analyse en direct de l'URL vidéo / playlist YouTube
   const youtubeAnalysis = useMemo(() => {
@@ -227,14 +238,27 @@ export default function EventMediaFields({
 
       {/* 3. Champ videoUrl (Restitution YouTube vidéo ou playlist) */}
       <div className="flex flex-col gap-1 pt-1 border-t border-dashed border-cordel-master-dark/15">
-        <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center justify-between">
-          <span>🎬 Vidéo ou Playlist YouTube (Restitution pupitre)</span>
-          {youtubeAnalysis && (
-            <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 border border-emerald-300">
-              {youtubeAnalysis.isPlaylistOnly ? '📑 Playlist YouTube' : '🎬 Vidéo YouTube'}
-            </span>
-          )}
-        </label>
+        <div className="flex items-center justify-between">
+          <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center gap-1.5">
+            <span>🎬 Vidéo ou Playlist YouTube (Restitution pupitre)</span>
+          </label>
+          <div className="flex items-center gap-2">
+            {youtubeAnalysis && (
+              <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 border border-emerald-300">
+                {youtubeAnalysis.isPlaylistOnly ? '📑 Playlist YouTube' : '🎬 Vidéo YouTube'}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={() => setIsPickerOpen(true)}
+              disabled={saving}
+              className="px-2 py-0.5 bg-[var(--color-cordel-ocre,#c05621)] text-white text-[8.5px] font-black uppercase rounded hover:brightness-110 active:scale-95 transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
+              title="Choisir une vidéo parmi les playlists de l'association"
+            >
+              <span>🎬 Choisir une vidéo</span>
+            </button>
+          </div>
+        </div>
         <input
           type="url"
           name="videoUrl"
@@ -253,6 +277,14 @@ export default function EventMediaFields({
           Lien de la captation finale téléversée sur YouTube pour consultation directe par le groupe.
         </p>
       </div>
+
+      {/* Modale de sélection vidéo contextuelle YouTube */}
+      <YouTubeVideoPickerModal
+        isOpen={isPickerOpen}
+        onClose={() => setIsPickerOpen(false)}
+        onSelectVideo={handleSelectVideo}
+        groupId={groupId || formData?.groupId}
+      />
     </div>
   );
 }

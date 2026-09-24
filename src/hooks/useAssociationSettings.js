@@ -21,7 +21,6 @@ export const DEFAULT_FIELDS_CONFIG = {
 
 export const DEFAULT_VARAL_CATEGORIES = [
   { id: 'Toadas', nom: 'Toadas', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
-  { id: 'TutorielsVideo', nom: 'Tutoriels Vidéo', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
   { id: 'TutosFabrication', nom: 'Tutos Fabrication', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
   { id: 'Culture', nom: 'Culture', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
   { id: 'PhotosPrestations', nom: 'Photos Prestations', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
@@ -268,7 +267,9 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
       url: '',
       titre: '',
       active: false
-    }
+    },
+    // Registre dynamique des playlists YouTube de l'association
+    youtubePlaylists: []
   });
 
   const [logoFile, setLogoFile] = useState(null);
@@ -561,7 +562,8 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
             url: '',
             titre: '',
             active: false
-          }
+          },
+          youtubePlaylists: Array.isArray(data.youtubePlaylists) ? data.youtubePlaylists : []
         }));
       }
       setLoading(false);
@@ -712,6 +714,17 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
         setSignatureTresorierFile(null);
       }
 
+      // Assainissement des playlists YouTube de l'association (suppression des lignes sans playlistId ou label vide)
+      const cleanYoutubePlaylists = Array.isArray(formData.youtubePlaylists)
+        ? formData.youtubePlaylists
+            .map((pl) => ({
+              id: pl.id || `pl_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+              label: (pl.label || '').trim(),
+              playlistId: (pl.playlistId || '').trim()
+            }))
+            .filter((pl) => pl.label && pl.playlistId)
+        : [];
+
       const assocRef = doc(db, 'associations', groupId);
       await setDoc(assocRef, {
         nom: formData.nom || '',
@@ -819,7 +832,9 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
           url: formData.videoALaUne?.url || '',
           titre: formData.videoALaUne?.titre || '',
           active: Boolean(formData.videoALaUne?.active)
-        }
+        },
+        // Registre des playlists YouTube de l'association
+        youtubePlaylists: cleanYoutubePlaylists
       }, { merge: true });
 
       const credentialsRef = doc(db, 'associations', groupId, 'private_settings', 'credentials');

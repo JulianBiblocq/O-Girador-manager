@@ -2,6 +2,7 @@ import React from 'react';
 import CordelCard from '../CordelCard';
 import RichTextEditor from '../RichTextEditor';
 import FormulesManager from './FormulesManager';
+import { XiloMegaphone } from '../XiloIcons';
 
 /**
  * Composant d'administration dédié à la configuration de la Vie Associative et du Recrutement
@@ -123,7 +124,10 @@ export default function TabPublicRecruitment({ formData, handleChange, saving, g
       {/* SECTION 2 : Formules & Campagne de Recrutement */}
       <CordelCard variant="default" className="p-5 flex flex-col gap-5 bg-white border-2 border-cordel-master-dark/30">
         <h4 className="text-xs font-black uppercase tracking-widest text-cordel-wood border-b border-dashed border-cordel-master-dark/20 pb-2 flex items-center justify-between">
-          <span>📣 Formules d'Adhésion & Recrutement</span>
+          <span className="flex items-center gap-1.5">
+            <XiloMegaphone size={16} className="text-cordel-wood" />
+            Formules d'Adhésion & Recrutement
+          </span>
           <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
             publicTheme.afficherRecrutement !== false 
               ? 'bg-emerald-50 text-emerald-800 border-emerald-300 font-bold' 

@@ -107,7 +107,7 @@ const PERMISSION_POLES = [
     tabs: [
       { 
         id: 'annonces-publish', 
-        label: '📢 Le Mégaphone (Annonces)', 
+        label: 'Le Mégaphone (Annonces)', 
         desc: "Autorise à rédiger, publier et gérer les annonces officielles sur le tableau de bord (ex: CA, Modérateur, Communication)",
         labelKey: 'permAnnoncesPublish',
         descKey: 'permAnnoncesPublishDesc'

@@ -1,5 +1,6 @@
 import React from 'react';
 import PublicRichText from './PublicRichText';
+import { XiloMegaphone } from '../XiloIcons';
 
 // Formules d'adhésion par défaut si l'administrateur n'a pas configuré de cartes personnalisées
 const DEFAULT_FORMULES = [
@@ -95,7 +96,9 @@ export default function PublicRecruitmentSection({ publicTheme }) {
               fontFamily: 'var(--public-font-heading, sans-serif)' 
             }}
           >
-            <span className="text-sm">📣</span>
+            <span className="bg-[#faf6ee] text-cordel-wood p-0.5 rounded-full flex items-center justify-center shrink-0">
+              <XiloMegaphone size={13} className="text-cordel-wood" />
+            </span>
             <span>{badgeRecrutement}</span>
           </span>
 

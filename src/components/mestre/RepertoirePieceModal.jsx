@@ -11,6 +11,7 @@ import RepertoireVideosPicker from './RepertoireVideosPicker';
 import RepertoireSinaisDoMestreEditor from './RepertoireSinaisDoMestreEditor';
 import CreateCultureFicheModal from './CreateCultureFicheModal';
 import RepertoireCulturePicker from './RepertoireCulturePicker';
+import YouTubeVideoPickerModal from '../common/YouTubeVideoPickerModal';
 import RepertoireTrainingsManager from './RepertoireTrainingsManager';
 import SongCard from '../SongCard';
 import { useDancadorChoreographies } from '../../hooks/useDancadorData';
@@ -79,6 +80,15 @@ export default function RepertoirePieceModal({
   const [isCultureModalOpen, setIsCultureModalOpen] = useState(false);
   const [toadaToPreview, setToadaToPreview] = useState(null);
   const [uploadingAudio, setUploadingAudio] = useState(false);
+  const [isVideoPickerOpen, setIsVideoPickerOpen] = useState(false);
+
+  // Remplissage automatique de l'URL et du titre (si vide) depuis le sélecteur YouTube
+  const handleSelectVideoFromPicker = ({ title, url }) => {
+    setVideoUrl(url);
+    if (!titre.trim() && title) {
+      setTitre(title);
+    }
+  };
 
   // État du formulaire
   const [submitting, setSubmitting] = useState(false);
@@ -1004,14 +1014,27 @@ export default function RepertoirePieceModal({
                   </button>
                 )}
               </div>
-              <input
-                type="url"
-                value={videoUrl}
-                onChange={(e) => setVideoUrl(e.target.value)}
-                disabled={submitting}
-                placeholder="https://www.youtube.com/watch?v=..."
-                className="theme-input text-xs font-semibold p-2 bg-cordel-bg-light border border-encre-noire/30 rounded"
-              />
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <input
+                  type="url"
+                  value={videoUrl}
+                  onChange={(e) => setVideoUrl(e.target.value)}
+                  disabled={submitting}
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  className="theme-input text-xs font-semibold p-2 bg-cordel-bg-light border border-encre-noire/30 rounded flex-1"
+                />
+                <CordelButton
+                  type="button"
+                  variant="ocre"
+                  useExtremeBorder={false}
+                  onClick={() => setIsVideoPickerOpen(true)}
+                  disabled={submitting}
+                  className="text-[9.5px] uppercase font-black tracking-wider py-2 px-3 shrink-0 flex items-center justify-center gap-1.5 shadow-2xs"
+                  title="Choisir parmi les playlists YouTube configurées de l'association"
+                >
+                  <span>🎬 Choisir parmi nos vidéos</span>
+                </CordelButton>
+              </div>
               {videoUrl && parseYouTubeMedia(videoUrl)?.isValid && (
                 <span className="text-[8.5px] text-green-800 font-bold flex items-center gap-1">
                   <span>✓</span>
@@ -1153,6 +1176,14 @@ export default function RepertoirePieceModal({
           </div>
         </div>
       )}
+
+      {/* Modale de sélection vidéo contextuelle YouTube */}
+      <YouTubeVideoPickerModal
+        isOpen={isVideoPickerOpen}
+        onClose={() => setIsVideoPickerOpen(false)}
+        onSelectVideo={handleSelectVideoFromPicker}
+        groupId={groupId}
+      />
     </div>
   );
 }

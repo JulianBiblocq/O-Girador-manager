@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../../firebase';
 import CordelCard from '../../CordelCard';
+import { XiloMegaphone } from '../../XiloIcons';
 import EventBudgetSection from '../EventBudgetSection';
 import ReunionAgendaManager from '../../ReunionAgendaManager';
 import EventReportSection from '../EventReportSection';
@@ -289,9 +290,10 @@ export default function TabAdmin({
             <button
               type="button"
               onClick={handlePreparePublication}
-              className="text-[10px] font-black uppercase bg-cordel-ocre text-black border border-encre-noire px-3 py-1.5 rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] hover:brightness-95 cursor-pointer flex items-center gap-1"
+              className="text-[10px] font-black uppercase bg-cordel-ocre text-black border border-encre-noire px-3 py-1.5 rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] hover:brightness-95 cursor-pointer flex items-center gap-1.5"
             >
-              📢 Préparer la publication
+              <XiloMegaphone size={13} className="text-cordel-wood shrink-0" />
+              <span>Préparer la publication</span>
             </button>
           )}
 

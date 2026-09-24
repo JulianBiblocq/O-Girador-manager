@@ -10,6 +10,7 @@ import {
   deleteDoc 
 } from 'firebase/firestore';
 import { db } from '../firebase';
+import { dispatchBulkInAppAndPushNotification, NOTIFICATION_TYPES } from '../utils/inAppNotificationService';
 
 /**
  * Hook personnalisé useConversationMessages
@@ -21,8 +22,9 @@ import { db } from '../firebase';
  * @param {Object} user - Utilisateur connecté
  * @param {Object} profileData - Profil complet de l'utilisateur
  * @param {Array<string>} participantIds - Liste des participants de la conversation
+ * @param {Object} [conversation] - Métadonnées de la conversation (type, nom)
  */
-export function useConversationMessages(conversationId, groupId, user, profileData, participantIds = []) {
+export function useConversationMessages(conversationId, groupId, user, profileData, participantIds = [], conversation = null) {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -123,13 +125,44 @@ export function useConversationMessages(conversationId, groupId, user, profileDa
           [`readStatus.${user.uid}`]: nowIso
         });
 
+        // 3. Diffuser les notifications aux autres participants
+        try {
+          const otherParticipants = effectiveParticipants.filter((uid) => uid !== user.uid);
+          if (otherParticipants.length > 0) {
+            const isGroup = conversation?.type === 'group';
+            const cleanSnippet = effectiveContent.length > 80 
+              ? `${effectiveContent.slice(0, 80)}...` 
+              : effectiveContent;
+
+            const notifType = isGroup ? NOTIFICATION_TYPES.CHAT_GROUP : NOTIFICATION_TYPES.CHAT_DIRECT;
+            const notifTitle = isGroup 
+              ? `👥 ${conversation?.name || 'Groupe'} : ${senderFullName}`
+              : `✉️ ${senderFullName}`;
+            const targetUrl = isGroup
+              ? `/forum?tab=groups&conversationId=${conversationId}`
+              : `/forum?tab=inbox&conversationId=${conversationId}`;
+
+            await dispatchBulkInAppAndPushNotification({
+              recipientIds: otherParticipants,
+              groupId,
+              type: notifType,
+              titre: notifTitle,
+              message: `"${cleanSnippet}"`,
+              targetUrl,
+              sendPush: true
+            });
+          }
+        } catch (notifErr) {
+          console.warn('useConversationMessages - Erreur envoi notifications participants :', notifErr);
+        }
+
         return msgRef.id;
       } catch (err) {
         console.error('useConversationMessages - Erreur envoi message :', err);
         throw err;
       }
     },
-    [conversationId, groupId, user?.uid, profileData, participantIds]
+    [conversationId, groupId, user?.uid, profileData, participantIds, conversation]
   );
 
   // 3. Basculer une réaction emoji sur un message
@@ -170,19 +203,80 @@ export function useConversationMessages(conversationId, groupId, user, profileDa
     [messages, user?.uid]
   );
 
-  // 4. Supprimer un message (auteur ou administrateur)
+  // 4. Modifier un message existant (auteur uniquement)
+  const editMessage = useCallback(
+    async (messageId, newContent) => {
+      const trimmed = (newContent || '').trim();
+      if (!messageId || !user?.uid || !trimmed) return;
+
+      const targetMsg = messages.find((m) => m.id === messageId);
+      if (!targetMsg || targetMsg.senderId !== user.uid) {
+        throw new Error("Action non autorisée : vous ne pouvez modifier que vos propres messages.");
+      }
+
+      try {
+        const nowIso = new Date().toISOString();
+        const msgRef = doc(db, 'conversation_messages', messageId);
+        await updateDoc(msgRef, {
+          content: trimmed,
+          isEdited: true,
+          editedAt: nowIso
+        });
+
+        // Mettre à jour l'aperçu du dernier message de la conversation s'il s'agissait du dernier message
+        if (conversationId && messages.length > 0 && messages[messages.length - 1]?.id === messageId) {
+          const convRef = doc(db, 'conversations', conversationId);
+          await updateDoc(convRef, {
+            'lastMessage.content': trimmed
+          }).catch(() => {});
+        }
+      } catch (err) {
+        console.error('useConversationMessages - Erreur modification message :', err);
+        throw err;
+      }
+    },
+    [conversationId, messages, user?.uid]
+  );
+
+  // 5. Supprimer un message (auteur uniquement pour les messages privés et de groupe)
   const deleteMessage = useCallback(
     async (messageId) => {
       if (!messageId || !user?.uid) return;
 
+      const targetMsg = messages.find((m) => m.id === messageId);
+      if (targetMsg && targetMsg.senderId !== user.uid) {
+        throw new Error("Action non autorisée : vous ne pouvez supprimer que vos propres messages.");
+      }
+
       try {
         await deleteDoc(doc(db, 'conversation_messages', messageId));
+
+        // Mettre à jour l'aperçu si le message supprimé était le dernier de la conversation
+        if (conversationId && messages.length > 0 && messages[messages.length - 1]?.id === messageId) {
+          const remaining = messages.filter((m) => m.id !== messageId);
+          const prevMsg = remaining.length > 0 ? remaining[remaining.length - 1] : null;
+          const convRef = doc(db, 'conversations', conversationId);
+          if (prevMsg) {
+            await updateDoc(convRef, {
+              lastMessage: {
+                content: prevMsg.content || (prevMsg.imageUrl ? '📷 Photo' : (prevMsg.fileUrl ? `📎 ${prevMsg.fileName || 'Fichier'}` : '')),
+                senderId: prevMsg.senderId,
+                senderName: prevMsg.senderName,
+                timestamp: prevMsg.timestamp
+              }
+            }).catch(() => {});
+          } else {
+            await updateDoc(convRef, {
+              lastMessage: null
+            }).catch(() => {});
+          }
+        }
       } catch (err) {
         console.error('useConversationMessages - Erreur suppression message :', err);
         throw err;
       }
     },
-    [user?.uid]
+    [conversationId, messages, user?.uid]
   );
 
   return {
@@ -190,6 +284,7 @@ export function useConversationMessages(conversationId, groupId, user, profileDa
     loading,
     sendMessage,
     toggleReaction,
-    deleteMessage
+    deleteMessage,
+    editMessage
   };
 }

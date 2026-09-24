@@ -493,7 +493,7 @@ export const XiloDrum = ({ size = 16, className = '', ...props }) => (
   </svg>
 );
 
-// 📢 Mégaphone (Tocado por / Joué par)
+// Mégaphone Cordel (Tocado por / Joué par)
 export const XiloMegaphone = ({ size = 16, className = '', ...props }) => (
   <svg 
     width={size} 

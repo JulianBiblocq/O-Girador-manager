@@ -93,7 +93,7 @@ function ChannelTreeItem({
         >
           <span className="flex items-center gap-1.5 min-w-0 overflow-hidden flex-1 pr-1">
             <span className="shrink-0 font-bold text-cordel-wood opacity-75">
-              {channel.readOnlyForMembers ? '📢' : (!channel.readRoles || channel.readRoles.includes('all') || channel.readRoles.length === 0) ? (level === 0 ? '📂' : '#') : '🔒'}
+              {channel.readOnlyForMembers ? <XiloMegaphone size={12} className="text-cordel-wood inline" /> : (!channel.readRoles || channel.readRoles.includes('all') || channel.readRoles.length === 0) ? (level === 0 ? '📂' : '#') : '🔒'}
             </span>
             <span className={`truncate ${hasUnread ? 'font-black text-encre-noire' : ''}`}>{channel.name}</span>
             {channelThreads.length > 0 && (
@@ -202,7 +202,8 @@ export default function Forum({
   onOpenStudioForum, 
   breakGlassActive = false,
   initialTab = 'discussions',
-  initialThreadId = null
+  initialThreadId = null,
+  initialConversationId = null
 }) {
   const { t } = useTranslation();
   const { confirm } = useConfirm();
@@ -233,7 +234,28 @@ export default function Forum({
   // États d'ouverture des modales dédiées (message direct 1-à-1 et groupe privé)
   const [isNewDirectModalOpen, setIsNewDirectModalOpen] = useState(false);
   const [isNewGroupModalOpen, setIsNewGroupModalOpen] = useState(false);
-  const [activeConversationId, setActiveConversationId] = useState(null);
+  const [activeConversationId, setActiveConversationId] = useState(initialConversationId || null);
+
+  // Synchronisation avec initialConversationId
+  useEffect(() => {
+    if (initialConversationId) {
+      setActiveConversationId(initialConversationId);
+    }
+  }, [initialConversationId]);
+
+  // Synchronisation avec les paramètres de navigation URL pour conversationId
+  useEffect(() => {
+    const handleUrlConversation = () => {
+      const searchParams = new URLSearchParams(window.location.search);
+      const convId = searchParams.get('conversationId');
+      if (convId) {
+        setActiveConversationId(convId);
+      }
+    };
+    window.addEventListener('popstate', handleUrlConversation);
+    handleUrlConversation();
+    return () => window.removeEventListener('popstate', handleUrlConversation);
+  }, []);
 
   useHardwareBack(isAdding, () => setIsAdding(false));
   useHardwareBack(!!movingThreadModal, () => setMovingThreadModal(null));
@@ -1230,6 +1252,7 @@ export default function Forum({
               <CreateThreadForm 
                 groupId={profileData.groupId} 
                 channelId={activeChannelId}
+                channels={channels}
                 user={user} 
                 profileData={profileData} 
                 allUsers={Object.values(usersMap)}

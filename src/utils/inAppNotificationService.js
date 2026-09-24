@@ -12,6 +12,10 @@ import { db } from '../firebase';
 export const NOTIFICATION_TYPES = {
   FORUM_MENTION: 'forum_mention',
   FORUM_REPLY: 'forum_reply',
+  FORUM_NEW_THREAD: 'forum_new_thread',
+  FORUM_MESSAGE: 'forum_message',
+  CHAT_DIRECT: 'chat_direct',
+  CHAT_GROUP: 'chat_group',
   EVENT_NEW: 'event_new',
   EVENT_ROADMAP: 'event_roadmap',
   EXPENSE_STATUS: 'expense_status',
@@ -139,4 +143,45 @@ export async function dispatchInAppAndPushNotification({
   }
 
   return { notifId, pushQueued };
+}
+
+/**
+ * Diffuse une notification à un groupe de membres destinataires en parallèle.
+ * Envoie à la fois dans le centre in-app et dans la file d'attente Push FCM.
+ * 
+ * @param {Object} params Paramètres de diffusion groupée
+ * @param {Array<string>} params.recipientIds Liste des identifiants des membres destinataires
+ * @param {string} params.groupId Identifiant de l'association
+ * @param {string} [params.type] Type de notification
+ * @param {string} params.titre Titre affiché
+ * @param {string} params.message Corps du texte
+ * @param {string} [params.targetUrl='/'] URL interne pour la redirection
+ * @param {boolean} [params.sendPush=true] Si true, pousse également dans notifications_queue
+ * @returns {Promise<Array<PromiseSettledResult>>}
+ */
+export async function dispatchBulkInAppAndPushNotification({
+  recipientIds = [],
+  groupId,
+  type = NOTIFICATION_TYPES.ANNOUNCEMENT,
+  titre,
+  message,
+  targetUrl = '/',
+  sendPush = true
+}) {
+  if (!Array.isArray(recipientIds) || recipientIds.length === 0) return [];
+  const uniqueRecipients = Array.from(new Set(recipientIds)).filter(Boolean);
+
+  return Promise.allSettled(
+    uniqueRecipients.map((recipientId) =>
+      dispatchInAppAndPushNotification({
+        recipientId,
+        groupId,
+        type,
+        titre,
+        message,
+        targetUrl,
+        sendPush
+      })
+    )
+  );
 }

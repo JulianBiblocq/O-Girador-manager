@@ -4,6 +4,7 @@
  */
 
 import React from 'react';
+import { XiloMegaphone } from '../XiloIcons';
 
 /**
  * Formate un horodatage Firestore ou Date en texte temporel relatif en français.
@@ -43,16 +44,24 @@ function formatRelativeDate(timestamp) {
  */
 function getNotificationIcon(type) {
   switch (type) {
+    case 'chat_direct':
+      return '✉️';
+    case 'chat_group':
+      return '👥';
     case 'forum_mention':
+      return '🗣️';
     case 'forum_reply':
-      return '📣';
+    case 'forum_message':
+      return '💬';
+    case 'forum_new_thread':
+      return <XiloMegaphone size={16} className="text-cordel-wood" />;
     case 'event_new':
     case 'event_roadmap':
       return '📅';
     case 'expense_status':
       return '💰';
     case 'announcement':
-      return '📢';
+      return <XiloMegaphone size={16} className="text-cordel-wood" />;
     default:
       return '🔔';
   }

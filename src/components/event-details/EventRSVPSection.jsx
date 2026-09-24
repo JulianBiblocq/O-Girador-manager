@@ -3,6 +3,7 @@ import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import XiloAvatar from '../XiloAvatar';
 import Tooltip from '../Tooltip';
+import { XiloMegaphone } from '../XiloIcons';
 import { useInstrumentColor } from '../../hooks/useInstrumentColor';
 import EventTransportSelector from './EventTransportSelector';
 
@@ -151,7 +152,7 @@ export default function EventRSVPSection({
         <div className="flex flex-col gap-4">
           <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col gap-2 text-center py-5 px-4">
             <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood flex items-center justify-center gap-2">
-              📢 Événement à titre informatif
+              <XiloMegaphone size={14} className="text-cordel-wood" /> Événement à titre informatif
             </h4>
             <p className="text-xs text-cordel-master-dark/80 font-medium leading-relaxed">
               Cet événement est publié à titre d'information. Aucune réponse de présence (Présent / Absent) n'est demandée.

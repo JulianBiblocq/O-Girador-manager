@@ -13,6 +13,7 @@ import {
 import useConfirm from './useConfirm';
 import { extractMentionedUserIds } from '../components/forum/MentionAutocomplete';
 import { canonicalizeGroupId } from '../utils/tenantUtils';
+import { dispatchInAppAndPushNotification, NOTIFICATION_TYPES } from '../utils/inAppNotificationService';
 
 /**
  * Hook personnalisé encapsulant toute la logique d'état, les écoutes temps réel,
@@ -347,16 +348,27 @@ export function useThreadData({
 
       setReplyingTo(null);
 
-      // Notification pour les utilisateurs ciblés ou mentionnés
+      // Notification automatique pour tous les membres ayant accès au salon de discussion
       try {
         const notifRecipientIds = new Set();
 
+        // 1. Tous les membres autorisés dans le salon (à l'exception de l'auteur du message)
+        (allUsers || []).forEach((u) => {
+          if (!u.id || u.id === user?.uid) return;
+          if (threadChannel && !canUserReadForumChannel(threadChannel, u, u.tags || [])) {
+            return;
+          }
+          notifRecipientIds.add(u.id);
+        });
+
+        // 2. Mentions explicites d'utilisateurs
         if (detectedMentionIds.length > 0) {
           detectedMentionIds.forEach((uid) => {
             if (uid !== user?.uid) notifRecipientIds.add(uid);
           });
         }
 
+        // 3. Utilisateurs avec instrument ou étiquette ciblée
         if (selectedTarget) {
           allUsers.forEach((u) => {
             if (u.id === user?.uid) return;
@@ -371,24 +383,22 @@ export function useThreadData({
         const senderName = `${profileData?.prenom || ''} ${profileData?.nom || ''}`.trim() || 'Un membre';
         const cleanMsg = replyText.replace(/<[^>]*>?/gm, '').trim();
         const snippet = cleanMsg.length > 80 ? `${cleanMsg.slice(0, 80)}...` : cleanMsg;
+        const effectiveGroupId = canonicalizeGroupId(profileData?.groupId || thread?.groupId);
 
         const notifPromises = Array.from(notifRecipientIds).map((recipientId) => {
           const isMentioned = detectedMentionIds.includes(recipientId);
           const notifTitle = isMentioned
             ? `🗣️ ${senderName} vous a mentionné(e)`
-            : `🎯 Nouveau message pour ${selectedTarget}`;
+            : `💬 ${senderName} dans "${thread?.titre || 'Discussion'}"`;
 
-          const effectiveGroupId = canonicalizeGroupId(profileData?.groupId || thread?.groupId);
-          return addDoc(collection(db, 'notifications'), {
+          return dispatchInAppAndPushNotification({
+            recipientId,
             groupId: effectiveGroupId,
-            userId: recipientId,
-            title: notifTitle,
-            body: `"${snippet}" dans "${thread?.titre || 'le forum'}"`,
-            type: 'forum_target',
-            link: `/forum?threadId=${threadId}`,
-            threadId,
-            read: false,
-            createdAt: now
+            type: isMentioned ? NOTIFICATION_TYPES.FORUM_MENTION : NOTIFICATION_TYPES.FORUM_MESSAGE,
+            titre: notifTitle,
+            message: `"${snippet}"`,
+            targetUrl: `/forum?threadId=${threadId}`,
+            sendPush: true
           });
         });
 
@@ -396,7 +406,7 @@ export function useThreadData({
           await Promise.allSettled(notifPromises);
         }
       } catch (notifErr) {
-        console.error("useThreadData - Erreur envoi notifications ciblées :", notifErr);
+        console.error("useThreadData - Erreur envoi notifications forum :", notifErr);
       }
 
       setReplyText('');

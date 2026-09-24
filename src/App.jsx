@@ -361,15 +361,19 @@ export default function App() {
   const [installPromptAvailable, setInstallPromptAvailable] = useState(false);
   const [unreadPrivateMessagesCount, setUnreadPrivateMessagesCount] = useState(0);
   const [activePrivateChatUserId, setActivePrivateChatUserId] = useState(null);
+  const [activeConversationId, setActiveConversationId] = useState(null);
   const [latestUnreadSenderId, setLatestUnreadSenderId] = useState(null);
   const [forumInitialTab, setForumInitialTab] = useState('discussions');
   const [initialPrivateMessage, setInitialPrivateMessage] = useState('');
   const [dashboardKey, setDashboardKey] = useState(0);
 
-  // Redirection directe vers la messagerie privée (avec interlocuteur spécifique si disponible)
-  const handleOpenPrivateMessages = useCallback((senderId = null) => {
+  // Redirection directe vers la messagerie privée (avec interlocuteur ou conversation spécifique si disponible)
+  const handleOpenPrivateMessages = useCallback((senderId = null, conversationId = null) => {
     const targetUserId = senderId || latestUnreadSenderId;
     setForumInitialTab('inbox');
+    if (conversationId) {
+      setActiveConversationId(conversationId);
+    }
     if (targetUserId) {
       setActivePrivateChatUserId(targetUserId);
     }
@@ -1739,22 +1743,38 @@ export default function App() {
     }
     const params = new URLSearchParams(queryStr);
 
-    // 1. Forum / Discussions (ex: /forum?threadId=xyz ou /threads/xyz)
+    // 1. Forum / Discussions / Messages Privés / Groupes
     if (path.includes('/forum') || path.includes('/threads')) {
       let threadId = params.get('threadId');
       if (!threadId && path.match(/\/threads\/([^/?#]+)/)) {
         threadId = path.match(/\/threads\/([^/?#]+)/)[1];
       }
+      const tabParam = params.get('tab');
+      const convIdParam = params.get('conversationId');
+      const chatUserIdParam = params.get('chatUserId');
+
       setCurrentPole('mon-espace');
       setCurrentTab('forum');
       cleanUrlParams(['eventId']);
 
-      const newSearchParams = new URLSearchParams(window.location.search);
-      if (threadId) {
-        newSearchParams.set('threadId', threadId);
+      if (tabParam) {
+        setForumInitialTab(tabParam === 'direct' ? 'inbox' : tabParam);
       }
+      if (convIdParam) {
+        setActiveConversationId(convIdParam);
+      }
+      if (chatUserIdParam) {
+        setActivePrivateChatUserId(chatUserIdParam);
+      }
+
+      const newSearchParams = new URLSearchParams(window.location.search);
+      if (threadId) newSearchParams.set('threadId', threadId);
+      if (tabParam) newSearchParams.set('tab', tabParam);
+      if (convIdParam) newSearchParams.set('conversationId', convIdParam);
+      if (chatUserIdParam) newSearchParams.set('chatUserId', chatUserIdParam);
+
       const newUrl = window.location.pathname + (newSearchParams.toString() ? '?' + newSearchParams.toString() : '');
-      window.history.pushState({ ...window.history.state, threadId }, '', newUrl);
+      window.history.pushState({ ...window.history.state, threadId, tab: tabParam, conversationId: convIdParam, chatUserId: chatUserIdParam }, '', newUrl);
       return;
     }
 
@@ -1954,11 +1974,14 @@ export default function App() {
                     profileData={profileData} 
                     onBack={() => handleNavigateToPole('accueil')} 
                     activePrivateChatUserId={activePrivateChatUserId}
+                    initialConversationId={activeConversationId}
                     initialPrivateMessage={initialPrivateMessage}
                     initialTab={forumInitialTab}
                     onClearActivePrivateChat={() => {
                       setActivePrivateChatUserId(null);
+                      setActiveConversationId(null);
                       setInitialPrivateMessage('');
+                      cleanUrlParams(['conversationId', 'chatUserId']);
                     }}
                     onOpenStudioForum={() => setCurrentTab('mestre-forum-channels')}
                     breakGlassActive={breakGlassActive}

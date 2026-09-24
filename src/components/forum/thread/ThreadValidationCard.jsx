@@ -3,6 +3,7 @@ import { doc, updateDoc, collection, addDoc } from 'firebase/firestore';
 import { db } from '../../../firebase';
 import CordelCard from '../../CordelCard';
 import CordelButton from '../../CordelButton';
+import { XiloMegaphone } from '../../XiloIcons';
 import useConfirm from '../../../hooks/useConfirm';
 import ThreadMediaGallery from './ThreadMediaGallery';
 import { canonicalizeGroupId } from '../../../utils/tenantUtils';
@@ -255,7 +256,7 @@ export default function ThreadValidationCard({
       {/* En-tête de la carte d'approbation */}
       <div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-dashed border-cordel-master-dark/20 pb-2.5">
         <div className="flex items-center gap-2">
-          <span className="text-lg">📢</span>
+          <XiloMegaphone size={20} className="text-cordel-wood shrink-0" />
           <div>
             <h3 className="font-heading font-black text-xs sm:text-sm uppercase tracking-wider text-encre-noire">
               Revue de Publication Réseaux Sociaux

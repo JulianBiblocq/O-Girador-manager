@@ -874,7 +874,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
       const authorName = profileData ? `${profileData.prenom || ''} ${profileData.nom || ''}`.trim() : (user?.displayName || 'Membre');
       const eventTitle = selectedEvent?.titre || 'Publication Réseaux';
 
-      let messageHtml = `<p>📢 <strong>Proposition de publication réseaux sociaux</strong>`;
+      let messageHtml = `<p><strong>Proposition de publication réseaux sociaux</strong>`;
       if (mediaUrls.length > 1) {
         messageHtml += ` <em>(${mediaUrls.length} photos)</em></p>`;
         messageHtml += `<div style="display:flex; flex-wrap:wrap; gap:8px; margin: 12px 0;">`;
