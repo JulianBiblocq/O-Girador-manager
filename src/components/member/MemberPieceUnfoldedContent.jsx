@@ -113,7 +113,9 @@ export default function MemberPieceUnfoldedContent({
         ))}
 
         {/* Passerelle Signes du Mestre */}
-        {((Array.isArray(piece.sinaisDoMestre) && piece.sinaisDoMestre.length > 0) || (Array.isArray(piece.activeSinaisDoMestre) && piece.activeSinaisDoMestre.length > 0)) && (
+        {((Array.isArray(piece.signalIds) && piece.signalIds.length > 0) ||
+          (Array.isArray(piece.sinaisDoMestre) && piece.sinaisDoMestre.length > 0) ||
+          (Array.isArray(piece.activeSinaisDoMestre) && piece.activeSinaisDoMestre.length > 0)) && (
           <button
             type="button"
             onClick={() => onOpenSignals && onOpenSignals(piece)}

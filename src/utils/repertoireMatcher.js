@@ -331,13 +331,15 @@ export function resolvePieceLiveTechnicalData(piece, dicts) {
   // 6. Présence de tablature (calcul paresseux : simple booléen)
   const hasTablature = Boolean(preset?.parsedData || piece.tablature);
 
-  // 7. Signes du Mestre (lus en direct depuis le Preset ou repli)
+  // 7. Signes du Mestre (lus en direct depuis le Preset, sinaisDoMestre ou signalIds)
   const activeSinaisDoMestre =
     (Array.isArray(preset?.parsedData?.sinaisDoMestre) && preset.parsedData.sinaisDoMestre.length > 0)
       ? preset.parsedData.sinaisDoMestre
       : (Array.isArray(preset?.sinaisDoMestre) && preset.sinaisDoMestre.length > 0)
         ? preset.sinaisDoMestre
-        : (Array.isArray(piece.sinaisDoMestre) ? piece.sinaisDoMestre : []);
+        : (Array.isArray(piece.sinaisDoMestre) && piece.sinaisDoMestre.length > 0)
+          ? piece.sinaisDoMestre
+          : (Array.isArray(piece.signalIds) ? piece.signalIds : []);
 
   // 8. BPM actif
   const activeBpm =

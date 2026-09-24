@@ -13,6 +13,7 @@ import PieceReflexConfigModal from './PieceReflexConfigModal';
 import ConductorGameModal from '../pedagogy/ConductorGameModal';
 import CultureCard from '../CultureCard';
 import SongCard from '../SongCard';
+import PieceSignalsModal from '../member/PieceSignalsModal';
 import RepertoireUnlinkedPresetsBanner from './RepertoireUnlinkedPresetsBanner';
 import useConfirm from '../../hooks/useConfirm';
 import useMestreSignals from '../../hooks/useMestreSignals';
@@ -77,6 +78,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
   const [activeToadaToView, setActiveToadaToView] = useState(null);
   const [reflexConfigPiece, setReflexConfigPiece] = useState(null);
   const [conductorGamePiece, setConductorGamePiece] = useState(null);
+  const [activeSignalsModalPiece, setActiveSignalsModalPiece] = useState(null);
 
   // Synchronisation & Importation
   const [syncingPieceId, setSyncingPieceId] = useState(null);
@@ -700,11 +702,16 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                       </span>
                     )}
 
-                    {((Array.isArray(piece.activeSinaisDoMestre) && piece.activeSinaisDoMestre.length > 0) || (Array.isArray(piece.sinaisDoMestre) && piece.sinaisDoMestre.length > 0)) && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-amber-50 text-amber-950 border border-amber-300">
+                    {((Array.isArray(piece.signalIds) && piece.signalIds.length > 0) || (Array.isArray(piece.activeSinaisDoMestre) && piece.activeSinaisDoMestre.length > 0) || (Array.isArray(piece.sinaisDoMestre) && piece.sinaisDoMestre.length > 0)) && (
+                      <button
+                        type="button"
+                        onClick={() => setActiveSignalsModalPiece(piece)}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-amber-50 hover:bg-amber-100 text-amber-950 border border-amber-300 transition-colors shadow-2xs cursor-pointer select-none"
+                        title="Consulter les signes du Mestre ou lancer le quiz"
+                      >
                         <span>🖐️</span>
-                        <span>{(piece.activeSinaisDoMestre?.length || piece.sinaisDoMestre?.length || (piece.sinaisDoMestre ? piece.sinaisDoMestre.length : 0))} Signe{(piece.activeSinaisDoMestre?.length || piece.sinaisDoMestre?.length) > 1 ? 's' : ''}</span>
-                      </span>
+                        <span>{(piece.signalIds?.length || piece.activeSinaisDoMestre?.length || piece.sinaisDoMestre?.length || 0)} Signe{(piece.signalIds?.length || piece.activeSinaisDoMestre?.length || piece.sinaisDoMestre?.length) > 1 ? 's' : ''}</span>
+                      </button>
                     )}
 
                     {/* Badge Entraînement si des entraînements sont rattachés au morceau */}
@@ -809,6 +816,15 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                       <span className="text-[9px] font-black uppercase tracking-wider text-cordel-master-dark/70 mr-0.5">
                         ✋ Signes :
                       </span>
+                      <button
+                        type="button"
+                        onClick={() => setActiveSignalsModalPiece(piece)}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-400 transition-colors shadow-2xs cursor-pointer mr-1 select-none"
+                        title="Ouvrir l'aide-mémoire et le quiz Défi des signes"
+                      >
+                        <span>🖐️</span>
+                        <span>Défi &amp; Aide-mémoire ↗</span>
+                      </button>
                       {piece.signalIds.map((sigId) => {
                         const sig = signalsMap.get(sigId);
                         if (!sig) return null;
@@ -838,10 +854,21 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                   {/* Signes & Conventions chronologiques vivants */}
                   {((Array.isArray(piece.activeSinaisDoMestre) && piece.activeSinaisDoMestre.length > 0) || (Array.isArray(piece.sinaisDoMestre) && piece.sinaisDoMestre.length > 0)) && (
                     <div className="flex flex-col gap-1 pt-1.5 border-t border-dashed border-encre-noire/10 text-left">
-                      <span className="text-[9px] font-black uppercase tracking-wider text-cordel-master-dark/80 flex items-center gap-1">
-                        <span>🖐️</span>
-                        <span>Signes &amp; Conventions ({(piece.activeSinaisDoMestre?.length || piece.sinaisDoMestre?.length || (piece.sinaisDoMestre ? piece.sinaisDoMestre.length : 0))}) :</span>
-                      </span>
+                      <div className="flex items-center justify-between gap-1 flex-wrap">
+                        <span className="text-[9px] font-black uppercase tracking-wider text-cordel-master-dark/80 flex items-center gap-1">
+                          <span>🖐️</span>
+                          <span>Signes &amp; Conventions ({(piece.activeSinaisDoMestre?.length || piece.sinaisDoMestre?.length || (piece.sinaisDoMestre ? piece.sinaisDoMestre.length : 0))}) :</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setActiveSignalsModalPiece(piece)}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-400 transition-colors shadow-2xs cursor-pointer select-none"
+                          title="Ouvrir l'aide-mémoire et le quiz Défi des signes"
+                        >
+                          <span>🖐️</span>
+                          <span>Défi &amp; Aide-mémoire ↗</span>
+                        </button>
+                      </div>
                       <div className="flex items-center gap-1.5 flex-wrap">
                         {[...(piece.activeSinaisDoMestre || piece.sinaisDoMestre || [])]
                           .sort((a, b) => {
@@ -1296,6 +1323,17 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
           onClose={() => setConductorGamePiece(null)}
           piece={conductorGamePiece}
           presetData={conductorGamePiece.preset || (Array.isArray(catalogRhythms) ? catalogRhythms.find(r => r.id === conductorGamePiece.sequenceurId) : null)}
+          profileData={_profileData}
+        />
+      )}
+
+      {/* Modale des Signes du Mestre & Quiz Défi Gestes */}
+      {activeSignalsModalPiece && (
+        <PieceSignalsModal
+          isOpen={Boolean(activeSignalsModalPiece)}
+          onClose={() => setActiveSignalsModalPiece(null)}
+          piece={activeSignalsModalPiece}
+          groupId={groupId}
           profileData={_profileData}
         />
       )}

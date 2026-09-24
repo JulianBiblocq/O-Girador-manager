@@ -71,22 +71,43 @@ export default function MemberPieceCard({
 
         {/* Ligne inférieure : Demande de révision 1-clic & Curseur de confort compact */}
         <div className="flex items-center justify-between gap-2 flex-wrap pt-0.5">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleRevision && onToggleRevision(piece.id);
-            }}
-            className={`px-2.5 py-1 text-xs font-black rounded border transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs select-none ${
-              isRevisionRequested
-                ? 'bg-amber-100 border-[var(--color-cordel-ocre,#c05621)] text-[var(--color-cordel-ocre,#c05621)]'
-                : 'bg-white border-encre-noire/25 text-stone-700 hover:bg-stone-50'
-            }`}
-            title={isRevisionRequested ? 'Annuler la demande' : 'Signaler au Mestre le besoin de réviser'}
-          >
-            <span>🙋</span>
-            <span>{isRevisionRequested ? 'Révision demandée ✓' : 'Demander à réviser'}</span>
-          </button>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleRevision && onToggleRevision(piece.id);
+              }}
+              className={`px-2.5 py-1 text-xs font-black rounded border transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs select-none ${
+                isRevisionRequested
+                  ? 'bg-amber-100 border-[var(--color-cordel-ocre,#c05621)] text-[var(--color-cordel-ocre,#c05621)]'
+                  : 'bg-white border-encre-noire/25 text-stone-700 hover:bg-stone-50'
+              }`}
+              title={isRevisionRequested ? 'Annuler la demande' : 'Signaler au Mestre le besoin de réviser'}
+            >
+              <span>🙋</span>
+              <span>{isRevisionRequested ? 'Révision demandée ✓' : 'Demander à réviser'}</span>
+            </button>
+
+            {/* Accès direct aux Signes du Mestre */}
+            {((Array.isArray(piece.signalIds) && piece.signalIds.length > 0) ||
+              (Array.isArray(piece.sinaisDoMestre) && piece.sinaisDoMestre.length > 0) ||
+              (Array.isArray(piece.activeSinaisDoMestre) && piece.activeSinaisDoMestre.length > 0)) && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onOpenSignals) onOpenSignals(piece);
+                  else setIsSignalsModalOpen(true);
+                }}
+                className="px-2 py-1 text-xs font-black rounded bg-amber-50 hover:bg-amber-100 text-amber-950 border border-amber-300 transition-colors shadow-2xs cursor-pointer select-none flex items-center gap-1"
+                title="Consulter les signes du Mestre ou lancer le défi"
+              >
+                <span>🖐️</span>
+                <span>Signes</span>
+              </button>
+            )}
+          </div>
 
           <div
             className="flex items-center gap-1"
