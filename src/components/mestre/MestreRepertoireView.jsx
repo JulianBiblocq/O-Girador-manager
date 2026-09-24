@@ -14,6 +14,8 @@ import ConductorGameModal from '../pedagogy/ConductorGameModal';
 import CultureCard from '../CultureCard';
 import SongCard from '../SongCard';
 import PieceSignalsModal from '../member/PieceSignalsModal';
+import PieceLyricsModal from '../member/PieceLyricsModal';
+import PieceCultureModal from '../member/PieceCultureModal';
 import RepertoireUnlinkedPresetsBanner from './RepertoireUnlinkedPresetsBanner';
 import useConfirm from '../../hooks/useConfirm';
 import useMestreSignals from '../../hooks/useMestreSignals';
@@ -1249,58 +1251,26 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
         </div>
       )}
 
-      {/* Modale de consultation de la Fiche Culture du Varal */}
+      {/* Modale d'apprentissage Culture du Varal */}
       {activeCultureDocToView && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/60 backdrop-blur-xs">
-          <div className="relative w-full max-w-[620px] max-h-[90vh] flex flex-col">
-            <button
-              type="button"
-              onClick={() => setActiveCultureDocToView(null)}
-              className="absolute -top-3 -right-3 z-30 w-8 h-8 rounded-full bg-encre-noire text-white font-black text-sm flex items-center justify-center border-2 border-white shadow-md hover:scale-105 transition-transform cursor-pointer"
-              title="Fermer"
-            >
-              ✕
-            </button>
-            <CultureCard culture={activeCultureDocToView} />
-          </div>
-        </div>
+        <PieceCultureModal
+          isOpen={Boolean(activeCultureDocToView)}
+          onClose={() => setActiveCultureDocToView(null)}
+          cultureDocs={activeCultureDocToView?.docs || [activeCultureDocToView]}
+          initialDocId={activeCultureDocToView?.id}
+          profileData={_profileData}
+        />
       )}
 
-      {/* Modale de consultation d'une Toada (Chant & Paroles) du Varal */}
+      {/* Modale d'apprentissage Paroles (Chant & Paroles) */}
       {activeToadaToView && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/60 backdrop-blur-xs">
-          <div className="relative w-full max-w-[580px] max-h-[92vh] flex flex-col min-h-0 bg-[#fdfaf2] rounded-lg shadow-2xl overflow-hidden border-2 border-encre-noire text-left">
-            {/* Header avec titre & bouton fermeture */}
-            <div className="w-full flex justify-between items-center px-4 py-2.5 border-b-2 border-dashed border-cordel-master-dark/20 shrink-0 bg-[#fdfaf2]">
-              <div className="flex items-center gap-2">
-                <span className="text-base">🗣️</span>
-                <span className="text-xs font-black uppercase text-cordel-wood tracking-wider">
-                  Chant &amp; Paroles {activeToadaToView.titre ? `— ${activeToadaToView.titre}` : ''}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setActiveToadaToView(null)}
-                className="w-7 h-7 rounded-full bg-encre-noire text-white font-black text-sm flex items-center justify-center border-2 border-white shadow-md hover:bg-red-700 transition-colors cursor-pointer"
-                title="Fermer"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Contenu défilable */}
-            <div className="w-full flex-1 min-h-0 overflow-y-auto p-2 sm:p-4 bg-cordel-bg-light flex flex-col items-center">
-              <div className="w-full max-w-full">
-                <SongCard
-                  song={activeToadaToView}
-                  defaultRevisionMode={false}
-                  groupId={groupId}
-                  profileData={_profileData}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
+        <PieceLyricsModal
+          isOpen={Boolean(activeToadaToView)}
+          onClose={() => setActiveToadaToView(null)}
+          song={activeToadaToView}
+          groupId={groupId}
+          profileData={_profileData}
+        />
       )}
 
       {/* Modale d'arbitrage Mestre pour le Défi Réflexe « Temps 1 » */}

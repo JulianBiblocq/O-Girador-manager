@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import CordelCard from '../CordelCard';
 import MemberPieceUnfoldedContent from './MemberPieceUnfoldedContent';
 import PieceSignalsModal from './PieceSignalsModal';
+import PieceLyricsModal from './PieceLyricsModal';
+import PieceCultureModal from './PieceCultureModal';
 
 // Échelle des 4 niveaux de confort personnel de l'adhérent
 export const COMFORT_LEVELS = [
@@ -14,7 +16,7 @@ export const COMFORT_LEVELS = [
 /**
  * Carte individuelle repliable d'un morceau du Répertoire (< 200 lignes).
  * Mode replié : En-tête avec titre, indicateur, curseur de confort et demande de révision.
- * Mode déplié : Ressources multimédias via MemberPieceUnfoldedContent et PieceSignalsModal.
+ * Mode déplié : Ressources multimédias via MemberPieceUnfoldedContent et modales dédiées.
  */
 export default function MemberPieceCard({
   piece,
@@ -36,6 +38,8 @@ export default function MemberPieceCard({
   sequenceurUrl
 }) {
   const [isSignalsModalOpen, setIsSignalsModalOpen] = useState(false);
+  const [isLyricsModalOpen, setIsLyricsModalOpen] = useState(false);
+  const [isCultureModalOpen, setIsCultureModalOpen] = useState(false);
 
   if (!piece) return null;
 
@@ -148,8 +152,8 @@ export default function MemberPieceCard({
           trainings={trainings}
           aisanceMap={aisanceMap}
           onOpenTablature={onOpenTablature}
-          onOpenToada={onOpenToada}
-          onOpenCulture={onOpenCulture}
+          onOpenToada={(t, p) => (onOpenToada ? onOpenToada(t, p) : setIsLyricsModalOpen(true))}
+          onOpenCulture={(c, p, docs) => (onOpenCulture ? onOpenCulture(c, p, docs) : setIsCultureModalOpen(true))}
           onOpenSignals={(p) => (onOpenSignals ? onOpenSignals(p) : setIsSignalsModalOpen(true))}
           sequenceurUrl={sequenceurUrl}
         />
@@ -160,6 +164,30 @@ export default function MemberPieceCard({
         <PieceSignalsModal
           isOpen={isSignalsModalOpen}
           onClose={() => setIsSignalsModalOpen(false)}
+          piece={piece}
+          groupId={groupId}
+          profileData={profileData}
+        />
+      )}
+
+      {/* 4. Modale dédiée des Paroles (Option A Parolier, Option B Récitation, Option C Quiz) */}
+      {isLyricsModalOpen && (
+        <PieceLyricsModal
+          isOpen={isLyricsModalOpen}
+          onClose={() => setIsLyricsModalOpen(false)}
+          song={piece.activeToada}
+          piece={piece}
+          groupId={groupId}
+          profileData={profileData}
+        />
+      )}
+
+      {/* 5. Modale dédiée Culture (Option A Lire la fiche, Option B Quiz Culture) */}
+      {isCultureModalOpen && (
+        <PieceCultureModal
+          isOpen={isCultureModalOpen}
+          onClose={() => setIsCultureModalOpen(false)}
+          cultureDocs={Array.isArray(piece.activeCultureDocs) && piece.activeCultureDocs.length > 0 ? piece.activeCultureDocs : (piece.activeCultureDoc ? [piece.activeCultureDoc] : [])}
           piece={piece}
           groupId={groupId}
           profileData={profileData}

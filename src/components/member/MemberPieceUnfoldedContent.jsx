@@ -23,24 +23,26 @@ export default function MemberPieceUnfoldedContent({
   const { t } = useTranslation();
   const audioUrl = piece.activeAudioUrl || piece.audioUrl;
   const videoUrl = piece.activeVideoUrl || piece.videoUrl || piece.youtubeUrl;
+  const hasToada = Boolean(piece.activeToada || piece.toadaDocId);
   const cultureDocs = Array.isArray(piece.activeCultureDocs) && piece.activeCultureDocs.length > 0
     ? piece.activeCultureDocs
     : (piece.activeCultureDoc ? [piece.activeCultureDoc] : []);
+  const hasCulture = Boolean(
+    cultureDocs.length > 0 ||
+    (Array.isArray(piece.cultureDocIds) && piece.cultureDocIds.length > 0) ||
+    piece.cultureDocId
+  );
 
   // Résolution sécurisée du lecteur vidéo intégré (sans autoplay intrusif)
   const embedInfo = useMemo(() => {
     if (!videoUrl || typeof videoUrl !== 'string') return null;
     const trimmed = videoUrl.trim();
     const yt = parseYouTubeMedia(trimmed);
-    if (yt?.embedUrl) {
-      return { type: 'youtube', embedUrl: yt.embedUrl };
-    }
+    if (yt?.embedUrl) return { type: 'youtube', embedUrl: yt.embedUrl };
     const driveMatch = trimmed.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
-    if (driveMatch && driveMatch[1]) {
-      return { type: 'drive', embedUrl: `https://drive.google.com/file/d/${driveMatch[1]}/preview` };
-    }
+    if (driveMatch?.[1]) return { type: 'drive', embedUrl: `https://drive.google.com/file/d/${driveMatch[1]}/preview` };
     const vimeoMatch = trimmed.match(/(?:vimeo\.com\/)(\d+)/);
-    if (vimeoMatch && vimeoMatch[1]) return { type: 'vimeo', embedUrl: `https://player.vimeo.com/video/${vimeoMatch[1]}` };
+    if (vimeoMatch?.[1]) return { type: 'vimeo', embedUrl: `https://player.vimeo.com/video/${vimeoMatch[1]}` };
     if (trimmed.match(/\.(mp4|webm|ogg)(\?.*)?$/i)) return { type: 'direct', embedUrl: trimmed };
     return null;
   }, [videoUrl]);
@@ -68,15 +70,16 @@ export default function MemberPieceUnfoldedContent({
 
       {/* 3. Badges ressources multimédias */}
       <div className="flex flex-wrap items-center gap-2">
-        {piece.activeToada && (
+        {/* Passerelle Paroles */}
+        {hasToada && (
           <button
             type="button"
-            onClick={() => onOpenToada && onOpenToada(piece.activeToada)}
+            onClick={() => onOpenToada && onOpenToada(piece.activeToada, piece)}
             className="px-2.5 py-1 text-xs font-bold rounded bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-950 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all select-none"
-            title="Consulter les paroles de la Toada"
+            title="Consulter les paroles, s'entraîner en récitation masquée ou lancer le quiz"
           >
             <span>🗣️</span>
-            <span>Paroles ({piece.activeToada.titre || 'Toada'})</span>
+            <span>{t('paroles', 'Paroles')}{piece.activeToada?.titre ? ` (${piece.activeToada.titre})` : ''}</span>
           </button>
         )}
 
@@ -99,18 +102,25 @@ export default function MemberPieceUnfoldedContent({
           </div>
         )}
 
-        {cultureDocs.map((cDoc) => (
+        {/* Passerelle Fiches Culturelles */}
+        {hasCulture && (
           <button
-            key={cDoc.id}
             type="button"
-            onClick={() => onOpenCulture && onOpenCulture(cDoc)}
+            onClick={() => onOpenCulture && onOpenCulture(cultureDocs[0] || null, piece, cultureDocs)}
             className="px-2.5 py-1 text-xs font-bold rounded bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-900 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all select-none"
-            title={`Consulter la fiche culturelle : ${cDoc.titre || cDoc.name || ''}`}
+            title="Consulter la fiche culturelle ou lancer le quiz"
           >
             <span>📖</span>
-            <span>Culture : {cDoc.titre || cDoc.name || 'Fiche'}</span>
+            <span>
+              {t('culture', 'Culture')}
+              {cultureDocs.length === 1 && (cultureDocs[0].titre || cultureDocs[0].name)
+                ? ` : ${cultureDocs[0].titre || cultureDocs[0].name}`
+                : cultureDocs.length > 1
+                  ? ` (${cultureDocs.length})`
+                  : ''}
+            </span>
           </button>
-        ))}
+        )}
 
         {/* Passerelle Signes du Mestre */}
         {((Array.isArray(piece.signalIds) && piece.signalIds.length > 0) ||
@@ -149,21 +159,9 @@ export default function MemberPieceUnfoldedContent({
 
           <div className="relative w-full aspect-video rounded overflow-hidden border-2 border-encre-noire bg-black shadow-inner">
             {embedInfo.type === 'direct' ? (
-              <video
-                controls
-                src={embedInfo.embedUrl}
-                className="w-full h-full"
-                preload="metadata"
-              />
+              <video controls src={embedInfo.embedUrl} className="w-full h-full" preload="metadata" />
             ) : (
-              <iframe
-                src={embedInfo.embedUrl}
-                title={`Vidéo - ${piece.titre}`}
-                className="w-full h-full border-0"
-                allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                loading="lazy"
-              />
+              <iframe src={embedInfo.embedUrl} title={`Vidéo - ${piece.titre}`} className="w-full h-full border-0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen loading="lazy" />
             )}
           </div>
         </div>
@@ -171,27 +169,14 @@ export default function MemberPieceUnfoldedContent({
 
       {/* Repli lien externe si URL vidéo non intégrable en iframe */}
       {!embedInfo && videoUrl && (
-        <a
-          href={videoUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="px-2.5 py-1 text-xs font-bold rounded bg-red-50 hover:bg-red-100 border border-red-300 text-red-900 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all select-none self-start"
-          title="Regarder la vidéo du morceau"
-        >
+        <a href={videoUrl} target="_blank" rel="noopener noreferrer" className="px-2.5 py-1 text-xs font-bold rounded bg-red-50 hover:bg-red-100 border border-red-300 text-red-900 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all select-none self-start" title="Regarder la vidéo du morceau">
           <span>🎬</span>
           <span>Vidéo</span>
         </a>
       )}
 
       {/* 5. Bloc Entraînements et Paliers d'Aisance */}
-      <PieceAisanceSection
-        piece={piece}
-        trainings={trainings}
-        aisanceMap={aisanceMap}
-        userId={userId}
-        groupId={groupId}
-        sequenceurUrl={sequenceurUrl}
-      />
+      <PieceAisanceSection piece={piece} trainings={trainings} aisanceMap={aisanceMap} userId={userId} groupId={groupId} sequenceurUrl={sequenceurUrl} />
     </div>
   );
 }

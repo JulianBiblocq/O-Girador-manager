@@ -54,7 +54,8 @@ const testScripts = [
   'scripts/test_mission_vocabulaire_dedoublonnage_culture.mjs',
   'scripts/test_member_repertoire_accordion.mjs',
   'scripts/test_toada_mixed_line_lyrics.mjs',
-  'scripts/test_repertoire_piece_signals.mjs'
+  'scripts/test_repertoire_piece_signals.mjs',
+  'scripts/test_repertoire_lyrics_and_culture_modals.mjs'
 ];
 
 console.log("===============================================================");

@@ -190,8 +190,8 @@ export default function MemberRepertoireView({ groupId, user, profileData, seque
               onToggleRevision={handleToggleRevision}
               onSetComfortLevel={handleSetComfortLevel}
               onOpenTablature={(p) => setActiveTablaturePiece({ ...p, tablature: getPieceTablature(p) })}
-              onOpenToada={(t) => setActiveToadaToView(t)}
-              onOpenCulture={(c) => setActiveCultureDocToView(c)}
+              onOpenToada={(t, p) => setActiveToadaToView(t ? { ...t, piece: p } : null)}
+              onOpenCulture={(c, p, docs) => setActiveCultureDocToView(c ? { ...c, piece: p, docs: docs || (c ? [c] : []) } : null)}
               sequenceurUrl={sequenceurUrl}
             />
           ))}

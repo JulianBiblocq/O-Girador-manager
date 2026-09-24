@@ -52,7 +52,14 @@ export const fr = {
     signes: "Signes",
     signesTitle: "Signes du Mestre",
     aideMemoire: "Aide-mémoire",
-    defiSignes: "Défi des signes"
+    defiSignes: "Défi des signes",
+    paroles: "Paroles",
+    parolierComplet: "Parolier complet",
+    recitationMasquee: "Récitation masquée",
+    quizChant: "Quiz du chant",
+    culture: "Culture",
+    lireFiche: "Lire la fiche",
+    quizCulture: "Quiz Culture"
   },
   tags: {
     managerTitle: "Gestion des étiquettes",

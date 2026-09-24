@@ -52,7 +52,14 @@ export const pt = {
     signes: "Sinais",
     signesTitle: "Sinais do Mestre",
     aideMemoire: "Lembrete",
-    defiSignes: "Desafio dos sinais"
+    defiSignes: "Desafio dos sinais",
+    paroles: "Letras",
+    parolierComplet: "Cancioneiro completo",
+    recitationMasquee: "Recitação oculta",
+    quizChant: "Quiz do canto",
+    culture: "Cultura",
+    lireFiche: "Ler a ficha",
+    quizCulture: "Quiz Cultura"
   },
   tags: {
     managerTitle: "Gerenciador de etiquetas",
