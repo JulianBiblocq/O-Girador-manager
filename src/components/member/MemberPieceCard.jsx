@@ -33,7 +33,6 @@ export default function MemberPieceCard({
   sequenceurUrl
 }) {
   if (!piece) return null;
-  const isMastered = piece.etatValidation === 'pret';
 
   return (
     <CordelCard
@@ -48,7 +47,7 @@ export default function MemberPieceCard({
           isExpanded ? 'border-b-2 border-dashed border-cordel-master-dark/25' : ''
         }`}
       >
-        {/* Ligne supérieure : Flèche de déploiement + Titre en gras + BPM + Statut */}
+        {/* Ligne supérieure : Flèche de déploiement + Titre en gras + BPM */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 min-w-0">
             <span className="text-xs font-black text-cordel-wood flex-shrink-0">
@@ -63,16 +62,6 @@ export default function MemberPieceCard({
               </span>
             )}
           </div>
-
-          <span
-            className={`px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded border flex-shrink-0 ${
-              isMastered
-                ? 'bg-emerald-100 text-emerald-900 border-emerald-400'
-                : 'bg-amber-100 text-amber-900 border-amber-400'
-            }`}
-          >
-            {isMastered ? '🟢 Maîtrisé' : '🟡 En cours'}
-          </span>
         </div>
 
         {/* Ligne inférieure : Demande de révision 1-clic & Curseur de confort compact */}
