@@ -23,7 +23,14 @@ export default function MemberPieceUnfoldedContent({
   const { t } = useTranslation();
   const audioUrl = piece.activeAudioUrl || piece.audioUrl;
   const videoUrl = piece.activeVideoUrl || piece.videoUrl || piece.youtubeUrl;
-  const hasToada = Boolean(piece.activeToada || piece.toadaDocId);
+  const hasToada = Boolean(
+    piece.activeToada && (
+      (typeof piece.activeToada.paroles === 'string' && piece.activeToada.paroles.trim() !== '') ||
+      (typeof piece.activeToada.texte === 'string' && piece.activeToada.texte.trim() !== '') ||
+      (Array.isArray(piece.activeToada.strophes) && piece.activeToada.strophes.length > 0) ||
+      (typeof piece.activeToada.titre === 'string' && piece.activeToada.titre.trim() !== '')
+    )
+  );
   const cultureDocs = Array.isArray(piece.activeCultureDocs) && piece.activeCultureDocs.length > 0
     ? piece.activeCultureDocs
     : (piece.activeCultureDoc ? [piece.activeCultureDoc] : []);
@@ -31,6 +38,11 @@ export default function MemberPieceUnfoldedContent({
     cultureDocs.length > 0 ||
     (Array.isArray(piece.cultureDocIds) && piece.cultureDocIds.length > 0) ||
     piece.cultureDocId
+  );
+  const hasSignals = Boolean(
+    (Array.isArray(piece.signalIds) && piece.signalIds.length > 0) ||
+    (Array.isArray(piece.sinaisDoMestre) && piece.sinaisDoMestre.length > 0) ||
+    (Array.isArray(piece.activeSinaisDoMestre) && piece.activeSinaisDoMestre.length > 0)
   );
 
   // Résolution sécurisée du lecteur vidéo intégré (sans autoplay intrusif)
@@ -68,47 +80,28 @@ export default function MemberPieceUnfoldedContent({
         </div>
       )}
 
-      {/* 3. Badges ressources multimédias */}
+      {/* 3. Passerelles multimédias épurées */}
       <div className="flex flex-wrap items-center gap-2">
-        {/* Passerelle Paroles */}
+        {/* Passerelle Paroles (lecture complète directe) */}
         {hasToada && (
           <button
             type="button"
             onClick={() => onOpenToada && onOpenToada(piece.activeToada, piece)}
             className="px-2.5 py-1 text-xs font-bold rounded bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-950 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all select-none"
-            title="Consulter les paroles, s'entraîner en récitation masquée ou lancer le quiz"
+            title="Consulter les paroles complètes du chant"
           >
             <span>🗣️</span>
             <span>{t('paroles', 'Paroles')}{piece.activeToada?.titre ? ` (${piece.activeToada.titre})` : ''}</span>
           </button>
         )}
 
-        {piece.hasTablature && (
-          <button
-            type="button"
-            onClick={() => onOpenTablature && onOpenTablature(piece)}
-            className="px-2.5 py-1 text-xs font-bold rounded bg-stone-50 hover:bg-stone-100 border border-stone-300 text-stone-900 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all select-none"
-            title="Consulter la tablature complète"
-          >
-            <span>📄</span>
-            <span>Tablature</span>
-          </button>
-        )}
-
-        {piece.activeChoreography && (
-          <div className="px-2.5 py-1 text-xs font-bold rounded bg-purple-50 border border-purple-200 text-purple-900 flex items-center gap-1.5 shadow-2xs select-none">
-            <span>💃</span>
-            <span>Danse : {piece.activeChoreography.nom || piece.activeChoreography.titre || 'Chorégraphie'}</span>
-          </div>
-        )}
-
-        {/* Passerelle Fiches Culturelles */}
+        {/* Passerelle Fiches Culturelles (lecture seule) */}
         {hasCulture && (
           <button
             type="button"
             onClick={() => onOpenCulture && onOpenCulture(cultureDocs[0] || null, piece, cultureDocs)}
             className="px-2.5 py-1 text-xs font-bold rounded bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-900 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all select-none"
-            title="Consulter la fiche culturelle ou lancer le quiz"
+            title="Consulter la fiche culturelle"
           >
             <span>📖</span>
             <span>
@@ -122,19 +115,38 @@ export default function MemberPieceUnfoldedContent({
           </button>
         )}
 
-        {/* Passerelle Signes du Mestre */}
-        {((Array.isArray(piece.signalIds) && piece.signalIds.length > 0) ||
-          (Array.isArray(piece.sinaisDoMestre) && piece.sinaisDoMestre.length > 0) ||
-          (Array.isArray(piece.activeSinaisDoMestre) && piece.activeSinaisDoMestre.length > 0)) && (
+        {/* Passerelle Tablature */}
+        {piece.hasTablature && (
+          <button
+            type="button"
+            onClick={() => onOpenTablature && onOpenTablature(piece)}
+            className="px-2.5 py-1 text-xs font-bold rounded bg-stone-50 hover:bg-stone-100 border border-stone-300 text-stone-900 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all select-none"
+            title="Consulter la tablature complète"
+          >
+            <span>📄</span>
+            <span>Tablature</span>
+          </button>
+        )}
+
+        {/* Passerelle Signes du Mestre (affiché UNIQUEMENT si signaux déclarés) */}
+        {hasSignals && (
           <button
             type="button"
             onClick={() => onOpenSignals && onOpenSignals(piece)}
             className="px-2.5 py-1 text-xs font-bold rounded bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-950 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all select-none"
-            title="Consulter les signes du Mestre ou s'entraîner au quiz"
+            title="Consulter l'aide-mémoire des signes du Mestre"
           >
             <span>🖐️</span>
             <span>{t('signes', 'Signes')}</span>
           </button>
+        )}
+
+        {/* Danse / Chorégraphie */}
+        {piece.activeChoreography && (
+          <div className="px-2.5 py-1 text-xs font-bold rounded bg-purple-50 border border-purple-200 text-purple-900 flex items-center gap-1.5 shadow-2xs select-none">
+            <span>💃</span>
+            <span>Danse : {piece.activeChoreography.nom || piece.activeChoreography.titre || 'Chorégraphie'}</span>
+          </div>
         )}
       </div>
 

@@ -21,12 +21,9 @@ const lyricsLines = lyricsCode.split('\n').length;
 
 assert(lyricsLines < 200, `PieceLyricsModal.jsx doit être sous 200 lignes (actuel: ${lyricsLines})`);
 assert(lyricsCode.includes('SongCard'), 'PieceLyricsModal doit intégrer SongCard');
-assert(lyricsCode.includes('AutoEvalQuiz'), 'PieceLyricsModal doit intégrer AutoEvalQuiz');
-assert(lyricsCode.includes('complet'), 'PieceLyricsModal doit proposer l\'Option A (Parolier complet)');
-assert(lyricsCode.includes('recitation'), 'PieceLyricsModal doit proposer l\'Option B (Récitation masquée)');
-assert(lyricsCode.includes('quiz'), 'PieceLyricsModal doit proposer l\'action Quiz du chant');
+assert(lyricsCode.includes('songTitle'), 'PieceLyricsModal doit afficher le titre');
 console.log(`  ✅ [PASS] PieceLyricsModal.jsx < 200 lignes (actuel: ${lyricsLines})`);
-console.log('  ✅ [PASS] Option A (Parolier), Option B (Récitation) et Quiz du chant validés');
+console.log('  ✅ [PASS] Affichage épuré de SongCard validé');
 
 // 2. Contrôle statique de PieceCultureModal.jsx
 console.log('\n▶️ Test 2 : Contrôle statique de PieceCultureModal.jsx');
@@ -37,12 +34,9 @@ const cultureLines = cultureCode.split('\n').length;
 
 assert(cultureLines < 200, `PieceCultureModal.jsx doit être sous 200 lignes (actuel: ${cultureLines})`);
 assert(cultureCode.includes('CultureCard'), 'PieceCultureModal doit intégrer CultureCard');
-assert(cultureCode.includes('AutoEvalQuiz'), 'PieceCultureModal doit intégrer AutoEvalQuiz');
 assert(cultureCode.includes('docsList.length > 1'), 'PieceCultureModal doit gérer le sélecteur d\'onglets si plusieurs fiches liées');
-assert(cultureCode.includes('read'), 'PieceCultureModal doit proposer l\'Option A (Lire la fiche)');
-assert(cultureCode.includes('quiz'), 'PieceCultureModal doit proposer l\'Option B (Quiz Culture)');
 console.log(`  ✅ [PASS] PieceCultureModal.jsx < 200 lignes (actuel: ${cultureLines})`);
-console.log('  ✅ [PASS] Support multi-fiches, Option A (Lecture) et Option B (Quiz) validés');
+console.log('  ✅ [PASS] Support multi-fiches et affichage épuré de CultureCard validés');
 
 // 3. Contrôle statique de MemberPieceUnfoldedContent.jsx
 console.log('\n▶️ Test 3 : Contrôle statique de MemberPieceUnfoldedContent.jsx');

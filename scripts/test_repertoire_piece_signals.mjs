@@ -106,13 +106,11 @@ const modalLines = modalCode.split('\n').length;
 
 assert(modalLines < 200, `PieceSignalsModal.jsx doit être sous 200 lignes (actuel: ${modalLines})`);
 assert(modalCode.includes('useMestreSignals'), 'Doit utiliser useMestreSignals pour résoudre les images du catalogue');
-assert(modalCode.includes('memorando'), 'Doit inclure l\'onglet Option A (Aide-mémoire)');
-assert(modalCode.includes('quiz'), 'Doit inclure l\'onglet Option B (Défi des signes)');
-assert(modalCode.includes('hideLabels'), 'Doit proposer le mode récitation masquée');
-assert(modalCode.includes('AutoEvalQuiz'), 'Doit intégrer le composant AutoEvalQuiz pour le défi');
+assert(modalCode.includes('resolvedSignals'), 'Doit résoudre la liste des signaux réels');
+assert(modalCode.includes('sig.consigne'), 'Doit afficher la consigne du geste');
 assert(modalCode.includes('🖐️'), 'Doit intégrer un pictogramme de repli propre sans casser la mise en page');
 console.log(`  ✅ [PASS] PieceSignalsModal.jsx < 200 lignes (actuel: ${modalLines})`);
-console.log('  ✅ [PASS] Option A (Aide-mémoire avec récitation masquée) & Option B (Défi AutoEvalQuiz) validées');
+console.log('  ✅ [PASS] Aide-mémoire visuel épuré (vignettes, consignes, mesures) validé');
 console.log('  ✅ [PASS] Pictogramme de repli en l\'absence d\'image garanti');
 
 // 5. Contrôle des traductions FR et PT

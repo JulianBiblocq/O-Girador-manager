@@ -1,21 +1,18 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import CultureCard from '../CultureCard';
-import AutoEvalQuiz from '../pedagogy/AutoEvalQuiz';
 import { useTranslation } from '../LanguageContext';
 
 /**
- * Modale Cordel d'apprentissage Culturel pour le Répertoire (< 180 lignes).
- * Gère le multi-fiches avec sélecteur de puces Cordel et deux modes :
- * - Option A : Lire la fiche complète (CultureCard avec chapitres, illustrations).
- * - Option B : Quiz Culture (QCM auto-évalué via AutoEvalQuiz).
+ * Modale de consultation culturelle pour le Répertoire Adhérent (< 90 lignes).
+ * Ouvre directement la CultureCard en lecture seule.
+ * Supporte le multi-fiches par puces de navigation, sans aucun QCM ni quiz.
  */
 export default function PieceCultureModal({
   isOpen,
   onClose,
   cultureDocs = [],
   initialDocId = null,
-  piece = null,
-  profileData = null
+  piece = null
 }) {
   const { t } = useTranslation();
   const docsList = useMemo(() => {
@@ -25,7 +22,6 @@ export default function PieceCultureModal({
   }, [cultureDocs]);
 
   const [selectedDocId, setSelectedDocId] = useState(initialDocId || docsList[0]?.id || null);
-  const [activeTab, setActiveTab] = useState('read'); // 'read' | 'quiz'
 
   useEffect(() => {
     if (initialDocId) {
@@ -43,7 +39,7 @@ export default function PieceCultureModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/60 backdrop-blur-xs">
       <div className="relative w-full max-w-2xl max-h-[92vh] flex flex-col bg-[#fdfaf2] rounded-lg shadow-2xl overflow-hidden border-2 border-encre-noire text-left">
-        {/* En-tête Cordel avec onglets et sélecteur multi-fiches */}
+        {/* En-tête Cordel épuré */}
         <div className="w-full flex flex-col border-b-2 border-dashed border-cordel-master-dark/20 bg-stone-100/90 shrink-0">
           <div className="flex justify-between items-center px-4 py-2.5">
             <span className="text-xs sm:text-sm font-black uppercase text-blue-900 tracking-wider truncate pr-2">
@@ -61,7 +57,7 @@ export default function PieceCultureModal({
 
           {/* Sélecteur de fiches en puces Cordel si plusieurs fiches sont rattachées */}
           {docsList.length > 1 && (
-            <div className="flex items-center gap-1.5 px-4 py-1.5 overflow-x-auto bg-stone-200/60 border-b border-encre-noire/10">
+            <div className="flex items-center gap-1.5 px-4 py-1.5 overflow-x-auto bg-stone-200/60 border-t border-encre-noire/10">
               <span className="text-[10px] font-black uppercase text-stone-600 shrink-0">
                 Fiches ({docsList.length}) :
               </span>
@@ -71,10 +67,7 @@ export default function PieceCultureModal({
                   <button
                     key={doc.id || idx}
                     type="button"
-                    onClick={() => {
-                      setSelectedDocId(doc.id);
-                      setActiveTab('read');
-                    }}
+                    onClick={() => setSelectedDocId(doc.id)}
                     className={`px-2.5 py-0.5 text-xs font-bold rounded-full transition-all shrink-0 cursor-pointer shadow-2xs ${
                       isSelected
                         ? 'bg-blue-900 text-white font-black'
@@ -87,65 +80,13 @@ export default function PieceCultureModal({
               })}
             </div>
           )}
-
-          {/* Bascule d'intention : Lecture vs Quiz */}
-          <div className="flex items-center gap-2 px-4 pb-2 pt-1 flex-wrap">
-            <button
-              type="button"
-              onClick={() => setActiveTab('read')}
-              className={`px-3 py-1.5 text-xs font-bold rounded-t border-b-2 transition-all cursor-pointer ${
-                activeTab === 'read'
-                  ? 'border-blue-900 text-blue-900 bg-[#fdfaf2] font-black shadow-xs'
-                  : 'border-transparent text-stone-600 hover:text-stone-900'
-              }`}
-            >
-              📜 {t('lireFiche', 'Lire la fiche')}
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('quiz')}
-              className={`px-3 py-1.5 text-xs font-bold rounded-t border-b-2 transition-all cursor-pointer ${
-                activeTab === 'quiz'
-                  ? 'border-[var(--color-cordel-vert,#2d6a4f)] text-[var(--color-cordel-vert,#2d6a4f)] bg-[#fdfaf2] font-black shadow-xs'
-                  : 'border-transparent text-stone-600 hover:text-stone-900'
-              }`}
-            >
-              🎯 {t('quizCulture', 'Quiz Culture')}
-            </button>
-          </div>
         </div>
 
-        {/* Corps de la modale */}
+        {/* Corps : Affichage direct de CultureCard en lecture seule (zéro QCM) */}
         <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-4 bg-cordel-bg-light flex flex-col items-center">
-          {activeTab === 'read' ? (
-            <div className="w-full flex flex-col items-center gap-3">
-              <div className="w-full max-w-[600px] flex items-center justify-between gap-2 p-2 rounded bg-white/80 border border-encre-noire/15 flex-wrap">
-                <span className="text-[10px] sm:text-xs font-bold text-stone-600 truncate">
-                  {activeDoc?.categorieFiche ? `${activeDoc.categorieFiche} • ` : ''}
-                  {docTitle}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('quiz')}
-                  className="px-3 py-1 text-[11px] font-black rounded bg-[var(--color-cordel-vert,#2d6a4f)] text-white hover:opacity-90 cursor-pointer shadow-2xs shrink-0 select-none"
-                >
-                  🎯 S'entraîner au Quiz
-                </button>
-              </div>
-
-              <div className="w-full max-w-[600px]">
-                <CultureCard culture={activeDoc} />
-              </div>
-            </div>
-          ) : (
-            <div className="w-full flex justify-center">
-              <AutoEvalQuiz
-                sheetData={activeDoc}
-                profileData={profileData}
-                onClose={() => setActiveTab('read')}
-              />
-            </div>
-          )}
+          <div className="w-full max-w-[600px]">
+            <CultureCard culture={activeDoc} />
+          </div>
         </div>
       </div>
     </div>

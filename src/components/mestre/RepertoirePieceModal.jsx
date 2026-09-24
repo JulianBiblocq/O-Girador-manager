@@ -8,7 +8,6 @@ import { useSequencerRhythms } from '../../hooks/useSequencerRhythms';
 import { formatPieceTablature } from '../../utils/tablatureFormatter';
 import { parseYouTubeMedia } from '../../utils/mediaUrlUtils';
 import RepertoireVideosPicker from './RepertoireVideosPicker';
-import RepertoireSignalsPicker from './RepertoireSignalsPicker';
 import RepertoireSinaisDoMestreEditor from './RepertoireSinaisDoMestreEditor';
 import CreateCultureFicheModal from './CreateCultureFicheModal';
 import RepertoireCulturePicker from './RepertoireCulturePicker';
@@ -201,6 +200,10 @@ export default function RepertoirePieceModal({
         if (foundSeq) {
           setSelectedSeqUrl(foundSeq.jsonUrl || foundSeq.id);
           setSelectedSeqType(foundSeq._collection || null);
+          const autoSinais = foundSeq.sinaisDoMestre || foundSeq.parsedData?.sinaisDoMestre || foundSeq.parsedData?.metadata?.sinaisDoMestre || [];
+          if ((!sinaisDoMestre || sinaisDoMestre.length === 0) && Array.isArray(autoSinais) && autoSinais.length > 0) {
+            setSinaisDoMestre(autoSinais);
+          }
         }
       }
 
@@ -293,13 +296,10 @@ export default function RepertoirePieceModal({
           setHistoire(presetHistoire.trim());
         }
 
-        // Auto-aspiration des signes et conventions du Mestre depuis le preset
-        const extractedSinais = found.parsedData?.sinaisDoMestre ||
-          found.parsedData?.metadata?.sinaisDoMestre ||
-          found.sinaisDoMestre ||
-          [];
-        if (Array.isArray(extractedSinais) && extractedSinais.length > 0) {
-          setSinaisDoMestre(extractedSinais);
+        // Extraction des signaux du preset décompressé et pré-remplissage sécurisé (si vide)
+        const autoSinais = found.sinaisDoMestre || found.parsedData?.sinaisDoMestre || found.parsedData?.metadata?.sinaisDoMestre || [];
+        if ((!sinaisDoMestre || sinaisDoMestre.length === 0) && Array.isArray(autoSinais) && autoSinais.length > 0) {
+          setSinaisDoMestre(autoSinais);
         }
 
         // Auto-liaisons transversales non destructives
@@ -401,7 +401,10 @@ export default function RepertoirePieceModal({
           url: v.url.trim()
         }));
 
-      const cleanSignalIds = (signalIds || []).filter(Boolean);
+      const extractedSignalIds = (sinaisDoMestre || [])
+        .map((s) => (typeof s === 'object' && s !== null ? (s.signalId || s.id) : String(s)))
+        .filter(Boolean);
+      const cleanSignalIds = Array.from(new Set([...(signalIds || []), ...extractedSignalIds]));
 
       // Vidéo principale ajoutée à la liste si non présente
       if (videoUrl && videoUrl.trim()) {
@@ -1051,17 +1054,11 @@ export default function RepertoirePieceModal({
             onChange={setVideos}
           />
 
-          {/* Signes gestuels du Mestre associés (vignettes de la bibliothèque de signes) */}
-          <RepertoireSignalsPicker
-            selectedSignalIds={signalIds}
-            onChange={setSignalIds}
-            groupId={groupId}
-          />
-
-          {/* Signes & Conventions chronologiques par mesure (Séquenceur & Mestria) */}
+          {/* Signes du Mestre associés & Conventions par Mesure */}
           <RepertoireSinaisDoMestreEditor
             sinais={sinaisDoMestre}
             onChange={setSinaisDoMestre}
+            groupId={groupId}
             disabled={submitting}
           />
 

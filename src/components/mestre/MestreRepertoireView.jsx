@@ -9,8 +9,6 @@ import RepertoireVideoModal from './RepertoireVideoModal';
 import SignalZoomModal from './SignalZoomModal';
 import TablatureModal from './TablatureModal';
 import CreateCultureFicheModal from './CreateCultureFicheModal';
-import PieceReflexConfigModal from './PieceReflexConfigModal';
-import ConductorGameModal from '../pedagogy/ConductorGameModal';
 import CultureCard from '../CultureCard';
 import SongCard from '../SongCard';
 import PieceSignalsModal from '../member/PieceSignalsModal';
@@ -78,8 +76,6 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
   const [activeCultureDocToView, setActiveCultureDocToView] = useState(null);
   const [culturePickerData, setCulturePickerData] = useState(null);
   const [activeToadaToView, setActiveToadaToView] = useState(null);
-  const [reflexConfigPiece, setReflexConfigPiece] = useState(null);
-  const [conductorGamePiece, setConductorGamePiece] = useState(null);
   const [activeSignalsModalPiece, setActiveSignalsModalPiece] = useState(null);
 
   // Synchronisation & Importation
@@ -331,6 +327,15 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
 
       if (matchVid && !piece.videoUrl) {
         updateData.videoUrl = matchVid.trim();
+      }
+
+      // Mise à jour de sinaisDoMestre à partir du preset uniquement si aucune modification manuelle prioritaire n'est enregistrée
+      const hasManualSignals = Array.isArray(piece.sinaisDoMestre) && piece.sinaisDoMestre.length > 0;
+      if (!hasManualSignals) {
+        const presetSignals = match.sinaisDoMestre || match.parsedData?.sinaisDoMestre || match.parsedData?.metadata?.sinaisDoMestre || [];
+        if (Array.isArray(presetSignals) && presetSignals.length > 0) {
+          updateData.sinaisDoMestre = cleanFirestorePayload(presetSignals);
+        }
       }
 
       const pieceRef = doc(db, 'associations', groupId, 'repertoire', piece.id);
@@ -709,7 +714,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                         type="button"
                         onClick={() => setActiveSignalsModalPiece(piece)}
                         className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-amber-50 hover:bg-amber-100 text-amber-950 border border-amber-300 transition-colors shadow-2xs cursor-pointer select-none"
-                        title="Consulter les signes du Mestre ou lancer le quiz"
+                        title="Consulter l'aide-mémoire des signes du Mestre"
                       >
                         <span>🖐️</span>
                         <span>{(piece.signalIds?.length || piece.activeSinaisDoMestre?.length || piece.sinaisDoMestre?.length || 0)} Signe{(piece.signalIds?.length || piece.activeSinaisDoMestre?.length || piece.sinaisDoMestre?.length) > 1 ? 's' : ''}</span>
@@ -812,88 +817,96 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                     </div>
                   )}
 
-                  {/* Signes du Mestre associés (vignettes avec zoom au clic) */}
-                  {Array.isArray(piece.signalIds) && piece.signalIds.length > 0 && (
-                    <div className="flex items-center gap-1.5 flex-wrap pt-1">
-                      <span className="text-[9px] font-black uppercase tracking-wider text-cordel-master-dark/70 mr-0.5">
-                        ✋ Signes :
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setActiveSignalsModalPiece(piece)}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-400 transition-colors shadow-2xs cursor-pointer mr-1 select-none"
-                        title="Ouvrir l'aide-mémoire et le quiz Défi des signes"
-                      >
-                        <span>🖐️</span>
-                        <span>Défi &amp; Aide-mémoire ↗</span>
-                      </button>
-                      {piece.signalIds.map((sigId) => {
-                        const sig = signalsMap.get(sigId);
-                        if (!sig) return null;
-                        return (
+                  {/* Signes du Mestre réels associés (vignettes propres : nom + consigne, sans identifiant brut) */}
+                  {(() => {
+                    const realSignals = [];
+                    const seen = new Set();
+                    const addSig = (sig, customMesure = null) => {
+                      if (!sig) return;
+                      const nom = (sig.name || sig.nom || '').trim();
+                      // Filtrer strictement les identifiants bruts Firestore non résolus ou les faux signaux
+                      if (!nom || /^[a-zA-Z0-9_-]{16,}$/.test(nom) || nom.toLowerCase().startsWith('signe ')) return;
+                      const sid = sig.id || sig.signalId || nom;
+                      const m = customMesure ?? sig.mesure ?? sig.bar ?? null;
+                      const dedupeKey = `${sid}_${m || ''}`;
+                      if (seen.has(dedupeKey)) return;
+                      seen.add(dedupeKey);
+
+                      realSignals.push({
+                        id: sid,
+                        nom,
+                        name: nom,
+                        mesure: m,
+                        consigne: (sig.consigne || sig.action || sig.description || '').trim(),
+                        imageUrl: sig.imageUrl || null
+                      });
+                    };
+
+                    const rawSinais = Array.isArray(piece.sinaisDoMestre) && piece.sinaisDoMestre.length > 0
+                      ? piece.sinaisDoMestre
+                      : (Array.isArray(piece.activeSinaisDoMestre) ? piece.activeSinaisDoMestre : []);
+
+                    rawSinais.forEach((item) => {
+                      const sid = typeof item === 'object' && item !== null ? (item.signalId || item.id) : String(item);
+                      const m = typeof item === 'object' && item !== null ? (item.mesure ?? item.bar ?? item.barIndex) : null;
+                      const match = sid ? signalsMap.get(sid) : null;
+                      if (match) {
+                        addSig({ ...match, ...item, imageUrl: match.imageUrl || item.imageUrl, consigne: item.consigne || match.consigne }, m);
+                      } else if (typeof item === 'object' && item !== null && (item.name || item.nom)) {
+                        addSig(item, m);
+                      }
+                    });
+
+                    if (Array.isArray(piece.signalIds)) {
+                      piece.signalIds.forEach((id) => {
+                        const match = signalsMap.get(id);
+                        if (match) addSig(match);
+                      });
+                    }
+
+                    if (realSignals.length === 0) return null;
+
+                    return (
+                      <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                        <span className="text-[9px] font-black uppercase tracking-wider text-cordel-master-dark/70 mr-0.5">
+                          ✋ Signes :
+                        </span>
+                        {realSignals.map((sig, idx) => (
                           <button
-                            key={sigId}
+                            key={`${sig.id}_${sig.mesure || idx}`}
                             type="button"
                             onClick={() => setActiveSignalToZoom(sig)}
-                            className="inline-flex items-center gap-1.5 p-1 pr-2 rounded-[4px_6px_3px_5px] bg-amber-50 hover:bg-amber-100/80 text-amber-950 border border-amber-300 transition-all cursor-pointer shadow-sm select-none"
-                            title={`Agrandir le geste : ${sig.name}`}
+                            className="inline-flex items-center gap-2 p-1.5 pr-2.5 rounded-[4px_6px_3px_5px] bg-amber-50 hover:bg-amber-100/90 text-amber-950 border border-amber-300 transition-all cursor-pointer shadow-sm select-none text-left"
+                            title={`Agrandir le geste : ${sig.name}${sig.consigne ? ` — Consigne : ${sig.consigne}` : ''}`}
                           >
-                            <div className="w-5 h-5 rounded bg-stone-900 shrink-0 overflow-hidden flex items-center justify-center border border-encre-noire/20">
+                            <div className="w-6 h-6 rounded bg-stone-900 shrink-0 overflow-hidden flex items-center justify-center border border-encre-noire/20">
                               {sig.imageUrl ? (
                                 <img src={sig.imageUrl} alt={sig.name} className="w-full h-full object-cover" />
                               ) : (
-                                <span className="text-[9px]">✋</span>
+                                <span className="text-[10px]">✋</span>
                               )}
                             </div>
-                            <span className="text-[9.5px] font-extrabold truncate max-w-[100px]">{sig.name}</span>
-                            <span className="text-[8.5px] opacity-50">🔍</span>
+                            <div className="flex flex-col min-w-0">
+                              <div className="flex items-center gap-1">
+                                {sig.mesure && (
+                                  <span className="text-[8.5px] font-black text-cordel-wood uppercase">
+                                    M.{sig.mesure}
+                                  </span>
+                                )}
+                                <span className="text-[9.5px] font-extrabold truncate max-w-[110px]">{sig.name}</span>
+                              </div>
+                              {sig.consigne && (
+                                <span className="text-[8.5px] text-stone-600 font-medium truncate max-w-[130px] italic leading-tight">
+                                  {sig.consigne}
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[8.5px] opacity-40 ml-0.5">🔍</span>
                           </button>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {/* Signes & Conventions chronologiques vivants */}
-                  {((Array.isArray(piece.activeSinaisDoMestre) && piece.activeSinaisDoMestre.length > 0) || (Array.isArray(piece.sinaisDoMestre) && piece.sinaisDoMestre.length > 0)) && (
-                    <div className="flex flex-col gap-1 pt-1.5 border-t border-dashed border-encre-noire/10 text-left">
-                      <div className="flex items-center justify-between gap-1 flex-wrap">
-                        <span className="text-[9px] font-black uppercase tracking-wider text-cordel-master-dark/80 flex items-center gap-1">
-                          <span>🖐️</span>
-                          <span>Signes &amp; Conventions ({(piece.activeSinaisDoMestre?.length || piece.sinaisDoMestre?.length || (piece.sinaisDoMestre ? piece.sinaisDoMestre.length : 0))}) :</span>
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setActiveSignalsModalPiece(piece)}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-400 transition-colors shadow-2xs cursor-pointer select-none"
-                          title="Ouvrir l'aide-mémoire et le quiz Défi des signes"
-                        >
-                          <span>🖐️</span>
-                          <span>Défi &amp; Aide-mémoire ↗</span>
-                        </button>
+                        ))}
                       </div>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        {[...(piece.activeSinaisDoMestre || piece.sinaisDoMestre || [])]
-                          .sort((a, b) => {
-                            const ma = typeof a === 'object' && a !== null ? (a.mesure ?? a.bar ?? a.barIndex ?? 0) : 0;
-                            const mb = typeof b === 'object' && b !== null ? (b.mesure ?? b.bar ?? b.barIndex ?? 0) : 0;
-                            return Number(ma) - Number(mb);
-                          })
-                          .map((s, idx) => {
-                            const m = typeof s === 'object' && s !== null ? (s.mesure ?? s.bar ?? s.barIndex ?? (idx + 1)) : (idx + 1);
-                            const nom = typeof s === 'object' && s !== null ? (s.nom || s.name || s.signe || s.label || s.action || 'Signe') : String(s);
-                            return (
-                              <span
-                                key={s.id || idx}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-extrabold rounded-[4px_6px_3px_5px] bg-[#fbf7ee] text-encre-noire border border-encre-noire/25 shadow-2xs"
-                              >
-                                <span className="text-cordel-wood font-black">Mesure {m} :</span>
-                                <span>{nom}</span>
-                              </span>
-                            );
-                          })}
-                      </div>
-                    </div>
-                  )}
+                    );
+                  })()}
 
                   {/* Volet déplié : Entraînements rattachés */}
                   {(() => {
@@ -976,44 +989,6 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                       >
                         <span>📄</span>
                         <span>Tablature</span>
-                      </CordelButton>
-                    )}
-
-                    {/* Bouton Configuration Défi Réflexe « Temps 1 » (Arbitrage & Surcharges Mestre) */}
-                    {Boolean(
-                      (Array.isArray(piece.activeSinaisDoMestre) && piece.activeSinaisDoMestre.length > 0) ||
-                      (Array.isArray(piece.sinaisDoMestre) && piece.sinaisDoMestre.length > 0) ||
-                      (Array.isArray(piece.preset?.sinaisDoMestre) && piece.preset.sinaisDoMestre.length > 0)
-                    ) && (
-                      <CordelButton
-                        type="button"
-                        variant="default"
-                        useExtremeBorder={false}
-                        onClick={() => setReflexConfigPiece(piece)}
-                        className="py-1 px-2 text-[9.5px] uppercase tracking-wider font-black bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-950 flex items-center gap-1 shrink-0"
-                        title="Configurer le Défi Réflexe « Temps 1 » (arbitrage des pauses et des leurres)"
-                      >
-                        <span>🎯</span>
-                        <span>Défi Temps 1</span>
-                      </CordelButton>
-                    )}
-
-                    {/* Bouton Jeu du Conducteur à trous (Timeline) */}
-                    {Boolean(
-                      (Array.isArray(piece.activeSinaisDoMestre) && piece.activeSinaisDoMestre.length > 0) ||
-                      (Array.isArray(piece.sinaisDoMestre) && piece.sinaisDoMestre.length > 0) ||
-                      (Array.isArray(piece.preset?.sinaisDoMestre) && piece.preset.sinaisDoMestre.length > 0)
-                    ) && (
-                      <CordelButton
-                        type="button"
-                        variant="default"
-                        useExtremeBorder={false}
-                        onClick={() => setConductorGamePiece(piece)}
-                        className="py-1 px-2 text-[9.5px] uppercase tracking-wider font-black bg-purple-50 hover:bg-purple-100 border border-purple-300 text-purple-950 flex items-center gap-1 shrink-0"
-                        title="Lancer le jeu du Conducteur à trous (mémoriser la structure des signaux)"
-                      >
-                        <span>🗺️</span>
-                        <span>Conduire le morceau (Timeline)</span>
                       </CordelButton>
                     )}
 
@@ -1273,31 +1248,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
         />
       )}
 
-      {/* Modale d'arbitrage Mestre pour le Défi Réflexe « Temps 1 » */}
-      <PieceReflexConfigModal
-        isOpen={Boolean(reflexConfigPiece)}
-        onClose={() => setReflexConfigPiece(null)}
-        piece={reflexConfigPiece}
-        presetData={reflexConfigPiece?.preset || (Array.isArray(catalogRhythms) ? catalogRhythms.find(r => r.id === reflexConfigPiece?.sequenceurId) : null)}
-        groupId={groupId}
-        onSaveSuccess={(updatedPiece) => {
-          setPieces((prev) => prev.map(p => p.id === updatedPiece.id ? { ...p, ...updatedPiece } : p));
-          showToast(`Réglages Défi Réflexe enregistrés pour « ${updatedPiece.titre} » !`);
-        }}
-      />
-
-      {/* Modale du jeu du Conducteur à trous */}
-      {conductorGamePiece && (
-        <ConductorGameModal
-          isOpen={Boolean(conductorGamePiece)}
-          onClose={() => setConductorGamePiece(null)}
-          piece={conductorGamePiece}
-          presetData={conductorGamePiece.preset || (Array.isArray(catalogRhythms) ? catalogRhythms.find(r => r.id === conductorGamePiece.sequenceurId) : null)}
-          profileData={_profileData}
-        />
-      )}
-
-      {/* Modale des Signes du Mestre & Quiz Défi Gestes */}
+      {/* Modale des Signes du Mestre (Aide-mémoire) */}
       {activeSignalsModalPiece && (
         <PieceSignalsModal
           isOpen={Boolean(activeSignalsModalPiece)}
