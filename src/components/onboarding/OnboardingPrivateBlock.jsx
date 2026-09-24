@@ -15,12 +15,19 @@ export default function OnboardingPrivateBlock({
   demanderAttestationSante,
   droitImageDocUrl,
   aptitudeMedicaleDocUrl,
+  missingFields = new Set(),
   t
 }) {
   const translate = (key, fallback) => {
     const val = t(key);
     return val === key ? fallback : val;
   };
+
+  const isLateraliteMissing = missingFields.has('lateralite');
+  const isTshirtMissing = missingFields.has('tailleTshirt');
+  const isPantalonMissing = missingFields.has('taillePantalon');
+  const isDroitImageMissing = missingFields.has('droitImage');
+  const isAptitudeMedicaleMissing = missingFields.has('aptitudeMedicale');
 
   return (
     <div className="flex flex-col gap-3.5 border-2 border-dashed border-red-900/30 dark:border-red-500/30 p-3.5 rounded bg-amber-50/50 dark:bg-amber-950/20">
@@ -45,7 +52,7 @@ export default function OnboardingPrivateBlock({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
         {/* Latéralité Dropdown */}
         {isFieldVisible('lateralite') && (
-          <div className="flex flex-col gap-1 sm:col-span-2">
+          <div id="field-lateralite" className="flex flex-col gap-1 sm:col-span-2">
             <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
               {translate('onboarding.lateralite', 'Latéralité (Main dominante)')}
               {isFieldRequired('lateralite') && <span className="text-red-500 font-bold ml-1">*</span>}
@@ -55,11 +62,16 @@ export default function OnboardingPrivateBlock({
               value={formData.lateralite}
               onChange={handleChange}
               disabled={submitting}
-              className="theme-input w-full font-semibold text-xs bg-cordel-bg-light disabled:opacity-50"
+              className={`theme-input w-full font-semibold text-xs bg-cordel-bg-light disabled:opacity-50 ${isLateraliteMissing ? 'border-2 border-red-500 bg-red-50 text-red-900' : ''}`}
             >
               <option value="droitier">{translate('onboarding.handRight', 'Droitier / Droitière')}</option>
               <option value="gaucher">{translate('onboarding.handLeft', 'Gaucher / Gauchère')}</option>
             </select>
+            {isLateraliteMissing && (
+              <span className="text-[10px] text-red-600 font-black mt-0.5">
+                ⚠️ Veuillez sélectionner votre latéralité
+              </span>
+            )}
           </div>
         )}
 
@@ -73,7 +85,7 @@ export default function OnboardingPrivateBlock({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {/* T-Shirt Size Dropdown */}
               {isFieldVisible('tailleTshirt') && (
-                <div className="flex flex-col gap-1">
+                <div id="field-tailleTshirt" className="flex flex-col gap-1">
                   <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
                     {translate('onboarding.tshirtSize', 'Taille T-shirt')}
                     {isFieldRequired('tailleTshirt') && <span className="text-red-500 font-bold ml-1">*</span>}
@@ -83,7 +95,7 @@ export default function OnboardingPrivateBlock({
                     value={formData.tailleTshirt}
                     onChange={handleChange}
                     disabled={submitting}
-                    className="theme-input w-full font-bold text-xs bg-cordel-bg-light disabled:opacity-50"
+                    className={`theme-input w-full font-bold text-xs bg-cordel-bg-light disabled:opacity-50 ${isTshirtMissing ? 'border-2 border-red-500 bg-red-50 text-red-900' : ''}`}
                   >
                     <option value="S">S</option>
                     <option value="M">M</option>
@@ -91,12 +103,17 @@ export default function OnboardingPrivateBlock({
                     <option value="XL">XL</option>
                     <option value="XXL">XXL</option>
                   </select>
+                  {isTshirtMissing && (
+                    <span className="text-[10px] text-red-600 font-black mt-0.5">
+                      ⚠️ Veuillez choisir une taille
+                    </span>
+                  )}
                 </div>
               )}
 
               {/* Pantalon Size Dropdown */}
               {isFieldVisible('taillePantalon') && (
-                <div className="flex flex-col gap-1">
+                <div id="field-taillePantalon" className="flex flex-col gap-1">
                   <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
                     {translate('onboarding.pantSize', 'Taille Pantalon')}
                     {isFieldRequired('taillePantalon') && <span className="text-red-500 font-bold ml-1">*</span>}
@@ -106,7 +123,7 @@ export default function OnboardingPrivateBlock({
                     value={formData.taillePantalon}
                     onChange={handleChange}
                     disabled={submitting}
-                    className="theme-input w-full font-bold text-xs bg-cordel-bg-light disabled:opacity-50"
+                    className={`theme-input w-full font-bold text-xs bg-cordel-bg-light disabled:opacity-50 ${isPantalonMissing ? 'border-2 border-red-500 bg-red-50 text-red-900' : ''}`}
                   >
                     <option value="XS">XS</option>
                     <option value="S">S</option>
@@ -115,6 +132,11 @@ export default function OnboardingPrivateBlock({
                     <option value="XL">XL</option>
                     <option value="XXL">XXL</option>
                   </select>
+                  {isPantalonMissing && (
+                    <span className="text-[10px] text-red-600 font-black mt-0.5">
+                      ⚠️ Veuillez choisir une taille
+                    </span>
+                  )}
                 </div>
               )}
             </div>
@@ -124,7 +146,7 @@ export default function OnboardingPrivateBlock({
 
       {/* Image Rights Checkbox */}
       {demanderDroitImage && (
-        <div className="flex flex-col gap-1 mt-1 text-left p-2.5 rounded bg-white/50 dark:bg-black/20 border border-cordel-master-dark/10">
+        <div id="field-droitImage" className={`flex flex-col gap-1 mt-1 text-left p-2.5 rounded border ${isDroitImageMissing ? 'bg-red-50/90 border-2 border-red-500' : 'bg-white/50 dark:bg-black/20 border-cordel-master-dark/10'}`}>
           <div className="flex items-start gap-2.5">
             <input
               type="checkbox"
@@ -140,6 +162,11 @@ export default function OnboardingPrivateBlock({
               {isFieldRequired('droitImage') && <span className="text-red-500 font-bold ml-1">*</span>}
             </label>
           </div>
+          {isDroitImageMissing && (
+            <span className="text-[10px] text-red-600 font-black pl-6 mt-0.5">
+              ⚠️ Veuillez cocher l'autorisation du droit à l'image pour poursuivre
+            </span>
+          )}
           {droitImageDocUrl && (
             <div className="pl-6 text-[10px] font-bold">
               📄 <a href={droitImageDocUrl} target="_blank" rel="noopener noreferrer" className="text-cordel-wood hover:underline">
@@ -152,7 +179,7 @@ export default function OnboardingPrivateBlock({
 
       {/* Medical Certificate Checkbox */}
       {demanderAttestationSante && (
-        <div className="flex flex-col gap-1 text-left p-2.5 rounded bg-red-50/60 dark:bg-red-950/30 border border-red-300 dark:border-red-700">
+        <div id="field-aptitudeMedicale" className={`flex flex-col gap-1 text-left p-2.5 rounded border ${isAptitudeMedicaleMissing ? 'bg-red-100 border-2 border-red-600 ring-2 ring-red-400/40' : 'bg-red-50/60 dark:bg-red-950/30 border-red-300 dark:border-red-700'}`}>
           <div className="flex items-start gap-2.5">
             <input
               type="checkbox"
@@ -169,6 +196,11 @@ export default function OnboardingPrivateBlock({
               {(demanderAttestationSante || isFieldRequired('aptitudeMedicale')) && <span className="text-red-500 font-bold ml-1">*</span>}
             </label>
           </div>
+          {isAptitudeMedicaleMissing && (
+            <span className="text-[10.5px] text-red-700 font-black pl-6 mt-0.5">
+              ⚠️ L'attestation de non contre-indication médicale est requise par l'association
+            </span>
+          )}
           {aptitudeMedicaleDocUrl && (
             <div className="pl-6 text-[10px] font-bold">
               📄 <a href={aptitudeMedicaleDocUrl} target="_blank" rel="noopener noreferrer" className="text-cordel-wood hover:underline">

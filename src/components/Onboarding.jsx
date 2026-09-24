@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { doc, setDoc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import LayoutShell from './LayoutShell';
@@ -8,6 +8,7 @@ import { useTranslation } from './LanguageContext';
 import OnboardingPublicBlock from './onboarding/OnboardingPublicBlock';
 import OnboardingVisibilityBlock from './onboarding/OnboardingVisibilityBlock';
 import OnboardingPrivateBlock from './onboarding/OnboardingPrivateBlock';
+import OnboardingMissingFieldsAlert from './onboarding/OnboardingMissingFieldsAlert';
 
 // Configuration par défaut des champs du formulaire d'inscription.
 // Les champs non essentiels sont isRequired: false pour éviter qu'un champ masqué
@@ -123,6 +124,12 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
   }, [groupId]);
 
   const [validationError, setValidationError] = useState('');
+  const [missingFieldsList, setMissingFieldsList] = useState([]);
+
+  // Ensemble des clés manquantes pour un affichage réactif dans les sous-blocs
+  const missingFields = useMemo(() => {
+    return new Set(missingFieldsList.map(item => item.key));
+  }, [missingFieldsList]);
 
   const isFieldVisible = (key) => {
     if (!fieldsConfig) return true; // show by default while chargement de
@@ -139,6 +146,15 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+    // Si l'utilisateur modifie un champ en anomalie, on nettoie son alerte si renseigné
+    if (missingFieldsList.length > 0) {
+      setMissingFieldsList(prevList => prevList.filter(item => {
+        if (item.key === name) {
+          return type === 'checkbox' ? !checked : !value?.trim();
+        }
+        return true;
+      }));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -150,50 +166,85 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
     const isAncien = Boolean(formData.estAncienMembre);
     const cleanVoeux = isPercussion ? (Array.isArray(formData.voeuxInstruments) ? formData.voeuxInstruments.filter(Boolean) : []) : [];
 
-    // Validation : Au moins une discipline doit être sélectionnée
-    if (!isPercussion && !isDanse) {
-      const errMsg = "Veuillez sélectionner au moins une discipline (Percussion ou Danse).";
-      setValidationError(errMsg);
-      alert(errMsg);
-      return;
+    const champsManquants = [];
+
+    // 1. Validation identité de base
+    if (!formData.firstName || !formData.firstName.trim()) {
+      champsManquants.push({ key: 'firstName', label: t('onboarding.firstName') || 'Prénom', anchorId: 'field-firstName' });
+    }
+    if (!formData.lastName || !formData.lastName.trim()) {
+      champsManquants.push({ key: 'lastName', label: t('onboarding.lastName') || 'Nom de famille', anchorId: 'field-lastName' });
     }
 
-    // Validation pour les Anciens membres : Sélection de l'instrument actuel obligatoire si percussion
+    // 2. Validation discipline obligatoire (Percussion et/ou Danse)
+    if (!isPercussion && !isDanse) {
+      champsManquants.push({ 
+        key: 'discipline', 
+        label: t('onboarding.discipline') || 'Discipline (Percussion ou Danse)', 
+        anchorId: 'field-discipline' 
+      });
+    }
+
+    // 3. Validation pour les Anciens membres si percussion
     if (isAncien && isPercussion) {
       if (!formData.instrumentPrincipal || !formData.instrumentPrincipal.trim()) {
-        const errMsg = "Veuillez sélectionner votre instrument actuel.";
-        setValidationError(errMsg);
-        alert(errMsg);
-        return;
+        champsManquants.push({ 
+          key: 'instrumentPrincipal', 
+          label: t('onboarding.currentInstrument') || 'Instrument actuel', 
+          anchorId: 'field-instrumentPrincipal' 
+        });
       }
       if (formData.souhaiteChangerInstrument && cleanVoeux.length === 0) {
-        const errMsg = "Veuillez sélectionner au moins 1 nouveau vœu d'instrument si vous souhaitez changer d'instrument.";
-        setValidationError(errMsg);
-        alert(errMsg);
-        return;
+        champsManquants.push({ 
+          key: 'voeuxInstruments', 
+          label: t('onboarding.newInstrumentWish') || "Au moins 1 nouveau vœu d'instrument", 
+          anchorId: 'field-instrumentPrincipal' 
+        });
       }
     }
 
-    // Collecte explicite des libellés de champs obligatoires manquants
-    const champsManquants = [];
+    // 4. Collecte explicite des champs configurables obligatoires de l'association
     Object.keys(fieldsConfig || {}).forEach(key => {
       if (!isFieldRequired(key)) return;
       const label = fieldsConfig[key]?.label || key;
-      if (key === 'telephone' && (!formData.phone || !formData.phone.trim())) champsManquants.push(label);
-      else if (key === 'surnom' && (!formData.surnom || !formData.surnom.trim())) champsManquants.push(label);
-      else if (key === 'adresse' && (!formData.adresseRue || !formData.adresseRue.trim())) champsManquants.push(label);
-      else if (key === 'tailleTshirt' && (!formData.tailleTshirt || !formData.tailleTshirt.trim())) champsManquants.push(label);
-      else if (key === 'taillePantalon' && (!formData.taillePantalon || !formData.taillePantalon.trim())) champsManquants.push(label);
-      else if (key === 'lateralite' && (!formData.lateralite || !formData.lateralite.trim())) champsManquants.push(label);
-      else if (key === 'dateNaissance' && (!formData.dateNaissance || !formData.dateNaissance.trim())) champsManquants.push(label);
-      else if (key === 'droitImage' && demanderDroitImage && !formData.droitImage) champsManquants.push(label);
-      else if (key === 'aptitudeMedicale' && demanderAttestationSante && !formData.aptitudeMedicale) champsManquants.push(label);
+      if (key === 'telephone' && (!formData.phone || !formData.phone.trim())) {
+        champsManquants.push({ key: 'telephone', label, anchorId: 'field-telephone' });
+      } else if (key === 'surnom' && (!formData.surnom || !formData.surnom.trim())) {
+        champsManquants.push({ key: 'surnom', label, anchorId: 'field-surnom' });
+      } else if (key === 'adresse' && (!formData.adresseRue || !formData.adresseRue.trim())) {
+        champsManquants.push({ key: 'adresse', label, anchorId: 'field-adresse' });
+      } else if (key === 'tailleTshirt' && (!formData.tailleTshirt || !formData.tailleTshirt.trim())) {
+        champsManquants.push({ key: 'tailleTshirt', label, anchorId: 'field-tailleTshirt' });
+      } else if (key === 'taillePantalon' && (!formData.taillePantalon || !formData.taillePantalon.trim())) {
+        champsManquants.push({ key: 'taillePantalon', label, anchorId: 'field-taillePantalon' });
+      } else if (key === 'lateralite' && (!formData.lateralite || !formData.lateralite.trim())) {
+        champsManquants.push({ key: 'lateralite', label, anchorId: 'field-lateralite' });
+      } else if (key === 'dateNaissance' && (!formData.dateNaissance || !formData.dateNaissance.trim())) {
+        champsManquants.push({ key: 'dateNaissance', label, anchorId: 'field-dateNaissance' });
+      } else if (key === 'droitImage' && demanderDroitImage && !formData.droitImage) {
+        champsManquants.push({ key: 'droitImage', label, anchorId: 'field-droitImage' });
+      } else if (key === 'aptitudeMedicale' && demanderAttestationSante && !formData.aptitudeMedicale) {
+        champsManquants.push({ key: 'aptitudeMedicale', label, anchorId: 'field-aptitudeMedicale' });
+      }
     });
 
     if (champsManquants.length > 0) {
-      const errMsg = `Veuillez renseigner : ${champsManquants.join(', ')}.`;
+      setMissingFieldsList(champsManquants);
+      const errMsg = `Veuillez renseigner les champs requis pour finaliser votre inscription.`;
       setValidationError(errMsg);
-      alert(errMsg);
+
+      // Auto-focus et défilement fluide vers le premier champ manquant
+      const firstTargetId = champsManquants[0]?.anchorId;
+      if (firstTargetId) {
+        const el = document.getElementById(firstTargetId);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          const inputEl = el.matches('input, select, textarea') ? el : el.querySelector('input, select, textarea');
+          if (inputEl) {
+            setTimeout(() => inputEl.focus(), 300);
+          }
+        }
+      }
       return;
     }
 
@@ -355,11 +406,8 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
             </p>
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-6 text-left">
-              {validationError && (
-                <div className="p-3 bg-red-100 border border-red-400 text-red-700 text-xs font-bold rounded">
-                  ⚠️ {validationError}
-                </div>
-              )}
+              {/* Alerte Cordel interactive listant les champs requis manquants avec raccourcis de navigation */}
+              <OnboardingMissingFieldsAlert missingFieldsList={missingFieldsList} />
 
               {/* Bloc 1 : Ton Profil Public (Trombinoscope) */}
               <OnboardingPublicBlock
@@ -372,6 +420,7 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
                 instrumentsDisponibles={instrumentsDisponibles}
                 linkedInstruments={linkedInstruments}
                 nomAssociation={nomAssociation}
+                missingFields={missingFields}
                 t={t}
               />
 
@@ -383,6 +432,7 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
                 submitting={submitting}
                 isFieldVisible={isFieldVisible}
                 isFieldRequired={isFieldRequired}
+                missingFields={missingFields}
                 t={t}
               />
 
@@ -397,8 +447,14 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
                 demanderAttestationSante={demanderAttestationSante}
                 droitImageDocUrl={droitImageDocUrl}
                 aptitudeMedicaleDocUrl={aptitudeMedicaleDocUrl}
+                missingFields={missingFields}
                 t={t}
               />
+
+              {/* Rappel d'alerte en bas de formulaire avant le bouton si des champs sont manquants */}
+              {missingFieldsList.length > 0 && (
+                <OnboardingMissingFieldsAlert missingFieldsList={missingFieldsList} />
+              )}
 
               <CordelButton 
                 variant="ocre" 

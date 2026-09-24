@@ -16,12 +16,17 @@ export default function OnboardingVisibilityBlock({
   submitting,
   isFieldVisible,
   isFieldRequired,
+  missingFields = new Set(),
   t
 }) {
   const translate = (key, fallback) => {
     const val = t(key);
     return val === key ? fallback : val;
   };
+
+  const isPhoneMissing = missingFields.has('telephone');
+  const isAddressMissing = missingFields.has('adresse');
+  const isBirthdateMissing = missingFields.has('dateNaissance');
 
   const isCityOnlyVisible = formData.visibiliteAdresse === 'ville' || formData.visibiliteAdresse === 'complete';
 
@@ -52,7 +57,7 @@ export default function OnboardingVisibilityBlock({
 
       {/* Téléphone & Interrupteur */}
       {isFieldVisible('telephone') && (
-        <div className="flex flex-col gap-2 p-2.5 rounded bg-white/50 dark:bg-black/20 border border-cordel-master-dark/10">
+        <div id="field-telephone" className={`flex flex-col gap-2 p-2.5 rounded border ${isPhoneMissing ? 'bg-red-50/80 border-2 border-red-500' : 'bg-white/50 dark:bg-black/20 border-cordel-master-dark/10'}`}>
           <div className="flex flex-col gap-1 text-left">
             <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
               {translate('onboarding.phone', 'Numéro de téléphone')}
@@ -66,8 +71,13 @@ export default function OnboardingVisibilityBlock({
               onChange={handleChange}
               required={isFieldRequired('telephone')}
               disabled={submitting}
-              className="theme-input w-full text-xs font-semibold disabled:opacity-50"
+              className={`theme-input w-full text-xs font-semibold disabled:opacity-50 ${isPhoneMissing ? 'border-2 border-red-500 bg-red-50 text-red-900' : ''}`}
             />
+            {isPhoneMissing && (
+              <span className="text-[10px] text-red-600 font-black mt-0.5">
+                ⚠️ Veuillez renseigner votre numéro de téléphone
+              </span>
+            )}
           </div>
 
           <OnboardingToggleSwitch
@@ -83,7 +93,7 @@ export default function OnboardingVisibilityBlock({
 
       {/* Adresse & Interrupteur Ville */}
       {isFieldVisible('adresse') && (
-        <div className="flex flex-col gap-2.5 p-2.5 rounded bg-white/50 dark:bg-black/20 border border-cordel-master-dark/10 text-left">
+        <div id="field-adresse" className={`flex flex-col gap-2.5 p-2.5 rounded border text-left ${isAddressMissing ? 'bg-red-50/80 border-2 border-red-500' : 'bg-white/50 dark:bg-black/20 border-cordel-master-dark/10'}`}>
           <div className="flex flex-col gap-1">
             <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
               {translate('onboarding.adresseRue', 'Adresse (Rue & Numéro)')}
@@ -109,9 +119,14 @@ export default function OnboardingVisibilityBlock({
                 required={isFieldRequired('adresse')}
                 disabled={submitting}
                 placeholder="123 Rue de la Roda"
-                className="theme-input w-full text-xs disabled:opacity-50"
+                className={`theme-input w-full text-xs disabled:opacity-50 ${isAddressMissing ? 'border-2 border-red-500 bg-red-50 text-red-900' : ''}`}
               />
             </React.Suspense>
+            {isAddressMissing && (
+              <span className="text-[10px] text-red-600 font-black mt-0.5">
+                ⚠️ Veuillez renseigner votre adresse
+              </span>
+            )}
           </div>
 
           <div className="grid grid-cols-3 gap-2">
@@ -160,7 +175,7 @@ export default function OnboardingVisibilityBlock({
 
       {/* Date de Naissance & Interrupteur Anniversaire */}
       {isFieldVisible('dateNaissance') && (
-        <div className="flex flex-col gap-2 p-2.5 rounded bg-white/50 dark:bg-black/20 border border-cordel-master-dark/10 text-left">
+        <div id="field-dateNaissance" className={`flex flex-col gap-2 p-2.5 rounded border text-left ${isBirthdateMissing ? 'bg-red-50/80 border-2 border-red-500' : 'bg-white/50 dark:bg-black/20 border-cordel-master-dark/10'}`}>
           <div className="flex flex-col gap-1">
             <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
               {translate('onboarding.birthdate', 'Date de naissance')}
@@ -173,8 +188,13 @@ export default function OnboardingVisibilityBlock({
               onChange={handleChange}
               required={isFieldRequired('dateNaissance')}
               disabled={submitting}
-              className="theme-input w-full font-bold text-xs disabled:opacity-50"
+              className={`theme-input w-full font-bold text-xs disabled:opacity-50 ${isBirthdateMissing ? 'border-2 border-red-500 bg-red-50 text-red-900' : ''}`}
             />
+            {isBirthdateMissing && (
+              <span className="text-[10px] text-red-600 font-black mt-0.5">
+                ⚠️ Veuillez renseigner votre date de naissance
+              </span>
+            )}
           </div>
 
           <OnboardingToggleSwitch

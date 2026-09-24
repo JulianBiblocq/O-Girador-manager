@@ -471,7 +471,7 @@ export default function TabIdentity({
               const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
               const baseUrl = isLocal ? window.location.origin : 'https://organizador.o-girador.com';
               const canonicalId = canonicalizeGroupId(groupId) || 'Samambaia';
-              const invitationUrl = `${baseUrl}/?groupe=${canonicalId}`;
+              const invitationUrl = `${baseUrl}/?groupe=${canonicalId}&mode=signup`;
               const shareText = `Rejoins notre groupe sur ${formData.nom || 'notre association'} : ${invitationUrl}`;
               try {
                 await navigator.clipboard.writeText(shareText);

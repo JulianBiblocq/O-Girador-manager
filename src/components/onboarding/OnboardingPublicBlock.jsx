@@ -16,6 +16,7 @@ export default function OnboardingPublicBlock({
   instrumentsDisponibles = [],
   linkedInstruments = [],
   nomAssociation = '',
+  missingFields = new Set(),
   t
 }) {
   const pupitresList = useMemo(() => {
@@ -25,6 +26,11 @@ export default function OnboardingPublicBlock({
     const val = t(key);
     return val === key ? fallback : val;
   };
+
+  const isFirstNameMissing = missingFields.has('firstName');
+  const isLastNameMissing = missingFields.has('lastName');
+  const isDisciplineMissing = missingFields.has('discipline');
+  const isInstrumentMissing = missingFields.has('instrumentPrincipal');
 
   return (
     <div className="flex flex-col gap-3.5 border-2 border-dashed border-cordel-wood/30 p-3.5 rounded bg-cordel-bg-light/40">
@@ -45,7 +51,7 @@ export default function OnboardingPublicBlock({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
         {/* First Name Input */}
-        <div className="flex flex-col gap-1">
+        <div id="field-firstName" className="flex flex-col gap-1">
           <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
             {translate('onboarding.firstName', 'Prénom')} <span className="text-red-500 font-bold ml-0.5">*</span>
           </label>
@@ -57,12 +63,19 @@ export default function OnboardingPublicBlock({
             required
             disabled={submitting}
             placeholder="Ex: Clara"
-            className="theme-input w-full font-bold text-xs disabled:opacity-50"
+            className={`theme-input w-full font-bold text-xs disabled:opacity-50 transition-colors ${
+              isFirstNameMissing ? 'border-2 border-red-500 bg-red-50/80 text-red-900 focus:border-red-600' : ''
+            }`}
           />
+          {isFirstNameMissing && (
+            <span className="text-[10px] text-red-600 font-black flex items-center gap-1 mt-0.5">
+              <span>⚠️</span> Le prénom est obligatoire
+            </span>
+          )}
         </div>
 
         {/* Last Name Input */}
-        <div className="flex flex-col gap-1">
+        <div id="field-lastName" className="flex flex-col gap-1">
           <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
             {translate('onboarding.lastName', 'Nom')} <span className="text-red-500 font-bold ml-0.5">*</span>
           </label>
@@ -74,8 +87,15 @@ export default function OnboardingPublicBlock({
             required
             disabled={submitting}
             placeholder="Ex: Dupont"
-            className="theme-input w-full font-bold text-xs disabled:opacity-50"
+            className={`theme-input w-full font-bold text-xs disabled:opacity-50 transition-colors ${
+              isLastNameMissing ? 'border-2 border-red-500 bg-red-50/80 text-red-900 focus:border-red-600' : ''
+            }`}
           />
+          {isLastNameMissing && (
+            <span className="text-[10px] text-red-600 font-black flex items-center gap-1 mt-0.5">
+              <span>⚠️</span> Le nom de famille est obligatoire
+            </span>
+          )}
         </div>
       </div>
 
@@ -150,15 +170,40 @@ export default function OnboardingPublicBlock({
       </div>
 
       {/* Section Choix des Disciplines */}
-      <div className="p-3 rounded bg-white/60 dark:bg-black/20 border border-cordel-master-dark/15 flex flex-col gap-2.5 text-left">
-        <label className="text-[11px] font-black uppercase text-cordel-wood tracking-wider flex items-center gap-1.5">
-          🎭 Choisis ta / tes discipline(s) <span className="text-red-500 font-bold">*</span>
-        </label>
+      <div
+        id="field-discipline"
+        className={`p-3 rounded transition-all flex flex-col gap-2.5 text-left ${
+          isDisciplineMissing
+            ? 'bg-red-50/90 border-2 border-dashed border-red-500 shadow-md ring-2 ring-red-400/40'
+            : 'bg-white/60 dark:bg-black/20 border border-cordel-master-dark/15'
+        }`}
+      >
+        <div className="flex items-center justify-between">
+          <label className="text-[11px] font-black uppercase text-cordel-wood tracking-wider flex items-center gap-1.5">
+            🎭 Choisis ta / tes discipline(s) <span className="text-red-500 font-bold">*</span>
+          </label>
+          {isDisciplineMissing && (
+            <span className="text-[10px] font-black text-red-600 bg-red-100 px-2 py-0.5 rounded border border-red-300">
+              ⚠️ Sélection obligatoire
+            </span>
+          )}
+        </div>
+
+        {isDisciplineMissing && (
+          <div className="p-2 rounded bg-red-100 border border-red-400 text-red-900 text-xs font-bold leading-snug">
+            👉 Veuillez cocher au moins une discipline ci-dessous (Percussion et/ou Danse) pour valider votre inscription.
+          </div>
+        )}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {/* Discipline Percussion */}
           <div 
             onClick={() => !submitting && setFormData(prev => ({ ...prev, pratiquePercussion: !prev.pratiquePercussion }))}
-            className={`p-3 rounded border cursor-pointer transition-all flex items-start gap-2.5 ${formData.pratiquePercussion ? 'bg-amber-100/90 border-amber-500 shadow-xs' : 'bg-white/40 dark:bg-black/10 border-cordel-master-dark/15 opacity-80'}`}
+            className={`p-3 rounded border cursor-pointer transition-all flex items-start gap-2.5 ${
+              formData.pratiquePercussion 
+                ? 'bg-amber-100/90 border-amber-500 shadow-xs' 
+                : (isDisciplineMissing ? 'bg-white border-red-300 hover:border-red-500' : 'bg-white/40 dark:bg-black/10 border-cordel-master-dark/15 opacity-80')
+            }`}
           >
             <input
               type="checkbox"
@@ -182,7 +227,11 @@ export default function OnboardingPublicBlock({
           {/* Discipline Danse */}
           <div 
             onClick={() => !submitting && setFormData(prev => ({ ...prev, pratiqueDanse: !prev.pratiqueDanse }))}
-            className={`p-3 rounded border cursor-pointer transition-all flex items-start gap-2.5 ${formData.pratiqueDanse ? 'bg-amber-100/90 border-amber-500 shadow-xs' : 'bg-white/40 dark:bg-black/10 border-cordel-master-dark/15 opacity-80'}`}
+            className={`p-3 rounded border cursor-pointer transition-all flex items-start gap-2.5 ${
+              formData.pratiqueDanse 
+                ? 'bg-amber-100/90 border-amber-500 shadow-xs' 
+                : (isDisciplineMissing ? 'bg-white border-red-300 hover:border-red-500' : 'bg-white/40 dark:bg-black/10 border-cordel-master-dark/15 opacity-80')
+            }`}
           >
             <input
               type="checkbox"
@@ -226,7 +275,7 @@ export default function OnboardingPublicBlock({
             </span>
 
             {/* Sélecteur de pupitre actuel (Indispensable pour la première année d'inscription) */}
-            <div className="flex flex-col gap-1 text-left">
+            <div id="field-instrumentPrincipal" className="flex flex-col gap-1 text-left">
               <label className="text-[10.5px] uppercase font-black tracking-wider text-cordel-wood flex items-center gap-1">
                 <span>Mon pupitre actuel</span>
                 <span className="text-red-500 font-bold">*</span>
@@ -243,13 +292,20 @@ export default function OnboardingPublicBlock({
                   }));
                 }}
                 disabled={submitting}
-                className="theme-input w-full text-xs font-bold bg-cordel-bg-light"
+                className={`theme-input w-full text-xs font-bold bg-cordel-bg-light ${
+                  isInstrumentMissing ? 'border-2 border-red-500 bg-red-50 text-red-900' : ''
+                }`}
               >
                 <option value="">-- Sélectionner mon pupitre actuel --</option>
                 {pupitresList.map(pup => (
                   <option key={pup} value={pup}>{pup}</option>
                 ))}
               </select>
+              {isInstrumentMissing && (
+                <span className="text-[10px] text-red-600 font-black mt-0.5">
+                  ⚠️ Veuillez sélectionner votre pupitre actuel
+                </span>
+              )}
             </div>
 
             {/* Question de réorientation : Souhaites-tu apprendre un nouveau pupitre ? */}
