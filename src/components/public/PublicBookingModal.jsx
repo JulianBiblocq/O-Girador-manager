@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { db } from '../../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { isDemoMode } from '../../demo/demoManager';
+import { notifyMembersByTag } from '../../utils/inAppNotificationService';
 
 /**
  * Modale Publique de Demande de Prestation / Booking pour la Vitrine SaaS.
@@ -62,6 +63,22 @@ export default function PublicBookingModal({
 
       // 2. Inscription simultanée dans la collection `gigs` du Pôle Diffusion pour un traitement direct Back-Office
       await addDoc(collection(db, 'associations', groupId, 'gigs'), gigPayload);
+
+      // 3. Notification interne pour le pôle Diffusion / Booking
+      try {
+        const nomOrganisateur = organizer.trim() || 'Organisateur';
+        const nomEvenement = eventName.trim() || `Prestation ${eventType}`;
+        notifyMembersByTag({
+          groupId,
+          tags: ['Diffusion', 'diffusion', 'Booking', 'booking'],
+          title: "📅 Prestation à relancer",
+          message: `${nomOrganisateur} pour ${nomEvenement}`,
+          targetUrl: "/diffusion?tab=pipeline",
+          icon: "📅"
+        }).catch((err) => console.warn("PublicBookingModal - Notification diffusion ignorée :", err));
+      } catch (notifErr) {
+        console.warn("PublicBookingModal - Erreur notification diffusion :", notifErr);
+      }
 
       setSubmitted(true);
     } catch (err) {

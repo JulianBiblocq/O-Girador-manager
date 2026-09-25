@@ -21,7 +21,7 @@ import { useSequencerRhythms } from '../../hooks/useSequencerRhythms';
 import { useDancadorChoreographies } from '../../hooks/useDancadorData';
 import { useRepertoireVaralDocs } from '../../hooks/useRepertoireVaralDocs';
 import { openSequencerWithCrossApp } from '../../utils/sequencerUrlUtils';
-import { parseYouTubeMedia } from '../../utils/mediaUrlUtils';
+import PieceVideoSection from '../repertoire/PieceVideoSection';
 import { cleanFirestorePayload } from '../../utils/firestoreUtils';
 import {
   buildResolutionDictionaries,
@@ -764,58 +764,12 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                     </div>
                   )}
 
-                  {/* Lecteur vidéo YouTube */}
-                  {(() => {
-                    const targetVideo = piece.activeVideoUrl;
-                    const yt = targetVideo ? parseYouTubeMedia(targetVideo) : null;
-                    if (!yt || !yt.embedUrl) return null;
-                    return (
-                      <div className="w-full mt-2 pt-2 border-t border-dashed border-encre-noire/15 flex flex-col gap-1.5 text-left">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[9px] font-black uppercase tracking-wider text-cordel-master-dark flex items-center gap-1">
-                            <span>🎬</span>
-                            <span>Vidéo de référence :</span>
-                          </span>
-                          <a
-                            href={yt.directUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[9px] text-cordel-wood hover:underline font-bold"
-                          >
-                            Ouvrir sur YouTube ↗
-                          </a>
-                        </div>
-                        <div className="relative w-full aspect-video rounded overflow-hidden border border-encre-noire/20 shadow-xs bg-black">
-                          <iframe
-                            src={yt.embedUrl}
-                            title={`Vidéo ${piece.titre}`}
-                            className="w-full h-full border-0"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                          />
-                        </div>
-                      </div>
-                    );
-                  })()}
-
-                  {/* Vidéos personnalisables du morceau */}
-                  {Array.isArray(piece.videos) && piece.videos.length > 0 && (
-                    <div className="flex items-center gap-1.5 flex-wrap pt-1">
-                      {piece.videos.map((vid, idx) => (
-                        <button
-                          key={vid.id || idx}
-                          type="button"
-                          onClick={() => setActiveVideoToWatch(vid)}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[9.5px] font-black uppercase rounded-[4px_6px_3px_5px] bg-red-50 hover:bg-red-100 text-red-900 border border-red-300 shadow-sm transition-all cursor-pointer"
-                          title={`Visionner la vidéo : ${vid.titre || 'Vidéo'}`}
-                        >
-                          <span>🎬</span>
-                          <span className="truncate max-w-[150px]">{vid.titre || `Vidéo #${idx + 1}`}</span>
-                          <span className="text-[8px] opacity-70">▶</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                  {/* Lecteur vidéo multi-pupitres avec smart-default adhérent */}
+                  <PieceVideoSection
+                    videos={piece.videos}
+                    defaultVideoUrl={piece.activeVideoUrl || piece.videoUrl}
+                    userInstrument={_profileData?.instrumentPrincipal || _profileData?.instrument}
+                  />
 
                   {/* Signes du Mestre réels associés (vignettes propres : nom + consigne, sans identifiant brut) */}
                   {(() => {

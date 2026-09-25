@@ -8,6 +8,7 @@ import useConfirm from '../../hooks/useConfirm';
 import ImportAgendaModal from '../agenda/ImportAgendaModal';
 import { generateCompteRenduPDF } from '../../utils/pdfGenerator';
 import { triggerEventStatusAutomation } from '../../utils/automationEngine';
+import { notifyMembersByTag } from '../../utils/inAppNotificationService';
 
 export default function EventReportSection({ event, user, profileData, associationSettings }) {
   const { t } = useTranslation();
@@ -490,10 +491,11 @@ export default function EventReportSection({ event, user, profileData, associati
 
     setIsSubmittingSuggestion(true);
     try {
+      const authorName = `${profileData?.prenom || ''} ${profileData?.nom || ''}`.trim() || user?.displayName || 'Un membre';
       const newSuggestion = {
         id: Date.now().toString(),
         userId: user.uid,
-        userName: `${profileData?.prenom || ''} ${profileData?.nom || ''}`.trim() || 'Membre',
+        userName: authorName,
         titre: newSuggestionTitle.trim(),
         status: 'en_attente',
         reponseSecretaire: ''
@@ -504,6 +506,21 @@ export default function EventReportSection({ event, user, profileData, associati
       await updateDoc(eventRef, { suggestionsOrdreDuJour: updatedSuggestions });
       setNewSuggestionTitle('');
       alert("Votre suggestion de point a été soumise au secrétaire !");
+
+      // Notification interne pour le secrétariat et le bureau
+      try {
+        const eventDateStr = event.date || event.dateDebut || 'à venir';
+        notifyMembersByTag({
+          groupId: event.groupId || profileData?.groupId,
+          tags: ['Secrétaire', 'secretaire', 'Bureau', 'bureau'],
+          title: "💡 Nouvelle proposition ODJ",
+          message: `${authorName} propose un point pour la réunion du ${eventDateStr}`,
+          targetUrl: `/events/${event.id}`,
+          icon: "💡"
+        }).catch((err) => console.warn("EventReportSection - Notification ODJ ignorée :", err));
+      } catch (notifErr) {
+        console.warn("EventReportSection - Erreur notification ODJ :", notifErr);
+      }
     } catch (err) {
       console.error("Error adding suggestion:", err);
       alert("Erreur lors de la soumission de la suggestion.");

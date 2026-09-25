@@ -1,20 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import AssociationBankDetailsBox from '../treasury/AssociationBankDetailsBox';
+import { notifyMembersByTag } from '../../utils/inAppNotificationService';
 
-/**
- * Bloc d'alerte et suivi des paiements de commandes de matériel côté adhérent.
- * 
- * Affiche en priorité les commandes en attente de règlement avec le montant dû,
- * la consigne de libellé de virement, l'IBAN de l'association, ainsi que l'historique
- * des commandes déjà réglées.
- */
+// Bloc d'alerte et suivi des paiements de commandes de matériel adhérent
 export default function MemberOrdersPaymentAlert({ groupId, currentUser, profileData }) {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedRequestId, setExpandedRequestId] = useState(null);
+  const [declaringPaymentId, setDeclaringPaymentId] = useState(null);
 
   const userId = currentUser?.uid || profileData?.uid || profileData?.id;
 
@@ -51,27 +47,38 @@ export default function MemberOrdersPaymentAlert({ groupId, currentUser, profile
 
   if (loading) return null;
 
-  // Filtrer les commandes avec statut de paiement actif
   const pendingPaymentRequests = requests.filter((r) => r.statutPaiement === 'en_attente');
   const paidRequests = requests.filter((r) => r.statutPaiement === 'paye');
+  if (pendingPaymentRequests.length === 0 && paidRequests.length === 0) return null;
 
-  if (pendingPaymentRequests.length === 0 && paidRequests.length === 0) {
-    return null;
-  }
+  const memberName = `${profileData?.prenom || ''} ${profileData?.nom || ''}`.trim() || currentUser?.displayName || 'Membre';
 
-  const memberName = `${profileData?.prenom || ''} ${profileData?.nom || ''}`.trim() || 
-                     currentUser?.displayName || 
-                     'Membre';
+  const formatDateDisplay = (d) => {
+    if (!d) return '';
+    const date = typeof d === 'object' && typeof d.toDate === 'function' ? d.toDate() : new Date(d);
+    return isNaN(date.getTime()) ? String(d) : date.toLocaleDateString('fr-FR');
+  };
 
-  const formatDateDisplay = (dateInput) => {
-    if (!dateInput) return '';
+  const handleDeclarePayment = async (req) => {
+    setDeclaringPaymentId(req.id);
     try {
-      if (typeof dateInput === 'object' && typeof dateInput.toDate === 'function') {
-        return dateInput.toDate().toLocaleDateString('fr-FR');
-      }
-      return new Date(dateInput).toLocaleDateString('fr-FR');
-    } catch {
-      return String(dateInput);
+      await updateDoc(doc(db, 'campaignRequests', req.id), {
+        virementDeclare: true,
+        dateVirementDeclare: new Date().toISOString()
+      });
+      notifyMembersByTag({
+        groupId,
+        tags: ['Trésorier', 'tresorier'],
+        title: "📦 Commande réglée",
+        message: `${memberName} a effectué son virement`,
+        targetUrl: "/treasury?tab=commandes",
+        icon: "📦"
+      }).catch((err) => console.warn("MemberOrdersPaymentAlert - Notif ignorée :", err));
+    } catch (err) {
+      console.error("MemberOrdersPaymentAlert - Erreur virement :", err);
+      alert("Erreur lors de la déclaration du virement.");
+    } finally {
+      setDeclaringPaymentId(null);
     }
   };
 
@@ -127,13 +134,27 @@ export default function MemberOrdersPaymentAlert({ groupId, currentUser, profile
               {/* Encart bancaire avec consigne de libellé */}
               {isBoxOpen && (
                 <div className="mt-1">
-                  <AssociationBankDetailsBox
-                    groupId={groupId}
-                    defaultOpen={true}
-                    customVirementLabel={virementLabel}
-                  />
+                  <AssociationBankDetailsBox groupId={groupId} defaultOpen={true} customVirementLabel={virementLabel} />
                 </div>
               )}
+
+              {/* Action : Déclaration du virement */}
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-dashed border-amber-600/20">
+                {req.virementDeclare ? (
+                  <span className="text-[10px] font-black text-green-700 dark:text-green-400 flex items-center gap-1.5">
+                    <span>✓</span> Virement déclaré — En attente de pointage trésorier
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={declaringPaymentId === req.id}
+                    onClick={() => handleDeclarePayment(req)}
+                    className="px-3 py-1.5 text-[9.5px] font-black uppercase tracking-wider bg-[var(--color-cordel-vert,#2d6a4f)] text-white rounded border border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] hover:brightness-105 cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                  >
+                    <span>💳</span> {declaringPaymentId === req.id ? 'Transmission...' : "J'ai effectué mon virement"}
+                  </button>
+                )}
+              </div>
             </div>
           </CordelCard>
         );

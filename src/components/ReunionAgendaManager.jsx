@@ -6,6 +6,7 @@ import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { XiloClose } from './XiloIcons';
 import useConfirm from '../hooks/useConfirm';
+import { notifyMembersByTag } from '../utils/inAppNotificationService';
 
 export default function ReunionAgendaManager({ event, user, profileData }) {
   const { confirm } = useConfirm();
@@ -23,11 +24,12 @@ export default function ReunionAgendaManager({ event, user, profileData }) {
     setSubmittingTopic(true);
     try {
       const currentSujets = event.sujetsProposes || [];
+      const authorName = `${profileData?.prenom || ''} ${profileData?.nom || ''}`.trim() || user?.displayName || 'Un membre';
       const newSujetObj = {
         id: Date.now().toString(),
         titre: newTopic.trim(),
         auteurId: user.uid,
-        auteurNom: `${profileData.prenom} ${profileData.nom}`,
+        auteurNom: authorName,
         status: 'attente'
       };
 
@@ -36,6 +38,21 @@ export default function ReunionAgendaManager({ event, user, profileData }) {
         sujetsProposes: [...currentSujets, newSujetObj]
       });
       setNewTopic('');
+
+      // Notification interne pour le secrétariat et le bureau
+      try {
+        const eventDateStr = event.date || event.dateDebut || 'à venir';
+        notifyMembersByTag({
+          groupId: event.groupId || profileData?.groupId,
+          tags: ['Secrétaire', 'secretaire', 'Bureau', 'bureau'],
+          title: "💡 Nouvelle proposition ODJ",
+          message: `${authorName} propose un point pour la réunion du ${eventDateStr}`,
+          targetUrl: `/events/${event.id}`,
+          icon: "💡"
+        }).catch((err) => console.warn("ReunionAgendaManager - Notification ODJ ignorée :", err));
+      } catch (notifErr) {
+        console.warn("ReunionAgendaManager - Erreur notification ODJ :", notifErr);
+      }
     } catch (err) {
       console.error("ReunionAgendaManager - Erreur add topic :", err);
       alert("Erreur lors de la proposition du sujet.");

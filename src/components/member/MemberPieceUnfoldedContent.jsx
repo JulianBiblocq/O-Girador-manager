@@ -1,17 +1,18 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import PieceAisanceSection from './PieceAisanceSection';
-import { parseYouTubeMedia } from '../../utils/mediaUrlUtils';
+import PieceVideoSection from '../repertoire/PieceVideoSection';
 import { useTranslation } from '../LanguageContext';
 
 /**
  * Contenu déplié de la carte morceau pour adhérents (lecture seule stricte).
  * Affiche les notes, lecteurs audios, toadas, tablatures, danse, culture,
- * lecteur vidéo intégré direct et entraînements.
+ * lecteur vidéo multi-pupitres avec smart-default et entraînements.
  */
 export default function MemberPieceUnfoldedContent({
   piece,
   userId,
   groupId,
+  profileData = null,
   trainings = [],
   aisanceMap = {},
   onOpenTablature,
@@ -22,7 +23,6 @@ export default function MemberPieceUnfoldedContent({
 }) {
   const { t } = useTranslation();
   const audioUrl = piece.activeAudioUrl || piece.audioUrl;
-  const videoUrl = piece.activeVideoUrl || piece.videoUrl || piece.youtubeUrl;
   const hasToada = Boolean(
     piece.activeToada && (
       (typeof piece.activeToada.paroles === 'string' && piece.activeToada.paroles.trim() !== '') ||
@@ -44,20 +44,6 @@ export default function MemberPieceUnfoldedContent({
     (Array.isArray(piece.sinaisDoMestre) && piece.sinaisDoMestre.length > 0) ||
     (Array.isArray(piece.activeSinaisDoMestre) && piece.activeSinaisDoMestre.length > 0)
   );
-
-  // Résolution sécurisée du lecteur vidéo intégré (sans autoplay intrusif)
-  const embedInfo = useMemo(() => {
-    if (!videoUrl || typeof videoUrl !== 'string') return null;
-    const trimmed = videoUrl.trim();
-    const yt = parseYouTubeMedia(trimmed);
-    if (yt?.embedUrl) return { type: 'youtube', embedUrl: yt.embedUrl };
-    const driveMatch = trimmed.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
-    if (driveMatch?.[1]) return { type: 'drive', embedUrl: `https://drive.google.com/file/d/${driveMatch[1]}/preview` };
-    const vimeoMatch = trimmed.match(/(?:vimeo\.com\/)(\d+)/);
-    if (vimeoMatch?.[1]) return { type: 'vimeo', embedUrl: `https://player.vimeo.com/video/${vimeoMatch[1]}` };
-    if (trimmed.match(/\.(mp4|webm|ogg)(\?.*)?$/i)) return { type: 'direct', embedUrl: trimmed };
-    return null;
-  }, [videoUrl]);
 
   return (
     <div className="p-3.5 flex flex-col gap-3 text-left">
@@ -150,42 +136,12 @@ export default function MemberPieceUnfoldedContent({
         )}
       </div>
 
-      {/* 4. Lecteur vidéo intégré direct sans quitter l'application */}
-      {embedInfo && (
-        <div className="flex flex-col gap-1.5 p-2.5 rounded bg-cordel-bg-light/80 border border-encre-noire/15 shadow-2xs">
-          <div className="flex items-center justify-between text-[10px] font-bold text-stone-700">
-            <span className="flex items-center gap-1 font-black uppercase text-cordel-wood">
-              <span>🎬</span>
-              <span>Vidéo du morceau</span>
-            </span>
-            <a
-              href={videoUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[9.5px] text-stone-500 hover:text-cordel-wood font-medium underline lowercase"
-              title="Ouvrir la vidéo dans un nouvel onglet"
-            >
-              ouvrir la source ↗
-            </a>
-          </div>
-
-          <div className="relative w-full aspect-video rounded overflow-hidden border-2 border-encre-noire bg-black shadow-inner">
-            {embedInfo.type === 'direct' ? (
-              <video controls src={embedInfo.embedUrl} className="w-full h-full" preload="metadata" />
-            ) : (
-              <iframe src={embedInfo.embedUrl} title={`Vidéo - ${piece.titre}`} className="w-full h-full border-0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen loading="lazy" />
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Repli lien externe si URL vidéo non intégrable en iframe */}
-      {!embedInfo && videoUrl && (
-        <a href={videoUrl} target="_blank" rel="noopener noreferrer" className="px-2.5 py-1 text-xs font-bold rounded bg-red-50 hover:bg-red-100 border border-red-300 text-red-900 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all select-none self-start" title="Regarder la vidéo du morceau">
-          <span>🎬</span>
-          <span>Vidéo</span>
-        </a>
-      )}
+      {/* 4. Lecteur vidéo multi-pupitres avec smart-default adhérent */}
+      <PieceVideoSection
+        videos={piece.videos}
+        defaultVideoUrl={piece.videoUrl || piece.activeVideoUrl || piece.youtubeUrl}
+        userInstrument={profileData?.instrumentPrincipal || profileData?.instrument}
+      />
 
       {/* 5. Bloc Entraînements et Paliers d'Aisance */}
       <PieceAisanceSection piece={piece} trainings={trainings} aisanceMap={aisanceMap} userId={userId} groupId={groupId} sequenceurUrl={sequenceurUrl} />

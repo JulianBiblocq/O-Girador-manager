@@ -7,6 +7,7 @@ import { XiloClose } from '../XiloIcons';
 import useHardwareBack from '../../hooks/useHardwareBack';
 import { doc, updateDoc, collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
+import { notifyMembersByTag } from '../../utils/inAppNotificationService';
 
 const getInstrumentIconPath = (instName) => {
   if (!instName) return '/favicon.svg';
@@ -140,6 +141,23 @@ export default function UserMateriel({ user, profileData, onBack }) {
       await updateDoc(doc(db, 'inventory', movementModalInst.id), {
         pendingMovement: payload
       });
+
+      // Notification interne pour le pôle Logistique & Matériel
+      try {
+        const userName = `${profileData?.prenom || user?.prenom || ''} ${profileData?.nom || user?.nom || ''}`.trim() || 'Un adhérent';
+        const nomInstrument = movementModalInst?.nom || 'un instrument';
+        notifyMembersByTag({
+          groupId: profileData?.groupId || 'o-girador',
+          tags: ['Logistique', 'logistique', 'Matériel', 'materiel'],
+          title: "📦 Mouvement d'instrument à valider",
+          message: `${userName} déclare un retour ou prêt pour ${nomInstrument}`,
+          targetUrl: "/logistics?tab=inventaire",
+          icon: "📦"
+        }).catch((err) => console.warn("UserMateriel - Notification mouvement ignorée :", err));
+      } catch (notifErr) {
+        console.warn("UserMateriel - Erreur notification mouvement :", notifErr);
+      }
+
       setMovementModalInst(null);
       setMovementType('return_to_local');
       setMovementToUser('');
@@ -195,6 +213,22 @@ export default function UserMateriel({ user, profileData, onBack }) {
         createdAt: serverTimestamp(),
         targetRoles: ['mestre', 'admin', 'logisticien'] // Destinataires
       });
+
+      // Notification interne pour le pôle Logistique, Matériel et Lutherie
+      try {
+        const userName = `${profileData?.prenom || user?.prenom || ''} ${profileData?.nom || user?.nom || ''}`.trim() || 'Un adhérent';
+        const nomInstrument = inst?.nom || 'un instrument';
+        notifyMembersByTag({
+          groupId: profileData?.groupId || 'o-girador',
+          tags: ['Logistique', 'logistique', 'Matériel', 'materiel', 'Lutherie'],
+          title: "⚠️ Signalement matériel",
+          message: `${userName} a signalé une anomalie sur ${nomInstrument}`,
+          targetUrl: "/logistics?tab=inventaire",
+          icon: "⚠️"
+        }).catch((err) => console.warn("UserMateriel - Notification casse ignorée :", err));
+      } catch (notifErr) {
+        console.warn("UserMateriel - Erreur notification casse :", notifErr);
+      }
 
       setReportInstrumentModal(null);
       setReportDescription('');

@@ -71,9 +71,9 @@ export function useInAppNotifications(userId, groupId) {
     return rawNotifications.filter((n) => !n.groupId || n.groupId === groupId);
   }, [rawNotifications, groupId]);
 
-  // Compteur d'éléments non lus
+  // Compteur d'éléments non lus (supporte read et isRead)
   const unreadCount = useMemo(() => {
-    return notifications.filter((n) => !n.isRead).length;
+    return notifications.filter((n) => (n.read !== undefined ? !n.read : !n.isRead)).length;
   }, [notifications]);
 
   /**
@@ -86,11 +86,11 @@ export function useInAppNotifications(userId, groupId) {
 
     try {
       const docRef = doc(db, 'users', userId, 'in_app_notifications', notifId);
-      await updateDoc(docRef, { isRead: true });
+      await updateDoc(docRef, { isRead: true, read: true });
 
       // Optimisation optimiste locale de l'état
       setRawNotifications((prev) =>
-        prev.map((n) => (n.id === notifId || n.notifId === notifId ? { ...n, isRead: true } : n))
+        prev.map((n) => (n.id === notifId || n.notifId === notifId ? { ...n, isRead: true, read: true } : n))
       );
     } catch (err) {
       console.error(`useInAppNotifications - Erreur marquage notification ${notifId} :`, err);
@@ -103,20 +103,20 @@ export function useInAppNotifications(userId, groupId) {
   const markAllAsRead = useCallback(async () => {
     if (!userId) return;
 
-    const unreadItems = notifications.filter((n) => !n.isRead);
+    const unreadItems = notifications.filter((n) => (n.read !== undefined ? !n.read : !n.isRead));
     if (unreadItems.length === 0) return;
 
     try {
       const batch = writeBatch(db);
       unreadItems.forEach((item) => {
         const docRef = doc(db, 'users', userId, 'in_app_notifications', item.id || item.notifId);
-        batch.update(docRef, { isRead: true });
+        batch.update(docRef, { isRead: true, read: true });
       });
 
       await batch.commit();
 
       // Mise à jour optimiste locale
-      setRawNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      setRawNotifications((prev) => prev.map((n) => ({ ...n, isRead: true, read: true })));
     } catch (err) {
       console.error("useInAppNotifications - Erreur marquage groupé des notifications :", err);
     }

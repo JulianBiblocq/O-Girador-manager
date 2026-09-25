@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { collection, doc, addDoc, updateDoc } from 'firebase/firestore';
+import { collection, doc, addDoc, updateDoc, onSnapshot } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../../firebase';
+import { DEFAULT_INSTRUMENTS } from '../../hooks/useAssociationSettings';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { useSequencerRhythms } from '../../hooks/useSequencerRhythms';
@@ -73,6 +74,21 @@ export default function RepertoirePieceModal({
     return () => unsub();
   }, [isOpen, groupId]);
 
+  // Écoute des pupitres de l'association
+  const [instrumentsList, setInstrumentsList] = useState(DEFAULT_INSTRUMENTS);
+  useEffect(() => {
+    if (!isOpen || !groupId) return;
+    const unsub = onSnapshot(doc(db, 'associations', groupId), (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        if (Array.isArray(data.instrumentsDisponibles) && data.instrumentsDisponibles.length > 0) {
+          setInstrumentsList(data.instrumentsDisponibles);
+        }
+      }
+    }, () => {});
+    return () => unsub();
+  }, [isOpen, groupId]);
+
   // Média et documentation propre au morceau
   const [videoUrl, setVideoUrl] = useState('');
   const [histoire, setHistoire] = useState('');
@@ -81,13 +97,50 @@ export default function RepertoirePieceModal({
   const [toadaToPreview, setToadaToPreview] = useState(null);
   const [uploadingAudio, setUploadingAudio] = useState(false);
   const [isVideoPickerOpen, setIsVideoPickerOpen] = useState(false);
+  const [pickerTargetIndex, setPickerTargetIndex] = useState(null); // null = nouvelle vidéo ajoutée, number = remplacement de la ligne à cet index, 'reference' = vidéo principale
+  const [pickerInitialPupitre, setPickerInitialPupitre] = useState('');
 
-  // Remplissage automatique de l'URL et du titre (si vide) depuis le sélecteur YouTube
+  // Remplissage automatique de l'URL et du titre depuis le sélecteur YouTube
   const handleSelectVideoFromPicker = ({ title, url }) => {
-    setVideoUrl(url);
-    if (!titre.trim() && title) {
-      setTitre(title);
+    if (pickerTargetIndex === 'reference') {
+      setVideoUrl(url || '');
+      if (!titre.trim() && title) {
+        setTitre(title);
+      }
+    } else if (pickerTargetIndex !== null && typeof pickerTargetIndex === 'number') {
+      // Remplacement sur une ligne existante dans le tableau des vidéos
+      setVideos((prev) => {
+        const next = [...prev];
+        if (next[pickerTargetIndex]) {
+          const currentTitle = next[pickerTargetIndex].titre;
+          next[pickerTargetIndex] = {
+            ...next[pickerTargetIndex],
+            url: url || '',
+            titre: currentTitle && currentTitle.trim() ? currentTitle : (title || '')
+          };
+        }
+        return next;
+      });
+    } else {
+      // pickerTargetIndex === null : ajout direct d'une nouvelle vidéo
+      const newVideo = {
+        id: `vid_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+        titre: title || '',
+        url: url || '',
+        instruments: pickerInitialPupitre ? [pickerInitialPupitre] : []
+      };
+      setVideos((prev) => [...prev, newVideo]);
+      // Rétrocompatibilité : initialiser la vidéo principale si non définie
+      if (!videoUrl) {
+        setVideoUrl(url || '');
+        if (!titre.trim() && title) {
+          setTitre(title);
+        }
+      }
     }
+    setIsVideoPickerOpen(false);
+    setPickerTargetIndex(null);
+    setPickerInitialPupitre('');
   };
 
   // État du formulaire
@@ -119,7 +172,14 @@ export default function RepertoirePieceModal({
       setStatutSaison(pieceToEdit.statutSaison || 'saison');
       setEtatValidation(pieceToEdit.etatValidation || 'pret');
       setNotes(pieceToEdit.notes || '');
-      setVideos(Array.isArray(pieceToEdit.videos) ? pieceToEdit.videos : []);
+      const rawVideos = Array.isArray(pieceToEdit.videos) ? pieceToEdit.videos : [];
+      const normalizedVideos = rawVideos.map((v) => ({
+        ...v,
+        instruments: Array.isArray(v.instruments)
+          ? v.instruments
+          : (v.pupitre ? [v.pupitre] : [])
+      }));
+      setVideos(normalizedVideos);
       setSignalIds(Array.isArray(pieceToEdit.signalIds) ? pieceToEdit.signalIds : []);
       setSinaisDoMestre(Array.isArray(pieceToEdit.sinaisDoMestre) ? pieceToEdit.sinaisDoMestre : []);
       setSelectedToadaId(pieceToEdit.toadaDocId || '');
@@ -158,6 +218,7 @@ export default function RepertoirePieceModal({
       setSelectedCultureIds([]);
       setSelectedTrainingIds([]);
       setExcludedTrainingIds([]);
+      setPickerTargetIndex(null);
     }
     setErrorMsg(null);
   }, [isOpen, pieceToEdit]);
@@ -405,11 +466,18 @@ export default function RepertoirePieceModal({
       // Nettoyage strict des vidéos personnalisées
       const cleanVideos = (videos || [])
         .filter((v) => v && typeof v.url === 'string' && v.url.trim() !== '')
-        .map((v) => ({
-          id: v.id || `vid_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
-          titre: (v.titre || '').trim(),
-          url: v.url.trim()
-        }));
+        .map((v) => {
+          const insts = Array.isArray(v.instruments)
+            ? v.instruments.filter(Boolean)
+            : (v.pupitre ? [v.pupitre.trim()] : []);
+          return {
+            id: v.id || `vid_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+            titre: (v.titre || '').trim(),
+            url: v.url.trim(),
+            instruments: insts,
+            pupitre: insts[0] || (v.pupitre ? v.pupitre.trim() : '')
+          };
+        });
 
       const extractedSignalIds = (sinaisDoMestre || [])
         .map((s) => (typeof s === 'object' && s !== null ? (s.signalId || s.id) : String(s)))
@@ -423,7 +491,9 @@ export default function RepertoirePieceModal({
           cleanVideos.unshift({
             id: `vid_yt_${Date.now()}`,
             titre: 'Vidéo principale',
-            url: vTrim
+            url: vTrim,
+            instruments: [],
+            pupitre: ''
           });
         }
       }
@@ -1027,7 +1097,11 @@ export default function RepertoirePieceModal({
                   type="button"
                   variant="ocre"
                   useExtremeBorder={false}
-                  onClick={() => setIsVideoPickerOpen(true)}
+                  onClick={() => {
+                    setPickerTargetIndex('reference');
+                    setPickerInitialPupitre('');
+                    setIsVideoPickerOpen(true);
+                  }}
                   disabled={submitting}
                   className="text-[9.5px] uppercase font-black tracking-wider py-2 px-3 shrink-0 flex items-center justify-center gap-1.5 shadow-2xs"
                   title="Choisir parmi les playlists YouTube configurées de l'association"
@@ -1075,6 +1149,12 @@ export default function RepertoirePieceModal({
           <RepertoireVideosPicker
             videos={videos}
             onChange={setVideos}
+            instrumentsList={instrumentsList}
+            onOpenPicker={(idx, pupitre) => {
+              setPickerTargetIndex(idx);
+              setPickerInitialPupitre(pupitre || '');
+              setIsVideoPickerOpen(true);
+            }}
           />
 
           {/* Signes du Mestre associés & Conventions par Mesure */}
@@ -1180,9 +1260,14 @@ export default function RepertoirePieceModal({
       {/* Modale de sélection vidéo contextuelle YouTube */}
       <YouTubeVideoPickerModal
         isOpen={isVideoPickerOpen}
-        onClose={() => setIsVideoPickerOpen(false)}
+        onClose={() => {
+          setIsVideoPickerOpen(false);
+          setPickerTargetIndex(null);
+          setPickerInitialPupitre('');
+        }}
         onSelectVideo={handleSelectVideoFromPicker}
         groupId={groupId}
+        initialPupitre={pickerInitialPupitre}
       />
     </div>
   );

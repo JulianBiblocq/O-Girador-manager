@@ -131,6 +131,7 @@ export default function MemberPieceCard({
           piece={piece}
           userId={userId}
           groupId={groupId}
+          profileData={profileData}
           trainings={trainings}
           aisanceMap={aisanceMap}
           onOpenTablature={onOpenTablature}

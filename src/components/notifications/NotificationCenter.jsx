@@ -147,8 +147,9 @@ export default function NotificationCenter({
   const handleSelectNotification = useCallback((notification) => {
     if (!notification) return;
 
-    // 1. Marquer immédiatement comme lue
-    if (!notification.isRead) {
+    // 1. Marquer immédiatement comme lue (supporte read et isRead)
+    const isUnread = notification.read !== undefined ? !notification.read : !notification.isRead;
+    if (isUnread) {
       markAsRead(notification.notifId || notification.id);
     }
 

@@ -7,6 +7,7 @@ import { getToken } from 'firebase/messaging';
 import { forceUpdateAndClearCache } from '../utils/pwaUtils';
 import { showPushActivationConfirmation } from '../utils/pushNotificationHelper';
 import useConfirm from './useConfirm';
+import { notifyMembersByTag } from '../utils/inAppNotificationService';
 
 export const DEFAULT_FIELDS_CONFIG = {
   telephone: { key: "telephone", label: "Téléphone", enabled: true, filledBy: "member", isRequired: false },
@@ -501,6 +502,24 @@ export function useUserProfile(user, profileData, t) {
 
       const userRef = doc(db, 'users', user.uid);
       await setDoc(userRef, updatePayload, { merge: true });
+
+      // Notification interne pour la direction artistique / mestre si les vœux ont changé
+      if (cleanVoeux.length > 0 && JSON.stringify(cleanVoeux) !== JSON.stringify(existingVoeux)) {
+        try {
+          const userName = `${formData.prenom || profileData?.prenom || ''} ${formData.nom || profileData?.nom || ''}`.trim() || user?.displayName || 'Un membre';
+          notifyMembersByTag({
+            groupId: profileData?.groupId || 'o-girador',
+            tags: ['Mestre', 'mestre', 'Direction'],
+            title: "🥁 Vœux d'instruments mis à jour",
+            message: `${userName} a formulé ses souhaits de pupitre`,
+            targetUrl: "/mestre?tab=casting",
+            icon: "🥁"
+          }).catch((err) => console.warn("useUserProfile - Notification vœux mestre ignorée :", err));
+        } catch (notifErr) {
+          console.warn("useUserProfile - Erreur notification mestre :", notifErr);
+        }
+      }
+
       alert(t('userProfile.successMsg'));
       setIsEditing(false);
     } catch (error) {

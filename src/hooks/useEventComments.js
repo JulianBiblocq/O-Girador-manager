@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { collection, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { notifyMembersByTag } from '../utils/inAppNotificationService';
 
 /**
  * Hook useEventComments
@@ -110,7 +111,21 @@ export function useEventComments(eventId, user, profileData, event) {
       const eventTitle = event?.titre || event?.nom || 'Événement';
       const excerpt = cleanText.length > 90 ? cleanText.slice(0, 90) + '...' : cleanText;
 
-      // 4. Notification pour l'étiquette configurée (ex: Bureau, Admins, Mestre)
+      // 4. Notification interne pour le Conseil d'Administration et le Bureau
+      try {
+        notifyMembersByTag({
+          groupId: effectiveGroupId,
+          tags: ['CA', 'ca', 'bureau', 'Bureau'],
+          title: `💬 Question sur l'événement ${eventTitle}`,
+          message: `${authorName} : ${excerpt}`,
+          targetUrl: `/events/${eventId}`,
+          icon: "💬"
+        }).catch((err) => console.warn("useEventComments - Notification CA ignorée :", err));
+      } catch (notifErr) {
+        console.warn("useEventComments - Erreur notification CA :", notifErr);
+      }
+
+      // 5. Notification pour l'étiquette configurée (si différente)
       if (tagConfigured) {
         try {
           await addDoc(collection(db, 'notifications_queue'), {

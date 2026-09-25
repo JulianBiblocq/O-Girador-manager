@@ -68,9 +68,10 @@ function getNotificationIcon(type) {
 }
 
 export default function NotificationItem({ notification, onSelect }) {
-  const isUnread = !notification.isRead;
+  const isUnread = notification.read !== undefined ? !notification.read : !notification.isRead;
   const dateFormatted = formatRelativeDate(notification.createdAt);
-  const icon = getNotificationIcon(notification.type);
+  const icon = notification.icon || getNotificationIcon(notification.type);
+  const displayTitle = notification.title || notification.titre || 'Notification';
 
   return (
     <div
@@ -98,7 +99,7 @@ export default function NotificationItem({ notification, onSelect }) {
       <div className="flex-1 min-w-0 pr-1">
         <div className="flex items-center justify-between gap-1 mb-0.5">
           <span className={`text-xs truncate ${isUnread ? 'font-black text-encre-noire' : 'font-bold text-encre-noire/80'}`}>
-            {notification.titre}
+            {displayTitle}
           </span>
           {isUnread && (
             <span

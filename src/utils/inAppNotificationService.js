@@ -1,14 +1,25 @@
 /**
- * Service de gestion et synchronisation des notifications internes (In-App)
- * et de leur couplage avec la file d'attente Push FCM (notifications_queue).
+ * Service de notifications internes (In-App) et de diffusion ciblée par badges/étiquettes.
  */
 
-import { collection, addDoc, doc, setDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import {
+  collection,
+  doc,
+  setDoc,
+  getDocs,
+  query,
+  where,
+  writeBatch,
+  serverTimestamp,
+  Timestamp
+} from 'firebase/firestore';
 import { db } from '../firebase';
 
-/**
- * Types de notifications supportés par le système in-app.
- */
+export {
+  dispatchInAppAndPushNotification,
+  dispatchBulkInAppAndPushNotification
+} from './pushQueueService';
+
 export const NOTIFICATION_TYPES = {
   FORUM_MENTION: 'forum_mention',
   FORUM_REPLY: 'forum_reply',
@@ -23,165 +34,128 @@ export const NOTIFICATION_TYPES = {
 };
 
 /**
- * Crée un document de notification interne dans users/{userId}/in_app_notifications.
- * 
- * @param {Object} params Paramètres de la notification
- * @param {string} params.userId Identifiant de l'utilisateur destinataire
- * @param {string} params.groupId Identifiant de l'association/groupe
- * @param {string} [params.type='announcement'] Type de notification
- * @param {string} params.titre Titre de la notification
- * @param {string} params.message Corps du message explicatif
- * @param {string} [params.targetUrl='/'] URL interne SPA de destination pour le deep linking
- * @param {boolean} [params.isRead=false] État de lecture initial
- * @param {Timestamp|Date} [params.createdAt] Horodatage de création
- * @returns {Promise<string>} Identifiant du document créé (notifId)
+ * Crée un document de notification dans users/{userId}/in_app_notifications.
  */
 export async function createInAppNotification({
   userId,
-  groupId,
+  groupId = '',
   type = NOTIFICATION_TYPES.ANNOUNCEMENT,
   titre,
-  message,
+  title,
+  message = '',
   targetUrl = '/',
+  icon = '🔔',
+  priority = 'normal',
   isRead = false,
+  read = false,
   createdAt = null
 }) {
-  if (!userId) {
-    console.warn("createInAppNotification : userId manquant, notification abandonnée.");
-    return null;
-  }
-
+  if (!userId) return null;
   try {
-    const notifsColRef = collection(db, 'users', userId, 'in_app_notifications');
-    const newDocRef = doc(notifsColRef);
-    const notifId = newDocRef.id;
-
-    // Résolution de l'horodatage Firestore
+    const notifsCol = collection(db, 'users', userId, 'in_app_notifications');
+    const newDocRef = doc(notifsCol);
     const resolvedTimestamp = createdAt instanceof Timestamp
       ? createdAt
       : (createdAt instanceof Date ? Timestamp.fromDate(createdAt) : serverTimestamp());
 
-    const notifPayload = {
-      notifId,
-      groupId: groupId || '',
-      type: type || NOTIFICATION_TYPES.ANNOUNCEMENT,
-      titre: titre || 'Notification',
-      message: message || '',
-      targetUrl: targetUrl || '/',
-      isRead: Boolean(isRead),
+    const displayTitle = title || titre || 'Notification';
+    await setDoc(newDocRef, {
+      id: newDocRef.id,
+      notifId: newDocRef.id,
+      groupId,
+      type,
+      title: displayTitle,
+      titre: displayTitle,
+      message,
+      targetUrl,
+      icon,
+      priority,
+      read: Boolean(read || isRead),
+      isRead: Boolean(read || isRead),
       createdAt: resolvedTimestamp
-    };
-
-    await setDoc(newDocRef, notifPayload);
-    return notifId;
+    });
+    return newDocRef.id;
   } catch (err) {
-    console.error(`Erreur lors de la création de la notification in-app pour l'utilisateur ${userId} :`, err);
+    console.error(`Erreur création notification in-app (${userId}) :`, err);
     return null;
   }
 }
 
 /**
- * Diffuse une notification à la fois dans le centre de notifications in-app du membre
- * et dans la file d'attente Push FCM (notifications_queue) pour les appareils externes.
- * 
- * @param {Object} params Paramètres de la notification combinée
- * @param {string} params.recipientId Identifiant du membre destinataire
- * @param {string} params.groupId Identifiant de l'association
- * @param {string} [params.type='announcement'] Type de notification
- * @param {string} params.titre Titre affiché
- * @param {string} params.message Corps du texte
- * @param {string} [params.targetUrl='/'] URL interne pour la redirection
- * @param {boolean} [params.sendPush=true] Si true, pousse également dans notifications_queue
- * @returns {Promise<{ notifId: string|null, pushQueued: boolean }>}
+ * Diffuse une notification in-app ciblée aux membres possédant au moins l'un des tags/rôles spécifiés.
  */
-export async function dispatchInAppAndPushNotification({
-  recipientId,
+export async function notifyMembersByTag({
   groupId,
-  type = NOTIFICATION_TYPES.ANNOUNCEMENT,
-  titre,
+  tags = [],
+  title,
   message,
   targetUrl = '/',
-  sendPush = true
+  icon = '🔔',
+  priority = 'normal'
 }) {
-  if (!recipientId) return { notifId: null, pushQueued: false };
+  if (!groupId || !Array.isArray(tags) || tags.length === 0) {
+    return { success: false, count: 0, recipientIds: [] };
+  }
 
-  let notifId = null;
-  let pushQueued = false;
+  const normalizedTargets = tags.map((t) => String(t || '').trim().toLowerCase()).filter(Boolean);
+  if (normalizedTargets.length === 0) return { success: false, count: 0, recipientIds: [] };
 
-  // 1. Notification In-App instantanée
   try {
-    notifId = await createInAppNotification({
-      userId: recipientId,
-      groupId,
-      type,
-      titre,
-      message,
-      targetUrl
-    });
-  } catch (inAppErr) {
-    console.warn("Échec création in_app_notification :", inAppErr);
-  }
-
-  // 2. Notification Push externe via notifications_queue
-  if (sendPush && groupId) {
-    try {
-      const nowIso = new Date().toISOString();
-      await addDoc(collection(db, 'notifications_queue'), {
-        groupId,
-        recipientId,
-        userId: recipientId,
-        title: titre,
-        body: message,
-        url: targetUrl,
-        type,
-        createdAt: nowIso
-      });
-      pushQueued = true;
-    } catch (pushErr) {
-      console.warn("Échec mise en file notifications_queue :", pushErr);
+    const usersRef = collection(db, 'users');
+    let snapshot = await getDocs(query(usersRef, where('groupId', '==', groupId)));
+    if (snapshot.empty && groupId !== groupId.toLowerCase()) {
+      snapshot = await getDocs(query(usersRef, where('groupId', '==', groupId.toLowerCase())));
     }
+
+    const recipientIds = [];
+    snapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      if (data.statutActuel === 'archived') return;
+
+      const userTagList = [
+        ...(Array.isArray(data.userTags) ? data.userTags : []),
+        ...(Array.isArray(data.tags) ? data.tags : []),
+        ...(data.role ? [data.role] : []),
+        ...(data.profilRole ? [data.profilRole] : [])
+      ]
+        .map((t) => (typeof t === 'string' ? t.trim().toLowerCase() : (t?.nom || t?.name || t?.label || t?.id || '').trim().toLowerCase()))
+        .filter(Boolean);
+
+      if (normalizedTargets.some((target) => userTagList.includes(target))) {
+        recipientIds.push(docSnap.id);
+      }
+    });
+
+    if (recipientIds.length > 0) {
+      const batchSize = 400;
+      for (let i = 0; i < recipientIds.length; i += batchSize) {
+        const chunk = recipientIds.slice(i, i + batchSize);
+        const batch = writeBatch(db);
+        chunk.forEach((userId) => {
+          const notifCol = collection(db, 'users', userId, 'in_app_notifications');
+          const newDocRef = doc(notifCol);
+          batch.set(newDocRef, {
+            id: newDocRef.id,
+            notifId: newDocRef.id,
+            title: title || '',
+            titre: title || '',
+            message: message || '',
+            targetUrl: targetUrl || '/',
+            icon: icon || '🔔',
+            priority,
+            read: false,
+            isRead: false,
+            groupId,
+            createdAt: serverTimestamp()
+          });
+        });
+        await batch.commit();
+      }
+    }
+
+    return { success: true, count: recipientIds.length, recipientIds };
+  } catch (err) {
+    console.error('notifyMembersByTag - Erreur lors de la diffusion :', err);
+    return { success: false, count: 0, recipientIds: [], error: err.message };
   }
-
-  return { notifId, pushQueued };
-}
-
-/**
- * Diffuse une notification à un groupe de membres destinataires en parallèle.
- * Envoie à la fois dans le centre in-app et dans la file d'attente Push FCM.
- * 
- * @param {Object} params Paramètres de diffusion groupée
- * @param {Array<string>} params.recipientIds Liste des identifiants des membres destinataires
- * @param {string} params.groupId Identifiant de l'association
- * @param {string} [params.type] Type de notification
- * @param {string} params.titre Titre affiché
- * @param {string} params.message Corps du texte
- * @param {string} [params.targetUrl='/'] URL interne pour la redirection
- * @param {boolean} [params.sendPush=true] Si true, pousse également dans notifications_queue
- * @returns {Promise<Array<PromiseSettledResult>>}
- */
-export async function dispatchBulkInAppAndPushNotification({
-  recipientIds = [],
-  groupId,
-  type = NOTIFICATION_TYPES.ANNOUNCEMENT,
-  titre,
-  message,
-  targetUrl = '/',
-  sendPush = true
-}) {
-  if (!Array.isArray(recipientIds) || recipientIds.length === 0) return [];
-  const uniqueRecipients = Array.from(new Set(recipientIds)).filter(Boolean);
-
-  return Promise.allSettled(
-    uniqueRecipients.map((recipientId) =>
-      dispatchInAppAndPushNotification({
-        recipientId,
-        groupId,
-        type,
-        titre,
-        message,
-        targetUrl,
-        sendPush
-      })
-    )
-  );
 }

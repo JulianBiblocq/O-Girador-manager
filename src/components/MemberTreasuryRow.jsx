@@ -4,6 +4,7 @@ import { db } from '../firebase';
 import XiloAvatar from './XiloAvatar';
 import { useTranslation } from './LanguageContext';
 import { useTerminologie } from '../hooks/useTerminologie';
+import { notifyMembersByTag } from '../utils/inAppNotificationService';
 
 function MemberTreasuryRow({
   member,
@@ -88,6 +89,19 @@ function MemberTreasuryRow({
       await updateDoc(userRef, {
         paymentStatus: newStatus
       });
+
+      // Notification interne pour les trésoriers si passage à 'paid'
+      if (newStatus === 'paid' && currentStatus !== 'paid') {
+        const userName = `${member.prenom || ''} ${member.nom || ''}`.trim() || 'Un adhérent';
+        notifyMembersByTag({
+          groupId: member.groupId,
+          tags: ['Trésorier', 'tresorier'],
+          title: "💳 Cotisation réglée",
+          message: `${userName} a réglé son adhésion`,
+          targetUrl: "/treasury?tab=cotisations",
+          icon: "💳"
+        }).catch((notifErr) => console.warn("MemberTreasuryRow - Notification trésorier ignorée :", notifErr));
+      }
     } catch (err) {
       console.error("MemberTreasuryRow - Erreur modification statut paiement :", err);
       alert((t('widgetTreasury.errorStatusUpdate') || "Impossible de modifier le statut de paiement : ") + (err.message || err));

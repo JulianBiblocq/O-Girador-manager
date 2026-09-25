@@ -9,6 +9,7 @@ import OnboardingPublicBlock from './onboarding/OnboardingPublicBlock';
 import OnboardingVisibilityBlock from './onboarding/OnboardingVisibilityBlock';
 import OnboardingPrivateBlock from './onboarding/OnboardingPrivateBlock';
 import OnboardingMissingFieldsAlert from './onboarding/OnboardingMissingFieldsAlert';
+import { notifyMembersByTag } from '../utils/inAppNotificationService';
 
 // Configuration par défaut des champs du formulaire d'inscription.
 // Les champs non essentiels sont isRequired: false pour éviter qu'un champ masqué
@@ -388,6 +389,23 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
         }
 
         await setDoc(userRef, userDoc, { merge: true });
+      }
+
+      // Notification interne pour la direction artistique / mestre si des vœux sont formulés
+      if (cleanVoeux.length > 0) {
+        try {
+          const userName = `${formData.firstName || ''} ${formData.lastName || ''}`.trim() || user?.displayName || 'Un membre';
+          notifyMembersByTag({
+            groupId: (profileData?.groupId || groupId)?.toLowerCase() === 'samambaia' ? 'Samambaia' : (profileData?.groupId || groupId),
+            tags: ['Mestre', 'mestre', 'Direction'],
+            title: "🥁 Vœux d'instruments mis à jour",
+            message: `${userName} a formulé ses souhaits de pupitre`,
+            targetUrl: "/mestre?tab=casting",
+            icon: "🥁"
+          }).catch((err) => console.warn("Onboarding - Notification vœux mestre ignorée :", err));
+        } catch (notifErr) {
+          console.warn("Onboarding - Erreur notification mestre :", notifErr);
+        }
       }
 
       // Nettoyages annexes non-bloquants (transactions comptables et sas pending_payments)

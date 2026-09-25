@@ -12,6 +12,7 @@ import {
 } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
+import { notifyMembersByTag } from '../utils/inAppNotificationService';
 
 /**
  * Hook React pour la gestion en temps réel du pipeline de prestations (Pôle Diffusion).
@@ -101,6 +102,21 @@ export function useGigsPipeline(groupId) {
       };
 
       const docRef = await addDoc(collection(db, 'gigs_pipeline'), newDoc);
+
+      // Notification pour le pôle Diffusion / Booking si demande entrante ou relance
+      try {
+        notifyMembersByTag({
+          groupId,
+          tags: ['Diffusion', 'diffusion', 'Booking', 'booking'],
+          title: "📅 Prestation à relancer",
+          message: `${newDoc.organizer || 'Organisateur'} pour ${newDoc.eventName}`,
+          targetUrl: "/diffusion?tab=pipeline",
+          icon: "📅"
+        }).catch((err) => console.warn("useGigsPipeline - Notif diffusion ignorée :", err));
+      } catch (notifErr) {
+        console.warn("useGigsPipeline - Erreur notification diffusion :", notifErr);
+      }
+
       return docRef.id;
     } catch (err) {
       console.error("useGigsPipeline - Erreur création prestation :", err);
@@ -121,6 +137,23 @@ export function useGigsPipeline(groupId) {
         ...updates,
         updatedAt: serverTimestamp()
       });
+
+      // Notification pour le pôle Diffusion si passage à relancer
+      if (updates.status && (updates.status === 'a_relancer' || updates.status === 'relance' || String(updates.status).toLowerCase().includes('relance'))) {
+        const targetGig = gigs.find(g => g.id === gigId);
+        try {
+          notifyMembersByTag({
+            groupId: targetGig?.groupId || groupId,
+            tags: ['Diffusion', 'diffusion', 'Booking', 'booking'],
+            title: "📅 Prestation à relancer",
+            message: `${updates.organizer || targetGig?.organizer || 'Organisateur'} pour ${updates.eventName || targetGig?.eventName || 'Prestation'}`,
+            targetUrl: "/diffusion?tab=pipeline",
+            icon: "📅"
+          }).catch((err) => console.warn("useGigsPipeline - Notif diffusion ignorée :", err));
+        } catch (notifErr) {
+          console.warn("useGigsPipeline - Erreur notification diffusion :", notifErr);
+        }
+      }
     } catch (err) {
       console.error("useGigsPipeline - Erreur mise à jour prestation :", err);
       throw new Error("Erreur lors de la mise à jour de la prestation.");
@@ -140,6 +173,23 @@ export function useGigsPipeline(groupId) {
         status: newStatus,
         updatedAt: serverTimestamp()
       });
+
+      // Notification pour le pôle Diffusion si passage à relancer
+      if (newStatus === 'a_relancer' || newStatus === 'relance' || String(newStatus).toLowerCase().includes('relance')) {
+        const targetGig = gigs.find(g => g.id === gigId);
+        try {
+          notifyMembersByTag({
+            groupId: targetGig?.groupId || groupId,
+            tags: ['Diffusion', 'diffusion', 'Booking', 'booking'],
+            title: "📅 Prestation à relancer",
+            message: `${targetGig?.organizer || 'Organisateur'} pour ${targetGig?.eventName || 'Prestation'}`,
+            targetUrl: "/diffusion?tab=pipeline",
+            icon: "📅"
+          }).catch((err) => console.warn("useGigsPipeline - Notif diffusion ignorée :", err));
+        } catch (notifErr) {
+          console.warn("useGigsPipeline - Erreur notification diffusion :", notifErr);
+        }
+      }
     } catch (err) {
       console.error("useGigsPipeline - Erreur changement statut :", err);
       throw new Error("Erreur lors du changement d'étape.");

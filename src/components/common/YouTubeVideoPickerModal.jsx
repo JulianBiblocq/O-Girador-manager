@@ -14,6 +14,7 @@ export default function YouTubeVideoPickerModal({
   onClose,
   onSelectVideo,
   defaultPlaylistIndex = 0,
+  initialPupitre = '',
   playlists: propPlaylists = null,
   groupId = null
 }) {
@@ -25,6 +26,22 @@ export default function YouTubeVideoPickerModal({
   const [loadingVideos, setLoadingVideos] = useState(false);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Pré-positionnement intelligent selon le pupitre ciblé ou l'index par défaut
+  useEffect(() => {
+    if (!isOpen || playlists.length === 0) return;
+    if (initialPupitre && typeof initialPupitre === 'string') {
+      const pNorm = initialPupitre.toLowerCase().trim();
+      const matchIdx = playlists.findIndex((pl) => (pl.label || '').toLowerCase().includes(pNorm));
+      if (matchIdx !== -1) {
+        setActiveTab(matchIdx);
+        return;
+      }
+    }
+    if (typeof defaultPlaylistIndex === 'number' && defaultPlaylistIndex >= 0 && defaultPlaylistIndex < playlists.length) {
+      setActiveTab(defaultPlaylistIndex);
+    }
+  }, [isOpen, initialPupitre, defaultPlaylistIndex, playlists]);
 
   useEffect(() => {
     if (activeTab >= playlists.length && playlists.length > 0) setActiveTab(0);

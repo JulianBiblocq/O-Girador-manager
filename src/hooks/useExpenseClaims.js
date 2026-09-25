@@ -13,7 +13,7 @@ import {
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../firebase';
 import { getSeasonFromDate, DEFAULT_SEASON_START_MONTH } from '../utils/seasonUtils';
-import { createInAppNotification } from '../utils/inAppNotificationService';
+import { createInAppNotification, notifyMembersByTag } from '../utils/inAppNotificationService';
 
 /**
  * Hook personnalisé pour la gestion des notes de frais associatives (expense_claims).
@@ -203,6 +203,21 @@ export function useExpenseClaims(groupId, userId = null, startMonth = DEFAULT_SE
       };
 
       await setDoc(claimRef, payload);
+
+      // Notification interne pour les trésoriers (non-bloquante)
+      try {
+        notifyMembersByTag({
+          groupId,
+          tags: ['Trésorier', 'tresorier'],
+          title: "🧾 Nouvelle note de frais",
+          message: `${userName} — ${parsedAmount} € pour ${motif.trim()}`,
+          targetUrl: "/treasury?tab=frais-km",
+          icon: "🧾"
+        }).catch((err) => console.warn("useExpenseClaims - Notification trésorier ignorée :", err));
+      } catch (notifErr) {
+        console.warn("useExpenseClaims - Erreur notification trésorier :", notifErr);
+      }
+
       return claimId;
     } catch (err) {
       console.error("useExpenseClaims - Erreur lors de l'enregistrement de la note de frais :", err);

@@ -1157,6 +1157,40 @@ exports.helloAssoWebhook = onRequest(
             newStatus: "paid",
             amount: amountEuros
           });
+
+          // Notification interne in-app pour les trésoriers
+          try {
+            const treasurersSnap = await db.collection("users")
+              .where("groupId", "==", groupId)
+              .get();
+            const treasurerPromises = [];
+            treasurersSnap.forEach((tDoc) => {
+              const tData = tDoc.data();
+              const uTags = [
+                ...(Array.isArray(tData.userTags) ? tData.userTags : []),
+                ...(Array.isArray(tData.tags) ? tData.tags : []),
+                ...(tData.role ? [tData.role] : [])
+              ].map(t => typeof t === 'string' ? t.toLowerCase().trim() : (t?.nom || t?.name || t?.id || '').toLowerCase().trim());
+              if (uTags.includes('trésorier') || uTags.includes('tresorier')) {
+                treasurerPromises.push(
+                  db.collection("users").doc(tDoc.id).collection("in_app_notifications").add({
+                    title: "💳 Cotisation réglée",
+                    titre: "💳 Cotisation réglée",
+                    message: `${matchedUserName} a réglé son adhésion`,
+                    targetUrl: "/treasury?tab=cotisations",
+                    icon: "💳",
+                    read: false,
+                    isRead: false,
+                    groupId,
+                    createdAt: FieldValue.serverTimestamp()
+                  })
+                );
+              }
+            });
+            await Promise.allSettled(treasurerPromises);
+          } catch (notifErr) {
+            console.warn("helloAssoWebhook - Notification trésorier ignorée :", notifErr.message);
+          }
         } else {
           console.warn("helloAssoWebhook - Aucun membre trouvé pour l'email :", payerEmail, "dans le groupe :", groupId, "- Enregistrement dans pending_payments");
           // Sas pending_payments pour réconciliation automatique lors de l'onboarding futur
