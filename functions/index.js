@@ -1657,17 +1657,6 @@ exports.createStripeCheckoutSession = onCall(
   }
 );
 
-/**
- * Cloud Function HTTP (v2) : stripeWebhook
- * Reçoit les événements de paiement de Stripe.
- */
-exports.stripeWebhook = onRequest(
-  async (req, res) => {
-    // Fonction minimale (stub) pour permettre le premier déploiement et obtenir l'URL.
-    // Le vrai code sera ajouté à l'étape suivante.
-    res.status(200).send("Webhook endpoint is ready.");
-  }
-);
 
 // ============================================================================
 // 🌍 PHASE 4 : SEO & RÉFÉRENCEMENT MULTI-TENANT (MOSTRADOR)
