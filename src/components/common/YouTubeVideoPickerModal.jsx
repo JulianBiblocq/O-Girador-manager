@@ -79,8 +79,8 @@ export default function YouTubeVideoPickerModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
-      <CordelCard variant="default" useExtremeBorder={true} className="w-full max-w-3xl max-h-[90vh] flex flex-col bg-cordel-bg p-0 overflow-hidden shadow-2xl">
-        <div className="flex items-center justify-between p-3.5 border-b-2 border-dashed border-cordel-master-dark/20 bg-cordel-bg-light">
+      <CordelCard variant="default" useExtremeBorder={true} className="w-full max-w-4xl lg:max-w-5xl max-h-[90vh] flex flex-col bg-cordel-bg p-0 overflow-hidden shadow-2xl">
+        <div className="flex items-center justify-between p-3.5 border-b-2 border-dashed border-cordel-master-dark/20 bg-cordel-bg-light shrink-0">
           <div className="flex items-center gap-2">
             <span className="text-xl">🎬</span>
             <h3 className="text-sm font-black uppercase tracking-wider text-cordel-wood">Vidéothèque YouTube</h3>
@@ -99,30 +99,35 @@ export default function YouTubeVideoPickerModal({
           </div>
         ) : (
           <div className="flex flex-col flex-1 min-h-0">
-            <div className="flex items-center gap-1.5 px-3 pt-2.5 overflow-x-auto border-b border-cordel-master-dark/15 scrollbar-thin">
-              {playlists.map((pl, idx) => (
-                <button
-                  key={pl.id || idx}
-                  type="button"
-                  onClick={() => { setActiveTab(idx); setSearchQuery(''); }}
-                  className={`px-3 py-1.5 text-xs font-bold whitespace-nowrap rounded-t-[4px_6px_0px_0px] border-t-2 border-x-2 transition-all cursor-pointer ${
-                    activeTab === idx
-                      ? 'bg-white border-cordel-master-dark text-cordel-wood font-black shadow-xs -mb-[1px]'
-                      : 'bg-cordel-bg-light/60 border-transparent text-cordel-master-dark/75 hover:bg-white/50'
-                  }`}
-                >
-                  {pl.label || `Playlist #${idx + 1}`}
-                </button>
-              ))}
+            {/* Bandeau élargi des playlists avec boutons thématiques Cordel */}
+            <div className="flex items-center gap-2 px-4 py-3 bg-cordel-bg-light/60 border-b-2 border-dashed border-cordel-master-dark/20 overflow-x-auto overflow-y-hidden shrink-0 select-none scrollbar-thin">
+              {playlists.map((pl, idx) => {
+                const isActive = activeTab === idx;
+                return (
+                  <button
+                    key={pl.id || idx}
+                    type="button"
+                    onClick={() => { setActiveTab(idx); setSearchQuery(''); }}
+                    className={`px-4 py-2 text-xs sm:text-sm font-black uppercase tracking-wider whitespace-nowrap rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
+                      isActive
+                        ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                        : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+                    }`}
+                  >
+                    <span>📺</span>
+                    <span>{pl.label || `Playlist #${idx + 1}`}</span>
+                  </button>
+                );
+              })}
             </div>
 
-            <div className="p-3 bg-white border-b border-cordel-master-dark/10">
+            <div className="p-3 bg-white border-b border-cordel-master-dark/10 shrink-0">
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Filtrer les vidéos par titre..."
-                className="w-full px-3 py-1.5 text-xs font-semibold bg-[#fdfaf2] border border-cordel-master-dark/30 rounded focus:border-cordel-wood focus:outline-hidden"
+                className="w-full px-3.5 py-2 text-xs font-semibold bg-[#fdfaf2] border border-cordel-master-dark/30 rounded focus:border-cordel-wood focus:outline-hidden"
               />
             </div>
 
