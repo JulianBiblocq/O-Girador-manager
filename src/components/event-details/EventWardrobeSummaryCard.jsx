@@ -72,7 +72,7 @@ export default function EventWardrobeSummaryCard({
 
     try {
       const eventName = event.titre || event.nom || "Événement";
-      const deepLinkUrl = `/mon-vestiaire?eventId=${event.id}`;
+      const deepLinkUrl = `/app/mon-vestiaire?eventId=${event.id}`;
       const effectiveGroupId = event.groupId || profileData?.groupId;
 
       // 1. Dépôt de la notification dans la file d'attente push

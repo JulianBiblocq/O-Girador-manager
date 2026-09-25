@@ -21,19 +21,32 @@ export default function PieceCultureModal({
     return [];
   }, [cultureDocs]);
 
-  const [selectedDocId, setSelectedDocId] = useState(initialDocId || docsList[0]?.id || null);
+  // Initialisation de la fiche sélectionnée
+  const [selectedDocId, setSelectedDocId] = useState(() => initialDocId || docsList[0]?.id || 0);
 
+  // Synchronisation sécurisée uniquement lors du montage ou du changement de fiche cible initiale
   useEffect(() => {
-    if (initialDocId) {
+    if (initialDocId != null) {
       setSelectedDocId(initialDocId);
-    } else if (docsList.length > 0 && !docsList.some((d) => d.id === selectedDocId)) {
-      setSelectedDocId(docsList[0].id);
+    } else if (docsList.length > 0) {
+      setSelectedDocId(docsList[0]?.id != null ? docsList[0].id : 0);
     }
-  }, [initialDocId, docsList, selectedDocId]);
+  }, [initialDocId, isOpen]);
 
   if (!isOpen || docsList.length === 0) return null;
 
-  const activeDoc = docsList.find((d) => d.id === selectedDocId) || docsList[0];
+  // Résolution tolérante de la fiche active (supporte ID chaîne, numérique ou repli sur l'index)
+  const activeDoc = useMemo(() => {
+    if (!docsList || docsList.length === 0) return null;
+    const found = docsList.find((d, idx) => {
+      if (d?.id != null && selectedDocId != null) {
+        return String(d.id) === String(selectedDocId);
+      }
+      return idx === selectedDocId;
+    });
+    return found || docsList[0];
+  }, [docsList, selectedDocId]);
+
   const docTitle = activeDoc?.titre || activeDoc?.name || piece?.titre || 'Fiche Culture';
 
   return (
@@ -62,19 +75,20 @@ export default function PieceCultureModal({
                 Fiches ({docsList.length}) :
               </span>
               {docsList.map((doc, idx) => {
-                const isSelected = (doc.id || idx) === (activeDoc?.id || idx);
+                const docKey = doc?.id != null ? doc.id : idx;
+                const isSelected = activeDoc === doc || String(docKey) === String(selectedDocId);
                 return (
                   <button
-                    key={doc.id || idx}
+                    key={docKey}
                     type="button"
-                    onClick={() => setSelectedDocId(doc.id)}
+                    onClick={() => setSelectedDocId(docKey)}
                     className={`px-2.5 py-0.5 text-xs font-bold rounded-full transition-all shrink-0 cursor-pointer shadow-2xs ${
                       isSelected
                         ? 'bg-blue-900 text-white font-black'
                         : 'bg-white/80 hover:bg-white text-stone-700 border border-stone-300'
                     }`}
                   >
-                    {doc.titre || doc.name || `Fiche #${idx + 1}`}
+                    {doc?.titre || doc?.name || `Fiche #${idx + 1}`}
                   </button>
                 );
               })}

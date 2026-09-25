@@ -1,12 +1,12 @@
 import { useEffect } from 'react';
 import { forceUpdateAndClearCache } from '../utils/pwaUtils';
 
-export const CURRENT_VERSION = '1.0.0';
+export const CURRENT_VERSION = (import.meta.env.VITE_APP_VERSION || 'v1.0.0').replace(/^v/, '');
 
 /**
  * Hook de détection de version et purge de cache PWA pour Organizad'Or.
  * Désactivé en développement. En production, sonde /version.json au montage
- * et lors du retour au premier plan de l'onglet.
+ * et lors du retour au premier plan de l'onglet avec un délai de temporisation.
  */
 export function useAppUpdate() {
   useEffect(() => {
@@ -18,7 +18,8 @@ export function useAppUpdate() {
     const checkVersion = async () => {
       if (hasChecked || !navigator.onLine) return;
       hasChecked = true;
-      setTimeout(() => { hasChecked = false; }, 60_000);
+      // Temporisation de 10 minutes entre deux vérifications
+      setTimeout(() => { hasChecked = false; }, 10 * 60 * 1000);
 
       try {
         const response = await fetch(`/version.json?t=${Date.now()}`);
@@ -29,7 +30,8 @@ export function useAppUpdate() {
           const latestVersion = String(data.version);
           if (latestVersion !== CURRENT_VERSION) {
             const sessionKey = `update_prompted_${latestVersion}`;
-            if (sessionStorage.getItem(sessionKey)) return;
+            const localKey = `update_dismissed_${latestVersion}`;
+            if (sessionStorage.getItem(sessionKey) || localStorage.getItem(localKey)) return;
             sessionStorage.setItem(sessionKey, 'true');
 
             const shouldUpdate = window.confirm(
@@ -37,6 +39,8 @@ export function useAppUpdate() {
             );
             if (shouldUpdate) {
               await forceUpdateAndClearCache();
+            } else {
+              localStorage.setItem(localKey, 'true');
             }
           }
         }

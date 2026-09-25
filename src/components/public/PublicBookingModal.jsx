@@ -73,7 +73,7 @@ export default function PublicBookingModal({
           tags: ['Diffusion', 'diffusion', 'Booking', 'booking'],
           title: "📅 Prestation à relancer",
           message: `${nomOrganisateur} pour ${nomEvenement}`,
-          targetUrl: "/diffusion?tab=pipeline",
+          targetUrl: "/app/diffusion?tab=pipeline",
           icon: "📅"
         }).catch((err) => console.warn("PublicBookingModal - Notification diffusion ignorée :", err));
       } catch (notifErr) {

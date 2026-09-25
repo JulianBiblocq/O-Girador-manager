@@ -382,10 +382,18 @@ export default function Forum({
     };
   }, [user?.uid]);
 
-  // Ouverture automatique d'une discussion privée en cas de rédirection depuis le Trombinoscope
+  // Ouverture automatique d'une discussion privée en cas de redirection depuis le Trombinoscope ou la modale des membres en ligne
   useEffect(() => {
     if (activePrivateChatUserId) {
       const initDirect = async () => {
+        // Si l'ID de la conversation est déjà connu et transmis en amont
+        if (initialConversationId) {
+          setActiveConversationId(initialConversationId);
+          setActiveTab('direct');
+          if (onClearActivePrivateChat) onClearActivePrivateChat();
+          return;
+        }
+
         const convId = await createDirectConversation(activePrivateChatUserId, initialPrivateMessage);
         if (convId) {
           setActiveConversationId(convId);
@@ -397,7 +405,7 @@ export default function Forum({
       };
       initDirect();
     }
-  }, [activePrivateChatUserId, createDirectConversation, initialPrivateMessage, onClearActivePrivateChat]);
+  }, [activePrivateChatUserId, initialConversationId, createDirectConversation, initialPrivateMessage, onClearActivePrivateChat]);
 
   const [tagsDisponibles, setTagsDisponibles] = useState([]);
 

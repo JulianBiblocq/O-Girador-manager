@@ -83,13 +83,27 @@ async function sendPushToUsers(db, { groupId, recipientId, cibles, title, body, 
     return false;
   }
 
-  // Récupération du nom de l'association pour l'afficher dans le titre de la notification
+  // Résolution de l'identifiant effectif de groupe pour charger le logo d'association
+  let effectiveGroupId = groupId;
+  if (!effectiveGroupId && recipientId && usersSnap.docs.length > 0) {
+    effectiveGroupId = usersSnap.docs[0].data()?.groupId || "";
+  }
+
+  // Récupération du nom et du logo personnalisé de l'association (branding marque blanche)
   let assoName = "";
-  if (groupId) {
+  let assoIcon = "/icon-192x192.png";
+  if (effectiveGroupId) {
     try {
-      const assoDoc = await db.collection("associations").doc(groupId).get();
+      const assoDoc = await db.collection("associations").doc(effectiveGroupId).get();
       if (assoDoc.exists) {
-        assoName = assoDoc.data().nom || "";
+        const assoData = assoDoc.data() || {};
+        assoName = assoData.nom || "";
+        // Priorité au logo téléversé dans le branding, sinon logo racine, sinon repli statique
+        if (assoData.branding && assoData.branding.logoUrl) {
+          assoIcon = assoData.branding.logoUrl;
+        } else if (assoData.logoUrl) {
+          assoIcon = assoData.logoUrl;
+        }
       }
     } catch (e) {
       console.warn("sendPushToUsers - Erreur lors de la récupération de l'association", e);
@@ -108,14 +122,22 @@ async function sendPushToUsers(db, { groupId, recipientId, cibles, title, body, 
 
     try {
       // Données de navigation transmises au service worker pour le deep linking
-      const resolvedData = dataPayload || { url: "/app", click_action: "/app" };
-      const eventUrl = resolvedData.url || "/app";
+      const rawData = dataPayload || { url: "/app", click_action: "/app" };
+      let eventUrl = rawData.url || "/app";
+      if (!eventUrl.startsWith('http') && !eventUrl.startsWith('/app')) {
+        eventUrl = eventUrl.startsWith('/') ? `/app${eventUrl}` : `/app/${eventUrl}`;
+      }
+      const resolvedData = { ...rawData, url: eventUrl, click_action: eventUrl };
 
       // Tag déterministe pour que le navigateur et l'OS fusionnent tout doublon
       const notifTag = resolvedData.tag || (resolvedData.eventId ? `event-${resolvedData.eventId}` : (resolvedData.announcementId ? `annonce-${resolvedData.announcementId}` : (resolvedData.threadId ? `forum-${resolvedData.threadId}` : undefined)));
 
       const multicastMessage = {
-        notification: { title: finalTitle, body: truncatedBody },
+        notification: {
+          title: finalTitle,
+          body: truncatedBody,
+          ...(assoIcon.startsWith('http') ? { imageUrl: assoIcon } : {})
+        },
         android: {
           priority: 'high',
           notification: {
@@ -129,17 +151,20 @@ async function sendPushToUsers(db, { groupId, recipientId, cibles, title, body, 
         },
         webpush: {
           notification: {
-            icon: 'https://organizador.o-girador.com/icon-192.png',
-            badge: 'https://organizador.o-girador.com/favicon.svg',
+            title: finalTitle,
+            body: truncatedBody,
+            icon: assoIcon, // URL Storage dynamique du logo de l'association
+            badge: '/badge-72x72.png', // Symbole monochrome pour la barre d'état Android
             ...(notifTag ? { tag: notifTag } : {}),
             // Données injectées dans l'objet notification pour le handler notificationclick du SW
             data: {
               ...resolvedData,
               url: eventUrl,
+              groupId: effectiveGroupId || "",
+              icon: assoIcon,
               ...(notifTag ? { tag: notifTag } : {})
             }
           },
-          // Deep Linking FCM WebPush standardisé pour ouvrir l'URL cible
           fcmOptions: {
             link: eventUrl
           }
@@ -147,6 +172,8 @@ async function sendPushToUsers(db, { groupId, recipientId, cibles, title, body, 
         data: {
           ...resolvedData,
           url: eventUrl,
+          groupId: effectiveGroupId || "",
+          icon: assoIcon,
           ...(notifTag ? { tag: notifTag } : {})
         },
         tokens: batchTokenStrings
@@ -296,9 +323,15 @@ exports.onNotificationQueued = onDocumentCreated(
     const notifId = event.params.notifId;
     
     let targetUrl = "/app";
-    if (data.url) targetUrl = data.url;
-    else if (data.eventId) targetUrl = `/events/${data.eventId}`;
-    else if (data.threadId) targetUrl = `/app/forum/${data.threadId}`;
+    if (data.url) {
+      targetUrl = (!data.url.startsWith('http') && !data.url.startsWith('/app'))
+        ? (data.url.startsWith('/') ? `/app${data.url}` : `/app/${data.url}`)
+        : data.url;
+    } else if (data.eventId) {
+      targetUrl = `/app/events/${data.eventId}`;
+    } else if (data.threadId) {
+      targetUrl = `/app/forum/${data.threadId}`;
+    }
 
     const cibles = data.targetTag ? [data.targetTag] : ["Tous"];
     

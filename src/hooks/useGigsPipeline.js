@@ -110,7 +110,7 @@ export function useGigsPipeline(groupId) {
           tags: ['Diffusion', 'diffusion', 'Booking', 'booking'],
           title: "📅 Prestation à relancer",
           message: `${newDoc.organizer || 'Organisateur'} pour ${newDoc.eventName}`,
-          targetUrl: "/diffusion?tab=pipeline",
+          targetUrl: "/app/diffusion?tab=pipeline",
           icon: "📅"
         }).catch((err) => console.warn("useGigsPipeline - Notif diffusion ignorée :", err));
       } catch (notifErr) {
@@ -147,7 +147,7 @@ export function useGigsPipeline(groupId) {
             tags: ['Diffusion', 'diffusion', 'Booking', 'booking'],
             title: "📅 Prestation à relancer",
             message: `${updates.organizer || targetGig?.organizer || 'Organisateur'} pour ${updates.eventName || targetGig?.eventName || 'Prestation'}`,
-            targetUrl: "/diffusion?tab=pipeline",
+            targetUrl: "/app/diffusion?tab=pipeline",
             icon: "📅"
           }).catch((err) => console.warn("useGigsPipeline - Notif diffusion ignorée :", err));
         } catch (notifErr) {
@@ -183,7 +183,7 @@ export function useGigsPipeline(groupId) {
             tags: ['Diffusion', 'diffusion', 'Booking', 'booking'],
             title: "📅 Prestation à relancer",
             message: `${targetGig?.organizer || 'Organisateur'} pour ${targetGig?.eventName || 'Prestation'}`,
-            targetUrl: "/diffusion?tab=pipeline",
+            targetUrl: "/app/diffusion?tab=pipeline",
             icon: "📅"
           }).catch((err) => console.warn("useGigsPipeline - Notif diffusion ignorée :", err));
         } catch (notifErr) {

@@ -5,6 +5,18 @@ import SeloAxeStamp from './SeloAxeStamp';
 
 const renderHTMLorText = (content, extraClass = "") => {
   if (!content) return null;
+  // Support des objets bilingues ou imbriqués { fr, pt } ou { text, description }
+  if (typeof content === 'object') {
+    if (content.fr || content.pt) {
+      return (
+        <div className={`flex flex-col gap-1 ${extraClass}`}>
+          {content.fr && <div>{content.fr}</div>}
+          {content.pt && <div className="italic text-stone-600 dark:text-stone-400">{content.pt}</div>}
+        </div>
+      );
+    }
+    content = content.text || content.texte || content.description || content.contenu || '';
+  }
   const isHtml = typeof content === 'string' && /<[a-z][\s\S]*>/i.test(content);
   if (isHtml) {
     return <div className={`[&_p]:mb-2 [&_b]:font-black [&_strong]:font-black ${extraClass}`} dangerouslySetInnerHTML={{ __html: content }} />;
@@ -13,11 +25,45 @@ const renderHTMLorText = (content, extraClass = "") => {
   return <div className={`whitespace-pre-wrap ${extraClass}`}>{safeContent}</div>;
 };
 
+// Extraction sécurisée de couleur depuis une chaîne ou un tableau
+const extractThemeColor = (val, idx, defaultColor = null) => {
+  if (typeof val === 'string' && val.trim()) {
+    return idx === 0 ? val.trim() : defaultColor;
+  }
+  if (Array.isArray(val) && val[idx]) {
+    return val[idx];
+  }
+  return defaultColor;
+};
+
 function CultureCard({ culture, isPrintVersion: _isPrintVersion = false }) {
   if (!culture) return null;
 
-  const primaryColor = culture.hexPrimary || (culture.couleurs && culture.couleurs[0]) || (culture.couleursTheme && culture.couleursTheme[0]) || 'var(--encre-noire)';
-  const secondaryColor = culture.hexSecondary || (culture.couleurs && culture.couleurs[1]) || (culture.couleursTheme && culture.couleursTheme[1]) || '#FFFFFF';
+  const primaryColor = culture.hexPrimary || extractThemeColor(culture.couleurs, 0) || extractThemeColor(culture.couleursTheme, 0) || 'var(--encre-noire)';
+  const secondaryColor = culture.hexSecondary || extractThemeColor(culture.couleurs, 1) || extractThemeColor(culture.couleursTheme, 1) || '#FFFFFF';
+
+  // Résolution tolérante du média image
+  const mainImageUrl = culture.fileUrl || culture.imageUrl || culture.photoUrl || culture.mediaUrl || culture.illustrationUrl;
+
+  // Résolution tolérante de la vidéo
+  const targetVideoUrl = culture.videoUrl || culture.youtubeUrl || culture.mediaVideoUrl || culture.mediaUrl;
+  const isDirectVideo = typeof targetVideoUrl === 'string' && (
+    targetVideoUrl.includes('.mp4') ||
+    targetVideoUrl.includes('.mov') ||
+    targetVideoUrl.includes('.webm') ||
+    targetVideoUrl.includes('firebasestorage') ||
+    targetVideoUrl.includes('framaspace')
+  );
+
+  // Résolution tolérante de la gestuelle
+  const gestureData = culture.danseData || (culture.postureDanse ? {
+    nomDuGeste: 'Posture & Danse',
+    descriptionGeste: culture.postureDanse
+  } : null);
+
+  // Détection des chapitres ou repli sur le texte brut du document
+  const hasStructuredChapters = Array.isArray(culture.chapitres) && culture.chapitres.length > 0;
+  const fallbackMainText = culture.texte || culture.contenuTexte || culture.contenu || culture.description || culture.histoire || culture.contexteHistorique || '';
 
   return (
     <div 
@@ -62,9 +108,8 @@ function CultureCard({ culture, isPrintVersion: _isPrintVersion = false }) {
 
                 {/* Main Title */}
                 <div className="flex flex-col items-center justify-center relative w-full">
-                  {/* En-tête titre centralisé */}
                   <h1 className="text-2xl md:text-4xl font-heading tracking-widest text-[var(--color-cordel-ocre,#c05621)] text-center mt-1 print:mt-0 print:text-3xl relative z-20">
-                    {culture.titre || "Titre Inconnu"}
+                    {culture.titre || culture.name || culture.title || "Fiche Culture"}
                   </h1>
                 </div>
                 
@@ -96,15 +141,15 @@ function CultureCard({ culture, isPrintVersion: _isPrintVersion = false }) {
               <div className="w-full flex-1 flex flex-col gap-6">
                 
                 {/* Main Image Section */}
-                {culture.fileUrl && (
+                {mainImageUrl && (
                   <div className="flex flex-col items-center gap-2 mt-2 print:break-inside-avoid">
-                    <div className="border-4 border-double border-encre-noire/80 p-1 bg-white shadow-sm inline-block">
+                    <div className="border-4 border-double border-encre-noire/80 p-1 bg-white shadow-sm inline-block max-w-full">
                       <img 
-                        src={culture.fileUrl} 
-                        alt={culture.legendeImage || culture.titre} 
+                        src={mainImageUrl} 
+                        alt={culture.legendeImage || culture.titre || culture.name || 'Illustration culturelle'} 
                         loading="lazy"
                         decoding="async"
-                        className="max-h-[300px] object-contain"
+                        className="max-h-[300px] w-auto max-w-full object-contain"
                       />
                     </div>
                     {culture.legendeImage && (
@@ -127,45 +172,65 @@ function CultureCard({ culture, isPrintVersion: _isPrintVersion = false }) {
                   </div>
                 )}
 
-                {/* Chapters */}
-                {Array.isArray(culture.chapitres) && culture.chapitres.length > 0 && (
+                {/* Chapters ou Repli Texte Principal */}
+                {hasStructuredChapters ? (
                   <div className="flex flex-col gap-5 mt-2">
-                    {culture.chapitres.map((chap, idx) => (
-                      <div key={chap.id || idx} className="flex flex-col gap-2 print:break-inside-avoid">
-                        {chap.sousTitre && (
-                          <h3 className="bg-[#f5f0e6] dark:bg-[#2a2622] text-encre-noire dark:text-stone-200 py-1.5 px-3 rounded font-heading tracking-widest text-lg md:text-xl border border-encre-noire/10 lowercase capitalize print:text-lg inline-block w-fit">
-                            {chap.sousTitre}
-                          </h3>
-                        )}
-                        <div className="font-medium text-[12px] md:text-[14px] leading-relaxed print:leading-snug print:text-[12px] text-encre-noire px-1 md:px-2">
-                          {renderHTMLorText(chap.texte)}
+                    {culture.chapitres.map((chap, idx) => {
+                      const chapterTitle = typeof chap === 'object' && chap !== null ? (chap.sousTitre || chap.titre || chap.name) : null;
+                      const chapterContent = typeof chap === 'string' ? chap : (chap?.texte || chap?.contenu || chap?.description || chap?.text || '');
+                      if (!chapterTitle && !chapterContent) return null;
+                      return (
+                        <div key={chap?.id || idx} className="flex flex-col gap-2 print:break-inside-avoid">
+                          {chapterTitle && (
+                            <h3 className="bg-[#f5f0e6] dark:bg-[#2a2622] text-encre-noire dark:text-stone-200 py-1.5 px-3 rounded font-heading tracking-widest text-lg md:text-xl border border-encre-noire/10 lowercase capitalize print:text-lg inline-block w-fit">
+                              {chapterTitle}
+                            </h3>
+                          )}
+                          {chapterContent && (
+                            <div className="font-medium text-[12px] md:text-[14px] leading-relaxed print:leading-snug print:text-[12px] text-encre-noire px-1 md:px-2">
+                              {renderHTMLorText(chapterContent)}
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
+                ) : (
+                  fallbackMainText && (
+                    <div className="flex flex-col gap-2 mt-2 print:break-inside-avoid">
+                      {(culture.sousTitre || culture.subtitle) && (
+                        <h3 className="bg-[#f5f0e6] dark:bg-[#2a2622] text-encre-noire dark:text-stone-200 py-1.5 px-3 rounded font-heading tracking-widest text-lg md:text-xl border border-encre-noire/10 lowercase capitalize print:text-lg inline-block w-fit">
+                          {culture.sousTitre || culture.subtitle}
+                        </h3>
+                      )}
+                      <div className="font-medium text-[12px] md:text-[14px] leading-relaxed print:leading-snug print:text-[12px] text-encre-noire px-1 md:px-2">
+                        {renderHTMLorText(fallbackMainText)}
+                      </div>
+                    </div>
+                  )
                 )}
 
                 {/* Danse & Gestuelle */}
-                {culture.danseData && (culture.danseData.nomDuGeste || culture.danseData.descriptionGeste) && (
+                {gestureData && (gestureData.nomDuGeste || gestureData.descriptionGeste || gestureData.description) && (
                   <div className="mt-4 flex flex-col gap-3 print:break-inside-avoid bg-cordel-wood/5 p-4 rounded-md border border-cordel-wood/20">
                     <h3 className="bg-[var(--color-cordel-vert,#2d6a4f)] text-[#fdfaf2] py-1.5 px-3 rounded font-heading tracking-widest text-lg md:text-xl lowercase capitalize inline-block w-fit">
-                      {culture.danseData.nomDuGeste || "Gestuelle"}
+                      {gestureData.nomDuGeste || "Gestuelle"}
                     </h3>
                     
-                    {culture.danseData.motsClesCorps && (
+                    {gestureData.motsClesCorps && (
                       <div className="flex gap-2 font-bold text-[10px] uppercase tracking-wider text-cordel-master-dark">
                         <span>💪 Focus corps :</span>
-                        <span className="text-cordel-wood">{culture.danseData.motsClesCorps}</span>
+                        <span className="text-cordel-wood">{gestureData.motsClesCorps}</span>
                       </div>
                     )}
                     
                     <div className="font-medium text-[12px] md:text-[14px] leading-relaxed text-encre-noire">
-                      {culture.danseData.descriptionGeste}
+                      {renderHTMLorText(gestureData.descriptionGeste || gestureData.description)}
                     </div>
 
-                    {culture.danseData.mediaGesteUrl && (
+                    {gestureData.mediaGesteUrl && (
                       <div className="mt-2 flex flex-col items-center gap-2">
-                         <img src={culture.danseData.mediaGesteUrl} alt={culture.danseData.nomDuGeste} className="max-h-[250px] object-contain border border-encre-noire/20 shadow-sm" />
+                         <img src={gestureData.mediaGesteUrl} alt={gestureData.nomDuGeste || 'Geste'} className="max-h-[250px] object-contain border border-encre-noire/20 shadow-sm" />
                       </div>
                     )}
                   </div>
@@ -210,24 +275,31 @@ function CultureCard({ culture, isPrintVersion: _isPrintVersion = false }) {
                       📖 Dictionnaire & Lexique
                     </h4>
                     <div className="grid grid-cols-1 gap-2">
-                      {culture.lexique.map((item, idx) => (
-                        item.pt && (
+                      {culture.lexique.map((item, idx) => {
+                        const ptTerm = item?.pt || item?.terme || item?.mot || item?.portugais || (typeof item === 'string' ? item.split(':')[0]?.trim() : '');
+                        const frDef = item?.fr || item?.definition || item?.trad || item?.francais || (typeof item === 'string' ? item.split(':').slice(1).join(':')?.trim() : '');
+                        if (!ptTerm && !frDef) return null;
+                        return (
                           <div key={idx} className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2 bg-[#fdfaf2] dark:bg-[#2a2622] p-2 sm:p-3 border border-cordel-wood/20 rounded shadow-sm">
-                            <span className="text-[11px] sm:text-xs font-black text-cordel-wood whitespace-nowrap">
-                              {item.pt} :
-                            </span>
-                            <span className="text-[11px] sm:text-xs text-encre-noire/90 dark:text-gray-300 font-medium leading-tight">
-                              {item.fr}
-                            </span>
+                            {ptTerm && (
+                              <span className="text-[11px] sm:text-xs font-black text-cordel-wood whitespace-nowrap">
+                                {ptTerm} {frDef ? ':' : ''}
+                              </span>
+                            )}
+                            {frDef && (
+                              <span className="text-[11px] sm:text-xs text-encre-noire/90 dark:text-gray-300 font-medium leading-tight">
+                                {frDef}
+                              </span>
+                            )}
                           </div>
-                        )
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}
 
-                {/* Video Externe (Hidden on Print, Replace with QR) */}
-                {culture.videoUrl && (
+                {/* Vidéo Associée */}
+                {targetVideoUrl && (
                   <div className="mt-6 flex flex-col items-center gap-2 pb-4 print:break-inside-avoid">
                     <h4 className="text-[10px] md:text-xs font-black uppercase tracking-widest text-cordel-master-dark mb-2 border-b-2 border-cordel-master-dark/10 pb-1 text-center w-full">
                       🎬 Vidéo Associée
@@ -235,12 +307,12 @@ function CultureCard({ culture, isPrintVersion: _isPrintVersion = false }) {
                     
                     {/* Screen View */}
                     <div className="w-full flex flex-col items-center print:hidden">
-                      {extractYouTubeId(culture.videoUrl) ? (
+                      {extractYouTubeId(targetVideoUrl) ? (
                         <div className="w-full max-w-[500px] aspect-video rounded overflow-hidden shadow-sm border border-cordel-wood/20 bg-black">
                           <iframe
                             width="100%"
                             height="100%"
-                            src={`https://www.youtube.com/embed/${extractYouTubeId(culture.videoUrl)}`}
+                            src={`https://www.youtube.com/embed/${extractYouTubeId(targetVideoUrl)}`}
                             title="YouTube video player"
                             frameBorder="0"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -248,9 +320,26 @@ function CultureCard({ culture, isPrintVersion: _isPrintVersion = false }) {
                             className="w-full h-full object-cover"
                           ></iframe>
                         </div>
+                      ) : isDirectVideo ? (
+                        <div className="w-full max-w-[500px] flex flex-col items-center gap-2">
+                          <video
+                            controls
+                            src={targetVideoUrl}
+                            preload="metadata"
+                            className="w-full aspect-video rounded bg-black border border-cordel-wood/20 shadow-sm"
+                          />
+                          <a
+                            href={targetVideoUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[10px] font-bold text-stone-600 underline hover:text-stone-900"
+                          >
+                            Télécharger / Ouvrir le fichier vidéo ↗
+                          </a>
+                        </div>
                       ) : (
                         <a 
-                          href={culture.videoUrl} 
+                          href={targetVideoUrl} 
                           target="_blank" 
                           rel="noreferrer"
                           className="bg-cordel-wood text-[#fdfaf2] px-6 py-2 rounded-full text-[11px] font-black uppercase tracking-widest shadow-md hover:bg-red-800 transition-colors flex items-center gap-2"
@@ -262,7 +351,7 @@ function CultureCard({ culture, isPrintVersion: _isPrintVersion = false }) {
 
                     {/* Print View: QR Code */}
                     <div className="hidden print:flex flex-col items-center justify-center p-4 border-2 border-dashed border-cordel-wood/50 rounded-lg max-w-[200px] mx-auto">
-                      <QRCodeSVG value={culture.videoUrl} size={100} level="M" />
+                      <QRCodeSVG value={targetVideoUrl} size={100} level="M" />
                       <p className="mt-2 text-[9px] font-bold uppercase text-center text-encre-noire">
                         📱 Scannez pour voir la vidéo
                       </p>

@@ -47,7 +47,7 @@ export default function ReunionAgendaManager({ event, user, profileData }) {
           tags: ['Secrétaire', 'secretaire', 'Bureau', 'bureau'],
           title: "💡 Nouvelle proposition ODJ",
           message: `${authorName} propose un point pour la réunion du ${eventDateStr}`,
-          targetUrl: `/events/${event.id}`,
+          targetUrl: `/app/events/${event.id}`,
           icon: "💡"
         }).catch((err) => console.warn("ReunionAgendaManager - Notification ODJ ignorée :", err));
       } catch (notifErr) {

@@ -43,7 +43,7 @@ export async function createInAppNotification({
   titre,
   title,
   message = '',
-  targetUrl = '/',
+  targetUrl = '/app',
   icon = '🔔',
   priority = 'normal',
   isRead = false,
@@ -59,6 +59,10 @@ export async function createInAppNotification({
       : (createdAt instanceof Date ? Timestamp.fromDate(createdAt) : serverTimestamp());
 
     const displayTitle = title || titre || 'Notification';
+    const resolvedUrl = (!targetUrl.startsWith('http') && !targetUrl.startsWith('/app'))
+      ? (targetUrl.startsWith('/') ? `/app${targetUrl}` : `/app/${targetUrl}`)
+      : targetUrl;
+
     await setDoc(newDocRef, {
       id: newDocRef.id,
       notifId: newDocRef.id,
@@ -67,7 +71,7 @@ export async function createInAppNotification({
       title: displayTitle,
       titre: displayTitle,
       message,
-      targetUrl,
+      targetUrl: resolvedUrl,
       icon,
       priority,
       read: Boolean(read || isRead),
@@ -89,7 +93,7 @@ export async function notifyMembersByTag({
   tags = [],
   title,
   message,
-  targetUrl = '/',
+  targetUrl = '/app',
   icon = '🔔',
   priority = 'normal'
 }) {
@@ -99,6 +103,10 @@ export async function notifyMembersByTag({
 
   const normalizedTargets = tags.map((t) => String(t || '').trim().toLowerCase()).filter(Boolean);
   if (normalizedTargets.length === 0) return { success: false, count: 0, recipientIds: [] };
+
+  const resolvedTargetUrl = (!targetUrl.startsWith('http') && !targetUrl.startsWith('/app'))
+    ? (targetUrl.startsWith('/') ? `/app${targetUrl}` : `/app/${targetUrl}`)
+    : targetUrl;
 
   try {
     const usersRef = collection(db, 'users');
@@ -140,7 +148,7 @@ export async function notifyMembersByTag({
             title: title || '',
             titre: title || '',
             message: message || '',
-            targetUrl: targetUrl || '/',
+            targetUrl: resolvedTargetUrl,
             icon: icon || '🔔',
             priority,
             read: false,

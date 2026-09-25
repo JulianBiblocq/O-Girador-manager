@@ -9,44 +9,62 @@ import CordelButton from './CordelButton';
  */
 export default function ReloadPrompt() {
   const { t } = useTranslation();
+  const [dismissed, setDismissed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('pwa_update_dismissed') === 'true';
+    }
+    return false;
+  });
+
   const {
     needRefresh: [needRefresh, setNeedRefresh],
     updateServiceWorker,
   } = useRegisterSW({
     onRegistered(r) {
       if (r) {
-        // Periodically vérifier for updates (every hour)
+        // Vérification périodique des mises à jour (toutes les heures)
         setInterval(() => {
           r.update();
         }, 60 * 60 * 1000);
       }
     },
     onRegisterError(error) {
-      console.error('ReloadPrompt - SW Registration Error:', error);
+      console.error('ReloadPrompt - Erreur enregistrement SW :', error);
     },
   });
 
   const [isUpdating, setIsUpdating] = useState(false);
 
-  if (!needRefresh) return null;
+  if (!needRefresh || dismissed) return null;
+
+  const handleClose = () => {
+    setNeedRefresh(false);
+    setDismissed(true);
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('pwa_update_dismissed', 'true');
+    }
+  };
 
   const handleUpdate = () => {
     setIsUpdating(true);
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('pwa_update_dismissed');
+    }
     try {
       updateServiceWorker(true);
     } catch (err) {
-      console.error("ReloadPrompt - Error updating service worker:", err);
+      console.error("ReloadPrompt - Erreur mise à jour service worker :", err);
     }
     
-    // Explicit force reload to guarantee bypass of any intermediate browser caches
+    // Sécurité : rechargement forcé si le contrôleur n'a pas déclenché de rechargement automatique
     setTimeout(() => {
       try {
         window.location.reload();
       } catch (reloadErr) {
-        console.error("ReloadPrompt - Reload failed:", reloadErr);
+        console.error("ReloadPrompt - Échec du rechargement :", reloadErr);
         setIsUpdating(false);
       }
-    }, 1500);
+    }, 2000);
   };
 
   return (
@@ -66,7 +84,7 @@ export default function ReloadPrompt() {
       <div className="flex gap-2 justify-end items-center">
         <button
           type="button"
-          onClick={() => setNeedRefresh(false)}
+          onClick={handleClose}
           className="theme-btn px-3 py-1.5 text-xs font-bold rounded-[4px_6px_3px_5px] border border-[var(--cordel-border)]/20 shadow-[1px_1px_0px_0px_rgba(0,0,0,0.15)] hover:brightness-95 cursor-pointer bg-[var(--cordel-master-bg)] text-[var(--cordel-text)] transition-all"
         >
           {t('common.close')}

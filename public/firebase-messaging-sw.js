@@ -26,7 +26,14 @@ self.addEventListener('notificationclick', (event) => {
   }
 
   // Construction de l'URL cible complète à partir du chemin relatif
-  const targetPath = data.url || data.link || data.click_action || '/app';
+  const rawTargetPath = data.url || data.link || data.click_action || '/app';
+  
+  // Normalisation : dans Organizad'Or, toutes les routes applicatives privées résident sous /app
+  let targetPath = rawTargetPath;
+  if (!targetPath.startsWith('http') && !targetPath.startsWith('/app') && targetPath !== '/' && !targetPath.startsWith('/login') && !targetPath.startsWith('/setup') && !targetPath.startsWith('/demo')) {
+    targetPath = targetPath.startsWith('/') ? `/app${targetPath}` : `/app/${targetPath}`;
+  }
+
   const baseOrigin = self.location.origin;
   const targetUrl = targetPath.startsWith('http') ? targetPath : baseOrigin + targetPath;
   console.log('[firebase-messaging-sw.js] Redirection vers :', targetUrl);
@@ -73,34 +80,38 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw.js] Message d\'arrière-plan reçu :', payload);
 
-  // IMPORTANT : Si le message contient déjà une section 'notification',
-  // le SDK Firebase WebPush affiche DÉJÀ automatiquement la notification système.
-  // Déclencher self.registration.showNotification ici créerait un doublon strict !
-  if (payload.notification) {
-    console.log('[firebase-messaging-sw.js] Notification déjà affichée automatiquement par Firebase SDK.');
-    return;
-  }
+  const notificationTitle = payload.notification?.title || payload.data?.title || "O Girador";
+  
+  // Priorité absolue à l'icône transmise dans le payload (logo dynamique d'association ou repli)
+  const iconUrl = payload.notification?.icon 
+               || payload.data?.icon 
+               || '/icon-192x192.png';
 
-  // Cas des messages de type "data-only" (sans section notification native) :
-  const title = payload.data?.title || "O Girador";
-  const body = payload.data?.body || "";
-  const icon = payload.data?.icon || 'https://organizador.o-girador.com/icon-192.png';
-  const badge = 'https://organizador.o-girador.com/favicon.svg';
+  const badgeUrl = '/badge-72x72.png';
 
   // Tag stable et contextualisé pour regrouper proprement les alertes et écraser tout doublon éventuel
-  const tag = payload.data?.tag || (payload.data?.eventId ? `event-${payload.data.eventId}` : (payload.data?.announcementId ? `annonce-${payload.data.announcementId}` : (payload.data?.threadId ? `forum-${payload.data.threadId}` : 'ogirador-general')));
+  const tag = payload.data?.tag || (payload.data?.eventId ? `event-${payload.data.eventId}` : (payload.data?.announcementId ? `annonce-${payload.data.announcementId}` : (payload.data?.threadId ? `forum-${payload.data.threadId}` : undefined)));
+
+  const rawNotifUrl = payload.data?.url || payload.fcmOptions?.link || '/app';
+  const resolvedNotifUrl = (!rawNotifUrl.startsWith('http') && !rawNotifUrl.startsWith('/app') && rawNotifUrl !== '/' && !rawNotifUrl.startsWith('/login') && !rawNotifUrl.startsWith('/setup') && !rawNotifUrl.startsWith('/demo'))
+    ? (rawNotifUrl.startsWith('/') ? `/app${rawNotifUrl}` : `/app/${rawNotifUrl}`)
+    : rawNotifUrl;
 
   const notificationData = Object.assign({}, payload.data, {
-    url: payload.data?.url || payload.fcmOptions?.link || '/app'
+    url: resolvedNotifUrl,
+    icon: iconUrl
   });
 
-  return self.registration.showNotification(title, {
-    body: body,
-    icon: icon,
-    badge: badge,
-    tag: tag,
+  const notificationOptions = {
+    body: payload.notification?.body || payload.data?.body || "",
+    icon: iconUrl,
+    badge: badgeUrl,
+    sound: '/sounds/notif.ogg',
+    ...(tag ? { tag } : {}),
     data: notificationData
-  });
+  };
+
+  return self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
 

@@ -24,6 +24,12 @@ export default function FramaspaceGalleryViewer({
   const [mediaItems, setMediaItems] = useState([]);
   const [error, setError] = useState(null);
   const [selectedMediaIndex, setSelectedMediaIndex] = useState(null);
+  const [videoPlaybackError, setVideoPlaybackError] = useState(false);
+
+  // Réinitialisation de l'erreur vidéo au changement de média sélectionné
+  useEffect(() => {
+    setVideoPlaybackError(false);
+  }, [selectedMediaIndex]);
 
   // Chargement des médias depuis Framaspace WebDAV via Cloud Function
   useEffect(() => {
@@ -194,31 +200,50 @@ export default function FramaspaceGalleryViewer({
                     aria-label={item.name}
                   >
                     {isVideo ? (
-                      <div className="absolute inset-0 w-full h-full bg-neutral-900">
-                        <video
-                          src={item.url}
+                      <div className="absolute inset-0 w-full h-full bg-neutral-900 flex items-center justify-center overflow-hidden">
+                        {/* Miniature serveur générée par Framaspace / Nextcloud */}
+                        <img
+                          src={item.thumbnailUrl || item.previewUrl}
+                          alt={item.name}
+                          loading="lazy"
+                          decoding="async"
                           style={{
                             width: '100%',
                             height: '100%',
                             objectFit: 'cover',
                             objectPosition: 'center',
                           }}
-                          className="block opacity-85 group-hover:opacity-100 transition-opacity"
-                          preload="metadata"
-                          muted
-                          playsInline
                           onError={(e) => {
-                            // Ne jamais rediriger vers WebDAV direct car cela déclenche la boîte de dialogue système HTTP Basic Auth
-                            console.warn("FramaspaceGalleryViewer - Format vidéo non pris en charge nativement :", item.name);
+                            // Repli en cascade pour les miniatures de vidéos
+                            const currentSrc = e.target.src;
+                            const safeFallbacks = [item.pathPreviewUrl, item.previewUrl].filter(Boolean);
+                            const nextFallback = safeFallbacks.find((fb) => fb && fb !== currentSrc);
+                            if (nextFallback) {
+                              e.target.src = nextFallback;
+                            } else {
+                              // Masquer l'image brisée pour révéler le fond stylisé de secours
+                              e.target.style.opacity = '0';
+                            }
                           }}
+                          className="block transition-transform duration-200 group-hover:scale-105 opacity-85 group-hover:opacity-100"
                         />
-                        <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                          <span className="w-10 h-10 rounded-full bg-black/60 border border-white/80 flex items-center justify-center text-white text-base shadow-md font-black pl-0.5">
+
+                        {/* Fond stylisé si la miniature n'est pas encore calculée par Nextcloud */}
+                        <div className="absolute inset-0 -z-0 flex flex-col items-center justify-center p-2 text-center bg-gradient-to-b from-stone-900 via-stone-800 to-stone-950 pointer-events-none">
+                          <span className="text-2xl mb-1 opacity-70">🎬</span>
+                          <span className="text-[9px] font-mono text-stone-300 truncate max-w-full px-1">{item.name}</span>
+                        </div>
+
+                        {/* Pastille de lecture centrée */}
+                        <span className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                          <span className="w-10 h-10 rounded-full bg-black/60 border border-white/80 flex items-center justify-center text-white text-base shadow-md font-black pl-0.5 group-hover:scale-110 transition-transform">
                             ▶
                           </span>
                         </span>
-                        <span className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 rounded bg-black/70 text-[10px] text-white font-mono uppercase pointer-events-none">
-                          Vidéo
+
+                        {/* Badge de format vidéo */}
+                        <span className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 rounded bg-black/75 text-[10px] text-white font-mono uppercase pointer-events-none z-10">
+                          {item.name.toLowerCase().endsWith('.mov') ? 'MOV' : 'Vidéo'}
                         </span>
                       </div>
                     ) : (
@@ -334,20 +359,75 @@ export default function FramaspaceGalleryViewer({
             {/* Contenu principal */}
             <div className="max-w-full max-h-full flex items-center justify-center">
               {currentMedia.type === 'video' ? (
-                <video
-                  src={currentMedia.url}
-                  controls
-                  playsInline
-                  autoPlay
-                  preload="metadata"
-                  onError={(e) => {
-                    // Ne jamais rediriger vers directDavUrl pour éviter le popup d'authentification navigateur
-                    console.warn("FramaspaceGalleryViewer - Impossible de lire la vidéo en grand format :", currentMedia.name);
-                  }}
-                  className="max-h-[78vh] max-w-[92vw] rounded shadow-2xl bg-black"
-                >
-                  Votre navigateur ne supporte pas la lecture de cette vidéo.
-                </video>
+                videoPlaybackError ? (
+                  <div className="relative max-h-[78vh] max-w-[92vw] w-full max-w-lg rounded shadow-2xl overflow-hidden bg-neutral-900 border border-stone-700 flex flex-col items-center justify-center p-6 text-center animate-fadeIn">
+                    {/* Arrière-plan avec la miniature vidéo floutée */}
+                    {(currentMedia.previewUrl || currentMedia.thumbnailUrl) && (
+                      <img
+                        src={currentMedia.previewUrl || currentMedia.thumbnailUrl}
+                        alt={currentMedia.name}
+                        className="absolute inset-0 w-full h-full object-cover opacity-20 filter blur-xs"
+                      />
+                    )}
+                    <div className="relative z-10 w-full bg-stone-900/90 border border-stone-700 rounded-lg p-5 shadow-2xl flex flex-col items-center gap-3 backdrop-blur-md">
+                      <div className="w-12 h-12 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-2xl">
+                        🎬
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-black text-white uppercase tracking-wider mb-1">
+                          Lecture vidéo non décodable dans ce navigateur
+                        </h3>
+                        <p className="text-xs text-stone-300 leading-relaxed">
+                          Le fichier <strong className="text-white font-mono">{currentMedia.name}</strong> utilise un encodage (ex: conteneur Apple QuickTime .mov / HEVC) que votre navigateur ne peut pas lire directement en streaming sur ce système.
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap items-center justify-center gap-2 pt-1 w-full">
+                        <a
+                          href={currentMedia.url}
+                          download={currentMedia.name}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 min-w-[140px] px-3 py-2 text-xs font-black uppercase tracking-wider rounded bg-[var(--color-cordel-vert,#2d6a4f)] hover:brightness-110 text-white border border-[var(--color-cordel-vert,#2d6a4f)] transition-all flex items-center justify-center gap-1.5 shadow-md"
+                        >
+                          <span>📥</span>
+                          <span>Télécharger</span>
+                        </a>
+                        <a
+                          href={currentMedia.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 min-w-[140px] px-3 py-2 text-xs font-black uppercase tracking-wider rounded bg-stone-800 hover:bg-stone-700 text-stone-200 border border-stone-600 transition-all flex items-center justify-center gap-1.5"
+                        >
+                          <span>↗</span>
+                          <span>Ouvrir le flux</span>
+                        </a>
+                      </div>
+                      <span className="text-[10px] text-stone-400">
+                        💡 Conseil : Téléchargez le fichier pour le visionner directement avec VLC ou le lecteur vidéo de votre système.
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <video
+                    key={currentMedia.url}
+                    src={currentMedia.url}
+                    poster={currentMedia.previewUrl || currentMedia.thumbnailUrl}
+                    controls
+                    playsInline
+                    autoPlay
+                    preload="metadata"
+                    onError={() => {
+                      console.warn("FramaspaceGalleryViewer - Format vidéo non pris en charge nativement dans le navigateur :", currentMedia.name);
+                      setVideoPlaybackError(true);
+                    }}
+                    className="max-h-[78vh] max-w-[92vw] rounded shadow-2xl bg-black"
+                  >
+                    <source src={currentMedia.url} type={currentMedia.mimeType || 'video/mp4'} onError={() => setVideoPlaybackError(true)} />
+                    <source src={currentMedia.url} type="video/mp4" onError={() => setVideoPlaybackError(true)} />
+                    <source src={currentMedia.url} type="video/quicktime" onError={() => setVideoPlaybackError(true)} />
+                    Votre navigateur ne supporte pas la lecture directe de ce format vidéo.
+                  </video>
+                )
               ) : (
                 <img
                   src={currentMedia.previewUrl || currentMedia.url}

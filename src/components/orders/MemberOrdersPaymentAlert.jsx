@@ -71,7 +71,7 @@ export default function MemberOrdersPaymentAlert({ groupId, currentUser, profile
         tags: ['Trésorier', 'tresorier'],
         title: "📦 Commande réglée",
         message: `${memberName} a effectué son virement`,
-        targetUrl: "/treasury?tab=commandes",
+        targetUrl: "/app/treasury?tab=commandes",
         icon: "📦"
       }).catch((err) => console.warn("MemberOrdersPaymentAlert - Notif ignorée :", err));
     } catch (err) {

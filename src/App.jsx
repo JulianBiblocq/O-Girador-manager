@@ -15,6 +15,7 @@ import PublicHome from './components/PublicHome';
 import PublicThemeProvider from './components/PublicThemeProvider';
 import { tracker } from './utils/O-Girador-Tracker';
 import { useAppUpdate } from './hooks/useAppUpdate';
+import { useConversations } from './hooks/useConversations';
 
 import { lazyWithRetry } from './utils/pwaUtils';
 import { resolveEffectiveUserTags } from './utils/tagUtils';
@@ -366,6 +367,12 @@ export default function App() {
   const [forumInitialTab, setForumInitialTab] = useState('discussions');
   const [initialPrivateMessage, setInitialPrivateMessage] = useState('');
   const [dashboardKey, setDashboardKey] = useState(0);
+
+  // Hook centralisé de gestion des conversations et des compteurs de non-lus
+  const {
+    createDirectConversation,
+    totalUnreadCount: unreadConversationsCount
+  } = useConversations(user, profileData?.groupId, profileData);
 
   // Redirection directe vers la messagerie privée (avec interlocuteur ou conversation spécifique si disponible)
   const handleOpenPrivateMessages = useCallback((senderId = null, conversationId = null) => {
@@ -801,22 +808,53 @@ export default function App() {
   useEffect(() => {
     if (!user || !profileData) return;
 
-    // Fonction de navigation interne déclenchée par un deep link (notification push)
+    // Fonction de navigation interne déclenchée par un deep link (notification push ou lien direct)
     const handleDeepLinkNavigation = (overridePath) => {
-      const pathname = overridePath || window.location.pathname || '';
-      const searchParams = new URLSearchParams(window.location.search);
+      let rawPath = overridePath || (typeof window !== 'undefined' ? (window.location.pathname + window.location.search) : '');
+      if (!rawPath) return;
 
-      const hasEventId = searchParams.has('eventId');
-      const hasThreadId = searchParams.has('threadId');
+      let pathname = rawPath;
+      let queryStr = '';
+      if (rawPath.includes('?')) {
+        const parts = rawPath.split('?');
+        pathname = parts[0];
+        queryStr = parts[1];
+      }
+      const searchParams = new URLSearchParams(queryStr || (typeof window !== 'undefined' ? window.location.search : ''));
+
+      // Extraction de l'identifiant d'événement (soit paramètre URL, soit fragment de chemin /events/...)
+      let eventId = searchParams.get('eventId');
+      const eventMatch = pathname.match(/\/events\/([^/?#]+)/);
+      if (!eventId && eventMatch) {
+        eventId = eventMatch[1];
+      }
+
+      // Extraction de l'identifiant de discussion (soit paramètre URL, soit fragment de chemin /threads/... ou /forum/...)
+      let threadId = searchParams.get('threadId');
+      const threadMatch = pathname.match(/\/threads\/([^/?#]+)/) || pathname.match(/\/forum\/([^/?#]+)/);
+      if (!threadId && threadMatch) {
+        threadId = threadMatch[1];
+      }
+
       const isAgendaRoute = pathname.includes('/agenda') || pathname.includes('/events');
       const isForumRoute = pathname.includes('/forum') || pathname.includes('/threads');
 
-      if (hasEventId || isAgendaRoute) {
+      if (eventId || isAgendaRoute) {
         setCurrentPole('accueil');
         setCurrentTab('agenda');
-      } else if (hasThreadId || isForumRoute) {
+        if (eventId) {
+          searchParams.set('eventId', eventId);
+        }
+      } else if (threadId || isForumRoute) {
         setCurrentPole('mon-espace');
         setCurrentTab('forum');
+        const tabParam = searchParams.get('tab');
+        const convIdParam = searchParams.get('conversationId');
+        const chatUserIdParam = searchParams.get('chatUserId');
+        if (tabParam) setForumInitialTab(tabParam === 'direct' ? 'inbox' : tabParam);
+        if (convIdParam) setActiveConversationId(convIdParam);
+        if (chatUserIdParam) setActivePrivateChatUserId(chatUserIdParam);
+        if (threadId) searchParams.set('threadId', threadId);
       } else if (pathname.includes('/profil') || pathname.includes('/profile')) {
         setCurrentPole('mon-espace');
         setCurrentTab('profil');
@@ -826,20 +864,54 @@ export default function App() {
         }, 150);
       } else if (pathname.includes('/treasury') || pathname.includes('/frais-km')) {
         setCurrentPole('tresorerie');
-        setCurrentTab(pathname.includes('/frais-km') ? 'frais-km' : 'dashboard-finance');
+        const tab = searchParams.get('tab') || (pathname.includes('/frais-km') ? 'frais-km' : 'dashboard-finance');
+        if (tab === 'frais-km') {
+          setCurrentTab('frais-km');
+        } else if (['cotisations', 'events-finances', 'operations-diverses', 'reports-exports', 'commandes'].includes(tab)) {
+          setCurrentTab(tab);
+        } else {
+          setCurrentTab('dashboard-finance');
+        }
+      } else if (pathname.includes('/mon-vestiaire') || pathname.includes('/vestiaire')) {
+        setCurrentPole('mon-espace');
+        setCurrentTab('mon-vestiaire');
+      } else if (pathname.includes('/diffusion')) {
+        setCurrentPole('diffusion');
+        setCurrentTab(searchParams.get('tab') || 'gigs-pipeline');
+      } else if (pathname.includes('/logistics') || pathname.includes('/logistique') || pathname.includes('/inventory')) {
+        setCurrentPole('logistique');
+        setCurrentTab(searchParams.get('tab') || 'inventory');
+      } else if (pathname.includes('/mestre')) {
+        setCurrentPole('mestre');
+        const tab = searchParams.get('tab');
+        if (tab === 'casting') {
+          setCurrentTab('mestre-orientation');
+        } else if (tab) {
+          setCurrentTab(tab.startsWith('mestre-') ? tab : `mestre-${tab}`);
+        } else {
+          setCurrentTab('mestre-repertoire');
+        }
       }
 
-      // Mettre à jour la route interne si un chemin explicite est fourni
-      if (overridePath) {
-        setCurrentRoute(overridePath);
-        window.history.pushState({}, '', overridePath);
+      // Normalisation impérative : dans Organizad'Or, l'espace membre est toujours /app
+      // Cela évite que /events/... ne soit interprété à tort comme une vitrine d'association inconnue
+      setCurrentRoute('/app');
+      const finalQuery = searchParams.toString();
+      const finalUrl = '/app' + (finalQuery ? `?${finalQuery}` : '');
+      if (typeof window !== 'undefined') {
+        window.history.replaceState({ ...window.history.state, eventId, threadId }, '', finalUrl);
+        if (eventId) {
+          // Notification immédiate pour que WidgetAgenda charge l'événement
+          window.dispatchEvent(new PopStateEvent('popstate'));
+        }
       }
     };
 
     handleDeepLinkNavigation();
 
     // Écoute des événements de navigation (ex: retour arrière navigateur)
-    window.addEventListener('popstate', () => handleDeepLinkNavigation());
+    const handlePopState = () => handleDeepLinkNavigation();
+    window.addEventListener('popstate', handlePopState);
 
     // Écoute des messages du service worker (clic notification quand l'app est déjà ouverte)
     // Le SW envoie un postMessage au lieu de client.navigate pour éviter un rechargement complet
@@ -852,7 +924,7 @@ export default function App() {
     navigator.serviceWorker?.addEventListener('message', handleSWMessage);
 
     return () => {
-      window.removeEventListener('popstate', () => handleDeepLinkNavigation());
+      window.removeEventListener('popstate', handlePopState);
       navigator.serviceWorker?.removeEventListener('message', handleSWMessage);
     };
   }, [user, profileData]);
@@ -1227,8 +1299,18 @@ export default function App() {
   const isDemoPath = (currentRoute === '/demo' || currentRoute === '/demo/' || currentRoute.startsWith('/demo/') || isDemoMode()) && !isDemoVitrine;
   const isRootPath = (!currentRoute || currentRoute === '/' || currentRoute === '' || currentRoute === '/index.html' || currentRoute.startsWith('/?') || currentRoute.startsWith('/#')) && !isDemoPath && !isDemoVitrine;
   const isSetupPath = currentRoute.startsWith('/setup');
-  const isAppPath = currentRoute.startsWith('/app') || isDemoPath;
   const isLoginPath = (currentRoute === '/login' || currentRoute === '/login/') && !isDemoPath && !isDemoVitrine;
+
+  // Préfixes des routes internes d'Organizad'Or pour ne jamais les confondre avec une vitrine publique
+  const INTERNAL_APP_PREFIXES = [
+    '/events', '/agenda', '/forum', '/threads', '/profil', '/profile',
+    '/treasury', '/frais-km', '/diffusion', '/mestre', '/logistique', '/logistics',
+    '/mon-vestiaire', '/vestiaire', '/newsletter', '/varal', '/trombinoscope',
+    '/adhesions', '/cotisations', '/repertoire', '/pedagogie', '/inventaire',
+    '/orders', '/commandes', '/documents', '/reunions', '/studio'
+  ];
+  const isInternalPath = INTERNAL_APP_PREFIXES.some(prefix => currentRoute === prefix || currentRoute.startsWith(prefix + '/') || currentRoute.startsWith(prefix + '?'));
+  const isAppPath = currentRoute.startsWith('/app') || isInternalPath || isDemoPath || (Boolean(user) && !isLoginPath && !isSetupPath && !isDemoVitrine);
   
   // Toute autre route (ex: /asso-01 ou vitrine démo) est traitée comme une route vitrine
   const isVitrinePath = isDemoVitrine || (!isRootPath && !isSetupPath && !isAppPath && !isLoginPath);
@@ -1426,7 +1508,8 @@ export default function App() {
       }
     });
     if (changed) {
-      const cleanUrl = window.location.pathname + (searchParams.toString() ? '?' + searchParams.toString() : '');
+      const basePath = window.location.pathname.startsWith('/app') ? window.location.pathname : '/app';
+      const cleanUrl = basePath + (searchParams.toString() ? '?' + searchParams.toString() : '');
       const stateUpdate = {};
       keys.forEach(k => { stateUpdate[k] = null; });
       window.history.replaceState({ ...window.history.state, ...stateUpdate }, '', cleanUrl);
@@ -1481,6 +1564,14 @@ export default function App() {
     if (viewName === 'forum' && extraOptions?.userId) {
       setActivePrivateChatUserId(extraOptions.userId);
       setInitialPrivateMessage(extraOptions.message || '');
+    }
+
+    if (viewName === 'forum' && extraOptions?.conversationId) {
+      setActiveConversationId(extraOptions.conversationId);
+    }
+
+    if (viewName === 'forum' && extraOptions?.tab) {
+      setForumInitialTab(extraOptions.tab);
     }
 
     if (viewName === 'forum' && extraOptions?.threadId) {
@@ -1728,6 +1819,25 @@ export default function App() {
   };
 
   /**
+   * Déclenchement instantané d'une discussion privée 1-à-1 depuis la modale des membres en ligne
+   * Ferme la présence, crée ou récupère la conversation et bascule sur le Porte-Voix.
+   */
+  const handleStartDirectChat = useCallback(async (targetUserId) => {
+    if (!targetUserId) return;
+    try {
+      const convId = await createDirectConversation(targetUserId);
+      handleNavigateToView('forum', {
+        conversationId: convId || null,
+        userId: targetUserId,
+        tab: 'direct'
+      });
+    } catch (err) {
+      console.warn("Erreur lors de l'ouverture du chat direct depuis la présence :", err);
+      handleNavigateToView('forum', { userId: targetUserId, tab: 'direct' });
+    }
+  }, [createDirectConversation]);
+
+  /**
    * Gestionnaire central de navigation interne déclenchée par le Centre de Notifications
    * et le Deep Linking SPA sans rechargement de page.
    */
@@ -1742,6 +1852,7 @@ export default function App() {
       queryStr = parts[1];
     }
     const params = new URLSearchParams(queryStr);
+    const basePath = '/app';
 
     // 1. Forum / Discussions / Messages Privés / Groupes
     if (path.includes('/forum') || path.includes('/threads')) {
@@ -1773,7 +1884,8 @@ export default function App() {
       if (convIdParam) newSearchParams.set('conversationId', convIdParam);
       if (chatUserIdParam) newSearchParams.set('chatUserId', chatUserIdParam);
 
-      const newUrl = window.location.pathname + (newSearchParams.toString() ? '?' + newSearchParams.toString() : '');
+      setCurrentRoute(basePath);
+      const newUrl = basePath + (newSearchParams.toString() ? '?' + newSearchParams.toString() : '');
       window.history.pushState({ ...window.history.state, threadId, tab: tabParam, conversationId: convIdParam, chatUserId: chatUserIdParam }, '', newUrl);
       return;
     }
@@ -1792,7 +1904,8 @@ export default function App() {
       if (eventId) {
         newSearchParams.set('eventId', eventId);
       }
-      const newUrl = window.location.pathname + (newSearchParams.toString() ? '?' + newSearchParams.toString() : '');
+      setCurrentRoute(basePath);
+      const newUrl = basePath + (newSearchParams.toString() ? '?' + newSearchParams.toString() : '');
       window.history.pushState({ ...window.history.state, eventId }, '', newUrl);
 
       // Notification immédiate pour WidgetAgenda
@@ -1806,7 +1919,8 @@ export default function App() {
       setCurrentTab('profil');
       cleanUrlParams(['eventId', 'threadId']);
 
-      window.history.pushState({}, '', window.location.pathname);
+      setCurrentRoute(basePath);
+      window.history.pushState({}, '', basePath);
 
       // Défilement automatique vers la section de remboursement des frais
       setTimeout(() => {
@@ -1826,19 +1940,65 @@ export default function App() {
 
       if (tab === 'frais-km') {
         setCurrentTab('frais-km');
-      } else if (['cotisations', 'events-finances', 'operations-diverses', 'reports-exports'].includes(tab)) {
+      } else if (['cotisations', 'events-finances', 'operations-diverses', 'reports-exports', 'commandes'].includes(tab)) {
         setCurrentTab(tab);
       } else {
         setCurrentTab('dashboard-finance');
       }
 
-      window.history.pushState({}, '', window.location.pathname);
+      setCurrentRoute(basePath);
+      window.history.pushState({}, '', basePath);
       return;
     }
 
-    // 5. Repli sur le gestionnaire de vues génériques SPA
-    const cleanViewName = path.replace(/^\//, '').split('?')[0];
+    // 5. Mon Vestiaire / Mes tenues
+    if (path.includes('/mon-vestiaire') || path.includes('/vestiaire')) {
+      setCurrentPole('mon-espace');
+      setCurrentTab('mon-vestiaire');
+      cleanUrlParams(['threadId']);
+      setCurrentRoute(basePath);
+      window.history.pushState({}, '', basePath);
+      return;
+    }
+
+    // 6. Diffusion / Prestations
+    if (path.includes('/diffusion')) {
+      setCurrentPole('diffusion');
+      setCurrentTab(params.get('tab') || 'gigs-pipeline');
+      setCurrentRoute(basePath);
+      window.history.pushState({}, '', basePath);
+      return;
+    }
+
+    // 7. Logistique / Matériel
+    if (path.includes('/logistics') || path.includes('/logistique')) {
+      setCurrentPole('logistique');
+      setCurrentTab(params.get('tab') || 'inventory');
+      setCurrentRoute(basePath);
+      window.history.pushState({}, '', basePath);
+      return;
+    }
+
+    // 8. Espace Mestre
+    if (path.includes('/mestre')) {
+      setCurrentPole('mestre');
+      const tab = params.get('tab');
+      if (tab === 'casting') {
+        setCurrentTab('mestre-orientation');
+      } else if (tab) {
+        setCurrentTab(tab.startsWith('mestre-') ? tab : `mestre-${tab}`);
+      } else {
+        setCurrentTab('mestre-repertoire');
+      }
+      setCurrentRoute(basePath);
+      window.history.pushState({}, '', basePath);
+      return;
+    }
+
+    // 9. Repli sur le gestionnaire de vues génériques SPA
+    const cleanViewName = path.replace(/^\/(app\/)?/, '').split('?')[0];
     if (cleanViewName) {
+      setCurrentRoute(basePath);
       handleNavigateToView(cleanViewName);
     }
   };
@@ -1880,7 +2040,8 @@ export default function App() {
               polesList={POLES_CONFIG}
               profileData={profileData}
               onSignOut={handleSignOut}
-              unreadPrivateMessagesCount={unreadPrivateMessagesCount}
+              unreadPrivateMessagesCount={unreadConversationsCount || unreadPrivateMessagesCount || 0}
+              onStartDirectChat={handleStartDirectChat}
               permissionsMatrice={permissionsMatrice}
               enabledModules={enabledModules}
               activerPresenceEnLigne={activerPresenceEnLigne}

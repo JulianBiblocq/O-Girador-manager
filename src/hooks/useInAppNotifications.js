@@ -4,9 +4,10 @@
  * de marquage comme lu à l'unité ou en lot.
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { collection, query, limit, onSnapshot, doc, updateDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase';
+import { playNotificationSound } from '../utils/soundService';
 
 /**
  * Hook d'abonnement aux notifications internes d'un membre.
@@ -18,9 +19,12 @@ import { db } from '../firebase';
 export function useInAppNotifications(userId, groupId) {
   const [rawNotifications, setRawNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const isFirstSnapshotRef = useRef(true);
 
   // Écoute temps réel bornée aux 50 dernières alertes
   useEffect(() => {
+    isFirstSnapshotRef.current = true;
+
     if (!userId) {
       setRawNotifications([]);
       setLoading(false);
@@ -35,6 +39,25 @@ export function useInAppNotifications(userId, groupId) {
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
+        // Déclenchement de la signature sonore uniquement pour les alertes arrivant après le premier chargement
+        if (!isFirstSnapshotRef.current) {
+          const hasNewUnread = snapshot.docChanges().some((change) => {
+            if (change.type === 'added') {
+              const data = change.doc.data();
+              const isUnread = data.read !== undefined ? !data.read : !data.isRead;
+              const matchesGroup = !groupId || !data.groupId || data.groupId === groupId;
+              return isUnread && matchesGroup;
+            }
+            return false;
+          });
+
+          if (hasNewUnread) {
+            playNotificationSound();
+          }
+        } else {
+          isFirstSnapshotRef.current = false;
+        }
+
         const fetched = [];
         snapshot.forEach((docSnap) => {
           const data = docSnap.data();
@@ -63,7 +86,7 @@ export function useInAppNotifications(userId, groupId) {
 
     // Nettoyage impératif de la souscription Firestore au démontage
     return () => unsubscribe();
-  }, [userId]);
+  }, [userId, groupId]);
 
   // Filtrage optionnel par groupId si pertinent
   const notifications = useMemo(() => {

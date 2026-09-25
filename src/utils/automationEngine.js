@@ -238,7 +238,7 @@ export async function runAutomationEngine(groupId, isSimulation = false) {
             );
 
             // Deep Linking direct : vers Mon Vestiaire pour les tenues, vers la fiche événement sinon
-            const targetUrl = isAfterEvent ? `/mon-vestiaire?eventId=${ev.id}` : `/events/${ev.id}`;
+            const targetUrl = isAfterEvent ? `/app/mon-vestiaire?eventId=${ev.id}` : `/app/events/${ev.id}`;
             const notifTitle = rule.titreNotification || (isAfterEvent ? `🎭 Tenues : ${eventName}` : 'Rappel Événement');
 
             for (const targetUser of targetUsers) {
@@ -367,7 +367,7 @@ export async function triggerEventStatusAutomation(groupId, event, triggerType) 
           title: rule.titreNotification || defaultTitle,
           body: bodyMessage,
           eventId: event.id,
-          url: `/events/${event.id}`,
+          url: `/app/events/${event.id}`,
           createdAt: new Date().toISOString()
         });
       }

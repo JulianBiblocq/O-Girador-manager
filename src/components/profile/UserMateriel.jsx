@@ -151,7 +151,7 @@ export default function UserMateriel({ user, profileData, onBack }) {
           tags: ['Logistique', 'logistique', 'Matériel', 'materiel'],
           title: "📦 Mouvement d'instrument à valider",
           message: `${userName} déclare un retour ou prêt pour ${nomInstrument}`,
-          targetUrl: "/logistics?tab=inventaire",
+          targetUrl: "/app/logistics?tab=inventaire",
           icon: "📦"
         }).catch((err) => console.warn("UserMateriel - Notification mouvement ignorée :", err));
       } catch (notifErr) {
@@ -209,7 +209,7 @@ export default function UserMateriel({ user, profileData, onBack }) {
         type: 'repair_needed',
         title: 'Signalement de casse',
         body: `${user.prenom || user.nom} a signalé une casse sur ${partName} de l'instrument "${inst.nom}".`,
-        link: '/inventory',
+        link: '/app/logistics?tab=inventaire',
         createdAt: serverTimestamp(),
         targetRoles: ['mestre', 'admin', 'logisticien'] // Destinataires
       });
@@ -223,7 +223,7 @@ export default function UserMateriel({ user, profileData, onBack }) {
           tags: ['Logistique', 'logistique', 'Matériel', 'materiel', 'Lutherie'],
           title: "⚠️ Signalement matériel",
           message: `${userName} a signalé une anomalie sur ${nomInstrument}`,
-          targetUrl: "/logistics?tab=inventaire",
+          targetUrl: "/app/logistics?tab=inventaire",
           icon: "⚠️"
         }).catch((err) => console.warn("UserMateriel - Notification casse ignorée :", err));
       } catch (notifErr) {

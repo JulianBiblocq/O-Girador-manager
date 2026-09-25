@@ -24,7 +24,7 @@ export async function showPushActivationConfirmation(registration) {
       badge: 'https://organizador.o-girador.com/favicon.svg',
       tag: 'activation-confirmation',
       data: {
-        url: '/agenda'
+        url: '/app/agenda'
       }
     };
 

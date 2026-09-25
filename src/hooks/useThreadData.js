@@ -397,7 +397,7 @@ export function useThreadData({
             type: isMentioned ? NOTIFICATION_TYPES.FORUM_MENTION : NOTIFICATION_TYPES.FORUM_MESSAGE,
             titre: notifTitle,
             message: `"${snippet}"`,
-            targetUrl: `/forum?threadId=${threadId}`,
+            targetUrl: `/app/forum?threadId=${threadId}`,
             sendPush: true
           });
         });

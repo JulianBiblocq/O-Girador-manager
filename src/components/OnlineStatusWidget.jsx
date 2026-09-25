@@ -4,15 +4,18 @@ import CordelButton from './CordelButton';
 import { usePresenceContext } from '../context/PresenceContext';
 
 // Carte membre en ligne mémoïsée pour éviter les re-renders inutiles
-const OnlineMemberItem = React.memo(({ member }) => {
+const OnlineMemberItem = React.memo(({ member, currentUserId, onStartDirectChat }) => {
   const fullName = `${member.prenom || ''} ${member.nom || ''}`.trim() || 'Batuqueiro';
   const userInstruments = Array.isArray(member.instrumentsJoues) && member.instrumentsJoues.length > 0
     ? member.instrumentsJoues
     : [member.instrument].filter(Boolean);
 
+  const memberId = member.id || member.uid;
+  const isSelf = Boolean(currentUserId && memberId === currentUserId);
+
   return (
-    <div className="p-2.5 border-2 border-encre-noire rounded-[6px_9px_5px_7px] bg-white shadow-[2px_2px_0px_0px_#181716] flex items-center justify-between gap-3">
-      <div className="flex items-center gap-3 min-w-0">
+    <div className="p-2.5 border-2 border-encre-noire rounded-[6px_9px_5px_7px] bg-white shadow-[2px_2px_0px_0px_#181716] flex items-center justify-between gap-2 sm:gap-3">
+      <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
         {/* Avatar with status indicator */}
         <div className="relative shrink-0">
           {member.photoURL ? (
@@ -38,7 +41,7 @@ const OnlineMemberItem = React.memo(({ member }) => {
           <h4 className="text-xs font-black text-encre-noire truncate flex items-center gap-1.5">
             <span>{fullName}</span>
             {member.surnom && (
-              <span className="text-[9px] font-bold text-cordel-wood italic">
+              <span className="text-[9px] font-bold text-cordel-wood italic truncate max-w-[90px]">
                 "{member.surnom}"
               </span>
             )}
@@ -59,9 +62,29 @@ const OnlineMemberItem = React.memo(({ member }) => {
         </div>
       </div>
 
-      <span className="text-[8px] font-extrabold text-emerald-700 bg-emerald-100 border border-emerald-600/30 px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0">
-        Actif
-      </span>
+      <div className="flex items-center gap-1.5 shrink-0">
+        {/* Bouton d'action directe de chat pour les autres membres */}
+        {!isSelf && onStartDirectChat && (
+          <button
+            type="button"
+            onClick={() => onStartDirectChat(memberId)}
+            className="px-2 sm:px-2.5 py-1 text-xs font-black rounded border-2 border-encre-noire bg-cordel-bg-light hover:bg-amber-100 active:translate-x-[0.5px] active:translate-y-[0.5px] text-encre-noire flex items-center gap-1 cursor-pointer transition-all shadow-[1.5px_1.5px_0px_0px_#181716] select-none min-h-[32px] sm:min-h-[34px] touch-manipulation"
+            title={`Envoyer un message privé à ${fullName}`}
+            aria-label={`Envoyer un message privé à ${fullName}`}
+          >
+            <span>💬</span>
+            <span className="hidden xs:inline text-[9.5px] uppercase font-black tracking-wider">Écrire</span>
+          </button>
+        )}
+
+        <span className={`text-[8px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+          isSelf 
+            ? 'text-cordel-wood bg-amber-100 border border-cordel-wood/30' 
+            : 'text-emerald-700 bg-emerald-100 border border-emerald-600/30'
+        }`}>
+          {isSelf ? 'Moi' : 'Actif'}
+        </span>
+      </div>
     </div>
   );
 });
@@ -71,11 +94,22 @@ export default function OnlineStatusWidget({
   onlineCount = 0, 
   className = "", 
   isPresenceEnabled: propIsEnabled,
-  compact = false 
+  compact = false,
+  currentUserId = null,
+  onStartDirectChat = null
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const context = usePresenceContext();
   const isPresenceEnabled = propIsEnabled !== undefined ? propIsEnabled : context?.isPresenceEnabled;
+
+  const handleMemberChatClick = (targetUserId) => {
+    // 1. Fermer la modale des personnes en ligne
+    setIsOpen(false);
+    // 2. Déclencher le raccordement direct vers la conversation
+    if (onStartDirectChat) {
+      onStartDirectChat(targetUserId);
+    }
+  };
 
   if (isPresenceEnabled === false) return null;
 
@@ -139,7 +173,12 @@ export default function OnlineStatusWidget({
                   </div>
                 ) : (
                   (onlineMembers || []).map((member) => (
-                    <OnlineMemberItem key={member.id || member.uid} member={member} />
+                    <OnlineMemberItem 
+                      key={member.id || member.uid} 
+                      member={member} 
+                      currentUserId={currentUserId}
+                      onStartDirectChat={handleMemberChatClick}
+                    />
                   ))
                 )}
               </div>

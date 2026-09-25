@@ -41,7 +41,12 @@ export function useRepertoireVaralDocs(groupId) {
           const data = d.data() || {};
           if (data.type === 'song') {
             fetchedSongs.push({ id: d.id, ...data });
-          } else if (data.type === 'culture_fiche' || data.type === 'fiche_pedagogique') {
+          } else if (
+            data.type === 'culture_fiche' ||
+            data.type === 'fiche_pedagogique' ||
+            data.type === 'culture' ||
+            (typeof data.categorie === 'string' && data.categorie.toLowerCase().includes('culture'))
+          ) {
             fetchedCulture.push({ id: d.id, ...data });
           }
         });

@@ -33,11 +33,7 @@ import PageAccessBadgeIndicator from './common/PageAccessBadgeIndicator';
 import FeedbackModal from './FeedbackModal';
 import CommandPaletteModal from './common/CommandPaletteModal';
 import { useTenantContext } from '../context/TenantContext';
-import { getVitrineUrl } from '../utils/urlUtils';
-import { httpsCallable } from 'firebase/functions';
-import { auth, functions } from '../firebase';
-import { launchCrossApp } from '../utils/crossAppAuth';
-import { getEcosystemUrl } from '../constants/ecosystemUrls';
+
 import { useViewSimulator } from '../context/ViewSimulatorContext';
 import SimulationBanner from './navigation/SimulationBanner';
 import ViewSimulatorSelector from './navigation/ViewSimulatorSelector';
@@ -72,6 +68,7 @@ export default function LayoutShell({
   onToggleBreakGlass,
   tagsDisponibles = [],
   isBirthdayMonth = false,
+  onStartDirectChat = null,
   children 
 }) {
   const { urls } = useTenantContext();
@@ -80,7 +77,6 @@ export default function LayoutShell({
   const [isLogoTilting, setIsLogoTilting] = useState(false);
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   const [combinedLogoUrl, setCombinedLogoUrl] = useState(null);
-  const [launchingAppKey, setLaunchingAppKey] = useState(null);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
 
   const licenseInfo = useLicenseGuard(associationData);
@@ -136,7 +132,7 @@ export default function LayoutShell({
   const effectiveBreakGlassActive = isSimulating ? false : breakGlassActive;
 
   const isPresenceEnabled = activerPresenceEnLigne !== false;
-  const currentUserId = currentProfile?.uid;
+  const currentUserId = currentProfile?.uid || currentProfile?.id;
   const currentGroupId = currentProfile?.groupId;
   const { onlineMembers, onlineCount } = usePresence(currentUserId, currentGroupId, isPresenceEnabled);
   const onlineUserIds = React.useMemo(() => new Set(onlineMembers.map(m => m.id || m.uid)), [onlineMembers]);
@@ -171,8 +167,6 @@ export default function LayoutShell({
 
   // Écouteur global pour ouvrir/fermer la palette de commande universelle (Ctrl + K / Cmd + K)
   useEffect(() => {
-    if (!hasBadgeOrRole) return;
-
     const handleKeyDown = (e) => {
       if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
         e.preventDefault();
@@ -183,7 +177,7 @@ export default function LayoutShell({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [hasBadgeOrRole]);
+  }, []);
 
   const isModuleEnabled = (tabId, poleId) => {
     if (!enabledModules) return true;
@@ -351,100 +345,7 @@ export default function LayoutShell({
     hub: true
   };
 
-  const renderAppLauncher = (isMobile = false) => {
-    const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
-    const apps = [
-      {
-        key: 'vitrine',
-        url: getVitrineUrl(urls, associationData),
-        img: '/ecosystem/logo-mostrador.png',
-        label: 'Mostrador (Site Public)'
-      },
-      {
-        key: 'sequenciador',
-        url: getEcosystemUrl('sequenciador'),
-        img: '/ecosystem/favicon.svg',
-        label: 'Sequenciador'
-      },
-      {
-        key: 'dancador',
-        url: getEcosystemUrl('dancador'),
-        img: '/ecosystem/dancador-logo.png',
-        label: 'Dancador'
-      },
-      {
-        key: 'hub',
-        url: getEcosystemUrl('hub'),
-        img: '/ecosystem/hub-logo.png',
-        label: 'Orquestrador'
-      }
-    ];
-
-    const handleLaunchApp = async (e, app) => {
-      e.preventDefault();
-      if (launchingAppKey) return;
-
-      // Vitrine publique ou non connecté : ouverture directe
-      if (app.key === 'vitrine' || !auth.currentUser) {
-        window.open(app.url, '_blank', 'noopener,noreferrer');
-        return;
-      }
-
-      setLaunchingAppKey(app.key);
-      try {
-        await launchCrossApp(app.url, { appLabel: app.label });
-      } finally {
-        setLaunchingAppKey(null);
-      }
-    };
-
-    return (
-      <div className={`flex items-center ${isMobile ? 'gap-0.5 sm:gap-1' : 'gap-1.5'} justify-center flex-nowrap`}>
-        {apps.map(app => {
-          const isEnabled = ecosystemAccess[app.key] !== false;
-          
-          if (!isEnabled) {
-            return (
-              <div
-                key={app.key}
-                className={`${isMobile ? 'p-0.5 sm:p-1' : 'p-1.5'} border border-transparent rounded flex items-center justify-center grayscale opacity-50 cursor-not-allowed`}
-                title="Module non activé. Découvrez-le sur le Hub O Girador !"
-              >
-                {app.isSvg ? (
-                  <div className="text-cordel-master-dark">{app.icon}</div>
-                ) : (
-                  <img src={app.img} alt={app.label} className={`${isMobile ? 'w-5 h-5 sm:w-6 sm:h-6' : 'w-6 h-6'} object-contain shrink-0`} />
-                )}
-              </div>
-            );
-          }
-
-          const isLaunching = launchingAppKey === app.key;
-
-          return (
-            <a
-              key={app.key}
-              href={app.url}
-              onClick={(e) => handleLaunchApp(e, app)}
-              className={`${isMobile ? 'p-0.5 sm:p-1' : 'p-1.5'} border border-transparent rounded flex items-center justify-center transition-all cursor-pointer hover:scale-105 hover:bg-encre-noire/5 hover:border-cordel-wood ${app.isSvg ? 'hover:border-emerald-600 text-emerald-700 hover:bg-emerald-50' : ''} ${isLaunching ? 'opacity-50 pointer-events-none' : ''}`}
-              title={app.label}
-            >
-              {isLaunching ? (
-                <div className={`${isMobile ? 'w-5 h-5 sm:w-6 sm:h-6' : 'w-6 h-6'} flex items-center justify-center`}>
-                  <div className="w-3.5 h-3.5 border-2 border-cordel-master-dark border-t-transparent rounded-full animate-spin" />
-                </div>
-              ) : app.isSvg ? (
-                <div>{app.icon}</div>
-              ) : (
-                <img src={app.img} alt={app.label} className={`${isMobile ? 'w-5 h-5 sm:w-6 sm:h-6' : 'w-6 h-6'} object-contain shrink-0`} />
-              )}
-            </a>
-          );
-        })}
-      </div>
-    );
-  };
 
   return (
     <div className={`min-h-screen lg:h-screen w-full ${forceLight ? 'bg-cordel-bg-light' : 'bg-cordel-bg-dark'} ${isBirthdayMonth ? 'theme-birthday-month' : ''} flex flex-col lg:items-stretch lg:justify-stretch lg:p-0 p-4 md:p-6`}>
@@ -501,6 +402,8 @@ export default function LayoutShell({
               onlineCount={onlineCount} 
               isPresenceEnabled={isPresenceEnabled}
               compact={true}
+              currentUserId={currentUserId}
+              onStartDirectChat={onStartDirectChat}
             />
             <NotificationCenter 
               currentUser={currentProfile}
@@ -555,27 +458,6 @@ export default function LayoutShell({
                   O Girador
                 </span>
               </div>
-              <div className="mt-2 mb-1 flex items-center gap-1.5 justify-center flex-wrap">
-                <NotificationCenter 
-                  currentUser={currentProfile}
-                  groupId={currentGroupId}
-                  onNavigateToUrl={onNotificationNavigate}
-                />
-                {renderAppLauncher(false)}
-                {hasBadgeOrRole && (
-                  <button
-                    type="button"
-                    onClick={() => setIsCommandPaletteOpen(true)}
-                    className="px-2 py-1 border-2 border-encre-noire bg-cordel-bg hover:bg-white text-encre-noire rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer flex items-center gap-1 transition-all text-[11px] font-bold"
-                    title="Palette de commande universelle (Ctrl + K)"
-                    aria-label="Palette de commande"
-                  >
-                    <span>🔍</span>
-                    <span className="text-[9px] font-mono opacity-60 bg-encre-noire/10 px-1 py-0.5 rounded">Ctrl K</span>
-                  </button>
-                )}
-                <ViewSimulatorSelector />
-              </div>
 
               {isDemoMode() && (
                 <button
@@ -590,15 +472,10 @@ export default function LayoutShell({
                 </button>
               )}
               {associationName && (
-                <span className="font-black text-xs uppercase tracking-wider text-cordel-wood mt-0.5 leading-tight text-center break-words max-w-[160px]">
+                <span className="font-black text-xs uppercase tracking-wider text-cordel-wood mt-1 leading-tight text-center break-words max-w-[160px]">
                   {associationName}
                 </span>
               )}
-
-              {/* Online Presence Indicator Widget in Desktop Sidebar */}
-              <div className="mt-2">
-                <OnlineStatusWidget onlineMembers={onlineMembers} onlineCount={onlineCount} isPresenceEnabled={isPresenceEnabled} />
-              </div>
             </div>
             
             <div className="w-full border-t border-dashed border-cordel-master-dark/20 my-2 shrink-0" />
@@ -823,11 +700,16 @@ export default function LayoutShell({
               </div>
             )}
 
-            {/* Menu d'onglets horizontaux principaux du pôle courant (Rendu unique tout en haut) */}
-            {(isSystemOrSuperAdminOrMestre || isAdministrativeUser) && visibleTabs.length > 0 && (
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-dashed border-cordel-master-dark/20 pb-3 mb-1 select-none shrink-0">
-                <div className="flex flex-wrap gap-2 items-center">
-                  {visibleTabs.map((tab) => {
+            {/* En-tête supérieur persistant : onglets de navigation à gauche et utilitaires universels à droite sur PC */}
+            <div className={`items-center justify-between gap-2 border-b border-dashed border-cordel-master-dark/20 pb-3 mb-1 select-none shrink-0 ${
+              ((isSystemOrSuperAdminOrMestre || isAdministrativeUser) && visibleTabs.length > 0)
+                ? 'flex'
+                : 'hidden lg:flex'
+            }`}>
+              {/* Menu d'onglets horizontaux principaux du pôle courant (si présents) */}
+              <div className="flex flex-wrap gap-2 items-center min-w-0">
+                {(isSystemOrSuperAdminOrMestre || isAdministrativeUser) && visibleTabs.length > 0 ? (
+                  visibleTabs.map((tab) => {
                     const isUnlocked = checkTabAccess(tab.id, activePoleObj?.id);
                     const isActive = currentTab === tab.id;
                     const isRestrictedTitle = t('common.accessRestricted') || "Accès restreint";
@@ -864,23 +746,65 @@ export default function LayoutShell({
                         {displayLabel}
                       </button>
                     );
-                  })}
-                </div>
-                <div className="flex items-center gap-2">
-                  <NotificationCenter 
-                    currentUser={currentProfile}
-                    groupId={currentGroupId}
-                    onNavigateToUrl={onNotificationNavigate}
-                  />
-                  <ViewSimulatorSelector />
-                  <InfoPoleHelpButton 
-                    key={`help_btn_${activePoleObj?.id || currentPole}_${currentTab || 'default'}`}
-                    currentPole={activePoleObj?.id || currentPole} 
-                    currentTab={currentTab} 
-                  />
-                </div>
+                  })
+                ) : null}
               </div>
-            )}
+
+              {/* Actions rapides supérieures droites (Desktop PC universel, toujours visibles sur grand écran) */}
+              <div className="hidden lg:flex items-center gap-2 shrink-0 ml-auto">
+                {/* Lanceur d'applications de l'écosystème */}
+                <EcosystemAppLauncher urls={urls} associationData={associationData} />
+
+                {/* 1. Bouton de recherche rapide (🔍 / loupe ouvrant CommandPaletteModal) */}
+                <button
+                  type="button"
+                  onClick={() => setIsCommandPaletteOpen(true)}
+                  className="px-2.5 py-1 min-h-[34px] border-2 border-encre-noire bg-cordel-bg-light hover:bg-white text-encre-noire rounded-[6px_9px_7px_8px] shadow-[1.5px_1.5px_0px_0px_#181716] hover:scale-[1.03] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1.5 transition-all text-xs font-black select-none"
+                  title="Recherche rapide (Ctrl + K)"
+                  aria-label="Palette de commande"
+                >
+                  <span>🔍</span>
+                  <span className="text-[9.5px] font-mono opacity-60 bg-encre-noire/10 px-1 py-0.5 rounded hidden xl:inline">Ctrl K</span>
+                </button>
+
+                {/* 2. Widget de présence en ligne (OnlineStatusWidget) */}
+                <OnlineStatusWidget 
+                  onlineMembers={onlineMembers} 
+                  onlineCount={onlineCount} 
+                  isPresenceEnabled={isPresenceEnabled} 
+                  currentUserId={currentUserId}
+                  onStartDirectChat={onStartDirectChat}
+                />
+
+                {/* 3. Cloche de notifications (NotificationCenter) */}
+                <NotificationCenter 
+                  currentUser={currentProfile}
+                  groupId={currentGroupId}
+                  onNavigateToUrl={onNotificationNavigate}
+                />
+
+                {/* 4. Icône de simulation de vue (ViewSimulatorSelector / 👁️) - réservé Super-Admin / Mestre */}
+                {(isSuperAdmin || currentProfile?.role === 'mestre') && (
+                  <ViewSimulatorSelector />
+                )}
+
+                {/* Aide contextuelle du pôle */}
+                <InfoPoleHelpButton 
+                  key={`help_btn_${activePoleObj?.id || currentPole}_${currentTab || 'default'}`}
+                  currentPole={activePoleObj?.id || currentPole} 
+                  currentTab={currentTab} 
+                />
+              </div>
+
+              {/* Sur mobile : bouton d'aide contextuelle si des onglets sont affichés */}
+              <div className="lg:hidden flex items-center gap-1.5 shrink-0 ml-auto">
+                <InfoPoleHelpButton 
+                  key={`help_btn_mob_${activePoleObj?.id || currentPole}_${currentTab || 'default'}`}
+                  currentPole={activePoleObj?.id || currentPole} 
+                  currentTab={currentTab} 
+                />
+              </div>
+            </div>
 
             <div className="w-full flex-1">
               <PresenceProvider value={{ onlineMembers, onlineCount, onlineUserIds, isPresenceEnabled }}>

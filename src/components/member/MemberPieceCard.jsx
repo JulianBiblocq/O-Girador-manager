@@ -165,12 +165,13 @@ export default function MemberPieceCard({
         />
       )}
 
-      {/* 5. Modale dédiée Culture (Option A Lire la fiche, Option B Quiz Culture) */}
+      {/* 5. Modale dédiée Culture (lecture seule) */}
       {isCultureModalOpen && (
         <PieceCultureModal
           isOpen={isCultureModalOpen}
           onClose={() => setIsCultureModalOpen(false)}
           cultureDocs={Array.isArray(piece.activeCultureDocs) && piece.activeCultureDocs.length > 0 ? piece.activeCultureDocs : (piece.activeCultureDoc ? [piece.activeCultureDoc] : [])}
+          initialDocId={piece.activeCultureDocs?.[0]?.id || piece.activeCultureDoc?.id}
           piece={piece}
           groupId={groupId}
           profileData={profileData}

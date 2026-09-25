@@ -81,24 +81,40 @@ export default function MemberPieceUnfoldedContent({
           </button>
         )}
 
-        {/* Passerelle Fiches Culturelles (lecture seule) */}
+        {/* Passerelle Fiches Culturelles (lecture seule avec support direct multi-fiches) */}
         {hasCulture && (
-          <button
-            type="button"
-            onClick={() => onOpenCulture && onOpenCulture(cultureDocs[0] || null, piece, cultureDocs)}
-            className="px-2.5 py-1 text-xs font-bold rounded bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-900 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all select-none"
-            title="Consulter la fiche culturelle"
-          >
-            <span>📖</span>
-            <span>
-              {t('culture', 'Culture')}
-              {cultureDocs.length === 1 && (cultureDocs[0].titre || cultureDocs[0].name)
-                ? ` : ${cultureDocs[0].titre || cultureDocs[0].name}`
-                : cultureDocs.length > 1
-                  ? ` (${cultureDocs.length})`
+          cultureDocs.length > 1 ? (
+            <div className="flex flex-wrap items-center gap-1.5">
+              {cultureDocs.map((cDoc, cIdx) => (
+                <button
+                  key={cDoc.id || cIdx}
+                  type="button"
+                  onClick={() => onOpenCulture && onOpenCulture(cDoc, piece, cultureDocs)}
+                  className="px-2.5 py-1 text-xs font-bold rounded bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-900 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all select-none"
+                  title={`Consulter la fiche culturelle : ${cDoc.titre || cDoc.name || 'Culture'}`}
+                >
+                  <span>📖</span>
+                  <span className="truncate max-w-[140px]">{cDoc.titre || cDoc.name || `Culture #${cIdx + 1}`}</span>
+                  <span className="text-[9px] opacity-70">↗</span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => onOpenCulture && onOpenCulture(cultureDocs[0] || null, piece, cultureDocs)}
+              className="px-2.5 py-1 text-xs font-bold rounded bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-900 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all select-none"
+              title="Consulter la fiche culturelle"
+            >
+              <span>📖</span>
+              <span>
+                {t('culture', 'Culture')}
+                {(cultureDocs[0]?.titre || cultureDocs[0]?.name)
+                  ? ` : ${cultureDocs[0].titre || cultureDocs[0].name}`
                   : ''}
-            </span>
-          </button>
+              </span>
+            </button>
+          )
         )}
 
         {/* Passerelle Tablature */}

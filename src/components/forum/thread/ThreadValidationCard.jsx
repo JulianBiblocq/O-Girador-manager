@@ -137,7 +137,7 @@ export default function ThreadValidationCard({
           title: "✅ Publication approuvée !",
           body: `Votre proposition de publication pour "${thread.titre}" a été validée par ${validatorName}.`,
           type: 'studio_validation',
-          link: `/forum?threadId=${thread.id}`,
+          link: `/app/forum?threadId=${thread.id}`,
           threadId: thread.id,
           read: false,
           createdAt: nowIso
@@ -217,7 +217,7 @@ export default function ThreadValidationCard({
           title: "💬 Retouche demandée pour votre publication",
           body: `${validatorName} a demandé des modifications : "${cleanNote.slice(0, 100)}"`,
           type: 'studio_retouche',
-          link: `/forum?threadId=${thread.id}`,
+          link: `/app/forum?threadId=${thread.id}`,
           threadId: thread.id,
           read: false,
           createdAt: nowIso

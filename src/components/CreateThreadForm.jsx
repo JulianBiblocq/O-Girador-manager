@@ -165,7 +165,7 @@ export default function CreateThreadForm({ groupId, channelId, channels = [], us
               type: NOTIFICATION_TYPES.FORUM_NEW_THREAD,
               titre: `${authorName} dans "${channelLabel}" : "${cleanTitle}"`,
               message: `"${snippet}"`,
-              targetUrl: `/forum?threadId=${docRef.id}`,
+              targetUrl: `/app/forum?threadId=${docRef.id}`,
               sendPush: true
             });
           })

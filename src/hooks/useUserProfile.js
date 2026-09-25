@@ -512,7 +512,7 @@ export function useUserProfile(user, profileData, t) {
             tags: ['Mestre', 'mestre', 'Direction'],
             title: "🥁 Vœux d'instruments mis à jour",
             message: `${userName} a formulé ses souhaits de pupitre`,
-            targetUrl: "/mestre?tab=casting",
+            targetUrl: "/app/mestre?tab=casting",
             icon: "🥁"
           }).catch((err) => console.warn("useUserProfile - Notification vœux mestre ignorée :", err));
         } catch (notifErr) {

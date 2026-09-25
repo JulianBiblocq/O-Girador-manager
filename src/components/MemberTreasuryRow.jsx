@@ -98,7 +98,7 @@ function MemberTreasuryRow({
           tags: ['Trésorier', 'tresorier'],
           title: "💳 Cotisation réglée",
           message: `${userName} a réglé son adhésion`,
-          targetUrl: "/treasury?tab=cotisations",
+          targetUrl: "/app/treasury?tab=cotisations",
           icon: "💳"
         }).catch((notifErr) => console.warn("MemberTreasuryRow - Notification trésorier ignorée :", notifErr));
       }

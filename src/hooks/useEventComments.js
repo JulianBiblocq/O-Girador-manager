@@ -118,7 +118,7 @@ export function useEventComments(eventId, user, profileData, event) {
           tags: ['CA', 'ca', 'bureau', 'Bureau'],
           title: `💬 Question sur l'événement ${eventTitle}`,
           message: `${authorName} : ${excerpt}`,
-          targetUrl: `/events/${eventId}`,
+          targetUrl: `/app/events/${eventId}`,
           icon: "💬"
         }).catch((err) => console.warn("useEventComments - Notification CA ignorée :", err));
       } catch (notifErr) {

@@ -8,12 +8,20 @@ export default function TenantNotFound() {
       <p className="text-lg text-[var(--color-cordel-vert)] mb-8 max-w-md">
         Nous n'avons pas pu trouver l'association correspondant à cette adresse. Vérifiez l'URL ou retournez à l'accueil.
       </p>
-      <a 
-        href="https://www.o-girador.com" 
-        className="px-6 py-3 bg-[var(--color-cordel-ocre)] text-white font-bold rounded-md hover:bg-[var(--theme-primary)] transition-colors"
-      >
-        Retour au Hub
-      </a>
+      <div className="flex gap-3 flex-wrap justify-center">
+        <a 
+          href="/app" 
+          className="px-6 py-3 bg-[var(--color-cordel-vert,#2d6a4f)] text-white font-bold rounded-md hover:brightness-110 transition-colors shadow-md"
+        >
+          Accéder à mon espace membre
+        </a>
+        <a 
+          href="https://www.o-girador.com" 
+          className="px-6 py-3 bg-[var(--color-cordel-ocre,#c05621)] text-white font-bold rounded-md hover:brightness-110 transition-colors shadow-md"
+        >
+          Retour au Hub
+        </a>
+      </div>
     </div>
   );
 }

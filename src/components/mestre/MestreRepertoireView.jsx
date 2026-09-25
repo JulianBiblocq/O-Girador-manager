@@ -670,7 +670,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                             <button
                               key={cDoc.id || cIdx}
                               type="button"
-                              onClick={() => setActiveCultureDocToView(cDoc)}
+                              onClick={() => setActiveCultureDocToView({ ...cDoc, docs: piece.activeCultureDocs, piece })}
                               className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-300 transition-colors shadow-2xs cursor-pointer select-none"
                               title={`Consulter la fiche culturelle : ${cDoc.titre || cDoc.name || 'Culture'}`}
                             >
@@ -690,7 +690,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                               videoUrl: piece.activeVideoUrl || piece.videoUrl,
                               chapitres: piece.activeHistoire ? [{ sousTitre: 'Origines & Histoire', texte: piece.activeHistoire }] : []
                             };
-                            setActiveCultureDocToView(docToOpen);
+                            setActiveCultureDocToView({ ...docToOpen, docs: piece.activeCultureDocs || [docToOpen], piece });
                           }}
                           className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-300 transition-colors shadow-2xs cursor-pointer select-none"
                           title={piece.activeCultureDocs?.[0]?.titre || piece.activeCultureDoc?.titre ? `Consulter la fiche culturelle : ${piece.activeCultureDocs?.[0]?.titre || piece.activeCultureDoc?.titre}` : 'Consulter la fiche culturelle du Varal'}
@@ -994,7 +994,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                               videoUrl: piece.activeVideoUrl || piece.videoUrl,
                               chapitres: piece.activeHistoire ? [{ sousTitre: 'Origines & Histoire', texte: piece.activeHistoire }] : []
                             };
-                            setActiveCultureDocToView(docToOpen);
+                            setActiveCultureDocToView({ ...docToOpen, docs: piece.activeCultureDocs || [docToOpen], piece });
                           }}
                           className="py-1 px-2 text-[9.5px] uppercase tracking-wider font-black bg-blue-50 hover:bg-blue-100 border border-blue-300 text-blue-950 flex items-center gap-1 shrink-0"
                           title="Consulter la fiche culturelle du Varal associée"
@@ -1163,7 +1163,11 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                   key={docItem.id || idx}
                   type="button"
                   onClick={() => {
-                    setActiveCultureDocToView(docItem);
+                    setActiveCultureDocToView({
+                      ...docItem,
+                      docs: culturePickerData.docs,
+                      piece: culturePickerData.piece
+                    });
                     setCulturePickerData(null);
                   }}
                   className="flex items-center justify-between p-2.5 rounded bg-blue-50 hover:bg-blue-100 border border-blue-300 text-blue-950 font-bold text-xs cursor-pointer transition-all shadow-xs text-left"
@@ -1187,6 +1191,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
           onClose={() => setActiveCultureDocToView(null)}
           cultureDocs={activeCultureDocToView?.docs || [activeCultureDocToView]}
           initialDocId={activeCultureDocToView?.id}
+          piece={activeCultureDocToView?.piece}
           profileData={_profileData}
         />
       )}

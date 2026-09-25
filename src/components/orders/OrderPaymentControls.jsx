@@ -59,7 +59,7 @@ export default function OrderPaymentControls({ request, groupId }) {
             userId: request.userId,
             title: "📦 Commande groupée : paiement attendu",
             body: `Votre commande pour ${request.quantite}x ${request.article} est prête à être réglée : ${cleanMontant.toFixed(2)} €. Retrouvez l'IBAN de l'association dans votre profil.`,
-            url: '/profil',
+            url: '/app/profil',
             type: 'order_payment_pending',
             createdAt: nowIso
           });
@@ -75,7 +75,7 @@ export default function OrderPaymentControls({ request, groupId }) {
             type: 'expense_status',
             titre: "📦 Commande groupée : paiement attendu",
             message: `Votre commande pour ${request.quantite}x ${request.article} est prête à être réglée : ${cleanMontant.toFixed(2)} €. Retrouvez l'IBAN de l'association dans votre profil.`,
-            targetUrl: '/profil'
+            targetUrl: '/app/profil'
           });
         } catch (notifErr) {
           console.warn("OrderPaymentControls - Erreur notification in-app :", notifErr);
@@ -143,7 +143,7 @@ export default function OrderPaymentControls({ request, groupId }) {
             userId: request.userId,
             title: "✅ Paiement commande validé",
             body: `Votre règlement de ${cleanMontant.toFixed(2)} € pour ${request.article} a bien été enregistré. Merci !`,
-            url: '/profil',
+            url: '/app/profil',
             type: 'order_paid',
             createdAt: nowIso
           });
@@ -159,7 +159,7 @@ export default function OrderPaymentControls({ request, groupId }) {
             type: 'expense_status',
             titre: "✅ Paiement commande validé",
             message: `Votre règlement de ${cleanMontant.toFixed(2)} € pour ${request.article} a bien été enregistré. Merci !`,
-            targetUrl: '/profil'
+            targetUrl: '/app/profil'
           });
         } catch (notifErr) {
           console.warn("OrderPaymentControls - Erreur in-app confirmation :", notifErr);

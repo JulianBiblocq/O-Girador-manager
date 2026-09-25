@@ -400,7 +400,7 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
             tags: ['Mestre', 'mestre', 'Direction'],
             title: "🥁 Vœux d'instruments mis à jour",
             message: `${userName} a formulé ses souhaits de pupitre`,
-            targetUrl: "/mestre?tab=casting",
+            targetUrl: "/app/mestre?tab=casting",
             icon: "🥁"
           }).catch((err) => console.warn("Onboarding - Notification vœux mestre ignorée :", err));
         } catch (notifErr) {

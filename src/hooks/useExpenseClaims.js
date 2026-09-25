@@ -211,7 +211,7 @@ export function useExpenseClaims(groupId, userId = null, startMonth = DEFAULT_SE
           tags: ['Trésorier', 'tresorier'],
           title: "🧾 Nouvelle note de frais",
           message: `${userName} — ${parsedAmount} € pour ${motif.trim()}`,
-          targetUrl: "/treasury?tab=frais-km",
+          targetUrl: "/app/treasury?tab=frais-km",
           icon: "🧾"
         }).catch((err) => console.warn("useExpenseClaims - Notification trésorier ignorée :", err));
       } catch (notifErr) {
@@ -282,7 +282,7 @@ export function useExpenseClaims(groupId, userId = null, startMonth = DEFAULT_SE
             userId: claim.userId,
             title: "❌ Note de frais refusée",
             body: `Votre note de frais pour "${claim.motif}" a été refusée : ${cleanRefus}`,
-            url: '/profil?tab=frais',
+            url: '/app/profil?tab=frais',
             type: 'expense_rejected',
             createdAt: nowIso
           });
@@ -298,7 +298,7 @@ export function useExpenseClaims(groupId, userId = null, startMonth = DEFAULT_SE
             type: 'expense_status',
             titre: "❌ Note de frais refusée",
             message: `Votre note de frais pour "${claim.motif}" a été refusée : ${cleanRefus}`,
-            targetUrl: '/profil?tab=frais'
+            targetUrl: '/app/profil?tab=frais'
           });
         } catch (notifErr) {
           console.warn("useExpenseClaims - Notification in-app non transmise :", notifErr);
@@ -356,7 +356,7 @@ export function useExpenseClaims(groupId, userId = null, startMonth = DEFAULT_SE
             userId: claim.userId,
             title: "💸 Note de frais remboursée !",
             body: `Votre note de frais de ${montantFloat.toFixed(2)} € (${claim.motif}) a été marquée comme remboursée.`,
-            url: '/profil?tab=frais',
+            url: '/app/profil?tab=frais',
             type: 'expense_reimbursed',
             createdAt: nowIso
           });
@@ -372,7 +372,7 @@ export function useExpenseClaims(groupId, userId = null, startMonth = DEFAULT_SE
             type: 'expense_status',
             titre: "💸 Note de frais remboursée !",
             message: `Votre note de frais de ${montantFloat.toFixed(2)} € (${claim.motif}) a été marquée comme remboursée.`,
-            targetUrl: '/profil?tab=frais'
+            targetUrl: '/app/profil?tab=frais'
           });
         } catch (notifErr) {
           console.warn("useExpenseClaims - Notification in-app non transmise :", notifErr);

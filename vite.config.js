@@ -126,8 +126,8 @@ export default defineConfig({
         navigateFallbackDenylist: [/^\/__/, /^\/robots\.txt$/, /^\/sitemap\.xml$/],
         importScripts: ['/firebase-messaging-sw.js'],
         cleanupOutdatedCaches: true,
-        skipWaiting: false,
-        clientsClaim: false
+        skipWaiting: true,
+        clientsClaim: true
       }
     })
   ],

@@ -17,7 +17,7 @@ export async function dispatchInAppAndPushNotification({
   titre,
   title,
   message,
-  targetUrl = '/',
+  targetUrl = '/app',
   icon = '🔔',
   sendPush = true
 }) {
@@ -25,6 +25,11 @@ export async function dispatchInAppAndPushNotification({
   let notifId = null;
   let pushQueued = false;
   const displayTitle = title || titre || 'Notification';
+
+  // Normalisation pour toujours diriger vers l'espace membre /app
+  const resolvedUrl = (!targetUrl.startsWith('http') && !targetUrl.startsWith('/app'))
+    ? (targetUrl.startsWith('/') ? `/app${targetUrl}` : `/app/${targetUrl}`)
+    : targetUrl;
 
   try {
     notifId = await createInAppNotification({
@@ -34,7 +39,7 @@ export async function dispatchInAppAndPushNotification({
       titre: displayTitle,
       title: displayTitle,
       message,
-      targetUrl,
+      targetUrl: resolvedUrl,
       icon
     });
   } catch (err) {
@@ -49,7 +54,7 @@ export async function dispatchInAppAndPushNotification({
         userId: recipientId,
         title: displayTitle,
         body: message,
-        url: targetUrl,
+        url: resolvedUrl,
         type,
         createdAt: new Date().toISOString()
       });
@@ -72,7 +77,7 @@ export async function dispatchBulkInAppAndPushNotification({
   titre,
   title,
   message,
-  targetUrl = '/',
+  targetUrl = '/app',
   icon = '🔔',
   sendPush = true
 }) {

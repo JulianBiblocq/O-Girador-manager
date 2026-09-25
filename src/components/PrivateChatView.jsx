@@ -290,7 +290,7 @@ export default function PrivateChatView({
         type: NOTIFICATION_TYPES.CHAT_DIRECT,
         titre: `✉️ ${senderFullName}`,
         message: `"${cleanSnippet}"`,
-        targetUrl: `/forum?tab=inbox&chatUserId=${user.uid}`,
+        targetUrl: `/app/forum?tab=inbox&chatUserId=${user.uid}`,
         sendPush: true
       });
     } catch (notifErr) {
