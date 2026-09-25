@@ -21,6 +21,7 @@ import NewDirectMessageModal from './forum/NewDirectMessageModal';
 import NewGroupModal from './forum/NewGroupModal';
 import { useConversations } from '../hooks/useConversations';
 import useHardwareBack from '../hooks/useHardwareBack';
+import { forceUpdateAndClearCache } from '../utils/pwaUtils';
 
 function ChannelTreeItem({
   channel,
@@ -602,9 +603,16 @@ export default function Forum({
 
   const activeChannelThreads = useMemo(() => {
     if (!activeChannelId) return [];
+    // Récupération récursive de tous les identifiants de sous-salons descendants
+    const getDescendantChannelIds = (cId) => {
+      const kids = channels.filter(c => c.parentId === cId);
+      return [cId, ...kids.flatMap(k => getDescendantChannelIds(k.id))];
+    };
+    const scopeChannelIds = new Set(getDescendantChannelIds(activeChannelId));
     const activeChan = channels.find(c => c.id === activeChannelId);
+
     return accessibleThreads.filter(t => {
-      if (t.channelId) return t.channelId === activeChannelId;
+      if (t.channelId) return scopeChannelIds.has(t.channelId);
       if (activeChan && activeChan.name === (t.categorie || 'Général')) return true;
       return false;
     });
@@ -833,6 +841,7 @@ export default function Forum({
       const found = accessibleThreads.find((t) => t.id === targetThreadId);
       if (found) {
         setSelectedThread(found);
+        setMobileView('discussion');
         return;
       }
     }
@@ -844,6 +853,7 @@ export default function Forum({
         .then((docSnap) => {
           if (docSnap.exists() && isMounted) {
             setSelectedThread({ id: docSnap.id, ...docSnap.data() });
+            setMobileView('discussion');
           }
         })
         .catch((err) => {
@@ -862,6 +872,7 @@ export default function Forum({
     // Mémorise le salon d'où venait l'utilisateur avant d'ouvrir le sujet
     previousChannelRef.current = originChannelId !== null ? originChannelId : activeChannelId;
     setSelectedThread(thread);
+    setMobileView('discussion');
 
     if (thread?.id) {
       markThreadAsReadLocally(thread.id);
@@ -886,6 +897,7 @@ export default function Forum({
     if (previousChannelRef.current !== null && previousChannelRef.current !== undefined) {
       setActiveChannelId(previousChannelRef.current);
     }
+    setMobileView('discussion');
     setSelectedThread(null);
   }, []);
 
@@ -977,18 +989,26 @@ export default function Forum({
           <XiloMegaphone size={16} className="text-cordel-wood" />
           {translate('forum.title', "Porte-Voix")}
         </span>
-        {isModeratorOrAdmin && onOpenStudioForum ? (
-          <CordelButton
-            variant="ocre"
-            onClick={onOpenStudioForum}
-            className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider shrink-0"
-            title="Accéder au Studio de Gestion du Porte-voix"
+        <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            type="button"
+            onClick={() => forceUpdateAndClearCache()}
+            className="text-[9px] font-black text-cordel-wood hover:text-encre-noire flex items-center gap-1 cursor-pointer opacity-80 hover:opacity-100 px-2 py-1 rounded bg-cordel-bg border border-cordel-master-dark/20 shadow-xs"
+            title="Rafraîchir les messages et purger le cache"
           >
-            🛠️ Studio Porte-voix
-          </CordelButton>
-        ) : (
-          <div className="w-12"></div>
-        )}
+            🔄
+          </button>
+          {isModeratorOrAdmin && onOpenStudioForum && (
+            <CordelButton
+              variant="ocre"
+              onClick={onOpenStudioForum}
+              className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider shrink-0"
+              title="Accéder au Studio de Gestion du Porte-voix"
+            >
+              🛠️ Studio Porte-voix
+            </CordelButton>
+          )}
+        </div>
       </div>
 
       {/* Barre de navigation principale (3 onglets racine : Discussions / Messages Privés / Groupes) */}

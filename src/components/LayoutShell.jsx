@@ -44,6 +44,7 @@ import NotificationCenter from './notifications/NotificationCenter';
 import EcosystemAppLauncher from './navigation/EcosystemAppLauncher';
 import LanguageToggle from './common/LanguageToggle';
 import HeaderBrandTitle from './common/HeaderBrandTitle';
+import { forceUpdateAndClearCache } from '../utils/pwaUtils';
 
 export default function LayoutShell({ 
   logoUrl, 
@@ -352,13 +353,13 @@ export default function LayoutShell({
 
 
   return (
-    <div className={`min-h-screen lg:h-screen w-full ${forceLight ? 'bg-cordel-bg-light' : 'bg-cordel-bg-dark'} ${isBirthdayMonth ? 'theme-birthday-month' : ''} flex flex-col lg:items-stretch lg:justify-stretch lg:p-0 p-4 md:p-6`}>
+    <div className={`min-h-[100dvh] h-[100dvh] max-h-[100dvh] w-full ${forceLight ? 'bg-cordel-bg-light' : 'bg-cordel-bg-dark'} ${isBirthdayMonth ? 'theme-birthday-month' : ''} flex flex-col items-stretch justify-stretch p-0 overflow-hidden`}>
       <SubscriptionBanner licenseInfo={licenseInfo} profileData={currentProfile} />
       {/* Bannière persistante d'avertissement du mode simulation */}
       <SimulationBanner />
 
       {/* Responsive board container */}
-      <div className="w-full h-screen lg:h-screen lg:max-w-none lg:border-none lg:rounded-none lg:shadow-none overflow-hidden flex flex-col lg:flex-row relative bg-cordel-bg-light text-encre-noire">
+      <div className="w-full h-full max-h-full overflow-hidden flex flex-col lg:flex-row relative bg-cordel-bg-light text-encre-noire">
         
         {/* Top Header / Navbar for Mobile and Tablet (hidden on Desktop) */}
         <div className="lg:hidden w-full h-16 landscape:h-12 border-b-4 border-cordel-master-dark bg-cordel-bg-light flex items-center px-3 sm:px-4 justify-between select-none shrink-0 z-[90]">
@@ -679,14 +680,22 @@ export default function LayoutShell({
               <LanguageToggle className="w-full" />
             </div>
 
-            <span className="text-[7.5px] font-black opacity-35 tracking-widest uppercase select-none mt-1">
-              {import.meta.env.VITE_APP_VERSION || 'v1.0.1'}
-            </span>
+            <div className="w-full flex items-center justify-between text-[7.5px] font-black opacity-40 tracking-widest uppercase select-none mt-1 px-1">
+              <span>{import.meta.env.VITE_APP_VERSION || 'v1.0.1'}</span>
+              <button
+                type="button"
+                onClick={() => forceUpdateAndClearCache()}
+                className="hover:opacity-100 hover:text-cordel-wood cursor-pointer underline flex items-center gap-0.5"
+                title="Vider les caches et actualiser l'application"
+              >
+                🔄 Actualiser
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Main Content Area */}
-        <div className="flex-1 overflow-y-auto cordel-bg p-5 sm:px-7 md:px-9 sm:py-6 md:py-8 flex flex-col justify-between">
+        <div className="flex-1 overflow-y-auto overscroll-contain touch-pan-y cordel-bg p-4 sm:p-5 sm:px-7 md:px-9 sm:py-6 md:py-8 flex flex-col justify-between">
           <div className="flex flex-col gap-5 w-full flex-1">
             
             {/* Break-Glass Active Warning Banner */}
@@ -1165,9 +1174,16 @@ export default function LayoutShell({
                   <LanguageToggle className="w-full" />
                 </div>
 
-                <div className="flex justify-between items-center text-[8px] font-black opacity-30 mt-1">
-                  <span>O GIRADOR</span>
+                <div className="flex justify-between items-center text-[8px] font-black opacity-40 mt-1">
                   <span>{import.meta.env.VITE_APP_VERSION || 'v1.0.1'}</span>
+                  <button
+                    type="button"
+                    onClick={() => forceUpdateAndClearCache()}
+                    className="hover:opacity-100 text-cordel-wood underline cursor-pointer flex items-center gap-1 font-black uppercase text-[8px]"
+                    title="Vider les caches et actualiser l'application"
+                  >
+                    🔄 Actualiser
+                  </button>
                 </div>
               </div>
 

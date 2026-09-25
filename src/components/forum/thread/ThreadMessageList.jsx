@@ -60,7 +60,7 @@ export default function ThreadMessageList({
       <div
         ref={messagesContainerRef}
         onScroll={onScroll}
-        className="flex flex-col gap-3 overflow-y-auto max-h-[460px] min-h-[220px] p-3 bg-cordel-bg-light border-2 border-dashed border-cordel-master-dark/20 rounded-md select-text"
+        className="flex flex-col gap-3 overflow-y-auto overscroll-contain touch-pan-y max-h-[460px] min-h-[220px] p-3 bg-cordel-bg-light border-2 border-dashed border-cordel-master-dark/20 rounded-md select-text"
       >
         {reponses.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full min-h-[160px] text-center text-xs opacity-60 font-semibold italic select-none py-8">

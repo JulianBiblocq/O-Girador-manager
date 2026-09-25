@@ -32,10 +32,11 @@ export function useAppUpdate() {
         if (data && typeof data === 'object' && data.version) {
           const latestVersion = String(data.version);
           if (latestVersion !== CURRENT_VERSION) {
-            // Empêche les boucles infinies de rechargement
-            const sessionKey = `update_reloaded_${latestVersion}`;
-            if (sessionStorage.getItem(sessionKey)) return;
-            sessionStorage.setItem(sessionKey, 'true');
+            // Protection contre les boucles infinies : temporisation de 15 secondes entre deux tentatives
+            const lastAttempt = parseInt(sessionStorage.getItem('last_update_reload_ts') || '0', 10);
+            const now = Date.now();
+            if (now - lastAttempt < 15000) return;
+            sessionStorage.setItem('last_update_reload_ts', String(now));
 
             // Purge immédiate des caches et désinscription des Service Workers
             await forceUpdateAndClearCache();
