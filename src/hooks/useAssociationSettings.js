@@ -269,7 +269,8 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
       active: false
     },
     // Registre dynamique des playlists YouTube de l'association
-    youtubePlaylists: []
+    youtubePlaylists: [],
+    youtubeApiKey: ''
   });
 
   const [logoFile, setLogoFile] = useState(null);
@@ -563,7 +564,8 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
             titre: '',
             active: false
           },
-          youtubePlaylists: Array.isArray(data.youtubePlaylists) ? data.youtubePlaylists : []
+          youtubePlaylists: Array.isArray(data.youtubePlaylists) ? data.youtubePlaylists : [],
+          youtubeApiKey: data.youtubeApiKey || ''
         }));
       }
       setLoading(false);
@@ -834,7 +836,8 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
           active: Boolean(formData.videoALaUne?.active)
         },
         // Registre des playlists YouTube de l'association
-        youtubePlaylists: cleanYoutubePlaylists
+        youtubePlaylists: cleanYoutubePlaylists,
+        youtubeApiKey: (formData.youtubeApiKey || '').trim()
       }, { merge: true });
 
       const credentialsRef = doc(db, 'associations', groupId, 'private_settings', 'credentials');

@@ -20,11 +20,13 @@ export function useYouTubePlaylists(customGroupId = null) {
 
   const effectiveGroupId = customGroupId || contextGroupId;
   const [playlists, setPlaylists] = useState([]);
+  const [apiKey, setApiKey] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!effectiveGroupId) {
       setPlaylists([]);
+      setApiKey('');
       setLoading(false);
       return;
     }
@@ -37,8 +39,10 @@ export function useYouTubePlaylists(customGroupId = null) {
           const data = snapshot.data();
           const list = Array.isArray(data.youtubePlaylists) ? data.youtubePlaylists : [];
           setPlaylists(list);
+          setApiKey(data.youtubeApiKey || '');
         } else {
           setPlaylists([]);
+          setApiKey('');
         }
         setLoading(false);
       },
@@ -51,5 +55,5 @@ export function useYouTubePlaylists(customGroupId = null) {
     return () => unsubscribe();
   }, [effectiveGroupId]);
 
-  return { playlists, loading };
+  return { playlists, apiKey, loading };
 }

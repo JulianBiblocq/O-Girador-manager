@@ -17,7 +17,7 @@ export default function YouTubeVideoPickerModal({
   playlists: propPlaylists = null,
   groupId = null
 }) {
-  const { playlists: fetchedPlaylists, loading: loadingPlaylists } = useYouTubePlaylists(groupId);
+  const { playlists: fetchedPlaylists, apiKey, loading: loadingPlaylists } = useYouTubePlaylists(groupId);
   const playlists = propPlaylists || fetchedPlaylists || [];
 
   const [activeTab, setActiveTab] = useState(defaultPlaylistIndex);
@@ -41,11 +41,11 @@ export default function YouTubeVideoPickerModal({
     let isMounted = true;
     setLoadingVideos(true);
     setError(null);
-    fetchPlaylistVideos(currentPlaylist.playlistId)
+    fetchPlaylistVideos(currentPlaylist.playlistId, apiKey)
       .then((items) => { if (isMounted) { setVideos(items); setLoadingVideos(false); } })
       .catch((err) => { if (isMounted) { setError(err.message || 'Erreur de chargement'); setLoadingVideos(false); } });
     return () => { isMounted = false; };
-  }, [isOpen, currentPlaylist?.playlistId]);
+  }, [isOpen, currentPlaylist?.playlistId, apiKey]);
 
   const filteredVideos = useMemo(() => {
     if (!searchQuery.trim()) return videos;

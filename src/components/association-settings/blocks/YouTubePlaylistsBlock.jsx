@@ -72,6 +72,30 @@ export default function YouTubePlaylistsBlock({ formData, handleChange, disabled
         </CordelButton>
       </div>
 
+      {/* Clé API YouTube Data v3 personnalisée de l'association */}
+      <div className="p-3 bg-[#faf6ee] border border-cordel-master-dark/20 rounded-[4px_6px_3px_5px] flex flex-col gap-1.5">
+        <div className="flex items-center justify-between">
+          <label className="text-[11px] font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
+            <span>🔑</span>
+            <span>Clé API YouTube Data v3 (Optionnel)</span>
+          </label>
+          <span className="text-[9.5px] text-cordel-master-dark/60 font-medium">
+            Par défaut : clé plateforme
+          </span>
+        </div>
+        <input
+          type="password"
+          placeholder="ex: AIzaSy... (laisser vide pour utiliser le quota par défaut)"
+          value={formData?.youtubeApiKey || ''}
+          onChange={(e) => handleChange('youtubeApiKey', e.target.value)}
+          disabled={disabled}
+          className="w-full px-2.5 py-1.5 text-xs font-mono bg-white border border-cordel-master-dark/30 rounded focus:border-cordel-wood focus:outline-hidden"
+        />
+        <p className="text-[9.5px] text-cordel-master-dark/70 italic">
+          Permet à chaque association de renseigner sa propre clé YouTube sans recompiler l'application.
+        </p>
+      </div>
+
       {playlists.length === 0 ? (
         <div className="py-4 px-3 text-center text-[11px] text-cordel-master-dark/60 italic border border-dashed border-cordel-master-dark/20 rounded bg-[#faf6ee]">
           Aucune playlist configurée. Ajoutez vos playlists YouTube (ex: Alfaias, Chœur, Prestations) pour alimenter le sélecteur vidéo.
