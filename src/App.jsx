@@ -1822,7 +1822,7 @@ export default function App() {
    * Déclenchement instantané d'une discussion privée 1-à-1 depuis la modale des membres en ligne
    * Ferme la présence, crée ou récupère la conversation et bascule sur le Porte-Voix.
    */
-  const handleStartDirectChat = useCallback(async (targetUserId) => {
+  const handleStartDirectChat = async (targetUserId) => {
     if (!targetUserId) return;
     try {
       const convId = await createDirectConversation(targetUserId);
@@ -1835,7 +1835,7 @@ export default function App() {
       console.warn("Erreur lors de l'ouverture du chat direct depuis la présence :", err);
       handleNavigateToView('forum', { userId: targetUserId, tab: 'direct' });
     }
-  }, [createDirectConversation]);
+  };
 
   /**
    * Gestionnaire central de navigation interne déclenchée par le Centre de Notifications
