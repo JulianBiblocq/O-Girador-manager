@@ -1672,10 +1672,15 @@ exports.serveDynamicApp = onRequest(async (req, res) => {
   const urlPath = req.path;
   const projectId = process.env.GCLOUD_PROJECT || "o-girador-7828c";
   
+  // Détermination du site Firebase Hosting source
+  const hostingDomain = (hostname.includes('mostrador') && !hostname.includes('organizador'))
+    ? 'o-girador-mostrador.web.app'
+    : 'o-girador-organizador.web.app';
+
   // Valeurs O Girador par défaut
   let seoTitle = "O Girador";
   let seoDesc = "Application de gestion pour groupes et associations.";
-  let seoImage = `https://${projectId}.web.app/og-image.png`;
+  let seoImage = `https://${hostingDomain}/og-image.png`;
   let seoUrl = `https://${hostname}${urlPath}`;
 
   try {
@@ -1714,7 +1719,7 @@ exports.serveDynamicApp = onRequest(async (req, res) => {
     }
 
     // 3. Récupération du HTML statique de base (bypasse le rewrite car pointe sur le fichier exact)
-    const htmlResponse = await fetch(`https://${projectId}.web.app/index.html`);
+    const htmlResponse = await fetch(`https://${hostingDomain}/index.html`);
     let htmlContent = await htmlResponse.text();
 
     // 4. Injection des métadonnées
@@ -1731,8 +1736,10 @@ exports.serveDynamicApp = onRequest(async (req, res) => {
       .replace(/<meta name="twitter:description" content=".*?" \/>/gi, `<meta name="twitter:description" content="${seoDesc}" />`)
       .replace(/<meta name="twitter:image" content=".*?" \/>/gi, `<meta name="twitter:image" content="${seoImage}" />`);
 
-    // 5. Mise en cache CDN Firebase (1h Edge, 5min Navigateur)
-    res.set('Cache-Control', 'public, max-age=300, s-maxage=3600');
+    // 5. Entêtes anti-cache strictes pour que le HTML ne soit jamais gelé par les CDN et navigateurs
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
     res.status(200).send(htmlContent);
 
   } catch (error) {
