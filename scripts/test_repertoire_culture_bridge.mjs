@@ -91,11 +91,15 @@ console.log("\n▶️ Module 3 : Validation de MestreRepertoireView.jsx");
 const viewPath = path.join(baseDir, 'src', 'components', 'mestre', 'MestreRepertoireView.jsx');
 const viewCode = fs.readFileSync(viewPath, 'utf8');
 
-// Vérification du lecteur YouTube responsive
+// Vérification du lecteur YouTube responsive (directement ou via le sous-composant modulaire PieceVideoSection)
+const videoSectionPath = path.join(baseDir, 'src', 'components', 'repertoire', 'PieceVideoSection.jsx');
+const videoSectionCode = fs.existsSync(videoSectionPath) ? fs.readFileSync(videoSectionPath, 'utf8') : '';
+const combinedRepertoireCode = viewCode + '\n' + videoSectionCode;
+
 assert(
-  viewCode.includes('parseYouTubeMedia') &&
-  viewCode.includes('aspect-video'),
-  "MestreRepertoireView doit intégrer un lecteur YouTube responsive via parseYouTubeMedia"
+  combinedRepertoireCode.includes('parseYouTubeMedia') &&
+  combinedRepertoireCode.includes('aspect-video'),
+  "MestreRepertoireView ou PieceVideoSection doit intégrer un lecteur YouTube responsive via parseYouTubeMedia"
 );
 
 // Vérification de l'encart Contexte & Histoire

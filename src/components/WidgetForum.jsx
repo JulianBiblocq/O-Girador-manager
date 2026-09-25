@@ -60,7 +60,7 @@ export default function WidgetForum({ groupId, profileData, breakGlassActive = f
 
     setLoading(true);
     const forumRef = collection(db, 'forum');
-    const q = query(forumRef, where('groupId', '==', groupId), limit(30));
+    const q = query(forumRef, where('groupId', '==', groupId), limit(150));
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const fetchedThreads = [];

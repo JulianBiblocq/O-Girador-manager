@@ -2,7 +2,7 @@ import React from 'react';
 
 /**
  * Composant Tampon "ORGANIZADOR" Style Cordel / Xylogravure.
- * Reproduit fidèlement les codes esthétiques du tampon Sequenciad'Or :
+ * Reproduit fidèlement les codes esthétiques du tampon Sequenciador :
  * - Cadre fin rouge brique / bois (#8B2A1A)
  * - Fond papier / ivoire (#F4ECD8)
  * - Typographie à empattement en capitales avec large espacement

@@ -28,13 +28,14 @@ export default function ThreadMediaGallery({ mediaUrls = [], initialIndex = 0 })
       {/* Cadre principal de visionnage */}
       <div 
         onClick={() => setIsLightboxOpen(true)}
-        className="relative aspect-square w-full rounded-lg border-2 border-encre-noire overflow-hidden bg-black/5 shadow-md group cursor-zoom-in"
+        className="relative aspect-square w-full rounded-lg border-2 border-encre-noire overflow-hidden bg-black/5 shadow-md group cursor-zoom-in touch-manipulation"
       >
         <img
           src={currentUrl}
           alt={`Photo ${currentIndex + 1}`}
-          className="w-full h-full object-contain bg-stone-900/5 transition-transform group-hover:scale-[1.01]"
-          loading="lazy"
+          className="w-full h-full object-contain bg-stone-900/5 transition-transform md:group-hover:scale-[1.01]"
+          loading="eager"
+          decoding="sync"
         />
 
         {/* Boutons de navigation carrousel */}

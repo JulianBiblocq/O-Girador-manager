@@ -851,7 +851,11 @@ export default function App() {
         const tabParam = searchParams.get('tab');
         const convIdParam = searchParams.get('conversationId');
         const chatUserIdParam = searchParams.get('chatUserId');
-        if (tabParam) setForumInitialTab(tabParam === 'direct' ? 'inbox' : tabParam);
+        if (threadId) {
+          setForumInitialTab('discussions');
+        } else if (tabParam) {
+          setForumInitialTab(tabParam === 'direct' ? 'inbox' : tabParam);
+        }
         if (convIdParam) setActiveConversationId(convIdParam);
         if (chatUserIdParam) setActivePrivateChatUserId(chatUserIdParam);
         if (threadId) searchParams.set('threadId', threadId);
@@ -1868,7 +1872,9 @@ export default function App() {
       setCurrentTab('forum');
       cleanUrlParams(['eventId']);
 
-      if (tabParam) {
+      if (threadId) {
+        setForumInitialTab('discussions');
+      } else if (tabParam) {
         setForumInitialTab(tabParam === 'direct' ? 'inbox' : tabParam);
       }
       if (convIdParam) {

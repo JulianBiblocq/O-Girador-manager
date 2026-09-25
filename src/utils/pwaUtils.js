@@ -27,8 +27,23 @@ export const forceUpdateAndClearCache = async () => {
     }
   }
 
-  // 3. Forcer le rechargement de la page (contourne le cache du navigateur)
-  window.location.reload(true);
+  // 3. Nettoyer les clés de refus de mise à jour résiduelles
+  try {
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith('update_dismissed_')) {
+        localStorage.removeItem(key);
+      }
+    });
+  } catch (_) {}
+
+  // 4. Forcer le rechargement sans cache par timestamping d'URL
+  try {
+    const cleanUrl = new URL(window.location.href);
+    cleanUrl.searchParams.set('_upd', Date.now().toString());
+    window.location.replace(cleanUrl.toString());
+  } catch (_) {
+    window.location.reload();
+  }
 };
 
 /**

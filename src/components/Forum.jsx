@@ -216,7 +216,7 @@ export default function Forum({
 
 
   const [threads, setThreads] = useState([]);
-  const [threadLimit, setThreadLimit] = useState(30);
+  const [threadLimit, setThreadLimit] = useState(300);
   const [hasMoreThreads, setHasMoreThreads] = useState(false);
   const [channels, setChannels] = useState([]);
   const [activeChannelId, setActiveChannelId] = useState(null);
@@ -583,37 +583,22 @@ export default function Forum({
     });
   }, [threads, allowedChannelIdSet, channels, breakGlassActive]);
 
-  // Synchronisation de l'URL et de l'historique pour le routage des discussions
+  // Écoute de l'historique de navigation du navigateur (bouton retour téléphone / navigateur)
   useEffect(() => {
     const handlePopState = () => {
       const searchParams = new URLSearchParams(window.location.search);
       const targetThreadId = searchParams.get('threadId');
-      
-      if (targetThreadId && accessibleThreads.length > 0) {
-        const matchedThread = accessibleThreads.find(t => t.id === targetThreadId);
-        if (matchedThread) {
-          setSelectedThread(matchedThread);
-        } else {
-          setSelectedThread(null);
-        }
-      } else {
-        if (selectedThread) {
-          setSelectedThread(null);
-          if (previousChannelRef.current) {
-            setActiveChannelId(previousChannelRef.current);
-          }
+      if (!targetThreadId) {
+        setSelectedThread(null);
+        if (previousChannelRef.current) {
+          setActiveChannelId(previousChannelRef.current);
         }
       }
     };
 
-    // Écouter les retours navigateur/téléphone
     window.addEventListener('popstate', handlePopState);
-    
-    // Gérer le deep linking initial
-    handlePopState();
-
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [accessibleThreads, selectedThread]);
+  }, []);
 
   const activeChannelThreads = useMemo(() => {
     if (!activeChannelId) return [];
@@ -840,8 +825,8 @@ export default function Forum({
     const targetThreadId = initialThreadId || searchParams.get('threadId');
     if (!targetThreadId) return;
 
-    // Déjà ouvert
-    if (selectedThread && selectedThread.id === targetThreadId) return;
+    // Déjà ouvert sur ce sujet précis
+    if (selectedThread?.id === targetThreadId) return;
 
     // 1. Recherche dans les threads accessibles synchronisés
     if (accessibleThreads.length > 0) {
@@ -852,19 +837,21 @@ export default function Forum({
       }
     }
 
-    // 2. Si absent du lot initial (ex: sujet ancien), chargement direct Firestore
+    // 2. Si absent du lot synchronisé (ex: sujet ancien ou notification directe), chargement direct Firestore
     if (!loading && profileData?.groupId) {
+      let isMounted = true;
       getDoc(doc(db, 'forum', targetThreadId))
         .then((docSnap) => {
-          if (docSnap.exists()) {
+          if (docSnap.exists() && isMounted) {
             setSelectedThread({ id: docSnap.id, ...docSnap.data() });
           }
         })
         .catch((err) => {
           console.warn("Forum - Erreur chargement sujet deep linking :", err);
         });
+      return () => { isMounted = false; };
     }
-  }, [accessibleThreads, initialThreadId, selectedThread, loading, profileData?.groupId]);
+  }, [accessibleThreads, initialThreadId, selectedThread?.id, loading, profileData?.groupId]);
 
   // Retrouver la discussion sélectionnée dans l'état synchronisé pour avoir les messages en temps réel
   const activeThread = selectedThread

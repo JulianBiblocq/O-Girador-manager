@@ -1719,7 +1719,10 @@ exports.serveDynamicApp = onRequest(async (req, res) => {
     }
 
     // 3. Récupération du HTML statique de base (bypasse le rewrite car pointe sur le fichier exact)
-    const htmlResponse = await fetch(`https://${hostingDomain}/index.html`);
+    const htmlResponse = await fetch(`https://${hostingDomain}/index.html?t=${Date.now()}`, {
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+    });
     let htmlContent = await htmlResponse.text();
 
     // 4. Injection des métadonnées

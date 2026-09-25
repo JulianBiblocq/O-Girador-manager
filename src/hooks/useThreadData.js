@@ -280,15 +280,19 @@ export function useThreadData({
     }
   }, [thread, user, threadId, profileData?.readThreads]);
 
-  // Gestion du défilement initial vers le séparateur ou le bas
+  // Gestion du défilement initial vers le séparateur ou le bas (confiné au conteneur interne pour préserver la stabilité du viewport mobile)
   useEffect(() => {
     if (!loading && thread && !hasScrolledInitialRef.current) {
       hasScrolledInitialRef.current = true;
       setTimeout(() => {
+        const container = messagesContainerRef.current;
+        if (!container) return;
+
         if (unreadSeparatorRef.current) {
-          unreadSeparatorRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        } else if (messagesEndRef.current) {
-          messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+          const sepTop = unreadSeparatorRef.current.offsetTop - container.offsetTop;
+          container.scrollTo({ top: Math.max(0, sepTop - 40), behavior: 'smooth' });
+        } else {
+          container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
         }
       }, 150);
     }
@@ -303,10 +307,10 @@ export function useThreadData({
   }, []);
 
   const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
+    const container = messagesContainerRef.current;
+    if (container) {
+      container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+    }
   }, []);
 
   // Envoi d'une nouvelle réponse
