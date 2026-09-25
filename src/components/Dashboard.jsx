@@ -21,6 +21,7 @@ import InstrumentReminderBanner from './dashboard/InstrumentReminderBanner';
 import { usePresenceContext } from '../context/PresenceContext';
 import { canPublishAnnonces } from '../utils/permissionUtils';
 import { resolveEffectiveUserTags } from '../utils/tagUtils';
+import HeaderBrandTitle from './common/HeaderBrandTitle';
 
 export default function Dashboard({ 
   user, 
@@ -218,16 +219,9 @@ export default function Dashboard({
   return (
     <div className="flex flex-col gap-4 w-full max-w-full overflow-hidden">
 
-      {/* Header Panel */}
-      <div className="flex justify-center items-center py-2 border-b-2 border-dashed border-cordel-master-dark/30 select-none">
-        <div className="text-center">
-          <h1 className="panel-title text-3xl font-extrabold tracking-wider text-cordel-wood">
-            O GIRADOR
-          </h1>
-          <p className="text-sm font-semibold tracking-widest opacity-80 mt-1 uppercase">
-            {t('dashboard.title')}
-          </p>
-        </div>
+      {/* Header Panel Mobile (sur grand écran, fusionné dans l'en-tête universel de LayoutShell) */}
+      <div className="lg:hidden flex justify-center items-center py-2 border-b-2 border-dashed border-cordel-master-dark/30 select-none">
+        <HeaderBrandTitle titleSize="text-2xl sm:text-3xl" />
       </div>
 
 

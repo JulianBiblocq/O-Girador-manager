@@ -117,15 +117,9 @@ export const processCordelEffect = (img: HTMLImageElement, options: CordelOption
 
   const intensity = options.intensity !== undefined ? options.intensity : 80;
 
-  // 1. Draw solid background paper color if intensity > 0
-  if (intensity > 0) {
-      finalCtx.fillStyle = '#f4ecd8';
-      finalCtx.fillRect(0, 0, outSize, outSize);
-  } else {
-      // White background for normal photo
-      finalCtx.fillStyle = '#ffffff';
-      finalCtx.fillRect(0, 0, outSize, outSize);
-  }
+  // 1. Remplissage avec le fond papier Cordel (évite formellement tout fond blanc)
+  finalCtx.fillStyle = '#f4ecd8';
+  finalCtx.fillRect(0, 0, outSize, outSize);
 
   // 2. Set filter on the context for vintage sepia look
   // Translate shadow slider to contrast, detail slider to brightness

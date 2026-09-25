@@ -216,6 +216,19 @@ svg.xilo-icon {
   font-family: var(--font-heading, monospace) !important;
 }
 
+/* ============================================================================
+   FILTRE D'USURE LINOGRAVURE / XYLOGRAVURE (.lino-distressed)
+   Simule l'encrage artisanal, les micro-aspérités et le tampon écaillé.
+   ============================================================================ */
+.lino-distressed {
+  filter: url(#lino-filter);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  display: inline-block;
+  letter-spacing: 0.08em;
+  text-shadow: 0.5px 0.5px 0px rgba(139, 42, 26, 0.2);
+}
+
 /* Custom Web Audio Recorder glow pulse keyframe */
 @keyframes pulse-red-record-gpu {
   0% {

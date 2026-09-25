@@ -1,94 +1,13 @@
-import React, { useState } from 'react';
+import { useState, useMemo } from 'react';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { usePresenceContext } from '../context/PresenceContext';
+import OnlineMemberItem from './presence/OnlineMemberItem';
 
-// Carte membre en ligne mémoïsée pour éviter les re-renders inutiles
-const OnlineMemberItem = React.memo(({ member, currentUserId, onStartDirectChat }) => {
-  const fullName = `${member.prenom || ''} ${member.nom || ''}`.trim() || 'Batuqueiro';
-  const userInstruments = Array.isArray(member.instrumentsJoues) && member.instrumentsJoues.length > 0
-    ? member.instrumentsJoues
-    : [member.instrument].filter(Boolean);
-
-  const memberId = member.id || member.uid;
-  const isSelf = Boolean(currentUserId && memberId === currentUserId);
-
-  return (
-    <div className="p-2.5 border-2 border-encre-noire rounded-[6px_9px_5px_7px] bg-white shadow-[2px_2px_0px_0px_#181716] flex items-center justify-between gap-2 sm:gap-3">
-      <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-        {/* Avatar with status indicator */}
-        <div className="relative shrink-0">
-          {member.photoURL ? (
-            <img
-              src={member.photoURL}
-              alt={fullName}
-              loading="lazy"
-              decoding="async"
-              className="w-10 h-10 rounded-[6px_4px_7px_5px] border border-encre-noire object-cover grayscale contrast-[120%] sepia-[30%]"
-            />
-          ) : (
-            <div className="w-10 h-10 rounded-[6px_4px_7px_5px] border border-encre-noire bg-cordel-bg flex items-center justify-center font-black text-xs text-cordel-wood">
-              {member.prenom ? member.prenom[0].toUpperCase() : '🥁'}
-            </div>
-          )}
-          {/* Online Green Badge */}
-          <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center">
-            <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
-          </span>
-        </div>
-
-        <div className="min-w-0 flex-1">
-          <h4 className="text-xs font-black text-encre-noire truncate flex items-center gap-1.5">
-            <span>{fullName}</span>
-            {member.surnom && (
-              <span className="text-[9px] font-bold text-cordel-wood italic truncate max-w-[90px]">
-                "{member.surnom}"
-              </span>
-            )}
-          </h4>
-
-          {userInstruments.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-1">
-              {userInstruments.map(inst => (
-                <span 
-                  key={inst}
-                  className="text-[8px] font-extrabold uppercase px-1.5 py-0.2 rounded bg-cordel-bg-light border border-encre-noire/30 text-encre-noire"
-                >
-                  🎵 {inst}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="flex items-center gap-1.5 shrink-0">
-        {/* Bouton d'action directe de chat pour les autres membres */}
-        {!isSelf && onStartDirectChat && (
-          <button
-            type="button"
-            onClick={() => onStartDirectChat(memberId)}
-            className="px-2 sm:px-2.5 py-1 text-xs font-black rounded border-2 border-encre-noire bg-cordel-bg-light hover:bg-amber-100 active:translate-x-[0.5px] active:translate-y-[0.5px] text-encre-noire flex items-center gap-1 cursor-pointer transition-all shadow-[1.5px_1.5px_0px_0px_#181716] select-none min-h-[32px] sm:min-h-[34px] touch-manipulation"
-            title={`Envoyer un message privé à ${fullName}`}
-            aria-label={`Envoyer un message privé à ${fullName}`}
-          >
-            <span>💬</span>
-            <span className="hidden xs:inline text-[9.5px] uppercase font-black tracking-wider">Écrire</span>
-          </button>
-        )}
-
-        <span className={`text-[8px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-          isSelf 
-            ? 'text-cordel-wood bg-amber-100 border border-cordel-wood/30' 
-            : 'text-emerald-700 bg-emerald-100 border border-emerald-600/30'
-        }`}>
-          {isSelf ? 'Moi' : 'Actif'}
-        </span>
-      </div>
-    </div>
-  );
-});
-
+/**
+ * Widget de statut de présence affichant le nombre de membres en ligne
+ * et ouvrant une modale détaillée avec commutateur de visibilité individuelle (Visible / Discret).
+ */
 export default function OnlineStatusWidget({ 
   onlineMembers = [], 
   onlineCount = 0, 
@@ -96,7 +15,9 @@ export default function OnlineStatusWidget({
   isPresenceEnabled: propIsEnabled,
   compact = false,
   currentUserId = null,
-  onStartDirectChat = null
+  currentUserProfile = null,
+  onStartDirectChat = null,
+  onToggleVisibility = null
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const context = usePresenceContext();
@@ -111,11 +32,47 @@ export default function OnlineStatusWidget({
     }
   };
 
+  // Liste des membres à afficher dans la modale : garantit que l'utilisateur connecté
+  // reste TOUJOURS visible sur sa propre ligne même s'il est en mode discret (isOnline === false)
+  const displayMembers = useMemo(() => {
+    const list = Array.isArray(onlineMembers) ? [...onlineMembers] : [];
+    if (!currentUserId) return list;
+
+    const selfIndex = list.findIndex(m => (m.id || m.uid) === currentUserId);
+
+    // Si l'utilisateur est déjà dans la liste (en ligne et visible pour les camarades)
+    if (selfIndex !== -1) {
+      if (currentUserProfile) {
+        list[selfIndex] = {
+          ...list[selfIndex],
+          ...currentUserProfile,
+          afficherEnLigne: currentUserProfile.afficherEnLigne !== false
+        };
+      }
+      return list;
+    }
+
+    // Si l'utilisateur n'est pas dans la liste (ex: mode discret afficherEnLigne === false),
+    // nous l'injectons en tête de modale pour lui permettre de basculer son statut à tout moment
+    if (currentUserProfile) {
+      const selfItem = {
+        id: currentUserId,
+        uid: currentUserId,
+        ...currentUserProfile,
+        afficherEnLigne: currentUserProfile.afficherEnLigne !== false,
+        isOnline: false
+      };
+      return [selfItem, ...list];
+    }
+
+    return list;
+  }, [onlineMembers, currentUserId, currentUserProfile]);
+
   if (isPresenceEnabled === false) return null;
 
   return (
     <>
-      {/* Trigger Button avec cible tactile minimale 40x40 sur mobile */}
+      {/* Bouton déclencheur avec cible tactile minimale 40x40 sur mobile */}
       <button
         type="button"
         onClick={() => setIsOpen(true)}
@@ -134,7 +91,7 @@ export default function OnlineStatusWidget({
         </span>
       </button>
 
-      {/* Online Members Modal */}
+      {/* Modale des membres en ligne */}
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs select-none">
           <div 
@@ -144,7 +101,7 @@ export default function OnlineStatusWidget({
 
           <div className="relative w-full max-w-md z-10 animate-fade-in">
             <CordelCard variant="default" useExtremeBorder={true} className="p-5 text-left max-h-[85vh] flex flex-col">
-              {/* Modal Header */}
+              {/* En-tête de la modale */}
               <div className="flex justify-between items-center pb-3 border-b-2 border-dashed border-cordel-master-dark/25 mb-4 shrink-0">
                 <div className="flex items-center gap-2">
                   <span className="relative flex h-3 w-3">
@@ -165,25 +122,35 @@ export default function OnlineStatusWidget({
                 </button>
               </div>
 
-              {/* Members List */}
+              {/* Liste des membres */}
               <div className="overflow-y-auto flex-1 pr-1 flex flex-col gap-2.5 scrollbar-thin">
-                {(onlineMembers || []).length === 0 ? (
+                {displayMembers.length === 0 ? (
                   <div className="py-8 text-center text-cordel-master-dark/60 text-xs font-bold">
                     Aucun membre actuellement en ligne.
                   </div>
                 ) : (
-                  (onlineMembers || []).map((member) => (
-                    <OnlineMemberItem 
-                      key={member.id || member.uid} 
-                      member={member} 
-                      currentUserId={currentUserId}
-                      onStartDirectChat={handleMemberChatClick}
-                    />
-                  ))
+                  <>
+                    {displayMembers.map((member) => (
+                      <OnlineMemberItem 
+                        key={member.id || member.uid} 
+                        member={member} 
+                        currentUserId={currentUserId}
+                        onStartDirectChat={handleMemberChatClick}
+                        onToggleVisibility={onToggleVisibility}
+                      />
+                    ))}
+
+                    {/* Notification discrète si l'utilisateur est seul dans la modale en mode discret */}
+                    {onlineMembers.length === 0 && displayMembers.length > 0 && (
+                      <div className="py-3 text-center text-cordel-master-dark/60 text-xs font-bold italic">
+                        Aucun autre membre connecté pour le moment.
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
 
-              {/* Modal Footer */}
+              {/* Pied de la modale */}
               <div className="mt-4 pt-3 border-t border-dashed border-cordel-master-dark/20 text-center shrink-0">
                 <CordelButton
                   variant="ocre"

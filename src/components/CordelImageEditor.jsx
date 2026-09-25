@@ -122,10 +122,10 @@ export default function CordelImageEditor({ imageSrc, lang = 'fr', onComplete, o
         </p>
       </div>
       
-      {/* Cadre de prévisualisation stylisé type gravure trombinoscope */}
-      <div className="relative aspect-square w-full max-w-[260px] mx-auto bg-cordel-master-dark/5 border-2 border-dashed border-cordel-wood/60 rounded-[var(--theme-border-radius)] p-1.5 shadow-[2px_2px_0px_0px_rgba(24,23,22,0.25)]">
+      {/* Cadre de prévisualisation stylisé type gravure trombinoscope (Plein cadre sans marge) */}
+      <div className="relative aspect-square w-full max-w-[260px] mx-auto bg-[var(--color-cordel-papier,#f4ecd8)] border-2 border-dashed border-cordel-wood/60 rounded-[var(--theme-border-radius)] p-0 overflow-hidden shadow-[2px_2px_0px_0px_rgba(24,23,22,0.25)]">
         <div 
-          className="relative w-full h-full rounded overflow-hidden flex items-center justify-center bg-black/10 cursor-pointer group"
+          className="relative w-full h-full overflow-hidden flex items-center justify-center cursor-pointer group"
           onClick={() => fileInputRef.current?.click()}
           title={lang === 'fr' ? 'Cliquer pour changer de photo' : 'Clique para trocar a foto'}
         >
@@ -140,7 +140,7 @@ export default function CordelImageEditor({ imageSrc, lang = 'fr', onComplete, o
             <img 
               src={previewBase64} 
               alt="Prévisualisation xylographique" 
-              className="w-full h-full object-cover select-none" 
+              className="w-full h-full object-cover object-center block select-none" 
             />
           ) : currentImage ? (
             <div className="w-7 h-7 border-2 border-cordel-wood border-t-transparent rounded-full animate-spin" />
@@ -222,7 +222,7 @@ export default function CordelImageEditor({ imageSrc, lang = 'fr', onComplete, o
             min="100" 
             max="250" 
             value={Math.max(100, options.zoom || 100)} 
-            onChange={e => handleOptionChange('zoom', parseInt(e.target.value))} 
+            onChange={e => handleOptionChange('zoom', Math.max(100, parseInt(e.target.value) || 100))} 
             className="w-full accent-cordel-wood cursor-pointer" 
           />
         </div>

@@ -2,14 +2,14 @@ import { useEffect, useState } from 'react';
 import { doc, updateDoc, collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 
-export function usePresence(userId, groupId, isPresenceEnabled = true) {
+export function usePresence(userId, groupId, isPresenceEnabled = true, afficherEnLigne = true) {
   const [onlineMembers, setOnlineMembers] = useState([]);
   const [onlineCount, setOnlineCount] = useState(0);
 
-  // 1. Manage current user presence status with strict quota & privacy optimization
+  // 1. Gestion du statut de présence de l'utilisateur avec optimisation stricte des quotas Firestore
   useEffect(() => {
-    // Early Return: if presence is disabled by association settings or userId is missing,
-    // DO NOT write isOnline / lastActive to Firebase, DO NOT définir up timers or listeners.
+    // Si la présence est désactivée globalement par l'association ou si userId est absent,
+    // ne pas écrire sur Firestore et ne pas attacher d'écouteurs.
     if (!userId || !isPresenceEnabled) return;
 
     const userRef = doc(db, 'users', userId);
@@ -29,10 +29,20 @@ export function usePresence(userId, groupId, isPresenceEnabled = true) {
       });
     };
 
-    // Mark online when component mounts / user is active
+    // Si l'utilisateur a désactivé sa visibilité en ligne (mode discret)
+    if (afficherEnLigne === false) {
+      // Déclencher immédiatement un passage à isOnline: false sur Firestore pour le compte
+      updateStatus(false);
+      // Stopper l'émission du heartbeat et ne pas enregistrer d'écouteurs de visibilité
+      return () => {
+        updateStatus(false);
+      };
+    }
+
+    // Marquer en ligne lorsque le composant est monté et que l'utilisateur est actif
     updateStatus(true);
 
-    // Heartbeat: refresh lastActive every 8 minutes if document is visible
+    // Heartbeat : rafraîchir lastActive toutes les 8 minutes si le document est visible
     const HEARTBEAT_INTERVAL = 8 * 60 * 1000; // 8 minutes
     const heartbeatTimer = setInterval(() => {
       if (document.visibilityState === 'visible') {
@@ -49,7 +59,7 @@ export function usePresence(userId, groupId, isPresenceEnabled = true) {
       }
     };
 
-    // Gérer la fermeture / déchargement de la page
+    // Gérer la fermeture ou déchargement de la page
     const handleUnload = () => {
       updateStatus(false);
     };
@@ -58,7 +68,7 @@ export function usePresence(userId, groupId, isPresenceEnabled = true) {
     window.addEventListener('beforeunload', handleUnload);
     window.addEventListener('pagehide', handleUnload);
 
-    // Cleanup listeners and heartbeat timer on unmount
+    // Nettoyage des écouteurs et du timer de battement de cœur lors du démontage
     return () => {
       clearInterval(heartbeatTimer);
       window.removeEventListener('visibilitychange', handleVisibilityChange);
@@ -66,12 +76,12 @@ export function usePresence(userId, groupId, isPresenceEnabled = true) {
       window.removeEventListener('pagehide', handleUnload);
       updateStatus(false);
     };
-  }, [userId, isPresenceEnabled]);
+  }, [userId, isPresenceEnabled, afficherEnLigne]);
 
-  // 2. Real-time subscription to online members of the group
+  // 2. Écoute en temps réel des membres en ligne du groupe (maintien de l'écoute en lecture)
   useEffect(() => {
-    // Early Return: if presence is disabled by association settings or groupId is missing,
-    // DO NOT trigger onSnapshot listener, réinitialiser state immediately.
+    // Si la présence est désactivée par l'association ou si le groupe est absent,
+    // réinitialiser immédiatement l'état et ne pas déclencher d'écouteur Firestore.
     if (!groupId || !isPresenceEnabled) {
       setOnlineMembers([]);
       setOnlineCount(0);
@@ -94,7 +104,7 @@ export function usePresence(userId, groupId, isPresenceEnabled = true) {
         });
       });
 
-      // Trier alphabetically by prenom
+      // Tri alphabétique par prénom
       activeMembers.sort((a, b) => (a.prenom || '').localeCompare(b.prenom || ''));
 
       setOnlineMembers(activeMembers);
