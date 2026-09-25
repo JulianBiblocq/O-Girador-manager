@@ -187,9 +187,9 @@ export default function RepertoireCulturePicker({
       )}
 
       {/* Barre de recherche textuelle et filtres par catégories */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1">
-        {/* Champ de recherche */}
-        <div className="relative flex-1">
+      <div className="flex flex-col gap-2 pt-1 w-full">
+        {/* Champ de recherche pleine largeur */}
+        <div className="relative w-full">
           <input
             type="text"
             value={searchTerm}
@@ -213,8 +213,8 @@ export default function RepertoireCulturePicker({
           )}
         </div>
 
-        {/* Puces de filtrage par catégorie */}
-        <div className="flex items-center gap-1 overflow-x-auto pb-0.5 sm:pb-0 shrink-0">
+        {/* Puces de filtrage par catégorie (passage à la ligne adaptatif pour ne jamais déborder hors du cadre) */}
+        <div className="flex flex-wrap items-center gap-1.5 max-w-full">
           {categoriesButtons.map((cat) => {
             const isActive = activeCategory === cat;
             return (
@@ -223,7 +223,7 @@ export default function RepertoireCulturePicker({
                 type="button"
                 onClick={() => setActiveCategory(cat)}
                 disabled={disabled}
-                className={`px-2 py-1 text-[9.5px] font-bold rounded-full transition-all cursor-pointer select-none border shrink-0 ${
+                className={`px-2.5 py-1 text-[9.5px] font-bold rounded-full transition-all cursor-pointer select-none border shrink-0 ${
                   isActive
                     ? 'bg-amber-200/90 text-amber-950 border-amber-400 shadow-2xs font-black'
                     : 'bg-white text-stone-600 border-stone-200 hover:bg-stone-50'
