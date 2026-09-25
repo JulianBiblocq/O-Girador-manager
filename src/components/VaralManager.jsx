@@ -20,12 +20,13 @@ import DocumentViewerModal from './documents/DocumentViewerModal';
 import { projectWorkshopBooklets, isWorkshopVirtualDoc } from '../utils/workshopProjectionUtils';
 
 const DEFAULT_VARAL_CATEGORIES = [
-  { id: 'Toadas', nom: 'Toadas', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
-  { id: 'TutosFabrication', nom: 'Tutos Fabrication', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
-  { id: 'Culture', nom: 'Culture', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
-  { id: 'PhotosPrestations', nom: 'Photos Prestations', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
-  { id: 'ComptesRendus', nom: 'Comptes-rendus', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: true },
-  { id: 'Administratif', nom: 'Administratif', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false }
+  { id: 'Toadas', nom: 'Toadas', actif: true, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
+  { id: 'TutosFabrication', nom: 'Tutos Fabrication', actif: true, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
+  { id: 'Costumerie', nom: 'Costumerie & Patrons', actif: true, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
+  { id: 'Culture', nom: 'Culture', actif: true, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
+  { id: 'PhotosPrestations', nom: 'Photos Prestations', actif: true, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
+  { id: 'ComptesRendus', nom: 'Comptes-rendus', actif: true, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: true },
+  { id: 'Administratif', nom: 'Administratif', actif: true, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false }
 ];
 
 export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isEmbedded, onNavigateToView, profileData }) {
@@ -183,6 +184,7 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
           return {
             ...c,
             nom: editingCategory.nom.trim(),
+            actif: editingCategory.actif !== false,
             activerUploadPublic: editingCategory.activerUploadPublic === true,
             lienUploadPublic: editingCategory.activerUploadPublic ? (editingCategory.lienUploadPublic || '').trim() : '',
             activerOpaciteArchive: editingCategory.activerOpaciteArchive === true
@@ -201,6 +203,22 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
     }
   };
 
+  const handleToggleCategoryActive = async (categoryId, nextActive) => {
+    setSavingSettings(true);
+    try {
+      const updatedCategories = varalCategories.map(c => 
+        c.id === categoryId ? { ...c, actif: nextActive } : c
+      );
+      const assocRef = doc(db, 'associations', groupId);
+      await updateDoc(assocRef, { varalCategories: updatedCategories });
+    } catch (err) {
+      console.error("VaralManager - Erreur bascule visibilité corde :", err);
+      alert("Erreur lors de la modification de la visibilité de la corde.");
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
   const handleAddCategory = async () => {
     if (!newCatName.trim()) return;
     setSavingSettings(true);
@@ -208,6 +226,7 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
       const newCat = {
         id: `cat_${Date.now()}`,
         nom: newCatName.trim(),
+        actif: true,
         activerUploadPublic: newCatUpload,
         lienUploadPublic: newCatUpload ? newCatUploadUrl.trim() : '',
         activerOpaciteArchive: newCatArchive
@@ -280,14 +299,23 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
     const unsubscribe = onSnapshot(assocRef, (docSnap) => {
       if (docSnap.exists()) {
         const rawCats = docSnap.data().varalCategories || [];
-        const mergedCats = DEFAULT_VARAL_CATEGORIES.map(defaultCat => {
+        const defaultMerged = DEFAULT_VARAL_CATEGORIES.map(defaultCat => {
           const customCat = rawCats.find(c => c.id === defaultCat.id) || rawCats.find(c => c.nom === defaultCat.nom);
           if (customCat) {
-            return { ...defaultCat, ...customCat, id: defaultCat.id }; // Force the native ID
+            return { 
+              ...defaultCat, 
+              ...customCat, 
+              id: defaultCat.id,
+              actif: customCat.actif !== false
+            };
           }
-          return defaultCat;
+          return { ...defaultCat, actif: defaultCat.actif !== false };
         });
-        setVaralCategories(mergedCats);
+        const customOnly = rawCats
+          .filter(c => !DEFAULT_VARAL_CATEGORIES.some(dc => dc.id === c.id || dc.nom === c.nom))
+          .map(c => ({ ...c, actif: c.actif !== false }));
+
+        setVaralCategories([...defaultMerged, ...customOnly]);
       } else {
         setVaralCategories(DEFAULT_VARAL_CATEGORIES);
       }
@@ -704,10 +732,22 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
                             )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-2">
+                          <label className="flex items-center gap-1 cursor-pointer select-none text-[10px] font-bold">
+                            <input
+                              type="checkbox"
+                              checked={cat.actif !== false}
+                              onChange={(e) => handleToggleCategoryActive(cat.id, e.target.checked)}
+                              disabled={savingSettings}
+                              className="w-3.5 h-3.5 rounded cursor-pointer accent-[var(--color-cordel-vert,#2d6a4f)]"
+                            />
+                            <span className={cat.actif !== false ? "text-[var(--color-cordel-vert,#2d6a4f)] font-extrabold" : "text-cordel-master-dark/60 italic"}>
+                              {cat.actif !== false ? "Afficher cette corde" : "Corde masquée"}
+                            </span>
+                          </label>
                           <button
                             type="button"
-                            onClick={() => setEditingCategory({ ...cat })}
+                            onClick={() => setEditingCategory({ ...cat, actif: cat.actif !== false })}
                             disabled={savingSettings}
                             className="text-xs px-1.5 py-0.5 border border-cordel-master-dark/20 rounded bg-white hover:bg-neutral-100 font-extrabold cursor-pointer select-none"
                             title="Modifier le nom de la corde ou activer des options"
@@ -728,7 +768,7 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
             <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
               <CordelCard variant="default" useExtremeBorder={true} className="w-full max-w-md bg-cordel-bg p-5 relative select-none">
                 <h3 className="font-extrabold text-sm text-encre-noire uppercase tracking-wider mb-3 border-b border-dashed border-cordel-master-dark/20 pb-2">
-                  ✏️ Modifier le nom de la Corde
+                  ✏️ Modifier la Corde
                 </h3>
 
                 <form onSubmit={handleSaveEditCategory} className="flex flex-col gap-3 text-left">
@@ -747,6 +787,19 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
                       autoFocus
                     />
                   </div>
+
+                  <label className="flex items-center gap-2 cursor-pointer select-none mt-1">
+                    <input
+                      type="checkbox"
+                      checked={editingCategory.actif !== false}
+                      onChange={(e) => setEditingCategory({ ...editingCategory, actif: e.target.checked })}
+                      disabled={savingSettings}
+                      className="w-3.5 h-3.5 border border-encre-noire rounded accent-[var(--color-cordel-vert,#2d6a4f)] cursor-pointer"
+                    />
+                    <span className="text-[10px] font-bold text-encre-noire">
+                      Afficher cette corde sur le Varal
+                    </span>
+                  </label>
 
                   <label className="flex items-center gap-2 cursor-pointer select-none mt-1">
                     <input
@@ -1229,7 +1282,7 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
             {/* Contenu défilable */}
             <div className="w-full flex-1 min-h-0 overflow-y-auto p-2 sm:p-4 bg-cordel-bg-light flex flex-col items-center">
               <div className="w-full max-w-full">
-                <SongCard song={selectedToada} defaultRevisionMode={false} />
+                <SongCard song={selectedToada} defaultRevisionMode={false} groupId={groupId} onNavigateToView={onNavigateToView} />
               </div>
             </div>
           </div>
@@ -1260,7 +1313,7 @@ export default function VaralManager({ groupId, onBack, role, isSystemAdmin, isE
             {/* Contenu défilable */}
             <div className="w-full flex-1 min-h-0 overflow-y-auto p-2 sm:p-4 bg-cordel-bg-light flex flex-col items-center">
               <div className="w-full max-w-full">
-                <CultureCard culture={selectedCultureCard} />
+                <CultureCard culture={selectedCultureCard} groupId={groupId} onNavigateToView={onNavigateToView} />
               </div>
             </div>
           </div>

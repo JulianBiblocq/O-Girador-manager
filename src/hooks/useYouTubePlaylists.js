@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
-import { useTenantContext } from '../context/TenantContext';
+import { TenantContext } from '../context/TenantContext';
 
 /**
  * Hook réactif pour charger les playlists YouTube configurées pour l'association.
@@ -10,13 +10,8 @@ import { useTenantContext } from '../context/TenantContext';
  * @returns {{ playlists: Array<{ id: string, label: string, playlistId: string }>, loading: boolean }}
  */
 export function useYouTubePlaylists(customGroupId = null) {
-  let contextGroupId = null;
-  try {
-    const tenantCtx = useTenantContext();
-    contextGroupId = tenantCtx?.groupId || null;
-  } catch (err) {
-    // Hors TenantProvider
-  }
+  const tenantCtx = useContext(TenantContext);
+  const contextGroupId = tenantCtx?.groupId || null;
 
   const effectiveGroupId = customGroupId || contextGroupId;
   const [playlists, setPlaylists] = useState([]);

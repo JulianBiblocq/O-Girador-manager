@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
@@ -52,6 +52,7 @@ export default function WidgetDocuments({
     handleMoveRight,
     handleSetDocStatus,
     isManagementView,
+    canSeeHidden,
     saveCategory,
     deleteCategory,
     getDocType
@@ -64,6 +65,30 @@ export default function WidgetDocuments({
     isSystemAdmin,
     canWrite
   });
+
+  // Filtrage intelligent des cordes avant le rendu selon les règles de visibilité
+  const displayedCategories = useMemo(() => {
+    return visibleCategories.filter((category) => {
+      // Pour les administrateurs, toutes les cordes du pôle restent affichées (les cordes vides ou inactives apparaîtront en mode compact)
+      if (isAuthorized) return true;
+
+      // Règle 1 : Désactivation manuelle côté adhérent
+      if (category.actif === false) return false;
+
+      // Règle 2 : Masquage si vide pour les adhérents (si 0 doc ET pas d'upload public avec lien valide)
+      const docs = groupedDocs[category.id] || [];
+      const hasValidPublicUpload = Boolean(
+        category.activerUploadPublic && 
+        category.lienUploadPublic && 
+        category.lienUploadPublic.trim() !== ''
+      );
+      if (docs.length === 0 && !hasValidPublicUpload) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [visibleCategories, isAuthorized, groupedDocs]);
 
   // États locaux de navigation et formulaires d'ajout / édition
   const [isAdding, setIsAdding] = useState(false);
@@ -231,7 +256,7 @@ export default function WidgetDocuments({
 
       {/* Galerie des cordes suspendues du Varal */}
       {!loading && !isAdding && !documentToEdit && (
-        visibleCategories.length === 0 ? (
+        displayedCategories.length === 0 ? (
           <CordelCard variant="default" useExtremeBorder={false} className="p-6 text-center bg-cordel-bg">
             <p className="text-xs font-bold text-cordel-master-dark opacity-75">
               Aucun document ou corde accessible dans ce pôle.
@@ -239,13 +264,14 @@ export default function WidgetDocuments({
           </CordelCard>
         ) : (
           <div className="flex flex-col gap-4 w-full">
-            {visibleCategories.map((category) => (
+            {displayedCategories.map((category) => (
               <VaralCategoryRope
                 key={category.id}
                 category={category}
                 documents={groupedDocs[category.id] || []}
                 newestDocumentId={newestDocumentId}
-                isAuthorized={isAuthorized && isManagementView}
+                isAuthorized={isAuthorized}
+                canSeeHidden={canSeeHidden}
                 canWrite={canWrite}
                 canDeposit={canDepositOnCategory(category)}
                 getDocType={getDocType}
@@ -263,7 +289,7 @@ export default function WidgetDocuments({
         )
       )}
 
-      {/* Modale d'édition des paramètres d'une corde (nom, upload public) */}
+      {/* Modale d'édition des paramètres d'une corde (nom, upload public, visibilité) */}
       {editingCategory && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 select-none animate-fadeIn">
           <CordelCard variant="default" useExtremeBorder={true} className="w-full max-w-md p-6 text-left relative bg-cordel-bg shadow-xl">
@@ -283,6 +309,21 @@ export default function WidgetDocuments({
                   className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
                 />
               </div>
+
+              <label className="flex items-start gap-2 cursor-pointer mt-1">
+                <input
+                  type="checkbox"
+                  checked={editingCategory.actif !== false}
+                  onChange={(e) => setEditingCategory(prev => ({ ...prev, actif: e.target.checked }))}
+                  className="w-4 h-4 cursor-pointer mt-0.5 accent-[var(--color-cordel-vert,#2d6a4f)]"
+                />
+                <div className="flex flex-col">
+                  <span className="font-bold text-encre-noire">Afficher cette corde sur le Varal</span>
+                  <span className="text-[9px] text-cordel-master-dark/70 font-semibold leading-relaxed">
+                    Désactivez pour masquer complètement cette corde aux adhérents.
+                  </span>
+                </div>
+              </label>
 
               <label className="flex items-start gap-2 cursor-pointer mt-1">
                 <input
@@ -536,6 +577,8 @@ export default function WidgetDocuments({
                 <SongCard
                   song={selectedToada}
                   defaultRevisionMode={false}
+                  groupId={groupId}
+                  onNavigateToView={onNavigateToView}
                   allDocsToPrint={groupedDocs['Toadas'] || []}
                   onPrintAll={(config) => {
                     setSelectedToada(null);
@@ -589,7 +632,7 @@ export default function WidgetDocuments({
             </button>
             <div className="w-full flex-1 min-h-0 overflow-y-auto rounded-lg shadow-2xl flex flex-col items-center">
               <div className="w-full max-w-full">
-                <CultureCard culture={selectedCultureCard} />
+                <CultureCard culture={selectedCultureCard} groupId={groupId} onNavigateToView={onNavigateToView} />
               </div>
             </div>
 

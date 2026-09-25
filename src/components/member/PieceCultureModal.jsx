@@ -33,8 +33,6 @@ export default function PieceCultureModal({
     }
   }, [initialDocId, isOpen]);
 
-  if (!isOpen || docsList.length === 0) return null;
-
   // Résolution tolérante de la fiche active (supporte ID chaîne, numérique ou repli sur l'index)
   const activeDoc = useMemo(() => {
     if (!docsList || docsList.length === 0) return null;
@@ -46,6 +44,8 @@ export default function PieceCultureModal({
     });
     return found || docsList[0];
   }, [docsList, selectedDocId]);
+
+  if (!isOpen || docsList.length === 0) return null;
 
   const docTitle = activeDoc?.titre || activeDoc?.name || piece?.titre || 'Fiche Culture';
 

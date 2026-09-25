@@ -422,12 +422,19 @@ export function useUserProfile(user, profileData, t) {
 
     setSaving(true);
     try {
+      // Résolution rétrocompatible : si aucun instrument n'est encore attribué, initialiser avec le premier choix
+      const defaultInitialInst = (!profileData?.instrument && !profileData?.instrumentPrincipal && Array.isArray(formData.instrumentsJoues) && formData.instrumentsJoues.length > 0)
+        ? formData.instrumentsJoues[0]
+        : '';
+      const resolvedInstrument = profileData?.instrument || profileData?.instrumentPrincipal || formData.instrument || defaultInitialInst;
+      const resolvedInstrumentPrincipal = profileData?.instrumentPrincipal || profileData?.instrument || formData.instrument || defaultInitialInst;
+
       const updatePayload = {
         prenom: formData.prenom,
         nom: formData.nom,
         onboardingCompleted: true,
-        instrument: profileData?.instrument || profileData?.instrumentPrincipal || formData.instrument || '',
-        instrumentPrincipal: profileData?.instrumentPrincipal || profileData?.instrument || formData.instrument || '',
+        instrument: resolvedInstrument,
+        instrumentPrincipal: resolvedInstrumentPrincipal,
         instrumentSecondaire: profileData?.instrumentSecondaire || formData.instrumentSecondaire || '',
         pratiquePercussion: formData.pratiquePercussion !== undefined ? Boolean(formData.pratiquePercussion) : (profileData?.pratiquePercussion !== undefined ? profileData.pratiquePercussion : true),
         pratiqueDanse: Boolean(formData.pratiqueDanse),
@@ -503,16 +510,23 @@ export function useUserProfile(user, profileData, t) {
       const userRef = doc(db, 'users', user.uid);
       await setDoc(userRef, updatePayload, { merge: true });
 
-      // Notification interne pour la direction artistique / mestre si les vœux ont changé
-      if (cleanVoeux.length > 0 && JSON.stringify(cleanVoeux) !== JSON.stringify(existingVoeux)) {
+      // Notification interne pour la direction artistique / mestre si les choix ou vœux ont changé
+      const prevInsts = (profileData?.instrumentsJoues || []).slice().sort();
+      const nextInsts = (updatePayload.instrumentsJoues || []).slice().sort();
+      const hasInstsChanged = JSON.stringify(prevInsts) !== JSON.stringify(nextInsts);
+      const hasVoeuxChanged = cleanVoeux.length > 0 && JSON.stringify(cleanVoeux) !== JSON.stringify(existingVoeux);
+      const hasOrientationChanged = updatePayload.souhaiteChangerInstrument && !profileData?.souhaiteChangerInstrument;
+
+      if (hasInstsChanged || hasVoeuxChanged || hasOrientationChanged) {
         try {
           const userName = `${formData.prenom || profileData?.prenom || ''} ${formData.nom || profileData?.nom || ''}`.trim() || user?.displayName || 'Un membre';
+          const chosenList = (updatePayload.instrumentsJoues || cleanVoeux || []).join(', ');
           notifyMembersByTag({
             groupId: profileData?.groupId || 'o-girador',
             tags: ['Mestre', 'mestre', 'Direction'],
-            title: "🥁 Vœux d'instruments mis à jour",
-            message: `${userName} a formulé ses souhaits de pupitre`,
-            targetUrl: "/app/mestre?tab=casting",
+            title: "🥁 Choix d'instruments mis à jour",
+            message: `${userName} a mis à jour ses choix de pupitres (${chosenList || 'Nouveaux choix'})`,
+            targetUrl: "/app?pole=mestre&tab=mestre-orientation",
             icon: "🥁"
           }).catch((err) => console.warn("useUserProfile - Notification vœux mestre ignorée :", err));
         } catch (notifErr) {

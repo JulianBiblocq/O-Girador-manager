@@ -2,6 +2,7 @@ import React from 'react';
 import { extractYouTubeId } from '../utils/videoUtils';
 import { QRCodeSVG } from 'qrcode.react';
 import SeloAxeStamp from './SeloAxeStamp';
+import RepertoirePasserelleButton from './repertoire/RepertoirePasserelleButton';
 
 const renderHTMLorText = (content, extraClass = "") => {
   if (!content) return null;
@@ -36,7 +37,12 @@ const extractThemeColor = (val, idx, defaultColor = null) => {
   return defaultColor;
 };
 
-function CultureCard({ culture, isPrintVersion: _isPrintVersion = false }) {
+function CultureCard({
+  culture,
+  isPrintVersion: _isPrintVersion = false,
+  onNavigateToView = null,
+  groupId = null
+}) {
   if (!culture) return null;
 
   const primaryColor = culture.hexPrimary || extractThemeColor(culture.couleurs, 0) || extractThemeColor(culture.couleursTheme, 0) || 'var(--encre-noire)';
@@ -129,8 +135,19 @@ function CultureCard({ culture, isPrintVersion: _isPrintVersion = false }) {
                     </span>
                   )}
                 </div>
+
+                {/* Passerelle directe vers la fiche Répertoire */}
+                {!_isPrintVersion && (
+                  <div className="mt-1 flex justify-center print:hidden">
+                    <RepertoirePasserelleButton
+                      cultureId={culture.id}
+                      groupId={groupId || culture.groupId}
+                      onNavigateToView={onNavigateToView}
+                    />
+                  </div>
+                )}
                 
-                <hr className="border-t-4 border-[var(--color-cordel-ocre,#c05621)] mt-3 w-full print:mt-2 mb-1" />
+                <hr className="border-t-4 border-[var(--color-cordel-ocre,#c05621)] mt-2 w-full print:mt-2 mb-1" />
               </div>
             </td>
           </tr>

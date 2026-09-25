@@ -63,10 +63,7 @@ export default function MemberRepertoireView({ groupId, user, profileData, seque
     if (!groupId) return;
     const unsubTrainings = subscribeGroupTrainings(groupId, setTrainings);
     const unsubAisance = subscribeUserAisance(effectiveUserId, setAisanceMap);
-    return () => {
-      unsubTrainings();
-      unsubAisance();
-    };
+    return () => { unsubTrainings(); unsubAisance(); };
   }, [groupId, effectiveUserId]);
 
   // 3. Écoute du parcours adhérent
@@ -81,7 +78,30 @@ export default function MemberRepertoireView({ groupId, user, profileData, seque
     return () => unsub();
   }, [effectiveUserId, groupId]);
 
-  // 4. Dictionnaires de résolution pour mapping direct O(1)
+  // 4. Déploiement et centrage automatique si ciblé par URL ou passerelle
+  useEffect(() => {
+    const focusPiece = (id) => {
+      if (!id) return;
+      setExpandedPieces((prev) => new Set([...prev, id]));
+      setTimeout(() => {
+        const el = document.getElementById(`piece-card-${id}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.classList.add('ring-4', 'ring-amber-400');
+          setTimeout(() => el.classList.remove('ring-4', 'ring-amber-400'), 3000);
+        }
+      }, 350);
+    };
+    try {
+      const pId = new URLSearchParams(window.location.search).get('pieceId');
+      if (pId) focusPiece(pId);
+    } catch (_e) {}
+    const onCustom = (e) => focusPiece(e.detail?.pieceId);
+    window.addEventListener('open-repertoire-piece', onCustom);
+    return () => window.removeEventListener('open-repertoire-piece', onCustom);
+  }, [pieces]);
+
+  // 5. Dictionnaires de résolution pour mapping direct O(1)
   const dicts = useMemo(() => {
     return buildResolutionDictionaries({
       catalogRhythms: rhythms,
@@ -133,11 +153,8 @@ export default function MemberRepertoireView({ groupId, user, profileData, seque
     const newVal = !revisionsDemandees[pieceId];
     setRevisionsDemandees((prev) => ({ ...prev, [pieceId]: newVal }));
     const pRef = doc(db, 'users', effectiveUserId, 'parcours', groupId);
-    try {
-      await updateDoc(pRef, { [`revisionsDemandees.${pieceId}`]: newVal });
-    } catch {
-      await setDoc(pRef, { revisionsDemandees: { [pieceId]: newVal } }, { merge: true });
-    }
+    try { await updateDoc(pRef, { [`revisionsDemandees.${pieceId}`]: newVal }); }
+    catch { await setDoc(pRef, { revisionsDemandees: { [pieceId]: newVal } }, { merge: true }); }
   };
 
   // Mutation : Curseur de confort
@@ -145,11 +162,8 @@ export default function MemberRepertoireView({ groupId, user, profileData, seque
     if (!effectiveUserId || !groupId || !pieceId) return;
     setPiecesProgress((prev) => ({ ...prev, [pieceId]: { ...(prev[pieceId] || {}), confort: level } }));
     const pRef = doc(db, 'users', effectiveUserId, 'parcours', groupId);
-    try {
-      await updateDoc(pRef, { [`piecesProgress.${pieceId}.confort`]: level });
-    } catch {
-      await setDoc(pRef, { piecesProgress: { [pieceId]: { confort: level } } }, { merge: true });
-    }
+    try { await updateDoc(pRef, { [`piecesProgress.${pieceId}.confort`]: level }); }
+    catch { await setDoc(pRef, { piecesProgress: { [pieceId]: { confort: level } } }, { merge: true }); }
   };
 
   return (
@@ -165,9 +179,7 @@ export default function MemberRepertoireView({ groupId, user, profileData, seque
 
       {/* Grille responsive 2 colonnes (PC) / 1 colonne (mobile) */}
       {loading ? (
-        <div className="p-8 text-center text-xs font-bold text-stone-500 animate-pulse">
-          Chargement du répertoire...
-        </div>
+        <div className="p-8 text-center text-xs font-bold text-stone-500 animate-pulse">Chargement du répertoire...</div>
       ) : resolvedPieces.length === 0 ? (
         <div className="p-8 text-center bg-white/70 border-2 border-dashed border-cordel-master-dark/30 rounded-lg text-xs font-bold text-stone-600">
           {searchQuery ? 'Aucun morceau ne correspond à votre recherche.' : "Aucun morceau n'est actuellement au programme de la saison."}
@@ -176,13 +188,8 @@ export default function MemberRepertoireView({ groupId, user, profileData, seque
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
           {resolvedPieces.map((piece) => (
             <MemberPieceCard
-              key={piece.id}
-              piece={piece}
-              userId={effectiveUserId}
-              groupId={groupId}
-              profileData={profileData}
-              trainings={trainings}
-              aisanceMap={aisanceMap}
+              key={piece.id} piece={piece} userId={effectiveUserId} groupId={groupId}
+              profileData={profileData} trainings={trainings} aisanceMap={aisanceMap}
               isRevisionRequested={Boolean(revisionsDemandees[piece.id])}
               comfortLevel={piecesProgress[piece.id]?.confort || 0}
               isExpanded={expandedPieces.has(piece.id)}
@@ -200,14 +207,10 @@ export default function MemberRepertoireView({ groupId, user, profileData, seque
 
       {/* Modales de consultation multimédia */}
       <MemberMediaModals
-        activeTablaturePiece={activeTablaturePiece}
-        onCloseTablature={() => setActiveTablaturePiece(null)}
-        activeToadaToView={activeToadaToView}
-        onCloseToada={() => setActiveToadaToView(null)}
-        activeCultureDocToView={activeCultureDocToView}
-        onCloseCulture={() => setActiveCultureDocToView(null)}
-        groupId={groupId}
-        profileData={profileData}
+        activeTablaturePiece={activeTablaturePiece} onCloseTablature={() => setActiveTablaturePiece(null)}
+        activeToadaToView={activeToadaToView} onCloseToada={() => setActiveToadaToView(null)}
+        activeCultureDocToView={activeCultureDocToView} onCloseCulture={() => setActiveCultureDocToView(null)}
+        groupId={groupId} profileData={profileData}
       />
     </div>
   );

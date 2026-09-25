@@ -22,6 +22,7 @@ import { useDancadorChoreographies } from '../../hooks/useDancadorData';
 import { useRepertoireVaralDocs } from '../../hooks/useRepertoireVaralDocs';
 import { openSequencerWithCrossApp } from '../../utils/sequencerUrlUtils';
 import PieceVideoSection from '../repertoire/PieceVideoSection';
+import BatchAssignVideoModal from '../repertoire/BatchAssignVideoModal';
 import { cleanFirestorePayload } from '../../utils/firestoreUtils';
 import {
   buildResolutionDictionaries,
@@ -77,6 +78,8 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
   const [culturePickerData, setCulturePickerData] = useState(null);
   const [activeToadaToView, setActiveToadaToView] = useState(null);
   const [activeSignalsModalPiece, setActiveSignalsModalPiece] = useState(null);
+  const [isBatchVideoModalOpen, setIsBatchVideoModalOpen] = useState(false);
+  const [batchVideoInitial, setBatchVideoInitial] = useState(null);
 
   // Synchronisation & Importation
   const [syncingPieceId, setSyncingPieceId] = useState(null);
@@ -419,6 +422,21 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
               </>
             )}
           </div>
+
+          <CordelButton
+            type="button"
+            variant="default"
+            useExtremeBorder={true}
+            onClick={() => {
+              setBatchVideoInitial(null);
+              setIsBatchVideoModalOpen(true);
+            }}
+            className="py-1.5 px-3 text-xs font-black uppercase tracking-wider shrink-0 flex items-center gap-1.5"
+            title="Affecter une vidéo à plusieurs morceaux du répertoire"
+          >
+            <span>🎬</span>
+            <span>Affecter vidéo par lot</span>
+          </CordelButton>
 
           <CordelButton
             type="button"
@@ -1069,6 +1087,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
         onClose={() => setIsEditModalOpen(false)}
         groupId={groupId}
         pieceToEdit={pieceToEdit}
+        piecesList={pieces}
         onSaveSuccess={(saved) => {
           showToast(`Morceau « ${saved.titre} » enregistré.`);
         }}
@@ -1083,6 +1102,18 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
         onSuccess={(event, item) => {
           const evName = event ? (event.titre || event.title || 'l\'événement') : 'l\'événement';
           showToast(`« ${item.titre} » programmé sur ${evName} !`);
+        }}
+      />
+
+      {/* Modale d'affectation par lot de vidéo */}
+      <BatchAssignVideoModal
+        isOpen={isBatchVideoModalOpen}
+        onClose={() => setIsBatchVideoModalOpen(false)}
+        initialVideo={batchVideoInitial}
+        piecesList={pieces}
+        groupId={groupId}
+        onSuccess={(count) => {
+          showToast(`Vidéo affectée à ${count} morceau${count > 1 ? 'x' : ''} !`);
         }}
       />
 

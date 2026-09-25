@@ -53,8 +53,8 @@ export default function ProfileEditForm({
   t
 }) {
   const translate = (key, fallback) => {
-    const val = t(key);
-    return val === key ? fallback : val;
+    const val = t(key, fallback);
+    return (!val || val === key) ? fallback : val;
   };
 
   const isAncien = Boolean(formData.instrument && formData.instrument.trim() !== '');

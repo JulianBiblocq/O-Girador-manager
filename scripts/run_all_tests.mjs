@@ -55,7 +55,9 @@ const testScripts = [
   'scripts/test_member_repertoire_accordion.mjs',
   'scripts/test_toada_mixed_line_lyrics.mjs',
   'scripts/test_repertoire_piece_signals.mjs',
-  'scripts/test_repertoire_lyrics_and_culture_modals.mjs'
+  'scripts/test_repertoire_lyrics_and_culture_modals.mjs',
+  'scripts/test_repertoire_video_levels_and_varal_gateway.mjs',
+  'scripts/test_varal_ropes_visibility_and_toggle.mjs'
 ];
 
 console.log("===============================================================");

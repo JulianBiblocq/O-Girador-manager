@@ -43,7 +43,8 @@ export default function RepertoirePieceModal({
   onClose,
   groupId,
   pieceToEdit = null,
-  onSaveSuccess
+  onSaveSuccess,
+  piecesList = null
 }) {
   // Champs administratifs & de direction artistique
   const [titre, setTitre] = useState('');
@@ -58,6 +59,7 @@ export default function RepertoirePieceModal({
 
   // Pointeurs réactifs vers les applications et modules transversaux
   const [selectedToadaId, setSelectedToadaId] = useState('');
+  const [toadaFilterMode, setToadaFilterMode] = useState('all'); // 'all' | 'available'
   const [selectedSeqUrl, setSelectedSeqUrl] = useState('');
   const [selectedSeqType, setSelectedSeqType] = useState(null); // 'presets' | 'sections' | 'patterns'
   const [customAudioUrl, setCustomAudioUrl] = useState('');
@@ -66,6 +68,31 @@ export default function RepertoirePieceModal({
   const [selectedTrainingIds, setSelectedTrainingIds] = useState([]);
   const [excludedTrainingIds, setExcludedTrainingIds] = useState([]);
   const [groupTrainings, setGroupTrainings] = useState([]);
+  const [localPieces, setLocalPieces] = useState([]);
+
+  // Écoute de secours des morceaux du répertoire si non fournis en props
+  useEffect(() => {
+    if (!isOpen || !groupId || piecesList !== null) return;
+    const unsub = onSnapshot(collection(db, 'associations', groupId, 'repertoire'), (snap) => {
+      const items = [];
+      snap.forEach((d) => items.push({ id: d.id, ...d.data() }));
+      setLocalPieces(items);
+    }, () => {});
+    return () => unsub();
+  }, [isOpen, groupId, piecesList]);
+
+  const effectivePiecesList = piecesList !== null ? piecesList : localPieces;
+
+  // Table de correspondance des Toadas déjà liées à un autre morceau
+  const toadaUsageMap = useMemo(() => {
+    const map = new Map();
+    (effectivePiecesList || []).forEach((p) => {
+      if (p && p.toadaDocId && p.id !== pieceToEdit?.id) {
+        map.set(p.toadaDocId, p.titre || 'Morceau sans titre');
+      }
+    });
+    return map;
+  }, [effectivePiecesList, pieceToEdit?.id]);
 
   // Écoute des entraînements du groupe
   useEffect(() => {
@@ -173,12 +200,23 @@ export default function RepertoirePieceModal({
       setEtatValidation(pieceToEdit.etatValidation || 'pret');
       setNotes(pieceToEdit.notes || '');
       const rawVideos = Array.isArray(pieceToEdit.videos) ? pieceToEdit.videos : [];
-      const normalizedVideos = rawVideos.map((v) => ({
-        ...v,
-        instruments: Array.isArray(v.instruments)
-          ? v.instruments
-          : (v.pupitre ? [v.pupitre] : [])
-      }));
+      const normalizedVideos = rawVideos.map((v) => {
+        let insts = [];
+        if (Array.isArray(v.instruments)) {
+          insts = v.instruments.filter(Boolean);
+        } else if (typeof v.instruments === 'string' && v.instruments.trim()) {
+          insts = v.instruments.split(',').map((s) => s.trim()).filter(Boolean);
+        } else if (v.pupitre) {
+          insts = [v.pupitre.trim()];
+        }
+        return {
+          ...v,
+          url: (v.url || '').trim(),
+          titre: (v.titre || '').trim(),
+          instruments: insts,
+          isLiveOrGlobal: Boolean(v.isLiveOrGlobal || insts.length === 0)
+        };
+      });
       setVideos(normalizedVideos);
       setSignalIds(Array.isArray(pieceToEdit.signalIds) ? pieceToEdit.signalIds : []);
       setSinaisDoMestre(Array.isArray(pieceToEdit.sinaisDoMestre) ? pieceToEdit.sinaisDoMestre : []);
@@ -240,6 +278,20 @@ export default function RepertoirePieceModal({
   const selectedSong = useMemo(() => {
     return toadasList.find((s) => s.id === selectedToadaId) || null;
   }, [toadasList, selectedToadaId]);
+
+  // Toadas filtrées selon toadaFilterMode ('all' vs 'available')
+  const filteredToadas = useMemo(() => {
+    if (toadaFilterMode === 'available') {
+      return toadasList.filter((song) => song.id === selectedToadaId || !toadaUsageMap.has(song.id));
+    }
+    return toadasList;
+  }, [toadasList, toadaFilterMode, selectedToadaId, toadaUsageMap]);
+
+  const availableToadasCount = useMemo(() => {
+    return toadasList.filter((song) => song.id === selectedToadaId || !toadaUsageMap.has(song.id)).length;
+  }, [toadasList, selectedToadaId, toadaUsageMap]);
+
+  const currentSelectedLinkedPiece = selectedToadaId ? toadaUsageMap.get(selectedToadaId) : null;
 
   // Détections automatiques de suggestions rapides en arrière-plan
   const detectedSuggestions = useMemo(() => {
@@ -467,15 +519,21 @@ export default function RepertoirePieceModal({
       const cleanVideos = (videos || [])
         .filter((v) => v && typeof v.url === 'string' && v.url.trim() !== '')
         .map((v) => {
-          const insts = Array.isArray(v.instruments)
-            ? v.instruments.filter(Boolean)
-            : (v.pupitre ? [v.pupitre.trim()] : []);
+          let insts = [];
+          if (Array.isArray(v.instruments)) {
+            insts = v.instruments.filter(Boolean);
+          } else if (typeof v.instruments === 'string' && v.instruments.trim()) {
+            insts = v.instruments.split(',').map((s) => s.trim()).filter(Boolean);
+          } else if (v.pupitre) {
+            insts = [v.pupitre.trim()];
+          }
           return {
             id: v.id || `vid_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
             titre: (v.titre || '').trim(),
             url: v.url.trim(),
             instruments: insts,
-            pupitre: insts[0] || (v.pupitre ? v.pupitre.trim() : '')
+            pupitre: insts[0] || (v.pupitre ? v.pupitre.trim() : ''),
+            isLiveOrGlobal: Boolean(v.isLiveOrGlobal || insts.length === 0)
           };
         });
 
@@ -493,7 +551,8 @@ export default function RepertoirePieceModal({
             titre: 'Vidéo principale',
             url: vTrim,
             instruments: [],
-            pupitre: ''
+            pupitre: '',
+            isLiveOrGlobal: true
           });
         }
       }
@@ -793,10 +852,39 @@ export default function RepertoirePieceModal({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-left">
               {/* 1. Toada (Chant) */}
               <div className="flex flex-col gap-1">
-                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center gap-1">
-                  <span>🗣️</span>
-                  <span>Chant / Toada associée</span>
-                </label>
+                <div className="flex items-center justify-between gap-1 flex-wrap">
+                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center gap-1">
+                    <span>🗣️</span>
+                    <span>Chant / Toada associée</span>
+                  </label>
+
+                  {/* Filtre à bascule : Toutes | Non attribuées */}
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setToadaFilterMode('all')}
+                      className={`px-1.5 py-0.5 text-[8.5px] font-black uppercase rounded border transition-all cursor-pointer ${
+                        toadaFilterMode === 'all'
+                          ? 'bg-amber-200 text-amber-950 border-amber-400 font-black'
+                          : 'bg-white text-stone-600 border-stone-200 hover:bg-stone-50'
+                      }`}
+                    >
+                      Toutes ({toadasList.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setToadaFilterMode('available')}
+                      className={`px-1.5 py-0.5 text-[8.5px] font-black uppercase rounded border transition-all cursor-pointer ${
+                        toadaFilterMode === 'available'
+                          ? 'bg-amber-200 text-amber-950 border-amber-400 font-black'
+                          : 'bg-white text-stone-600 border-stone-200 hover:bg-stone-50'
+                      }`}
+                    >
+                      Non attribuées ({availableToadasCount})
+                    </button>
+                  </div>
+                </div>
+
                 <select
                   value={selectedToadaId}
                   onChange={handleToadaChange}
@@ -804,12 +892,28 @@ export default function RepertoirePieceModal({
                   className="theme-input text-xs font-semibold p-2 bg-cordel-bg-light border border-encre-noire/30 rounded cursor-pointer"
                 >
                   <option value="">-- Aucun chant associé --</option>
-                  {toadasList.map((song) => (
-                    <option key={song.id} value={song.id}>
-                      🗣️ {song.titre} {song.nacao ? `(${song.nacao})` : ''}
-                    </option>
-                  ))}
+                  {filteredToadas.map((song) => {
+                    const linkedTitle = toadaUsageMap.get(song.id);
+                    const isLinked = Boolean(linkedTitle);
+                    return (
+                      <option
+                        key={song.id}
+                        value={song.id}
+                        style={isLinked ? { opacity: 0.5, color: '#888' } : {}}
+                      >
+                        🗣️ {song.titre} {song.nacao ? `(${song.nacao})` : ''} {isLinked ? `— [✓ Déjà liée à : ${linkedTitle}]` : ''}
+                      </option>
+                    );
+                  })}
                 </select>
+
+                {/* Mention discrète si la toada sélectionnée est déjà liée à un autre morceau */}
+                {currentSelectedLinkedPiece && (
+                  <div className="flex items-center gap-1.5 px-2 py-1 text-[9.5px] font-bold text-amber-900 bg-amber-50 border border-amber-200 rounded">
+                    <span>ℹ️</span>
+                    <span>Cette toada est déjà liée à : <u>« {currentSelectedLinkedPiece} »</u></span>
+                  </div>
+                )}
 
                 {selectedSong && selectedSong.titre && titre.trim() !== selectedSong.titre && (
                   <button

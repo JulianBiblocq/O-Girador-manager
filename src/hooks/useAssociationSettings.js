@@ -20,12 +20,13 @@ export const DEFAULT_FIELDS_CONFIG = {
 };
 
 export const DEFAULT_VARAL_CATEGORIES = [
-  { id: 'Toadas', nom: 'Toadas', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
-  { id: 'TutosFabrication', nom: 'Tutos Fabrication', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
-  { id: 'Culture', nom: 'Culture', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
-  { id: 'PhotosPrestations', nom: 'Photos Prestations', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
-  { id: 'ComptesRendus', nom: 'Comptes-rendus', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: true },
-  { id: 'Administratif', nom: 'Administratif', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false }
+  { id: 'Toadas', nom: 'Toadas', actif: true, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
+  { id: 'TutosFabrication', nom: 'Tutos Fabrication', actif: true, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
+  { id: 'Costumerie', nom: 'Costumerie & Patrons', actif: true, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
+  { id: 'Culture', nom: 'Culture', actif: true, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
+  { id: 'PhotosPrestations', nom: 'Photos Prestations', actif: true, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
+  { id: 'ComptesRendus', nom: 'Comptes-rendus', actif: true, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: true },
+  { id: 'Administratif', nom: 'Administratif', actif: true, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false }
 ];
 
 export const DEFAULT_ENABLED_MODULES = {

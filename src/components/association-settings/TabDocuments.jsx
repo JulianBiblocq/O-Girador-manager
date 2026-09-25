@@ -32,6 +32,7 @@ export default function TabDocuments({
     const newCat = {
       id: `cat_${Date.now()}`,
       nom: newCatName.trim(),
+      actif: true,
       activerUploadPublic: newCatUpload,
       lienUploadPublic: newCatUpload ? newCatUploadUrl.trim() : '',
       activerOpaciteArchive: newCatArchive
@@ -41,6 +42,13 @@ export default function TabDocuments({
     setNewCatUpload(false);
     setNewCatUploadUrl('');
     setNewCatArchive(false);
+  };
+
+  const handleToggleCategoryActive = (id, newActiveState) => {
+    const updated = varalCategories.map(c => 
+      c.id === id ? { ...c, actif: newActiveState } : c
+    );
+    handleChange('varalCategories', updated);
   };
 
   const handleRemoveCategory = async (id) => {
@@ -265,14 +273,28 @@ export default function TabDocuments({
                       )}
                     </div>
                   </div>
-                  <button 
-                    type="button"
-                    onClick={() => handleRemoveCategory(cat.id)}
-                    className="text-xs hover:text-red-500 font-bold px-2 py-1 cursor-pointer select-none"
-                    title="Supprimer"
-                  >
-                    ✕
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                      <input 
+                        type="checkbox"
+                        checked={cat.actif !== false}
+                        onChange={(e) => handleToggleCategoryActive(cat.id, e.target.checked)}
+                        disabled={saving}
+                        className="w-4 h-4 rounded cursor-pointer accent-[var(--color-cordel-vert,#2d6a4f)]"
+                      />
+                      <span className={`text-[10px] font-bold ${cat.actif !== false ? 'text-[var(--color-cordel-vert,#2d6a4f)] font-black' : 'text-cordel-master-dark/60 italic'}`}>
+                        {cat.actif !== false ? "Afficher cette corde" : "Corde masquée"}
+                      </span>
+                    </label>
+                    <button 
+                      type="button"
+                      onClick={() => handleRemoveCategory(cat.id)}
+                      className="text-xs hover:text-red-500 font-bold px-2 py-1 cursor-pointer select-none"
+                      title="Supprimer"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

@@ -4,6 +4,7 @@ import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import PrintConfigModal from './PrintConfigModal';
 import { parseLyricsString } from '../utils/lyricsParser';
+import RepertoirePasserelleButton from './repertoire/RepertoirePasserelleButton';
 
 /**
  * Modèle de données attendu pour une chanson (Fiche de Chant)
@@ -31,7 +32,8 @@ function SongCard({
   onToggleRevision = null,
   profileData = null,
   userId = null,
-  groupId = null
+  groupId = null,
+  onNavigateToView = null
 }) {
   const [activePuxador, setActivePuxador] = useState(false);
   const [activeChoeur, setActiveChoeur] = useState(false);
@@ -358,6 +360,17 @@ function SongCard({
                     {song?.rythme ? renderFlashcard('rythme', <span>{song.rythme}</span>) : null}
                   </div>
                 </div>
+
+                {/* Passerelle directe vers la fiche Répertoire */}
+                {!isPrintVersion && (
+                  <div className="mt-1 flex justify-center print:hidden">
+                    <RepertoirePasserelleButton
+                      toadaId={song?.id}
+                      groupId={groupId || profileData?.groupId}
+                      onNavigateToView={onNavigateToView}
+                    />
+                  </div>
+                )}
                 
                 <hr className="border-t-4 border-[var(--color-cordel-ocre,#c05621)] mt-2 print:mt-1 mb-1 md:mb-2" />
 

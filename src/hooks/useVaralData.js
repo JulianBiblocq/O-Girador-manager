@@ -10,13 +10,13 @@ import useConfirm from './useConfirm';
  * Catégories par défaut suspendues sur le Varal de documents.
  */
 export const DEFAULT_VARAL_CATEGORIES = [
-  { id: 'Toadas', nom: 'Toadas', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
-  { id: 'TutosFabrication', nom: 'Tutos Fabrication', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
-  { id: 'Costumerie', nom: 'Costumerie & Patrons', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
-  { id: 'Culture', nom: 'Culture', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
-  { id: 'PhotosPrestations', nom: 'Photos Prestations', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
-  { id: 'ComptesRendus', nom: 'Comptes-rendus', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: true },
-  { id: 'Administratif', nom: 'Administratif', activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false }
+  { id: 'Toadas', nom: 'Toadas', actif: true, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
+  { id: 'TutosFabrication', nom: 'Tutos Fabrication', actif: true, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
+  { id: 'Costumerie', nom: 'Costumerie & Patrons', actif: true, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
+  { id: 'Culture', nom: 'Culture', actif: true, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
+  { id: 'PhotosPrestations', nom: 'Photos Prestations', actif: true, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
+  { id: 'ComptesRendus', nom: 'Comptes-rendus', actif: true, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: true },
+  { id: 'Administratif', nom: 'Administratif', actif: true, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false }
 ];
 
 /**
@@ -73,8 +73,8 @@ export default function useVaralData({
   const [reunions, setReunions] = useState([]);
   const [instrumentModels, setInstrumentModels] = useState([]);
 
-  // Les droits d'administration couvrent les mestres, super-admins et utilisateurs ayant les droits d'écriture sur le pôle
-  const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true || canWrite === true;
+  // Les droits d'administration couvrent les mestres, super-admins, administrateurs, membres du bureau et utilisateurs ayant les droits d'écriture
+  const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true || role === 'admin' || role === 'bureau' || role === 'ca' || canWrite === true;
 
   // Distinction Pôle de gestion vs Accueil :
   // Sur l'accueil (ou le varal général de l'accueil), un encadrant doit voir le Varal comme les élèves (aucun document masqué).
@@ -176,14 +176,24 @@ export default function useVaralData({
         const data = docSnap.data();
         if (Array.isArray(data.varalCategories)) {
           const rawCats = data.varalCategories;
-          const mergedCats = DEFAULT_VARAL_CATEGORIES.map((defaultCat) => {
+          const defaultMerged = DEFAULT_VARAL_CATEGORIES.map((defaultCat) => {
             const customCat = rawCats.find(c => c.id === defaultCat.id) || rawCats.find(c => c.nom === defaultCat.nom);
             if (customCat) {
-              return { ...defaultCat, ...customCat, id: defaultCat.id }; // Préserver l'identifiant natif
+              return { 
+                ...defaultCat, 
+                ...customCat, 
+                id: defaultCat.id,
+                actif: customCat.actif !== false // Actif par défaut si non défini
+              };
             }
-            return defaultCat;
+            return { ...defaultCat, actif: defaultCat.actif !== false };
           });
-          setVaralCategories(mergedCats);
+          // Préserver également les éventuelles cordes personnalisées ajoutées par l'association
+          const customOnly = rawCats
+            .filter(c => !DEFAULT_VARAL_CATEGORIES.some(dc => dc.id === c.id || dc.nom === c.nom))
+            .map(c => ({ ...c, actif: c.actif !== false }));
+
+          setVaralCategories([...defaultMerged, ...customOnly]);
           return;
         }
       }
@@ -368,6 +378,9 @@ export default function useVaralData({
         if (catPole !== poleId) return false;
       }
 
+      // Règle 1 : Corde désactivée manuellement (masquée pour les adhérents non administrateurs)
+      if (!isAuthorized && category.actif === false) return false;
+
       // Filtrage par badge / allowedTags (Bypass administrateurs et mestres)
       if (isAuthorized) return true;
       if (!category.allowedTags || category.allowedTags.length === 0) return true;
@@ -520,7 +533,16 @@ export default function useVaralData({
     }
     try {
       const assocRef = doc(db, 'associations', groupId);
-      const updatedCategories = varalCategories.map(c => c.id === editingCategory.id ? { ...editingCategory, nom: editingCategory.nom.trim() } : c);
+      const updatedCategories = varalCategories.map(c => 
+        c.id === editingCategory.id 
+          ? { 
+              ...c, 
+              ...editingCategory, 
+              nom: editingCategory.nom.trim(),
+              actif: editingCategory.actif !== false 
+            } 
+          : c
+      );
       await updateDoc(assocRef, { varalCategories: updatedCategories });
     } catch (err) {
       console.error("useVaralData - Erreur lors de la mise à jour de la catégorie :", err);

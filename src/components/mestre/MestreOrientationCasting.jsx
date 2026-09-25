@@ -317,6 +317,15 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
       const resolvedSec = resolvePupitreForInstrument(rawSec).toLowerCase().trim();
       const secInst = rawSec.toLowerCase().trim();
 
+      const allMemberInsts = [
+        member.instrument,
+        member.instrumentPrincipal,
+        member.instrumentSecondaire,
+        ...(Array.isArray(member.instrumentsJoues) ? member.instrumentsJoues : []),
+        ...(Array.isArray(member.voeuxInstruments) ? member.voeuxInstruments : []),
+        member.voeuPrincipal
+      ].filter(Boolean).map(i => resolvePupitreForInstrument(i).toLowerCase().trim());
+
       displayPupitres.forEach(pupitre => {
         if (pupitre.name.toLowerCase() === 'danse') {
           if (isDanseMember(member)) {
@@ -338,11 +347,16 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
             const clean = i.toLowerCase().trim();
             return clean === secInst || clean === resolvedSec || (secInst && (secInst.includes(clean) || clean.includes(secInst)));
           });
+          const matchOther = !rawMain && !rawSec && allMemberInsts.some(inst => {
+            return inst === pupNameLower || pupitre.instruments.some(i => {
+              const clean = i.toLowerCase().trim();
+              return clean === inst || (inst && (inst.includes(clean) || clean.includes(inst)));
+            });
+          });
 
-          if (matchMain) {
+          if (matchMain || matchOther) {
             counts[pupitre.id].primary += 1;
-          }
-          if (matchSec) {
+          } else if (matchSec) {
             counts[pupitre.id].secondary += 1;
           }
         }
@@ -428,6 +442,15 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
             const resolvedSec = resolvePupitreForInstrument(rawSec).toLowerCase().trim();
             const secInst = rawSec.toLowerCase().trim();
 
+            const allMemberInsts = [
+              m.instrument,
+              m.instrumentPrincipal,
+              m.instrumentSecondaire,
+              ...(Array.isArray(m.instrumentsJoues) ? m.instrumentsJoues : []),
+              ...(Array.isArray(m.voeuxInstruments) ? m.voeuxInstruments : []),
+              m.voeuPrincipal
+            ].filter(Boolean).map(i => resolvePupitreForInstrument(i).toLowerCase().trim());
+
             const targetNameLower = targetPupitre.name.toLowerCase().trim();
             const matchMain = (targetNameLower === resolvedMain) || (targetNameLower === mainInst) || targetPupitre.instruments.some(i => {
               const clean = i.toLowerCase().trim();
@@ -437,7 +460,14 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
               const clean = i.toLowerCase().trim();
               return clean === secInst || clean === resolvedSec || (secInst && (secInst.includes(clean) || clean.includes(secInst)));
             });
-            return matchMain || matchSec;
+            const matchAggregated = allMemberInsts.some(inst => {
+              return inst === targetNameLower || targetPupitre.instruments.some(i => {
+                const clean = i.toLowerCase().trim();
+                return clean === inst || (inst && (inst.includes(clean) || clean.includes(inst)));
+              });
+            });
+
+            return matchMain || matchSec || matchAggregated;
           });
         }
       }

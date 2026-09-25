@@ -610,6 +610,25 @@ export default function App() {
     }
   }, [currentPole, currentTab]);
 
+  // Écoute de l'événement global de passerelle vers une fiche Répertoire
+  useEffect(() => {
+    const handleOpenRepertoirePiece = (e) => {
+      const pieceId = e.detail?.pieceId;
+      if (pieceId) {
+        const isMestre = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.role === 'admin' || isMasterKeyActive;
+        if (isMestre) {
+          setCurrentPole('mestre');
+          setCurrentTab('mestre-repertoire');
+        } else {
+          setCurrentPole('mon-espace');
+          setCurrentTab('repertoire');
+        }
+      }
+    };
+    window.addEventListener('open-repertoire-piece', handleOpenRepertoirePiece);
+    return () => window.removeEventListener('open-repertoire-piece', handleOpenRepertoirePiece);
+  }, [profileData?.role, isMasterKeyActive]);
+
   // Intercept PWA installation prompt
   useEffect(() => {
     const handleBeforeInstall = (e) => {

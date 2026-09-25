@@ -45,6 +45,7 @@ export default function MemberPieceCard({
 
   return (
     <CordelCard
+      id={`piece-card-${piece.id}`}
       variant="default"
       useExtremeBorder={true}
       className="p-0 overflow-hidden flex flex-col text-left transition-all border-2 border-encre-noire"

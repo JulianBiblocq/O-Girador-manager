@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import CordelCard from '../../CordelCard';
 import VaralRopeSVG from './VaralRopeSVG';
 import VaralBookletCover from './VaralBookletCover';
+import VaralEmptyRopeAdmin from './VaralEmptyRopeAdmin';
 import { useTranslation } from '../../LanguageContext';
 
 /**
@@ -240,6 +241,40 @@ export default function VaralCategoryRope({
       }
       return true;
     });
+  }
+
+  // Évaluation de l'état d'activité et de vacuité de la corde
+  const isInactive = category.actif === false;
+  const hasValidPublicUpload = Boolean(
+    category.activerUploadPublic &&
+    category.lienUploadPublic &&
+    category.lienUploadPublic.trim() !== ''
+  );
+  // Une corde est considérée vide si elle ne contient aucun document et aucun lien de dépôt public actif
+  const isEmpty = docList.length === 0 && !hasValidPublicUpload;
+
+  // Règle 1 (Désactivation manuelle) & Règle 2 (Masquage si vide) côté adhérent : ne rien afficher
+  if (!isAuthorized) {
+    if (isInactive || isEmpty) {
+      return null;
+    }
+  }
+
+  // Règle 3 (Vue Admin) : Affichage compact avec avertissement et bouton d'ajout si corde vide ou inactive
+  if (isAuthorized && (isInactive || isEmpty)) {
+    return (
+      <VaralEmptyRopeAdmin
+        category={category}
+        isInactive={isInactive}
+        variant={variant}
+        canDeposit={canDeposit}
+        canWrite={canWrite}
+        isAuthorized={isAuthorized}
+        onOpenAdd={onOpenAdd}
+        onNavigateToView={onNavigateToView}
+        onEditCategory={onEditCategory}
+      />
+    );
   }
 
   return (

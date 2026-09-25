@@ -27,7 +27,8 @@ export default function RepertoireVideosPicker({
       id: `vid_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
       titre: '',
       url: '',
-      instruments: []
+      instruments: [],
+      isLiveOrGlobal: false
     };
     onChange([...videos, newVideo]);
   };
@@ -162,11 +163,13 @@ export default function RepertoireVideosPicker({
                   </div>
                 </div>
 
-                {/* Ligne 3 : Cases à cocher multi-instruments */}
+                {/* Ligne 3 : Cases à cocher multi-instruments & Live */}
                 <VideoInstrumentCheckboxes
                   selectedInstruments={vidInstruments}
                   instrumentsList={instrumentsList}
                   onChange={(newInsts) => handleUpdate(vid.id, 'instruments', newInsts)}
+                  isLiveOrGlobal={Boolean(vid.isLiveOrGlobal)}
+                  onToggleLive={(val) => handleUpdate(vid.id, 'isLiveOrGlobal', val)}
                 />
               </div>
             );

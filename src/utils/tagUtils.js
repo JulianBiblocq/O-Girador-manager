@@ -269,8 +269,8 @@ export function resolvePupitreForInstrument(instName, pupitresList = [], linkedI
   const exactMatch = (pupitresList || []).find(p => p.toLowerCase() === lower);
   if (exactMatch) return exactMatch;
 
-  // 2. Sous-voix d'Alfaia -> Pupitre Alfaia
-  if (lower === 'marcante' || lower === 'meião' || lower === 'meiao' || lower === 'repique') {
+  // 2. Sous-voix et déclinaisons d'Alfaia -> Pupitre Alfaia
+  if (lower.includes('alfaia') || lower === 'marcante' || lower === 'meião' || lower === 'meiao' || lower === 'repique') {
     const alfaiaPupitre = (pupitresList || []).find(p => p.toLowerCase().includes('alfaia'));
     return alfaiaPupitre || 'Alfaia';
   }
