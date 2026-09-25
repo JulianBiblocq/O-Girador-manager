@@ -62,8 +62,8 @@ export default function ThreadView({
 
   return (
     <div className="flex flex-col gap-4 text-left h-full">
-      {/* Barre d'en-tête supérieure fixe */}
-      <div className="sticky top-0 z-[100] bg-cordel-bg/95 backdrop-blur-sm flex justify-between items-center border-b-2 border-dashed border-cordel-master-dark/30 py-2 select-none">
+      {/* Barre d'en-tête supérieure fixe (z-20 pour rester sous les modales) */}
+      <div className="sticky top-0 z-20 bg-cordel-bg/95 backdrop-blur-sm flex justify-between items-center border-b-2 border-dashed border-cordel-master-dark/30 py-2 select-none">
         <CordelButton variant="default" onClick={onClose} className="px-3 py-1 text-xs">
           ← {t('common.back')}
         </CordelButton>

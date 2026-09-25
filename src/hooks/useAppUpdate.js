@@ -22,26 +22,23 @@ export function useAppUpdate() {
       setTimeout(() => { hasChecked = false; }, 10 * 60 * 1000);
 
       try {
-        const response = await fetch(`/version.json?t=${Date.now()}`);
+        const response = await fetch(`/version.json?t=${Date.now()}`, {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+        });
         if (!response.ok) return;
 
         const data = await response.json();
         if (data && typeof data === 'object' && data.version) {
           const latestVersion = String(data.version);
           if (latestVersion !== CURRENT_VERSION) {
-            const sessionKey = `update_prompted_${latestVersion}`;
-            const localKey = `update_dismissed_${latestVersion}`;
-            if (sessionStorage.getItem(sessionKey) || localStorage.getItem(localKey)) return;
+            // Empêche les boucles infinies de rechargement
+            const sessionKey = `update_reloaded_${latestVersion}`;
+            if (sessionStorage.getItem(sessionKey)) return;
             sessionStorage.setItem(sessionKey, 'true');
 
-            const shouldUpdate = window.confirm(
-              "Une nouvelle version de O Girador Organizador est disponible. Recharger pour mettre à jour ?"
-            );
-            if (shouldUpdate) {
-              await forceUpdateAndClearCache();
-            } else {
-              localStorage.setItem(localKey, 'true');
-            }
+            // Purge immédiate des caches et désinscription des Service Workers
+            await forceUpdateAndClearCache();
           }
         }
       } catch (_) {}

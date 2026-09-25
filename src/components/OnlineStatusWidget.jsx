@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { usePresenceContext } from '../context/PresenceContext';
@@ -91,9 +92,9 @@ export default function OnlineStatusWidget({
         </span>
       </button>
 
-      {/* Modale des membres en ligne */}
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs select-none">
+      {/* Modale des membres en ligne avec z-[9999] et createPortal pour surmonter tous les bandeaux sticky */}
+      {isOpen && typeof document !== 'undefined' && document.body && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs select-none">
           <div 
             className="fixed inset-0" 
             onClick={() => setIsOpen(false)} 
@@ -116,7 +117,8 @@ export default function OnlineStatusWidget({
                 <button
                   type="button"
                   onClick={() => setIsOpen(false)}
-                  className="p-1 text-xs font-black uppercase border border-encre-noire rounded hover:bg-neutral-200 cursor-pointer"
+                  className="p-1.5 min-w-[28px] min-h-[28px] flex items-center justify-center text-xs font-black uppercase border border-encre-noire rounded hover:bg-neutral-200 cursor-pointer active:scale-95 transition-all"
+                  aria-label="Fermer la modale"
                 >
                   ✕
                 </button>
@@ -162,7 +164,8 @@ export default function OnlineStatusWidget({
               </div>
             </CordelCard>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
