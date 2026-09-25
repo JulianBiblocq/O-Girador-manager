@@ -5,6 +5,8 @@ import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import LiteYouTubeEmbed, { extractYouTubeVideoId } from '../common/LiteYouTubeEmbed';
 import { XiloMegaphone } from '../XiloIcons';
+import YouTubePlaylistsBlock from './blocks/YouTubePlaylistsBlock';
+import YouTubeVideoPickerModal from '../common/YouTubeVideoPickerModal';
 
 /**
  * Icône Chevron vers le haut stylisée gravure sur bois (Cordel)
@@ -120,6 +122,11 @@ export default function TabMemberLayout({ groupId }) {
   const [videoTitle, setVideoTitle] = useState('');
   const [isVideoActive, setIsVideoActive] = useState(false);
 
+  // Registre des playlists YouTube & Sélecteur modal
+  const [youtubePlaylists, setYoutubePlaylists] = useState([]);
+  const [youtubeApiKey, setYoutubeApiKey] = useState('');
+  const [showVideoPicker, setShowVideoPicker] = useState(false);
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -163,6 +170,14 @@ export default function TabMemberLayout({ groupId }) {
           setVideoUrl(data.videoALaUne.url || '');
           setVideoTitle(data.videoALaUne.titre || '');
           setIsVideoActive(Boolean(data.videoALaUne.active));
+        }
+
+        // Registre des playlists YouTube de l'association
+        if (Array.isArray(data.youtubePlaylists)) {
+          setYoutubePlaylists(data.youtubePlaylists);
+        }
+        if (data.youtubeApiKey) {
+          setYoutubeApiKey(data.youtubeApiKey);
         }
       }
       setLoading(false);
@@ -256,6 +271,16 @@ export default function TabMemberLayout({ groupId }) {
     }
 
     try {
+      const cleanYoutubePlaylists = Array.isArray(youtubePlaylists)
+        ? youtubePlaylists
+            .filter((p) => p && typeof p === 'object' && p.playlistId && p.playlistId.trim())
+            .map((p) => ({
+              id: p.id || `pl_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+              label: (p.label || '').trim(),
+              playlistId: (p.playlistId || '').trim()
+            }))
+        : [];
+
       const assocRef = doc(db, 'associations', groupId);
       await updateDoc(assocRef, {
         layoutEleves: items,
@@ -264,7 +289,9 @@ export default function TabMemberLayout({ groupId }) {
           url: videoUrl.trim(),
           titre: videoTitle.trim(),
           active: isVideoActive && Boolean(currentVideoId)
-        }
+        },
+        youtubePlaylists: cleanYoutubePlaylists,
+        youtubeApiKey: (youtubeApiKey || '').trim()
       });
 
       setSaveSuccess(true);
@@ -354,9 +381,18 @@ export default function TabMemberLayout({ groupId }) {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-black uppercase tracking-wider text-cordel-wood">
-              Lien YouTube (URL standard, partage ou Shorts)
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-[10px] font-black uppercase tracking-wider text-cordel-wood">
+                Lien YouTube (URL standard, partage ou Shorts)
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowVideoPicker(true)}
+                className="text-[9.5px] font-black uppercase tracking-wider text-cordel-wood hover:underline cursor-pointer flex items-center gap-1"
+              >
+                <span>🎬</span> Choisir parmi nos vidéos
+              </button>
+            </div>
             <input
               type="text"
               value={videoUrl}
@@ -391,6 +427,16 @@ export default function TabMemberLayout({ groupId }) {
           </div>
         )}
       </CordelCard>
+
+      {/* 2.bis SECTION : Registre dynamique des Playlists YouTube de l'association */}
+      <YouTubePlaylistsBlock
+        formData={{ youtubePlaylists, youtubeApiKey }}
+        handleChange={(field, value) => {
+          if (field === 'youtubePlaylists') setYoutubePlaylists(value);
+          if (field === 'youtubeApiKey') setYoutubeApiKey(value);
+        }}
+        disabled={saving}
+      />
 
       {/* 3. SECTION : Emplacement du bloc Anniversaires */}
       <CordelCard variant="default" useExtremeBorder={false} className="p-4 bg-cordel-bg flex flex-col gap-2.5">
@@ -558,9 +604,23 @@ export default function TabMemberLayout({ groupId }) {
           disabled={saving}
           className="w-full py-3 font-extrabold text-xs sm:text-sm tracking-wider uppercase flex items-center justify-center gap-2"
         >
-          {saving ? "Enregistrement en cours..." : "💾 Enregistrer la disposition de la vue membre"}
+          {saving ? "Enregistrement en cours..." : "💾 Enregistrer les réglages et la disposition"}
         </CordelButton>
       </div>
+
+      {/* Sélecteur universel de vidéos YouTube */}
+      <YouTubeVideoPickerModal
+        isOpen={showVideoPicker}
+        onClose={() => setShowVideoPicker(false)}
+        playlists={youtubePlaylists}
+        groupId={groupId}
+        onSelectVideo={({ url, title }) => {
+          setVideoUrl(url);
+          if (!videoTitle && title) {
+            setVideoTitle(title);
+          }
+        }}
+      />
     </div>
   );
 }
