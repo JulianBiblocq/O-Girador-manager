@@ -5,6 +5,7 @@ import { db, storage } from '../firebase';
 import { projectWorkshopBooklets, isWorkshopVirtualDoc } from '../utils/workshopProjectionUtils';
 import { useTranslation } from '../components/LanguageContext';
 import useConfirm from './useConfirm';
+import { useViewSimulator } from '../context/ViewSimulatorContext';
 
 /**
  * Catégories par défaut suspendues sur le Varal de documents.
@@ -73,8 +74,18 @@ export default function useVaralData({
   const [reunions, setReunions] = useState([]);
   const [instrumentModels, setInstrumentModels] = useState([]);
 
-  // Les droits d'administration couvrent les mestres, super-admins, administrateurs, membres du bureau et utilisateurs ayant les droits d'écriture
-  const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true || role === 'admin' || role === 'bureau' || role === 'ca' || canWrite === true;
+  // Consommation réactive du Simulateur de Vue
+  const { isSimulating, effectiveProfile, effectiveUserTags } = useViewSimulator();
+  const activeProfile = isSimulating && effectiveProfile ? effectiveProfile : profileData;
+  const activeRole = isSimulating && effectiveProfile ? (effectiveProfile.role || 'membre') : role;
+  const activeIsSystemAdmin = isSimulating && effectiveProfile ? Boolean(effectiveProfile.isSystemAdmin) : isSystemAdmin;
+  const activeUserTags = isSimulating && effectiveUserTags ? effectiveUserTags : userTags;
+
+  // Les droits d'administration couvrent les mestres, super-admins, administrateurs, membres du bureau et utilisateurs ayant les droits d'écriture.
+  // En mode simulation, les privilèges super-admin racine sont neutralisés : seules les permissions du profil simulé s'appliquent.
+  const isAuthorized = isSimulating
+    ? (activeRole === 'mestre' || activeRole === 'admin' || activeRole === 'bureau' || activeRole === 'ca')
+    : (activeRole === 'mestre' || activeRole === 'super-admin' || activeIsSystemAdmin === true || activeRole === 'admin' || activeRole === 'bureau' || activeRole === 'ca' || canWrite === true);
 
   // Distinction Pôle de gestion vs Accueil :
   // Sur l'accueil (ou le varal général de l'accueil), un encadrant doit voir le Varal comme les élèves (aucun document masqué).
@@ -362,12 +373,12 @@ export default function useVaralData({
   }, [documents, instrumentModels, varalCategories, eventsWithMedia, reunions, canSeeHidden]);
 
   // 7. Résolution des étiquettes / badges effectifs de l'utilisateur
-  const profileTags = profileData?.tags;
+  const profileTags = activeProfile?.tags;
   const effectiveTags = useMemo(() => {
-    if (Array.isArray(userTags) && userTags.length > 0) return userTags;
+    if (Array.isArray(activeUserTags) && activeUserTags.length > 0) return activeUserTags;
     if (Array.isArray(profileTags)) return profileTags;
     return [];
-  }, [userTags, profileTags]);
+  }, [activeUserTags, profileTags]);
 
   // 8. Filtrage des catégories visibles selon le pôle actif et les autorisations de badges
   const visibleCategories = useMemo(() => {

@@ -22,6 +22,7 @@ import { usePresenceContext } from '../context/PresenceContext';
 import { canPublishAnnonces } from '../utils/permissionUtils';
 import { resolveEffectiveUserTags } from '../utils/tagUtils';
 import HeaderBrandTitle from './common/HeaderBrandTitle';
+import { useViewSimulator } from '../context/ViewSimulatorContext';
 
 export default function Dashboard({ 
   user, 
@@ -39,21 +40,28 @@ export default function Dashboard({
   const { t } = useTranslation();
   const { isPresenceEnabled } = usePresenceContext();
 
-  // Détection des rôles privilégiés (Système, Super-Admin ou Mestre)
+  // Consommation du simulateur de vue
+  const { isSimulating, effectiveProfile, effectiveUserTags: simTags } = useViewSimulator();
+  const currentProfile = isSimulating && effectiveProfile ? effectiveProfile : profileData;
+
+  // Détection des rôles privilégiés (Système, Super-Admin ou Mestre - neutralisé en simulation)
   const isSystemOrSuperAdminOrMestre = Boolean(
-    profileData?.isSystemAdmin || 
-    profileData?.role === 'super-admin' || 
-    profileData?.role === 'mestre'
+    !isSimulating && (
+      currentProfile?.isSystemAdmin || 
+      currentProfile?.role === 'super-admin' || 
+      currentProfile?.role === 'mestre'
+    )
   );
 
   // Résolution des étiquettes effectives et calcul des droits de publication au Mégaphone (Annonces)
   const effectiveUserTags = useMemo(() => {
-    return resolveEffectiveUserTags(profileData?.tags || [], tagsDisponibles);
-  }, [profileData?.tags, tagsDisponibles]);
+    if (isSimulating && simTags && simTags.length > 0) return simTags;
+    return resolveEffectiveUserTags(currentProfile?.tags || [], tagsDisponibles);
+  }, [isSimulating, simTags, currentProfile?.tags, tagsDisponibles]);
 
   const canUserPublishAnnonces = useMemo(() => {
-    return canPublishAnnonces(profileData, _permissionsMatrice, effectiveUserTags, breakGlassActive);
-  }, [profileData, _permissionsMatrice, effectiveUserTags, breakGlassActive]);
+    return canPublishAnnonces(currentProfile, _permissionsMatrice, effectiveUserTags, breakGlassActive);
+  }, [currentProfile, _permissionsMatrice, effectiveUserTags, breakGlassActive]);
 
   const [layout, setLayout] = useState(["motMestre", "annonces", "agenda", "commandes", "forum", "documents", "tresorerie", "anniversaires"]);
   const [agendaFocusMode, setAgendaFocusMode] = useState(false);
@@ -357,9 +365,9 @@ export default function Dashboard({
               widgetContent = (
                 <WidgetAnnonces 
                   groupId={profileData?.groupId} 
-                  profileData={profileData}
-                  role={profileData?.role} 
-                  isSystemAdmin={profileData?.isSystemAdmin} 
+                  profileData={currentProfile}
+                  role={currentProfile?.role} 
+                  isSystemAdmin={currentProfile?.isSystemAdmin} 
                   user={user}
                   onNavigateToView={onNavigateToView}
                   permissionsMatrice={_permissionsMatrice}
@@ -372,11 +380,11 @@ export default function Dashboard({
             case 'agenda':
               widgetContent = (
                 <WidgetAgenda 
-                  role={profileData?.role} 
-                  isSystemAdmin={profileData?.isSystemAdmin} 
-                  groupId={profileData?.groupId} 
+                  role={currentProfile?.role} 
+                  isSystemAdmin={currentProfile?.isSystemAdmin} 
+                  groupId={currentProfile?.groupId} 
                   user={user} 
-                  profileData={profileData} 
+                  profileData={currentProfile} 
                   onFocusModeChange={(isFocused) => setAgendaFocusMode(isFocused)}
                   onNavigateToView={onNavigateToView}
                   selectedEvent={selectedEventForAgenda}
@@ -388,7 +396,7 @@ export default function Dashboard({
               widgetContent = (
                 <WidgetVideoALaUne 
                   videoALaUne={videoALaUne} 
-                  groupId={profileData?.groupId}
+                  groupId={currentProfile?.groupId}
                   isAuthorized={isSystemOrSuperAdminOrMestre}
                 />
               );
@@ -397,17 +405,17 @@ export default function Dashboard({
               if (!hasOpenCampaign) break;
               widgetContent = (
                 <WidgetCommandes 
-                  groupId={profileData?.groupId} 
+                  groupId={currentProfile?.groupId} 
                   user={user} 
-                  profileData={profileData} 
+                  profileData={currentProfile} 
                 />
               );
               break;
             case 'forum':
               widgetContent = (
                 <WidgetForum 
-                  groupId={profileData?.groupId} 
-                  profileData={profileData}
+                  groupId={currentProfile?.groupId} 
+                  profileData={currentProfile}
                   breakGlassActive={breakGlassActive}
                   tagsDisponibles={tagsDisponibles}
                   onOpen={(threadId) => onNavigateToView('forum', threadId ? { threadId } : null)} 
@@ -418,11 +426,11 @@ export default function Dashboard({
               widgetContent = (
                 <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement du Varal...</div>}>
                   <WidgetDocuments 
-                    role={profileData?.role} 
-                    isSystemAdmin={profileData?.isSystemAdmin} 
-                    groupId={profileData?.groupId} 
+                    role={currentProfile?.role} 
+                    isSystemAdmin={currentProfile?.isSystemAdmin} 
+                    groupId={currentProfile?.groupId} 
                     user={user}
-                    profileData={profileData}
+                    profileData={currentProfile}
                   />
                 </React.Suspense>
               );
@@ -431,8 +439,8 @@ export default function Dashboard({
               widgetContent = (
                 <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement de la Trésorerie...</div>}>
                   <WidgetTreasury 
-                    groupId={profileData?.groupId} 
-                    profileData={profileData} 
+                    groupId={currentProfile?.groupId} 
+                    profileData={currentProfile} 
                     user={user}
                   />
                 </React.Suspense>

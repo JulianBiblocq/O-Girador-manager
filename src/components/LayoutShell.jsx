@@ -133,14 +133,21 @@ export default function LayoutShell({
   // Garde-fou 1 : Isolation du Break-Glass (forcé à false en mode simulation pour ne pas fausser le test)
   const effectiveBreakGlassActive = isSimulating ? false : breakGlassActive;
 
-  const isSuperAdmin = Boolean(
-    currentProfile?.isSystemAdmin === true || 
-    (currentProfile?.role || '').toLowerCase() === 'super-admin' || 
-    (currentProfile?.role || '').toLowerCase() === 'mestre' ||
-    currentProfile?.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
-    currentProfile?.id === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1'
+  // Droits réels de l'utilisateur pour l'accès aux outils de diagnostic et simulateur
+  const realIsSuperAdmin = Boolean(
+    profileData?.isSystemAdmin === true || 
+    (profileData?.role || '').toLowerCase() === 'super-admin' || 
+    profileData?.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
+    profileData?.id === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1'
   );
-  const isSystemOrSuperAdminOrMestre = isSuperAdmin || currentProfile?.role === 'mestre';
+  const realIsSystemOrSuperAdminOrMestre = realIsSuperAdmin || (profileData?.role || '').toLowerCase() === 'mestre';
+  const canUseViewSimulator = realIsSystemOrSuperAdminOrMestre || isSimulating;
+
+  // En simulation, les privilèges de Super-Administrateur racine sont neutralisés
+  const isSuperAdmin = Boolean(
+    !isSimulating && realIsSuperAdmin
+  );
+  const isSystemOrSuperAdminOrMestre = isSuperAdmin || (currentProfile?.role || '').toLowerCase() === 'mestre';
 
   const isPresenceEnabled = activerPresenceEnLigne !== false;
   const currentUserId = currentProfile?.uid || currentProfile?.id;
@@ -755,7 +762,7 @@ export default function LayoutShell({
                     onNavigateToUrl={onNotificationNavigate}
                   />
 
-                  {(isSuperAdmin || currentProfile?.role === 'mestre') && (
+                  {canUseViewSimulator && (
                     <ViewSimulatorSelector />
                   )}
                 </div>
@@ -769,7 +776,7 @@ export default function LayoutShell({
               }`}>
                 {/* Menu d'onglets horizontaux principaux du pôle courant (si présents) */}
                 <div className="flex flex-wrap gap-2 items-center min-w-0">
-                  <EcosystemAppLauncher urls={urls} associationData={associationData} className="mr-1 hidden lg:inline-flex" />
+                  <EcosystemAppLauncher urls={urls} associationData={associationData} className="mr-1 !hidden lg:!inline-flex" />
                   {(isSystemOrSuperAdminOrMestre || isAdministrativeUser) && visibleTabs.length > 0 ? (
                     visibleTabs.map((tab) => {
                       const isUnlocked = checkTabAccess(tab.id, activePoleObj?.id);
@@ -840,7 +847,7 @@ export default function LayoutShell({
                     onNavigateToUrl={onNotificationNavigate}
                   />
 
-                  {(isSuperAdmin || currentProfile?.role === 'mestre') && (
+                  {canUseViewSimulator && (
                     <ViewSimulatorSelector />
                   )}
 
@@ -927,8 +934,8 @@ export default function LayoutShell({
                   </span>
                 )}
 
-                {/* Encart réservé Administration Technique (Super-Admin / Mestres réels) */}
-                {isSystemOrSuperAdminOrMestre && (
+                {/* Encart réservé Administration Technique (Super-Admin / Mestres réels ou simulation active) */}
+                {canUseViewSimulator && (
                   <div className="w-full mt-2 p-2 bg-amber-500/10 border-2 border-dashed border-amber-800/40 rounded-[6px_9px_5px_8px] flex flex-col gap-1.5 text-left">
                     <span className="text-[8px] font-black uppercase tracking-widest text-amber-950/80">
                       🛠️ Administration technique

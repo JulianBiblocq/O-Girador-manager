@@ -72,9 +72,11 @@ export function ViewSimulatorProvider({ children, realProfileData, tagsDisponibl
     // 1. Simulation par adhérent précis (adopte son identité, ses tags et son rôle réel)
     if (simulationTarget.type === 'user' && simulationTarget.simulatedUser) {
       const u = simulationTarget.simulatedUser;
+      const targetId = u.id || u.uid || 'simulated-user';
       return {
         ...realProfileData,
-        uid: u.id || u.uid || 'simulated-user',
+        id: targetId,
+        uid: targetId,
         prenom: u.prenom || 'Membre',
         nom: u.nom || 'Simulé',
         surnom: u.surnom || '',
@@ -88,7 +90,9 @@ export function ViewSimulatorProvider({ children, realProfileData, tagsDisponibl
         pupitrePrincipal: u.pupitrePrincipal || u.instrumentPrincipal || '',
         isSystemAdmin: false, // Sécurité : JAMAIS d'accès admin système en simulation
         isNew: false,
-        onboardingCompleted: true
+        onboardingCompleted: true,
+        isSimulated: true,
+        permissions: u.permissions || null
       };
     }
 
@@ -96,6 +100,7 @@ export function ViewSimulatorProvider({ children, realProfileData, tagsDisponibl
     if (simulationTarget.type === 'tag') {
       return {
         ...realProfileData,
+        id: 'simulated-tag-user',
         uid: 'simulated-tag-user',
         prenom: 'Vue Badge',
         nom: simulationTarget.label || 'Étiquette',
@@ -106,13 +111,16 @@ export function ViewSimulatorProvider({ children, realProfileData, tagsDisponibl
         instrumentPrincipal: 'Pupitre simulé',
         isSystemAdmin: false,
         isNew: false,
-        onboardingCompleted: true
+        onboardingCompleted: true,
+        isSimulated: true,
+        permissions: null
       };
     }
 
     // 3. Simulation Adhérent standard (aucun badge, rôle membre de base)
     return {
       ...realProfileData,
+      id: 'simulated-standard-user',
       uid: 'simulated-standard-user',
       prenom: 'Adhérent',
       nom: 'Standard',
@@ -123,7 +131,9 @@ export function ViewSimulatorProvider({ children, realProfileData, tagsDisponibl
       instrumentPrincipal: 'Pupitre',
       isSystemAdmin: false,
       isNew: false,
-      onboardingCompleted: true
+      onboardingCompleted: true,
+      isSimulated: true,
+      permissions: null
     };
   }, [isSimulating, simulationTarget, realProfileData]);
 

@@ -47,6 +47,8 @@ export function matchesAllowedKeyword(tagString, keyword) {
  */
 export function isSuperAdminProfile(profileData) {
   if (!profileData) return false;
+  // En mode simulation, le statut de Super-Administrateur racine est strictement désactivé
+  if (profileData.isSimulated === true) return false;
   const role = (profileData.role || '').toLowerCase();
   return (
     profileData.isSystemAdmin === true ||
@@ -447,13 +449,15 @@ export function canAccessPole(poleId, profileData, permissionsMatrice = null, ef
     return true;
   }
 
-  // Rôle Administrateur ou Bureau de l'association, ou Fondateur
+  // Rôle Administrateur ou Bureau de l'association, ou Fondateur (ignoré en simulation)
   const systemRole = (profileData.role || '').toLowerCase();
   if (
     systemRole === 'admin' ||
     systemRole === 'bureau' ||
-    profileData.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
-    profileData.id === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1'
+    (!profileData.isSimulated && (
+      profileData.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
+      profileData.id === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1'
+    ))
   ) {
     return true;
   }
@@ -532,13 +536,15 @@ export function canAccessTabPermission(tabId, poleIdOrProfile, profileDataArg = 
     return true;
   }
 
-  // Rôle Administrateur ou Bureau de l'association, ou Fondateur
+  // Rôle Administrateur ou Bureau de l'association, ou Fondateur (ignoré en simulation)
   const systemRole = (profileData.role || '').toLowerCase();
   if (
     systemRole === 'admin' ||
     systemRole === 'bureau' ||
-    profileData.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
-    profileData.id === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1'
+    (!profileData.isSimulated && (
+      profileData.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
+      profileData.id === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1'
+    ))
   ) {
     return true;
   }
@@ -968,15 +974,17 @@ export function canPublishAnnonces(profileData, permissionsMatrice = null, effec
     return true;
   }
 
-  // 3. Rôles directeurs par défaut (Mestre, Super-Admin, Admin ou Bureau)
+  // 3. Rôles directeurs par défaut (Mestre, Super-Admin, Admin ou Bureau, ignoré pour fondateur en simulation)
   const systemRole = (profileData.role || '').toLowerCase();
   if (
     systemRole === 'mestre' ||
     systemRole === 'super-admin' ||
     systemRole === 'admin' ||
     systemRole === 'bureau' ||
-    profileData.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
-    profileData.id === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1'
+    (!profileData.isSimulated && (
+      profileData.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
+      profileData.id === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1'
+    ))
   ) {
     return true;
   }

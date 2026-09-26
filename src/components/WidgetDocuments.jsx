@@ -16,6 +16,7 @@ import useVaralData, { DEFAULT_VARAL_CATEGORIES, DEFAULT_POLE_ROPES } from '../h
 import { isWorkshopVirtualDoc } from '../utils/workshopProjectionUtils';
 import { useTranslation } from './LanguageContext';
 import useHardwareBack from '../hooks/useHardwareBack';
+import { useViewSimulator } from '../context/ViewSimulatorContext';
 
 // Réexport des constantes pour garantir une compatibilité descendante absolue
 export { DEFAULT_VARAL_CATEGORIES, DEFAULT_POLE_ROPES };
@@ -38,6 +39,13 @@ export default function WidgetDocuments({
 }) {
   const { t } = useTranslation();
 
+  const { isSimulating, effectiveProfile, effectiveUserTags } = useViewSimulator();
+  const activeProfile = isSimulating && effectiveProfile ? effectiveProfile : profileData;
+  const activeRole = isSimulating && effectiveProfile ? (effectiveProfile.role || 'membre') : role;
+  const activeIsSystemAdmin = isSimulating && effectiveProfile ? Boolean(effectiveProfile.isSystemAdmin) : isSystemAdmin;
+  const activeUserTags = isSimulating && effectiveUserTags ? effectiveUserTags : userTags;
+  const activeCanWrite = isSimulating ? false : canWrite;
+
   // Consommation du custom hook centralisant les flux Firestore et les mutations du Varal
   const {
     varalCategories,
@@ -59,11 +67,11 @@ export default function WidgetDocuments({
   } = useVaralData({
     groupId,
     poleId,
-    userTags,
-    profileData,
-    role,
-    isSystemAdmin,
-    canWrite
+    userTags: activeUserTags,
+    profileData: activeProfile,
+    role: activeRole,
+    isSystemAdmin: activeIsSystemAdmin,
+    canWrite: activeCanWrite
   });
 
   // Filtrage intelligent des cordes avant le rendu selon les règles de visibilité

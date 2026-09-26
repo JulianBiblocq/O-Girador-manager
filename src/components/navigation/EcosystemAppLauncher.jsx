@@ -213,8 +213,12 @@ export default function EcosystemAppLauncher({ urls, associationData, className 
     }
   };
 
+  // Détection des directives de disposition externes pour éviter les conflits CSS (ex: masquage mobile)
+  const hasDisplayOverride = className.includes('hidden') || className.includes('block') || className.includes('flex');
+  const displayClass = hasDisplayOverride ? '' : 'inline-block';
+
   return (
-    <div className={`relative inline-block ${className}`}>
+    <div className={`relative ${displayClass} ${className}`.trim()}>
       {/* Bouton déclencheur Gaufrier avec cible tactile minimale 38x38 */}
       <button
         ref={buttonRef}

@@ -33,12 +33,16 @@ import { formatTagGender, filterUserAssignedTags } from '../utils/tagUtils';
 import { getInstrumentIconPath } from '../utils/instrumentUtils';
 
 import { generateImageCharterPDF, generateMedicalAttestationPDF } from '../utils/pdfGenerator';
+import { useViewSimulator } from '../context/ViewSimulatorContext';
 
 export default function UserProfile({ user, profileData, associationName, onBack, onNavigateToTuto }) {
   const { t, locale } = useTranslation();
   const { tRole } = useTerminologie();
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [showQrScanner, setShowQrScanner] = useState(false);
+
+  const { isSimulating, effectiveProfile } = useViewSimulator();
+  const currentProfile = isSimulating && effectiveProfile ? effectiveProfile : profileData;
 
   const {
     isEditing,
@@ -73,11 +77,11 @@ export default function UserProfile({ user, profileData, associationName, onBack
     handleSave,
     handleDisconnect,
     handleForceUpdate
-  } = useUserProfile(user, profileData, t);
+  } = useUserProfile(user, currentProfile, t);
 
-  const visibleTags = filterUserAssignedTags(profileData?.tags, tagsDisponibles);
+  const visibleTags = filterUserAssignedTags(currentProfile?.tags, tagsDisponibles);
 
-  const fullName = `${profileData?.prenom || ''} ${profileData?.nom || ''}`;
+  const fullName = `${currentProfile?.prenom || ''} ${currentProfile?.nom || ''}`;
 
   const translate = (key, fallback) => {
     const val = t(key);

@@ -26,6 +26,7 @@ import { canManageEvents } from '../utils/permissionUtils';
 import { resolveEffectiveUserTags } from '../utils/tagUtils';
 import { formatLocationShort } from '../utils/locationUtils';
 import useHardwareBack from '../hooks/useHardwareBack';
+import { useViewSimulator } from '../context/ViewSimulatorContext';
 import { calculateRoadDistance } from '../utils/googleMaps';
 
 const formatDateWithDay = (dateStr, includeYear = true, locale = 'fr') => {
@@ -288,13 +289,18 @@ export default function WidgetAgenda({
   const [permissionsMatrice, setPermissionsMatrice] = useState(null);
   const [tagsDisponibles, setTagsDisponibles] = useState([]);
 
+  // Consommation du simulateur de vue
+  const { isSimulating, effectiveProfile, effectiveUserTags: simTags } = useViewSimulator();
+  const currentProfile = isSimulating && effectiveProfile ? effectiveProfile : (profileData || { role, isSystemAdmin, groupId });
+
   const effectiveUserTags = useMemo(() => {
-    return resolveEffectiveUserTags(profileData?.tags || [], tagsDisponibles);
-  }, [profileData?.tags, tagsDisponibles]);
+    if (isSimulating && simTags && simTags.length > 0) return simTags;
+    return resolveEffectiveUserTags(currentProfile?.tags || [], tagsDisponibles);
+  }, [isSimulating, simTags, currentProfile?.tags, tagsDisponibles]);
 
   const isAuthorized = useMemo(() => {
-    return canManageEvents(profileData || { role, isSystemAdmin }, permissionsMatrice, effectiveUserTags);
-  }, [profileData, role, isSystemAdmin, permissionsMatrice, effectiveUserTags]);
+    return canManageEvents(currentProfile, permissionsMatrice, effectiveUserTags);
+  }, [currentProfile, permissionsMatrice, effectiveUserTags]);
 
   // Écoute de la passerelle Établi -> Agenda pour pré-remplir la création d'un atelier
   useEffect(() => {
