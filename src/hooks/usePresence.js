@@ -1,56 +1,71 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { doc, updateDoc, collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 
-export function usePresence(userId, groupId, isPresenceEnabled = true, afficherEnLigne = true) {
-  const [onlineMembers, setOnlineMembers] = useState([]);
-  const [onlineCount, setOnlineCount] = useState(0);
+// Intervalle d'émission du battement de cœur de l'utilisateur actif (2 min 30 s)
+const HEARTBEAT_INTERVAL_MS = 2.5 * 60 * 1000;
 
-  // 1. Gestion du statut de présence de l'utilisateur avec optimisation stricte des quotas Firestore
+// Seuil d'inactivité au-delà duquel un membre est considéré hors ligne (5 minutes)
+const ONLINE_TIMEOUT_MS = 5 * 60 * 1000;
+
+// Fréquence d'évaluation locale du statut d'expiration (en mémoire, zéro requête réseau)
+const LOCAL_TICK_INTERVAL_MS = 30 * 1000;
+
+/**
+ * Hook de présence en temps réel (< 160 lignes)
+ * Gère le statut de l'utilisateur connecté et écoute les membres en ligne
+ * avec filtrage strict par horodatage d'activité récente (TTL 5 minutes).
+ */
+export function usePresence(userId, groupId, isPresenceEnabled = true, afficherEnLigne = true, isAdmin = false) {
+  const [rawOnlineDocs, setRawOnlineDocs] = useState([]);
+  const [now, setNow] = useState(Date.now());
+  const cleanedIdsRef = useRef(new Set());
+
+  // 1. Ticker local d'expiration en mémoire : recalcul toutes les 30s sans aucun appel réseau Firestore
   useEffect(() => {
-    // Si la présence est désactivée globalement par l'association ou si userId est absent,
-    // ne pas écrire sur Firestore et ne pas attacher d'écouteurs.
+    const timer = setInterval(() => {
+      setNow(Date.now());
+    }, LOCAL_TICK_INTERVAL_MS);
+    return () => clearInterval(timer);
+  }, []);
+
+  // 2. Gestion du statut de présence de l'utilisateur connecté (heartbeat et visibilité)
+  useEffect(() => {
     if (!userId || !isPresenceEnabled) return;
 
     const userRef = doc(db, 'users', userId);
 
     const updateStatus = (isOnlineStatus) => {
-      // Si l'utilisateur n'est plus connecté ou si la session a expiré, ne pas tenter l'écriture
       if (!auth.currentUser || auth.currentUser.uid !== userId) return;
 
       updateDoc(userRef, {
         isOnline: isOnlineStatus,
         lastActive: new Date().toISOString()
       }).catch(err => {
-        // Ignorer silencieusement si la déconnexion a déjà invalidé les permissions
         if (err?.code !== 'permission-denied') {
           console.error("usePresence - Erreur de mise à jour du statut :", err);
         }
       });
     };
 
-    // Si l'utilisateur a désactivé sa visibilité en ligne (mode discret)
     if (afficherEnLigne === false) {
-      // Déclencher immédiatement un passage à isOnline: false sur Firestore pour le compte
       updateStatus(false);
-      // Stopper l'émission du heartbeat et ne pas enregistrer d'écouteurs de visibilité
       return () => {
         updateStatus(false);
       };
     }
 
-    // Marquer en ligne lorsque le composant est monté et que l'utilisateur est actif
+    // Marquer l'utilisateur en ligne dès la connexion
     updateStatus(true);
 
-    // Heartbeat : rafraîchir lastActive toutes les 8 minutes si le document est visible
-    const HEARTBEAT_INTERVAL = 8 * 60 * 1000; // 8 minutes
+    // Heartbeat : rafraîchir l'horodatage si l'onglet est actif
     const heartbeatTimer = setInterval(() => {
       if (document.visibilityState === 'visible') {
         updateStatus(true);
       }
-    }, HEARTBEAT_INTERVAL);
+    }, HEARTBEAT_INTERVAL_MS);
 
-    // Gérer le changement de visibilité de l'onglet
+    // Détection immédiate du masquage ou de la fermeture de l'onglet
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         updateStatus(true);
@@ -59,7 +74,6 @@ export function usePresence(userId, groupId, isPresenceEnabled = true, afficherE
       }
     };
 
-    // Gérer la fermeture ou déchargement de la page
     const handleUnload = () => {
       updateStatus(false);
     };
@@ -68,7 +82,6 @@ export function usePresence(userId, groupId, isPresenceEnabled = true, afficherE
     window.addEventListener('beforeunload', handleUnload);
     window.addEventListener('pagehide', handleUnload);
 
-    // Nettoyage des écouteurs et du timer de battement de cœur lors du démontage
     return () => {
       clearInterval(heartbeatTimer);
       window.removeEventListener('visibilitychange', handleVisibilityChange);
@@ -78,13 +91,10 @@ export function usePresence(userId, groupId, isPresenceEnabled = true, afficherE
     };
   }, [userId, isPresenceEnabled, afficherEnLigne]);
 
-  // 2. Écoute en temps réel des membres en ligne du groupe (maintien de l'écoute en lecture)
+  // 3. Écoute en temps réel des documents Firestore avec isOnline == true
   useEffect(() => {
-    // Si la présence est désactivée par l'association ou si le groupe est absent,
-    // réinitialiser immédiatement l'état et ne pas déclencher d'écouteur Firestore.
     if (!groupId || !isPresenceEnabled) {
-      setOnlineMembers([]);
-      setOnlineCount(0);
+      setRawOnlineDocs([]);
       return;
     }
 
@@ -96,25 +106,50 @@ export function usePresence(userId, groupId, isPresenceEnabled = true, afficherE
     );
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const activeMembers = [];
+      const docs = [];
       querySnapshot.forEach((docSnap) => {
-        activeMembers.push({
+        docs.push({
           id: docSnap.id,
           ...docSnap.data()
         });
       });
-
-      // Tri alphabétique par prénom
-      activeMembers.sort((a, b) => (a.prenom || '').localeCompare(b.prenom || ''));
-
-      setOnlineMembers(activeMembers);
-      setOnlineCount(activeMembers.length);
+      setRawOnlineDocs(docs);
     }, (err) => {
       console.error("usePresence - Erreur d'écoute des membres en ligne :", err);
     });
 
     return () => unsubscribe();
   }, [groupId, isPresenceEnabled]);
+
+  // 4. Filtrage dynamique et auto-nettoyage des statuts périmés (TTL 5 minutes)
+  const onlineMembers = useMemo(() => {
+    if (!isPresenceEnabled || !groupId) return [];
+
+    return rawOnlineDocs
+      .filter((member) => {
+        if (member.afficherEnLigne === false) return false;
+        if (member.isOnline !== true) return false;
+        if (!member.lastActive) return false;
+
+        const lastActiveTime = new Date(member.lastActive).getTime();
+        if (isNaN(lastActiveTime)) return false;
+
+        const isFresh = (now - lastActiveTime) <= ONLINE_TIMEOUT_MS;
+
+        // Auto-nettoyage opportuniste dans Firestore si l'utilisateur est admin et le statut périmé (> 15 min)
+        if (!isFresh && isAdmin && (now - lastActiveTime > 15 * 60 * 1000)) {
+          if (!cleanedIdsRef.current.has(member.id)) {
+            cleanedIdsRef.current.add(member.id);
+            updateDoc(doc(db, 'users', member.id), { isOnline: false }).catch(() => {});
+          }
+        }
+
+        return isFresh;
+      })
+      .sort((a, b) => (a.prenom || '').localeCompare(b.prenom || ''));
+  }, [rawOnlineDocs, now, isPresenceEnabled, groupId, isAdmin]);
+
+  const onlineCount = onlineMembers.length;
 
   return { onlineMembers, onlineCount };
 }

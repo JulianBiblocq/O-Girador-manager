@@ -133,13 +133,6 @@ export default function LayoutShell({
   // Garde-fou 1 : Isolation du Break-Glass (forcé à false en mode simulation pour ne pas fausser le test)
   const effectiveBreakGlassActive = isSimulating ? false : breakGlassActive;
 
-  const isPresenceEnabled = activerPresenceEnLigne !== false;
-  const currentUserId = currentProfile?.uid || currentProfile?.id;
-  const currentGroupId = currentProfile?.groupId;
-  const afficherEnLigne = currentProfile?.afficherEnLigne !== false;
-  const { onlineMembers, onlineCount } = usePresence(currentUserId, currentGroupId, isPresenceEnabled, afficherEnLigne);
-  const onlineUserIds = React.useMemo(() => new Set(onlineMembers.map(m => m.id || m.uid)), [onlineMembers]);
-  
   const isSuperAdmin = Boolean(
     currentProfile?.isSystemAdmin === true || 
     (currentProfile?.role || '').toLowerCase() === 'super-admin' || 
@@ -148,6 +141,13 @@ export default function LayoutShell({
     currentProfile?.id === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1'
   );
   const isSystemOrSuperAdminOrMestre = isSuperAdmin || currentProfile?.role === 'mestre';
+
+  const isPresenceEnabled = activerPresenceEnLigne !== false;
+  const currentUserId = currentProfile?.uid || currentProfile?.id;
+  const currentGroupId = currentProfile?.groupId;
+  const afficherEnLigne = currentProfile?.afficherEnLigne !== false;
+  const { onlineMembers, onlineCount } = usePresence(currentUserId, currentGroupId, isPresenceEnabled, afficherEnLigne, isSystemOrSuperAdminOrMestre);
+  const onlineUserIds = React.useMemo(() => new Set(onlineMembers.map(m => m.id || m.uid)), [onlineMembers]);
   const isMasterKeyActive = isSuperAdmin && effectiveBreakGlassActive;
   // isPrivileged contrôle l'affichage des boutons inaccessibles avec un cadenas (🔒).
   // Si le mode intervention est inactif ou en simulation, le super-admin subit le même masquage propre que les autres membres.
