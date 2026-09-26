@@ -132,6 +132,7 @@ export default defineConfig({
     })
   ],
   build: {
+    modulePreload: false,
     rollupOptions: {
       output: {
         entryFileNames: 'assets/[name]-[hash].js',
