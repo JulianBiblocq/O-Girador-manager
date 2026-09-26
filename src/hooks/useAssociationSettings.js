@@ -46,7 +46,8 @@ export const DEFAULT_ENABLED_MODULES = {
   monParcoursDanse: true,
   monParcoursChant: true,
   monParcoursAtelier: true,
-  monParcoursCulture: true
+  monParcoursCulture: true,
+  defisEnLigne: false // Désactivé par défaut pour les adhérents standards
 };
 
 export const DEFAULT_ECOSYSTEM_ACCESS = {

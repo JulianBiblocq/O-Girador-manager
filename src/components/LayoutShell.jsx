@@ -43,6 +43,10 @@ import { isDemoMode } from '../demo/demoManager';
 import NotificationCenter from './notifications/NotificationCenter';
 import EcosystemAppLauncher from './navigation/EcosystemAppLauncher';
 import LanguageToggle from './common/LanguageToggle';
+import { useActiveGameRoom } from '../hooks/useActiveGameRoom';
+import { useGameRepertoire } from '../hooks/useGameRepertoire';
+import { isDefisEnLigneEnabled } from '../utils/gameUtils';
+import GameLobbyModal from './games/GameLobbyModal';
 import HeaderBrandTitle from './common/HeaderBrandTitle';
 import { forceUpdateAndClearCache } from '../utils/pwaUtils';
 
@@ -174,6 +178,39 @@ export default function LayoutShell({
     currentProfile?.isSystemAdmin === true ||
     isMasterKeyActive
   );
+
+  // Gestion des Défis multijoueurs (Roda Quiz & Cadavre Exquis)
+  const isDefisAuthorized = isDefisEnLigneEnabled(enabledModules, currentProfile);
+  const {
+    activeRoom: activeLobbyRoom,
+    createRoom: createGameRoom,
+    joinRoom: joinGameRoom,
+    launchRoom: launchGameRoom,
+    advanceToReveal,
+    advanceToNextQuestion,
+    finishGame,
+    submitAnswer,
+    restartLobby,
+    submitChainStep,
+    submitCouncilVote,
+    evaluateRoundResult,
+    advanceToNextRound
+  } = useActiveGameRoom(currentGroupId, isDefisAuthorized);
+
+  const { repertoireList: gameRepertoire, varalList: gameVaral } = useGameRepertoire(currentGroupId, isDefisAuthorized);
+
+  const [activeGameRoomId, setActiveGameRoomId] = useState(null);
+
+  const handleCreateGameRoom = async (theme) => {
+    const roomId = await createGameRoom(theme, currentProfile);
+    setActiveGameRoomId(roomId);
+    return roomId;
+  };
+
+  const handleJoinGameRoom = async (roomId) => {
+    await joinGameRoom(roomId, currentProfile);
+    setActiveGameRoomId(roomId);
+  };
 
   // Écouteur global pour ouvrir/fermer la palette de commande universelle (Ctrl + K / Cmd + K)
   useEffect(() => {
@@ -409,6 +446,17 @@ export default function LayoutShell({
           {/* Actions rapides Mobile : Écosystème, Présence compacte, Notifications & Menu */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <EcosystemAppLauncher urls={urls} associationData={associationData} />
+            {isDefisAuthorized && activeLobbyRoom && (
+              <button
+                type="button"
+                onClick={() => setActiveGameRoomId(activeLobbyRoom.id)}
+                className="animate-pulse inline-flex items-center gap-1 px-2 py-1 min-h-[34px] bg-[var(--color-cordel-vert)] text-white border-2 border-encre-noire rounded-[6px_9px_7px_8px] shadow-[1.5px_1.5px_0px_0px_#181716] text-[10px] font-black uppercase tracking-wider cursor-pointer select-none hover:scale-105 active:scale-95 transition-all"
+                title="Défi ouvert ! Cliquer pour voir la table"
+              >
+                <span>🏆</span>
+                <span className="hidden sm:inline">Défi ouvert</span>
+              </button>
+            )}
             <OnlineStatusWidget 
               onlineMembers={onlineMembers} 
               onlineCount={onlineCount} 
@@ -417,6 +465,11 @@ export default function LayoutShell({
               currentUserId={currentUserId}
               currentUserProfile={currentProfile}
               onStartDirectChat={onStartDirectChat}
+              activeLobbyRoom={activeLobbyRoom}
+              onOpenLobby={(roomId) => setActiveGameRoomId(roomId)}
+              onCreateRoom={handleCreateGameRoom}
+              onJoinRoom={handleJoinGameRoom}
+              isDefisAuthorized={isDefisAuthorized}
             />
             <NotificationCenter 
               currentUser={currentProfile}
@@ -747,6 +800,21 @@ export default function LayoutShell({
                     <span className="text-[9.5px] font-mono opacity-60 bg-encre-noire/10 px-1 py-0.5 rounded hidden xl:inline">Ctrl K</span>
                   </button>
 
+                  {isDefisAuthorized && activeLobbyRoom && (
+                    <button
+                      type="button"
+                      onClick={() => setActiveGameRoomId(activeLobbyRoom.id)}
+                      className="animate-bounce inline-flex items-center gap-1.5 px-2.5 py-1 min-h-[34px] bg-[var(--color-cordel-vert)] text-white border-2 border-encre-noire rounded-[6px_9px_7px_8px] shadow-[1.5px_1.5px_0px_0px_#181716] text-[10px] font-black uppercase tracking-wider cursor-pointer select-none hover:scale-105 active:scale-95 transition-all"
+                      title="Défi ouvert ! Cliquer pour rejoindre la table"
+                    >
+                      <span className="text-xs">🏆</span>
+                      <span>Défi ouvert</span>
+                      <span className="bg-white/20 text-white text-[9px] px-1.5 py-0.2 rounded-full font-mono">
+                        {Object.keys(activeLobbyRoom.players || {}).length}/4
+                      </span>
+                    </button>
+                  )}
+
                   <OnlineStatusWidget 
                     onlineMembers={onlineMembers} 
                     onlineCount={onlineCount} 
@@ -754,6 +822,11 @@ export default function LayoutShell({
                     currentUserId={currentUserId}
                     currentUserProfile={currentProfile}
                     onStartDirectChat={onStartDirectChat}
+                    activeLobbyRoom={activeLobbyRoom}
+                    onOpenLobby={(roomId) => setActiveGameRoomId(roomId)}
+                    onCreateRoom={handleCreateGameRoom}
+                    onJoinRoom={handleJoinGameRoom}
+                    isDefisAuthorized={isDefisAuthorized}
                   />
 
                   <NotificationCenter 
@@ -832,6 +905,21 @@ export default function LayoutShell({
                     <span className="text-[9.5px] font-mono opacity-60 bg-encre-noire/10 px-1 py-0.5 rounded hidden xl:inline">Ctrl K</span>
                   </button>
 
+                  {isDefisAuthorized && activeLobbyRoom && (
+                    <button
+                      type="button"
+                      onClick={() => setActiveGameRoomId(activeLobbyRoom.id)}
+                      className="animate-bounce inline-flex items-center gap-1.5 px-2.5 py-1 min-h-[34px] bg-[var(--color-cordel-vert)] text-white border-2 border-encre-noire rounded-[6px_9px_7px_8px] shadow-[1.5px_1.5px_0px_0px_#181716] text-[10px] font-black uppercase tracking-wider cursor-pointer select-none hover:scale-105 active:scale-95 transition-all"
+                      title="Défi ouvert ! Cliquer pour rejoindre la table"
+                    >
+                      <span className="text-xs">🏆</span>
+                      <span>Défi ouvert</span>
+                      <span className="bg-white/20 text-white text-[9px] px-1.5 py-0.2 rounded-full font-mono">
+                        {Object.keys(activeLobbyRoom.players || {}).length}/4
+                      </span>
+                    </button>
+                  )}
+
                   <OnlineStatusWidget 
                     onlineMembers={onlineMembers} 
                     onlineCount={onlineCount} 
@@ -839,6 +927,11 @@ export default function LayoutShell({
                     currentUserId={currentUserId}
                     currentUserProfile={currentProfile}
                     onStartDirectChat={onStartDirectChat}
+                    activeLobbyRoom={activeLobbyRoom}
+                    onOpenLobby={(roomId) => setActiveGameRoomId(roomId)}
+                    onCreateRoom={handleCreateGameRoom}
+                    onJoinRoom={handleJoinGameRoom}
+                    isDefisAuthorized={isDefisAuthorized}
                   />
 
                   <NotificationCenter 
@@ -1225,6 +1318,27 @@ export default function LayoutShell({
         profileData={profileData}
         associationName={associationName}
       />
+
+      {/* Modale de la Salle d'Attente Multijoueur (Lobby), Arène et Podium */}
+      {activeGameRoomId && (
+        <GameLobbyModal
+          roomId={activeGameRoomId}
+          profileData={currentProfile}
+          onClose={() => setActiveGameRoomId(null)}
+          onLaunchRoom={(rId, theme) => launchGameRoom(rId, theme, { repertoire: gameRepertoire, varalList: gameVaral })}
+          onAdvanceReveal={advanceToReveal}
+          onNextQuestion={advanceToNextQuestion}
+          onFinishGame={finishGame}
+          onSubmitAnswer={submitAnswer}
+          onRestartLobby={restartLobby}
+          repertoireList={gameRepertoire}
+          varalList={gameVaral}
+          onSubmitChainStep={submitChainStep}
+          onSubmitCouncilVote={submitCouncilVote}
+          onEvaluateRoundResult={evaluateRoundResult}
+          onAdvanceToNextRound={advanceToNextRound}
+        />
+      )}
     </div>
   );
 }

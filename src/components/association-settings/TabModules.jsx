@@ -69,6 +69,12 @@ const MODULES_CONFIG = [
     icon: '🥁',
     title: 'Espace Mestre & Direction Artistique',
     desc: 'Activer le séquenceur, le plan de scène et l\'espace pédagogique du Mestre.'
+  },
+  {
+    key: 'defisEnLigne',
+    icon: '🏆',
+    title: '🏆 Défis & Quiz en direct (Multijoueur)',
+    desc: 'Activer le salon multijoueur en temps réel : la Roda Quiz (Défis Rythme et Culture).'
   }
 ];
 
@@ -141,7 +147,9 @@ export default function TabModules({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-left">
         {MODULES_CONFIG.map((mod) => {
-          const isEnabled = enabledModules[mod.key] !== false;
+          const isEnabled = mod.key === 'defisEnLigne'
+            ? enabledModules[mod.key] === true
+            : enabledModules[mod.key] !== false;
 
           return (
             <div 

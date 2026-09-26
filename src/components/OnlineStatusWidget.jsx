@@ -4,10 +4,13 @@ import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { usePresenceContext } from '../context/PresenceContext';
 import OnlineMemberItem from './presence/OnlineMemberItem';
+import GameThemeSelectorModal from './games/GameThemeSelectorModal';
+import { formatThemeTitle, formatThemeIcon } from '../utils/gameUtils';
 
 /**
  * Widget de statut de présence affichant le nombre de membres en ligne
- * et ouvrant une modale détaillée avec commutateur de visibilité individuelle (Visible / Discret).
+ * et ouvrant une modale détaillée avec commutateur de visibilité individuelle (Visible / Discret)
+ * et passerelle vers les Défis multijoueurs (Roda Quiz).
  */
 export default function OnlineStatusWidget({ 
   onlineMembers = [], 
@@ -18,9 +21,16 @@ export default function OnlineStatusWidget({
   currentUserId = null,
   currentUserProfile = null,
   onStartDirectChat = null,
-  onToggleVisibility = null
+  onToggleVisibility = null,
+  activeLobbyRoom = null,
+  onOpenLobby = null,
+  onCreateRoom = null,
+  onJoinRoom = null,
+  isDefisAuthorized = false
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [showThemeSelector, setShowThemeSelector] = useState(false);
+  const [isCreatingGame, setIsCreatingGame] = useState(false);
   const context = usePresenceContext();
   const isPresenceEnabled = propIsEnabled !== undefined ? propIsEnabled : context?.isPresenceEnabled;
 
@@ -68,6 +78,37 @@ export default function OnlineStatusWidget({
 
     return list;
   }, [onlineMembers, currentUserId, currentUserProfile]);
+
+  const handleSelectTheme = async (theme) => {
+    if (!onCreateRoom || isCreatingGame) return;
+    setIsCreatingGame(true);
+    try {
+      const roomId = await onCreateRoom(theme);
+      setShowThemeSelector(false);
+      setIsOpen(false);
+      if (onOpenLobby && roomId) {
+        onOpenLobby(roomId);
+      }
+    } catch (err) {
+      console.error('[OnlineStatusWidget] Erreur lors de la création du défi :', err);
+    } finally {
+      setIsCreatingGame(false);
+    }
+  };
+
+  const handleJoinActiveRoom = async (roomId) => {
+    try {
+      if (onJoinRoom) {
+        await onJoinRoom(roomId);
+      }
+      setIsOpen(false);
+      if (onOpenLobby) {
+        onOpenLobby(roomId);
+      }
+    } catch (err) {
+      console.error('[OnlineStatusWidget] Erreur pour rejoindre la table :', err);
+    }
+  };
 
   if (isPresenceEnabled === false) return null;
 
@@ -124,6 +165,66 @@ export default function OnlineStatusWidget({
                 </button>
               </div>
 
+              {/* Section Défis Multijoueurs : Encart de salon ouvert ou Bouton Proposer un défi */}
+              {isDefisAuthorized && (
+                <div className="mb-3 shrink-0">
+                  {activeLobbyRoom ? (
+                    <div className="p-3 bg-cordel-bg-light border-2 border-encre-noire rounded-[6px_9px_7px_8px] shadow-[2px_2px_0px_0px_#181716] flex flex-col gap-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xl select-none">{formatThemeIcon(activeLobbyRoom.theme)}</span>
+                          <div>
+                            <h4 className="text-xs font-black text-encre-noire uppercase tracking-wider">
+                              {formatThemeTitle(activeLobbyRoom.theme)}
+                            </h4>
+                            <span className="text-[9.5px] font-bold text-cordel-master-dark/70">
+                              Hôte : {activeLobbyRoom.hostName} • ({Object.keys(activeLobbyRoom.players || {}).length}/{activeLobbyRoom.maxPlayers || 4} joueurs)
+                            </span>
+                          </div>
+                        </div>
+                        <span className="animate-pulse text-[9px] font-black uppercase text-[var(--color-cordel-vert)] bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300">
+                          ● En attente
+                        </span>
+                      </div>
+
+                      {/* Bouton d'action Rejoindre la table ou Ouvrir le salon */}
+                      {activeLobbyRoom.players && activeLobbyRoom.players[currentUserId] ? (
+                        <CordelButton
+                          variant="primary"
+                          onClick={() => {
+                            setIsOpen(false);
+                            if (onOpenLobby) onOpenLobby(activeLobbyRoom.id);
+                          }}
+                          className="w-full py-1 text-xs font-black uppercase !bg-[var(--color-cordel-vert)] !text-white"
+                        >
+                          🚪 Voir ma table
+                        </CordelButton>
+                      ) : (
+                        <CordelButton
+                          variant="primary"
+                          disabled={Object.keys(activeLobbyRoom.players || {}).length >= (activeLobbyRoom.maxPlayers || 4)}
+                          onClick={() => handleJoinActiveRoom(activeLobbyRoom.id)}
+                          className="w-full py-1 text-xs font-black uppercase !bg-[var(--color-cordel-vert)] !text-white disabled:opacity-50"
+                        >
+                          {Object.keys(activeLobbyRoom.players || {}).length >= (activeLobbyRoom.maxPlayers || 4)
+                            ? 'Table complète (4/4)'
+                            : '🎲 Rejoindre la table'}
+                        </CordelButton>
+                      )}
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setShowThemeSelector(true)}
+                      className="w-full py-2 px-3 bg-cordel-bg-light hover:bg-white text-encre-noire border-2 border-encre-noire rounded-[6px_8px_6px_7px] shadow-[1.5px_1.5px_0px_0px_#181716] flex items-center justify-center gap-2 text-xs font-black uppercase tracking-wider hover:scale-[1.01] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all cursor-pointer"
+                    >
+                      <span className="text-sm">🎲</span>
+                      <span>Proposer un défi</span>
+                    </button>
+                  )}
+                </div>
+              )}
+
               {/* Liste des membres */}
               <div className="overflow-y-auto flex-1 pr-1 flex flex-col gap-2.5 scrollbar-thin">
                 {displayMembers.length === 0 ? (
@@ -167,6 +268,14 @@ export default function OnlineStatusWidget({
         </div>,
         document.body
       )}
+
+      {/* Sélecteur de thème pour initier un défi */}
+      <GameThemeSelectorModal
+        isOpen={showThemeSelector}
+        onClose={() => setShowThemeSelector(false)}
+        onSelectTheme={handleSelectTheme}
+        isCreating={isCreatingGame}
+      />
     </>
   );
 }

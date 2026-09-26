@@ -26,6 +26,8 @@ import {
 import { calculatePauseTimes } from '../../utils/reflexGameUtils';
 import { launchTrainingStage } from '../../utils/trainingLauncher';
 import { normalizeString } from '../../utils/repertoireMatcher';
+import GameStatsCard from '../games/GameStatsCard';
+import { isDefisEnLigneEnabled } from '../../utils/gameUtils';
 
 // Icône catégorielle pour les fiches culture (xilo-gravure SVG)
 export const CultureCategoryIcon = ({ docItem }) => {
@@ -256,6 +258,7 @@ export default function MonCarnetAisance({
   profileData
 }) {
   const { nomenclature: groupNomenclature } = useGroupNomenclature(profileData?.groupId);
+  const isDefisAuthorized = isDefisEnLigneEnabled(enabledModules, profileData);
 
   // Niveaux de confort (barème à 4 paliers)
   const comfortLevels = [
@@ -592,6 +595,14 @@ export default function MonCarnetAisance({
       {/* ================================================================ */}
       {activeSubTab === 'defis' && (
         <div className="flex flex-col gap-5">
+          {/* Encart Statistiques des Défis Multijoueurs (Roda Quiz) */}
+          {isDefisAuthorized && (
+            <GameStatsCard
+              userId={profileData?.uid || profileData?.id}
+              groupId={profileData?.groupId}
+            />
+          )}
+
           <div className="bg-[var(--color-cordel-ocre,#c05621)]/10 border-l-4 border-[var(--color-cordel-ocre,#c05621)] p-3.5 rounded-r flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow-xs">
             <div>
               <h3 className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
