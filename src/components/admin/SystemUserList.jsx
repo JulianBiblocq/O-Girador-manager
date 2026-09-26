@@ -101,9 +101,20 @@ export default function SystemUserList({
             placeholder="Rechercher un membre par nom ou email..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="theme-input w-full text-sm font-bold py-2 px-3 pl-8"
+            style={{ paddingLeft: '2.5rem', paddingRight: '2rem' }}
+            className="theme-input w-full text-sm font-bold py-2"
           />
-          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 opacity-50">🔍</span>
+          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm opacity-50 pointer-events-none select-none">🔍</span>
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={() => setSearchTerm('')}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-stone-400 hover:text-stone-700 cursor-pointer font-bold"
+              title="Effacer la recherche"
+            >
+              ✕
+            </button>
+          )}
         </div>
         <div className="flex gap-2 shrink-0">
           <button 

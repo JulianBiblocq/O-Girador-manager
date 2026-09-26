@@ -196,16 +196,17 @@ export default function RepertoireCulturePicker({
             onChange={(e) => setSearchTerm(e.target.value)}
             disabled={disabled}
             placeholder="Rechercher une fiche (titre, mot-clé, orixá, histoire...)..."
-            className="theme-input w-full text-xs font-semibold pl-7 pr-7 py-1.5 bg-white border border-encre-noire/30 rounded focus:border-amber-600 focus:outline-none"
+            style={{ paddingLeft: '2.5rem', paddingRight: '2rem' }}
+            className="theme-input w-full text-xs font-semibold py-2 bg-white border border-encre-noire/30 rounded focus:border-amber-600 focus:outline-hidden"
           />
-          <span className="absolute left-2 top-2 text-[11px] text-stone-400 pointer-events-none">
+          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-stone-400 pointer-events-none select-none">
             🔍
           </span>
           {searchTerm && (
             <button
               type="button"
               onClick={() => setSearchTerm('')}
-              className="absolute right-2 top-1.5 text-xs text-stone-400 hover:text-stone-700 cursor-pointer font-bold"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-stone-400 hover:text-stone-700 cursor-pointer font-bold"
               title="Effacer la recherche"
             >
               ✕

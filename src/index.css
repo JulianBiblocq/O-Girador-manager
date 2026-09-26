@@ -1130,29 +1130,10 @@ body.eco-mode #center-afficheur {
   border-radius: 8px 12px 9px 11px;
 }
 
-/* Input Fields */
-.theme-input {
-  border: 2px solid var(--cordel-border);
-  background-color: var(--cordel-master-bg);
-  color: var(--cordel-text);
-  border-radius: 4px 8px 3px 6px;
-  padding: 0.625rem;
-  font-weight: 600;
-  font-size: 0.875rem;
-  transition: border-color 0.2s, background-color 0.2s;
-}
-.theme-input::placeholder {
-  color: var(--cordel-text);
-  opacity: 0.65;
-}
-.theme-input:focus {
-  outline: none;
-  border-color: var(--cordel-wood);
-  background-color: var(--cordel-bg);
-}
-.theme-input option {
-  background-color: var(--cordel-master-bg);
-  color: var(--cordel-text);
+/* Input avec icône de recherche intégrée */
+.theme-input.has-search-icon,
+.theme-input-search {
+  padding-left: 2.5rem !important;
 }
 
 /* Background/Text Variants */
