@@ -73,12 +73,12 @@ export default function YouTubeVideoPickerModal({
   if (!isOpen) return null;
 
   const handlePick = (v) => {
-    if (onSelectVideo) onSelectVideo({ videoId: v.videoId, title: v.title, url: v.url });
+    if (onSelectVideo) onSelectVideo({ videoId: v.videoId, title: v.title, url: v.url, playlistLabel: currentPlaylist?.label || '' });
     if (onClose) onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
       <CordelCard variant="default" useExtremeBorder={true} className="w-full max-w-4xl lg:max-w-5xl max-h-[90vh] flex flex-col bg-cordel-bg p-0 overflow-hidden shadow-2xl">
         <div className="flex items-center justify-between p-3.5 border-b-2 border-dashed border-cordel-master-dark/20 bg-cordel-bg-light shrink-0">
           <div className="flex items-center gap-2">

@@ -23,6 +23,7 @@ import { useRepertoireVaralDocs } from '../../hooks/useRepertoireVaralDocs';
 import { openSequencerWithCrossApp } from '../../utils/sequencerUrlUtils';
 import PieceVideoSection from '../repertoire/PieceVideoSection';
 import BatchAssignVideoModal from '../repertoire/BatchAssignVideoModal';
+import YouTubeVideoPickerModal from '../common/YouTubeVideoPickerModal';
 import { cleanFirestorePayload } from '../../utils/firestoreUtils';
 import {
   buildResolutionDictionaries,
@@ -80,6 +81,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
   const [activeSignalsModalPiece, setActiveSignalsModalPiece] = useState(null);
   const [isBatchVideoModalOpen, setIsBatchVideoModalOpen] = useState(false);
   const [batchVideoInitial, setBatchVideoInitial] = useState(null);
+  const [isGlobalVideoPickerOpen, setIsGlobalVideoPickerOpen] = useState(false);
 
   // Synchronisation & Importation
   const [syncingPieceId, setSyncingPieceId] = useState(null);
@@ -422,6 +424,18 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
               </>
             )}
           </div>
+
+          <CordelButton
+            type="button"
+            variant="default"
+            useExtremeBorder={true}
+            onClick={() => setIsGlobalVideoPickerOpen(true)}
+            className="py-1.5 px-3 text-xs font-black uppercase tracking-wider shrink-0 flex items-center gap-1.5"
+            title="Consulter les playlists YouTube de l'association et piocher des vidéos"
+          >
+            <span>📺</span>
+            <span>Vidéothèque Asso</span>
+          </CordelButton>
 
           <CordelButton
             type="button"
@@ -1114,6 +1128,18 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
         groupId={groupId}
         onSuccess={(count) => {
           showToast(`Vidéo affectée à ${count} morceau${count > 1 ? 'x' : ''} !`);
+        }}
+      />
+
+      {/* Vidéothèque YouTube globale du Répertoire */}
+      <YouTubeVideoPickerModal
+        isOpen={isGlobalVideoPickerOpen}
+        onClose={() => setIsGlobalVideoPickerOpen(false)}
+        groupId={groupId}
+        onSelectVideo={(picked) => {
+          setIsGlobalVideoPickerOpen(false);
+          setBatchVideoInitial({ url: picked.url, titre: picked.title });
+          setIsBatchVideoModalOpen(true);
         }}
       />
 

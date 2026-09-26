@@ -7,6 +7,8 @@ import { XiloClose } from '../XiloIcons';
 import { parseYouTubeMedia } from '../../utils/mediaUrlUtils';
 import VideoInstrumentCheckboxes from '../mestre/VideoInstrumentCheckboxes';
 import { DEFAULT_INSTRUMENTS } from '../../hooks/useAssociationSettings';
+import YouTubeVideoPickerModal from '../common/YouTubeVideoPickerModal';
+import BatchAssignVideoSource from './BatchAssignVideoSource';
 
 /**
  * Modale Cordel d'affectation par lot inversée d'une vidéo vers plusieurs morceaux (< 180 lignes).
@@ -21,6 +23,7 @@ export default function BatchAssignVideoModal({
   const [selectedPieceIds, setSelectedPieceIds] = useState(new Set());
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -34,6 +37,21 @@ export default function BatchAssignVideoModal({
 
   const ytMedia = useMemo(() => parseYouTubeMedia(videoUrl), [videoUrl]);
   const sortedPieces = useMemo(() => [...piecesList].sort((a, b) => (a.titre || '').localeCompare(b.titre || '')), [piecesList]);
+
+  // Remplissage automatique lors du choix d'une vidéo dans la vidéothèque YouTube
+  const handleSelectFromPicker = ({ url, title, playlistLabel }) => {
+    setVideoUrl(url || '');
+    if (title) setVideoTitle(title);
+    if (selectedInstruments.length === 0 && !isLive && playlistLabel) {
+      const plNorm = playlistLabel.toLowerCase();
+      if (plNorm.includes('live') || plNorm.includes('générale') || plNorm.includes('concert') || plNorm.includes('prestation') || plNorm.includes('tous')) {
+        setIsLive(true);
+      } else {
+        const matched = DEFAULT_INSTRUMENTS.filter((inst) => plNorm.includes(inst.toLowerCase()));
+        if (matched.length > 0) setSelectedInstruments(matched);
+      }
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -99,17 +117,14 @@ export default function BatchAssignVideoModal({
         <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3.5 text-left bg-cordel-bg">
           {errorMsg && <div className="p-2.5 bg-red-100 text-red-900 border border-red-300 rounded text-xs font-bold">⚠️ {errorMsg}</div>}
 
-          <div className="p-3 bg-white rounded border border-encre-noire/20 flex gap-3 items-center">
-            {ytMedia?.videoId ? (
-              <img src={`https://img.youtube.com/vi/${ytMedia.videoId}/mqdefault.jpg`} alt="Miniature" className="w-24 aspect-video object-cover rounded border border-encre-noire/30 shrink-0" />
-            ) : (
-              <div className="w-24 aspect-video bg-stone-200 rounded flex items-center justify-center text-xl shrink-0">🎬</div>
-            )}
-            <div className="flex-1 min-w-0 flex flex-col gap-1.5">
-              <input type="text" value={videoTitle} onChange={(e) => setVideoTitle(e.target.value)} placeholder="Titre / libellé de la vidéo (ex: Tuto de base, Captation...)" className="theme-input text-xs font-bold py-1 px-2 bg-[#fdfaf2] border border-encre-noire/30 rounded w-full" />
-              <input type="url" value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="https://www.youtube.com/watch?v=..." className="theme-input text-xs font-mono py-1 px-2 bg-[#fdfaf2] border border-encre-noire/30 rounded w-full" />
-            </div>
-          </div>
+          <BatchAssignVideoSource
+            videoTitle={videoTitle}
+            setVideoTitle={setVideoTitle}
+            videoUrl={videoUrl}
+            setVideoUrl={setVideoUrl}
+            ytMedia={ytMedia}
+            onOpenPicker={() => setIsPickerOpen(true)}
+          />
 
           <div className="p-3 bg-white rounded border border-encre-noire/20 flex flex-col gap-1.5">
             <span className="text-[10px] font-black uppercase text-cordel-wood">1. Pupitres cibles ou Répétition générale</span>
@@ -148,6 +163,15 @@ export default function BatchAssignVideoModal({
           </CordelButton>
         </div>
       </CordelCard>
+
+      {/* Sélecteur de vidéos depuis les playlists de l'association */}
+      <YouTubeVideoPickerModal
+        isOpen={isPickerOpen}
+        onClose={() => setIsPickerOpen(false)}
+        onSelectVideo={handleSelectFromPicker}
+        groupId={groupId}
+        initialPupitre={selectedInstruments[0] || ''}
+      />
     </div>
   );
 }
