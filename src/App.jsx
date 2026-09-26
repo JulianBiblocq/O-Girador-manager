@@ -320,6 +320,9 @@ export default function App() {
     return false;
   });
 
+  const isSystemOrSuperAdminOrMestre = profileData?.isSystemAdmin || profileData?.role === 'super-admin' || profileData?.role === 'mestre';
+  const isMasterKeyActive = isSystemOrSuperAdminOrMestre && breakGlassActive;
+
   const handleToggleBreakGlass = () => {
     setBreakGlassActive(prev => {
       const nextVal = !prev;
@@ -1240,8 +1243,6 @@ export default function App() {
   };
 
   const userTags = resolveEffectiveUserTags(profileData?.tags || [], tagsDisponibles);
-  const isSystemOrSuperAdminOrMestre = profileData?.isSystemAdmin || profileData?.role === 'super-admin' || profileData?.role === 'mestre';
-  const isMasterKeyActive = isSystemOrSuperAdminOrMestre && breakGlassActive;
 
   const [accessDeniedToast, setAccessDeniedToast] = useState(false);
 
