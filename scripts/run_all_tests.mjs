@@ -60,7 +60,8 @@ const testScripts = [
   'scripts/test_varal_ropes_visibility_and_toggle.mjs',
   'scripts/test_mestre_custom_categories_edition_and_sync.mjs',
   'scripts/test_event_rsvp_accordion_and_permissions.mjs',
-  'scripts/test_instrument_icons_resolution.mjs'
+  'scripts/test_instrument_icons_resolution.mjs',
+  'scripts/test_mestre_orientation_custom_categories_robustness.mjs'
 ];
 
 console.log("===============================================================");

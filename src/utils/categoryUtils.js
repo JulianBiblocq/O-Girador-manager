@@ -12,8 +12,8 @@ export const DEFAULT_CUSTOM_CATEGORIES = ['Débutant', 'Confirmé'];
  */
 export function getCategoryName(c) {
   if (!c) return '';
-  if (typeof c === 'object' && c !== null) return c.name || '';
-  return String(c);
+  if (typeof c === 'object' && c !== null) return (c.name || c.label || c.title || '').trim();
+  return String(c).trim();
 }
 
 /**

@@ -5,7 +5,7 @@ import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import XiloAvatar from '../XiloAvatar';
 import { filterPublicPercussionInstruments, computePupitresList, resolvePupitreForInstrument as resolvePupitreCanonical } from '../../utils/tagUtils';
-import { DEFAULT_CUSTOM_CATEGORIES, resolveCategory } from '../../utils/categoryUtils';
+import { DEFAULT_CUSTOM_CATEGORIES, resolveCategory, getCustomCategories, getCategoryName } from '../../utils/categoryUtils';
 import { getVoiceLabel, normalizeGroupNomenclature } from '../../constants/nomenclature';
 import { getInstrumentIconPath } from '../../utils/instrumentUtils';
 
@@ -160,11 +160,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
           setLinkedInstruments([]);
         }
 
-        if (Array.isArray(data.customCategories) && data.customCategories.length > 0) {
-          setCustomCategories(data.customCategories);
-        } else {
-          setCustomCategories(DEFAULT_CUSTOM_CATEGORIES);
-        }
+        setCustomCategories(getCustomCategories(data));
 
         if (data.groupNomenclature) {
           setGroupNomenclature(normalizeGroupNomenclature(data.groupNomenclature));
@@ -578,7 +574,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
 
       // Si c'est un instrument historique, on force le niveau à Confirmé (ou 2ème customCategory)
       if (newInstrument) {
-         const confirmeCategory = customCategories.length > 1 ? customCategories[1] : (customCategories[0] || 'Confirmé');
+         const confirmeCategory = getCategoryName(customCategories.length > 1 ? customCategories[1] : (customCategories[0] || 'Confirmé'));
          updatePayload[`niveauxParInstrument.${newInstrument}`] = confirmeCategory;
       }
 
@@ -1315,9 +1311,12 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                                   className="theme-input text-[10px] py-1 bg-white max-w-[80px]"
                                 >
                                   <option value="aucun">- Niv. -</option>
-                                  {customCategories.map(cat => (
-                                    <option key={`cat-${cat}`} value={cat}>{resolveCategory(cat, customCategories)}</option>
-                                  ))}
+                                  {customCategories.map(cat => {
+                                    const catName = getCategoryName(cat);
+                                    return (
+                                      <option key={`cat-${catName}`} value={catName}>{resolveCategory(catName, customCategories)}</option>
+                                    );
+                                  })}
                                 </select>
                               )}
                             </div>
@@ -1375,9 +1374,12 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                                   className="theme-input text-[10px] py-1 bg-white max-w-[80px]"
                                 >
                                   <option value="aucun">- Niv. -</option>
-                                  {customCategories.map(cat => (
-                                    <option key={`cat-sec-${cat}`} value={cat}>{resolveCategory(cat, customCategories)}</option>
-                                  ))}
+                                  {customCategories.map(cat => {
+                                    const catName = getCategoryName(cat);
+                                    return (
+                                      <option key={`cat-sec-${catName}`} value={catName}>{resolveCategory(catName, customCategories)}</option>
+                                    );
+                                  })}
                                 </select>
                               )}
                             </div>
@@ -1493,9 +1495,12 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                                   className="theme-input text-[10px] py-0.5 bg-white w-full text-cordel-master-dark/80"
                                 >
                                   <option value="aucun">-- Niveau --</option>
-                                  {customCategories.map(cat => (
-                                    <option key={`saison-cat-${cat}`} value={cat}>{resolveCategory(cat, customCategories)}</option>
-                                  ))}
+                                  {customCategories.map(cat => {
+                                    const catName = getCategoryName(cat);
+                                    return (
+                                      <option key={`saison-cat-${catName}`} value={catName}>{resolveCategory(catName, customCategories)}</option>
+                                    );
+                                  })}
                                 </select>
                               )}
 
@@ -1535,9 +1540,17 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                         >
                           <option value="aucun">Non inscrit(e)</option>
                           <option value="debutant">💃 Débutant</option>
-                          {customCategories.filter(cat => cat.toLowerCase().replace(/é/g, 'e') !== 'debutant').map(cat => (
-                            <option key={`danse-${cat}`} value={cat}>💃 {resolveCategory(cat, customCategories)}</option>
-                          ))}
+                          {customCategories
+                            .filter(cat => {
+                              const name = getCategoryName(cat);
+                              return name && name.toLowerCase().replace(/é|è|ê/g, 'e') !== 'debutant';
+                            })
+                            .map(cat => {
+                              const catName = getCategoryName(cat);
+                              return (
+                                <option key={`danse-${catName}`} value={catName}>💃 {resolveCategory(catName, customCategories)}</option>
+                              );
+                            })}
                         </select>
                       </td>
                     </tr>
