@@ -4,6 +4,7 @@ import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import RepertoirePieceModal from './RepertoirePieceModal';
+import RepertoirePieceStatusSelector from './RepertoirePieceStatusSelector';
 import ProgramPieceModal from './ProgramPieceModal';
 import RepertoireVideoModal from './RepertoireVideoModal';
 import SignalZoomModal from './SignalZoomModal';
@@ -595,33 +596,28 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                 key={piece.id}
                 className="border-2 border-encre-noire rounded-[8px_12px_9px_11px] shadow-[2.5px_2.5px_0px_0px_#181716] bg-white p-4 flex flex-col justify-between gap-3 hover:shadow-[3.5px_3.5px_0px_0px_#181716] transition-all text-left"
               >
-                {/* Haut de la carte : Titre & Pastille d'état */}
+                {/* Haut de la carte : Titre & Sélecteur interactif de statut */}
                 <div className="flex flex-col gap-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex flex-col">
-                      <h3 className="font-extrabold text-sm md:text-base text-encre-noire leading-tight">
+                  <div className="flex items-start justify-between gap-2 flex-wrap sm:flex-nowrap">
+                    <div className="flex flex-col min-w-0">
+                      <h3
+                        onClick={() => {
+                          setPieceToEdit(piece);
+                          setIsEditModalOpen(true);
+                        }}
+                        className="font-extrabold text-sm md:text-base text-encre-noire leading-tight cursor-pointer hover:text-cordel-wood hover:underline transition-colors"
+                        title="Cliquer pour ouvrir et modifier la fiche de ce morceau"
+                      >
                         {piece.titre}
                       </h3>
-                      {seasonFilter === 'all' && (
-                        <span className="text-[9.5px] font-black uppercase tracking-wider text-cordel-master-dark/60 mt-0.5">
-                          {piece.statutSaison === 'saison'
-                            ? '🟢 Au programme cette année'
-                            : piece.statutSaison === 'chantier'
-                              ? '🟡 En préparation'
-                              : '⚪ Archives'}
-                        </span>
-                      )}
                     </div>
 
-                    <span
-                      className={`px-2.5 py-0.5 border border-dashed rounded-[4px_6px_3px_5px] font-black uppercase text-[9.5px] shrink-0 ${
-                        isPret
-                          ? 'bg-green-100 text-green-900 border-green-400'
-                          : 'bg-amber-100 text-amber-900 border-amber-400'
-                      }`}
-                    >
-                      {isPret ? '🟢 Validé / Prêt' : '🟡 En chantier'}
-                    </span>
+                    {/* Sélecteur modulaire immédiat : Statut Saison (Au programme / Chantier / Au frigo) + Maturité */}
+                    <RepertoirePieceStatusSelector
+                      piece={piece}
+                      groupId={groupId}
+                      onStatusChange={showToast}
+                    />
                   </div>
 
                   {/* Notes du Mestre */}
@@ -1101,7 +1097,8 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
         onClose={() => setIsEditModalOpen(false)}
         groupId={groupId}
         pieceToEdit={pieceToEdit}
-        piecesList={pieces}
+        piecesList={filteredPieces && filteredPieces.length > 0 ? filteredPieces : pieces}
+        onNavigatePiece={(nextPiece) => setPieceToEdit(nextPiece)}
         onSaveSuccess={(saved) => {
           showToast(`Morceau « ${saved.titre} » enregistré.`);
         }}

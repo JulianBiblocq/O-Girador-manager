@@ -4,13 +4,13 @@ import React from 'react';
  * CordelCard component utilizing theme-agnostic semantic CSS classes
  * for multi-theme architecture capability.
  */
-export default function CordelCard({ 
+const CordelCard = React.forwardRef(function CordelCard({ 
   children, 
   variant = 'default', // 'default', 'ocre', 'vert', 'bleu', 'kraft'
   useExtremeBorder = true, 
   className = '',
   ...props
-}) {
+}, ref) {
   const baseClass = useExtremeBorder 
     ? 'theme-card-extreme' 
     : 'theme-card-standard';
@@ -25,8 +25,10 @@ export default function CordelCard({
   };
 
   return (
-    <div className={`${baseClass} ${bgColors[variant] || bgColors.default} ${className}`} {...props}>
+    <div ref={ref} className={`${baseClass} ${bgColors[variant] || bgColors.default} ${className}`} {...props}>
       {children}
     </div>
   );
-}
+});
+
+export default CordelCard;

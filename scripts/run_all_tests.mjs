@@ -57,7 +57,10 @@ const testScripts = [
   'scripts/test_repertoire_piece_signals.mjs',
   'scripts/test_repertoire_lyrics_and_culture_modals.mjs',
   'scripts/test_repertoire_video_levels_and_varal_gateway.mjs',
-  'scripts/test_varal_ropes_visibility_and_toggle.mjs'
+  'scripts/test_varal_ropes_visibility_and_toggle.mjs',
+  'scripts/test_mestre_custom_categories_edition_and_sync.mjs',
+  'scripts/test_event_rsvp_accordion_and_permissions.mjs',
+  'scripts/test_instrument_icons_resolution.mjs'
 ];
 
 console.log("===============================================================");

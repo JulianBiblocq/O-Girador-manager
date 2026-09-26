@@ -8,20 +8,7 @@ import useHardwareBack from '../../hooks/useHardwareBack';
 import { doc, updateDoc, collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { notifyMembersByTag } from '../../utils/inAppNotificationService';
-
-const getInstrumentIconPath = (instName) => {
-  if (!instName) return '/favicon.svg';
-  const name = instName.toLowerCase().trim();
-  if (name.includes('alfaia')) return '/icones/alfaia.svg';
-  if (name.includes('agbê') || name.includes('agbe') || name.includes('sementes')) return '/icones/agbe.svg';
-  if (name.includes('gonguê') || name.includes('gongue')) return '/icones/gongue.svg';
-  if (name.includes('caixa') || name.includes('tarol') || name.includes('caisse')) return '/icones/caixa.svg';
-  if (name.includes('chant') || name.includes('voix') || name.includes('singer') || name.includes('danse') || name.includes('dance') || name.includes('micro')) return '/icones/micro.svg';
-  if (name.includes('timbal')) return '/icones/timbal.svg';
-  if (name.includes('mineiro')) return '/icones/mineiro.svg';
-  if (name.includes('apito') || name.includes('mestre') || name.includes('chef')) return '/icones/apito.svg';
-  return '/favicon.svg';
-};
+import { getInstrumentIconPath } from '../../utils/instrumentUtils';
 
 /**
  * UserMateriel Component

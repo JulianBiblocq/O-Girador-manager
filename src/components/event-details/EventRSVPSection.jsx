@@ -6,6 +6,8 @@ import Tooltip from '../Tooltip';
 import { XiloMegaphone } from '../XiloIcons';
 import { useInstrumentColor } from '../../hooks/useInstrumentColor';
 import EventTransportSelector from './EventTransportSelector';
+import RSVPAccordionSection from './RSVPAccordionSection';
+import { getInstrumentIconPath } from '../../utils/instrumentUtils';
 
 export default function EventRSVPSection({
   event,
@@ -76,6 +78,34 @@ export default function EventRSVPSection({
   const [addingInvite, setAddingInvite] = useState(false);
   const [isCalendarMenuOpen, setIsCalendarMenuOpen] = useState(false);
 
+  // État des accordéons de présence réservés aux administrateurs (repliés par défaut)
+  const [expandedSections, setExpandedSections] = useState({
+    absents: false,
+    confirm: false,
+    pending: false,
+    refused: false,
+    unanswered: false,
+    mestreInstruments: false
+  });
+
+  const toggleSection = (sectionKey) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [sectionKey]: !prev[sectionKey]
+    }));
+  };
+
+  const handleToggleAllSections = (expand) => {
+    setExpandedSections({
+      absents: expand,
+      confirm: expand,
+      pending: expand,
+      refused: expand,
+      unanswered: expand,
+      mestreInstruments: expand
+    });
+  };
+
   // Gestion du formulaire de demande de modification transmise au bureau
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   const [requestStatusTarget, setRequestStatusTarget] = useState('present');
@@ -129,20 +159,6 @@ export default function EventRSVPSection({
     } finally {
       setAddingInvite(false);
     }
-  };
-
-  const getInstrumentIconPath = (instName) => {
-    if (!instName) return '/favicon.svg';
-    const name = instName.toLowerCase();
-    if (name.includes('alfaia')) return '/icones/alfaia.svg';
-    if (name.includes('agbê') || name.includes('agbe') || name.includes('sementes')) return '/icones/agbe.svg';
-    if (name.includes('gonguê') || name.includes('gongue')) return '/icones/gongue.svg';
-    if (name.includes('caixa') || name.includes('tarol') || name.includes('caisse')) return '/icones/caixa.svg';
-    if (name.includes('chant') || name.includes('voix') || name.includes('singer') || name.includes('danse') || name.includes('dance')) return '/icones/micro.svg';
-    if (name.includes('timbal')) return '/icones/timbal.svg';
-    if (name.includes('mineiro')) return '/icones/mineiro.svg';
-    if (name.includes('apito') || name.includes('mestre') || name.includes('chef')) return '/icones/apito.svg';
-    return '/favicon.svg';
   };
 
   const renderRSVPForm = () => (
@@ -1091,21 +1107,50 @@ export default function EventRSVPSection({
           </div>
         )}
 
-        {/* Section Absents & À confirmer - Visible universellement pour tous les événements */}
-        <div className="flex flex-col gap-3.5 theme-inner-panel p-3.5 rounded text-xs text-left mt-3">
-          {/* Absents */}
-          <div>
-            <strong className="text-cordel-wood block border-b border-dashed border-[#8b2a1a]/20 pb-0.5 mb-1">
-              ❌ Absents ({(event.inscriptions || []).filter(i => i.status === 'absent').length})
-            </strong>
-            <div className="flex flex-wrap gap-1.5 items-center mt-1">
-              {(event.inscriptions || []).filter(i => i.status === 'absent').map(i => {
-                const userInfo = resolveMemberInfo(i.userId, i.userName);
-                return (
-                  <div key={i.userId} className="inline-flex items-center gap-1.5 bg-white/60 dark:bg-black/20 px-2 py-1 rounded border border-dashed border-encre-noire/10 text-xs font-semibold text-encre-noire">
-                    <XiloAvatar src={userInfo.photoURL} name={i.userName} size={18} />
-                    <span>{i.userName}</span>
-                    {isAuthorized && (
+        {/* Sections d'administration des présences (Absents, À confirmer, Validations, Sans réponse, Instruments Mestre) */}
+        {/* Strictement réservées aux organisateurs et administrateurs du bureau/CA */}
+        {isAuthorized && (
+          <div className="flex flex-col gap-2.5 mt-3 pt-3 border-t-2 border-dashed border-cordel-master-dark/15">
+            {/* Barre de contrôle des accordéons */}
+            <div className="flex items-center justify-between px-1">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-cordel-wood/80">
+                🔒 Suivi Administratif des Présences
+              </span>
+              <div className="flex items-center gap-1.5 text-[9px] font-bold">
+                <button
+                  type="button"
+                  onClick={() => handleToggleAllSections(true)}
+                  className="px-1.5 py-0.5 rounded bg-cordel-bg-light border border-cordel-master-dark/20 hover:bg-stone-200 text-cordel-master-dark cursor-pointer transition-colors"
+                >
+                  ▼ Tout déplier
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleToggleAllSections(false)}
+                  className="px-1.5 py-0.5 rounded bg-cordel-bg-light border border-cordel-master-dark/20 hover:bg-stone-200 text-cordel-master-dark cursor-pointer transition-colors"
+                >
+                  ▲ Tout replier
+                </button>
+              </div>
+            </div>
+
+            {/* 1. Accordéon Absents */}
+            <RSVPAccordionSection
+              title="Absents"
+              count={(event.inscriptions || []).filter(i => i.status === 'absent').length}
+              icon="❌"
+              colorVariant="rouge"
+              isExpanded={expandedSections.absents}
+              onToggle={() => toggleSection('absents')}
+              emptyText="Aucun absent"
+            >
+              <div className="flex flex-wrap gap-1.5 items-center">
+                {(event.inscriptions || []).filter(i => i.status === 'absent').map(i => {
+                  const userInfo = resolveMemberInfo(i.userId, i.userName);
+                  return (
+                    <div key={i.userId} className="inline-flex items-center gap-1.5 bg-white/80 dark:bg-black/40 px-2 py-1 rounded border border-dashed border-encre-noire/10 text-xs font-semibold text-encre-noire">
+                      <XiloAvatar src={userInfo.photoURL} name={i.userName} size={18} />
+                      <span>{i.userName}</span>
                       <div className="flex items-center gap-1 ml-1.5 border-l border-encre-noire/15 pl-1.5">
                         <button
                           type="button"
@@ -1124,30 +1169,33 @@ export default function EventRSVPSection({
                           ✕
                         </button>
                       </div>
-                    )}
-                  </div>
-                );
-              })}
-              {(event.inscriptions || []).filter(i => i.status === 'absent').length === 0 && (
-                <span className="opacity-60 italic">Aucun absent</span>
-              )}
-            </div>
-          </div>
+                    </div>
+                  );
+                })}
+                {(event.inscriptions || []).filter(i => i.status === 'absent').length === 0 && (
+                  <span className="opacity-60 italic">Aucun absent</span>
+                )}
+              </div>
+            </RSVPAccordionSection>
 
-          {/* À confirmer */}
-          {agendaEnableMaybeStatus && (
-            <div>
-              <strong className="text-[var(--color-cordel-ocre)] block border-b border-dashed border-[#c05621]/20 pb-0.5 mb-1">
-                ⏳ À confirmer ({(event.inscriptions || []).filter(i => i.status === 'confirm').length})
-              </strong>
-              <div className="flex flex-wrap gap-1.5 items-center mt-1">
-                {(event.inscriptions || []).filter(i => i.status === 'confirm').map(i => {
-                  const userInfo = resolveMemberInfo(i.userId, i.userName);
-                  return (
-                    <div key={i.userId} className="inline-flex items-center gap-1.5 bg-white/60 dark:bg-black/20 px-2 py-1 rounded border border-dashed border-encre-noire/10 text-xs font-semibold text-encre-noire">
-                      <XiloAvatar src={userInfo.photoURL} name={i.userName} size={18} />
-                      <span>{i.userName}</span>
-                      {isAuthorized && (
+            {/* 2. Accordéon À confirmer (si option activée dans la config) */}
+            {agendaEnableMaybeStatus && (
+              <RSVPAccordionSection
+                title="À confirmer"
+                count={(event.inscriptions || []).filter(i => i.status === 'confirm').length}
+                icon="⏳"
+                colorVariant="ocre"
+                isExpanded={expandedSections.confirm}
+                onToggle={() => toggleSection('confirm')}
+                emptyText="Aucun membre en attente de confirmation"
+              >
+                <div className="flex flex-wrap gap-1.5 items-center">
+                  {(event.inscriptions || []).filter(i => i.status === 'confirm').map(i => {
+                    const userInfo = resolveMemberInfo(i.userId, i.userName);
+                    return (
+                      <div key={i.userId} className="inline-flex items-center gap-1.5 bg-white/80 dark:bg-black/40 px-2 py-1 rounded border border-dashed border-encre-noire/10 text-xs font-semibold text-encre-noire">
+                        <XiloAvatar src={userInfo.photoURL} name={i.userName} size={18} />
+                        <span>{i.userName}</span>
                         <div className="flex items-center gap-1 ml-1.5 border-l border-encre-noire/15 pl-1.5">
                           <button
                             type="button"
@@ -1174,143 +1222,137 @@ export default function EventRSVPSection({
                             ✕
                           </button>
                         </div>
-                      )}
+                      </div>
+                    );
+                  })}
+                  {(event.inscriptions || []).filter(i => i.status === 'confirm').length === 0 && (
+                    <span className="opacity-60 italic">Aucun membre en attente de confirmation</span>
+                  )}
+                </div>
+              </RSVPAccordionSection>
+            )}
+
+            {/* 3. Accordéon En attente de validation */}
+            <RSVPAccordionSection
+              title="En attente de validation"
+              count={(event.inscriptions || []).filter(i => i.status === 'pending').length}
+              icon="⏳"
+              colorVariant="yellow"
+              isExpanded={expandedSections.pending}
+              onToggle={() => toggleSection('pending')}
+              emptyText="Aucune inscription en attente"
+            >
+              <div className="flex flex-wrap gap-1.5 items-center">
+                {(event.inscriptions || []).filter(i => i.status === 'pending').map(i => {
+                  const userInfo = resolveMemberInfo(i.userId, i.userName);
+                  return (
+                    <div key={i.userId} className="inline-flex items-center gap-1.5 bg-white/80 dark:bg-black/40 px-2 py-1 rounded border border-dashed border-yellow-500/40 text-xs font-semibold text-encre-noire">
+                      <XiloAvatar src={userInfo.photoURL} name={i.userName} size={18} />
+                      <span>{i.userName}</span>
+                      <div className="flex items-center gap-1 ml-1.5 border-l border-encre-noire/15 pl-1.5 font-bold">
+                        <button
+                          type="button"
+                          onClick={() => handleValidatePending(i.userId, 'present')}
+                          className="text-[var(--color-cordel-vert)] hover:text-white text-[10px] font-black cursor-pointer px-1.5 py-0.5 bg-[var(--color-cordel-vert)]/10 hover:bg-[var(--color-cordel-vert)] border border-[#2d6a4f]/30 rounded transition-colors"
+                          title="Valider l'inscription"
+                        >
+                          ✓
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleValidatePending(i.userId, 'refused')}
+                          className="text-[var(--theme-primary)] hover:text-white text-[10px] font-black cursor-pointer px-1.5 py-0.5 bg-[var(--theme-primary)]/10 hover:bg-[var(--theme-primary)] border border-[var(--theme-primary)]/30 rounded transition-colors"
+                          title="Refuser l'inscription"
+                        >
+                          ✗
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleManualUnregister(i.userId)}
+                          className="text-[var(--theme-primary)] hover:text-red-900 text-[10px] font-black cursor-pointer ml-1 pl-1 border-l border-encre-noire/15"
+                          title="Désinscrire ce membre"
+                        >
+                          ✕
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
-                {(event.inscriptions || []).filter(i => i.status === 'confirm').length === 0 && (
-                  <span className="opacity-60 italic">Aucun en attente</span>
+                {(event.inscriptions || []).filter(i => i.status === 'pending').length === 0 && (
+                  <span className="opacity-60 italic">Aucune inscription en attente</span>
                 )}
               </div>
-            </div>
-          )}
-        </div>
+            </RSVPAccordionSection>
 
-        {/* Validation section */}
-        {((event.inscriptions || []).some(i => i.status === 'pending' || i.status === 'refused') || isAuthorized) && (
-          <div className="flex flex-col gap-3.5 theme-inner-panel p-3.5 rounded text-xs text-left mt-3.5 border-t border-dashed border-cordel-master-dark/15">
-            {/* Pending validations list */}
-            {((event.inscriptions || []).some(i => i.status === 'pending') || isAuthorized) && (
-              <div>
-                <strong className="text-yellow-600 block border-b border-dashed border-yellow-500/10 pb-0.5 mb-1">
-                  ⏳ En attente de validation ({(event.inscriptions || []).filter(i => i.status === 'pending').length})
-                </strong>
-                <div className="flex flex-wrap gap-1.5 items-center mt-1">
-                  {(event.inscriptions || []).filter(i => i.status === 'pending').map(i => {
-                    const userInfo = resolveMemberInfo(i.userId, i.userName);
-                    return (
-                      <div key={i.userId} className="inline-flex items-center gap-1.5 bg-white/60 dark:bg-black/20 px-2 py-1 rounded border border-dashed border-yellow-500/30 text-xs font-semibold text-encre-noire">
-                        <XiloAvatar src={userInfo.photoURL} name={i.userName} size={18} />
-                        <span>{i.userName}</span>
-                        {isAuthorized && (
-                          <div className="flex items-center gap-1 ml-1.5 border-l border-encre-noire/15 pl-1.5 font-bold">
-                            <button
-                              type="button"
-                              onClick={() => handleValidatePending(i.userId, 'present')}
-                              className="text-[var(--color-cordel-vert)] hover:text-white text-[10px] font-black cursor-pointer px-1.5 py-0.5 bg-[var(--color-cordel-vert)]/10 hover:bg-[var(--color-cordel-vert)] border border-[#2d6a4f]/30 rounded transition-colors"
-                              title="Valider l'inscription"
-                            >
-                              ✓
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleValidatePending(i.userId, 'refused')}
-                              className="text-[var(--theme-primary)] hover:text-white text-[10px] font-black cursor-pointer px-1.5 py-0.5 bg-[var(--theme-primary)]/10 hover:bg-[var(--theme-primary)] border border-[var(--theme-primary)]/30 rounded transition-colors"
-                              title="Refuser l'inscription"
-                            >
-                              ✗
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleManualUnregister(i.userId)}
-                              className="text-[var(--theme-primary)] hover:text-red-900 text-[10px] font-black cursor-pointer ml-1 pl-1 border-l border-encre-noire/15"
-                              title="Désinscrire ce membre"
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        )}
+            {/* 4. Accordéon Inscriptions refusées */}
+            <RSVPAccordionSection
+              title="Inscriptions refusées"
+              count={(event.inscriptions || []).filter(i => i.status === 'refused').length}
+              icon="🚫"
+              colorVariant="neutral"
+              isExpanded={expandedSections.refused}
+              onToggle={() => toggleSection('refused')}
+              emptyText="Aucune inscription refusée"
+            >
+              <div className="flex flex-wrap gap-1.5 items-center">
+                {(event.inscriptions || []).filter(i => i.status === 'refused').map(i => {
+                  const userInfo = resolveMemberInfo(i.userId, i.userName);
+                  return (
+                    <div key={i.userId} className="inline-flex items-center gap-1.5 bg-white/80 dark:bg-black/40 px-2 py-1 rounded border border-dashed border-gray-300 text-xs font-semibold text-encre-noire opacity-70">
+                      <XiloAvatar src={userInfo.photoURL} name={i.userName} size={18} />
+                      <span>{i.userName}</span>
+                      <div className="flex items-center gap-1 ml-1.5 border-l border-encre-noire/15 pl-1.5 font-bold">
+                        <button
+                          type="button"
+                          onClick={() => handleValidatePending(i.userId, 'present')}
+                          className="text-[var(--color-cordel-vert)] hover:text-white text-[10px] font-black cursor-pointer px-1.5 py-0.5 bg-[var(--color-cordel-vert)]/10 hover:bg-[var(--color-cordel-vert)] border border-[#2d6a4f]/30 rounded transition-colors"
+                          title="Valider/Rétablir l'inscription"
+                        >
+                          ✓
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleManualUnregister(i.userId)}
+                          className="text-[var(--theme-primary)] hover:text-red-900 text-[10px] font-black cursor-pointer ml-1.5 border-l border-encre-noire/15 pl-1.5 font-black"
+                          title="Désinscrire ce membre"
+                        >
+                          ✕
+                        </button>
                       </div>
-                    );
-                  })}
-                  {(event.inscriptions || []).filter(i => i.status === 'pending').length === 0 && <span className="opacity-60 italic">Aucun</span>}
-                </div>
+                    </div>
+                  );
+                })}
+                {(event.inscriptions || []).filter(i => i.status === 'refused').length === 0 && (
+                  <span className="opacity-60 italic">Aucune inscription refusée</span>
+                )}
               </div>
-            )}
+            </RSVPAccordionSection>
 
-            {/* Refused registrations list */}
-            {((event.inscriptions || []).some(i => i.status === 'refused') || isAuthorized) && (
-              <div>
-                <strong className="text-gray-600 block border-b border-dashed border-gray-500/10 pb-0.5 mb-1">
-                  🚫 Inscriptions refusées ({(event.inscriptions || []).filter(i => i.status === 'refused').length})
-                </strong>
-                <div className="flex flex-wrap gap-1.5 items-center mt-1">
-                  {(event.inscriptions || []).filter(i => i.status === 'refused').map(i => {
-                    const userInfo = resolveMemberInfo(i.userId, i.userName);
-                    return (
-                      <div key={i.userId} className="inline-flex items-center gap-1.5 bg-white/60 dark:bg-black/20 px-2 py-1 rounded border border-dashed border-gray-300 text-xs font-semibold text-encre-noire opacity-70">
-                        <XiloAvatar src={userInfo.photoURL} name={i.userName} size={18} />
-                        <span>{i.userName}</span>
-                        {isAuthorized && (
-                          <div className="flex items-center gap-1 ml-1.5 border-l border-encre-noire/15 pl-1.5 font-bold">
-                            <button
-                              type="button"
-                              onClick={() => handleValidatePending(i.userId, 'present')}
-                              className="text-[var(--color-cordel-vert)] hover:text-white text-[10px] font-black cursor-pointer px-1.5 py-0.5 bg-[var(--color-cordel-vert)]/10 hover:bg-[var(--color-cordel-vert)] border border-[#2d6a4f]/30 rounded transition-colors"
-                              title="Valider/Rétablir l'inscription"
-                            >
-                              ✓
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleManualUnregister(i.userId)}
-                              className="text-[var(--theme-primary)] hover:text-red-900 text-[10px] font-black cursor-pointer ml-1.5 border-l border-encre-noire/15 pl-1.5 font-black"
-                              title="Désinscrire ce membre"
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                  {(event.inscriptions || []).filter(i => i.status === 'refused').length === 0 && <span className="opacity-60 italic">Aucun</span>}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Section Sans réponse - Membres de l'association n'ayant pas encore voté/répondu */}
-        <div className="flex flex-col gap-3.5 theme-inner-panel p-3.5 rounded text-xs text-left mt-3.5 border-t border-dashed border-cordel-master-dark/15">
-          <div>
-            <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-0.5 mb-1.5">
-              <strong className="text-cordel-master-dark dark:text-cordel-bg-light flex items-center gap-1.5 font-bold">
-                <span>❓</span>
-                <span>Sans réponse ({unansweredUsers?.length || 0})</span>
-              </strong>
-              {unansweredUsers?.length > 0 && (
-                <span className="text-[10px] opacity-60 font-semibold italic">
-                  En attente d'un vote
-                </span>
-              )}
-            </div>
-            <div className="flex flex-wrap gap-1.5 items-center mt-1">
-              {(unansweredUsers || []).map(u => {
-                const name = u.displayNameFormatted || `${u.prenom || ''} ${u.nom || ''}`.trim() || u.email || 'Membre';
-                return (
-                  <div 
-                    key={u.id || u.uid || name} 
-                    className="inline-flex items-center gap-1.5 bg-white/60 dark:bg-black/20 px-2 py-1 rounded border border-dashed border-encre-noire/15 text-xs font-semibold text-encre-noire opacity-80 hover:opacity-100 transition-opacity"
-                  >
-                    <XiloAvatar src={u.photoURL} name={name} size={18} />
-                    <span>{name}</span>
-                    {u.instrument && u.instrument !== 'Autre' && (
-                      <span className="text-[9.5px] opacity-70 font-normal">
-                        ({u.instrument})
-                      </span>
-                    )}
-                    {isAuthorized && (
+            {/* 5. Accordéon Sans réponse */}
+            <RSVPAccordionSection
+              title="Sans réponse"
+              count={unansweredUsers?.length || 0}
+              icon="❓"
+              colorVariant="neutral"
+              isExpanded={expandedSections.unanswered}
+              onToggle={() => toggleSection('unanswered')}
+              emptyText="Tous les membres ont répondu ! 🎉"
+            >
+              <div className="flex flex-wrap gap-1.5 items-center">
+                {(unansweredUsers || []).map(u => {
+                  const name = u.displayNameFormatted || `${u.prenom || ''} ${u.nom || ''}`.trim() || u.email || 'Membre';
+                  return (
+                    <div 
+                      key={u.id || u.uid || name} 
+                      className="inline-flex items-center gap-1.5 bg-white/80 dark:bg-black/40 px-2 py-1 rounded border border-dashed border-encre-noire/15 text-xs font-semibold text-encre-noire opacity-80 hover:opacity-100 transition-opacity"
+                    >
+                      <XiloAvatar src={u.photoURL} name={name} size={18} />
+                      <span>{name}</span>
+                      {u.instrument && u.instrument !== 'Autre' && (
+                        <span className="text-[9.5px] opacity-70 font-normal">
+                          ({u.instrument})
+                        </span>
+                      )}
                       <div className="flex items-center gap-1 ml-1.5 border-l border-encre-noire/15 pl-1.5 font-bold">
                         <button
                           type="button"
@@ -1329,75 +1371,80 @@ export default function EventRSVPSection({
                           ✗ Absent
                         </button>
                       </div>
-                    )}
-                  </div>
-                );
-              })}
-              {(unansweredUsers || []).length === 0 && (
-                <span className="opacity-60 italic text-xs">Tous les membres ont répondu ! 🎉</span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {isAuthorized && (event.includesPercussion !== false) && (event.inscriptions || []).filter(i => i.status === 'present').length > 0 && (
-          <div className="mt-4 pt-4 border-t border-dashed border-cordel-master-dark/15 text-left flex flex-col gap-3">
-            <h5 className="font-bold text-[10px] uppercase tracking-widest text-cordel-wood mb-1">
-              🛠️ Gestion des instruments par Mestre
-            </h5>
-            <div className="flex flex-col gap-2.5 bg-white/40 dark:bg-black/20 p-3 rounded border border-dashed border-encre-noire/15">
-              {(event.inscriptions || [])
-                .filter(ins => ins.status === 'present')
-                .map(ins => {
-                  const userInfo = allUsers.find(u => u.id === ins.userId) || {};
-                  const memberInstruments = getMemberInstrumentOptions(userInfo);
-                  
-                  const currentInst = ins.instrumentChoisi || userInfo.instrument || 'Autre';
-                  const isLocked = !!ins.instrumentImposeParMestre;
-
-                  return (
-                    <div key={ins.userId} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-dashed border-encre-noire/10 pb-2 last:border-0 last:pb-0 text-xs">
-                      <span className="font-bold text-encre-noire truncate sm:max-w-[180px] flex items-center gap-1.5">
-                        <XiloAvatar src={userInfo.photoURL} name={ins.userName} size={20} />
-                        <span>{ins.userName}</span>
-                      </span>
-                      <div className="flex flex-wrap items-center gap-3">
-                        <select
-                          value={currentInst}
-                          onChange={(e) => handleUpdateMemberInstrument(ins.userId, e.target.value, isLocked)}
-                          className="theme-input text-[11px] font-bold py-1 bg-cordel-bg-light"
-                        >
-                          {!memberInstruments.includes(currentInst) && (() => {
-                            const pupitreName = getPupitreName(currentInst);
-                            return (
-                              <option value={currentInst}>
-                                {pupitreName ? `${currentInst} (${pupitreName})` : currentInst}
-                              </option>
-                            );
-                          })()}
-                          {memberInstruments.map(inst => {
-                            const pupitreName = getPupitreName(inst);
-                            return (
-                              <option key={inst} value={inst}>
-                                {pupitreName ? `${inst} (${pupitreName})` : inst}
-                              </option>
-                            );
-                          })}
-                        </select>
-                        <label className="flex items-center gap-1.5 cursor-pointer font-bold text-[10px] uppercase select-none">
-                          <input
-                            type="checkbox"
-                            checked={isLocked}
-                            onChange={(e) => handleUpdateMemberInstrument(ins.userId, currentInst, e.target.checked)}
-                            className="scale-95 cursor-pointer"
-                          />
-                          <span>Imposer</span>
-                        </label>
-                      </div>
                     </div>
                   );
                 })}
-            </div>
+                {(unansweredUsers || []).length === 0 && (
+                  <span className="opacity-60 italic text-xs">Tous les membres ont répondu ! 🎉</span>
+                )}
+              </div>
+            </RSVPAccordionSection>
+
+            {/* 6. Accordéon Gestion des instruments par Mestre */}
+            {(event.includesPercussion !== false) && (event.inscriptions || []).filter(i => i.status === 'present').length > 0 && (
+              <RSVPAccordionSection
+                title="Gestion des instruments par Mestre"
+                count={(event.inscriptions || []).filter(i => i.status === 'present').length}
+                icon="🛠️"
+                colorVariant="ocre"
+                isExpanded={expandedSections.mestreInstruments}
+                onToggle={() => toggleSection('mestreInstruments')}
+                className="mt-1"
+              >
+                <div className="flex flex-col gap-2.5 bg-white/40 dark:bg-black/20 p-2.5 rounded border border-dashed border-encre-noire/15">
+                  {(event.inscriptions || [])
+                    .filter(ins => ins.status === 'present')
+                    .map(ins => {
+                      const userInfo = allUsers.find(u => u.id === ins.userId) || {};
+                      const memberInstruments = getMemberInstrumentOptions(userInfo);
+                      const currentInst = ins.instrumentChoisi || userInfo.instrument || 'Autre';
+                      const isLocked = !!ins.instrumentImposeParMestre;
+
+                      return (
+                        <div key={ins.userId} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-dashed border-encre-noire/10 pb-2 last:border-0 last:pb-0 text-xs">
+                          <span className="font-bold text-encre-noire truncate sm:max-w-[180px] flex items-center gap-1.5">
+                            <XiloAvatar src={userInfo.photoURL} name={ins.userName} size={20} />
+                            <span>{ins.userName}</span>
+                          </span>
+                          <div className="flex flex-wrap items-center gap-3">
+                            <select
+                              value={currentInst}
+                              onChange={(e) => handleUpdateMemberInstrument(ins.userId, e.target.value, isLocked)}
+                              className="theme-input text-[11px] font-bold py-1 bg-cordel-bg-light"
+                            >
+                              {!memberInstruments.includes(currentInst) && (() => {
+                                const pupitreName = getPupitreName(currentInst);
+                                return (
+                                  <option value={currentInst}>
+                                    {pupitreName ? `${currentInst} (${pupitreName})` : currentInst}
+                                  </option>
+                                );
+                              })()}
+                              {memberInstruments.map(inst => {
+                                const pupitreName = getPupitreName(inst);
+                                return (
+                                  <option key={inst} value={inst}>
+                                    {pupitreName ? `${inst} (${pupitreName})` : inst}
+                                  </option>
+                                );
+                              })}
+                            </select>
+                            <label className="flex items-center gap-1.5 cursor-pointer font-bold text-[10px] uppercase select-none">
+                              <input
+                                type="checkbox"
+                                checked={isLocked}
+                                onChange={(e) => handleUpdateMemberInstrument(ins.userId, currentInst, e.target.checked)}
+                                className="scale-95 cursor-pointer"
+                              />
+                              <span>Imposer</span>
+                            </label>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </RSVPAccordionSection>
+            )}
           </div>
         )}
 

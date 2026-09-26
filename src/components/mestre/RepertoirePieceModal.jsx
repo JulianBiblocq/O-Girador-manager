@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { collection, doc, addDoc, updateDoc, onSnapshot } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../../firebase';
@@ -14,6 +14,7 @@ import CreateCultureFicheModal from './CreateCultureFicheModal';
 import RepertoireCulturePicker from './RepertoireCulturePicker';
 import YouTubeVideoPickerModal from '../common/YouTubeVideoPickerModal';
 import RepertoireTrainingsManager from './RepertoireTrainingsManager';
+import RepertoireModalNavArrows from './RepertoireModalNavArrows';
 import SongCard from '../SongCard';
 import { useDancadorChoreographies } from '../../hooks/useDancadorData';
 import { useRepertoireVaralDocs } from '../../hooks/useRepertoireVaralDocs';
@@ -36,7 +37,8 @@ import {
  * @param {Function} onClose - Callback de fermeture
  * @param {string} groupId - Identifiant de l'association
  * @param {Object|null} pieceToEdit - Objet morceau à éditer ou null pour création
- * @param {Function} onSaveSuccess - Callback après enregistrement réussi
+ * @param {Array|null} piecesList - Liste des morceaux pour la navigation
+ * @param {Function|null} onNavigatePiece - Callback de navigation entre fiches morceaux
  */
 export default function RepertoirePieceModal({
   isOpen,
@@ -44,7 +46,8 @@ export default function RepertoirePieceModal({
   groupId,
   pieceToEdit = null,
   onSaveSuccess,
-  piecesList = null
+  piecesList = null,
+  onNavigatePiece = null
 }) {
   // Champs administratifs & de direction artistique
   const [titre, setTitre] = useState('');
@@ -82,6 +85,32 @@ export default function RepertoirePieceModal({
   }, [isOpen, groupId, piecesList]);
 
   const effectivePiecesList = piecesList !== null ? piecesList : localPieces;
+
+  const modalBodyRef = useRef(null);
+
+  // État de repliage des grandes sections pour gagner de la place en hauteur
+  const [collapsedSections, setCollapsedSections] = useState({
+    liaisons: false,
+    histoire: false,
+    sinais: false,
+    notes: false
+  });
+  const toggleSection = (key) => {
+    setCollapsedSections((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  // Position / index du morceau actuel dans le classeur
+  const currentIndex = useMemo(() => {
+    if (!effectivePiecesList || !pieceToEdit) return -1;
+    return effectivePiecesList.findIndex((p) => p.id === pieceToEdit.id);
+  }, [effectivePiecesList, pieceToEdit]);
+
+  // Réinitialiser le défilement vertical vers le haut lors du changement de fiche morceau
+  useEffect(() => {
+    if (modalBodyRef.current) {
+      modalBodyRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [pieceToEdit?.id]);
 
   // Table de correspondance des Toadas déjà liées à un autre morceau
   const toadaUsageMap = useMemo(() => {
@@ -475,9 +504,125 @@ export default function RepertoirePieceModal({
     }
   };
 
+  // Construction du payload réactif propre pour Firestore
+  const buildPiecePayload = () => {
+    if (!titre.trim()) return null;
+
+    // Résolution de l'identifiant et de l'URL Séquenceur
+    let matchedSeqId = null;
+    let matchedSeqUrl = null;
+    let matchedSeqType = selectedSeqType || null;
+
+    if (selectedSeqUrl && catalogRhythms.length > 0) {
+      const found = catalogRhythms.find(
+        (r) => r.jsonUrl === selectedSeqUrl || r.id === selectedSeqUrl
+      );
+      if (found) {
+        matchedSeqId = found.id || null;
+        matchedSeqType = found._collection || null;
+        matchedSeqUrl =
+          found.jsonUrl &&
+          (found.jsonUrl.startsWith('http://') || found.jsonUrl.startsWith('https://'))
+            ? found.jsonUrl
+            : selectedSeqUrl.startsWith('http://') || selectedSeqUrl.startsWith('https://')
+              ? selectedSeqUrl
+              : null;
+      } else {
+        if (selectedSeqUrl.startsWith('http://') || selectedSeqUrl.startsWith('https://')) {
+          matchedSeqUrl = selectedSeqUrl;
+        } else {
+          matchedSeqId = selectedSeqUrl;
+        }
+      }
+    }
+
+    // Nettoyage strict des vidéos personnalisées
+    const cleanVideos = (videos || [])
+      .filter((v) => v && typeof v.url === 'string' && v.url.trim() !== '')
+      .map((v) => {
+        let insts = [];
+        if (Array.isArray(v.instruments)) {
+          insts = v.instruments.filter(Boolean);
+        } else if (typeof v.instruments === 'string' && v.instruments.trim()) {
+          insts = v.instruments.split(',').map((s) => s.trim()).filter(Boolean);
+        } else if (v.pupitre) {
+          insts = [v.pupitre.trim()];
+        }
+        return {
+          id: v.id || `vid_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+          titre: (v.titre || '').trim(),
+          url: v.url.trim(),
+          instruments: insts,
+          pupitre: insts[0] || (v.pupitre ? v.pupitre.trim() : ''),
+          isLiveOrGlobal: Boolean(v.isLiveOrGlobal || insts.length === 0)
+        };
+      });
+
+    const extractedSignalIds = (sinaisDoMestre || [])
+      .map((s) => (typeof s === 'object' && s !== null ? (s.signalId || s.id) : String(s)))
+      .filter(Boolean);
+    const cleanSignalIds = Array.from(new Set([...(signalIds || []), ...extractedSignalIds]));
+
+    // Vidéo principale ajoutée à la liste si non présente
+    if (videoUrl && videoUrl.trim()) {
+      const vTrim = videoUrl.trim();
+      if (!cleanVideos.some((v) => v.url === vTrim)) {
+        cleanVideos.unshift({
+          id: `vid_yt_${Date.now()}`,
+          titre: 'Vidéo principale',
+          url: vTrim,
+          instruments: [],
+          pupitre: '',
+          isLiveOrGlobal: true
+        });
+      }
+    }
+
+    // Audio : Ne persiste sous `audioUrl` que s'il s'agit d'un enregistrement autonome / personnalisé
+    const isPresetAudio =
+      selectedPreset?.audioUrl && customAudioUrl === selectedPreset.audioUrl;
+    const audioToPersist = isPresetAudio
+      ? null
+      : (customAudioUrl ? customAudioUrl.trim() : null);
+
+    // Nettoyage strict des entraînements rattachés manuellement et exclus
+    const cleanTrainingIds = Array.from(
+      new Set((selectedTrainingIds || []).filter((id) => typeof id === 'string' && id.trim() !== ''))
+    );
+    const cleanExcludedTrainingIds = Array.from(
+      new Set((excludedTrainingIds || []).filter((id) => typeof id === 'string' && id.trim() !== ''))
+    );
+
+    // Payload réactif sans duplication de données volumineuses dérivées
+    return {
+      groupId: groupId,
+      titre: titre.trim(),
+      statutSaison: statutSaison || 'saison',
+      etatValidation: etatValidation || 'pret',
+      notes: (notes || '').trim() || '',
+      videos: cleanVideos,
+      signalIds: cleanSignalIds,
+      sinaisDoMestre: Array.isArray(sinaisDoMestre) ? cleanFirestorePayload(sinaisDoMestre) : [],
+      sequenceurId: matchedSeqId || null,
+      sequenceurType: matchedSeqType || null,
+      sequenceurFileUrl: matchedSeqUrl || null,
+      trainingIds: cleanTrainingIds.length > 0 ? cleanTrainingIds : null,
+      excludedTrainingIds: cleanExcludedTrainingIds.length > 0 ? cleanExcludedTrainingIds : null,
+      audioUrl: audioToPersist || null,
+      videoUrl: (videoUrl || '').trim() || null,
+      contexteHistorique: (histoire || '').trim() || null,
+      histoire: (histoire || '').trim() || null,
+      dancadorChoreoId: selectedChoreoId || null,
+      toadaDocId: selectedToadaId || null,
+      cultureDocIds: Array.from(new Set((selectedCultureIds || []).filter((id) => typeof id === 'string' && id.trim() !== ''))),
+      cultureDocId: (selectedCultureIds && selectedCultureIds.length > 0) ? selectedCultureIds[0] : null,
+      updatedAt: new Date().toISOString()
+    };
+  };
+
   // Enregistrement Firestore réactif (schéma épuré sans snapshots dérivés)
   const handleSubmit = async (e) => {
-    if (e) e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     if (!titre.trim()) {
       setErrorMsg("Veuillez renseigner le titre du morceau.");
       return;
@@ -487,119 +632,8 @@ export default function RepertoirePieceModal({
     setErrorMsg(null);
 
     try {
-      // Résolution de l'identifiant et de l'URL Séquenceur
-      let matchedSeqId = null;
-      let matchedSeqUrl = null;
-      let matchedSeqType = selectedSeqType || null;
-
-      if (selectedSeqUrl && catalogRhythms.length > 0) {
-        const found = catalogRhythms.find(
-          (r) => r.jsonUrl === selectedSeqUrl || r.id === selectedSeqUrl
-        );
-        if (found) {
-          matchedSeqId = found.id || null;
-          matchedSeqType = found._collection || null;
-          matchedSeqUrl =
-            found.jsonUrl &&
-            (found.jsonUrl.startsWith('http://') || found.jsonUrl.startsWith('https://'))
-              ? found.jsonUrl
-              : selectedSeqUrl.startsWith('http://') || selectedSeqUrl.startsWith('https://')
-                ? selectedSeqUrl
-                : null;
-        } else {
-          if (selectedSeqUrl.startsWith('http://') || selectedSeqUrl.startsWith('https://')) {
-            matchedSeqUrl = selectedSeqUrl;
-          } else {
-            matchedSeqId = selectedSeqUrl;
-          }
-        }
-      }
-
-      // Nettoyage strict des vidéos personnalisées
-      const cleanVideos = (videos || [])
-        .filter((v) => v && typeof v.url === 'string' && v.url.trim() !== '')
-        .map((v) => {
-          let insts = [];
-          if (Array.isArray(v.instruments)) {
-            insts = v.instruments.filter(Boolean);
-          } else if (typeof v.instruments === 'string' && v.instruments.trim()) {
-            insts = v.instruments.split(',').map((s) => s.trim()).filter(Boolean);
-          } else if (v.pupitre) {
-            insts = [v.pupitre.trim()];
-          }
-          return {
-            id: v.id || `vid_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
-            titre: (v.titre || '').trim(),
-            url: v.url.trim(),
-            instruments: insts,
-            pupitre: insts[0] || (v.pupitre ? v.pupitre.trim() : ''),
-            isLiveOrGlobal: Boolean(v.isLiveOrGlobal || insts.length === 0)
-          };
-        });
-
-      const extractedSignalIds = (sinaisDoMestre || [])
-        .map((s) => (typeof s === 'object' && s !== null ? (s.signalId || s.id) : String(s)))
-        .filter(Boolean);
-      const cleanSignalIds = Array.from(new Set([...(signalIds || []), ...extractedSignalIds]));
-
-      // Vidéo principale ajoutée à la liste si non présente
-      if (videoUrl && videoUrl.trim()) {
-        const vTrim = videoUrl.trim();
-        if (!cleanVideos.some((v) => v.url === vTrim)) {
-          cleanVideos.unshift({
-            id: `vid_yt_${Date.now()}`,
-            titre: 'Vidéo principale',
-            url: vTrim,
-            instruments: [],
-            pupitre: '',
-            isLiveOrGlobal: true
-          });
-        }
-      }
-
-      // Audio : Ne persiste sous `audioUrl` que s'il s'agit d'un enregistrement autonome / personnalisé
-      // (si l'audio provient du preset lié, on ne le duplique pas en base)
-      const isPresetAudio =
-        selectedPreset?.audioUrl && customAudioUrl === selectedPreset.audioUrl;
-      const audioToPersist = isPresetAudio
-        ? null
-        : (customAudioUrl ? customAudioUrl.trim() : null);
-
-      // Nettoyage strict des entraînements rattachés manuellement et exclus
-      const cleanTrainingIds = Array.from(
-        new Set((selectedTrainingIds || []).filter((id) => typeof id === 'string' && id.trim() !== ''))
-      );
-      const cleanExcludedTrainingIds = Array.from(
-        new Set((excludedTrainingIds || []).filter((id) => typeof id === 'string' && id.trim() !== ''))
-      );
-
-      // Payload strictement épuré : POINTEURS VIVANTS uniquement, tout vide converti en null
-      const pieceData = {
-        groupId: groupId,
-        titre: titre.trim(),
-        statutSaison: statutSaison || 'saison',
-        etatValidation: etatValidation || 'pret',
-        notes: (notes || '').trim() || '',
-        videos: cleanVideos,
-        signalIds: cleanSignalIds,
-        sinaisDoMestre: Array.isArray(sinaisDoMestre) ? cleanFirestorePayload(sinaisDoMestre) : [],
-        sequenceurId: matchedSeqId || null,
-        sequenceurType: matchedSeqType || null,
-        sequenceurFileUrl: matchedSeqUrl || null,
-        trainingIds: cleanTrainingIds.length > 0 ? cleanTrainingIds : null,
-        excludedTrainingIds: cleanExcludedTrainingIds.length > 0 ? cleanExcludedTrainingIds : null,
-        audioUrl: audioToPersist || null,
-        videoUrl: (videoUrl || '').trim() || null,
-        contexteHistorique: (histoire || '').trim() || null,
-        histoire: (histoire || '').trim() || null,
-        dancadorChoreoId: selectedChoreoId || null,
-        toadaDocId: selectedToadaId || null,
-        cultureDocIds: Array.from(new Set((selectedCultureIds || []).filter((id) => typeof id === 'string' && id.trim() !== ''))),
-        cultureDocId: (selectedCultureIds && selectedCultureIds.length > 0) ? selectedCultureIds[0] : null,
-        updatedAt: new Date().toISOString()
-      };
-
-      const sanitizedData = cleanFirestorePayload(pieceData);
+      const payload = buildPiecePayload();
+      const sanitizedData = cleanFirestorePayload(payload);
 
       if (pieceToEdit?.id) {
         const pieceRef = doc(db, 'associations', groupId, 'repertoire', pieceToEdit.id);
@@ -618,6 +652,29 @@ export default function RepertoirePieceModal({
       setErrorMsg("Erreur lors de l'enregistrement dans le répertoire.");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  // Navigation vers un autre morceau avec auto-sauvegarde silencieuse si valide
+  const handleNavigatePiece = async (targetPiece) => {
+    if (!targetPiece || submitting) return;
+
+    if (pieceToEdit?.id && titre.trim()) {
+      try {
+        const payload = buildPiecePayload();
+        if (payload) {
+          const sanitizedData = cleanFirestorePayload(payload);
+          const pieceRef = doc(db, 'associations', groupId, 'repertoire', pieceToEdit.id);
+          await updateDoc(pieceRef, sanitizedData);
+          if (onSaveSuccess) onSaveSuccess({ id: pieceToEdit.id, ...sanitizedData });
+        }
+      } catch (err) {
+        console.warn("Erreur auto-sauvegarde avant navigation répertoire :", err);
+      }
+    }
+
+    if (onNavigatePiece) {
+      onNavigatePiece(targetPiece);
     }
   };
 
@@ -644,30 +701,76 @@ export default function RepertoirePieceModal({
 
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-      <CordelCard className="w-full max-w-2xl p-6 flex flex-col gap-4 animate-scale-in bg-[#fdfaf2] border-2 border-encre-noire shadow-[4px_4px_0px_0px_#181716] max-h-[90vh] overflow-y-auto">
-        {/* En-tête de la modale */}
-        <div className="border-b-2 border-dashed border-cordel-wood/30 pb-3 flex items-center justify-between">
-          <h3 className="text-base md:text-lg font-black uppercase tracking-widest text-cordel-wood flex items-center gap-2">
-            <span>📜</span>
-            <span>{pieceToEdit ? "Modifier le morceau" : "Ajouter un morceau au répertoire"}</span>
-          </h3>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-stone-400 hover:text-stone-700 font-black text-lg p-1 cursor-pointer transition-colors"
-            title="Fermer"
-          >
-            ✕
-          </button>
+      {/* Flèches de navigation persistantes au centre vertical de l'écran ("en dehors de la fiche d'ailleurs sur PC") */}
+      {pieceToEdit && effectivePiecesList.length > 1 && (
+        <RepertoireModalNavArrows
+          piecesList={effectivePiecesList}
+          currentPiece={pieceToEdit}
+          disabled={submitting}
+          onNavigate={handleNavigatePiece}
+        />
+      )}
+
+      <CordelCard
+        className="w-full max-w-2xl flex flex-col animate-scale-in bg-[#fdfaf2] border-2 border-encre-noire shadow-[4px_4px_0px_0px_#181716] max-h-[90vh] relative overflow-hidden p-0"
+      >
+        {/* En-tête fixe de la modale */}
+        <div className="shrink-0 px-5 pt-4 pb-3 border-b-2 border-dashed border-cordel-wood/30 bg-[#fdfaf2] flex items-center justify-between gap-2 z-10">
+          <div className="flex items-center gap-2 min-w-0">
+            <h3 className="text-base md:text-lg font-black uppercase tracking-widest text-cordel-wood flex items-center gap-2 truncate">
+              <span>📜</span>
+              <span className="truncate">{pieceToEdit ? "Modifier le morceau" : "Ajouter un morceau au répertoire"}</span>
+            </h3>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Compteur et boutons de navigation rapide intégrés dans l'en-tête (idéal mobile & responsive) */}
+            {pieceToEdit && effectivePiecesList.length > 1 && currentIndex !== -1 && (
+              <div className="flex items-center gap-1 bg-[#f5efe0] px-2 py-0.5 rounded border border-encre-noire/25 text-xs font-black shadow-2xs">
+                <button
+                  type="button"
+                  disabled={currentIndex <= 0 || submitting}
+                  onClick={() => handleNavigatePiece(effectivePiecesList[currentIndex - 1])}
+                  className="px-1 text-[11px] font-black hover:text-cordel-wood disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed select-none transition-colors"
+                  title={currentIndex > 0 ? `Morceau précédent : « ${effectivePiecesList[currentIndex - 1].titre} »` : 'Premier morceau'}
+                >
+                  ◀
+                </button>
+                <span className="text-[10px] text-cordel-wood tracking-wider font-extrabold px-1">
+                  {currentIndex + 1} / {effectivePiecesList.length}
+                </span>
+                <button
+                  type="button"
+                  disabled={currentIndex >= effectivePiecesList.length - 1 || submitting}
+                  onClick={() => handleNavigatePiece(effectivePiecesList[currentIndex + 1])}
+                  className="px-1 text-[11px] font-black hover:text-cordel-wood disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed select-none transition-colors"
+                  title={currentIndex < effectivePiecesList.length - 1 ? `Morceau suivant : « ${effectivePiecesList[currentIndex + 1].titre} »` : 'Dernier morceau'}
+                >
+                  ▶
+                </button>
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-stone-400 hover:text-stone-700 font-black text-lg p-1 cursor-pointer transition-colors"
+              title="Fermer"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
-        {errorMsg && (
-          <div className="p-2.5 bg-red-100 border border-red-400 text-red-800 text-xs font-bold rounded">
-            ⚠️ {errorMsg}
-          </div>
-        )}
+        <form onSubmit={handleSubmit} className="flex-1 min-h-0 flex flex-col overflow-hidden">
+          {errorMsg && (
+            <div className="shrink-0 mx-5 mt-3 p-2.5 bg-red-100 border border-red-400 text-red-800 text-xs font-bold rounded">
+              ⚠️ {errorMsg}
+            </div>
+          )}
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4 text-left">
+          {/* Corps défilable de la modale */}
+          <div ref={modalBodyRef} className="flex-1 min-h-0 overflow-y-auto px-5 py-4 flex flex-col gap-4 text-left">
           {/* Titre du morceau */}
           <div className="flex flex-col gap-1">
             <div className="flex items-center justify-between gap-2">
@@ -844,12 +947,26 @@ export default function RepertoirePieceModal({
 
           {/* Section Liaisons transversales réactives */}
           <div className="p-3.5 rounded bg-white border border-encre-noire/15 shadow-xs flex flex-col gap-3">
-            <h4 className="text-[10px] uppercase font-black tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1 flex items-center gap-1.5">
-              <span>🔗</span>
-              <span>Liaisons transversales vivantes (Varal, Séquenceur, Danse)</span>
-            </h4>
+            <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/15 pb-1">
+              <button
+                type="button"
+                onClick={() => toggleSection('liaisons')}
+                className="flex items-center gap-1.5 text-[10px] uppercase font-black tracking-wider text-cordel-wood hover:text-cordel-master-dark cursor-pointer select-none text-left"
+              >
+                <span>{collapsedSections.liaisons ? '▶' : '▼'}</span>
+                <span>🔗 Liaisons transversales vivantes (Varal, Séquenceur, Danse)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => toggleSection('liaisons')}
+                className="text-[9.5px] font-bold text-cordel-wood underline cursor-pointer"
+              >
+                {collapsedSections.liaisons ? 'Déplier' : 'Replier'}
+              </button>
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-left">
+            {!collapsedSections.liaisons ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-left animate-fade-in">
               {/* 1. Toada (Chant) */}
               <div className="flex flex-col gap-1">
                 <div className="flex items-center justify-between gap-1 flex-wrap">
@@ -1124,6 +1241,33 @@ export default function RepertoirePieceModal({
                 disabled={submitting}
               />
             </div>
+            ) : (
+              <div className="flex items-center gap-1.5 flex-wrap text-[9px] text-cordel-master-dark/70 font-semibold py-0.5">
+                {selectedSong && (
+                  <span className="bg-emerald-50 text-emerald-900 px-2 py-0.5 rounded border border-emerald-200">
+                    🗣️ {selectedSong.titre}
+                  </span>
+                )}
+                {selectedPreset && (
+                  <span className="bg-amber-50 text-amber-900 px-2 py-0.5 rounded border border-amber-200">
+                    🥁 {selectedPreset.displayTitle || selectedPreset.titre}
+                  </span>
+                )}
+                {selectedChoreoId && (
+                  <span className="bg-pink-50 text-pink-900 px-2 py-0.5 rounded border border-pink-200">
+                    💃 Chorégraphie liée
+                  </span>
+                )}
+                {selectedCultureIds.length > 0 && (
+                  <span className="bg-blue-50 text-blue-900 px-2 py-0.5 rounded border border-blue-200">
+                    📖 {selectedCultureIds.length} fiche(s) culture
+                  </span>
+                )}
+                {!selectedSong && !selectedPreset && !selectedChoreoId && selectedCultureIds.length === 0 && (
+                  <span className="italic opacity-60">Aucune liaison transversale active</span>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Aperçu paresseux de la tablature (calculée à la volée sans snapshot en base) */}
@@ -1156,20 +1300,36 @@ export default function RepertoirePieceModal({
           {/* Vidéo YouTube de référence & Histoire du morceau */}
           <div className="p-3.5 rounded bg-white border border-encre-noire/15 shadow-xs flex flex-col gap-3">
             <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/15 pb-1">
-              <h4 className="text-[10px] uppercase font-black tracking-wider text-cordel-wood flex items-center gap-1.5">
-                <span>🎬</span>
-                <span>Vidéo de référence &amp; Histoire culturelle</span>
-              </h4>
               <button
                 type="button"
-                onClick={() => setIsCultureModalOpen(true)}
-                className="text-[9.5px] font-extrabold text-amber-900 hover:text-amber-950 underline cursor-pointer flex items-center gap-1"
-                title="Créer une fiche sur le Varal Culture pré-remplie avec ces informations"
+                onClick={() => toggleSection('histoire')}
+                className="flex items-center gap-1.5 text-[10px] uppercase font-black tracking-wider text-cordel-wood hover:text-cordel-master-dark cursor-pointer select-none text-left"
               >
-                <span>📜</span>
-                <span>Créer une fiche Varal Culture</span>
+                <span>{collapsedSections.histoire ? '▶' : '▼'}</span>
+                <span>🎬 Vidéo de référence &amp; Histoire culturelle</span>
               </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsCultureModalOpen(true)}
+                  className="text-[9.5px] font-extrabold text-amber-900 hover:text-amber-950 underline cursor-pointer flex items-center gap-1"
+                  title="Créer une fiche sur le Varal Culture pré-remplie avec ces informations"
+                >
+                  <span>📜</span>
+                  <span className="hidden sm:inline">Créer fiche Culture</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toggleSection('histoire')}
+                  className="text-[9.5px] font-bold text-cordel-wood underline cursor-pointer"
+                >
+                  {collapsedSections.histoire ? 'Déplier' : 'Replier'}
+                </button>
+              </div>
             </div>
+
+            {!collapsedSections.histoire ? (
+              <>
 
             {/* URL de la vidéo YouTube */}
             <div className="flex flex-col gap-1">
@@ -1247,33 +1407,98 @@ export default function RepertoirePieceModal({
                 className="theme-input text-xs font-medium p-2 bg-cordel-bg-light border border-encre-noire/30 rounded leading-relaxed font-serif"
               />
             </div>
+            </>
+          ) : (
+            <div className="flex items-center gap-2 text-[9px] text-cordel-master-dark/70 font-semibold py-0.5">
+              {videoUrl ? (
+                <span className="bg-red-50 text-red-900 px-2 py-0.5 rounded border border-red-200">
+                  🎬 Vidéo principale configurée
+                </span>
+              ) : (
+                <span className="italic opacity-60">Pas de vidéo principale</span>
+              )}
+              {histoire ? (
+                <span className="bg-amber-50 text-amber-900 px-2 py-0.5 rounded border border-amber-200 truncate max-w-xs">
+                  📜 Contexte historique renseigné
+                </span>
+              ) : null}
+            </div>
+          )}
+        </div>
+
+        {/* Vidéos personnalisables du morceau */}
+        <RepertoireVideosPicker
+          videos={videos}
+          onChange={setVideos}
+          instrumentsList={instrumentsList}
+          onOpenPicker={(idx, pupitre) => {
+            setPickerTargetIndex(idx);
+            setPickerInitialPupitre(pupitre || '');
+            setIsVideoPickerOpen(true);
+          }}
+        />
+
+        {/* Signes du Mestre associés & Conventions par Mesure */}
+        <div className="p-3.5 rounded bg-white border border-encre-noire/15 shadow-xs flex flex-col gap-3">
+          <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/15 pb-1">
+            <button
+              type="button"
+              onClick={() => toggleSection('sinais')}
+              className="flex items-center gap-1.5 text-[10px] uppercase font-black tracking-wider text-cordel-wood hover:text-cordel-master-dark cursor-pointer select-none text-left"
+            >
+              <span>{collapsedSections.sinais ? '▶' : '▼'}</span>
+              <span>✌️ Signes du Mestre associés &amp; Mesures ({sinaisDoMestre.length})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => toggleSection('sinais')}
+              className="text-[9.5px] font-bold text-cordel-wood underline cursor-pointer"
+            >
+              {collapsedSections.sinais ? 'Déplier' : 'Replier'}
+            </button>
           </div>
 
-          {/* Vidéos personnalisables du morceau */}
-          <RepertoireVideosPicker
-            videos={videos}
-            onChange={setVideos}
-            instrumentsList={instrumentsList}
-            onOpenPicker={(idx, pupitre) => {
-              setPickerTargetIndex(idx);
-              setPickerInitialPupitre(pupitre || '');
-              setIsVideoPickerOpen(true);
-            }}
-          />
+          {!collapsedSections.sinais ? (
+            <RepertoireSinaisDoMestreEditor
+              sinais={sinaisDoMestre}
+              onChange={setSinaisDoMestre}
+              groupId={groupId}
+              disabled={submitting}
+            />
+          ) : (
+            <div className="text-[9px] text-cordel-master-dark/70 font-semibold py-0.5">
+              {sinaisDoMestre.length > 0 ? (
+                <span className="bg-amber-50 text-amber-900 px-2 py-0.5 rounded border border-amber-200">
+                  ✌️ {sinaisDoMestre.length} signe(s) configuré(s)
+                </span>
+              ) : (
+                <span className="italic opacity-60">Aucun signe du Mestre associé</span>
+              )}
+            </div>
+          )}
+        </div>
 
-          {/* Signes du Mestre associés & Conventions par Mesure */}
-          <RepertoireSinaisDoMestreEditor
-            sinais={sinaisDoMestre}
-            onChange={setSinaisDoMestre}
-            groupId={groupId}
-            disabled={submitting}
-          />
+        {/* Notes du Mestre & Consignes artistiques */}
+        <div className="p-3.5 rounded bg-white border border-encre-noire/15 shadow-xs flex flex-col gap-2">
+          <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/15 pb-1">
+            <button
+              type="button"
+              onClick={() => toggleSection('notes')}
+              className="flex items-center gap-1.5 text-[10px] uppercase font-black tracking-wider text-cordel-master-dark hover:text-cordel-wood cursor-pointer select-none text-left"
+            >
+              <span>{collapsedSections.notes ? '▶' : '▼'}</span>
+              <span>📝 Notes du Mestre &amp; Consignes {notes.trim() ? '(renseignées)' : ''}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => toggleSection('notes')}
+              className="text-[9.5px] font-bold text-cordel-wood underline cursor-pointer"
+            >
+              {collapsedSections.notes ? 'Déplier' : 'Replier'}
+            </button>
+          </div>
 
-          {/* Notes du Mestre & Consignes artistiques */}
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] uppercase font-black tracking-wider text-cordel-master-dark">
-              Notes du Mestre &amp; Consignes artistiques
-            </label>
+          {!collapsedSections.notes ? (
             <textarea
               rows={3}
               placeholder="Ex: Tempo cible 128 BPM, break avec virada en 2 temps, entrée soliste au repique..."
@@ -1282,30 +1507,48 @@ export default function RepertoirePieceModal({
               disabled={submitting}
               className="theme-input text-xs font-medium p-2.5 bg-cordel-bg-light border-2 border-encre-noire rounded"
             />
-          </div>
+          ) : (
+            <div className="text-[9px] text-cordel-master-dark/70 font-semibold py-0.5 truncate">
+              {notes.trim() ? (
+                <span className="italic">« {notes.slice(0, 80)}... »</span>
+              ) : (
+                <span className="italic opacity-60">Aucune note particulière</span>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
 
-          {/* Boutons d'action */}
-          <div className="flex gap-2 justify-end pt-3 border-t border-dashed border-cordel-master-dark/15">
-            <CordelButton
-              type="button"
-              variant="default"
-              onClick={onClose}
-              disabled={submitting}
-              className="px-4 py-2 text-xs font-bold"
-            >
-              Annuler
-            </CordelButton>
-            <CordelButton
-              type="submit"
-              variant="ocre"
-              useExtremeBorder={true}
-              disabled={submitting || !titre.trim()}
-              className="px-6 py-2 text-xs font-black uppercase tracking-wider"
-            >
-              {submitting ? "Enregistrement..." : (pieceToEdit ? "💾 Enregistrer les modifications" : "➕ Ajouter au répertoire")}
-            </CordelButton>
-          </div>
-        </form>
+      {/* Pied de page fixe - Boutons d'action toujours visibles sans défilement */}
+      <div className="shrink-0 px-5 py-3 border-t-2 border-dashed border-cordel-master-dark/20 bg-[#fdfaf2] flex items-center justify-between gap-3 z-20 shadow-[0_-4px_10px_rgba(0,0,0,0.06)]">
+        <div className="flex items-center gap-2 text-xs truncate max-w-[40%] text-cordel-master-dark font-medium">
+          <span className="truncate opacity-75 hidden sm:inline">
+            {titre.trim() ? `« ${titre.trim()} »` : (pieceToEdit ? "Édition morceau" : "Nouveau morceau")}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2 ml-auto">
+          <CordelButton
+            type="button"
+            variant="default"
+            onClick={onClose}
+            disabled={submitting}
+            className="px-4 py-2 text-xs font-bold"
+          >
+            Annuler
+          </CordelButton>
+          <CordelButton
+            type="submit"
+            variant="vert"
+            useExtremeBorder={true}
+            disabled={submitting || !titre.trim()}
+            className="px-5 py-2 text-xs font-black uppercase tracking-wider shadow-sm"
+          >
+            {submitting ? "Enregistrement..." : (pieceToEdit ? "💾 Enregistrer les modifications" : "➕ Ajouter au répertoire")}
+          </CordelButton>
+        </div>
+      </div>
+    </form>
       </CordelCard>
 
       {/* Modale passerelle vers le Varal Culture */}

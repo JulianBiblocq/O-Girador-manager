@@ -30,20 +30,7 @@ import QRScannerModal from './auth/QRScannerModal';
 const CordelImageEditor = React.lazy(() => import('./CordelImageEditor'));
 
 import { formatTagGender, filterUserAssignedTags } from '../utils/tagUtils';
-
-const getInstrumentIconPath = (instName) => {
-  if (!instName) return '/favicon.svg';
-  const name = instName.toLowerCase().trim();
-  if (name.includes('alfaia')) return '/icones/alfaia.svg';
-  if (name.includes('agbê') || name.includes('agbe') || name.includes('sementes')) return '/icones/agbe.svg';
-  if (name.includes('gonguê') || name.includes('gongue')) return '/icones/gongue.svg';
-  if (name.includes('caixa') || name.includes('tarol') || name.includes('caisse')) return '/icones/caixa.svg';
-  if (name.includes('chant') || name.includes('voix') || name.includes('singer') || name.includes('danse') || name.includes('dance') || name.includes('micro')) return '/icones/micro.svg';
-  if (name.includes('timbal')) return '/icones/timbal.svg';
-  if (name.includes('mineiro')) return '/icones/mineiro.svg';
-  if (name.includes('apito') || name.includes('mestre') || name.includes('chef')) return '/icones/apito.svg';
-  return '/favicon.svg';
-};
+import { getInstrumentIconPath } from '../utils/instrumentUtils';
 
 import { generateImageCharterPDF, generateMedicalAttestationPDF } from '../utils/pdfGenerator';
 

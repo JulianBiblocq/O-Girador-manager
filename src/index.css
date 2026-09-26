@@ -1139,9 +1139,10 @@ body.eco-mode #center-afficheur {
 /* Background/Text Variants */
 .theme-bg-default { background-color: var(--cordel-bg); color: var(--cordel-text); }
 .theme-bg-ocre { background-color: var(--color-cordel-ocre) !important; color: #1a1a1a !important; }
-.theme-bg-vert { background-color: var(--color-cordel-vert) !important; color: #1a1a1a !important; }
+.theme-bg-vert { background-color: #2d6a4f !important; color: #ffffff !important; }
 .theme-bg-bleu { background-color: var(--color-cordel-bleu) !important; color: #1a1a1a !important; }
 .theme-bg-kraft { background-color: var(--color-cordel-kraft) !important; color: #1a1a1a !important; }
+.theme-bg-rouge { background-color: #8b2a1a !important; color: #ffffff !important; }
 
 /* Slanted Stamp Badge (Role Badge) */
 .theme-stamp-badge {

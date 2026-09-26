@@ -7,6 +7,7 @@ import XiloAvatar from '../XiloAvatar';
 import { filterPublicPercussionInstruments, computePupitresList, resolvePupitreForInstrument as resolvePupitreCanonical } from '../../utils/tagUtils';
 import { DEFAULT_CUSTOM_CATEGORIES, resolveCategory } from '../../utils/categoryUtils';
 import { getVoiceLabel, normalizeGroupNomenclature } from '../../constants/nomenclature';
+import { getInstrumentIconPath } from '../../utils/instrumentUtils';
 
 const DEFAULT_INSTRUMENTS = [
   "Alfaia",
@@ -18,21 +19,6 @@ const DEFAULT_INSTRUMENTS = [
   "Timbal",
   "Chant"
 ];
-
-const getInstrumentIconPath = (instName) => {
-  if (!instName) return '/favicon.svg';
-  const name = instName.toLowerCase().trim();
-  if (name.includes('danse') || name.includes('dance')) return '/icones/danse.svg';
-  if (name.includes('alfaia')) return '/icones/alfaia.svg';
-  if (name.includes('agbê') || name.includes('agbe') || name.includes('sementes')) return '/icones/agbe.svg';
-  if (name.includes('gonguê') || name.includes('gongue')) return '/icones/gongue.svg';
-  if (name.includes('caixa') || name.includes('tarol') || name.includes('caisse')) return '/icones/caixa.svg';
-  if (name.includes('chant') || name.includes('voix') || name.includes('singer') || name.includes('micro')) return '/icones/micro.svg';
-  if (name.includes('timbal')) return '/icones/timbal.svg';
-  if (name.includes('mineiro')) return '/icones/mineiro.svg';
-  if (name.includes('apito') || name.includes('mestre') || name.includes('chef')) return '/icones/apito.svg';
-  return '/favicon.svg';
-};
 
 /**
  * Assainit les vœux d'orientation d'un membre pour extraire "Danse" des vœux de percussions.
@@ -204,11 +190,22 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
     return false;
   };
 
+  // Indique si un membre a une affectation Danse active et confirmée (niveau débutant, confirmé, etc.)
+  const hasActiveDanseAssignment = (m) => {
+    if (!m) return false;
+    // Si désinscrit explicitement de la danse
+    if (m.niveauDanse === 'aucun') return false;
+    // Niveau renseigné (débutant, confirmé, etc.)
+    if (m.niveauDanse && m.niveauDanse !== 'aucun') return true;
+    // Inscrit à la pratique de la danse ou détecté danseur
+    if (m.pratiqueDanse === true || isDanseMember(m)) return true;
+    return false;
+  };
+
   // Détermine si un membre pratique ou souhaite pratiquer la percussion (exclut les danseurs 100% Danse sans percussion)
   const isPercussionistMember = (m) => {
     if (!m) return false;
     if (m.pratiquePercussion === false) return false;
-    if (m.pratiquePercussion === true) return true;
 
     const inst = (m.instrument || m.instrumentPrincipal || '').toLowerCase().trim();
     const wishesList = Array.isArray(m.voeuxInstruments) && m.voeuxInstruments.length > 0
@@ -220,6 +217,15 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
       const wishLower = w.toLowerCase().trim();
       return wishLower !== 'danse' && wishLower !== 'chant';
     });
+
+    // Règle Mestria Danse : Si le membre est affecté à la Danse (niveau débutant ou confirmé)
+    // et qu'il n'a ni percussion attribuée ni vœu de percussion, il s'agit d'un membre Danse pur
+    // (on n'attend pas d'instrument de percussion pour ce profil).
+    if (hasActiveDanseAssignment(m) && !hasAssignedPercussion && !hasPercussionWishes) {
+      return false;
+    }
+
+    if (m.pratiquePercussion === true) return true;
 
     return hasAssignedPercussion || hasPercussionWishes;
   };
@@ -368,6 +374,26 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
 
   // Détermine si un membre a un vœu réellement EN ATTENTE de traitement par le Mestre
   const hasPendingWishForMestre = (m) => {
+    const wishesList = Array.isArray(m.voeuxInstruments) && m.voeuxInstruments.length > 0
+      ? m.voeuxInstruments.filter(Boolean)
+      : [m.voeuPrincipal, m.voeuSecondaire, m.voeuTertiaire].filter(Boolean);
+
+    const hasPercussionWishes = wishesList.some(w => {
+      const wishLower = w.toLowerCase().trim();
+      return wishLower !== 'danse' && wishLower !== 'chant';
+    });
+
+    const inst = (m.instrument || m.instrumentPrincipal || '').toLowerCase().trim();
+    const hasAssignedPercussion = inst && inst !== 'danse' && inst !== 'chant' && inst !== 'en attente';
+
+    // Règle Danse : si le membre a une affectation Danse active (niveau débutant ou confirmé),
+    // il n'est en attente que s'il a explicitement formulé un vœu de percussion non encore satisfait.
+    if (hasActiveDanseAssignment(m)) {
+      if (!hasAssignedPercussion && hasPercussionWishes) return true;
+      if (hasAssignedPercussion && m.souhaiteChangerInstrument && hasPercussionWishes) return true;
+      return false;
+    }
+
     if (!isPercussionistMember(m)) return false;
 
     const isUnassigned = !m.instrument || m.instrument.trim() === '' || m.instrument === 'En attente';
@@ -389,6 +415,9 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
 
   // Détermine si un percussionniste n'a pas encore d'instrument attribué
   const isUnassignedForMestre = (m) => {
+    // Si le membre est déjà affecté à la Danse (niveau débutant, confirmé...), il n'est pas "non affecté"
+    if (hasActiveDanseAssignment(m)) return false;
+
     if (!isPercussionistMember(m)) return false;
     return !m.instrument || m.instrument.trim() === '' || m.instrument === 'En attente';
   };
@@ -992,6 +1021,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
 
   const unassignedCount = activeMembers.filter(m => isUnassignedForMestre(m)).length;
   const wishCount = activeMembers.filter(m => hasPendingWishForMestre(m)).length;
+  const pendingMembersCount = activeMembers.filter(m => isUnassignedForMestre(m) || hasPendingWishForMestre(m)).length;
 
   return (
     <div className="flex flex-col gap-5 text-left select-none">
@@ -1035,7 +1065,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
           {displayPupitres.map(pupitre => {
             const quota = quotasByPupitre[pupitre.id] || { primary: 0, secondary: 0 };
             const isLow = quota.primary === 0;
-            const iconInst = pupitre.instruments[0] || pupitre.name;
+            const iconInst = pupitre.name || pupitre.instruments[0];
             const isDanse = pupitre.name.toLowerCase() === 'danse';
             const isSelected = selectedPupitreFilter === pupitre.id;
 
@@ -1138,9 +1168,9 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                 className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 ${showPendingOnly ? 'bg-amber-600 text-white shadow-xs' : 'bg-amber-100 text-amber-900 border border-amber-300'}`}
               >
                 <span>⏳ Vœux en attente</span>
-                {(unassignedCount > 0 || wishCount > 0) && (
+                {pendingMembersCount > 0 && (
                   <span className="bg-red-500 text-white text-[8px] px-1.5 py-0.2 rounded-full font-black">
-                    {unassignedCount + wishCount}
+                    {pendingMembersCount}
                   </span>
                 )}
               </button>

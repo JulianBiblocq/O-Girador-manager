@@ -6,6 +6,7 @@ import { useAssociationSettings } from '../../hooks/useAssociationSettings';
 import { useTranslation } from '../LanguageContext';
 import { batchMigrateUserCategories, DEFAULT_CUSTOM_CATEGORIES } from '../../utils/categoryUtils';
 import { db } from '../../firebase';
+import CategoryCardItem from './CategoryCardItem';
 
 /**
  * Composant de gestion des Catégories de Pratique (Niveaux / Sections de la troupe)
@@ -28,6 +29,7 @@ export default function MestreCustomCategories({ groupId, onBack }) {
   // État du formulaire d'ajout d'une nouvelle catégorie
   const [newCatName, setNewCatName] = useState('');
   const [newCatColor, setNewCatColor] = useState('#8b2a1a');
+  const [editingCatId, setEditingCatId] = useState(null);
   const [migrating, setMigrating] = useState(false);
   const [migrationStatus, setMigrationStatus] = useState(null);
 
@@ -80,6 +82,48 @@ export default function MestreCustomCategories({ groupId, onBack }) {
     setNewCatColor('#8b2a1a');
   };
 
+  // Modification / Renommage d'une catégorie existante
+  const handleSaveEditCategory = async (updatedCat) => {
+    const originalCat = categories.find((c) => c.id === updatedCat.id);
+    const updatedList = categories.map((c) => (c.id === updatedCat.id ? updatedCat : c));
+
+    // Si le nom a changé, proposer de mettre à jour rétroactivement les profils des membres
+    if (originalCat && originalCat.name.trim() !== updatedCat.name.trim()) {
+      const oldName = originalCat.name.trim();
+      const newName = updatedCat.name.trim();
+
+      const shouldMigrate = await confirm({
+        title: `Mettre à jour les profils membres ?`,
+        message: `Vous venez de renommer la catégorie « ${oldName} » en « ${newName} ».\n\nSouhaitez-vous répercuter automatiquement ce changement sur tous les profils des membres dans la base de données ?`,
+        confirmText: "Oui, mettre à jour les membres",
+        cancelText: "Ne modifier que la catégorie",
+        variant: "warning"
+      });
+
+      if (shouldMigrate) {
+        setMigrating(true);
+        setMigrationStatus(null);
+        try {
+          const res = await batchMigrateUserCategories(db, groupId, updatedList, { [oldName]: newName });
+          const count = res?.count || 0;
+          setMigrationStatus(
+            count > 0
+              ? `✅ Catégorie renommée en « ${newName} » et ${count} profil(s) membre(s) mis à jour !`
+              : `✅ Catégorie renommée en « ${newName} » (aucun profil membre n'avait l'ancien intitulé).`
+          );
+        } catch (err) {
+          console.error("Erreur lors de la migration du renommage :", err);
+          setMigrationStatus("Catégorie renommée, mais une erreur est survenue lors de la mise à jour des membres.");
+        } finally {
+          setMigrating(false);
+        }
+      }
+    }
+
+    handleChange('customCategories', updatedList);
+    setEditingCatId(null);
+  };
+
   // Suppression d'une catégorie
   const handleRemoveCategory = async (catId, catName) => {
     const isOk = await confirm({
@@ -91,16 +135,20 @@ export default function MestreCustomCategories({ groupId, onBack }) {
     });
 
     if (isOk) {
+      if (editingCatId === catId) setEditingCatId(null);
       const updated = categories.filter((c) => c.id !== catId);
       handleChange('customCategories', updated);
     }
   };
 
-  // Synchronisation des membres existants
+  // Synchronisation globale des anciens membres ('débutant' / 'confirmé' vers les catégories officielles)
   const handleBatchSyncMembers = async () => {
+    const catDebutant = categories[0]?.name || 'Débutant';
+    const catConfirme = categories[1]?.name || 'Confirmé';
+
     const isConfirmed = await confirm({
       title: "Synchroniser les profils membres",
-      message: "Cette opération va mettre à jour dans la base de données les anciens profils membres (débutant / confirmé) pour leur attribuer les libellés officiels de vos catégories de pratique actuelles. Continuer ?",
+      message: `Cette opération va analyser tous les membres de la troupe et mettre à jour les anciens statuts génériques vers vos catégories officielles actuelles :\n\n• Débutants ➔ « ${catDebutant} »\n• Confirmés ➔ « ${catConfirme} »\n\nVoulez-vous lancer la synchronisation ?`,
       confirmText: "Oui, synchroniser",
       cancelText: "Annuler",
       variant: "warning"
@@ -111,9 +159,13 @@ export default function MestreCustomCategories({ groupId, onBack }) {
     setMigrating(true);
     setMigrationStatus(null);
     try {
-      const catNames = categories.map(c => c.name);
-      await batchMigrateUserCategories(db, groupId, catNames);
-      setMigrationStatus("Synchronisation des membres terminée avec succès !");
+      const res = await batchMigrateUserCategories(db, groupId, categories);
+      const count = res?.count || 0;
+      if (count > 0) {
+        setMigrationStatus(`✅ ${count} profil(s) membre(s) synchronisé(s) vers « ${catDebutant} » et « ${catConfirme} » !`);
+      } else {
+        setMigrationStatus(`ℹ️ Tous les profils membres sont déjà parfaitement alignés avec vos catégories actuelles.`);
+      }
     } catch (err) {
       console.error("Erreur synchronisation membres :", err);
       setMigrationStatus("Erreur lors de la synchronisation des membres.");
@@ -262,31 +314,18 @@ export default function MestreCustomCategories({ groupId, onBack }) {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
             {categories.map((cat) => (
-              <div
+              <CategoryCardItem
                 key={cat.id}
-                className="flex items-center justify-between gap-2 px-3 py-2 rounded-[4px_6px_3px_5px] border border-cordel-master-dark/30 shadow-sm bg-cordel-bg-light"
-                style={{ borderLeftColor: cat.color || '#8b2a1a', borderLeftWidth: '4px' }}
-              >
-                <div className="flex items-center gap-2 truncate">
-                  <span
-                    className="w-3 h-3 rounded-full shrink-0"
-                    style={{ backgroundColor: cat.color || '#8b2a1a' }}
-                  />
-                  <span className="text-xs font-extrabold text-encre-noire truncate">
-                    {cat.name}
-                  </span>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => handleRemoveCategory(cat.id, cat.name)}
-                  disabled={saving}
-                  className="text-xs text-[var(--theme-primary)] hover:bg-red-100 dark:hover:bg-red-950/40 p-1 rounded font-bold cursor-pointer transition-colors shrink-0"
-                  title="Supprimer cette catégorie"
-                >
-                  ✕
-                </button>
-              </div>
+                category={cat}
+                isEditing={editingCatId === cat.id}
+                onStartEdit={() => setEditingCatId(cat.id)}
+                onCancelEdit={() => setEditingCatId(null)}
+                onSaveEdit={handleSaveEditCategory}
+                onRemove={handleRemoveCategory}
+                disabled={saving || migrating}
+                cordelPresets={CORDEL_COLOR_PRESETS}
+                allCategories={categories}
+              />
             ))}
           </div>
         )}
