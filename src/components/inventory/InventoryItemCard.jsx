@@ -1,5 +1,6 @@
 import React from 'react';
 import CordelCard from '../CordelCard';
+import { normalizeInstrumentAttribution } from './inventoryConstants';
 
 const INSTRUMENT_ICONS = {
   Alfaia: 'icones/alfaia.svg',
@@ -28,6 +29,7 @@ const INSTRUMENT_ICONS = {
  */
 export default function InventoryItemCard({ item, usersMap, onEdit, onDelete, _onToggleBorrow, onDiagnose, inventoryParts, kitCompletionText, _t }) {
   const iconPath = INSTRUMENT_ICONS[item.type] || 'favicon.svg';
+  const attr = normalizeInstrumentAttribution(item);
 
   const getEtatBadgeClass = (etat) => {
     switch (etat) {
@@ -75,6 +77,45 @@ export default function InventoryItemCard({ item, usersMap, onEdit, onDelete, _o
             {kitCompletionText && kitCompletionText !== "-" && (
               <span className="bg-cordel-bg-light px-2 py-0.5 rounded border border-cordel-master-dark/15">
                 🎒 Kit: {kitCompletionText}
+              </span>
+            )}
+
+            {/* Badge sobre de régime d'attribution */}
+            {attr.regimeMiseADisposition === 'pret_gratuit' && (
+              <span className="bg-cordel-bg-light px-2 py-0.5 rounded border border-cordel-master-dark/15 text-[9.5px] font-bold text-[var(--color-cordel-vert)]" title="Prêt gracieux de l'association">
+                🎁 Prêt gratuit
+              </span>
+            )}
+            {attr.regimeMiseADisposition === 'cotisation' && (
+              <span className="bg-cordel-bg-light px-2 py-0.5 rounded border border-cordel-master-dark/15 text-[9.5px] font-bold text-[var(--color-cordel-ocre)]" title="Mis à disposition avec cotisation instrument">
+                💳 Cotisation
+              </span>
+            )}
+            {attr.regimeMiseADisposition === 'personnel' && (
+              <span className="bg-cordel-bg-light px-2 py-0.5 rounded border border-cordel-master-dark/15 text-[9.5px] font-bold text-stone-600 dark:text-stone-400" title="Instrument personnel du membre">
+                👤 Personnel
+              </span>
+            )}
+
+            {/* Pastille de caution (uniquement si cautionRequise: true) */}
+            {attr.cautionRequise && (
+              <span
+                className={`px-2 py-0.5 rounded border text-[9.5px] font-bold flex items-center gap-1 ${
+                  attr.caution.statut === 'recue'
+                    ? 'bg-[var(--color-cordel-vert)]/10 text-[var(--color-cordel-vert)] border-[#2d6a4f]/30'
+                    : attr.caution.statut === 'restituee'
+                      ? 'bg-stone-100 text-stone-600 border-stone-300'
+                      : 'bg-[var(--color-cordel-ocre)]/10 text-[var(--color-cordel-ocre)] border-[#c05621]/30 font-black'
+                }`}
+                title={
+                  attr.caution.referencePiece
+                    ? `Caution ${attr.caution.type} (Réf: ${attr.caution.referencePiece})`
+                    : `Caution ${attr.caution.type}`
+                }
+              >
+                {attr.caution.statut === 'recue' && `✓ Caution reçue (${attr.caution.montant}€)`}
+                {attr.caution.statut === 'en_attente' && `⏳ Caution en attente (${attr.caution.montant}€)`}
+                {attr.caution.statut === 'restituee' && `↩️ Caution restituée`}
               </span>
             )}
           </div>

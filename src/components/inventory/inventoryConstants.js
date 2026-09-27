@@ -103,3 +103,109 @@ export const getKitCompletionRatio = (inst, logisticsKits = []) => {
 
   return validChecked / kit.accessories.length;
 };
+
+/**
+ * Régimes de mise à disposition d'un instrument.
+ */
+export const REGIME_ATTRIBUTION_OPTIONS = [
+  { id: 'pret_gratuit', label: 'Prêt gracieux association', desc: 'Ne génère aucune ligne de paiement' },
+  { id: 'cotisation', label: 'Mis à disposition avec cotisation instrument', desc: 'Facturé avec la cotisation instrument' },
+  { id: 'personnel', label: 'Instrument personnel du membre', desc: 'Propriété directe du membre' }
+];
+
+/**
+ * Statuts possibles pour le dépôt de garantie / caution.
+ */
+export const CAUTION_STATUS_OPTIONS = [
+  { id: 'non_requise', label: 'Non requise' },
+  { id: 'en_attente', label: 'En attente' },
+  { id: 'recue', label: 'Reçue' },
+  { id: 'restituee', label: 'Restituée' }
+];
+
+/**
+ * Types de moyen de garantie de la caution.
+ */
+export const CAUTION_TYPES = [
+  { id: 'cheque', label: 'Chèque' },
+  { id: 'especes', label: 'Espèces' },
+  { id: 'virement', label: 'Virement' }
+];
+
+/**
+ * Retourne le libellé du régime de mise à disposition.
+ * @param {string} regime
+ * @param {Function} [t]
+ * @returns {string}
+ */
+export const getRegimeLabel = (regime, t) => {
+  switch (regime) {
+    case 'pret_gratuit':
+      return (t && t('inventory.regimePretGratuit')) || 'Prêt gracieux association';
+    case 'cotisation':
+      return (t && t('inventory.regimeCotisation')) || 'Mis à disposition avec cotisation';
+    case 'personnel':
+      return (t && t('inventory.regimePersonnel')) || 'Instrument personnel';
+    default:
+      return (t && t('inventory.regimePretGratuit')) || 'Prêt gracieux association';
+  }
+};
+
+/**
+ * Normalise l'attribution et la caution d'un instrument avec rétrocompatibilité totale.
+ * @param {Object} inst - Instrument issu de Firestore ou du formulaire
+ * @returns {{ regimeMiseADisposition: string, cautionRequise: boolean, caution: Object }}
+ */
+export const normalizeInstrumentAttribution = (inst) => {
+  if (!inst) {
+    return {
+      regimeMiseADisposition: 'pret_gratuit',
+      cautionRequise: false,
+      caution: {
+        montant: 150,
+        statut: 'non_requise',
+        type: 'cheque',
+        referencePiece: '',
+        dateReception: null,
+        encaisse: false
+      }
+    };
+  }
+
+  // Déduction du régime par défaut pour les instruments existants
+  const isPersonal = inst.proprietaire && inst.proprietaire !== 'Association';
+  const regime = inst.regimeMiseADisposition || (isPersonal ? 'personnel' : 'pret_gratuit');
+
+  // Détection rétrocompatible de l'exigence de caution
+  const rawCaution = inst.caution || {};
+  let cautionRequise = false;
+  if (inst.cautionRequise !== undefined) {
+    cautionRequise = Boolean(inst.cautionRequise);
+  } else if (rawCaution.statut && rawCaution.statut !== 'non_requise') {
+    cautionRequise = true;
+  }
+
+  const cautionStatut = cautionRequise
+    ? (rawCaution.statut && rawCaution.statut !== 'non_requise' ? rawCaution.statut : 'en_attente')
+    : 'non_requise';
+
+  const refPiece = rawCaution.referencePiece || rawCaution.reference || '';
+  const typeGarantie = rawCaution.type || rawCaution.typeGarantie || 'cheque';
+
+  return {
+    regimeMiseADisposition: regime,
+    cautionRequise,
+    caution: {
+      montant: rawCaution.montant !== undefined && rawCaution.montant !== null ? Number(rawCaution.montant) : 150,
+      statut: cautionStatut,
+      type: typeGarantie,
+      referencePiece: refPiece,
+      reference: refPiece, // Rétrocompatibilité
+      typeGarantie: typeGarantie, // Rétrocompatibilité
+      dateReception: rawCaution.dateReception || null,
+      dateRestitution: rawCaution.dateRestitution || null,
+      encaisse: Boolean(rawCaution.encaisse)
+    }
+  };
+};
+

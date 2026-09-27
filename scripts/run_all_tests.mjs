@@ -66,7 +66,11 @@ const testScripts = [
   'scripts/test_presence_counter_and_voice_dictation.mjs',
   'scripts/test_varal_reorganization_5_ropes.mjs',
   'scripts/test_espace_instruments_labels.mjs',
-  'scripts/test_secretariat_4_tabs_and_forum_channels.mjs'
+  'scripts/test_secretariat_4_tabs_and_forum_channels.mjs',
+  'scripts/test_inventory_caution_attribution.mjs',
+  'scripts/test_event_roadbook_mission.mjs',
+  'scripts/test_carpool_crew_discussion_mission.mjs',
+  'scripts/test_collective_kits_roadbook_mission.mjs'
 ];
 
 console.log("===============================================================");

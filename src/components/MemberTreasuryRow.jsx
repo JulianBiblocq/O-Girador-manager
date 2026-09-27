@@ -112,15 +112,21 @@ function MemberTreasuryRow({
   const handleToggleInstrumentCaution = async (inst, newStatut) => {
     if (!onUpdateCaution) return;
     try {
-      const currentCaution = inst.statut === newStatut ? {} : inst;
-      const refValue = referenceInputs[inst.id] !== undefined ? referenceInputs[inst.id] : (inst.reference || '');
+      const refValue = referenceInputs[inst.id] !== undefined 
+        ? referenceInputs[inst.id] 
+        : (inst.referencePiece || inst.reference || '');
+      const typeGarantie = inst.type || inst.typeGarantie || 'cheque';
+
       await onUpdateCaution(inst.id, {
         montant: inst.montant,
         statut: newStatut,
-        typeGarantie: inst.typeGarantie || 'cheque',
+        type: typeGarantie,
+        typeGarantie: typeGarantie,
+        referencePiece: refValue.trim(),
         reference: refValue.trim(),
         dateReception: newStatut === 'recue' ? new Date().toISOString() : null,
-        dateRestitution: newStatut === 'restituee' ? new Date().toISOString() : null
+        dateRestitution: newStatut === 'restituee' ? new Date().toISOString() : null,
+        encaisse: false
       });
     } catch (err) {
       alert("Erreur lors de la mise à jour de la caution : " + (err.message || err));
@@ -304,7 +310,7 @@ function MemberTreasuryRow({
                       <input
                         type="text"
                         placeholder="N° de chèque ou réf..."
-                        value={referenceInputs[inst.id] !== undefined ? referenceInputs[inst.id] : (inst.reference || '')}
+                        value={referenceInputs[inst.id] !== undefined ? referenceInputs[inst.id] : (inst.referencePiece || inst.reference || '')}
                         onChange={(e) => setReferenceInputs({ ...referenceInputs, [inst.id]: e.target.value })}
                         className="theme-input text-[8px] py-0.5 px-1.5 bg-cordel-bg"
                       />
@@ -315,7 +321,7 @@ function MemberTreasuryRow({
                       {isRecue ? (
                         <button
                           type="button"
-                          onClick={() => handleToggleInstrumentCaution(inst, 'non_recue')}
+                          onClick={() => handleToggleInstrumentCaution(inst, 'en_attente')}
                           className="text-[7.5px] font-black uppercase px-2 py-0.5 rounded bg-red-100 text-[var(--theme-primary)] hover:bg-red-200 border border-[var(--theme-primary)]/30"
                         >
                           Annuler réception

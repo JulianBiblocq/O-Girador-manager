@@ -4,6 +4,7 @@ import CordelButton from '../CordelButton';
 import { XiloClose } from '../XiloIcons';
 import XiloAvatar from '../XiloAvatar';
 import { INSTRUMENT_TYPES, ETAT_OPTIONS } from './inventoryConstants';
+import InstrumentAttributionSection from './InstrumentAttributionSection';
 
 /**
  * Modale / Formulaire complet d'ajout et d'édition d'un instrument,
@@ -300,6 +301,14 @@ export default function InstrumentEditModal({
                 </select>
               </div>
             )}
+
+            {/* Régime d'attribution et Gestion du Dépôt de garantie / Caution */}
+            <InstrumentAttributionSection
+              formData={formData}
+              setFormData={setFormData}
+              saving={saving}
+              t={t}
+            />
 
             {/* Assignations (Membres désignés) */}
             <div className="flex flex-col gap-1 border-t border-dashed border-cordel-master-dark/15 pt-2">

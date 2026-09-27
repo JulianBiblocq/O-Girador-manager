@@ -3,6 +3,7 @@ import { collection, query, where, onSnapshot, doc, addDoc, updateDoc, deleteDoc
 import { db } from '../firebase';
 import useConfirm from './useConfirm';
 import { canonicalizeGroupId } from '../utils/tenantUtils';
+import { normalizeInstrumentAttribution } from '../components/inventory/inventoryConstants';
 
 /**
  * Hook personnalisé pour piloter l'inventaire du matériel et des instruments d'une association.
@@ -182,13 +183,24 @@ export function useInventoryData(groupId, isAuthorized, t) {
       kit: '',
       modelId: '',
       nomenclature: [],
-      kitChecklist: []
+      kitChecklist: [],
+      regimeMiseADisposition: 'pret_gratuit',
+      cautionRequise: false,
+      caution: {
+        montant: 150,
+        statut: 'non_requise',
+        type: 'cheque',
+        referencePiece: '',
+        dateReception: null,
+        encaisse: false
+      }
     });
     setEditingId(null);
     setIsFormOpen(true);
   }, []);
 
   const handleOpenEdit = useCallback((inst) => {
+    const attr = normalizeInstrumentAttribution(inst);
     setFormData({
       nom: inst.nom || '',
       type: inst.type || 'Alfaia',
@@ -203,7 +215,10 @@ export function useInventoryData(groupId, isAuthorized, t) {
       modelId: inst.modelId || '',
       nomenclature: inst.nomenclature || [],
       kitChecklist: inst.kitChecklist || [],
-      historiqueMouvements: inst.historiqueMouvements || []
+      historiqueMouvements: inst.historiqueMouvements || [],
+      regimeMiseADisposition: attr.regimeMiseADisposition,
+      cautionRequise: attr.cautionRequise,
+      caution: attr.caution
     });
     setEditingId(inst.id);
     setIsFormOpen(true);
@@ -215,6 +230,14 @@ export function useInventoryData(groupId, isAuthorized, t) {
 
     setSaving(true);
     try {
+      const isCautionReq = Boolean(formData.cautionRequise);
+      const cautionData = formData.caution || {};
+      const cautionStatut = isCautionReq
+        ? (cautionData.statut && cautionData.statut !== 'non_requise' ? cautionData.statut : 'en_attente')
+        : 'non_requise';
+      const refPiece = cautionData.referencePiece || cautionData.reference || '';
+      const typeGarantie = cautionData.type || cautionData.typeGarantie || 'cheque';
+
       const payload = {
         nom: formData.nom.trim(),
         type: formData.type,
@@ -229,6 +252,19 @@ export function useInventoryData(groupId, isAuthorized, t) {
         modelId: formData.modelId || '',
         nomenclature: formData.nomenclature || [],
         kitChecklist: formData.kitChecklist || [],
+        regimeMiseADisposition: formData.regimeMiseADisposition || 'pret_gratuit',
+        cautionRequise: isCautionReq,
+        caution: {
+          montant: cautionData.montant !== undefined && cautionData.montant !== '' ? Number(cautionData.montant) : 150,
+          statut: cautionStatut,
+          type: typeGarantie,
+          typeGarantie: typeGarantie,
+          referencePiece: refPiece,
+          reference: refPiece,
+          dateReception: cautionData.dateReception || null,
+          dateRestitution: cautionData.dateRestitution || null,
+          encaisse: Boolean(cautionData.encaisse)
+        },
         groupId: groupId
       };
 
@@ -623,6 +659,14 @@ export function useInventoryData(groupId, isAuthorized, t) {
       const oldChecklist = oldInst?.kitChecklist || [];
       const newChecklist = formData.kitChecklist || [];
 
+      const isCautionReq = Boolean(formData.cautionRequise);
+      const cautionData = formData.caution || {};
+      const cautionStatut = isCautionReq
+        ? (cautionData.statut && cautionData.statut !== 'non_requise' ? cautionData.statut : 'en_attente')
+        : 'non_requise';
+      const refPiece = cautionData.referencePiece || cautionData.reference || '';
+      const typeGarantie = cautionData.type || cautionData.typeGarantie || 'cheque';
+
       const payload = {
         nom: formData.nom.trim(),
         type: formData.type,
@@ -637,6 +681,19 @@ export function useInventoryData(groupId, isAuthorized, t) {
         modelId: formData.modelId || '',
         nomenclature: formData.nomenclature || [],
         kitChecklist: newChecklist,
+        regimeMiseADisposition: formData.regimeMiseADisposition || 'pret_gratuit',
+        cautionRequise: isCautionReq,
+        caution: {
+          montant: cautionData.montant !== undefined && cautionData.montant !== '' ? Number(cautionData.montant) : 150,
+          statut: cautionStatut,
+          type: typeGarantie,
+          typeGarantie: typeGarantie,
+          referencePiece: refPiece,
+          reference: refPiece,
+          dateReception: cautionData.dateReception || null,
+          dateRestitution: cautionData.dateRestitution || null,
+          encaisse: Boolean(cautionData.encaisse)
+        },
         groupId: canonicalGroupId || groupId
       };
 

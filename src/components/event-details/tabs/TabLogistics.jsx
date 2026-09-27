@@ -45,6 +45,7 @@ export default function TabLogistics({
   reimbursementRule,
   handleAssignPassenger,
   handleRemovePassenger,
+  handleSendCarMessage,
   // Props Tableau de présence (mode attendance)
   status,
   saving,
@@ -170,6 +171,7 @@ export default function TabLogistics({
             reimbursementRule={reimbursementRule}
             handleAssignPassenger={handleAssignPassenger}
             handleRemovePassenger={handleRemovePassenger}
+            handleSendCarMessage={handleSendCarMessage}
           />
         </div>
       ) : currentConfig?.agendaEnableCarpool && (

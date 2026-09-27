@@ -6,7 +6,8 @@ import {
   ETAT_OPTIONS,
   INSTRUMENT_ICONS,
   getEtatLabel,
-  getKitCompletionText
+  getKitCompletionText,
+  normalizeInstrumentAttribution
 } from './inventoryConstants';
 
 /**
@@ -155,6 +156,7 @@ export default function InstrumentsDataTable({
         <tbody className="divide-y divide-encre-noire/10 font-medium">
           {instruments.map((inst) => {
             const iconPath = INSTRUMENT_ICONS[inst.type] || INSTRUMENT_ICONS.Autre;
+            const attr = normalizeInstrumentAttribution(inst);
 
             return (
               <tr key={inst.id} className="hover:bg-cordel-hover/50 transition-colors">
@@ -320,6 +322,42 @@ export default function InstrumentsDataTable({
                         )}
                       </div>
                     )}
+
+                    {/* Badges sobres régime d'attribution et caution */}
+                    <div className="flex flex-wrap items-center gap-1 mt-1">
+                      {attr.regimeMiseADisposition === 'pret_gratuit' && (
+                        <span className="text-[8px] font-bold text-[var(--color-cordel-vert)] bg-white/70 dark:bg-stone-800/70 px-1 py-0.5 rounded border border-[#2d6a4f]/25" title="Prêt gracieux de l'association">
+                          🎁 Prêt gratuit
+                        </span>
+                      )}
+                      {attr.regimeMiseADisposition === 'cotisation' && (
+                        <span className="text-[8px] font-bold text-[var(--color-cordel-ocre)] bg-white/70 dark:bg-stone-800/70 px-1 py-0.5 rounded border border-[#c05621]/25" title="Mis à disposition avec cotisation">
+                          💳 Cotisation
+                        </span>
+                      )}
+                      {attr.regimeMiseADisposition === 'personnel' && (
+                        <span className="text-[8px] font-bold text-stone-600 dark:text-stone-300 bg-white/70 dark:bg-stone-800/70 px-1 py-0.5 rounded border border-stone-300" title="Instrument personnel du membre">
+                          👤 Personnel
+                        </span>
+                      )}
+
+                      {attr.cautionRequise && (
+                        <span
+                          className={`text-[8px] font-black px-1 py-0.5 rounded border ${
+                            attr.caution.statut === 'recue'
+                              ? 'bg-[var(--color-cordel-vert)]/10 text-[var(--color-cordel-vert)] border-[#2d6a4f]/30'
+                              : attr.caution.statut === 'restituee'
+                                ? 'bg-stone-100 text-stone-600 border-stone-300'
+                                : 'bg-[var(--color-cordel-ocre)]/10 text-[var(--color-cordel-ocre)] border-[#c05621]/30'
+                          }`}
+                          title={attr.caution.referencePiece ? `Caution ${attr.caution.type} (${attr.caution.referencePiece})` : `Caution ${attr.caution.type}`}
+                        >
+                          {attr.caution.statut === 'recue' && `✓ ${attr.caution.montant}€`}
+                          {attr.caution.statut === 'en_attente' && `⏳ ${attr.caution.montant}€`}
+                          {attr.caution.statut === 'restituee' && `↩️ Restituée`}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </td>
 

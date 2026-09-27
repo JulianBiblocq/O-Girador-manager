@@ -5,16 +5,18 @@ import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import EventFormFields from '../agenda/EventFormFields';
 import ImportAgendaModal from '../agenda/ImportAgendaModal';
+import EventRoadbookFormSection from './EventRoadbookFormSection';
 import { DEFAULT_CUSTOM_CATEGORIES } from '../../utils/categoryUtils';
 
 /**
  * EventEditForm - Formulaire de modification d'événement unifié
  * Repose sur le composant modulaire EventFormFields (3 étages)
- * et ajoute la gestion de l'image de couverture et de suppression.
+ * et ajoute la gestion de l'image de couverture, le roadbook et la suppression.
  */
 export default function EventEditForm({
   editForm,
   setEditForm,
+  allUsers = [],
   savingEvent = false,
   handleSaveEvent,
   handleDeleteEvent,
@@ -139,6 +141,14 @@ export default function EventEditForm({
           createConfig={editConfig}
           groupId={groupId}
           defaultDropUrl={defaultDropUrl}
+          t={t}
+        />
+
+        {/* Section Feuille de route / Roadbook (Parcours, Scène, Hébergement, Checklist, Contacts) */}
+        <EventRoadbookFormSection
+          editForm={editForm}
+          setEditForm={setEditForm}
+          allUsers={allUsers}
           t={t}
         />
 

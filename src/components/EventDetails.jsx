@@ -25,6 +25,7 @@ import EventMediaQrCodeModal from './event-details/EventMediaQrCodeModal';
 import EventTabsNav from './event-details/EventTabsNav';
 import EventDisciplineBadges from './agenda/EventDisciplineBadges';
 import EventMediaCaptureSection from './event-details/EventMediaCaptureSection';
+import RoadbookModal from './event-details/RoadbookModal';
 import TabRsvp from './event-details/tabs/TabRsvp';
 import TabLogistics from './event-details/tabs/TabLogistics';
 import TabProgram from './event-details/tabs/TabProgram';
@@ -107,7 +108,32 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     programmeFabrication: evt?.programmeFabrication || null,
     latitude: evt?.latitude || null,
     longitude: evt?.longitude || null,
-    isPublic: Boolean(evt?.isPublic)
+    isPublic: Boolean(evt?.isPublic),
+    formatJeu: evt?.formatJeu || 'scene',
+    parcours: evt?.parcours || {
+      pointDepart: '',
+      itineraire: '',
+      pointArrivee: '',
+      ravitaillementEau: '',
+      urlFichierParcours: ''
+    },
+    hebergement: evt?.hebergement || {
+      type: '',
+      adresse: '',
+      codeAcces: '',
+      repartitionChambres: ''
+    },
+    logistiqueDepart: evt?.logistiqueDepart || {
+      maquillageRequis: false,
+      trousseSecoursBouchons: false,
+      reserveBaguettes: false
+    },
+    contactsJourJ: evt?.contactsJourJ || {
+      referentOrgaNom: '',
+      referentOrgaTel: '',
+      referentGroupeId: '',
+      referentsPupitres: []
+    }
   }), []);
 
   const [editForm, setEditForm] = useState(() => buildEditFormFromEvent(activeEvent));
@@ -132,6 +158,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   const [lienGoogleFormRecoltePhotos, setLienGoogleFormRecoltePhotos] = useState('');
   const [showQrCodeModal, setShowQrCodeModal] = useState(false);
   const [showMediaQrCodeModal, setShowMediaQrCodeModal] = useState(false);
+  const [showRoadbookModal, setShowRoadbookModal] = useState(false);
   const [isSendContractModalOpen, setIsSendContractModalOpen] = useState(false);
   const [isHeaderCalendarMenuOpen, setIsHeaderCalendarMenuOpen] = useState(false);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
@@ -139,6 +166,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   useHardwareBack(isEditingEvent, () => { if (typeof toggleEditing === 'function') toggleEditing(); else setIsEditingEvent(false); });
   useHardwareBack(showQrCodeModal, () => setShowQrCodeModal(false));
   useHardwareBack(showMediaQrCodeModal, () => setShowMediaQrCodeModal(false));
+  useHardwareBack(showRoadbookModal, () => setShowRoadbookModal(false));
   useHardwareBack(isSendContractModalOpen, () => setIsSendContractModalOpen(false));
   useHardwareBack(isHeaderCalendarMenuOpen, () => setIsHeaderCalendarMenuOpen(false));
   useHardwareBack(isMoreMenuOpen, () => setIsMoreMenuOpen(false));
@@ -263,7 +291,8 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     handleChercherPlace,
     handleAnnulerCherchePlace,
     handleAssignPassenger,
-    handleRemovePassenger
+    handleRemovePassenger,
+    handleSendCarMessage
   } = useEventCarpool({
     event,
     user,
@@ -951,7 +980,12 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         longitude: editForm.longitude ? Number(editForm.longitude) : null,
         linkedPatterns: editForm.linkedPatterns || [],
         specialiteAtelier: (editForm.type === 'atelier' || editForm.type === 'stage') ? (editForm.specialiteAtelier || 'general') : null,
-        programmeFabrication: (editForm.type === 'atelier' || editForm.type === 'stage') && editForm.specialiteAtelier === 'fabrication' ? (editForm.programmeFabrication || null) : null
+        programmeFabrication: (editForm.type === 'atelier' || editForm.type === 'stage') && editForm.specialiteAtelier === 'fabrication' ? (editForm.programmeFabrication || null) : null,
+        formatJeu: editForm.formatJeu || 'scene',
+        parcours: editForm.parcours || {},
+        hebergement: editForm.hebergement || {},
+        logistiqueDepart: editForm.logistiqueDepart || {},
+        contactsJourJ: editForm.contactsJourJ || {}
       });
 
       setEditForm(prev => ({
@@ -1403,6 +1437,17 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
               </button>
             )}
 
+            {/* Bouton d'accès rapide Feuille de route (Roadbook complet jour J) */}
+            <button
+              type="button"
+              onClick={() => setShowRoadbookModal(true)}
+              className="text-[10px] font-black uppercase bg-[var(--color-cordel-papier-card,#fdfbf7)] hover:bg-white text-[var(--color-cordel-encre,#181716)] border border-encre-noire px-2.5 sm:px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1 transition-colors select-none"
+              title="Consulter la feuille de route opérationnelle du concert / événement"
+            >
+              <span>📄</span>
+              <span className="hidden sm:inline">Feuille de route</span>
+            </button>
+
             {/* Bouton rapide de provisionnement si récolte active mais pas de dossier Framaspace créé */}
             {isRecolteActive && !currentLienDepot && isAuthorized && (
               <button
@@ -1529,6 +1574,18 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                         </button>
                       )}
 
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowRoadbookModal(true);
+                          setIsMoreMenuOpen(false);
+                        }}
+                        className="w-full px-3.5 py-2 text-[10px] font-black uppercase tracking-wider text-encre-noire hover:bg-neutral-100 cursor-pointer text-left flex items-center gap-2"
+                      >
+                        <span>📄</span>
+                        <span>Feuille de route (A4)</span>
+                      </button>
+
                       {isAuthorized && (
                         <>
                           <button
@@ -1594,6 +1651,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         <EventEditForm
           editForm={editForm}
           setEditForm={setEditForm}
+          allUsers={effectiveAllUsers || allUsers}
           savingEvent={savingEvent}
           handleSaveEvent={handleSaveEvent}
           handleDeleteEvent={handleDeleteEvent}
@@ -1816,6 +1874,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                 reimbursementRule={reimbursementRule}
                 handleAssignPassenger={handleAssignPassenger}
                 handleRemovePassenger={handleRemovePassenger}
+                handleSendCarMessage={handleSendCarMessage}
                 status={status}
                 saving={saving}
                 isPrestationRestricted={isPrestationRestricted}
@@ -1955,6 +2014,20 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         onClose={() => setIsSendContractModalOpen(false)}
         event={activeEvent || event}
         groupId={event.groupId}
+      />
+
+      {/* MODALE : Feuille de route (Roadbook complet & impression A4) */}
+      <RoadbookModal
+        isOpen={showRoadbookModal}
+        onClose={() => setShowRoadbookModal(false)}
+        event={activeEvent || event}
+        allUsers={effectiveAllUsers || allUsers}
+        presentsByInstrument={presentsByInstrument || {}}
+        onNavigateToStageLayout={() => {
+          setActiveTab('program');
+          setShowRoadbookModal(false);
+        }}
+        t={t}
       />
     </div>
   );

@@ -115,13 +115,15 @@ export function useEventCarpool({
     placesReserveesExternes: 0,
     motifReserveesExternes: '',
     materielCharge: '',
-    materielTransporte: ''
+    materielTransporte: '',
+    retourDirect: false
   });
 
   const [joiningVoitureId, setJoiningVoitureId] = useState(null);
   const [joinForm, setJoinForm] = useState({
     isPassenger: true,
-    alfayasCount: 0
+    alfayasCount: 0,
+    doitRentrerDirect: false
   });
   const [submittingCovoit, setSubmittingCovoit] = useState(false);
 
@@ -167,6 +169,8 @@ export function useEventCarpool({
           motifReserveesExternes: (voitureForm.motifReserveesExternes || '').trim(),
           materielCharge: (voitureForm.materielCharge || '').trim(),
           materielTransporte: (voitureForm.materielTransporte || '').trim(),
+          retourDirect: Boolean(voitureForm.retourDirect),
+          messages: [],
           passengers: []
         };
 
@@ -196,7 +200,8 @@ export function useEventCarpool({
         placesReserveesExternes: 0,
         motifReserveesExternes: '',
         materielCharge: '',
-        materielTransporte: ''
+        materielTransporte: '',
+        retourDirect: false
       });
       alert("Votre voiture a été ajoutée au convoi !");
     } catch (err) {
@@ -215,7 +220,8 @@ export function useEventCarpool({
       uid: user.uid,
       nom: `${profileData?.prenom} ${profileData?.nom}`,
       isPassenger: joinForm.isPassenger,
-      alfayasCount: joinForm.alfayasCount
+      alfayasCount: joinForm.alfayasCount,
+      doitRentrerDirect: Boolean(joinForm.doitRentrerDirect)
     };
     const simulatedCar = {
       ...voiture,
@@ -434,7 +440,7 @@ export function useEventCarpool({
 
   const handleChercherPlace = async (options = {}) => {
     if (!user?.uid) return;
-    const { cherchePassager = true, chercheInstrument = false } = options;
+    const { cherchePassager = true, chercheInstrument = false, doitRentrerDirect = false } = options;
 
     setSubmittingCovoit(true);
     try {
@@ -461,7 +467,8 @@ export function useEventCarpool({
           uid: user.uid,
           nom: `${profileData?.prenom} ${profileData?.nom}`,
           cherchePassager: !!cherchePassager,
-          chercheInstrument: !!chercheInstrument
+          chercheInstrument: !!chercheInstrument,
+          doitRentrerDirect: Boolean(doitRentrerDirect)
         });
 
         const currentInscriptions = eventData.inscriptions || [];
@@ -664,6 +671,43 @@ export function useEventCarpool({
     }
   };
 
+  const handleSendCarMessage = async (voitureId, messageText) => {
+    if (!user?.uid || !messageText?.trim() || !event?.id) return;
+
+    const newMsg = {
+      id: `msg_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      senderId: user.uid,
+      senderName: `${profileData?.prenom || ''} ${profileData?.nom || ''}`.trim() || 'Membre',
+      text: messageText.trim(),
+      createdAt: new Date().toISOString()
+    };
+
+    const eventRef = doc(db, 'events', event.id);
+    await runTransaction(db, async (transaction) => {
+      const eventDocSnap = await transaction.get(eventRef);
+      if (!eventDocSnap.exists()) return;
+
+      const eventData = eventDocSnap.data();
+      const currentCovoit = eventData.covoiturage || { voitures: [], recherchePlace: [] };
+      const voitures = (currentCovoit.voitures || []).map((v) => {
+        if (v.id === voitureId) {
+          return {
+            ...v,
+            messages: [...(v.messages || []), newMsg]
+          };
+        }
+        return v;
+      });
+
+      transaction.update(eventRef, {
+        covoiturage: {
+          ...currentCovoit,
+          voitures
+        }
+      });
+    });
+  };
+
   return {
     showProposerForm,
     setShowProposerForm,
@@ -682,6 +726,7 @@ export function useEventCarpool({
     handleChercherPlace,
     handleAnnulerCherchePlace,
     handleAssignPassenger,
-    handleRemovePassenger
+    handleRemovePassenger,
+    handleSendCarMessage
   };
 }

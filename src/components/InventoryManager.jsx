@@ -23,6 +23,7 @@ import InstrumentEditModal from './inventory/InstrumentEditModal';
 import InstrumentsCatalogBlock from './association-settings/blocks/InstrumentsCatalogBlock';
 import AccessoriesKitsBlock from './association-settings/blocks/AccessoriesKitsBlock';
 import CarpoolBlock from './association-settings/blocks/CarpoolBlock';
+import CollectiveKitsManager from './logistics/CollectiveKitsManager';
 
 import { getKitCompletionRatio, getKitCompletionText } from './inventory/inventoryConstants';
 
@@ -531,36 +532,46 @@ export default function InventoryManager({
 
       {/* ONGLET : KITS ET ACCESSOIRES LOGISTIQUE */}
       {activeTab === 'kits' && (
-        <div className="bg-cordel-bg p-5 rounded-b-lg border-2 border-encre-noire shadow-[4px_4px_0px_0px_#181716] flex flex-col gap-4 text-left">
-          <div>
-            <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-1">
-              🎒 Gestion des Kits & Accessoires Logistiques
-            </h3>
-            <p className="text-[10px] text-cordel-master-dark/75 leading-relaxed">
-              Configurez les kits de transport, housses, mailloches, sangles et accessoires opérationnels par pupitre.
-            </p>
-          </div>
-          <form onSubmit={(e) => { e.preventDefault(); handleSaveSettings(); }} className="flex flex-col gap-4">
-            <AccessoriesKitsBlock 
-              formData={settings}
-              handleChange={handleUpdateSetting}
-              saving={savingSettings}
-              t={t}
-              groupId={groupId}
-              supplies={supplies}
-            />
-            <div className="flex justify-end pt-3 border-t border-dashed border-cordel-master-dark/15">
-              <CordelButton
-                type="submit"
-                variant="ocre"
-                useExtremeBorder={true}
-                disabled={savingSettings}
-                className="px-6 py-2 uppercase font-black tracking-wider text-xs shadow-[2px_2px_0px_0px_#181716]"
-              >
-                {savingSettings ? "Enregistrement..." : "💾 Enregistrer les Kits"}
-              </CordelButton>
+        <div className="bg-cordel-bg p-5 rounded-b-lg border-2 border-encre-noire shadow-[4px_4px_0px_0px_#181716] flex flex-col gap-6 text-left">
+          {/* 1. Mallettes Collectives & Trousses Régie */}
+          <CollectiveKitsManager
+            groupId={groupId}
+            user={profileData}
+            profileData={profileData}
+          />
+
+          {/* 2. Configuration des Kits et Accessoires par Pupitre */}
+          <div className="pt-4 border-t-2 border-dashed border-cordel-master-dark/20 flex flex-col gap-4">
+            <div>
+              <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-1">
+                🎒 Accessoires &amp; Kits par Pupitre (Housses, Sangles, Mailloches)
+              </h3>
+              <p className="text-[10px] text-cordel-master-dark/75 leading-relaxed">
+                Configurez les kits de transport, housses, mailloches, sangles et accessoires opérationnels par pupitre.
+              </p>
             </div>
-          </form>
+            <form onSubmit={(e) => { e.preventDefault(); handleSaveSettings(); }} className="flex flex-col gap-4">
+              <AccessoriesKitsBlock 
+                formData={settings}
+                handleChange={handleUpdateSetting}
+                saving={savingSettings}
+                t={t}
+                groupId={groupId}
+                supplies={supplies}
+              />
+              <div className="flex justify-end pt-3 border-t border-dashed border-cordel-master-dark/15">
+                <CordelButton
+                  type="submit"
+                  variant="ocre"
+                  useExtremeBorder={true}
+                  disabled={savingSettings}
+                  className="px-6 py-2 uppercase font-black tracking-wider text-xs shadow-[2px_2px_0px_0px_#181716]"
+                >
+                  {savingSettings ? "Enregistrement..." : "💾 Enregistrer les Kits Pupitres"}
+                </CordelButton>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 

@@ -577,7 +577,7 @@ export function useTreasury(groupId) {
     };
   };
 
-  // Agrégation réactive des cautions d'instruments par adhérent
+  // Agrégation réactive des cautions d'instruments par adhérent (uniquement les instruments avec caution exigée)
   const cautionsByMember = useMemo(() => {
     const defaultMontant = Number(associationSettings?.montantCautionDefaut) || 150;
     const map = {};
@@ -590,7 +590,17 @@ export function useTreasury(groupId) {
         (inst.status === 'Emprunté' && inst.localisationPhysique === memberId)
       );
 
-      if (borrowed.length === 0) {
+      // Seuls les instruments nécessitant explicitement une caution sont pris en compte
+      const withCaution = borrowed.filter(inst => {
+        if (inst.cautionRequise === true) return true;
+        // Rétrocompatibilité : si cautionRequise n'est pas explicité mais qu'un statut actif existe
+        if (inst.cautionRequise === undefined && inst.caution?.statut && inst.caution.statut !== 'non_requise') {
+          return true;
+        }
+        return false;
+      });
+
+      if (withCaution.length === 0) {
         map[memberId] = {
           statutGlobal: 'na',
           totalCaution: 0,
@@ -598,17 +608,21 @@ export function useTreasury(groupId) {
           instruments: []
         };
       } else {
+        let hasPending = false;
         let allRecue = true;
         let totalCaution = 0;
 
-        const detailedList = borrowed.map(inst => {
+        const detailedList = withCaution.map(inst => {
           const montant = inst.caution?.montant !== undefined && inst.caution?.montant !== null
             ? Number(inst.caution.montant) 
             : defaultMontant;
-          const statut = inst.caution?.statut || 'non_recue';
-          const typeGarantie = inst.caution?.typeGarantie || 'cheque';
-          const reference = inst.caution?.reference || '';
+          const statut = inst.caution?.statut || 'en_attente';
+          const typeGarantie = inst.caution?.type || inst.caution?.typeGarantie || 'cheque';
+          const reference = inst.caution?.referencePiece || inst.caution?.reference || '';
           
+          if (statut === 'en_attente' || (statut !== 'recue' && statut !== 'restituee')) {
+            hasPending = true;
+          }
           if (statut !== 'recue') {
             allRecue = false;
           }
@@ -621,13 +635,19 @@ export function useTreasury(groupId) {
             montant,
             statut,
             typeGarantie,
+            type: typeGarantie,
             reference,
-            dateReception: inst.caution?.dateReception || null
+            referencePiece: reference,
+            dateReception: inst.caution?.dateReception || null,
+            dateRestitution: inst.caution?.dateRestitution || null,
+            encaisse: Boolean(inst.caution?.encaisse)
           };
         });
 
+        const statutGlobal = hasPending ? 'en_attente' : (allRecue ? 'recue' : 'restituee');
+
         map[memberId] = {
-          statutGlobal: allRecue ? 'recue' : 'en_attente',
+          statutGlobal,
           totalCaution,
           countInstruments: detailedList.length,
           instruments: detailedList
@@ -642,9 +662,15 @@ export function useTreasury(groupId) {
   const handleUpdateCaution = useCallback(async (instrumentId, cautionData) => {
     try {
       const instRef = doc(db, 'inventory', instrumentId);
+      const isRequise = cautionData.statut !== 'non_requise';
       await updateDoc(instRef, {
+        cautionRequise: isRequise,
         caution: {
           ...cautionData,
+          type: cautionData.type || cautionData.typeGarantie || 'cheque',
+          typeGarantie: cautionData.type || cautionData.typeGarantie || 'cheque',
+          referencePiece: cautionData.referencePiece || cautionData.reference || '',
+          reference: cautionData.referencePiece || cautionData.reference || '',
           updatedAt: Timestamp.now()
         }
       });

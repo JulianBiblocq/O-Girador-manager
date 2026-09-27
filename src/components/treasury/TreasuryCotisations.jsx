@@ -218,7 +218,7 @@ export default function TreasuryCotisations({
       else if (caution.statutGlobal === 'en_attente') cautionStatutLabel = 'En attente';
 
       const garantiesRefs = caution.instruments
-        .map(i => `${i.typeGarantie || 'Chèque'}${i.reference ? ` (${i.reference})` : ''}`)
+        .map(i => `${i.type || i.typeGarantie || 'Chèque'}${i.referencePiece || i.reference ? ` (${i.referencePiece || i.reference})` : ''}`)
         .join(', ') || '';
 
       return [

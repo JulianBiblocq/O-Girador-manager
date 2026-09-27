@@ -1,0 +1,136 @@
+import React from 'react';
+import RoadbookInteractiveContent from './RoadbookInteractiveContent';
+import RoadbookPrintView from './RoadbookPrintView';
+
+/**
+ * Modale de consultation de la Feuille de Route (Roadbook) du jour J.
+ * Affichage sobre et contrasté (thème Cordel), optimisé smartphone et imprimable en A4.
+ *
+ * @param {Object} props
+ * @param {boolean} props.isOpen - Visibilité de la modale
+ * @param {Function} props.onClose - Fermeture de la modale
+ * @param {Object} props.event - Données complètes de l'événement
+ * @param {Array} props.allUsers - Liste de tous les membres
+ * @param {Object} props.presentsByInstrument - Effectifs présents par pupitre
+ * @param {Function} [props.onNavigateToStageLayout] - Navigation vers le plan de scène
+ * @param {Function} [props.t] - Fonction de traduction
+ */
+export default function RoadbookModal({
+  isOpen,
+  onClose,
+  event = {},
+  allUsers = [],
+  presentsByInstrument = {},
+  onNavigateToStageLayout,
+  t = (key) => key
+}) {
+  if (!isOpen) return null;
+
+  const isStageLayoutPublished = Boolean(
+    event.isStageLayoutPublished || event.stageLayout?.isPublished
+  );
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleGoToStage = () => {
+    if (onNavigateToStageLayout) {
+      onNavigateToStageLayout();
+      onClose();
+    }
+  };
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="roadbook-modal-title"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto"
+    >
+      {/* Conteneur principal écran */}
+      <div className="print:hidden relative w-full max-w-3xl max-h-[90vh] flex flex-col bg-[var(--color-cordel-papier)] text-[var(--color-cordel-encre)] rounded-xl border-2 border-[var(--theme-border-color)] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        {/* Barre d'outils / En-tête */}
+        <div className="flex items-center justify-between px-4 py-3 border-b-2 border-[var(--theme-border-color)] bg-[var(--color-cordel-papier-card)]">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">📄</span>
+            <div>
+              <h2 id="roadbook-modal-title" className="font-bold text-base sm:text-lg text-[var(--color-cordel-encre)] m-0 leading-tight">
+                {t('roadbook.title') || 'Feuille de Route'}
+              </h2>
+              <span className="text-xs text-[var(--color-cordel-marron)] truncate block max-w-[200px] sm:max-w-md">
+                {event.titre || 'Événement'}
+              </span>
+            </div>
+          </div>
+
+          {/* Actions : Imprimer, Plan de scène, Fermer */}
+          <div className="flex items-center gap-2">
+            {isStageLayoutPublished && (
+              <button
+                type="button"
+                onClick={handleGoToStage}
+                className="px-2.5 py-1.5 text-xs font-bold bg-[var(--color-cordel-vert)] text-white rounded hover:opacity-90 transition-opacity flex items-center gap-1 shadow-sm"
+                title="Consulter le plan de scène publié"
+              >
+                <span>📐</span>
+                <span className="hidden sm:inline">{t('roadbook.btnStageLayout') || 'Plan de scène'}</span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={handlePrint}
+              className="px-2.5 py-1.5 text-xs font-bold bg-[var(--color-cordel-ocre)] text-white rounded hover:opacity-90 transition-opacity flex items-center gap-1 shadow-sm"
+              title="Imprimer ou générer le PDF A4"
+            >
+              <span>🖨️</span>
+              <span className="hidden sm:inline">{t('roadbook.btnPrint') || 'Imprimer / PDF'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1.5 rounded-full hover:bg-black/10 text-neutral-600 transition-colors ml-1"
+              aria-label="Fermer"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+
+        {/* Corps défilable de la modale interactive */}
+        <div className="overflow-y-auto p-4 flex-1">
+          <RoadbookInteractiveContent
+            event={event}
+            allUsers={allUsers}
+            presentsByInstrument={presentsByInstrument}
+          />
+        </div>
+
+        {/* Pied de page modale */}
+        <div className="px-4 py-2.5 border-t border-[var(--theme-border-color)] bg-[var(--color-cordel-papier-card)] flex justify-between items-center text-xs text-[var(--color-cordel-marron)]">
+          <span className="truncate">
+            📅 {event.date || 'Date à définir'} • {event.lieu || 'Lieu à définir'}
+          </span>
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-3 py-1 bg-neutral-200 hover:bg-neutral-300 text-neutral-800 rounded font-semibold text-xs"
+          >
+            Fermer
+          </button>
+        </div>
+      </div>
+
+      {/* Rendu imprimable A4 (masqué à l'écran, visible uniquement pour window.print()) */}
+      <div className="hidden print:block w-full">
+        <RoadbookPrintView
+          event={event}
+          allUsers={allUsers}
+          presentsByInstrument={presentsByInstrument}
+        />
+      </div>
+    </div>
+  );
+}
