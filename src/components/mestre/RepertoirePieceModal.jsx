@@ -219,6 +219,9 @@ export default function RepertoirePieceModal({
   // Audio effectif affiché (priorité au preset Séquenceur, sinon audio personnalisé)
   const effectiveAudioUrl = selectedPreset?.audioUrl || customAudioUrl || '';
 
+  // Morceau séquencé ou non
+  const isSequenced = Boolean(selectedSeqUrl || selectedPreset || pieceToEdit?.sequenceurId || pieceToEdit?.sequenceurFileUrl);
+
   // Initialisation à l'ouverture (création vs modification)
   useEffect(() => {
     if (!isOpen) return;
@@ -246,9 +249,20 @@ export default function RepertoirePieceModal({
           isLiveOrGlobal: Boolean(v.isLiveOrGlobal || insts.length === 0)
         };
       });
-      setVideos(normalizedVideos);
-      setSignalIds(Array.isArray(pieceToEdit.signalIds) ? pieceToEdit.signalIds : []);
-      setSinaisDoMestre(Array.isArray(pieceToEdit.sinaisDoMestre) ? pieceToEdit.sinaisDoMestre : []);
+      const rawSigIds = Array.isArray(pieceToEdit.signalIds) ? pieceToEdit.signalIds : [];
+      const rawSinais = Array.isArray(pieceToEdit.sinaisDoMestre) ? pieceToEdit.sinaisDoMestre : [];
+      let initialSinais = rawSinais;
+      // Rétrocompatibilité : si l'ancien morceau n'avait que signalIds mais pas de sinaisDoMestre
+      if (initialSinais.length === 0 && rawSigIds.length > 0) {
+        initialSinais = rawSigIds.map((sid) => ({
+          id: `sig_migrated_${sid}`,
+          signalId: sid,
+          mesure: null,
+          bar: null
+        }));
+      }
+      setSignalIds(rawSigIds);
+      setSinaisDoMestre(initialSinais);
       setSelectedToadaId(pieceToEdit.toadaDocId || '');
 
       const rawSeq = pieceToEdit.sequenceurFileUrl || pieceToEdit.sequenceurId || '';
@@ -558,10 +572,25 @@ export default function RepertoirePieceModal({
         };
       });
 
-    const extractedSignalIds = (sinaisDoMestre || [])
-      .map((s) => (typeof s === 'object' && s !== null ? (s.signalId || s.id) : String(s)))
-      .filter(Boolean);
-    const cleanSignalIds = Array.from(new Set([...(signalIds || []), ...extractedSignalIds]));
+    // Synchronisation stricte des signes du Mestre
+    const isSeq = Boolean(matchedSeqId || matchedSeqUrl || selectedSeqUrl);
+    const cleanSinais = (sinaisDoMestre || []).map((s) => {
+      if (typeof s !== 'object' || s === null) return s;
+      if (!isSeq) {
+        // Pour un morceau non séquencé, éliminer les résidus de numéro de mesure
+        const { mesure, bar, barIndex, ...rest } = s;
+        return { ...rest, mesure: null, bar: null };
+      }
+      return s;
+    });
+
+    const cleanSignalIds = Array.from(
+      new Set(
+        cleanSinais
+          .map((s) => (typeof s === 'object' && s !== null ? (s.signalId || s.id) : String(s)))
+          .filter((id) => id && typeof id === 'string' && !id.startsWith('sig_custom_'))
+      )
+    );
 
     // Vidéo principale ajoutée à la liste si non présente
     if (videoUrl && videoUrl.trim()) {
@@ -602,7 +631,7 @@ export default function RepertoirePieceModal({
       notes: (notes || '').trim() || '',
       videos: cleanVideos,
       signalIds: cleanSignalIds,
-      sinaisDoMestre: Array.isArray(sinaisDoMestre) ? cleanFirestorePayload(sinaisDoMestre) : [],
+      sinaisDoMestre: Array.isArray(cleanSinais) ? cleanFirestorePayload(cleanSinais) : [],
       sequenceurId: matchedSeqId || null,
       sequenceurType: matchedSeqType || null,
       sequenceurFileUrl: matchedSeqUrl || null,
@@ -1447,7 +1476,7 @@ export default function RepertoirePieceModal({
               className="flex items-center gap-1.5 text-[10px] uppercase font-black tracking-wider text-cordel-wood hover:text-cordel-master-dark cursor-pointer select-none text-left"
             >
               <span>{collapsedSections.sinais ? '▶' : '▼'}</span>
-              <span>✌️ Signes du Mestre associés &amp; Mesures ({sinaisDoMestre.length})</span>
+              <span>✌️ Signes du Mestre associés {isSequenced ? '&amp; Mesures' : ''} ({sinaisDoMestre.length})</span>
             </button>
             <button
               type="button"
@@ -1464,6 +1493,7 @@ export default function RepertoirePieceModal({
               onChange={setSinaisDoMestre}
               groupId={groupId}
               disabled={submitting}
+              isSequenced={isSequenced}
             />
           ) : (
             <div className="text-[9px] text-cordel-master-dark/70 font-semibold py-0.5">

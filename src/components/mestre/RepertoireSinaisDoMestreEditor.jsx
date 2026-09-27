@@ -3,21 +3,23 @@ import useMestreSignals from '../../hooks/useMestreSignals';
 import CordelButton from '../CordelButton';
 
 /**
- * Interface d'édition des Signes du Mestre pour une fiche du répertoire (< 200 lignes).
+ * Interface d'édition des Signes du Mestre pour une fiche du répertoire.
  * Permet d'afficher les signaux sélectionnés sous forme de puces Cordel
- * (miniature, nom, mesure, suppression directe [ ✕ ]) et d'ajouter de nouveaux
+ * (miniature, nom, mesure éventuelle, suppression directe [ ✕ ]) et d'ajouter de nouveaux
  * gestes depuis la collection mestre_signals via un sélecteur interactif.
  *
- * @param {Array} sinais - Signaux et conventions chronologiques associés
+ * @param {Array} sinais - Signaux et conventions associés
  * @param {Function} onChange - Callback de mise à jour du tableau des signaux
  * @param {string} groupId - Identifiant de l'association
  * @param {boolean} disabled - Désactivation en cours d'envoi
+ * @param {boolean} isSequenced - Indique si le morceau est séquencé (affiche alors les numéros de mesure)
  */
 export default function RepertoireSinaisDoMestreEditor({
   sinais = [],
   onChange,
   groupId = null,
-  disabled = false
+  disabled = false,
+  isSequenced = false
 }) {
   const { signals = [], loading: loadingSignals } = useMestreSignals(groupId);
   const signalsMap = useMemo(() => new Map(signals.map((s) => [s.id, s])), [signals]);
@@ -31,32 +33,94 @@ export default function RepertoireSinaisDoMestreEditor({
   const [customNom, setCustomNom] = useState('');
   const [customMesure, setCustomMesure] = useState('1');
 
-  // Tri chronologique des signaux par mesure
+  // Tri chronologique des signaux par mesure si séquencé, ou par ordre alphabétique / saisie
   const sortedSinais = useMemo(() => {
     return [...(Array.isArray(sinais) ? sinais : [])].sort((a, b) => {
-      const ma = typeof a === 'object' && a !== null ? (a.mesure ?? a.bar ?? a.barIndex ?? 0) : 0;
-      const mb = typeof b === 'object' && b !== null ? (b.mesure ?? b.bar ?? b.barIndex ?? 0) : 0;
-      return Number(ma) - Number(mb);
+      if (isSequenced) {
+        const ma = typeof a === 'object' && a !== null ? (a.mesure ?? a.bar ?? a.barIndex ?? null) : null;
+        const mb = typeof b === 'object' && b !== null ? (b.mesure ?? b.bar ?? b.barIndex ?? null) : null;
+        if (ma !== null && mb !== null) return Number(ma) - Number(mb);
+        if (ma !== null) return -1;
+        if (mb !== null) return 1;
+      }
+      const na = (typeof a === 'object' && a !== null ? (a.nom || a.name) : String(a)) || '';
+      const nb = (typeof b === 'object' && b !== null ? (b.nom || b.name) : String(b)) || '';
+      return na.localeCompare(nb);
     });
-  }, [sinais]);
+  }, [sinais, isSequenced]);
 
-  // Suppression directe d'un signal
+  // Suppression directe d'un signal (sécurisée contre les IDs ou objets dérivés)
   const handleRemove = (targetItem) => {
-    if (disabled) return;
+    if (disabled || !targetItem) return;
+    const targetSid = typeof targetItem === 'object' && targetItem !== null
+      ? (targetItem.signalId || targetItem.id)
+      : String(targetItem);
+    const targetId = typeof targetItem === 'object' && targetItem !== null ? targetItem.id : null;
+    const targetMesure = typeof targetItem === 'object' && targetItem !== null
+      ? (targetItem.mesure ?? targetItem.bar ?? null)
+      : null;
+
     const updated = (sinais || []).filter((item) => {
       if (item === targetItem) return false;
-      if (typeof item === 'object' && typeof targetItem === 'object' && item !== null && targetItem !== null) {
-        if (item.id && targetItem.id && item.id === targetItem.id) return false;
-        if (item.signalId && targetItem.signalId && item.signalId === targetItem.signalId && item.mesure === targetItem.mesure) return false;
+      const itemSid = typeof item === 'object' && item !== null
+        ? (item.signalId || item.id)
+        : String(item);
+      const itemId = typeof item === 'object' && item !== null ? item.id : null;
+      const itemMesure = typeof item === 'object' && item !== null
+        ? (item.mesure ?? item.bar ?? null)
+        : null;
+
+      // Correspondance par identifiant technique interne
+      if (itemId && targetId && itemId === targetId) return false;
+
+      // Si morceau non séquencé : supprimer par ID du signal
+      if (!isSequenced) {
+        if (itemSid && targetSid && itemSid === targetSid) return false;
+      } else {
+        // Si morceau séquencé : supprimer si même signal et même mesure
+        if (itemSid && targetSid && itemSid === targetSid && itemMesure === targetMesure) return false;
       }
       return true;
     });
+
     onChange(updated);
   };
 
   // Ajout d'un signal depuis la bibliothèque mestre_signals
   const handleAddSignalFromLibrary = (sig) => {
     if (disabled || !sig) return;
+
+    // Pour un morceau non séquencé, logique toggle / absence de mesure
+    if (!isSequenced) {
+      const alreadyIndex = (sinais || []).findIndex((item) => {
+        const sid = typeof item === 'object' && item !== null ? (item.signalId || item.id) : String(item);
+        return sid === sig.id;
+      });
+
+      if (alreadyIndex !== -1) {
+        // Si déjà associé, on le retire (mode toggle intuitif)
+        const updated = [...(sinais || [])];
+        updated.splice(alreadyIndex, 1);
+        onChange(updated);
+        return;
+      }
+
+      const newEntry = {
+        id: `sig_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        signalId: sig.id,
+        mesure: null,
+        bar: null,
+        nom: sig.name || sig.nom || 'Geste',
+        name: sig.name || sig.nom || 'Geste',
+        imageUrl: sig.imageUrl || null,
+        consigne: sig.consigne || sig.action || sig.description || ''
+      };
+
+      onChange([...(sinais || []), newEntry]);
+      return;
+    }
+
+    // Pour un morceau séquencé : positionnement sur la mesure choisie
     const m = parseInt(selectedMesure, 10);
     const validMesure = isNaN(m) || m < 1 ? 1 : m;
 
@@ -81,8 +145,8 @@ export default function RepertoireSinaisDoMestreEditor({
     if (e) e.preventDefault();
     if (!customNom.trim()) return;
 
-    const m = parseInt(customMesure, 10);
-    const validMesure = isNaN(m) || m < 1 ? 1 : m;
+    const m = isSequenced ? parseInt(customMesure, 10) : null;
+    const validMesure = isSequenced ? (isNaN(m) || m < 1 ? 1 : m) : null;
 
     const newEntry = {
       id: `sig_custom_${Date.now()}`,
@@ -94,7 +158,9 @@ export default function RepertoireSinaisDoMestreEditor({
 
     onChange([...(sinais || []), newEntry]);
     setCustomNom('');
-    setCustomMesure(String(validMesure + 1));
+    if (isSequenced && validMesure) {
+      setCustomMesure(String(validMesure + 1));
+    }
     setIsCustomInputOpen(false);
   };
 
@@ -151,13 +217,17 @@ export default function RepertoireSinaisDoMestreEditor({
       </div>
 
       <p className="text-[10px] text-encre-noire/70 font-semibold italic leading-tight">
-        Signaux de commandement et conventions par mesure (départ, virada, break, coupure). Suggérés depuis le Séquenceur ou ajoutés à la main.
+        {isSequenced
+          ? "Signaux de commandement et conventions par mesure (départ, virada, break, coupure). Suggérés depuis le Séquenceur ou positionnés à la main."
+          : "Signaux de commandement du Mestre associés à ce rythme (départ, virada, coupure...)."}
       </p>
 
       {/* Liste des puces / badges Cordel des signaux sélectionnés */}
       {sortedSinais.length === 0 ? (
         <div className="py-2.5 px-3 text-center text-[10px] text-encre-noire/50 italic border border-dashed border-encre-noire/15 rounded bg-white/60">
-          Aucun signe rattaché pour l'instant. Liez un Preset pour les suggérer automatiquement ou cliquez sur [ ➕ Ajouter un signe ].
+          {isSequenced
+            ? "Aucun signe rattaché pour l'instant. Liez un Preset pour les suggérer automatiquement ou cliquez sur [ ➕ Ajouter un signe ]."
+            : "Aucun signe rattaché pour l'instant. Cliquez sur [ ➕ Ajouter un signe ] pour associer des gestes du Mestre."}
         </div>
       ) : (
         <div className="flex flex-wrap gap-1.5 p-2 bg-white/80 rounded border border-encre-noire/15 max-h-52 overflow-y-auto">
@@ -183,9 +253,9 @@ export default function RepertoireSinaisDoMestreEditor({
                   )}
                 </div>
 
-                {/* Mesure & Nom */}
+                {/* Mesure (uniquement si morceau séquencé) & Nom */}
                 <div className="flex items-center gap-1">
-                  {m && (
+                  {isSequenced && m && (
                     <span className="text-[9px] font-black text-cordel-wood uppercase">
                       M.{m} :
                     </span>
@@ -220,19 +290,21 @@ export default function RepertoireSinaisDoMestreEditor({
               <span>Bibliothèque des Signes du Mestre ({signals.length})</span>
             </span>
 
-            {/* Réglage de la mesure cible pour le prochain ajout */}
-            <div className="flex items-center gap-1.5">
-              <label className="text-[9px] font-bold text-amber-900 uppercase">
-                Mesure :
-              </label>
-              <input
-                type="number"
-                min="1"
-                value={selectedMesure}
-                onChange={(e) => setSelectedMesure(e.target.value)}
-                className="w-14 text-[10px] font-black p-1 bg-white border border-amber-400 rounded text-center"
-              />
-            </div>
+            {/* Réglage de la mesure cible pour le prochain ajout (uniquement si le morceau est séquencé) */}
+            {isSequenced && (
+              <div className="flex items-center gap-1.5">
+                <label className="text-[9px] font-bold text-amber-900 uppercase">
+                  Mesure :
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  value={selectedMesure}
+                  onChange={(e) => setSelectedMesure(e.target.value)}
+                  className="w-14 text-[10px] font-black p-1 bg-white border border-amber-400 rounded text-center"
+                />
+              </div>
+            )}
           </div>
 
           {/* Recherche rapide */}
@@ -254,36 +326,63 @@ export default function RepertoireSinaisDoMestreEditor({
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-48 overflow-y-auto p-1 bg-white/60 rounded border border-amber-200">
-              {filteredCatalogSignals.map((sig) => (
-                <button
-                  key={sig.id}
-                  type="button"
-                  onClick={() => handleAddSignalFromLibrary(sig)}
-                  className="flex items-center gap-2 p-1.5 rounded bg-white hover:bg-amber-100/70 border border-encre-noire/15 hover:border-amber-400 transition-all text-left cursor-pointer shadow-2xs select-none"
-                  title={`Ajouter « ${sig.name} » à la mesure ${selectedMesure}`}
-                >
-                  <div className="w-7 h-7 rounded bg-stone-900 shrink-0 overflow-hidden flex items-center justify-center border border-encre-noire/20">
-                    {sig.imageUrl ? (
-                      <img src={sig.imageUrl} alt={sig.name} className="w-full h-full object-cover" />
+              {filteredCatalogSignals.map((sig) => {
+                const isSelected = !isSequenced && (sinais || []).some((item) => {
+                  const sid = typeof item === 'object' && item !== null ? (item.signalId || item.id) : String(item);
+                  return sid === sig.id;
+                });
+
+                return (
+                  <button
+                    key={sig.id}
+                    type="button"
+                    onClick={() => handleAddSignalFromLibrary(sig)}
+                    className={`flex items-center gap-2 p-1.5 rounded transition-all text-left cursor-pointer shadow-2xs select-none ${
+                      isSelected
+                        ? 'bg-green-50 border-2 border-green-700 shadow-[1px_1px_0px_0px_#2d6a4f]'
+                        : 'bg-white hover:bg-amber-100/70 border border-encre-noire/15 hover:border-amber-400'
+                    }`}
+                    title={
+                      isSequenced
+                        ? `Ajouter « ${sig.name} » à la mesure ${selectedMesure}`
+                        : isSelected
+                          ? `Retirer « ${sig.name} »`
+                          : `Associer « ${sig.name} » à ce morceau`
+                    }
+                  >
+                    <div className="w-7 h-7 rounded bg-stone-900 shrink-0 overflow-hidden flex items-center justify-center border border-encre-noire/20">
+                      {sig.imageUrl ? (
+                        <img src={sig.imageUrl} alt={sig.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-[10px]">✋</span>
+                      )}
+                    </div>
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <span className="text-[10px] font-black text-encre-noire truncate leading-tight">
+                        {sig.name}
+                      </span>
+                      {sig.consigne && (
+                        <span className="text-[8.5px] text-stone-500 truncate leading-none mt-0.5">
+                          {sig.consigne}
+                        </span>
+                      )}
+                    </div>
+                    {isSequenced ? (
+                      <span className="text-[9px] font-black text-amber-800 bg-amber-100 px-1 py-0.5 rounded border border-amber-300 shrink-0">
+                        + M.{selectedMesure}
+                      </span>
                     ) : (
-                      <span className="text-[10px]">✋</span>
-                    )}
-                  </div>
-                  <div className="flex flex-col min-w-0 flex-1">
-                    <span className="text-[10px] font-black text-encre-noire truncate leading-tight">
-                      {sig.name}
-                    </span>
-                    {sig.consigne && (
-                      <span className="text-[8.5px] text-stone-500 truncate leading-none mt-0.5">
-                        {sig.consigne}
+                      <span className={`text-[9px] font-black px-1.5 py-0.5 rounded shrink-0 ${
+                        isSelected
+                          ? 'bg-green-100 text-green-900 border border-green-600'
+                          : 'bg-stone-100 text-stone-700 border border-stone-300'
+                      }`}>
+                        {isSelected ? '✓ Associé' : '+ Associer'}
                       </span>
                     )}
-                  </div>
-                  <span className="text-[9px] font-black text-amber-800 bg-amber-100 px-1 py-0.5 rounded border border-amber-300 shrink-0">
-                    + M.{selectedMesure}
-                  </span>
-                </button>
-              ))}
+                  </button>
+                );
+              })}
             </div>
           )}
 
@@ -301,17 +400,19 @@ export default function RepertoireSinaisDoMestreEditor({
           {/* Formulaire ajout personnalisé rapide */}
           {isCustomInputOpen && (
             <div className="flex items-center gap-2 pt-1">
-              <input
-                type="number"
-                min="1"
-                placeholder="Mesure"
-                value={customMesure}
-                onChange={(e) => setCustomMesure(e.target.value)}
-                className="w-16 text-[10px] font-black p-1 bg-white border border-amber-300 rounded text-center"
-              />
+              {isSequenced && (
+                <input
+                  type="number"
+                  min="1"
+                  placeholder="Mesure"
+                  value={customMesure}
+                  onChange={(e) => setCustomMesure(e.target.value)}
+                  className="w-16 text-[10px] font-black p-1 bg-white border border-amber-300 rounded text-center"
+                />
+              )}
               <input
                 type="text"
-                placeholder="Ex: Break solo, Virada 2 temps..."
+                placeholder={isSequenced ? "Ex: Break solo, Virada 2 temps..." : "Ex: Appel de fin, Coupure générale..."}
                 value={customNom}
                 onChange={(e) => setCustomNom(e.target.value)}
                 className="flex-1 text-[10px] font-semibold p-1 bg-white border border-amber-300 rounded"
@@ -333,3 +434,4 @@ export default function RepertoireSinaisDoMestreEditor({
     </div>
   );
 }
+

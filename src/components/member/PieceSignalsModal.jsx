@@ -16,6 +16,8 @@ export default function PieceSignalsModal({
   const { t } = useTranslation();
   const { signals: catalogSignals = [] } = useMestreSignals(groupId);
 
+  const isSequenced = Boolean(piece?.hasSequencer || piece?.sequenceurId || piece?.sequenceurFileUrl || piece?.activeSequencerUrl);
+
   // Résolution rigoureuse des signaux réels du morceau (interdiction des signaux factices ou bruts)
   const resolvedSignals = useMemo(() => {
     if (!piece) return [];
@@ -28,7 +30,7 @@ export default function PieceSignalsModal({
       if (!sig || !sig.id) return;
       const nom = (sig.name || sig.nom || '').trim();
       // Interdiction formelle des signaux sans nom réel ou factices
-      if (!nom || nom.toLowerCase().startsWith('signe ')) return;
+      if (!nom || /^[a-zA-Z0-9_-]{16,}$/.test(nom) || nom.toLowerCase().startsWith('signe ')) return;
       const normName = nom.toLowerCase();
       if (seenIds.has(sig.id) || seenNames.has(normName)) return;
 
@@ -36,31 +38,21 @@ export default function PieceSignalsModal({
       seenNames.add(normName);
       signalsList.push({
         id: sig.id,
-        mesure: barNumber ? Number(barNumber) : null,
+        mesure: isSequenced && barNumber ? Number(barNumber) : null,
         nom,
         consigne: (sig.consigne || sig.action || sig.description || '').trim(),
         imageUrl: sig.imageUrl || null
       });
     };
 
-    // 1. Depuis piece.signalIds
-    if (Array.isArray(piece.signalIds)) {
-      piece.signalIds.forEach((sigId, idx) => {
-        const match = catalogSignals.find((cs) => cs.id === sigId);
-        if (match) {
-          addSignal(match, idx + 1);
-        }
-      });
-    }
-
-    // 2. Depuis sinaisDoMestre / activeSinaisDoMestre
+    // 1. Depuis sinaisDoMestre / activeSinaisDoMestre (prioritaire)
     const rawSinais = (Array.isArray(piece.sinaisDoMestre) && piece.sinaisDoMestre.length > 0)
       ? piece.sinaisDoMestre
       : (Array.isArray(piece.activeSinaisDoMestre) ? piece.activeSinaisDoMestre : []);
 
     rawSinais.forEach((sig, idx) => {
       const sid = typeof sig === 'object' && sig !== null ? (sig.signalId || sig.id) : String(sig);
-      const m = typeof sig === 'object' && sig !== null ? (sig.mesure ?? sig.bar ?? sig.barIndex) : null;
+      const m = isSequenced && typeof sig === 'object' && sig !== null ? (sig.mesure ?? sig.bar ?? sig.barIndex) : null;
       const match = catalogSignals.find((cs) =>
         (sid && cs.id === sid) ||
         (sig.name && cs.name && cs.name.toLowerCase() === sig.name.toLowerCase()) ||
@@ -85,13 +77,25 @@ export default function PieceSignalsModal({
       }
     });
 
+    // 2. Rétrocompatibilité : depuis piece.signalIds UNIQUEMENT si rawSinais était vide
+    if (rawSinais.length === 0 && Array.isArray(piece.signalIds)) {
+      piece.signalIds.forEach((sigId) => {
+        const match = catalogSignals.find((cs) => cs.id === sigId);
+        if (match) {
+          addSignal(match, null);
+        }
+      });
+    }
+
     return signalsList.sort((a, b) => {
-      if (a.mesure && b.mesure) return a.mesure - b.mesure;
-      if (a.mesure) return -1;
-      if (b.mesure) return 1;
+      if (isSequenced) {
+        if (a.mesure && b.mesure) return a.mesure - b.mesure;
+        if (a.mesure) return -1;
+        if (b.mesure) return 1;
+      }
       return a.nom.localeCompare(b.nom);
     });
-  }, [piece, catalogSignals]);
+  }, [piece, catalogSignals, isSequenced]);
 
   if (!isOpen || !piece) return null;
 
@@ -153,7 +157,7 @@ export default function PieceSignalsModal({
 
                     {/* Informations du geste */}
                     <div className="flex-1 min-w-0 flex flex-col gap-0.5 text-left">
-                      {sig.mesure && (
+                      {isSequenced && sig.mesure && (
                         <span className="inline-block px-1.5 py-0.5 rounded text-[9.5px] font-extrabold uppercase bg-amber-100 text-amber-950 w-fit border border-amber-300">
                           Mesure {sig.mesure}
                         </span>

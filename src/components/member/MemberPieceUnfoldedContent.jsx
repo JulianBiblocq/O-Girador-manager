@@ -40,9 +40,9 @@ export default function MemberPieceUnfoldedContent({
     piece.cultureDocId
   );
   const hasSignals = Boolean(
-    (Array.isArray(piece.signalIds) && piece.signalIds.length > 0) ||
     (Array.isArray(piece.sinaisDoMestre) && piece.sinaisDoMestre.length > 0) ||
-    (Array.isArray(piece.activeSinaisDoMestre) && piece.activeSinaisDoMestre.length > 0)
+    (Array.isArray(piece.activeSinaisDoMestre) && piece.activeSinaisDoMestre.length > 0) ||
+    (Array.isArray(piece.signalIds) && piece.signalIds.length > 0)
   );
 
   return (

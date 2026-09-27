@@ -737,17 +737,27 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                       </span>
                     )}
 
-                    {((Array.isArray(piece.signalIds) && piece.signalIds.length > 0) || (Array.isArray(piece.activeSinaisDoMestre) && piece.activeSinaisDoMestre.length > 0) || (Array.isArray(piece.sinaisDoMestre) && piece.sinaisDoMestre.length > 0)) && (
-                      <button
-                        type="button"
-                        onClick={() => setActiveSignalsModalPiece(piece)}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-amber-50 hover:bg-amber-100 text-amber-950 border border-amber-300 transition-colors shadow-2xs cursor-pointer select-none"
-                        title="Consulter l'aide-mémoire des signes du Mestre"
-                      >
-                        <span>🖐️</span>
-                        <span>{(piece.signalIds?.length || piece.activeSinaisDoMestre?.length || piece.sinaisDoMestre?.length || 0)} Signe{(piece.signalIds?.length || piece.activeSinaisDoMestre?.length || piece.sinaisDoMestre?.length) > 1 ? 's' : ''}</span>
-                      </button>
-                    )}
+                    {(() => {
+                      const effectiveSignalsCount = (
+                        Array.isArray(piece.sinaisDoMestre) && piece.sinaisDoMestre.length > 0
+                          ? piece.sinaisDoMestre.length
+                          : (Array.isArray(piece.activeSinaisDoMestre) && piece.activeSinaisDoMestre.length > 0
+                            ? piece.activeSinaisDoMestre.length
+                            : (Array.isArray(piece.signalIds) ? piece.signalIds.length : 0))
+                      );
+                      if (effectiveSignalsCount === 0) return null;
+                      return (
+                        <button
+                          type="button"
+                          onClick={() => setActiveSignalsModalPiece(piece)}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-amber-50 hover:bg-amber-100 text-amber-950 border border-amber-300 transition-colors shadow-2xs cursor-pointer select-none"
+                          title="Consulter l'aide-mémoire des signes du Mestre"
+                        >
+                          <span>🖐️</span>
+                          <span>{effectiveSignalsCount} Signe{effectiveSignalsCount > 1 ? 's' : ''}</span>
+                        </button>
+                      );
+                    })()}
 
                     {/* Badge Entraînement si des entraînements sont rattachés au morceau */}
                     {(() => {
@@ -803,14 +813,18 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                   {(() => {
                     const realSignals = [];
                     const seen = new Set();
+                    const isPieceSequenced = Boolean(piece.hasSequencer || piece.sequenceurId || piece.sequenceurFileUrl);
+
                     const addSig = (sig, customMesure = null) => {
                       if (!sig) return;
                       const nom = (sig.name || sig.nom || '').trim();
                       // Filtrer strictement les identifiants bruts Firestore non résolus ou les faux signaux
                       if (!nom || /^[a-zA-Z0-9_-]{16,}$/.test(nom) || nom.toLowerCase().startsWith('signe ')) return;
                       const sid = sig.id || sig.signalId || nom;
-                      const m = customMesure ?? sig.mesure ?? sig.bar ?? null;
-                      const dedupeKey = `${sid}_${m || ''}`;
+                      // Si le morceau n'est pas séquencé, ignorer complètement le numéro de mesure
+                      const m = isPieceSequenced ? (customMesure ?? sig.mesure ?? sig.bar ?? null) : null;
+                      // Déduplication : si non séquencé, strictement par sid/nom. Si séquencé, par sid_mesure.
+                      const dedupeKey = isPieceSequenced ? `${sid}_${m || ''}` : `${sid}`;
                       if (seen.has(dedupeKey)) return;
                       seen.add(dedupeKey);
 
@@ -839,7 +853,8 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                       }
                     });
 
-                    if (Array.isArray(piece.signalIds)) {
+                    // Rétrocompatibilité : uniquement si rawSinais était vide
+                    if (rawSinais.length === 0 && Array.isArray(piece.signalIds)) {
                       piece.signalIds.forEach((id) => {
                         const match = signalsMap.get(id);
                         if (match) addSig(match);
@@ -870,7 +885,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                             </div>
                             <div className="flex flex-col min-w-0">
                               <div className="flex items-center gap-1">
-                                {sig.mesure && (
+                                {isPieceSequenced && sig.mesure && (
                                   <span className="text-[8.5px] font-black text-cordel-wood uppercase">
                                     M.{sig.mesure}
                                   </span>
@@ -889,6 +904,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                       </div>
                     );
                   })()}
+
 
                   {/* Volet déplié : Entraînements rattachés */}
                   {(() => {
