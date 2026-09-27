@@ -15,7 +15,7 @@ export const DEFAULT_VARAL_CATEGORIES = [
   { id: 'Culture', nom: 'Culture', actif: true, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
   { id: 'TutosFabrication', nom: 'Tutos Fabrication', actif: true, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
   { id: 'PhotosPrestations', nom: 'Photos Prestations', actif: true, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
-  { id: 'ComptesRendus', nom: 'Comptes-rendus & Administratif', actif: true, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: true },
+  { id: 'ComptesRendus', nom: 'Documents administratifs', actif: true, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: true },
   { id: 'TutorielsVideo', nom: 'Tutoriels Vidéo', actif: false, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
   { id: 'Administratif', nom: 'Administratif', actif: false, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
   { id: 'Costumerie', nom: 'Costumerie & Patrons', actif: false, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false }
@@ -218,6 +218,7 @@ export default function useVaralData({
                 ...defaultCat, 
                 ...customCat, 
                 id: defaultCat.id,
+                nom: defaultCat.id === 'ComptesRendus' ? 'Documents administratifs' : (customCat.nom || defaultCat.nom),
                 actif: customCat.actif !== false // Actif par défaut si non défini
               };
             }

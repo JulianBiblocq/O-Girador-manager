@@ -1000,14 +1000,14 @@ export default function Forum({
           >
             🔄
           </button>
-          {isModeratorOrAdmin && onOpenStudioForum && (
+          {isModeratorOrAdmin && (
             <CordelButton
               variant="ocre"
-              onClick={onOpenStudioForum}
-              className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider shrink-0"
-              title="Accéder au Studio de Gestion du Porte-voix"
+              onClick={() => setIsChannelsManagerOpen(true)}
+              className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider shrink-0 cursor-pointer"
+              title="Gérer les salons, droits d'accès et modération"
             >
-              🛠️ Studio Porte-voix
+              ⚙️ Salons
             </CordelButton>
           )}
         </div>

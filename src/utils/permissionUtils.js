@@ -312,7 +312,6 @@ export function canAccessMestre(profileData, permissionsMatrice = null, effectiv
       ...(permissionsMatrice['mestre-repertoire'] || []),
       ...(permissionsMatrice['mestre-orientation'] || []),
       ...(permissionsMatrice['mestre-stage-layout'] || []),
-      ...(permissionsMatrice['mestre-sequenceur'] || []),
       ...(permissionsMatrice['mestre-events'] || []),
       ...(permissionsMatrice['mestre-mot-mestre'] || [])
     ].map(t => (typeof t === 'string' ? t.toLowerCase() : (t.id || t.nomF || t.nomM || '').toLowerCase()));
@@ -334,7 +333,6 @@ export const TAB_TO_POLE_MAP = {
 
   // Logistique
   inventory: 'logistique',
-  'logistics-pupitres': 'logistique',
   'logistics-kits': 'logistique',
   'logistics-carpool': 'logistique',
   orders: 'logistique',
@@ -371,13 +369,9 @@ export const TAB_TO_POLE_MAP = {
 
   // Secrétariat
   'export-annu': 'secretariat',
-  'reunion-manager': 'secretariat',
   'activity-reports': 'secretariat',
-  'mestre-forum-channels': 'secretariat',
   'studio-events': 'secretariat',
   'varal-secretariat': 'secretariat',
-  'secretariat-documents': 'secretariat',
-  'secretariat-lieux': 'secretariat',
 
   // Gouvernance / CA
   'ca-reunions': 'gouvernance',
@@ -389,9 +383,7 @@ export const TAB_TO_POLE_MAP = {
   // Studio
   'annonces-publish': 'studio',
   'studio-social': 'studio',
-  'studio-lexique': 'studio',
   newsletter: 'studio',
-  'studio-communication': 'studio',
   'varal-photos': 'studio',
 
   // Pédagogie
@@ -405,7 +397,6 @@ export const TAB_TO_POLE_MAP = {
   'mestre-orientation': 'mestre',
   'mestre-events': 'mestre',
   'mestre-stage-layout': 'mestre',
-  'mestre-sequenceur': 'mestre',
   'mestre-mot-mestre': 'mestre'
 };
 

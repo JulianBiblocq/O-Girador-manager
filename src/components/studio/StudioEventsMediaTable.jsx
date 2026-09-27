@@ -4,6 +4,7 @@ import { httpsCallable } from 'firebase/functions';
 import { db, functions } from '../../firebase';
 import { useTranslation } from '../LanguageContext';
 import StudioPhotoQrPrintModal from './StudioPhotoQrPrintModal';
+import StudioEventMediaAccordionRow from './StudioEventMediaAccordionRow';
 
 /**
  * Composant : StudioEventsMediaTable
@@ -32,6 +33,21 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false, onSw
 
   // Modale QR-Code active
   const [activeQrModal, setActiveQrModal] = useState(null); // { qrUrl, eventTitle, eventDate, eventLocation, mode }
+
+  // Liste des identifiants d'événements dépliés en accordéon (pliés par défaut)
+  const [expandedEventIds, setExpandedEventIds] = useState(new Set());
+
+  const toggleExpandEvent = (id) => {
+    setExpandedEventIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
 
   // 1. Écoute en temps réel des événements du groupe
   useEffect(() => {
@@ -601,337 +617,27 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false, onSw
           Aucun événement trouvé pour ces critères de recherche.
         </div>
       ) : (
-        <div className="flex flex-col gap-3.5">
-          {filteredEvents.map((ev) => {
-            const rowState = rowStates[ev.id] || {};
-            const evDate = ev.dateDebut || ev.date || '';
-            const isPresta = ev.type === 'prestation' || ev.isPrestation;
-            const hasDepot = Boolean((ev.lienDepotMedias || '').trim());
-            const hasAlbum = Boolean((ev.albumPhotosUrl || '').trim());
-
-            return (
-              <div
-                key={ev.id}
-                className="bg-cordel-card-bg text-encre-noire border-2 border-encre-noire rounded-[6px_12px_7px_10px] p-4 shadow-[2px_2px_0px_0px_#181716] flex flex-col gap-3"
-              >
-                {/* En-tête de la carte événement */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-dashed border-cordel-master-dark/20 pb-2.5">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider border border-encre-noire/30 bg-cordel-bg">
-                      {isPresta ? '🎭 Prestation' : ev.type === 'repetition' ? '🥁 Répétition' : '📅 Sortie'}
-                    </span>
-                    <h4 className="text-xs sm:text-sm font-black uppercase tracking-wide text-cordel-wood">
-                      {ev.titre || "Événement sans titre"}
-                    </h4>
-                    {evDate && (
-                      <span className="text-[11px] font-bold text-encre-noire/75">
-                        • 📅 {new Date(evDate).toLocaleDateString('fr-FR')}
-                      </span>
-                    )}
-                    {ev.lieu && (
-                      <span className="text-[10.5px] font-medium text-encre-noire/60 truncate max-w-xs">
-                        • 📍 {ev.lieu}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Badges de statut récapitulatifs & Actions Framaspace */}
-                  <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto flex-wrap">
-                    {ev.framaspaceFolder && (
-                      <span 
-                        className="px-2 py-0.5 rounded text-[8.5px] font-bold font-mono bg-amber-50 text-amber-950 border border-amber-300 truncate max-w-[160px]"
-                        title={`Dossier Nextcloud : Prestations/${ev.framaspaceFolder}`}
-                      >
-                        📁 {ev.framaspaceFolder}
-                      </span>
-                    )}
-
-                    {hasDepot && (
-                      <span className="px-2 py-0.5 rounded-full text-[8.5px] font-black uppercase tracking-widest bg-emerald-100 text-emerald-900 border border-emerald-800/40">
-                        📸 Dépôt actif
-                      </span>
-                    )}
-                    {hasAlbum && (
-                      <span className="px-2 py-0.5 rounded-full text-[8.5px] font-black uppercase tracking-widest bg-amber-100 text-amber-900 border border-amber-800/40">
-                        🪢 Varal relié
-                      </span>
-                    )}
-
-                    {/* Raccourci vers le livret sur le Varal Photos */}
-                    {(hasAlbum || Boolean(ev.publierSurVaral)) && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (onSwitchToVaral) {
-                            onSwitchToVaral();
-                          } else if (ev.albumPhotosUrl || ev.lienDepotMedias) {
-                            window.open(ev.albumPhotosUrl || ev.lienDepotMedias, '_blank', 'noopener,noreferrer');
-                          }
-                        }}
-                        className="px-2 py-0.5 text-[8.5px] font-black uppercase tracking-wider rounded border border-encre-noire bg-amber-200 hover:bg-amber-300 text-encre-noire cursor-pointer flex items-center gap-1 shadow-xs active:scale-95"
-                        title="Consulter le livret de cet événement sur le Varal Photos"
-                      >
-                        <span>👁️</span>
-                        <span>Voir sur le Varal</span>
-                      </button>
-                    )}
-
-                    {/* Déclencheur manuel Framaspace Nextcloud */}
-                    {canWrite && (
-                      <button
-                        type="button"
-                        onClick={() => handleProvisionFramaspace(ev)}
-                        disabled={provisioningMap[ev.id]?.loading}
-                        className={`px-2.5 py-1 text-[9px] font-black uppercase tracking-wider rounded-[3px_5px_4px_4px] border-2 border-encre-noire transition-all cursor-pointer flex items-center gap-1 shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none ${
-                          hasDepot
-                            ? 'bg-cordel-bg text-encre-noire hover:bg-amber-100'
-                            : 'bg-[var(--color-cordel-vert)] text-white hover:bg-emerald-800 border-emerald-950'
-                        }`}
-                        title={
-                          hasDepot
-                            ? "Re-générer ou vérifier les dossiers et partages Framaspace"
-                            : "Générer automatiquement le dossier Framaspace, le dépôt public et le lien album"
-                        }
-                      >
-                        {provisioningMap[ev.id]?.loading ? (
-                          <>
-                            <span className="animate-spin">⏳</span>
-                            <span>Framaspace...</span>
-                          </>
-                        ) : provisioningMap[ev.id]?.success ? (
-                          <>
-                            <span>✓</span>
-                            <span>Créé !</span>
-                          </>
-                        ) : (
-                          <>
-                            <span>⚡</span>
-                            <span>{hasDepot ? "Re-sync Cloud" : "Créer sur Framaspace"}</span>
-                          </>
-                        )}
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Message d'erreur éventuel sur le provisionnement Framaspace */}
-                {provisioningMap[ev.id]?.error && (
-                  <div className="text-[10px] font-bold text-[var(--color-cordel-rouge)] bg-red-50 p-2 rounded border border-red-300">
-                    ⚠️ Erreur Framaspace : {provisioningMap[ev.id].error}
-                  </div>
-                )}
-
-                {/* Bandeau de contrôle : Boîte à photos, Publication Varal & Nettoyage Cloud */}
-                <div className="flex flex-wrap items-center justify-between gap-2.5 p-2.5 rounded-[4px_6px_3px_5px] bg-amber-50/60 dark:bg-amber-950/20 border border-encre-noire/20">
-                  <div className="flex flex-wrap items-center gap-4">
-                    {/* Toggle 1 : Activer la boîte à photos / QR Code */}
-                    <label className="flex items-center gap-2 cursor-pointer select-none" title="Conditionne la génération des QR-Codes de dépôt et le provisionnement automatique">
-                      <input
-                        type="checkbox"
-                        checked={ev.activerRecolteMedias !== undefined ? Boolean(ev.activerRecolteMedias) : isPresta}
-                        onChange={() => handleToggleEventField(ev, 'activerRecolteMedias', ev.activerRecolteMedias !== undefined ? Boolean(ev.activerRecolteMedias) : isPresta)}
-                        disabled={!canWrite}
-                        className="w-4 h-4 accent-amber-600 rounded cursor-pointer"
-                      />
-                      <span className="text-[10px] font-black uppercase tracking-wider text-cordel-master-dark">
-                        📸 Activer la boîte à photos / QR Code
-                      </span>
-                    </label>
-
-                    {/* Toggle 2 : Afficher sur le Varal Photos */}
-                    <label className="flex items-center gap-2 cursor-pointer select-none" title="Si désactivé, le livret ne sera pas visible sur la corde Photos du Varal">
-                      <input
-                        type="checkbox"
-                        checked={Boolean(ev.publierSurVaral)}
-                        onChange={() => handleToggleEventField(ev, 'publierSurVaral', Boolean(ev.publierSurVaral))}
-                        disabled={!canWrite}
-                        className="w-4 h-4 accent-emerald-600 rounded cursor-pointer"
-                      />
-                      <span className="text-[10px] font-black uppercase tracking-wider text-cordel-master-dark">
-                        🪢 Afficher sur le Varal Photos
-                      </span>
-                    </label>
-                  </div>
-
-                  {/* Bouton d'action Délier / Réinitialiser Cloud */}
-                  {canWrite && (hasDepot || hasAlbum || ev.framaspaceFolder || Boolean(ev.publierSurVaral)) && (
-                    <button
-                      type="button"
-                      onClick={() => handleResetCloudMedia(ev)}
-                      className="px-2.5 py-1 text-[9px] font-black uppercase tracking-wider rounded border border-[var(--color-cordel-rouge)] text-[var(--color-cordel-rouge)] bg-white hover:bg-red-50 cursor-pointer flex items-center gap-1 shadow-xs transition-all active:scale-95 shrink-0"
-                      title="Vider les liens Cloud de cet événement et supprimer son livret du Varal Photos"
-                    >
-                      <span>🗑️</span>
-                      <span>Délier / Réinitialiser Cloud</span>
-                    </button>
-                  )}
-                </div>
-
-                {/* Formulaires d'édition directe des liens */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5 pt-1">
-                  
-                  {/* BLOC 1 : Lien de dépôt public & QR-Code */}
-                  <div className="flex flex-col gap-1.5 p-3 bg-cordel-bg/60 border border-encre-noire/20 rounded-[4px_6px_3px_5px]">
-                    <div className="flex items-center justify-between gap-1">
-                      <label className="text-[9.5px] font-black uppercase tracking-wider text-cordel-master-dark flex items-center gap-1">
-                        <span>📸 1. Dossier de dépôt public (Framaspace, Drive...)</span>
-                      </label>
-                      {hasDepot && (
-                        <button
-                          type="button"
-                          onClick={() => setActiveQrModal({
-                            qrUrl: ev.lienDepotMedias,
-                            eventTitle: ev.titre,
-                            eventDate: evDate,
-                            eventLocation: ev.lieu,
-                            mode: 'depot'
-                          })}
-                          className="px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded border border-encre-noire bg-amber-300 hover:bg-amber-200 text-encre-noire cursor-pointer flex items-center gap-1 shadow-xs"
-                          title="Afficher et imprimer le QR-Code de récolte"
-                        >
-                          <span>📱 QR-Code</span>
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
-                      <input
-                        type="url"
-                        value={rowState.lienDepotMedias || ''}
-                        onChange={(e) => handleInputChange(ev.id, 'lienDepotMedias', e.target.value)}
-                        disabled={!canWrite || rowState.savingDepot}
-                        placeholder="https://mon-asso.framaspace.org/s/... (File drop)"
-                        className="theme-input flex-1 px-2 py-1 text-xs font-bold rounded border border-encre-noire bg-white text-encre-noire"
-                      />
-
-                      {canWrite && (
-                        <button
-                          type="button"
-                          onClick={() => handleSaveDepot(ev.id)}
-                          disabled={rowState.savingDepot}
-                          className="px-2.5 py-1 text-[9.5px] font-black uppercase tracking-wider rounded border border-emerald-950 bg-[var(--color-cordel-vert)] text-white hover:bg-emerald-800 cursor-pointer shrink-0 shadow-xs"
-                        >
-                          {rowState.savingDepot ? '⏳' : rowState.savedDepot ? '✓' : 'Sauver'}
-                        </button>
-                      )}
-
-                      {hasDepot && (
-                        <button
-                          type="button"
-                          onClick={() => window.open(ev.lienDepotMedias, '_blank', 'noopener,noreferrer')}
-                          className="p-1 rounded border border-encre-noire/40 hover:border-encre-noire text-encre-noire text-xs cursor-pointer shrink-0"
-                          title="Tester le lien dans un nouvel onglet"
-                        >
-                          ↗
-                        </button>
-                      )}
-                    </div>
-                    <span className="text-[9px] text-encre-noire/60 font-medium">
-                      Ce lien alimente automatiquement le QR-Code et le bouton de dépôt sur la fiche événement.
-                    </span>
-                  </div>
-
-                  {/* BLOC 2 : Lien de l'album finalisé & Synchronisation Varal */}
-                  <div className="flex flex-col gap-1.5 p-3 bg-cordel-bg/60 border border-encre-noire/20 rounded-[4px_6px_3px_5px]">
-                    <div className="flex items-center justify-between gap-1 flex-wrap">
-                      <label className="text-[9.5px] font-black uppercase tracking-wider text-cordel-master-dark flex items-center gap-1">
-                        <span>🪢 2. Album photos finalisé (Sync Varal Photos)</span>
-                      </label>
-                      <div className="flex items-center gap-1 flex-wrap">
-                        {/* Alignement immédiat avec l'URL de dépôt si présente */}
-                        {canWrite && !rowState.albumPhotosUrl && (rowState.lienDepotMedias || ev.lienDepotMedias) && (
-                          <button
-                            type="button"
-                            onClick={() => handleAlignDepotToAlbum(ev)}
-                            className="px-2 py-0.5 text-[8.5px] font-black uppercase tracking-wider rounded border border-amber-800/50 bg-amber-100 hover:bg-amber-200 text-amber-950 cursor-pointer flex items-center gap-1 shadow-xs transition-all active:scale-95"
-                            title="Copier l'URL de dépôt comme album et synchroniser le Varal"
-                          >
-                            <span>⚡</span>
-                            <span>Aligner avec le dépôt</span>
-                          </button>
-                        )}
-
-                        {hasAlbum && (
-                          <button
-                            type="button"
-                            onClick={() => setActiveQrModal({
-                              qrUrl: ev.albumPhotosUrl,
-                              eventTitle: ev.titre,
-                              eventDate: evDate,
-                              eventLocation: ev.lieu,
-                              mode: 'album'
-                            })}
-                            className="px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded border border-encre-noire bg-amber-300 hover:bg-amber-200 text-encre-noire cursor-pointer flex items-center gap-1 shadow-xs"
-                            title="Afficher et imprimer le QR-Code de l'album"
-                          >
-                            <span>📱 QR-Code</span>
-                          </button>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
-                      <input
-                        type="url"
-                        value={rowState.albumPhotosUrl || ''}
-                        onChange={(e) => handleInputChange(ev.id, 'albumPhotosUrl', e.target.value)}
-                        disabled={!canWrite || rowState.savingAlbum}
-                        placeholder="https://mon-asso.framaspace.org/s/... ou Drive"
-                        className="theme-input flex-1 px-2 py-1 text-xs font-bold rounded border border-encre-noire bg-white text-encre-noire"
-                      />
-
-                      {canWrite && (
-                        <button
-                          type="button"
-                          onClick={() => handleSaveAlbum(ev)}
-                          disabled={rowState.savingAlbum}
-                          className="px-2.5 py-1 text-[9.5px] font-black uppercase tracking-wider rounded border border-emerald-950 bg-[var(--color-cordel-vert)] text-white hover:bg-emerald-800 cursor-pointer shrink-0 shadow-xs"
-                        >
-                          {rowState.savingAlbum ? '⏳' : rowState.savedAlbum ? '✓ Sync' : 'Sync Varal'}
-                        </button>
-                      )}
-
-                      {hasAlbum && (
-                        <button
-                          type="button"
-                          onClick={() => window.open(ev.albumPhotosUrl, '_blank', 'noopener,noreferrer')}
-                          className="p-1 rounded border border-encre-noire/40 hover:border-encre-noire text-encre-noire text-xs cursor-pointer shrink-0"
-                          title="Tester le lien de l'album dans un nouvel onglet"
-                        >
-                          ↗
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="flex items-center justify-between gap-1 flex-wrap">
-                      <span className="text-[9px] text-encre-noire/60 font-medium">
-                        Génère un livret Cordel sur la corde « Photos Prestations » du Varal. Vider le champ le retire du Varal.
-                      </span>
-
-                      {(hasAlbum || Boolean(ev.publierSurVaral)) && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (onSwitchToVaral) {
-                              onSwitchToVaral();
-                            } else if (ev.albumPhotosUrl || ev.lienDepotMedias) {
-                              window.open(ev.albumPhotosUrl || ev.lienDepotMedias, '_blank', 'noopener,noreferrer');
-                            }
-                          }}
-                          className="text-[9px] font-black text-cordel-wood hover:underline cursor-pointer flex items-center gap-0.5 shrink-0"
-                          title="Accéder au livret de l'événement sur le Varal"
-                        >
-                          <span>👁️</span>
-                          <span>Voir le livret sur le Varal</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                </div>
-              </div>
-            );
-          })}
+        <div className="flex flex-col gap-2.5">
+          {filteredEvents.map((ev) => (
+            <StudioEventMediaAccordionRow
+              key={ev.id}
+              ev={ev}
+              rowState={rowStates[ev.id] || {}}
+              canWrite={canWrite}
+              isExpanded={expandedEventIds.has(ev.id)}
+              onToggleExpand={() => toggleExpandEvent(ev.id)}
+              provisioningStatus={provisioningMap[ev.id] || {}}
+              handleInputChange={handleInputChange}
+              handleToggleEventField={handleToggleEventField}
+              handleResetCloudMedia={handleResetCloudMedia}
+              handleSaveDepot={handleSaveDepot}
+              handleSaveAlbum={handleSaveAlbum}
+              handleAlignDepotToAlbum={handleAlignDepotToAlbum}
+              handleProvisionFramaspace={handleProvisionFramaspace}
+              setActiveQrModal={setActiveQrModal}
+              onSwitchToVaral={onSwitchToVaral}
+            />
+          ))}
         </div>
       )}
 

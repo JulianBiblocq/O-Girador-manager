@@ -1,11 +1,15 @@
 import React from 'react';
 import CordelCard from '../CordelCard';
-import CordelButton from '../CordelButton';
-import LegalInfoBlock from './blocks/LegalInfoBlock';
-import { httpsCallable } from 'firebase/functions';
-import { functions } from '../../firebase';
-import { canonicalizeGroupId } from '../../utils/tenantUtils';
+import SubscriptionInvitationHeader from './identity/SubscriptionInvitationHeader';
+import LegalInfoAccordion from './identity/LegalInfoAccordion';
+import OfficialSignaturesAccordion from './identity/OfficialSignaturesAccordion';
+import BankDetailsAccordion from './identity/BankDetailsAccordion';
+import BureauMestriaAccordion from './identity/BureauMestriaAccordion';
 
+/**
+ * Pôle Configuration - Onglet Identité Légale & Juridique.
+ * Architecture compacte avec formulaires pliés par défaut et en-tête d'administration prioritaire.
+ */
 export default function TabIdentity({
   formData,
   handleChange,
@@ -18,475 +22,91 @@ export default function TabIdentity({
   t,
   onReopenOnboarding
 }) {
-  // Gestion de la liste dynamique du Bureau Officiel
-  const bureauMembres = Array.isArray(formData.bureauMembres) ? formData.bureauMembres : [];
-  const [portalLoading, setPortalLoading] = React.useState(false);
-
-  const handleOpenStripePortal = async () => {
-    setPortalLoading(true);
-    try {
-      const createPortalSession = httpsCallable(functions, 'createStripePortalSession');
-      const result = await createPortalSession({
-        groupId,
-        returnUrl: window.location.href
-      });
-      if (result.data && result.data.url) {
-        window.location.href = result.data.url;
-      }
-    } catch (err) {
-      console.error("Erreur lors de l'accès au portail Stripe:", err);
-      alert("Impossible d'accéder au portail de paiement.");
-    } finally {
-      setPortalLoading(false);
-    }
-  };
-
-  const subscription = formData.subscription || { status: 'exempt', plan: 'exempt' };
-  const { status: subStatus, plan: subPlan } = subscription;
-
-  const handleAddBureauMembre = () => {
-    const newMember = { id: `bureau_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`, role: '', nom: '' };
-    handleChange('bureauMembres', [...bureauMembres, newMember]);
-  };
-
-  const handleUpdateBureauMembre = (id, field, value) => {
-    const updated = bureauMembres.map(item => item.id === id ? { ...item, [field]: value } : item);
-    handleChange('bureauMembres', updated);
-  };
-
-  const handleRemoveBureauMembre = (id) => {
-    const updated = bureauMembres.filter(item => item.id !== id);
-    handleChange('bureauMembres', updated);
-  };
-
-  const handleMoveBureauMembre = (index, direction) => {
-    const targetIndex = index + direction;
-    if (targetIndex < 0 || targetIndex >= bureauMembres.length) return;
-    const updated = [...bureauMembres];
-    const [moved] = updated.splice(index, 1);
-    updated.splice(targetIndex, 0, moved);
-    handleChange('bureauMembres', updated);
-  };
-
-  // Gestion de la liste dynamique de la Direction Artistique / Mestria
-  const directionArtistique = Array.isArray(formData.directionArtistique) ? formData.directionArtistique : [];
-
-  const handleAddMestre = () => {
-    const newMestre = { id: `mestre_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`, role: '', nom: '' };
-    handleChange('directionArtistique', [...directionArtistique, newMestre]);
-  };
-
-  const handleUpdateMestre = (id, field, value) => {
-    const updated = directionArtistique.map(item => item.id === id ? { ...item, [field]: value } : item);
-    handleChange('directionArtistique', updated);
-  };
-
-  const handleRemoveMestre = (id) => {
-    const updated = directionArtistique.filter(item => item.id !== id);
-    handleChange('directionArtistique', updated);
-  };
-
-  const handleMoveMestre = (index, direction) => {
-    const targetIndex = index + direction;
-    if (targetIndex < 0 || targetIndex >= directionArtistique.length) return;
-    const updated = [...directionArtistique];
-    const [moved] = updated.splice(index, 1);
-    updated.splice(targetIndex, 0, moved);
-    handleChange('directionArtistique', updated);
-  };
-
-  // Gestion de la création automatique du dossier général de dépôt de vidéos Framaspace
-  const [generalDropLoading, setGeneralDropLoading] = React.useState(false);
-  const [generalDropMsg, setGeneralDropMsg] = React.useState(null);
-
-  const handleProvisionGeneralDrop = async () => {
-    setGeneralDropLoading(true);
-    setGeneralDropMsg(null);
-    try {
-      const provisionFn = httpsCallable(functions, 'provisionFramaspaceGeneralDropFolder');
-      const res = await provisionFn({ groupId });
-      if (res.data?.defaultDropUrl) {
-        handleChange('defaultDropUrl', res.data.defaultDropUrl);
-        setGeneralDropMsg({ type: 'success', text: "Dossier général Framaspace créé et configuré avec succès !" });
-      } else {
-        throw new Error("Lien non généré.");
-      }
-    } catch (err) {
-      console.error("Erreur création dossier général Framaspace :", err);
-      setGeneralDropMsg({
-        type: 'error',
-        text: err.message || "Erreur lors de la création automatique sur Framaspace."
-      });
-    } finally {
-      setGeneralDropLoading(false);
-    }
-  };
-
   return (
-    <>
-      {/* Carte d'action : Relancer l'assistant de premier démarrage */}
-      {onReopenOnboarding && (
-        <CordelCard variant="default" className="p-4 bg-emerald-50/70 border-2 border-[var(--color-cordel-vert,#2d6a4f)]/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-left mb-4">
-          <div className="flex items-center gap-2.5">
-            <span className="text-xl">🚀</span>
-            <div>
-              <h4 className="text-xs font-black uppercase tracking-wider text-[var(--color-cordel-vert,#2d6a4f)]">
-                Assistant de Premier Démarrage (Wizard)
-              </h4>
-              <p className="text-[11px] text-stone-600 font-medium">
-                Souhaitez-vous refaire la visite guidée et réinitialiser les réglages de base en 4 étapes ?
-              </p>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={onReopenOnboarding}
-            className="px-4 py-2 text-xs font-extrabold uppercase tracking-wider text-white bg-[var(--color-cordel-vert,#2d6a4f)] rounded-lg hover:brightness-110 cursor-pointer shadow-xs whitespace-nowrap flex items-center gap-1.5"
-          >
-            <span>🚀 Relancer l'assistant de configuration</span>
-          </button>
-        </CordelCard>
-      )}
-
-      {/* 💳 Abonnement & Licence */}
-      <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5 mt-4 mb-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood flex items-center gap-1.5">
-            💳 Abonnement & Licence O Girador
-          </h3>
-        </div>
-
-        <div className="flex flex-col gap-2 text-left text-[10px] text-cordel-master-dark">
-          <p className="font-semibold">
-            Plan actuel : <span className="font-black text-cordel-wood uppercase ml-1">{subPlan}</span>
-          </p>
-          <p className="font-semibold">
-            Statut : 
-            <span className={`font-black uppercase ml-2 px-2 py-0.5 rounded ${
-              subStatus === 'active' || subStatus === 'exempt' ? 'bg-green-100 text-green-800' :
-              subStatus === 'past_due' ? 'bg-red-100 text-red-800' :
-              subStatus === 'trial' ? 'bg-orange-100 text-orange-800' :
-              'bg-neutral-200 text-neutral-800'
-            }`}>
-              {subStatus}
-            </span>
-          </p>
-          <div className="mt-3">
-            <CordelButton
-              type="button"
-              variant="ocre"
-              useExtremeBorder={true}
-              onClick={handleOpenStripePortal}
-              disabled={portalLoading}
-              className="py-2 px-4 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer w-full sm:w-auto"
-            >
-              {portalLoading ? 'Ouverture...' : '⚙️ Gérer mon abonnement (Factures & Paiement)'}
-            </CordelButton>
-          </div>
-        </div>
-      </CordelCard>
-
-      {/* Informations Légales */}
-      <LegalInfoBlock 
-        formData={formData} 
-        handleChange={handleChange} 
-        saving={saving} 
-        signaturePresidentFile={signaturePresidentFile}
-        setSignaturePresidentFile={setSignaturePresidentFile}
-        signatureTresorierFile={signatureTresorierFile}
-        setSignatureTresorierFile={setSignatureTresorierFile}
+    <div className="flex flex-col gap-4 text-left select-none">
+      {/* 1. Encart d'en-tête : Abonnement SaaS & Invitation Groupe */}
+      <SubscriptionInvitationHeader
+        formData={formData}
+        groupId={groupId}
+        onReopenOnboarding={onReopenOnboarding}
       />
 
-      {/* Section Dépôt Vidéos & Captations par défaut */}
-      <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5 mt-4 mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood flex items-center gap-1.5">
-            <span>📹</span>
-            <span>Dépôt Vidéos par défaut (Ateliers & Répétitions)</span>
-          </h3>
-          <span className="text-[9px] text-cordel-master-dark/70 font-semibold italic">
-            Repli ateliers & événements
-          </span>
-        </div>
-
-        <div className="flex flex-col gap-2.5 text-left">
-          <p className="text-[10px] text-cordel-master-dark/70 font-semibold leading-relaxed">
-            Lien du dossier de dépôt de fichiers par défaut (Framaspace / Nextcloud File Drop). Ce lien sera proposé automatiquement aux adhérents pour déposer leurs vidéos brutes lors des ateliers et répétitions si l'événement n'a pas de dossier spécifique configuré.
-          </p>
-
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-center justify-between gap-2 flex-wrap">
-              <label className="text-[10.5px] font-black uppercase tracking-wider text-cordel-master-dark">
-                🔗 Lien du dossier de dépôt par défaut (Framaspace / Nextcloud)
-              </label>
-              <button
-                type="button"
-                onClick={handleProvisionGeneralDrop}
-                disabled={generalDropLoading || saving}
-                className="px-2.5 py-1 bg-cordel-vert text-white text-[9px] font-black uppercase rounded hover:brightness-110 active:scale-95 transition-all flex items-center gap-1 cursor-pointer disabled:opacity-50"
-                title="Créer automatiquement le dossier /Depot_Videos sur votre Framaspace"
-              >
-                {generalDropLoading ? (
-                  <>
-                    <span className="inline-block animate-spin">⏳</span>
-                    <span>Création...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>⚡</span>
-                    <span>Créer automatiquement sur Framaspace</span>
-                  </>
-                )}
-              </button>
-            </div>
-
-            {generalDropMsg && (
-              <div className={`p-2 rounded text-[10px] font-bold ${
-                generalDropMsg.type === 'success' ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' : 'bg-red-100 text-red-900 border border-red-300'
-              }`}>
-                {generalDropMsg.text}
-              </div>
-            )}
-
-            <input
-              type="url"
-              name="defaultDropUrl"
-              value={formData.defaultDropUrl || ''}
-              onChange={(e) => handleChange('defaultDropUrl', e.target.value)}
-              disabled={saving || generalDropLoading}
-              placeholder="https://mon-instance.framaspace.org/s/..."
-              className="text-xs px-3 py-2 border border-cordel-master-dark/30 rounded bg-cordel-bg-light font-bold text-encre-noire focus:outline-none focus:border-cordel-wood"
-            />
-            <span className="text-[9px] text-encre-noire/60">
-              {formData.defaultDropUrl 
-                ? "Ce lien est actif et sera utilisé automatiquement pour tous les ateliers et répétitions."
-                : "Cliquez sur « Créer automatiquement sur Framaspace » pour générer ce dossier en 1 clic sans saisie manuelle."}
-            </span>
-          </div>
-        </div>
-      </CordelCard>
-
-      {/* 🏛️ Bureau Officiel Juridique */}
-      <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5 mt-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood flex items-center gap-1.5">
-            🏛️ Bureau Officiel Juridique
-          </h3>
-          <span className="text-[9px] text-cordel-master-dark/70 font-semibold italic">
-            Optionnel
-          </span>
-        </div>
-
-        <p className="text-[10px] text-cordel-master-dark/75 font-medium leading-relaxed mb-3 text-left">
-          Ajoutez autant de fonctions du bureau que nécessaire (Président(e), Secrétaire, Trésorier(ère), etc.).
-        </p>
-
-        <div className="flex flex-col gap-2.5 text-left">
-          {bureauMembres.length === 0 ? (
-            <div className="p-3 border border-dashed border-cordel-master-dark/20 rounded bg-white/50 text-[10px] text-cordel-master-dark/60 font-semibold italic text-center">
-              Aucun membre du bureau renseigné pour le moment.
-            </div>
-          ) : (
-            bureauMembres.map((membre, idx) => (
-              <div key={membre.id || idx} className="flex items-center gap-2 p-2 bg-stone-50 border border-stone-200 rounded">
-                <div className="flex flex-col sm:flex-row flex-1 gap-2">
-                  <input
-                    type="text"
-                    value={membre.role || ''}
-                    onChange={(e) => handleUpdateBureauMembre(membre.id, 'role', e.target.value)}
-                    placeholder="Titre du rôle"
-                    disabled={saving}
-                    className="theme-input text-xs font-bold py-1 px-2 bg-white flex-1"
-                  />
-                  <input
-                    type="text"
-                    value={membre.nom || ''}
-                    onChange={(e) => handleUpdateBureauMembre(membre.id, 'nom', e.target.value)}
-                    placeholder="Prénom & Nom du membre"
-                    disabled={saving}
-                    className="theme-input text-xs font-bold py-1 px-2 bg-white flex-1"
-                  />
-                </div>
-                
-                <div className="flex items-center gap-1 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => handleMoveBureauMembre(idx, -1)}
-                    disabled={saving || idx === 0}
-                    className="w-6 h-6 rounded bg-stone-200 text-stone-700 text-xs font-bold flex items-center justify-center hover:bg-stone-300 disabled:opacity-30 cursor-pointer"
-                  >
-                    ↑
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleMoveBureauMembre(idx, 1)}
-                    disabled={saving || idx === bureauMembres.length - 1}
-                    className="w-6 h-6 rounded bg-stone-200 text-stone-700 text-xs font-bold flex items-center justify-center hover:bg-stone-300 disabled:opacity-30 cursor-pointer"
-                  >
-                    ↓
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveBureauMembre(membre.id)}
-                    disabled={saving}
-                    className="w-6 h-6 rounded bg-[var(--theme-primary)] text-white text-xs font-bold flex items-center justify-center hover:bg-[var(--theme-primary)]/80 cursor-pointer"
-                  >
-                    ✕
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
-
-          <div className="pt-2">
-            <CordelButton
-              type="button"
-              variant="vert"
-              useExtremeBorder={true}
-              onClick={handleAddBureauMembre}
-              disabled={saving}
-              className="py-1.5 px-3 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer"
-            >
-              ➕ Ajouter une fonction du bureau
-            </CordelButton>
-          </div>
-        </div>
-      </CordelCard>
-
-      {/* 🥁 Direction Artistique / Mestria */}
-      <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5 mt-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood flex items-center gap-1.5">
-            🥁 Direction Artistique / Mestria
-          </h3>
-        </div>
-
-        <p className="text-[10px] text-cordel-master-dark/75 font-medium leading-relaxed mb-3 text-left">
-          Renseignez les Mestres, Directeurs Artistiques et Maîtres de section.
-        </p>
-
-        <div className="flex flex-col gap-2.5 text-left">
-          {directionArtistique.length === 0 ? (
-            <div className="p-3 border border-dashed border-cordel-master-dark/20 rounded bg-white/50 text-[10px] text-cordel-master-dark/60 font-semibold italic text-center">
-              Aucun Mestre ou Directeur Artistique renseigné.
-            </div>
-          ) : (
-            directionArtistique.map((mestre, idx) => (
-              <div key={mestre.id || idx} className="flex items-center gap-2 p-2 bg-stone-50 border border-stone-200 rounded">
-                <div className="flex flex-col sm:flex-row flex-1 gap-2">
-                  <input
-                    type="text"
-                    value={mestre.role || ''}
-                    onChange={(e) => handleUpdateMestre(mestre.id, 'role', e.target.value)}
-                    placeholder="Fonction"
-                    disabled={saving}
-                    className="theme-input text-xs font-bold py-1 px-2 bg-white flex-1"
-                  />
-                  <input
-                    type="text"
-                    value={mestre.nom || ''}
-                    onChange={(e) => handleUpdateMestre(mestre.id, 'nom', e.target.value)}
-                    placeholder="Prénom & Nom du Mestre"
-                    disabled={saving}
-                    className="theme-input text-xs font-bold py-1 px-2 bg-white flex-1"
-                  />
-                </div>
-
-                <div className="flex items-center gap-1 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => handleMoveMestre(idx, -1)}
-                    disabled={saving || idx === 0}
-                    className="w-6 h-6 rounded bg-stone-200 text-stone-700 text-xs font-bold flex items-center justify-center hover:bg-stone-300 disabled:opacity-30 cursor-pointer"
-                  >
-                    ↑
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleMoveMestre(idx, 1)}
-                    disabled={saving || idx === directionArtistique.length - 1}
-                    className="w-6 h-6 rounded bg-stone-200 text-stone-700 text-xs font-bold flex items-center justify-center hover:bg-stone-300 disabled:opacity-30 cursor-pointer"
-                  >
-                    ↓
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveMestre(mestre.id)}
-                    disabled={saving}
-                    className="w-6 h-6 rounded bg-[var(--theme-primary)] text-white text-xs font-bold flex items-center justify-center hover:bg-[var(--theme-primary)]/80 cursor-pointer"
-                  >
-                    ✕
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
-
-          <div className="pt-2">
-            <CordelButton
-              type="button"
-              variant="vert"
-              useExtremeBorder={true}
-              onClick={handleAddMestre}
-              disabled={saving}
-              className="py-1.5 px-3 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer"
-            >
-              ➕ Ajouter un membre de la Direction Artistique
-            </CordelButton>
-          </div>
-
-          <div className="mt-3 pt-3 border-t border-dashed border-stone-300">
-            <label className="flex items-start gap-2.5 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={formData.afficherMestriaPV || false}
-                onChange={(e) => handleChange('afficherMestriaPV', e.target.checked)}
-                disabled={saving}
-                className="w-4 h-4 cursor-pointer mt-0.5 shrink-0"
-              />
-              <div className="flex flex-col">
-                <span className="text-xs font-bold text-encre-noire">
-                  Afficher la Direction Artistique sur les Procès-Verbaux (PV)
-                </span>
-              </div>
-            </label>
-          </div>
-        </div>
-      </CordelCard>
-
-      {/* Invitation Link Card */}
-      <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5 mt-4">
-        <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">
-          📨 Invitation au groupe
+      {/* 2. Dénomination officielle & Nom court / Sigle de l'Association */}
+      <CordelCard variant="default" useExtremeBorder={true} className="p-4">
+        <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3 flex items-center gap-2">
+          <span>🏛️</span> Dénomination & Sigle de l'Association
         </h3>
-        <div className="flex flex-col gap-2.5 text-left">
-          <p className="text-[10px] text-cordel-master-dark/70 font-semibold leading-relaxed">
-            Permettez aux nouveaux membres de s'inscrire et de rejoindre directement votre association en partageant ce lien d'invitation unique.
-          </p>
-          <CordelButton
-            variant="ocre"
-            useExtremeBorder={true}
-            onClick={async () => {
-              const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-              const baseUrl = isLocal ? window.location.origin : 'https://organizador.o-girador.com';
-              const canonicalId = canonicalizeGroupId(groupId) || 'Samambaia';
-              const invitationUrl = `${baseUrl}/?groupe=${canonicalId}&mode=signup`;
-              const shareText = `Rejoins notre groupe sur ${formData.nom || 'notre association'} : ${invitationUrl}`;
-              try {
-                await navigator.clipboard.writeText(shareText);
-                alert("Lien d'invitation copié dans le presse-papiers !");
-              } catch (err) {
-                console.error("Erreur lors de la copie :", err);
-                alert("Impossible de copier le lien automatiquement. Voici le lien d'invitation : " + invitationUrl);
-              }
-            }}
-            className="w-full py-2.5 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer select-none"
-          >
-            📋 Copier le lien d'invitation
-          </CordelButton>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="sm:col-span-2 flex flex-col gap-1">
+            <label htmlFor="nom" className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
+              Nom Officiel Complet de l'Association *
+            </label>
+            <input
+              id="nom"
+              type="text"
+              name="nom"
+              value={formData.nom || ''}
+              onChange={(e) => handleChange('nom', e.target.value)}
+              disabled={saving}
+              placeholder="ex: Associação Cultural Samambaia"
+              className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label htmlFor="shortName" className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
+              Nom court / Sigle *
+            </label>
+            <input
+              id="shortName"
+              type="text"
+              name="shortName"
+              value={formData.shortName || ''}
+              onChange={(e) => handleChange('shortName', e.target.value)}
+              disabled={saving}
+              placeholder="ex: Samambaia"
+              className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
+            />
+          </div>
         </div>
       </CordelCard>
-    </>
+
+      {/* 3. Informations Légales (Forme, SIRET, Siège) - Accordéon compact */}
+      <div data-tour="config-identity-legal">
+        <LegalInfoAccordion
+          formData={formData}
+          handleChange={handleChange}
+          saving={saving}
+        />
+      </div>
+
+      {/* 4. Signatures Officielles - Accordéon compact avec pastilles d'état */}
+      <div data-tour="config-identity-signatures">
+        <OfficialSignaturesAccordion
+          formData={formData}
+          saving={saving}
+          signaturePresidentFile={signaturePresidentFile}
+          setSignaturePresidentFile={setSignaturePresidentFile}
+          signatureTresorierFile={signatureTresorierFile}
+          setSignatureTresorierFile={setSignatureTresorierFile}
+        />
+      </div>
+
+      {/* 5. Coordonnées Bancaires & RIB - Accordéon compact */}
+      <BankDetailsAccordion
+        formData={formData}
+        handleChange={handleChange}
+        saving={saving}
+      />
+
+      {/* 6. Trombinoscope Bureau & Direction Artistique - Deux tiroirs repliés avec comptage */}
+      <div data-tour="config-identity-bureau">
+        <BureauMestriaAccordion
+          formData={formData}
+          handleChange={handleChange}
+          saving={saving}
+        />
+      </div>
+    </div>
   );
 }

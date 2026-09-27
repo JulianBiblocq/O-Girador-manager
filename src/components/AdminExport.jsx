@@ -308,7 +308,8 @@ export default function AdminExport({ user, profileData, onBack }) {
             </h3>
             <CordelButton
               type="button"
-              variant="default"
+              variant="ocre"
+              useExtremeBorder={true}
               onClick={() => setIsExportModalOpen(true)}
               className="px-3 py-1 text-xs font-black uppercase tracking-wider shadow-xs flex items-center gap-1.5 ml-2 cursor-pointer"
             >

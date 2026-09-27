@@ -64,18 +64,26 @@ export default function PoleTourOverlay({ guide, tabId, isOpen, onClose, onCompl
       element = document.querySelector(`[data-tour="${tabId}-step-${currentStepIndex + 1}"]`);
     }
 
-    // 3. Traitement selon présence de l'élément
+    // 3. Traitement selon présence et visibilité réelle de l'élément
     if (element) {
       const rect = element.getBoundingClientRect();
-      setTargetRect({
-        top: rect.top,
-        left: rect.left,
-        width: rect.width,
-        height: rect.height,
-        bottom: rect.bottom,
-        right: rect.right
-      });
-      setTargetFound(true);
+      // Vérification que l'élément est réellement déployé (taille positive et non replié)
+      const isVisible = rect.width > 0 && rect.height > 0;
+      if (isVisible) {
+        setTargetRect({
+          top: rect.top,
+          left: rect.left,
+          width: rect.width,
+          height: rect.height,
+          bottom: rect.bottom,
+          right: rect.right
+        });
+        setTargetFound(true);
+      } else {
+        // Repli gracieux en modale centrée si la cible est temporairement repliée
+        setTargetRect(null);
+        setTargetFound(false);
+      }
     } else {
       setTargetRect(null);
       setTargetFound(false);
@@ -95,8 +103,11 @@ export default function PoleTourOverlay({ guide, tabId, isOpen, onClose, onCompl
     }
 
     if (element) {
-      // Défilement centré fluide
-      element.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+      const rect = element.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        // Défilement centré fluide uniquement si l'élément est visible
+        element.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+      }
       
       // Recalcul immédiat puis ajustement après animation de défilement
       updateTargetPosition();

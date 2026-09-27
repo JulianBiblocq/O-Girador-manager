@@ -12,6 +12,11 @@ import ReunionViewModal from './ReunionViewModal';
 import DocumentViewerModal from './documents/DocumentViewerModal';
 import VaralCategoryRope from './documents/varal/VaralCategoryRope';
 import DocStatusSelector from './documents/varal/DocStatusSelector';
+import SecretariatDocumentsView from './secretariat/SecretariatDocumentsView';
+import WorkshopDocumentsTable from './documents/WorkshopDocumentsTable';
+import PedagogyDocumentsView from './pedagogy/PedagogyDocumentsView';
+import LutherieDocumentsTable from './documents/LutherieDocumentsTable';
+import CostumerieDocumentsTable from './documents/CostumerieDocumentsTable';
 import useVaralData, { DEFAULT_VARAL_CATEGORIES, DEFAULT_POLE_ROPES } from '../hooks/useVaralData';
 import { isWorkshopVirtualDoc } from '../utils/workshopProjectionUtils';
 import { useTranslation } from './LanguageContext';
@@ -45,6 +50,22 @@ export default function WidgetDocuments({
   const activeIsSystemAdmin = isSimulating && effectiveProfile ? Boolean(effectiveProfile.isSystemAdmin) : isSystemAdmin;
   const activeUserTags = isSimulating && effectiveUserTags ? effectiveUserTags : userTags;
   const activeCanWrite = isSimulating ? false : canWrite;
+
+  // Redirection immédiate vers la vue en liste sobre à 2 volets pour le Secrétariat
+  if (poleId === 'secretariat') {
+    return (
+      <SecretariatDocumentsView
+        groupId={groupId}
+        role={activeRole}
+        isSystemAdmin={activeIsSystemAdmin}
+        canWrite={activeCanWrite}
+        user={user}
+        profileData={activeProfile}
+        userTags={activeUserTags}
+        onNavigateToView={onNavigateToView}
+      />
+    );
+  }
 
   // Consommation du custom hook centralisant les flux Firestore et les mutations du Varal
   const {
@@ -99,6 +120,8 @@ export default function WidgetDocuments({
   }, [visibleCategories, isAuthorized, groupedDocs]);
 
   // États locaux de navigation et formulaires d'ajout / édition
+  const isWorkshopPole = ['lutherie', 'costumerie', 'pedagogie'].includes(poleId);
+  const [workshopViewMode, setWorkshopViewMode] = useState('table'); // 'table' | 'rope'
   const [isAdding, setIsAdding] = useState(false);
   const [selectedCategoryForAdd, setSelectedCategoryForAdd] = useState(null);
   const [documentToEdit, setDocumentToEdit] = useState(null);
@@ -262,9 +285,59 @@ export default function WidgetDocuments({
         </div>
       )}
 
-      {/* Galerie des cordes suspendues du Varal */}
+      {/* Galerie des documents : Tableaux d'atelier dédiés OU Cordes suspendues */}
       {!loading && !isAdding && !documentToEdit && (
-        displayedCategories.length === 0 ? (
+        isWorkshopPole && workshopViewMode === 'table' ? (
+          poleId === 'pedagogie' ? (
+            <PedagogyDocumentsView
+              documents={Object.values(groupedDocs).flat()}
+              groupId={groupId}
+              categories={displayedCategories}
+              canWrite={canWrite || isAuthorized}
+              onSelectDoc={handleSelectDoc}
+              onEditDoc={setDocumentToEdit}
+              onDeleteDoc={handleDelete}
+              onToggleViewMode={() => setWorkshopViewMode('rope')}
+            />
+          ) : poleId === 'lutherie' ? (
+            <LutherieDocumentsTable
+              documents={Object.values(groupedDocs).flat()}
+              groupId={groupId}
+              categories={displayedCategories}
+              canWrite={canWrite || isAuthorized}
+              onSelectDoc={handleSelectDoc}
+              onEditDoc={setDocumentToEdit}
+              onDeleteDoc={handleDelete}
+              onToggleViewMode={() => setWorkshopViewMode('rope')}
+            />
+          ) : poleId === 'costumerie' ? (
+            <CostumerieDocumentsTable
+              documents={Object.values(groupedDocs).flat()}
+              groupId={groupId}
+              categories={displayedCategories}
+              canWrite={canWrite || isAuthorized}
+              onSelectDoc={handleSelectDoc}
+              onEditDoc={setDocumentToEdit}
+              onDeleteDoc={handleDelete}
+              onToggleViewMode={() => setWorkshopViewMode('rope')}
+            />
+          ) : (
+            <WorkshopDocumentsTable
+              documents={Object.values(groupedDocs).flat()}
+              categories={displayedCategories}
+              canWrite={canWrite || isAuthorized}
+              onOpenAdd={() => {
+                setSelectedCategoryForAdd(displayedCategories[0] || null);
+                setDocumentToEdit(null);
+                setIsAdding(true);
+              }}
+              onEditDoc={setDocumentToEdit}
+              onDeleteDoc={handleDelete}
+              onSelectDoc={handleSelectDoc}
+              onToggleViewMode={() => setWorkshopViewMode('rope')}
+            />
+          )
+        ) : displayedCategories.length === 0 ? (
           <CordelCard variant="default" useExtremeBorder={false} className="p-6 text-center bg-cordel-bg">
             <p className="text-xs font-bold text-cordel-master-dark opacity-75">
               Aucun document ou corde accessible dans ce pôle.
@@ -272,6 +345,18 @@ export default function WidgetDocuments({
           </CordelCard>
         ) : (
           <div className="flex flex-col gap-4 w-full">
+            {isWorkshopPole && (
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setWorkshopViewMode('table')}
+                  className="px-2.5 py-1 text-[9.5px] font-black uppercase tracking-wider rounded border border-cordel-master-dark/30 bg-cordel-bg hover:bg-white text-encre-noire cursor-pointer transition-all shadow-2xs"
+                  title="Revenir à la liste d'atelier"
+                >
+                  📋 Vue Liste d'atelier
+                </button>
+              </div>
+            )}
             {displayedCategories.map((category) => (
               <VaralCategoryRope
                 key={category.id}

@@ -51,21 +51,17 @@ const StudioLexiqueManager = lazyWithRetry(() => import('./components/studio/Stu
 const StudioEventsManager = lazyWithRetry(() => import('./components/studio/StudioEventsManager'));
 const NewsletterPage = lazyWithRetry(() => import('./components/studio/NewsletterPage'));
 const AdminExport = lazyWithRetry(() => import('./components/AdminExport'));
-const VaralManager = lazyWithRetry(() => import('./components/VaralManager'));
 const ReunionManager = lazyWithRetry(() => import('./components/ReunionManager'));
 const ActivityReports = lazyWithRetry(() => import('./components/studio/ActivityReports'));
 const EventDetails = lazyWithRetry(() => import('./components/EventDetails'));
-const MestreEvents = lazyWithRetry(() => import('./components/mestre/MestreEvents'));
 const MestreOrientationCasting = lazyWithRetry(() => import('./components/mestre/MestreOrientationCasting'));
 const MestreStageLayout = lazyWithRetry(() => import('./components/mestre/MestreStageLayout'));
 const ForumChannelsManager = lazyWithRetry(() => import('./components/ForumChannelsManager'));
-const MestreSequenceur = lazyWithRetry(() => import('./components/mestre/MestreSequenceur'));
 const SecretariatDocuments = lazyWithRetry(() => import('./components/secretariat/SecretariatDocuments'));
 const SecretariatAgendaLieux = lazyWithRetry(() => import('./components/secretariat/SecretariatAgendaLieux'));
 const SecretariatReportsView = lazyWithRetry(() => import('./components/secretariat/SecretariatReportsView'));
 const StudioCommunication = lazyWithRetry(() => import('./components/studio/StudioCommunication'));
 const StudioPhotosView = lazyWithRetry(() => import('./components/studio/StudioPhotosView'));
-const MestrePedagogyManager = lazyWithRetry(() => import('./components/mestre/MestrePedagogyManager'));
 const GigsPipelineManager = lazyWithRetry(() => import('./components/diffusion/GigsPipelineManager'));
 const MestreMotMestre = lazyWithRetry(() => import('./components/mestre/MestreMotMestre'));
 const MestreCustomCategories = lazyWithRetry(() => import('./components/mestre/MestreCustomCategories'));
@@ -75,7 +71,6 @@ const MestreAutoEvalConfig = lazyWithRetry(() => import('./components/mestre/Mes
 const WidgetAgenda = lazyWithRetry(() => import('./components/WidgetAgenda'));
 const WidgetDocuments = lazyWithRetry(() => import('./components/WidgetDocuments'));
 const InstrumentModelsManager = lazyWithRetry(() => import('./components/varal/InstrumentModelsManager'));
-const AtelierCouture = lazyWithRetry(() => import('./components/profile/AtelierCouture'));
 const MonParcours = lazyWithRetry(() => import('./components/pedagogy/MonParcours'));
 const MonAtelier = lazyWithRetry(() => import('./components/profile/MonAtelier'));
 const MemberRepertoireView = lazyWithRetry(() => import('./components/member/MemberRepertoireView'));
@@ -122,10 +117,10 @@ const POLES_CONFIG = [
     label: 'Secrétariat',
     labelKey: 'poles.secretariat',
     tabs: [
-      { id: 'export-annu', label: 'Annuaire', labelKey: 'tabExportAnnu' },
-      { id: 'activity-reports', label: "Journal d'activité (CSV)", labelKey: 'tabActivityReports' },
+      { id: 'export-annu', label: 'Annuaire & Exports', labelKey: 'tabExportAnnu' },
+      { id: 'activity-reports', label: "Bilans d'Activité & Présences", labelKey: 'tabActivityReports' },
       { id: 'studio-events', label: 'Registre des dates', labelKey: 'tabStudioEvents' },
-      { id: 'varal-secretariat', label: 'Varal Secrétariat', labelKey: 'tabVaralSecretariat' }
+      { id: 'varal-secretariat', label: 'Documents officiels', labelKey: 'tabVaralSecretariat' }
     ]
   },
   {
@@ -155,11 +150,10 @@ const POLES_CONFIG = [
     label: 'Logistique',
     labelKey: 'poles.logistique',
     tabs: [
-      { id: 'inventory', label: 'Instruments', labelKey: 'tabInventory' },
-      { id: 'logistics-pupitres', label: 'Pupitres', labelKey: 'tabLogisticsPupitres' },
-      { id: 'logistics-kits', label: 'Accessoires & Kits', labelKey: 'tabLogisticsKits' },
-      { id: 'logistics-carpool', label: 'Covoiturage & Convois', labelKey: 'tabLogisticsCarpool' },
-      { id: 'orders', label: 'Commandes', labelKey: 'tabOrders' }
+      { id: 'inventory', label: 'Parc Instruments & Cautions', labelKey: 'tabInventory' },
+      { id: 'orders', label: 'Commandes Groupées', labelKey: 'tabOrders' },
+      { id: 'logistics-carpool', label: 'Convois & Flotte Véhicules', labelKey: 'tabLogisticsCarpool' },
+      { id: 'logistics-kits', label: 'Malles Régie & Trousses Secours', labelKey: 'tabLogisticsKits' }
     ]
   },
   {
@@ -194,11 +188,9 @@ const POLES_CONFIG = [
     label: 'Studio',
     labelKey: 'poles.studio',
     tabs: [
-      { id: 'studio-social', label: 'Studio social', labelKey: 'tabStudioSocial' },
-      { id: 'studio-lexique', label: 'Lexique', labelKey: 'tabStudioLexique' },
-      { id: 'newsletter', label: 'Newsletter', labelKey: 'tabNewsletter' },
-      { id: 'studio-communication', label: 'Communication & Brevo', labelKey: 'tabStudioCommunication' },
-      { id: 'varal-photos', label: 'Varal Photos', labelKey: 'tabVaralPhotos' }
+      { id: 'studio-social', label: 'Réseaux & Médias', labelKey: 'tabStudioSocial' },
+      { id: 'newsletter', label: "Lettres d'info", labelKey: 'tabNewsletter' },
+      { id: 'varal-photos', label: 'Médiathèque Photos', labelKey: 'tabVaralPhotos' }
     ]
   },
   {
@@ -217,10 +209,8 @@ const POLES_CONFIG = [
     labelKey: 'poles.mestre',
     tabs: [
       { id: 'mestre-repertoire', label: '📜 Répertoire', labelKey: 'tabMestreRepertoire' },
-      { id: 'mestre-categories', label: 'Catégories de pratique', labelKey: 'tabMestreCategories' },
       { id: 'mestre-orientation', label: 'Casting & Orientation', labelKey: 'tabMestreOrientation' },
       { id: 'mestre-stage-layout', label: 'Plan de Scène', labelKey: 'tabMestreStage' },
-      { id: 'mestre-sequenceur', label: 'Séquenceur & Rythmes', labelKey: 'tabMestreSequenceur' },
       { id: 'mestre-mot-mestre', label: 'Annonces du Mestre', labelKey: 'tabMestreMotMestre' }
     ]
   },
@@ -243,13 +233,11 @@ const POLES_CONFIG = [
     label: 'Configuration',
     labelKey: 'poles.config',
     tabs: [
-      { id: 'config-identity', label: 'Identité', labelKey: 'tabConfigIdentity' },
-      { id: 'config-security', label: 'Badges & Permissions', labelKey: 'tabConfigSecurity' },
-      { id: 'config-layout', label: 'Apparence', labelKey: 'tabConfigLayout' },
-      { id: 'config-member-layout', label: 'Vue Membre & Vidéo', labelKey: 'tabConfigMemberLayout' },
-      { id: 'config-profile', label: 'Inscription & Profils', labelKey: 'tabConfigProfile' },
-      { id: 'config-modules', label: 'Modules & Fonctionnalités', labelKey: 'tabConfigModules' },
-      { id: 'config-tambours', label: 'Les Tambours', labelKey: 'tabConfigTambours' }
+      { id: 'config-identity', label: 'Identité légale & Juridique', labelKey: 'tabConfigIdentity' },
+      { id: 'config-profile', label: 'Inscription, Profils & Lieux/Agenda', labelKey: 'tabConfigProfile' },
+      { id: 'config-security', label: 'Badges, Rôles & Sécurité', labelKey: 'tabConfigSecurity' },
+      { id: 'config-comms', label: 'Communication, E-mails & Automatisations', labelKey: 'tabConfigComms' },
+      { id: 'config-modules', label: 'Modules SaaS, Apparence & Médias', labelKey: 'tabConfigModules' }
     ]
   }
 ];
@@ -1473,7 +1461,7 @@ export default function App() {
     if (poleId === 'pedagogie' && enabledModules.mestre === false && enabledModules.studioSocial === false) return false;
 
     // Specific Tabs Checks
-    if (['mestre-sante-troupe', 'mestre-pedagogy-dashboard', 'mestre-sequenceur'].includes(tabId) && enabledModules.mestre === false) return false;
+    if (['mestre-sante-troupe', 'mestre-pedagogy-dashboard'].includes(tabId) && enabledModules.mestre === false) return false;
     if (tabId === 'varal-manager' && enabledModules.studioSocial === false) return false;
 
     // Vérifier Tab-level module basculer
@@ -1487,7 +1475,7 @@ export default function App() {
     if (['studio-social', 'studio-lexique', 'newsletter'].includes(tabId) && enabledModules.studioSocial === false) return false;
     if (['reunion-manager', 'ca-reunions'].includes(tabId) && enabledModules.reunions === false) return false;
     if (['forum', 'mestre-forum-channels'].includes(tabId) && enabledModules.forum === false) return false;
-    if (['mestre-repertoire', 'mestre-sante-troupe', 'mestre-pedagogy-dashboard', 'varal-manager', 'mestre-pedagogy-qcm', 'mestre-orientation', 'mestre-categories', 'mestre-events', 'mestre-stage-layout', 'mestre-mot-mestre', 'mestre-sequenceur'].includes(tabId) && enabledModules.mestre === false) return false;
+    if (['mestre-repertoire', 'mestre-sante-troupe', 'mestre-pedagogy-dashboard', 'varal-manager', 'mestre-pedagogy-qcm', 'mestre-orientation', 'mestre-categories', 'mestre-events', 'mestre-stage-layout', 'mestre-mot-mestre'].includes(tabId) && enabledModules.mestre === false) return false;
 
     return true;
   };
@@ -1507,13 +1495,13 @@ export default function App() {
   const hasAccessDiffusion = isMasterKeyActive || canAccessPole('diffusion', profileData, permissionsMatrice, userTags) || checkTabAccess('gigs-pipeline', 'diffusion');
   const hasAccessTresorerie = isMasterKeyActive || canAccessPole('tresorerie', profileData, permissionsMatrice, userTags) || checkTabAccess('dashboard-finance', 'tresorerie') || checkTabAccess('cotisations', 'tresorerie') || checkTabAccess('events-finances', 'tresorerie') || checkTabAccess('operations-diverses', 'tresorerie') || checkTabAccess('frais-km', 'tresorerie') || checkTabAccess('reports-exports', 'tresorerie');
   const hasAccessSecretariat = isMasterKeyActive || canAccessPole('secretariat', profileData, permissionsMatrice, userTags) || checkTabAccess('export-annu', 'secretariat') || checkTabAccess('activity-reports', 'secretariat') || checkTabAccess('studio-events', 'secretariat') || checkTabAccess('varal-secretariat', 'secretariat');
-  const hasAccessLogistique = isMasterKeyActive || canAccessPole('logistique', profileData, permissionsMatrice, userTags) || checkTabAccess('inventory', 'logistique') || checkTabAccess('logistics-pupitres', 'logistique') || checkTabAccess('logistics-kits', 'logistique') || checkTabAccess('logistics-carpool', 'logistique') || checkTabAccess('orders', 'logistique') || checkTabAccess('orders-manager', 'logistique');
+  const hasAccessLogistique = isMasterKeyActive || canAccessPole('logistique', profileData, permissionsMatrice, userTags) || checkTabAccess('inventory', 'logistique') || checkTabAccess('logistics-kits', 'logistique') || checkTabAccess('logistics-carpool', 'logistique') || checkTabAccess('orders', 'logistique') || checkTabAccess('orders-manager', 'logistique');
   const hasAccessLutherie = isMasterKeyActive || canAccessPole('lutherie', profileData, permissionsMatrice, userTags) || checkTabAccess('instrument-models', 'lutherie') || checkTabAccess('inventory-projects', 'lutherie') || checkTabAccess('inventory-parts', 'lutherie') || checkTabAccess('inventory-supplies', 'lutherie') || checkTabAccess('workshop-tools', 'lutherie') || checkTabAccess('varal-lutherie', 'lutherie');
   const hasAccessCostumerie = isMasterKeyActive || canAccessPole('costumerie', profileData, permissionsMatrice, userTags) || checkTabAccess('wardrobe-projects', 'costumerie') || checkTabAccess('wardrobe-models', 'costumerie') || checkTabAccess('wardrobe-pieces', 'costumerie') || checkTabAccess('wardrobe-supplies', 'costumerie') || checkTabAccess('wardrobe-tools', 'costumerie') || checkTabAccess('wardrobe-sizes', 'costumerie') || checkTabAccess('varal-costumerie', 'costumerie');
-  const hasAccessStudio = isMasterKeyActive || canAccessPole('studio', profileData, permissionsMatrice, userTags) || checkTabAccess('studio-social', 'studio') || checkTabAccess('studio-lexique', 'studio') || checkTabAccess('newsletter', 'studio') || checkTabAccess('studio-communication', 'studio') || checkTabAccess('varal-photos', 'studio');
+  const hasAccessStudio = isMasterKeyActive || canAccessPole('studio', profileData, permissionsMatrice, userTags) || checkTabAccess('studio-social', 'studio') || checkTabAccess('newsletter', 'studio') || checkTabAccess('varal-photos', 'studio');
   const hasAccessPedagogie = isMasterKeyActive || canAccessPole('pedagogie', profileData, permissionsMatrice, userTags) || checkTabAccess('mestre-pedagogy-dashboard', 'pedagogie') || checkTabAccess('varal-manager', 'pedagogie') || checkTabAccess('mestre-pedagogy-qcm', 'pedagogie');
   const hasAccessVitrine = isMasterKeyActive || checkTabAccess('vitrine-general', 'vitrine') || checkTabAccess('vitrine-editor', 'vitrine');
-  const hasAccessConfig = isSystemOrSuperAdminOrMestre || isMasterKeyActive || checkTabAccess('config-identity', 'config') || checkTabAccess('config-security', 'config') || checkTabAccess('config-layout', 'config') || checkTabAccess('config-member-layout', 'config') || checkTabAccess('config-profile', 'config') || checkTabAccess('config-modules', 'config') || checkTabAccess('config-tambours', 'config');
+  const hasAccessConfig = isSystemOrSuperAdminOrMestre || isMasterKeyActive || checkTabAccess('config-identity', 'config') || checkTabAccess('config-profile', 'config') || checkTabAccess('config-security', 'config') || checkTabAccess('config-comms', 'config') || checkTabAccess('config-modules', 'config');
   const hasAccessForumMod = isMasterKeyActive || userTags.some(t => ['Modérateur', 'Modérateur Forum', 'Gestionnaire Porte-voix', 'Porte-voix'].includes(t));
 
   // Fonction utilitaire pour nettoyer les paramètres d'URL (ex: threadId, eventId) lors des navigations
@@ -1643,16 +1631,22 @@ export default function App() {
         setCurrentTab('export-annu');
         break;
       case 'reunion-manager':
-        setCurrentPole('secretariat');
-        setCurrentTab('reunion-manager');
+      case 'ca-reunions':
+        setCurrentPole('gouvernance');
+        setCurrentTab('ca-reunions');
         break;
       case 'activity-reports':
         setCurrentPole('secretariat');
         setCurrentTab('activity-reports');
         break;
+      case 'secretariat-reports':
+      case 'ca-reports':
+        setCurrentPole('gouvernance');
+        setCurrentTab('ca-reports');
+        break;
       case 'mestre-forum-channels':
-        setCurrentPole('secretariat');
-        setCurrentTab('mestre-forum-channels');
+        setCurrentPole('mon-espace');
+        setCurrentTab('forum');
         break;
       case 'studio-events':
         setCurrentPole('secretariat');
@@ -1677,7 +1671,7 @@ export default function App() {
         break;
       case 'logistics-pupitres':
         setCurrentPole('logistique');
-        setCurrentTab('logistics-pupitres');
+        setCurrentTab('inventory');
         break;
       case 'logistics-kits':
         setCurrentPole('logistique');
@@ -1809,7 +1803,7 @@ export default function App() {
         break;
       case 'mestre-sequenceur':
         setCurrentPole('mestre');
-        setCurrentTab('mestre-sequenceur');
+        setCurrentTab('mestre-repertoire');
         break;
       case 'mestre-mot-mestre':
         setCurrentPole('mestre');
@@ -1817,11 +1811,11 @@ export default function App() {
         break;
       case 'secretariat-documents':
         setCurrentPole('secretariat');
-        setCurrentTab('secretariat-documents');
+        setCurrentTab('varal-secretariat');
         break;
       case 'secretariat-lieux':
         setCurrentPole('secretariat');
-        setCurrentTab('secretariat-lieux');
+        setCurrentTab('studio-events');
         break;
       case 'logistics-carpool':
         setCurrentPole('logistique');
@@ -1829,7 +1823,7 @@ export default function App() {
         break;
       case 'studio-communication':
         setCurrentPole('studio');
-        setCurrentTab('studio-communication');
+        setCurrentTab('studio-social');
         break;
       default:
         setCurrentPole('accueil');
@@ -2168,13 +2162,6 @@ export default function App() {
                     onOpenStudioForum={() => setCurrentTab('mestre-forum-channels')}
                     breakGlassActive={breakGlassActive}
                   />
-                ) : currentTab === 'atelier-couture' ? (
-                  <AtelierCouture
-                    groupId={profileData?.groupId}
-                    activePiece={activeTutorialPiece}
-                    onClearActivePiece={() => setActiveTutorialPiece(null)}
-                    onBack={() => handleNavigateToPole('accueil')}
-                  />
                 ) : (currentTab === 'export-annu' && (hasAccessSecretariat || hasAccessStudio)) ? (
                   <AdminExport 
                     user={user}
@@ -2195,15 +2182,6 @@ export default function App() {
                     role={profileData?.role}
                     isSystemAdmin={profileData?.isSystemAdmin}
                     onBack={() => setCurrentTab('export-annu')} 
-                  />
-                ) : (currentTab === 'instruments' && hasAccessConfig) ? (
-                  <AssociationSettings 
-                    groupId={profileData?.groupId}
-                    role={profileData?.role}
-                    isSystemAdmin={profileData?.isSystemAdmin}
-                    mode="instruments-only"
-                    activeTabProp="organisation"
-                    onBack={() => handleNavigateToPole('accueil')}
                   />
                 ) : (['gigs-pipeline', 'diffusion-contacts'].includes(currentTab) && hasAccessDiffusion) ? (
                   <GigsPipelineManager
@@ -2553,13 +2531,6 @@ export default function App() {
                     hasAccessDiffusion={hasAccessDiffusion || hasAccessGouvernance}
                     onBack={() => handleNavigateToPole('accueil')} 
                   />
-                ) : (currentTab === 'reunion-manager' && (hasAccessSecretariat || hasAccessStudio)) ? (
-                  <ReunionManager 
-                    groupId={profileData?.groupId}
-                    user={user}
-                    profileData={profileData}
-                    onBack={() => handleNavigateToPole('accueil')} 
-                  />
                 ) : (currentTab === 'newsletter' && hasAccessStudio) ? (
                   <NewsletterPage
                     groupId={profileData?.groupId}
@@ -2634,11 +2605,6 @@ export default function App() {
                     profileData={profileData}
                     sequenceurUrl={sequenceurUrl}
                   />
-                ) : (currentTab === 'mestre-pedagogy-manager' && hasAccessPedagogie) ? (
-                  <MestrePedagogyManager 
-                    profileData={profileData}
-                    sequenceurUrl={sequenceurUrl}
-                  />
                 ) : (currentTab === 'mestre-pedagogy-qcm' && hasAccessPedagogie) ? (
                   <MestreAutoEvalConfig 
                     profileData={profileData}
@@ -2680,7 +2646,7 @@ export default function App() {
                       setCurrentTab('trombinoscope');
                     }}
                   />
-                ) : ((currentTab === 'mestre-stage-layout' || currentTab === 'mestre-events') && hasAccessMestre) ? (
+                ) : (currentTab === 'mestre-stage-layout' && hasAccessMestre) ? (
                   <MestreStageLayout 
                     groupId={profileData?.groupId} 
                     user={user}
@@ -2688,11 +2654,6 @@ export default function App() {
                     selectedEventId={selectedMestreEventId}
                     onSelectEventId={setSelectedMestreEventId}
                     onOpenDetails={(evt) => setActiveMestreEventDetails(evt)}
-                  />
-                ) : (currentTab === 'mestre-sequenceur' && (hasAccessMestre || hasAccessPedagogie)) ? (
-                  <MestreSequenceur 
-                    groupId={profileData?.groupId}
-                    sequenceurUrl={sequenceurUrl}
                   />
                 ) : (currentTab === 'mestre-mot-mestre' && hasAccessMestre) ? (
                   <MestreMotMestre 
@@ -2709,6 +2670,15 @@ export default function App() {
                     onBack={() => handleNavigateToPole('accueil')} 
                     onReopenOnboarding={() => setShowOnboardingWizard(true)}
                   />
+                ) : (currentTab === 'config-profile' && checkTabAccess('config-profile', 'config')) ? (
+                  <AssociationSettings 
+                    groupId={profileData?.groupId}
+                    role={profileData?.role}
+                    isSystemAdmin={profileData?.isSystemAdmin}
+                    mode="profile-only"
+                    activeTabProp="organisation"
+                    onBack={() => handleNavigateToPole('accueil')} 
+                  />
                 ) : (currentTab === 'config-security' && checkTabAccess('config-security', 'config')) ? (
                   <AssociationSettings 
                     groupId={profileData?.groupId}
@@ -2716,33 +2686,16 @@ export default function App() {
                     isSystemAdmin={profileData?.isSystemAdmin}
                     activeTabProp="security"
                     mode="security-only"
+                    onNavigateToView={(view) => setCurrentTab(view)}
                     onBack={() => handleNavigateToPole('accueil')} 
                   />
-                ) : (currentTab === 'config-layout' && checkTabAccess('config-layout', 'config')) ? (
+                ) : (currentTab === 'config-comms' && checkTabAccess('config-comms', 'config')) ? (
                   <AssociationSettings 
                     groupId={profileData?.groupId}
                     role={profileData?.role}
                     isSystemAdmin={profileData?.isSystemAdmin}
-                    activeTabProp="apparence"
-                    mode="apparence-only"
-                    onBack={() => handleNavigateToPole('accueil')} 
-                  />
-                ) : (currentTab === 'config-member-layout' && checkTabAccess('config-member-layout', 'config')) ? (
-                  <AssociationSettings 
-                    groupId={profileData?.groupId}
-                    role={profileData?.role}
-                    isSystemAdmin={profileData?.isSystemAdmin}
-                    activeTabProp="member-layout"
-                    mode="member-layout-only"
-                    onBack={() => handleNavigateToPole('accueil')} 
-                  />
-                ) : (currentTab === 'config-profile' && checkTabAccess('config-profile', 'config')) ? (
-                  <AssociationSettings 
-                    groupId={profileData?.groupId}
-                    role={profileData?.role}
-                    isSystemAdmin={profileData?.isSystemAdmin}
-                    mode="profile-fields-only"
-                    activeTabProp="organisation"
+                    mode="comms-only"
+                    activeTabProp="comms"
                     onBack={() => handleNavigateToPole('accueil')} 
                   />
                 ) : (currentTab === 'config-modules' && checkTabAccess('config-modules', 'config')) ? (
@@ -2752,15 +2705,6 @@ export default function App() {
                     isSystemAdmin={profileData?.isSystemAdmin}
                     activeTabProp="modules"
                     mode="modules-only"
-                    onBack={() => handleNavigateToPole('accueil')} 
-                  />
-                ) : (currentTab === 'config-tambours' && checkTabAccess('config-tambours', 'config')) ? (
-                  <AssociationSettings 
-                    groupId={profileData?.groupId}
-                    role={profileData?.role}
-                    isSystemAdmin={profileData?.isSystemAdmin}
-                    activeTabProp="tambours"
-                    mode="tambours-only"
                     onBack={() => handleNavigateToPole('accueil')} 
                   />
                 ) : (['vitrine-editor', 'vitrine-general', 'vitrine-presentation', 'vitrine-organisateur', 'vitrine-galerie', 'vitrine-recrutement', 'vitrine-reseaux', 'vitrine-apparence'].includes(currentTab) && checkTabAccess('vitrine-editor', 'vitrine')) ? (

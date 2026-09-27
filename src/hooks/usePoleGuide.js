@@ -2,28 +2,40 @@ import { useState, useEffect, useCallback } from 'react';
 import { getPoleGuide, POLE_GUIDES } from '../config/poleGuides';
 
 /**
- * Fonction pure utilitaire : lecture synchrone de l'état masqué dans le localStorage.
- * Déportée en dehors du hook pour éviter des instanciations de callbacks et garantir
- * une stabilité absolue de l'ordre des hooks React.
+ * Résolution déterministe de la clé de guide correspondant au contenu affiché.
+ * Priorise l'onglet dédié s'il possède un guide dans POLE_GUIDES,
+ * sinon se replie sur le pôle parent ou le premier identifiant disponible.
+ * 
+ * @param {string} tabId - Identifiant de l'onglet actif
+ * @param {string} poleId - Identifiant du pôle actif
+ * @returns {string} Clé unique du guide
+ */
+export function getGuideKey(tabId, poleId) {
+  if (tabId && POLE_GUIDES[tabId]) return tabId;
+  if (poleId && POLE_GUIDES[poleId]) return poleId;
+  return tabId || poleId || '';
+}
+
+/**
+ * Fonction pure utilitaire : lecture synchrone et immédiate de l'état masqué dans le localStorage.
+ * Déportée en dehors du hook pour garantir un premier rendu sans sursaut visuel.
  * 
  * @param {string} tabId - Identifiant de l'onglet actif
  * @param {string} poleId - Identifiant du pôle actif
  * @returns {boolean} true si l'aide doit être masquée, false sinon
  */
-function readHiddenState(tabId, poleId) {
-  const guideKey = tabId || poleId;
-  if (!guideKey || typeof window === 'undefined') return false;
+export function readHiddenState(tabId, poleId) {
+  if (typeof window === 'undefined') return false;
+  const guideKey = getGuideKey(tabId, poleId);
+  if (!guideKey) return false;
   try {
-    // 1. Vérification pour l'onglet spécifique
-    if (tabId && localStorage.getItem(`pole_guide_hidden_${tabId}`) === 'true') {
-      return true;
-    }
-    // 2. Vérification pour la clé directe
     if (localStorage.getItem(`pole_guide_hidden_${guideKey}`) === 'true') {
       return true;
     }
-    // 3. Si l'aide affichée est celle du pôle global
-    if (poleId && (!tabId || !POLE_GUIDES[tabId]) && localStorage.getItem(`pole_guide_hidden_${poleId}`) === 'true') {
+    if (tabId && localStorage.getItem(`pole_guide_hidden_${tabId}`) === 'true') {
+      return true;
+    }
+    if (poleId && localStorage.getItem(`pole_guide_hidden_${poleId}`) === 'true') {
       return true;
     }
     return false;
@@ -47,8 +59,8 @@ function readHiddenState(tabId, poleId) {
  * @returns {Object} { guide, guideKey, isHidden, hideBanner, showBanner, toggleBanner }
  */
 export function usePoleGuide(tabId, poleId) {
-  // Clé d'identification unique de l'emplacement courant
-  const guideKey = tabId || poleId;
+  // Clé d'identification unique et résolue du guide
+  const guideKey = getGuideKey(tabId, poleId);
 
   // Résolution du guide à partir du fichier de configuration
   const guide = getPoleGuide(tabId, poleId);
@@ -73,18 +85,14 @@ export function usePoleGuide(tabId, poleId) {
     };
   }, [tabId, poleId]);
 
-  // 3. Masquer la bannière d'aide pour l'onglet et la page courante
+  // 3. Masquer la bannière d'aide immédiatement avec persistance locale
   const hideBanner = useCallback(() => {
-    const currentKey = tabId || poleId;
-    if (!currentKey || typeof window === 'undefined') return;
+    const key = getGuideKey(tabId, poleId);
+    if (!key || typeof window === 'undefined') return;
     try {
-      if (tabId) {
-        localStorage.setItem(`pole_guide_hidden_${tabId}`, 'true');
-      }
-      if (poleId && (!tabId || !POLE_GUIDES[tabId])) {
-        localStorage.setItem(`pole_guide_hidden_${poleId}`, 'true');
-      }
-      localStorage.setItem(`pole_guide_hidden_${currentKey}`, 'true');
+      localStorage.setItem(`pole_guide_hidden_${key}`, 'true');
+      if (tabId) localStorage.setItem(`pole_guide_hidden_${tabId}`, 'true');
+      if (poleId) localStorage.setItem(`pole_guide_hidden_${poleId}`, 'true');
       setIsHidden(true);
       window.dispatchEvent(new Event('pole-guide-changed'));
     } catch (e) {
@@ -94,16 +102,12 @@ export function usePoleGuide(tabId, poleId) {
 
   // 4. Afficher / Réouvrir la bannière d'aide pour l'onglet courant
   const showBanner = useCallback(() => {
-    const currentKey = tabId || poleId;
-    if (!currentKey || typeof window === 'undefined') return;
+    const key = getGuideKey(tabId, poleId);
+    if (!key || typeof window === 'undefined') return;
     try {
-      if (tabId) {
-        localStorage.setItem(`pole_guide_hidden_${tabId}`, 'false');
-      }
-      if (poleId && (!tabId || !POLE_GUIDES[tabId])) {
-        localStorage.setItem(`pole_guide_hidden_${poleId}`, 'false');
-      }
-      localStorage.setItem(`pole_guide_hidden_${currentKey}`, 'false');
+      localStorage.setItem(`pole_guide_hidden_${key}`, 'false');
+      if (tabId) localStorage.setItem(`pole_guide_hidden_${tabId}`, 'false');
+      if (poleId) localStorage.setItem(`pole_guide_hidden_${poleId}`, 'false');
       setIsHidden(false);
       window.dispatchEvent(new Event('pole-guide-changed'));
     } catch (e) {

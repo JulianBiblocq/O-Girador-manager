@@ -66,9 +66,11 @@ export default function CollectiveKitsManager({ groupId, user, profileData }) {
               ⚡ Initialiser les 3 kits régie types
             </button>
           )}
-          <CordelButton variant="vert" onClick={() => setShowAddForm(!showAddForm)}>
-            {showAddForm ? 'Fermer' : '+ Nouveau Kit'}
-          </CordelButton>
+          <div data-tour="kits-add-btn">
+            <CordelButton variant="vert" onClick={() => setShowAddForm(!showAddForm)}>
+              {showAddForm ? 'Fermer' : '+ Nouveau Kit'}
+            </CordelButton>
+          </div>
         </div>
       </div>
 
@@ -116,8 +118,8 @@ export default function CollectiveKitsManager({ groupId, user, profileData }) {
           </p>
         </CordelCard>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-          {kits.map((kit) => {
+        <div data-tour="kits-grid" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+          {kits.map((kit, kitIdx) => {
             const health = calculateKitStatus(kit);
             const icon = TYPE_ICONS[kit.type] || '🧰';
             const badgeClasses = {
@@ -138,7 +140,10 @@ export default function CollectiveKitsManager({ groupId, user, profileData }) {
                       <span className="text-lg">{icon}</span>
                       <strong className="text-xs text-cordel-wood truncate">{kit.nom}</strong>
                     </div>
-                    <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded border shrink-0 ${badgeClasses}`}>
+                    <span 
+                      {...(kitIdx === 0 ? { 'data-tour': 'kits-status-badge' } : {})}
+                      className={`text-[9px] font-black uppercase px-2 py-0.5 rounded border shrink-0 ${badgeClasses}`}
+                    >
                       {health.color === 'green' ? '✅ ' : health.color === 'red' ? '🚨 ' : '⚠️ '}
                       {health.label}
                     </span>

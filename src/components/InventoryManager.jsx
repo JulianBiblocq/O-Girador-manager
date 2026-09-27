@@ -583,7 +583,7 @@ export default function InventoryManager({
               🚗 Configuration Covoiturage & Convois
             </h3>
             <p className="text-[10px] text-cordel-master-dark/75 leading-relaxed">
-              Définissez le barème kilométrique, le point de rassemblement habituel pour les départs en convoi et les règles de calcul.
+              Gérez la flotte de véhicules de la troupe et le point de rassemblement habituel pour les départs en convoi.
             </p>
           </div>
           <form onSubmit={(e) => { e.preventDefault(); handleSaveSettings(); }} className="flex flex-col gap-4">

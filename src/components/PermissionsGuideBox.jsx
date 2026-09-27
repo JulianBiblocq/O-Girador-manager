@@ -13,7 +13,7 @@ import { useTranslation } from './LanguageContext';
  * @param {Function} [props.onNavigateToTagManager] - Optional shortcut callback
  */
 export default function PermissionsGuideBox({
-  defaultOpen = true,
+  defaultOpen = false,
   className = '',
   onNavigateToTagManager
 }) {

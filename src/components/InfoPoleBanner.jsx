@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { usePoleGuide } from '../hooks/usePoleGuide';
+import { usePoleGuide, getGuideKey } from '../hooks/usePoleGuide';
 import PoleTourOverlay from './guided-tour/PoleTourOverlay';
 
 /**
@@ -15,16 +15,38 @@ import PoleTourOverlay from './guided-tour/PoleTourOverlay';
  * @param {Function} [onClose] - Optionnel : callback de fermeture
  */
 export default function InfoPoleBanner({ currentPole, currentTab, forceShow = false, onClose }) {
-  const { guide, isHidden, hideBanner } = usePoleGuide(currentTab, currentPole);
+  const { guide, guideKey, isHidden, hideBanner } = usePoleGuide(currentTab, currentPole);
   const [isTourOpen, setIsTourOpen] = useState(false);
 
-  // Si aucun guide n'est défini pour cet onglet/pôle, ne rien afficher
+  // Si aucun guide n'est défini pour cet onglet/pôle, ne rien afficher immédiatement
   if (!guide) return null;
 
-  // Si le guide est masqué par l'utilisateur (et pas forcé et pas en visite guidée active), ne rien afficher
-  if (isHidden && !forceShow && !isTourOpen) return null;
+  // Clé résolue pour la persistance locale
+  const effectiveKey = guideKey || getGuideKey(currentTab, currentPole);
+
+  // Vérification synchrone immédiate du localStorage au montage
+  const isDirectlyHidden = typeof window !== 'undefined' && (
+    localStorage.getItem(`pole_guide_hidden_${effectiveKey}`) === 'true' ||
+    (currentTab && localStorage.getItem(`pole_guide_hidden_${currentTab}`) === 'true') ||
+    (currentPole && localStorage.getItem(`pole_guide_hidden_${currentPole}`) === 'true')
+  );
+
+  // Si le guide est masqué par l'utilisateur (et pas forcé et pas en visite guidée active), retourner null immédiatement
+  if ((isDirectlyHidden || isHidden) && !forceShow && !isTourOpen) return null;
 
   const handleHide = () => {
+    // 1. Enregistrement synchrone direct dans le localStorage
+    try {
+      if (effectiveKey && typeof window !== 'undefined') {
+        localStorage.setItem(`pole_guide_hidden_${effectiveKey}`, 'true');
+        if (currentTab) localStorage.setItem(`pole_guide_hidden_${currentTab}`, 'true');
+        if (currentPole) localStorage.setItem(`pole_guide_hidden_${currentPole}`, 'true');
+      }
+    } catch (e) {
+      console.warn("Impossible d'enregistrer la préférence locale", e);
+    }
+
+    // 2. Notification de mise à jour d'état via le hook
     hideBanner();
     if (onClose) onClose();
   };

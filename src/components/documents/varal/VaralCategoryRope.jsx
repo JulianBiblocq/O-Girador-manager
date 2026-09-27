@@ -164,10 +164,22 @@ const categoryVariants = {
   'DocumentsFixes': 'bleu'
 };
 
-const getCategoryLabel = (cat) => {
+const getCategoryLabel = (cat, t) => {
   if (!cat) return '';
-  if (typeof cat === 'string') return cat;
-  return cat.nom || cat.id || '';
+  const id = typeof cat === 'object' ? (cat.id || '') : '';
+  const nom = typeof cat === 'object' ? (cat.nom || cat.id || '') : cat;
+
+  if (id === 'ComptesRendus' || nom === 'ComptesRendus' || nom === 'Comptes-rendus' || nom === 'Comptes Rendus' || nom === 'Documents administratifs') {
+    return t ? (t('documents.Documents administratifs') || 'Documents administratifs') : 'Documents administratifs';
+  }
+
+  if (t && id && t(`documents.${id}`) !== `documents.${id}`) {
+    return t(`documents.${id}`);
+  }
+  if (t && nom && t(`documents.${nom}`) !== `documents.${nom}`) {
+    return t(`documents.${nom}`);
+  }
+  return nom;
 };
 
 /**
@@ -288,7 +300,7 @@ export default function VaralCategoryRope({
       <div className="flex flex-col md:flex-row md:justify-between items-start md:items-center gap-2 mb-2 pl-3 pr-3 select-none relative z-20">
         <div className="flex items-center gap-1.5 flex-wrap">
           <span className={`theme-stamp-badge theme-stamp-badge-${variant === 'ocre' || variant === 'vert' ? 'wood' : 'dark'} text-[8.5px] tracking-wider font-extrabold`}>
-            {getCategoryLabel(category.nom)}
+            {getCategoryLabel(category, t)}
           </span>
 
           {/* Filtres de visibilité (Tous, Visibles, Masqués, Archivés) */}

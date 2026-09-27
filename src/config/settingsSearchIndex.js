@@ -107,9 +107,9 @@ export const SETTINGS_INDEX = [
     title: 'Canaux du Porte-voix',
     description: 'Configuration et modération des salons de discussion publics',
     keywords: ['porte voix', 'canaux', 'salons', 'forum', 'moderation', 'discussions', 'communication interne'],
-    poleId: 'secretariat',
-    tabId: 'mestre-forum-channels',
-    requiredPole: 'secretariat'
+    poleId: 'mon-espace',
+    tabId: 'forum',
+    requiredPole: 'mon-espace'
   },
   {
     id: 'secretariat-activite',
@@ -227,9 +227,9 @@ export const SETTINGS_INDEX = [
     title: 'Pupitres de Percussion',
     description: 'Configuration des sections instrumentales (Alfaias, Caixas, Gonguê, Agbê, etc.)',
     keywords: ['pupitres', 'sections', 'alfaias', 'caixas', 'gongues', 'agbes', 'repartage', 'composition'],
-    poleId: 'logistique',
-    tabId: 'logistics-pupitres',
-    requiredPole: 'logistique'
+    poleId: 'config',
+    tabId: 'config-tambours',
+    requiredPole: 'config'
   },
   {
     id: 'logistique-kits',
@@ -411,7 +411,7 @@ export const SETTINGS_INDEX = [
     description: 'Configuration du serveur d\'e-mails, clé API Brevo et sélection de la vidéo à la une',
     keywords: ['communication', 'video a la une', 'brevo', 'smtp', 'api key', 'youtube accueil', 'emailing config'],
     poleId: 'studio',
-    tabId: 'studio-communication',
+    tabId: 'studio-social',
     requiredPole: 'studio'
   },
   {
@@ -461,15 +461,6 @@ export const SETTINGS_INDEX = [
     keywords: ['plan de scene', 'scene', 'placement', 'geometrie', 'formation', 'disposition'],
     poleId: 'mestre',
     tabId: 'mestre-stage-layout',
-    requiredPole: 'mestre'
-  },
-  {
-    id: 'mestre-sequenceur',
-    title: 'Séquenceur & Boîte à Rythmes',
-    description: 'Simulateur polyrythmique interactif pour décomposer les variations de baques',
-    keywords: ['sequenceur', 'polyrythmie', 'rythmes', 'tempo', 'metronome', 'baques', 'variations'],
-    poleId: 'mestre',
-    tabId: 'mestre-sequenceur',
     requiredPole: 'mestre'
   },
   {

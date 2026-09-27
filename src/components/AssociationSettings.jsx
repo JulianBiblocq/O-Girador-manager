@@ -10,6 +10,7 @@ import TabApparence from './association-settings/TabApparence';
 import TabMemberLayout from './association-settings/TabMemberLayout';
 import TabOrganization from './association-settings/TabOrganization';
 import TabSecurity from './association-settings/TabSecurity';
+import TabConfigComms from './association-settings/TabConfigComms';
 import TabModules from './association-settings/TabModules';
 import TabTambours from './association-settings/TabTambours';
 import TabPublicContent from './association-settings/TabPublicContent';
@@ -143,6 +144,7 @@ export default function AssociationSettings({
           />
         );
       case 'organisation':
+      case 'profile':
         return (
           <TabOrganization
             formData={formData}
@@ -162,11 +164,25 @@ export default function AssociationSettings({
             onNavigateToTagManager={() => onNavigateToView && onNavigateToView('tag-manager')}
           />
         );
+      case 'comms':
+        return (
+          <TabConfigComms
+            formData={formData}
+            handleChange={handleChange}
+            groupId={groupId}
+            saving={saving}
+            t={t}
+          />
+        );
       case 'modules':
         return (
           <TabModules
             formData={formData}
             handleChange={handleChange}
+            logoFile={logoFile}
+            setLogoFile={setLogoFile}
+            uploadingLogo={uploadingLogo}
+            groupId={groupId}
             saving={saving}
             t={t}
           />
@@ -250,7 +266,7 @@ export default function AssociationSettings({
 
 
 
-          {/* Tab Selector */}
+          {/* Tab Selector - 5 Piliers Institutionnels */}
           {!mode && (
             <div className="flex flex-wrap gap-2 border-b border-dashed border-cordel-master-dark/20 pb-3 mb-1 select-none">
               <button
@@ -262,7 +278,18 @@ export default function AssociationSettings({
                     : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
                 }`}
               >
-                🏢 Identité légale
+                🏢 Identité Légale
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveSettingsTab('organisation')}
+                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
+                  activeSettingsTab === 'organisation' || activeSettingsTab === 'profile'
+                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+                }`}
+              >
+                👥 Inscription, Profils & Lieux/Agenda
               </button>
               <button
                 type="button"
@@ -273,62 +300,29 @@ export default function AssociationSettings({
                     : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
                 }`}
               >
-                🛡️ Badges & Permissions
+                🛡️ Badges & Sécurité
               </button>
               <button
                 type="button"
-                onClick={() => setActiveSettingsTab('apparence')}
+                onClick={() => setActiveSettingsTab('comms')}
                 className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
-                  activeSettingsTab === 'apparence'
+                  activeSettingsTab === 'comms'
                     ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
                     : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
                 }`}
               >
-                🖌️ Apparence
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveSettingsTab('member-layout')}
-                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
-                  activeSettingsTab === 'member-layout'
-                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
-                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
-                }`}
-              >
-                🪢 Vue Membre & Vidéo
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveSettingsTab('organisation')}
-                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
-                  activeSettingsTab === 'organisation'
-                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
-                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
-                }`}
-              >
-                👥 Inscription & Profils
+                📬 Communication & Automatisations
               </button>
               <button
                 type="button"
                 onClick={() => setActiveSettingsTab('modules')}
                 className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
-                  activeSettingsTab === 'modules'
+                  activeSettingsTab === 'modules' || activeSettingsTab === 'apparence' || activeSettingsTab === 'member-layout' || activeSettingsTab === 'tambours'
                     ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
                     : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
                 }`}
               >
-                🧩 Modules & Fonctionnalités
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveSettingsTab('tambours')}
-                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
-                  activeSettingsTab === 'tambours'
-                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
-                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
-                }`}
-              >
-                🥁 Les Tambours
+                🧩 Modules, Apparence & Médias
               </button>
             </div>
           )}

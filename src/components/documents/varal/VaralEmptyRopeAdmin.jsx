@@ -18,7 +18,9 @@ export default function VaralEmptyRopeAdmin({
   onEditCategory
 }) {
   const { t } = useTranslation();
-  const categoryLabel = category?.nom || category?.id || '';
+  const categoryLabel = (category?.id === 'ComptesRendus' || category?.nom === 'Comptes-rendus' || category?.nom === 'Comptes Rendus' || category?.nom === 'Documents administratifs')
+    ? (t('documents.Documents administratifs') || 'Documents administratifs')
+    : (t(`documents.${category?.nom || category?.id}`) || category?.nom || category?.id || '');
 
   return (
     <CordelCard

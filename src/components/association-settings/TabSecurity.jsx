@@ -20,12 +20,12 @@ const PERMISSION_POLES = [
   {
     id: 'secretariat',
     label: '📋 Secrétariat',
-    desc: 'Gestion statutaire, annuaire, journal d\'activité, registre des dates et Varal administratif',
+    desc: 'Gestion statutaire, annuaire, bilans d\'activité, registre des dates et documents officiels',
     tabs: [
-      { id: 'export-annu', label: 'Annuaire', desc: 'Accès à la liste des adhérents et export CSV/Excel' },
-      { id: 'activity-reports', label: "Journal d'activité (CSV)", desc: 'Extraction CSV des présences et du journal des événements' },
+      { id: 'export-annu', label: 'Annuaire & Exports', desc: 'Accès à la liste des adhérents et export CSV/Excel' },
+      { id: 'activity-reports', label: "Bilans d'Activité & Présences", desc: 'Extraction CSV des présences et du journal des événements' },
       { id: 'studio-events', label: 'Registre des dates', desc: 'Tableau d\'édition rapide et globale des événements' },
-      { id: 'varal-secretariat', label: 'Varal Secrétariat', desc: 'Documents administratifs et comptes-rendus officiels' }
+      { id: 'varal-secretariat', label: 'Documents officiels', desc: 'Documents administratifs et comptes-rendus officiels' }
     ]
   },
   {
@@ -52,13 +52,12 @@ const PERMISSION_POLES = [
   {
     id: 'logistique',
     label: '📦 Logistique',
-    desc: 'Inventaire du matériel opérationnel, pupitres, kits et commandes',
+    desc: 'Inventaire du parc d\'instruments, commandes groupées, convois et malles régie',
     tabs: [
-      { id: 'inventory', label: 'Instruments', desc: 'Gestion du parc d\'instruments et état du matériel' },
-      { id: 'logistics-pupitres', label: 'Pupitres', desc: 'Familles de pupitres, catalogue d\'instruments et attributions de couleurs' },
-      { id: 'logistics-kits', label: 'Accessoires & Kits', desc: 'Gestion des kits d\'accessoires et matériels par pupitre' },
-      { id: 'logistics-carpool', label: 'Covoiturage & Convois', desc: 'Point de départ convoi, barème km et règles de transport' },
-      { id: 'orders', label: 'Commandes', desc: 'Suivi des achats et commandes de matériel' }
+      { id: 'inventory', label: 'Parc Instruments & Cautions', desc: 'Gestion du parc d\'instruments, cautions et état du matériel' },
+      { id: 'orders', label: 'Commandes Groupées', desc: 'Suivi des achats et commandes de matériel' },
+      { id: 'logistics-carpool', label: 'Convois & Flotte Véhicules', desc: 'Point de départ convoi, barème km et règles de transport' },
+      { id: 'logistics-kits', label: 'Malles Régie & Trousses Secours', desc: 'Gestion des malles régie, trousses de secours, maquillage et outillage' }
     ]
   },
   {
@@ -98,7 +97,7 @@ const PERMISSION_POLES = [
   {
     id: 'studio',
     label: 'Studio',
-    desc: 'Communication externe, réseaux sociaux, newsletter et Varal photos',
+    desc: 'Communication externe, réseaux sociaux, lettres d\'info et photothèque',
     tabs: [
       { 
         id: 'annonces-publish', 
@@ -107,10 +106,9 @@ const PERMISSION_POLES = [
         labelKey: 'permAnnoncesPublish',
         descKey: 'permAnnoncesPublishDesc'
       },
-      { id: 'studio-social', label: 'Studio social', desc: 'Gestion et publication sur les réseaux sociaux' },
-      { id: 'newsletter', label: 'Newsletter', desc: 'Création et envoi de newsletters' },
-      { id: 'studio-communication', label: 'Communication & Brevo', desc: 'Clés Brevo API, DNS, newsletter et export des inscrits (CSV)' },
-      { id: 'varal-photos', label: 'Varal Photos', desc: 'Dépôts et albums photos partagés des prestations' }
+      { id: 'studio-social', label: 'Réseaux & Médias', desc: 'Gestion et publication sur les réseaux sociaux' },
+      { id: 'newsletter', label: "Lettres d'info", desc: 'Création et envoi de lettres d\'information' },
+      { id: 'varal-photos', label: 'Médiathèque Photos', desc: 'Dépôts et albums photos partagés des prestations' }
     ]
   },
   {
@@ -126,14 +124,13 @@ const PERMISSION_POLES = [
   {
     id: 'mestre',
     label: '🥁 Mestria',
-    desc: 'Direction artistique, plan de scène et séquenceur',
+    desc: 'Direction artistique et plan de scène',
     tabs: [
       { id: 'mestre-repertoire', label: 'Répertoire', desc: 'Gestion de la setlist de saison et statut des morceaux' },
       { id: 'mestre-categories', label: 'Catégories de pratique', desc: 'Gestion des sections et niveaux de pratique de la troupe' },
       { id: 'mestre-orientation', label: 'Casting', desc: 'Gestion des affectations d\'instruments et vœux d\'évolution' },
       { id: 'mestre-events', label: 'Événements', desc: 'Vue mestre détaillée des événements et présences' },
       { id: 'mestre-stage-layout', label: 'Plan de Scène', desc: 'Création et disposition visuelle du placement scénique' },
-      { id: 'mestre-sequenceur', label: 'Séquenceur', desc: 'Édition des séquences musicales et structures rhythm' },
       { id: 'mestre-mot-mestre', label: 'Annonces', desc: 'Publication des communications officielles du Mestre' }
     ]
   },
@@ -151,13 +148,11 @@ const PERMISSION_POLES = [
     label: '⚙️ Configuration',
     desc: 'Paramètres institutionnels de l\'association, identité, sécurité, modules et profils',
     tabs: [
-      { id: 'config-identity', label: 'Identité légale', desc: 'SIRET, RNA, siège social et signatures officielles' },
-      { id: 'config-security', label: 'Badges & Permissions', desc: 'Matrice RBAC des rôles et permissions' },
-      { id: 'config-layout', label: 'Apparence', desc: 'Logo, identité visuelle et thème de base' },
-      { id: 'config-member-layout', label: 'Vue Membre & Vidéo', desc: "Ordre d'affichage des blocs de l'accueil adhérent et vidéo à la une" },
-      { id: 'config-profile', label: 'Inscription & Profils', desc: 'Champs dynamiques requis pour les profils adhérents' },
-      { id: 'config-modules', label: 'Modules & Fonctionnalités', desc: 'Activation et désactivation des grands pôles métiers' },
-      { id: 'config-tambours', label: 'Les Tambours', desc: 'Nomenclature des pupitres et présélections traditionnelles' }
+      { id: 'config-identity', label: 'Identité légale & Juridique', desc: 'SIRET, RNA, siège social, signatures et coordonnées bancaires' },
+      { id: 'config-profile', label: 'Inscription, Profils & Lieux/Agenda', desc: 'Formulaire d\'inscription, cycles annuels, salles clés et catégories d\'agenda' },
+      { id: 'config-security', label: 'Badges, Rôles & Sécurité', desc: 'Matrice RBAC des rôles et permissions par pôle' },
+      { id: 'config-comms', label: 'Communication, E-mails & Automatisations', desc: 'Configuration expéditeur, API Brevo, DNS et règles de relance automatique' },
+      { id: 'config-modules', label: 'Modules SaaS, Apparence & Médias', desc: 'Activation des pôles, nomenclature des tambours, logo et playlists' }
     ]
   }
 ];
@@ -173,17 +168,20 @@ export default function TabSecurity({
   const tFunc = t || translate;
   const { permissionsMatrice = {}, tagsDisponibles = [] } = formData;
 
-  // État local des accordéons de pôles
+  // État local des accordéons de pôles : TOUS FERMÉS PAR DÉFAUT à l'ouverture
   const [openPoles, setOpenPoles] = useState({
     gouvernance: false,
-    secretariat: true,
+    secretariat: false,
+    diffusion: false,
     tresorerie: false,
     logistique: false,
     lutherie: false,
+    costumerie: false,
     studio: false,
     pedagogie: false,
     mestre: false,
-    vitrine: false
+    vitrine: false,
+    config: false
   });
 
   // Initialisation par défaut des permissions du Pôle Gouvernance si non encore configurées
@@ -323,7 +321,7 @@ export default function TabSecurity({
     <div className="flex flex-col gap-4">
       {/* Raccourci vers le Gestionnaire d'Étiquettes et sa Vue Inversée */}
       {onNavigateToTagManager && (
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 bg-cordel-bg-light border-2 border-encre-noire rounded-[6px_10px_7px_9px] shadow-[2px_2px_0px_0px_#181716] select-none text-left">
+        <div data-tour="config-security-pin" className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 bg-cordel-bg-light border-2 border-encre-noire rounded-[6px_10px_7px_9px] shadow-[2px_2px_0px_0px_#181716] select-none text-left">
           <div className="flex flex-col">
             <span className="text-xs font-black text-encre-noire flex items-center gap-1.5">
               <span>🏷️</span>
@@ -344,10 +342,13 @@ export default function TabSecurity({
         </div>
       )}
 
-      {/* Permanent Explanatory Guide Box */}
-      <PermissionsGuideBox defaultOpen={true} onNavigateToTagManager={onNavigateToTagManager} />
+      {/* Permanent Explanatory Guide Box (fermé par défaut) */}
+      <div data-tour="config-security-guide">
+        <PermissionsGuideBox defaultOpen={false} onNavigateToTagManager={onNavigateToTagManager} />
+      </div>
 
-      <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
+      <div data-tour="config-security-matrix">
+        <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
       <div className="flex justify-between items-center mb-3">
         <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood text-left flex items-center gap-2">
           <span>🪢</span> {tFunc('tabSecurity.matrixTitle') || "Matrice des Permissions (Par Pôle & Par Onglet)"}
@@ -540,6 +541,7 @@ export default function TabSecurity({
         </div>
       )}
     </CordelCard>
+    </div>
     </div>
   );
 }

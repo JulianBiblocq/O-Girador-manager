@@ -180,65 +180,87 @@ export default function ActivityReports({
         📊 Ce module permet d'extraire le journal des événements et les registres de présence de l'association sur une période choisie. Les exports sont générés sous forme de fichiers tableurs CSV compatibles avec Microsoft Excel, LibreOffice et Google Sheets.
       </div>
 
-      {/* Date Filters Card */}
-      <CordelCard variant="default" useExtremeBorder={true} className="p-5 flex flex-col gap-4">
-        <h3 className="text-xs font-extrabold tracking-wider text-cordel-wood uppercase border-b border-dashed border-cordel-master-dark/15 pb-1 mb-1">
-          📅 Choix de la Période
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              Date de début
-            </label>
-            <input 
-              type="date" 
-              value={startDate} 
-              onChange={(e) => {
-                setStartDate(e.target.value);
-                setUserHasCustomizedDates(true);
-              }} 
-              className="theme-input w-full font-bold text-xs"
-            />
+      {/* Grille équilibrée Desktop (Choix de la période & Exporter le bilan) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
+        {/* Carte 1 : Date Filters Card */}
+        <CordelCard variant="default" useExtremeBorder={true} className="p-5 flex flex-col justify-between">
+          <div className="flex flex-col gap-3">
+            <h3 className="text-xs font-extrabold tracking-wider text-cordel-wood uppercase border-b border-dashed border-cordel-master-dark/15 pb-1 mb-1">
+              📅 Choix de la Période
+            </h3>
+            <p className="text-[10px] leading-relaxed opacity-85">
+              Sélectionnez la plage de dates à auditer. Par défaut, la saison associative en cours est présélectionnée.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+              <div className="flex flex-col gap-1.5 text-left">
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  Date de début
+                </label>
+                <input 
+                  type="date" 
+                  value={startDate} 
+                  onChange={(e) => {
+                    setStartDate(e.target.value);
+                    setUserHasCustomizedDates(true);
+                  }} 
+                  className="theme-input w-full font-bold text-xs"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5 text-left">
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                  Date de fin
+                </label>
+                <input 
+                  type="date" 
+                  value={endDate} 
+                  onChange={(e) => {
+                    setEndDate(e.target.value);
+                    setUserHasCustomizedDates(true);
+                  }} 
+                  className="theme-input w-full font-bold text-xs"
+                />
+              </div>
+            </div>
           </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              Date de fin
-            </label>
-            <input 
-              type="date" 
-              value={endDate} 
-              onChange={(e) => {
-                setEndDate(e.target.value);
-                setUserHasCustomizedDates(true);
-              }} 
-              className="theme-input w-full font-bold text-xs"
-            />
-          </div>
-        </div>
-      </CordelCard>
 
-      {/* Export Container */}
-      <div className="max-w-xl mx-auto w-full">
+          <div className="pt-4 border-t border-dashed border-cordel-master-dark/15 flex items-center justify-between text-[10px] text-cordel-master-dark/70 font-semibold mt-4">
+            <span>Saison associative active :</span>
+            <span className="font-bold text-encre-noire bg-cordel-bg px-2 py-0.5 rounded border border-cordel-master-dark/20">
+              {startDate && endDate ? `${startDate.substring(0, 4)} - ${endDate.substring(0, 4)}` : "En cours"}
+            </span>
+          </div>
+        </CordelCard>
+
+        {/* Carte 2 : Export Container */}
         <CordelCard variant="default" useExtremeBorder={false} className="p-5 flex flex-col justify-between">
           <div className="flex flex-col gap-3">
-            <h4 className="text-[11px] uppercase font-extrabold tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1.5 mb-1.5">
+            <h4 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1 mb-1">
               🎭 Exporter le Bilan d'Activité
             </h4>
             <p className="text-[10px] leading-relaxed opacity-85">
-              Génère la liste des événements survenus pendant la période spécifiée avec les détails de présence. Idéal pour votre rapport d'activité.
+              Génère le registre des événements avec le décompte des présences. Idéal pour votre bilan annuel ou assemblée générale.
             </p>
-            <div className="flex flex-col gap-2 pt-2 text-left">
-              <span className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">Types d'événements à inclure :</span>
-              <div className="flex flex-col gap-1.5 pl-1">
+            <div className="flex flex-col gap-1.5 pt-1 text-left">
+              <span className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                Types d'événements à inclure :
+              </span>
+              <div className="flex flex-wrap gap-2 pt-1">
                 {Object.keys(eventTypes).map(type => (
-                  <label key={type} className="flex items-center gap-2 text-xs font-semibold cursor-pointer select-none">
+                  <label 
+                    key={type} 
+                    className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded cursor-pointer select-none border transition-all ${
+                      eventTypes[type] 
+                        ? 'bg-cordel-bg border-encre-noire text-encre-noire shadow-xs' 
+                        : 'bg-white/40 border-cordel-master-dark/20 text-cordel-master-dark/60'
+                    }`}
+                  >
                     <input 
                       type="checkbox"
                       checked={eventTypes[type]}
                       onChange={() => handleCheckboxChange(type)}
-                      className="accent-cordel-wood scale-105"
+                      className="accent-cordel-wood scale-105 cursor-pointer"
                     />
-                    <span className="capitalize">
+                    <span>
                       {type === 'prestation' ? "Prestations" :
                        type === 'repetition' ? "Répétitions" :
                        type === 'stage' ? "Stages" :
@@ -251,7 +273,7 @@ export default function ActivityReports({
             </div>
           </div>
           
-          <div className="mt-6">
+          <div className="mt-4 pt-3 border-t border-dashed border-cordel-master-dark/15">
             <CordelButton
               variant="ocre"
               useExtremeBorder={true}

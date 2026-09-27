@@ -302,18 +302,22 @@ export const POLE_GUIDES = {
     ]
   },
   'varal-secretariat': {
-    titre: "🗂️ Varal Secrétariat & Documents Officiels",
-    title: "🗂️ Varal Secrétariat & Documents Officiels",
-    description: "Archives administratives, statuts déclarés, récépissés de préfecture et comptes-rendus d'assemblée générale.",
+    titre: "🗂️ Documents Officiels & Procès-Verbaux",
+    title: "🗂️ Documents Officiels & Procès-Verbaux",
+    description: "Classement étanche des actes administratifs permanents et des comptes-rendus de réunions.",
     etapes: [
-      "Conservez les statuts officiels et les déclarations administratives de l'association.",
-      "Classez les procès-verbaux de réunions et d'assemblées générales annuelles.",
-      "Mettez à disposition les documents types et formulaires administratifs pour le bureau."
+      "Consulter et mettre à jour les statuts et assurances",
+      "Archiver les procès-verbaux d'assemblée générale",
+      "Télécharger les pièces justificatives officielles"
+    ],
+    targets: [
+      "sec-docs-permanent-table",
+      "sec-docs-reunions-table"
     ],
     steps: [
-      "Conservez les statuts officiels et les déclarations administratives de l'association.",
-      "Classez les procès-verbaux de réunions et d'assemblées générales annuelles.",
-      "Mettez à disposition les documents types et formulaires administratifs pour le bureau."
+      "Consulter et mettre à jour les statuts et assurances",
+      "Archiver les procès-verbaux d'assemblée générale",
+      "Télécharger les pièces justificatives officielles"
     ]
   },
   'mestre-forum-channels': {
@@ -366,36 +370,6 @@ export const POLE_GUIDES = {
       "Exportez la synthèse au format CSV tableur ou imprimez le rapport officiel."
     ]
   },
-  'secretariat-documents': {
-    titre: "📋 Chartes, Santé & Droits à l'Image",
-    title: "📋 Chartes, Santé & Droits à l'Image",
-    description: "Gestion des chartes associatives, consentements RGPD et certificats médicaux obligatoires.",
-    etapes: [
-      "Téléversez le modèle officiel de droit à l'image et d'aptitude médicale.",
-      "Contrôlez la signature des chartes et documents obligatoires par les adhérents.",
-      "Garantissez la conformité légale et statutaire de l'association."
-    ],
-    steps: [
-      "Téléversez le modèle officiel de droit à l'image et d'aptitude médicale.",
-      "Contrôlez la signature des chartes et documents obligatoires par les adhérents.",
-      "Garantissez la conformité légale et statutaire de l'association."
-    ]
-  },
-  'secretariat-lieux': {
-    titre: "📍 Lieux, Salles & Types d'Événements",
-    title: "📍 Lieux, Salles & Types d'Événements",
-    description: "Répertoire des adresses de répétition, consignes d'accès, clés et catégories d'agenda.",
-    etapes: [
-      "Enregistrez les salles avec leurs coordonnées GPS précises et digicodes.",
-      "Indiquez les consignes d'accès et les responsables de clés.",
-      "Définissez les types d'activités et leurs couleurs associées pour l'agenda."
-    ],
-    steps: [
-      "Enregistrez les salles avec leurs coordonnées GPS précises et digicodes.",
-      "Indiquez les consignes d'accès et les responsables de clés.",
-      "Définissez les types d'activités et leurs couleurs associées pour l'agenda."
-    ]
-  },
 
   // ==========================================
   // 3. PÔLE LOGISTIQUE & MATÉRIEL
@@ -435,34 +409,24 @@ export const POLE_GUIDES = {
       "Renseignez les numéros de série et photographies d'identification."
     ]
   },
-  'logistics-pupitres': {
-    titre: "🥁 Référentiel des Pupitres & Instruments",
-    title: "🥁 Référentiel des Pupitres & Instruments",
-    description: "Nomenclature musicale des pupitres et types d'instruments exploités par la troupe.",
-    etapes: [
-      "Consultez la liste des pupitres actifs et leurs attributions de couleurs.",
-      "Définissez les types d'instruments associés à chaque pupitre.",
-      "Harmonisez la terminologie musicale avec le séquenceur et les partitions."
-    ],
-    steps: [
-      "Consultez la liste des pupitres actifs et leurs attributions de couleurs.",
-      "Définissez les types d'instruments associés à chaque pupitre.",
-      "Harmonisez la terminologie musicale avec le séquenceur et les partitions."
-    ]
-  },
   'logistics-kits': {
-    titre: "🎒 Composition des Kits d'Accessoires",
-    title: "🎒 Composition des Kits d'Accessoires",
-    description: "Configuration des paquetages d'accessoires (housses, sangles, baguettes) indissociables des instruments.",
+    titre: "🧰 Malles Régie, Trousses & Consommables",
+    title: "🧰 Malles Régie, Trousses & Consommables",
+    description: "Composition des trousses de secours, malles de maquillage et caisses d'outillage live à charger dans les convois.",
     etapes: [
-      "Définissez les fournitures requises pour le kit de chaque pupitre.",
-      "Liez les consommables nécessaires depuis le stock de fournitures.",
-      "Vérifiez la complétion des paquetages avant attribution aux membres."
+      "Vérifier la complétion de chaque malle régie",
+      "Pointer les consommables en rupture à racheter",
+      "Connecter l'état des trousses à la feuille de route"
+    ],
+    targets: [
+      "kits-grid",
+      "kits-status-badge",
+      "kits-add-btn"
     ],
     steps: [
-      "Définissez les fournitures requises pour le kit de chaque pupitre.",
-      "Liez les consommables nécessaires depuis le stock de fournitures.",
-      "Vérifiez la complétion des paquetages avant attribution aux membres."
+      "Vérifier la complétion de chaque malle régie",
+      "Pointer les consommables en rupture à racheter",
+      "Connecter l'état des trousses à la feuille de route"
     ]
   },
   'logistics-carpool': {
@@ -868,21 +832,6 @@ export const POLE_GUIDES = {
       "Validez et exportez le JSON pour Brevo."
     ]
   },
-  'studio-communication': {
-    titre: "✉️ Passerelle Emailing & Paramètres Brevo",
-    title: "✉️ Passerelle Emailing & Paramètres Brevo",
-    description: "Intégration de l'API Brevo, configuration des expéditeurs e-mails/DNS, et export CSV des abonnés.",
-    etapes: [
-      "Renseignez la clé API Brevo et l'adresse courriel d'expédition officielle.",
-      "Configurez les enregistrements DNS (SPF / DKIM) pour assurer la délivrabilité.",
-      "Exportez la liste des abonnés à la newsletter pour vos campagnes externes."
-    ],
-    steps: [
-      "Renseignez la clé API Brevo et l'adresse courriel d'expédition officielle.",
-      "Configurez les enregistrements DNS (SPF / DKIM) pour assurer la délivrabilité.",
-      "Exportez la liste des abonnés à la newsletter pour vos campagnes externes."
-    ]
-  },
   'varal-photos': {
     titre: "📸 Passerelle Cloud & Varal Photos",
     title: "📸 Passerelle Cloud & Varal Photos",
@@ -1071,26 +1020,6 @@ export const POLE_GUIDES = {
       "Synchronisez les profils membres si nécessaire pour aligner les anciens libellés."
     ]
   },
-  'mestre-sequenceur': {
-    titre: "🎧 Séquenceur Rythmique Pédagogique",
-    title: "🎧 Séquenceur Rythmique Pédagogique",
-    description: "Outil interactif de décomposition des baques, breaks, viradas et appels de maracatu.",
-    etapes: [
-      "Sélectionnez le morceau ou la séquence dans le catalogue audio et JSON.",
-      "Configurez les métadonnées métronomiques et consignes de pupitres.",
-      "Lancez le séquenceur comme support interactif d'entraînement."
-    ],
-    targets: [
-      "mestre-sequenceur-list",
-      "mestre-sequenceur-metadata",
-      "mestre-sequenceur-list"
-    ],
-    steps: [
-      "Sélectionnez le morceau ou la séquence dans le catalogue audio et JSON.",
-      "Configurez les métadonnées métronomiques et consignes de pupitres.",
-      "Lancez le séquenceur comme support interactif d'entraînement."
-    ]
-  },
   'mestre-mot-mestre': {
     titre: "Directives & Annonces de la Mestria",
     title: "Directives & Annonces de la Mestria",
@@ -1250,63 +1179,103 @@ export const POLE_GUIDES = {
     ]
   },
   'config-identity': {
-    titre: "🏛️ Identité Juridique & Composition du Bureau",
-    title: "🏛️ Identité Juridique & Composition du Bureau",
-    description: "Saisie des données administratives officielles (RNA, SIRET, siège social) et membres du Bureau.",
+    titre: "🏛️ Identité Légale & Juridique",
+    title: "🏛️ Identité Légale & Juridique",
+    description: "Siège social, SIRET, signatures numérisées officielles du Bureau et composition de la Direction artistique.",
     etapes: [
-      "Renseignez le nom légal, l'adresse officielle et la préfecture de rattachement.",
-      "Déclarez la Présidence, Trésorerie, Secrétariat et Direction Artistique.",
-      "Téléversez le logo haute définition et les signatures officielles."
+      "Renseigner la raison sociale et l'adresse officielle",
+      "Vérifier les signatures numérisées du Président et du Trésorier",
+      "Mettre à jour la composition du Bureau"
+    ],
+    targets: [
+      "config-identity-legal",
+      "config-identity-signatures",
+      "config-identity-bureau"
     ],
     steps: [
-      "Renseignez le nom légal, l'adresse officielle et la préfecture de rattachement.",
-      "Déclarez la Présidence, Trésorerie, Secrétariat et Direction Artistique.",
-      "Téléversez le logo haute définition et les signatures officielles."
+      "Renseigner la raison sociale et l'adresse officielle",
+      "Vérifier les signatures numérisées du Président et du Trésorier",
+      "Mettre à jour la composition du Bureau"
     ]
   },
   'config-profile': {
-    titre: "⚙️ Champs du Profil Adhérent",
-    title: "⚙️ Champs du Profil Adhérent",
-    description: "Création et gestion des champs personnalisés pour les profils membres.",
+    titre: "👥 Inscription, Profils & Lieux Habitants",
+    title: "👥 Inscription, Profils & Lieux Habitants",
+    description: "Champs obligatoires d'onboarding, questions personnalisées, carnet des salles de répétition et catégories d'agenda.",
     etapes: [
-      "Créez des champs texte, liste déroulante ou cases à cocher.",
-      "Définissez si les champs sont obligatoires à l'inscription.",
-      "Réorganisez l'ordre d'affichage des champs dans le profil."
+      "Activer les champs standards d'inscription",
+      "Configurer les questions spécifiques pour les adhérents",
+      "Déclarer les lieux de pratique et repères GPS"
+    ],
+    targets: [
+      "config-profile-form-accordion",
+      "config-profile-custom-fields",
+      "config-profile-lieux"
     ],
     steps: [
-      "Créez des champs texte, liste déroulante ou cases à cocher.",
-      "Définissez si les champs sont obligatoires à l'inscription.",
-      "Réorganisez l'ordre d'affichage des champs dans le profil."
+      "Activer les champs standards d'inscription",
+      "Configurer les questions spécifiques pour les adhérents",
+      "Déclarer les lieux de pratique et repères GPS"
     ]
   },
   'config-security': {
-    titre: "🔒 Sécurité & Contrôle d'Accès",
-    title: "🔒 Sécurité & Contrôle d'Accès",
-    description: "Politique de sécurité, contrôle des connexions et gestion du mode passe-partout.",
+    titre: "🛡️ Badges, Rôles & Sécurité",
+    title: "🛡️ Badges, Rôles & Sécurité",
+    description: "Distribution des étiquettes d'accès par pôle, matrice RBAC et code PIN d'urgence Break-Glass.",
     etapes: [
-      "Supervisez les options d'authentification des utilisateurs.",
-      "Activez si nécessaire le mode intervention technique (Break-Glass Mode).",
-      "Contrôlez le journal de sécurité des actions administratives."
+      "Créer les étiquettes de rôles (Secrétaire, Trésorier, etc.)",
+      "Ajuster les permissions d'accès aux onglets",
+      "Attribuer les badges aux membres de la troupe"
+    ],
+    targets: [
+      "config-security-guide",
+      "config-security-pin",
+      "config-security-matrix"
     ],
     steps: [
-      "Supervisez les options d'authentification des utilisateurs.",
-      "Activez si nécessaire le mode intervention technique (Break-Glass Mode).",
-      "Contrôlez le journal de sécurité des actions administratives."
+      "Créer les étiquettes de rôles (Secrétaire, Trésorier, etc.)",
+      "Ajuster les permissions d'accès aux onglets",
+      "Attribuer les badges aux membres de la troupe"
+    ]
+  },
+  'config-comms': {
+    titre: "📬 Communication, E-mails & Relances",
+    title: "📬 Communication, E-mails & Relances",
+    description: "Configuration du service d'envoi d'e-mails (API Brevo, expéditeur, DNS) et paramétrage des délais de notification automatique.",
+    etapes: [
+      "Vérifier la clé API et l'expéditeur d'e-mails",
+      "Contrôler la signature DNS du domaine",
+      "Définir les délais de relance automatique (J-1 / J-2)"
+    ],
+    targets: [
+      "config-comms-email",
+      "config-comms-dns",
+      "config-comms-automations"
+    ],
+    steps: [
+      "Vérifier la clé API et l'expéditeur d'e-mails",
+      "Contrôler la signature DNS du domaine",
+      "Définir les délais de relance automatique (J-1 / J-2)"
     ]
   },
   'config-modules': {
-    titre: "🧩 Activation des Modules Applicatifs",
-    title: "🧩 Activation des Modules Applicatifs",
-    description: "Interrupteurs généraux pour afficher ou masquer les pôles selon les besoins du bureau.",
+    titre: "🧩 Modules SaaS, Pupitres & Thème",
+    title: "🧩 Modules SaaS, Pupitres & Thème",
+    description: "Activation modulaire des pôles, nomenclature des instruments et personnalisation visuelle de l'espace.",
     etapes: [
-      "Activez ou désactivez les pôles (Costumerie, Lutherie, Diffusion, Studio...).",
-      "Masquez les fonctionnalités inutilisées pour simplifier l'interface.",
-      "Enregistrez la grille des modules pour l'ensemble des membres."
+      "Activer ou masquer les modules selon les besoins de l'association",
+      "Harmoniser la liste des pupitres et couleurs de fûts",
+      "Définir l'ordonnancement des cartes d'accueil"
+    ],
+    targets: [
+      "config-modules-toggles",
+      "config-modules-tambours",
+      "config-modules-appearance"
     ],
     steps: [
-      "Activez ou désactivez les pôles (Costumerie, Lutherie, Diffusion, Studio...).",
-      "Masquez les fonctionnalités inutilisées pour simplifier l'interface.",
-      "Enregistrez la grille des modules pour l'ensemble des membres."
+      "Activer ou masquer les modules selon les besoins de l'association",
+      "Harmoniser la liste des pupitres et couleurs de fûts",
+      "Définir l'ordonnancement des cartes d'accueil"
     ]
   },
   'config-tambours': {
