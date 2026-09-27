@@ -12,6 +12,7 @@ import ChatFramaspaceImageModal from './forum/ChatFramaspaceImageModal';
 import { useConversationMessages } from '../hooks/useConversationMessages';
 import { uploadChatAttachment } from '../utils/attachmentUploadUtils';
 import { dispatchInAppAndPushNotification, NOTIFICATION_TYPES } from '../utils/inAppNotificationService';
+import VoiceDictationButton from './common/VoiceDictationButton';
 
 /**
  * Composant PrivateChatView
@@ -826,6 +827,18 @@ export default function PrivateChatView({
             📸
           </button>
 
+          {/* Bouton de dictée vocale au microphone */}
+          <VoiceDictationButton
+            onTranscript={(spokenText) => {
+              setInputText(prev => {
+                const trimmed = (prev || '').trim();
+                return trimmed ? `${trimmed} ${spokenText}` : spokenText;
+              });
+            }}
+            disabled={sending || isUploadingAttachment}
+            title="Dicter votre message à la voix (microphone)"
+          />
+
           <input 
             type="text"
             value={inputText}
@@ -926,9 +939,22 @@ export default function PrivateChatView({
 
               <form onSubmit={handleSaveEdit} className="flex flex-col gap-4">
                 <div className="flex flex-col gap-1 text-left">
-                  <label className="text-[10px] font-black uppercase text-cordel-master-dark">
-                    Nouveau texte *
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-black uppercase text-cordel-master-dark">
+                      Nouveau texte *
+                    </label>
+                    <VoiceDictationButton
+                      size="sm"
+                      onTranscript={(spokenText) => {
+                        setEditText(prev => {
+                          const trimmed = (prev || '').trim();
+                          return trimmed ? `${trimmed} ${spokenText}` : spokenText;
+                        });
+                      }}
+                      disabled={isSubmittingEdit}
+                      title="Dicter la modification à la voix"
+                    />
+                  </div>
                   <textarea
                     value={editText}
                     onChange={(e) => setEditText(e.target.value)}

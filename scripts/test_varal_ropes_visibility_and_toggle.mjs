@@ -31,14 +31,24 @@ console.log("▶️ Test 1 : Vérification du champ actif sur DEFAULT_VARAL_CATE
 assert(Array.isArray(VARAL_CATS_DATA) && VARAL_CATS_DATA.length >= 7, "DEFAULT_VARAL_CATEGORIES doit contenir au moins 7 rubriques dans useVaralData");
 assert(Array.isArray(VARAL_CATS_SETTINGS) && VARAL_CATS_SETTINGS.length >= 7, "DEFAULT_VARAL_CATEGORIES doit contenir au moins 7 rubriques dans useAssociationSettings");
 
+const MAIN_ROPES = ['Toadas', 'Culture', 'TutosFabrication', 'PhotosPrestations', 'ComptesRendus'];
+
 VARAL_CATS_DATA.forEach(cat => {
-  assert.strictEqual(cat.actif, true, `La catégorie native "${cat.nom || cat.id}" doit avoir actif === true par défaut`);
+  if (MAIN_ROPES.includes(cat.id)) {
+    assert.strictEqual(cat.actif, true, `La corde principale "${cat.nom || cat.id}" doit avoir actif === true par défaut`);
+  } else if (cat.id === 'TutorielsVideo') {
+    assert.strictEqual(cat.actif, false, `La catégorie "${cat.nom || cat.id}" doit être désactivée du Varal par défaut (actif === false)`);
+  }
 });
 
 VARAL_CATS_SETTINGS.forEach(cat => {
-  assert.strictEqual(cat.actif, true, `La catégorie settings "${cat.nom || cat.id}" doit avoir actif === true par défaut`);
+  if (MAIN_ROPES.includes(cat.id)) {
+    assert.strictEqual(cat.actif, true, `La catégorie settings "${cat.nom || cat.id}" doit avoir actif === true par défaut`);
+  } else if (cat.id === 'TutorielsVideo') {
+    assert.strictEqual(cat.actif, false, `La catégorie settings "${cat.nom || cat.id}" doit être désactivée par défaut (actif === false)`);
+  }
 });
-console.log("✅ Test 1 validé : Champ actif: true présent sur toutes les catégories natives.");
+console.log("✅ Test 1 validé : 5 cordes principales actives et TutorielsVideo inactif par défaut.");
 
 // 2. Simulation de l'algorithme de filtrage Règle 1, Règle 2 et Règle 3
 console.log("▶️ Test 2 : Simulation des règles de filtrage intelligent (Règle 1, 2, 3)...");

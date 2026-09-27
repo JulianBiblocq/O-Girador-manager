@@ -8,6 +8,7 @@ import ForumImageInsertModal from './forum/ForumImageInsertModal';
 import EmojiPickerPopover, { EmojiQuickRow } from './forum/EmojiPickerPopover';
 import { MentionDropdown, filterUsersByMentionQuery } from './forum/MentionAutocomplete';
 import { uploadForumAttachment } from '../utils/attachmentUploadUtils';
+import VoiceDictationButton from './common/VoiceDictationButton';
 
 export default function RichTextEditor({ 
   value = '', 
@@ -448,6 +449,19 @@ export default function RichTextEditor({
             </div>
           </>
         )}
+
+        {/* Dictée vocale au microphone */}
+        <div className="h-4 w-[1px] bg-encre-noire/20 mx-1"></div>
+        <VoiceDictationButton
+          size="sm"
+          onTranscript={(spokenText) => {
+            if (editor && spokenText) {
+              editor.chain().focus().insertContent(` ${spokenText} `).run();
+            }
+          }}
+          disabled={disabled}
+          title="Dicter à la voix (microphone)"
+        />
       </div>
 
       {/* Popover d'autocomplétion pendant la frappe d'un @ */}

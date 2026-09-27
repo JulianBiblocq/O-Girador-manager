@@ -4,6 +4,7 @@ import RichTextEditor from '../../RichTextEditor';
 import EmojiPickerPopover, { EmojiQuickRow } from '../EmojiPickerPopover';
 import { MentionDropdown, getMentionQueryAtCursor, filterUsersByMentionQuery } from '../MentionAutocomplete';
 import { getTagId } from '../../../utils/tagUtils';
+import VoiceDictationButton from '../../common/VoiceDictationButton';
 
 /**
  * Composant de barre de réponse dockée en bas d'écran.
@@ -152,6 +153,19 @@ export default function ThreadReplyBar({
             >
               😀
             </button>
+
+            {/* Dictée vocale au microphone */}
+            <VoiceDictationButton
+              size="sm"
+              onTranscript={(spokenText) => {
+                setReplyText(prev => {
+                  const trimmed = (prev || '').trim();
+                  return trimmed ? `${trimmed} ${spokenText}` : spokenText;
+                });
+              }}
+              disabled={sending}
+              title="Dicter votre réponse au microphone"
+            />
 
             <input
               ref={compactInputRef}

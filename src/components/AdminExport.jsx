@@ -6,6 +6,7 @@ import CordelButton from './CordelButton';
 import { useTranslation } from './LanguageContext';
 import { useTerminologie } from '../hooks/useTerminologie';
 import { XiloScroll, XiloPeople } from './XiloIcons';
+import AdminExportModal from './admin/AdminExportModal';
 
 export default function AdminExport({ user, profileData, onBack }) {
   const { t } = useTranslation();
@@ -14,6 +15,8 @@ export default function AdminExport({ user, profileData, onBack }) {
   const [loading, setLoading] = useState(true);
   const [associationSettings, setAssociationSettings] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   const columnsConfig = {
     identity: {
@@ -139,12 +142,28 @@ export default function AdminExport({ user, profileData, onBack }) {
     });
   };
 
-  // Filtrer members list based on search bar query
+  // Filtrer members list based on search bar query & role filter
   const filteredMembers = members.filter(member => {
+    // 1. Filtre par rôle
+    if (roleFilter !== 'all') {
+      const mRole = (member.role || 'membre').toLowerCase();
+      if (roleFilter === 'bureau' || roleFilter === 'ca') {
+        const hasTag = (member.tags || []).some(t => (t.nom || t.id || t).toLowerCase().includes(roleFilter));
+        if (mRole !== roleFilter && !hasTag) return false;
+      } else if (mRole !== roleFilter) {
+        return false;
+      }
+    }
+
+    // 2. Recherche textuelle multi-champs
     const fullName = `${member.prenom || ''} ${member.nom || ''}`.toLowerCase();
     const email = (member.email || '').toLowerCase();
-    const query = searchQuery.toLowerCase();
-    return fullName.includes(query) || email.includes(query);
+    const phone = (member.telephone || '').toLowerCase();
+    const instr = (Array.isArray(member.instrumentsJoues) ? member.instrumentsJoues.join(' ') : (member.instrument || '')).toLowerCase();
+    const query = searchQuery.toLowerCase().trim();
+
+    if (!query) return true;
+    return fullName.includes(query) || email.includes(query) || phone.includes(query) || instr.includes(query);
   });
 
   const exportToCSV = () => {
@@ -282,17 +301,45 @@ export default function AdminExport({ user, profileData, onBack }) {
 
       {/* Annuaire preview card (Annuaire des membres en premier) */}
       <CordelCard variant="default" useExtremeBorder={false} className="p-5 flex flex-col gap-4">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <h3 className="text-sm font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
-            <XiloPeople size={16} className="inline" /> Annuaire des membres ({filteredMembers.length})
-          </h3>
-          <input
-            type="text"
-            placeholder="Rechercher par nom, prénom ou email..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="theme-input w-full md:w-80"
-          />
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="text-sm font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
+              <XiloPeople size={16} className="inline" /> Annuaire des membres ({filteredMembers.length})
+            </h3>
+            <CordelButton
+              type="button"
+              variant="default"
+              onClick={() => setIsExportModalOpen(true)}
+              className="px-3 py-1 text-xs font-black uppercase tracking-wider shadow-xs flex items-center gap-1.5 ml-2 cursor-pointer"
+            >
+              📥 Exporter les données
+            </CordelButton>
+          </div>
+
+          <div className="flex items-center gap-2 w-full md:w-auto flex-wrap">
+            {/* Filtre de rôle */}
+            <select
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+              className="theme-input text-xs font-bold py-1 px-2 bg-white"
+            >
+              <option value="all">Tous les rôles</option>
+              <option value="mestre">Mestre</option>
+              <option value="admin">Administrateur</option>
+              <option value="bureau">Bureau</option>
+              <option value="ca">Conseil d'Administration</option>
+              <option value="membre">Adhérent</option>
+            </select>
+
+            {/* Barre de recherche textuelle */}
+            <input
+              type="text"
+              placeholder="Rechercher nom, email, instrument..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="theme-input text-xs w-full md:w-64"
+            />
+          </div>
         </div>
 
         {loading ? (
@@ -345,87 +392,17 @@ export default function AdminExport({ user, profileData, onBack }) {
         )}
       </CordelCard>
 
-      {/* Main Instructions & Export trigger (Colonnes à inclure et Générateur CSV en dessous) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left column: Selection details (spans 2 columns) */}
-        <div className="lg:col-span-2 flex flex-col gap-6">
-          <CordelCard variant="default" useExtremeBorder={false} className="p-5">
-            <h3 className="text-sm font-black uppercase tracking-wider text-cordel-wood mb-4">
-              Colonnes à inclure dans l'export
-            </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {Object.entries(columnsConfig).map(([catKey, category]) => {
-                const catFields = category.fields;
-                const checkedCount = catFields.filter(f => checkedFields[f.key]).length;
-                const allChecked = checkedCount === catFields.length;
-
-                return (
-                  <div key={catKey} className="border border-dashed border-cordel-master-dark/15 p-4 rounded-[4px_6px_3px_5px] bg-cordel-bg/50">
-                    <div className="flex justify-between items-center mb-3 pb-1.5 border-b border-dashed border-cordel-master-dark/10">
-                      <span className="font-extrabold text-xs text-encre-noire flex items-center gap-1.5">
-                        {category.label}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleToggleCategory(catKey, allChecked)}
-                        className="text-[9px] font-black uppercase tracking-widest text-cordel-wood hover:opacity-80 transition-opacity cursor-pointer border border-dashed border-cordel-wood/30 px-1.5 py-0.5 rounded bg-white/40"
-                      >
-                        {allChecked ? "Aucun" : "Tous"}
-                      </button>
-                    </div>
-
-                    <div className="flex flex-col gap-2">
-                      {catFields.map(field => (
-                        <label 
-                          key={field.key} 
-                          className="flex items-center gap-2 text-xs font-semibold text-encre-noire cursor-pointer select-none py-0.5 hover:translate-x-[2px] transition-transform"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={checkedFields[field.key] || false}
-                            onChange={() => handleCheckboxChange(field.key)}
-                            className="w-3.5 h-3.5 border-2 border-encre-noire text-cordel-wood rounded-sm focus:ring-0 focus:ring-offset-0 cursor-pointer"
-                          />
-                          <span>{field.label}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </CordelCard>
-        </div>
-
-        {/* Right column: Action Trigger */}
-        <div className="flex flex-col gap-6">
-          <CordelCard variant="ocre" useExtremeBorder={true} className="p-5 flex flex-col justify-between h-full">
-            <div className="flex flex-col gap-3">
-              <h3 className="text-sm font-black uppercase tracking-wider text-encre-noire mb-1">
-                Générateur CSV
-              </h3>
-              <p className="text-xs font-semibold text-encre-noire/80 leading-relaxed">
-                Ce bouton génère un fichier tableur CSV configuré spécifiquement pour Microsoft Excel France.
-              </p>
-              <div className="flex flex-col gap-2 text-[10px] font-semibold text-encre-noire/70 border-t border-dashed border-encre-noire/25 pt-3 mt-1">
-                <span className="flex items-center gap-1.5">✔️ Séparateur : point-virgule (;)</span>
-                <span className="flex items-center gap-1.5">✔️ Encodage : UTF-8 avec BOM (accents préservés)</span>
-                <span className="flex items-center gap-1.5">✔️ Total : <strong className="text-sm text-encre-noire">{filteredMembers.length} membres</strong></span>
-              </div>
-            </div>
-            
-            <CordelButton 
-              type="button"
-              variant="default"
-              onClick={exportToCSV}
-              className="w-full mt-6 py-2.5 text-xs font-black uppercase tracking-wider shadow-[3px_3px_0px_0px_#181716] active:translate-y-[1px] active:shadow-[1px_1px_0px_0px_#181716] hover:scale-[1.01]"
-            >
-              📥 Exporter les données (CSV)
-            </CordelButton>
-          </CordelCard>
-        </div>
-      </div>
+      {/* Modale d'exportation des données CSV */}
+      <AdminExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        columnsConfig={columnsConfig}
+        checkedFields={checkedFields}
+        handleCheckboxChange={handleCheckboxChange}
+        handleToggleCategory={handleToggleCategory}
+        onExport={exportToCSV}
+        membersCount={filteredMembers.length}
+      />
     </div>
   );
 }

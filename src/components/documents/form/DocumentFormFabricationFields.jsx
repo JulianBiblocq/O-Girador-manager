@@ -6,6 +6,14 @@ import RichTextEditor from '../../RichTextEditor';
  * Visuel animé, instrument concerné, liste des matières & outils, étapes illustrées pas-à-pas et conseils d'atelier.
  */
 export default function DocumentFormFabricationFields({
+  thematiqueFabrication = 'lutherie',
+  setThematiqueFabrication,
+  patronUploadType = 'url',
+  setPatronUploadType,
+  patronUrl = '',
+  setPatronUrl,
+  patronFile = null,
+  setPatronFile,
   visuelAnimeType = 'url',
   setVisuelAnimeType,
   visuelAnimeUrl = '',
@@ -130,6 +138,92 @@ export default function DocumentFormFabricationFields({
 
   return (
     <div className="flex flex-col gap-4 mt-2 border-t-2 border-dashed border-cordel-master-dark/20 pt-4">
+      {/* 0. Choix de la thématique : Lutherie ou Costumerie */}
+      <div className="flex flex-col gap-1">
+        <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+          Thématique de confection
+        </label>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setThematiqueFabrication && setThematiqueFabrication('lutherie')}
+            className={`py-2 px-3 text-xs font-bold uppercase rounded border transition-all cursor-pointer flex items-center justify-center gap-2 ${
+              thematiqueFabrication === 'lutherie'
+                ? 'bg-cordel-wood text-[#fdfaf2] border-black shadow-[2px_2px_0px_0px_#181716]'
+                : 'bg-encre-noire/5 text-encre-noire border-encre-noire/20 hover:bg-encre-noire/10'
+            }`}
+          >
+            <span>🛠️</span> Lutherie & Instruments
+          </button>
+          <button
+            type="button"
+            onClick={() => setThematiqueFabrication && setThematiqueFabrication('costumerie')}
+            className={`py-2 px-3 text-xs font-bold uppercase rounded border transition-all cursor-pointer flex items-center justify-center gap-2 ${
+              thematiqueFabrication === 'costumerie'
+                ? 'bg-[var(--color-cordel-vert)] text-[#fdfaf2] border-black shadow-[2px_2px_0px_0px_#181716]'
+                : 'bg-encre-noire/5 text-encre-noire border-encre-noire/20 hover:bg-encre-noire/10'
+            }`}
+          >
+            <span>🧵</span> Costumerie & Patrons
+          </button>
+        </div>
+      </div>
+
+      {/* Si Costumerie : Patron / Gabarit téléchargeable */}
+      {thematiqueFabrication === 'costumerie' && (
+        <div className="p-3 bg-[var(--color-cordel-vert)]/10 border-2 border-dashed border-[var(--color-cordel-vert)]/40 rounded flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <label className="text-[10px] uppercase font-black tracking-wider text-[var(--color-cordel-vert)] flex items-center gap-1.5">
+              <span>📐</span> Patron / Gabarit téléchargeable (PDF ou Image haute résolution)
+            </label>
+            <div className="flex gap-1 p-0.5 bg-encre-noire/5 rounded">
+              <button
+                type="button"
+                onClick={() => setPatronUploadType && setPatronUploadType('url')}
+                className={`text-[9px] uppercase font-bold px-2 py-0.5 rounded transition-all cursor-pointer ${
+                  patronUploadType === 'url' ? 'bg-[var(--color-cordel-vert)] text-white shadow-sm' : 'text-encre-noire hover:bg-encre-noire/10'
+                }`}
+              >
+                Lien
+              </button>
+              <button
+                type="button"
+                onClick={() => setPatronUploadType && setPatronUploadType('file')}
+                className={`text-[9px] uppercase font-bold px-2 py-0.5 rounded transition-all cursor-pointer ${
+                  patronUploadType === 'file' ? 'bg-[var(--color-cordel-vert)] text-white shadow-sm' : 'text-encre-noire hover:bg-encre-noire/10'
+                }`}
+              >
+                Fichier
+              </button>
+            </div>
+          </div>
+
+          {patronUploadType === 'url' ? (
+            <input
+              type="url"
+              value={patronUrl}
+              onChange={(e) => setPatronUrl && setPatronUrl(e.target.value)}
+              disabled={isSubmitting}
+              placeholder="https://... (ex: lien Google Drive, PDF ou patron vectoriel)"
+              className="theme-input w-full text-xs"
+            />
+          ) : (
+            <div className="flex items-center gap-2">
+              <input
+                type="file"
+                accept=".pdf,image/*,.svg,.ai"
+                onChange={(e) => setPatronFile && setPatronFile(e.target.files[0] || null)}
+                disabled={isSubmitting}
+                className="theme-input w-full text-xs py-1 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-[9px] file:font-semibold file:bg-cordel-master-light file:text-encre-noire file:cursor-pointer"
+              />
+              {(patronUrl && !patronFile) && (
+                <span className="text-[9px] text-[var(--color-cordel-vert)] font-bold flex-shrink-0">✓ Patron existant conservé</span>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* 1. Visuel animé en boucle */}
       <div className="flex flex-col gap-1">
         <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
@@ -181,17 +275,17 @@ export default function DocumentFormFabricationFields({
         )}
       </div>
       
-      {/* 2. Instrument concerné */}
+      {/* 2. Instrument ou élément concerné */}
       <div className="flex flex-col gap-1">
         <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-          Instrument concerné
+          {thematiqueFabrication === 'costumerie' ? 'Costume, rôle ou élément concerné' : 'Instrument concerné'}
         </label>
         <input
           type="text"
           value={instrumentConcerne}
           onChange={(e) => setInstrumentConcerne(e.target.value)}
           disabled={isSubmitting}
-          placeholder="Ex: Alfaia, Agbê, Mineiro..."
+          placeholder={thematiqueFabrication === 'costumerie' ? 'Ex: Veste de Rei, Jupe de Dama, Coiffe, Cape...' : 'Ex: Alfaia, Agbê, Mineiro...'}
           className="theme-input w-full disabled:opacity-50 text-xs"
         />
       </div>

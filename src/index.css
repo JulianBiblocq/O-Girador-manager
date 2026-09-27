@@ -30,6 +30,7 @@
   --color-cordel-vert: #2d6a4f; /* Vert validation / Présent */
   --color-cordel-rouge: #8b2a1a; /* Rouge terre cuite / Absent / Invalide / Suppression */
   --color-cordel-ocre: #c05621; /* Ocre ambré / Attente / À confirmer */
+  --color-cordel-bleu-ardoise: #334155; /* Bleu-gris ardoise / Documents administratifs fixes */
 
   /* Couleurs de fond et de relief dynamiques */
   --cordel-bg-dark-color: #1a1a1a;
@@ -57,6 +58,7 @@
   --cordel-text: #e5e7eb;               /* Texte clair / gris-200 */
   --cordel-border: #e5e7eb;             /* Bordures claires */
   --cordel-wood: #bf5b4a;               /* Rouge terre cuite ajusté pour le contraste du mode sombre */
+  --color-cordel-bleu-ardoise: #2e435e; /* Ardoise profond ajusté pour le mode sombre */
   --cordel-master-bg: #252525;          /* Fond des champs de saisie internes */
   --cordel-shadow-color: rgba(0, 0, 0, 0.65);
   --title-text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9);

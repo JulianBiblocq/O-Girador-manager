@@ -261,7 +261,7 @@ export default function UserMateriel({ user, profileData, onBack }) {
           ← {t('common.back')}
         </CordelButton>
         <span className="panel-title text-base font-black tracking-wider text-cordel-wood uppercase flex items-center gap-2">
-          🎺 {translate('userProfile.instrumentsHeading', 'Mon Matériel & Instruments')}
+          🎺 {translate('userProfile.instrumentsHeading', 'Instruments & Assignations')}
         </span>
         <div className="w-12"></div>
       </div>

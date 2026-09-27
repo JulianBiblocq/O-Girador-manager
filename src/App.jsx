@@ -97,7 +97,7 @@ const POLES_CONFIG = [
       { id: 'agenda', label: 'Agenda', labelKey: 'tabAgenda' },
       { id: 'repertoire', label: 'Répertoire', labelKey: 'tabRepertoire' },
       { id: 'atelier', label: 'Atelier', labelKey: 'tabAtelier' },
-      { id: 'materiel', label: 'Matériel', labelKey: 'tabMateriel' },
+      { id: 'materiel', label: 'Instruments', labelKey: 'tabMateriel' },
       { id: 'vestiaire', label: 'Vestiaire', labelKey: 'tabVestiaire' },
       { id: 'trombinoscope', label: 'Trombinoscope', labelKey: 'tabTrombinoscope' },
       { id: 'forum', label: 'Porte-voix', labelKey: 'tabForum' },
@@ -123,14 +123,9 @@ const POLES_CONFIG = [
     labelKey: 'poles.secretariat',
     tabs: [
       { id: 'export-annu', label: 'Annuaire', labelKey: 'tabExportAnnu' },
-      { id: 'studio-events', label: 'Registre des dates', labelKey: 'tabStudioEvents' },
-      { id: 'reunion-manager', label: 'Réunions', labelKey: 'tabReunions' },
-      { id: 'varal-secretariat', label: 'Varal Secrétariat', labelKey: 'tabVaralSecretariat' },
-      { id: 'mestre-forum-channels', label: 'Porte-voix', labelKey: 'tabMestreForumChannels' },
       { id: 'activity-reports', label: "Journal d'activité (CSV)", labelKey: 'tabActivityReports' },
-      { id: 'secretariat-reports', label: 'Rapports & Bilan AG', labelKey: 'tabSecretariatReports' },
-      { id: 'secretariat-documents', label: 'Ressources & Liens', labelKey: 'tabSecretariatDocuments' },
-      { id: 'secretariat-lieux', label: 'Lieux, Types & Relances', labelKey: 'tabSecretariatLieux' }
+      { id: 'studio-events', label: 'Registre des dates', labelKey: 'tabStudioEvents' },
+      { id: 'varal-secretariat', label: 'Varal Secrétariat', labelKey: 'tabVaralSecretariat' }
     ]
   },
   {
@@ -1511,7 +1506,7 @@ export default function App() {
   const hasAccessGouvernance = isMasterKeyActive || canAccessPole('gouvernance', profileData, permissionsMatrice, userTags) || checkTabAccess('ca-reunions', 'gouvernance') || checkTabAccess('ca-reports', 'gouvernance') || checkTabAccess('ca-documents', 'gouvernance') || checkTabAccess('ca-finances', 'gouvernance') || checkTabAccess('ca-prestations', 'gouvernance');
   const hasAccessDiffusion = isMasterKeyActive || canAccessPole('diffusion', profileData, permissionsMatrice, userTags) || checkTabAccess('gigs-pipeline', 'diffusion');
   const hasAccessTresorerie = isMasterKeyActive || canAccessPole('tresorerie', profileData, permissionsMatrice, userTags) || checkTabAccess('dashboard-finance', 'tresorerie') || checkTabAccess('cotisations', 'tresorerie') || checkTabAccess('events-finances', 'tresorerie') || checkTabAccess('operations-diverses', 'tresorerie') || checkTabAccess('frais-km', 'tresorerie') || checkTabAccess('reports-exports', 'tresorerie');
-  const hasAccessSecretariat = isMasterKeyActive || canAccessPole('secretariat', profileData, permissionsMatrice, userTags) || checkTabAccess('export-annu', 'secretariat') || checkTabAccess('reunion-manager', 'secretariat') || checkTabAccess('activity-reports', 'secretariat') || checkTabAccess('mestre-forum-channels', 'secretariat') || checkTabAccess('studio-events', 'secretariat') || checkTabAccess('varal-secretariat', 'secretariat') || checkTabAccess('secretariat-documents', 'secretariat') || checkTabAccess('secretariat-lieux', 'secretariat');
+  const hasAccessSecretariat = isMasterKeyActive || canAccessPole('secretariat', profileData, permissionsMatrice, userTags) || checkTabAccess('export-annu', 'secretariat') || checkTabAccess('activity-reports', 'secretariat') || checkTabAccess('studio-events', 'secretariat') || checkTabAccess('varal-secretariat', 'secretariat');
   const hasAccessLogistique = isMasterKeyActive || canAccessPole('logistique', profileData, permissionsMatrice, userTags) || checkTabAccess('inventory', 'logistique') || checkTabAccess('logistics-pupitres', 'logistique') || checkTabAccess('logistics-kits', 'logistique') || checkTabAccess('logistics-carpool', 'logistique') || checkTabAccess('orders', 'logistique') || checkTabAccess('orders-manager', 'logistique');
   const hasAccessLutherie = isMasterKeyActive || canAccessPole('lutherie', profileData, permissionsMatrice, userTags) || checkTabAccess('instrument-models', 'lutherie') || checkTabAccess('inventory-projects', 'lutherie') || checkTabAccess('inventory-parts', 'lutherie') || checkTabAccess('inventory-supplies', 'lutherie') || checkTabAccess('workshop-tools', 'lutherie') || checkTabAccess('varal-lutherie', 'lutherie');
   const hasAccessCostumerie = isMasterKeyActive || canAccessPole('costumerie', profileData, permissionsMatrice, userTags) || checkTabAccess('wardrobe-projects', 'costumerie') || checkTabAccess('wardrobe-models', 'costumerie') || checkTabAccess('wardrobe-pieces', 'costumerie') || checkTabAccess('wardrobe-supplies', 'costumerie') || checkTabAccess('wardrobe-tools', 'costumerie') || checkTabAccess('wardrobe-sizes', 'costumerie') || checkTabAccess('varal-costumerie', 'costumerie');

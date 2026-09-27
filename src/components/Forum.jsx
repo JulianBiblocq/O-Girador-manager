@@ -22,6 +22,7 @@ import NewGroupModal from './forum/NewGroupModal';
 import { useConversations } from '../hooks/useConversations';
 import useHardwareBack from '../hooks/useHardwareBack';
 import { forceUpdateAndClearCache } from '../utils/pwaUtils';
+import ForumChannelsManager from './ForumChannelsManager';
 
 function ChannelTreeItem({
   channel,
@@ -228,6 +229,7 @@ export default function Forum({
   
   // État de création de salon et sous-dossier par un membre
   const [isCreatingChannel, setIsCreatingChannel] = useState(false);
+  const [isChannelsManagerOpen, setIsChannelsManagerOpen] = useState(false);
   const [newChannelName, setNewChannelName] = useState('');
   const [newChannelParentId, setNewChannelParentId] = useState('');
   const [savingChannel, setSavingChannel] = useState(false);
@@ -1213,14 +1215,26 @@ export default function Forum({
                     ✓✓ {translate('forum.markAllAsRead', "Tout lire")}
                   </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setIsCreatingChannel(true)}
-                  className="text-[9px] font-black uppercase text-cordel-wood hover:underline cursor-pointer flex items-center gap-0.5 shrink-0"
-                  title="Créer un salon ou un sous-dossier"
-                >
-                  ➕ {translate('forum.addChannelShort', "Salon")}
-                </button>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {isModeratorOrAdmin && (
+                    <button
+                      type="button"
+                      onClick={() => setIsChannelsManagerOpen(true)}
+                      className="text-[9px] font-black uppercase tracking-wider text-cordel-wood hover:text-encre-noire bg-cordel-bg px-2 py-0.5 rounded border border-cordel-master-dark/30 hover:border-encre-noire transition-all cursor-pointer flex items-center gap-1 shadow-xs"
+                      title="Gérer les salons, droits d'accès et modération"
+                    >
+                      ⚙️ {translate('forum.manageChannels', "Gérer")}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setIsCreatingChannel(true)}
+                    className="text-[9px] font-black uppercase text-cordel-wood hover:underline cursor-pointer flex items-center gap-0.5 shrink-0"
+                    title="Créer un salon ou un sous-dossier"
+                  >
+                    ➕ {translate('forum.addChannelShort', "Salon")}
+                  </button>
+                </div>
               </div>
               <div className="flex flex-col gap-1 min-w-0">
                 {channels.filter(c => !c.parentId).map((ch) => (
@@ -1504,6 +1518,28 @@ export default function Forum({
         members={Object.values(usersMap)}
         currentUserId={user?.uid}
       />
+
+      {/* Modale d'administration et de modération des salons du Porte-voix */}
+      {isChannelsManagerOpen && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-encre-noire/70 backdrop-blur-xs animate-fade-in outline-none"
+          onClick={() => setIsChannelsManagerOpen(false)}
+        >
+          <div 
+            className="relative w-full max-w-4xl max-h-[92vh] flex flex-col rounded-[8px] bg-cordel-bg border-2 border-encre-noire shadow-[6px_6px_0px_0px_#181716] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+              <ForumChannelsManager
+                groupId={profileData?.groupId}
+                role={profileData?.role}
+                isSystemAdmin={profileData?.isSystemAdmin || isModeratorOrAdmin}
+                onBack={() => setIsChannelsManagerOpen(false)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -62,7 +62,11 @@ const testScripts = [
   'scripts/test_event_rsvp_accordion_and_permissions.mjs',
   'scripts/test_instrument_icons_resolution.mjs',
   'scripts/test_mestre_orientation_custom_categories_robustness.mjs',
-  'scripts/test_quiz_generator_focus_repertoire.mjs'
+  'scripts/test_quiz_generator_focus_repertoire.mjs',
+  'scripts/test_presence_counter_and_voice_dictation.mjs',
+  'scripts/test_varal_reorganization_5_ropes.mjs',
+  'scripts/test_espace_instruments_labels.mjs',
+  'scripts/test_secretariat_4_tabs_and_forum_channels.mjs'
 ];
 
 console.log("===============================================================");

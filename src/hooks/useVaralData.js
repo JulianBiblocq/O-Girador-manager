@@ -12,12 +12,13 @@ import { useViewSimulator } from '../context/ViewSimulatorContext';
  */
 export const DEFAULT_VARAL_CATEGORIES = [
   { id: 'Toadas', nom: 'Toadas', actif: true, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
-  { id: 'TutosFabrication', nom: 'Tutos Fabrication', actif: true, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
-  { id: 'Costumerie', nom: 'Costumerie & Patrons', actif: true, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
   { id: 'Culture', nom: 'Culture', actif: true, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
+  { id: 'TutosFabrication', nom: 'Tutos Fabrication', actif: true, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
   { id: 'PhotosPrestations', nom: 'Photos Prestations', actif: true, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
-  { id: 'ComptesRendus', nom: 'Comptes-rendus', actif: true, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: true },
-  { id: 'Administratif', nom: 'Administratif', actif: true, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false }
+  { id: 'ComptesRendus', nom: 'Comptes-rendus & Administratif', actif: true, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: true },
+  { id: 'TutorielsVideo', nom: 'Tutoriels Vidéo', actif: false, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
+  { id: 'Administratif', nom: 'Administratif', actif: false, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
+  { id: 'Costumerie', nom: 'Costumerie & Patrons', actif: false, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false }
 ];
 
 /**
@@ -25,10 +26,33 @@ export const DEFAULT_VARAL_CATEGORIES = [
  */
 export const DEFAULT_POLE_ROPES = {
   pedagogie: ['Toadas', 'Culture'],
-  secretariat: ['Administratif', 'ComptesRendus'],
+  secretariat: ['ComptesRendus', 'Administratif'],
   studio: ['PhotosPrestations'],
   lutherie: ['TutosFabrication'],
-  costumerie: ['Costumerie', 'TutosCostumes', 'PatronsCostumes']
+  costumerie: ['TutosFabrication', 'Costumerie', 'TutosCostumes', 'PatronsCostumes']
+};
+
+/**
+ * Détermine si un document relève de la documentation administrative fixe
+ * (statuts, règlement intérieur, RIB, attestation d'assurance, composition CA)
+ * par opposition aux comptes-rendus de réunions périodiques.
+ */
+export const isAdministrativeDoc = (docItem) => {
+  if (!docItem) return false;
+  if (docItem.type === 'reunion' || docItem.typeDoc === 'reunion' || docItem.reunionData) return false;
+  if (docItem.typeDoc === 'statuts' || docItem.type === 'statuts') return true;
+  if (docItem.categoryId === 'Administratif' || docItem.categorie === 'Administratif') return true;
+  const titre = (docItem.titre || '').toLowerCase();
+  return titre.includes('statut') || 
+         titre.includes('règlement') || 
+         titre.includes('reglement') || 
+         titre.includes('rib') || 
+         titre.includes('assurance') || 
+         titre.includes('conseil d\'administration') || 
+         titre.includes('bureau') || 
+         titre.includes('compo ca') || 
+         titre.includes('ca ') || 
+         titre.includes('administratif');
 };
 
 /**
@@ -255,15 +279,11 @@ export default function useVaralData({
         || (docItem.categorie && varalCategories.find(c => c.id === docItem.categorie));
       let catId = catObj ? catObj.id : 'Autre';
 
-      // Migration front-end automatique : Nettoyage du varal Administratif
+      // Fusion des cordes cibles : Administratif rejoint ComptesRendus, Costumerie rejoint TutosFabrication
       if (catId === 'Administratif') {
-        const titre = (docItem.titre || '').toLowerCase();
-        const isCoreAdmin = titre.includes('compo ca') || titre.includes('règlement') || titre.includes('reglement') || titre.includes('statut') || titre.includes('rib');
-
-        if (!isCoreAdmin) {
-          // Tous les autres documents (notamment les comptes-rendus) sont basculés sur ComptesRendus
-          catId = 'ComptesRendus';
-        }
+        catId = 'ComptesRendus';
+      } else if (catId === 'Costumerie' || catId === 'TutosCostumes' || catId === 'PatronsCostumes') {
+        catId = 'TutosFabrication';
       }
 
       // Si le document est visible OU si l'utilisateur possède les droits de gestion dans un pôle métier
@@ -350,10 +370,23 @@ export default function useVaralData({
         }
       });
 
-      // Trier "ComptesRendus" par date décroissante
+      // Trier "ComptesRendus" : Documents administratifs fixes en premier (à gauche), puis comptes-rendus par date décroissante
       groups['ComptesRendus'].sort((a, b) => {
-        const dateA = a.date ? new Date(a.date).getTime() : new Date(a.createdAt || 0).getTime();
-        const dateB = b.date ? new Date(b.date).getTime() : new Date(b.createdAt || 0).getTime();
+        const aIsAdmin = isAdministrativeDoc(a);
+        const bIsAdmin = isAdministrativeDoc(b);
+
+        if (aIsAdmin && !bIsAdmin) return -1;
+        if (!aIsAdmin && bIsAdmin) return 1;
+
+        if (aIsAdmin && bIsAdmin) {
+          const orderA = a.order !== undefined ? a.order : 999;
+          const orderB = b.order !== undefined ? b.order : 999;
+          if (orderA !== orderB) return orderA - orderB;
+          return (a.titre || '').localeCompare(b.titre || '');
+        }
+
+        const dateA = a.date ? new Date(a.date).getTime() : new Date(a.createdAt || a.dateAjout || 0).getTime();
+        const dateB = b.date ? new Date(b.date).getTime() : new Date(b.createdAt || b.dateAjout || 0).getTime();
         return dateB - dateA;
       });
     }

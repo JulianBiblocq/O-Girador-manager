@@ -35,14 +35,9 @@ const SECRETAIRE_PROFILE = {
 
 const SECRETARIAT_TABS = [
   'export-annu',
-  'studio-events',
-  'reunion-manager',
-  'varal-secretariat',
-  'mestre-forum-channels',
   'activity-reports',
-  'secretariat-reports',
-  'secretariat-documents',
-  'secretariat-lieux'
+  'studio-events',
+  'varal-secretariat'
 ];
 
 const EXPECTED_TOUR_TARGETS = {

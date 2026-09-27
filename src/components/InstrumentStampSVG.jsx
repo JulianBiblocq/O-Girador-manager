@@ -88,6 +88,22 @@ export const getInstrumentStamp = (instrumentName, className = "") => {
         <path d="M-15,5 Q0,-10 15,5 M0,-10 L0,15 M0,15 L-10,35 M0,15 L10,35" stroke="currentColor" strokeWidth="4" fill="none" strokeLinecap="round"/>
       </g>
     );
+  } else if (nameLower.includes('costume') || nameLower.includes('couture') || nameLower.includes('patron') || nameLower.includes('tailleur') || nameLower.includes('mannequin') || nameLower.includes('habit')) {
+    label = "COUTURE";
+    Icon = () => (
+      <g transform="translate(60, 42) scale(0.65)">
+        {/* Anneaux des ciseaux de tailleur */}
+        <circle cx="-14" cy="18" r="8" fill="none" stroke="currentColor" strokeWidth="3.5"/>
+        <circle cx="14" cy="18" r="8" fill="none" stroke="currentColor" strokeWidth="3.5"/>
+        {/* Tiges et lames croisées */}
+        <path d="M-9,12 L14,-22" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round"/>
+        <path d="M9,12 L-14,-22" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round"/>
+        {/* Rivet de fixation central */}
+        <circle cx="0" cy="-2" r="3" fill="currentColor"/>
+        {/* Fil et aiguille stylisés en arrière-plan */}
+        <path d="M-22,-10 Q0,-18 22,-10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 2"/>
+      </g>
+    );
   } else {
     // Generic
     Icon = () => (

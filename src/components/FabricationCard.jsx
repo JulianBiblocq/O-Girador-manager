@@ -78,6 +78,11 @@ export default function FabricationCard({ fabrication, onClose }) {
     return etapeId === selectedEtapeId;
   });
   
+  const isCostumerie = fabrication?.thematiqueFabrication === 'costumerie' ||
+    fabrication?.sousCategorie === 'costumerie' ||
+    /costume|couture|patron|habit|veste|coiffe/i.test(fabrication?.titre || '') ||
+    /costume|couture|patron/i.test(fabrication?.instrumentConcerne || '');
+
   // Modale principale
   const cardContent = (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in outline-none"
@@ -95,18 +100,18 @@ export default function FabricationCard({ fabrication, onClose }) {
         <div className="flex-shrink-0 flex items-center justify-between p-3 sm:p-5 border-b-[var(--theme-border-width)] border-dashed border-[var(--color-cordel-wood)] bg-[#fdfaf2]">
           <div className="flex flex-col">
             <span className="text-[10px] uppercase font-black tracking-widest text-[var(--color-cordel-wood)] mb-1">
-              🧵 Atelier de Fabrication (Varal)
+              {isCostumerie ? "🧵 Atelier de Costumerie & Patrons" : "🛠️ Atelier de Lutherie & Fabrication"}
             </span>
             <h2 className="font-heading font-black text-2xl sm:text-3xl text-black leading-none">
               {fabrication.titre}
             </h2>
-            {fabrication.instrumentConcerne && (
+            {(fabrication.instrumentConcerne || isCostumerie) && (
               <div className="flex items-center gap-2 mt-2">
                 <span className="text-[9px] uppercase font-bold text-gray-700 bg-black/10 px-2 py-0.5 rounded">
-                  {fabrication.instrumentConcerne}
+                  {fabrication.instrumentConcerne || (isCostumerie ? "Costumerie / Couture" : "Instrument")}
                 </span>
-                <div className="w-4 h-4 text-[var(--color-cordel-wood)] flex-shrink-0 opacity-80">
-                   {getInstrumentStamp(fabrication.instrumentConcerne, "currentColor")}
+                <div className="w-5 h-5 text-[var(--color-cordel-wood)] flex-shrink-0 opacity-90">
+                  {getInstrumentStamp(isCostumerie ? "couture" : (fabrication.instrumentConcerne || "Alfaia"), "currentColor")}
                 </div>
               </div>
             )}
@@ -128,6 +133,34 @@ export default function FabricationCard({ fabrication, onClose }) {
             {fabrication.visuelAnimeUrl && (
               <div className="w-full flex justify-center py-4">
                 {renderMedia(fabrication.visuelAnimeUrl)}
+              </div>
+            )}
+
+            {/* Patron / Gabarit téléchargeable (PDF ou Image) */}
+            {fabrication.patronUrl && (
+              <div className="p-4 bg-[var(--color-cordel-vert)]/10 border-2 border-dashed border-[var(--color-cordel-vert)] rounded-[var(--theme-border-radius)] flex flex-col sm:flex-row items-center justify-between gap-3 shadow-[2px_2px_0px_0px_#181716]">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 flex items-center justify-center bg-[var(--color-cordel-vert)] text-white rounded font-bold text-lg shadow-sm">
+                    📐
+                  </div>
+                  <div>
+                    <h4 className="font-heading font-black text-sm text-[var(--color-cordel-vert)] uppercase tracking-wider">
+                      Patron & Gabarit de Confection
+                    </h4>
+                    <p className="text-xs text-black/70">
+                      Gabarit ou planche technique téléchargeable pour découpe et assemblage.
+                    </p>
+                  </div>
+                </div>
+                <a
+                  href={fabrication.patronUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  download
+                  className="px-4 py-2 bg-[var(--color-cordel-vert)] text-white text-xs font-black uppercase tracking-wider rounded border border-black shadow-[2px_2px_0px_0px_#181716] hover:opacity-90 transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer"
+                >
+                  <span>📥</span> Télécharger le Patron
+                </a>
               </div>
             )}
 

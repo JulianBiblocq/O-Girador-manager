@@ -333,6 +333,19 @@ export function useDocumentUploadPipeline({
         }
       }
 
+      // 1b. Traitement patron ou gabarit téléchargeable (Fabrication & Costumerie)
+      let finalPatronUrl = fabricationData.patronUrl || '';
+      if (computedType === 'fabrication' && fabricationData.patronUploadType === 'file' && fabricationData.patronFile) {
+        try {
+          const patronStoragePath = `documents/${groupId}/patron_${Date.now()}_${fabricationData.patronFile.name}`;
+          const patronRef = ref(storage, patronStoragePath);
+          const snapshot = await uploadBytes(patronRef, fabricationData.patronFile);
+          finalPatronUrl = await getDownloadURL(snapshot.ref);
+        } catch (err) {
+          console.error("Erreur lors de l'upload du patron téléchargeable :", err);
+        }
+      }
+
       // 2. Traitement audio témoin (Chant / Toada)
       let finalAudioUrl = songData.audioUrl || '';
       if (isSongType && songData.audioUploadType === 'file' && songData.audioFile) {
@@ -376,6 +389,8 @@ export function useDocumentUploadPipeline({
         }
 
         if (computedType === 'fabrication') {
+          updateData.thematiqueFabrication = fabricationData.thematiqueFabrication || 'lutherie';
+          updateData.patronUrl = finalPatronUrl;
           updateData.contenuFabrication = fabricationData.contenuFabrication || '';
           updateData.materielRequis = fabricationData.materielRequisList || [];
           updateData.outilsNecessaires = fabricationData.outilsNecessairesList || [];
@@ -493,6 +508,8 @@ export function useDocumentUploadPipeline({
       }
 
       if (computedType === 'fabrication') {
+        newDoc.thematiqueFabrication = fabricationData.thematiqueFabrication || 'lutherie';
+        newDoc.patronUrl = finalPatronUrl;
         newDoc.contenuFabrication = fabricationData.contenuFabrication || '';
         newDoc.materielRequis = fabricationData.materielRequisList || [];
         newDoc.outilsNecessaires = fabricationData.outilsNecessairesList || [];

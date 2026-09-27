@@ -3,6 +3,7 @@ import VaralClothespinSVG from './VaralClothespinSVG';
 import { getInstrumentStamp } from '../../InstrumentStampSVG';
 import { isWorkshopVirtualDoc } from '../../../utils/workshopProjectionUtils';
 import { useTranslation } from '../../LanguageContext';
+import { isAdministrativeDoc } from '../../../hooks/useVaralData';
 
 /**
  * Calcule une couleur déterministe Cordel pour un document
@@ -41,19 +42,43 @@ export default function VaralBookletCover({
 
   const isArchived = docItem.isArchived === true;
   const isHidden = docItem.isHidden === true;
-  const opacityClass = isArchived 
-    ? 'opacity-60 grayscale-[0.3] hover:opacity-100 hover:grayscale-0 transition-all duration-300' 
-    : isHidden 
-      ? 'opacity-85 hover:opacity-100 transition-all duration-300' 
-      : 'opacity-100';
+  const isAdminDoc = isAdministrativeDoc(docItem);
+
+  // Année du document pour la règle d'opacité des comptes-rendus
+  const currentYear = new Date().getFullYear();
+  const docYear = docItem.annee || (docItem.date ? new Date(docItem.date).getFullYear() : (docItem.dateAjout ? new Date(docItem.dateAjout).getFullYear() : null));
+  const isPastYear = Boolean(docYear && docYear < currentYear);
 
   let colorClass = 'default';
-  if (category?.id === 'Administratif' || category?.id === 'DocumentsFixes' || category?.nom === 'Administratif') {
-    colorClass = 'bleu-ardoise'; // Ardoise exclusif pour les documents administratifs fixes
-  } else if (category?.id === 'ComptesRendus' || category?.nom === 'Comptes-rendus') {
-    colorClass = 'rouge'; // Rouge distinctif pour les comptes-rendus
+  let opacityClass = 'opacity-100';
+
+  if (category?.id === 'ComptesRendus' || category?.nom?.includes('Comptes-rendus')) {
+    if (isAdminDoc) {
+      // Documents administratifs fixes : Bleu ardoise et 100% d'opacité permanente
+      colorClass = 'bleu-ardoise';
+      opacityClass = 'opacity-100';
+    } else {
+      // Comptes-rendus de réunions : Rouge Cordel
+      colorClass = 'rouge';
+      // Règle d'opacité : opacité réduite (50%) UNIQUEMENT pour les comptes-rendus des années antérieures
+      if (isPastYear || isArchived) {
+        opacityClass = 'opacity-50 grayscale-[0.2] hover:opacity-100 hover:grayscale-0 transition-all duration-300';
+      } else if (isHidden) {
+        opacityClass = 'opacity-85 hover:opacity-100 transition-all duration-300';
+      } else {
+        opacityClass = 'opacity-100';
+      }
+    }
+  } else if (category?.id === 'Administratif' || category?.id === 'DocumentsFixes' || category?.nom === 'Administratif') {
+    colorClass = 'bleu-ardoise';
+    opacityClass = 'opacity-100';
   } else {
     colorClass = getDeterministicColor(docItem.id);
+    opacityClass = isArchived 
+      ? 'opacity-60 grayscale-[0.3] hover:opacity-100 hover:grayscale-0 transition-all duration-300' 
+      : isHidden 
+        ? 'opacity-85 hover:opacity-100 transition-all duration-300' 
+        : 'opacity-100';
   }
 
   const typeIcons = {
@@ -232,16 +257,18 @@ export default function VaralBookletCover({
           }
 
           if (isTutoFab) {
-            const instr = docItem.instrument || docItem.familleInstrument || docItem.categorieFiche || docItem.categorie;
-            if (instr) {
-              return (
-                <div className={`absolute inset-0 m-auto flex items-center justify-center z-0 pointer-events-none opacity-20 ${isDarkBg ? 'text-encre-noire' : 'text-[#523214]'}`}>
-                  <div className="scale-[1.2] origin-center mix-blend-multiply dark:mix-blend-normal">
-                    {getInstrumentStamp(instr, "currentColor")}
-                  </div>
+            const isCostume = docItem.thematiqueFabrication === 'costumerie' ||
+              docItem.sousCategorie === 'costumerie' ||
+              (docItem.titre && /costume|couture|patron|habit|veste|coiffe/i.test(docItem.titre)) ||
+              (docItem.description && /costume|couture|patron/i.test(docItem.description));
+            const instr = isCostume ? 'couture' : (docItem.instrument || docItem.familleInstrument || docItem.categorieFiche || docItem.categorie || 'Alfaia');
+            return (
+              <div className={`absolute inset-0 m-auto flex items-center justify-center z-0 pointer-events-none opacity-20 ${isDarkBg ? 'text-encre-noire' : 'text-[#523214]'}`}>
+                <div className="scale-[1.2] origin-center mix-blend-multiply dark:mix-blend-normal">
+                  {getInstrumentStamp(instr, "currentColor")}
                 </div>
-              );
-            }
+              </div>
+            );
           }
 
           if (isOrixa) {

@@ -20,17 +20,12 @@ const PERMISSION_POLES = [
   {
     id: 'secretariat',
     label: '📋 Secrétariat',
-    desc: 'Gestion statutaire, annuaire, réunions, registre des dates et Varal administratif',
+    desc: 'Gestion statutaire, annuaire, journal d\'activité, registre des dates et Varal administratif',
     tabs: [
       { id: 'export-annu', label: 'Annuaire', desc: 'Accès à la liste des adhérents et export CSV/Excel' },
-      { id: 'studio-events', label: 'Registre des dates', desc: 'Tableau d\'édition rapide et globale des événements' },
-      { id: 'reunion-manager', label: 'Réunions', desc: 'Ordres du jour et procès-verbaux de réunion' },
-      { id: 'varal-secretariat', label: 'Varal Secrétariat', desc: 'Documents administratifs et comptes-rendus officiels' },
-      { id: 'mestre-forum-channels', label: 'Porte-voix (Salons)', desc: 'Modération et configuration des salons du forum' },
       { id: 'activity-reports', label: "Journal d'activité (CSV)", desc: 'Extraction CSV des présences et du journal des événements' },
-      { id: 'secretariat-reports', label: 'Rapports & Bilan AG', desc: 'Consolidation multi-pôles des indicateurs de la saison pour l\'Assemblée Générale' },
-      { id: 'secretariat-documents', label: 'Ressources & Liens', desc: 'Gestion des chartes, droit à l\'image, aptitudes médicales et espaces cloud partagés' },
-      { id: 'secretariat-lieux', label: 'Lieux, Types & Relances', desc: 'Répertoire des salles habituelles, types d\'événements et règles de relance automatique' }
+      { id: 'studio-events', label: 'Registre des dates', desc: 'Tableau d\'édition rapide et globale des événements' },
+      { id: 'varal-secretariat', label: 'Varal Secrétariat', desc: 'Documents administratifs et comptes-rendus officiels' }
     ]
   },
   {

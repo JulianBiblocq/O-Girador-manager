@@ -169,6 +169,16 @@ export default function DocumentUploadForm({
   const [videoUrlCulture, setVideoUrlCulture] = useState(documentToEdit ? documentToEdit.videoUrl || '' : '');
 
   // 6. Sous-états Fabrication
+  const [thematiqueFabrication, setThematiqueFabrication] = useState(() => {
+    if (documentToEdit?.thematiqueFabrication) return documentToEdit.thematiqueFabrication;
+    if (documentToEdit?.sousCategorie === 'costumerie' || /costume|couture|patron/i.test(documentToEdit?.titre || '')) {
+      return 'costumerie';
+    }
+    return 'lutherie';
+  });
+  const [patronUploadType, setPatronUploadType] = useState(() => (documentToEdit?.patronUrl ? 'url' : 'file'));
+  const [patronUrl, setPatronUrl] = useState(documentToEdit ? documentToEdit.patronUrl || '' : '');
+  const [patronFile, setPatronFile] = useState(null);
   const [visuelAnimeType, setVisuelAnimeType] = useState(documentToEdit && documentToEdit.visuelAnimeUrl ? 'url' : 'file');
   const [visuelAnimeUrl, setVisuelAnimeUrl] = useState(documentToEdit ? documentToEdit.visuelAnimeUrl || '' : '');
   const [visuelAnimeFile, setVisuelAnimeFile] = useState(null);
@@ -263,6 +273,10 @@ export default function DocumentUploadForm({
         videoUrlCulture
       },
       fabricationData: {
+        thematiqueFabrication,
+        patronUploadType,
+        patronUrl,
+        patronFile,
         visuelAnimeType,
         visuelAnimeUrl,
         visuelAnimeFile,
@@ -570,6 +584,14 @@ export default function DocumentUploadForm({
             {/* SECTION 3 : Tutoriels de Fabrication */}
             {computedType === 'fabrication' && (
               <DocumentFormFabricationFields
+                thematiqueFabrication={thematiqueFabrication}
+                setThematiqueFabrication={setThematiqueFabrication}
+                patronUploadType={patronUploadType}
+                setPatronUploadType={setPatronUploadType}
+                patronUrl={patronUrl}
+                setPatronUrl={setPatronUrl}
+                patronFile={patronFile}
+                setPatronFile={setPatronFile}
                 visuelAnimeType={visuelAnimeType}
                 setVisuelAnimeType={setVisuelAnimeType}
                 visuelAnimeUrl={visuelAnimeUrl}
