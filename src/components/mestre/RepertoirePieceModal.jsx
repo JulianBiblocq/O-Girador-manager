@@ -631,7 +631,7 @@ export default function RepertoirePieceModal({
       notes: (notes || '').trim() || '',
       videos: cleanVideos,
       signalIds: cleanSignalIds,
-      sinaisDoMestre: Array.isArray(cleanSinais) ? cleanFirestorePayload(cleanSinais) : [],
+      sinaisDoMestre: Array.isArray(sinaisDoMestre) ? cleanFirestorePayload(sinaisDoMestre) : [],
       sequenceurId: matchedSeqId || null,
       sequenceurType: matchedSeqType || null,
       sequenceurFileUrl: matchedSeqUrl || null,

@@ -31,8 +31,16 @@ export default function OnlineStatusWidget({
   const [isOpen, setIsOpen] = useState(false);
   const [showThemeSelector, setShowThemeSelector] = useState(false);
   const [isCreatingGame, setIsCreatingGame] = useState(false);
+  const [toastNotification, setToastNotification] = useState(null);
   const context = usePresenceContext();
   const isPresenceEnabled = propIsEnabled !== undefined ? propIsEnabled : context?.isPresenceEnabled;
+
+  const showNotification = (message, type = 'error') => {
+    setToastNotification({ message, type });
+    setTimeout(() => {
+      setToastNotification(null);
+    }, 4500);
+  };
 
   const handleMemberChatClick = (targetUserId) => {
     // 1. Fermer la modale des personnes en ligne
@@ -91,6 +99,10 @@ export default function OnlineStatusWidget({
       }
     } catch (err) {
       console.error('[OnlineStatusWidget] Erreur lors de la création du défi :', err);
+      showNotification(
+        "Impossible de lancer le défi multijoueur. Vérifiez votre connexion ou vos permissions.",
+        'error'
+      );
     } finally {
       setIsCreatingGame(false);
     }
@@ -107,6 +119,10 @@ export default function OnlineStatusWidget({
       }
     } catch (err) {
       console.error('[OnlineStatusWidget] Erreur pour rejoindre la table :', err);
+      showNotification(
+        "Impossible de rejoindre la table. Vérifiez vos autorisations.",
+        'error'
+      );
     }
   };
 
@@ -276,6 +292,30 @@ export default function OnlineStatusWidget({
         onSelectTheme={handleSelectTheme}
         isCreating={isCreatingGame}
       />
+
+      {/* Toast / Notification discrète Cordel en cas d'erreur */}
+      {toastNotification && typeof document !== 'undefined' && document.body && createPortal(
+        <div 
+          role="alert"
+          className="fixed bottom-5 right-5 z-[10001] max-w-sm px-4 py-3 bg-[#faf7f0] border-2 border-encre-noire rounded-[6px_9px_7px_8px] shadow-[3px_3px_0px_0px_#181716] flex items-center gap-3 animate-fade-in text-encre-noire select-none"
+        >
+          <span className="text-base select-none shrink-0">
+            {toastNotification.type === 'error' ? '⚠️' : 'ℹ️'}
+          </span>
+          <p className="text-xs font-bold font-sans flex-1 leading-snug">
+            {toastNotification.message}
+          </p>
+          <button
+            type="button"
+            onClick={() => setToastNotification(null)}
+            className="text-stone-500 hover:text-encre-noire text-xs font-black p-1 cursor-pointer transition-colors"
+            aria-label="Fermer la notification"
+          >
+            ✕
+          </button>
+        </div>,
+        document.body
+      )}
     </>
   );
 }

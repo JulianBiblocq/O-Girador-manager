@@ -1,12 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import PieceAisanceSection from './PieceAisanceSection';
 import PieceVideoSection from '../repertoire/PieceVideoSection';
+import PieceQuizModal from './PieceQuizModal';
 import { useTranslation } from '../LanguageContext';
 
 /**
  * Contenu déplié de la carte morceau pour adhérents (lecture seule stricte).
  * Affiche les notes, lecteurs audios, toadas, tablatures, danse, culture,
- * lecteur vidéo multi-pupitres avec smart-default et entraînements.
+ * lecteur vidéo multi-pupitres avec smart-default, entraînements et quiz de révision.
  */
 export default function MemberPieceUnfoldedContent({
   piece,
@@ -19,9 +20,11 @@ export default function MemberPieceUnfoldedContent({
   onOpenToada,
   onOpenCulture,
   onOpenSignals,
+  onOpenQuiz = null,
   sequenceurUrl
 }) {
   const { t } = useTranslation();
+  const [isQuizModalOpen, setIsQuizModalOpen] = useState(false);
   const audioUrl = piece.activeAudioUrl || piece.audioUrl;
   const hasToada = Boolean(
     piece.activeToada && (
@@ -150,6 +153,17 @@ export default function MemberPieceUnfoldedContent({
             <span>Danse : {piece.activeChoreography.nom || piece.activeChoreography.titre || 'Chorégraphie'}</span>
           </div>
         )}
+
+        {/* Passerelle Quiz Focus Répertoire */}
+        <button
+          type="button"
+          onClick={() => (onOpenQuiz ? onOpenQuiz(piece) : setIsQuizModalOpen(true))}
+          className="px-2.5 py-1 text-xs font-bold rounded bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-950 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all select-none"
+          title="Lancer le QCM Focus Répertoire pour réviser ce morceau"
+        >
+          <span>🎯</span>
+          <span>{t('reviserCeMorceau', 'Réviser ce morceau')}</span>
+        </button>
       </div>
 
       {/* 4. Lecteur vidéo multi-pupitres avec smart-default adhérent */}
@@ -161,6 +175,18 @@ export default function MemberPieceUnfoldedContent({
 
       {/* 5. Bloc Entraînements et Paliers d'Aisance */}
       <PieceAisanceSection piece={piece} trainings={trainings} aisanceMap={aisanceMap} userId={userId} groupId={groupId} sequenceurUrl={sequenceurUrl} />
+
+      {/* 6. Modale QCM Focus Répertoire */}
+      {isQuizModalOpen && (
+        <PieceQuizModal
+          isOpen={isQuizModalOpen}
+          onClose={() => setIsQuizModalOpen(false)}
+          piece={piece}
+          groupId={groupId}
+          profileData={profileData}
+        />
+      )}
     </div>
   );
 }
+

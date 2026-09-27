@@ -5,7 +5,18 @@
 
 import { distractorPool } from '../data/distractorPool.js';
 import { normalizePartSteps } from './workshopProjectionUtils.js';
-import { cleanPromptTitle, sanitizeTextHole, cleanChoiceText, sanitizeQuizQuestions } from './quizSanitizer.js';
+import {
+  cleanPromptTitle,
+  sanitizeTextHole,
+  cleanChoiceText,
+  sanitizeQuizQuestions,
+  sanitizeQuizText,
+  hasLeak,
+  filterDistractorsByLength
+} from './quizSanitizer.js';
+import { detectAlfaiaSticks } from './sequencerParser.js';
+
+export { sanitizeQuizText, hasLeak, filterDistractorsByLength };
 
 const shuffleArray = (array) => {
   const arr = [...array];
@@ -554,7 +565,12 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
     sheetData.lexique.forEach((wordObj, i) => {
       if (!wordObj.pt || !wordObj.fr) return;
       
-      let wrongChoices = allTranslations.filter(t => t.toLowerCase() !== wordObj.fr.toLowerCase());
+      let wrongChoices = filterDistractorsByLength(wordObj.fr, allTranslations);
+      if (wrongChoices.length < 3) {
+        // Compléter avec d'autres traductions si vivier insuffisant
+        const remaining = allTranslations.filter(t => t.toLowerCase() !== wordObj.fr.toLowerCase() && !wrongChoices.includes(t));
+        wrongChoices.push(...shuffleArray(remaining).slice(0, 3 - wrongChoices.length));
+      }
       if (wrongChoices.length < 3) {
         // Fallback en dernier recours
         const fallbackFails = distractorPool.fallbackFailsTraductions;
@@ -630,8 +646,8 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
         otherTitles = distractorPool.orixasTitles;
       }
 
-      let correctTitle = sheetData.titre;
-      if (correctTitle.includes(sheetData.personnageOrisha)) {
+      let correctTitle = sheetData.titre || sheetData.name || '';
+      if (correctTitle && sheetData.personnageOrisha && correctTitle.includes(sheetData.personnageOrisha)) {
         correctTitle = correctTitle.replace(new RegExp(`${sheetData.personnageOrisha}[,\\s-]*`, 'gi'), '').trim();
       }
       correctTitle = cleanPromptTitle(correctTitle);
@@ -1388,16 +1404,22 @@ export const generateQuizFromSong = (song, allSongs = [], allSheetsData = [], co
 
       // S'assurer que l'explication ne trahit pas le mot
       if (!cleanExpl.toLowerCase().includes(cleanMot.toLowerCase())) {
-        let wrongChoices = allLexiqueFr.filter(t => t.toLowerCase() !== cleanExpl.toLowerCase());
-        wrongChoices = shuffleArray(wrongChoices).slice(0, 3);
-        
-        const fallbacks = distractorPool.fallbackFailsTraductions;
-        for (let attempts = 0; wrongChoices.length < 3 && attempts < 50; attempts++) {
-          const randomF = fallbacks[Math.floor(Math.random() * fallbacks.length)];
-          if (!wrongChoices.includes(randomF) && randomF.toLowerCase() !== cleanExpl.toLowerCase()) {
-            wrongChoices.push(randomF);
+        let wrongChoices = filterDistractorsByLength(cleanExpl, allLexiqueFr);
+        if (wrongChoices.length < 3) {
+          const remaining = allLexiqueFr.filter(t => t.toLowerCase() !== cleanExpl.toLowerCase() && !wrongChoices.includes(t));
+          wrongChoices.push(...shuffleArray(remaining).slice(0, 3 - wrongChoices.length));
+        }
+        if (wrongChoices.length < 3) {
+          const fallbacks = distractorPool.fallbackFailsTraductions;
+          for (let attempts = 0; wrongChoices.length < 3 && attempts < 50; attempts++) {
+            const randomF = fallbacks[Math.floor(Math.random() * fallbacks.length)];
+            if (!wrongChoices.includes(randomF) && randomF.toLowerCase() !== cleanExpl.toLowerCase()) {
+              wrongChoices.push(randomF);
+            }
           }
         }
+
+        wrongChoices = shuffleArray(wrongChoices).slice(0, 3);
 
         const choices = shuffleArray([
           { text: cleanExpl, isCorrect: true },
@@ -1889,3 +1911,318 @@ export const generateQuizFromPieceSignals = (piece, resolvedSignals = [], catalo
 
   return shuffleArray(questions);
 };
+
+/**
+ * Générateur de QCM ciblé sur une fiche Répertoire ("Mode Focus Répertoire").
+ * Construit un ensemble cohérent de questions pédagogiques à partir des données liées :
+ * - Axe Matériel : Détection binaire des baguettes Alfaia (detectAlfaiaSticks)
+ * - Axe Mestria : Identification du geste ou coup de sifflet d'après sinaisDoMestre
+ * - Axe Tablature : Phrase rythmique du pupitre (activeSteps) face à 3 leurres issus d'autres presets
+ * - Axe Paroles : Sens d'un terme ou vers manquant si une Toada est rattachée
+ * - Axe Culture : Orixá, symbole ou anecdote si une Fiche Culturelle est rattachée
+ *
+ * @param {Object} pieceDoc - Morceau du répertoire
+ * @param {Object} [contextData] - Données de contexte (presetData, catalogSignals, allSongs, allSheetsData, etc.)
+ * @param {Object} [config] - Options de configuration (t, difficulty, etc.)
+ * @returns {Array} Liste des questions assainies et calibrées
+ */
+export const generateQuizFromRepertoirePiece = (pieceDoc, contextData = {}, config = {}) => {
+  if (!pieceDoc) return [];
+
+  const questions = [];
+  const t = config.t || contextData.t || ((k, fallback, params) => {
+    let str = fallback || k;
+    if (params) {
+      Object.keys(params).forEach(p => {
+        str = str.replace(new RegExp(`{{${p}}}`, 'g'), params[p]);
+      });
+    }
+    return str;
+  });
+
+  const pieceTitle = cleanPromptTitle(pieceDoc.titre || 'ce morceau');
+
+  // =========================================================================
+  // 1. AXE MATÉRIEL : Détection des baguettes Alfaia (detectAlfaiaSticks)
+  // =========================================================================
+  const alfaiaSource = contextData.presetData ||
+                       contextData.tracks ||
+                       pieceDoc.parsedSequencerData ||
+                       pieceDoc.tracks ||
+                       (contextData.allPresets || []).find(p => p.id === pieceDoc.sequenceurId || p.presetId === pieceDoc.sequenceurId) ||
+                       pieceDoc;
+
+  const sticksResult = detectAlfaiaSticks(alfaiaSource, {
+    pieceTitle,
+    pieceId: pieceDoc.id,
+    t
+  });
+  if (sticksResult && sticksResult.question) {
+    questions.push(sticksResult.question);
+  }
+
+  // =========================================================================
+  // 2. AXE MESTRIA : Direction Musicale & Signaux du Mestre (sinaisDoMestre)
+  // =========================================================================
+  const rawSignals = (Array.isArray(pieceDoc.sinaisDoMestre) && pieceDoc.sinaisDoMestre.length > 0)
+    ? pieceDoc.sinaisDoMestre
+    : (Array.isArray(pieceDoc.activeSinaisDoMestre) && pieceDoc.activeSinaisDoMestre.length > 0
+        ? pieceDoc.activeSinaisDoMestre
+        : (contextData.presetData?.sinaisDoMestre || []));
+
+  if (rawSignals.length > 0) {
+    const signalQuestions = generateQuizFromPieceSignals(
+      pieceDoc,
+      rawSignals,
+      contextData.catalogSignals || contextData.mestreSignals || [],
+      { t }
+    );
+    if (signalQuestions && signalQuestions.length > 0) {
+      questions.push(...signalQuestions.slice(0, 2));
+    }
+  }
+
+  // =========================================================================
+  // 3. AXE TABLATURE : Identification de la phrase rythmique du pupitre
+  // =========================================================================
+  const userInstrument = (contextData.userInstrument || contextData.pupitre || 'alfaia').toLowerCase();
+  const tracks = contextData.presetData?.tracks ||
+                 pieceDoc.parsedSequencerData?.tracks ||
+                 pieceDoc.tracks ||
+                 [];
+
+  let targetTrack = null;
+  if (Array.isArray(tracks) && tracks.length > 0) {
+    targetTrack = tracks.find(tr => {
+      const n = (tr.name || tr.instrument || tr.customName || '').toLowerCase();
+      return n.includes(userInstrument);
+    }) || tracks.find(tr => {
+      const n = (tr.name || tr.instrument || tr.customName || '').toLowerCase();
+      return n.includes('alfaia') || n.includes('caixa') || n.includes('gongue') || n.includes('gonguê');
+    }) || tracks[0];
+  }
+
+  if (targetTrack) {
+    let rawSteps = targetTrack.activeSteps || targetTrack.steps;
+    if (!rawSteps && Array.isArray(targetTrack.patterns) && targetTrack.patterns[0]) {
+      rawSteps = targetTrack.patterns[0].activeSteps || targetTrack.patterns[0].steps;
+    }
+
+    if (rawSteps && (Array.isArray(rawSteps) || typeof rawSteps === 'string')) {
+      const stepsArr = Array.isArray(rawSteps)
+        ? rawSteps.map(s => (s === 0 || s === '0' ? '-' : String(s)))
+        : rawSteps.split('').map(s => (s === '0' ? '-' : s));
+      const formattedPattern = stepsArr.slice(0, 16);
+      const patternText = formattedPattern.join(' ');
+      const trackInstrumentName = targetTrack.name || targetTrack.instrument || 'ce pupitre';
+
+      // Recherche de leurres issus d'autres presets
+      const otherPresets = (contextData.allPresets || contextData.allRhythms || contextData.allSheetsData || [])
+        .filter(p => p.id !== pieceDoc.sequenceurId && p.id !== pieceDoc.id);
+
+      const wrongPatterns = [];
+
+      for (const op of otherPresets) {
+        if (wrongPatterns.length >= 3) break;
+        const opTracks = op.tracks || op.parsedData?.tracks || op.parsedSequencerData?.tracks || [];
+        if (Array.isArray(opTracks) && opTracks.length > 0) {
+          const matchTr = opTracks.find(t => {
+            const n = (t.name || t.instrument || '').toLowerCase();
+            return n.includes(userInstrument);
+          }) || opTracks[0];
+
+          if (matchTr) {
+            const oSteps = matchTr.activeSteps || matchTr.steps || matchTr.patterns?.[0]?.steps;
+            if (oSteps) {
+              const oArr = (Array.isArray(oSteps) ? oSteps : oSteps.split(''))
+                .map(s => (s === 0 || s === '0' ? '-' : String(s)))
+                .slice(0, 16);
+              if (JSON.stringify(oArr) !== JSON.stringify(formattedPattern) &&
+                  !wrongPatterns.some(wp => JSON.stringify(wp) === JSON.stringify(oArr))) {
+                wrongPatterns.push(oArr);
+              }
+            }
+          }
+        } else if (op.activeSteps && Array.isArray(op.activeSteps)) {
+          const oArr = op.activeSteps.map(s => (s === 0 || s === '0' ? '-' : String(s))).slice(0, 16);
+          if (JSON.stringify(oArr) !== JSON.stringify(formattedPattern) &&
+              !wrongPatterns.some(wp => JSON.stringify(wp) === JSON.stringify(oArr))) {
+            wrongPatterns.push(oArr);
+          }
+        }
+      }
+
+      // Compléter si besoin par des mutations synthétiques
+      for (let attempts = 0; wrongPatterns.length < 3 && attempts < 50; attempts++) {
+        const fake = [...formattedPattern];
+        const numMutations = Math.floor(Math.random() * 3) + 1;
+        for (let m = 0; m < numMutations; m++) {
+          const randIdx = Math.floor(Math.random() * fake.length);
+          fake[randIdx] = fake[randIdx] === '-' ? (fake.includes('I') ? 'I' : 'X') : '-';
+        }
+        if (JSON.stringify(fake) !== JSON.stringify(formattedPattern) &&
+            !wrongPatterns.some(wp => JSON.stringify(wp) === JSON.stringify(fake))) {
+          wrongPatterns.push(fake);
+        }
+      }
+
+      const choices = shuffleArray([
+        {
+          text: patternText,
+          isCorrect: true,
+          visualElement: { type: 'pattern', patternData: formattedPattern }
+        },
+        ...wrongPatterns.slice(0, 3).map(wp => ({
+          text: wp.join(' '),
+          isCorrect: false,
+          visualElement: { type: 'pattern', patternData: wp }
+        }))
+      ]);
+
+      questions.push({
+        id: `qcm_tablature_${pieceDoc.id || 'piece'}_${userInstrument}`,
+        type: 'pattern_rythmique',
+        instruction: t('pedagogyQuiz.rhythmPatternInstruction', 'Tablature & Rythme'),
+        questionText: t('pedagogyQuiz.piecePatternQuestion', `Quel est le pattern rythmique joué par le pupitre "${trackInstrumentName}" sur "${pieceTitle}" ?`, { instrument: trackInstrumentName, titre: pieceTitle }),
+        choices,
+        correctAnswer: patternText,
+        feedback: `Le bon pattern pour "${trackInstrumentName}" est : ${patternText}.`
+      });
+    }
+  }
+
+  // =========================================================================
+  // 4. AXE PAROLES (si pieceDoc.toadaDocId ou activeToada présent)
+  // =========================================================================
+  const toadaDocId = pieceDoc.toadaDocId || pieceDoc.toadaId;
+  const toadaDoc = contextData.toadaDoc ||
+                   pieceDoc.activeToada ||
+                   (contextData.allSongs || []).find(s => s.id === toadaDocId);
+
+  if (toadaDocId || toadaDoc) {
+    if (toadaDoc) {
+      let lyricQuestionAdded = false;
+
+      // 4.1 Priorité au sens d'un terme du lexique (calibré par filterDistractorsByLength)
+      let lexiqueList = toadaDoc.notesLexique || toadaDoc.lexique;
+      if (typeof lexiqueList === 'string') {
+        lexiqueList = parseLexiqueString(lexiqueList);
+      }
+
+      if (Array.isArray(lexiqueList) && lexiqueList.length > 0) {
+        const allLexiqueFr = getTransversalLexique(contextData.allSheetsData, contextData.allSongs);
+        const randomLexique = lexiqueList[Math.floor(Math.random() * lexiqueList.length)];
+        const cleanMot = cleanPromptTitle(randomLexique.mot || randomLexique.pt);
+        const cleanExpl = sanitizeQuizText(cleanChoiceText(randomLexique.explication || randomLexique.fr, cleanMot));
+
+        if (cleanMot && cleanExpl && !hasLeak(cleanMot, cleanExpl)) {
+          let wrongChoices = filterDistractorsByLength(cleanExpl, allLexiqueFr);
+          if (wrongChoices.length < 3) {
+            const fallbackPool = distractorPool.fallbackFailsTraductions || [];
+            wrongChoices.push(...shuffleArray(fallbackPool.filter(f => f.toLowerCase() !== cleanExpl.toLowerCase())).slice(0, 3 - wrongChoices.length));
+          }
+
+          if (wrongChoices.length >= 1) {
+            const choices = shuffleArray([
+              { text: cleanExpl, isCorrect: true },
+              ...wrongChoices.slice(0, 3).map(w => ({ text: w, isCorrect: false }))
+            ]);
+
+            questions.push({
+              id: `qcm_paroles_sens_${pieceDoc.id || 'piece'}`,
+              type: 'song_lexique',
+              instruction: t('pedagogyQuiz.songLexiconInstruction', 'Sens des Paroles'),
+              questionText: t('pedagogyQuiz.songLexiconQuestion', `Dans les paroles de "${toadaDoc.titre || pieceTitle}", que signifie le terme "${cleanMot}" ?`, { mot: cleanMot, titre: toadaDoc.titre || pieceTitle }),
+              choices,
+              correctAnswer: cleanExpl,
+              feedback: `Le terme "${cleanMot}" signifie bien : "${cleanExpl}".`
+            });
+            lyricQuestionAdded = true;
+          }
+        }
+      }
+
+      // 4.2 Vers manquant (texte à trous) si aucune question de lexique ajoutée
+      if (!lyricQuestionAdded) {
+        const rawLyrics = toadaDoc.parolesOriginales || toadaDoc.paroles || toadaDoc.texte;
+        if (typeof rawLyrics === 'string' && rawLyrics.trim() !== '') {
+          const lines = rawLyrics
+            .split('\n')
+            .map(l => l.replace(/<[^>]+>/g, '').trim())
+            .filter(l => l.length >= 15 && l.length <= 100 && !l.startsWith('[') && !l.startsWith('('));
+
+          if (lines.length > 0) {
+            const chosenLine = lines[Math.floor(Math.random() * lines.length)];
+            const words = chosenLine.split(/\s+/).filter(w => w.length > 4);
+
+            if (words.length > 0) {
+              const targetWord = words[Math.floor(Math.random() * words.length)];
+              const cleanTargetWord = sanitizeQuizText(targetWord);
+              const lineWithHole = chosenLine.replace(new RegExp(`\\b${cleanTargetWord}\\b`, 'i'), '______');
+
+              if (lineWithHole.includes('______') && !hasLeak(lineWithHole, cleanTargetWord)) {
+                const otherWords = Array.from(new Set(
+                  rawLyrics.split(/\s+/)
+                    .map(w => sanitizeQuizText(w))
+                    .filter(w => w.length >= 3 && w.toLowerCase() !== cleanTargetWord.toLowerCase())
+                ));
+
+                let wrongWords = filterDistractorsByLength(cleanTargetWord, otherWords);
+                if (wrongWords.length < 3) {
+                  const genericWords = ['coração', 'estrela', 'guerreiro', 'maracatu', 'esperança', 'luanda', 'rainha', 'tambor'];
+                  wrongWords.push(...genericWords.filter(w => w.toLowerCase() !== cleanTargetWord.toLowerCase() && !wrongWords.includes(w)));
+                }
+
+                const choices = shuffleArray([
+                  { text: cleanTargetWord, isCorrect: true },
+                  ...wrongWords.slice(0, 3).map(w => ({ text: w, isCorrect: false }))
+                ]);
+
+                questions.push({
+                  id: `qcm_paroles_vers_${pieceDoc.id || 'piece'}`,
+                  type: 'song_verse_hole',
+                  instruction: t('pedagogyQuiz.missingVerseInstruction', 'Vers Manquant & Paroles'),
+                  questionText: t('pedagogyQuiz.missingVerseQuestion', `Complétez le vers suivant : "${lineWithHole}"`, { extrait: lineWithHole }),
+                  choices,
+                  correctAnswer: cleanTargetWord,
+                  feedback: `Le mot manquant était bien "${cleanTargetWord}".`
+                });
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // =========================================================================
+  // 5. AXE CULTURE (si pieceDoc.cultureDocId ou activeCultureDoc présent)
+  // =========================================================================
+  const cultureDocId = pieceDoc.cultureDocId || (Array.isArray(pieceDoc.cultureDocIds) ? pieceDoc.cultureDocIds[0] : null);
+  const cultureDoc = contextData.cultureDoc ||
+                     pieceDoc.activeCultureDoc ||
+                     (Array.isArray(pieceDoc.activeCultureDocs) ? pieceDoc.activeCultureDocs[0] : null) ||
+                     (contextData.allSheetsData || []).find(s => s.id === cultureDocId);
+
+  if (cultureDocId || cultureDoc) {
+    if (cultureDoc) {
+      const cultureQuiz = generateQuizFromSheet(cultureDoc, contextData.allSheetsData || [], contextData.allSongs || [], { t });
+      if (Array.isArray(cultureQuiz) && cultureQuiz.length > 0) {
+        const priorityCulture = cultureQuiz.filter(q =>
+          q.type === 'devinette_visuelle' ||
+          q.type === 'symbole_orixa' ||
+          q.type === 'culture' ||
+          q.type === 'anecdote' ||
+          q.type === 'histoire_orixa'
+        );
+        const selected = priorityCulture.length > 0 ? priorityCulture[0] : cultureQuiz[0];
+        if (selected) {
+          questions.push(selected);
+        }
+      }
+    }
+  }
+
+  return sanitizeQuizQuestions(questions);
+};
+

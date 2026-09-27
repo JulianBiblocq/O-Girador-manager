@@ -61,7 +61,8 @@ const testScripts = [
   'scripts/test_mestre_custom_categories_edition_and_sync.mjs',
   'scripts/test_event_rsvp_accordion_and_permissions.mjs',
   'scripts/test_instrument_icons_resolution.mjs',
-  'scripts/test_mestre_orientation_custom_categories_robustness.mjs'
+  'scripts/test_mestre_orientation_custom_categories_robustness.mjs',
+  'scripts/test_quiz_generator_focus_repertoire.mjs'
 ];
 
 console.log("===============================================================");

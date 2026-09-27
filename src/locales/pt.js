@@ -1630,7 +1630,12 @@ export const pt = {
     danceVisualFeedback: "Este passo se chama \"{{nom}}\".",
     danceFamilyInstruction: "Família de passos",
     danceFamilyQuestion: "A qual família pertence o passo \"{{nom}}\"?",
-    danceFamilyFeedback: "O passo \"{{nom}}\" pertence à família \"{{famille}}\"."
+    danceFamilyFeedback: "O passo \"{{nom}}\" pertence à família \"{{famille}}\".",
+    piecePatternQuestion: "Qual é o padrão rítmico tocado pelo naipe \"{{instrument}}\" em \"{{titre}}\"?",
+    missingVerseInstruction: "Verso Ausente & Letra",
+    missingVerseQuestion: "Complete o verso seguinte: \"{{extrait}}\"",
+    alfaiaSticksInstruction: "Material & Baquetas",
+    alfaiaSticksQuestion: "Quais baquetas ou maçanetas são usadas para tocar \"{{pieceTitle}}\" no Alfaia?"
   },
   lexicon: {
     alfaia: "Alfaia",

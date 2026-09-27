@@ -175,8 +175,8 @@ export const sanitizeQuestion = (question) => {
                    question.visualElement ||
                    correctChoice.isImage;
 
-  // 2. Vérification de fuite dans l'intitulé
-  if (!isVisual && typeof correctText === 'string' && hasAnswerLeak(question.questionText, correctText)) {
+  // 2. Vérification de fuite dans l'intitulé (intitulé direct ou mot significatif)
+  if (!isVisual && typeof correctText === 'string' && (hasAnswerLeak(question.questionText, correctText) || hasLeak(question.questionText, correctText))) {
     return null; // Question écartée car elle trahit directement la réponse
   }
 
@@ -187,7 +187,7 @@ export const sanitizeQuestion = (question) => {
 
   for (const choice of question.choices) {
     if (typeof choice.text === 'string') {
-      let cleanedText = cleanChoiceText(choice.text, subjectKeyword);
+      let cleanedText = sanitizeQuizText(cleanChoiceText(choice.text, subjectKeyword));
       const normalizedKey = cleanedText.toLowerCase().trim();
 
       // Éviter les choix doublons
@@ -212,6 +212,7 @@ export const sanitizeQuestion = (question) => {
 
   return {
     ...question,
+    questionText: sanitizeQuizText(question.questionText),
     choices: sanitizedChoices
   };
 };
@@ -235,3 +236,110 @@ export const sanitizeQuizQuestions = (questions = []) => {
 
   return results;
 };
+
+/**
+ * Nettoie la typographie d'un texte de question ou de choix :
+ * retire systématiquement les guillemets («, », ", '), les crochets et parenthèses résiduels.
+ * Normalise les espaces multiples.
+ *
+ * @param {string} str - Texte brut
+ * @returns {string} Texte assaini
+ */
+export const sanitizeQuizText = (str) => {
+  if (str == null) return '';
+  if (typeof str !== 'string') return String(str).trim();
+
+  return str
+    .replace(/[«»‹›"'\`“”‘’„‟[\]()]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
+// Liste des mots de liaison courants à ignorer lors de la détection de fuite
+const LEAK_STOP_WORDS = new Set([
+  'dans', 'pour', 'avec', 'sans', 'sous', 'chez', 'vers', 'entre', 'apres', 'après',
+  'quel', 'quelle', 'quels', 'quelles', 'cette', 'celui', 'celle', 'ceux', 'celles',
+  'sont', 'etre', 'être', 'avoir', 'fait', 'faire', 'plus', 'moins', 'tout', 'tous',
+  'toute', 'toutes', 'comme', 'mais', 'donc', 'leur', 'leurs', 'aussi', 'bien',
+  'autre', 'autres', 'meme', 'même', 'dont', 'quand', 'lors', 'afin', 'ainsi',
+  'alors', 'ceci', 'cela', 'deux', 'trois', 'quatre', 'cinq', 'vous', 'nous', 'elles', 'ils',
+  'para', 'com', 'sem', 'sob', 'sobre', 'qual', 'quais', 'esta', 'este', 'estas', 'estes',
+  'esse', 'essa', 'esses', 'essas', 'isso', 'isto', 'aquilo', 'aquele', 'aquela',
+  'onde', 'quando', 'como', 'mais', 'menos', 'muito', 'muita', 'muitos', 'muitas'
+]);
+
+/**
+ * Détecte si l'énoncé de la question trahit la réponse attendue en contenant
+ * un mot significatif de la réponse (> 3 caractères, hors mots de liaison courants).
+ *
+ * @param {string} questionText - Intitulé de la question
+ * @param {string} answerText - Réponse correcte attendue
+ * @returns {boolean} True si une fuite est détectée
+ */
+export const hasLeak = (questionText, answerText) => {
+  if (!questionText || !answerText || typeof questionText !== 'string' || typeof answerText !== 'string') {
+    return false;
+  }
+
+  // Écarter les trous "______" pour ne pas pénaliser les textes à trous
+  const cleanQ = questionText.replace(/_{2,}/g, ' ').toLowerCase();
+
+  // Extraire les mots de la réponse (conservation des lettres accentuées Unicode)
+  const rawWords = answerText.toLowerCase().match(/[\p{L}\p{N}]+/gu) || [];
+
+  // Mots significatifs : longueur > 3 et non stop-word
+  const significantWords = rawWords.filter(w => w.length > 3 && !LEAK_STOP_WORDS.has(w));
+  if (significantWords.length === 0) {
+    return false;
+  }
+
+  return significantWords.some(word => {
+    const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const leakRegex = new RegExp(`(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`, 'ui');
+    return leakRegex.test(cleanQ);
+  });
+};
+
+/**
+ * Calibre la longueur des leurres pour les questions de traduction ou définitions :
+ * - Écart de nombre de mots <= ±1 mot par rapport à la cible
+ * - Ratio de caractères compris à ±35 % de la cible
+ *
+ * @param {string} target - Réponse correcte attendue
+ * @param {Array<string|Object>} pool - Vivier de leurres candidats
+ * @returns {Array} Candidats filtrés et calibrés
+ */
+export const filterDistractorsByLength = (target, pool = []) => {
+  if (!target || typeof target !== 'string' || !Array.isArray(pool)) return [];
+
+  const cleanTarget = sanitizeQuizText(target);
+  const targetWords = cleanTarget.split(/\s+/).filter(Boolean).length;
+  const targetLen = cleanTarget.length;
+  if (targetLen === 0) return [];
+
+  return pool.filter(cand => {
+    const candStr = typeof cand === 'string' ? cand : (cand?.text || cand?.fr || cand?.explication || '');
+    if (!candStr || typeof candStr !== 'string') return false;
+
+    const cleanCand = sanitizeQuizText(candStr);
+    if (!cleanCand) return false;
+    if (cleanCand.toLowerCase() === cleanTarget.toLowerCase()) return false;
+
+    const candWords = cleanCand.split(/\s+/).filter(Boolean).length;
+    const candLen = cleanCand.length;
+
+    // 1. Écart de nombre de mots <= ±1 mot
+    if (Math.abs(candWords - targetWords) > 1) {
+      return false;
+    }
+
+    // 2. Ratio de caractères compris à ±35 % de la cible (|candLen - targetLen| / targetLen <= 0.35)
+    const charRatioDiff = Math.abs(candLen - targetLen) / targetLen;
+    if (charRatioDiff > 0.35) {
+      return false;
+    }
+
+    return true;
+  });
+};
+

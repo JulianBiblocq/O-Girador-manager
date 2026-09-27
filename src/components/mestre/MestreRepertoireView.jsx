@@ -24,7 +24,7 @@ import { useRepertoireVaralDocs } from '../../hooks/useRepertoireVaralDocs';
 import { openSequencerWithCrossApp } from '../../utils/sequencerUrlUtils';
 import PieceVideoSection from '../repertoire/PieceVideoSection';
 import BatchAssignVideoModal from '../repertoire/BatchAssignVideoModal';
-import YouTubeVideoPickerModal from '../common/YouTubeVideoPickerModal';
+import MestreRepertoireHeader from './MestreRepertoireHeader';
 import { cleanFirestorePayload } from '../../utils/firestoreUtils';
 import {
   buildResolutionDictionaries,
@@ -82,7 +82,6 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
   const [activeSignalsModalPiece, setActiveSignalsModalPiece] = useState(null);
   const [isBatchVideoModalOpen, setIsBatchVideoModalOpen] = useState(false);
   const [batchVideoInitial, setBatchVideoInitial] = useState(null);
-  const [isGlobalVideoPickerOpen, setIsGlobalVideoPickerOpen] = useState(false);
 
   // Synchronisation & Importation
   const [syncingPieceId, setSyncingPieceId] = useState(null);
@@ -374,99 +373,20 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
         </div>
       )}
 
-      {/* En-tête de section */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-3 border-b-2 border-dashed border-cordel-master-dark/30">
-        <div>
-          <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase flex items-center gap-2">
-            <span>📜</span>
-            <span>Direction Artistique — Répertoire de la Troupe</span>
-          </h2>
-          <p className="text-[11px] font-bold text-encre-noire/70 mt-0.5">
-            Architecture réactive vivante liée au Séquenceur, au Varal et à Dançad'Or
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2.5 flex-wrap">
-          {/* Bandeau d'état interactif : Répertoire adhérents */}
-          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-[4px_6px_3px_5px] border-2 text-xs font-black shadow-[1.5px_1.5px_0px_0px_#181716] transition-all ${
-            isRepertoireOpen
-              ? 'bg-emerald-100 text-emerald-900 border-emerald-950'
-              : 'bg-stone-100 text-stone-700 border-stone-800'
-          }`}>
-            {isRepertoireOpen ? (
-              <>
-                <span className="flex items-center gap-1.5">
-                  <span className="animate-pulse">🟢</span>
-                  <span>Répertoire adhérents ouvert</span>
-                </span>
-                <button
-                  type="button"
-                  onClick={handleToggleRepertoireEleves}
-                  disabled={togglingRepertoire}
-                  className="ml-2 text-[10px] font-black uppercase text-[var(--color-cordel-rouge,#8b2a1a)] hover:underline cursor-pointer disabled:opacity-50"
-                >
-                  Masquer
-                </button>
-              </>
-            ) : (
-              <>
-                <span className="flex items-center gap-1.5 text-stone-600">
-                  <span>🔒</span>
-                  <span>Répertoire adhérents masqué</span>
-                </span>
-                <button
-                  type="button"
-                  onClick={handleToggleRepertoireEleves}
-                  disabled={togglingRepertoire}
-                  className="ml-2 text-[10px] font-black uppercase text-emerald-800 hover:text-emerald-950 hover:underline cursor-pointer disabled:opacity-50"
-                >
-                  Ouvrir au groupe
-                </button>
-              </>
-            )}
-          </div>
-
-          <CordelButton
-            type="button"
-            variant="default"
-            useExtremeBorder={true}
-            onClick={() => setIsGlobalVideoPickerOpen(true)}
-            className="py-1.5 px-3 text-xs font-black uppercase tracking-wider shrink-0 flex items-center gap-1.5"
-            title="Consulter les playlists YouTube de l'association et piocher des vidéos"
-          >
-            <span>📺</span>
-            <span>Vidéothèque Asso</span>
-          </CordelButton>
-
-          <CordelButton
-            type="button"
-            variant="default"
-            useExtremeBorder={true}
-            onClick={() => {
-              setBatchVideoInitial(null);
-              setIsBatchVideoModalOpen(true);
-            }}
-            className="py-1.5 px-3 text-xs font-black uppercase tracking-wider shrink-0 flex items-center gap-1.5"
-            title="Affecter une vidéo à plusieurs morceaux du répertoire"
-          >
-            <span>🎬</span>
-            <span>Affecter vidéo par lot</span>
-          </CordelButton>
-
-          <CordelButton
-            type="button"
-            variant="ocre"
-            useExtremeBorder={true}
-            onClick={() => {
-              setPieceToEdit(null);
-              setIsEditModalOpen(true);
-            }}
-            className="py-1.5 px-4 text-xs font-black uppercase tracking-wider shrink-0"
-          >
-            ➕ Ajouter un morceau
-          </CordelButton>
-        </div>
-      </div>
+      {/* En-tête de section compact sur une ligne Desktop (Répertoire adhérents ouvert / Répertoire adhérents masqué) */}
+      <MestreRepertoireHeader
+        isRepertoireOpen={isRepertoireOpen}
+        onToggleRepertoire={handleToggleRepertoireEleves}
+        isToggling={togglingRepertoire}
+        onOpenBatchVideo={() => {
+          setBatchVideoInitial(null);
+          setIsBatchVideoModalOpen(true);
+        }}
+        onAddPiece={() => {
+          setPieceToEdit(null);
+          setIsEditModalOpen(true);
+        }}
+      />
 
       {/* Barre de filtrage & Recherche */}
       <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3">
@@ -740,7 +660,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                     {(() => {
                       const effectiveSignalsCount = (
                         Array.isArray(piece.sinaisDoMestre) && piece.sinaisDoMestre.length > 0
-                          ? piece.sinaisDoMestre.length
+                          ? piece.sinaisDoMestre?.length
                           : (Array.isArray(piece.activeSinaisDoMestre) && piece.activeSinaisDoMestre.length > 0
                             ? piece.activeSinaisDoMestre.length
                             : (Array.isArray(piece.signalIds) ? piece.signalIds.length : 0))
@@ -1144,17 +1064,6 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
         }}
       />
 
-      {/* Vidéothèque YouTube globale du Répertoire */}
-      <YouTubeVideoPickerModal
-        isOpen={isGlobalVideoPickerOpen}
-        onClose={() => setIsGlobalVideoPickerOpen(false)}
-        groupId={groupId}
-        onSelectVideo={(picked) => {
-          setIsGlobalVideoPickerOpen(false);
-          setBatchVideoInitial({ url: picked.url, titre: picked.title });
-          setIsBatchVideoModalOpen(true);
-        }}
-      />
 
       {/* Modale de lecture vidéo Cordel */}
       <RepertoireVideoModal

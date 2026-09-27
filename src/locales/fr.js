@@ -1626,7 +1626,12 @@ export const fr = {
     "danceVisualFeedback": "Ce pas s'appelle bien \"{{nom}}\".",
     "danceFamilyInstruction": "Famille de pas",
     "danceFamilyQuestion": "À quelle famille appartient le pas \"{{nom}}\" ?",
-    "danceFamilyFeedback": "Le pas \"{{nom}}\" appartient à la famille \"{{famille}}\"."
+    "danceFamilyFeedback": "Le pas \"{{nom}}\" appartient à la famille \"{{famille}}\".",
+    piecePatternQuestion: "Quel est le pattern rythmique joué par le pupitre \"{{instrument}}\" sur \"{{titre}}\" ?",
+    missingVerseInstruction: "Vers Manquant & Paroles",
+    missingVerseQuestion: "Complétez le vers suivant : \"{{extrait}}\"",
+    alfaiaSticksInstruction: "Matériel & Baguettes",
+    alfaiaSticksQuestion: "Quelles baguettes ou mailloches utilise-t-on pour jouer \"{{pieceTitle}}\" à l'Alfaia ?"
   },
   lexicon: {
     "alfaia": "Tambour grave en bois et corde",
