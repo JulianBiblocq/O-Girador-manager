@@ -67,7 +67,7 @@ function getNotificationIcon(type) {
   }
 }
 
-export default function NotificationItem({ notification, onSelect }) {
+export default function NotificationItem({ notification, onSelect, onDelete }) {
   const isUnread = notification.read !== undefined ? !notification.read : !notification.isRead;
   const dateFormatted = formatRelativeDate(notification.createdAt);
   const icon = notification.icon || getNotificationIcon(notification.type);
@@ -101,12 +101,28 @@ export default function NotificationItem({ notification, onSelect }) {
           <span className={`text-xs truncate ${isUnread ? 'font-black text-encre-noire' : 'font-bold text-encre-noire/80'}`}>
             {displayTitle}
           </span>
-          {isUnread && (
-            <span
-              className="w-2 h-2 rounded-full shrink-0 bg-[var(--color-cordel-rouge,#8b2a1a)] animate-pulse"
-              title="Non lu"
-            />
-          )}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {isUnread && (
+              <span
+                className="w-2 h-2 rounded-full shrink-0 bg-[var(--color-cordel-rouge,#8b2a1a)] animate-pulse"
+                title="Non lu"
+              />
+            )}
+            {onDelete && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(notification.notifId || notification.id);
+                }}
+                className="p-1 -mr-1 text-encre-noire/40 hover:text-[var(--color-cordel-rouge,#8b2a1a)] hover:bg-black/5 rounded cursor-pointer transition-colors text-xs leading-none"
+                title="Supprimer cette notification"
+                aria-label="Supprimer la notification"
+              >
+                ✕
+              </button>
+            )}
+          </div>
         </div>
 
         {notification.message && (

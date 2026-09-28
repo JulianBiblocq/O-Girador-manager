@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { collection, query, limit, onSnapshot, doc, updateDoc, writeBatch } from 'firebase/firestore';
+import { collection, query, limit, onSnapshot, doc, updateDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase';
 import { playNotificationSound } from '../utils/soundService';
 
@@ -14,7 +14,7 @@ import { playNotificationSound } from '../utils/soundService';
  * 
  * @param {string} userId Identifiant de l'utilisateur connecté
  * @param {string} [groupId] Identifiant du groupe/association
- * @returns {object} { notifications, unreadCount, loading, markAsRead, markAllAsRead }
+ * @returns {object} { notifications, unreadCount, loading, markAsRead, markAllAsRead, deleteNotification, clearAllNotifications }
  */
 export function useInAppNotifications(userId, groupId) {
   const [rawNotifications, setRawNotifications] = useState([]);
@@ -145,11 +145,60 @@ export function useInAppNotifications(userId, groupId) {
     }
   }, [userId, notifications]);
 
+  /**
+   * Supprime définitivement une notification spécifique de la sous-collection users/{userId}/in_app_notifications.
+   * 
+   * @param {string} notifId Identifiant de la notification à supprimer
+   */
+  const deleteNotification = useCallback(async (notifId) => {
+    if (!userId || !notifId) return;
+
+    try {
+      const docRef = doc(db, 'users', userId, 'in_app_notifications', notifId);
+      await deleteDoc(docRef);
+
+      // Mise à jour optimiste locale
+      setRawNotifications((prev) =>
+        prev.filter((n) => n.id !== notifId && n.notifId !== notifId)
+      );
+    } catch (err) {
+      console.error(`useInAppNotifications - Erreur suppression notification ${notifId} :`, err);
+    }
+  }, [userId]);
+
+  /**
+   * Supprime définitivement en lot (writeBatch) l'ensemble des notifications de la sous-collection users/{userId}/in_app_notifications.
+   */
+  const clearAllNotifications = useCallback(async () => {
+    if (!userId || notifications.length === 0) return;
+
+    try {
+      const batch = writeBatch(db);
+      notifications.forEach((item) => {
+        const docId = item.id || item.notifId;
+        if (docId) {
+          const docRef = doc(db, 'users', userId, 'in_app_notifications', docId);
+          batch.delete(docRef);
+        }
+      });
+
+      await batch.commit();
+
+      // Mise à jour optimiste locale
+      const idsToDelete = new Set(notifications.map((n) => n.id || n.notifId));
+      setRawNotifications((prev) => prev.filter((n) => !idsToDelete.has(n.id || n.notifId)));
+    } catch (err) {
+      console.error("useInAppNotifications - Erreur suppression collective des notifications :", err);
+    }
+  }, [userId, notifications]);
+
   return {
     notifications,
     unreadCount,
     loading,
     markAsRead,
-    markAllAsRead
+    markAllAsRead,
+    deleteNotification,
+    clearAllNotifications
   };
 }

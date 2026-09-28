@@ -21,7 +21,9 @@ export default function NotificationCenter({
     unreadCount,
     loading,
     markAsRead,
-    markAllAsRead
+    markAllAsRead,
+    deleteNotification,
+    clearAllNotifications
   } = useInAppNotifications(userId, groupId);
 
   const [isOpen, setIsOpen] = useState(false);
@@ -162,6 +164,15 @@ export default function NotificationCenter({
     }
   }, [markAsRead, onNavigateToUrl]);
 
+  // Purge collective de l'historique après confirmation
+  const handleClearAll = useCallback(() => {
+    if (notifications.length === 0) return;
+    const confirmed = window.confirm("Voulez-vous vraiment effacer tout l'historique de vos notifications ?");
+    if (confirmed) {
+      clearAllNotifications();
+    }
+  }, [notifications.length, clearAllNotifications]);
+
   return (
     <div className={`relative inline-block ${className}`}>
       {/* Bouton Déclencheur Cloche avec pastille dynamique */}
@@ -241,6 +252,17 @@ export default function NotificationCenter({
                   </button>
                 )}
 
+                {notifications.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleClearAll}
+                    className="px-2 py-1 text-[9.5px] font-extrabold uppercase tracking-wide bg-white hover:bg-red-50 text-[var(--color-cordel-rouge,#8b2a1a)] border border-[var(--color-cordel-rouge,#8b2a1a)]/40 hover:border-[var(--color-cordel-rouge,#8b2a1a)] rounded shadow-xs cursor-pointer active:translate-y-0.5 transition-all"
+                    title="Supprimer toutes les notifications de l'historique"
+                  >
+                    Tout effacer
+                  </button>
+                )}
+
                 <button
                   type="button"
                   onClick={() => setIsOpen(false)}
@@ -278,6 +300,7 @@ export default function NotificationCenter({
                     key={notif.notifId || notif.id}
                     notification={notif}
                     onSelect={handleSelectNotification}
+                    onDelete={deleteNotification}
                   />
                 ))
               )}
