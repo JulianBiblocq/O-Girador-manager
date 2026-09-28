@@ -741,6 +741,7 @@ export default function WidgetAgenda({
             event={activeEvent}
             user={user}
             profileData={profileData}
+            groupId={groupId || profileData?.groupId || 'Samambaia'}
             onNavigateToView={onNavigateToView}
             viewMode={viewMode}
             setViewMode={(mode) => {

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../../firebase';
 import EventRepertoireItemCard from './EventRepertoireItemCard';
+import { canonicalizeGroupId } from '../../utils/tenantUtils';
 
 /**
  * EventRepertoireProgramSelector - Sélecteur de morceaux du Répertoire pour l'Agenda
@@ -20,16 +21,18 @@ export default function EventRepertoireProgramSelector({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPieceToAdd, setSelectedPieceToAdd] = useState('');
 
-  // 1. Écoute temps réel du Répertoire de l'association
+  // 1. Écoute temps réel du Répertoire de l'association (avec normalisation de casse canonique)
   useEffect(() => {
-    if (!groupId) {
+    const rawGroup = groupId || 'Samambaia';
+    const targetGroupId = canonicalizeGroupId(rawGroup) || rawGroup;
+    if (!targetGroupId) {
       setAllPieces([]);
       setLoading(false);
       return;
     }
 
     setLoading(true);
-    const colRef = collection(db, 'associations', groupId.trim().toLowerCase(), 'repertoire');
+    const colRef = collection(db, 'associations', targetGroupId, 'repertoire');
     const unsubscribe = onSnapshot(
       colRef,
       (snapshot) => {
@@ -37,6 +40,26 @@ export default function EventRepertoireProgramSelector({
         snapshot.forEach((d) => {
           list.push({ id: d.id, ...d.data() });
         });
+
+        // Repli résilient si la collection avec la casse canonique est vide
+        if (list.length === 0 && targetGroupId !== targetGroupId.toLowerCase()) {
+          const fallbackRef = collection(db, 'associations', targetGroupId.toLowerCase(), 'repertoire');
+          onSnapshot(fallbackRef, (fallbackSnap) => {
+            if (!fallbackSnap.empty) {
+              const fallbackList = [];
+              fallbackSnap.forEach((d) => fallbackList.push({ id: d.id, ...d.data() }));
+              setAllPieces(fallbackList);
+            } else {
+              setAllPieces([]);
+            }
+            setLoading(false);
+          }, () => {
+            setAllPieces([]);
+            setLoading(false);
+          });
+          return;
+        }
+
         setAllPieces(list);
         setLoading(false);
       },
@@ -49,14 +72,14 @@ export default function EventRepertoireProgramSelector({
     return () => unsubscribe();
   }, [groupId]);
 
-  // 2. Filtrage des morceaux actifs (statutSaison === 'saison' ou non archivés)
+  // 2. Filtrage des morceaux actifs (saison, chantier ou non archivés)
   const activePieces = useMemo(() => {
     return allPieces
       .filter((p) => {
         if (!p) return false;
+        // Exclure uniquement les morceaux explicitement archivés
         if (p.isArchived || p.archived || p.statutSaison === 'archive') return false;
-        // Morceau actif : en saison ou non archivé
-        return p.statutSaison === 'saison' || (!p.statutSaison && !p.isArchived && !p.archived);
+        return true;
       })
       .sort((a, b) => (a.titre || '').localeCompare(b.titre || ''));
   }, [allPieces]);
@@ -195,9 +218,11 @@ export default function EventRepertoireProgramSelector({
               </option>
               {availableToAdd.map((p) => {
                 const b = getDisciplineBadges(p).map((x) => x.emoji).join(' ');
+                const icon = p.statutSaison === 'chantier' ? '🔨 ' : '📜 ';
+                const chantierLabel = p.statutSaison === 'chantier' ? ' (En chantier)' : '';
                 return (
                   <option key={p.id} value={p.id}>
-                    {p.titre} {b ? `(${b})` : ''}
+                    {icon}{p.titre}{chantierLabel} {b ? `(${b})` : ''}
                   </option>
                 );
               })}

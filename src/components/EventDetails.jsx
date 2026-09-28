@@ -34,7 +34,7 @@ import useHardwareBack from '../hooks/useHardwareBack';
 import { triggerEventStatusAutomation } from '../utils/automationEngine';
 import { canonicalizeGroupId } from '../utils/tenantUtils';
 
-export default function EventDetails({ event, user, profileData, onNavigateToView, onClose, onPrev, onNext, viewMode: _viewMode, setViewMode: _setViewMode, onGoToStageLayoutEditor }) {
+export default function EventDetails({ event, user, profileData, groupId: propGroupId, onNavigateToView, onClose, onPrev, onNext, viewMode: _viewMode, setViewMode: _setViewMode, onGoToStageLayoutEditor }) {
   const { t } = useTranslation();
   const { confirm } = useConfirm();
 
@@ -58,6 +58,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   } = useEventDetailsController(event, onClose, t);
 
   const targetEvent = activeEvent || event;
+  const resolvedGroupId = propGroupId || targetEvent?.groupId || event?.groupId || profileData?.groupId || 'Samambaia';
 
   const [allUsers, setAllUsers] = useState([]);
 
@@ -1711,7 +1712,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
           handleImageUpload={handleImageUpload}
           defaultDropUrl={defaultDropUrl}
           t={t}
-          groupId={event.groupId}
+          groupId={resolvedGroupId}
           pupitresList={pupitresList}
         />
       ) : (
@@ -1975,6 +1976,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                 activeEvent={activeEvent}
                 user={user}
                 profileData={profileData}
+                groupId={resolvedGroupId}
                 isAuthorized={isAuthorized}
                 currentConfig={currentConfig}
                 allUsers={allUsers}

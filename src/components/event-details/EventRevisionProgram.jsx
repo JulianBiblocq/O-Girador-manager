@@ -16,6 +16,7 @@ import { launchCrossApp } from '../../utils/crossAppAuth';
 import { subscribeGroupTrainings } from '../../services/aisanceService';
 import { resolvePieceTrainings, buildResolutionDictionaries, resolvePieceLiveTechnicalData } from '../../utils/repertoireMatcher';
 import TrainingCompactCard from '../pedagogy/TrainingCompactCard';
+import { canonicalizeGroupId } from '../../utils/tenantUtils';
 
 export default function EventRevisionProgram({
   setlist = [],
@@ -52,12 +53,36 @@ export default function EventRevisionProgram({
   const [selectedRepertoirePieceId, setSelectedRepertoirePieceId] = useState('');
 
   useEffect(() => {
-    if (!groupId || !isAuthorized) return;
+    const rawGroup = groupId || 'Samambaia';
+    const targetGroupId = canonicalizeGroupId(rawGroup) || rawGroup;
+    if (!targetGroupId) return;
+
     setLoadingRepertoire(true);
-    const colRef = collection(db, 'associations', groupId.trim().toLowerCase(), 'repertoire');
+    const colRef = collection(db, 'associations', targetGroupId, 'repertoire');
     const unsub = onSnapshot(colRef, (snap) => {
       const list = [];
       snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
+
+      // Repli résilient si la collection avec la casse canonique est vide
+      if (list.length === 0 && targetGroupId !== targetGroupId.toLowerCase()) {
+        const fallbackRef = collection(db, 'associations', targetGroupId.toLowerCase(), 'repertoire');
+        onSnapshot(fallbackRef, (fallbackSnap) => {
+          if (!fallbackSnap.empty) {
+            const fallbackList = [];
+            fallbackSnap.forEach((d) => fallbackList.push({ id: d.id, ...d.data() }));
+            fallbackList.sort((a, b) => (a.titre || '').localeCompare(b.titre || ''));
+            setRepertoirePieces(fallbackList);
+          } else {
+            setRepertoirePieces([]);
+          }
+          setLoadingRepertoire(false);
+        }, () => {
+          setRepertoirePieces([]);
+          setLoadingRepertoire(false);
+        });
+        return;
+      }
+
       list.sort((a, b) => (a.titre || '').localeCompare(b.titre || ''));
       setRepertoirePieces(list);
       setLoadingRepertoire(false);
@@ -65,15 +90,19 @@ export default function EventRevisionProgram({
       console.warn("EventRevisionProgram - Erreur répertoire :", err);
       setLoadingRepertoire(false);
     });
+
     return () => unsub();
-  }, [groupId, isAuthorized]);
+  }, [groupId]);
 
   const activeRepertoirePieces = useMemo(() => {
-    return repertoirePieces.filter((p) => {
-      if (!p) return false;
-      if (p.isArchived || p.archived || p.statutSaison === 'archive') return false;
-      return p.statutSaison === 'saison' || (!p.statutSaison && !p.isArchived && !p.archived);
-    });
+    return repertoirePieces
+      .filter((p) => {
+        if (!p) return false;
+        // Exclure uniquement les morceaux explicitement archivés (inclut saison et chantier)
+        if (p.isArchived || p.archived || p.statutSaison === 'archive') return false;
+        return true;
+      })
+      .sort((a, b) => (a.titre || '').localeCompare(b.titre || ''));
   }, [repertoirePieces]);
 
   // Entraînements du groupe (écoute réactive si non fournis par le parent)
@@ -535,7 +564,7 @@ export default function EventRevisionProgram({
                       </option>
                       {activeRepertoirePieces.map((p) => (
                         <option key={p.id} value={p.id}>
-                          📜 {p.titre}
+                          {p.statutSaison === 'chantier' ? '🔨' : '📜'} {p.titre}{p.statutSaison === 'chantier' ? ' (En chantier)' : ''}
                         </option>
                       ))}
                     </select>
