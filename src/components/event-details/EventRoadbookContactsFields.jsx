@@ -1,7 +1,7 @@
 import React from 'react';
 
-const PUPITRES_DISPONIBLES = [
-  'Alfaia', 'Caixa', 'Tarol', 'Gonguê', 'Agbê', 'Mineiro', 'Timbal', 'Danse', 'Chant'
+const DEFAULT_PUPITRES = [
+  'Alfaias', 'Caixas', 'Sementes', 'Gonguê', 'Timbal', 'Danse', 'Chant'
 ];
 
 /**
@@ -11,15 +11,20 @@ const PUPITRES_DISPONIBLES = [
  * @param {Object} props.contactsJourJ - Données des contacts
  * @param {Function} props.onChange - Fonction de mise à jour (champ, valeur)
  * @param {Array} props.allUsers - Liste des membres
+ * @param {Array<string>} [props.pupitresList] - Noms réels des pupitres configurés
  * @param {boolean} [props.disabled] - Désactivation des champs
  */
 export default function EventRoadbookContactsFields({
   contactsJourJ = {},
   onChange,
   allUsers = [],
+  pupitresList = [],
   disabled = false
 }) {
   const referentsPupitres = contactsJourJ.referentsPupitres || [];
+  const availablePupitres = (Array.isArray(pupitresList) && pupitresList.length > 0)
+    ? pupitresList
+    : DEFAULT_PUPITRES;
 
   const handleAddReferentPupitre = (pupitre) => {
     if (!pupitre || referentsPupitres.some((p) => p.pupitre === pupitre)) return;
@@ -88,7 +93,7 @@ export default function EventRoadbookContactsFields({
             className="text-[8px] font-bold py-0.5 px-1 rounded border border-encre-noire/20"
           >
             <option value="">+ Ajouter un pupitre...</option>
-            {PUPITRES_DISPONIBLES.filter((p) => !referentsPupitres.some((r) => r.pupitre === p)).map((p) => (
+            {availablePupitres.filter((p) => !referentsPupitres.some((r) => r.pupitre === p)).map((p) => (
               <option key={p} value={p}>{p}</option>
             ))}
           </select>

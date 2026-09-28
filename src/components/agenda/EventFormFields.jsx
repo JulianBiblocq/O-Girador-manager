@@ -6,9 +6,10 @@ import { calculateRoadDistance } from '../../utils/googleMaps';
 import ManualMapMarkerModal from './ManualMapMarkerModal';
 import LocationSelector from '../LocationSelector';
 import WorkshopProgramSelector from './WorkshopProgramSelector';
-import { useSequencerFirestoreData } from '../../hooks/useSequencerFirestoreData';
+import EventRepertoireProgramSelector from './EventRepertoireProgramSelector';
 import { DEFAULT_CUSTOM_CATEGORIES } from '../../utils/categoryUtils';
 import EventMediaFields from './EventMediaFields';
+import EventPupitresQuotasFields from './EventPupitresQuotasFields';
 
 /**
  * EventFormFields - Composant unifié pour les champs de formulaire d'événement
@@ -33,10 +34,10 @@ export default function EventFormFields({
   createConfig = {},
   groupId,
   defaultDropUrl = '',
+  pupitresList = [],
   t
 }) {
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
-  const { rhythms: sequencerRhythms, loading: loadingRhythms } = useSequencerFirestoreData(groupId);
 
   const translate = (key, fallback) => {
     if (!t) return fallback;
@@ -564,6 +565,16 @@ export default function EventFormFields({
             </div>
           )}
 
+          {/* Pupitres Requis & Quotas Cibles */}
+          {(formData.includesPercussion !== false || formData.includesDance !== false) && (
+            <EventPupitresQuotasFields
+              formData={formData}
+              setFormData={setFormData}
+              pupitresList={pupitresList}
+              disabled={saving}
+            />
+          )}
+
           {/* Covoiturage actif : Horaires & Distance */}
           {formData.enableCarpool !== false && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-2.5 bg-emerald-50/50 dark:bg-emerald-950/10 rounded border border-emerald-300/40">
@@ -611,46 +622,13 @@ export default function EventFormFields({
             />
           )}
 
-          {/* Morceaux à réviser (Séquenceur) */}
-          <div className="flex flex-col gap-1.5 pt-1">
-            <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center justify-between">
-              <span>🎛️ Morceaux du Séquenceur à réviser</span>
-              <span className="text-[8px] font-normal text-stone-500">
-                {(formData.linkedPatterns || []).length} sélectionné{(formData.linkedPatterns || []).length > 1 ? 's' : ''}
-              </span>
-            </label>
-            {loadingRhythms ? (
-              <p className="text-xs text-cordel-wood animate-pulse">Chargement des morceaux...</p>
-            ) : sequencerRhythms.length === 0 ? (
-              <p className="text-xs italic text-encre-noire/60">Aucun morceau trouvé dans le Séquenceur.</p>
-            ) : (
-              <div className="max-h-36 overflow-y-auto border border-encre-noire/20 rounded bg-white p-2 space-y-1 scrollbar-thin">
-                {sequencerRhythms.map(rhythm => {
-                  const isChecked = (formData.linkedPatterns || []).includes(rhythm.id);
-                  return (
-                    <label key={rhythm.id} className="flex items-center gap-2 p-1 hover:bg-black/5 cursor-pointer rounded transition-colors select-none text-xs">
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={(e) => {
-                          const current = formData.linkedPatterns || [];
-                          if (e.target.checked) {
-                            setFormData(prev => ({ ...prev, linkedPatterns: [...current, rhythm.id] }));
-                          } else {
-                            setFormData(prev => ({ ...prev, linkedPatterns: current.filter(id => id !== rhythm.id) }));
-                          }
-                        }}
-                        className="w-3.5 h-3.5 accent-cordel-wood cursor-pointer"
-                      />
-                      <span className="font-bold text-encre-noire truncate">
-                        {rhythm.title || rhythm.name || 'Sans titre'}
-                      </span>
-                    </label>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          {/* Morceaux du répertoire au programme (Fil conducteur) */}
+          <EventRepertoireProgramSelector
+            formData={formData}
+            setFormData={setFormData}
+            groupId={groupId}
+            disabled={saving}
+          />
 
           {/* Section Médias & Captations (Dépôt Framaspace & Restitution YouTube) */}
           <EventMediaFields

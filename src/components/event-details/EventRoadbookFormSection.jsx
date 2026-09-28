@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import EventRoadbookParcoursFields from './EventRoadbookParcoursFields';
 import EventRoadbookContactsFields from './EventRoadbookContactsFields';
+import EventLogisticsKitsSelector from './EventLogisticsKitsSelector';
 
 /**
  * Sous-composant de formulaire pour la Feuille de Route / Roadbook du Jour J.
@@ -10,6 +11,7 @@ import EventRoadbookContactsFields from './EventRoadbookContactsFields';
  * @param {Object} props.editForm - Données du formulaire d'édition d'événement
  * @param {Function} props.setEditForm - Setter du formulaire d'édition
  * @param {Array} props.allUsers - Liste des membres pour contacts et chefs de pupitre
+ * @param {Array<string>} [props.pupitresList] - Noms des vrais pupitres configurés
  * @param {string} [props.groupId] - ID du groupe
  * @param {boolean} [props.saving] - Indicateur de sauvegarde en cours
  */
@@ -17,6 +19,7 @@ export default function EventRoadbookFormSection({
   editForm = {},
   setEditForm,
   allUsers = [],
+  pupitresList = [],
   groupId,
   saving = false
 }) {
@@ -121,48 +124,20 @@ export default function EventRoadbookFormSection({
             />
           </div>
 
-          {/* Logistique Départ & Matériel */}
-          <div className="p-2.5 bg-white/70 dark:bg-stone-800/70 rounded border border-encre-noire/10 flex flex-col gap-1.5">
-            <span className="text-[9px] font-black uppercase text-cordel-wood">🎒 Checklist Logistique Jour J</span>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              <label className="flex items-center gap-1.5 cursor-pointer text-[9px] font-bold">
-                <input
-                  type="checkbox"
-                  checked={Boolean(logistiqueDepart.maquillageRequis)}
-                  onChange={(e) => handleFieldChange('logistiqueDepart', 'maquillageRequis', e.target.checked)}
-                  disabled={saving}
-                  className="rounded text-cordel-wood"
-                />
-                <span>💄 Maquillage</span>
-              </label>
-              <label className="flex items-center gap-1.5 cursor-pointer text-[9px] font-bold">
-                <input
-                  type="checkbox"
-                  checked={Boolean(logistiqueDepart.trousseSecoursBouchons)}
-                  onChange={(e) => handleFieldChange('logistiqueDepart', 'trousseSecoursBouchons', e.target.checked)}
-                  disabled={saving}
-                  className="rounded text-cordel-wood"
-                />
-                <span>🩹 Trousse &amp; Bouchons</span>
-              </label>
-              <label className="flex items-center gap-1.5 cursor-pointer text-[9px] font-bold">
-                <input
-                  type="checkbox"
-                  checked={Boolean(logistiqueDepart.reserveBaguettes)}
-                  onChange={(e) => handleFieldChange('logistiqueDepart', 'reserveBaguettes', e.target.checked)}
-                  disabled={saving}
-                  className="rounded text-cordel-wood"
-                />
-                <span>🥁 Baguettes/Mailloches</span>
-              </label>
-            </div>
-          </div>
+          {/* Logistique Départ & Malles Régie dynamiques */}
+          <EventLogisticsKitsSelector
+            formData={editForm}
+            setFormData={setEditForm}
+            groupId={groupId || editForm.groupId}
+            disabled={saving}
+          />
 
           {/* Contacts Clés Jour J */}
           <EventRoadbookContactsFields
             contactsJourJ={contactsJourJ}
             onChange={(field, val) => handleFieldChange('contactsJourJ', field, val)}
             allUsers={allUsers}
+            pupitresList={pupitresList}
             disabled={saving}
           />
         </div>

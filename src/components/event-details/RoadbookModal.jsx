@@ -46,16 +46,16 @@ export default function RoadbookModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="roadbook-modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/70 backdrop-blur-sm overflow-y-auto"
     >
-      {/* Conteneur principal écran */}
-      <div className="print:hidden relative w-full max-w-3xl max-h-[90vh] flex flex-col bg-[var(--color-cordel-papier)] text-[var(--color-cordel-encre)] rounded-xl border-2 border-[var(--theme-border-color)] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      {/* Conteneur principal écran avec fond crème opaque Cordel */}
+      <div className="print:hidden relative w-full max-w-3xl max-h-[90vh] flex flex-col bg-[#f4ecd8] dark:bg-[#1a1a1a] text-encre-noire rounded-xl border-2 border-encre-noire shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         {/* Barre d'outils / En-tête */}
-        <div className="flex items-center justify-between px-4 py-3 border-b-2 border-[var(--theme-border-color)] bg-[var(--color-cordel-papier-card)]">
+        <div className="flex items-center justify-between px-4 py-3 border-b-2 border-encre-noire bg-[#e7d5c1] dark:bg-[#252525]">
           <div className="flex items-center gap-2">
             <span className="text-xl">📄</span>
             <div>
-              <h2 id="roadbook-modal-title" className="font-bold text-base sm:text-lg text-[var(--color-cordel-encre)] m-0 leading-tight">
+              <h2 id="roadbook-modal-title" className="font-bold text-base sm:text-lg text-encre-noire m-0 leading-tight">
                 {t('roadbook.title') || 'Feuille de Route'}
               </h2>
               <span className="text-xs text-[var(--color-cordel-marron)] truncate block max-w-[200px] sm:max-w-md">
@@ -109,14 +109,14 @@ export default function RoadbookModal({
         </div>
 
         {/* Pied de page modale */}
-        <div className="px-4 py-2.5 border-t border-[var(--theme-border-color)] bg-[var(--color-cordel-papier-card)] flex justify-between items-center text-xs text-[var(--color-cordel-marron)]">
-          <span className="truncate">
+        <div className="px-4 py-2.5 border-t-2 border-encre-noire bg-[#e7d5c1] dark:bg-[#252525] flex justify-between items-center text-xs text-cordel-wood dark:text-amber-400">
+          <span className="truncate font-semibold">
             📅 {event.date || 'Date à définir'} • {event.lieu || 'Lieu à définir'}
           </span>
           <button
             type="button"
             onClick={onClose}
-            className="px-3 py-1 bg-neutral-200 hover:bg-neutral-300 text-neutral-800 rounded font-semibold text-xs"
+            className="px-3 py-1 bg-white/90 dark:bg-stone-700 hover:bg-white text-encre-noire border border-encre-noire/30 rounded font-bold text-xs cursor-pointer shadow-xs"
           >
             Fermer
           </button>

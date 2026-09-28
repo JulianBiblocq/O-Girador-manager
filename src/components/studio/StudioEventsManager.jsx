@@ -3,6 +3,7 @@ import { collection, query, where, onSnapshot, doc, updateDoc } from 'firebase/f
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import EventsDataGrid from './EventsDataGrid';
+import BatchRehearsalModal from '../agenda/BatchRehearsalModal';
 import { useTranslation } from '../LanguageContext';
 import { isPastEvent } from '../../utils/dateUtils';
 
@@ -18,6 +19,9 @@ export default function StudioEventsManager({ groupId, onBack }) {
   const [lastNotification, setLastNotification] = useState(null);
   const [lieuxImportants, setLieuxImportants] = useState([]);
   const [defaultLocationsByEventType, setDefaultLocationsByEventType] = useState({});
+  const [adresseLocal, setAdresseLocal] = useState('');
+  const [saisonDebutMois, setSaisonDebutMois] = useState(9);
+  const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
 
   // Real-time listener for events in the group
   useEffect(() => {
@@ -51,6 +55,8 @@ export default function StudioEventsManager({ groupId, onBack }) {
         const data = docSnap.data();
         setLieuxImportants(Array.isArray(data.lieuxImportants) ? data.lieuxImportants : []);
         setDefaultLocationsByEventType(data.defaultLocationsByEventType && typeof data.defaultLocationsByEventType === 'object' ? data.defaultLocationsByEventType : {});
+        setAdresseLocal(data.adresseLocal || '');
+        if (data.saisonDebutMois !== undefined) setSaisonDebutMois(Number(data.saisonDebutMois));
       }
     });
 
@@ -174,6 +180,15 @@ export default function StudioEventsManager({ groupId, onBack }) {
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-emerald-100 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700/60 font-bold">
               🔒 Validation: {countValidation}
             </span>
+            <button
+              type="button"
+              onClick={() => setIsBatchModalOpen(true)}
+              className="px-2.5 py-1 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 border-encre-noire bg-amber-200 hover:bg-amber-300 text-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none flex items-center gap-1.5 cursor-pointer transition-all ml-1"
+              title="⚡ Planifier une série de répétitions pour la saison"
+            >
+              <span>⚡</span>
+              <span>Planifier une série</span>
+            </button>
           </div>
         </div>
 
@@ -293,6 +308,19 @@ export default function StudioEventsManager({ groupId, onBack }) {
           updatingField={updatingField}
           lieuxImportants={lieuxImportants}
           defaultLocationsByEventType={defaultLocationsByEventType}
+        />
+      )}
+
+      {/* Modale de planification de répétitions groupées */}
+      {isBatchModalOpen && (
+        <BatchRehearsalModal
+          isOpen={isBatchModalOpen}
+          onClose={() => setIsBatchModalOpen(false)}
+          groupId={groupId}
+          lieuxImportants={lieuxImportants}
+          defaultLocationsByEventType={defaultLocationsByEventType}
+          adresseLocal={adresseLocal}
+          saisonDebutMois={saisonDebutMois}
         />
       )}
     </div>

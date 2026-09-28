@@ -27,7 +27,8 @@ export default function EventCreateForm({
   eventTypeConfigs = {},
   t,
   groupId,
-  defaultDropUrl = ''
+  defaultDropUrl = '',
+  pupitresList = []
 }) {
   const translate = (key, fallback) => {
     if (!t) return fallback;
@@ -87,6 +88,7 @@ export default function EventCreateForm({
           createConfig={createConfig}
           groupId={groupId}
           defaultDropUrl={defaultDropUrl}
+          pupitresList={pupitresList}
           t={t}
         />
 

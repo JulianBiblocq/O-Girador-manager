@@ -63,7 +63,7 @@ export function useEventSetlist(event) {
   const handleRemoveMorceau = async (morceauId) => {
     setUpdatingSetlist(true);
     try {
-      const updatedSetlist = setlist.filter(m => m.id !== morceauId);
+      const updatedSetlist = setlist.filter(m => (m.id || m.pieceId) !== morceauId && m.pieceId !== morceauId);
       const eventRef = doc(db, 'events', event.id);
       await updateDoc(eventRef, {
         setlist: updatedSetlist
@@ -115,6 +115,43 @@ export function useEventSetlist(event) {
     }
   };
 
+  const handleAddRepertoirePiece = async (piece, customNotes = '') => {
+    if (!piece || !event?.id) return;
+    setUpdatingSetlist(true);
+    try {
+      const newItem = {
+        id: piece.id || `morceau_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+        pieceId: piece.id || piece.pieceId,
+        repertoireId: piece.id || piece.repertoireId || null,
+        titre: (piece.titre || 'Morceau sans titre').trim(),
+        notes: (customNotes || piece.notes || '').trim(),
+        sequenceurId: piece.sequenceurId || null,
+        sequenceurType: piece.sequenceurType || null,
+        sequenceurFileUrl: piece.sequenceurFileUrl || piece.jsonUrl || null,
+        jsonUrl: piece.sequenceurFileUrl || piece.jsonUrl || null,
+        audioUrl: piece.audioUrl || null,
+        toadaDocId: piece.toadaDocId || null,
+        cultureDocId: piece.cultureDocId || (Array.isArray(piece.cultureDocIds) && piece.cultureDocIds.length > 0 ? piece.cultureDocIds[0] : null) || null,
+        cultureDocIds: Array.isArray(piece.cultureDocIds) ? piece.cultureDocIds : (piece.cultureDocId ? [piece.cultureDocId] : []),
+        dancadorChoreoId: piece.dancadorChoreoId || null,
+        videos: Array.isArray(piece.videos) ? piece.videos : [],
+        signalIds: Array.isArray(piece.signalIds) ? piece.signalIds : []
+      };
+
+      const updatedSetlist = [...setlist, newItem];
+      const eventRef = doc(db, 'events', event.id);
+      await updateDoc(eventRef, {
+        setlist: updatedSetlist
+      });
+      setSetlist(updatedSetlist);
+    } catch (err) {
+      console.error("useEventSetlist - Erreur handleAddRepertoirePiece :", err);
+      alert("Erreur lors de l'ajout du morceau du répertoire.");
+    } finally {
+      setUpdatingSetlist(false);
+    }
+  };
+
   return {
     setlist,
     setSetlist,
@@ -130,6 +167,7 @@ export function useEventSetlist(event) {
     setNewMorceauNotes,
     updatingSetlist,
     handleAddMorceau,
+    handleAddRepertoirePiece,
     handleRemoveMorceau,
     handleAddDancadorChoreo,
     handleRemoveDancadorChoreo,

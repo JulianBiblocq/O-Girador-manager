@@ -22,6 +22,7 @@ import {
 } from '../utils/seasonUtils';
 import AgendaTemporalTabs from './agenda/AgendaTemporalTabs';
 import EventThumbnail from './agenda/EventThumbnail';
+import BatchRehearsalModal from './agenda/BatchRehearsalModal';
 import { canManageEvents } from '../utils/permissionUtils';
 import { resolveEffectiveUserTags } from '../utils/tagUtils';
 import { formatLocationShort } from '../utils/locationUtils';
@@ -67,6 +68,7 @@ export default function WidgetAgenda({
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
+  const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const [localSelectedEvent, setLocalSelectedEvent] = useState(null);
@@ -492,6 +494,7 @@ export default function WidgetAgenda({
         ? Boolean(typeCfg.enableVideoDrop)
         : ['atelier', 'repetition', 'stage'].includes(defaultType),
       description: '',
+      setlist: [],
       linkedPatterns: [],
       specialiteAtelier: 'general',
       programmeFabrication: null
@@ -608,6 +611,24 @@ export default function WidgetAgenda({
           latitude: formData.latitude ? Number(formData.latitude) : null,
           longitude: formData.longitude ? Number(formData.longitude) : null,
           linkedPatterns: formData.linkedPatterns || [],
+          setlist: (formData.setlist || []).map((item) => ({
+            id: item.id || item.pieceId,
+            pieceId: item.pieceId || item.id,
+            repertoireId: item.repertoireId || item.pieceId || item.id,
+            titre: (item.titre || '').trim(),
+            notes: (item.notes || '').trim(),
+            sequenceurId: item.sequenceurId || null,
+            sequenceurType: item.sequenceurType || null,
+            sequenceurFileUrl: item.sequenceurFileUrl || item.jsonUrl || null,
+            jsonUrl: item.jsonUrl || item.sequenceurFileUrl || null,
+            audioUrl: item.audioUrl || null,
+            toadaDocId: item.toadaDocId || null,
+            cultureDocId: item.cultureDocId || null,
+            cultureDocIds: Array.isArray(item.cultureDocIds) ? item.cultureDocIds : (item.cultureDocId ? [item.cultureDocId] : []),
+            dancadorChoreoId: item.dancadorChoreoId || null,
+            videos: Array.isArray(item.videos) ? item.videos : [],
+            signalIds: Array.isArray(item.signalIds) ? item.signalIds : []
+          })),
           specialiteAtelier: (formData.type === 'atelier' || formData.type === 'stage') ? (formData.specialiteAtelier || 'general') : null,
           programmeFabrication: (formData.type === 'atelier' || formData.type === 'stage') && formData.specialiteAtelier === 'fabrication' ? (formData.programmeFabrication || null) : null
         });
@@ -821,13 +842,25 @@ export default function WidgetAgenda({
           )}
 
           {!loading && isAuthorized && !isAdding && (
-            <CordelButton 
-              variant="default" 
-              onClick={handleOpenForm} 
-              className="text-xs px-3 py-1.5 uppercase tracking-widest font-black"
-            >
-              {t('widgetAgenda.addBtn') || "+ Ajouter"}
-            </CordelButton>
+            <div className="flex items-center gap-2">
+              <CordelButton 
+                variant="default" 
+                onClick={handleOpenForm} 
+                className="text-xs px-3 py-1.5 uppercase tracking-widest font-black"
+              >
+                {t('widgetAgenda.addBtn') || "+ Ajouter"}
+              </CordelButton>
+              <button
+                type="button"
+                onClick={() => setIsBatchModalOpen(true)}
+                className="px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 border-encre-noire bg-amber-200 hover:bg-amber-300 text-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none flex items-center gap-1.5 cursor-pointer transition-all shrink-0"
+                title="⚡ Planifier une série de répétitions pour la saison"
+              >
+                <span>⚡</span>
+                <span className="hidden sm:inline">{t('widgetAgenda.batchRehearsalBtn') || "Planifier une série de répétitions"}</span>
+                <span className="sm:hidden">{t('widgetAgenda.batchRehearsalBtnShort') || "Série répétitions"}</span>
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -1203,6 +1236,19 @@ export default function WidgetAgenda({
 
           </>
         )
+      )}
+
+      {/* Modale de planification de répétitions groupées */}
+      {isBatchModalOpen && (
+        <BatchRehearsalModal
+          isOpen={isBatchModalOpen}
+          onClose={() => setIsBatchModalOpen(false)}
+          groupId={groupId}
+          lieuxImportants={lieuxImportants}
+          defaultLocationsByEventType={defaultLocationsByEventType}
+          adresseLocal={adresseLocal}
+          saisonDebutMois={saisonDebutMois}
+        />
       )}
     </div>
   );

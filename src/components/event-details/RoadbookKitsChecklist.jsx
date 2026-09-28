@@ -3,12 +3,7 @@ import { useCollectiveKits, calculateKitStatus } from '../../hooks/useCollective
 
 /**
  * Section Matériel & Checklist de la Feuille de Route interactive.
- * Affiche les effectifs par pupitre et le statut en temps réel des mallettes collectives régie.
- *
- * @param {Object} props
- * @param {Object} props.event - Événement
- * @param {Object} props.logistique - Bloc logistiqueDepart
- * @param {Object} props.presentsByInstrument - Décompte des fûts
+ * Affiche les effectifs par pupitre et le statut en temps réel des malles régie sélectionnées.
  */
 export default function RoadbookKitsChecklist({
   event = {},
@@ -18,40 +13,52 @@ export default function RoadbookKitsChecklist({
   const { kits } = useCollectiveKits(event.groupId);
   const [openMaquillage, setOpenMaquillage] = useState(false);
   const [openSecours, setOpenSecours] = useState(false);
+  const [openCustomKits, setOpenCustomKits] = useState({});
 
-  const kitMaquillage = kits.find(
-    (k) => k.type === 'maquillage' || (k.nom || '').toLowerCase().includes('maquillage')
+  // Liste consolidée des malles sélectionnées pour cette sortie
+  const selectedMalles = Array.isArray(event.logistiqueMalles) && event.logistiqueMalles.length > 0
+    ? event.logistiqueMalles
+    : [
+        logistique.maquillageRequis ? 'Mallette Maquillage' : null,
+        logistique.trousseSecoursBouchons ? 'Trousse de secours & Bouchons' : null,
+        logistique.reserveBaguettes ? 'Réserve de mailloches & baguettes' : null,
+        ...(Array.isArray(event.mallesSpecifiques) ? event.mallesSpecifiques : [])
+      ].filter(Boolean);
+
+  const maquillageRequis = Boolean(
+    logistique.maquillageRequis || selectedMalles.some((m) => m.toLowerCase().includes('maquillage'))
   );
-  const kitSecours = kits.find(
-    (k) => k.type === 'secours' || (k.nom || '').toLowerCase().includes('secours')
+  const trousseSecoursBouchons = Boolean(
+    logistique.trousseSecoursBouchons || selectedMalles.some((m) => m.toLowerCase().includes('secours') || m.toLowerCase().includes('pharmacie'))
+  );
+  const reserveBaguettes = Boolean(
+    logistique.reserveBaguettes || selectedMalles.some((m) => m.toLowerCase().includes('baguette') || m.toLowerCase().includes('mailloche'))
   );
 
-  const statusMaquillage = kitMaquillage ? calculateKitStatus(kitMaquillage) : null;
-  const statusSecours = kitSecours ? calculateKitStatus(kitSecours) : null;
+  const kitMaquillage = kits.find((k) => k.type === 'maquillage' || (k.nom || '').toLowerCase().includes('maquillage'));
+  const kitSecours = kits.find((k) => k.type === 'secours' || (k.nom || '').toLowerCase().includes('secours'));
+
+  // Autres malles régie ou consignes ponctuelles
+  const otherMalles = selectedMalles.filter((m) => {
+    const l = m.toLowerCase();
+    return !l.includes('maquillage') && !l.includes('secours') && !l.includes('pharmacie') && !l.includes('baguette') && !l.includes('mailloche');
+  });
 
   const renderBadge = (statusObj) => {
     if (!statusObj) return <span className="text-[9px] px-1.5 py-0.5 rounded bg-neutral-200 text-neutral-600 font-bold">À inventorier</span>;
-    if (statusObj.color === 'green') {
-      return <span className="text-[9px] px-2 py-0.5 rounded font-black uppercase tracking-wider bg-emerald-100 text-emerald-900 border border-emerald-400">✅ Prête (OK)</span>;
-    }
-    if (statusObj.color === 'red') {
-      return <span className="text-[9px] px-2 py-0.5 rounded font-black uppercase tracking-wider bg-red-100 text-red-900 border border-red-400">🚨 {statusObj.label}</span>;
-    }
-    return <span className="text-[9px] px-2 py-0.5 rounded font-black uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-400">⚠️ {statusObj.label}</span>;
+    if (statusObj.color === 'green') return <span className="text-[9px] px-2 py-0.5 rounded font-black uppercase bg-emerald-100 text-emerald-900 border border-emerald-400">✅ Prête</span>;
+    if (statusObj.color === 'red') return <span className="text-[9px] px-2 py-0.5 rounded font-black uppercase bg-red-100 text-red-900 border border-red-400">🚨 {statusObj.label}</span>;
+    return <span className="text-[9px] px-2 py-0.5 rounded font-black uppercase bg-amber-100 text-amber-900 border border-amber-400">⚠️ {statusObj.label}</span>;
   };
 
   const renderKitItems = (kit) => {
     const items = kit?.items || [];
-    if (items.length === 0) {
-      return <p className="text-[10px] italic text-neutral-500 pl-2">Aucun article enregistré dans cette trousse.</p>;
-    }
+    if (items.length === 0) return <p className="text-[10px] italic text-neutral-500 pl-2">Aucun article enregistré.</p>;
     return (
       <div className="mt-1.5 p-2 bg-white/90 rounded border border-neutral-300 space-y-1 text-[11px]">
         {items.map((it) => (
           <div key={it.id} className="flex items-center justify-between gap-1 border-b border-dashed border-neutral-200 pb-0.5 last:border-none">
-            <span className="truncate">
-              • {it.nom}
-            </span>
+            <span className="truncate">• {it.nom}</span>
             <span className="font-bold shrink-0 ml-1 text-neutral-700">
               {it.quantiteActuelle}/{it.quantiteCible}
               {it.statut === 'a_racheter' && <span className="ml-1 text-[8px] bg-red-100 text-red-800 px-1 rounded font-black">À racheter</span>}
@@ -69,7 +76,7 @@ export default function RoadbookKitsChecklist({
         <span className="text-[10px] font-normal text-neutral-500 lowercase">contrôle régie</span>
       </h3>
 
-      {/* Effectifs par pupitre */}
+      {/* Effectifs présents par pupitre */}
       <div className="mb-2.5">
         <span className="text-[10px] uppercase font-bold text-[var(--color-cordel-marron,#8b5e34)] block mb-1">
           Effectifs présents par pupitre :
@@ -86,21 +93,16 @@ export default function RoadbookKitsChecklist({
       {/* Trousses & Mallettes collectives connectées */}
       <div className="space-y-2 pt-2 border-t border-[var(--theme-border-color,#181716)] text-xs">
         {/* Mallette Maquillage */}
-        {logistique.maquillageRequis && (
+        {maquillageRequis && (
           <div className="p-2 rounded bg-white/70 border border-neutral-300 transition-all">
-            <div
-              onClick={() => setOpenMaquillage(!openMaquillage)}
-              className="flex items-center justify-between gap-2 cursor-pointer select-none"
-            >
+            <div onClick={() => setOpenMaquillage(!openMaquillage)} className="flex items-center justify-between gap-2 cursor-pointer select-none">
               <div className="flex items-center gap-1.5 font-bold text-[var(--color-cordel-encre,#181716)]">
-                <span>💄</span>
+                <span>🧰</span>
                 <span>Mallette Maquillage</span>
-                <span className="text-[10px] text-neutral-500 font-normal">
-                  ({(kitMaquillage?.items || []).length} articles)
-                </span>
+                <span className="text-[10px] text-neutral-500 font-normal">({(kitMaquillage?.items || []).length} articles)</span>
               </div>
               <div className="flex items-center gap-2">
-                {renderBadge(statusMaquillage)}
+                {renderBadge(kitMaquillage ? calculateKitStatus(kitMaquillage) : null)}
                 <span className="text-xs text-neutral-500">{openMaquillage ? '▲' : '▼'}</span>
               </div>
             </div>
@@ -109,21 +111,16 @@ export default function RoadbookKitsChecklist({
         )}
 
         {/* Trousse Secours & Bouchons */}
-        {logistique.trousseSecoursBouchons && (
+        {trousseSecoursBouchons && (
           <div className="p-2 rounded bg-white/70 border border-neutral-300 transition-all">
-            <div
-              onClick={() => setOpenSecours(!openSecours)}
-              className="flex items-center justify-between gap-2 cursor-pointer select-none"
-            >
+            <div onClick={() => setOpenSecours(!openSecours)} className="flex items-center justify-between gap-2 cursor-pointer select-none">
               <div className="flex items-center gap-1.5 font-bold text-[var(--color-cordel-encre,#181716)]">
-                <span>🩹</span>
+                <span>🧰</span>
                 <span>Trousse de secours &amp; Bouchons</span>
-                <span className="text-[10px] text-neutral-500 font-normal">
-                  ({(kitSecours?.items || []).length} articles)
-                </span>
+                <span className="text-[10px] text-neutral-500 font-normal">({(kitSecours?.items || []).length} articles)</span>
               </div>
               <div className="flex items-center gap-2">
-                {renderBadge(statusSecours)}
+                {renderBadge(kitSecours ? calculateKitStatus(kitSecours) : null)}
                 <span className="text-xs text-neutral-500">{openSecours ? '▲' : '▼'}</span>
               </div>
             </div>
@@ -132,20 +129,55 @@ export default function RoadbookKitsChecklist({
         )}
 
         {/* Réserve Mailloches / Baguettes */}
-        {logistique.reserveBaguettes && (
+        {reserveBaguettes && (
           <div className="p-2 rounded bg-white/70 border border-neutral-300 flex items-center justify-between">
             <div className="flex items-center gap-1.5 font-bold text-[var(--color-cordel-encre,#181716)]">
-              <span>🥁</span>
+              <span>🧰</span>
               <span>Réserve de mailloches &amp; baguettes</span>
             </div>
-            <span className="text-[9px] px-2 py-0.5 rounded font-black uppercase tracking-wider bg-emerald-100 text-emerald-900 border border-emerald-400">
+            <span className="text-[9px] px-2 py-0.5 rounded font-black uppercase bg-emerald-100 text-emerald-900 border border-emerald-400">
               ✅ Prévue
             </span>
           </div>
         )}
 
-        {!logistique.maquillageRequis && !logistique.trousseSecoursBouchons && !logistique.reserveBaguettes && (
-          <p className="text-[11px] italic text-neutral-500">Aucune mallette ni consigne logistique spécifique requise pour ce rendez-vous.</p>
+        {/* Autres Malles Régie et Consignes Ponctuelles */}
+        {otherMalles.map((malleName) => {
+          const matchedKit = kits.find((k) => k.nom === malleName || k.id === malleName);
+          const status = matchedKit ? calculateKitStatus(matchedKit) : null;
+          const isOpen = Boolean(openCustomKits[malleName]);
+
+          return (
+            <div key={malleName} className="p-2 rounded bg-white/70 border border-neutral-300 transition-all">
+              <div
+                onClick={() => matchedKit && setOpenCustomKits((prev) => ({ ...prev, [malleName]: !prev[malleName] }))}
+                className={`flex items-center justify-between gap-2 select-none ${matchedKit ? 'cursor-pointer' : ''}`}
+              >
+                <div className="flex items-center gap-1.5 font-bold text-[var(--color-cordel-encre,#181716)]">
+                  <span>🧰</span>
+                  <span>{malleName}</span>
+                  {matchedKit && (
+                    <span className="text-[10px] text-neutral-500 font-normal">
+                      ({(matchedKit.items || []).length} articles)
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {matchedKit ? renderBadge(status) : (
+                    <span className="text-[9px] px-2 py-0.5 rounded font-bold bg-stone-100 text-stone-800 border border-stone-300">
+                      Consigne ponctuelle
+                    </span>
+                  )}
+                  {matchedKit && <span className="text-xs text-neutral-500">{isOpen ? '▲' : '▼'}</span>}
+                </div>
+              </div>
+              {isOpen && matchedKit && renderKitItems(matchedKit)}
+            </div>
+          );
+        })}
+
+        {selectedMalles.length === 0 && !maquillageRequis && !trousseSecoursBouchons && !reserveBaguettes && (
+          <p className="text-[11px] italic text-neutral-500">Aucune malle ni consigne logistique spécifique requise pour ce rendez-vous.</p>
         )}
       </div>
     </div>

@@ -400,6 +400,8 @@ export const pt = {
   widgetAgenda: {
     title: "Agenda",
     addBtn: "+ Adicionar",
+    batchRehearsalBtn: "Agendar série de ensaios",
+    batchRehearsalBtnShort: "Série de ensaios",
     viewCards: "Cartões",
     viewCardsTooltip: "Visualização em cartões",
     viewList: "Lista",

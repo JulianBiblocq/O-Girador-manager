@@ -27,6 +27,7 @@ export default function TabProgram({
   handleRemoveMorceau,
   assocSequenceurUrl,
   handleAddMorceau,
+  handleAddRepertoirePiece,
   newMorceauTitre,
   setNewMorceauTitre,
   selectedCatalogRhythmUrl,
@@ -93,6 +94,7 @@ export default function TabProgram({
             handleRemoveMorceau={handleRemoveMorceau}
             assocSequenceurUrl={assocSequenceurUrl}
             handleAddMorceau={handleAddMorceau}
+            handleAddRepertoirePiece={handleAddRepertoirePiece}
             newMorceauTitre={newMorceauTitre}
             setNewMorceauTitre={setNewMorceauTitre}
             selectedCatalogRhythmUrl={selectedCatalogRhythmUrl}

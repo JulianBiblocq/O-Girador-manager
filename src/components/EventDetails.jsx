@@ -13,7 +13,7 @@ import { useEventSetlist } from '../hooks/useEventSetlist';
 import useConfirm from '../hooks/useConfirm';
 
 import { DEFAULT_CUSTOM_CATEGORIES, resolveCategory, isUserCategoryMatchingEvent } from '../utils/categoryUtils';
-import { resolveEffectiveUserTags, findTagObject, getTagId } from '../utils/tagUtils';
+import { resolveEffectiveUserTags, findTagObject, getTagId, computePupitresList, resolvePupitreForInstrument } from '../utils/tagUtils';
 import { canManageEvents } from '../utils/permissionUtils';
 import EventEditForm from './event-details/EventEditForm';
 import EventPollSection from './event-details/EventPollSection';
@@ -103,6 +103,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
       ? Boolean(evt.publierSurVaral) 
       : ['prestation', 'concert', 'spectacle', 'festival'].includes(evt?.type),
     description: evt?.description || '',
+    setlist: evt?.setlist || [],
     linkedPatterns: evt?.linkedPatterns || [],
     specialiteAtelier: evt?.specialiteAtelier || 'general',
     programmeFabrication: evt?.programmeFabrication || null,
@@ -128,6 +129,9 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
       trousseSecoursBouchons: false,
       reserveBaguettes: false
     },
+    logistiqueMalles: Array.isArray(evt?.logistiqueMalles) ? evt.logistiqueMalles : [],
+    mallesSpecifiques: Array.isArray(evt?.mallesSpecifiques) ? evt.mallesSpecifiques : [],
+    quotasPupitres: evt?.quotasPupitres || {},
     contactsJourJ: evt?.contactsJourJ || {
       referentOrgaNom: '',
       referentOrgaTel: '',
@@ -153,6 +157,18 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
   const [defaultLocationsByEventType, setDefaultLocationsByEventType] = useState({});
   const [instrumentsDisponibles, setInstrumentsDisponibles] = useState(["Alfaia", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"]);
   const [linkedInstruments, setLinkedInstruments] = useState([]);
+
+  // Calcul dynamique des vrais pupitres configurés pour l'association
+  const pupitresList = useMemo(() => {
+    const base = (Array.isArray(instrumentsDisponibles) && instrumentsDisponibles.length > 0)
+      ? instrumentsDisponibles
+      : ["Alfaia", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant"];
+    const list = computePupitresList(base, linkedInstruments);
+    if (!list.some(p => p.toLowerCase() === 'danse')) {
+      list.push('Danse');
+    }
+    return list;
+  }, [instrumentsDisponibles, linkedInstruments]);
   const [enableCarpoolReimbursement, setEnableCarpoolReimbursement] = useState(true);
   const [reimbursementRule, setReimbursementRule] = useState('full_cars_only');
   const [lienGoogleFormRecoltePhotos, setLienGoogleFormRecoltePhotos] = useState('');
@@ -183,6 +199,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     setNewMorceauNotes,
     updatingSetlist,
     handleAddMorceau,
+    handleAddRepertoirePiece,
     handleRemoveMorceau,
     handleAddDancadorChoreo,
     handleRemoveDancadorChoreo,
@@ -979,12 +996,33 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
         latitude: editForm.latitude ? Number(editForm.latitude) : null,
         longitude: editForm.longitude ? Number(editForm.longitude) : null,
         linkedPatterns: editForm.linkedPatterns || [],
+        setlist: (editForm.setlist || []).map((item) => ({
+          id: item.id || item.pieceId,
+          pieceId: item.pieceId || item.id,
+          repertoireId: item.repertoireId || item.pieceId || item.id,
+          titre: (item.titre || '').trim(),
+          notes: (item.notes || '').trim(),
+          sequenceurId: item.sequenceurId || null,
+          sequenceurType: item.sequenceurType || null,
+          sequenceurFileUrl: item.sequenceurFileUrl || item.jsonUrl || null,
+          jsonUrl: item.jsonUrl || item.sequenceurFileUrl || null,
+          audioUrl: item.audioUrl || null,
+          toadaDocId: item.toadaDocId || null,
+          cultureDocId: item.cultureDocId || null,
+          cultureDocIds: Array.isArray(item.cultureDocIds) ? item.cultureDocIds : (item.cultureDocId ? [item.cultureDocId] : []),
+          dancadorChoreoId: item.dancadorChoreoId || null,
+          videos: Array.isArray(item.videos) ? item.videos : [],
+          signalIds: Array.isArray(item.signalIds) ? item.signalIds : []
+        })),
         specialiteAtelier: (editForm.type === 'atelier' || editForm.type === 'stage') ? (editForm.specialiteAtelier || 'general') : null,
         programmeFabrication: (editForm.type === 'atelier' || editForm.type === 'stage') && editForm.specialiteAtelier === 'fabrication' ? (editForm.programmeFabrication || null) : null,
         formatJeu: editForm.formatJeu || 'scene',
         parcours: editForm.parcours || {},
         hebergement: editForm.hebergement || {},
         logistiqueDepart: editForm.logistiqueDepart || {},
+        logistiqueMalles: Array.isArray(editForm.logistiqueMalles) ? editForm.logistiqueMalles : [],
+        mallesSpecifiques: Array.isArray(editForm.mallesSpecifiques) ? editForm.mallesSpecifiques : [],
+        quotasPupitres: editForm.quotasPupitres || {},
         contactsJourJ: editForm.contactsJourJ || {}
       });
 
@@ -1064,44 +1102,47 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
     }
   };
 
-  // Regrouper les présents par pupitre pour la liste de présence
+  // Regrouper les présents par pupitre unifié pour la liste de présence
   const presentsByInstrument = useMemo(() => {
     const grouped = {};
     if (targetEvent.inscriptions && targetEvent.inscriptions.length > 0) {
       targetEvent.inscriptions.forEach((ins) => {
         if (ins.status === 'present') {
           const userInfo = resolveUserInfo(ins.userId, ins.userName);
-          const inst = ins.instrumentChoisi || userInfo.instrument || 'Autre';
-          if (!grouped[inst]) {
-            grouped[inst] = [];
+          const rawInst = ins.instrumentChoisi || userInfo.instrument || 'Autre';
+          const resolvedPupitre = resolvePupitreForInstrument(rawInst, pupitresList, linkedInstruments) || rawInst;
+          if (!grouped[resolvedPupitre]) {
+            grouped[resolvedPupitre] = [];
           }
-          grouped[inst].push({
+          grouped[resolvedPupitre].push({
             ...userInfo,
+            instrumentChoisi: rawInst,
             isInvite: false
           });
         }
       });
     }
 
-    // Ajouter les invités externes à la liste groupée
+    // Ajouter les invités externes à la liste groupée par pupitre
     if (targetEvent.invitesExternes && targetEvent.invitesExternes.length > 0) {
       targetEvent.invitesExternes.forEach((invite) => {
-        const inst = invite.instrument || invite.fonction || 'Autre';
-        if (!grouped[inst]) {
-          grouped[inst] = [];
+        const rawInst = invite.instrument || invite.fonction || 'Autre';
+        const resolvedPupitre = resolvePupitreForInstrument(rawInst, pupitresList, linkedInstruments) || rawInst;
+        if (!grouped[resolvedPupitre]) {
+          grouped[resolvedPupitre] = [];
         }
-        grouped[inst].push({
+        grouped[resolvedPupitre].push({
           id: invite.id,
           prenom: invite.nom,
           nom: '',
-          instrument: inst,
+          instrument: rawInst,
           photoURL: null,
           isInvite: true
         });
       });
     }
     return grouped;
-  }, [targetEvent.inscriptions, targetEvent.invitesExternes, resolveUserInfo]);
+  }, [targetEvent.inscriptions, targetEvent.invitesExternes, resolveUserInfo, pupitresList, linkedInstruments]);
 
   // Extract convoi drivers and individual drivers
   const convoiDrivers = [];
@@ -1671,6 +1712,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
           defaultDropUrl={defaultDropUrl}
           t={t}
           groupId={event.groupId}
+          pupitresList={pupitresList}
         />
       ) : (
         <>
@@ -1942,6 +1984,7 @@ export default function EventDetails({ event, user, profileData, onNavigateToVie
                 handleRemoveMorceau={handleRemoveMorceau}
                 assocSequenceurUrl={assocSequenceurUrl}
                 handleAddMorceau={handleAddMorceau}
+                handleAddRepertoirePiece={handleAddRepertoirePiece}
                 newMorceauTitre={newMorceauTitre}
                 setNewMorceauTitre={setNewMorceauTitre}
                 selectedCatalogRhythmUrl={selectedCatalogRhythmUrl}

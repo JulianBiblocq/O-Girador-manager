@@ -159,6 +159,7 @@ export default function GigEventCreateModal({
         includesDance: false,
         enableCarpool: true,
         description: '', // Laissé sciemment vide pour confidentialité des contacts
+        setlist: [],
         status: 'a_confirmer', // Statut positionné par défaut sur "À confirmer"
         isOption: true,
         isPublic: false // Décoché par défaut pour rester interne
@@ -217,6 +218,24 @@ export default function GigEventCreateModal({
         budgetDepenses: Array.isArray(formData.budgetDepenses) ? formData.budgetDepenses : [],
         dateLimiteInscription: formData.dateLimiteInscription || '',
         description: formData.description?.trim() || '',
+        setlist: (formData.setlist || []).map((item) => ({
+          id: item.id || item.pieceId,
+          pieceId: item.pieceId || item.id,
+          repertoireId: item.repertoireId || item.pieceId || item.id,
+          titre: (item.titre || '').trim(),
+          notes: (item.notes || '').trim(),
+          sequenceurId: item.sequenceurId || null,
+          sequenceurType: item.sequenceurType || null,
+          sequenceurFileUrl: item.sequenceurFileUrl || item.jsonUrl || null,
+          jsonUrl: item.jsonUrl || item.sequenceurFileUrl || null,
+          audioUrl: item.audioUrl || null,
+          toadaDocId: item.toadaDocId || null,
+          cultureDocId: item.cultureDocId || null,
+          cultureDocIds: Array.isArray(item.cultureDocIds) ? item.cultureDocIds : (item.cultureDocId ? [item.cultureDocId] : []),
+          dancadorChoreoId: item.dancadorChoreoId || null,
+          videos: Array.isArray(item.videos) ? item.videos : [],
+          signalIds: Array.isArray(item.signalIds) ? item.signalIds : []
+        })),
         inscriptions: [],
         gigId: gig.id,
         createdFromGigId: gig.id,
@@ -334,6 +353,7 @@ export default function GigEventCreateModal({
               defaultLocationsByEventType={defaultLocationsByEventType}
               eventTypeConfigs={eventTypeConfigs}
               t={t}
+              groupId={gig.groupId || groupId}
             />
           )}
         </div>

@@ -1,15 +1,20 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { collection, onSnapshot } from 'firebase/firestore';
+import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { useSequencerRhythms } from '../../hooks/useSequencerRhythms';
 import { useDancadorChoreographies, useDancadorSteps } from '../../hooks/useDancadorData';
 import { useSequencerFirestoreData } from '../../hooks/useSequencerFirestoreData';
+import { useRepertoireVaralDocs } from '../../hooks/useRepertoireVaralDocs';
 import useMestreSignals from '../../hooks/useMestreSignals';
 import RepertoireVideoModal from '../mestre/RepertoireVideoModal';
 import SignalZoomModal from '../mestre/SignalZoomModal';
+import PieceLyricsModal from '../member/PieceLyricsModal';
+import PieceCultureModal from '../member/PieceCultureModal';
 import { buildSequencerUrl } from '../../utils/sequencerUrlUtils';
 import { subscribeGroupTrainings } from '../../services/aisanceService';
-import { resolvePieceTrainings } from '../../utils/repertoireMatcher';
+import { resolvePieceTrainings, buildResolutionDictionaries, resolvePieceLiveTechnicalData } from '../../utils/repertoireMatcher';
 import TrainingCompactCard from '../pedagogy/TrainingCompactCard';
 
 export default function EventRevisionProgram({
@@ -19,6 +24,7 @@ export default function EventRevisionProgram({
   handleRemoveMorceau,
   assocSequenceurUrl,
   handleAddMorceau,
+  handleAddRepertoirePiece,
   newMorceauTitre,
   setNewMorceauTitre,
   selectedCatalogRhythmUrl,
@@ -38,6 +44,41 @@ export default function EventRevisionProgram({
   const [selectedChoreoToAdd, setSelectedChoreoToAdd] = useState('');
   const [activeVideoToWatch, setActiveVideoToWatch] = useState(null);
   const [activeSignalToZoom, setActiveSignalToZoom] = useState(null);
+  const [activeToadaToView, setActiveToadaToView] = useState(null);
+  const [activeCultureToView, setActiveCultureToView] = useState(null);
+
+  // Documents du Varal (Chants & Fiches Culturelles)
+  const { toadasList, toadasMap, cultureDocsList, cultureMap } = useRepertoireVaralDocs(groupId);
+
+  // Morceaux actifs du Répertoire pour ajout direct par l'Admin
+  const [repertoirePieces, setRepertoirePieces] = useState([]);
+  const [loadingRepertoire, setLoadingRepertoire] = useState(false);
+  const [selectedRepertoirePieceId, setSelectedRepertoirePieceId] = useState('');
+
+  useEffect(() => {
+    if (!groupId || !isAuthorized) return;
+    setLoadingRepertoire(true);
+    const colRef = collection(db, 'associations', groupId.trim().toLowerCase(), 'repertoire');
+    const unsub = onSnapshot(colRef, (snap) => {
+      const list = [];
+      snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
+      list.sort((a, b) => (a.titre || '').localeCompare(b.titre || ''));
+      setRepertoirePieces(list);
+      setLoadingRepertoire(false);
+    }, (err) => {
+      console.warn("EventRevisionProgram - Erreur répertoire :", err);
+      setLoadingRepertoire(false);
+    });
+    return () => unsub();
+  }, [groupId, isAuthorized]);
+
+  const activeRepertoirePieces = useMemo(() => {
+    return repertoirePieces.filter((p) => {
+      if (!p) return false;
+      if (p.isArchived || p.archived || p.statutSaison === 'archive') return false;
+      return p.statutSaison === 'saison' || (!p.statutSaison && !p.isArchived && !p.archived);
+    });
+  }, [repertoirePieces]);
 
   // Entraînements du groupe (écoute réactive si non fournis par le parent)
   const [internalTrainingsList, setInternalTrainingsList] = useState([]);
@@ -64,42 +105,58 @@ export default function EventRevisionProgram({
   const { choreographies: allChoreographies, loading: loadingChoreos } = useDancadorChoreographies(groupId);
   const { steps: allSteps, loading: loadingSteps } = useDancadorSteps(groupId);
 
-  // Détermination sémantique de la discipline pour les badges transversaux
-  const getDisciplineBadge = (morceau) => {
-    const type = morceau?.type || '';
-    const lowerTitre = (morceau?.titre || '').toLowerCase();
-    const lowerNotes = (morceau?.notes || '').toLowerCase();
+  // Dictionnaires de résolution instantanée O(1)
+  const resolutionDicts = useMemo(() => {
+    return buildResolutionDictionaries({
+      catalogRhythms: allSequencerRhythms || [],
+      toadasList: toadasList || [],
+      cultureDocsList: cultureDocsList || [],
+      choreographies: allChoreographies || []
+    });
+  }, [allSequencerRhythms, toadasList, cultureDocsList, allChoreographies]);
 
-    if (type === 'danse' || lowerTitre.includes('[danse') || lowerTitre.includes('danse')) {
-      return {
-        label: 'Danse',
-        emoji: '💃',
-        badgeClass: 'bg-pink-100 text-pink-900 border-pink-300 dark:bg-pink-950/40 dark:text-pink-300'
-      };
+  // Détermination sémantique multi-disciplines (Percussion, Chant, Danse, Culture)
+  const getDisciplineBadges = (morceau, resolved) => {
+    const badges = [];
+    const hasDanse = Boolean(morceau.dancadorChoreoId || resolved?.hasChoreography || morceau.type === 'danse');
+    const hasChant = Boolean(morceau.toadaDocId || resolved?.hasToada || morceau.type === 'song');
+    const hasCulture = Boolean(morceau.cultureDocId || (Array.isArray(morceau.cultureDocIds) && morceau.cultureDocIds.length > 0) || resolved?.hasCulture);
+    const hasPercu = Boolean(morceau.sequenceurId || morceau.sequenceurType || morceau.jsonUrl || morceau.sequenceurUrl || resolved?.hasSequencer || (!hasDanse && !hasChant && !hasCulture));
+
+    if (hasPercu) {
+      badges.push({
+        key: 'percu',
+        label: 'Percussion',
+        emoji: '🥁',
+        badgeClass: 'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300'
+      });
     }
-    if (type === 'song' || lowerTitre.includes('[chant') || lowerTitre.includes('toada') || lowerNotes.includes('chant') || lowerNotes.includes('toada')) {
-      return {
+    if (hasChant) {
+      badges.push({
+        key: 'chant',
         label: 'Chant',
         emoji: '🗣️',
         badgeClass: 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300'
-      };
+      });
     }
-    return {
-      label: 'Percussion',
-      emoji: '🥁',
-      badgeClass: 'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300'
-    };
-  };
+    if (hasDanse) {
+      badges.push({
+        key: 'danse',
+        label: 'Danse',
+        emoji: '💃',
+        badgeClass: 'bg-pink-100 text-pink-900 border-pink-300 dark:bg-pink-950/40 dark:text-pink-300'
+      });
+    }
+    if (hasCulture) {
+      badges.push({
+        key: 'culture',
+        label: 'Culture',
+        emoji: '📖',
+        badgeClass: 'bg-blue-100 text-blue-900 border-blue-300 dark:bg-blue-950/40 dark:text-blue-300'
+      });
+    }
 
-  const handleSelectCatalogRhythm = (e) => {
-    const selectedUrl = e.target.value;
-    setSelectedCatalogRhythmUrl(selectedUrl);
-    if (selectedUrl) {
-      const foundRhythm = catalogRhythms.find(r => r.jsonUrl === selectedUrl);
-      if (foundRhythm) {
-        setNewMorceauTitre(foundRhythm.titre);
-      }
-    }
+    return badges;
   };
 
   const submitAddChoreo = (e) => {
@@ -171,29 +228,42 @@ export default function EventRevisionProgram({
               <div className="flex flex-col gap-2.5 mb-4">
                 {/* Liste transversale du Fil Conducteur */}
                 {setlist.map((morceau) => {
-                  const disc = getDisciplineBadge(morceau);
+                  const resolved = resolvePieceLiveTechnicalData(morceau, resolutionDicts) || morceau;
+                  const badges = getDisciplineBadges(morceau, resolved);
+
                   // Résolution propre de l'URL du séquenceur (compatible presets, sections, patterns et legacy jsonUrl)
                   let targetUrl = '';
-                  if (morceau.sequenceurType || morceau.sequenceurId || morceau.jsonUrl || morceau.sequenceurUrl) {
+                  const seqId = morceau.sequenceurId || resolved.sequenceurId;
+                  const seqFileUrl = morceau.jsonUrl || morceau.sequenceurUrl || resolved.sequenceurFileUrl;
+                  const seqType = morceau.sequenceurType || resolved.sequenceurType;
+
+                  if (seqType || seqId || seqFileUrl) {
                     targetUrl = buildSequencerUrl({
-                      sequenceurType: morceau.sequenceurType,
-                      sequenceurId: morceau.sequenceurId,
-                      sequenceurFileUrl: morceau.jsonUrl || morceau.sequenceurUrl,
+                      sequenceurType: seqType,
+                      sequenceurId: seqId,
+                      sequenceurFileUrl: seqFileUrl,
                     }, assocSequenceurUrl);
                   }
 
+                  const activeToadaDoc = resolved.activeToada || (morceau.toadaDocId ? toadasMap.get(morceau.toadaDocId) : null);
+                  const activeCultureDoc = resolved.activeCultureDoc || (morceau.cultureDocId ? cultureMap.get(morceau.cultureDocId) : null);
+                  const choreoId = morceau.dancadorChoreoId || resolved.activeChoreography?.id;
+                  const audioSrc = morceau.audioUrl || resolved.activeAudioUrl;
+
                   return (
                     <div 
-                      key={morceau.id}
+                      key={morceau.id || morceau.pieceId}
                       className="text-xs p-3 rounded theme-inner-panel flex flex-col gap-2 border border-encre-noire/15 shadow-xs bg-white"
                     >
                       <div className="flex justify-between items-start gap-2">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded border flex items-center gap-1 ${disc.badgeClass}`}>
-                            <span>{disc.emoji}</span>
-                            <span>{disc.label}</span>
-                          </span>
-                          <span className="font-extrabold text-encre-noire text-sm">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {badges.map((b) => (
+                            <span key={b.key} className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded border flex items-center gap-1 ${b.badgeClass}`}>
+                              <span>{b.emoji}</span>
+                              <span className="hidden sm:inline">{b.label}</span>
+                            </span>
+                          ))}
+                          <span className="font-extrabold text-encre-noire text-sm ml-0.5">
                             {morceau.titre}
                           </span>
                         </div>
@@ -201,7 +271,7 @@ export default function EventRevisionProgram({
                           <button
                             type="button"
                             disabled={updatingSetlist}
-                            onClick={() => handleRemoveMorceau(morceau.id)}
+                            onClick={() => handleRemoveMorceau(morceau.id || morceau.pieceId)}
                             className="text-[10px] text-red-600 hover:text-red-500 font-black cursor-pointer select-none shrink-0"
                             title="Retirer du fil conducteur"
                           >
@@ -212,7 +282,7 @@ export default function EventRevisionProgram({
 
                       {morceau.notes && (
                         <p className="text-[11px] text-encre-noire/80 bg-[#fdfaf2] p-2 rounded border border-dashed border-encre-noire/15 italic leading-snug">
-                          💡 {morceau.notes}
+                          🎯 {morceau.notes}
                         </p>
                       )}
 
@@ -282,11 +352,11 @@ export default function EventRevisionProgram({
                       )}
 
                       {/* Audio de référence (écoute directe dans Organizador) */}
-                      {morceau.audioUrl && (
+                      {audioSrc && (
                         <div className="w-full mt-1">
                           <audio
                             controls
-                            src={morceau.audioUrl}
+                            src={audioSrc}
                             className="w-full h-8"
                             preload="none"
                           >
@@ -295,17 +365,56 @@ export default function EventRevisionProgram({
                         </div>
                       )}
 
-                      {/* Lecteur / Lien Séquenceur si disponible uniquement */}
-                      {targetUrl && (
-                        <a
-                          href={targetUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="theme-btn theme-bg-ocre text-encre-noire px-3 py-1.5 text-[10px] font-black rounded-[4px_6px_3px_5px] shadow-[1px_1px_0px_0px_rgba(0,0,0,0.15)] inline-flex items-center justify-center gap-1.5 hover:brightness-105 active:translate-x-[0.5px] active:translate-y-[0.5px] w-full text-center mt-1"
-                        >
-                          🎧 {morceau.sequenceurType === 'presets' ? 'Ouvrir le Preset dans le Séquenceur' : (morceau.sequenceurType === 'sections' ? 'Ouvrir la Séquence dans le Séquenceur' : 'Écouter dans le Séquenceur')}
-                        </a>
-                      )}
+                      {/* Liens et passerelles dynamiques */}
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                        {targetUrl && (
+                          <a
+                            href={targetUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="theme-btn theme-bg-ocre text-encre-noire px-3 py-1.5 text-[10px] font-black rounded-[4px_6px_3px_5px] shadow-[1px_1px_0px_0px_rgba(0,0,0,0.15)] inline-flex items-center justify-center gap-1.5 hover:brightness-105 active:translate-x-[0.5px] active:translate-y-[0.5px] flex-1 text-center"
+                          >
+                            🎧 {morceau.sequenceurType === 'presets' ? 'Ouvrir le Preset dans le Séquenceur' : (morceau.sequenceurType === 'sections' ? 'Ouvrir la Séquence dans le Séquenceur' : 'Écouter dans le Séquenceur')}
+                          </a>
+                        )}
+
+                        {choreoId && (
+                          <a
+                            href={`https://dancador.ogirador.fr/?choreoId=${choreoId}&groupId=${groupId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black uppercase rounded bg-pink-50 hover:bg-pink-100 text-pink-900 border border-pink-300 shadow-2xs transition-colors cursor-pointer"
+                            title="Ouvrir la chorégraphie dans Dançad'Or"
+                          >
+                            <span>💃</span>
+                            <span>Chorégraphie</span>
+                          </a>
+                        )}
+
+                        {activeToadaDoc && (
+                          <button
+                            type="button"
+                            onClick={() => setActiveToadaToView(activeToadaDoc)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black uppercase rounded bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs transition-colors cursor-pointer"
+                            title="Consulter les paroles du chant"
+                          >
+                            <span>🗣️</span>
+                            <span>Paroles</span>
+                          </button>
+                        )}
+
+                        {activeCultureDoc && (
+                          <button
+                            type="button"
+                            onClick={() => setActiveCultureToView(activeCultureDoc)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black uppercase rounded bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-300 shadow-2xs transition-colors cursor-pointer"
+                            title="Consulter la fiche culturelle"
+                          >
+                            <span>📖</span>
+                            <span>Culture</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
@@ -370,40 +479,65 @@ export default function EventRevisionProgram({
             {/* Formulaire d'ajout pour les Admins */}
             {isAuthorized && (
               <div className="mt-4 pt-4 border-t border-dashed border-cordel-master-dark/15">
-                <h5 className="font-bold text-[10px] uppercase tracking-widest text-cordel-wood mb-2.5">
-                  ➕ Ajouter un point au fil conducteur
+                <h5 className="font-bold text-[10px] uppercase tracking-widest text-cordel-wood mb-2.5 flex items-center gap-1.5">
+                  <span>➕</span>
+                  <span>Ajouter un morceau au fil conducteur</span>
                 </h5>
-                <form onSubmit={handleAddMorceau} className="flex flex-col gap-2.5">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const piece = activeRepertoirePieces.find((p) => p.id === selectedRepertoirePieceId);
+                    if (piece) {
+                      if (handleAddRepertoirePiece) {
+                        handleAddRepertoirePiece(piece, newMorceauNotes);
+                      }
+                      setSelectedRepertoirePieceId('');
+                      setNewMorceauTitre('');
+                      setNewMorceauNotes('');
+                    } else if (newMorceauTitre.trim()) {
+                      handleAddMorceau(e);
+                    }
+                  }}
+                  className="flex flex-col gap-2.5"
+                >
                   <div className="flex flex-col gap-1 text-left">
                     <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                      Choisir un rythme du catalogue (optionnel)
+                      Choisir un morceau du Répertoire
                     </label>
                     <select
-                      value={selectedCatalogRhythmUrl}
-                      onChange={handleSelectCatalogRhythm}
-                      disabled={updatingSetlist || loadingRhythms}
+                      value={selectedRepertoirePieceId}
+                      onChange={(e) => {
+                        const id = e.target.value;
+                        setSelectedRepertoirePieceId(id);
+                        const found = activeRepertoirePieces.find((p) => p.id === id);
+                        if (found) {
+                          setNewMorceauTitre(found.titre || '');
+                          if (found.notes) setNewMorceauNotes(found.notes);
+                        }
+                      }}
+                      disabled={updatingSetlist || loadingRepertoire}
                       className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full cursor-pointer"
                     >
                       <option value="">
-                        {loadingRhythms 
-                          ? "-- Chargement du catalogue... --" 
-                          : catalogRhythms.length === 0 
-                            ? "-- Aucun rythme dans le catalogue --" 
-                            : "-- Choisir un rythme du catalogue --"}
+                        {loadingRepertoire
+                          ? "-- Chargement du répertoire... --"
+                          : activeRepertoirePieces.length === 0
+                            ? "-- Aucun morceau dans le répertoire --"
+                            : "-- Sélectionner un morceau du Répertoire (ou saisie libre ci-dessous) --"}
                       </option>
-                      {catalogRhythms.map((rhythm) => (
-                        <option key={rhythm.id} value={rhythm.jsonUrl}>
-                          🎵 {rhythm.titre}
+                      {activeRepertoirePieces.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          📜 {p.titre}
                         </option>
                       ))}
                     </select>
                   </div>
 
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark text-left">
-                      Titre de l'intention ou du morceau *
+                  <div className="flex flex-col gap-1 text-left">
+                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                      Titre du morceau ou de l'intention *
                     </label>
-                    <input 
+                    <input
                       type="text"
                       placeholder="Ex: Baque de Luanda, Toada Ô Samambaia, Pas d'entrée..."
                       value={newMorceauTitre}
@@ -416,25 +550,11 @@ export default function EventRevisionProgram({
 
                   <div className="flex flex-col gap-1 text-left">
                     <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                      OU Fichier .json personnalisé (optionnel)
+                      🎯 Notes d'intention / Focus de travail
                     </label>
-                    <input 
-                      key={fileInputKey}
-                      type="file"
-                      accept=".json"
-                      onChange={(e) => setNewMorceauJsonFile(e.target.files[0])}
-                      disabled={updatingSetlist}
-                      className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full file:mr-3 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-[10px] file:font-semibold file:bg-cordel-master-light file:text-encre-noire file:cursor-pointer"
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-1 text-left">
-                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                      Notes d'intention de travail
-                    </label>
-                    <input 
+                    <input
                       type="text"
-                      placeholder="Notes de révision (ex: Tempo 120, travailler la réponse choeur/puxador)"
+                      placeholder="Notes de révision (ex: Bien caler le chant, break à 95 BPM...)"
                       value={newMorceauNotes}
                       onChange={(e) => setNewMorceauNotes(e.target.value)}
                       disabled={updatingSetlist}
@@ -445,7 +565,7 @@ export default function EventRevisionProgram({
                   <CordelButton
                     variant="ocre"
                     useExtremeBorder={true}
-                    disabled={updatingSetlist || !newMorceauTitre.trim()}
+                    disabled={updatingSetlist || (!newMorceauTitre.trim() && !selectedRepertoirePieceId)}
                     className="w-full py-2 text-[10px] font-black uppercase tracking-widest"
                   >
                     {updatingSetlist ? "Enregistrement..." : "Ajouter au fil conducteur"}
@@ -601,6 +721,26 @@ export default function EventRevisionProgram({
         onClose={() => setActiveSignalToZoom(null)}
         signal={activeSignalToZoom}
       />
+
+      {/* Modale des paroles de la toada */}
+      {activeToadaToView && (
+        <PieceLyricsModal
+          isOpen={Boolean(activeToadaToView)}
+          onClose={() => setActiveToadaToView(null)}
+          song={activeToadaToView}
+          groupId={groupId}
+        />
+      )}
+
+      {/* Modale de la fiche culturelle */}
+      {activeCultureToView && (
+        <PieceCultureModal
+          isOpen={Boolean(activeCultureToView)}
+          onClose={() => setActiveCultureToView(null)}
+          cultureDocs={[activeCultureToView]}
+          initialDocId={activeCultureToView?.id}
+        />
+      )}
     </CordelCard>
   );
 }

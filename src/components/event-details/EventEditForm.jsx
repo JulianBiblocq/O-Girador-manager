@@ -36,7 +36,8 @@ export default function EventEditForm({
   eventTypeConfigs = {},
   t,
   groupId,
-  defaultDropUrl = ''
+  defaultDropUrl = '',
+  pupitresList = []
 }) {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [varalPhotos, setVaralPhotos] = useState([]);
@@ -141,6 +142,7 @@ export default function EventEditForm({
           createConfig={editConfig}
           groupId={groupId}
           defaultDropUrl={defaultDropUrl}
+          pupitresList={pupitresList}
           t={t}
         />
 
@@ -149,6 +151,8 @@ export default function EventEditForm({
           editForm={editForm}
           setEditForm={setEditForm}
           allUsers={allUsers}
+          pupitresList={pupitresList}
+          groupId={groupId || editForm.groupId}
           t={t}
         />
 

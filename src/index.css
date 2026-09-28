@@ -50,6 +50,13 @@
   --theme-input-bg: var(--cordel-master-bg);
   --theme-hover-bg: var(--cordel-hover-bg);
   --theme-ink: var(--encre-noire);
+
+  /* Variables d'opacité et de texture papier Cordel */
+  --color-cordel-papier: #f4ecd8;
+  --color-cordel-papier-card: #e7d5c1;
+  --color-cordel-encre: #1a1a1a;
+  --color-cordel-marron: #8b2a1a;
+  --theme-border-color: #1a1a1a;
 }
 
 [data-theme='dark'], html.dark, body.dark, .dark {
@@ -81,6 +88,13 @@
   --theme-input-bg: var(--cordel-master-bg);
   --theme-hover-bg: var(--cordel-hover-bg);
   --theme-ink: var(--encre-noire);
+
+  /* Variables d'opacité et de texture papier Cordel (mode sombre) */
+  --color-cordel-papier: #1a1a1a;
+  --color-cordel-papier-card: #252525;
+  --color-cordel-encre: #e5e7eb;
+  --color-cordel-marron: #bf5b4a;
+  --theme-border-color: #e5e7eb;
 }
 
 /* Thème conditionnel "Mois d'Anniversaire" (Guirlande de fanions Bandeirinhas de Cordel / Festa Junina) */
