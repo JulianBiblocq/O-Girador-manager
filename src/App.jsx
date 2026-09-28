@@ -405,7 +405,7 @@ export default function App() {
     tracker.init({
       appId: 'manager',
       groupId: profileData?.groupId || 'public',
-      appVersion: '1.2.0'
+      appVersion: '1.2.1'
     });
   }, [profileData?.groupId]);
 
