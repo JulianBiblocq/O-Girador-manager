@@ -194,8 +194,8 @@ export default function DiffusionContactsManager({ groupId, associationSettings 
           ⏳ Chargement du carnet de contacts...
         </div>
       ) : filteredContacts.length > 0 ? (
-        <div data-tour="contacts-table" className="overflow-x-auto bg-white rounded-lg border border-stone-200 shadow-xs">
-          <table className="w-full text-left border-collapse">
+        <div data-tour="contacts-table" className="w-full overflow-x-auto bg-white rounded-lg border border-stone-200 shadow-xs">
+          <table className="w-full text-left border-collapse min-w-[650px]">
             <thead>
               <tr className="bg-stone-100 border-b border-stone-200 text-[10px] font-extrabold uppercase text-cordel-wood">
                 <th className="p-3">Structure & Contact</th>
@@ -300,9 +300,9 @@ export default function DiffusionContactsManager({ groupId, associationSettings 
           onKeyDown={(e) => e.key === 'Escape' && !saving && setIsModalOpen(false)}
           className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 select-none outline-none animate-fade-in"
         >
-          <div className="relative w-full max-w-lg max-h-[90vh] flex flex-col rounded-lg bg-white shadow-2xl border-2 border-cordel-master-dark/40 overflow-hidden text-left">
+          <div className="relative w-full max-w-lg max-h-[90dvh] flex flex-col rounded-lg bg-white shadow-2xl border-2 border-cordel-master-dark/40 overflow-hidden text-left">
             {/* 1. Header (Fixe) */}
-            <div className="flex-shrink-0 p-4 border-b border-dashed border-cordel-master-dark/20 flex items-center justify-between bg-white">
+            <div className="shrink-0 p-4 border-b border-dashed border-cordel-master-dark/20 flex items-center justify-between bg-white">
               <h3 className="text-sm sm:text-base font-extrabold uppercase text-cordel-wood">
                 {editingContact ? '✏️ Modifier le Contact' : '➕ Nouveau Contact Prospection'}
               </h3>
@@ -310,7 +310,7 @@ export default function DiffusionContactsManager({ groupId, associationSettings 
                 type="button"
                 onClick={() => setIsModalOpen(false)}
                 disabled={saving}
-                className="text-stone-400 hover:text-stone-800 text-lg font-bold cursor-pointer"
+                className="text-stone-400 hover:text-stone-800 text-lg font-bold cursor-pointer shrink-0"
                 title="Fermer (Échap)"
               >
                 ✕
@@ -318,9 +318,9 @@ export default function DiffusionContactsManager({ groupId, associationSettings 
             </div>
 
             {/* Form Wrapper */}
-            <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+            <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
               {/* 2. Body (Défilable verticalement) */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="flex flex-col gap-1">
                     <label className="text-[10px] font-extrabold uppercase text-stone-700">Nom Structure *</label>
@@ -421,7 +421,7 @@ export default function DiffusionContactsManager({ groupId, associationSettings 
               </div>
 
               {/* 3. Footer (Fixe en bas) */}
-              <div className="flex-shrink-0 p-4 border-t border-dashed border-cordel-master-dark/20 flex items-center justify-end gap-2 bg-stone-50">
+              <div className="shrink-0 p-4 pb-safe border-t border-dashed border-cordel-master-dark/20 flex items-center justify-end gap-2 bg-stone-50">
                 <CordelButton type="button" variant="default" onClick={() => setIsModalOpen(false)} className="text-xs">
                   Annuler
                 </CordelButton>

@@ -62,9 +62,11 @@ export default function MestreAutoEvalConfig({ profileData, isEmbedded }) {
         if (data.qcmGlobalConfig) {
           setQcmGlobalConfig({ ...qcmGlobalConfig, ...data.qcmGlobalConfig });
         }
-        if (data.enabledModules) {
-          setEnabledModules(data.enabledModules);
+        const initialModules = data.enabledModules ? { ...data.enabledModules } : {};
+        if (data.visibleTabs?.defisRythmiques !== undefined && initialModules.defisRythmiques === undefined) {
+          initialModules.defisRythmiques = data.visibleTabs.defisRythmiques;
         }
+        setEnabledModules(initialModules);
       }
 
       // Récupérer Educational Sheets (Fiches)
@@ -235,10 +237,19 @@ export default function MestreAutoEvalConfig({ profileData, isEmbedded }) {
     try {
       const newModules = { ...enabledModules, [key]: value };
       const assocRef = doc(db, 'associations', groupId);
-      await updateDoc(assocRef, { enabledModules: newModules });
+      const updateData = { enabledModules: newModules };
+
+      if (key === 'defisRythmiques' || key === 'monParcoursDefisRythmiques') {
+        updateData['visibleTabs.defisRythmiques'] = value;
+        updateData['features.defisRythmiques'] = value;
+        newModules.defisRythmiques = value;
+        newModules.monParcoursDefisRythmiques = value;
+      }
+
+      await updateDoc(assocRef, updateData);
       setEnabledModules(newModules);
     } catch (e) {
-      console.error(e);
+      console.error('Erreur lors du changement de visibilité du module :', e);
     }
   };
 
@@ -309,24 +320,38 @@ export default function MestreAutoEvalConfig({ profileData, isEmbedded }) {
                   
                   <div className="flex flex-col gap-3">
                     {[
-                      { key: 'monParcoursPercussion', label: 'Percussion' },
-                      { key: 'monParcoursDanse', label: 'Danse' },
-                      { key: 'monParcoursChant', label: 'Chant' },
-                      { key: 'monParcoursAtelier', label: 'Atelier (Fabrication/Entretien)' },
-                      { key: 'monParcoursCulture', label: 'Culture' }
-                    ].map(mp => (
-                      <label key={mp.key} className="flex items-center gap-3 cursor-pointer p-3 bg-[#fdfaf2] rounded border border-encre-noire/10 hover:border-cordel-wood transition-colors">
-                        <input 
-                          type="checkbox"
-                          checked={enabledModules[mp.key] !== false}
-                          onChange={(e) => handleToggleModule(mp.key, e.target.checked)}
-                          className="accent-cordel-wood w-4 h-4 cursor-pointer"
-                        />
-                        <span className="text-xs font-bold text-encre-noire">
-                          Afficher l'onglet "{mp.label}"
-                        </span>
-                      </label>
-                    ))}
+                      { key: 'monParcoursPercussion', label: 'Percussion', isDefaultFalse: false },
+                      { key: 'monParcoursDanse', label: 'Danse', isDefaultFalse: false },
+                      { key: 'monParcoursChant', label: 'Chant', isDefaultFalse: false },
+                      { key: 'monParcoursAtelier', label: 'Atelier (Fabrication/Entretien)', isDefaultFalse: false },
+                      { key: 'monParcoursCulture', label: 'Culture', isDefaultFalse: false },
+                      { key: 'defisRythmiques', label: 'Défis rythmiques (Speed Trainer & Réflexes)', isDefaultFalse: true }
+                    ].map(mp => {
+                      const isChecked = mp.isDefaultFalse
+                        ? Boolean(enabledModules[mp.key] === true || enabledModules.monParcoursDefisRythmiques === true)
+                        : enabledModules[mp.key] !== false;
+
+                      return (
+                        <label key={mp.key} className="flex items-center gap-3 cursor-pointer p-3 bg-[#fdfaf2] rounded border border-encre-noire/10 hover:border-cordel-wood transition-colors">
+                          <input 
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={(e) => handleToggleModule(mp.key, e.target.checked)}
+                            className="accent-cordel-wood w-4 h-4 cursor-pointer"
+                          />
+                          <div className="flex flex-col">
+                            <span className="text-xs font-bold text-encre-noire">
+                              Afficher l'onglet "{mp.label}"
+                            </span>
+                            {mp.isDefaultFalse && (
+                              <span className="text-[10px] text-encre-noire/60 font-semibold mt-0.5">
+                                Désactivé par défaut. Révèle l'onglet des programmes métronomiques et défis de réaction dans Mon Parcours.
+                              </span>
+                            )}
+                          </div>
+                        </label>
+                      );
+                    })}
                   </div>
                 </CordelCard>
               )}

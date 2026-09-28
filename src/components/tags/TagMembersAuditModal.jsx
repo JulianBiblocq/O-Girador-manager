@@ -99,7 +99,7 @@ export default function TagMembersAuditModal({ tag, members = [], groupId, onClo
       onClick={onClose}
     >
       <div 
-        className="relative w-full max-w-lg max-h-[85vh] flex flex-col bg-cordel-bg border-2 border-encre-noire shadow-[4px_4px_0px_0px_#181716] rounded-[8px_12px_10px_14px] overflow-hidden text-encre-noire"
+        className="relative w-full max-w-lg max-h-[85dvh] flex flex-col bg-cordel-bg border-2 border-encre-noire shadow-[4px_4px_0px_0px_#181716] rounded-[8px_12px_10px_14px] overflow-hidden text-encre-noire"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Toast de validation Cordel flottant */}
@@ -154,7 +154,7 @@ export default function TagMembersAuditModal({ tag, members = [], groupId, onClo
         </div>
 
         {/* Corps de la modale */}
-        <div className="p-4 overflow-y-auto flex-1 flex flex-col gap-2.5">
+        <div className="p-4 flex-1 min-h-0 overflow-y-auto overscroll-contain flex flex-col gap-2.5">
           {carrierMembers.length === 0 ? (
             <EmptyState
               title="Aucun membre porteur"
@@ -231,7 +231,7 @@ export default function TagMembersAuditModal({ tag, members = [], groupId, onClo
         </div>
 
         {/* Pied de la modale */}
-        <div className="p-3 border-t-2 border-encre-noire/20 bg-cordel-bg-light flex justify-between items-center shrink-0">
+        <div className="p-3 pb-safe border-t-2 border-encre-noire/20 bg-cordel-bg-light flex justify-between items-center shrink-0">
           <span className="text-[10px] text-cordel-master-dark/60 font-medium italic">
             Les modifications sont immédiatement répercutées sur les permissions.
           </span>

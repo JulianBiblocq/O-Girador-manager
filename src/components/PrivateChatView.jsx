@@ -463,7 +463,7 @@ export default function PrivateChatView({
   };
 
   return (
-    <div className="flex flex-col h-[560px] border-2 border-encre-noire rounded-[8px_12px_10px_9px] shadow-[4px_4px_0px_0px_#181716] overflow-hidden bg-cordel-bg text-left select-none">
+    <div className="flex flex-col h-[calc(100dvh-130px)] sm:h-[560px] max-h-[100dvh] border-2 border-encre-noire rounded-[8px_12px_10px_9px] shadow-[4px_4px_0px_0px_#181716] overflow-hidden bg-cordel-bg text-left select-none">
       
       {/* 1. En-tête de la discussion */}
       <div className="flex items-center justify-between border-b-2 border-dashed border-encre-noire/20 p-3 bg-white/40 dark:bg-black/10">
@@ -734,7 +734,7 @@ export default function PrivateChatView({
       </div>
 
       {/* 3. Zone de saisie et d'envoi */}
-      <div className="flex flex-col border-t-2 border-dashed border-encre-noire/20 p-2.5 bg-white/40 dark:bg-black/10 select-none">
+      <div className="flex flex-col border-t-2 border-dashed border-encre-noire/20 p-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom,0px))] bg-white/40 dark:bg-black/10 select-none">
         
         {/* Bandeau de réponse / citation active */}
         {replyingTo && (

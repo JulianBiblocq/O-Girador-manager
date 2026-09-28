@@ -40,70 +40,85 @@ export default function LieuEditModal({ initialLieu, isOpen, onClose, onSave, sa
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 select-none">
-      <div className="bg-cordel-bg border-2 border-encre-noire rounded-lg shadow-xl p-5 max-w-lg w-full text-left flex flex-col gap-3 max-h-[90vh] overflow-y-auto">
-        <h4 className="text-xs font-black uppercase text-cordel-wood border-b border-dashed border-cordel-master-dark/20 pb-2">
-          {initialLieu?.id ? "✏️ Modifier le lieu" : "➕ Nouveau lieu habituel"}
-        </h4>
+      <div className="bg-cordel-bg border-2 border-encre-noire rounded-lg shadow-xl max-w-lg w-full text-left flex flex-col max-h-[90dvh] overflow-hidden">
+        {/* Étage 1 : Header fixe */}
+        <div className="shrink-0 p-5 pb-3 border-b border-dashed border-cordel-master-dark/20 flex items-center justify-between">
+          <h4 className="text-xs font-black uppercase text-cordel-wood">
+            {initialLieu?.id ? "✏️ Modifier le lieu" : "➕ Nouveau lieu habituel"}
+          </h4>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-stone-400 hover:text-stone-800 font-bold text-base cursor-pointer shrink-0"
+            title="Fermer"
+          >
+            ✕
+          </button>
+        </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-          <div className="flex flex-col gap-1">
-            <label className="text-[9px] uppercase font-bold text-cordel-master-dark">Nom usuel du lieu *</label>
-            <input
-              type="text"
-              value={nom}
-              onChange={(e) => setNom(e.target.value)}
-              placeholder="Ex: Salle de répétition principale"
-              required
-              className="theme-input text-xs bg-white py-1.5 font-bold"
-            />
-          </div>
+        {/* Étage 2 & 3 : Formulaire scrollable avec actions fixes */}
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-5 pt-3 space-y-3">
+            <div className="flex flex-col gap-1">
+              <label className="text-[9px] uppercase font-bold text-cordel-master-dark">Nom usuel du lieu *</label>
+              <input
+                type="text"
+                value={nom}
+                onChange={(e) => setNom(e.target.value)}
+                placeholder="Ex: Salle de répétition principale"
+                required
+                className="theme-input text-xs bg-white py-1.5 font-bold"
+              />
+            </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-[9px] uppercase font-bold text-cordel-master-dark">Adresse physique complète *</label>
-            <AddressAutocomplete
-              value={adresse}
-              onChange={(val) => setAdresse(typeof val === 'string' ? val : val?.target?.value || '')}
-              onPlaceSelected={(details) => {
-                if (details) {
-                  setAdresse(details.formattedAddress || details.name || adresse);
-                  if (details.latitude && details.longitude) {
-                    setLatitude(details.latitude);
-                    setLongitude(details.longitude);
+            <div className="flex flex-col gap-1">
+              <label className="text-[9px] uppercase font-bold text-cordel-master-dark">Adresse physique complète *</label>
+              <AddressAutocomplete
+                value={adresse}
+                onChange={(val) => setAdresse(typeof val === 'string' ? val : val?.target?.value || '')}
+                onPlaceSelected={(details) => {
+                  if (details) {
+                    setAdresse(details.formattedAddress || details.name || adresse);
+                    if (details.latitude && details.longitude) {
+                      setLatitude(details.latitude);
+                      setLongitude(details.longitude);
+                    }
                   }
-                }
-              }}
-              placeholder="Rechercher une adresse sur Google Maps..."
-              className="theme-input text-xs bg-white py-1.5"
-            />
+                }}
+                placeholder="Rechercher une adresse sur Google Maps..."
+                className="theme-input text-xs bg-white py-1.5"
+              />
+            </div>
+
+            <div className="flex flex-col items-start gap-1">
+              <button
+                type="button"
+                onClick={() => setIsMapModalOpen(true)}
+                className="text-[10px] font-black uppercase tracking-wider text-cordel-wood hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                📌 {latitude && longitude ? "Ajuster le repère sur la carte" : "Placer le repère sur la carte"}
+              </button>
+              {latitude && longitude && (
+                <span className="text-[9px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-300 px-1.5 py-0.5 rounded">
+                  ✓ Repère GPS : {Number(latitude).toFixed(4)}, {Number(longitude).toFixed(4)}
+                </span>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-[9px] uppercase font-bold text-cordel-master-dark">Instructions d'accès / Notes (Optionnel)</label>
+              <input
+                type="text"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Ex: Digicode 45B, entrée côté cour"
+                className="theme-input text-xs bg-white py-1.5"
+              />
+            </div>
           </div>
 
-          <div className="flex flex-col items-start gap-1">
-            <button
-              type="button"
-              onClick={() => setIsMapModalOpen(true)}
-              className="text-[10px] font-black uppercase tracking-wider text-cordel-wood hover:underline flex items-center gap-1 cursor-pointer"
-            >
-              📌 {latitude && longitude ? "Ajuster le repère sur la carte" : "Placer le repère sur la carte"}
-            </button>
-            {latitude && longitude && (
-              <span className="text-[9px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-300 px-1.5 py-0.5 rounded">
-                ✓ Repère GPS : {Number(latitude).toFixed(4)}, {Number(longitude).toFixed(4)}
-              </span>
-            )}
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-[9px] uppercase font-bold text-cordel-master-dark">Instructions d'accès / Notes (Optionnel)</label>
-            <input
-              type="text"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Ex: Digicode 45B, entrée côté cour"
-              className="theme-input text-xs bg-white py-1.5"
-            />
-          </div>
-
-          <div className="flex justify-end gap-2 pt-2 border-t border-dashed border-cordel-master-dark/20 mt-2">
+          {/* Étage 3 : Actions fixes avec pb-safe */}
+          <div className="shrink-0 flex justify-end gap-2 p-4 pb-safe border-t border-dashed border-cordel-master-dark/20 bg-cordel-bg-light/40">
             <button
               type="button"
               onClick={onClose}

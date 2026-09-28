@@ -150,7 +150,7 @@ export default function DocumentViewerModal({ document: docItem, onClose }) {
       />
 
       {/* Conteneur principal de la modale Cordel */}
-      <div className="relative w-full max-w-5xl max-h-[92vh] flex flex-col bg-[var(--cordel-bg)] text-[var(--cordel-text)] border-2 border-cordel-master-dark rounded-[8px_14px_6px_12px] shadow-[6px_6px_0px_0px_#181716] overflow-hidden z-10 animate-scaleUp">
+      <div className="relative w-full max-w-5xl max-h-[92dvh] flex flex-col bg-[var(--cordel-bg)] text-[var(--cordel-text)] border-2 border-cordel-master-dark rounded-[8px_14px_6px_12px] shadow-[6px_6px_0px_0px_#181716] overflow-hidden z-10 animate-scaleUp">
         
         {/* En-tête de la modale */}
         <div className="flex items-start justify-between p-4 sm:p-5 border-b-2 border-dashed border-cordel-master-dark/25 bg-[var(--cordel-bg-light,#fffcf5)] shrink-0 gap-3">
@@ -195,7 +195,7 @@ export default function DocumentViewerModal({ document: docItem, onClose }) {
         </div>
 
         {/* Corps principal avec affichage du média */}
-        <div className="flex-1 overflow-y-auto p-3 sm:p-5 flex flex-col gap-4 bg-[var(--cordel-bg)] varal-scrollbar min-h-[300px]">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 sm:p-5 flex flex-col gap-4 bg-[var(--cordel-bg)] varal-scrollbar">
           
           {/* Description ou notes contextuelles si présentes */}
           {docItem.description && (
@@ -207,7 +207,7 @@ export default function DocumentViewerModal({ document: docItem, onClose }) {
           {/* 1. CAS VIDÉO : YouTube, Vimeo ou fichier direct */}
           {isVideo && mediaInfo?.embedUrl && (
             <div className="w-full flex flex-col items-center gap-3">
-              <div className="w-full aspect-video max-h-[68vh] rounded border-2 border-encre-noire shadow-[3px_3px_0px_0px_#181716] overflow-hidden bg-black">
+              <div className="w-full aspect-video max-h-[68dvh] rounded border-2 border-encre-noire shadow-[3px_3px_0px_0px_#181716] overflow-hidden bg-black">
                 {mediaInfo.type === 'video-file' ? (
                   <video 
                     src={mediaInfo.embedUrl} 
@@ -231,11 +231,11 @@ export default function DocumentViewerModal({ document: docItem, onClose }) {
 
           {/* 2. CAS PDF : Affichage Iframe interactif */}
           {isPdf && targetUrl && (
-            <div className="w-full flex-1 flex flex-col min-h-[55vh] md:min-h-[65vh] rounded border-2 border-encre-noire shadow-[3px_3px_0px_0px_#181716] overflow-hidden bg-white">
+            <div className="w-full flex-1 flex flex-col min-h-[45dvh] md:min-h-[60dvh] rounded border-2 border-encre-noire shadow-[3px_3px_0px_0px_#181716] overflow-hidden bg-white">
               <iframe
                 src={`${targetUrl}#toolbar=1&navpanes=0`}
                 title={docItem.titre}
-                className="w-full h-full flex-1 border-0 min-h-[55vh] md:min-h-[65vh]"
+                className="w-full h-full flex-1 border-0 min-h-[45dvh] md:min-h-[60dvh]"
               />
             </div>
           )}
@@ -258,7 +258,7 @@ export default function DocumentViewerModal({ document: docItem, onClose }) {
                 alt={docItem.titre} 
                 loading="lazy"
                 decoding="async"
-                className="max-h-[68vh] w-auto object-contain rounded shadow" 
+                className="max-h-[68dvh] w-auto object-contain rounded shadow" 
               />
             </div>
           )}
@@ -404,11 +404,11 @@ export default function DocumentViewerModal({ document: docItem, onClose }) {
                   <span className="text-[10px] font-black uppercase tracking-wider text-cordel-master-dark">
                     📄 Document scanné officiel (PDF joint) :
                   </span>
-                  <div className="w-full flex-1 flex flex-col min-h-[50vh] rounded border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] overflow-hidden bg-white">
+                  <div className="w-full flex-1 flex flex-col min-h-[50dvh] rounded border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] overflow-hidden bg-white">
                     <iframe
                       src={`${targetUrl}#toolbar=1&navpanes=0`}
                       title={docItem.titre}
-                      className="w-full h-full flex-1 border-0 min-h-[50vh]"
+                      className="w-full h-full flex-1 border-0 min-h-[50dvh]"
                     />
                   </div>
                 </div>
@@ -478,7 +478,7 @@ export default function DocumentViewerModal({ document: docItem, onClose }) {
         </div>
 
         {/* Pied de page de la modale avec actions directes */}
-        <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 sm:p-4 border-t-2 border-dashed border-cordel-master-dark/25 bg-[var(--cordel-bg-light,#fffcf5)] shrink-0">
+        <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 sm:p-4 pb-safe border-t-2 border-dashed border-cordel-master-dark/25 bg-[var(--cordel-bg-light,#fffcf5)] shrink-0">
           <div className="text-[9px] font-black uppercase tracking-wider text-stone-500 select-none">
             {formattedDate ? `Ajouté le ${formattedDate}` : "Document du Varal"}
           </div>

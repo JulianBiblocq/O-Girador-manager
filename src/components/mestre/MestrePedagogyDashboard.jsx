@@ -12,6 +12,12 @@ import { normalizePupitreName } from '../../utils/secretariatMetrics';
 import XiloAvatar from '../XiloAvatar';
 import { subscribeGroupTrainings, computeTrainingStages } from '../../services/aisanceService';
 import { normalizeString } from '../../utils/repertoireMatcher';
+import DefisSummaryCard from '../pedagogy/DefisSummaryCard';
+import PercussionRepertoireAnalytics from '../pedagogy/PercussionRepertoireAnalytics';
+import DanseChoregraphieAnalytics from '../pedagogy/DanseChoregraphieAnalytics';
+import EntrainementMacroAnalytics from '../pedagogy/EntrainementMacroAnalytics';
+import { computeTroupeChallengeMetrics } from '../../utils/pedagogyDashboardCalculations';
+import { useDancadorSteps, useDancadorChoreographies } from '../../hooks/useDancadorData';
 
 export default function MestrePedagogyDashboard({ profileData }) {
   const { confirm } = useConfirm();
@@ -30,6 +36,10 @@ export default function MestrePedagogyDashboard({ profileData }) {
   // 1. Branchement sur le catalogue complet du Séquenceur officiel
   const { rhythms: sequencerRhythms, loading: loadingSequencer } = useSequencerFirestoreData(groupId);
 
+  // 1.bis Branchement sur les pas et chorégraphies réels Dançador
+  const { steps: dancadorSteps } = useDancadorSteps(groupId);
+  const { choreographies: dancadorChoreos } = useDancadorChoreographies(groupId);
+
   const [usersData, setUsersData] = useState([]);
   const [evaluationsMap, setEvaluationsMap] = useState({}); // { uid: { [itemId]: 'level' } }
   const [revisionsDemandeesMap, setRevisionsDemandeesMap] = useState({}); // { uid: { [itemId]: boolean } }
@@ -43,9 +53,8 @@ export default function MestrePedagogyDashboard({ profileData }) {
   // Entraînements et état d'aisance des membres
   const [groupTrainings, setGroupTrainings] = useState([]);
   const [userAisanceMap, setUserAisanceMap] = useState({}); // { [uid]: { [trainingId]: stagesCompleted[] } }
+  const [userReflexesMap, setUserReflexesMap] = useState({}); // { [uid]: { [key]: { score, totalSignals } } }
   const [repertoire, setRepertoire] = useState([]);
-  const [selectedTrainingId, setSelectedTrainingId] = useState('ALL');
-  const [speedPupitreFilter, setSpeedPupitreFilter] = useState('ALL');
 
   useEffect(() => {
     if (!groupId || !isAuthorized) return;
@@ -134,14 +143,19 @@ export default function MestrePedagogyDashboard({ profileData }) {
           console.error("Erreur récupération répertoire :", e);
         }
 
-        // 7. Récupérer l'état des paliers d'entraînement de chaque membre
+        // 7. Récupérer l'état des paliers d'entraînement et des défis de chaque membre
         const aisance = {};
+        const reflexes = {};
         await Promise.all(users.map(async (u) => {
           try {
             const aSnap = await getDocs(collection(db, 'users', u.id, 'aisance'));
             const uAisance = {};
             aSnap.forEach(ad => {
-              uAisance[ad.id] = ad.data().stagesCompleted || [];
+              if (ad.id === 'reflexes') {
+                reflexes[u.id] = ad.data();
+              } else if (ad.id !== 'conducteurs') {
+                uAisance[ad.id] = ad.data().stagesCompleted || [];
+              }
             });
             aisance[u.id] = uAisance;
           } catch (e) {
@@ -149,6 +163,7 @@ export default function MestrePedagogyDashboard({ profileData }) {
           }
         }));
         setUserAisanceMap(aisance);
+        setUserReflexesMap(reflexes);
 
       } catch (err) {
         console.error("Erreur lors de la récupération des données pédagogiques :", err);
@@ -187,6 +202,11 @@ export default function MestrePedagogyDashboard({ profileData }) {
       };
     });
   }, [groupTrainings, repertoire]);
+
+  // Calcul synthétique des indicateurs clés des 3 défis pour la troupe
+  const troupeChallengeMetrics = useMemo(() => {
+    return computeTroupeChallengeMetrics(usersData, userReflexesMap);
+  }, [usersData, userReflexesMap]);
 
   // Construction unifiée et saine du catalogue de rythmes (Percussion et Danse)
   const unifiedRhythms = useMemo(() => {
@@ -804,6 +824,18 @@ export default function MestrePedagogyDashboard({ profileData }) {
       </section>
 
       {/* ========================================================================= */}
+      {/* ENCART COMPACT : RÉSULTATS AUX DÉFIS DE LA TROUPE                          */}
+      {/* ========================================================================= */}
+      <section aria-label="Résultats aux défis de la troupe">
+        <DefisSummaryCard
+          metrics={troupeChallengeMetrics}
+          pieces={repertoire}
+          profileData={profileData}
+          groupId={groupId}
+        />
+      </section>
+
+      {/* ========================================================================= */}
       {/* ZONE 2 : SÉLECTEUR DE DISCIPLINE & MATRICES                               */}
       {/* ========================================================================= */}
       <section aria-label="Matrices d'aisance par discipline" className="flex flex-col gap-4">
@@ -884,169 +916,32 @@ export default function MestrePedagogyDashboard({ profileData }) {
         ) : (
           <div className="flex flex-col gap-6 w-full">
 
-            {/* VUE 1 : PERCUSSION PAR PUPITRE */}
+            {/* VUE 1 : SYNTHÈSE PERCUSSION PAR MORCEAU DE SAISON */}
             {activeAnalyseTab === 'percussion' && (
-              <div className="flex flex-col gap-5">
-                {pupitres.length === 0 ? (
-                  <CordelCard className="p-6 text-center text-xs font-bold text-cordel-master-dark/60">
-                    Aucun membre avec un pupitre de percussion assigné.
-                  </CordelCard>
-                ) : (
-                  pupitres.map(pupitre => {
-                    const pupitreUsers = getPupitreUsers(pupitre);
-                    return (
-                      <CordelCard key={pupitre} variant="default" className="p-5 flex flex-col gap-4 bg-[#fdfaf2] border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716]">
-                        <div className="flex justify-between items-center border-b border-dashed border-cordel-master-dark/20 pb-2">
-                          <h3 className="text-sm font-black uppercase tracking-wider text-encre-noire flex items-center gap-2">
-                            <span>🪘</span>
-                            <span>Pupitre : {pupitre}</span>
-                          </h3>
-                          <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-encre-noire/10 text-encre-noire">
-                            {pupitreUsers.length} adhérent{pupitreUsers.length > 1 ? 's' : ''}
-                          </span>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-                          {unifiedRhythms.map(rhythm => {
-                            const stats = getStatsForItem(rhythm.id, pupitreUsers, false);
-                            const revCount = revisionsCountMap[rhythm.id] || 0;
-                            return (
-                              <div 
-                                key={rhythm.id} 
-                                className="flex justify-between items-center p-2.5 bg-white border border-dashed border-encre-noire/20 rounded hover:border-encre-noire/50 transition-colors"
-                              >
-                                <div className="flex items-center gap-1.5 truncate mr-2">
-                                  <span className="text-xs font-bold text-encre-noire truncate" title={rhythm.titre}>
-                                    {rhythm.titre}
-                                  </span>
-                                  {revCount > 0 && (
-                                    <span className="shrink-0 text-[9px] font-black px-1.5 py-0.5 rounded bg-[var(--color-cordel-ocre,#c05621)]/15 text-[var(--color-cordel-ocre,#c05621)] border border-[var(--color-cordel-ocre,#c05621)]/30 flex items-center gap-0.5">
-                                      <span>🙋</span>
-                                      <span>{revCount} demande{revCount > 1 ? 's' : ''}</span>
-                                    </span>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-2 shrink-0">
-                                  <span className={`text-[10px] font-black px-2 py-0.5 rounded ${stats.bg} ${stats.color}`}>
-                                    {stats.text}
-                                  </span>
-                                  {(revCount > 0 || (stats.total > 0 && stats.pct < 75)) && (
-                                    <button
-                                      type="button"
-                                      onClick={() => handlePinNote(rhythm.titre, pupitre, revCount)}
-                                      className="text-[9px] font-black uppercase px-1.5 py-0.5 bg-[#fdfaf2] border border-encre-noire/20 rounded hover:bg-neutral-100 hover:scale-105 active:scale-95 transition-transform cursor-pointer"
-                                      title="Épingler au bloc-notes"
-                                    >
-                                      📌
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </CordelCard>
-                    );
-                  })
-                )}
-              </div>
+              <PercussionRepertoireAnalytics
+                repertoire={repertoire}
+                percuUsers={percuUsers}
+                evaluationsMap={evaluationsMap}
+                userAisanceMap={userAisanceMap}
+                resolvedTrainings={resolvedTrainings}
+                revisionsCountMap={revisionsCountMap}
+                onProgramDirect={(piece) => setItemToProgramDirect({ titre: piece.titre, discipline: '🥁 Percussion', id: piece.id })}
+                onPinNote={handlePinNote}
+              />
             )}
 
-            {/* VUE 2 : DANSE (RACCORDEMENT DE LA CLÉ DANSE_ ET DEMANDES DE RÉVISION) */}
+            {/* VUE 2 : SYNTHÈSE DANSE BRANCHÉE STRICTEMENT SUR LES ÉLÉMENTS RÉELS */}
             {activeAnalyseTab === 'danse' && (
-              <CordelCard variant="default" className="p-5 flex flex-col gap-4 bg-[#fdfaf2] border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716]">
-                <div className="flex justify-between items-center border-b border-dashed border-cordel-master-dark/20 pb-2">
-                  <h3 className="text-sm font-black uppercase tracking-wider text-encre-noire flex items-center gap-2">
-                    <span>💃</span>
-                    <span>Équipe Danse</span>
-                  </h3>
-                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-encre-noire/10 text-encre-noire">
-                    {danseUsers.length} danseuse{danseUsers.length > 1 ? 's' : ''}/danseur{danseUsers.length > 1 ? 's' : ''}
-                  </span>
-                </div>
-
-                {danseUsers.length === 0 ? (
-                  <p className="text-xs font-bold text-cordel-master-dark/60 italic py-4 text-center">
-                    Aucun profil Danse enregistré dans les adhérents actifs.
-                  </p>
-                ) : (
-                  <>
-                    {/* Trombinoscope et composition nominative de l'Équipe Danse */}
-                    <div className="p-3 bg-white/80 border border-dashed border-encre-noire/20 rounded flex flex-col gap-2 shadow-xs">
-                      <span className="text-[10px] font-black uppercase text-cordel-wood tracking-wider">
-                        Effectif Danseurs & Danseuses ({danseUsers.length}) :
-                      </span>
-                      <div className="flex flex-wrap gap-2 items-center">
-                        {danseUsers.map(u => {
-                          const name = `${u.prenom || ''} ${u.nom || ''}`.trim() || 'Sans Nom';
-                          const danseLevel = (u.niveauDanse && u.niveauDanse !== 'aucun') ? u.niveauDanse : 'Inscrit(e)';
-                          const mainInst = u.instrumentPrincipal || u.instrument;
-                          const isPoly = mainInst && mainInst.toLowerCase() !== 'danse' && mainInst !== 'En attente';
-
-                          return (
-                            <div 
-                              key={u.id}
-                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#fdfaf2] border border-encre-noire/20 shadow-xs text-xs font-bold"
-                            >
-                              <XiloAvatar src={u.photoURL} name={name} size={22} />
-                              <span className="text-encre-noire font-extrabold">{name}</span>
-                              {u.surnom && <span className="text-cordel-wood text-[10px] italic font-semibold">"{u.surnom}"</span>}
-                              <span className="text-[8.5px] font-black uppercase px-1.5 py-0.5 rounded bg-pink-100 text-pink-900 border border-pink-300">
-                                💃 {danseLevel}
-                              </span>
-                              {isPoly && (
-                                <span className="text-[8.5px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300" title={`Polyvalent • Joue aussi en percussion : ${mainInst}`}>
-                                  🥁 {mainInst}
-                                </span>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-                    {unifiedRhythms.map(rhythm => {
-                      const stats = getStatsForItem(rhythm.id, danseUsers, true);
-                      const revCount = revisionsCountMap[`danse_${rhythm.id}`] || 0;
-                      return (
-                        <div 
-                          key={rhythm.id} 
-                          className="flex justify-between items-center p-2.5 bg-white border border-dashed border-encre-noire/20 rounded hover:border-encre-noire/50 transition-colors"
-                        >
-                          <div className="flex items-center gap-1.5 truncate mr-2">
-                            <span className="text-xs font-bold text-encre-noire truncate" title={rhythm.titre}>
-                              {rhythm.titre}
-                            </span>
-                            {revCount > 0 && (
-                              <span className="shrink-0 text-[9px] font-black px-1.5 py-0.5 rounded bg-[var(--color-cordel-ocre,#c05621)]/15 text-[var(--color-cordel-ocre,#c05621)] border border-[var(--color-cordel-ocre,#c05621)]/30 flex items-center gap-0.5">
-                                <span>🙋</span>
-                                <span>{revCount} demande{revCount > 1 ? 's' : ''}</span>
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <span className={`text-[10px] font-black px-2 py-0.5 rounded ${stats.bg} ${stats.color}`}>
-                              {stats.text}
-                            </span>
-                            {(revCount > 0 || (stats.total > 0 && stats.pct < 75)) && (
-                              <button
-                                type="button"
-                                onClick={() => handlePinNote(rhythm.titre, 'Danse', revCount)}
-                                className="text-[9px] font-black uppercase px-1.5 py-0.5 bg-[#fdfaf2] border border-encre-noire/20 rounded hover:bg-neutral-100 hover:scale-105 active:scale-95 transition-transform cursor-pointer"
-                                title="Épingler au bloc-notes"
-                              >
-                                📌
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </>
-              )}
-              </CordelCard>
+              <DanseChoregraphieAnalytics
+                danseUsers={danseUsers}
+                repertoire={repertoire}
+                steps={dancadorSteps}
+                choreographies={dancadorChoreos}
+                evaluationsMap={evaluationsMap}
+                revisionsCountMap={revisionsCountMap}
+                onProgramDirect={setItemToProgramDirect}
+                onPinNote={handlePinNote}
+              />
             )}
 
             {/* VUE 3 : CHANTS & TOADAS (AVEC CALCUL HYBRIDE ET ALERTES) */}
@@ -1061,196 +956,15 @@ export default function MestrePedagogyDashboard({ profileData }) {
               />
             )}
 
-            {/* VUE : SUIVI DES PALIERS D'ENTRAÎNEMENT (LECTURE SEULE) */}
+            {/* VUE : SUIVI DES PALIERS D'ENTRAÎNEMENT (DYNAMIQUE MACRO TROUPE) */}
             {activeAnalyseTab === 'entrainement' && (
-              <div className="flex flex-col gap-5">
-                {/* En-tête explicatif */}
-                <div className="bg-[var(--color-cordel-ocre,#c05621)]/10 border-l-4 border-[var(--color-cordel-ocre,#c05621)] p-4 rounded-r flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow-xs">
-                  <div>
-                    <h3 className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
-                      <span>⚡</span>
-                      <span>Suivi Pédagogique des Paliers d'Entraînement (Lecture Seule)</span>
-                    </h3>
-                    <p className="text-[11px] font-bold text-cordel-master-dark opacity-85 mt-0.5">
-                      Vue d'ensemble de l'avancement métronomique des adhérents sur chaque défi rythmique configuré depuis sequenciador.
-                    </p>
-                  </div>
-                  <span className="shrink-0 text-[10px] font-black uppercase px-2.5 py-1 rounded bg-white text-cordel-wood border border-cordel-wood/30 shadow-2xs">
-                    {resolvedTrainings.length} défi{resolvedTrainings.length > 1 ? 's' : ''} actif{resolvedTrainings.length > 1 ? 's' : ''}
-                  </span>
-                </div>
-
-                {/* Filtres de sélection */}
-                {resolvedTrainings.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-3 p-3 bg-white border border-dashed border-encre-noire/20 rounded shadow-xs">
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-encre-noire">
-                      <span>🎯 Défi :</span>
-                      <select
-                        value={selectedTrainingId}
-                        onChange={(e) => setSelectedTrainingId(e.target.value)}
-                        className="px-2 py-1 text-xs font-extrabold bg-[#fdfaf2] border border-encre-noire/30 rounded cursor-pointer"
-                      >
-                        <option value="ALL">Tous les défis ({resolvedTrainings.length})</option>
-                        {resolvedTrainings.map((t) => (
-                          <option key={t.id} value={t.id}>
-                            {t.repertoireTitle} {t.title && t.title !== t.repertoireTitle ? `(${t.title})` : ''}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-encre-noire">
-                      <span>🪘 Pupitre :</span>
-                      <select
-                        value={speedPupitreFilter}
-                        onChange={(e) => setSpeedPupitreFilter(e.target.value)}
-                        className="px-2 py-1 text-xs font-extrabold bg-[#fdfaf2] border border-encre-noire/30 rounded cursor-pointer"
-                      >
-                        <option value="ALL">Tous les adhérents ({usersData.length})</option>
-                        {pupitres.map((p) => (
-                          <option key={p} value={p}>
-                            Pupitre {p}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                )}
-
-                {resolvedTrainings.length === 0 ? (
-                  <CordelCard className="p-8 text-center text-xs font-bold text-cordel-master-dark/60 bg-[#fdfaf2] border border-dashed border-encre-noire/20 rounded-lg">
-                    <span className="text-3xl block mb-2">⚡</span>
-                    <p className="text-sm font-black uppercase text-encre-noire mb-1">
-                      Aucun entraînement synchronisé
-                    </p>
-                    <p className="text-xs text-encre-noire/60">
-                      Les entraînements configurés depuis sequenciador pour ce groupe s'afficheront ici automatiquement en lecture seule.
-                    </p>
-                  </CordelCard>
-                ) : (
-                  resolvedTrainings
-                    .filter((t) => selectedTrainingId === 'ALL' || t.id === selectedTrainingId)
-                    .map((training) => {
-                      const stages = training.stages || [];
-                      const filteredUsers = usersData.filter((u) => {
-                        if (speedPupitreFilter === 'ALL') return true;
-                        const userPupitre = (u.instrument || u.instrumentPrincipal || u.pupitre || '').trim();
-                        return userPupitre.toLowerCase() === speedPupitreFilter.toLowerCase();
-                      });
-
-                      const masteredCount = filteredUsers.filter((u) => {
-                        const userStages = userAisanceMap[u.id]?.[training.id] || [];
-                        return stages.length > 0 && stages.every((s) => userStages.includes(s.index));
-                      }).length;
-
-                      return (
-                        <CordelCard key={training.id} variant="default" className="p-5 flex flex-col gap-4 bg-[#fdfaf2] border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716]">
-                          {/* En-tête du défi */}
-                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-dashed border-cordel-master-dark/20 pb-2.5 gap-2">
-                            <div className="flex flex-col gap-0.5">
-                              <h3 className="text-sm font-black uppercase tracking-wider text-encre-noire flex items-center gap-1.5">
-                                <span>🎵</span>
-                                <span>{training.repertoireTitle}</span>
-                              </h3>
-                              <div className="flex items-center gap-2 flex-wrap">
-                                {training.title && training.title !== training.repertoireTitle && (
-                                  <span className="text-[10px] font-extrabold text-cordel-wood bg-cordel-wood/10 px-2 py-0.5 rounded border border-cordel-wood/20">
-                                    {training.title}
-                                  </span>
-                                )}
-                                <span className="text-[9.5px] font-bold text-encre-noire/70">
-                                  {stages.length} palier{stages.length > 1 ? 's' : ''} métronomique{stages.length > 1 ? 's' : ''}
-                                </span>
-                              </div>
-                            </div>
-
-                            <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded bg-white text-cordel-wood border border-cordel-wood/30 shadow-2xs">
-                              {masteredCount} / {filteredUsers.length} élève{filteredUsers.length > 1 ? 's' : ''} au point (👑)
-                            </span>
-                          </div>
-
-                          {/* Tableau des adhérents en lecture seule */}
-                          <div className="flex flex-col gap-2">
-                            {filteredUsers.length === 0 ? (
-                              <p className="text-xs text-center text-encre-noire/50 py-3 italic">
-                                Aucun adhérent ne correspond au filtre de pupitre sélectionné.
-                              </p>
-                            ) : (
-                              filteredUsers.map((user) => {
-                                const userName = `${user.prenom || ''} ${user.nom || ''}`.trim() || user.displayName || 'Adhérent';
-                                const userPupitre = user.instrument || user.instrumentPrincipal || user.pupitre || 'Percussion';
-                                const userStages = userAisanceMap[user.id]?.[training.id] || [];
-                                const isUserMastered = stages.length > 0 && stages.every((s) => userStages.includes(s.index));
-                                const pct = stages.length > 0 ? Math.round((userStages.length / stages.length) * 100) : 0;
-
-                                return (
-                                  <div
-                                    key={user.id}
-                                    className="p-2.5 bg-white border border-encre-noire/15 rounded flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-2xs hover:border-encre-noire/30 transition-colors"
-                                  >
-                                    {/* Profil adhérent */}
-                                    <div className="flex items-center gap-2.5 min-w-[200px]">
-                                      <XiloAvatar src={user.photoURL} name={userName} size={28} />
-                                      <div className="flex flex-col truncate">
-                                        <div className="flex items-center gap-1.5">
-                                          <span className="text-xs font-black text-encre-noire truncate">
-                                            {userName}
-                                          </span>
-                                          {isUserMastered && (
-                                            <span className="text-[9px] font-black uppercase px-1.5 py-0.2 rounded bg-[var(--color-cordel-vert)] text-white shadow-2xs">
-                                              👑 Maîtrisé
-                                            </span>
-                                          )}
-                                        </div>
-                                        <span className="text-[9.5px] font-bold text-encre-noire/60">
-                                          {userPupitre}
-                                        </span>
-                                      </div>
-                                    </div>
-
-                                    {/* Paliers en lecture seule */}
-                                    <div className="flex items-center gap-1.5 flex-wrap">
-                                      {stages.map((stage) => {
-                                        const isDone = userStages.includes(stage.index);
-                                        return (
-                                          <span
-                                            key={stage.index}
-                                            className={`text-[9px] font-extrabold px-2 py-0.5 rounded border transition-all flex items-center gap-1 ${
-                                              isDone
-                                                ? 'bg-[var(--color-cordel-vert)]/15 text-[var(--color-cordel-vert)] border-[var(--color-cordel-vert)]/40 font-black'
-                                                : 'bg-neutral-50 text-neutral-400 border-neutral-200'
-                                            }`}
-                                            title={isDone ? `Validé : ${stage.label}` : `En attente : ${stage.label}`}
-                                          >
-                                            <span>{isDone ? '✓' : '○'}</span>
-                                            <span>{stage.label}</span>
-                                          </span>
-                                        );
-                                      })}
-                                    </div>
-
-                                    {/* Score / Ratio */}
-                                    <div className="flex items-center gap-2 shrink-0 md:ml-auto">
-                                      <div className="w-16 bg-neutral-200 h-2 rounded-full overflow-hidden">
-                                        <div
-                                          className={`h-full ${isUserMastered ? 'bg-[var(--color-cordel-vert)]' : 'bg-cordel-wood'}`}
-                                          style={{ width: `${pct}%` }}
-                                        />
-                                      </div>
-                                      <span className="text-[10px] font-black text-encre-noire/70 min-w-[45px] text-right">
-                                        {userStages.length}/{stages.length} ({pct}%)
-                                      </span>
-                                    </div>
-                                  </div>
-                                );
-                              })
-                            )}
-                          </div>
-                        </CordelCard>
-                      );
-                    })
-                )}
-              </div>
+              <EntrainementMacroAnalytics
+                usersData={usersData}
+                resolvedTrainings={resolvedTrainings}
+                userAisanceMap={userAisanceMap}
+                evaluationsMap={evaluationsMap}
+                pupitres={pupitres}
+              />
             )}
 
             {/* VUE 4 : ADMINISTRATION SAISON */}

@@ -640,8 +640,8 @@ export default function ReportsExports({
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto border-2 border-encre-noire rounded-md bg-white dark:bg-black/10 shadow-xs max-h-[420px] overflow-y-auto">
-            <table className="w-full text-left text-xs border-collapse">
+          <div className="w-full overflow-x-auto border-2 border-encre-noire rounded-md bg-white dark:bg-black/10 shadow-xs max-h-[420px] overflow-y-auto">
+            <table className="w-full text-left text-xs border-collapse min-w-[600px]">
               <thead className="bg-cordel-wood text-white sticky top-0 z-10 text-[10px] uppercase font-black tracking-wider select-none">
                 <tr>
                   <th className="p-2 border-b border-encre-noire">Date</th>

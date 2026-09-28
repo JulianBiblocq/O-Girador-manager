@@ -352,8 +352,8 @@ export default function TreasuryExpenseClaims({
             Aucune note de frais ne correspond à vos filtres.
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
+          <div className="w-full overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs min-w-[700px]">
               <thead>
                 <tr className="border-b-2 border-encre-noire/20 text-[9px] uppercase font-black text-cordel-master-dark/70 tracking-wider">
                   <th className="py-2 px-2">Date</th>

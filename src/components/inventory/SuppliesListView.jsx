@@ -238,8 +238,8 @@ export default function SuppliesListView({ supplies, loading, addSupply, updateS
 
       {/* Tableau des fournitures */}
       {supplies.length > 0 ? (
-        <div className="overflow-x-auto border-2 border-encre-noire bg-cordel-bg-light rounded shadow-[3px_3px_0px_0px_#181716]">
-          <table className="w-full text-left border-collapse">
+        <div className="w-full overflow-x-auto border-2 border-encre-noire bg-cordel-bg-light rounded shadow-[3px_3px_0px_0px_#181716]">
+          <table className="w-full text-left border-collapse min-w-[600px]">
             <thead>
               <tr className="bg-cordel-bg border-b-2 border-encre-noire text-[10px] font-extrabold uppercase text-cordel-master-dark">
                 <th className="p-3 border-r border-encre-noire/20">Article</th>

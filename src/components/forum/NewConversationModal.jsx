@@ -99,10 +99,10 @@ export default function NewConversationModal({
       onKeyDown={(e) => e.key === 'Escape' && onClose()}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-encre-noire/70 backdrop-blur-sm animate-fade-in select-none outline-none"
     >
-      <div className="relative w-full max-w-lg max-h-[85vh] flex flex-col rounded-[8px_6px_10px_7px] bg-cordel-bg border-2 border-encre-noire shadow-[3px_3px_0px_0px_#181716] overflow-hidden">
+      <div className="relative w-full max-w-lg max-h-[85dvh] flex flex-col rounded-[8px_6px_10px_7px] bg-cordel-bg border-2 border-encre-noire shadow-[3px_3px_0px_0px_#181716] overflow-hidden">
         
         {/* 1. En-tête de la modale avec onglets */}
-        <div className="flex-shrink-0 p-4 border-b-2 border-dashed border-cordel-master-dark/25 bg-cordel-bg-light">
+        <div className="shrink-0 p-4 border-b-2 border-dashed border-cordel-master-dark/25 bg-cordel-bg-light">
           <div className="flex justify-between items-start">
             <div>
               <span className="text-[9px] font-black uppercase text-cordel-wood tracking-widest block">
@@ -178,7 +178,7 @@ export default function NewConversationModal({
             </div>
 
             {/* Liste défilante des membres pour chat direct */}
-            <div className="flex-1 overflow-y-auto p-3 space-y-2 text-left scrollbar-thin">
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 pb-safe space-y-2 text-left scrollbar-thin">
               {filteredMembers.length === 0 ? (
                 <div className="p-8 text-center bg-cordel-bg-light/60 rounded border border-dashed border-cordel-master-dark/20">
                   <span className="text-2xl block mb-2">👤</span>
@@ -304,7 +304,7 @@ export default function NewConversationModal({
             </div>
 
             {/* Liste de sélection avec cases à cocher */}
-            <div className="flex-1 overflow-y-auto p-3 space-y-1.5 text-left scrollbar-thin">
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 space-y-1.5 text-left scrollbar-thin">
               {filteredMembers.map((member) => {
                 const fullName = `${member.prenom || ''} ${member.nom || ''}`.trim() || member.email || 'Membre';
                 const isSelected = selectedMemberIds.includes(member.id);
@@ -342,7 +342,7 @@ export default function NewConversationModal({
             </div>
 
             {/* Pied de page avec bouton vert validation */}
-            <div className="p-3 border-t-2 border-dashed border-cordel-master-dark/20 bg-cordel-bg-light flex items-center justify-between">
+            <div className="shrink-0 p-3 pb-safe border-t-2 border-dashed border-cordel-master-dark/20 bg-cordel-bg-light flex items-center justify-between">
               <span className="text-[10px] font-semibold text-cordel-master-dark/70">
                 Vous serez l'administrateur de ce groupe
               </span>

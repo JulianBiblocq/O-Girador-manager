@@ -1211,8 +1211,8 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
         </div>
 
         {/* Data Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
+        <div className="w-full overflow-x-auto">
+          <table className="w-full text-left text-xs border-collapse min-w-[650px]">
             <thead>
               <tr className="border-b-2 border-dashed border-cordel-master-dark/20 text-[9.5px] uppercase tracking-wider font-extrabold text-cordel-wood">
                 <th className="py-2 px-2">Membre</th>

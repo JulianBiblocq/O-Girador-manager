@@ -51,7 +51,7 @@ export default function ThreadReplyBar({
   return (
     <form
       onSubmit={onSubmit}
-      className="sticky bottom-0 bg-cordel-bg z-10 pt-2 pb-1 border-t border-dashed border-cordel-master-dark/20 flex flex-col gap-2 select-none"
+      className="sticky bottom-0 bg-cordel-bg z-10 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] border-t border-dashed border-cordel-master-dark/20 flex flex-col gap-2 select-none"
     >
       {/* Bandeau contextuel élégant de réponse / citation */}
       {replyingTo && (

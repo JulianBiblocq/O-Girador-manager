@@ -7,6 +7,8 @@ import { useSequencerFirestoreData } from '../../hooks/useSequencerFirestoreData
 // New Sub-components
 import MonCarnetAisance from './MonCarnetAisance';
 import AtelierEntrainement from './AtelierEntrainement';
+import RodaQuizStatsBanner from './RodaQuizStatsBanner';
+import MonParcoursGuideBanner from './MonParcoursGuideBanner';
 
 export default function MonParcours({ profileData, sequenceurUrl, enabledModules = {} }) {
   const groupId = profileData?.groupId;
@@ -180,16 +182,11 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
         <p className="text-xs md:text-sm text-cordel-master-dark opacity-80 text-center max-w-2xl">
           Déclare ton niveau d'aisance ou entraîne-toi avec les mini-jeux. Ton évolution est sauvegardée automatiquement.
         </p>
-        <div className="bg-cordel-ocre/10 border-l-4 border-cordel-ocre p-3 mt-2 text-left rounded-r max-w-2xl w-full">
-          <p className="text-xs font-bold text-cordel-master-dark flex items-start gap-2">
-            <span className="text-base">💡</span>
-            <span>
-              <strong>Où apprendre et réviser ?</strong><br/>
-              Avant de tester tes acquis ici, retrouve tous les détails (fiches complètes, audios, explications) dans les <strong>Varals (cordes à linge)</strong> situés tout en bas de la page d'accueil !
-            </span>
-          </p>
-        </div>
+        <MonParcoursGuideBanner />
       </div>
+
+      {/* Tableau de bord compact des résultats Roda Quiz & Défis en direct */}
+      <RodaQuizStatsBanner profileData={profileData} />
 
       {/* Switch Vues Principales */}
       <div className="flex justify-center gap-4 border-b-2 border-dashed border-cordel-master-dark/30 pb-6 mb-4">

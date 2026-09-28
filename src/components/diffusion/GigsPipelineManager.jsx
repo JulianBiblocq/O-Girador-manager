@@ -221,7 +221,8 @@ export default function GigsPipelineManager({ groupId, associationSettings: prop
         </div>
       ) : viewMode === 'kanban' ? (
         /* VUE KANBAN (COLONNES PAR ÉTAPE) */
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 overflow-x-auto pb-4" data-tour="gigs-kanban-board">
+        <div className="w-full max-w-full overflow-x-auto pb-4" data-tour="gigs-kanban-board">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 min-w-[750px]">
           {GIG_STATUSES.filter(st => filterStatus === 'all' || filterStatus === st.id).map(statusObj => {
             // Tolérance d'équivalence multi-statuts via le helper matchesGigStatus
             const statusGigs = gigs.filter(g => matchesGigStatus(g.status, statusObj.id));
@@ -272,11 +273,12 @@ export default function GigsPipelineManager({ groupId, associationSettings: prop
               </div>
             );
           })}
+          </div>
         </div>
       ) : (
         /* VUE TABLEAU (DATA-TABLE) */
         <CordelCard variant="default" useExtremeBorder={false} className="p-4 bg-cordel-bg">
-          <div className="flex flex-col gap-2 overflow-x-auto">
+          <div className="flex flex-col gap-2 overflow-x-auto w-full max-w-full">
             {/* Header de la Table */}
             <div className="grid grid-cols-12 gap-2 text-[9px] font-extrabold uppercase tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-2 min-w-[700px] px-1">
               <div className="col-span-3 text-left">Événement & Organisateur</div>

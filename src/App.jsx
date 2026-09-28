@@ -2026,7 +2026,7 @@ export default function App() {
         groupId={profileData?.groupId}
       >
         <LicenseProvider groupId={profileData?.groupId} associationSettings={associationData}>
-          <div style={brandingStyle} className="min-h-screen flex flex-col w-full relative">
+          <div style={brandingStyle} className="min-h-[100dvh] flex flex-col w-full relative">
             {isDemoMode() && <DemoTopBanner />}
             {accessDeniedToast && (
               <div className="fixed top-4 right-4 z-50 bg-amber-900 text-amber-100 font-extrabold text-xs px-4 py-3 rounded-[6px_10px_8px_12px] border-2 border-amber-600 shadow-[3px_3px_0px_0px_#181716] flex items-center gap-2 animate-bounce">

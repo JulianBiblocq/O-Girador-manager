@@ -123,9 +123,9 @@ export default function InvoiceFormModal({
       onKeyDown={(e) => e.key === 'Escape' && !saving && onClose()}
       className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 select-none outline-none animate-fade-in"
     >
-      <div className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-lg bg-white shadow-2xl border-2 border-cordel-master-dark/40 overflow-hidden text-left">
+      <div className="relative w-full max-w-2xl max-h-[90dvh] flex flex-col rounded-lg bg-white shadow-2xl border-2 border-cordel-master-dark/40 overflow-hidden text-left">
         {/* 1. Header (Fixe) */}
-        <div className="flex-shrink-0 p-4 border-b border-dashed border-cordel-master-dark/20 flex items-center justify-between bg-white">
+        <div className="shrink-0 p-4 border-b border-dashed border-cordel-master-dark/20 flex items-center justify-between bg-white">
           <h3 className="text-sm sm:text-base font-extrabold uppercase text-cordel-wood flex items-center gap-2">
             <span>{initialData ? '✏️ Modifier le Document' : '📄 Nouveau Devis / Facture'}</span>
           </h3>
@@ -141,9 +141,9 @@ export default function InvoiceFormModal({
         </div>
 
         {/* Form Wrapper */}
-        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
           {/* 2. Body (Défilable verticalement) */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 space-y-4">
             {/* Sélection du Type & Numéro */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 bg-[#fdfaf2] border border-encre-noire/20 rounded">
               <div className="flex flex-col gap-1">
@@ -366,7 +366,7 @@ export default function InvoiceFormModal({
           </div>
 
           {/* 3. Footer (Fixe en bas) */}
-          <div className="flex-shrink-0 p-4 border-t border-dashed border-cordel-master-dark/20 flex items-center justify-end gap-3 bg-stone-50">
+          <div className="shrink-0 p-4 pb-safe border-t border-dashed border-cordel-master-dark/20 flex items-center justify-end gap-3 bg-stone-50">
             <CordelButton type="button" variant="default" onClick={onClose} disabled={saving} className="text-xs">
               Annuler
             </CordelButton>

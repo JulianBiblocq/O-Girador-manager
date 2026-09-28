@@ -210,7 +210,7 @@ export default function NotificationCenter({
             className={`fixed z-[9999] flex flex-col bg-cordel-bg-light overflow-hidden select-none ${
               isDesktop
                 ? 'border-2 border-encre-noire rounded-[8px_12px_9px_11px] shadow-[4px_4px_0px_0px_#181716] animate-fade-in'
-                : 'inset-y-0 right-0 w-full max-w-sm sm:max-w-md border-l-4 border-cordel-master-dark max-h-screen shadow-2xl animate-slide-in-right'
+                : 'inset-y-0 right-0 w-full max-w-sm sm:max-w-md border-l-4 border-cordel-master-dark h-[100dvh] max-h-[100dvh] shadow-2xl animate-slide-in-right'
             }`}
             role="dialog"
             aria-label="Centre de notifications"
@@ -254,7 +254,7 @@ export default function NotificationCenter({
             </div>
 
             {/* Corps de la liste déroulante */}
-            <div className="flex-1 overflow-y-auto p-3 space-y-2.5 bg-cordel-bg-light/50">
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 space-y-2.5 bg-cordel-bg-light/50">
               {loading ? (
                 <div className="py-12 flex flex-col items-center justify-center text-center">
                   <div className="w-5 h-5 border-2 border-[var(--color-cordel-ocre,#c05621)] border-t-transparent rounded-full animate-spin mb-2" />
@@ -285,7 +285,7 @@ export default function NotificationCenter({
 
             {/* Pied de panneau discret */}
             {notifications.length > 0 && (
-              <div className="p-2 border-t border-dashed border-encre-noire/15 bg-cordel-bg text-center shrink-0">
+              <div className="p-2 pb-safe border-t border-dashed border-encre-noire/15 bg-cordel-bg text-center shrink-0">
                 <span className="text-[9px] font-extrabold text-encre-noire/50 uppercase tracking-wider">
                   {notifications.length} notification{notifications.length > 1 ? 's' : ''} récente{notifications.length > 1 ? 's' : ''}
                 </span>

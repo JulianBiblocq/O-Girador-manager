@@ -9,9 +9,8 @@ import { getInstrumentLabel } from '../../constants/nomenclature';
 import AutoEvalQuizContainer from '../student/AutoEvalQuizContainer';
 import AutoEvalQuiz from './AutoEvalQuiz';
 import AtelierModelPartsProgress from './AtelierModelPartsProgress';
-import QcmSequenceurBlindTest from './QcmSequenceurBlindTest';
 import DailyRevisionSession from './DailyRevisionSession';
-import ExamDashboard from './ExamDashboard';
+import CarnetPercussionSection from './CarnetPercussionSection';
 import { launchCrossApp } from '../../utils/crossAppAuth';
 import ReflexGameModal from './ReflexGameModal';
 import ConductorGameModal from './ConductorGameModal';
@@ -271,9 +270,16 @@ export default function MonCarnetAisance({
   // Onglets dynamiques selon les modules activés par le Mestre
   const subTabs = useMemo(() => {
     const tabs = [];
-    tabs.push({ id: 'defis', label: '⚡ Défis Rythmiques' });
+    const isDefisRythmiquesEnabled = Boolean(
+      enabledModules?.defisRythmiques === true ||
+      enabledModules?.monParcoursDefisRythmiques === true ||
+      enabledModules?.visibleTabs?.defisRythmiques === true
+    );
+
+    if (isDefisRythmiquesEnabled) {
+      tabs.push({ id: 'defis', label: '⚡ Défis Rythmiques' });
+    }
     tabs.push({ id: 'revision', label: '🧠 Révisions' });
-    tabs.push({ id: 'examens', label: '🏅 Examens' });
     
     if (enabledModules?.monParcoursPercussion !== false) tabs.push({ id: 'rythmes', label: '🥁 Percussion' });
     if (enabledModules?.monParcoursDanse !== false) tabs.push({ id: 'danse', label: '💃 Danse' });
@@ -283,7 +289,7 @@ export default function MonCarnetAisance({
     return tabs;
   }, [enabledModules]);
 
-  const [activeSubTab, setActiveSubTab] = useState(subTabs.length > 0 ? subTabs[0].id : 'defis');
+  const [activeSubTab, setActiveSubTab] = useState(subTabs.length > 0 ? subTabs[0].id : 'revision');
 
   // Synchronisation si l'onglet actif n'existe plus dans la liste
   useEffect(() => {
@@ -436,9 +442,6 @@ export default function MonCarnetAisance({
     }
   };
 
-  // État pour le Blind Test inline (onglet Percussion)
-  const [blindTestRhythm, setBlindTestRhythm] = useState(null);
-
   // État pour le quiz ciblé sur une Toada (onglet Chants)
   const [quizToadaId, setQuizToadaId] = useState(null);
 
@@ -519,34 +522,6 @@ export default function MonCarnetAisance({
     );
   }
 
-  // --- Vue plein écran : Blind Test inline ---
-  if (blindTestRhythm) {
-    const rhythm = rhythms.find(r => r.id === blindTestRhythm);
-    let patternData = rhythmsJsonData[blindTestRhythm] || {
-      info: { name: rhythm?.titre || 'Inconnu' },
-      name: rhythm?.titre || 'Inconnu',
-      tracks: [{ name: 'Piste Inconnue', steps: ['-', '-', '-', '-'] }]
-    };
-
-    return (
-      <div className="flex flex-col gap-4">
-        <button
-          type="button"
-          onClick={() => setBlindTestRhythm(null)}
-          className="self-start text-sm font-bold text-cordel-master-dark hover:text-cordel-wood underline underline-offset-4"
-        >
-          ← Retour au Carnet
-        </button>
-        <QcmSequenceurBlindTest
-          patternId={blindTestRhythm}
-          patternData={patternData}
-          audioUrl={rhythm?.url}
-          onComplete={() => setBlindTestRhythm(null)}
-        />
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col gap-6">
       {/* SOUS-MENU DES ONGLETS DU PARCOURS */}
@@ -576,17 +551,6 @@ export default function MonCarnetAisance({
           allSongs={songs} 
           allSheets={educationalSheets} 
           onExit={() => setActiveSubTab('rythmes')} 
-        />
-      )}
-
-      {/* ================================================================ */}
-      {/* ONGLET EXAMENS                                                   */}
-      {/* ================================================================ */}
-      {activeSubTab === 'examens' && (
-        <ExamDashboard 
-          profileData={profileData} 
-          allSongs={songs} 
-          allSheets={educationalSheets} 
         />
       )}
 
@@ -923,109 +887,18 @@ export default function MonCarnetAisance({
       )}
 
       {/* ================================================================ */}
-      {/* ONGLET PERCUSSION                                                */}
+      {/* ONGLET PERCUSSION (RECENTRÉ SUR LES MORCEAUX DU RÉPERTOIRE)       */}
       {/* ================================================================ */}
       {activeSubTab === 'rythmes' && (
-        <div className="flex flex-col gap-4">
-          {/* Passerelle directe vers les entraînements */}
-          {activeSeasonTrainings.length > 0 && (
-            <div className="p-3 bg-amber-50 border border-dashed border-amber-300 rounded-[4px_6px_3px_5px] flex items-center justify-between gap-2 shadow-2xs">
-              <div className="flex items-center gap-2">
-                <span className="text-base">⚡</span>
-                <span className="text-xs font-bold text-amber-950">
-                  <strong>{activeSeasonTrainings.length} entraînement(s)</strong> disponible(s) pour vos morceaux.
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setActiveSubTab('defis')}
-                className="px-2.5 py-1 text-[9.5px] font-black uppercase rounded bg-amber-200 hover:bg-amber-300 text-amber-950 border border-amber-400 cursor-pointer shadow-2xs transition-all active:scale-95"
-              >
-                Voir les entraînements ➔
-              </button>
-            </div>
-          )}
-          {rhythms.length === 0 ? (
-            <div className="text-center p-8 bg-[#fdfaf2] border border-dashed border-encre-noire/20 rounded-lg">
-              <span className="text-3xl block mb-2">🥁</span>
-              <p className="text-sm font-bold text-encre-noire/70">Aucun rythme disponible pour le moment.</p>
-            </div>
-          ) : (
-            rhythms.map(rhythm => {
-              const autoParsed = parseSequencerJson(rhythmsJsonData[rhythm.id]);
-              return (
-                <CordelCard key={rhythm.id} className="p-5 flex flex-col gap-4">
-                  <div className="flex justify-between items-start border-b border-dashed border-cordel-master-dark/20 pb-2">
-                    <div className="flex flex-col gap-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="text-sm font-black uppercase tracking-wider text-encre-noire">
-                          {rhythm.titre}
-                        </h3>
-                        {handleToggleRevisionDemandee && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              handleToggleRevisionDemandee(rhythm.id);
-                            }}
-                            className={`text-[9px] font-black uppercase px-2 py-0.5 rounded border transition-all flex items-center gap-1 cursor-pointer ${
-                              revisionsDemandees[rhythm.id]
-                                ? 'bg-[var(--color-cordel-vert,#2d6a4f)] text-white border-[#1b4332] shadow-xs'
-                                : 'bg-[#fdfaf2] text-cordel-master-dark border-encre-noire/30 hover:bg-neutral-100'
-                            }`}
-                            title={revisionsDemandees[rhythm.id] ? "Demande de révision active pour ce rythme" : "Signaler au Mestre le besoin de réviser ce rythme"}
-                          >
-                            <span>🙋</span>
-                            <span>{revisionsDemandees[rhythm.id] ? 'Révision demandée ✓' : 'Demander à réviser'}</span>
-                          </button>
-                        )}
-                      </div>
-                      {autoParsed.instrumentsPresents && autoParsed.instrumentsPresents.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-0.5">
-                          {autoParsed.instrumentsPresents.map(inst => (
-                            <span key={inst} className="text-[8px] font-black uppercase tracking-wider bg-[#d99f4d]/20 text-cordel-wood border border-[#d99f4d]/50 px-1.5 py-0.5 rounded">
-                              {getInstrumentLabel(inst, groupNomenclature) || inst}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    {/* Échelle de confort */}
-                    <ComfortBar itemId={rhythm.id} evaluations={evaluations} handleSetEvaluation={handleSetEvaluation} comfortLevels={comfortLevels} />
-                  </div>
-
-                  {/* Entraînement : liens Séquenceur + Blind Test */}
-                  <div className="flex flex-wrap items-center gap-2 mt-2 pt-3 border-t border-dashed border-cordel-master-dark/15">
-                    <span className="text-[9px] font-black uppercase tracking-wider text-cordel-master-dark mr-2">
-                      ⏱️ Entraînement :
-                    </span>
-                    {[80, 100, 120].map(bpm => (
-                      <button
-                        key={bpm}
-                        type="button"
-                        onClick={() => launchCrossApp(getSequencerUrl(rhythm, bpm), { appLabel: 'le Séquenceur' })}
-                        className="text-[9px] font-bold bg-[var(--theme-bg)] border border-encre-noire/50 px-2.5 py-1 rounded hover:bg-[#ebdcc0] shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all cursor-pointer"
-                      >
-                        {bpm} BPM
-                      </button>
-                    ))}
-                    {/* Bouton Blind Test inline — pont vers le séquenceur */}
-                    {(rhythm.isJson || rhythm.isAudio) && (
-                      <button
-                        type="button"
-                        onClick={() => setBlindTestRhythm(rhythm.id)}
-                        className="text-[9px] font-black uppercase px-2.5 py-1 rounded border border-cordel-wood/50 bg-cordel-wood/10 text-cordel-wood hover:bg-cordel-wood/20 transition-all"
-                      >
-                        🎧 Blind Test
-                      </button>
-                    )}
-                  </div>
-                </CordelCard>
-              );
-            })
-          )}
-        </div>
+        <CarnetPercussionSection
+          repertoire={repertoire}
+          evaluations={evaluations}
+          handleSetEvaluation={handleSetEvaluation}
+          revisionsDemandees={revisionsDemandees}
+          handleToggleRevisionDemandee={handleToggleRevisionDemandee}
+          sequenceurUrl={sequenceurUrl}
+          comfortLevels={comfortLevels}
+        />
       )}
 
       {/* ================================================================ */}

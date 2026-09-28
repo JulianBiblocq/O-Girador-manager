@@ -160,7 +160,7 @@ export default function MestreEvents({ groupId, onSelectForStage, onOpenDetails 
         </CordelCard>
       ) : (
         <div className="w-full max-w-full overflow-x-auto border-2 border-encre-noire rounded-[8px_12px_9px_11px] shadow-[2.5px_2.5px_0px_0px_#181716] bg-cordel-bg-light">
-          <table className="w-full text-xs text-left border-collapse">
+          <table className="w-full text-xs text-left border-collapse min-w-[650px]">
             <thead>
               <tr className="border-b-2 border-encre-noire bg-cordel-master-light/50 font-black uppercase text-[10px] tracking-wider text-cordel-wood select-none">
                 <th className="p-1.5 md:p-3 border-r border-encre-noire/15">{t('mestre.eventDate') || "Date"}</th>

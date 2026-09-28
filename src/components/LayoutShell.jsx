@@ -755,8 +755,8 @@ export default function LayoutShell({
         </div>
 
         {/* Main Content Area */}
-        <div className="flex-1 overflow-y-auto overscroll-contain touch-pan-y cordel-bg p-4 sm:p-5 sm:px-7 md:px-9 sm:py-6 md:py-8 flex flex-col justify-between">
-          <div className="flex flex-col gap-5 w-full flex-1">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden w-full max-w-full min-w-0 overscroll-contain touch-pan-y cordel-bg p-4 sm:p-5 sm:px-7 md:px-9 sm:py-6 md:py-8 flex flex-col justify-between">
+          <div className="flex flex-col gap-5 w-full max-w-full flex-1 min-w-0">
             
             {/* Break-Glass Active Warning Banner */}
             {breakGlassActive && isSuperAdmin && (
@@ -962,7 +962,7 @@ export default function LayoutShell({
               </div>
             )}
 
-            <div className="w-full flex-1">
+            <div className="w-full max-w-full flex-1 min-w-0">
               <PresenceProvider value={{ onlineMembers, onlineCount, onlineUserIds, isPresenceEnabled, afficherEnLigne }}>
                 <InfoPoleBanner 
                   key={`help_banner_${activePoleObj?.id || currentPole}_${currentTab || 'default'}`}
@@ -982,7 +982,7 @@ export default function LayoutShell({
             </div>
           </div>
 
-          <div className="w-full flex justify-between items-center mt-8 border-t border-dashed border-cordel-master-dark/10 pt-2 select-none shrink-0">
+          <div className="w-full flex justify-between items-center mt-8 border-t border-dashed border-cordel-master-dark/10 pt-2 select-none shrink-0 pb-safe">
             <span className="text-[8px] font-black uppercase tracking-wider opacity-20">
               © O Girador {associationName || (isDemo ? 'Maracatu Na Chuva' : 'Samambaia')}
             </span>
@@ -1002,7 +1002,7 @@ export default function LayoutShell({
             />
             
             {/* Drawer sheet container */}
-            <div className="relative flex flex-col w-64 max-w-xs h-full bg-cordel-bg-light border-r-4 border-cordel-master-dark p-6 z-10 shadow-2xl animate-slide-in select-none text-left">
+            <div className="relative flex flex-col w-64 max-w-xs h-[100dvh] max-h-[100dvh] pb-safe bg-cordel-bg-light border-r-4 border-cordel-master-dark p-6 z-10 shadow-2xl animate-slide-in select-none text-left">
               {/* Close Button */}
               <button
                 type="button"
