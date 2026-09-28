@@ -9,6 +9,10 @@ import { collection, query, limit, onSnapshot, doc, updateDoc, deleteDoc, writeB
 import { db } from '../firebase';
 import { playNotificationSound } from '../utils/soundService';
 
+// Variable mémorisant si la suppression physique 'delete' est autorisée par les règles distantes Firestore.
+// Vaut null initialement, puis true ou false après première vérification.
+let isHardDeletePermitted = null;
+
 /**
  * Hook d'abonnement aux notifications internes d'un membre.
  * 
@@ -42,8 +46,9 @@ export function useInAppNotifications(userId, groupId) {
         // Déclenchement de la signature sonore uniquement pour les alertes arrivant après le premier chargement
         if (!isFirstSnapshotRef.current) {
           const hasNewUnread = snapshot.docChanges().some((change) => {
-            if (change.type === 'added') {
+            if (change.type === 'added' || change.type === 'modified') {
               const data = change.doc.data();
+              if (data.isDeleted || data.deleted) return false;
               const isUnread = data.read !== undefined ? !data.read : !data.isRead;
               const matchesGroup = !groupId || !data.groupId || data.groupId === groupId;
               return isUnread && matchesGroup;
@@ -61,6 +66,8 @@ export function useInAppNotifications(userId, groupId) {
         const fetched = [];
         snapshot.forEach((docSnap) => {
           const data = docSnap.data();
+          // Ignorer les alertes ayant fait l'objet d'une suppression logique (soft-delete)
+          if (data.isDeleted || data.deleted) return;
           fetched.push({
             id: docSnap.id,
             notifId: docSnap.id,
@@ -88,10 +95,11 @@ export function useInAppNotifications(userId, groupId) {
     return () => unsubscribe();
   }, [userId, groupId]);
 
-  // Filtrage optionnel par groupId si pertinent
+  // Filtrage optionnel par groupId si pertinent et exclusion stricte des éléments supprimés
   const notifications = useMemo(() => {
-    if (!groupId) return rawNotifications;
-    return rawNotifications.filter((n) => !n.groupId || n.groupId === groupId);
+    const active = rawNotifications.filter((n) => !n.isDeleted && !n.deleted);
+    if (!groupId) return active;
+    return active.filter((n) => !n.groupId || n.groupId === groupId);
   }, [rawNotifications, groupId]);
 
   // Compteur d'éléments non lus (supporte read et isRead)
@@ -146,32 +154,103 @@ export function useInAppNotifications(userId, groupId) {
   }, [userId, notifications]);
 
   /**
-   * Supprime définitivement une notification spécifique de la sous-collection users/{userId}/in_app_notifications.
+   * Supprime une notification spécifique.
+   * Procède à une éviction optimiste immédiate de l'interface utilisateur, puis applique
+   * une suppression physique (deleteDoc) ou logique résiliente (updateDoc) en conformité
+   * avec les règles de sécurité Firestore en vigueur.
    * 
    * @param {string} notifId Identifiant de la notification à supprimer
    */
   const deleteNotification = useCallback(async (notifId) => {
     if (!userId || !notifId) return;
 
-    try {
-      const docRef = doc(db, 'users', userId, 'in_app_notifications', notifId);
-      await deleteDoc(docRef);
+    // 1. Éviction optimiste immédiate dans l'état local pour une réactivité instantanée à l'écran
+    setRawNotifications((prev) =>
+      prev.filter((n) => n.id !== notifId && n.notifId !== notifId)
+    );
 
-      // Mise à jour optimiste locale
-      setRawNotifications((prev) =>
-        prev.filter((n) => n.id !== notifId && n.notifId !== notifId)
-      );
+    const docRef = doc(db, 'users', userId, 'in_app_notifications', notifId);
+
+    // 2. Si les permissions Firestore restreignent déjà la suppression physique,
+    // appliquer directement la suppression logique autorisée sans requête réseau superflue.
+    if (isHardDeletePermitted === false) {
+      try {
+        await updateDoc(docRef, {
+          isDeleted: true,
+          deleted: true,
+          isRead: true,
+          read: true,
+          deletedAt: new Date().toISOString()
+        });
+      } catch (err) {
+        console.error(`useInAppNotifications - Erreur marquage suppression ${notifId} :`, err);
+      }
+      return;
+    }
+
+    // 3. Tentative de suppression définitive physique avec repli résilient si non autorisée
+    try {
+      await deleteDoc(docRef);
+      isHardDeletePermitted = true;
     } catch (err) {
-      console.error(`useInAppNotifications - Erreur suppression notification ${notifId} :`, err);
+      if (err?.code === 'permission-denied' || err?.message?.includes('permissions')) {
+        // Enregistrement de la contrainte des règles Firestore pour les prochains appels
+        isHardDeletePermitted = false;
+        try {
+          await updateDoc(docRef, {
+            isDeleted: true,
+            deleted: true,
+            isRead: true,
+            read: true,
+            deletedAt: new Date().toISOString()
+          });
+        } catch (updateErr) {
+          console.error(`useInAppNotifications - Erreur repli suppression logique ${notifId} :`, updateErr);
+        }
+      } else {
+        console.error(`useInAppNotifications - Erreur suppression notification ${notifId} :`, err);
+      }
     }
   }, [userId]);
 
   /**
-   * Supprime définitivement en lot (writeBatch) l'ensemble des notifications de la sous-collection users/{userId}/in_app_notifications.
+   * Supprime l'ensemble des notifications affichées.
+   * Procède à une purge optimiste locale immédiate, puis persiste via batch (delete ou soft-delete).
    */
   const clearAllNotifications = useCallback(async () => {
     if (!userId || notifications.length === 0) return;
 
+    // 1. Purge optimiste locale immédiate
+    const idsToDelete = new Set(notifications.map((n) => n.id || n.notifId));
+    setRawNotifications((prev) => prev.filter((n) => !idsToDelete.has(n.id || n.notifId)));
+
+    const nowIso = new Date().toISOString();
+
+    // 2. Si les permissions restreignent la suppression physique, bascule immédiate sur update batch
+    if (isHardDeletePermitted === false) {
+      try {
+        const batch = writeBatch(db);
+        notifications.forEach((item) => {
+          const docId = item.id || item.notifId;
+          if (docId) {
+            const docRef = doc(db, 'users', userId, 'in_app_notifications', docId);
+            batch.update(docRef, {
+              isDeleted: true,
+              deleted: true,
+              isRead: true,
+              read: true,
+              deletedAt: nowIso
+            });
+          }
+        });
+        await batch.commit();
+      } catch (err) {
+        console.error("useInAppNotifications - Erreur suppression collective logique :", err);
+      }
+      return;
+    }
+
+    // 3. Tentative de suppression par lot physique avec repli résilient
     try {
       const batch = writeBatch(db);
       notifications.forEach((item) => {
@@ -181,14 +260,33 @@ export function useInAppNotifications(userId, groupId) {
           batch.delete(docRef);
         }
       });
-
       await batch.commit();
-
-      // Mise à jour optimiste locale
-      const idsToDelete = new Set(notifications.map((n) => n.id || n.notifId));
-      setRawNotifications((prev) => prev.filter((n) => !idsToDelete.has(n.id || n.notifId)));
+      isHardDeletePermitted = true;
     } catch (err) {
-      console.error("useInAppNotifications - Erreur suppression collective des notifications :", err);
+      if (err?.code === 'permission-denied' || err?.message?.includes('permissions')) {
+        isHardDeletePermitted = false;
+        try {
+          const fallbackBatch = writeBatch(db);
+          notifications.forEach((item) => {
+            const docId = item.id || item.notifId;
+            if (docId) {
+              const docRef = doc(db, 'users', userId, 'in_app_notifications', docId);
+              fallbackBatch.update(docRef, {
+                isDeleted: true,
+                deleted: true,
+                isRead: true,
+                read: true,
+                deletedAt: nowIso
+              });
+            }
+          });
+          await fallbackBatch.commit();
+        } catch (fallbackErr) {
+          console.error("useInAppNotifications - Erreur repli suppression collective logique :", fallbackErr);
+        }
+      } else {
+        console.error("useInAppNotifications - Erreur suppression collective des notifications :", err);
+      }
     }
   }, [userId, notifications]);
 
