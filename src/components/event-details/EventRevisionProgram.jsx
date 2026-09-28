@@ -3,7 +3,6 @@ import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
-import { useSequencerRhythms } from '../../hooks/useSequencerRhythms';
 import { useDancadorChoreographies, useDancadorSteps } from '../../hooks/useDancadorData';
 import { useSequencerFirestoreData } from '../../hooks/useSequencerFirestoreData';
 import { useRepertoireVaralDocs } from '../../hooks/useRepertoireVaralDocs';
@@ -12,13 +11,14 @@ import RepertoireVideoModal from '../mestre/RepertoireVideoModal';
 import SignalZoomModal from '../mestre/SignalZoomModal';
 import PieceLyricsModal from '../member/PieceLyricsModal';
 import PieceCultureModal from '../member/PieceCultureModal';
-import { buildSequencerUrl } from '../../utils/sequencerUrlUtils';
+import { buildSequencerUrl, openSequencerWithCrossApp } from '../../utils/sequencerUrlUtils';
+import { launchCrossApp } from '../../utils/crossAppAuth';
 import { subscribeGroupTrainings } from '../../services/aisanceService';
 import { resolvePieceTrainings, buildResolutionDictionaries, resolvePieceLiveTechnicalData } from '../../utils/repertoireMatcher';
 import TrainingCompactCard from '../pedagogy/TrainingCompactCard';
 
 export default function EventRevisionProgram({
-  setlist,
+  setlist = [],
   isAuthorized,
   updatingSetlist,
   handleRemoveMorceau,
@@ -27,10 +27,6 @@ export default function EventRevisionProgram({
   handleAddRepertoirePiece,
   newMorceauTitre,
   setNewMorceauTitre,
-  selectedCatalogRhythmUrl,
-  setSelectedCatalogRhythmUrl,
-  fileInputKey,
-  setNewMorceauJsonFile,
   newMorceauNotes,
   setNewMorceauNotes,
   groupId,
@@ -97,9 +93,19 @@ export default function EventRevisionProgram({
   const signalsMap = useMemo(() => new Map((signals || []).map((s) => [s.id, s])), [signals]);
 
   // Hooks pour le séquenceur
-  const { catalogRhythms, loadingRhythms } = useSequencerRhythms(groupId);
-  const { rhythms: allSequencerRhythms, loading: loadingSequencerRhythms } = useSequencerFirestoreData(groupId);
-  const linkedSequencerRhythms = allSequencerRhythms.filter(r => linkedPatterns.includes(r.id));
+  const { rhythms: allSequencerRhythms } = useSequencerFirestoreData(groupId);
+
+  // Déduplication des rythmes orphelins : n'afficher en bas que les rythmes non représentés dans le classeur setlist
+  const linkedSequencerRhythms = useMemo(() => {
+    const representedSeqIds = new Set(
+      (setlist || [])
+        .flatMap((m) => [m.sequenceurId, m.pieceId, m.id, m.jsonUrl])
+        .filter(Boolean)
+    );
+    return (allSequencerRhythms || []).filter(
+      (r) => (linkedPatterns || []).includes(r.id) && !representedSeqIds.has(r.id)
+    );
+  }, [allSequencerRhythms, linkedPatterns, setlist]);
 
   // Hooks pour Dançador
   const { choreographies: allChoreographies, loading: loadingChoreos } = useDancadorChoreographies(groupId);
@@ -227,7 +233,7 @@ export default function EventRevisionProgram({
             ) : (
               <div className="flex flex-col gap-2.5 mb-4">
                 {/* Liste transversale du Fil Conducteur */}
-                {setlist.map((morceau) => {
+                {setlist.map((morceau, index) => {
                   const resolved = resolvePieceLiveTechnicalData(morceau, resolutionDicts) || morceau;
                   const badges = getDisciplineBadges(morceau, resolved);
 
@@ -237,12 +243,16 @@ export default function EventRevisionProgram({
                   const seqFileUrl = morceau.jsonUrl || morceau.sequenceurUrl || resolved.sequenceurFileUrl;
                   const seqType = morceau.sequenceurType || resolved.sequenceurType;
 
+                  const pieceForSequencer = {
+                    sequenceurType: seqType,
+                    sequenceurId: seqId,
+                    sequenceurFileUrl: seqFileUrl,
+                    jsonUrl: seqFileUrl,
+                    titre: morceau.titre
+                  };
+
                   if (seqType || seqId || seqFileUrl) {
-                    targetUrl = buildSequencerUrl({
-                      sequenceurType: seqType,
-                      sequenceurId: seqId,
-                      sequenceurFileUrl: seqFileUrl,
-                    }, assocSequenceurUrl);
+                    targetUrl = buildSequencerUrl(assocSequenceurUrl, pieceForSequencer);
                   }
 
                   const activeToadaDoc = resolved.activeToada || (morceau.toadaDocId ? toadasMap.get(morceau.toadaDocId) : null);
@@ -252,7 +262,7 @@ export default function EventRevisionProgram({
 
                   return (
                     <div 
-                      key={morceau.id || morceau.pieceId}
+                      key={morceau.id || morceau.pieceId || `piece_${index}`}
                       className="text-xs p-3 rounded theme-inner-panel flex flex-col gap-2 border border-encre-noire/15 shadow-xs bg-white"
                     >
                       <div className="flex justify-between items-start gap-2">
@@ -368,27 +378,26 @@ export default function EventRevisionProgram({
                       {/* Liens et passerelles dynamiques */}
                       <div className="flex flex-wrap items-center gap-1.5 pt-1">
                         {targetUrl && (
-                          <a
-                            href={targetUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="theme-btn theme-bg-ocre text-encre-noire px-3 py-1.5 text-[10px] font-black rounded-[4px_6px_3px_5px] shadow-[1px_1px_0px_0px_rgba(0,0,0,0.15)] inline-flex items-center justify-center gap-1.5 hover:brightness-105 active:translate-x-[0.5px] active:translate-y-[0.5px] flex-1 text-center"
+                          <button
+                            type="button"
+                            onClick={() => openSequencerWithCrossApp(assocSequenceurUrl, pieceForSequencer)}
+                            className="theme-btn theme-bg-ocre text-encre-noire px-3 py-1.5 text-[10px] font-black rounded-[4px_6px_3px_5px] shadow-[1px_1px_0px_0px_rgba(0,0,0,0.15)] inline-flex items-center justify-center gap-1.5 hover:brightness-105 active:translate-x-[0.5px] active:translate-y-[0.5px] flex-1 text-center cursor-pointer"
+                            title="Ouvrir dans le Séquenceur avec SSO transparent"
                           >
                             🎧 {morceau.sequenceurType === 'presets' ? 'Ouvrir le Preset dans le Séquenceur' : (morceau.sequenceurType === 'sections' ? 'Ouvrir la Séquence dans le Séquenceur' : 'Écouter dans le Séquenceur')}
-                          </a>
+                          </button>
                         )}
 
                         {choreoId && (
-                          <a
-                            href={`https://dancador.ogirador.fr/?choreoId=${choreoId}&groupId=${groupId}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <button
+                            type="button"
+                            onClick={() => launchCrossApp(`https://dancador.ogirador.fr/?choreoId=${choreoId}&groupId=${groupId}`, { appLabel: "Dançad'Or" })}
                             className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black uppercase rounded bg-pink-50 hover:bg-pink-100 text-pink-900 border border-pink-300 shadow-2xs transition-colors cursor-pointer"
                             title="Ouvrir la chorégraphie dans Dançad'Or"
                           >
                             <span>💃</span>
                             <span>Chorégraphie</span>
-                          </a>
+                          </button>
                         )}
 
                         {activeToadaDoc && (
@@ -460,14 +469,13 @@ export default function EventRevisionProgram({
                             </div>
                           )}
 
-                          <a
-                            href={targetUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="theme-btn theme-bg-ocre text-encre-noire px-3 py-1.5 text-[10px] font-black rounded-[4px_6px_3px_5px] shadow-[1px_1px_0px_0px_rgba(0,0,0,0.15)] inline-flex items-center justify-center gap-1.5 hover:brightness-105 active:translate-x-[0.5px] active:translate-y-[0.5px] w-full text-center mt-1"
+                          <button
+                            type="button"
+                            onClick={() => launchCrossApp(targetUrl, { appLabel: 'le Séquenceur' })}
+                            className="theme-btn theme-bg-ocre text-encre-noire px-3 py-1.5 text-[10px] font-black rounded-[4px_6px_3px_5px] shadow-[1px_1px_0px_0px_rgba(0,0,0,0.15)] inline-flex items-center justify-center gap-1.5 hover:brightness-105 active:translate-x-[0.5px] active:translate-y-[0.5px] w-full text-center mt-1 cursor-pointer"
                           >
                             🎧 Ouvrir dans le Séquenceur
-                          </a>
+                          </button>
                         </div>
                       );
                     })}

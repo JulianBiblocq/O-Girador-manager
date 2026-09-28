@@ -9,13 +9,25 @@ import { launchCrossApp } from './crossAppAuth';
 
 /**
  * Construit l'URL complète de lancement du Séquenceur avec les paramètres appropriés.
+ * Fonction polymorphe tolérante aux inversions d'arguments (baseUrl, item) ou (item, baseUrl).
  *
- * @param {string} [baseUrl] - URL de base du Séquenceur (ex: depuis les paramètres de l'association)
- * @param {Object|string} item - Morceau du répertoire ou identifiant de ressource
+ * @param {string|Object} [arg1] - URL de base du Séquenceur ou objet Morceau
+ * @param {Object|string} [arg2] - Morceau du répertoire, identifiant de ressource ou URL de base
  * @returns {string} URL prête à être ouverte
  */
-export function buildSequencerUrl(baseUrl = 'https://sequenceur.app', item) {
-  const base = (baseUrl || 'https://sequenceur.app').trim();
+export function buildSequencerUrl(arg1 = 'https://sequenceur.app', arg2) {
+  let baseUrl = arg1;
+  let item = arg2;
+
+  // Support polymorphique : inversion d'arguments tolérée si arg1 est un objet (morceau)
+  if (typeof arg1 === 'object' && arg1 !== null) {
+    item = arg1;
+    baseUrl = typeof arg2 === 'string' && arg2.trim() ? arg2 : 'https://sequenceur.app';
+  } else if (!baseUrl || typeof baseUrl !== 'string') {
+    baseUrl = 'https://sequenceur.app';
+  }
+
+  const base = baseUrl.trim();
   if (!item) return base;
 
   const separator = base.includes('?') ? '&' : '?';

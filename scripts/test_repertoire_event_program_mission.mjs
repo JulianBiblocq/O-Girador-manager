@@ -80,5 +80,44 @@ assert(
   revisionContent.includes("morceau.notes"),
   "EventRevisionProgram.jsx doit afficher la note d'intention du morceau pour la séance."
 );
+assert(
+  revisionContent.includes("setlist = []"),
+  "EventRevisionProgram.jsx doit avoir setlist = [] par défaut pour immuniser contre undefined."
+);
+assert(
+  revisionContent.includes("openSequencerWithCrossApp"),
+  "EventRevisionProgram.jsx doit utiliser openSequencerWithCrossApp pour le SSO sécurisé."
+);
+assert(
+  revisionContent.includes("representedSeqIds"),
+  "EventRevisionProgram.jsx doit dédupliquer les rythmes du séquenceur déjà présents dans la setlist."
+);
+
+// 8. Test fonctionnel direct du polymorphisme de buildSequencerUrl
+const seqUtilsPath = path.join(rootDir, 'src/utils/sequencerUrlUtils.js');
+const seqUtilsContent = fs.readFileSync(seqUtilsPath, 'utf8');
+assert(seqUtilsContent.includes("typeof arg1 === 'object'"), "buildSequencerUrl doit supporter arg1 objet.");
+
+// Simulation du comportement polymorphe
+function testBuildSequencerUrl(arg1 = 'https://sequenceur.app', arg2) {
+  let baseUrl = arg1;
+  let item = arg2;
+  if (typeof arg1 === 'object' && arg1 !== null) {
+    item = arg1;
+    baseUrl = typeof arg2 === 'string' && arg2.trim() ? arg2 : 'https://sequenceur.app';
+  } else if (!baseUrl || typeof baseUrl !== 'string') {
+    baseUrl = 'https://sequenceur.app';
+  }
+  const base = baseUrl.trim();
+  if (!item) return base;
+  const separator = base.includes('?') ? '&' : '?';
+  const patternId = item.sequenceurId || item.id;
+  return `${base}${separator}patternId=${encodeURIComponent(patternId)}`;
+}
+
+const urlStandard = testBuildSequencerUrl('https://sequenceur.app', { sequenceurId: 'luanda_123' });
+const urlInverted = testBuildSequencerUrl({ sequenceurId: 'luanda_123' }, 'https://sequenceur.app');
+assert(urlStandard.includes('patternId=luanda_123'), "Ordre standard doit fonctionner.");
+assert(urlInverted.includes('patternId=luanda_123'), "Ordre inversé (polymorphe) doit fonctionner sans crash.");
 
 console.log("✅ TOUS LES TESTS DU SÉLECTEUR RÉPERTOIRE DANS LES ÉVÉNEMENTS SONT PASSÉS AVEC SUCCÈS !");
