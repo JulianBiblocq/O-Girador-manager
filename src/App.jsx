@@ -120,7 +120,8 @@ const POLES_CONFIG = [
       { id: 'export-annu', label: 'Annuaire & Exports', labelKey: 'tabExportAnnu' },
       { id: 'activity-reports', label: "Bilans d'Activité & Présences", labelKey: 'tabActivityReports' },
       { id: 'studio-events', label: 'Registre des dates', labelKey: 'tabStudioEvents' },
-      { id: 'varal-secretariat', label: 'Documents officiels', labelKey: 'tabVaralSecretariat' }
+      { id: 'varal-secretariat', label: 'Documents officiels', labelKey: 'tabVaralSecretariat' },
+      { id: 'secretariat-documents', label: 'Chartes, Santé & Liens', labelKey: 'tabSecretariatDocuments' }
     ]
   },
   {
@@ -190,7 +191,9 @@ const POLES_CONFIG = [
     tabs: [
       { id: 'studio-social', label: 'Réseaux & Médias', labelKey: 'tabStudioSocial' },
       { id: 'newsletter', label: "Lettres d'info", labelKey: 'tabNewsletter' },
-      { id: 'varal-photos', label: 'Médiathèque Photos', labelKey: 'tabVaralPhotos' }
+      { id: 'varal-photos', label: 'Médiathèque Photos', labelKey: 'tabVaralPhotos' },
+      { id: 'studio-communication', label: 'Communication & Brevo', labelKey: 'tabStudioCommunication' },
+      { id: 'studio-lexique', label: 'Lexique & Mentions', labelKey: 'tabStudioLexique' }
     ]
   },
   {
@@ -234,7 +237,8 @@ const POLES_CONFIG = [
     labelKey: 'poles.config',
     tabs: [
       { id: 'config-identity', label: 'Identité légale & Juridique', labelKey: 'tabConfigIdentity' },
-      { id: 'config-profile', label: 'Inscription, Profils & Lieux/Agenda', labelKey: 'tabConfigProfile' },
+      { id: 'config-profile', label: 'Inscription, Profils & Pupitres', labelKey: 'tabConfigProfile' },
+      { id: 'config-agenda', label: 'Agenda & Lieux', labelKey: 'tabConfigAgenda' },
       { id: 'config-security', label: 'Badges, Rôles & Sécurité', labelKey: 'tabConfigSecurity' },
       { id: 'config-comms', label: 'Communication, E-mails & Automatisations', labelKey: 'tabConfigComms' },
       { id: 'config-modules', label: 'Modules SaaS, Apparence & Médias', labelKey: 'tabConfigModules' }
@@ -1494,14 +1498,14 @@ export default function App() {
   const hasAccessGouvernance = isMasterKeyActive || canAccessPole('gouvernance', profileData, permissionsMatrice, userTags) || checkTabAccess('ca-reunions', 'gouvernance') || checkTabAccess('ca-reports', 'gouvernance') || checkTabAccess('ca-documents', 'gouvernance') || checkTabAccess('ca-finances', 'gouvernance') || checkTabAccess('ca-prestations', 'gouvernance');
   const hasAccessDiffusion = isMasterKeyActive || canAccessPole('diffusion', profileData, permissionsMatrice, userTags) || checkTabAccess('gigs-pipeline', 'diffusion');
   const hasAccessTresorerie = isMasterKeyActive || canAccessPole('tresorerie', profileData, permissionsMatrice, userTags) || checkTabAccess('dashboard-finance', 'tresorerie') || checkTabAccess('cotisations', 'tresorerie') || checkTabAccess('events-finances', 'tresorerie') || checkTabAccess('operations-diverses', 'tresorerie') || checkTabAccess('frais-km', 'tresorerie') || checkTabAccess('reports-exports', 'tresorerie');
-  const hasAccessSecretariat = isMasterKeyActive || canAccessPole('secretariat', profileData, permissionsMatrice, userTags) || checkTabAccess('export-annu', 'secretariat') || checkTabAccess('activity-reports', 'secretariat') || checkTabAccess('studio-events', 'secretariat') || checkTabAccess('varal-secretariat', 'secretariat');
+  const hasAccessSecretariat = isMasterKeyActive || canAccessPole('secretariat', profileData, permissionsMatrice, userTags) || checkTabAccess('export-annu', 'secretariat') || checkTabAccess('activity-reports', 'secretariat') || checkTabAccess('studio-events', 'secretariat') || checkTabAccess('varal-secretariat', 'secretariat') || checkTabAccess('secretariat-documents', 'secretariat');
   const hasAccessLogistique = isMasterKeyActive || canAccessPole('logistique', profileData, permissionsMatrice, userTags) || checkTabAccess('inventory', 'logistique') || checkTabAccess('logistics-kits', 'logistique') || checkTabAccess('logistics-carpool', 'logistique') || checkTabAccess('orders', 'logistique') || checkTabAccess('orders-manager', 'logistique');
   const hasAccessLutherie = isMasterKeyActive || canAccessPole('lutherie', profileData, permissionsMatrice, userTags) || checkTabAccess('instrument-models', 'lutherie') || checkTabAccess('inventory-projects', 'lutherie') || checkTabAccess('inventory-parts', 'lutherie') || checkTabAccess('inventory-supplies', 'lutherie') || checkTabAccess('workshop-tools', 'lutherie') || checkTabAccess('varal-lutherie', 'lutherie');
   const hasAccessCostumerie = isMasterKeyActive || canAccessPole('costumerie', profileData, permissionsMatrice, userTags) || checkTabAccess('wardrobe-projects', 'costumerie') || checkTabAccess('wardrobe-models', 'costumerie') || checkTabAccess('wardrobe-pieces', 'costumerie') || checkTabAccess('wardrobe-supplies', 'costumerie') || checkTabAccess('wardrobe-tools', 'costumerie') || checkTabAccess('wardrobe-sizes', 'costumerie') || checkTabAccess('varal-costumerie', 'costumerie');
-  const hasAccessStudio = isMasterKeyActive || canAccessPole('studio', profileData, permissionsMatrice, userTags) || checkTabAccess('studio-social', 'studio') || checkTabAccess('newsletter', 'studio') || checkTabAccess('varal-photos', 'studio');
+  const hasAccessStudio = isMasterKeyActive || canAccessPole('studio', profileData, permissionsMatrice, userTags) || checkTabAccess('studio-social', 'studio') || checkTabAccess('newsletter', 'studio') || checkTabAccess('varal-photos', 'studio') || checkTabAccess('studio-communication', 'studio') || checkTabAccess('studio-lexique', 'studio');
   const hasAccessPedagogie = isMasterKeyActive || canAccessPole('pedagogie', profileData, permissionsMatrice, userTags) || checkTabAccess('mestre-pedagogy-dashboard', 'pedagogie') || checkTabAccess('varal-manager', 'pedagogie') || checkTabAccess('mestre-pedagogy-qcm', 'pedagogie');
   const hasAccessVitrine = isMasterKeyActive || checkTabAccess('vitrine-general', 'vitrine') || checkTabAccess('vitrine-editor', 'vitrine');
-  const hasAccessConfig = isSystemOrSuperAdminOrMestre || isMasterKeyActive || checkTabAccess('config-identity', 'config') || checkTabAccess('config-profile', 'config') || checkTabAccess('config-security', 'config') || checkTabAccess('config-comms', 'config') || checkTabAccess('config-modules', 'config');
+  const hasAccessConfig = isSystemOrSuperAdminOrMestre || isMasterKeyActive || checkTabAccess('config-identity', 'config') || checkTabAccess('config-profile', 'config') || checkTabAccess('config-agenda', 'config') || checkTabAccess('config-security', 'config') || checkTabAccess('config-comms', 'config') || checkTabAccess('config-modules', 'config');
   const hasAccessForumMod = isMasterKeyActive || userTags.some(t => ['Modérateur', 'Modérateur Forum', 'Gestionnaire Porte-voix', 'Porte-voix'].includes(t));
 
   // Fonction utilitaire pour nettoyer les paramètres d'URL (ex: threadId, eventId) lors des navigations
@@ -1811,11 +1815,12 @@ export default function App() {
         break;
       case 'secretariat-documents':
         setCurrentPole('secretariat');
-        setCurrentTab('varal-secretariat');
+        setCurrentTab('secretariat-documents');
         break;
+      case 'config-agenda':
       case 'secretariat-lieux':
-        setCurrentPole('secretariat');
-        setCurrentTab('studio-events');
+        setCurrentPole('config');
+        setCurrentTab('config-agenda');
         break;
       case 'logistics-carpool':
         setCurrentPole('logistique');
@@ -1823,7 +1828,7 @@ export default function App() {
         break;
       case 'studio-communication':
         setCurrentPole('studio');
-        setCurrentTab('studio-social');
+        setCurrentTab('studio-communication');
         break;
       default:
         setCurrentPole('accueil');
@@ -2546,11 +2551,7 @@ export default function App() {
                     groupId={profileData?.groupId}
                     onBack={() => handleNavigateToPole('accueil')} 
                   />
-                ) : (currentTab === 'secretariat-reports' && hasAccessSecretariat) ? (
-                  <SecretariatReportsView 
-                    groupId={profileData?.groupId} 
-                    onBack={() => handleNavigateToPole('accueil')} 
-                  />
+
                 ) : (currentTab === 'secretariat-documents' && hasAccessSecretariat) ? (
                   <SecretariatDocuments 
                     groupId={profileData?.groupId}
@@ -2677,6 +2678,15 @@ export default function App() {
                     isSystemAdmin={profileData?.isSystemAdmin}
                     mode="profile-only"
                     activeTabProp="organisation"
+                    onBack={() => handleNavigateToPole('accueil')} 
+                  />
+                ) : (currentTab === 'config-agenda' && checkTabAccess('config-agenda', 'config')) ? (
+                  <AssociationSettings 
+                    groupId={profileData?.groupId}
+                    role={profileData?.role}
+                    isSystemAdmin={profileData?.isSystemAdmin}
+                    mode="agenda-only"
+                    activeTabProp="agenda"
                     onBack={() => handleNavigateToPole('accueil')} 
                   />
                 ) : (currentTab === 'config-security' && checkTabAccess('config-security', 'config')) ? (

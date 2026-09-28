@@ -64,6 +64,24 @@ export default function EventFormFields({
           console.warn("Calcul automatique dateFin échoué :", err);
         }
       }
+
+      // Calcul automatique de la date limite d'inscription selon le délai par défaut en heures
+      const activeType = prev.type || 'prestation';
+      const typePresets = eventTypeConfigs?.[activeType];
+      const deadlineHours = Number(typePresets?.defaultDeadlineHours);
+      if (deadlineHours > 0 && newDate && (!prev.dateLimiteInscription || !isEdit)) {
+        try {
+          const eventStart = new Date(newDate);
+          if (!isNaN(eventStart.getTime())) {
+            const deadlineDate = new Date(eventStart.getTime() - deadlineHours * 3600 * 1000);
+            const tzOffset = deadlineDate.getTimezoneOffset() * 60000;
+            updated.dateLimiteInscription = new Date(deadlineDate.getTime() - tzOffset).toISOString().slice(0, 16);
+          }
+        } catch (err) {
+          console.warn("Calcul automatique dateLimiteInscription échoué :", err);
+        }
+      }
+
       return updated;
     });
   };
@@ -90,7 +108,7 @@ export default function EventFormFields({
         }
       }
 
-      // Application des presets booléens configurés pour ce type
+      // Application des presets configurés pour ce type (eventTypeConfigs)
       const typePresets = eventTypeConfigs?.[newType];
       if (typePresets) {
         if (typePresets.includesPercussion !== undefined) {
@@ -104,6 +122,40 @@ export default function EventFormFields({
         }
         if (typePresets.isPublic !== undefined) {
           updated.isPublic = Boolean(typePresets.isPublic);
+        }
+        if (typePresets.requiresValidation !== undefined) {
+          updated.requiresValidation = Boolean(typePresets.requiresValidation);
+        }
+        if (typePresets.enableRoadbook !== undefined) {
+          updated.enableRoadbook = Boolean(typePresets.enableRoadbook);
+        }
+        if (typePresets.enableStageLayout !== undefined) {
+          updated.enableStageLayout = Boolean(typePresets.enableStageLayout);
+          updated.agendaEnableStageLayout = Boolean(typePresets.enableStageLayout);
+        }
+        if (typePresets.enableRevisionProgram !== undefined) {
+          updated.enableRevisionProgram = Boolean(typePresets.enableRevisionProgram);
+          updated.agendaEnableRevisionProgram = Boolean(typePresets.enableRevisionProgram);
+        }
+        // Pré-remplissage du lien de dépôt cloud par défaut si renseigné
+        if (typePresets.defaultDropUrl && (!isEdit || !prev.dropUrl)) {
+          updated.dropUrl = typePresets.defaultDropUrl;
+          updated.lienDepotMedias = typePresets.defaultDropUrl;
+        }
+        // Calcul automatique de la date limite d'inscription selon le délai par défaut en heures
+        const deadlineHours = Number(typePresets.defaultDeadlineHours);
+        const targetDate = updated.date || prev.date;
+        if (deadlineHours > 0 && targetDate && (!isEdit || !prev.dateLimiteInscription)) {
+          try {
+            const eventStart = new Date(targetDate);
+            if (!isNaN(eventStart.getTime())) {
+              const deadlineDate = new Date(eventStart.getTime() - deadlineHours * 3600 * 1000);
+              const tzOffset = deadlineDate.getTimezoneOffset() * 60000;
+              updated.dateLimiteInscription = new Date(deadlineDate.getTime() - tzOffset).toISOString().slice(0, 16);
+            }
+          } catch (err) {
+            console.warn("Calcul automatique dateLimiteInscription échoué :", err);
+          }
         }
       }
 
@@ -122,6 +174,8 @@ export default function EventFormFields({
       if (!isEdit || prev.enableVideoDrop === undefined) {
         if (typePresets?.enableVideoDrop !== undefined) {
           updated.enableVideoDrop = Boolean(typePresets.enableVideoDrop);
+        } else if (typePresets?.activerDepotVideo !== undefined) {
+          updated.enableVideoDrop = Boolean(typePresets.activerDepotVideo);
         } else {
           updated.enableVideoDrop = defaultVideoDrop;
         }
@@ -475,6 +529,23 @@ export default function EventFormFields({
             <span>🪢</span>
             <span>Varal Photos</span>
             <span className="ml-auto text-[10px]">{Boolean(formData.publierSurVaral) ? 'ON' : 'OFF'}</span>
+          </button>
+
+          {/* 9. Feuille de route (Roadbook) */}
+          <button
+            type="button"
+            onClick={() => toggleBooleanField('enableRoadbook', formData.enableRoadbook !== false)}
+            disabled={saving}
+            className={`flex items-center justify-center gap-2 p-2 rounded text-xs font-black uppercase tracking-wider border transition-all cursor-pointer ${
+              formData.enableRoadbook !== false
+                ? 'bg-amber-100 dark:bg-amber-950/40 text-amber-950 dark:text-amber-200 border-amber-500 shadow-xs'
+                : 'bg-neutral-100 dark:bg-neutral-800/40 text-neutral-400 border-neutral-300 dark:border-neutral-700'
+            }`}
+            title="Activer la feuille de route opérationnelle (Roadbook jour J)"
+          >
+            <span>📄</span>
+            <span>Feuille de route</span>
+            <span className="ml-auto text-[10px]">{formData.enableRoadbook !== false ? 'ON' : 'OFF'}</span>
           </button>
         </div>
 

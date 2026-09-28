@@ -101,6 +101,62 @@ export default function TabLieux({ formData, handleChange, saving, t }) {
 
   return (
     <div className="flex flex-col gap-6 text-left">
+      {/* 0. Adresse du Local Associatif & Référence Convois / Frais Km */}
+      <CordelCard variant="default" useExtremeBorder={true} className="p-4 bg-amber-50/70 border border-amber-300/80">
+        <div className="flex items-start gap-2.5">
+          <span className="text-xl shrink-0 mt-0.5">🏛️</span>
+          <div className="flex flex-col text-left flex-1 min-w-0">
+            <h3 className="text-xs font-black uppercase tracking-wider text-cordel-wood">
+              Local Associatif & Référence Kilométrique
+            </h3>
+            <p className="text-[10px] text-stone-600 mt-0.5 leading-relaxed">
+              Adresse du local de l'association servant de point de départ par défaut des convois régie et de base de calcul pour les indemnités kilométriques (frais de déplacement).
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-2 items-center mt-3">
+              <div className="flex-1 w-full">
+                <AddressAutocomplete
+                  value={formData.adresseLocal || formData.adresseSiegeSocial || ''}
+                  onChange={(val) => {
+                    const stringVal = typeof val === 'string' ? val : (val?.target?.value || '');
+                    handleChange('adresseLocal', stringVal);
+                  }}
+                  onPlaceSelected={(placeDetails) => {
+                    if (placeDetails) {
+                      handleChange('adresseLocal', placeDetails.formattedAddress || placeDetails.name || '');
+                    }
+                  }}
+                  placeholder="Rechercher l'adresse physique du local associatif..."
+                  className="theme-input text-xs bg-white py-1.5 w-full font-bold"
+                />
+              </div>
+              {lieuxImportants.length > 0 && (
+                <select
+                  value=""
+                  onChange={(e) => {
+                    const selectedLieu = lieuxImportants.find(l => l.id === e.target.value);
+                    if (selectedLieu) {
+                      handleChange('adresseLocal', selectedLieu.adresse);
+                    }
+                  }}
+                  className="theme-input text-xs font-semibold py-1.5 bg-white border border-stone-300 sm:w-auto w-full cursor-pointer shrink-0"
+                >
+                  <option value="">📋 Copier depuis un lieu enregistré...</option>
+                  {lieuxImportants.map(l => (
+                    <option key={l.id} value={l.id}>📍 {l.nom}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+            {formData.adresseLocal && (
+              <span className="text-[9px] font-bold text-emerald-800 mt-1 flex items-center gap-1">
+                ✅ Point de départ configuré : {formData.adresseLocal}
+              </span>
+            )}
+          </div>
+        </div>
+      </CordelCard>
+
       <CordelCard variant="default" useExtremeBorder={true} className="p-5 flex flex-col gap-4">
         <div className="flex justify-between items-center border-b border-dashed border-cordel-master-dark/20 pb-3 flex-wrap gap-2">
           <div>

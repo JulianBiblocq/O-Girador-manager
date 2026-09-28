@@ -602,6 +602,11 @@ export default function WidgetAgenda({
           includesPercussion: formData.includesPercussion !== false,
           includesDance: formData.includesDance !== false,
           enableCarpool: formData.enableCarpool !== false,
+          enableRoadbook: formData.enableRoadbook !== undefined
+            ? Boolean(formData.enableRoadbook)
+            : (rawConfig.enableRoadbook !== undefined
+                ? Boolean(rawConfig.enableRoadbook)
+                : ['prestation', 'stage'].includes(formData.type)),
           isPublic: Boolean(formData.isPublic),
           enableInscriptions: formData.enableInscriptions !== false,
           activerRecolteMedias: isRecolteActiveForDoc,

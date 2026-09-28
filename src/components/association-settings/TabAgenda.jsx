@@ -2,14 +2,21 @@ import React, { useState } from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import useConfirm from '../../hooks/useConfirm';
+import EventTypeConfigCard from './EventTypeConfigCard';
+import TabLieux from './TabLieux';
+import TabAutomations from './TabAutomations';
 
 export default function TabAgenda({
-  formData,
+  formData = {},
   handleChange,
   saving,
+  groupId,
   t
 }) {
   const { confirm } = useConfirm();
+  const [activeSection, setActiveSection] = useState('all'); // 'all' | 'lieux' | 'types' | 'relances'
+  const [isAutomationsOpen, setIsAutomationsOpen] = useState(false);
+
   const {
     agendaRequireInstrument = false,
     agendaEnableMaybeStatus = true,
@@ -23,6 +30,7 @@ export default function TabAgenda({
   } = formData;
 
   const [newType, setNewType] = useState('');
+  const [expandedType, setExpandedType] = useState(null);
 
   const handleAddType = () => {
     if (!newType.trim()) return;
@@ -32,24 +40,38 @@ export default function TabAgenda({
       return;
     }
 
+    const isPresta = ['prestation', 'concert', 'spectacle', 'festival', 'parade'].some(k => cleanType.includes(k));
+    const isRepet = cleanType.includes('repetition') || cleanType.includes('répétition');
+    const isStage = cleanType.includes('stage');
+    const isAtelier = cleanType.includes('atelier');
+    const isReunion = cleanType.includes('reunion') || cleanType.includes('réunion');
+
     const newConfig = {
+      enableRoadbook: isPresta || isStage,
+      activerRecolteMedias: isPresta,
+      enableVideoDrop: isAtelier || isRepet || isStage,
+      activerDepotVideo: isAtelier || isRepet || isStage,
+      enableStageLayout: isPresta || isStage,
+      agendaEnableStageLayout: isPresta || isStage,
+      enableRevisionProgram: !isReunion,
+      agendaEnableRevisionProgram: !isReunion,
+      enableCarpool: !isReunion && !isAtelier,
+      agendaEnableCarpool: !isReunion && !isAtelier,
+      includesPercussion: !isReunion,
+      includesDance: isPresta || isRepet || isStage,
+      requiresValidation: false,
+      defaultDeadlineHours: '',
+      defaultDropUrl: '',
       agendaRequireInstrument: false,
       agendaEnableMaybeStatus: true,
-      agendaEnableStageLayout: true,
-      agendaEnableRevisionProgram: true,
-      agendaEnableCarpool: true,
       agendaEnableFinance: true,
       agendaEnableInscriptions: true,
       agendaEnableImage: true,
-      agendaEnableOrdreDuJour: cleanType === 'reunion',
+      agendaEnableOrdreDuJour: isReunion,
       agendaEnableAdresse: true,
       agendaEnableUrl: true,
-      agendaEnableVolunteerShifts: cleanType === 'prestation' || cleanType === 'stage',
-      includesPercussion: cleanType !== 'reunion',
-      includesDance: cleanType === 'prestation' || cleanType === 'repetition' || cleanType === 'stage',
-      enableCarpool: cleanType !== 'reunion' && cleanType !== 'atelier',
-      isPublic: cleanType === 'prestation',
-      enableVideoDrop: cleanType === 'atelier' || cleanType === 'repetition' || cleanType === 'stage'
+      agendaEnableVolunteerShifts: isPresta || isStage,
+      isPublic: isPresta
     };
 
     const updatedConfigs = {
@@ -60,6 +82,7 @@ export default function TabAgenda({
     handleChange('eventTypeConfigs', updatedConfigs);
     handleChange('eventTypes', [...eventTypes, cleanType]);
     setNewType('');
+    setExpandedType(cleanType);
   };
 
   const handleRemoveType = async (typeToRemove) => {
@@ -81,18 +104,99 @@ export default function TabAgenda({
       delete updatedConfigs[typeToRemove];
       handleChange('eventTypeConfigs', updatedConfigs);
       handleChange('eventTypes', eventTypes.filter(t => t !== typeToRemove));
+      if (expandedType === typeToRemove) {
+        setExpandedType(null);
+      }
     }
   };
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6 text-left">
+      {/* Sélecteur de sous-sections rapide */}
+      <div className="flex flex-wrap items-center gap-2 border-b border-dashed border-cordel-master-dark/20 pb-3 mb-1 select-none">
+        <button
+          type="button"
+          onClick={() => setActiveSection('all')}
+          className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded transition-all cursor-pointer ${
+            activeSection === 'all'
+              ? 'bg-[var(--color-cordel-vert,#2d6a4f)] text-white shadow-2xs'
+              : 'bg-white text-stone-700 border border-stone-300 hover:bg-stone-50'
+          }`}
+        >
+          📜 Vue d'ensemble (Tout)
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveSection('lieux')}
+          className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded transition-all cursor-pointer ${
+            activeSection === 'lieux'
+              ? 'bg-[var(--color-cordel-vert,#2d6a4f)] text-white shadow-2xs'
+              : 'bg-white text-stone-700 border border-stone-300 hover:bg-stone-50'
+          }`}
+        >
+          📍 Salles & Lieux Habituels
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveSection('types')}
+          className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded transition-all cursor-pointer ${
+            activeSection === 'types'
+              ? 'bg-[var(--color-cordel-vert,#2d6a4f)] text-white shadow-2xs'
+              : 'bg-white text-stone-700 border border-stone-300 hover:bg-stone-50'
+          }`}
+        >
+          📅 Types d'Événements & Presets
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setActiveSection('relances');
+            setIsAutomationsOpen(true);
+          }}
+          className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded transition-all cursor-pointer ${
+            activeSection === 'relances'
+              ? 'bg-[var(--color-cordel-vert,#2d6a4f)] text-white shadow-2xs'
+              : 'bg-white text-stone-700 border border-stone-300 hover:bg-stone-50'
+          }`}
+        >
+          ⚡ Relances Automatiques (J-1 / J-2)
+        </button>
+      </div>
+
+      {/* SECTION 1 : Salles & Lieux Habituels */}
+      {(activeSection === 'all' || activeSection === 'lieux') && (
+        <div className="flex flex-col gap-3 animate-fade-in">
+          <div className="flex items-center gap-2 border-b border-dashed border-cordel-master-dark/20 pb-2">
+            <span className="text-base">📍</span>
+            <h2 className="text-xs font-black uppercase tracking-wider text-cordel-wood">
+              1. Répertoire des Salles, Repères GPS & Lieux Habituels
+            </h2>
+          </div>
+          <TabLieux
+            formData={formData}
+            handleChange={handleChange}
+            saving={saving}
+            t={t}
+          />
+        </div>
+      )}
+
+      {/* SECTION 2 : Types d'Événements & Presets */}
+      {(activeSection === 'all' || activeSection === 'types') && (
+        <div className="flex flex-col gap-5 animate-fade-in">
+          <div className="flex items-center gap-2 border-b border-dashed border-cordel-master-dark/20 pb-2 pt-2">
+            <span className="text-base">📅</span>
+            <h2 className="text-xs font-black uppercase tracking-wider text-cordel-wood">
+              2. Types d'Événements, Presets & Options d'Agenda
+            </h2>
+          </div>
       
-      {/* Contrôles On/Off */}
-      <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
-        <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">
-          ⚙️ Options de l'Agenda
-        </h3>
-        <div className="flex flex-col gap-4 text-xs font-semibold text-encre-noire select-none">
+          {/* Contrôles On/Off */}
+          <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
+            <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">
+              ⚙️ Options Globales de l'Agenda
+            </h3>
+            <div className="flex flex-col gap-4 text-xs font-semibold text-encre-noire select-none">
           
           {/* Impositions Inscriptions (RSVP) */}
           <div className="flex items-start gap-2.5 cursor-pointer">
@@ -366,237 +470,41 @@ export default function TabAgenda({
           </div>
         </div>
 
-        {/* Liste des types et configuration */}
+        {/* Liste des types configurables sous forme de Cartes Accordéons Cordel */}
+        {/* Configuration des presets d'événements : Boîte Photos (QR Code) (activerRecolteMedias), Vidéos, Roadbook, etc. */}
         <div className="flex flex-col gap-3 mt-3 text-left">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-cordel-master-dark mb-1">
-            Types actifs et Configuration des modules
-          </span>
-          <div className="flex flex-col gap-4 max-h-96 overflow-y-auto pr-1">
+          <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/15 pb-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-cordel-master-dark">
+              Types actifs & Presets par format
+            </span>
+            <span className="text-[9px] text-stone-500 font-semibold">
+              Dépliez un type pour configurer ses modules par défaut
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-3 max-h-[550px] overflow-y-auto pr-1">
             {eventTypes.map((type) => {
               const rawConfig = (formData.eventTypeConfigs && formData.eventTypeConfigs[type]) || {};
-              const config = {
-                agendaRequireInstrument: rawConfig.agendaRequireInstrument || false,
-                agendaEnableMaybeStatus: rawConfig.agendaEnableMaybeStatus !== false,
-                agendaEnableStageLayout: rawConfig.agendaEnableStageLayout !== false,
-                agendaEnableRevisionProgram: rawConfig.agendaEnableRevisionProgram !== false,
-                agendaEnableCarpool: rawConfig.agendaEnableCarpool !== false,
-                agendaEnableFinance: rawConfig.agendaEnableFinance !== false,
-                agendaEnableInscriptions: rawConfig.agendaEnableInscriptions !== false,
-                agendaEnableImage: rawConfig.agendaEnableImage !== false,
-                agendaEnableOrdreDuJour: rawConfig.agendaEnableOrdreDuJour !== undefined ? rawConfig.agendaEnableOrdreDuJour : type === 'reunion',
-                agendaEnableAdresse: rawConfig.agendaEnableAdresse !== false,
-                agendaEnableUrl: rawConfig.agendaEnableUrl !== false,
-                agendaEnableVolunteerShifts: rawConfig.agendaEnableVolunteerShifts !== undefined ? rawConfig.agendaEnableVolunteerShifts : (type === 'prestation' || type === 'stage'),
-                includesPercussion: rawConfig.includesPercussion !== undefined ? rawConfig.includesPercussion : (type !== 'reunion'),
-                includesDance: rawConfig.includesDance !== undefined ? rawConfig.includesDance : (type === 'prestation' || type === 'repetition' || type === 'stage'),
-                enableCarpool: rawConfig.enableCarpool !== undefined ? rawConfig.enableCarpool : (type !== 'reunion' && type !== 'atelier'),
-                isPublic: rawConfig.isPublic !== undefined ? rawConfig.isPublic : (type === 'prestation'),
-                activerRecolteMedias: rawConfig.activerRecolteMedias !== undefined ? rawConfig.activerRecolteMedias : ['prestation', 'concert', 'spectacle', 'festival', 'parade'].includes(type.toLowerCase()),
-                enableVideoDrop: rawConfig.enableVideoDrop !== undefined ? rawConfig.enableVideoDrop : (type === 'atelier' || type === 'repetition' || type === 'stage')
-              };
 
-              const handleToggleOption = (optionKey, isChecked) => {
+              const handleChangeTypeConfig = (typeKey, updatedConfig) => {
                 const currentConfigs = formData.eventTypeConfigs || {};
-                const updatedTypeConfig = {
-                  ...config,
-                  [optionKey]: isChecked
-                };
                 handleChange('eventTypeConfigs', {
                   ...currentConfigs,
-                  [type]: updatedTypeConfig
+                  [typeKey]: updatedConfig
                 });
               };
 
               return (
-                <div key={type} className="p-3 border border-dashed border-cordel-master-dark/15 rounded bg-cordel-bg-light/35 flex flex-col gap-2">
-                  <div className="flex justify-between items-center border-b border-dashed border-cordel-master-dark/10 pb-1.5">
-                    <span className="text-xs font-extrabold capitalize text-cordel-wood flex items-center gap-1.5 select-none">
-                      🏷️ {type}
-                    </span>
-                    <button 
-                      type="button"
-                      onClick={() => handleRemoveType(type)}
-                      className="text-[8px] hover:text-red-700 font-extrabold text-red-600 bg-red-500/10 px-2 py-0.5 border border-dashed border-red-300 rounded cursor-pointer select-none"
-                      title="Supprimer ce type"
-                    >
-                      ✕ Supprimer
-                    </button>
-                  </div>
-                  
-                  {/* Checkboxes grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-3 gap-y-2 text-[10px] font-semibold text-encre-noire">
-                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
-                      <input 
-                        type="checkbox" 
-                        checked={config.agendaEnableInscriptions}
-                        onChange={(e) => handleToggleOption('agendaEnableInscriptions', e.target.checked)}
-                        className="scale-95"
-                      />
-                      Inscriptions (RSVP)
-                    </label>
-                    
-                    {config.agendaEnableInscriptions && (
-                      <>
-                        <label className="flex items-center gap-1.5 cursor-pointer select-none pl-3 border-l border-dashed border-cordel-master-dark/15">
-                          <input 
-                            type="checkbox" 
-                            checked={config.agendaRequireInstrument}
-                            onChange={(e) => handleToggleOption('agendaRequireInstrument', e.target.checked)}
-                            className="scale-95"
-                          />
-                          Imposer instrument
-                        </label>
-                        <label className="flex items-center gap-1.5 cursor-pointer select-none pl-3 border-l border-dashed border-cordel-master-dark/15">
-                          <input 
-                            type="checkbox" 
-                            checked={config.agendaEnableMaybeStatus}
-                            onChange={(e) => handleToggleOption('agendaEnableMaybeStatus', e.target.checked)}
-                            className="scale-95"
-                          />
-                          Statut "À confirmer"
-                        </label>
-                      </>
-                    )}
-
-                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
-                      <input 
-                        type="checkbox" 
-                        checked={config.agendaEnableStageLayout}
-                        onChange={(e) => handleToggleOption('agendaEnableStageLayout', e.target.checked)}
-                        className="scale-95"
-                      />
-                      Plan de scène
-                    </label>
-                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
-                      <input 
-                        type="checkbox" 
-                        checked={config.agendaEnableRevisionProgram}
-                        onChange={(e) => handleToggleOption('agendaEnableRevisionProgram', e.target.checked)}
-                        className="scale-95"
-                      />
-                      Programme révision
-                    </label>
-                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
-                      <input 
-                        type="checkbox" 
-                        checked={config.agendaEnableCarpool}
-                        onChange={(e) => handleToggleOption('agendaEnableCarpool', e.target.checked)}
-                        className="scale-95"
-                      />
-                      Covoiturage
-                    </label>
-                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
-                      <input 
-                        type="checkbox" 
-                        checked={config.agendaEnableFinance}
-                        onChange={(e) => handleToggleOption('agendaEnableFinance', e.target.checked)}
-                        className="scale-95"
-                      />
-                      Bilan Financier
-                    </label>
-                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
-                      <input 
-                        type="checkbox" 
-                        checked={config.agendaEnableImage}
-                        onChange={(e) => handleToggleOption('agendaEnableImage', e.target.checked)}
-                        className="scale-95"
-                      />
-                      Image / Affiche
-                    </label>
-                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
-                      <input 
-                        type="checkbox" 
-                        checked={config.agendaEnableOrdreDuJour}
-                        onChange={(e) => handleToggleOption('agendaEnableOrdreDuJour', e.target.checked)}
-                        className="scale-95"
-                      />
-                      Ordre du jour (Doc)
-                    </label>
-                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
-                      <input 
-                        type="checkbox" 
-                        checked={config.agendaEnableAdresse}
-                        onChange={(e) => handleToggleOption('agendaEnableAdresse', e.target.checked)}
-                        className="scale-95"
-                      />
-                      Lieu / Adresse
-                    </label>
-                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
-                      <input 
-                        type="checkbox" 
-                        checked={config.agendaEnableUrl}
-                        onChange={(e) => handleToggleOption('agendaEnableUrl', e.target.checked)}
-                        className="scale-95"
-                      />
-                      Lien externe / URL
-                    </label>
-                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
-                      <input 
-                        type="checkbox" 
-                        checked={config.agendaEnableVolunteerShifts}
-                        onChange={(e) => handleToggleOption('agendaEnableVolunteerShifts', e.target.checked)}
-                        className="scale-95"
-                      />
-                      Créneaux Bénévolat
-                    </label>
-
-                    {/* Presets Disciplines et Logistique par défaut pour ce Type */}
-                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
-                      <input 
-                        type="checkbox" 
-                        checked={config.includesPercussion}
-                        onChange={(e) => handleToggleOption('includesPercussion', e.target.checked)}
-                        className="scale-95"
-                      />
-                      🥁 Inclut Percussion
-                    </label>
-                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
-                      <input 
-                        type="checkbox" 
-                        checked={config.includesDance}
-                        onChange={(e) => handleToggleOption('includesDance', e.target.checked)}
-                        className="scale-95"
-                      />
-                      💃 Inclut Danse
-                    </label>
-                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
-                      <input 
-                        type="checkbox" 
-                        checked={config.enableCarpool}
-                        onChange={(e) => handleToggleOption('enableCarpool', e.target.checked)}
-                        className="scale-95"
-                      />
-                      🚗 Covoiturage actif
-                    </label>
-                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
-                      <input 
-                        type="checkbox" 
-                        checked={config.isPublic}
-                        onChange={(e) => handleToggleOption('isPublic', e.target.checked)}
-                        className="scale-95"
-                      />
-                      🌍 Public (Vitrine)
-                    </label>
-                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
-                      <input 
-                        type="checkbox" 
-                        checked={config.activerRecolteMedias}
-                        onChange={(e) => handleToggleOption('activerRecolteMedias', e.target.checked)}
-                        className="scale-95"
-                      />
-                      📸 Boîte Photos (QR Code)
-                    </label>
-                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
-                      <input 
-                        type="checkbox" 
-                        checked={config.enableVideoDrop}
-                        onChange={(e) => handleToggleOption('enableVideoDrop', e.target.checked)}
-                        className="scale-95"
-                      />
-                      📹 Dépôt de vidéos (Framaspace / Drive)
-                    </label>
-                  </div>
-                </div>
+                <EventTypeConfigCard
+                  key={type}
+                  type={type}
+                  rawConfig={rawConfig}
+                  onChangeConfig={handleChangeTypeConfig}
+                  onRemoveType={handleRemoveType}
+                  saving={saving}
+                  isExpanded={expandedType === type}
+                  onToggleExpand={() => setExpandedType(prev => prev === type ? null : type)}
+                />
               );
             })}
           </div>
@@ -637,7 +545,57 @@ export default function TabAgenda({
           </select>
         </div>
       </CordelCard>
+    </div>
+  )}
+
+
+      {/* SECTION 3 : Automatisations & Relances de Présence */}
+      {(activeSection === 'all' || activeSection === 'relances') && (
+        <div className="flex flex-col gap-3 pt-2 animate-fade-in">
+          <div className="flex items-center gap-2 border-b border-dashed border-cordel-master-dark/20 pb-2">
+            <span className="text-base">⚡</span>
+            <h2 className="text-xs font-black uppercase tracking-wider text-cordel-wood">
+              3. Automatisations & Relances de Présence (J-1 / J-2)
+            </h2>
+          </div>
+
+          <CordelCard variant="default" useExtremeBorder={true} className="p-0 overflow-hidden mb-4">
+            <div 
+              onClick={() => setIsAutomationsOpen(prev => !prev)}
+              className="py-3 px-4 flex items-center justify-between cursor-pointer bg-cordel-bg-light/60 hover:bg-cordel-bg-light transition-colors select-none"
+            >
+              <div className="flex items-center gap-2 text-left">
+                <span className="text-sm">⏰</span>
+                <span className="text-xs font-black uppercase tracking-wider text-cordel-wood">
+                  Règles de Relance Automatique de Présence {isAutomationsOpen ? '▲' : '▾'}
+                </span>
+                <span className="text-[9px] text-cordel-master-dark/60 font-semibold hidden sm:inline">
+                  (Rappels de réponse RSVP ciblés avant la date limite ou l'événement)
+                </span>
+              </div>
+
+              <button
+                type="button"
+                className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded border border-encre-noire/30 bg-white hover:bg-stone-50 text-encre-noire transition-all cursor-pointer shadow-2xs"
+              >
+                {isAutomationsOpen ? 'Fermer' : 'Déplier les relances'}
+              </button>
+            </div>
+
+            {isAutomationsOpen && (
+              <div className="p-4 border-t border-dashed border-cordel-master-dark/20 animate-fade-in bg-white/40">
+                <TabAutomations
+                  groupId={groupId}
+                  eventTypes={eventTypes}
+                  t={t}
+                />
+              </div>
+            )}
+          </CordelCard>
+        </div>
+      )}
 
     </div>
   );
 }
+

@@ -2,11 +2,10 @@ import React from 'react';
 import RegistrationFieldsTable from './organization/RegistrationFieldsTable';
 import CustomFieldsAccordion from './organization/CustomFieldsAccordion';
 import AnnualCyclesAccordion from './organization/AnnualCyclesAccordion';
-import LieuxAccordion from './organization/LieuxAccordion';
-import AgendaCategoriesAccordion from './organization/AgendaCategoriesAccordion';
+import PupitresNomenclatureAccordion from './organization/PupitresNomenclatureAccordion';
 
 /**
- * Pôle Configuration - Onglet Inscription, Profils & Lieux/Agenda.
+ * Pôle Configuration - Onglet Inscription, Profils & Pupitres.
  * Restructuré en tableau clair et accordéons compacts pour éliminer le défilement vertical excessif.
  */
 export default function TabOrganization({ formData, handleChange, saving, t }) {
@@ -37,21 +36,16 @@ export default function TabOrganization({ formData, handleChange, saving, t }) {
         saving={saving}
       />
 
-      {/* 4. Carnet des salles habituelles & Repères GPS - Rapatriement accordéon */}
-      <div data-tour="config-profile-lieux">
-        <LieuxAccordion
+      {/* 4. Pupitres, Tambours & Nomenclature - Accordéon replié */}
+      <div data-tour="config-profile-pupitres">
+        <PupitresNomenclatureAccordion
           formData={formData}
           handleChange={handleChange}
           saving={saving}
+          t={t}
         />
       </div>
-
-      {/* 5. Catégories d'événements & Options d'agenda - Rapatriement accordéon */}
-      <AgendaCategoriesAccordion
-        formData={formData}
-        handleChange={handleChange}
-        saving={saving}
-      />
     </div>
   );
 }
+

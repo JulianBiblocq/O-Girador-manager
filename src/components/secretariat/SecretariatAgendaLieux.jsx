@@ -113,6 +113,7 @@ export default function SecretariatAgendaLieux({ groupId, onBack, initialSubTab 
             formData={formData}
             handleChange={handleChange}
             saving={saving}
+            groupId={groupId}
             t={t}
           />
         ) : (

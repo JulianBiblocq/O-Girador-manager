@@ -987,6 +987,11 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
         includesDance: editForm.includesDance || false,
         enableCarpool: editForm.enableCarpool !== false,
         enableInscriptions: editForm.enableInscriptions !== false,
+        enableRoadbook: editForm.enableRoadbook !== undefined
+          ? Boolean(editForm.enableRoadbook)
+          : (rawEditConfig.enableRoadbook !== undefined
+              ? Boolean(rawEditConfig.enableRoadbook)
+              : ['prestation', 'stage'].includes(editForm.type)),
         activerRecolteMedias: editForm.activerRecolteMedias !== undefined 
           ? Boolean(editForm.activerRecolteMedias) 
           : ['prestation', 'concert', 'spectacle', 'festival'].includes(editForm.type),

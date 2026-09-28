@@ -25,7 +25,8 @@ const PERMISSION_POLES = [
       { id: 'export-annu', label: 'Annuaire & Exports', desc: 'Accès à la liste des adhérents et export CSV/Excel' },
       { id: 'activity-reports', label: "Bilans d'Activité & Présences", desc: 'Extraction CSV des présences et du journal des événements' },
       { id: 'studio-events', label: 'Registre des dates', desc: 'Tableau d\'édition rapide et globale des événements' },
-      { id: 'varal-secretariat', label: 'Documents officiels', desc: 'Documents administratifs et comptes-rendus officiels' }
+      { id: 'varal-secretariat', label: 'Documents officiels', desc: 'Documents administratifs et comptes-rendus officiels' },
+      { id: 'secretariat-documents', label: 'Chartes, Santé & Liens', desc: 'Gestion des chartes, droits à l\'image RGPD, attestations médicales et liens cloud' }
     ]
   },
   {
@@ -108,7 +109,9 @@ const PERMISSION_POLES = [
       },
       { id: 'studio-social', label: 'Réseaux & Médias', desc: 'Gestion et publication sur les réseaux sociaux' },
       { id: 'newsletter', label: "Lettres d'info", desc: 'Création et envoi de lettres d\'information' },
-      { id: 'varal-photos', label: 'Médiathèque Photos', desc: 'Dépôts et albums photos partagés des prestations' }
+      { id: 'varal-photos', label: 'Médiathèque Photos', desc: 'Dépôts et albums photos partagés des prestations' },
+      { id: 'studio-communication', label: 'Communication & Brevo', desc: 'Vidéo à la une, synchronisation Brevo, Cloud Functions et exports' },
+      { id: 'studio-lexique', label: 'Lexique & Mentions', desc: 'Dictionnaire des termes musicaux, mentions légales et lexique' }
     ]
   },
   {
