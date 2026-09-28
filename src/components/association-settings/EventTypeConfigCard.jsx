@@ -72,9 +72,9 @@ export default function EventTypeConfigCard({
   };
 
   return (
-    <div className="border-2 border-encre-noire rounded-[6px_9px_7px_8px] bg-cordel-bg-light/60 overflow-hidden shadow-[2px_2px_0px_0px_#181716] transition-all">
+    <div className="border-2 border-encre-noire rounded-[6px_9px_7px_8px] bg-cordel-bg-light/60 overflow-visible shadow-[2px_2px_0px_0px_#181716] transition-all h-auto">
       {/* Barre d'en-tête Cordel (Ligne accordéon cliquable) */}
-      <div className="p-3 bg-cordel-bg flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap border-b border-dashed border-cordel-master-dark/15">
+      <div className="p-3 bg-cordel-bg flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap border-b border-dashed border-cordel-master-dark/15 rounded-t-[4px_7px_0px_0px]">
         <div 
           onClick={onToggleExpand}
           className="flex items-center gap-2.5 flex-1 min-w-0 cursor-pointer select-none"
@@ -124,7 +124,7 @@ export default function EventTypeConfigCard({
 
       {/* Tiroir dépliable (Formulaire des presets du type) */}
       {isExpanded && (
-        <div className="p-3.5 bg-white/70 flex flex-col gap-4 text-left animate-fade-in text-encre-noire">
+        <div className="p-3.5 pb-6 bg-white/70 flex flex-col gap-4 text-left animate-fade-in text-encre-noire h-auto overflow-visible rounded-b-[0px_0px_5px_6px]">
           {/* Section 1 : Modules & Outils */}
           <div>
             <h4 className="text-[10px] font-black uppercase tracking-wider text-cordel-wood mb-2 border-b border-dashed border-cordel-master-dark/15 pb-1 flex items-center gap-1.5">
@@ -223,13 +223,13 @@ export default function EventTypeConfigCard({
           </div>
 
           {/* Section 2 : Inscriptions & Délais */}
-          <div>
+          <div className="pb-3">
             <h4 className="text-[10px] font-black uppercase tracking-wider text-cordel-wood mb-2 border-b border-dashed border-cordel-master-dark/15 pb-1 flex items-center gap-1.5">
               <span>👥</span>
               <span>Inscriptions & Délais</span>
             </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start select-none">
-              <label className="flex items-start gap-2.5 p-2 rounded bg-cordel-bg-light/40 border border-cordel-master-dark/15 cursor-pointer">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-stretch select-none">
+              <label className="flex items-start gap-2.5 p-3 rounded bg-cordel-bg-light/50 border border-cordel-master-dark/20 cursor-pointer min-h-[90px]">
                 <input
                   type="checkbox"
                   checked={config.requiresValidation}
@@ -237,35 +237,37 @@ export default function EventTypeConfigCard({
                   disabled={saving}
                   className="w-4 h-4 accent-amber-600 rounded cursor-pointer shrink-0 mt-0.5"
                 />
-                <div className="flex flex-col">
+                <div className="flex flex-col text-left">
                   <span className="text-[11px] font-bold text-encre-noire">
                     🔒 Validation obligatoire par un administrateur
                   </span>
-                  <span className="text-[9.5px] text-neutral-500 font-medium">
+                  <span className="text-[9.5px] text-neutral-500 font-medium leading-relaxed mt-0.5">
                     Les inscriptions des membres sont placées « En attente » tant qu'un admin ne les a pas confirmées.
                   </span>
                 </div>
               </label>
 
-              <div className="flex flex-col gap-1 p-2 rounded bg-cordel-bg-light/40 border border-cordel-master-dark/15">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-encre-noire flex items-center gap-1">
-                  <span>⏳</span>
-                  <span>Délai limite d'inscription (en heures avant l'événement)</span>
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    min="0"
-                    step="1"
-                    placeholder="Ex: 48 (clôture 48h avant)"
-                    value={config.defaultDeadlineHours ?? ''}
-                    onChange={(e) => handleDeadlineChange(e.target.value)}
-                    disabled={saving}
-                    className="theme-input text-xs font-bold py-1 px-2 bg-white w-32"
-                  />
-                  <span className="text-[10px] text-stone-500 font-semibold">heures</span>
+              <div className="flex flex-col justify-between gap-1.5 p-3 rounded bg-cordel-bg-light/50 border border-cordel-master-dark/20 min-h-[90px]">
+                <div>
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-encre-noire flex items-center gap-1">
+                    <span>⏳</span>
+                    <span>Délai limite d'inscription (avant l'événement)</span>
+                  </label>
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      placeholder="Ex: 48 (clôture 48h avant)"
+                      value={config.defaultDeadlineHours ?? ''}
+                      onChange={(e) => handleDeadlineChange(e.target.value)}
+                      disabled={saving}
+                      className="theme-input text-xs font-bold py-1.5 px-2 bg-white w-36 border border-cordel-master-dark/30 rounded"
+                    />
+                    <span className="text-[10px] text-stone-600 font-bold">heures avant</span>
+                  </div>
                 </div>
-                <span className="text-[9px] text-neutral-500">
+                <span className="text-[9px] text-neutral-500 leading-tight">
                   Laissez vide ou 0 pour ne pas imposer de date limite automatique lors de la création.
                 </span>
               </div>

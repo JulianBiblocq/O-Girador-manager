@@ -23,6 +23,7 @@ export default function TabLieux({ formData, handleChange, saving, t }) {
   const [longitude, setLongitude] = useState(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+  const [isDefaultLocationsOpen, setIsDefaultLocationsOpen] = useState(false);
 
   // Ouvrir le formulaire en mode édition
   const handleEdit = (lieu) => {
@@ -357,63 +358,92 @@ export default function TabLieux({ formData, handleChange, saving, t }) {
         )}
       </CordelCard>
 
-      {/* Section 2: Grille de correspondance des lieux par défaut par type d'événement */}
-      <CordelCard variant="default" useExtremeBorder={true} className="p-5 flex flex-col gap-4">
-        <div className="border-b border-dashed border-cordel-master-dark/20 pb-3">
-          <h3 className="text-xs font-black uppercase tracking-wider text-cordel-wood">
-            🎯 Lieux par Défaut selon le Type d'Événement
-          </h3>
-          <p className="text-[10px] opacity-75 mt-0.5 leading-relaxed">
-            Associez un lieu habituel par défaut à chaque type d'événement (réunion, répétition, stage, atelier, prestation). Lors de la création d'un événement, le lieu sera automatiquement pré-rempli.
-          </p>
+      {/* Section 2: Grille de correspondance des lieux par défaut par type d'événement (Accordéon fermé par défaut) */}
+      <CordelCard variant="default" useExtremeBorder={true} className="p-0 overflow-hidden">
+        <div
+          onClick={() => setIsDefaultLocationsOpen(prev => !prev)}
+          className="py-3 px-4 flex items-center justify-between cursor-pointer bg-cordel-bg-light/60 hover:bg-cordel-bg-light transition-colors select-none"
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setIsDefaultLocationsOpen(prev => !prev);
+            }
+          }}
+        >
+          <div className="flex items-center gap-2 text-left">
+            <span className="text-sm">📍</span>
+            <span className="text-xs font-black uppercase tracking-wider text-cordel-wood">
+              Lieux par défaut par type d'événement {isDefaultLocationsOpen ? '▲' : '▾'}
+            </span>
+            <span className="text-[9px] text-cordel-master-dark/60 font-semibold hidden sm:inline">
+              (Pré-remplissage automatique des salles selon le format d'événement)
+            </span>
+          </div>
+
+          <button
+            type="button"
+            className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded border border-encre-noire/30 bg-white hover:bg-stone-50 text-encre-noire transition-all cursor-pointer shadow-2xs"
+          >
+            {isDefaultLocationsOpen ? 'Fermer' : 'Déplier les lieux'}
+          </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-          {(Array.isArray(formData.eventTypes) && formData.eventTypes.length > 0
-            ? formData.eventTypes
-            : ['reunion', 'repetition', 'stage', 'atelier', 'prestation']
-          ).map((typeKey) => {
-            const currentLieuId = (formData.defaultLocationsByEventType || {})[typeKey] || '';
+        {isDefaultLocationsOpen && (
+          <div className="p-4 border-t border-dashed border-cordel-master-dark/20 animate-fade-in bg-white/40 flex flex-col gap-3.5">
+            <p className="text-[10px] opacity-75 leading-relaxed text-left">
+              Associez un lieu habituel par défaut à chaque type d'événement. Lors de la création d'un événement de ce format, la salle sera automatiquement pré-sélectionnée.
+            </p>
 
-            // Libellé propre pour chaque type d'événement
-            const typeLabels = {
-              reunion: "🤝 Réunions & AG",
-              repetition: "🥁 Répétitions",
-              stage: "🎓 Stages",
-              atelier: "🛠️ Ateliers",
-              prestation: "🎭 Prestations & Concerts"
-            };
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-left">
+              {(Array.isArray(formData.eventTypes) && formData.eventTypes.length > 0
+                ? formData.eventTypes
+                : ['reunion', 'repetition', 'stage', 'atelier', 'prestation']
+              ).map((typeKey) => {
+                const currentLieuId = (formData.defaultLocationsByEventType || {})[typeKey] || '';
 
-            const labelText = typeLabels[typeKey] || `Événement: ${typeKey.toUpperCase()}`;
+                // Libellé propre pour chaque type d'événement
+                const typeLabels = {
+                  reunion: "🤝 Réunions & AG",
+                  repetition: "🥁 Répétitions",
+                  stage: "🎓 Stages",
+                  atelier: "🛠️ Ateliers",
+                  prestation: "🎭 Prestations & Concerts"
+                };
 
-            return (
-              <div key={typeKey} className="p-3 bg-white/70 rounded border border-cordel-master-dark/20 flex flex-col gap-1.5 shadow-sm">
-                <label className="text-[9.5px] uppercase font-black tracking-wider text-cordel-wood">
-                  {labelText}
-                </label>
-                <select
-                  value={currentLieuId}
-                  onChange={(e) => {
-                    const newLieuId = e.target.value;
-                    const updated = {
-                      ...(formData.defaultLocationsByEventType || {}),
-                      [typeKey]: newLieuId
-                    };
-                    handleChange('defaultLocationsByEventType', updated);
-                  }}
-                  className="theme-input text-xs font-bold py-1.5 bg-white border border-cordel-master-dark/30"
-                >
-                  <option value="">🚫 Aucun (Saisie manuelle)</option>
-                  {lieuxImportants.map((lieu) => (
-                    <option key={lieu.id} value={lieu.id}>
-                      📍 {lieu.nom} ({lieu.adresse})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            );
-          })}
-        </div>
+                const labelText = typeLabels[typeKey] || `Événement: ${typeKey.toUpperCase()}`;
+
+                return (
+                  <div key={typeKey} className="p-3 bg-white/80 rounded border border-cordel-master-dark/20 flex flex-col gap-1.5 shadow-xs">
+                    <label className="text-[9.5px] uppercase font-black tracking-wider text-cordel-wood">
+                      {labelText}
+                    </label>
+                    <select
+                      value={currentLieuId}
+                      onChange={(e) => {
+                        const newLieuId = e.target.value;
+                        const updated = {
+                          ...(formData.defaultLocationsByEventType || {}),
+                          [typeKey]: newLieuId
+                        };
+                        handleChange('defaultLocationsByEventType', updated);
+                      }}
+                      className="theme-input text-xs font-bold py-1.5 bg-white border border-cordel-master-dark/30"
+                    >
+                      <option value="">🚫 Aucun (Saisie manuelle)</option>
+                      {lieuxImportants.map((lieu) => (
+                        <option key={lieu.id} value={lieu.id}>
+                          📍 {lieu.nom} ({lieu.adresse})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </CordelCard>
 
       {/* Modale de positionnement manuel sur la carte */}
