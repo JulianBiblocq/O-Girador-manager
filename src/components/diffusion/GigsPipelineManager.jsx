@@ -10,6 +10,7 @@ import GigQuoteGeneratorModal from './GigQuoteGeneratorModal';
 import DiffusionContactsManager from './DiffusionContactsManager';
 import useConfirm from '../../hooks/useConfirm';
 import { matchesGigStatus } from '../../utils/diffusionUtils.js';
+import { HorizontalRibbonContainer } from '../navigation/HorizontalTabRibbon';
 
 export { matchesGigStatus };
 
@@ -122,19 +123,53 @@ export default function GigsPipelineManager({ groupId, associationSettings: prop
 
   return (
     <div className="flex flex-col gap-6 text-left select-none max-w-5xl mx-auto w-full">
-      {/* Action rapide : Nouveau dossier (Vue Pipeline) */}
-      {activeTab === 'pipeline' && (
-        <div className="flex justify-end items-center mb-1 select-none">
+      {/* Barre de navigation interne Cordel : Pipeline vs Contacts CRM sous forme de ruban défilant */}
+      <div className="flex items-center justify-between gap-3 border-b-2 border-dashed border-cordel-master-dark/30 pb-2">
+        <div className="flex items-center min-w-0 flex-1 max-w-full overflow-hidden lg:overflow-visible">
+          <HorizontalRibbonContainer activeTabId={activeTab} className="flex-1">
+            <button
+              type="button"
+              data-tab-id="pipeline"
+              data-tab-active={activeTab === 'pipeline' ? 'true' : 'false'}
+              onClick={() => setActiveTab('pipeline')}
+              className={`shrink-0 whitespace-nowrap min-h-[40px] px-3.5 py-1.5 text-sm font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 select-none ${
+                activeTab === 'pipeline'
+                  ? 'bg-amber-300 text-encre-noire border-encre-noire shadow-[2px_2px_0px_0px_#181716] translate-x-[0.5px] translate-y-[0.5px]'
+                  : 'bg-cordel-card-bg text-encre-noire/75 border-encre-noire/40 hover:border-encre-noire hover:text-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+              }`}
+            >
+              <span>🎯</span>
+              <span>Suivi des Prestations (Pipeline)</span>
+            </button>
+
+            <button
+              type="button"
+              data-tab-id="contacts"
+              data-tab-active={activeTab === 'contacts' ? 'true' : 'false'}
+              onClick={() => setActiveTab('contacts')}
+              className={`shrink-0 whitespace-nowrap min-h-[40px] px-3.5 py-1.5 text-sm font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 select-none ${
+                activeTab === 'contacts'
+                  ? 'bg-amber-300 text-encre-noire border-encre-noire shadow-[2px_2px_0px_0px_#181716] translate-x-[0.5px] translate-y-[0.5px]'
+                  : 'bg-cordel-card-bg text-encre-noire/75 border-encre-noire/40 hover:border-encre-noire hover:text-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+              }`}
+            >
+              <span>📇</span>
+              <span>Carnet de Contacts CRM</span>
+            </button>
+          </HorizontalRibbonContainer>
+        </div>
+
+        {activeTab === 'pipeline' && (
           <button
             type="button"
             data-tour="gigs-add-button"
             onClick={handleOpenCreate}
-            className="text-xs font-black uppercase bg-cordel-vert text-white border border-encre-noire px-3.5 py-1.5 rounded shadow-[1.5px_1.5px_0px_0px_#181716] hover:brightness-105 cursor-pointer flex items-center gap-1.5 shrink-0"
+            className="text-xs font-black uppercase bg-cordel-vert text-white border border-encre-noire px-3.5 py-1.5 min-h-[38px] rounded shadow-[1.5px_1.5px_0px_0px_#181716] hover:brightness-105 cursor-pointer flex items-center gap-1.5 shrink-0"
           >
             <span>➕ Nouveau dossier</span>
           </button>
-        </div>
-      )}
+        )}
+      </div>
 
       {activeTab === 'contacts' ? (
         <DiffusionContactsManager groupId={groupId} associationSettings={associationSettings} />

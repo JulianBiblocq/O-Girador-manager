@@ -86,3 +86,55 @@ export const getInstrumentIconPath = (instName) => {
   // Par défaut, retourner le favicon si aucun pictogramme n'est trouvé
   return '/favicon.svg';
 };
+
+/**
+ * Formate la liste des pratiques d'un membre (instruments de percussion et/ou danse).
+ * Prise en compte rigoureuse des membres danseurs purs et polyvalents.
+ *
+ * @param {Object} user Données de profil du membre
+ * @returns {string} Chaîne formatée (ex: "Caixa, Danse", "Danse", "En attente" ou "-")
+ */
+export const formatPratiques = (user) => {
+  if (!user) return '-';
+  const liste = [];
+  // Récupérer les instruments (tableau ou string unique)
+  if (Array.isArray(user.instrumentsJoues) && user.instrumentsJoues.length > 0) {
+    liste.push(...user.instrumentsJoues);
+  } else if (user.instrumentPrincipal) {
+    liste.push(user.instrumentPrincipal);
+  } else if (user.instrument && user.instrument !== 'En attente') {
+    liste.push(user.instrument);
+  }
+  // Ajouter la Danse si le membre la pratique
+  if (user.pratiqueDanse) {
+    if (!liste.some(i => typeof i === 'string' && i.toLowerCase().trim() === 'danse')) {
+      liste.push('Danse');
+    }
+  }
+  return liste.length > 0 ? liste.join(', ') : (user.statutActuel === 'en_attente' ? 'En attente' : '-');
+};
+
+/**
+ * Retourne le tableau des pratiques d'un membre pour affichage structuré (badges/tags).
+ *
+ * @param {Object} user Données de profil du membre
+ * @returns {string[]} Liste des instruments et pratiques (incluant "Danse" si pratiquée)
+ */
+export const getPratiquesList = (user) => {
+  if (!user) return [];
+  const liste = [];
+  if (Array.isArray(user.instrumentsJoues) && user.instrumentsJoues.length > 0) {
+    liste.push(...user.instrumentsJoues);
+  } else if (user.instrumentPrincipal) {
+    liste.push(user.instrumentPrincipal);
+  } else if (user.instrument && user.instrument !== 'En attente') {
+    liste.push(user.instrument);
+  }
+  if (user.pratiqueDanse) {
+    if (!liste.some(i => typeof i === 'string' && i.toLowerCase().trim() === 'danse')) {
+      liste.push('Danse');
+    }
+  }
+  return liste;
+};
+

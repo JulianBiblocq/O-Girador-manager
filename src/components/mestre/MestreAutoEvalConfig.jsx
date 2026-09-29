@@ -325,7 +325,7 @@ export default function MestreAutoEvalConfig({ profileData, isEmbedded }) {
                       { key: 'monParcoursChant', label: 'Chant', isDefaultFalse: false },
                       { key: 'monParcoursAtelier', label: 'Atelier (Fabrication/Entretien)', isDefaultFalse: false },
                       { key: 'monParcoursCulture', label: 'Culture', isDefaultFalse: false },
-                      { key: 'defisRythmiques', label: 'Défis rythmiques (Speed Trainer & Réflexes)', isDefaultFalse: true }
+                      { key: 'defisRythmiques', label: 'Défis rythmiques (Entraînements & Réflexes)', isDefaultFalse: true }
                     ].map(mp => {
                       const isChecked = mp.isDefaultFalse
                         ? Boolean(enabledModules[mp.key] === true || enabledModules.monParcoursDefisRythmiques === true)

@@ -15,6 +15,7 @@ import TabPublicContent from './association-settings/TabPublicContent';
 
 import TabPublicTheme from './association-settings/TabPublicTheme';
 import { canEditVitrine } from '../utils/permissionUtils';
+import { HorizontalRibbonContainer } from './navigation/HorizontalTabRibbon';
 
 import { useEffect } from 'react';
 
@@ -252,75 +253,95 @@ export default function AssociationSettings({
 
 
 
-          {/* Tab Selector - 5 Piliers Institutionnels */}
+          {/* Tab Selector - 5 Piliers Institutionnels sous forme de ruban défilant */}
           {!mode && (
-            <div className="flex flex-wrap gap-2 border-b border-dashed border-cordel-master-dark/20 pb-3 mb-1 select-none">
-              <button
-                type="button"
-                onClick={() => setActiveSettingsTab('identity')}
-                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
-                  activeSettingsTab === 'identity'
-                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
-                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
-                }`}
-              >
-                🏢 Identité Légale
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveSettingsTab('organisation')}
-                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
-                  activeSettingsTab === 'organisation' || activeSettingsTab === 'profile'
-                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
-                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
-                }`}
-              >
-                👥 Inscription, Profils & Pupitres
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveSettingsTab('agenda')}
-                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
-                  activeSettingsTab === 'agenda'
-                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
-                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
-                }`}
-              >
-                📅 Agenda & Lieux
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveSettingsTab('security')}
-                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
-                  activeSettingsTab === 'security'
-                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
-                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
-                }`}
-              >
-                🛡️ Badges & Sécurité
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveSettingsTab('comms')}
-                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
-                  activeSettingsTab === 'comms'
-                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
-                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
-                }`}
-              >
-                📬 Communication & Automatisations
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveSettingsTab('modules')}
-                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
-                  activeSettingsTab === 'modules'
-                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
-                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
-                }`}
-              >
-                🧩 Modules, Apparence & Médias
-              </button>
+            <div className="border-b border-dashed border-cordel-master-dark/20 pb-2 mb-1 select-none overflow-hidden lg:overflow-visible">
+              <HorizontalRibbonContainer activeTabId={activeSettingsTab}>
+                <button
+                  type="button"
+                  data-tab-id="identity"
+                  data-tab-active={activeSettingsTab === 'identity' ? 'true' : 'false'}
+                  onClick={() => setActiveSettingsTab('identity')}
+                  className={`shrink-0 whitespace-nowrap min-h-[40px] lg:min-h-0 px-3.5 py-1.5 lg:px-2.5 lg:py-1 text-sm lg:text-xs font-black uppercase tracking-wider lg:tracking-wide rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 select-none ${
+                    activeSettingsTab === 'identity'
+                      ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                      : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+                  }`}
+                >
+                  <span>🏢</span>
+                  <span>Identité Légale</span>
+                </button>
+                <button
+                  type="button"
+                  data-tab-id="organisation"
+                  data-tab-active={activeSettingsTab === 'organisation' || activeSettingsTab === 'profile' ? 'true' : 'false'}
+                  onClick={() => setActiveSettingsTab('organisation')}
+                  className={`shrink-0 whitespace-nowrap min-h-[40px] lg:min-h-0 px-3.5 py-1.5 lg:px-2.5 lg:py-1 text-sm lg:text-xs font-black uppercase tracking-wider lg:tracking-wide rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 select-none ${
+                    activeSettingsTab === 'organisation' || activeSettingsTab === 'profile'
+                      ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                      : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+                  }`}
+                >
+                  <span>👥</span>
+                  <span>Inscription, Profils & Pupitres</span>
+                </button>
+                <button
+                  type="button"
+                  data-tab-id="agenda"
+                  data-tab-active={activeSettingsTab === 'agenda' ? 'true' : 'false'}
+                  onClick={() => setActiveSettingsTab('agenda')}
+                  className={`shrink-0 whitespace-nowrap min-h-[40px] lg:min-h-0 px-3.5 py-1.5 lg:px-2.5 lg:py-1 text-sm lg:text-xs font-black uppercase tracking-wider lg:tracking-wide rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 select-none ${
+                    activeSettingsTab === 'agenda'
+                      ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                      : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+                  }`}
+                >
+                  <span>📅</span>
+                  <span>Agenda & Lieux</span>
+                </button>
+                <button
+                  type="button"
+                  data-tab-id="security"
+                  data-tab-active={activeSettingsTab === 'security' ? 'true' : 'false'}
+                  onClick={() => setActiveSettingsTab('security')}
+                  className={`shrink-0 whitespace-nowrap min-h-[40px] lg:min-h-0 px-3.5 py-1.5 lg:px-2.5 lg:py-1 text-sm lg:text-xs font-black uppercase tracking-wider lg:tracking-wide rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 select-none ${
+                    activeSettingsTab === 'security'
+                      ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                      : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+                  }`}
+                >
+                  <span>🛡️</span>
+                  <span>Badges & Sécurité</span>
+                </button>
+                <button
+                  type="button"
+                  data-tab-id="comms"
+                  data-tab-active={activeSettingsTab === 'comms' ? 'true' : 'false'}
+                  onClick={() => setActiveSettingsTab('comms')}
+                  className={`shrink-0 whitespace-nowrap min-h-[40px] lg:min-h-0 px-3.5 py-1.5 lg:px-2.5 lg:py-1 text-sm lg:text-xs font-black uppercase tracking-wider lg:tracking-wide rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 select-none ${
+                    activeSettingsTab === 'comms'
+                      ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                      : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+                  }`}
+                >
+                  <span>📬</span>
+                  <span>Communication & Automatisations</span>
+                </button>
+                <button
+                  type="button"
+                  data-tab-id="modules"
+                  data-tab-active={activeSettingsTab === 'modules' ? 'true' : 'false'}
+                  onClick={() => setActiveSettingsTab('modules')}
+                  className={`shrink-0 whitespace-nowrap min-h-[40px] lg:min-h-0 px-3.5 py-1.5 lg:px-2.5 lg:py-1 text-sm lg:text-xs font-black uppercase tracking-wider lg:tracking-wide rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 select-none ${
+                    activeSettingsTab === 'modules'
+                      ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                      : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+                  }`}
+                >
+                  <span>🧩</span>
+                  <span>Modules, Apparence & Médias</span>
+                </button>
+              </HorizontalRibbonContainer>
             </div>
           )}
 

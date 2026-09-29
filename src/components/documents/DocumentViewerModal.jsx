@@ -111,20 +111,26 @@ export default function DocumentViewerModal({ document: docItem, onClose }) {
   const targetUrl = docItem.fileUrl || docItem.url || docItem.link || '';
   const mediaInfo = getMediaEmbedInfo(targetUrl);
 
-  const isFramaspaceShare = (mediaInfo && mediaInfo.type === 'framaspace-gallery') || Boolean(
+  const isDropOnly = Boolean(docItem.isDropOnly) || Boolean(
+    (docItem.titre || '').includes('[Collecte') ||
+    (docItem.titre || '').includes('[Dépôt') ||
+    (!docItem.hasAlbum && docItem.isVirtualEventMedia)
+  );
+
+  const isFramaspaceShare = !isDropOnly && ((mediaInfo && mediaInfo.type === 'framaspace-gallery') || Boolean(
     targetUrl && (
       /\/s\/[a-zA-Z0-9_-]+/i.test(targetUrl) ||
       targetUrl.includes('frama.space') ||
       targetUrl.includes('framaspace.org')
     )
-  );
+  ));
 
   const docType = docItem.type || docItem.typeDoc || mediaInfo?.type || 'pdf';
-  const isPdf = !isFramaspaceShare && (docType === 'pdf' || (mediaInfo && mediaInfo.type === 'pdf') || targetUrl.toLowerCase().includes('.pdf'));
-  const isVideo = !isFramaspaceShare && (docType === 'video' || (mediaInfo && ['youtube-playlist', 'youtube-video', 'vimeo', 'video-file'].includes(mediaInfo.type)));
-  const isAudio = !isFramaspaceShare && (docType === 'audio' || (mediaInfo && mediaInfo.type === 'audio-file'));
-  const isImage = !isFramaspaceShare && (docType === 'image' || (mediaInfo && mediaInfo.type === 'image'));
-  const isCloudDrive = !isFramaspaceShare && (docType === 'dossier_externe' || docType === 'drive' || (mediaInfo && mediaInfo.type === 'cloud-drive'));
+  const isPdf = !isDropOnly && !isFramaspaceShare && (docType === 'pdf' || (mediaInfo && mediaInfo.type === 'pdf') || targetUrl.toLowerCase().includes('.pdf'));
+  const isVideo = !isDropOnly && !isFramaspaceShare && (docType === 'video' || (mediaInfo && ['youtube-playlist', 'youtube-video', 'vimeo', 'video-file'].includes(mediaInfo.type)));
+  const isAudio = !isDropOnly && !isFramaspaceShare && (docType === 'audio' || (mediaInfo && mediaInfo.type === 'audio-file'));
+  const isImage = !isDropOnly && !isFramaspaceShare && (docType === 'image' || (mediaInfo && mediaInfo.type === 'image'));
+  const isCloudDrive = !isDropOnly && !isFramaspaceShare && (docType === 'dossier_externe' || docType === 'drive' || (mediaInfo && mediaInfo.type === 'cloud-drive'));
   const isReport = docType === 'report' || docType === 'compte_rendu';
   const isStatuts = docType === 'statuts' || (docItem.categorie || '').toLowerCase().includes('officiel') || (docItem.titre || '').toLowerCase().includes('statut');
 
@@ -157,10 +163,10 @@ export default function DocumentViewerModal({ document: docItem, onClose }) {
           <div className="flex flex-col gap-1 min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-sm select-none">
-                {isFramaspaceShare ? '📸' : isVideo ? '🎥' : isPdf ? '📄' : isAudio ? '🎵' : isImage ? '📷' : isCloudDrive ? '📂' : '📜'}
+                {isDropOnly ? '📥' : isFramaspaceShare ? '📸' : isVideo ? '🎥' : isPdf ? '📄' : isAudio ? '🎵' : isImage ? '📷' : isCloudDrive ? '📂' : '📜'}
               </span>
               <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-[var(--color-cordel-ocre,#c05621)] text-[#FEF9E7] border border-encre-noire shadow-[1px_1px_0px_0px_#181716]">
-                {isFramaspaceShare ? "Galerie Photos & Vidéos" : docItem.categorie || docItem.categoryId || (isPdf ? "Document PDF" : isVideo ? "Vidéo / Tutoriel" : "Document")}
+                {isDropOnly ? "Collecte Médias" : isFramaspaceShare ? "Galerie Photos & Vidéos" : docItem.categorie || docItem.categoryId || (isPdf ? "Document PDF" : isVideo ? "Vidéo / Tutoriel" : "Document")}
               </span>
               {docItem.annee && (
                 <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-encre-noire/10 text-encre-noire">
@@ -263,8 +269,32 @@ export default function DocumentViewerModal({ document: docItem, onClose }) {
             </div>
           )}
 
-          {/* 5. CAS GALERIE NATIVE FRAMASPACE (Nextcloud WebDAV) OU DOSSIER EXTERNE */}
-          {isFramaspaceShare ? (
+          {/* 5. CAS DOSSIER DE COLLECTE / FILE DROP SANS ALBUM PUBLIÉ */}
+          {isDropOnly ? (
+            <div className="p-6 sm:p-8 bg-amber-50/80 border-2 border-dashed border-cordel-master-dark/30 rounded-[6px_10px_4px_8px] text-center flex flex-col items-center gap-4 my-auto">
+              <span className="text-5xl">📥</span>
+              <div className="max-w-md">
+                <h4 className="font-extrabold text-base text-cordel-wood uppercase">
+                  Collecte de photos &amp; vidéos en cours
+                </h4>
+                <p className="text-xs text-stone-600 mt-1">
+                  L'album officiel de cette prestation n'est pas encore finalisé.
+                  Vous pouvez déposer vos clichés et vidéos directement dans le dossier partagé sécurisé.
+                </p>
+              </div>
+
+              {targetUrl && (
+                <button
+                  type="button"
+                  onClick={() => window.open(targetUrl, '_blank', 'noopener,noreferrer')}
+                  className="px-5 py-2.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] bg-[var(--theme-bg-ocre,#c05621)] hover:brightness-110 text-white border-2 border-encre-noire shadow-[3px_3px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-2 transition-all mt-2"
+                >
+                  <span>📤 Déposer mes photos / vidéos</span>
+                  <span>↗</span>
+                </button>
+              )}
+            </div>
+          ) : isFramaspaceShare ? (
             <div className="w-full flex flex-col my-auto">
               <FramaspaceGalleryViewer
                 albumUrl={targetUrl}
@@ -279,7 +309,7 @@ export default function DocumentViewerModal({ document: docItem, onClose }) {
                 <span className="text-5xl">📂</span>
                 <div className="max-w-md">
                   <h4 className="font-extrabold text-base text-cordel-wood uppercase">
-                    Dépôt Externe & Galerie Partagée
+                    Dépôt Externe &amp; Galerie Partagée
                   </h4>
                   <p className="text-xs text-stone-600 mt-1">
                     Ce livret est relié à un espace de stockage externe (Google Drive, Dropbox ou serveur cloud dédié).

@@ -276,8 +276,12 @@ const eventFormFieldsCode = fs.readFileSync(eventFormFieldsPath, 'utf-8');
 const widgetAgendaCode = fs.readFileSync(widgetAgendaPath, 'utf-8');
 const tabAdminCode = fs.readFileSync(tabAdminPath, 'utf-8');
 
-assert(tabAgendaCode.includes('activerRecolteMedias'), "TabAgenda.jsx doit contenir l'option activerRecolteMedias");
-assert(tabAgendaCode.includes('Boîte Photos (QR Code)'), "TabAgenda.jsx doit afficher la case 'Boîte Photos (QR Code)'");
+const eventTypeConfigCardPath = path.resolve('src/components/association-settings/EventTypeConfigCard.jsx');
+const eventTypeConfigCardCode = fs.readFileSync(eventTypeConfigCardPath, 'utf-8');
+
+assert(tabAgendaCode.includes('EventTypeConfigCard'), "TabAgenda.jsx doit utiliser le sous-composant EventTypeConfigCard");
+assert(eventTypeConfigCardCode.includes('activerRecolteMedias'), "EventTypeConfigCard.jsx doit contenir l'option activerRecolteMedias");
+assert(eventTypeConfigCardCode.includes('Boîte Photos (QR Code)'), "EventTypeConfigCard.jsx doit afficher la case 'Boîte Photos (QR Code)'");
 assert(eventFormFieldsCode.includes('typePresets?.activerRecolteMedias'), "EventFormFields.jsx doit lire typePresets.activerRecolteMedias");
 assert(widgetAgendaCode.includes('activerRecolteMedias: typeCfg.activerRecolteMedias'), "WidgetAgenda.jsx doit initialiser activerRecolteMedias");
 assert(tabAdminCode.includes('📸 Boîte Photos'), "TabAdmin.jsx doit proposer l'interrupteur '📸 Boîte Photos'");
@@ -310,17 +314,19 @@ console.log("▶️ Module 8 : Régie Studio & Varal (Alignement immédiat & syn
 
 const studioTablePath = path.resolve('src/components/studio/StudioEventsMediaTable.jsx');
 const studioPhotosViewPath = path.resolve('src/components/studio/StudioPhotosView.jsx');
+const studioRowPath = path.resolve('src/components/studio/StudioEventMediaAccordionRow.jsx');
 
 const studioTableCode = fs.readFileSync(studioTablePath, 'utf-8');
 const studioPhotosViewCode = fs.readFileSync(studioPhotosViewPath, 'utf-8');
+const studioRowCode = fs.readFileSync(studioRowPath, 'utf-8');
 
 // 1. Alignement immédiat vers l'album Varal depuis l'URL de dépôt
 assert(studioTableCode.includes('handleAlignDepotToAlbum'), "StudioEventsMediaTable doit inclure handleAlignDepotToAlbum");
-assert(studioTableCode.includes('Aligner avec le dépôt'), "StudioEventsMediaTable doit proposer le bouton 'Aligner avec le dépôt'");
+assert(studioRowCode.includes('Aligner avec le dépôt'), "StudioEventMediaAccordionRow doit proposer le bouton 'Aligner avec le dépôt'");
 console.log("  ✅ [PASS] Alignement immédiat vers l'album Varal opérationnel");
 
 // 2. Raccourci vers le Varal et synchronisation documents
-assert(studioTableCode.includes('Voir le livret sur le Varal') || studioTableCode.includes('Voir sur le Varal'), "StudioEventsMediaTable doit proposer le raccourci 'Voir le livret sur le Varal'");
+assert(studioRowCode.includes('Voir le livret sur le Varal') || studioRowCode.includes('Voir sur le Varal'), "StudioEventMediaAccordionRow doit proposer le raccourci 'Voir sur le Varal'");
 assert(studioTableCode.includes("categoryId: 'PhotosPrestations'"), "StudioEventsMediaTable doit synchroniser avec la catégorie PhotosPrestations");
 assert(studioPhotosViewCode.includes('onSwitchToVaral'), "StudioPhotosView doit transmettre onSwitchToVaral à StudioEventsMediaTable");
 console.log("  ✅ [PASS] Synchronisation automatique du livret et raccourci d'accès au Varal validés\n");

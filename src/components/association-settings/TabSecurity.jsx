@@ -23,7 +23,7 @@ const PERMISSION_POLES = [
     desc: 'Gestion statutaire, annuaire, bilans d\'activité, registre des dates et documents officiels',
     tabs: [
       { id: 'export-annu', label: 'Annuaire & Exports', desc: 'Accès à la liste des adhérents et export CSV/Excel' },
-      { id: 'activity-reports', label: "Bilans d'Activité & Présences", desc: 'Extraction CSV des présences et du journal des événements' },
+      { id: 'secretariat-reports', label: "Rapports & Bilan AG", desc: 'Bilan d\'activité AG et extraction CSV des présences' },
       { id: 'studio-events', label: 'Registre des dates', desc: 'Tableau d\'édition rapide et globale des événements' },
       { id: 'varal-secretariat', label: 'Documents officiels', desc: 'Documents administratifs et comptes-rendus officiels' },
       { id: 'secretariat-documents', label: 'Chartes, Santé & Liens', desc: 'Gestion des chartes, droits à l\'image RGPD, attestations médicales et liens cloud' }

@@ -151,7 +151,6 @@ export default function FramaspaceIntegrationBlock({
       });
 
       const resData = response?.data || {};
-      console.log("FramaspaceIntegrationBlock - Réponse du test callable :", resData);
 
       if (resData.success) {
         setTestResult({

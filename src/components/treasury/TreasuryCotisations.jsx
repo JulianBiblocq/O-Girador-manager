@@ -3,7 +3,7 @@ import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import MemberTreasuryRow from '../MemberTreasuryRow';
 import { useTranslation } from '../LanguageContext';
-import CotisationsBlock from '../association-settings/blocks/CotisationsBlock';
+import CotisationsBlock from './CotisationsBlock';
 import FormulesManager from '../association-settings/FormulesManager';
 
 export default function TreasuryCotisations({
@@ -34,13 +34,9 @@ export default function TreasuryCotisations({
     formulesAdhesion: [],
     lienPaiementExterne: '',
     instructionsPaiement: '',
-    demanderDroitImage: false,
-    demanderAttestationSante: false,
     helloAssoSignatureKey: ''
   });
 
-  const [droitImageFile, setDroitImageFile] = useState(null);
-  const [aptitudeMedicaleFile, setAptitudeMedicaleFile] = useState(null);
   const [copySuccess, setCopySuccess] = useState(false);
 
   const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID || 'o-girador-7828c';
@@ -66,8 +62,6 @@ export default function TreasuryCotisations({
         formulesAdhesion: existingFormules,
         lienPaiementExterne: associationSettings.lienPaiementExterne || '',
         instructionsPaiement: associationSettings.instructionsPaiement || '',
-        demanderDroitImage: associationSettings.demanderDroitImage || false,
-        demanderAttestationSante: associationSettings.demanderAttestationSante || false,
         helloAssoSignatureKey: helloAssoSignatureKey || ''
       });
     }
@@ -150,19 +144,10 @@ export default function TreasuryCotisations({
         "publicTheme.formulesRecrutement": formConfig.formulesAdhesion,
         lienPaiementExterne: formConfig.lienPaiementExterne,
         instructionsPaiement: formConfig.instructionsPaiement,
-        demanderDroitImage: formConfig.demanderDroitImage,
-        demanderAttestationSante: formConfig.demanderAttestationSante,
         helloAssoSignatureKey: formConfig.helloAssoSignatureKey
       };
-      
-      const files = {
-        droitImageFile,
-        aptitudeMedicaleFile
-      };
 
-      await handleSaveAssociationSettings(updates, files);
-      setDroitImageFile(null);
-      setAptitudeMedicaleFile(null);
+      await handleSaveAssociationSettings(updates, {});
       alert("Configuration sauvegardée avec succès !");
       setShowConfig(false);
     } catch (err) {

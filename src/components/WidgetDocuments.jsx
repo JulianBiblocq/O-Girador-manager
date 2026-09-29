@@ -31,18 +31,18 @@ export { DEFAULT_VARAL_CATEGORIES, DEFAULT_POLE_ROPES };
  * Coordonne les flux de données (via useVaralData), l'affichage des cordes
  * de catégories et l'ouverture étanche des différentes modales de consultation.
  */
-export default function WidgetDocuments({
-  role,
-  isSystemAdmin,
-  groupId,
-  user,
-  profileData,
-  poleId = null,
-  userTags = null,
-  canWrite = false,
-  onNavigateToView = null
-}) {
-  const { t } = useTranslation();
+export default function WidgetDocuments(props) {
+  const {
+    role,
+    isSystemAdmin,
+    groupId,
+    user,
+    profileData,
+    poleId = null,
+    userTags = null,
+    canWrite = false,
+    onNavigateToView = null
+  } = props;
 
   const { isSimulating, effectiveProfile, effectiveUserTags } = useViewSimulator();
   const activeProfile = isSimulating && effectiveProfile ? effectiveProfile : profileData;
@@ -66,6 +66,39 @@ export default function WidgetDocuments({
       />
     );
   }
+
+  return (
+    <VaralWidgetContent
+      {...props}
+      activeProfile={activeProfile}
+      activeRole={activeRole}
+      activeIsSystemAdmin={activeIsSystemAdmin}
+      activeUserTags={activeUserTags}
+      activeCanWrite={activeCanWrite}
+    />
+  );
+}
+
+/**
+ * Contenu principal du Varal Cordel avec tous ses hooks et états locaux.
+ */
+function VaralWidgetContent({
+  role,
+  isSystemAdmin,
+  groupId,
+  user,
+  profileData,
+  poleId = null,
+  userTags = null,
+  canWrite = false,
+  onNavigateToView = null,
+  activeProfile,
+  activeRole,
+  activeIsSystemAdmin,
+  activeUserTags,
+  activeCanWrite
+}) {
+  const { t } = useTranslation();
 
   // Consommation du custom hook centralisant les flux Firestore et les mutations du Varal
   const {

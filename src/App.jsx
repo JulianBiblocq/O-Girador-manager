@@ -52,13 +52,10 @@ const StudioEventsManager = lazyWithRetry(() => import('./components/studio/Stud
 const NewsletterPage = lazyWithRetry(() => import('./components/studio/NewsletterPage'));
 const AdminExport = lazyWithRetry(() => import('./components/AdminExport'));
 const ReunionManager = lazyWithRetry(() => import('./components/ReunionManager'));
-const ActivityReports = lazyWithRetry(() => import('./components/studio/ActivityReports'));
 const EventDetails = lazyWithRetry(() => import('./components/EventDetails'));
 const MestreOrientationCasting = lazyWithRetry(() => import('./components/mestre/MestreOrientationCasting'));
 const MestreStageLayout = lazyWithRetry(() => import('./components/mestre/MestreStageLayout'));
-const ForumChannelsManager = lazyWithRetry(() => import('./components/ForumChannelsManager'));
 const SecretariatDocuments = lazyWithRetry(() => import('./components/secretariat/SecretariatDocuments'));
-const SecretariatAgendaLieux = lazyWithRetry(() => import('./components/secretariat/SecretariatAgendaLieux'));
 const SecretariatReportsView = lazyWithRetry(() => import('./components/secretariat/SecretariatReportsView'));
 const StudioCommunication = lazyWithRetry(() => import('./components/studio/StudioCommunication'));
 const StudioPhotosView = lazyWithRetry(() => import('./components/studio/StudioPhotosView'));
@@ -118,7 +115,7 @@ const POLES_CONFIG = [
     labelKey: 'poles.secretariat',
     tabs: [
       { id: 'export-annu', label: 'Annuaire & Exports', labelKey: 'tabExportAnnu' },
-      { id: 'activity-reports', label: "Bilans d'Activité & Présences", labelKey: 'tabActivityReports' },
+      { id: 'secretariat-reports', label: "Rapports & Bilan AG", labelKey: 'tabSecretariatReports' },
       { id: 'studio-events', label: 'Registre des dates', labelKey: 'tabStudioEvents' },
       { id: 'varal-secretariat', label: 'Documents officiels', labelKey: 'tabVaralSecretariat' },
       { id: 'secretariat-documents', label: 'Chartes, Santé & Liens', labelKey: 'tabSecretariatDocuments' }
@@ -129,8 +126,7 @@ const POLES_CONFIG = [
     label: 'Diffusion',
     labelKey: 'poles.diffusion',
     tabs: [
-      { id: 'gigs-pipeline', label: 'Suivi des Prestations', labelKey: 'tabGigsPipeline' },
-      { id: 'diffusion-contacts', label: 'Carnet de Contacts CRM', labelKey: 'tabDiffusionContacts' }
+      { id: 'gigs-pipeline', label: 'Prestations & Contacts CRM', labelKey: 'tabGigsPipeline' }
     ]
   },
   {
@@ -930,7 +926,6 @@ export default function App() {
     // Le SW envoie un postMessage au lieu de client.navigate pour éviter un rechargement complet
     const handleSWMessage = (event) => {
       if (event.data && event.data.type === 'NOTIFICATION_CLICK' && event.data.url) {
-        console.log('[App] Navigation via notification push :', event.data.url);
         handleDeepLinkNavigation(event.data.url);
       }
     };
@@ -1075,9 +1070,7 @@ export default function App() {
       } else {
         setLoading(true);
         signInWithCustomToken(auth, ssoToken)
-          .then((cred) => {
-            console.log("[Organizad'Or SSO] Authentification SSO réussie pour :", cred.user.uid);
-          })
+          .then(() => {})
           .catch((err) => {
             console.warn("[Organizad'Or SSO] Erreur custom token :", err);
           })
@@ -1262,9 +1255,15 @@ export default function App() {
     }
   }, [currentPole, profileData, permissionsMatrice, userTags, isMasterKeyActive]);
 
-  // Called after onboarding completes successfully
+  // Déclenché à la fin de l'onboarding : redirection automatique et fluide vers le tableau de bord adhérent
   const handleOnboardingComplete = () => {
-    // No need to récupérer manually, the onSnapshot listener handles it automatically
+    setCurrentRoute('/app');
+    setCurrentPole('accueil');
+    setCurrentTab('dashboard');
+    if (typeof window !== 'undefined') {
+      window.history.pushState({ currentPole: 'accueil', currentTab: 'dashboard' }, '', '/app');
+      window.dispatchEvent(new PopStateEvent('popstate', { state: { currentPole: 'accueil', currentTab: 'dashboard' } }));
+    }
   };
 
   // 1. Écran de chargement (Authentification ou chargement Firestore)
@@ -1398,8 +1397,8 @@ export default function App() {
     );
   }
 
-  // 3. Utilisateur non connecté sur une route privée (/app, /login, etc.) -> Affichage de la page Login
-  if (!user) {
+  // 3. Utilisateur non connecté sur une route privée ou accès explicite à /login (invitation / inscription)
+  if (!user || isLoginPath) {
     return (
       <>
         <Login branding={branding} onSuccess={() => navigateToRoute('/app')} />
@@ -1478,7 +1477,7 @@ export default function App() {
     if (['wardrobe-projects', 'wardrobe-models', 'wardrobe-pieces', 'wardrobe-supplies', 'wardrobe-tools', 'wardrobe-sizes', 'varal-costumerie', 'wardrobe', 'vestiaire', 'wardrobe-inventory', 'wardrobe-couture'].includes(tabId) && enabledModules.vestiaire === false && enabledModules.costumerie === false) return false;
     if (['studio-social', 'studio-lexique', 'newsletter'].includes(tabId) && enabledModules.studioSocial === false) return false;
     if (['reunion-manager', 'ca-reunions'].includes(tabId) && enabledModules.reunions === false) return false;
-    if (['forum', 'mestre-forum-channels'].includes(tabId) && enabledModules.forum === false) return false;
+    if (tabId === 'forum' && enabledModules.forum === false) return false;
     if (['mestre-repertoire', 'mestre-sante-troupe', 'mestre-pedagogy-dashboard', 'varal-manager', 'mestre-pedagogy-qcm', 'mestre-orientation', 'mestre-categories', 'mestre-events', 'mestre-stage-layout', 'mestre-mot-mestre'].includes(tabId) && enabledModules.mestre === false) return false;
 
     return true;
@@ -1498,7 +1497,7 @@ export default function App() {
   const hasAccessGouvernance = isMasterKeyActive || canAccessPole('gouvernance', profileData, permissionsMatrice, userTags) || checkTabAccess('ca-reunions', 'gouvernance') || checkTabAccess('ca-reports', 'gouvernance') || checkTabAccess('ca-documents', 'gouvernance') || checkTabAccess('ca-finances', 'gouvernance') || checkTabAccess('ca-prestations', 'gouvernance');
   const hasAccessDiffusion = isMasterKeyActive || canAccessPole('diffusion', profileData, permissionsMatrice, userTags) || checkTabAccess('gigs-pipeline', 'diffusion');
   const hasAccessTresorerie = isMasterKeyActive || canAccessPole('tresorerie', profileData, permissionsMatrice, userTags) || checkTabAccess('dashboard-finance', 'tresorerie') || checkTabAccess('cotisations', 'tresorerie') || checkTabAccess('events-finances', 'tresorerie') || checkTabAccess('operations-diverses', 'tresorerie') || checkTabAccess('frais-km', 'tresorerie') || checkTabAccess('reports-exports', 'tresorerie');
-  const hasAccessSecretariat = isMasterKeyActive || canAccessPole('secretariat', profileData, permissionsMatrice, userTags) || checkTabAccess('export-annu', 'secretariat') || checkTabAccess('activity-reports', 'secretariat') || checkTabAccess('studio-events', 'secretariat') || checkTabAccess('varal-secretariat', 'secretariat') || checkTabAccess('secretariat-documents', 'secretariat');
+  const hasAccessSecretariat = isMasterKeyActive || canAccessPole('secretariat', profileData, permissionsMatrice, userTags) || checkTabAccess('export-annu', 'secretariat') || checkTabAccess('secretariat-reports', 'secretariat') || checkTabAccess('activity-reports', 'secretariat') || checkTabAccess('studio-events', 'secretariat') || checkTabAccess('varal-secretariat', 'secretariat') || checkTabAccess('secretariat-documents', 'secretariat');
   const hasAccessLogistique = isMasterKeyActive || canAccessPole('logistique', profileData, permissionsMatrice, userTags) || checkTabAccess('inventory', 'logistique') || checkTabAccess('logistics-kits', 'logistique') || checkTabAccess('logistics-carpool', 'logistique') || checkTabAccess('orders', 'logistique') || checkTabAccess('orders-manager', 'logistique');
   const hasAccessLutherie = isMasterKeyActive || canAccessPole('lutherie', profileData, permissionsMatrice, userTags) || checkTabAccess('instrument-models', 'lutherie') || checkTabAccess('inventory-projects', 'lutherie') || checkTabAccess('inventory-parts', 'lutherie') || checkTabAccess('inventory-supplies', 'lutherie') || checkTabAccess('workshop-tools', 'lutherie') || checkTabAccess('varal-lutherie', 'lutherie');
   const hasAccessCostumerie = isMasterKeyActive || canAccessPole('costumerie', profileData, permissionsMatrice, userTags) || checkTabAccess('wardrobe-projects', 'costumerie') || checkTabAccess('wardrobe-models', 'costumerie') || checkTabAccess('wardrobe-pieces', 'costumerie') || checkTabAccess('wardrobe-supplies', 'costumerie') || checkTabAccess('wardrobe-tools', 'costumerie') || checkTabAccess('wardrobe-sizes', 'costumerie') || checkTabAccess('varal-costumerie', 'costumerie');
@@ -1640,17 +1639,13 @@ export default function App() {
         setCurrentTab('ca-reunions');
         break;
       case 'activity-reports':
-        setCurrentPole('secretariat');
-        setCurrentTab('activity-reports');
-        break;
       case 'secretariat-reports':
+        setCurrentPole('secretariat');
+        setCurrentTab('secretariat-reports');
+        break;
       case 'ca-reports':
         setCurrentPole('gouvernance');
         setCurrentTab('ca-reports');
-        break;
-      case 'mestre-forum-channels':
-        setCurrentPole('mon-espace');
-        setCurrentTab('forum');
         break;
       case 'studio-events':
         setCurrentPole('secretariat');
@@ -1818,7 +1813,6 @@ export default function App() {
         setCurrentTab('secretariat-documents');
         break;
       case 'config-agenda':
-      case 'secretariat-lieux':
         setCurrentPole('config');
         setCurrentTab('config-agenda');
         break;
@@ -2132,13 +2126,34 @@ export default function App() {
                     onBack={() => handleNavigateToPole('accueil')} 
                   />
                 ) : currentTab === 'vestiaire' ? (
-                  <MonVestiaire 
-                    userId={user?.uid} 
-                    groupId={profileData?.groupId} 
-                    userChecklist={profileData?.userCostumeChecklist || {}} 
-                    userSection={profileData?.instrument || ''} 
-                    onBack={() => handleNavigateToPole('accueil')} 
-                  />
+                  (associationData?.wardrobeMemberMode === 'disabled' && !hasAccessCostumerie) ? (
+                    <div className="max-w-md mx-auto text-center py-12 p-6 bg-cordel-bg rounded-lg border-2 border-cordel-master-dark/20 shadow-md">
+                      <span className="text-3xl mb-2 block">👗</span>
+                      <h3 className="text-sm font-black uppercase text-cordel-wood mb-1">Vestiaire Adhérent Non Disponible</h3>
+                      <p className="text-xs text-cordel-master-dark/80 mb-4">Le vestiaire n'est pas activé pour les adhérents dans cette association.</p>
+                      <button
+                        type="button"
+                        onClick={() => handleNavigateToPole('accueil')}
+                        className="px-4 py-2 text-xs font-black uppercase bg-cordel-wood text-white rounded border border-encre-noire shadow-[2px_2px_0px_0px_#181716] cursor-pointer"
+                      >
+                        Retour à l'accueil
+                      </button>
+                    </div>
+                  ) : (
+                    <MonVestiaire 
+                      userId={user?.uid} 
+                      groupId={profileData?.groupId} 
+                      userChecklist={profileData?.userCostumeChecklist || {}} 
+                      userSection={profileData?.instrument || ''} 
+                      userEmail={user?.email || ''}
+                      onBack={() => handleNavigateToPole('accueil')} 
+                      wardrobeMemberMode={associationData?.wardrobeMemberMode || 'personal'}
+                      associationData={associationData}
+                      profileData={profileData}
+                      onNavigateToTab={(tab) => handleNavigateToView(tab)}
+                      onNavigateToPole={(pole, tab) => handleNavigateToPole(pole, tab)}
+                    />
+                  )
                 ) : currentTab === 'trombinoscope' ? (
                   <Trombinoscope 
                     user={user} 
@@ -2150,23 +2165,24 @@ export default function App() {
                     }}
                   />
                 ) : currentTab === 'forum' ? (
-                  <Forum 
-                    user={user} 
-                    profileData={profileData} 
-                    onBack={() => handleNavigateToPole('accueil')} 
-                    activePrivateChatUserId={activePrivateChatUserId}
-                    initialConversationId={activeConversationId}
-                    initialPrivateMessage={initialPrivateMessage}
-                    initialTab={forumInitialTab}
-                    onClearActivePrivateChat={() => {
-                      setActivePrivateChatUserId(null);
-                      setActiveConversationId(null);
-                      setInitialPrivateMessage('');
-                      cleanUrlParams(['conversationId', 'chatUserId']);
-                    }}
-                    onOpenStudioForum={() => setCurrentTab('mestre-forum-channels')}
-                    breakGlassActive={breakGlassActive}
-                  />
+                  <ErrorBoundary title="Forum & Discussions">
+                    <Forum 
+                      user={user} 
+                      profileData={profileData} 
+                      onBack={() => handleNavigateToPole('accueil')} 
+                      activePrivateChatUserId={activePrivateChatUserId}
+                      initialConversationId={activeConversationId}
+                      initialPrivateMessage={initialPrivateMessage}
+                      initialTab={forumInitialTab}
+                      onClearActivePrivateChat={() => {
+                        setActivePrivateChatUserId(null);
+                        setActiveConversationId(null);
+                        setInitialPrivateMessage('');
+                        cleanUrlParams(['conversationId', 'chatUserId']);
+                      }}
+                      breakGlassActive={breakGlassActive}
+                    />
+                  </ErrorBoundary>
                 ) : (currentTab === 'export-annu' && (hasAccessSecretariat || hasAccessStudio)) ? (
                   <AdminExport 
                     user={user}
@@ -2498,7 +2514,7 @@ export default function App() {
                     profileData={profileData}
                     onBack={() => handleNavigateToPole('accueil')} 
                   />
-                ) : (currentTab === 'ca-reports' && hasAccessGouvernance) ? (
+                ) : (['ca-reports', 'secretariat-reports', 'activity-reports'].includes(currentTab) && (hasAccessGouvernance || hasAccessSecretariat)) ? (
                   <SecretariatReportsView 
                     groupId={profileData?.groupId} 
                     onBack={() => handleNavigateToPole('accueil')} 
@@ -2546,27 +2562,9 @@ export default function App() {
                     groupId={profileData?.groupId}
                     onBack={() => handleNavigateToPole('accueil')} 
                   />
-                ) : (currentTab === 'activity-reports' && (hasAccessSecretariat || hasAccessStudio)) ? (
-                  <ActivityReports 
-                    groupId={profileData?.groupId}
-                    onBack={() => handleNavigateToPole('accueil')} 
-                  />
-
                 ) : (currentTab === 'secretariat-documents' && hasAccessSecretariat) ? (
                   <SecretariatDocuments 
                     groupId={profileData?.groupId}
-                    onBack={() => handleNavigateToPole('accueil')} 
-                  />
-                ) : (currentTab === 'secretariat-lieux' && hasAccessSecretariat) ? (
-                  <SecretariatAgendaLieux 
-                    groupId={profileData?.groupId}
-                    onBack={() => handleNavigateToPole('accueil')} 
-                  />
-                ) : (currentTab === 'mestre-forum-channels' && (hasAccessSecretariat || hasAccessStudio || hasAccessMestre || hasAccessForumMod)) ? (
-                  <ForumChannelsManager 
-                    groupId={profileData?.groupId}
-                    role={profileData?.role}
-                    isSystemAdmin={profileData?.isSystemAdmin}
                     onBack={() => handleNavigateToPole('accueil')} 
                   />
                 ) : (currentTab === 'varal-secretariat' && (hasAccessSecretariat || hasAccessStudio)) ? (
@@ -2742,6 +2740,7 @@ export default function App() {
                         if (!isFocused) handleNavigateToView('dashboard');
                       }}
                       onNavigateToView={handleNavigateToView}
+                      isFullPage={true}
                     />
                   </div>
                 ) : currentTab === 'varal' ? (

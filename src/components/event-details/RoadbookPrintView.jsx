@@ -1,10 +1,16 @@
 import React from 'react';
+import RoadbookCommissionsPrintSection from './RoadbookCommissionsPrintSection';
 
 /**
- * Vue imprimable A4 de la feuille de route du concert / événement.
+ * Vue imprimable A4 de la feuille de route du concert / événement (Bloc 1 & 2).
  * Optimisée pour une page papier A4 avec contrastes élevés et zéro fond d'encre lourd.
  */
-export default function RoadbookPrintView({ event = {}, allUsers = [], presentsByInstrument = {} }) {
+export default function RoadbookPrintView({
+  event = {},
+  allUsers = [],
+  presentsByInstrument = {},
+  commissions = []
+}) {
   const parcours = event.parcours || {};
   const hebergement = event.hebergement || {};
   const logistique = event.logistiqueDepart || {};
@@ -18,23 +24,15 @@ export default function RoadbookPrintView({ event = {}, allUsers = [], presentsB
   const selectedMalles = Array.isArray(event.logistiqueMalles) && event.logistiqueMalles.length > 0
     ? event.logistiqueMalles
     : [
-        logistique.maquillageRequis ? 'Mallette Maquillage' : null,
-        logistique.trousseSecoursBouchons ? 'Trousse secours & bouchons' : null,
-        logistique.reserveBaguettes ? 'Réserve baguettes / mailloches' : null,
+        logistique.maquillageRequis && 'Mallette Maquillage',
+        logistique.trousseSecoursBouchons && 'Trousse secours & bouchons',
+        logistique.reserveBaguettes && 'Réserve baguettes / mailloches',
         ...(Array.isArray(event.mallesSpecifiques) ? event.mallesSpecifiques : [])
       ].filter(Boolean);
 
   return (
     <div className="roadbook-print-root bg-white text-black p-4 font-sans text-[10.5px] leading-tight">
-      <style>{`
-        @media print {
-          @page { size: A4 portrait; margin: 8mm; }
-          body { background: white !important; color: black !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          .roadbook-no-print { display: none !important; }
-          .roadbook-print-root { padding: 0 !important; width: 100% !important; }
-          a { text-decoration: none !important; color: black !important; }
-        }
-      `}</style>
+      <style>{`@media print { @page { size: A4 portrait; margin: 8mm; } body { background: white !important; color: black !important; } .roadbook-no-print { display: none !important; } .roadbook-print-root { padding: 0 !important; width: 100% !important; } a { text-decoration: none !important; color: black !important; } }`}</style>
       {/* En-tête principal */}
       <div className="border-b-2 border-black pb-2 mb-2 flex justify-between items-start">
         <div>
@@ -60,23 +58,15 @@ export default function RoadbookPrintView({ event = {}, allUsers = [], presentsB
           <div className="border border-black p-2 rounded">
             <h2 className="text-[10px] font-black uppercase border-b border-black pb-1 mb-1">📞 Contacts Clés Jour J</h2>
             <div className="space-y-1">
-              {contacts.referentOrgaNom && (
-                <div>Orga : <strong>{contacts.referentOrgaNom}</strong> {contacts.referentOrgaTel && `(${contacts.referentOrgaTel})`}</div>
-              )}
-              {referentGroupe && (
-                <div>Référent Groupe : <strong>{referentGroupe.prenom} {referentGroupe.nom}</strong> {referentGroupe.telephone && `(${referentGroupe.telephone})`}</div>
-              )}
+              {contacts.referentOrgaNom && <div>Orga : <strong>{contacts.referentOrgaNom}</strong> {contacts.referentOrgaTel && `(${contacts.referentOrgaTel})`}</div>}
+              {referentGroupe && <div>Référent Groupe : <strong>{referentGroupe.prenom} {referentGroupe.nom}</strong> {referentGroupe.telephone && `(${referentGroupe.telephone})`}</div>}
               {(contacts.referentsPupitres || []).length > 0 && (
                 <div className="pt-1 border-t border-dotted border-neutral-400 mt-1">
                   <span className="font-bold text-[9px] block">Chefs de pupitre :</span>
                   <div className="grid grid-cols-2 gap-x-1 text-[9px]">
                     {contacts.referentsPupitres.map((rp, i) => {
                       const u = allUsers.find(user => user.id === rp.memberId);
-                      return (
-                        <div key={i} className="truncate">
-                          • {rp.pupitre} : {u ? `${u.prenom} ${u.nom}` : '-'} {u?.telephone ? `(${u.telephone})` : ''}
-                        </div>
-                      );
+                      return <div key={i} className="truncate">• {rp.pupitre} : {u ? `${u.prenom} ${u.nom}` : '-'} {u?.telephone ? `(${u.telephone})` : ''}</div>;
                     })}
                   </div>
                 </div>
@@ -183,6 +173,14 @@ export default function RoadbookPrintView({ event = {}, allUsers = [], presentsB
           )}
         </div>
       </div>
+
+      {/* Section Postes Bénévoles & Régie issus des Commissions */}
+      {commissions.length > 0 && (
+        <RoadbookCommissionsPrintSection
+          commissions={commissions}
+          allUsers={allUsers}
+        />
+      )}
 
       {/* Pied de page A4 */}
       <div className="border-t border-neutral-400 mt-3 pt-1 text-center text-[8px] text-neutral-500 flex justify-between">

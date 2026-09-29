@@ -1,19 +1,11 @@
 import React from 'react';
 import RoadbookInteractiveContent from './RoadbookInteractiveContent';
 import RoadbookPrintView from './RoadbookPrintView';
+import { useEventCommissions } from '../../hooks/useEventCommissions';
 
 /**
  * Modale de consultation de la Feuille de Route (Roadbook) du jour J.
  * Affichage sobre et contrasté (thème Cordel), optimisé smartphone et imprimable en A4.
- *
- * @param {Object} props
- * @param {boolean} props.isOpen - Visibilité de la modale
- * @param {Function} props.onClose - Fermeture de la modale
- * @param {Object} props.event - Données complètes de l'événement
- * @param {Array} props.allUsers - Liste de tous les membres
- * @param {Object} props.presentsByInstrument - Effectifs présents par pupitre
- * @param {Function} [props.onNavigateToStageLayout] - Navigation vers le plan de scène
- * @param {Function} [props.t] - Fonction de traduction
  */
 export default function RoadbookModal({
   isOpen,
@@ -24,6 +16,9 @@ export default function RoadbookModal({
   onNavigateToStageLayout,
   t = (key) => key
 }) {
+  const hasCommissions = Boolean(event?.hasCommissions);
+  const { commissions = [] } = useEventCommissions(hasCommissions && isOpen ? event.id : null);
+
   if (!isOpen) return null;
 
   const isStageLayoutPublished = Boolean(
@@ -105,6 +100,7 @@ export default function RoadbookModal({
             event={event}
             allUsers={allUsers}
             presentsByInstrument={presentsByInstrument}
+            commissions={commissions}
           />
         </div>
 
@@ -129,6 +125,7 @@ export default function RoadbookModal({
           event={event}
           allUsers={allUsers}
           presentsByInstrument={presentsByInstrument}
+          commissions={commissions}
         />
       </div>
     </div>

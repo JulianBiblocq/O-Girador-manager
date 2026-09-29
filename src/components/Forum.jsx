@@ -201,7 +201,6 @@ export default function Forum({
   activePrivateChatUserId, 
   initialPrivateMessage = '', 
   onClearActivePrivateChat, 
-  onOpenStudioForum, 
   breakGlassActive = false,
   initialTab = 'discussions',
   initialThreadId = null,

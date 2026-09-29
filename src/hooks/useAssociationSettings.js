@@ -237,6 +237,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
     nomenclaturePreset: 'traditional_baque_virado',
     eventTypes: ['prestation', 'repetition', 'stage', 'atelier', 'reunion'],
     eventTypeConfigs: {},
+    wardrobeMemberMode: 'personal',
     enabledModules: DEFAULT_ENABLED_MODULES,
     ecosystemAccess: DEFAULT_ECOSYSTEM_ACCESS,
     activerPresenceEnLigne: true,
@@ -529,6 +530,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
             ? data.eventTypes 
             : ['prestation', 'repetition', 'stage', 'atelier', 'reunion'],
           eventTypeConfigs: data.eventTypeConfigs || {},
+          wardrobeMemberMode: data.wardrobeMemberMode || 'personal',
           enabledModules: data.enabledModules ? { ...DEFAULT_ENABLED_MODULES, ...data.enabledModules } : DEFAULT_ENABLED_MODULES,
           ecosystemAccess: data.ecosystemAccess ? { ...DEFAULT_ECOSYSTEM_ACCESS, ...data.ecosystemAccess } : DEFAULT_ECOSYSTEM_ACCESS,
           activerPresenceEnLigne: data.activerPresenceEnLigne !== false,
@@ -807,6 +809,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
         agendaEnableRevisionProgram: formData.agendaEnableRevisionProgram !== undefined ? formData.agendaEnableRevisionProgram : true,
         eventTypes: formData.eventTypes || [],
         eventTypeConfigs: formData.eventTypeConfigs || {},
+        wardrobeMemberMode: formData.wardrobeMemberMode || 'personal',
         enabledModules: formData.enabledModules || DEFAULT_ENABLED_MODULES,
         ecosystemAccess: formData.ecosystemAccess || DEFAULT_ECOSYSTEM_ACCESS,
         activerPresenceEnLigne: formData.activerPresenceEnLigne !== false,

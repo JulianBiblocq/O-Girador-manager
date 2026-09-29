@@ -62,11 +62,14 @@ export default function StudioMultiPhotoManager({
         const snapshot = await uploadBytes(fileRef, fileToUpload);
         const downloadUrl = await getDownloadURL(snapshot.ref);
 
-        setMediaList(prev => prev.map(m => m.id === item.id ? { ...m, url: downloadUrl, isUploading: false } : m));
+        setMediaList(prev => prev.map(m => m.id === item.id ? { ...m, url: downloadUrl, isUploading: false, error: false } : m));
       } catch (uploadErr) {
         console.error("Studio - Erreur upload image :", uploadErr);
         setMediaList(prev => prev.map(m => m.id === item.id ? { ...m, isUploading: false, error: true } : m));
       }
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -211,9 +214,15 @@ export default function StudioMultiPhotoManager({
               <div className="relative aspect-square w-full overflow-hidden bg-stone-100">
                 <img src={item.url} alt={item.name} className="w-full h-full object-cover" />
                 {item.isUploading && (
-                  <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-white text-[10px] font-bold">
+                  <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white text-[10px] font-bold">
                     <span className="animate-spin text-sm">⏳</span>
-                    <span>Upload...</span>
+                    <span>Upload en cours...</span>
+                  </div>
+                )}
+                {item.error && (
+                  <div className="absolute inset-0 bg-red-900/80 flex flex-col items-center justify-center text-white text-[9px] font-bold p-1 text-center">
+                    <span className="text-sm">⚠️</span>
+                    <span>Échec envoi</span>
                   </div>
                 )}
                 {item.isCover && (

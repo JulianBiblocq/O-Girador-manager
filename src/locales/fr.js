@@ -158,7 +158,7 @@ export const fr = {
     imageRightsDoc: "Lire la charte de droit à l'image",
     medicalCert: "J'atteste n'avoir aucune contre-indication médicale",
     medicalCertDoc: "Lire le règlement de santé / certificat type",
-    nextStep: "Étape suivante",
+    nextStep: "Finaliser mon inscription",
     saving: "Enregistrement...",
     genderMale: "Masculin (ex: Membre, Mestre)",
     genderFemale: "Féminin (ex: Membre, Mestra)",
@@ -166,6 +166,19 @@ export const fr = {
     handRight: "Droitier",
     handLeft: "Gaucher",
     errorSave: "Erreur lors de l'enregistrement de votre profil. Veuillez réessayer."
+  },
+  welcomeTour: {
+    welcomeBadge: "Bienvenue dans la troupe",
+    guideBadge: "Visite guidée",
+    welcomeTitle: "Bienvenue dans la troupe !",
+    introText: "Ton inscription est bien enregistrée ! Prends 1 minute pour découvrir les outils essentiels qui t'accompagneront tout au long de ta saison.",
+    skip: "Passer ✕",
+    skipBtn: "Passer",
+    discoverBtn: "🧭 Découvrir l'application",
+    backHome: "← Accueil",
+    prev: "← Précédent",
+    next: "Étape suivante →",
+    letsGo: "C'est parti ! 🥁"
   },
   dashboard: {
     title: "Tableau de Bord",
@@ -222,7 +235,8 @@ export const fr = {
     photoZoom: "Cliquer pour agrandir la photo",
     bannerMissingTitle: "Votre photo est manquante dans le Trombinoscope",
     bannerMissingDesc: "Ajoutez votre portrait pour permettre aux autres membres du groupe de vous reconnaître facilement !",
-    addMyPhoto: "Ajouter ma photo"
+    addMyPhoto: "Ajouter ma photo",
+    memberCard: "Fiche Membre"
   },
   pwa: {
     newVersion: "Une nouvelle version est disponible !",
@@ -235,7 +249,9 @@ export const fr = {
     maintenanceDesc: "Si des utilisateurs rencontrent des difficultés ou des blocages, forcez la purge complète du cache local."
   },
   userProfile: {
-    title: "MON PROFIL / PARAMÈTRES",
+    title: "Mon Profil",
+    mainTitle: "Mon Profil",
+    settingsTag: "Paramètres",
     subtitle: "Mettre à jour vos informations",
     firstName: "Prénom",
     lastName: "Nom",
@@ -400,6 +416,10 @@ export const fr = {
   widgetAgenda: {
     title: "Agenda",
     addBtn: "+ Ajouter",
+    addSingleEvent: "Événement ponctuel",
+    addSingleEventDesc: "Prestation, répétition, stage, atelier ou réunion",
+    addBatchRehearsals: "Série de répétitions",
+    addBatchRehearsalsDesc: "Planifier les dates récurrentes pour la saison",
     batchRehearsalBtn: "Planifier une série de répétitions",
     batchRehearsalBtnShort: "Série répétitions",
     viewCards: "Cartes",
@@ -1164,7 +1184,7 @@ export const fr = {
     pedagogyPracticeVolume: "Paliers Franchis",
     pedagogyDanseEmptyTitle: "Aucun élément de danse renseigné pour le moment",
     pedagogyDanseEmptyDesc: "Les indicateurs apparaîtront automatiquement lorsque les morceaux de danse seront travaillés.",
-    pedagogyDefisRythmiquesToggle: "Défis rythmiques (Speed Trainer & Réflexes)",
+    pedagogyDefisRythmiquesToggle: "Défis rythmiques (Entraînements & Réflexes)",
     pedagogyDefisRythmiquesToggleDesc: "Désactivé par défaut. Révèle l'onglet des programmes métronomiques et défis de réaction dans Mon Parcours.",
     rodaQuizOpenRoom: "1 salon ouvert",
     rodaQuizJoin: "Rejoindre la Roda 🚀",

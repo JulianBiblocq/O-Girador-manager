@@ -16,8 +16,7 @@ assert(appContent.includes("checkTabAccess('config-agenda', 'config')"), "checkT
 const secretariatMatch = appContent.match(/id:\s*'secretariat'[\s\S]*?tabs:\s*\[([\s\S]*?)\]/);
 assert(secretariatMatch, "Section secretariat trouvée");
 const secTabs = (secretariatMatch[1].match(/id:\s*'([^']+)'/g) || []).map(s => s.replace(/id:\s*'|'/g, ''));
-console.log('Onglets Secrétariat :', secTabs);
-assert.deepStrictEqual(secTabs, ['export-annu', 'activity-reports', 'studio-events', 'varal-secretariat'], "Secrétariat doit avoir exactement ses 4 onglets opérationnels");
+assert.deepStrictEqual(secTabs, ['export-annu', 'secretariat-reports', 'studio-events', 'varal-secretariat', 'secretariat-documents'], "Secrétariat doit avoir exactement ses onglets opérationnels");
 
 // Logistique strict (4 tabs)
 const logistiqueMatch = appContent.match(/id:\s*'logistique'[\s\S]*?tabs:\s*\[([\s\S]*?)\]/);
@@ -26,13 +25,15 @@ const logTabs = (logistiqueMatch[1].match(/id:\s*'([^']+)'/g) || []).map(s => s.
 console.log('Onglets Logistique :', logTabs);
 assert.deepStrictEqual(logTabs, ['inventory', 'orders', 'logistics-carpool', 'logistics-kits'], "Logistique doit avoir exactement ses 4 onglets opérationnels (aucun logistics-pupitres)");
 
-// 2. Vérification de TabAgenda.jsx
+// 2. Vérification de TabAgenda.jsx et TabConfigComms.jsx
 const tabAgendaContent = fs.readFileSync('src/components/association-settings/TabAgenda.jsx', 'utf8');
 assert(tabAgendaContent.includes("import TabLieux from './TabLieux';"), "TabAgenda doit importer TabLieux");
-assert(tabAgendaContent.includes("import TabAutomations from './TabAutomations';"), "TabAgenda doit importer TabAutomations");
 assert(tabAgendaContent.includes("<TabLieux"), "TabAgenda doit intégrer TabLieux");
-assert(tabAgendaContent.includes("<TabAutomations"), "TabAgenda doit intégrer TabAutomations");
 assert(tabAgendaContent.includes("EventTypeConfigCard"), "TabAgenda doit conserver EventTypeConfigCard");
+
+const tabConfigCommsContent = fs.readFileSync('src/components/association-settings/TabConfigComms.jsx', 'utf8');
+assert(tabConfigCommsContent.includes("import TabAutomations from './TabAutomations';"), "TabConfigComms doit importer TabAutomations");
+assert(tabConfigCommsContent.includes("<TabAutomations"), "TabConfigComms doit intégrer TabAutomations");
 
 // 3. Vérification de TabLieux.jsx (adresse du local)
 const tabLieuxContent = fs.readFileSync('src/components/association-settings/TabLieux.jsx', 'utf8');

@@ -518,7 +518,7 @@ export default function PrivateChatView({
       </div>
 
       {/* 2. Zone des messages */}
-      <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3.5 bg-cordel-bg-light/40 scrollbar-thin">
+      <div className="flex-1 overflow-y-auto p-4 pb-8 flex flex-col gap-3.5 bg-cordel-bg-light/40 scrollbar-thin">
         {activeMessages.length === 0 ? (
           <div className="flex-1 flex flex-col justify-center items-center opacity-50 select-none">
             <span className="text-xl mb-2">{isGroup ? '👥' : '✉️'}</span>
@@ -730,11 +730,11 @@ export default function PrivateChatView({
             );
           })
         )}
-        <div ref={messagesEndRef} />
+        <div ref={messagesEndRef} className="h-2 shrink-0" />
       </div>
 
       {/* 3. Zone de saisie et d'envoi */}
-      <div className="flex flex-col border-t-2 border-dashed border-encre-noire/20 p-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom,0px))] bg-white/40 dark:bg-black/10 select-none">
+      <div className="shrink-0 flex flex-col border-t-2 border-dashed border-encre-noire/20 p-2.5 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] bg-white/40 dark:bg-black/10 select-none">
         
         {/* Bandeau de réponse / citation active */}
         {replyingTo && (

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-export default function XiloAvatar({ src, name, size = 80 }) {
+export default function XiloAvatar({ src, name, size = 80, className = '' }) {
   const [error, setError] = useState(false);
 
   useEffect(() => {
@@ -24,12 +24,13 @@ export default function XiloAvatar({ src, name, size = 80 }) {
   };
 
   const initials = getInitials(name);
+  const sizeStyle = size ? { width: size, height: size } : undefined;
 
   if (error || !src) {
     return (
       <div 
-        style={{ width: size, height: size }}
-        className="rounded-[12px_6px_10px_8px] border-2 border-encre-noire bg-cordel-wood flex items-center justify-center text-cordel-bg-light font-black text-2xl shadow-[2px_2px_0px_0px_#181716] select-none shrink-0"
+        style={sizeStyle}
+        className={`rounded-[12px_6px_10px_8px] border-2 border-encre-noire bg-cordel-wood flex items-center justify-center text-cordel-bg-light font-black text-2xl shadow-[2px_2px_0px_0px_#181716] select-none shrink-0 ${className}`}
       >
         {initials}
       </div>
@@ -38,14 +39,12 @@ export default function XiloAvatar({ src, name, size = 80 }) {
 
   return (
     <div 
-      style={{ width: size, height: size }}
-      className="relative rounded-[12px_6px_10px_8px] border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] bg-[var(--color-cordel-papier,#f4ecd8)] p-0 overflow-hidden select-none pointer-events-none shrink-0"
+      style={sizeStyle}
+      className={`relative rounded-[12px_6px_10px_8px] border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] bg-[var(--color-cordel-papier,#f4ecd8)] p-0 overflow-hidden select-none pointer-events-none shrink-0 ${className}`}
     >
       <img 
         src={src} 
         alt={name}
-        width={size}
-        height={size}
         loading="lazy"
         decoding="async"
         onError={() => setError(true)}

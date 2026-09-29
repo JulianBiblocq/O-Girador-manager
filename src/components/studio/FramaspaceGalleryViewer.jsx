@@ -31,9 +31,10 @@ export default function FramaspaceGalleryViewer({
     setVideoPlaybackError(false);
   }, [selectedMediaIndex]);
 
-  // Chargement des médias depuis Framaspace WebDAV via Cloud Function
+  // Chargement des médias depuis Framaspace WebDAV via Cloud Function avec délai de sécurité (8s)
   useEffect(() => {
     let isMounted = true;
+    let timerId = null;
 
     async function fetchMedia() {
       if (!albumUrl) {
@@ -46,12 +47,22 @@ export default function FramaspaceGalleryViewer({
 
       try {
         const getMediaFn = httpsCallable(functions, 'getFramaspaceAlbumMedia');
-        const res = await getMediaFn({
-          albumUrl: albumUrl.trim(),
-          eventId,
-          groupId
+        const timeoutPromise = new Promise((_, reject) => {
+          timerId = setTimeout(() => {
+            reject(new Error("Délai de connexion dépassé (8s). Le dossier distant ne répond pas ou est restreint."));
+          }, 8000);
         });
 
+        const res = await Promise.race([
+          getMediaFn({
+            albumUrl: albumUrl.trim(),
+            eventId,
+            groupId
+          }),
+          timeoutPromise
+        ]);
+
+        if (timerId) clearTimeout(timerId);
         if (!isMounted) return;
 
         const data = res?.data || {};
@@ -63,8 +74,12 @@ export default function FramaspaceGalleryViewer({
       } catch (err) {
         if (!isMounted) return;
         console.error("FramaspaceGalleryViewer - Erreur récupération médias :", err);
-        setError("Impossible de charger la galerie. Vous pouvez consulter l'album directement sur Framaspace.");
+        const errMsg = err?.message && err.message.includes("Délai de connexion")
+          ? err.message
+          : "Impossible de charger la galerie en direct. Vous pouvez consulter l'album directement sur Framaspace.";
+        setError(errMsg);
       } finally {
+        if (timerId) clearTimeout(timerId);
         if (isMounted) setLoading(false);
       }
     }
@@ -73,6 +88,7 @@ export default function FramaspaceGalleryViewer({
 
     return () => {
       isMounted = false;
+      if (timerId) clearTimeout(timerId);
     };
   }, [albumUrl, eventId, groupId]);
 
@@ -132,6 +148,10 @@ export default function FramaspaceGalleryViewer({
             href={albumUrl}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={(e) => {
+              e.preventDefault();
+              window.open(albumUrl, '_blank', 'noopener,noreferrer');
+            }}
             className="px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded-[3px_5px_4px_4px] border border-encre-noire bg-cordel-bg hover:bg-amber-100 text-encre-noire flex items-center gap-1 transition-all cursor-pointer shadow-xs"
             title="Ouvrir l'album complet dans un nouvel onglet sécurisé"
           >
@@ -162,6 +182,10 @@ export default function FramaspaceGalleryViewer({
               href={albumUrl}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={(e) => {
+                e.preventDefault();
+                window.open(albumUrl, '_blank', 'noopener,noreferrer');
+              }}
               className="px-4 py-2 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] bg-[var(--color-cordel-vert)] text-white border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center gap-2"
             >
               <span>Consulter l'album en ligne</span>

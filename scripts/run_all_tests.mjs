@@ -70,7 +70,17 @@ const testScripts = [
   'scripts/test_inventory_caution_attribution.mjs',
   'scripts/test_event_roadbook_mission.mjs',
   'scripts/test_carpool_crew_discussion_mission.mjs',
-  'scripts/test_collective_kits_roadbook_mission.mjs'
+  'scripts/test_collective_kits_roadbook_mission.mjs',
+  'scripts/test_simple_member_suite.mjs',
+  'scripts/test_tab_ribbon_responsive.mjs',
+  'scripts/test_event_commissions_engine.mjs',
+  'scripts/test_event_commissions_bloc2.mjs',
+  'scripts/test_trombinoscope_stamp_grid.mjs',
+  'scripts/test_event_type_configs_accordion.mjs',
+  'scripts/test_in_app_notifications_deletion.mjs',
+  'scripts/test_repertoire_event_program_mission.mjs',
+  'scripts/test_responsive_popups_clamping.mjs',
+  'scripts/test_consolidation_config_mission.mjs'
 ];
 
 console.log("===============================================================");

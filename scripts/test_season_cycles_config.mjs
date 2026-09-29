@@ -95,19 +95,22 @@ assert(hookContent.includes('saisonDebutMois: Number(formData.saisonDebutMois) |
 assert(hookContent.includes('exerciceDebutMois: Number(formData.exerciceDebutMois) || 1'), "useAssociationSettings persiste exerciceDebutMois dans handleSave");
 
 // -------------------------------------------------------------
-// MODULE 3 : Interface TabOrganization.jsx
+// MODULE 3 : Interface TabOrganization.jsx & AnnualCyclesAccordion.jsx
 // -------------------------------------------------------------
-console.log("\n▶️ Module 3 : Interface TabOrganization.jsx");
+console.log("\n▶️ Module 3 : Interface TabOrganization.jsx & AnnualCyclesAccordion.jsx");
 const tabOrgPath = path.join(rootDir, 'src', 'components', 'association-settings', 'TabOrganization.jsx');
+const annualCyclesPath = path.join(rootDir, 'src', 'components', 'association-settings', 'organization', 'AnnualCyclesAccordion.jsx');
 const tabOrgContent = fs.readFileSync(tabOrgPath, 'utf-8');
+const annualCyclesContent = fs.readFileSync(annualCyclesPath, 'utf-8');
 
-assert(tabOrgContent.includes('getSeasonDateRange'), "TabOrganization importe getSeasonDateRange");
-assert(tabOrgContent.includes('getCurrentSeason'), "TabOrganization importe getCurrentSeason");
-assert(tabOrgContent.includes('getFiscalYearDateRange'), "TabOrganization importe getFiscalYearDateRange");
-assert(tabOrgContent.includes('id="saisonDebutMois"'), "TabOrganization dispose du champ sélecteur saisonDebutMois");
-assert(tabOrgContent.includes('id="exerciceDebutMois"'), "TabOrganization dispose du champ sélecteur exerciceDebutMois");
-assert(tabOrgContent.includes('currentSeasonRange'), "TabOrganization calcule currentSeasonRange pour l'aperçu dynamique");
-assert(tabOrgContent.includes('currentFiscalRange'), "TabOrganization calcule currentFiscalRange pour l'aperçu dynamique");
+assert(tabOrgContent.includes('AnnualCyclesAccordion'), "TabOrganization intègre le sous-composant AnnualCyclesAccordion");
+assert(annualCyclesContent.includes('getSeasonDateRange'), "AnnualCyclesAccordion importe getSeasonDateRange");
+assert(annualCyclesContent.includes('getCurrentSeason'), "AnnualCyclesAccordion importe getCurrentSeason");
+assert(annualCyclesContent.includes('getFiscalYearDateRange'), "AnnualCyclesAccordion importe getFiscalYearDateRange");
+assert(annualCyclesContent.includes('id="saisonDebutMois"'), "AnnualCyclesAccordion dispose du champ sélecteur saisonDebutMois");
+assert(annualCyclesContent.includes('id="exerciceDebutMois"'), "AnnualCyclesAccordion dispose du champ sélecteur exerciceDebutMois");
+assert(annualCyclesContent.includes('currentSeasonRange'), "AnnualCyclesAccordion calcule currentSeasonRange pour l'aperçu dynamique");
+assert(annualCyclesContent.includes('currentFiscalRange'), "AnnualCyclesAccordion calcule currentFiscalRange pour l'aperçu dynamique");
 
 // -------------------------------------------------------------
 // MODULE 4 : Internationalisation (fr.js & pt.js)

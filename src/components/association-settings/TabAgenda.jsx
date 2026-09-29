@@ -4,7 +4,6 @@ import CordelButton from '../CordelButton';
 import useConfirm from '../../hooks/useConfirm';
 import EventTypeConfigCard from './EventTypeConfigCard';
 import TabLieux from './TabLieux';
-import TabAutomations from './TabAutomations';
 
 export default function TabAgenda({
   formData = {},
@@ -14,8 +13,7 @@ export default function TabAgenda({
   t
 }) {
   const { confirm } = useConfirm();
-  const [activeSection, setActiveSection] = useState('all'); // 'all' | 'lieux' | 'types' | 'relances'
-  const [isAutomationsOpen, setIsAutomationsOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState('all'); // 'all' | 'lieux' | 'types'
   const [isGlobalOptionsOpen, setIsGlobalOptionsOpen] = useState(false);
 
   const {
@@ -147,20 +145,6 @@ export default function TabAgenda({
           }`}
         >
           📅 Types d'Événements & Presets
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setActiveSection('relances');
-            setIsAutomationsOpen(true);
-          }}
-          className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded transition-all cursor-pointer ${
-            activeSection === 'relances'
-              ? 'bg-[var(--color-cordel-vert,#2d6a4f)] text-white shadow-2xs'
-              : 'bg-white text-stone-700 border border-stone-300 hover:bg-stone-50'
-          }`}
-        >
-          ⚡ Relances Automatiques (J-1 / J-2)
         </button>
       </div>
 
@@ -503,53 +487,6 @@ export default function TabAgenda({
       </CordelCard>
     </div>
   )}
-
-
-      {/* SECTION 3 : Automatisations & Relances de Présence */}
-      {(activeSection === 'all' || activeSection === 'relances') && (
-        <div className="flex flex-col gap-3 pt-2 animate-fade-in">
-          <div className="flex items-center gap-2 border-b border-dashed border-cordel-master-dark/20 pb-2">
-            <span className="text-base">⚡</span>
-            <h2 className="text-xs font-black uppercase tracking-wider text-cordel-wood">
-              3. Automatisations & Relances de Présence (J-1 / J-2)
-            </h2>
-          </div>
-
-          <CordelCard variant="default" useExtremeBorder={true} className="p-0 overflow-hidden mb-4">
-            <div 
-              onClick={() => setIsAutomationsOpen(prev => !prev)}
-              className="py-3 px-4 flex items-center justify-between cursor-pointer bg-cordel-bg-light/60 hover:bg-cordel-bg-light transition-colors select-none"
-            >
-              <div className="flex items-center gap-2 text-left">
-                <span className="text-sm">⏰</span>
-                <span className="text-xs font-black uppercase tracking-wider text-cordel-wood">
-                  Règles de Relance Automatique de Présence {isAutomationsOpen ? '▲' : '▾'}
-                </span>
-                <span className="text-[9px] text-cordel-master-dark/60 font-semibold hidden sm:inline">
-                  (Rappels de réponse RSVP ciblés avant la date limite ou l'événement)
-                </span>
-              </div>
-
-              <button
-                type="button"
-                className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded border border-encre-noire/30 bg-white hover:bg-stone-50 text-encre-noire transition-all cursor-pointer shadow-2xs"
-              >
-                {isAutomationsOpen ? 'Fermer' : 'Déplier les relances'}
-              </button>
-            </div>
-
-            {isAutomationsOpen && (
-              <div className="p-4 border-t border-dashed border-cordel-master-dark/20 animate-fade-in bg-white/40">
-                <TabAutomations
-                  groupId={groupId}
-                  eventTypes={eventTypes}
-                  t={t}
-                />
-              </div>
-            )}
-          </CordelCard>
-        </div>
-      )}
 
     </div>
   );

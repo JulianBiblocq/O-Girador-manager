@@ -102,7 +102,7 @@ export default function CarDiscussionModal({
         </div>
 
         {/* Fil de discussion */}
-        <div className="flex-1 overflow-y-auto p-3.5 space-y-2.5 text-xs bg-[var(--color-cordel-papier,#fdfbf7)]">
+        <div className="flex-1 overflow-y-auto p-3.5 pb-6 space-y-2.5 text-xs bg-[var(--color-cordel-papier,#fdfbf7)]">
           {messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center text-neutral-400 p-4">
               <span className="text-3xl mb-2">🚗💬</span>
@@ -139,11 +139,11 @@ export default function CarDiscussionModal({
               );
             })
           )}
-          <div ref={messagesEndRef} />
+          <div ref={messagesEndRef} className="h-2 shrink-0" />
         </div>
 
         {/* Zone de saisie */}
-        <form onSubmit={handleSend} className="p-2.5 border-t border-[var(--theme-border-color,#181716)] bg-white flex items-center gap-2">
+        <form onSubmit={handleSend} className="shrink-0 p-2.5 border-t border-[var(--theme-border-color,#181716)] bg-white flex items-center gap-2">
           <input
             type="text"
             placeholder="Écrire un message à l'équipage..."

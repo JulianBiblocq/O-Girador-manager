@@ -20,21 +20,20 @@ export default function RepertoireModalNavArrows({
   onNavigate,
   disabled = false
 }) {
-  if (!piecesList || piecesList.length <= 1 || !currentPiece) {
-    return null;
-  }
+  const isValid = Boolean(piecesList && piecesList.length > 1 && currentPiece);
+  const currentIndex = isValid ? piecesList.findIndex((p) => p.id === currentPiece.id) : -1;
+  const isNavigable = isValid && currentIndex !== -1;
 
-  const currentIndex = piecesList.findIndex((p) => p.id === currentPiece.id);
-  if (currentIndex === -1) return null;
-
-  const hasPrev = currentIndex > 0;
-  const hasNext = currentIndex < piecesList.length - 1;
+  const hasPrev = isNavigable && currentIndex > 0;
+  const hasNext = isNavigable && currentIndex < piecesList.length - 1;
 
   const prevPiece = hasPrev ? piecesList[currentIndex - 1] : null;
   const nextPiece = hasNext ? piecesList[currentIndex + 1] : null;
 
   // Gestion des raccourcis clavier Flèche Gauche (←) et Flèche Droite (→)
   useEffect(() => {
+    if (!isNavigable) return;
+
     const handleKeyDown = (e) => {
       // Ignorer si le focus est actuellement dans un champ de saisie de texte
       const target = e.target;
@@ -58,7 +57,11 @@ export default function RepertoireModalNavArrows({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [hasPrev, hasNext, prevPiece, nextPiece, onNavigate, disabled]);
+  }, [isNavigable, hasPrev, hasNext, prevPiece, nextPiece, onNavigate, disabled]);
+
+  if (!isNavigable) {
+    return null;
+  }
 
   return (
     <>

@@ -7,6 +7,7 @@ import { useTranslation } from './LanguageContext';
 import { useTerminologie } from '../hooks/useTerminologie';
 import { XiloScroll, XiloPeople } from './XiloIcons';
 import AdminExportModal from './admin/AdminExportModal';
+import { formatPratiques, getPratiquesList } from '../utils/instrumentUtils';
 
 export default function AdminExport({ user, profileData, onBack }) {
   const { t } = useTranslation();
@@ -159,7 +160,7 @@ export default function AdminExport({ user, profileData, onBack }) {
     const fullName = `${member.prenom || ''} ${member.nom || ''}`.toLowerCase();
     const email = (member.email || '').toLowerCase();
     const phone = (member.telephone || '').toLowerCase();
-    const instr = (Array.isArray(member.instrumentsJoues) ? member.instrumentsJoues.join(' ') : (member.instrument || '')).toLowerCase();
+    const instr = formatPratiques(member).toLowerCase();
     const query = searchQuery.toLowerCase().trim();
 
     if (!query) return true;
@@ -203,7 +204,7 @@ export default function AdminExport({ user, profileData, onBack }) {
         
         // Custom formatting based on field key
         if (field.key === 'instrumentsJoues') {
-          return Array.isArray(val) ? val.join(', ') : (member.instrument || '');
+          return formatPratiques(member);
         }
         if (field.key === 'niveau') {
           return val === 'confirme' ? 'Confirmé' : val === 'debutant' ? 'Débutant' : 'Aucun';
@@ -380,10 +381,36 @@ export default function AdminExport({ user, profileData, onBack }) {
                         {tRole(member.role || 'membre', member.genre)}
                       </span>
                     </td>
-                    <td className="px-2 py-2 md:px-4 md:py-2.5 truncate max-w-[220px]">
-                      {Array.isArray(member.instrumentsJoues) && member.instrumentsJoues.length > 0 
-                        ? member.instrumentsJoues.join(', ')
-                        : member.instrument || "-"}
+                    <td className="px-2 py-2 md:px-4 md:py-2.5 max-w-[240px]">
+                      {(() => {
+                        const pratiques = getPratiquesList(member);
+                        if (pratiques.length === 0) {
+                          return (
+                            <span className="opacity-50 text-[11px]">
+                              {member.statutActuel === 'en_attente' ? 'En attente' : '-'}
+                            </span>
+                          );
+                        }
+                        return (
+                          <div className="flex flex-wrap gap-1 items-center">
+                            {pratiques.map((pratique, pIdx) => {
+                              const isDanse = typeof pratique === 'string' && pratique.toLowerCase().includes('danse');
+                              return (
+                                <span
+                                  key={`${member.id}-prat-${pIdx}`}
+                                  className={`theme-stamp-badge ${
+                                    isDanse 
+                                      ? 'theme-stamp-badge-ocre text-[8px] bg-amber-500/15 border-amber-800/40 text-amber-950 font-black' 
+                                      : 'theme-stamp-badge-wood text-[8px]'
+                                  } px-1.5 py-0.5 normal-case font-bold inline-flex items-center gap-1 shadow-none`}
+                                >
+                                  {isDanse ? '💃' : '🥁'} {pratique}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        );
+                      })()}
                     </td>
                   </tr>
                 ))}

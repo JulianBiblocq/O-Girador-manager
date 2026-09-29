@@ -5,9 +5,8 @@ import { db, functions } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { XiloMegaphone } from '../XiloIcons';
-import EmailConfigSection from './email/EmailConfigSection';
-import BrevoIntegrationBlock from './blocks/BrevoIntegrationBlock';
 import FramaspaceIntegrationBlock from './blocks/FramaspaceIntegrationBlock';
+import BrevoIntegrationBlock from './blocks/BrevoIntegrationBlock';
 import YouTubePlaylistsBlock from './blocks/YouTubePlaylistsBlock';
 import YouTubeVideoPickerModal from '../common/YouTubeVideoPickerModal';
 import { extractYouTubeVideoId } from '../common/LiteYouTubeEmbed';
@@ -184,12 +183,39 @@ export default function TabCommunication({ formData, handleChange, groupId, savi
 
   return (
     <div className="flex flex-col gap-6 text-left select-none">
-      {/* Section 1 : Configuration de l'expéditeur et des e-mails SaaS */}
-      <EmailConfigSection
-        formData={formData}
-        handleChange={handleChange}
-        saving={saving}
-      />
+      {/* Section 1 : Encart informatif du service d'envoi (Lecture seule) */}
+      {(() => {
+        const isBrevoConfigured = Boolean(formData?.brevoApiKey?.trim());
+        const expediteurEmail = formData?.emailOfficiel || formData?.emailExpediteur || formData?.emailContact || formData?.email || "Non configuré";
+
+        return (
+          <CordelCard variant="default" className="p-4 bg-[#fdfaf2] dark:bg-[#201d1a] border-2 border-encre-noire shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">✉️</span>
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2">
+                  <h4 className="text-xs font-black uppercase tracking-widest text-cordel-wood">
+                    Service d'envoi e-mails & Expéditeur
+                  </h4>
+                  <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded border ${
+                    isBrevoConfigured 
+                      ? 'bg-emerald-50 text-[var(--color-cordel-vert)] border-emerald-300' 
+                      : 'bg-amber-50 text-[var(--color-cordel-ocre)] border-amber-300'
+                  }`}>
+                    {isBrevoConfigured ? "✓ Service d'envoi configuré" : "⚠️ Envoi désactivé / API non renseignée"}
+                  </span>
+                </div>
+                <p className="text-[11px] text-stone-600 dark:text-stone-400 font-semibold mt-0.5">
+                  Expéditeur officiel : <strong className="text-encre-noire dark:text-white font-bold">{expediteurEmail}</strong>
+                </p>
+              </div>
+            </div>
+            <p className="text-[10px] text-stone-500 italic max-w-xs leading-tight sm:text-right">
+              La gestion de la clé API Brevo, des signatures SPF/DKIM et de l'expéditeur officiel est centralisée dans <strong>Configuration › Communication, E-mails & Automatisations</strong>.
+            </p>
+          </CordelCard>
+        );
+      })()}
 
       {/* Section 2 : Vidéo à la une (Dashboard & Accueil) */}
       <CordelCard variant="default" className="p-5 flex flex-col gap-4 bg-white border-2 border-encre-noire shadow-xs">

@@ -145,7 +145,6 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false, onSw
         ...prev,
         [eventId]: {
           ...prev[eventId],
-          savingDepot: false,
           savedDepot: true,
           isEditingDepot: false
         }
@@ -159,11 +158,12 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false, onSw
       }, 2000);
     } catch (err) {
       console.error("Erreur sauvegarde lienDepotMedias :", err);
+      alert("Erreur lors de l'enregistrement du lien de dépôt.");
+    } finally {
       setRowStates((prev) => ({
         ...prev,
         [eventId]: { ...prev[eventId], savingDepot: false }
       }));
-      alert("Erreur lors de l'enregistrement du lien de dépôt.");
     }
   }, [groupId, canWrite, rowStates]);
 
@@ -241,7 +241,6 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false, onSw
         [eventId]: {
           ...prev[eventId],
           albumPhotosUrl: cleanUrl,
-          savingAlbum: false,
           savedAlbum: true,
           isEditingAlbum: false
         }
@@ -255,11 +254,12 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false, onSw
       }, 2000);
     } catch (err) {
       console.error("Erreur synchronisation albumPhotosUrl / documents :", err);
+      alert("Erreur lors de la synchronisation de l'album avec le Varal.");
+    } finally {
       setRowStates((prev) => ({
         ...prev,
         [eventId]: { ...prev[eventId], savingAlbum: false }
       }));
-      alert("Erreur lors de la synchronisation de l'album avec le Varal.");
     }
   }, [groupId, canWrite, rowStates]);
 
@@ -409,6 +409,7 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false, onSw
         const newLienDepot = data.lienDepotMedias || ev.lienDepotMedias || '';
         const newAlbumUrl = data.albumPhotosUrl || ev.albumPhotosUrl || '';
         const finalUrl = newAlbumUrl || newLienDepot;
+        const hasAlbum = Boolean(newAlbumUrl);
 
         // Mise à jour immédiate de l'affichage local si nouveaux liens reçus
         if (newLienDepot || newAlbumUrl) {
@@ -449,21 +450,27 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false, onSw
             if (!existingSnap.empty) {
               const docItem = existingSnap.docs[0];
               await updateDoc(doc(db, 'documents', docItem.id), {
-                titre: `[Album] ${ev.titre || 'Événement'}`,
+                titre: hasAlbum ? `[Album] ${ev.titre || 'Événement'}` : `[Collecte Photos] ${ev.titre || 'Événement'}`,
                 fileUrl: finalUrl,
-                dateAjout: ev.dateDebut || ev.date || new Date().toISOString()
+                dateAjout: ev.dateDebut || ev.date || new Date().toISOString(),
+                isDropOnly: !hasAlbum,
+                hasAlbum
               });
             } else {
               await addDoc(docsRef, {
                 groupId,
                 eventId: ev.id,
-                titre: `[Album] ${ev.titre || 'Événement'}`,
+                titre: hasAlbum ? `[Album] ${ev.titre || 'Événement'}` : `[Collecte Photos] ${ev.titre || 'Événement'}`,
                 fileUrl: finalUrl,
                 categorie: 'PhotosPrestations',
                 categoryId: 'PhotosPrestations',
                 type: 'dossier_externe',
                 dateAjout: ev.dateDebut || ev.date || new Date().toISOString(),
-                description: `Album photos officiel de l'événement "${ev.titre || ''}" du ${new Date(ev.dateDebut || ev.date || Date.now()).toLocaleDateString('fr-FR')}.`
+                description: hasAlbum
+                  ? `Album photos officiel de l'événement "${ev.titre || ''}" du ${new Date(ev.dateDebut || ev.date || Date.now()).toLocaleDateString('fr-FR')}.`
+                  : `Dossier partagé pour déposer et collecter des médias liés à l'événement "${ev.titre || ''}".`,
+                isDropOnly: !hasAlbum,
+                hasAlbum
               });
             }
           }
@@ -488,6 +495,17 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false, onSw
         ...prev,
         [ev.id]: { loading: false, error: errMsg, success: false }
       }));
+    } finally {
+      // Sécurité anti-spinner infini : garantir que le loading ne reste jamais bloqué
+      setProvisioningMap((prev) => {
+        if (prev[ev.id]?.loading) {
+          return {
+            ...prev,
+            [ev.id]: { ...prev[ev.id], loading: false }
+          };
+        }
+        return prev;
+      });
     }
   };
 

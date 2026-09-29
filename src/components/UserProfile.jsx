@@ -107,15 +107,24 @@ export default function UserProfile({ user, profileData, associationName, onBack
 
   return (
     <div className="flex flex-col gap-4 text-left max-w-3xl mx-auto w-full">
-      {/* Barre d'en-tête (z-20 pour rester sous les modales) */}
-      <div className="sticky top-0 z-20 bg-cordel-bg/95 backdrop-blur-sm flex justify-between items-center border-b-2 border-dashed border-cordel-master-dark/30 py-2 select-none">
-        <CordelButton variant="default" onClick={onBack} className="px-3 py-1 text-xs">
-          ← {t('common.back')}
-        </CordelButton>
-        <span className="panel-title text-base font-extrabold tracking-wider text-cordel-wood uppercase">
-          {t('userProfile.title')}
-        </span>
-        <div className="w-12"></div> {/* Spacer for alignment */}
+      {/* Barre d'en-tête du profil intégrée au flux normal (sans sticky parasite ni double pointillés) */}
+      <div className="flex items-center justify-between w-full py-1.5 select-none shrink-0">
+        {onBack ? (
+          <CordelButton variant="default" onClick={onBack} className="px-3 py-1 text-xs shrink-0 flex items-center gap-1 shadow-[1.5px_1.5px_0px_0px_#181716]">
+            ← {t('common.back')}
+          </CordelButton>
+        ) : (
+          <div className="w-16 shrink-0"></div>
+        )}
+        <div className="flex items-center gap-2 px-2">
+          <span className="panel-title text-base sm:text-lg font-extrabold tracking-wider text-cordel-wood uppercase">
+            {t('userProfile.mainTitle') || t('userProfile.title') || "Mon Profil"}
+          </span>
+          <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-cordel-wood/10 text-cordel-wood border border-cordel-wood/25 hidden xs:inline-block">
+            ⚙️ {t('userProfile.settingsTag') || "Paramètres"}
+          </span>
+        </div>
+        <div className="w-16 shrink-0 hidden sm:block"></div>
       </div>
 
       {/* Missing Required Fields Alert Banner */}
@@ -142,30 +151,36 @@ export default function UserProfile({ user, profileData, associationName, onBack
         </div>
       )}
 
-      {/* Bloc d'identité utilisateur et photo de profil (Carte Cordel avec fond opaque) */}
-      <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col items-center gap-3 py-4 select-none w-full">
+      {/* Bloc d'identité utilisateur et photo de profil (Carte Cordel étanche avec padding généreux) */}
+      <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col items-center gap-3 pt-6 pb-5 px-4 select-none w-full relative">
         <div 
-          className="relative cursor-pointer group hover:scale-105 transition-transform" 
+          className="relative inline-block cursor-pointer group hover:scale-105 transition-transform my-1" 
           onClick={() => (profileData?.photoURL || user?.photoURL) && setLightboxOpen(true)}
           title={t('userProfile.photoEnlargeTitle')}
         >
           <XiloAvatar src={profileData?.photoURL || user?.photoURL} name={fullName} size={110} />
-          {/* Sceaux décoratifs sur l'avatar */}
-          <div className="absolute -bottom-1 -right-2 z-20 flex flex-col gap-1 items-end select-none">
-            <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] rotate-12">
-              {tRole(profileData?.role || 'membre', profileData?.genre)}
-            </span>
-            <span className="theme-stamp-badge theme-stamp-badge-ocre text-[7px] -rotate-6">
-              {currentNiveau && currentNiveau !== 'aucun' ? '🎵 ' + resolveCategory(currentNiveau) : '🎵 ' + translate('common.none', 'Aucun')}
-            </span>
-            <span className="theme-stamp-badge theme-stamp-badge-ocre text-[7px] rotate-3">
-              {profileData?.niveauDanse && profileData?.niveauDanse !== 'aucun' ? '💃 ' + resolveCategory(profileData.niveauDanse) : '💃 ' + translate('common.none', 'Aucun')}
-            </span>
+          {/* Sceaux décoratifs ancrés strictement au conteneur de l'avatar */}
+          <div className="absolute bottom-0 -right-2 z-10 flex flex-col gap-1 items-end pointer-events-none select-none max-w-[130px]">
+            {profileData?.role && profileData.role !== 'membre' && (
+              <span className="theme-stamp-badge theme-stamp-badge-wood text-[8.5px] font-black uppercase tracking-wider rotate-[6deg] shadow-xs">
+                {tRole(profileData.role, profileData?.genre)}
+              </span>
+            )}
+            {currentNiveau && currentNiveau !== 'aucun' && (
+              <span className="theme-stamp-badge theme-stamp-badge-ocre text-[7.5px] font-black uppercase tracking-wider -rotate-[4deg] shadow-xs">
+                🎵 {resolveCategory(currentNiveau)}
+              </span>
+            )}
+            {profileData?.niveauDanse && profileData.niveauDanse !== 'aucun' && (
+              <span className="theme-stamp-badge theme-stamp-badge-ocre text-[7.5px] font-black uppercase tracking-wider rotate-[2deg] shadow-xs">
+                💃 {resolveCategory(profileData.niveauDanse)}
+              </span>
+            )}
           </div>
         </div>
 
-        {/* Nom de l'utilisateur et rôle principal */}
-        <div className="flex flex-col items-center gap-1 w-full text-center">
+        {/* Nom de l'utilisateur et rôle principal dégagés de toute collision */}
+        <div className="flex flex-col items-center gap-1 w-full text-center mt-2">
           <h2 className="font-heading font-black text-2xl uppercase tracking-wider text-encre-noire">
             {fullName}
           </h2>

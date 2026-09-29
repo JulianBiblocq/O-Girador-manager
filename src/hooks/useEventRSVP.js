@@ -3,6 +3,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useFamilyMembers } from './useFamilyMembers';
 import useConfirm from './useConfirm';
+import { cleanFirestorePayload } from '../utils/firestoreUtils';
 
 // Vérification sécurisée du dépassement de la date limite d'inscription (jusqu'à 23h59:59 si format YYYY-MM-DD)
 export const checkRegistrationDeadlinePassed = (deadline) => {
@@ -236,7 +237,7 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
       }
 
       const eventRef = doc(db, 'events', event.id);
-      await updateDoc(eventRef, eventUpdates);
+      await updateDoc(eventRef, cleanFirestorePayload(eventUpdates));
 
       let msg = "Inscription validée (Présent)";
       if (finalStatus === 'pending') msg = "Inscription en attente de validation";
@@ -516,7 +517,7 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
       }
 
       const eventRef = doc(db, 'events', event.id);
-      await updateDoc(eventRef, eventUpdates);
+      await updateDoc(eventRef, cleanFirestorePayload(eventUpdates));
 
       triggerToast("Statut mis à jour");
     } catch (error) {
@@ -711,7 +712,7 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
       }
 
       const eventRef = doc(db, 'events', event.id);
-      await updateDoc(eventRef, eventUpdates);
+      await updateDoc(eventRef, cleanFirestorePayload(eventUpdates));
 
       triggerToast(action === 'accept' ? "Demande validée et inscription mise à jour !" : "Demande refusée.");
     } catch (error) {

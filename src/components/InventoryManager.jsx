@@ -23,6 +23,7 @@ import InstrumentEditModal from './inventory/InstrumentEditModal';
 import InstrumentsCatalogBlock from './association-settings/blocks/InstrumentsCatalogBlock';
 import AccessoriesKitsBlock from './association-settings/blocks/AccessoriesKitsBlock';
 import CarpoolBlock from './association-settings/blocks/CarpoolBlock';
+import { HorizontalRibbonContainer } from './navigation/HorizontalTabRibbon';
 import CollectiveKitsManager from './logistics/CollectiveKitsManager';
 
 import { getKitCompletionRatio, getKitCompletionText } from './inventory/inventoryConstants';
@@ -285,34 +286,37 @@ export default function InventoryManager({
         </h2>
       </div>
 
-      {/* Barre de sous-onglets logistiques */}
+      {/* Barre de sous-onglets logistiques sous forme de ruban défilant */}
       {shouldShowSubTabs && (
-        <div className="border-b-2 border-cordel-master-dark/20">
-          <div className="flex gap-1 overflow-x-auto">
+        <div className="border-b-2 border-dashed border-cordel-master-dark/20 pb-2 mb-2 select-none">
+          <HorizontalRibbonContainer activeTabId={activeTab}>
             {[
-              { id: 'instruments', label: 'Instruments' },
-              { id: 'pupitres', label: 'Pupitres' },
-              { id: 'kits', label: 'Kits & Accessoires' },
-              { id: 'carpool', label: 'Covoiturage & Convois' },
-              { id: 'parts', label: 'Pièces Détachées' },
-              { id: 'projects', label: 'Projets' },
-              { id: 'supplies', label: 'Matières Premières' },
-              { id: 'tools', label: 'Outillage' }
+              { id: 'instruments', label: 'Instruments', icon: '🥁' },
+              { id: 'pupitres', label: 'Pupitres', icon: '🎵' },
+              { id: 'kits', label: 'Kits & Accessoires', icon: '🧰' },
+              { id: 'carpool', label: 'Covoiturage & Convois', icon: '🚗' },
+              { id: 'parts', label: 'Pièces Détachées', icon: '⚙️' },
+              { id: 'projects', label: 'Projets', icon: '🔨' },
+              { id: 'supplies', label: 'Matières Premières', icon: '🪵' },
+              { id: 'tools', label: 'Outillage', icon: '🪚' }
             ].map((tabItem) => (
               <button
                 key={tabItem.id}
                 type="button"
+                data-tab-id={tabItem.id}
+                data-tab-active={activeTab === tabItem.id ? 'true' : 'false'}
                 onClick={() => setActiveTab(tabItem.id)}
-                className={`px-4 py-2.5 font-extrabold uppercase tracking-widest text-[10px] transition-colors rounded-t-lg border-b-2 cursor-pointer ${
+                className={`shrink-0 whitespace-nowrap min-h-[40px] px-3.5 py-1.5 text-sm font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 select-none ${
                   activeTab === tabItem.id
-                    ? 'bg-cordel-bg text-cordel-wood border-cordel-wood shadow-xs'
-                    : 'text-cordel-master-dark hover:text-cordel-wood border-transparent hover:bg-white/30'
+                    ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                    : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
                 }`}
               >
-                {tabItem.label}
+                <span>{tabItem.icon}</span>
+                <span>{tabItem.label}</span>
               </button>
             ))}
-          </div>
+          </HorizontalRibbonContainer>
         </div>
       )}
 

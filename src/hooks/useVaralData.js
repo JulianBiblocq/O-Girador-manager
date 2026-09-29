@@ -305,21 +305,29 @@ export default function useVaralData({
         // Éviter les doublons et vérifier que la publication sur le Varal est bien autorisée
         const alreadyExists = groups['PhotosPrestations'].some(d => d.eventId === ev.id);
         if (!alreadyExists && ev.publierSurVaral === true) {
-          const targetUrl = ev.albumPhotosUrl || ev.lienDepotMedias;
+          const hasAlbum = Boolean((ev.albumPhotosUrl || '').trim());
+          const hasDepot = Boolean((ev.lienDepotMedias || '').trim());
+          const isDropOnly = !hasAlbum && hasDepot;
+          const targetUrl = (ev.albumPhotosUrl || ev.lienDepotMedias || '').trim();
+
           if (targetUrl) {
             const eventDateFormatted = ev.dateDebut ? new Date(ev.dateDebut).toLocaleDateString('fr-FR') : '';
             groups['PhotosPrestations'].push({
               id: `event-media-${ev.id}`,
-              titre: `[Album] ${ev.titre || 'Événement'}`,
+              titre: hasAlbum
+                ? `[Album] ${ev.titre || 'Événement'}`
+                : `[Collecte Photos] ${ev.titre || 'Événement'}`,
               fileUrl: targetUrl,
               categorie: 'PhotosPrestations',
               categoryId: 'PhotosPrestations',
               type: 'dossier_externe',
               dateAjout: ev.dateDebut || ev.createdAt || '',
-              description: ev.albumPhotosUrl
+              description: hasAlbum
                 ? `Album photos finalisé de l'événement${eventDateFormatted ? ` du ${eventDateFormatted}` : ''}.`
-                : `Dossier partagé pour consulter et déposer des médias liés à l'événement${eventDateFormatted ? ` du ${eventDateFormatted}` : ''}.`,
+                : `Dossier partagé pour déposer et collecter des médias liés à l'événement${eventDateFormatted ? ` du ${eventDateFormatted}` : ''}.`,
               isVirtualEventMedia: true,
+              isDropOnly,
+              hasAlbum,
               eventId: ev.id,
               groupId: ev.groupId || groupId,
             });

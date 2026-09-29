@@ -206,20 +206,29 @@ export default function Dashboard({
   if (agendaFocusMode) {
     return (
       <div className="flex flex-col gap-4 text-left max-w-4xl mx-auto w-full select-none min-h-screen justify-center items-stretch py-4 px-1">
-        <WidgetAgenda 
-          role={profileData?.role} 
-          isSystemAdmin={profileData?.isSystemAdmin} 
-          groupId={profileData?.groupId} 
-          user={user} 
-          profileData={profileData} 
-          onFocusModeChange={(isFocused) => {
-            setAgendaFocusMode(isFocused);
-            if (!isFocused) setSelectedEventForAgenda(null);
-          }}
-          onNavigateToView={onNavigateToView}
-          selectedEvent={selectedEventForAgenda}
-          setSelectedEvent={setSelectedEventForAgenda}
-        />
+        <React.Suspense fallback={
+          <div className="flex-1 flex flex-col justify-center items-center py-12">
+            <div className="animate-spin text-4xl mb-4 select-none">⏳</div>
+            <span className="font-bold text-xs uppercase tracking-widest text-cordel-master-dark opacity-75">
+              Chargement de l'Agenda...
+            </span>
+          </div>
+        }>
+          <WidgetAgenda 
+            role={profileData?.role} 
+            isSystemAdmin={profileData?.isSystemAdmin} 
+            groupId={profileData?.groupId} 
+            user={user} 
+            profileData={profileData} 
+            onFocusModeChange={(isFocused) => {
+              setAgendaFocusMode(isFocused);
+              if (!isFocused) setSelectedEventForAgenda(null);
+            }}
+            onNavigateToView={onNavigateToView}
+            selectedEvent={selectedEventForAgenda}
+            setSelectedEvent={setSelectedEventForAgenda}
+          />
+        </React.Suspense>
       </div>
     );
   }
@@ -379,17 +388,19 @@ export default function Dashboard({
               break;
             case 'agenda':
               widgetContent = (
-                <WidgetAgenda 
-                  role={currentProfile?.role} 
-                  isSystemAdmin={currentProfile?.isSystemAdmin} 
-                  groupId={currentProfile?.groupId} 
-                  user={user} 
-                  profileData={currentProfile} 
-                  onFocusModeChange={(isFocused) => setAgendaFocusMode(isFocused)}
-                  onNavigateToView={onNavigateToView}
-                  selectedEvent={selectedEventForAgenda}
-                  setSelectedEvent={setSelectedEventForAgenda}
-                />
+                <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement de l'Agenda...</div>}>
+                  <WidgetAgenda 
+                    role={currentProfile?.role} 
+                    isSystemAdmin={currentProfile?.isSystemAdmin} 
+                    groupId={currentProfile?.groupId} 
+                    user={user} 
+                    profileData={currentProfile} 
+                    onFocusModeChange={(isFocused) => setAgendaFocusMode(isFocused)}
+                    onNavigateToView={onNavigateToView}
+                    selectedEvent={selectedEventForAgenda}
+                    setSelectedEvent={setSelectedEventForAgenda}
+                  />
+                </React.Suspense>
               );
               break;
             case 'videoALaUne':

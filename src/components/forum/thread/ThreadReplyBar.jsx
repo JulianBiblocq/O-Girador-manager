@@ -12,6 +12,13 @@ import VoiceDictationButton from '../../common/VoiceDictationButton';
  * - Mode compact : saisie ultra-rapide façon messagerie instantanée avec émojis directs et autocomplétion @
  * - Mode étendu : éditeur enrichi TipTap, sélection de groupe ciblé, tags de mention et ajout de sondage
  */
+// Vérifie si le message contient du contenu effectif (texte non-vide ou élément multimédia)
+const hasValidContent = (text) => {
+  if (!text) return false;
+  const stripped = text.replace(/<[^>]*>/g, '').trim();
+  return stripped.length > 0 || text.includes('<img') || text.includes('<a ');
+};
+
 export default function ThreadReplyBar({
   isReadOnly = false,
   replyText = '',
@@ -51,7 +58,7 @@ export default function ThreadReplyBar({
   return (
     <form
       onSubmit={onSubmit}
-      className="sticky bottom-0 bg-cordel-bg z-10 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] border-t border-dashed border-cordel-master-dark/20 flex flex-col gap-2 select-none"
+      className="shrink-0 border-t border-dashed border-cordel-master-dark/20 bg-[var(--theme-bg,var(--color-cordel-papier,#fbf6eb))] pt-2 pb-[max(env(safe-area-inset-bottom),0.75rem)] flex flex-col gap-2 select-none"
     >
       {/* Bandeau contextuel élégant de réponse / citation */}
       {replyingTo && (
@@ -170,7 +177,7 @@ export default function ThreadReplyBar({
             <input
               ref={compactInputRef}
               type="text"
-              value={replyText}
+              value={replyText ? (replyText.includes('<') ? replyText.replace(/<[^>]*>/g, '') : replyText) : ''}
               onChange={(e) => {
                 const val = e.target.value;
                 setReplyText(val);
@@ -178,15 +185,14 @@ export default function ThreadReplyBar({
                 const match = getMentionQueryAtCursor(val, cursor);
                 setCompactMentionQuery(match);
               }}
-              onFocus={() => setIsReplyExpanded(true)}
-              placeholder={(t && t('forum.writeReplyPlaceholder')) || "Écrire une réponse... (cliquez pour déplier)"}
+              placeholder={(t && t('forum.writeReplyPlaceholder')) || "Écrire une réponse..."}
               disabled={sending}
               className="flex-1 bg-transparent text-xs font-semibold text-encre-noire placeholder:opacity-50 outline-none px-1"
             />
             <CordelButton
               type="submit"
               variant="ocre"
-              disabled={sending || !replyText.trim()}
+              disabled={sending || !hasValidContent(replyText)}
               className="text-xs px-3 py-1 uppercase font-bold tracking-wider shrink-0"
             >
               {sending ? "..." : "➤"}
@@ -289,7 +295,7 @@ export default function ThreadReplyBar({
             <CordelButton
               variant="ocre"
               useExtremeBorder={true}
-              disabled={sending || !replyText.trim()}
+              disabled={sending || !hasValidContent(replyText)}
               className="text-xs px-5 py-2 uppercase font-bold tracking-widest"
             >
               {sending ? (t && t('forum.sendingMsg')) : ((t && t('common.send')) || "Envoyer")}

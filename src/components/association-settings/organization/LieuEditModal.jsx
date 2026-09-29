@@ -7,15 +7,28 @@ import CordelButton from '../../CordelButton';
  * Modale / Formulaire d'édition ou création d'un lieu important avec coordonnées GPS.
  */
 export default function LieuEditModal({ initialLieu, isOpen, onClose, onSave, saving }) {
-  if (!isOpen) return null;
-
   const [nom, setNom] = useState(initialLieu?.nom || '');
   const [adresse, setAdresse] = useState(initialLieu?.adresse || '');
   const [notes, setNotes] = useState(initialLieu?.notes || '');
   const [googleMapsUrl, setGoogleMapsUrl] = useState(initialLieu?.googleMapsUrl || '');
-  const [latitude, setLatitude] = useState(initialLieu?.latitude || null);
-  const [longitude, setLongitude] = useState(initialLieu?.longitude || null);
+  const [latitude, setLatitude] = useState(initialLieu?.latitude ?? null);
+  const [longitude, setLongitude] = useState(initialLieu?.longitude ?? null);
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+
+  // Réinitialisation ou synchronisation des états à chaque changement du lieu ou à l'ouverture
+  React.useEffect(() => {
+    if (isOpen) {
+      setNom(initialLieu?.nom || '');
+      setAdresse(initialLieu?.adresse || '');
+      setNotes(initialLieu?.notes || '');
+      setGoogleMapsUrl(initialLieu?.googleMapsUrl || '');
+      setLatitude(initialLieu?.latitude ?? null);
+      setLongitude(initialLieu?.longitude ?? null);
+      setIsMapModalOpen(false);
+    }
+  }, [isOpen, initialLieu]);
+
+  if (!isOpen) return null;
 
   const handleSubmit = (e) => {
     e.preventDefault();

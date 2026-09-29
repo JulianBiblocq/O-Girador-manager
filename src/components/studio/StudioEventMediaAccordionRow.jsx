@@ -217,21 +217,33 @@ export default function StudioEventMediaAccordionRow({
                 <span className="text-[9.5px] font-black uppercase text-cordel-master-dark">
                   🪢 Album photos finalisé (Sync Varal)
                 </span>
-                {hasAlbum && (
-                  <button
-                    type="button"
-                    onClick={() => setActiveQrModal({
-                      qrUrl: ev.albumPhotosUrl,
-                      eventTitle: ev.titre,
-                      eventDate: evDate,
-                      eventLocation: ev.lieu,
-                      mode: 'album'
-                    })}
-                    className="px-2 py-0.5 text-[8.5px] font-black uppercase rounded bg-amber-300 border border-encre-noire cursor-pointer"
-                  >
-                    📱 QR-Code
-                  </button>
-                )}
+                <div className="flex items-center gap-1">
+                  {hasDepot && canWrite && !hasAlbum && (
+                    <button
+                      type="button"
+                      onClick={() => handleAlignDepotToAlbum(ev)}
+                      className="px-2 py-0.5 text-[8px] font-black uppercase rounded bg-amber-200 hover:bg-amber-300 border border-encre-noire cursor-pointer transition-colors"
+                      title="Copier l'URL du dépôt pour synchroniser immédiatement l'album Varal"
+                    >
+                      🔗 Aligner avec le dépôt
+                    </button>
+                  )}
+                  {hasAlbum && (
+                    <button
+                      type="button"
+                      onClick={() => setActiveQrModal({
+                        qrUrl: ev.albumPhotosUrl,
+                        eventTitle: ev.titre,
+                        eventDate: evDate,
+                        eventLocation: ev.lieu,
+                        mode: 'album'
+                      })}
+                      className="px-2 py-0.5 text-[8.5px] font-black uppercase rounded bg-amber-300 border border-encre-noire cursor-pointer"
+                    >
+                      📱 QR-Code
+                    </button>
+                  )}
+                </div>
               </div>
               <div className="flex items-center gap-1.5">
                 <input

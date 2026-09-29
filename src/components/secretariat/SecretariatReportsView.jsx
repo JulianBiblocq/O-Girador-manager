@@ -453,6 +453,48 @@ export default function SecretariatReportsView({ groupId, onBack }) {
   };
 
   // =========================================================================
+  // 5.B EXPORT CSV BRUT D'ASSIDUITÉ & PRÉSENCES (ÉVÉNEMENT PAR ÉVÉNEMENT)
+  // =========================================================================
+  const handleExportActivityCSV = () => {
+    const filteredEvents = rawEvents.filter(e => isWithinRange(e.date));
+    filteredEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    const headers = ["Date", "Titre", "Type", "Lieu", "Nombre de présents"];
+    const rows = filteredEvents.map(event => {
+      const dateStr = event.date ? (typeof event.date === 'string' ? event.date.substring(0, 10) : new Date(event.date).toISOString().substring(0, 10)) : '';
+      const presentCount = (event.inscriptions || []).filter(i => i.status === 'present').length + ((event.invitesExternes || []).length);
+
+      let displayType = event.type || 'autre';
+      if (event.type === 'prestation') displayType = "Prestation";
+      else if (event.type === 'repetition') displayType = "Répétition";
+      else if (event.type === 'stage') displayType = "Stage";
+      else if (event.type === 'atelier') displayType = "Atelier";
+      else if (event.type === 'reunion') displayType = "Réunion";
+
+      return [
+        dateStr,
+        event.titre || '',
+        displayType,
+        event.lieu || '',
+        presentCount.toString()
+      ];
+    });
+
+    const csvContent = "\uFEFF" + [headers, ...rows]
+      .map(row => row.map(val => `"${String(val).replace(/"/g, '""')}"`).join(";"))
+      .join("\n");
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Detail_Assiduite_Presences_${assocInfo?.nom || 'Association'}_${startDate}_au_${endDate}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // =========================================================================
   // 6. IMPRESSION FORMATÉE (window.print avec styles print Cordel)
   // =========================================================================
   const handlePrint = () => {
@@ -544,10 +586,21 @@ export default function SecretariatReportsView({ groupId, onBack }) {
             onClick={handleExportCSV}
             disabled={loading}
             className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider bg-cordel-card-bg hover:bg-amber-200 text-encre-noire border-2 border-encre-noire rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1.5"
-            title="Exporter la synthèse au format tableur CSV"
+            title="Exporter la synthèse générale d'activité au format tableur CSV"
           >
             <span>📥</span>
-            <span>{t('secretariatReports.exportCsv') || "Exporter CSV"}</span>
+            <span>Bilan AG (CSV)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleExportActivityCSV}
+            disabled={loading}
+            className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider bg-cordel-card-bg hover:bg-amber-200 text-encre-noire border-2 border-encre-noire rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1.5"
+            title="Exporter l'assiduité brute événement par événement (date, titre, type, lieu, nombre de présents)"
+          >
+            <span>📋</span>
+            <span>Assiduité & Présences (CSV)</span>
           </button>
 
           <button

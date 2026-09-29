@@ -1,5 +1,6 @@
 import React from 'react';
 import ModulesSwitchesTable from './modules/ModulesSwitchesTable';
+import WardrobeMemberModeCard from './modules/WardrobeMemberModeCard';
 import TamboursNamingAccordion from './modules/TamboursNamingAccordion';
 import BrandingLogoAccordion from './modules/BrandingLogoAccordion';
 import MediaStorageAccordion from './modules/MediaStorageAccordion';
@@ -7,8 +8,8 @@ import MemberDashboardLayoutAccordion from './modules/MemberDashboardLayoutAccor
 
 /**
  * Pôle Configuration - Onglet Modules SaaS, Apparence & Médias ('config-modules').
- * Regroupe les interrupteurs des modules, la nomenclature des tambours, le logo/thème,
- * les playlists YouTube, le stockage cloud et l'ordonnancement de l'accueil adhérent.
+ * Regroupe les interrupteurs des modules, le mode de vestiaire adhérent,
+ * la nomenclature des tambours, le logo/thème, les playlists YouTube et l'ordonnancement accueil.
  */
 export default function TabModules({
   formData,
@@ -25,6 +26,15 @@ export default function TabModules({
       {/* 1. Tableau unifié des interrupteurs des modules SaaS et pôles métiers */}
       <div data-tour="config-modules-toggles">
         <ModulesSwitchesTable
+          formData={formData}
+          handleChange={handleChange}
+          saving={saving}
+        />
+      </div>
+
+      {/* 1b. Mode de fonctionnement du Vestiaire Adhérent (Personnel, Collectif/Atelier, Masqué) */}
+      <div data-tour="config-modules-wardrobe-mode">
+        <WardrobeMemberModeCard
           formData={formData}
           handleChange={handleChange}
           saving={saving}

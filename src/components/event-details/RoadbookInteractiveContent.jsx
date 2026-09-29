@@ -1,19 +1,16 @@
 import React from 'react';
 import RoadbookKitsChecklist from './RoadbookKitsChecklist';
+import RoadbookCommissionsSection from './RoadbookCommissionsSection';
 
 /**
  * Contenu interactif de la feuille de route pour affichage écran et smartphone.
  * Navigation rapide, numéros de téléphone cliquables (tel:...) et lien vers l'annexe PDF.
- *
- * @param {Object} props
- * @param {Object} props.event - Données de l'événement
- * @param {Array} props.allUsers - Membres du groupe
- * @param {Object} props.presentsByInstrument - Décompte des présents par pupitre
  */
 export default function RoadbookInteractiveContent({
   event = {},
   allUsers = [],
-  presentsByInstrument = {}
+  presentsByInstrument = {},
+  commissions = []
 }) {
   const parcours = event.parcours || {};
   const hebergement = event.hebergement || {};
@@ -174,6 +171,14 @@ export default function RoadbookInteractiveContent({
         logistique={logistique}
         presentsByInstrument={presentsByInstrument}
       />
+
+      {/* Postes bénévoles & régie issus des commissions */}
+      {commissions.length > 0 && (
+        <RoadbookCommissionsSection
+          commissions={commissions}
+          allUsers={allUsers}
+        />
+      )}
     </div>
   );
 }

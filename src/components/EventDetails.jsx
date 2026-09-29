@@ -26,6 +26,7 @@ import EventTabsNav from './event-details/EventTabsNav';
 import EventDisciplineBadges from './agenda/EventDisciplineBadges';
 import EventMediaCaptureSection from './event-details/EventMediaCaptureSection';
 import RoadbookModal from './event-details/RoadbookModal';
+import EventCommissionsHub from './event-details/commissions/EventCommissionsHub';
 import TabRsvp from './event-details/tabs/TabRsvp';
 import TabLogistics from './event-details/tabs/TabLogistics';
 import TabProgram from './event-details/tabs/TabProgram';
@@ -111,6 +112,7 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
     latitude: evt?.latitude || null,
     longitude: evt?.longitude || null,
     isPublic: Boolean(evt?.isPublic),
+    hasCommissions: Boolean(evt?.hasCommissions),
     formatJeu: evt?.formatJeu || 'scene',
     parcours: evt?.parcours || {
       pointDepart: '',
@@ -176,6 +178,7 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
   const [showQrCodeModal, setShowQrCodeModal] = useState(false);
   const [showMediaQrCodeModal, setShowMediaQrCodeModal] = useState(false);
   const [showRoadbookModal, setShowRoadbookModal] = useState(false);
+  const [showCommissionsHub, setShowCommissionsHub] = useState(false);
   const [isSendContractModalOpen, setIsSendContractModalOpen] = useState(false);
   const [isHeaderCalendarMenuOpen, setIsHeaderCalendarMenuOpen] = useState(false);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
@@ -184,6 +187,7 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
   useHardwareBack(showQrCodeModal, () => setShowQrCodeModal(false));
   useHardwareBack(showMediaQrCodeModal, () => setShowMediaQrCodeModal(false));
   useHardwareBack(showRoadbookModal, () => setShowRoadbookModal(false));
+  useHardwareBack(showCommissionsHub, () => setShowCommissionsHub(false));
   useHardwareBack(isSendContractModalOpen, () => setIsSendContractModalOpen(false));
   useHardwareBack(isHeaderCalendarMenuOpen, () => setIsHeaderCalendarMenuOpen(false));
   useHardwareBack(isMoreMenuOpen, () => setIsMoreMenuOpen(false));
@@ -456,6 +460,16 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
     }
     return list;
   }, [allUsers, user?.uid, user?.photoURL, profileData]);
+
+  // Dictionnaire indexé des utilisateurs pour accès O(1)
+  const usersMap = useMemo(() => {
+    const map = {};
+    (effectiveAllUsers || []).forEach((u) => {
+      if (u.id) map[u.id] = u;
+      if (u.uid) map[u.uid] = u;
+    });
+    return map;
+  }, [effectiveAllUsers]);
 
   // Résolution multi-critères fiable et anti-scintillement des informations de chaque participant
   const resolveUserInfo = useCallback((userId, userName = '') => {
@@ -987,6 +1001,7 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
         includesDance: editForm.includesDance || false,
         enableCarpool: editForm.enableCarpool !== false,
         enableInscriptions: editForm.enableInscriptions !== false,
+        hasCommissions: Boolean(editForm.hasCommissions),
         enableRoadbook: editForm.enableRoadbook !== undefined
           ? Boolean(editForm.enableRoadbook)
           : (rawEditConfig.enableRoadbook !== undefined
@@ -1494,6 +1509,19 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
               <span>📄</span>
               <span className="hidden sm:inline">Feuille de route</span>
             </button>
+
+            {/* Bouton d'accès rapide Tour de Contrôle des Commissions (si activé) */}
+            {Boolean((activeEvent || event)?.hasCommissions) && (
+              <button
+                type="button"
+                onClick={() => setShowCommissionsHub(true)}
+                className="text-[10px] font-black uppercase bg-[var(--color-cordel-vert,#2d6a4f)] hover:bg-emerald-800 text-white border border-emerald-950 px-2.5 sm:px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1 transition-colors select-none"
+                title="🎪 Tour de contrôle des commissions"
+              >
+                <span>🎪</span>
+                <span className="hidden sm:inline">Tour de contrôle</span>
+              </button>
+            )}
 
             {/* Bouton rapide de provisionnement si récolte active mais pas de dossier Framaspace créé */}
             {isRecolteActive && !currentLienDepot && isAuthorized && (
@@ -2079,6 +2107,19 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
         }}
         t={t}
       />
+
+      {/* MODALE : Tour de Contrôle des Commissions (Bloc 1) */}
+      {showCommissionsHub && (
+        <EventCommissionsHub
+          event={activeEvent || event}
+          allUsers={effectiveAllUsers || allUsers}
+          usersMap={usersMap}
+          currentUserId={user?.uid}
+          isAdmin={Boolean(profileData?.role === 'admin' || isAuthorized)}
+          isMestre={Boolean(profileData?.role === 'mestre' || profileData?.isMestre || isAuthorized)}
+          onClose={() => setShowCommissionsHub(false)}
+        />
+      )}
     </div>
   );
 }

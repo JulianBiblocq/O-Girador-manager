@@ -36,6 +36,15 @@ export function matchesAllowedKeyword(tagString, keyword) {
     return t === 'bureau' || t.includes('bureau') || t.includes('président') || t.includes('présidente') || t.includes('présidence');
   }
 
+  // Règle stricte anti-faux-positif pour 'ca' (Conseil d'Administration) :
+  // Ne doit matcher que 'ca', 'c.a', 'c.a.' ou en mot isolé, JAMAIS 'caixa', 'caxixi', 'carnaval', etc.
+  if (kw === 'ca') {
+    if (t === 'ca' || t === 'c.a' || t === 'c.a.' || t === 'conseil d\'administration' || t === 'administrateur ca' || t === 'membre ca') {
+      return true;
+    }
+    return /(?:^|[\s/_-])ca(?:$|[\s/_-])/i.test(t);
+  }
+
   return t === kw || t.includes(kw);
 }
 
@@ -370,8 +379,10 @@ export const TAB_TO_POLE_MAP = {
   // Secrétariat
   'export-annu': 'secretariat',
   'activity-reports': 'secretariat',
+  'secretariat-reports': 'secretariat',
   'studio-events': 'secretariat',
   'varal-secretariat': 'secretariat',
+  'secretariat-documents': 'secretariat',
 
   // Gouvernance / CA
   'ca-reunions': 'gouvernance',
@@ -561,7 +572,12 @@ export function canAccessTabPermission(tabId, poleIdOrProfile, profileDataArg = 
 
   // 2. Vérification spécifique par onglet dans la matrice de permissions
   if (permissionsMatrice && typeof permissionsMatrice === 'object') {
-    const tabTags = permissionsMatrice[tabId];
+    let tabTags = permissionsMatrice[tabId];
+    if ((!tabTags || tabTags.length === 0) && tabId === 'secretariat-reports') {
+      tabTags = permissionsMatrice['activity-reports'];
+    } else if ((!tabTags || tabTags.length === 0) && tabId === 'activity-reports') {
+      tabTags = permissionsMatrice['secretariat-reports'];
+    }
     if (Array.isArray(tabTags) && tabTags.length > 0) {
       const userTagsList = (
         effectiveUserTags && effectiveUserTags.length > 0
@@ -757,15 +773,22 @@ export function checkUserAccessToList(allowedList = ['all'], userRole = 'membre'
     return hasCaTag;
   }
 
-  // Assimilation des variantes de rôles adhérent / élève au rôle 'membre'
-  const isMemberRole = ['membre', 'adherent', 'adhérent', 'adherente', 'adhérente', 'eleve', 'élève', 'batuqueiro'].includes(cleanRole);
+  // Assimilation exhaustive des variantes de rôles adhérent(e) / élève au statut 'membre'
+  const MEMBER_ROLE_VARIANTS = [
+    'membre', 'membres',
+    'adherent', 'adhérent', 'adherents', 'adhérents',
+    'adherente', 'adhérente', 'adherentes', 'adhérentes',
+    'eleve', 'élève', 'eleves', 'élèves',
+    'batuqueiro', 'batuqueira', 'batuqueiros', 'batuqueiras'
+  ];
+  const isMemberRole = MEMBER_ROLE_VARIANTS.includes(cleanRole);
 
   // 3. Correspondance directe de rôle système (en mode normal, super-admin n'accorde pas d'accès automatique)
   if (cleanRole !== 'super-admin' && cleanRole !== 'superadmin') {
     if (allowedList.some(r => {
       const target = String(r).toLowerCase().trim();
       if (target === cleanRole) return true;
-      if (target === 'membre' && isMemberRole) return true;
+      if (MEMBER_ROLE_VARIANTS.includes(target) && isMemberRole) return true;
       return false;
     })) {
       return true;
@@ -803,8 +826,19 @@ export function canUserWriteInForumChannel(
   if (!channel) return true;
   if (breakGlassActive && isSuperAdminProfile(profileData)) return true;
 
+  // Support défensif si tagsDisponibles et effectiveUserTags ont été inversés ou si un seul tableau a été fourni
+  let resolvedTagsDisponibles = Array.isArray(tagsDisponibles) ? tagsDisponibles : [];
+  let resolvedEffectiveUserTags = Array.isArray(effectiveUserTags) ? effectiveUserTags : [];
+
+  if (resolvedTagsDisponibles.length > 0 && resolvedEffectiveUserTags.length === 0) {
+    if (resolvedTagsDisponibles.every(t => typeof t === 'string')) {
+      resolvedEffectiveUserTags = resolvedTagsDisponibles;
+      resolvedTagsDisponibles = [];
+    }
+  }
+
   // L'utilisateur doit obligatoirement avoir accès en lecture au salon pour pouvoir y écrire
-  if (!canUserReadForumChannel(channel, profileData, tagsDisponibles, effectiveUserTags, breakGlassActive)) {
+  if (!canUserReadForumChannel(channel, profileData, resolvedTagsDisponibles, resolvedEffectiveUserTags, breakGlassActive)) {
     return false;
   }
 
@@ -816,12 +850,20 @@ export function canUserWriteInForumChannel(
   }
 
   const userRole = profileData?.role || 'membre';
-  const userTags = (effectiveUserTags && effectiveUserTags.length > 0)
-    ? effectiveUserTags
+  const baseUserTags = (resolvedEffectiveUserTags && resolvedEffectiveUserTags.length > 0)
+    ? resolvedEffectiveUserTags
     : (profileData?.tags || []);
 
+  // Inclusion transparente des instruments / pupitres de l'adhérent(e)
+  const userInstruments = [
+    profileData?.instrument,
+    ...(Array.isArray(profileData?.instrumentsJoues) ? profileData.instrumentsJoues : [])
+  ].filter(Boolean);
+
+  const userTags = Array.from(new Set([...baseUserTags, ...userInstruments]));
+
   const writeList = channel.writeRoles || channel.allowedRoles || ['all'];
-  return checkUserAccessToList(writeList, userRole, userTags, tagsDisponibles, breakGlassActive);
+  return checkUserAccessToList(writeList, userRole, userTags, resolvedTagsDisponibles, breakGlassActive);
 }
 
 /**
@@ -844,13 +886,31 @@ export function canUserReadForumChannel(
   if (!channel) return true;
   if (breakGlassActive && isSuperAdminProfile(profileData)) return true;
 
+  // Support défensif si tagsDisponibles et effectiveUserTags ont été inversés ou si un seul tableau a été fourni
+  let resolvedTagsDisponibles = Array.isArray(tagsDisponibles) ? tagsDisponibles : [];
+  let resolvedEffectiveUserTags = Array.isArray(effectiveUserTags) ? effectiveUserTags : [];
+
+  if (resolvedTagsDisponibles.length > 0 && resolvedEffectiveUserTags.length === 0) {
+    if (resolvedTagsDisponibles.every(t => typeof t === 'string')) {
+      resolvedEffectiveUserTags = resolvedTagsDisponibles;
+      resolvedTagsDisponibles = [];
+    }
+  }
+
   const channelNameLower = (channel.name || '').toLowerCase().trim();
   const channelIdLower = (channel.id || '').toLowerCase().trim();
 
   const userRole = profileData?.role || 'membre';
-  const userTags = (effectiveUserTags && effectiveUserTags.length > 0)
-    ? effectiveUserTags
+  const baseUserTags = (resolvedEffectiveUserTags && resolvedEffectiveUserTags.length > 0)
+    ? resolvedEffectiveUserTags
     : (profileData?.tags || []);
+
+  const userInstruments = [
+    profileData?.instrument,
+    ...(Array.isArray(profileData?.instrumentsJoues) ? profileData.instrumentsJoues : [])
+  ].filter(Boolean);
+
+  const userTags = Array.from(new Set([...baseUserTags, ...userInstruments]));
 
   // Sécurité absolue pour le salon Bureau : strictement restreint aux membres du Bureau
   const isBureau = channelNameLower === 'bureau' || 
@@ -862,7 +922,7 @@ export function canUserReadForumChannel(
                    channelIdLower === 'bureau';
 
   if (isBureau) {
-    return checkUserAccessToList(['bureau'], userRole, userTags, tagsDisponibles, breakGlassActive);
+    return checkUserAccessToList(['bureau'], userRole, userTags, resolvedTagsDisponibles, breakGlassActive);
   }
 
   // Sécurité pour le salon CA : restreint aux membres du CA et du Bureau
@@ -880,7 +940,7 @@ export function canUserReadForumChannel(
                channelIdLower === 'ca';
 
   if (isCa) {
-    return checkUserAccessToList(['ca'], userRole, userTags, tagsDisponibles, breakGlassActive);
+    return checkUserAccessToList(['ca'], userRole, userTags, resolvedTagsDisponibles, breakGlassActive);
   }
 
   if (channel.isTransparent === true) return true;
@@ -888,7 +948,7 @@ export function canUserReadForumChannel(
   const readList = channel.readRoles || channel.allowedRoles || channel.allowedTags || ['all'];
   if (!readList || readList.length === 0 || readList.includes('all')) return true;
 
-  return checkUserAccessToList(readList, userRole, userTags, tagsDisponibles, breakGlassActive);
+  return checkUserAccessToList(readList, userRole, userTags, resolvedTagsDisponibles, breakGlassActive);
 }
 
 /**

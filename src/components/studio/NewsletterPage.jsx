@@ -8,7 +8,6 @@ import Step3RetourImages from './newsletter/Step3RetourImages';
 import Step4Recapitulatif from './newsletter/Step4Recapitulatif';
 import { useNewsletterData } from '../../hooks/useNewsletterData';
 import { useAssociationSettings } from '../../hooks/useAssociationSettings';
-import BrevoIntegrationBlock from '../association-settings/blocks/BrevoIntegrationBlock';
 import { useTranslation } from '../LanguageContext';
 
 /**
@@ -22,14 +21,7 @@ import { useTranslation } from '../LanguageContext';
 export default function NewsletterPage({ groupId, onBack }) {
   const { t } = useTranslation();
   
-  const {
-    formData: settingsData,
-    handleChange: handleSettingsChange,
-    handleSave: handleSaveSettings,
-    saving: savingSettings
-  } = useAssociationSettings(groupId, true, null, t);
-
-  const [showConfig, setShowConfig] = useState(false);
+  const { formData: settingsData } = useAssociationSettings(groupId, false, null, t);
 
   const {
     currentStep,
@@ -103,36 +95,41 @@ export default function NewsletterPage({ groupId, onBack }) {
         </div>
       )}
 
-      {/* Configuration Section (Accordeon) */}
-      <CordelCard variant="default" useExtremeBorder={true} className="p-4 mb-2">
-        <div className="flex justify-between items-center cursor-pointer select-none" onClick={() => setShowConfig(!showConfig)}>
-          <h3 className="text-xs font-extrabold tracking-wider text-cordel-wood uppercase">
-            ⚙️ Configuration Newsletter (API Brevo & Opt-in)
-          </h3>
-          <span className="text-xs font-black">{showConfig ? '▲ Masquer' : '▼ Déployer'}</span>
-        </div>
-
-        {showConfig && (
-          <form onSubmit={(e) => { e.preventDefault(); handleSaveSettings(); }} className="flex flex-col gap-4 mt-4 pt-4 border-t border-dashed border-cordel-master-dark/20 text-left">
-            <BrevoIntegrationBlock 
-              formData={settingsData}
-              handleChange={handleSettingsChange}
-              saving={savingSettings}
-            />
-            <div className="flex justify-end mt-2 pt-3 border-t border-dashed border-cordel-master-dark/15">
-              <CordelButton
-                type="submit"
-                variant="ocre"
-                useExtremeBorder={true}
-                disabled={savingSettings}
-                className="px-6 py-2 uppercase font-black tracking-wider text-xs shadow-[2px_2px_0px_0px_#181716]"
-              >
-                {savingSettings ? "Enregistrement..." : "💾 Enregistrer Configuration"}
-              </CordelButton>
+      {/* Encart informatif : Statut du service d'envoi (Lecture seule) */}
+      {(() => {
+        const isBrevoConfigured = Boolean(settingsData?.brevoApiKey?.trim());
+        const expediteurEmail = settingsData?.emailOfficiel || settingsData?.emailExpediteur || settingsData?.emailContact || settingsData?.email || "Non configuré";
+        
+        return (
+          <CordelCard variant="default" useExtremeBorder={true} className="p-3.5 mb-2 bg-[#fdfaf2] dark:bg-[#201d1a] border border-dashed border-cordel-master-dark/30">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left">
+              <div className="flex items-center gap-2.5">
+                <span className="text-xl">✉️</span>
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-black uppercase tracking-wider text-cordel-wood">
+                      Service d'envoi & Expéditeur
+                    </span>
+                    <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded border ${
+                      isBrevoConfigured 
+                        ? 'bg-emerald-50 text-[var(--color-cordel-vert)] border-emerald-300' 
+                        : 'bg-amber-50 text-[var(--color-cordel-ocre)] border-amber-300'
+                    }`}>
+                      {isBrevoConfigured ? "✓ Service d'envoi configuré" : "⚠️ Clé API non renseignée"}
+                    </span>
+                  </div>
+                  <span className="text-[10.5px] text-stone-600 dark:text-stone-400 font-semibold mt-0.5">
+                    Expéditeur officiel : <strong className="text-encre-noire dark:text-white font-bold">{expediteurEmail}</strong>
+                  </span>
+                </div>
+              </div>
+              <p className="text-[10px] text-stone-500 italic max-w-xs leading-tight sm:text-right">
+                La configuration technique (clé Brevo & domaine expéditeur) est centralisée dans <strong>Configuration › Communication</strong>.
+              </p>
             </div>
-          </form>
-        )}
-      </CordelCard>
+          </CordelCard>
+        );
+      })()}
 
       {/* Barre de progression Stepper UI */}
       <NewsletterStepper

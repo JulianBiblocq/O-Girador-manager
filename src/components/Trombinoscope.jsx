@@ -15,342 +15,9 @@ import useHardwareBack from '../hooks/useHardwareBack';
 import { useAvatarUpload } from '../hooks/useAvatarUpload';
 const CordelImageEditor = React.lazy(() => import('./CordelImageEditor'));
 
-// Memoized MemberCard subcomponent
-const MemberCard = React.memo(({
-  id,
-  prenom,
-  nom,
-  surnom,
-  photoURL,
-  isOnline = false,
-  role,
-  genre,
-  tags = [],
-  telephone,
-  adresseRue: _adresseRue,
-  adresseCP,
-  adresseVille,
-  adresse,
-  dateNaissance,
-  afficherTelephone,
-  afficherDateNaissance,
-  afficherVille,
-  visibiliteAdresse,
-  publierTelephone,
-  publierDateNaissance,
-  niveau,
-  niveauDanse,
-  niveauxParInstrument = {},
-  instrumentsJoues = [],
-  instrument,
-  isCurrentUser,
-  isViewerAdmin: _isViewerAdmin,
-  fieldsConfig,
-  onContactUser,
-  onEditPhoto,
-  onOpenLightbox,
-  t,
-  tRole,
-  locale,
-  getPupitreName,
-  getColorForInstrument,
-  tagsDisponibles = [],
-  majoriteFeminine = false,
-  isDependent = false,
-  isGhost = false,
-  primaryInstrumentName = ''
-}) => {
-  const fullName = `${prenom || ''} ${nom || ''}`;
-  const hasRoleBadge = role && role !== 'membre';
-  const validTags = useMemo(() => filterUserAssignedTags(tags, tagsDisponibles), [tags, tagsDisponibles]);
-  const hasTags = validTags && validTags.length > 0;
-
-  // Contrôle strict de la confidentialité selon les préférences choisies par le membre
-  const isPhoneEnabled = fieldsConfig?.telephone?.enabled !== false;
-  const isPhoneAllowed = afficherTelephone !== undefined ? (afficherTelephone === true) : (publierTelephone === true);
-  const showPhone = isPhoneEnabled && Boolean(telephone) && isPhoneAllowed;
-
-  const isBirthdateEnabled = fieldsConfig?.dateNaissance?.enabled !== false;
-  const isBirthdateAllowed = afficherDateNaissance !== undefined ? (afficherDateNaissance === true) : (publierDateNaissance === true);
-  const showBirthdate = isBirthdateEnabled && Boolean(dateNaissance) && isBirthdateAllowed;
-
-  const isAddressEnabled = fieldsConfig?.adresse?.enabled !== false;
-  const isNiveauxEnabled = fieldsConfig?.niveaux?.enabled !== false;
-  const isAddressAllowed = afficherVille !== undefined ? (afficherVille === true) : (visibiliteAdresse !== 'masquee');
-  const showCity = isAddressEnabled && isAddressAllowed;
-
-  const isSurnomEnabled = fieldsConfig?.surnom?.enabled !== false;
-  const displaySurnom = isSurnomEnabled && surnom && surnom.trim() ? `"${surnom.trim()}"` : null;
-
-  const getDisplayCity = (cityVal, cpVal, fullAddr) => {
-    if (cityVal && cityVal.trim()) return cityVal.trim();
-    if (fullAddr) {
-      if (cpVal) {
-        const parts = fullAddr.split(cpVal);
-        if (parts.length > 1 && parts[1].trim()) {
-          return parts[1].trim().replace(/^,/, '').trim();
-        }
-      }
-      const match = fullAddr.match(/(?:\d{5}|\d{4})\s+([A-Za-zÀ-ÿ\s-]+)/);
-      if (match && match[1]) return match[1].trim();
-    }
-    return null;
-  };
-
-  const displayAddress = showCity ? getDisplayCity(adresseVille, adresseCP, adresse) : null;
-
-  const formatBirthday = (dateStr) => {
-    if (!dateStr) return '';
-    const dateLocale = locale === 'pt' ? 'pt-BR' : 'fr-FR';
-    const parts = dateStr.split('-');
-    if (parts.length === 3) {
-      const year = parseInt(parts[0], 10);
-      const month = parseInt(parts[1], 10) - 1;
-      const day = parseInt(parts[2], 10);
-      if (!isNaN(day) && !isNaN(month)) {
-        const d = new Date(year, month, day);
-        return d.toLocaleDateString(dateLocale, { day: 'numeric', month: 'long' });
-      }
-    }
-    try {
-      const d = new Date(dateStr);
-      return d.toLocaleDateString(dateLocale, { day: 'numeric', month: 'long' });
-    } catch {
-      return dateStr;
-    }
-  };
-
-  const userInstruments = instrumentsJoues && instrumentsJoues.length > 0
-    ? instrumentsJoues
-    : [instrument].filter(Boolean);
-
-  const percussions = userInstruments.filter(inst => {
-    const name = inst.toLowerCase().trim();
-    return name !== 'danse' && !name.includes('danse');
-  });
-
-  const hasPercussions = percussions.length > 0;
-  const hasDanse = (niveauDanse && niveauDanse !== 'aucun') || userInstruments.some(inst => inst.toLowerCase().trim() === 'danse');
-  const danseLevel = niveauDanse && niveauDanse !== 'aucun' ? niveauDanse : null;
-
-  const mainInstrument = userInstruments[0] || '';
-  const cardBgColor = getColorForInstrument ? getColorForInstrument(mainInstrument, 'pastel') : undefined;
-
-  const { isPresenceEnabled } = usePresenceContext();
-
-  return (
-    <div className={`relative flex flex-col items-center w-full ${isGhost ? 'opacity-65 hover:opacity-100 transition-all duration-300' : ''}`}>
-      <CordelCard 
-        variant="default" 
-        useExtremeBorder={true} 
-        className={`w-full flex flex-col items-center p-4 min-h-[220px] relative overflow-hidden transition-all duration-300 ${
-          isGhost ? 'grayscale-[0.35] hover:grayscale-0 border-dashed border-cordel-master-dark/50 shadow-none' : ''
-        }`}
-        style={cardBgColor ? { backgroundColor: cardBgColor } : undefined}
-      >
-        {/* Avatar with Xylogravure Filtrer */}
-        <div 
-          className="mb-3 relative group cursor-pointer"
-          onClick={() => {
-            if (photoURL && onOpenLightbox) {
-              onOpenLightbox(photoURL, fullName);
-            } else if (isCurrentUser && onEditPhoto) {
-              onEditPhoto(null);
-            }
-          }}
-          title={photoURL ? (t('trombinoscope.photoZoom') || "Cliquer pour agrandir la photo") : (isCurrentUser ? (t('trombinoscope.clickToAddPhoto') || "Cliquer pour ajouter votre photo") : fullName)}
-        >
-          <XiloAvatar src={photoURL} name={fullName} size={72} />
-          {isPresenceEnabled !== false && isOnline && (
-            <span 
-              className="absolute -bottom-0.5 -right-0.5 z-20 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center shadow-md"
-              title={t('trombinoscope.onlineNow') || "Actuellement en ligne"}
-            >
-              <span className="w-1.5 h-1.5 bg-white rounded-full animate-ping"></span>
-            </span>
-          )}
-          {isCurrentUser && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onEditPhoto(photoURL);
-              }}
-              className="absolute -bottom-1 -right-1 bg-encre-noire text-cordel-bg-light hover:bg-cordel-wood rounded-full p-1.5 border border-encre-noire shadow-[1px_1px_0px_0px_#181716] cursor-pointer z-30 transition-all hover:scale-110 active:scale-95 flex items-center justify-center select-none"
-              title={photoURL ? (t('trombinoscope.editPhotoFilter') || "Modifier ma photo (Filtre Xylogravure)") : (t('trombinoscope.clickToAddPhoto') || "Ajouter ma photo de profil")}
-            >
-              {photoURL ? (
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                </svg>
-              ) : (
-                <span className="text-[11px] leading-none">📸</span>
-              )}
-            </button>
-          )}
-        </div>
-
-        {/* Member Name */}
-        <div className="text-center mt-1 w-full select-none flex flex-col items-center">
-          {isGhost && (
-            <span className="bg-amber-100 text-amber-900 border border-dashed border-amber-600 text-[8px] font-black px-1.5 py-0.5 rounded uppercase mb-1.5 inline-block tracking-wider text-center">
-              👻 {(t('trombinoscope.ghostBadge') || 'Polyvalent • Principal :')} {primaryInstrumentName || t('common.other') || 'Autre'}
-            </span>
-          )}
-          {isDependent && (
-            <span className="bg-amber-200 text-amber-900 border border-amber-400 text-[8px] font-black px-1.5 py-0.2 rounded uppercase mb-0.5 inline-block">
-              👶 {t('trombinoscope.childBadge') || 'Enfant'}
-            </span>
-          )}
-          <div className="font-bold text-xs truncate leading-snug">
-            {prenom} {displaySurnom && <span className="font-extrabold text-cordel-wood font-serif italic text-[11px] ml-0.5">{displaySurnom}</span>}
-          </div>
-          <div className="font-bold text-xs truncate leading-none uppercase text-[10px] opacity-75 mt-0.5">
-            {nom}
-          </div>
-        </div>
-
-        {/* Member Details */}
-        <div className="text-center mt-2.5 text-[9px] leading-tight text-cordel-master-dark/85 flex flex-col gap-1.5 w-full select-none">
-          {hasPercussions && (
-            <div className="flex flex-col items-center">
-              <span className="font-extrabold text-cordel-wood flex items-center justify-center gap-0.5 uppercase text-[8.5px] tracking-wider">
-                <XiloCaixa size={9} /> {t('trombinoscope.percussion') || 'Percussion'}
-              </span>
-              <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 mt-1">
-                {percussions.map((inst) => {
-                  const pupitreName = getPupitreName(inst);
-                  const isSame = pupitreName && pupitreName.toLowerCase().trim() === inst.toLowerCase().trim();
-                  const instName = (pupitreName && !isSame) ? `${inst} (${pupitreName})` : inst;
-                  const instNiveau = niveauxParInstrument[inst] || niveau;
-                  const niveauLabel = instNiveau === 'confirme' 
-                    ? (t('userProfile.levelConfirmSimple') || 'Confirmé') 
-                    : instNiveau === 'debutant' 
-                      ? (t('userProfile.levelBeginner') || 'Débutant') 
-                      : (instNiveau || t('common.none') || 'Aucun');
-                  
-                  return (
-                    <span key={inst} className="font-semibold text-encre-noire text-[9.5px] leading-snug flex items-center gap-1 bg-black/5 px-1.5 py-0.5 rounded">
-                      {instName} 
-                      {isNiveauxEnabled && instNiveau && instNiveau !== 'aucun' && (
-                        <span className={`text-[8px] uppercase tracking-wider font-extrabold px-1 py-0.5 rounded ${instNiveau === 'confirme' ? 'bg-[var(--color-cordel-vert)]/20 text-[var(--color-cordel-vert)]' : 'bg-cordel-wood/20 text-cordel-wood'}`}>
-                          {niveauLabel}
-                        </span>
-                      )}
-                    </span>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {hasDanse && (
-            <div className={`flex flex-col items-center ${hasPercussions ? 'mt-1.5 border-t border-dashed border-cordel-master-dark/10 pt-1.5' : ''}`}>
-              <span className="font-extrabold text-cordel-wood flex items-center justify-center gap-0.5 uppercase text-[8.5px] tracking-wider">
-                💃 {t('trombinoscope.dance') || 'Danse'}
-              </span>
-              {isNiveauxEnabled && (
-                <span className="font-semibold text-encre-noire text-[9.5px] mt-0.5">
-                  {danseLevel ? (danseLevel === 'confirme' ? t('userProfile.levelConfirmSimple') || 'Confirmé' : t('userProfile.levelBeginner') || 'Débutant') : (t('userProfile.levelBeginner') || 'Débutant')}
-                </span>
-              )}
-            </div>
-          )}
-
-          {(showPhone || showBirthdate || displayAddress) && (
-            <div className="flex flex-col items-center mt-1.5 border-t border-dashed border-cordel-master-dark/10 pt-1.5 gap-0.5 text-cordel-master-dark/75 font-bold">
-              {showPhone && (
-                <span className="truncate">📞 {telephone}</span>
-              )}
-              {showBirthdate && (
-                <span>🎂 {formatBirthday(dateNaissance)}</span>
-              )}
-              {displayAddress && (
-                <span className="truncate text-[8.5px] max-w-full">📍 {displayAddress}</span>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Member Tags (Custom ink stamp badges) */}
-        {hasTags && (
-          <div className="flex flex-wrap gap-1 mt-3 justify-center max-w-full z-10 select-none">
-            {validTags.map((tag, tagIdx) => {
-              const formattedTag = formatTagGender(tag, genre, majoriteFeminine, tagsDisponibles);
-              const tagStr = typeof tag === 'string' ? tag : (tag.id || tagIdx);
-              const rotation = ((String(tagStr).charCodeAt(0) + tagIdx) % 5) - 2;
-              return (
-                <span 
-                  key={`tag-${tagStr}`} 
-                  style={{ transform: `rotate(${rotation}deg)` }}
-                  className="theme-stamp-badge theme-stamp-badge-wood text-[7px] px-1.5 py-0.5 border-dashed select-none bg-transparent shadow-none"
-                >
-                  {formattedTag}
-                </span>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Contact button */}
-        {!isCurrentUser && onContactUser && (
-          <button
-            type="button"
-            onClick={() => onContactUser(id)}
-            className="mt-3 text-[9px] font-black uppercase tracking-wider bg-cordel-bg-light text-encre-noire border border-encre-noire px-3 py-1 rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:bg-cordel-hover cursor-pointer flex items-center justify-center gap-1 w-full max-w-[120px] mx-auto transition-all select-none z-10"
-          >
-            ✉️ {t('trombinoscope.contact') || 'Contacter'}
-          </button>
-        )}
-
-        {/* Role Stamp overlay */}
-        {hasRoleBadge && (
-          <div className="absolute top-2 right-2 z-25 max-w-[70%] flex justify-end">
-            <span className="theme-stamp-badge theme-stamp-badge-wood text-[7px] rotate-[-6deg] select-none break-words whitespace-normal text-right">
-              {tRole(role, genre)}
-            </span>
-          </div>
-        )}
-      </CordelCard>
-    </div>
-  );
-}, (prevProps, nextProps) => {
-  // high performance equality vérifier to empcher unneeded card renders
-  return prevProps.id === nextProps.id &&
-         prevProps.locale === nextProps.locale &&
-         prevProps.isOnline === nextProps.isOnline &&
-         prevProps.prenom === nextProps.prenom &&
-         prevProps.nom === nextProps.nom &&
-         prevProps.surnom === nextProps.surnom &&
-         prevProps.photoURL === nextProps.photoURL &&
-         prevProps.role === nextProps.role &&
-         prevProps.genre === nextProps.genre &&
-         prevProps.telephone === nextProps.telephone &&
-         prevProps.adresseRue === nextProps.adresseRue &&
-         prevProps.adresseCP === nextProps.adresseCP &&
-         prevProps.adresseVille === nextProps.adresseVille &&
-         prevProps.adresse === nextProps.adresse &&
-         prevProps.dateNaissance === nextProps.dateNaissance &&
-         prevProps.afficherTelephone === nextProps.afficherTelephone &&
-         prevProps.afficherDateNaissance === nextProps.afficherDateNaissance &&
-         prevProps.afficherVille === nextProps.afficherVille &&
-         prevProps.visibiliteAdresse === nextProps.visibiliteAdresse &&
-         prevProps.publierTelephone === nextProps.publierTelephone &&
-         prevProps.publierDateNaissance === nextProps.publierDateNaissance &&
-         prevProps.niveau === nextProps.niveau &&
-         prevProps.niveauDanse === nextProps.niveauDanse &&
-         prevProps.instrument === nextProps.instrument &&
-         prevProps.isCurrentUser === nextProps.isCurrentUser &&
-         prevProps.isViewerAdmin === nextProps.isViewerAdmin &&
-         prevProps.onContactUser === nextProps.onContactUser &&
-         prevProps.onEditPhoto === nextProps.onEditPhoto &&
-         prevProps.getColorForInstrument === nextProps.getColorForInstrument &&
-         prevProps.fieldsConfig?.niveaux?.enabled === nextProps.fieldsConfig?.niveaux?.enabled &&
-         prevProps.isGhost === nextProps.isGhost &&
-         prevProps.primaryInstrumentName === nextProps.primaryInstrumentName &&
-         JSON.stringify(prevProps.tags) === JSON.stringify(nextProps.tags) &&
-         JSON.stringify(prevProps.instrumentsJoues) === JSON.stringify(nextProps.instrumentsJoues);
-});
+// Sous-composants modulaires du Trombinoscope (Planche de timbres et modale détaillée)
+import MemberStampCard from './trombinoscope/MemberStampCard';
+import MemberDetailModal from './trombinoscope/MemberDetailModal';
 
 // Détection inclusive d'un membre pratiquant la danse
 const isDanseMember = (m) => {
@@ -405,12 +72,14 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
   const [showEditor, setShowEditor] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
   const [lightboxPhoto, setLightboxPhoto] = useState(null);
+  const [selectedMember, setSelectedMember] = useState(null);
 
   const fileInputRef = useRef(null);
   const { uploadAvatar, compressAndPrepareFile, isCompressing, isUploading: isUploadingPhoto } = useAvatarUpload();
 
   useHardwareBack(showEditor, () => setShowEditor(false));
   useHardwareBack(!!lightboxPhoto, () => setLightboxPhoto(null));
+  useHardwareBack(!!selectedMember, () => setSelectedMember(null));
 
   const handleOpenLightbox = useCallback((url, name) => {
     setLightboxPhoto({ url, name });
@@ -1036,19 +705,13 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
 
       {/* Main Content Area */}
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 min-h-[500px] animate-pulse select-none">
-          {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
-            <div key={n} className="bg-cordel-master-dark/5 border-2 border-dashed border-cordel-master-dark/15 rounded-lg p-4 h-[210px] flex flex-col justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-14 h-14 bg-cordel-master-dark/20 rounded-lg shrink-0" />
-                <div className="flex flex-col gap-2 flex-1">
-                  <div className="h-4 bg-cordel-master-dark/20 rounded w-3/4" />
-                  <div className="h-3 bg-cordel-master-dark/15 rounded w-1/2" />
-                </div>
-              </div>
-              <div className="flex flex-col gap-2 mt-2">
-                <div className="h-3 bg-cordel-master-dark/15 rounded w-full" />
-                <div className="h-3 bg-cordel-master-dark/15 rounded w-2/3" />
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-2 sm:gap-3 min-h-[300px] animate-pulse select-none">
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16].map((n) => (
+            <div key={n} className="rounded-md border-2 border-dashed border-cordel-master-dark/20 bg-cordel-master-dark/5 overflow-hidden flex flex-col">
+              <div className="aspect-square w-full bg-cordel-master-dark/15" />
+              <div className="p-1.5 flex flex-col items-center gap-1">
+                <div className="h-2.5 bg-cordel-master-dark/20 rounded w-3/4" />
+                <div className="h-2 bg-cordel-master-dark/10 rounded w-1/2" />
               </div>
             </div>
           ))}
@@ -1084,70 +747,32 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
                   <div key={sec.id} className="flex flex-col gap-4">
                     {/* Section Header */}
                     <div className="border-b border-dashed border-cordel-master-dark/20 pb-2 text-left mt-2 flex items-center justify-between">
-                      <h3 className="panel-title text-sm font-black uppercase tracking-widest text-cordel-wood flex items-center gap-2 select-none">
+                      <h3 className="text-xs font-black uppercase tracking-wider text-[var(--color-cordel-marron,#8b2a1a)] flex items-center gap-1.5 select-none">
                         <img 
                           src={sec.icon} 
                           alt={sec.label} 
                           loading="lazy" 
                           decoding="async" 
-                          className="w-5 h-5 object-contain inline-block dark:invert" 
+                          className="w-4 h-4 object-contain inline-block dark:invert" 
                         />
                         <span>{sec.label}</span>
-                        <span className="text-xs font-bold text-cordel-master-dark/60 font-sans tracking-normal ml-1">
+                        <span className="text-[11px] font-bold text-stone-500 font-sans tracking-normal ml-0.5">
                           ({sectionMembers.length})
                         </span>
                       </h3>
                     </div>
 
-                    <div 
-                      className="grid gap-4"
-                      style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}
-                    >
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-2 sm:gap-3">
                       {sectionMembers.map((member) => (
-                        <MemberCard
+                        <MemberStampCard
                           key={member.cardKey || `${member.id}-${sec.id}-${member.isGhost ? 'ghost' : 'main'}`}
-                          id={member.id}
-                          prenom={member.prenom}
-                          nom={member.nom}
-                          surnom={member.surnom}
-                          photoURL={member.photoURL}
+                          member={member}
                           isOnline={member.isOnline === true}
-                          role={member.role}
-                          genre={member.genre}
-                          tags={member.tags}
-                          telephone={member.telephone}
-                          adresseRue={member.adresseRue}
-                          adresseCP={member.adresseCP}
-                          adresseVille={member.adresseVille}
-                          adresse={member.adresse}
-                          dateNaissance={member.dateNaissance}
-                          afficherTelephone={member.afficherTelephone}
-                          afficherDateNaissance={member.afficherDateNaissance}
-                          afficherVille={member.afficherVille}
-                          visibiliteAdresse={member.visibiliteAdresse}
-                          publierTelephone={member.publierTelephone}
-                          publierDateNaissance={member.publierDateNaissance}
-                          niveau={member.niveau}
-                          niveauDanse={member.niveauDanse}
-                          niveauxParInstrument={member.niveauxParInstrument}
-                          instrumentsJoues={member.instrumentsJoues}
-                          instrument={member.instrument}
                           isCurrentUser={Boolean(user?.uid && member.id === user.uid)}
-                          isViewerAdmin={isViewerAdmin}
-                          fieldsConfig={fieldsConfig}
-                          onContactUser={handleContactUser}
+                          pupitreColor={getColorForInstrument(member.instrument || sec.pupitreName || sec.label, 'solid') || '#181716'}
+                          onClick={(m) => setSelectedMember(m)}
                           onEditPhoto={handleEditPhoto}
-                          onOpenLightbox={handleOpenLightbox}
                           t={t}
-                          tRole={tRole}
-                          locale={locale}
-                          getPupitreName={getPupitreName}
-                          getColorForInstrument={getColorForInstrument}
-                          tagsDisponibles={tagsDisponibles}
-                          majoriteFeminine={majoriteFeminine}
-                          isDependent={member.isDependent === true}
-                          isGhost={member.isGhost === true}
-                          primaryInstrumentName={member.primaryInstrumentName}
                         />
                       ))}
                     </div>
@@ -1200,6 +825,25 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
         photoURL={lightboxPhoto?.url}
         name={lightboxPhoto?.name}
         onClose={() => setLightboxPhoto(null)}
+      />
+
+      {/* Modale Fiche Membre détaillée (Lightbox Cordel) */}
+      <MemberDetailModal
+        member={selectedMember}
+        isOpen={Boolean(selectedMember)}
+        onClose={() => setSelectedMember(null)}
+        isOnline={selectedMember?.isOnline === true}
+        isCurrentUser={Boolean(user?.uid && selectedMember?.id === user.uid)}
+        fieldsConfig={fieldsConfig}
+        tagsDisponibles={tagsDisponibles}
+        majoriteFeminine={majoriteFeminine}
+        getPupitreName={getPupitreName}
+        onContactUser={handleContactUser}
+        onEditPhoto={handleEditPhoto}
+        t={t}
+        tRole={tRole}
+        locale={locale}
+        getColorForInstrument={getColorForInstrument}
       />
     </div>
   );

@@ -1,4 +1,5 @@
 import React from 'react';
+import { HorizontalRibbonContainer } from '../navigation/HorizontalTabRibbon';
 
 /**
  * Barre de navigation par onglets pour la fiche détaillée d'un événement (Navigation Hub Cordel).
@@ -51,11 +52,8 @@ export default function EventTabsNav({
   }
 
   return (
-    <div className="w-full border-b-2 border-dashed border-cordel-master-dark/20 pb-2 mb-3 overflow-visible">
-      <nav
-        className="flex items-center gap-1.5 overflow-x-auto pt-2 pb-1.5 px-0.5 no-scrollbar select-none"
-        aria-label="Navigation de l'événement"
-      >
+    <div className="w-full border-b-2 border-dashed border-cordel-master-dark/20 pb-2 mb-3 select-none">
+      <HorizontalRibbonContainer activeTabId={activeTab} ariaLabel="Navigation de l'événement">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
 
@@ -63,17 +61,19 @@ export default function EventTabsNav({
             <button
               key={tab.id}
               type="button"
+              data-tab-id={tab.id}
+              data-tab-active={isActive ? 'true' : 'false'}
               onClick={() => setActiveTab(tab.id)}
               className={`
-                group shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-[6px_8px_5px_7px] text-xs transition-all cursor-pointer select-none
+                group shrink-0 whitespace-nowrap min-h-[40px] inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-[6px_8px_5px_7px] text-sm transition-all cursor-pointer select-none border-2
                 ${isActive
-                  ? 'bg-cordel-bg border-2 border-encre-noire font-black text-cordel-wood shadow-[2.5px_2.5px_0px_0px_#181716] -translate-y-0.5'
-                  : 'bg-cordel-bg-light/70 hover:bg-cordel-bg border-2 border-dashed border-encre-noire/30 font-bold text-encre-noire/75 hover:text-encre-noire shadow-xs'
+                  ? 'bg-cordel-bg border-encre-noire font-black text-cordel-wood shadow-[2.5px_2.5px_0px_0px_#181716] -translate-y-0.5'
+                  : 'bg-cordel-bg-light/70 hover:bg-cordel-bg border-dashed border-encre-noire/30 font-bold text-encre-noire/75 hover:text-encre-noire shadow-xs'
                 }
               `}
             >
-              <span className="text-sm">{tab.icon}</span>
-              <span className="whitespace-nowrap tracking-wide">{tab.label}</span>
+              <span className="text-base">{tab.icon}</span>
+              <span className="tracking-wide">{tab.label}</span>
 
               {tab.badge && (
                 <span
@@ -91,7 +91,7 @@ export default function EventTabsNav({
             </button>
           );
         })}
-      </nav>
+      </HorizontalRibbonContainer>
     </div>
   );
 }

@@ -9,7 +9,10 @@ import OnboardingPublicBlock from './onboarding/OnboardingPublicBlock';
 import OnboardingVisibilityBlock from './onboarding/OnboardingVisibilityBlock';
 import OnboardingPrivateBlock from './onboarding/OnboardingPrivateBlock';
 import OnboardingMissingFieldsAlert from './onboarding/OnboardingMissingFieldsAlert';
+import WelcomeTourModal from './guided-tour/WelcomeTourModal';
 import { notifyMembersByTag } from '../utils/inAppNotificationService';
+import { sanitizeUserDocPayload } from '../utils/firestoreUtils';
+import { canonicalizeGroupId } from '../utils/tenantUtils';
 
 // Configuration par défaut des champs du formulaire d'inscription.
 // Les champs non essentiels sont isRequired: false pour éviter qu'un champ masqué
@@ -44,27 +47,27 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
     surnom: profileData?.surnom || '',
     tailleTshirt: profileData?.tailleTshirt || 'M',
     taillePantalon: profileData?.taillePantalon || 'M',
-    droitImage: profileData?.droitImage || false,
-    aptitudeMedicale: profileData?.aptitudeMedicale || false,
+    droitImage: Boolean(profileData?.droitImage),
+    aptitudeMedicale: Boolean(profileData?.aptitudeMedicale),
     lateralite: profileData?.lateralite || 'droitier',
     dateNaissance: profileData?.dateNaissance || '',
     instrument: profileData?.instrument || '',
     instrumentSecondaire: profileData?.instrumentSecondaire || '',
     voeuPrincipal: profileData?.voeuPrincipal || '',
     voeuSecondaire: profileData?.voeuSecondaire || '',
-    instrumentsJoues: profileData?.instrumentsJoues || [],
-    voeuxInstruments: profileData?.voeuxInstruments || [],
-    pratiqueDanse: profileData?.pratiqueDanse ?? false,
-    pratiquePercussion: profileData?.pratiquePercussion ?? false,
-    estAncienMembre: profileData?.estAncienMembre ?? false,
-    souhaiteChangerInstrument: profileData?.souhaiteChangerInstrument || false,
-    volontaireAncienInstrument: profileData?.volontaireAncienInstrument || false,
+    instrumentsJoues: Array.isArray(profileData?.instrumentsJoues) ? profileData.instrumentsJoues : [],
+    voeuxInstruments: Array.isArray(profileData?.voeuxInstruments) ? profileData.voeuxInstruments : [],
+    pratiqueDanse: Boolean(profileData?.pratiqueDanse),
+    pratiquePercussion: Boolean(profileData?.pratiquePercussion),
+    estAncienMembre: Boolean(profileData?.estAncienMembre),
+    souhaiteChangerInstrument: Boolean(profileData?.souhaiteChangerInstrument),
+    volontaireAncienInstrument: Boolean(profileData?.volontaireAncienInstrument),
     genre: profileData?.genre || 'femme',
-    afficherTelephone: profileData?.afficherTelephone ?? true,
-    afficherDateNaissance: profileData?.afficherDateNaissance ?? false,
+    afficherTelephone: profileData?.afficherTelephone !== undefined ? Boolean(profileData.afficherTelephone) : true,
+    afficherDateNaissance: Boolean(profileData?.afficherDateNaissance),
     visibiliteAdresse: profileData?.visibiliteAdresse || 'ville',
-    publierTelephone: profileData?.publierTelephone ?? true,
-    publierDateNaissance: profileData?.publierDateNaissance ?? false
+    publierTelephone: profileData?.publierTelephone !== undefined ? Boolean(profileData.publierTelephone) : true,
+    publierDateNaissance: Boolean(profileData?.publierDateNaissance)
   });
 
   const [fieldsConfig, setFieldsConfig] = useState(null);
@@ -76,10 +79,20 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
   const [aptitudeMedicaleDocUrl, setAptitudeMedicaleDocUrl] = useState('');
   const [demanderDroitImage, setDemanderDroitImage] = useState(false);
   const [demanderAttestationSante, setDemanderAttestationSante] = useState(false);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
 
-  // Extract the group ID parameter from the URL if present, fallback to profileData or default
+  // Callback de clôture de la visite guidée et passage au flux applicatif suivant
+  const handleFinishTour = () => {
+    setShowWelcomeModal(false);
+    if (onComplete) {
+      onComplete();
+    }
+  };
+
+  // Extraction et normalisation stricte du groupe (préservation de casse "Samambaia")
   const searchParams = new URLSearchParams(window.location.search);
-  const groupId = searchParams.get('groupe') || searchParams.get('assoc') || profileData?.groupId || 'Samambaia';
+  const rawGroupId = searchParams.get('groupe') || searchParams.get('assoc') || profileData?.groupId || 'Samambaia';
+  const groupId = canonicalizeGroupId(rawGroupId);
 
   // Charger custom fields configuration and association details for Onboarding
   useEffect(() => {
@@ -328,7 +341,7 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
         instrumentSecondaire: "",
         instrumentsJoues: cleanVoeux,
         genre: formData.genre,
-        isNew: profileData?.isNew !== undefined ? profileData.isNew : (!isExistingMember),
+        isNew: false,
         statutActuel: profileData?.statutActuel || "active",
         groupId: (profileData?.groupId || groupId)?.toLowerCase() === 'samambaia' ? 'Samambaia' : (profileData?.groupId || groupId),
         afficherTelephone: Boolean(formData.afficherTelephone),
@@ -347,13 +360,9 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
         userDoc.dateSignatureAttestationSante = new Date();
       }
 
-      // Nettoyage du payload : suppression des valeurs null/undefined
-      // pour éviter un rejet par les règles Firestore du backend maître
-      Object.keys(userDoc).forEach(key => {
-        if (userDoc[key] === null || userDoc[key] === undefined) {
-          delete userDoc[key];
-        }
-      });
+      // Assainissement strict du payload : élimination récursive anti-undefined et anti-null
+      // pour éradiquer tout rejet par les règles Firestore ou affectedKeys()
+      const sanitizedUserDoc = sanitizeUserDocPayload(userDoc);
 
       if (isNewDoc) {
         // --- 1. CRÉATION D'UN NOUVEAU DOCUMENT UTILISATEUR ---
@@ -362,33 +371,33 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
         // - tags doit être []
         // - statutActuel doit être 'active'
         // - paymentStatus initialisé directement ('paid' si reconnu dans pending_payments, sinon 'unpaid')
-        userDoc.role = "membre";
-        userDoc.tags = [];
-        userDoc.paymentStatus = pendingPaymentData ? "paid" : "unpaid";
+        sanitizedUserDoc.role = "membre";
+        sanitizedUserDoc.tags = [];
+        sanitizedUserDoc.paymentStatus = pendingPaymentData ? "paid" : "unpaid";
 
         if (pendingPaymentData) {
-          userDoc.helloAssoLastPayment = pendingPaymentData;
+          sanitizedUserDoc.helloAssoLastPayment = sanitizeUserDocPayload(pendingPaymentData);
         }
 
         // Création initiale autorisée par les règles de sécurité en un seul setDoc
-        await setDoc(userRef, userDoc);
+        await setDoc(userRef, sanitizedUserDoc);
       } else {
         // --- 2. MISE À JOUR D'UN DOCUMENT EXISTANT ---
         // Les règles Firestore allow update interdisent aux membres non-admin
         // de modifier les clés système (role, privilèges, paymentStatus, etc.)
-        delete userDoc.role;
-        delete userDoc.isSystemAdmin;
-        delete userDoc.hasAccessLogistique;
-        delete userDoc.canWriteSequenciador;
-        delete userDoc.canWriteDansador;
-        delete userDoc.canWriteOrchestrador;
-        delete userDoc.paymentStatus;
+        delete sanitizedUserDoc.role;
+        delete sanitizedUserDoc.isSystemAdmin;
+        delete sanitizedUserDoc.hasAccessLogistique;
+        delete sanitizedUserDoc.canWriteSequenciador;
+        delete sanitizedUserDoc.canWriteDansador;
+        delete sanitizedUserDoc.canWriteOrchestrador;
+        delete sanitizedUserDoc.paymentStatus;
 
         if (pendingPaymentData) {
-          userDoc.helloAssoLastPayment = pendingPaymentData;
+          sanitizedUserDoc.helloAssoLastPayment = sanitizeUserDocPayload(pendingPaymentData);
         }
 
-        await setDoc(userRef, userDoc, { merge: true });
+        await setDoc(userRef, sanitizedUserDoc, { merge: true });
       }
 
       // Notification interne pour la direction artistique / mestre si des vœux sont formulés
@@ -425,10 +434,8 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
         }
       }
 
-      // Déclenchement du callback parent pour finaliser l'onboarding
-      if (onComplete) {
-        onComplete();
-      }
+      // Activation immédiate de la modale de visite guidée de bienvenue (sans redirection prématurée)
+      setShowWelcomeModal(true);
     } catch (error) {
       console.error("Onboarding - Erreur d'écriture dans Firestore :", error);
       alert((t('onboarding.errorSave') || "Erreur de sauvegarde") + " (" + error.message + ")");
@@ -515,11 +522,22 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
                 className="w-full mt-2 py-3 text-xs font-bold uppercase tracking-wider opacity-100 disabled:opacity-50"
                 disabled={submitting}
               >
-                {submitting ? (t('onboarding.saving') || "Enregistrement...") : (t('onboarding.nextStep') || "Terminer mon inscription")}
+                {submitting ? (t('onboarding.saving') || "Enregistrement...") : (t('onboarding.nextStep') || "Finaliser mon inscription")}
               </CordelButton>
             </form>
           </CordelCard>
         </div>
+
+        {/* Modale de bienvenue & visite guidée interactive post-inscription */}
+        {showWelcomeModal && (
+          <WelcomeTourModal
+            isOpen={showWelcomeModal}
+            nomAssociation={nomAssociation}
+            userId={user?.uid}
+            onClose={handleFinishTour}
+            onComplete={handleFinishTour}
+          />
+        )}
       </LayoutShell>
     </div>
   );

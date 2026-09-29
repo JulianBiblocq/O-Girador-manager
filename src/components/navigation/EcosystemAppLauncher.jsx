@@ -227,7 +227,7 @@ export default function EcosystemAppLauncher({ urls, associationData, className 
           if (!isOpen) updatePosition();
           setIsOpen(!isOpen);
         }}
-        className={`p-2 min-w-[38px] min-h-[38px] border-2 border-encre-noire rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer flex items-center justify-center transition-all select-none ${
+        className={`p-2 lg:p-1.5 min-w-[38px] lg:min-w-0 min-h-[38px] lg:min-h-0 lg:h-[30px] lg:w-[30px] border-2 border-encre-noire rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer flex items-center justify-center transition-all select-none ${
           isOpen
             ? 'bg-amber-200 text-encre-noire'
             : 'bg-cordel-bg hover:bg-white text-encre-noire'

@@ -13,6 +13,7 @@ import { useSuppliesData } from '../../hooks/useSuppliesData';
 import SuppliesListView from '../inventory/SuppliesListView';
 import WorkshopToolsListView from '../inventory/WorkshopToolsListView';
 import useConfirm from '../../hooks/useConfirm';
+import { HorizontalRibbonContainer } from '../navigation/HorizontalTabRibbon';
 
 export default function WardrobeManager({ 
   groupId, 
@@ -283,54 +284,81 @@ export default function WardrobeManager({
         <div className="w-12"></div>
       </div>
 
-      {/* Navigation interne par onglets (masquée si hideSubTabs ou si pilotée par activeTab) */}
+      {/* Navigation interne par onglets sous forme de ruban défilant */}
       {shouldShowSubTabs && (
-        <div className="flex flex-wrap gap-2 border-b border-dashed border-cordel-master-dark/20 pb-2 select-none">
-          <button
-            type="button"
-            onClick={() => setLocalTab('couture')}
-            className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded border transition-all cursor-pointer ${
-              currentActiveTab === 'couture' ? 'theme-bg-ocre text-encre-noire border-encre-noire' : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire'
-            }`}
-          >
-            🧵 Établi de confection
-          </button>
-          <button
-            type="button"
-            onClick={() => setLocalTab('inventory')}
-            className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded border transition-all cursor-pointer ${
-              currentActiveTab === 'inventory' ? 'theme-bg-ocre text-encre-noire border-encre-noire' : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire'
-            }`}
-          >
-            📦 Stock & Prêts
-          </button>
-          <button
-            type="button"
-            onClick={() => setLocalTab('supplies')}
-            className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded border transition-all cursor-pointer ${
-              currentActiveTab === 'supplies' ? 'theme-bg-ocre text-encre-noire border-encre-noire' : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire'
-            }`}
-          >
-            🧶 Tissus & Mercerie
-          </button>
-          <button
-            type="button"
-            onClick={() => setLocalTab('tools')}
-            className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded border transition-all cursor-pointer ${
-              currentActiveTab === 'tools' ? 'theme-bg-ocre text-encre-noire border-encre-noire' : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire'
-            }`}
-          >
-            ✂️ Outillage
-          </button>
-          <button
-            type="button"
-            onClick={() => setLocalTab('sizes')}
-            className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded border transition-all cursor-pointer ${
-              currentActiveTab === 'sizes' ? 'theme-bg-ocre text-encre-noire border-encre-noire' : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire'
-            }`}
-          >
-            📏 Mensurations
-          </button>
+        <div className="border-b border-dashed border-cordel-master-dark/20 pb-2 mb-2 select-none">
+          <HorizontalRibbonContainer activeTabId={currentActiveTab}>
+            <button
+              type="button"
+              data-tab-id="couture"
+              data-tab-active={currentActiveTab === 'couture' ? 'true' : 'false'}
+              onClick={() => setLocalTab('couture')}
+              className={`shrink-0 whitespace-nowrap min-h-[40px] px-3.5 py-1.5 text-sm font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 select-none ${
+                currentActiveTab === 'couture'
+                  ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                  : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+              }`}
+            >
+              <span>🧵</span>
+              <span>Établi de confection</span>
+            </button>
+            <button
+              type="button"
+              data-tab-id="inventory"
+              data-tab-active={currentActiveTab === 'inventory' ? 'true' : 'false'}
+              onClick={() => setLocalTab('inventory')}
+              className={`shrink-0 whitespace-nowrap min-h-[40px] px-3.5 py-1.5 text-sm font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 select-none ${
+                currentActiveTab === 'inventory'
+                  ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                  : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+              }`}
+            >
+              <span>📦</span>
+              <span>Stock & Prêts</span>
+            </button>
+            <button
+              type="button"
+              data-tab-id="supplies"
+              data-tab-active={currentActiveTab === 'supplies' ? 'true' : 'false'}
+              onClick={() => setLocalTab('supplies')}
+              className={`shrink-0 whitespace-nowrap min-h-[40px] px-3.5 py-1.5 text-sm font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 select-none ${
+                currentActiveTab === 'supplies'
+                  ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                  : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+              }`}
+            >
+              <span>🧶</span>
+              <span>Tissus & Mercerie</span>
+            </button>
+            <button
+              type="button"
+              data-tab-id="tools"
+              data-tab-active={currentActiveTab === 'tools' ? 'true' : 'false'}
+              onClick={() => setLocalTab('tools')}
+              className={`shrink-0 whitespace-nowrap min-h-[40px] px-3.5 py-1.5 text-sm font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 select-none ${
+                currentActiveTab === 'tools'
+                  ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                  : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+              }`}
+            >
+              <span>✂️</span>
+              <span>Outillage</span>
+            </button>
+            <button
+              type="button"
+              data-tab-id="sizes"
+              data-tab-active={currentActiveTab === 'sizes' ? 'true' : 'false'}
+              onClick={() => setLocalTab('sizes')}
+              className={`shrink-0 whitespace-nowrap min-h-[40px] px-3.5 py-1.5 text-sm font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 select-none ${
+                currentActiveTab === 'sizes'
+                  ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
+                  : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+              }`}
+            >
+              <span>📏</span>
+              <span>Mensurations</span>
+            </button>
+          </HorizontalRibbonContainer>
         </div>
       )}
 

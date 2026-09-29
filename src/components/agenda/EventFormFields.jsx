@@ -547,6 +547,23 @@ export default function EventFormFields({
             <span>Feuille de route</span>
             <span className="ml-auto text-[10px]">{formData.enableRoadbook !== false ? 'ON' : 'OFF'}</span>
           </button>
+
+          {/* 10. Commissions & Chantiers de Projets (hasCommissions) */}
+          <button
+            type="button"
+            onClick={() => toggleBooleanField('hasCommissions', Boolean(formData.hasCommissions))}
+            disabled={saving}
+            className={`flex items-center justify-center gap-2 p-2 rounded text-xs font-black uppercase tracking-wider border transition-all cursor-pointer ${
+              Boolean(formData.hasCommissions)
+                ? 'bg-amber-100 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 border-[var(--color-cordel-ocre,#c05621)] shadow-xs'
+                : 'bg-neutral-100 dark:bg-neutral-800/40 text-neutral-400 border-neutral-300 dark:border-neutral-700'
+            }`}
+            title="Activer la gestion par commissions (Tour de contrôle, rétro-planning, budget, bénévoles)"
+          >
+            <span>🎪</span>
+            <span>Commissions</span>
+            <span className="ml-auto text-[10px]">{Boolean(formData.hasCommissions) ? 'ON' : 'OFF'}</span>
+          </button>
         </div>
 
         {/* Détails conditionnels Artistiques & Covoiturage */}

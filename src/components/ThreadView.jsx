@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
-import RichTextEditor from './RichTextEditor';
-import MoveThreadModal from './MoveThreadModal';
-import MoveReplyModal from './MoveReplyModal';
 import { useTranslation } from './LanguageContext';
 import { useThreadData } from '../hooks/useThreadData';
 import ThreadHeader from './forum/thread/ThreadHeader';
@@ -11,59 +8,38 @@ import ThreadValidationCard from './forum/thread/ThreadValidationCard';
 import ThreadPollSection from './forum/thread/ThreadPollSection';
 import ThreadMessageList from './forum/thread/ThreadMessageList';
 import ThreadReplyBar from './forum/thread/ThreadReplyBar';
+import ThreadModerationModals from './forum/thread/ThreadModerationModals';
 
 /**
  * Vue principale d'un sujet de discussion (ThreadView).
- * Rôle : Chef d'orchestre épuré assemblant les composants spécialisés
- * (en-tête, sondage, messages, barre de saisie, modales de modération).
+ * Architecture Flexbox étanche avec flux de messages scrollable et barre de réponse ancrée.
  */
 export default function ThreadView({ 
-  threadId, 
-  user, 
-  profileData, 
-  channels = [], 
-  allThreads = [], 
-  allUsers = [], 
-  onClose, 
-  breakGlassActive = false,
-  tagsDisponibles = [],
-  effectiveUserTags = []
+  threadId, user, profileData, channels = [], allThreads = [], allUsers = [], 
+  onClose, breakGlassActive = false, tagsDisponibles = [], effectiveUserTags = [] 
 }) {
   const { t } = useTranslation();
 
-  // Logique métier complète encapsulée dans le custom hook
   const threadData = useThreadData({
-    threadId,
-    user,
-    profileData,
-    channels,
-    allUsers,
-    breakGlassActive,
-    tagsDisponibles,
-    effectiveUserTags,
-    onClose,
-    t
+    threadId, user, profileData, channels, allUsers,
+    breakGlassActive, tagsDisponibles, effectiveUserTags, onClose, t
   });
 
-  // États locaux des modales de modération et d'édition rapide
   const [isMoveThreadOpen, setIsMoveThreadOpen] = useState(false);
-  const [movingReplyData, setMovingReplyData] = useState(null); // { reply, index }
-  const [editingReplyData, setEditingReplyData] = useState(null); // { reply, index, text }
+  const [movingReplyData, setMovingReplyData] = useState(null);
+  const [editingReplyData, setEditingReplyData] = useState(null);
 
-  // Enregistrement de l'édition d'une réponse
   const handleSaveEditReply = async (e) => {
     e.preventDefault();
     if (!editingReplyData || !editingReplyData.text.trim()) return;
     const ok = await threadData.editReply(threadId, editingReplyData.index, editingReplyData.text.trim());
-    if (ok) {
-      setEditingReplyData(null);
-    }
+    if (ok) setEditingReplyData(null);
   };
 
   return (
-    <div className="flex flex-col gap-4 text-left h-full">
-      {/* Barre d'en-tête supérieure fixe (z-20 pour rester sous les modales) */}
-      <div className="sticky top-0 z-20 bg-cordel-bg/95 backdrop-blur-sm flex justify-between items-center border-b-2 border-dashed border-cordel-master-dark/30 py-2 select-none">
+    <div className="flex flex-col h-full max-h-[100dvh] overflow-hidden text-left gap-2 sm:gap-3">
+      {/* Barre d'en-tête supérieure fixe en flux (z-20 pour rester sous les modales) */}
+      <div className="shrink-0 z-20 bg-cordel-bg/95 backdrop-blur-sm flex justify-between items-center border-b-2 border-dashed border-cordel-master-dark/30 py-2 select-none">
         <CordelButton variant="default" onClick={onClose} className="px-3 py-1 text-xs">
           ← {t('common.back')}
         </CordelButton>
@@ -90,47 +66,53 @@ export default function ThreadView({
           </p>
         </CordelCard>
       ) : (
-        <div className="flex flex-col gap-4 flex-1">
+        <div className="flex flex-col flex-1 min-h-0 overflow-hidden gap-2">
           {/* En-tête du sujet et actions de modération */}
-          <ThreadHeader
-            thread={threadData.thread}
-            isModeratorOrAdmin={threadData.isModeratorOrAdmin}
-            isAuthor={user?.uid === threadData.thread.auteurId}
-            actionLoading={threadData.actionLoading}
-            onTogglePin={() => threadData.togglePinThread(threadData.thread.id, threadData.thread.isPinned)}
-            onOpenMove={() => setIsMoveThreadOpen(true)}
-            onDeleteThread={() => threadData.handleDeleteThread()}
-            t={t}
-            getCategoryLabel={threadData.getCategoryLabel}
-          />
+          <div className="shrink-0">
+            <ThreadHeader
+              thread={threadData.thread}
+              isModeratorOrAdmin={threadData.isModeratorOrAdmin}
+              isAuthor={user?.uid === threadData.thread.auteurId}
+              actionLoading={threadData.actionLoading}
+              onTogglePin={() => threadData.togglePinThread(threadData.thread.id, threadData.thread.isPinned)}
+              onOpenMove={() => setIsMoveThreadOpen(true)}
+              onDeleteThread={() => threadData.handleDeleteThread()}
+              t={t}
+              getCategoryLabel={threadData.getCategoryLabel}
+            />
+          </div>
 
           {/* Section d'approbation collaborative de la publication réseaux sociaux */}
           {threadData.thread?.validationData && (
-            <ThreadValidationCard
-              thread={threadData.thread}
-              userId={user?.uid}
-              profileData={profileData}
-              isModeratorOrAdmin={threadData.isModeratorOrAdmin}
-              allUsers={allUsers}
-            />
+            <div className="shrink-0">
+              <ThreadValidationCard
+                thread={threadData.thread}
+                userId={user?.uid}
+                profileData={profileData}
+                isModeratorOrAdmin={threadData.isModeratorOrAdmin}
+                allUsers={allUsers}
+              />
+            </div>
           )}
 
           {/* Section sondage interactif & modale d'ajout */}
-          <ThreadPollSection
-            thread={threadData.thread}
-            userId={user?.uid}
-            user={user}
-            allUsers={allUsers}
-            isAuthorOrAdmin={threadData.isModeratorOrAdmin || user?.uid === threadData.thread?.auteurId}
-            isAddPollOpen={threadData.isAddPollOpen}
-            setIsAddPollOpen={threadData.setIsAddPollOpen}
-            onCloseAddPoll={() => threadData.setIsAddPollOpen(false)}
-            onCreatePoll={threadData.handleCreatePoll}
-            savingPoll={threadData.savingNewPoll}
-            t={t}
-          />
+          <div className="shrink-0">
+            <ThreadPollSection
+              thread={threadData.thread}
+              userId={user?.uid}
+              user={user}
+              allUsers={allUsers}
+              isAuthorOrAdmin={threadData.isModeratorOrAdmin || user?.uid === threadData.thread?.auteurId}
+              isAddPollOpen={threadData.isAddPollOpen}
+              setIsAddPollOpen={threadData.setIsAddPollOpen}
+              onCloseAddPoll={() => threadData.setIsAddPollOpen(false)}
+              onCreatePoll={threadData.handleCreatePoll}
+              savingPoll={threadData.savingNewPoll}
+              t={t}
+            />
+          </div>
 
-          {/* Liste déroulante des messages avec repère des non-lus */}
+          {/* Liste déroulante des messages avec repère des non-lus (confinée dans l'espace restant) */}
           <ThreadMessageList
             thread={threadData.thread}
             reponses={threadData.thread?.reponses || []}
@@ -153,7 +135,7 @@ export default function ThreadView({
             t={t}
           />
 
-          {/* Barre de réponse dockée en bas d'écran */}
+          {/* Barre de réponse dockée en bas d'écran en flux normal */}
           <ThreadReplyBar
             isReadOnly={threadData.isReadOnly}
             replyText={threadData.replyText}
@@ -175,106 +157,25 @@ export default function ThreadView({
             t={t}
           />
 
-          {/* Modale de déplacement du sujet */}
-          {isMoveThreadOpen && (
-            <MoveThreadModal
-              thread={threadData.thread}
-              channels={channels}
-              isSubmitting={threadData.actionLoading}
-              onClose={() => setIsMoveThreadOpen(false)}
-              onConfirm={async (newChannelId, newCategory) => {
-                const ok = await threadData.moveThread(threadData.thread.id, newChannelId, newCategory);
-                if (ok) setIsMoveThreadOpen(false);
-              }}
-            />
-          )}
-
-          {/* Modale de déplacement / extraction d'une réponse */}
-          {movingReplyData && (
-            <MoveReplyModal
-              reply={movingReplyData.reply}
-              replyIndex={movingReplyData.index}
-              currentThreadId={threadData.thread.id}
-              availableThreads={allThreads}
-              channels={channels}
-              isSubmitting={threadData.actionLoading}
-              onClose={() => setMovingReplyData(null)}
-              onMoveToExisting={async (targetThreadId) => {
-                const ok = await threadData.moveReplyToThread(threadData.thread.id, movingReplyData.index, targetThreadId);
-                if (ok) setMovingReplyData(null);
-              }}
-              onExtractToNew={async (newTitle, newChannelId, newCategory) => {
-                const ok = await threadData.extractReplyToNewThread(
-                  threadData.thread.id,
-                  movingReplyData.index,
-                  newTitle,
-                  newChannelId,
-                  newCategory,
-                  profileData
-                );
-                if (ok) setMovingReplyData(null);
-              }}
-            />
-          )}
-
-          {/* Modale d'édition d'une réponse */}
-          {editingReplyData && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-encre-noire/70 backdrop-blur-sm animate-fade-in select-none">
-              <div className="relative w-full max-w-md">
-                <CordelCard variant="default" useExtremeBorder={true} className="p-5 flex flex-col gap-4 text-left bg-cordel-bg">
-                  <div className="flex justify-between items-start border-b-2 border-dashed border-cordel-master-dark/25 pb-2">
-                    <h3 className="font-heading font-black text-base text-encre-noire tracking-wider uppercase">
-                      ✏️ Éditer le message
-                    </h3>
-                    <button
-                      type="button"
-                      onClick={() => setEditingReplyData(null)}
-                      className="text-base font-extrabold text-cordel-wood hover:text-red-600 cursor-pointer"
-                    >
-                      ✕
-                    </button>
-                  </div>
-
-                  <form onSubmit={handleSaveEditReply} className="flex flex-col gap-4">
-                    <div className="flex flex-col gap-1 text-left">
-                      <label className="text-[10px] font-black uppercase text-cordel-master-dark">
-                        Message *
-                      </label>
-                      <RichTextEditor
-                        value={editingReplyData.text}
-                        onChange={(val) => setEditingReplyData(prev => ({ ...prev, text: val }))}
-                        disabled={threadData.actionLoading}
-                        placeholder="Message..."
-                        groupId={profileData?.groupId}
-                        minHeight="120px"
-                      />
-                    </div>
-
-                    <div className="flex justify-end gap-2 pt-3 border-t border-dashed border-cordel-master-dark/20">
-                      <CordelButton
-                        type="button"
-                        variant="default"
-                        onClick={() => setEditingReplyData(null)}
-                        disabled={threadData.actionLoading}
-                        className="py-2 px-4 text-xs font-bold uppercase"
-                      >
-                        Annuler
-                      </CordelButton>
-                      <CordelButton
-                        type="submit"
-                        variant="ocre"
-                        useExtremeBorder={true}
-                        disabled={threadData.actionLoading || !editingReplyData.text.trim()}
-                        className="py-2 px-4 text-xs font-black uppercase tracking-wider"
-                      >
-                        {threadData.actionLoading ? "Enregistrement..." : "Enregistrer"}
-                      </CordelButton>
-                    </div>
-                  </form>
-                </CordelCard>
-              </div>
-            </div>
-          )}
+          {/* Modales de modération (déplacement et édition) */}
+          <ThreadModerationModals
+            isMoveThreadOpen={isMoveThreadOpen}
+            onCloseMoveThread={() => setIsMoveThreadOpen(false)}
+            moveThread={threadData.moveThread}
+            movingReplyData={movingReplyData}
+            onCloseMoveReply={() => setMovingReplyData(null)}
+            moveReplyToThread={threadData.moveReplyToThread}
+            extractReplyToNewThread={threadData.extractReplyToNewThread}
+            editingReplyData={editingReplyData}
+            onCloseEditReply={() => setEditingReplyData(null)}
+            onChangeEditText={(val) => setEditingReplyData((prev) => ({ ...prev, text: val }))}
+            onSaveEditReply={handleSaveEditReply}
+            thread={threadData.thread}
+            channels={channels}
+            availableThreads={allThreads}
+            profileData={profileData}
+            actionLoading={threadData.actionLoading}
+          />
         </div>
       )}
     </div>

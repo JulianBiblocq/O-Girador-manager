@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
-import CordelCard from '../../CordelCard';
-import CordelButton from '../../CordelButton';
-import { XiloClose } from '../../XiloIcons';
+import CordelCard from '../CordelCard';
+import CordelButton from '../CordelButton';
+import { XiloClose } from '../XiloIcons';
 
+/**
+ * Bloc de configuration des cotisations, options et webhook HelloAsso.
+ * Composant de trésorerie dédié à la gestion financière des adhésions.
+ */
 export default function CotisationsBlock({ formData = {}, handleChange, saving, groupId, handleSaveHelloAssoKey }) {
   const {
     montantAdhesion = 0,

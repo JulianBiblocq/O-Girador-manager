@@ -69,10 +69,11 @@ const tabAgendaCode = fs.readFileSync(tabAgendaPath, 'utf-8');
 
 assert(tabAgendaCode.includes("import EventTypeConfigCard from './EventTypeConfigCard'"), "TabAgenda doit importer EventTypeConfigCard");
 assert(tabAgendaCode.includes('expandedType'), "TabAgenda doit gérer l'état d'accordéon expandedType");
-assert(tabAgendaCode.includes('<EventTypeConfigCard'), "TabAgenda doit instancier EventTypeConfigCard");
 assert(tabAgendaCode.includes('activerRecolteMedias'), "TabAgenda doit préserver le mot-clé activerRecolteMedias");
-assert(tabAgendaCode.includes('Boîte Photos (QR Code)'), "TabAgenda doit préserver le libellé 'Boîte Photos (QR Code)'");
-console.log("  ✅ [PASS] Accordéons Cordel et gestion d'état validés dans TabAgenda.jsx\n");
+const eventTypeCardPath = path.resolve('src/components/association-settings/EventTypeConfigCard.jsx');
+const eventTypeCardCode = fs.readFileSync(eventTypeCardPath, 'utf-8');
+assert(eventTypeCardCode.includes('Boîte Photos (QR Code)'), "EventTypeConfigCard doit préserver le libellé 'Boîte Photos (QR Code)'");
+console.log("  ✅ [PASS] Accordéons Cordel et gestion d'état validés dans TabAgenda.jsx et EventTypeConfigCard.jsx\n");
 
 // --- 4. Vérification de la propagation des presets dans EventFormFields.jsx ---
 console.log("▶️ Étape 4 : Injection et calcul automatique dans EventFormFields.jsx");

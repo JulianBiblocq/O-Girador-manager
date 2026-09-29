@@ -23,6 +23,7 @@ import {
 import AgendaTemporalTabs from './agenda/AgendaTemporalTabs';
 import EventThumbnail from './agenda/EventThumbnail';
 import BatchRehearsalModal from './agenda/BatchRehearsalModal';
+import AgendaAddMenu from './agenda/AgendaAddMenu';
 import { canManageEvents } from '../utils/permissionUtils';
 import { resolveEffectiveUserTags } from '../utils/tagUtils';
 import { formatLocationShort } from '../utils/locationUtils';
@@ -81,6 +82,8 @@ export default function WidgetAgenda({
 
   useHardwareBack(isAdding, () => setIsAdding(false));
   const [viewMode, setViewMode] = useState('cards'); // 'cards' ou 'list' ou 'grid'
+  // En mode compact / dashboard (!isFullPage), forcer impérativement la vue "Cartes"
+  const activeViewMode = isFullPage ? viewMode : 'cards';
   const [disciplineFilter, setDisciplineFilter] = useState('all'); // 'all' | 'percussion' | 'dance'
   const [selectedTypeFilter, setSelectedTypeFilter] = useState('all');
   const [hiddenTypes, setHiddenTypes] = useState([]);
@@ -280,6 +283,7 @@ export default function WidgetAgenda({
     includesDance: false,
     enableCarpool: true,
     enableInscriptions: true,
+    hasCommissions: false,
     activerRecolteMedias: true,
     publierSurVaral: true,
     description: '',
@@ -486,6 +490,7 @@ export default function WidgetAgenda({
       enableCarpool: typeCfg.enableCarpool !== false,
       isPublic: Boolean(typeCfg.isPublic),
       enableInscriptions: true,
+      hasCommissions: Boolean(typeCfg.hasCommissions),
       activerRecolteMedias: typeCfg.activerRecolteMedias !== undefined ? Boolean(typeCfg.activerRecolteMedias) : true,
       publierSurVaral: typeCfg.publierSurVaral !== undefined ? Boolean(typeCfg.publierSurVaral) : true,
       dropUrl: '',
@@ -609,6 +614,7 @@ export default function WidgetAgenda({
                 : ['prestation', 'stage'].includes(formData.type)),
           isPublic: Boolean(formData.isPublic),
           enableInscriptions: formData.enableInscriptions !== false,
+          hasCommissions: Boolean(formData.hasCommissions),
           activerRecolteMedias: isRecolteActiveForDoc,
           publierSurVaral: formData.publierSurVaral !== undefined ? Boolean(formData.publierSurVaral) : (isRecolteActiveForDoc !== false),
           sendPushNotification: Boolean(formData.sendPushNotification),
@@ -802,8 +808,8 @@ export default function WidgetAgenda({
         </h3>
         
         <div className="flex items-center gap-2 flex-wrap">
-          {/* View Mode Basculer */}
-          {!loading && !isAdding && (
+          {/* Sélecteur de vues (Cartes | Liste | Grille) - uniquement en vue dédiée pleine page */}
+          {isFullPage && !loading && !isAdding && (
             <div className="flex items-center border-2 border-encre-noire rounded-[6px_9px_5px_8px] overflow-hidden bg-cordel-bg shadow-[2px_2px_0px_0px_#181716] select-none text-xs font-extrabold uppercase">
               <button
                 type="button"
@@ -847,26 +853,13 @@ export default function WidgetAgenda({
             </div>
           )}
 
+          {/* Menu contextuel unifié d'ajout [+ Ajouter ▾] */}
           {!loading && isAuthorized && !isAdding && (
-            <div className="flex items-center gap-2">
-              <CordelButton 
-                variant="default" 
-                onClick={handleOpenForm} 
-                className="text-xs px-3 py-1.5 uppercase tracking-widest font-black"
-              >
-                {t('widgetAgenda.addBtn') || "+ Ajouter"}
-              </CordelButton>
-              <button
-                type="button"
-                onClick={() => setIsBatchModalOpen(true)}
-                className="px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 border-encre-noire bg-amber-200 hover:bg-amber-300 text-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none flex items-center gap-1.5 cursor-pointer transition-all shrink-0"
-                title="⚡ Planifier une série de répétitions pour la saison"
-              >
-                <span>⚡</span>
-                <span className="hidden sm:inline">{t('widgetAgenda.batchRehearsalBtn') || "Planifier une série de répétitions"}</span>
-                <span className="sm:hidden">{t('widgetAgenda.batchRehearsalBtnShort') || "Série répétitions"}</span>
-              </button>
-            </div>
+            <AgendaAddMenu
+              onAddSingle={handleOpenForm}
+              onAddBatch={() => setIsBatchModalOpen(true)}
+              t={t}
+            />
           )}
         </div>
       </div>
@@ -964,14 +957,14 @@ export default function WidgetAgenda({
             actionLabel={temporalTab === 'upcoming' && isAuthorized ? "+ Créer mon premier événement" : null}
             onAction={temporalTab === 'upcoming' && isAuthorized ? () => setIsAdding(true) : null}
           />
-        ) : viewMode === 'grid' ? (
+        ) : activeViewMode === 'grid' ? (
           <CalendarGrid 
             events={activeTabEvents} 
             onSelectEvent={handleSelectEvent} 
             t={t} 
           />
 
-        ) : viewMode === 'list' ? (
+        ) : activeViewMode === 'list' ? (
           <div className="w-full max-w-full overflow-x-auto border-2 border-encre-noire rounded-[8px_12px_9px_11px] shadow-[2.5px_2.5px_0px_0px_#181716] bg-cordel-bg-light">
             <table className="w-full text-xs text-left border-collapse">
               <thead>

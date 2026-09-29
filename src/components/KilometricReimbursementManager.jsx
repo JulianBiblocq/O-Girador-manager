@@ -7,6 +7,7 @@ import { useTranslation } from './LanguageContext';
 import { XiloCar } from './XiloIcons';
 
 import AddressAutocomplete from './AddressAutocomplete';
+import { HorizontalRibbonContainer } from './navigation/HorizontalTabRibbon';
 
 // Algorithme de calcul de l'occupation et éligibilité du véhicule
 const calculateCarStatus = (car, associationSettings) => {
@@ -475,38 +476,52 @@ export default function KilometricReimbursementManager({ groupId, onBack, role, 
         </CordelCard>
       )}
 
-      {/* Tabs bar */}
-      <div className="flex gap-2 border-b border-cordel-master-dark/20 pb-2">
-        <button
-          onClick={() => { setActiveTab('summary'); setExpandedRow(null); }}
-          className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] cursor-pointer transition-all ${
-            activeTab === 'summary' 
-              ? 'bg-cordel-wood text-cordel-bg-light border border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]' 
-              : 'border border-dashed border-cordel-master-dark/35 text-encre-noire hover:bg-cordel-hover'
-          }`}
-        >
-          Vue d'ensemble
-        </button>
-        <button
-          onClick={() => { setActiveTab('members'); setExpandedRow(null); }}
-          className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] cursor-pointer transition-all ${
-            activeTab === 'members' 
-              ? 'bg-cordel-wood text-cordel-bg-light border border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]' 
-              : 'border border-dashed border-cordel-master-dark/35 text-encre-noire hover:bg-cordel-hover'
-          }`}
-        >
-          Par Membre ({memberList.length})
-        </button>
-        <button
-          onClick={() => { setActiveTab('events'); setExpandedRow(null); }}
-          className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] cursor-pointer transition-all ${
-            activeTab === 'events' 
-              ? 'bg-cordel-wood text-cordel-bg-light border border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]' 
-              : 'border border-dashed border-cordel-master-dark/35 text-encre-noire hover:bg-cordel-hover'
-          }`}
-        >
-          Par Événement ({eventList.length})
-        </button>
+      {/* Tabs bar sous forme de ruban défilant */}
+      <div className="border-b-2 border-dashed border-cordel-master-dark/20 pb-2 mb-2 select-none">
+        <HorizontalRibbonContainer activeTabId={activeTab}>
+          <button
+            type="button"
+            data-tab-id="summary"
+            data-tab-active={activeTab === 'summary' ? 'true' : 'false'}
+            onClick={() => { setActiveTab('summary'); setExpandedRow(null); }}
+            className={`shrink-0 whitespace-nowrap min-h-[40px] px-3.5 py-1.5 text-sm font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] cursor-pointer transition-all flex items-center justify-center gap-1.5 select-none ${
+              activeTab === 'summary' 
+                ? 'bg-cordel-wood text-cordel-bg-light border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] translate-x-[0.5px] translate-y-[0.5px]' 
+                : 'bg-cordel-bg text-encre-noire border-2 border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+            }`}
+          >
+            <span>📊</span>
+            <span>Vue d'ensemble</span>
+          </button>
+          <button
+            type="button"
+            data-tab-id="members"
+            data-tab-active={activeTab === 'members' ? 'true' : 'false'}
+            onClick={() => { setActiveTab('members'); setExpandedRow(null); }}
+            className={`shrink-0 whitespace-nowrap min-h-[40px] px-3.5 py-1.5 text-sm font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] cursor-pointer transition-all flex items-center justify-center gap-1.5 select-none ${
+              activeTab === 'members' 
+                ? 'bg-cordel-wood text-cordel-bg-light border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] translate-x-[0.5px] translate-y-[0.5px]' 
+                : 'bg-cordel-bg text-encre-noire border-2 border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+            }`}
+          >
+            <span>👥</span>
+            <span>Par Membre ({memberList.length})</span>
+          </button>
+          <button
+            type="button"
+            data-tab-id="events"
+            data-tab-active={activeTab === 'events' ? 'true' : 'false'}
+            onClick={() => { setActiveTab('events'); setExpandedRow(null); }}
+            className={`shrink-0 whitespace-nowrap min-h-[40px] px-3.5 py-1.5 text-sm font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] cursor-pointer transition-all flex items-center justify-center gap-1.5 select-none ${
+              activeTab === 'events' 
+                ? 'bg-cordel-wood text-cordel-bg-light border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] translate-x-[0.5px] translate-y-[0.5px]' 
+                : 'bg-cordel-bg text-encre-noire border-2 border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+            }`}
+          >
+            <span>📅</span>
+            <span>Par Événement ({eventList.length})</span>
+          </button>
+        </HorizontalRibbonContainer>
       </div>
 
       {loading ? (

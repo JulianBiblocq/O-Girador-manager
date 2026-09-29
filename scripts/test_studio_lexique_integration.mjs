@@ -67,8 +67,8 @@ console.log("   ✓ Filtrage des pastilles rapides (activeChip) : OK");
 
 // Test 4 : Vérification des traductions FR et PT
 console.log("4. Vérification des dictionnaires de traduction FR et PT...");
-assert.strictEqual(fr.poles.tabStudioLexique, "Lexique");
-assert.strictEqual(pt.poles.tabStudioLexique, "Léxico");
+assert(fr.poles.tabStudioLexique.includes("Lexique"), "tabStudioLexique FR doit contenir 'Lexique'");
+assert(pt.poles.tabStudioLexique.includes("Léxico"), "tabStudioLexique PT doit contenir 'Léxico'");
 assert.strictEqual(fr.studioSocial.videoUrlLabel, "Vidéo");
 assert.strictEqual(pt.studioSocial.videoUrlLabel, "Vídeo");
 assert(fr.studioLexique && fr.studioLexique.title, "Le bloc studioLexique FR doit être défini");

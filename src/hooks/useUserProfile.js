@@ -8,6 +8,7 @@ import { forceUpdateAndClearCache } from '../utils/pwaUtils';
 import { showPushActivationConfirmation } from '../utils/pushNotificationHelper';
 import useConfirm from './useConfirm';
 import { notifyMembersByTag } from '../utils/inAppNotificationService';
+import { sanitizeUserDocPayload } from '../utils/firestoreUtils';
 
 export const DEFAULT_FIELDS_CONFIG = {
   telephone: { key: "telephone", label: "Téléphone", enabled: true, filledBy: "member", isRequired: false },
@@ -508,7 +509,8 @@ export function useUserProfile(user, profileData, t) {
       }
 
       const userRef = doc(db, 'users', user.uid);
-      await setDoc(userRef, updatePayload, { merge: true });
+      const sanitizedPayload = sanitizeUserDocPayload(updatePayload);
+      await setDoc(userRef, sanitizedPayload, { merge: true });
 
       // Notification interne pour la direction artistique / mestre si les choix ou vœux ont changé
       const prevInsts = (profileData?.instrumentsJoues || []).slice().sort();

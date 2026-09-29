@@ -158,7 +158,7 @@ export const pt = {
     imageRightsDoc: "Ler o acordo de direito de imagem",
     medicalCert: "* Declaro sob juramento estar clinicamente apto para a prática do Maracatu.",
     medicalCertDoc: "Ler as normas de saúde / modelo de certificado",
-    nextStep: "Próxima etapa",
+    nextStep: "Finalizar minha inscrição",
     saving: "Salvando...",
     genderMale: "Masculino (ex: Membro, Mestre)",
     genderFemale: "Feminino (ex: Membro, Mestra)",
@@ -166,6 +166,19 @@ export const pt = {
     handRight: "Destro",
     handLeft: "Canhoto",
     errorSave: "Erro ao salvar seu perfil. Por favor, tente novamente."
+  },
+  welcomeTour: {
+    welcomeBadge: "Bem-vindo(a) ao grupo",
+    guideBadge: "Tour guiado",
+    welcomeTitle: "Bem-vindo(a) ao grupo!",
+    introText: "Sua inscrição foi confirmada! Reserve 1 minuto para conhecer as ferramentas essenciais para sua temporada.",
+    skip: "Pular ✕",
+    skipBtn: "Pular",
+    discoverBtn: "🧭 Conhecer o aplicativo",
+    backHome: "← Início",
+    prev: "← Anterior",
+    next: "Próxima etapa →",
+    letsGo: "Vamos lá! 🥁"
   },
   dashboard: {
     title: "Painel de Controle",
@@ -222,7 +235,8 @@ export const pt = {
     photoZoom: "Clique para ampliar a foto",
     bannerMissingTitle: "Sua foto está ausente no Elenco",
     bannerMissingDesc: "Adicione sua foto para permitir que os outros membros do grupo o reconheçam facilmente!",
-    addMyPhoto: "Adicionar minha foto"
+    addMyPhoto: "Adicionar minha foto",
+    memberCard: "Ficha do Membro"
   },
   pwa: {
     newVersion: "Uma nova versão está disponível!",
@@ -235,7 +249,9 @@ export const pt = {
     maintenanceDesc: "Se os usuários encontrarem dificuldades ou travamentos, force a limpeza completa do cache local."
   },
   userProfile: {
-    title: "MEU PERFIL / CONFIGURAÇÕES",
+    title: "Meu Perfil",
+    mainTitle: "Meu Perfil",
+    settingsTag: "Configurações",
     subtitle: "Atualizar suas informações",
     firstName: "Nome",
     lastName: "Sobrenome",
@@ -400,6 +416,10 @@ export const pt = {
   widgetAgenda: {
     title: "Agenda",
     addBtn: "+ Adicionar",
+    addSingleEvent: "Evento pontual",
+    addSingleEventDesc: "Apresentação, ensaio, oficina, ateliê ou reunião",
+    addBatchRehearsals: "Série de ensaios",
+    addBatchRehearsalsDesc: "Agendar datas recorrentes para a temporada",
     batchRehearsalBtn: "Agendar série de ensaios",
     batchRehearsalBtnShort: "Série de ensaios",
     viewCards: "Cartões",
@@ -1168,7 +1188,7 @@ export const pt = {
     pedagogyPracticeVolume: "Estágios Alcançados",
     pedagogyDanseEmptyTitle: "Nenhum elemento de dança informado no momento",
     pedagogyDanseEmptyDesc: "Os indicadores aparecerão automaticamente quando as músicas de dança forem trabalhadas.",
-    pedagogyDefisRythmiquesToggle: "Desafios rítmicos (Speed Trainer & Reflexos)",
+    pedagogyDefisRythmiquesToggle: "Desafios rítmicos (Treinos & Reflexos)",
     pedagogyDefisRythmiquesToggleDesc: "Desativado por padrão. Revela a aba de programas metronômicos e desafios de reação no Meu Percurso.",
     rodaQuizOpenRoom: "1 sala aberta",
     rodaQuizJoin: "Entrar na Roda 🚀",

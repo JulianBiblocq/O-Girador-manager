@@ -7,14 +7,28 @@ import CordelButton from '../CordelButton';
 import PieceTutorialModal from './PieceTutorialModal';
 import CostumeVisualizer from './CostumeVisualizer';
 import PostEventCostumeReturnModal from './PostEventCostumeReturnModal';
+import CollectiveWorkshopView from './CollectiveWorkshopView';
 
 /**
  * MonVestiaire Component
- * Interactive wardrobe component for members.
- * Displays costumes with a Mannequin Silhouette visualizer, pieces checklist, fabrication progress,
- * validation status, and access to Atelier Couture tutorials.
+ * Composant interactif du Vestiaire pour les adhérents.
+ * Supporte les modes :
+ * - 'personal' : mannequin visuel SVG, checklist des pièces personnelles possédées.
+ * - 'collective_workshop' : confections déclaratives pour la troupe, chantiers textiles et tutoriels.
  */
-export default function MonVestiaire({ userId, groupId, userChecklist = {}, userSection = '', userEmail = '', onBack }) {
+export default function MonVestiaire({ 
+  userId, 
+  groupId, 
+  userChecklist = {}, 
+  userSection = '', 
+  userEmail = '', 
+  onBack,
+  wardrobeMemberMode = 'personal',
+  associationData = null,
+  profileData = {},
+  onNavigateToTab = null,
+  onNavigateToPole = null
+}) {
   const { t } = useTranslation();
   const [costumes, setCostumes] = useState([]);
   const [workshops, setWorkshops] = useState([]);
@@ -130,6 +144,35 @@ export default function MonVestiaire({ userId, groupId, userChecklist = {}, user
     if (selectedFilter === 'tous') return true;
     return (c?.targetCategory || 'Tous').toLowerCase() === selectedFilter.toLowerCase() || (c?.targetCategory || 'Tous') === 'Tous';
   });
+
+  // Rendu en mode 'collective_workshop' (Confection collective & Atelier)
+  if (wardrobeMemberMode === 'collective_workshop') {
+    return (
+      <>
+        <CollectiveWorkshopView
+          userId={userId}
+          groupId={groupId}
+          profileData={profileData}
+          workshops={workshops}
+          costumes={costumes}
+          onNavigateToTab={onNavigateToTab}
+          onNavigateToPole={onNavigateToPole}
+          onBack={onBack}
+        />
+
+        {/* Modale de déclaration de retour de costume post-événement */}
+        {showReturnModal && returnEvent && (
+          <PostEventCostumeReturnModal
+            event={returnEvent}
+            userId={userId}
+            userEmail={userEmail}
+            onClose={() => setShowReturnModal(false)}
+            onSuccess={() => {}}
+          />
+        )}
+      </>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-4 text-left select-none w-full max-w-4xl mx-auto">

@@ -117,7 +117,7 @@ export const SETTINGS_INDEX = [
     description: 'Historique technique des événements, présences et actions réalisées',
     keywords: ['journal', 'activite', 'logs', 'historique', 'csv', 'audit', 'tracabilite'],
     poleId: 'secretariat',
-    tabId: 'activity-reports',
+    tabId: 'secretariat-reports',
     requiredPole: 'secretariat'
   },
   {
@@ -139,13 +139,13 @@ export const SETTINGS_INDEX = [
     requiredPole: 'secretariat'
   },
   {
-    id: 'secretariat-lieux',
+    id: 'config-agenda-lieux',
     title: 'Lieux & Salles de Répétition',
-    description: 'Gestion des adresses, salles de répétition, contacts mairies et relances',
-    keywords: ['lieux', 'salles', 'repetition', 'adresses', 'mairies', 'reservation', 'relances'],
-    poleId: 'secretariat',
-    tabId: 'secretariat-lieux',
-    requiredPole: 'secretariat'
+    description: 'Gestion des adresses, salles de répétition et contacts mairies',
+    keywords: ['lieux', 'salles', 'repetition', 'adresses', 'mairies', 'reservation'],
+    poleId: 'config',
+    tabId: 'config-agenda',
+    requiredPole: 'config'
   },
 
   // ==========================================
@@ -546,6 +546,15 @@ export const SETTINGS_INDEX = [
     keywords: ['modules', 'fonctionnalites', 'activer', 'desactiver', 'options', 'options avancees'],
     poleId: 'config',
     tabId: 'config-modules',
+    requiredPole: 'config'
+  },
+  {
+    id: 'config-comms',
+    title: 'Communication, E-mails & Automatisations',
+    description: 'Configuration expéditeur, intégration Brevo et règles de relance automatique de présence',
+    keywords: ['communication', 'emails', 'brevo', 'automatisations', 'relances', 'relances automatiques', 'j-1', 'j-2', 'notifications'],
+    poleId: 'config',
+    tabId: 'config-comms',
     requiredPole: 'config'
   },
   {

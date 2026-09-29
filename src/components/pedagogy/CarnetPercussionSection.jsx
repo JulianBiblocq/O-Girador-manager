@@ -27,7 +27,7 @@ export default function CarnetPercussionSection({
     return active.length > 0 ? active : repertoire || [];
   }, [repertoire]);
 
-  // Construction de l'URL vers le Séquenciad'Or avec calage BPM
+  // Construction de l'URL vers le Séquenceur avec calage BPM
   const buildSequencerUrl = (piece, bpm) => {
     const baseUrl = sequenceurUrl || 'https://sequenceur.app';
     const targetId = piece.sequenceurId || piece.presetId || piece.id;
@@ -140,7 +140,7 @@ export default function CarnetPercussionSection({
             <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-dashed border-cordel-master-dark/15">
               <span className="text-[9.5px] font-black uppercase tracking-wider text-cordel-master-dark mr-1 flex items-center gap-1">
                 <span>⏱️</span>
-                <span>Calage tempo dans Séquenciad'Or :</span>
+                <span>Calage tempo dans le Séquenceur :</span>
               </span>
 
               {[80, 100, 120].map((bpm) => (

@@ -37,10 +37,12 @@ const resolvedNoPresetWithManual = resolvePieceTrainings(null, mockTrainings, ['
 assert('Résolution sans presetId mais avec trainingIds', resolvedNoPresetWithManual.length === 1 && resolvedNoPresetWithManual[0].id === 'tr_manual_1');
 
 // 2. Contrôle statique : TabModules.jsx
-console.log('\n▶️ Test 2 : Contrôle statique de TabModules.jsx (Feature Toggle)');
+console.log('\n▶️ Test 2 : Contrôle statique de TabModules.jsx & ModulesSwitchesTable.jsx (Feature Toggle)');
 const tabModulesContent = fs.readFileSync(path.resolve('src/components/association-settings/TabModules.jsx'), 'utf-8');
-assert('Contient le bloc Accès Adhérent au Répertoire', tabModulesContent.includes('Accès Adhérent au Répertoire'));
-assert('Modifie features.repertoireEleves', tabModulesContent.includes('repertoireEleves'));
+const switchesTableContent = fs.readFileSync(path.resolve('src/components/association-settings/modules/ModulesSwitchesTable.jsx'), 'utf-8');
+assert('TabModules intègre ModulesSwitchesTable', tabModulesContent.includes('ModulesSwitchesTable'));
+assert('Contient le bloc Accès Adhérent au Répertoire', switchesTableContent.includes('Répertoire ouvert aux') || switchesTableContent.includes('Accès Adhérent au Répertoire'));
+assert('Modifie features.repertoireEleves', switchesTableContent.includes('repertoireEleves'));
 
 // 3. Contrôle statique : MestreRepertoireView.jsx
 console.log('\n▶️ Test 3 : Contrôle statique de MestreRepertoireView.jsx (Bandeau interactif)');

@@ -83,6 +83,13 @@ export default function EventMediaCaptureSection({ event, defaultDropUrl = '' })
             href={effectiveDropUrl}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={(e) => {
+              // Sécurisation de l'ouverture dans un nouvel onglet externe sans interception CORS
+              if (effectiveDropUrl) {
+                e.preventDefault();
+                window.open(effectiveDropUrl, '_blank', 'noopener,noreferrer');
+              }
+            }}
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[var(--theme-bg-ocre,#c05621)] hover:brightness-110 text-white font-black text-xs uppercase tracking-wider rounded-[4px_6px_5px_7px] border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all cursor-pointer whitespace-nowrap"
             title="Ouvrir le dossier Framaspace File Drop dans un nouvel onglet"
           >

@@ -130,15 +130,15 @@ export function useThreadData({
   const isAccessForbidden = useMemo(() => {
     if (!threadChannel) return false;
     if (breakGlassActive) return false;
-    return !canUserReadForumChannel(threadChannel, profileData, activeEffectiveUserTags);
-  }, [threadChannel, breakGlassActive, profileData, activeEffectiveUserTags]);
+    return !canUserReadForumChannel(threadChannel, profileData, activeTagsDisponibles, activeEffectiveUserTags, breakGlassActive);
+  }, [threadChannel, breakGlassActive, profileData, activeTagsDisponibles, activeEffectiveUserTags]);
 
   // Salon en lecture seule pour l'utilisateur
   const isReadOnly = useMemo(() => {
     if (!threadChannel) return false;
     if (breakGlassActive) return false;
-    return !canUserWriteInForumChannel(threadChannel, profileData, activeEffectiveUserTags);
-  }, [threadChannel, breakGlassActive, profileData, activeEffectiveUserTags]);
+    return !canUserWriteInForumChannel(threadChannel, profileData, activeTagsDisponibles, activeEffectiveUserTags, breakGlassActive);
+  }, [threadChannel, breakGlassActive, profileData, activeTagsDisponibles, activeEffectiveUserTags]);
 
   // Réinitialisation des références d'affichage au changement de sujet
   useEffect(() => {
@@ -311,12 +311,22 @@ export function useThreadData({
     if (container) {
       container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
     }
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
   }, []);
+
+  // Vérification de la présence effective de contenu textuel ou multimédia
+  const hasValidContent = (text) => {
+    if (!text) return false;
+    const stripped = text.replace(/<[^>]*>/g, '').trim();
+    return stripped.length > 0 || text.includes('<img') || text.includes('<a ');
+  };
 
   // Envoi d'une nouvelle réponse
   const handleSend = async (e) => {
     if (e) e.preventDefault();
-    if (!replyText.trim() || sending) return;
+    if (!hasValidContent(replyText) || sending) return;
 
     if (isReadOnly) {
       alert("Ce salon est en lecture seule pour votre rôle.");
@@ -359,7 +369,7 @@ export function useThreadData({
         // 1. Tous les membres autorisés dans le salon (à l'exception de l'auteur du message)
         (allUsers || []).forEach((u) => {
           if (!u.id || u.id === user?.uid) return;
-          if (threadChannel && !canUserReadForumChannel(threadChannel, u, u.tags || [])) {
+          if (threadChannel && !canUserReadForumChannel(threadChannel, u, activeTagsDisponibles, u.tags || [], false)) {
             return;
           }
           notifRecipientIds.add(u.id);

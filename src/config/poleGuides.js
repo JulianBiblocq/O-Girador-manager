@@ -320,21 +320,6 @@ export const POLE_GUIDES = {
       "Télécharger les pièces justificatives officielles"
     ]
   },
-  'mestre-forum-channels': {
-    titre: "Administration des Salons Porte-voix",
-    title: "Administration des Salons Porte-voix",
-    description: "Gestion des canaux de discussion thématiques et modération des espaces d'échange.",
-    etapes: [
-      "Créez de nouveaux salons par pupitre ou projet associatif spécial.",
-      "Modérez les échanges et veillez au respect de la charte du groupe.",
-      "Épinglez les annonces prioritaires en tête de discussion."
-    ],
-    steps: [
-      "Créez de nouveaux salons par pupitre ou projet associatif spécial.",
-      "Modérez les échanges et veillez au respect de la charte du groupe.",
-      "Épinglez les annonces prioritaires en tête de discussion."
-    ]
-  },
   'activity-reports': {
     titre: "📊 Journal d'Activité (CSV)",
     title: "📊 Journal d'Activité (CSV)",
@@ -832,6 +817,21 @@ export const POLE_GUIDES = {
       "Validez et exportez le JSON pour Brevo."
     ]
   },
+  'studio-communication': {
+    titre: "📢 Campagnes & Stratégie de Communication",
+    title: "📢 Campagnes & Stratégie de Communication",
+    description: "Coordination des plans de communication, relations presse et diffusion des annonces de la troupe.",
+    etapes: [
+      "Planifiez le calendrier éditorial des campagnes promotionnelles.",
+      "Préparez les communiqués de presse et dossiers médias.",
+      "Harmonisez les messages et affiches diffusés sur tous les canaux."
+    ],
+    steps: [
+      "Planifiez le calendrier éditorial des campagnes promotionnelles.",
+      "Préparez les communiqués de presse et dossiers médias.",
+      "Harmonisez les messages et affiches diffusés sur tous les canaux."
+    ]
+  },
   'varal-photos': {
     titre: "📸 Passerelle Cloud & Varal Photos",
     title: "📸 Passerelle Cloud & Varal Photos",
@@ -948,6 +948,26 @@ export const POLE_GUIDES = {
       "Ajoutez les morceaux et rythmes de la saison avec leur niveau de maturité.",
       "Liez optionnellement chaque pièce à une toada, un rythme séquenceur ou une chorégraphie.",
       "Injectez directement les morceaux dans le fil conducteur de vos répétitions et concerts."
+    ]
+  },
+  'mestre-sequenceur': {
+    titre: "🎼 Séquenceur & Répertoire Musical",
+    title: "🎼 Séquenceur & Répertoire Musical",
+    description: "Arrangements rythmiques, partitions interactives et liaisons avec l'application Séquenceur.",
+    etapes: [
+      "Consultez les pièces et grilles rythmiques synchronisées.",
+      "Ajustez les métadonnées et découpages en sections.",
+      "Lancez l'entraînement interactif sur le Séquenceur."
+    ],
+    targets: [
+      "mestre-sequenceur-list",
+      "mestre-sequenceur-metadata",
+      "mestre-sequenceur-list"
+    ],
+    steps: [
+      "Consultez les pièces et grilles rythmiques synchronisées.",
+      "Ajustez les métadonnées et découpages en sections.",
+      "Lancez l'entraînement interactif sur le Séquenceur."
     ]
   },
   'mestre-orientation': {
