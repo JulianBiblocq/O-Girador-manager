@@ -29,10 +29,11 @@ export default function RoadbookModal({
     window.print();
   };
 
+  // Navigation vers le plan de scène — la fermeture de la modale
+  // est gérée par le callback parent (EventDetails.onNavigateToStageLayout)
   const handleGoToStage = () => {
     if (onNavigateToStageLayout) {
       onNavigateToStageLayout();
-      onClose();
     }
   };
 

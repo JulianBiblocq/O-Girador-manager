@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import VocabForm from './VocabForm';
+import useConfirm from '../../../hooks/useConfirm';
 
 /**
  * Section Vocabulaire & Guide culturel :
@@ -16,6 +17,7 @@ export default function VocabSection({
   onSaveEquivalences,
   disabled = false
 }) {
+  const confirm = useConfirm();
   const [isAdding, setIsAdding] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
 
@@ -65,8 +67,15 @@ export default function VocabSection({
   };
 
   // Supprime une équivalence culturelle
-  const handleDelete = (id, term) => {
-    if (window.confirm(`Voulez-vous supprimer l'équivalence pour "${term}" ?`)) {
+  const handleDelete = async (id, term) => {
+    const ok = await confirm({
+      title: "Supprimer l'équivalence ?",
+      message: `Voulez-vous supprimer l'équivalence pour "${term}" ?`,
+      confirmLabel: "Supprimer",
+      cancelLabel: "Annuler",
+      variant: "danger"
+    });
+    if (ok) {
       const updated = equivalences.filter((eq) => eq.id !== id);
       onSaveEquivalences(updated);
     }

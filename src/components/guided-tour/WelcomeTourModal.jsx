@@ -12,7 +12,7 @@ import { useTranslation } from '../LanguageContext';
  * Étapes :
  * - Écran 0 : Accueil chaleureux (avec nom dynamique de l'association)
  * - Étape 1 : 📅 L'Agenda & le Covoiturage
- * - Étape 2 : 📜 Le Répertoire de saison & le Speed Trainer
+ * - Étape 2 : 📜 Le Répertoire de saison & les Entraînements
  * - Étape 3 : 🧺 Le Varal (Chants, Toadas & Documents)
  * - Étape 4 : 👤 Mon Profil & le Trombinoscope
  * 
@@ -114,7 +114,7 @@ export default function WelcomeTourModal({
         },
         {
           emoji: '⚡',
-          titre: "Speed Trainer & Paliers d'Aisance",
+          titre: "Entraînements & Paliers d'Aisance",
           texte: "Entraîne-toi au tempo métronomique et hisse ton niveau de maîtrise, du semis 🌱 jusqu'à la couronne 👑."
         }
       ]
@@ -242,7 +242,7 @@ export default function WelcomeTourModal({
                     <span>📜</span>
                     <span className="text-[11px] uppercase tracking-wide">Répertoire</span>
                   </div>
-                  <p className="text-[10px] text-[#181716]/70 mt-0.5">Audios par pupitre & Speed Trainer</p>
+                  <p className="text-[10px] text-[#181716]/70 mt-0.5">Audios par pupitre & Entraînements</p>
                 </div>
 
                 <div className="p-2.5 bg-white/70 border border-[#181716]/30 rounded-[5px_7px_6px_8px] shadow-[1px_1px_0px_0px_#181716]">

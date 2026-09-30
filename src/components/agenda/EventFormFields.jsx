@@ -159,6 +159,12 @@ export default function EventFormFields({
         }
       }
 
+      // Préremplissage de l'interrupteur Commissions & Chantiers selon le preset du type
+      // Uniquement en mode création (nouvel événement sans ID)
+      if (!isEdit && !prev.id) {
+        updated.hasCommissions = Boolean(eventTypeConfigs?.[newType]?.hasCommissionsByDefault);
+      }
+
       // Gestion de la récolte photos / QR code (activerRecolteMedias) :
       // Priorité au preset explicite du type, sinon repli selon la nature de l'événement
       const isTargetPrestation = ['prestation', 'concert', 'spectacle', 'festival'].includes(newType);

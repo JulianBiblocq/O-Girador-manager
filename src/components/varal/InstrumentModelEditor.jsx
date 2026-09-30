@@ -3,10 +3,12 @@ import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { XiloClose } from '../XiloIcons';
 import PartEditor from './PartEditor';
+import useConfirm from '../../hooks/useConfirm';
 
 const INSTRUMENT_TYPES = ['Alfaia', 'Caixa', 'Agbê', 'Gonguê', 'Mineiro', 'Apito', 'Timbal', 'Maintenance', 'Costume', 'Autre'];
 
 export default function InstrumentModelEditor({ model, existingModels, varalCategories, tools = [], supplies = [], onSave, onCancel }) {
+  const confirm = useConfirm();
   const allTypes = useMemo(() => {
     const types = new Set(INSTRUMENT_TYPES);
     (existingModels || []).forEach(m => {
@@ -74,8 +76,15 @@ export default function InstrumentModelEditor({ model, existingModels, varalCate
     setEditingPart(null);
   };
 
-  const handleDeletePart = (partId) => {
-    if (window.confirm("Supprimer cette pièce de la nomenclature ?")) {
+  const handleDeletePart = async (partId) => {
+    const ok = await confirm({
+      title: "Supprimer la pièce ?",
+      message: "Êtes-vous sûr de vouloir supprimer cette pièce de la nomenclature ?",
+      confirmLabel: "Supprimer",
+      cancelLabel: "Annuler",
+      variant: "danger"
+    });
+    if (ok) {
       setFormData(prev => ({ ...prev, parts: prev.parts.filter(p => p.id !== partId) }));
     }
   };

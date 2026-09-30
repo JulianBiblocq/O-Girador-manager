@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import CordelButton from '../CordelButton';
+import { parseDateLinear, formatGoogleCalendarDate, buildGoogleCalendarUrl } from '../../utils/calendarUtils';
 
 /**
  * Barre d'actions rapides pour un événement (Inscriptions, Export Calendrier et Administration).
@@ -25,27 +26,17 @@ export default function EventQuickActionsBar({ event, isAdmin, onToggleEdit, onD
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Génération du lien d'ajout Google Calendar
+  // Génération du lien d'ajout Google Calendar via utilitaire centralisé
   const getGoogleCalendarUrl = () => {
     if (!event.date) return '#';
-    const startDate = new Date(event.date);
-    const endDate = event.dateFin ? new Date(event.dateFin) : new Date(startDate.getTime() + 2 * 60 * 60 * 1000);
-    
-    const formatTime = (d) => d.toISOString().replace(/-|:|\.\d\d\d/g, '');
-    const dates = `${formatTime(startDate)}/${formatTime(endDate)}`;
-    const details = encodeURIComponent(event.description || '');
-    const location = encodeURIComponent(event.lieu || '');
-    const title = encodeURIComponent(event.titre || 'Événement');
-
-    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&details=${details}&location=${location}`;
+    return buildGoogleCalendarUrl(event);
   };
 
-  // Téléchargement du fichier iCal / ICS
+  // Téléchargement du fichier iCal / ICS avec parsing linéaire sécurisé
   const handleDownloadICS = () => {
     if (!event.date) return;
-    const startDate = new Date(event.date);
-    const endDate = event.dateFin ? new Date(event.dateFin) : new Date(startDate.getTime() + 2 * 60 * 60 * 1000);
-    const formatTime = (d) => d.toISOString().replace(/-|:|\.\d\d\d/g, '');
+    const startDate = parseDateLinear(event.date);
+    const endDate = event.dateFin ? parseDateLinear(event.dateFin) : new Date(startDate.getTime() + 2 * 60 * 60 * 1000);
 
     const icsContent = [
       'BEGIN:VCALENDAR',
@@ -55,8 +46,8 @@ export default function EventQuickActionsBar({ event, isAdmin, onToggleEdit, onD
       `SUMMARY:${event.titre || 'Événement'}`,
       `DESCRIPTION:${(event.description || '').replace(/\n/g, '\\n')}`,
       `LOCATION:${event.lieu || ''}`,
-      `DTSTART:${formatTime(startDate)}`,
-      `DTEND:${formatTime(endDate)}`,
+      `DTSTART:${formatGoogleCalendarDate(startDate)}`,
+      `DTEND:${formatGoogleCalendarDate(endDate)}`,
       'END:VEVENT',
       'END:VCALENDAR'
     ].join('\r\n');

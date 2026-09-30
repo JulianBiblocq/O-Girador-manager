@@ -4,8 +4,10 @@ import { db } from '../../../firebase';
 import CordelCard from '../../CordelCard';
 import CordelButton from '../../CordelButton';
 import { XiloCaixa } from '../../XiloIcons';
+import useConfirm from '../../../hooks/useConfirm';
 
 export default function AccessoriesKitsBlock({ formData = {}, handleChange, saving, t, groupId, supplies = [] }) {
+  const confirm = useConfirm();
   const [newKitPupitre, setNewKitPupitre] = useState('');
   const [selectedSupplyIds, setSelectedSupplyIds] = useState([]);
   const [editingIndex, setEditingIndex] = useState(null);
@@ -101,8 +103,15 @@ export default function AccessoriesKitsBlock({ formData = {}, handleChange, savi
     setEditingIndex(null);
   };
 
-  const handleRemoveKit = (indexToRemove) => {
-    if (window.confirm("Voulez-vous vraiment supprimer ce kit ?")) {
+  const handleRemoveKit = async (indexToRemove) => {
+    const ok = await confirm({
+      title: "Supprimer le kit ?",
+      message: "Voulez-vous vraiment supprimer ce kit logistique ?",
+      confirmLabel: "Supprimer",
+      cancelLabel: "Annuler",
+      variant: "danger"
+    });
+    if (ok) {
       const newKits = kits.filter((_, idx) => idx !== indexToRemove);
       saveToDb(newKits);
       if (editingIndex === indexToRemove) {

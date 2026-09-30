@@ -80,7 +80,21 @@ const testScripts = [
   'scripts/test_in_app_notifications_deletion.mjs',
   'scripts/test_repertoire_event_program_mission.mjs',
   'scripts/test_responsive_popups_clamping.mjs',
-  'scripts/test_consolidation_config_mission.mjs'
+  'scripts/test_consolidation_config_mission.mjs',
+  'scripts/test_commission_varal_gateway.mjs',
+  'scripts/test_birthday_privacy.mjs',
+  'scripts/test_card_height_and_tags.mjs',
+  'scripts/test_cordel_confirm_modal.mjs',
+  'scripts/test_dedup_and_secretariat_fix.mjs',
+  'scripts/test_effective_tags_and_search_bar.mjs',
+  'scripts/test_event_discussion_notifications.mjs',
+  'scripts/test_fiche5_cordel_confirm_modal.mjs',
+  'scripts/test_fiche6_trombinoscope.mjs',
+  'scripts/test_helloasso_sync.mjs',
+  'scripts/test_levels_and_sementes.mjs',
+  'scripts/test_mestre_pedagogical_roles.mjs',
+  'scripts/test_read_receipt.mjs',
+  'scripts/test_search_input_padding.mjs'
 ];
 
 console.log("===============================================================");

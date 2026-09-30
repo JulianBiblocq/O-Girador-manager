@@ -5,6 +5,7 @@ import { db, functions } from '../../firebase';
 import { useTranslation } from '../LanguageContext';
 import StudioPhotoQrPrintModal from './StudioPhotoQrPrintModal';
 import StudioEventMediaAccordionRow from './StudioEventMediaAccordionRow';
+import useConfirm from '../../hooks/useConfirm';
 
 /**
  * Composant : StudioEventsMediaTable
@@ -19,6 +20,7 @@ import StudioEventMediaAccordionRow from './StudioEventMediaAccordionRow';
  */
 export default function StudioEventsMediaTable({ groupId, canWrite = false, onSwitchToVaral }) {
   const { t } = useTranslation();
+  const confirm = useConfirm();
 
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -340,8 +342,14 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false, onSw
   // 6. Réinitialisation complète / Délier les dossiers Cloud et retirer du Varal
   const handleResetCloudMedia = useCallback(async (ev) => {
     if (!groupId || !canWrite || !ev?.id) return;
-    const confirmMsg = `Êtes-vous sûr de vouloir délier les dossiers Cloud et retirer "${ev.titre || 'cet événement'}" du Varal Photos ?`;
-    if (!window.confirm(confirmMsg)) return;
+    const ok = await confirm({
+      title: "Délier les dossiers Cloud ?",
+      message: `Êtes-vous sûr de vouloir délier les dossiers Cloud et retirer "${ev.titre || 'cet événement'}" du Varal Photos ?`,
+      confirmLabel: "Délier et retirer",
+      cancelLabel: "Annuler",
+      variant: "danger"
+    });
+    if (!ok) return;
 
     try {
       // A. Réinitialisation des champs Cloud de l'événement

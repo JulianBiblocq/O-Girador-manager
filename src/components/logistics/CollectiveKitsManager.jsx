@@ -3,6 +3,7 @@ import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { useCollectiveKits, calculateKitStatus } from '../../hooks/useCollectiveKits';
 import KitDetailModal from './KitDetailModal';
+import useConfirm from '../../hooks/useConfirm';
 
 const TYPE_ICONS = { maquillage: '💄', secours: '🩹', outils_live: '🔧', autre: '🧰' };
 const SUGGESTED_KITS = [
@@ -14,6 +15,7 @@ const SUGGESTED_KITS = [
 ];
 
 export default function CollectiveKitsManager({ groupId, user, profileData }) {
+  const confirm = useConfirm();
   const { kits, loading, addKit, updateKit, deleteKit, initDefaultKits } = useCollectiveKits(groupId);
   const [selectedKit, setSelectedKit] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -32,7 +34,14 @@ export default function CollectiveKitsManager({ groupId, user, profileData }) {
 
   const handleDeleteKit = async (kitId, kitNom, e) => {
     e.stopPropagation();
-    if (window.confirm(`Supprimer définitivement la malle « ${kitNom} » ?`)) await deleteKit(kitId);
+    const ok = await confirm({
+      title: "Supprimer la malle ?",
+      message: `Supprimer définitivement la malle « ${kitNom} » ?`,
+      confirmLabel: "Supprimer",
+      cancelLabel: "Annuler",
+      variant: "danger"
+    });
+    if (ok) await deleteKit(kitId);
   };
 
   return (

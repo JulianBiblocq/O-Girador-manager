@@ -3,6 +3,7 @@ import { collection, query, where, onSnapshot, doc, deleteDoc, updateDoc, writeB
 import { ref, deleteObject } from 'firebase/storage';
 import { db, storage } from '../firebase';
 import { projectWorkshopBooklets, isWorkshopVirtualDoc } from '../utils/workshopProjectionUtils';
+import { isProjectRopeActive } from '../utils/commissionVaralAdapter';
 import { useTranslation } from '../components/LanguageContext';
 import useConfirm from './useConfirm';
 import { useViewSimulator } from '../context/ViewSimulatorContext';
@@ -60,8 +61,11 @@ export const isAdministrativeDoc = (docItem) => {
  */
 export const getDocType = (docItem) => {
   if (!docItem) return 'pdf';
+  if (docItem.type === 'cordel_commission' || docItem.typeDoc === 'cordel_commission') return 'cordel_commission';
   if (docItem.type) return docItem.type;
-  const cat = (docItem.categorie || '').toLowerCase();
+  if (docItem.typeDoc) return docItem.typeDoc;
+  const cat = (docItem.categorie || docItem.categoryId || '').toLowerCase();
+  if (cat.startsWith('projet_')) return 'cordel_commission';
   if (cat.includes('toada')) return 'song';
   if (cat.includes('culture') || cat.includes('fiche')) return 'culture_fiche';
 
@@ -173,6 +177,8 @@ export default function useVaralData({
     return () => unsubscribeModels();
   }, [groupId]);
 
+  const [allEventsMap, setAllEventsMap] = useState({});
+
   // 3. Écouteur Firestore pour les événements (médias et réunions)
   useEffect(() => {
     if (!groupId) return;
@@ -182,16 +188,20 @@ export default function useVaralData({
     const unsubscribeEvents = onSnapshot(qEvents, (querySnapshot) => {
       const fetchedEvents = [];
       const fetchedReunions = [];
+      const evMap = {};
       querySnapshot.forEach((docSnap) => {
         const data = docSnap.data();
+        const ev = { id: docSnap.id, ...data };
+        evMap[docSnap.id] = ev;
         // N'alimenter le Varal Photos que si la publication sur le Varal a été explicitement activée
         if ((data.lienDepotMedias || data.albumPhotosUrl) && data.publierSurVaral === true) {
-          fetchedEvents.push({ id: docSnap.id, ...data });
+          fetchedEvents.push(ev);
         }
         if (data.type === 'reunion' && data.date) {
-          fetchedReunions.push({ id: docSnap.id, ...data });
+          fetchedReunions.push(ev);
         }
       });
+      setAllEventsMap(evMap);
       setEventsWithMedia(fetchedEvents);
       setReunions(fetchedReunions);
     }, (error) => {
@@ -268,17 +278,72 @@ export default function useVaralData({
     return newestId || (documents[0] ? documents[0].id : null);
   }, [documents]);
 
+  // 5b. Détection dynamique des cordes de projets à partir des documents publiés
+  const dynamicProjectCategories = useMemo(() => {
+    const projectMap = new Map();
+
+    documents.forEach((d) => {
+      const rawCat = d.categoryId || d.categorie;
+      if (rawCat && typeof rawCat === 'string' && rawCat.startsWith('projet_')) {
+        if (!projectMap.has(rawCat)) {
+          // Extraire le titre de l'événement depuis les métadonnées du premier document
+          const eventTitle = d.eventTitle || d.projetTitre || d.evenementTitre || d.sousCategorie || '';
+          const cleanTitle = eventTitle.replace(/^Chantier\s*:\s*/i, '').trim();
+          const ropeNom = cleanTitle ? `🎪 Projet : ${cleanTitle}` : `🎪 Projet : Événement`;
+
+          projectMap.set(rawCat, {
+            id: rawCat,
+            nom: ropeNom,
+            icone: '🎪',
+            actif: true,
+            isProjectRope: true,
+            order: 95
+          });
+        }
+      }
+    });
+
+    return Array.from(projectMap.values());
+  }, [documents]);
+
+  // Fusion des catégories configurées avec les cordes de projets dynamiques
+  const allVaralCategories = useMemo(() => {
+    const base = [...varalCategories];
+    dynamicProjectCategories.forEach((projCat) => {
+      const existingIdx = base.findIndex((c) => c.id === projCat.id);
+      if (existingIdx === -1) {
+        base.push(projCat);
+      } else {
+        if (!base[existingIdx].nom?.startsWith('🎪 Projet :')) {
+          base[existingIdx] = {
+            ...base[existingIdx],
+            nom: projCat.nom,
+            isProjectRope: true
+          };
+        }
+      }
+    });
+    return base;
+  }, [varalCategories, dynamicProjectCategories]);
+
   // 6. Groupement des documents par catégorie et projections dynamiques en mémoire
   const groupedDocs = useMemo(() => {
     const groups = {};
     const allDocs = [...documents];
 
     allDocs.forEach((docItem) => {
-      // Recherche de la catégorie correspondante par priorité : categoryId d'abord, puis nom, puis id
-      const catObj = (docItem.categoryId && varalCategories.find(c => c.id === docItem.categoryId))
-        || (docItem.categorie && varalCategories.find(c => c.nom === docItem.categorie))
-        || (docItem.categorie && varalCategories.find(c => c.id === docItem.categorie));
-      let catId = catObj ? catObj.id : 'Autre';
+      const rawCat = docItem.categoryId || docItem.categorie || '';
+      let catId;
+
+      if (rawCat.startsWith('projet_')) {
+        catId = rawCat;
+      } else {
+        // Recherche de la catégorie correspondante par priorité : categoryId d'abord, puis nom, puis id
+        const catObj = (docItem.categoryId && allVaralCategories.find(c => c.id === docItem.categoryId))
+          || (docItem.categorie && allVaralCategories.find(c => c.nom === docItem.categorie))
+          || (docItem.categorie && allVaralCategories.find(c => c.id === docItem.categorie));
+        catId = catObj ? catObj.id : 'Autre';
+      }
 
       // Fusion des cordes cibles : Administratif rejoint ComptesRendus, Costumerie rejoint TutosFabrication
       if (catId === 'Administratif') {
@@ -412,7 +477,7 @@ export default function useVaralData({
     }
 
     return groups;
-  }, [documents, instrumentModels, varalCategories, eventsWithMedia, reunions, canSeeHidden]);
+  }, [documents, instrumentModels, allVaralCategories, eventsWithMedia, reunions, canSeeHidden]);
 
   // 7. Résolution des étiquettes / badges effectifs de l'utilisateur
   const profileTags = activeProfile?.tags;
@@ -424,8 +489,19 @@ export default function useVaralData({
 
   // 8. Filtrage des catégories visibles selon le pôle actif et les autorisations de badges
   const visibleCategories = useMemo(() => {
-    return varalCategories.filter((category) => {
-      // Filtrage par pôle métier
+    return allVaralCategories.filter((category) => {
+      // Cas spécifique des cordes de projets (Passerelle Commissions ➔ Varal)
+      if (category.id.startsWith('projet_')) {
+        // Ne pas afficher sur les vues de pôles métiers cloisonnées (secretariat, lutherie...)
+        if (poleId) return false;
+
+        const docs = groupedDocs[category.id] || [];
+        const eventId = category.id.replace(/^projet_/, '');
+        const ev = allEventsMap?.[eventId];
+        return isProjectRopeActive({ category, docs, event: ev });
+      }
+
+      // Filtrage par pôle métier pour les autres cordes
       if (poleId) {
         const catPole = category.poleId || Object.keys(DEFAULT_POLE_ROPES).find(p => DEFAULT_POLE_ROPES[p].includes(category.id));
         if (catPole !== poleId) return false;
@@ -446,11 +522,15 @@ export default function useVaralData({
         });
       });
     });
-  }, [varalCategories, poleId, isAuthorized, effectiveTags]);
+  }, [allVaralCategories, poleId, isAuthorized, effectiveTags, groupedDocs, allEventsMap]);
 
   // 9. Vérification des droits de dépôt sur une catégorie donnée
   const canDepositOnCategory = (category) => {
     if (!category) return false;
+    // Sur une corde de projet, seuls les encadrants et administrateurs peuvent déposer directement
+    if (category.id?.startsWith('projet_')) {
+      return isAuthorized;
+    }
     if (category.activerUploadPublic) return true;
     if (isAuthorized) return true;
 
@@ -654,7 +734,7 @@ export default function useVaralData({
 
   return {
     documents,
-    varalCategories,
+    varalCategories: allVaralCategories,
     loading,
     eventsWithMedia,
     reunions,
@@ -675,6 +755,7 @@ export default function useVaralData({
     updateDocumentsOrder,
     saveCategory,
     deleteCategory,
-    getDocType
+    getDocType,
+    allEventsMap
   };
 }

@@ -354,7 +354,7 @@ function MemberTreasuryRow({
             className={`theme-input text-[8.5px] font-black py-1 px-2 bg-cordel-bg-light cursor-pointer rounded-[4px_6px_3px_5px] border-2 ${
               currentStatus === 'paid' 
                 ? 'border-green-600/40 text-[var(--color-cordel-vert)]' 
-                : currentStatus === 'partial' 
+                : (currentStatus === 'partial' || currentStatus === 'en_cours') 
                   ? 'border-amber-600/40 text-[var(--color-cordel-ocre)]' 
                   : currentStatus === 'exempted'
                     ? 'border-blue-600/40 text-blue-700 dark:text-blue-400'
@@ -363,22 +363,23 @@ function MemberTreasuryRow({
           >
             <option value="unpaid">{t('widgetTreasury.statusUnpaid') || "Non payé"}</option>
             <option value="partial">{t('widgetTreasury.statusPartial') || "Partiel"}</option>
+            <option value="en_cours">⏳ En cours (3x)</option>
             <option value="paid">{t('widgetTreasury.statusPaid') || "À jour"}</option>
             <option value="exempted">{t('widgetTreasury.statusExempted') || "Exonéré"}</option>
           </select>
         </div>
 
-        {/* Badge informatif HelloAsso avec montant direct et date de validation */}
+        {/* Badge informatif HelloAsso avec montant direct, détail option et date */}
         {member.helloAssoLastPayment && (
           <div 
             className="flex items-center gap-1 text-[7.5px] font-bold text-[var(--color-cordel-vert)] dark:text-emerald-400 bg-[var(--color-cordel-vert)]/10 dark:bg-emerald-950/30 px-1.5 py-0.5 rounded border border-[#2d6a4f]/30 dark:border-emerald-800/50 select-none"
-            title={`Paiement HelloAsso ${member.helloAssoLastPayment.orderId ? `(Réf: ${member.helloAssoLastPayment.orderId})` : ''} enregistré ${member.helloAssoLastPayment.date ? `le ${new Date(member.helloAssoLastPayment.date).toLocaleDateString(locale === 'pt' ? 'pt-BR' : 'fr-FR')}` : ''}`}
+            title={`Paiement HelloAsso ${member.helloAssoLastPayment.orderId ? `(Réf: ${member.helloAssoLastPayment.orderId})` : ''} ${member.helloAssoLastPayment.formule ? `[${member.helloAssoLastPayment.formule}]` : ''} enregistré ${member.helloAssoLastPayment.date ? `le ${new Date(member.helloAssoLastPayment.date).toLocaleDateString(locale === 'pt' ? 'pt-BR' : 'fr-FR')}` : ''}`}
           >
             <span>💳</span>
             <span>
               {!isNaN(Number(member.helloAssoLastPayment.amount)) && Number(member.helloAssoLastPayment.amount) > 0
-                ? `${Number(member.helloAssoLastPayment.amount)} € (HelloAsso)`
-                : 'Paiement HelloAsso'}
+                ? `${Number(member.helloAssoLastPayment.amount)} € (HelloAsso${member.helloAssoLastPayment.isInstallment ? ' - 3x' : ''})`
+                : `Paiement HelloAsso${member.helloAssoLastPayment.isInstallment ? ' (3x)' : ''}`}
             </span>
           </div>
         )}

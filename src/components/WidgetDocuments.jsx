@@ -19,6 +19,7 @@ import LutherieDocumentsTable from './documents/LutherieDocumentsTable';
 import CostumerieDocumentsTable from './documents/CostumerieDocumentsTable';
 import useVaralData, { DEFAULT_VARAL_CATEGORIES, DEFAULT_POLE_ROPES } from '../hooks/useVaralData';
 import { isWorkshopVirtualDoc } from '../utils/workshopProjectionUtils';
+import { isProjectRopeActive } from '../utils/commissionVaralAdapter';
 import { useTranslation } from './LanguageContext';
 import useHardwareBack from '../hooks/useHardwareBack';
 import { useViewSimulator } from '../context/ViewSimulatorContext';
@@ -96,7 +97,8 @@ function VaralWidgetContent({
   activeRole,
   activeIsSystemAdmin,
   activeUserTags,
-  activeCanWrite
+  activeCanWrite,
+  targetEventId = null
 }) {
   const { t } = useTranslation();
 
@@ -117,7 +119,8 @@ function VaralWidgetContent({
     canSeeHidden,
     saveCategory,
     deleteCategory,
-    getDocType
+    getDocType,
+    allEventsMap
   } = useVaralData({
     groupId,
     poleId,
@@ -128,9 +131,29 @@ function VaralWidgetContent({
     canWrite: activeCanWrite
   });
 
-  // Filtrage intelligent des cordes avant le rendu selon les règles de visibilité
+  // Filtrage intelligent des cordes avant le rendu selon les règles de visibilité et cycle de vie
   const displayedCategories = useMemo(() => {
+    const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const urlEventId = searchParams?.get('eventId');
+    const effectiveTargetEventId = targetEventId || (searchParams?.get('ropeId')?.replace(/^projet_/, '') || urlEventId);
+
     return visibleCategories.filter((category) => {
+      // Règle spécifique aux cordes de projet (Passerelle Commissions ➔ Varal) :
+      // Cycle de vie : affichage tant que l'événement est actif ou récent (<= 30 jours), masquage si clos ou archivé.
+      // Si l'utilisateur accède spécifiquement aux documents depuis la fiche événement, la corde reste accessible.
+      if (category.id.startsWith('projet_')) {
+        const docs = groupedDocs[category.id] || [];
+        if (docs.length === 0) return false;
+
+        const eventId = category.id.replace(/^projet_/, '');
+        if (effectiveTargetEventId && (effectiveTargetEventId === eventId || effectiveTargetEventId === category.id)) {
+          return true;
+        }
+
+        const ev = allEventsMap?.[eventId];
+        return isProjectRopeActive({ category, docs, event: ev });
+      }
+
       // Pour les administrateurs, toutes les cordes du pôle restent affichées (les cordes vides ou inactives apparaîtront en mode compact)
       if (isAuthorized) return true;
 
@@ -150,7 +173,7 @@ function VaralWidgetContent({
 
       return true;
     });
-  }, [visibleCategories, isAuthorized, groupedDocs]);
+  }, [visibleCategories, isAuthorized, groupedDocs, allEventsMap, targetEventId]);
 
   // États locaux de navigation et formulaires d'ajout / édition
   const isWorkshopPole = ['lutherie', 'costumerie', 'pedagogie'].includes(poleId);
@@ -229,6 +252,8 @@ function VaralWidgetContent({
         ...(docItem.modelData || docItem),
         focusedPartId: docItem.partId || null
       });
+    } else if (docType === 'cordel_commission') {
+      setSelectedDocumentView(docItem);
     } else if (docType === 'report' || docType === 'compte_rendu') {
       // Si le compte-rendu est un fichier PDF sans points structurés rédigés, l'ouvrir dans le lecteur universel
       if (docItem.fileUrl && (!docItem.points || docItem.points.length === 0) && !docItem.texte) {

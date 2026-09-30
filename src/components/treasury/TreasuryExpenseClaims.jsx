@@ -5,6 +5,7 @@ import CordelCard from '../CordelCard';
 import ExpenseRefusalModal from '../expenses/ExpenseRefusalModal';
 import { useExpenseClaims } from '../../hooks/useExpenseClaims';
 import { getCurrentSeason, getSeasonOptions, isPastSeason, DEFAULT_SEASON_START_MONTH } from '../../utils/seasonUtils';
+import useConfirm from '../../hooks/useConfirm';
 
 /**
  * Interface du Trésorier : Gestion des Notes de Frais & Achats.
@@ -20,6 +21,7 @@ export default function TreasuryExpenseClaims({
   _hasAccessTresorerie,
   associationSettings
 }) {
+  const confirm = useConfirm();
   // 1. Récupération des notes de frais via le hook avec mois de rentrée dynamique
   const {
     claims,
@@ -170,8 +172,14 @@ export default function TreasuryExpenseClaims({
 
   const handleReimburse = async (claim) => {
     const id = claim.claimId || claim.id;
-    const confirmMsg = `Confirmez-vous le remboursement de ${(parseFloat(claim.montant) || 0).toFixed(2)} € à ${claim.userName} ?\n\nUne écriture sera automatiquement enregistrée dans la comptabilité et une notification envoyée à l'adhérent.`;
-    if (!window.confirm(confirmMsg)) return;
+    const ok = await confirm({
+      title: "Confirmer le remboursement ?",
+      message: `Confirmez-vous le remboursement de ${(parseFloat(claim.montant) || 0).toFixed(2)} € à ${claim.userName} ?\n\nUne écriture sera automatiquement enregistrée dans la comptabilité et une notification envoyée à l'adhérent.`,
+      confirmLabel: "Confirmer le remboursement",
+      cancelLabel: "Annuler",
+      variant: "success"
+    });
+    if (!ok) return;
 
     setActionInProgressId(id);
     try {

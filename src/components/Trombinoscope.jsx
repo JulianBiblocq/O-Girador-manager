@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { collection, query, where, onSnapshot, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
@@ -9,8 +9,7 @@ import { useTranslation } from './LanguageContext';
 import { XiloCaixa, XiloPeople } from './XiloIcons';
 import { useInstrumentColor } from '../hooks/useInstrumentColor';
 import ImageLightboxModal from './ImageLightboxModal';
-import { formatTagGender, getTagId, filterPublicPercussionInstruments, computePupitresList, filterUserAssignedTags } from '../utils/tagUtils';
-import { usePresenceContext } from '../context/PresenceContext';
+import { formatTagGender, getTagId } from '../utils/tagUtils';
 import useHardwareBack from '../hooks/useHardwareBack';
 import { useAvatarUpload } from '../hooks/useAvatarUpload';
 const CordelImageEditor = React.lazy(() => import('./CordelImageEditor'));
@@ -18,44 +17,18 @@ const CordelImageEditor = React.lazy(() => import('./CordelImageEditor'));
 // Sous-composants modulaires du Trombinoscope (Planche de timbres et modale détaillée)
 import MemberStampCard from './trombinoscope/MemberStampCard';
 import MemberDetailModal from './trombinoscope/MemberDetailModal';
+import {
+  FIVE_PUPITRES,
+  isDanseMember,
+  isRenfortMember,
+  isChantReferent,
+  resolveMemberPrimaryPupitre,
+  extractMemberBadges,
+  getEffectiveMemberTags,
+  isDefaultMemberBadge
+} from './trombinoscope/trombinoscopeUtils';
 
-// Détection inclusive d'un membre pratiquant la danse
-const isDanseMember = (m) => {
-  if (!m) return false;
-  if (m.pratiqueDanse === true) return true;
-  if (m.niveauDanse && m.niveauDanse !== 'aucun') return true;
-  const userInstruments = (Array.isArray(m.instrumentsJoues) && m.instrumentsJoues.length > 0)
-    ? m.instrumentsJoues
-    : [m.instrumentPrincipal || m.instrument || m.instrumentSecondaire].filter(Boolean);
-  return userInstruments.some(inst => String(inst).toLowerCase().includes('danse'));
-};
 
-/**
- * Retourne le chemin de l'icône associée à un pupitre ou une section
- */
-const getPupitreIcon = (name) => {
-  if (!name) return '/favicon.svg';
-  const lower = String(name).toLowerCase();
-  if (lower.includes('agbe') || lower.includes('agbê') || lower.includes('mineiro') || lower.includes('semente') || lower.includes('shekere') || lower.includes('xequere')) {
-    return '/icones/agbe.svg';
-  }
-  if (lower.includes('caixa') || lower.includes('tarol') || lower.includes('snare')) {
-    return '/icones/caixa.svg';
-  }
-  if (lower.includes('alfaia') || lower.includes('zabumba') || lower.includes('surdo')) {
-    return '/icones/alfaia.svg';
-  }
-  if (lower.includes('gongue') || lower.includes('gonguê') || lower.includes('cloche') || lower.includes('agogo') || lower.includes('agogô')) {
-    return '/icones/gongue.svg';
-  }
-  if (lower.includes('apito') || lower.includes('mestre') || lower.includes('direction') || lower.includes('chef')) {
-    return '/icones/apito.svg';
-  }
-  if (lower.includes('danse') || lower.includes('chant') || lower.includes('voix') || lower.includes('micro')) {
-    return '/icones/micro.svg';
-  }
-  return '/favicon.svg';
-};
 
 const DEFAULT_INSTRUMENTS = ["Alfaia", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"];
 
@@ -95,48 +68,6 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
 
   const isViewerAdmin = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin === true;
 
-  // Calcul de la liste consolidée des pupitres de l'association
-  const basePercs = useMemo(() => {
-    return filterPublicPercussionInstruments(instrumentsDisponibles);
-  }, [instrumentsDisponibles]);
-
-  const pupitresList = useMemo(() => {
-    return computePupitresList(basePercs, linkedInstruments);
-  }, [basePercs, linkedInstruments]);
-
-  // Définition dynamique des sections ordonnées du Trombinoscope
-  const dynamicSections = useMemo(() => {
-    const sections = [
-      {
-        id: 'mestre',
-        label: t('trombinoscope.sectionMestre') || 'Direction & Mestria',
-        icon: '/icones/apito.svg'
-      }
-    ];
-
-    pupitresList.forEach(pupitre => {
-      sections.push({
-        id: `pupitre-${pupitre}`,
-        pupitreName: pupitre,
-        label: pupitre,
-        icon: getPupitreIcon(pupitre)
-      });
-    });
-
-    sections.push({
-      id: 'chant_danse',
-      label: t('trombinoscope.sectionChantDanse') || 'Chant & Danse',
-      icon: '/icones/micro.svg'
-    });
-
-    sections.push({
-      id: 'autres',
-      label: t('trombinoscope.sectionAutres') || 'Autres Instruments',
-      icon: '/favicon.svg'
-    });
-
-    return sections;
-  }, [pupitresList, t]);
 
   const getPupitreName = useCallback((inst) => {
     if (!inst) return null;
@@ -163,76 +94,18 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
     if (containingGroup && containingGroup.name && containingGroup.name.trim()) {
       return containingGroup.name.trim();
     }
+
+    // 3. Unification canonique Maracatu (Sementes & Caixas)
+    if (lowerClean.includes('agbe') || lowerClean.includes('agbê') || lowerClean.includes('mineiro') || lowerClean.includes('semente')) {
+      return 'Sementes';
+    }
+    if (lowerClean.includes('caixa') || lowerClean.includes('tarol')) {
+      return 'Caixas';
+    }
+
     return null;
   }, [linkedInstruments]);
 
-  // Résolution automatique et bidirectionnelle d'un instrument vers son pupitre
-  const resolvePupitreSection = useCallback((instName, member) => {
-    const lower = String(instName || '').toLowerCase().trim();
-
-    // A. Mestria & Direction
-    if (lower.includes('mestre') || lower.includes('direction') || lower.includes('apito') || lower.includes('chef de bateria')) {
-      return 'mestre';
-    }
-    if (member && (member.role === 'mestre' || member.role === 'super-admin') && (member.pratiquePercussion || member.isSystemAdmin)) {
-      if (!instName || lower === 'direction & mestria' || lower === 'mestre') {
-        return 'mestre';
-      }
-    }
-
-    // B. Danse / Chant
-    if (lower.includes('danse') || lower.includes('chant') || lower.includes('voix')) {
-      return 'chant_danse';
-    }
-
-    if (!lower) return 'autres';
-
-    // C. Groupes d'instruments liés configurés (ex: Sementes pour Agbê et Mineiro)
-    for (const group of linkedInstruments) {
-      const groupInsts = (group.instruments || (Array.isArray(group) ? group : [group.inst1, group.inst2].filter(Boolean)))
-        .map(i => String(i).toLowerCase().trim());
-      const groupName = group.name && group.name.trim() ? group.name.trim() : (group.instruments || []).join(' + ');
-      const lowerGroupName = groupName.toLowerCase().trim();
-
-      if (groupInsts.includes(lower) || lowerGroupName === lower || lowerGroupName.includes(lower) || lower.includes(lowerGroupName)) {
-        return `pupitre-${groupName}`;
-      }
-    }
-
-    // D. Pupitres autonomes configurés
-    for (const pupitre of pupitresList) {
-      const lowerPupitre = pupitre.toLowerCase().trim();
-      if (lower === lowerPupitre || lower.includes(lowerPupitre) || lowerPupitre.includes(lower)) {
-        return `pupitre-${pupitre}`;
-      }
-    }
-
-    // E. Familles Maracatu traditionnelles si non encore associées
-    if (lower.includes('agbe') || lower.includes('agbê') || lower.includes('mineiro') || lower.includes('semente')) {
-      const found = pupitresList.find(p => {
-        const l = p.toLowerCase();
-        return l.includes('agbe') || l.includes('agbê') || l.includes('mineiro') || l.includes('semente');
-      });
-      if (found) return `pupitre-${found}`;
-    }
-    if (lower.includes('caixa') || lower.includes('tarol')) {
-      const found = pupitresList.find(p => {
-        const l = p.toLowerCase();
-        return l.includes('caixa') || l.includes('tarol');
-      });
-      if (found) return `pupitre-${found}`;
-    }
-    if (lower.includes('alfaia')) {
-      const found = pupitresList.find(p => p.toLowerCase().includes('alfaia'));
-      if (found) return `pupitre-${found}`;
-    }
-    if (lower.includes('gongue') || lower.includes('gonguê')) {
-      const found = pupitresList.find(p => p.toLowerCase().includes('gongue') || p.toLowerCase().includes('gonguê'));
-      if (found) return `pupitre-${found}`;
-    }
-
-    return 'autres';
-  }, [linkedInstruments, pupitresList]);
 
   // Charger les étiquettes et instruments de l'association
   useEffect(() => {
@@ -289,7 +162,10 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
         photoURL: profileData?.photoURL || user?.photoURL || null,
         role: profileData?.role || 'membre',
         tags: profileData?.tags || [],
-        statutActuel: profileData?.statutActuel || 'active'
+        statutActuel: profileData?.statutActuel || 'active',
+        dateNaissance: profileData?.dateNaissance || '',
+        afficherDateNaissance: profileData?.afficherDateNaissance,
+        publierDateNaissance: profileData?.publierDateNaissance
       }]);
       setLoading(false);
       return;
@@ -329,7 +205,10 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
           photoURL: profileData?.photoURL || user?.photoURL || null,
           role: profileData?.role || 'membre',
           tags: profileData?.tags || [],
-          statutActuel: profileData?.statutActuel || 'active'
+          statutActuel: profileData?.statutActuel || 'active',
+          dateNaissance: profileData?.dateNaissance || '',
+          afficherDateNaissance: profileData?.afficherDateNaissance,
+          publierDateNaissance: profileData?.publierDateNaissance
         });
       }
 
@@ -377,204 +256,116 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
     }
   };
 
-  // Memoized Filtered Members (Filtrage préalable par recherche, pupitre et tag)
-  const filteredMembers = useMemo(() => {
+  // Liste consolidée des étiquettes disponibles pour le filtre (inclut systématiquement Bureau et C.A.)
+  const availableFilterTags = useMemo(() => {
+    const list = [];
+    const seen = new Set();
+
+    const addTag = (id, label) => {
+      const key = String(id).toLowerCase().replace(/\./g, '').trim();
+      if (!seen.has(key) && !isDefaultMemberBadge(id) && !isDefaultMemberBadge(label)) {
+        seen.add(key);
+        list.push({ id, label });
+      }
+    };
+
+    // 1. Tags institutionnels prioritaires garantis dans le filtre
+    addTag('Bureau', '🏛️ Bureau');
+    addTag('C.A.', '📜 C.A.');
+
+    // 2. Tags configurés de l'association
+    (tagsDisponibles || []).forEach((t) => {
+      const id = getTagId(t);
+      const label = formatTagGender(t, null, majoriteFeminine, tagsDisponibles);
+      if (id) addTag(id, label);
+    });
+
+    return list;
+  }, [tagsDisponibles, majoriteFeminine]);
+
+  // Distribution des membres dans les 5 pupitres SaaS et isolation des renforts (Dédoublonnage strict)
+  const { regularByPupitre, renfortsList, totalFilteredCount } = useMemo(() => {
     const queryStr = searchQuery.trim().toLowerCase();
-    return members.filter((member) => {
-      if (member.statutActuel === 'archived') return false;
+
+    const byPupitre = {
+      alfaias: [],
+      caixas: [],
+      gongue: [],
+      sementes: [],
+      danse: []
+    };
+    const renforts = [];
+    let count = 0;
+
+    members.forEach((member) => {
+      if (member.statutActuel === 'archived') return;
+
+      // Expansion automatique des étiquettes (Présidence -> Bureau -> C.A.)
+      const effectiveTags = getEffectiveMemberTags(member);
 
       // 1. Recherche textuelle (Prénom, Nom, Surnom, Ville)
       const fullName = `${member.prenom || ''} ${member.nom || ''} ${member.surnom || ''} ${member.adresseVille || ''}`.toLowerCase();
-      const matchesSearch = !queryStr || fullName.includes(queryStr);
+      if (queryStr && !fullName.includes(queryStr)) return;
 
-      // Récupération de tous les instruments du membre
-      const userInstruments = (Array.isArray(member.instrumentsJoues) && member.instrumentsJoues.length > 0)
-        ? member.instrumentsJoues
-        : [member.instrumentPrincipal || member.instrument || member.instrumentSecondaire].filter(Boolean);
-
-      const isDancer = isDanseMember(member);
-      const isMestre = (member.role === 'mestre' || member.role === 'super-admin') && (member.pratiquePercussion || member.isSystemAdmin);
-
-      // 2. Filtre par instrument / pupitre
-      let matchesInstrument = filterInstrument === 'all';
-      if (!matchesInstrument) {
-        if (filterInstrument === 'mestre') {
-          matchesInstrument = isMestre || userInstruments.some(inst => resolvePupitreSection(inst, member) === 'mestre');
-        } else if (filterInstrument.toLowerCase().includes('danse')) {
-          matchesInstrument = isDancer;
-        } else if (filterInstrument === 'Autre') {
-          matchesInstrument = userInstruments.length === 0 ? (!isDancer && !isMestre) : userInstruments.some(inst => resolvePupitreSection(inst, member) === 'autres');
-        } else {
-          // Filtre par nom de pupitre configuré (ex: Sementes, Caixa & Tarol, Alfaia)
-          const targetSection = `pupitre-${filterInstrument}`;
-          matchesInstrument = userInstruments.some(inst => resolvePupitreSection(inst, member) === targetSection);
-        }
+      // 2. Filtre par étiquettes (Tags) avec prise en compte des tags effectifs
+      if (filterTag !== 'all') {
+        const cleanFilter = String(filterTag).toLowerCase().replace(/\./g, '').trim();
+        const hasTag = effectiveTags.some((t) => {
+          const rawTag = String(getTagId(t) || t).toLowerCase().trim();
+          const cleanTag = rawTag.replace(/\./g, '');
+          return (
+            rawTag === cleanFilter ||
+            cleanTag === cleanFilter ||
+            (cleanFilter === 'ca' && (cleanTag === 'ca' || cleanTag.includes('conseil'))) ||
+            (cleanFilter === 'bureau' && cleanTag === 'bureau')
+          );
+        });
+        if (!hasTag) return;
       }
 
-      // 3. Filtre par étiquettes (Tags)
-      const matchesTag = filterTag === 'all' || 
-        (member.tags && (
-          member.tags.includes(filterTag) || 
-          member.tags.some(t => getTagId(t) === filterTag)
-        ));
+      const isRenfort = isRenfortMember(member);
+      const primaryPupitreId = resolveMemberPrimaryPupitre(member);
+      const badges = extractMemberBadges(member, isRenfort ? 'renfort' : primaryPupitreId);
+      const isLead = isChantReferent(member);
 
-      return matchesSearch && matchesInstrument && matchesTag;
-    });
-  }, [members, searchQuery, filterInstrument, filterTag, resolvePupitreSection]);
+      const enrichedMember = {
+        ...member,
+        tags: effectiveTags,
+        primaryPupitreId: isRenfort ? 'renfort' : primaryPupitreId,
+        secondaryBadges: badges,
+        isLeadSinger: isLead,
+        isGhost: false
+      };
 
-  // Distribution des membres dans les pupitres dynamiques avec support des Cartes Fantômes (Polyvalence)
-  const groupedMembers = useMemo(() => {
-    const groups = {};
-    dynamicSections.forEach(sec => {
-      groups[sec.id] = [];
-    });
-
-    filteredMembers.forEach((member) => {
-      const rawInstruments = (Array.isArray(member.instrumentsJoues) && member.instrumentsJoues.length > 0)
-        ? member.instrumentsJoues
-        : [member.instrumentPrincipal || member.instrument || member.instrumentSecondaire].filter(Boolean);
-
-      const isDancer = isDanseMember(member);
-      const isMestre = (member.role === 'mestre' || member.role === 'super-admin') && (member.pratiquePercussion || member.isSystemAdmin);
-
-      // Détermination du rôle ou instrument principal et de sa section de rattachement
-      let primaryInst = member.instrumentPrincipal || member.instrument || (rawInstruments.length > 0 ? rawInstruments[0] : '');
-      let primarySection = 'autres';
-
-      if (isMestre && (!rawInstruments.length || rawInstruments.some(i => String(i).toLowerCase().includes('mestre') || String(i).toLowerCase().includes('direction') || String(i).toLowerCase().includes('apito')))) {
-        primarySection = 'mestre';
-        if (!primaryInst) primaryInst = 'Direction & Mestria';
-      } else if (rawInstruments.length === 0) {
-        if (isDancer) {
-          primarySection = 'chant_danse';
-          primaryInst = 'Danse';
-        } else if (isMestre) {
-          primarySection = 'mestre';
-          primaryInst = 'Direction & Mestria';
-        } else {
-          primarySection = 'autres';
+      // 3. Filtre par pupitre / sélection
+      if (isRenfort) {
+        if (filterInstrument === 'all' || filterInstrument === 'renforts') {
+          renforts.push(enrichedMember);
+          count++;
         }
       } else {
-        if (isDancer && (!primaryInst || String(primaryInst).toLowerCase().includes('danse'))) {
-          primarySection = 'chant_danse';
-        } else {
-          primarySection = resolvePupitreSection(primaryInst, member);
-        }
-      }
-
-      // Cas où le membre n'a aucun instrument de percussion configuré
-      if (rawInstruments.length === 0) {
-        if (!groups[primarySection]) groups[primarySection] = [];
-        groups[primarySection].push({
-          ...member,
-          isGhost: false,
-          primaryInstrumentName: primaryInst || (primarySection === 'chant_danse' ? 'Danse' : primarySection === 'mestre' ? 'Direction & Mestria' : ''),
-          cardKey: `${member.id}-${primarySection}-main`
-        });
-        return;
-      }
-
-      const addedSections = new Set();
-
-      // Si un filtre d'instrument / pupitre spécifique est sélectionné
-      if (filterInstrument !== 'all') {
-        let targetSection = '';
-        if (filterInstrument === 'mestre') targetSection = 'mestre';
-        else if (filterInstrument.toLowerCase().includes('danse')) targetSection = 'chant_danse';
-        else if (filterInstrument === 'Autre') targetSection = 'autres';
-        else targetSection = `pupitre-${filterInstrument}`;
-
-        if (targetSection === 'chant_danse' && isDancer) {
-          const isMainForMember = primarySection === 'chant_danse';
-          if (!groups.chant_danse) groups.chant_danse = [];
-          groups.chant_danse.push({
-            ...member,
-            isGhost: !isMainForMember,
-            primaryInstrumentName: primaryInst || 'Danse',
-            cardKey: `${member.id}-chant_danse-${isMainForMember ? 'main' : 'ghost'}`
-          });
+        if (filterInstrument === 'renforts') {
           return;
         }
-
-        if (targetSection === 'mestre' && isMestre) {
-          const isMainForMember = primarySection === 'mestre';
-          if (!groups.mestre) groups.mestre = [];
-          groups.mestre.push({
-            ...member,
-            isGhost: !isMainForMember,
-            primaryInstrumentName: primaryInst || 'Direction & Mestria',
-            cardKey: `${member.id}-mestre-${isMainForMember ? 'main' : 'ghost'}`
-          });
-          return;
-        }
-
-        rawInstruments.forEach((inst) => {
-          const sec = resolvePupitreSection(inst, member);
-          if (sec === targetSection && !addedSections.has(sec)) {
-            addedSections.add(sec);
-            const isMainForMember = (sec === primarySection);
-            if (!groups[sec]) groups[sec] = [];
-            groups[sec].push({
-              ...member,
-              isGhost: !isMainForMember,
-              primaryInstrumentName: primaryInst,
-              cardKey: `${member.id}-${sec}-${isMainForMember ? 'main' : 'ghost'}`
-            });
+        if (filterInstrument === 'all' || filterInstrument === primaryPupitreId) {
+          if (byPupitre[primaryPupitreId]) {
+            byPupitre[primaryPupitreId].push(enrichedMember);
+            count++;
           }
-        });
-        return;
-      }
-
-      // Mode standard (vue globale de tous les pupitres)
-      // 1. Carte principale dans le pupitre principal
-      if (!groups[primarySection]) groups[primarySection] = [];
-      groups[primarySection].push({
-        ...member,
-        isGhost: false,
-        primaryInstrumentName: primaryInst,
-        cardKey: `${member.id}-${primarySection}-main`
-      });
-      addedSections.add(primarySection);
-
-      // 2. Cartes Fantômes dans les pupitres secondaires
-      rawInstruments.forEach((inst) => {
-        const sec = resolvePupitreSection(inst, member);
-        if (sec && !addedSections.has(sec) && groups[sec]) {
-          addedSections.add(sec);
-          groups[sec].push({
-            ...member,
-            isGhost: true,
-            primaryInstrumentName: primaryInst || 'Instrument principal',
-            cardKey: `${member.id}-${sec}-ghost`
-          });
         }
-      });
-
-      // 3. Carte Fantôme pour la Danse si pratiquée en secondaire
-      if (isDancer && !addedSections.has('chant_danse') && groups.chant_danse) {
-        addedSections.add('chant_danse');
-        groups.chant_danse.push({
-          ...member,
-          isGhost: true,
-          primaryInstrumentName: primaryInst || 'Danse',
-          cardKey: `${member.id}-chant_danse-ghost`
-        });
-      }
-
-      // 4. Carte Fantôme pour Direction / Mestria si rôle Mestre sans être le pupitre principal
-      if (isMestre && !addedSections.has('mestre') && groups.mestre) {
-        addedSections.add('mestre');
-        groups.mestre.push({
-          ...member,
-          isGhost: true,
-          primaryInstrumentName: primaryInst || 'Direction & Mestria',
-          cardKey: `${member.id}-mestre-ghost`
-        });
       }
     });
 
-    return groups;
-  }, [filteredMembers, dynamicSections, filterInstrument, resolvePupitreSection]);
+    return { regularByPupitre: byPupitre, renfortsList: renforts, totalFilteredCount: count };
+  }, [members, searchQuery, filterInstrument, filterTag]);
+
+  // Détection conditionnelle stricte : y a-t-il des musiciens extérieurs / renforts dans l'association ?
+  const hasRenforts = useMemo(() => {
+    return (members || []).some((m) => m.statutActuel !== 'archived' && isRenfortMember(m));
+  }, [members]);
+
+  // Indique si au moins un filtre est actif
+  const hasActiveFilter = Boolean(searchQuery.trim() || filterInstrument !== 'all' || filterTag !== 'all');
 
   // Memoized callback handlers
   const handleContactUser = useCallback((memberId) => {
@@ -642,64 +433,88 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
         </div>
       )}
 
-      {/* Dynamic Search & Filters Toolbar */}
+      {/* Barre de recherche et filtres unifiée (1 seule ligne desktop md:flex-row, empilée verticalement sur mobile) */}
       {!loading && !error && (
-        <CordelCard variant="default" useExtremeBorder={false} className="p-4 bg-cordel-bg flex flex-col gap-3 select-none">
-          {/* Saisie textuelle */}
-          <div className="flex flex-col gap-1 text-left">
-            <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-wood">
-              🔍 {t('trombinoscope.search')}
-            </label>
+        <CordelCard
+          variant="default"
+          useExtremeBorder={false}
+          className="p-2 sm:p-2.5 bg-cordel-bg flex flex-col md:flex-row md:items-center gap-2 md:gap-3 select-none"
+        >
+          {/* 1. Champ texte avec loupe intégrée à gauche (Prend tout l'espace disponible : flex-1) */}
+          <div className="relative flex-1 min-w-0">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-500 text-xs flex items-center leading-none">
+              🔍
+            </span>
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={t('trombinoscope.searchPlaceholder')}
-              className="theme-input w-full text-xs font-bold py-1.5"
+              placeholder="Prénom, nom, surnom..."
+              className="theme-input w-full pl-10 pr-8 py-1.5 text-xs font-bold"
             />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-xs text-stone-400 hover:text-stone-700 cursor-pointer"
+                title="Effacer la recherche"
+              >
+                ✕
+              </button>
+            )}
           </div>
 
-          {/* Sélecteurs déroulants */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <div className="flex flex-col gap-1 text-left">
-              <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-wood flex items-center gap-1">
-                <XiloCaixa size={12} /> {t('trombinoscope.instrument')}
-              </label>
-              <select
-                value={filterInstrument}
-                onChange={(e) => setFilterInstrument(e.target.value)}
-                className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
-              >
-                <option value="all">{t('trombinoscope.all')}</option>
-                <option value="mestre">{t('trombinoscope.sectionMestre') || 'Direction & Mestria'}</option>
-                {pupitresList.map((pupitre) => (
-                  <option key={pupitre} value={pupitre}>{pupitre}</option>
-                ))}
-                <option value="Danse">{t('trombinoscope.dance') || 'Danse'}</option>
-                <option value="Autre">{t('trombinoscope.other')}</option>
-              </select>
-            </div>
-
-            <div className="flex flex-col gap-1 text-left">
-              <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-wood">
-                🏷️ {t('trombinoscope.tag')}
-              </label>
-              <select
-                value={filterTag}
-                onChange={(e) => setFilterTag(e.target.value)}
-                className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
-              >
-                <option value="all">{t('trombinoscope.all')}</option>
-                {tagsDisponibles.map((tag) => {
-                  const tagId = getTagId(tag);
-                  const formattedLabel = formatTagGender(tag, null, majoriteFeminine, tagsDisponibles);
-                  return (
-                    <option key={tagId} value={tagId}>{formattedLabel}</option>
-                  );
-                })}
-              </select>
-            </div>
+          {/* 2. Filtre Pupitre (menu déroulant compact w-auto shrink-0) */}
+          <div className="w-full md:w-auto shrink-0">
+            <select
+              value={filterInstrument}
+              onChange={(e) => setFilterInstrument(e.target.value)}
+              className="theme-input w-full md:w-auto text-xs font-bold py-1.5 px-2 bg-cordel-bg-light cursor-pointer"
+            >
+              <option value="all">Tous les pupitres</option>
+              {FIVE_PUPITRES.map((pupitre) => (
+                <option key={pupitre.id} value={pupitre.id}>{pupitre.label}</option>
+              ))}
+              {hasRenforts && (
+                <option value="renforts">🎪 Renforts &amp; Extérieurs</option>
+              )}
+            </select>
           </div>
+
+          {/* 3. Filtre Étiquettes / Badges (menu déroulant compact w-auto shrink-0) */}
+          <div className="w-full md:w-auto shrink-0">
+            <select
+              value={filterTag}
+              onChange={(e) => setFilterTag(e.target.value)}
+              className="theme-input w-full md:w-auto text-xs font-bold py-1.5 px-2 bg-cordel-bg-light cursor-pointer"
+            >
+              <option value="all">🏷️ Toutes les étiquettes</option>
+              {availableFilterTags.map((tag) => (
+                <option key={tag.id} value={tag.id}>{tag.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* 4. Compteur d'adhérents / Remise à zéro */}
+          {hasActiveFilter ? (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery('');
+                setFilterInstrument('all');
+                setFilterTag('all');
+              }}
+              className="w-full md:w-auto shrink-0 flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded border border-cordel-wood/40 text-[11px] font-bold text-[var(--color-cordel-marron,#8b2a1a)] bg-cordel-bg-light hover:bg-stone-200 transition-colors cursor-pointer"
+              title="Réinitialiser tous les filtres"
+            >
+              <span>✕</span>
+              <span>{totalFilteredCount} {totalFilteredCount > 1 ? 'membres' : 'membre'}</span>
+            </button>
+          ) : (
+            <div className="w-full md:w-auto shrink-0 text-center md:text-right px-2 py-1 text-[11px] font-extrabold text-stone-600 dark:text-stone-300 whitespace-nowrap">
+              {totalFilteredCount} {totalFilteredCount > 1 ? 'membres' : 'membre'}
+            </div>
+          )}
         </CordelCard>
       )}
 
@@ -733,19 +548,20 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
           )}
 
           {/* Grille responsive de portraits */}
-          {filteredMembers.length === 0 ? (
+          {totalFilteredCount === 0 ? (
             <CordelCard variant="default" useExtremeBorder={false} className="p-8 text-center bg-cordel-bg">
               <p className="text-xs font-bold opacity-75">{t('trombinoscope.noMembers')}</p>
             </CordelCard>
           ) : (
             <div className="flex flex-col gap-8">
-              {dynamicSections.map((sec) => {
-                const sectionMembers = groupedMembers[sec.id] || [];
+              {/* 5 Pupitres SaaS ordonnés */}
+              {FIVE_PUPITRES.map((sec) => {
+                const sectionMembers = regularByPupitre[sec.id] || [];
                 if (sectionMembers.length === 0) return null;
 
                 return (
                   <div key={sec.id} className="flex flex-col gap-4">
-                    {/* Section Header */}
+                    {/* En-tête du pupitre avec son tampon xylogravé */}
                     <div className="border-b border-dashed border-cordel-master-dark/20 pb-2 text-left mt-2 flex items-center justify-between">
                       <h3 className="text-xs font-black uppercase tracking-wider text-[var(--color-cordel-marron,#8b2a1a)] flex items-center gap-1.5 select-none">
                         <img 
@@ -762,14 +578,14 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
                       </h3>
                     </div>
 
-                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-2 sm:gap-3">
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-2 sm:gap-3 items-stretch">
                       {sectionMembers.map((member) => (
                         <MemberStampCard
-                          key={member.cardKey || `${member.id}-${sec.id}-${member.isGhost ? 'ghost' : 'main'}`}
+                          key={member.id}
                           member={member}
                           isOnline={member.isOnline === true}
                           isCurrentUser={Boolean(user?.uid && member.id === user.uid)}
-                          pupitreColor={getColorForInstrument(member.instrument || sec.pupitreName || sec.label, 'solid') || '#181716'}
+                          pupitreColor={getColorForInstrument(sec.colorKey, 'solid') || '#181716'}
                           onClick={(m) => setSelectedMember(m)}
                           onEditPhoto={handleEditPhoto}
                           t={t}
@@ -779,6 +595,35 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
                   </div>
                 );
               })}
+
+              {/* Section isolée pour les renforts & musiciens extérieurs (masquage strict si aucun renfort) */}
+              {hasRenforts && renfortsList.length > 0 && (
+                <div className="flex flex-col gap-4 mt-2 pt-6 border-t-2 border-dashed border-cordel-master-dark/30">
+                  <div className="border-b border-dashed border-cordel-master-dark/20 pb-2 text-left flex items-center justify-between">
+                    <h3 className="text-xs font-black uppercase tracking-wider text-[var(--color-cordel-marron,#8b2a1a)] flex items-center gap-1.5 select-none">
+                      <span>🎪 Renforts & Musiciens extérieurs</span>
+                      <span className="text-[11px] font-bold text-stone-500 font-sans tracking-normal ml-0.5">
+                        ({renfortsList.length})
+                      </span>
+                    </h3>
+                  </div>
+
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-2 sm:gap-3 items-stretch">
+                    {renfortsList.map((member) => (
+                      <MemberStampCard
+                        key={member.id}
+                        member={member}
+                        isOnline={member.isOnline === true}
+                        isCurrentUser={Boolean(user?.uid && member.id === user.uid)}
+                        pupitreColor={getColorForInstrument(member.instrumentPrincipal || member.instrument || 'Renfort', 'solid') || '#181716'}
+                        onClick={(m) => setSelectedMember(m)}
+                        onEditPhoto={handleEditPhoto}
+                        t={t}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

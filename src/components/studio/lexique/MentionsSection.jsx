@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { normalizeMentionHandle } from '../../../config/studioSocialConfig';
+import useConfirm from '../../../hooks/useConfirm';
 
 /**
  * Section du carnet de mentions (@) :
@@ -15,6 +16,7 @@ export default function MentionsSection({
   onSaveMentions,
   disabled = false
 }) {
+  const confirm = useConfirm();
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formLabel, setFormLabel] = useState('');
@@ -78,8 +80,15 @@ export default function MentionsSection({
   };
 
   // Supprime une mention
-  const handleDelete = (id, label) => {
-    if (window.confirm(`Voulez-vous vraiment retirer la mention "${label}" du carnet ?`)) {
+  const handleDelete = async (id, label) => {
+    const ok = await confirm({
+      title: "Retirer la mention ?",
+      message: `Voulez-vous vraiment retirer la mention "${label}" du carnet ?`,
+      confirmLabel: "Retirer",
+      cancelLabel: "Annuler",
+      variant: "danger"
+    });
+    if (ok) {
       const updated = mentions.filter((m) => m.id !== id);
       onSaveMentions(updated);
     }

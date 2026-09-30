@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { doc, updateDoc, addDoc, collection, Timestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { createInAppNotification } from '../../utils/inAppNotificationService';
+import useConfirm from '../../hooks/useConfirm';
 
 /**
  * Contrôles financiers pour une commande de matériel nominative dans OrdersManager.
@@ -13,6 +14,7 @@ import { createInAppNotification } from '../../utils/inAppNotificationService';
  *    dans 'transactions' avec traçabilité requestId).
  */
 export default function OrderPaymentControls({ request, groupId }) {
+  const confirm = useConfirm();
   const initialAmount = request.montantFacture !== undefined
     ? String(request.montantFacture)
     : (request.prix ? String(request.prix * (request.quantite || 1)) : '');
@@ -102,9 +104,13 @@ export default function OrderPaymentControls({ request, groupId }) {
       return;
     }
 
-    const confirmPayment = window.confirm(
-      `Confirmez-vous la réception du paiement de ${cleanMontant.toFixed(2)} € pour la commande de ${request.userName || 'Membre'} ?\n\nUne écriture comptable de recette sera automatiquement créée.`
-    );
+    const confirmPayment = await confirm({
+      title: "Confirmer l'encaissement ?",
+      message: `Confirmez-vous la réception du paiement de ${cleanMontant.toFixed(2)} € pour la commande de ${request.userName || 'Membre'} ?\n\nUne écriture comptable de recette sera automatiquement créée.`,
+      confirmLabel: "Confirmer l'encaissement",
+      cancelLabel: "Annuler",
+      variant: "success"
+    });
     if (!confirmPayment) return;
 
     setProcessing(true);

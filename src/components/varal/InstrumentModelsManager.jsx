@@ -9,8 +9,10 @@ import { db } from '../../firebase';
 import { exportInstrumentMasterBundle } from '../../utils/bundleExportService';
 import ImportModelWizardModal from '../inventory/ImportModelWizardModal';
 import { useSuppliesData } from '../../hooks/useSuppliesData';
+import useConfirm from '../../hooks/useConfirm';
 
 export default function InstrumentModelsManager({ groupId, isAuthorized, varalCategories }) {
+  const confirm = useConfirm();
   const { models, loading, addModel, updateModel, deleteModel } = useInstrumentModels(groupId);
   const [editingModel, setEditingModel] = useState(null);
   const [importFile, setImportFile] = useState(null);
@@ -32,7 +34,14 @@ export default function InstrumentModelsManager({ groupId, isAuthorized, varalCa
   };
 
   const handleDeleteModel = async (modelId, nom) => {
-    if (window.confirm(`Êtes-vous sûr de vouloir supprimer le modèle "${nom}" ?\nAttention, ceci supprimera aussi les tutoriels associés.`)) {
+    const ok = await confirm({
+      title: "Supprimer le modèle ?",
+      message: `Êtes-vous sûr de vouloir supprimer le modèle "${nom}" ?\nAttention, ceci supprimera aussi les tutoriels associés.`,
+      confirmLabel: "Supprimer",
+      cancelLabel: "Annuler",
+      variant: "danger"
+    });
+    if (ok) {
       try {
         await deleteModel(modelId);
       } catch (err) {

@@ -4,7 +4,7 @@
  * sans aucun contact avec les serveurs Firebase Firestore.
  */
 
-import { INITIAL_DEMO_DATA, DEMO_GROUP_ID, createDemoTimestamp } from '../data/demoData';
+import { INITIAL_DEMO_DATA, DEMO_GROUP_ID, createDemoTimestamp } from '../data/demoData.js';
 
 const DEMO_ACTIVE_KEY = 'ogirador_demo_active';
 const DEMO_STATE_KEY = 'ogirador_demo_state';

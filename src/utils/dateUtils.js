@@ -138,3 +138,32 @@ export const splitEventsByTime = (events = []) => {
     pastEvents: sortPastEvents(past)
   };
 };
+
+/**
+ * Formate l'anniversaire sous la forme stricte « 20 Mai » (sans jamais faire apparaître l'année).
+ * Évite les décalages de fuseau horaire UTC en découpant directement la chaîne AAAA-MM-JJ.
+ *
+ * @param {string} dateStr Chaîne de date au format ISO (AAAA-MM-JJ)
+ * @returns {string|null} ex: "20 Mai" ou null si date invalide
+ */
+export const formatBirthdayShort = (dateStr) => {
+  if (!dateStr || typeof dateStr !== 'string') return null;
+  const cleanDate = dateStr.trim().split('T')[0].split(' ')[0];
+  const parts = cleanDate.split('-');
+  if (parts.length < 3) return null;
+
+  const [, month, day] = parts;
+  const moisFr = [
+    'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
+    'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'
+  ];
+
+  const dayNum = parseInt(day, 10);
+  const monthIdx = parseInt(month, 10) - 1;
+  if (isNaN(dayNum) || isNaN(monthIdx) || monthIdx < 0 || monthIdx > 11) return null;
+
+  const monthName = moisFr[monthIdx] || month;
+
+  return `${dayNum} ${monthName.charAt(0).toUpperCase() + monthName.slice(1)}`;
+};
+

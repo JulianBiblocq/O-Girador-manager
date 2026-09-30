@@ -219,6 +219,17 @@ export default function EventTypeConfigCard({
                 />
                 <span className="text-[11px] leading-snug">💃 Section Danse</span>
               </label>
+
+              <label className="flex items-center gap-2 p-1.5 rounded hover:bg-black/5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={Boolean(config.hasCommissionsByDefault)}
+                  onChange={(e) => handleToggle('hasCommissionsByDefault', e.target.checked)}
+                  disabled={saving}
+                  className="w-4 h-4 accent-amber-600 rounded cursor-pointer shrink-0"
+                />
+                <span className="text-[11px] leading-snug">🎪 Activer les commissions par défaut</span>
+              </label>
             </div>
           </div>
 

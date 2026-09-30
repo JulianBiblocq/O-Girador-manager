@@ -490,7 +490,7 @@ export default function WidgetAgenda({
       enableCarpool: typeCfg.enableCarpool !== false,
       isPublic: Boolean(typeCfg.isPublic),
       enableInscriptions: true,
-      hasCommissions: Boolean(typeCfg.hasCommissions),
+      hasCommissions: Boolean(typeCfg.hasCommissionsByDefault ?? typeCfg.hasCommissions),
       activerRecolteMedias: typeCfg.activerRecolteMedias !== undefined ? Boolean(typeCfg.activerRecolteMedias) : true,
       publierSurVaral: typeCfg.publierSurVaral !== undefined ? Boolean(typeCfg.publierSurVaral) : true,
       dropUrl: '',
@@ -765,10 +765,11 @@ export default function WidgetAgenda({
             onClose={() => {
               const newUrl = new URL(window.location);
               newUrl.searchParams.delete('eventId');
+              newUrl.searchParams.delete('tab');
               if (newUrl.pathname.includes('/events/')) {
                 newUrl.pathname = '/app';
               }
-              window.history.replaceState({ ...window.history.state, eventId: null }, '', newUrl.toString());
+              window.history.replaceState({ ...window.history.state, eventId: null, tab: null }, '', newUrl.toString());
               setSelectedEvent(null);
               if (onFocusModeChange) {
                 onFocusModeChange(false);

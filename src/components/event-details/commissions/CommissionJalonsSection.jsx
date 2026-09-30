@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import useConfirm from '../../../hooks/useConfirm';
 
 /**
  * Sous-composant du tiroir "Jalons & Rétro-planning"
@@ -9,22 +10,29 @@ export default function CommissionJalonsSection({
   onChangeJalons,
   usersMap = {}
 }) {
+  const confirm = useConfirm();
   const [newTitre, setNewTitre] = useState('');
   const [newDeadline, setNewDeadline] = useState('');
   const [newAssigneA, setNewAssigneA] = useState('');
 
   const today = new Date().toISOString().slice(0, 10);
 
+  // Gestionnaire d'ajout — bloque impérativement la propagation
+  // pour éviter de déclencher le submit du formulaire parent (CommissionEditModal)
   const handleAddJalon = (e) => {
-    e.preventDefault();
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     if (!newTitre.trim()) return;
 
     const newJalon = {
-      id: `jalon_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
-      titre: newTitre.trim(),
-      deadline: newDeadline || '',
+      id: `jalon_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      titre: (newTitre || '').trim() || 'Nouveau jalon',
+      deadline: newDeadline || null,
       status: 'a_faire',
-      assigneA: newAssigneA || ''
+      assigneA: newAssigneA || '',
+      creeLe: new Date().toISOString()
     };
 
     onChangeJalons([...jalons, newJalon]);
@@ -33,13 +41,32 @@ export default function CommissionJalonsSection({
     setNewAssigneA('');
   };
 
+  // Interception de la touche Entrée sur les champs du jalon
+  // pour déclencher l'ajout sans soumettre le formulaire parent
+  const handleJalonKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      e.stopPropagation();
+      handleAddJalon(e);
+    }
+  };
+
   const handleToggleStatus = (jalonId) => {
     const cycle = { a_faire: 'en_cours', en_cours: 'fait', fait: 'a_faire' };
     const updated = jalons.map((j) => (j.id === jalonId ? { ...j, status: cycle[j.status] || 'a_faire' } : j));
     onChangeJalons(updated);
   };
 
-  const handleDeleteJalon = (jalonId) => {
+  const handleDeleteJalon = async (jalonId) => {
+    const ok = await confirm({
+      title: "Supprimer le jalon ?",
+      message: "Êtes-vous sûr de vouloir supprimer ce jalon du rétro-planning ?",
+      confirmLabel: "Supprimer",
+      cancelLabel: "Annuler",
+      variant: "danger"
+    });
+    if (!ok) return;
+
     onChangeJalons(jalons.filter((j) => j.id !== jalonId));
   };
 
@@ -121,12 +148,14 @@ export default function CommissionJalonsSection({
         )}
       </div>
 
-      {/* Ajout rapide d'un jalon */}
-      <form onSubmit={handleAddJalon} className="flex flex-wrap items-center gap-2 pt-2 border-t border-encre-noire/10">
+      {/* Zone d'ajout rapide — utilise un <div> au lieu de <form> imbriqué
+          pour ne pas provoquer un submit en cascade vers le formulaire parent */}
+      <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-encre-noire/10">
         <input
           type="text"
           value={newTitre}
           onChange={(e) => setNewTitre(e.target.value)}
+          onKeyDown={handleJalonKeyDown}
           placeholder="Titre du jalon..."
           className="flex-1 min-w-[140px] text-xs px-2.5 py-1.5 rounded border border-encre-noire/30 bg-white focus:outline-none focus:border-encre-noire"
         />
@@ -134,23 +163,26 @@ export default function CommissionJalonsSection({
           type="date"
           value={newDeadline}
           onChange={(e) => setNewDeadline(e.target.value)}
+          onKeyDown={handleJalonKeyDown}
           className="text-xs px-2 py-1 rounded border border-encre-noire/30 bg-white"
         />
         <input
           type="text"
           value={newAssigneA}
           onChange={(e) => setNewAssigneA(e.target.value)}
+          onKeyDown={handleJalonKeyDown}
           placeholder="Responsable..."
           className="w-28 text-xs px-2 py-1.5 rounded border border-encre-noire/30 bg-white"
         />
         <button
-          type="submit"
+          type="button"
+          onClick={handleAddJalon}
           disabled={!newTitre.trim()}
           className="text-xs px-3 py-1.5 font-black rounded border border-encre-noire bg-[var(--color-cordel-vert)] text-white hover:opacity-90 disabled:opacity-40 transition-opacity"
         >
           + Ajouter
         </button>
-      </form>
+      </div>
     </div>
   );
 }

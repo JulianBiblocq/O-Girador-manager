@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import XiloAvatar from '../XiloAvatar';
@@ -10,19 +10,46 @@ import useConfirm from '../../hooks/useConfirm';
  * Intègre le fil de discussion et questions logistiques dédié à un événement.
  * Affiche les commentaires sous forme de bulles de chat et permet aux membres d'échanger.
  */
-export default function EventCommentsSection({ event, user, profileData }) {
+export default function EventCommentsSection({ event, user, profileData, autoFocus = false }) {
   const { confirm } = useConfirm();
   const eventId = event?.id || event?.uid;
   const { comments, loading, sending, addComment, deleteComment } = useEventComments(eventId, user, profileData, event);
 
   const [inputText, setInputText] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const commentsEndRef = useRef(null);
+  const commentsContainerRef = useRef(null);
+  const inputRef = useRef(null);
 
   const isViewerAdmin = profileData?.role === 'mestre' || 
                         profileData?.role === 'super-admin' || 
                         profileData?.isSystemAdmin === true ||
                         profileData?.role === 'bureau' ||
                         profileData?.role === 'admin';
+
+  // Fait défiler le conteneur jusqu'au dernier message
+  const scrollToBottom = useCallback((smooth = true) => {
+    if (commentsEndRef.current) {
+      commentsEndRef.current.scrollIntoView({
+        behavior: smooth ? 'smooth' : 'auto',
+        block: 'nearest'
+      });
+    }
+  }, []);
+
+  // Défilement automatique vers le dernier message lorsque l'onglet discussion est actif
+  useEffect(() => {
+    if (loading) return;
+    const isDiscussionTarget = typeof window !== 'undefined' && (
+      new URLSearchParams(window.location.search).get('tab') === 'discussion'
+    );
+    if (isDiscussionTarget || autoFocus) {
+      const timer = setTimeout(() => {
+        scrollToBottom(true);
+      }, 250);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, comments.length, autoFocus, scrollToBottom]);
 
   const handleSend = async (e) => {
     e.preventDefault();
@@ -32,6 +59,7 @@ export default function EventCommentsSection({ event, user, profileData }) {
     try {
       await addComment(inputText);
       setInputText('');
+      setTimeout(() => scrollToBottom(true), 150);
     } catch (err) {
       console.error("EventCommentsSection - Erreur envoi commentaire :", err);
       setErrorMsg("Impossible d'envoyer le commentaire : " + (err.message || err));
@@ -105,7 +133,7 @@ export default function EventCommentsSection({ event, user, profileData }) {
           </p>
         </div>
       ) : (
-        <div className="flex flex-col gap-3 my-1 max-h-[420px] overflow-y-auto pr-1 scrollbar-thin">
+        <div ref={commentsContainerRef} className="flex flex-col gap-3 my-1 max-h-[420px] overflow-y-auto pr-1 scrollbar-thin">
           {comments.map((c) => {
             const isAuthor = c.auteurId === user?.uid;
             const canDelete = isAuthor || isViewerAdmin;
@@ -154,6 +182,8 @@ export default function EventCommentsSection({ event, user, profileData }) {
               </div>
             );
           })}
+          {/* Ancre de défilement vers le dernier message */}
+          <div ref={commentsEndRef} id="event-comments-end" className="h-0 w-0" />
         </div>
       )}
 

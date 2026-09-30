@@ -126,16 +126,17 @@ export default function DocumentViewerModal({ document: docItem, onClose }) {
   ));
 
   const docType = docItem.type || docItem.typeDoc || mediaInfo?.type || 'pdf';
-  const isPdf = !isDropOnly && !isFramaspaceShare && (docType === 'pdf' || (mediaInfo && mediaInfo.type === 'pdf') || targetUrl.toLowerCase().includes('.pdf'));
-  const isVideo = !isDropOnly && !isFramaspaceShare && (docType === 'video' || (mediaInfo && ['youtube-playlist', 'youtube-video', 'vimeo', 'video-file'].includes(mediaInfo.type)));
-  const isAudio = !isDropOnly && !isFramaspaceShare && (docType === 'audio' || (mediaInfo && mediaInfo.type === 'audio-file'));
-  const isImage = !isDropOnly && !isFramaspaceShare && (docType === 'image' || (mediaInfo && mediaInfo.type === 'image'));
-  const isCloudDrive = !isDropOnly && !isFramaspaceShare && (docType === 'dossier_externe' || docType === 'drive' || (mediaInfo && mediaInfo.type === 'cloud-drive'));
-  const isReport = docType === 'report' || docType === 'compte_rendu';
-  const isStatuts = docType === 'statuts' || (docItem.categorie || '').toLowerCase().includes('officiel') || (docItem.titre || '').toLowerCase().includes('statut');
+  const isCommission = docType === 'cordel_commission';
+  const isPdf = !isDropOnly && !isFramaspaceShare && !isCommission && (docType === 'pdf' || (mediaInfo && mediaInfo.type === 'pdf') || targetUrl.toLowerCase().includes('.pdf'));
+  const isVideo = !isDropOnly && !isFramaspaceShare && !isCommission && (docType === 'video' || (mediaInfo && ['youtube-playlist', 'youtube-video', 'vimeo', 'video-file'].includes(mediaInfo.type)));
+  const isAudio = !isDropOnly && !isFramaspaceShare && !isCommission && (docType === 'audio' || (mediaInfo && mediaInfo.type === 'audio-file'));
+  const isImage = !isDropOnly && !isFramaspaceShare && !isCommission && (docType === 'image' || (mediaInfo && mediaInfo.type === 'image'));
+  const isCloudDrive = !isDropOnly && !isFramaspaceShare && !isCommission && (docType === 'dossier_externe' || docType === 'drive' || (mediaInfo && mediaInfo.type === 'cloud-drive'));
+  const isReport = !isCommission && (docType === 'report' || docType === 'compte_rendu');
+  const isStatuts = !isCommission && (docType === 'statuts' || (docItem.categorie || '').toLowerCase().includes('officiel') || (docItem.titre || '').toLowerCase().includes('statut'));
 
   // Formatage de la date
-  const displayDate = docItem.dateAjout || docItem.date || docItem.createdAt;
+  const displayDate = docItem.dateModification || docItem.dateAjout || docItem.date || docItem.createdAt;
   const formattedDate = displayDate ? new Date(displayDate).toLocaleDateString('fr-FR', {
     day: 'numeric',
     month: 'long',
@@ -163,10 +164,10 @@ export default function DocumentViewerModal({ document: docItem, onClose }) {
           <div className="flex flex-col gap-1 min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-sm select-none">
-                {isDropOnly ? '📥' : isFramaspaceShare ? '📸' : isVideo ? '🎥' : isPdf ? '📄' : isAudio ? '🎵' : isImage ? '📷' : isCloudDrive ? '📂' : '📜'}
+                {isDropOnly ? '📥' : isFramaspaceShare ? '📸' : isCommission ? '🎪' : isVideo ? '🎥' : isPdf ? '📄' : isAudio ? '🎵' : isImage ? '📷' : isCloudDrive ? '📂' : '📜'}
               </span>
               <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-[var(--color-cordel-ocre,#c05621)] text-[#FEF9E7] border border-encre-noire shadow-[1px_1px_0px_0px_#181716]">
-                {isDropOnly ? "Collecte Médias" : isFramaspaceShare ? "Galerie Photos & Vidéos" : docItem.categorie || docItem.categoryId || (isPdf ? "Document PDF" : isVideo ? "Vidéo / Tutoriel" : "Document")}
+                {isDropOnly ? "Collecte Médias" : isFramaspaceShare ? "Galerie Photos & Vidéos" : isCommission ? "Livret de Commission" : docItem.categorie || docItem.categoryId || (isPdf ? "Document PDF" : isVideo ? "Vidéo / Tutoriel" : "Document")}
               </span>
               {docItem.annee && (
                 <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-encre-noire/10 text-encre-noire">
@@ -503,6 +504,32 @@ export default function DocumentViewerModal({ document: docItem, onClose }) {
                   {docItem.contenuTexte || docItem.texte}
                 </div>
               ) : null}
+            </div>
+          )}
+
+          {/* 8. CAS LIVRET DE COMMISSION (Passerelle Commissions ➔ Varal) */}
+          {isCommission && (
+            <div className="flex flex-col gap-4">
+              <div className="bg-amber-50/80 border-2 border-dashed border-[var(--color-cordel-ocre,#c05621)]/40 p-4 rounded-[6px_10px_4px_8px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] font-black uppercase text-cordel-wood tracking-wider">
+                    🎪 {docItem.eventTitle || docItem.projetTitre || "Chantier d'Événement"}
+                  </span>
+                  <span className="font-bold text-stone-800 text-sm">
+                    {docItem.titre}
+                  </span>
+                </div>
+                {docItem.auteur && (
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white/90 rounded border border-encre-noire/20 text-xs font-bold text-stone-800 shrink-0">
+                    <span>👤</span>
+                    <span>{docItem.auteur}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="p-4 sm:p-6 bg-white border-2 border-encre-noire/20 rounded-[6px_10px_4px_8px] shadow-xs text-xs whitespace-pre-wrap leading-relaxed font-medium text-encre-noire">
+                {docItem.contenu || docItem.texte || "Aucun contenu rédigé pour cette commission."}
+              </div>
             </div>
           )}
         </div>

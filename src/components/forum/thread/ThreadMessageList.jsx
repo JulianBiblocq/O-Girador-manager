@@ -93,8 +93,13 @@ export default function ThreadMessageList({
               )}
 
               <ThreadMessageItem
-                reply={reply}
+                reply={{
+                  ...reply,
+                  lectures: reply.lectures || (index === 0 ? thread?.lectures : {})
+                }}
                 index={index}
+                threadId={thread?.id}
+                collectionName="forum"
                 userId={userId}
                 profileData={profileData}
                 isModeratorOrAdmin={isModeratorOrAdmin}

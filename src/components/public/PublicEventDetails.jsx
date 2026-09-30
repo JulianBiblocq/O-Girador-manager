@@ -1,4 +1,5 @@
 import React from 'react';
+import { buildGoogleCalendarUrl } from '../../utils/calendarUtils';
 
 /**
  * Composant Détails Publics d'un Événement (PublicEventDetails).
@@ -23,18 +24,10 @@ export default function PublicEventDetails({ event, onClose }) {
 
   const imageUrl = event.imageUrl || event.socialThumbnailUrl || '';
 
-  // Génération du lien Google Calendar public
+  // Génération du lien Google Calendar public via utilitaire centralisé
   const generateGoogleCalendarUrl = () => {
     if (isNaN(dateObj.getTime())) return '#';
-    const startTimeIso = dateObj.toISOString().replace(/-|:|\.\d\d\d/g, '');
-    const endDateObj = event.dateFin ? new Date(event.dateFin) : new Date(dateObj.getTime() + 2 * 60 * 60 * 1000);
-    const endTimeIso = endDateObj.toISOString().replace(/-|:|\.\d\d\d/g, '');
-
-    const title = encodeURIComponent(event.titre || 'Événement');
-    const details = encodeURIComponent(event.description || '');
-    const location = encodeURIComponent(event.lieu || '');
-
-    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startTimeIso}/${endTimeIso}&details=${details}&location=${location}`;
+    return buildGoogleCalendarUrl(event);
   };
 
   // URL Google Maps d'itinéraires/carte

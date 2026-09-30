@@ -1,10 +1,18 @@
 import React from 'react';
 import CordelButton from '../CordelButton';
 import { formatTagGender } from '../../utils/tagUtils';
+import {
+  formatBirthdayShort,
+  formatMemberLevel,
+  isDefaultMemberBadge,
+  getCanonicalTagKey,
+  resolvePedagogicalRoles
+} from './trombinoscopeUtils';
 
 /**
  * Sous-composant affichant les détails musicaux, coordonnées et tags
  * dans la modale de consultation de membre (Bloc Anti-Monolithe).
+ * N'affiche que les étiquettes métier ou administratives réelles (exclut 'Adhérent').
  */
 export default function MemberDetailCardContent({
   member,
@@ -27,6 +35,29 @@ export default function MemberDetailCardContent({
   onClose,
   t = (key) => key
 }) {
+  const { isMestreDanse, pedagogicalTitle } = resolvePedagogicalRoles(member);
+
+  // Filtrage strict : éliminer tout badge par défaut ('adhérent', 'adhérente', 'membre', etc.)
+  // et déduplication canonique rigoureuse (unifie 'ca', 'c.a.', 'conseil d'administration', etc.)
+  const seenCanonicalKeys = new Set();
+  const visibleTags = [];
+
+  (validTags || []).forEach((tag) => {
+    const rawTagId = typeof tag === 'object' ? (tag.id || tag.nom || tag.label || '') : String(tag);
+    const rawTagLabel = typeof tag === 'object' ? (tag.nom || tag.label || tag.id || '') : String(tag);
+    const formatted = formatTagGender(tag, member?.genre, majoriteFeminine, tagsDisponibles);
+
+    if (isDefaultMemberBadge(rawTagId) || isDefaultMemberBadge(rawTagLabel) || isDefaultMemberBadge(formatted)) {
+      return;
+    }
+
+    const key = getCanonicalTagKey(tag) || getCanonicalTagKey(formatted);
+    if (!key || seenCanonicalKeys.has(key)) return;
+
+    seenCanonicalKeys.add(key);
+    visibleTags.push({ tag, label: formatted });
+  });
+
   return (
     <>
       {/* Pupitres et Instruments */}
@@ -38,12 +69,13 @@ export default function MemberDetailCardContent({
           <div className="flex flex-wrap gap-1 items-center">
             {percussions.map((inst) => {
               const instNiveau = niveauxParInstrument[inst] || niveau;
+              const formattedLevel = instNiveau && instNiveau !== 'aucun' ? formatMemberLevel(instNiveau) : null;
               return (
                 <span key={inst} className="px-2 py-0.5 rounded bg-cordel-bg border border-encre-noire/20 text-[10.5px] font-bold flex items-center gap-1">
-                  <span>🪘</span> {getPupitreName(inst) || inst}
-                  {instNiveau && instNiveau !== 'aucun' && (
-                    <span className="text-[8px] uppercase text-stone-500 font-black">
-                      ({instNiveau === 'confirme' ? 'Confirmé' : 'Débutant'})
+                  {getPupitreName(inst) || inst}
+                  {formattedLevel && (
+                    <span className="text-[8px] uppercase text-stone-600 dark:text-stone-300 font-black">
+                      ({formattedLevel})
                     </span>
                   )}
                 </span>
@@ -53,7 +85,12 @@ export default function MemberDetailCardContent({
         )}
         {hasDanse && (
           <div className="pt-1 border-t border-dotted border-stone-200 text-[11px] font-bold text-[var(--color-cordel-marron,#8b2a1a)]">
-            💃 Danse {niveauDanse && niveauDanse !== 'aucun' ? `(${niveauDanse})` : ''}
+            💃 Danse {isMestreDanse ? `• ${pedagogicalTitle || 'Mestra de danse'} ` : ''}{niveauDanse && niveauDanse !== 'aucun' && formatMemberLevel(niveauDanse) ? `(${formatMemberLevel(niveauDanse)})` : ''}
+          </div>
+        )}
+        {member?.isLeadSinger && (
+          <div className="pt-1 border-t border-dotted border-stone-200 text-[11px] font-bold text-amber-800 dark:text-amber-300">
+            🎤 Soliste / Chanteur(se) référent(e)
           </div>
         )}
       </div>
@@ -72,10 +109,10 @@ export default function MemberDetailCardContent({
               </a>
             </div>
           )}
-          {showBirthdate && (
+          {showBirthdate && formatBirthdayShort(dateNaissance) && (
             <div className="flex items-center justify-between">
               <span className="text-stone-600">Anniversaire :</span>
-              <strong className="text-encre-noire">🎂 {dateNaissance}</strong>
+              <strong className="text-encre-noire">🎂 {formatBirthdayShort(dateNaissance)}</strong>
             </div>
           )}
           {displayCity && (
@@ -88,14 +125,14 @@ export default function MemberDetailCardContent({
       )}
 
       {/* Badges / Étiquettes Cordel */}
-      {validTags.length > 0 && (
+      {visibleTags.length > 0 && (
         <div className="flex flex-wrap gap-1 justify-center pt-1">
-          {validTags.map((tag, idx) => (
+          {visibleTags.map((item, idx) => (
             <span
               key={idx}
               className="theme-stamp-badge theme-stamp-badge-wood text-[8px] rotate-[-2deg]"
             >
-              {formatTagGender(tag, member.genre, majoriteFeminine, tagsDisponibles)}
+              {item.label}
             </span>
           ))}
         </div>

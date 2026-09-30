@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import useConfirm from '../../../hooks/useConfirm';
 import CommissionBasicInfoFields from './CommissionBasicInfoFields';
 import CommissionJalonsSection from './CommissionJalonsSection';
 import CommissionBudgetSection from './CommissionBudgetSection';
@@ -20,7 +21,8 @@ export default function CommissionEditModal({
   canArbitrate = false,
   isOpen,
   onClose,
-  onSave
+  onSave,
+  onDelete
 }) {
   const isEditing = Boolean(commission?.id);
 
@@ -39,15 +41,35 @@ export default function CommissionEditModal({
 
   const [isSaving, setIsSaving] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const confirm = useConfirm();
 
   if (!isOpen) return null;
 
-  const toggleModule = (moduleId) => {
-    const active = formData.modulesActifs.includes(moduleId);
-    const updated = active
-      ? formData.modulesActifs.filter((m) => m !== moduleId)
-      : [...formData.modulesActifs, moduleId];
-    setFormData((prev) => ({ ...prev, modulesActifs: updated }));
+  const toggleModule = (modId) => {
+    const active = formData.modulesActifs.includes(modId);
+    setFormData((prev) => ({
+      ...prev,
+      modulesActifs: active ? prev.modulesActifs.filter((m) => m !== modId) : [...prev.modulesActifs, modId]
+    }));
+  };
+
+  const handleDelete = async () => {
+    const ok = await confirm({
+      title: "Supprimer la commission ?",
+      message: "Cette action est irréversible. Les jalons associés seront également effacés.",
+      confirmLabel: "Supprimer", cancelLabel: "Annuler", variant: "danger"
+    });
+    if (!ok) return;
+
+    try {
+      setIsSaving(true);
+      if (onDelete) await onDelete(commission.id);
+      onClose();
+    } catch (err) {
+      console.error('Erreur suppression commission:', err);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleSave = async (e) => {
@@ -58,10 +80,7 @@ export default function CommissionEditModal({
       setIsSaving(true);
       await onSave(formData);
       setToastMessage('✅ Commission enregistrée avec succès !');
-      setTimeout(() => {
-        setToastMessage('');
-        onClose();
-      }, 700);
+      setTimeout(() => { setToastMessage(''); onClose(); }, 700);
     } catch (err) {
       console.error('Erreur enregistrement commission:', err);
       setToastMessage('❌ Erreur lors de l’enregistrement');
@@ -71,7 +90,10 @@ export default function CommissionEditModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/60 backdrop-blur-xs select-none">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/60 backdrop-blur-xs select-none"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
       <div className="w-full max-w-2xl bg-cordel-bg-light border-2 border-encre-noire rounded-[8px_12px_7px_10px] shadow-[4px_4px_0px_0px_#181716] flex flex-col max-h-[90vh] overflow-hidden">
         {/* En-tête */}
         <div className="px-4 py-3 border-b-2 border-encre-noire bg-cordel-bg flex items-center justify-between">
@@ -92,11 +114,7 @@ export default function CommissionEditModal({
             </div>
           )}
 
-          <CommissionBasicInfoFields
-            formData={formData}
-            setFormData={setFormData}
-            allUsers={allUsers}
-          />
+          <CommissionBasicInfoFields formData={formData} setFormData={setFormData} allUsers={allUsers} />
 
           {/* Tiroirs d'activation des modules */}
           <div className="flex flex-col gap-1.5 pt-2 border-t border-encre-noire/10">
@@ -106,18 +124,12 @@ export default function CommissionEditModal({
                 const isActive = formData.modulesActifs.includes(m.id);
                 return (
                   <button
-                    key={m.id}
-                    type="button"
-                    onClick={() => toggleModule(m.id)}
+                    key={m.id} type="button" onClick={() => toggleModule(m.id)}
                     className={`px-2.5 py-1 rounded font-bold border flex items-center gap-1.5 ${
-                      isActive
-                        ? 'bg-[var(--color-cordel-vert)] text-white border-encre-noire shadow-xs'
-                        : 'bg-stone-100 text-stone-600 border-stone-300'
+                      isActive ? 'bg-[var(--color-cordel-vert)] text-white border-encre-noire shadow-xs' : 'bg-stone-100 text-stone-600 border-stone-300'
                     }`}
                   >
-                    <span>{m.icone}</span>
-                    <span>{m.label}</span>
-                    <span>{isActive ? '✓' : '+'}</span>
+                    <span>{m.icone}</span><span>{m.label}</span><span>{isActive ? '✓' : '+'}</span>
                   </button>
                 );
               })}
@@ -126,65 +138,52 @@ export default function CommissionEditModal({
 
           {/* Sous-sections actives */}
           {formData.modulesActifs.includes('jalons') && (
-            <CommissionJalonsSection
-              jalons={formData.jalons}
-              onChangeJalons={(next) => setFormData({ ...formData, jalons: next })}
-              usersMap={usersMap}
-            />
+            <CommissionJalonsSection jalons={formData.jalons} onChangeJalons={(next) => setFormData({ ...formData, jalons: next })} usersMap={usersMap} />
           )}
 
           {formData.modulesActifs.includes('budget') && (
-            <CommissionBudgetSection
-              budget={formData.budget}
-              onChangeBudget={(next) => setFormData({ ...formData, budget: next })}
-              canArbitrate={canArbitrate}
-            />
+            <CommissionBudgetSection budget={formData.budget} onChangeBudget={(next) => setFormData({ ...formData, budget: next })} canArbitrate={canArbitrate} />
           )}
 
           {formData.modulesActifs.includes('benevoles') && (
-            <CommissionBenevolesSection
-              creneaux={formData.creneauxBenevoles}
-              onChangeCreneaux={(next) => setFormData({ ...formData, creneauxBenevoles: next })}
-              usersMap={usersMap}
-            />
+            <CommissionBenevolesSection creneaux={formData.creneauxBenevoles} onChangeCreneaux={(next) => setFormData({ ...formData, creneauxBenevoles: next })} usersMap={usersMap} />
           )}
 
           {formData.modulesActifs.includes('materiel') && (
-            <CommissionMaterielSection
-              besoins={formData.besoinsMateriel}
-              onChangeBesoins={(next) => setFormData({ ...formData, besoinsMateriel: next })}
-            />
+            <CommissionMaterielSection besoins={formData.besoinsMateriel} onChangeBesoins={(next) => setFormData({ ...formData, besoinsMateriel: next })} />
           )}
 
           {/* Bloc de publication et synchronisation au Varal */}
           {isEditing && event && (
             <div className="pt-1">
-              <CommissionVaralAction
-                event={event}
-                commission={commission}
-                usersMap={usersMap}
-                groupId={groupId}
-                variant="full"
-              />
+              <CommissionVaralAction event={event} commission={commission} usersMap={usersMap} groupId={groupId} variant="full" />
             </div>
           )}
 
           {/* Pied de formulaire */}
-          <div className="flex items-center justify-end gap-2 pt-3 border-t border-encre-noire/20">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-3 py-1.5 rounded border border-stone-300 font-bold bg-white text-stone-700 hover:bg-stone-50"
-            >
-              Annuler
-            </button>
-            <button
-              type="submit"
-              disabled={isSaving || !formData.titre.trim()}
-              className="px-4 py-1.5 font-black rounded border border-encre-noire bg-[var(--color-cordel-vert)] text-white hover:opacity-90 disabled:opacity-40 shadow-xs"
-            >
-              {isSaving ? 'Enregistrement...' : 'Enregistrer la commission'}
-            </button>
+          <div className="flex items-center justify-between gap-2 pt-3 border-t border-encre-noire/20">
+            <div>
+              {isEditing && onDelete && (
+                <button
+                  type="button" onClick={handleDelete} disabled={isSaving}
+                  className="px-2.5 py-1.5 rounded font-black text-xs text-[var(--color-cordel-rouge)] hover:bg-rose-50 border border-transparent hover:border-[var(--color-cordel-rouge)]/30 transition-colors cursor-pointer"
+                >
+                  🗑️ Supprimer la commission
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={onClose} className="px-3 py-1.5 rounded border border-stone-300 font-bold bg-white text-stone-700 hover:bg-stone-50 cursor-pointer">
+                Annuler
+              </button>
+              <button
+                type="submit" disabled={isSaving || !formData.titre.trim()}
+                className="px-4 py-1.5 font-black rounded border border-encre-noire bg-[var(--color-cordel-vert)] text-white hover:opacity-90 disabled:opacity-40 shadow-xs cursor-pointer"
+              >
+                {isSaving ? 'Enregistrement...' : 'Enregistrer la commission'}
+              </button>
+            </div>
           </div>
         </form>
       </div>

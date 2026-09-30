@@ -16,8 +16,10 @@ import InstrumentVisualizer from './InstrumentVisualizer';
 import InstrumentBaptismModal from './InstrumentBaptismModal';
 import { canValidateWorkshop } from '../../utils/permissionUtils';
 import { doc, writeBatch } from 'firebase/firestore';
+import useConfirm from '../../hooks/useConfirm';
 
 export default function InventoryProjectsView({ groupId, isAuthorized, profileData, _t, inventoryParts, _onCreateInstrument, onNavigateToView }) {
+  const confirm = useConfirm();
   const { projects, loading: pLoading, addProject, updateProject, deleteProject } = useInventoryProjects(groupId);
   const { models, loading: mLoading } = useInstrumentModels(groupId);
   const { updatePartWorkflow } = useInventoryData(groupId);
@@ -128,7 +130,14 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
   };
 
   const handleDeleteProject = async (id, nom) => {
-    if (window.confirm(`Supprimer le projet "${nom}" ?`)) {
+    const ok = await confirm({
+      title: "Supprimer le projet ?",
+      message: `Voulez-vous vraiment supprimer le projet "${nom}" ?`,
+      confirmLabel: "Supprimer",
+      cancelLabel: "Annuler",
+      variant: "danger"
+    });
+    if (ok) {
       await deleteProject(id);
       if (editingProject?.id === id) setEditingProject(null);
     }

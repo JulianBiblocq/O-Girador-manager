@@ -34,12 +34,47 @@ import TabAdmin from './event-details/tabs/TabAdmin';
 import useHardwareBack from '../hooks/useHardwareBack';
 import { triggerEventStatusAutomation } from '../utils/automationEngine';
 import { canonicalizeGroupId } from '../utils/tenantUtils';
+import { parseDateLinear, formatGoogleCalendarDate, openGoogleCalendar } from '../utils/calendarUtils';
 
 export default function EventDetails({ event, user, profileData, groupId: propGroupId, onNavigateToView, onClose, onPrev, onNext, viewMode: _viewMode, setViewMode: _setViewMode, onGoToStageLayoutEditor }) {
   const { t } = useTranslation();
-  const { confirm } = useConfirm();
+  const [activeTab, setActiveTab] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      const tabParam = searchParams.get('tab');
+      if (tabParam && ['rsvp', 'logistics', 'program', 'admin', 'discussion'].includes(tabParam)) {
+        return tabParam;
+      }
+    }
+    return 'rsvp';
+  });
 
-  const [activeTab, setActiveTab] = useState('rsvp');
+  // Synchronisation dynamique de l'onglet actif avec les paramètres d'URL (ex: popstate, clics de notification)
+  useEffect(() => {
+    const handleUrlTabChange = () => {
+      if (typeof window === 'undefined') return;
+      const searchParams = new URLSearchParams(window.location.search);
+      const tabParam = searchParams.get('tab');
+      if (tabParam && ['rsvp', 'logistics', 'program', 'admin', 'discussion'].includes(tabParam)) {
+        setActiveTab(tabParam);
+      }
+    };
+
+    window.addEventListener('popstate', handleUrlTabChange);
+    return () => window.removeEventListener('popstate', handleUrlTabChange);
+  }, []);
+
+  // Gestionnaire de changement d'onglet avec synchronisation de l'historique d'URL
+  const handleSelectTab = useCallback((newTab) => {
+    setActiveTab(newTab);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location);
+      url.searchParams.set('tab', newTab);
+      window.history.replaceState({ ...window.history.state, tab: newTab }, '', url.toString());
+    }
+  }, []);
+
+  const { confirm } = useConfirm();
 
   const translate = (key, fallback) => {
     const val = t(key);
@@ -673,13 +708,12 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
     return resolveEffectiveUserTags(profileData?.tags || [], tagsDisponibles);
   }, [profileData?.tags, tagsDisponibles]);
 
-  const [isMemberViewSimulation, setIsMemberViewSimulation] = useState(false);
-
   const rawIsAuthorized = React.useMemo(() => {
     return canManageEvents(profileData, permissionsMatrice, effectiveUserTags);
   }, [profileData, permissionsMatrice, effectiveUserTags]);
 
-  const isAuthorized = rawIsAuthorized && !isMemberViewSimulation;
+  // Simulation adhérent locale supprimée — le simulateur global de la barre de navigation le remplace
+  const isAuthorized = rawIsAuthorized;
 
   const hasFinanceAccess = React.useMemo(() => {
     if (isAuthorized) return true;
@@ -718,8 +752,8 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
       return financeKeywords.some(kw => lower.includes(kw) || nomMLower.includes(kw) || nomFLower.includes(kw));
     });
 
-    return hasTagAccess && !isMemberViewSimulation;
-  }, [isAuthorized, profileData?.role, permissionsMatrice, effectiveUserTags, tagsDisponibles, isMemberViewSimulation]);
+    return hasTagAccess;
+  }, [isAuthorized, profileData?.role, permissionsMatrice, effectiveUserTags, tagsDisponibles]);
 
   const canAccessAdminTab = isAuthorized || hasFinanceAccess;
 
@@ -809,17 +843,7 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
     return base;
   };
 
-  const formatToUTCISO8601 = (date) => {
-    if (!date || isNaN(date.getTime())) return '';
-    const y = date.getUTCFullYear();
-    const m = String(date.getUTCMonth() + 1).padStart(2, '0');
-    const d = String(date.getUTCDate()).padStart(2, '0');
-    const h = String(date.getUTCHours()).padStart(2, '0');
-    const min = String(date.getUTCMinutes()).padStart(2, '0');
-    const s = String(date.getUTCSeconds()).padStart(2, '0');
-    return `${y}${m}${d}T${h}${min}${s}Z`;
-  };
-
+  // Texte descriptif de l'événement pour l'export agenda (Google Calendar / ICS)
   const getEventDetailsText = () => {
     let detailsText = `Type d'événement : ${event.type || ''}`;
     if (event.lieu) detailsText += `\n📍 Lieu : ${event.lieu}`;
@@ -842,46 +866,43 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
     return detailsText;
   };
 
+  // Calcul de la date de fin de l'événement (repli sur durée par défaut de 1h)
   const getEventEndTimestamp = (startDate) => {
     if (event.dateFin) {
-      const parsedEnd = new Date(event.dateFin);
-      if (!isNaN(parsedEnd.getTime()) && parsedEnd.getTime() > startDate.getTime()) {
+      const parsedEnd = parseDateLinear(event.dateFin);
+      if (parsedEnd.getTime() > startDate.getTime()) {
         return parsedEnd;
       }
     }
-    // Default duration: 1 hour if no end date specified
+    // Durée par défaut : 1 heure si aucune date de fin spécifiée
     return new Date(startDate.getTime() + 1 * 60 * 60 * 1000);
   };
 
+  // Ajout sécurisé à Google Calendar via calendarUtils (pas de récursion, pas de SyntheticEvent)
   const handleAddToGoogleCalendar = () => {
-    const eventDate = new Date(event.date);
-    if (isNaN(eventDate.getTime())) {
+    const eventDate = parseDateLinear(event.date);
+    if (!event.date) {
       alert("Impossible d'ajouter à l'agenda : date invalide.");
       return;
     }
-    const endDate = getEventEndTimestamp(eventDate);
-    const startStr = formatToUTCISO8601(eventDate);
-    const endStr = formatToUTCISO8601(endDate);
-
-    const title = encodeURIComponent(event.titre || 'Événement Roda');
-    const dates = `${startStr}/${endStr}`;
-    const details = encodeURIComponent(getEventDetailsText());
-    const location = encodeURIComponent(event.lieu || '');
-
-    const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&details=${details}&location=${location}`;
-    window.open(googleCalendarUrl, '_blank', 'noopener,noreferrer');
+    // Ouverture sécurisée via l'utilitaire centralisé
+    openGoogleCalendar(event, {
+      customDetails: getEventDetailsText(),
+      defaultDurationMs: 1 * 60 * 60 * 1000, // 1 heure par défaut pour cet écran
+    });
   };
 
+  // Téléchargement du fichier iCal (.ics) avec parsing linéaire sécurisé
   const handleDownloadIcs = () => {
-    const eventDate = new Date(event.date);
-    if (isNaN(eventDate.getTime())) {
+    const eventDate = parseDateLinear(event.date);
+    if (!event.date) {
       alert("Impossible de générer le fichier iCal : date invalide.");
       return;
     }
     const endDate = getEventEndTimestamp(eventDate);
-    const startStr = formatToUTCISO8601(eventDate);
-    const endStr = formatToUTCISO8601(endDate);
-    const stampStr = formatToUTCISO8601(new Date());
+    const startStr = formatGoogleCalendarDate(eventDate);
+    const endStr = formatGoogleCalendarDate(endDate);
+    const stampStr = formatGoogleCalendarDate(new Date());
 
     const summary = event.titre || 'Événement Roda';
     const description = getEventDetailsText().replace(/\n/g, '\\n');
@@ -1499,16 +1520,18 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
               </button>
             )}
 
-            {/* Bouton d'accès rapide Feuille de route (Roadbook complet jour J) */}
-            <button
-              type="button"
-              onClick={() => setShowRoadbookModal(true)}
-              className="text-[10px] font-black uppercase bg-[var(--color-cordel-papier-card,#fdfbf7)] hover:bg-white text-[var(--color-cordel-encre,#181716)] border border-encre-noire px-2.5 sm:px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1 transition-colors select-none"
-              title="Consulter la feuille de route opérationnelle du concert / événement"
-            >
-              <span>📄</span>
-              <span className="hidden sm:inline">Feuille de route</span>
-            </button>
+            {/* Bouton d'accès rapide Feuille de route — conditionné à l'activation du roadbook */}
+            {Boolean((activeEvent || event)?.enableRoadbook) && (
+              <button
+                type="button"
+                onClick={() => setShowRoadbookModal(true)}
+                className="text-[10px] font-black uppercase bg-[var(--color-cordel-papier-card,#fdfbf7)] hover:bg-white text-[var(--color-cordel-encre,#181716)] border border-encre-noire px-2.5 sm:px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1 transition-colors select-none"
+                title="Consulter la feuille de route opérationnelle du concert / événement"
+              >
+                <span>📄</span>
+                <span className="hidden sm:inline">Feuille de route</span>
+              </button>
+            )}
 
             {/* Bouton d'accès rapide Tour de Contrôle des Commissions (si activé) */}
             {Boolean((activeEvent || event)?.hasCommissions) && (
@@ -1539,18 +1562,7 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
               </button>
             )}
 
-            {/* 2. Bouton d'action directe : 📷 QR Code (priorité dépôt direct Framaspace) */}
-            {hasQrCode && (
-              <button
-                type="button"
-                onClick={handleOpenQrCodeModal}
-                className="text-[10px] font-black uppercase bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-900 px-2.5 sm:px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1 transition-colors select-none"
-                title={currentLienDepot ? "Afficher le QR Code du dossier photos/vidéos de l'événement" : "Afficher le QR Code de récolte photos"}
-              >
-                <span>📷</span>
-                <span className="hidden sm:inline">QR Code</span>
-              </button>
-            )}
+            {/* Bouton QR Code supprimé de la barre haute — accessible via l'onglet RSVP et le menu ••• Actions */}
 
             {/* 2. Bouton prioritaire : 📅 Ajouter à mon agenda (avec dropdown Google/ICS) */}
             <div className="relative">
@@ -1624,19 +1636,7 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
                       onClick={() => setIsMoreMenuOpen(false)}
                     />
                     <div className="absolute right-0 top-full mt-2 w-56 bg-cordel-bg-light border-2 border-encre-noire rounded-[8px_12px_9px_11px] shadow-[4px_4px_0px_0px_#181716] py-1.5 z-50 flex flex-col text-left">
-                      {rawIsAuthorized && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsMemberViewSimulation(!isMemberViewSimulation);
-                            setIsMoreMenuOpen(false);
-                          }}
-                          className="w-full px-3.5 py-2 text-[10px] font-black uppercase tracking-wider text-encre-noire hover:bg-amber-100 cursor-pointer text-left flex items-center gap-2"
-                        >
-                          <span>👁️</span>
-                          <span>{isMemberViewSimulation ? 'Quitter la vue adhérent' : 'Aperçu vue adhérent'}</span>
-                        </button>
-                      )}
+                      {/* Option « Aperçu vue adhérent » supprimée — remplacée par le simulateur global de la barre de navigation */}
 
                       {hasQrCode && (
                         <button
@@ -1649,17 +1649,20 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
                         </button>
                       )}
 
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowRoadbookModal(true);
-                          setIsMoreMenuOpen(false);
-                        }}
-                        className="w-full px-3.5 py-2 text-[10px] font-black uppercase tracking-wider text-encre-noire hover:bg-neutral-100 cursor-pointer text-left flex items-center gap-2"
-                      >
-                        <span>📄</span>
-                        <span>Feuille de route (A4)</span>
-                      </button>
+                      {/* Feuille de route A4 — affichée uniquement si le roadbook est activé sur l'événement */}
+                      {Boolean((activeEvent || event)?.enableRoadbook) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowRoadbookModal(true);
+                            setIsMoreMenuOpen(false);
+                          }}
+                          className="w-full px-3.5 py-2 text-[10px] font-black uppercase tracking-wider text-encre-noire hover:bg-neutral-100 cursor-pointer text-left flex items-center gap-2"
+                        >
+                          <span>📄</span>
+                          <span>Feuille de route (A4)</span>
+                        </button>
+                      )}
 
                       {isAuthorized && (
                         <>
@@ -1764,20 +1767,7 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
             />
           )}
 
-          {isMemberViewSimulation && (
-            <div className="w-full mb-1 px-3.5 py-2 bg-amber-400 text-encre-noire border-2 border-encre-noire rounded shadow-[2px_2px_0px_0px_#181716] text-[10px] font-black uppercase tracking-wider flex items-center justify-between z-20 select-none animate-fade-in shrink-0">
-              <span className="flex items-center gap-2">
-                ⚠️ Mode Simulation Adhérent Actif
-              </span>
-              <button
-                type="button"
-                onClick={() => setIsMemberViewSimulation(false)}
-                className="bg-encre-noire text-white text-[9px] px-2.5 py-1 rounded font-black uppercase hover:bg-neutral-800 cursor-pointer shadow-xs shrink-0 ml-2"
-              >
-                [ Revenir en mode Admin ]
-              </button>
-            </div>
-          )}
+          {/* Bandeau de simulation adhérent local supprimé — le simulateur global de la navbar le remplace */}
 
           {/* Bandeau d'Identification de l'Événement (Nom, Date & Lieu) */}
           <div className="w-full bg-cordel-bg-light/90 border-2 border-encre-noire rounded-[8px_12px_7px_10px] p-3.5 sm:p-4 shadow-[2.5px_2.5px_0px_0px_#181716] flex flex-col gap-2 relative overflow-hidden">
@@ -1842,7 +1832,7 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
           {/* Navigation par Onglets Thématiques Cordel */}
           <EventTabsNav
             activeTab={activeTab}
-            setActiveTab={setActiveTab}
+            setActiveTab={handleSelectTab}
             canAccessAdminTab={canAccessAdminTab}
             attendeesCount={((event.inscriptions || []).filter(ins => ins.status === 'present').length) + ((event.invitesExternes || []).length)}
             carsCount={(event.covoiturage?.voitures || []).length}
@@ -2051,18 +2041,31 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
                 hasQrCode={hasQrCode}
               />
             )}
+
+            {activeTab === 'discussion' && (
+              <div id="event-tab-discussion" className="mt-2">
+                <EventCommentsSection
+                  event={activeEvent || event}
+                  user={user}
+                  profileData={profileData}
+                  autoFocus={true}
+                />
+              </div>
+            )}
           </div>
       </>
     )}
 
-      {/* SECTION : Discussion & Questions Logistiques */}
-      <div className="mt-6">
-        <EventCommentsSection
-          event={activeEvent || event}
-          user={user}
-          profileData={profileData}
-        />
-      </div>
+      {/* SECTION : Discussion & Questions Logistiques (affichée en pied de fiche si un autre onglet est actif) */}
+      {activeTab !== 'discussion' && (
+        <div className="mt-6">
+          <EventCommentsSection
+            event={activeEvent || event}
+            user={user}
+            profileData={profileData}
+          />
+        </div>
+      )}
 
       {/* MODALE : QR Code Dépôt Médias Événement (Framaspace, Drive...) */}
       {showMediaQrCodeModal && (currentLienDepot || effectiveQrUrl) && (
@@ -2102,8 +2105,16 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
         allUsers={effectiveAllUsers || allUsers}
         presentsByInstrument={presentsByInstrument || {}}
         onNavigateToStageLayout={() => {
-          setActiveTab('program');
           setShowRoadbookModal(false);
+          setActiveTab('program');
+          // Attendre l'insertion du composant plan de scène dans le DOM
+          // puis déclencher le défilement fluide centré sur l'ancrage
+          setTimeout(() => {
+            const target = document.getElementById('event-stage-layout');
+            if (target) {
+              target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          }, 150);
         }}
         t={t}
       />

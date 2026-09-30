@@ -8,8 +8,8 @@ import { syncCommissionToVaral } from '../../../utils/commissionVaralAdapter';
  * @param {Object} props
  * @param {Object} props.event Données de l'événement
  * @param {Object} props.commission Données de la commission
- * @param {Object} props.usersMap Dictionnaire des utilisateurs
- * @param {string} props.groupId Identifiant du groupe
+ * @param {Object} [props.usersMap={}] Dictionnaire des utilisateurs
+ * @param {string} [props.groupId] Identifiant du groupe
  * @param {'compact'|'full'} [props.variant='full'] Variante d'affichage
  * @param {Function} [props.onSyncSuccess] Callback après synchronisation réussie
  */
@@ -26,12 +26,13 @@ export default function CommissionVaralAction({
 
   if (!commission || !event) return null;
 
-  const isPublished = Boolean(commission.varalDocId);
-  const derniereSynchro = commission.varalDerniereSynchro ? new Date(commission.varalDerniereSynchro) : null;
+  const derniereSynchroStr = commission.derniereSynchroVaral || commission.varalDerniereSynchro;
+  const isPublished = Boolean(commission.varalDocId || derniereSynchroStr);
+  const derniereSynchro = derniereSynchroStr ? new Date(derniereSynchroStr) : null;
   const derniereModif = commission.derniereModif ? new Date(commission.derniereModif) : null;
 
-  // Calcul du statut de synchronisation
-  const isUpToDate = isPublished && (!derniereModif || !derniereSynchro || derniereSynchro >= derniereModif);
+  // Calcul du statut de synchronisation : À jour si synchro >= dernière modification
+  const isUpToDate = isPublished && (!derniereModif || !derniereSynchro || derniereSynchro.getTime() >= derniereModif.getTime());
 
   const handleSync = async (e) => {
     if (e) e.stopPropagation();
@@ -69,34 +70,38 @@ export default function CommissionVaralAction({
   if (variant === 'compact') {
     return (
       <div className="flex items-center gap-1.5 text-[9.5px]">
-        {/* Badge d'état */}
-        {isPublished ? (
+        {/* Indicateur d'état selon les spécifications */}
+        {isPublished && (
           <span
-            className={`px-1.5 py-0.5 rounded font-bold border truncate max-w-[120px] ${
+            className={`px-1.5 py-0.5 rounded font-bold border truncate max-w-[160px] flex items-center gap-1 ${
               isUpToDate
                 ? 'bg-emerald-50 text-[var(--color-cordel-vert)] border-[var(--color-cordel-vert)]/40'
                 : 'bg-amber-50 text-[var(--color-cordel-ocre)] border-[var(--color-cordel-ocre)]/40'
             }`}
-            title={isUpToDate ? 'Livret Varal à jour' : 'Modifications non publiées'}
+            title={isUpToDate ? 'Livret Varal à jour' : 'Modifications non synchronisées'}
           >
-            {isUpToDate ? '✅ Varal à jour' : '⚠️ Modifs à publier'}
-          </span>
-        ) : (
-          <span className="px-1.5 py-0.5 rounded font-bold border border-stone-300 bg-stone-100 text-stone-500">
-            📜 Non publié
+            <span>{isUpToDate ? '✅' : '⚠️'}</span>
+            <span>{isUpToDate ? 'À jour au Varal' : 'Modifié (non synchronisé)'}</span>
           </span>
         )}
 
-        {/* Bouton synchro miniature */}
+        {/* Bouton d'action compact Cordel */}
         <button
           type="button"
           disabled={isSyncing}
           onClick={handleSync}
-          className="p-1 rounded border border-encre-noire bg-cordel-bg hover:bg-stone-200 text-encre-noire font-bold cursor-pointer disabled:opacity-50"
-          title={isPublished ? 'Mettre à jour le livret Varal' : 'Publier le livret au Varal'}
+          className="px-2 py-1 rounded border border-encre-noire bg-cordel-bg hover:bg-stone-200 text-encre-noire font-black cursor-pointer disabled:opacity-50 flex items-center gap-1 shadow-2xs active:translate-y-0.5 transition-all"
+          title={isPublished ? '🔄 Synchroniser au Varal' : '📜 Publier au Varal'}
         >
-          {isSyncing ? '⏳' : '📜'}
+          <span>{isSyncing ? '⏳' : isPublished ? '🔄' : '📜'}</span>
+          <span>{isPublished ? 'Synchroniser au Varal' : 'Publier au Varal'}</span>
         </button>
+
+        {feedback && (
+          <span className={`text-[9px] font-bold ${feedback.type === 'error' ? 'text-[var(--color-cordel-rouge)]' : 'text-[var(--color-cordel-vert)]'}`}>
+            {feedback.message}
+          </span>
+        )}
       </div>
     );
   }
@@ -111,13 +116,14 @@ export default function CommissionVaralAction({
           </span>
           {isPublished ? (
             <span
-              className={`px-2 py-0.5 rounded text-[10px] font-black border ${
+              className={`px-2 py-0.5 rounded text-[10px] font-black border flex items-center gap-1 ${
                 isUpToDate
                   ? 'bg-emerald-100 text-[var(--color-cordel-vert)] border-[var(--color-cordel-vert)]'
                   : 'bg-amber-100 text-[var(--color-cordel-ocre)] border-[var(--color-cordel-ocre)]'
               }`}
             >
-              {isUpToDate ? '✅ À jour au Varal' : '⚠️ Modifications non publiées'}
+              <span>{isUpToDate ? '✅' : '⚠️'}</span>
+              <span>{isUpToDate ? 'À jour au Varal' : 'Modifié (non synchronisé)'}</span>
             </span>
           ) : (
             <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-stone-100 text-stone-600 border border-stone-300">
@@ -144,8 +150,8 @@ export default function CommissionVaralAction({
           onClick={handleSync}
           className="px-3 py-1.5 rounded font-black text-xs border border-encre-noire bg-cordel-bg hover:bg-stone-200 text-encre-noire shadow-xs flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
         >
-          <span>{isSyncing ? '⏳' : '📜'}</span>
-          <span>{isPublished ? 'Synchroniser au Varal' : 'Publier au Varal'}</span>
+          <span>{isSyncing ? '⏳' : isPublished ? '🔄' : '📜'}</span>
+          <span>{isPublished ? '🔄 Synchroniser au Varal' : '📜 Publier au Varal'}</span>
         </button>
       </div>
     </div>

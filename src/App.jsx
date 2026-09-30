@@ -1910,6 +1910,7 @@ export default function App() {
       if (!eventId && path.match(/\/events\/([^/?#]+)/)) {
         eventId = path.match(/\/events\/([^/?#]+)/)[1];
       }
+      const tabParam = params.get('tab');
       setCurrentPole('accueil');
       setCurrentTab('agenda');
       cleanUrlParams(['threadId']);
@@ -1918,9 +1919,12 @@ export default function App() {
       if (eventId) {
         newSearchParams.set('eventId', eventId);
       }
+      if (tabParam) {
+        newSearchParams.set('tab', tabParam);
+      }
       setCurrentRoute(basePath);
       const newUrl = basePath + (newSearchParams.toString() ? '?' + newSearchParams.toString() : '');
-      window.history.pushState({ ...window.history.state, eventId }, '', newUrl);
+      window.history.pushState({ ...window.history.state, eventId, tab: tabParam }, '', newUrl);
 
       // Notification immédiate pour WidgetAgenda
       window.dispatchEvent(new PopStateEvent('popstate'));

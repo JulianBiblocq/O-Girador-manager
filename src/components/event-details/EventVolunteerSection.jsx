@@ -3,6 +3,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import XiloAvatar from '../XiloAvatar';
+import { openGoogleCalendar } from '../../utils/calendarUtils';
 
 export default function EventVolunteerSection({ event, user, allUsers = [], t }) {
   const [loading, setLoading] = useState(false);
@@ -13,32 +14,18 @@ export default function EventVolunteerSection({ event, user, allUsers = [], t })
     return null;
   }
 
+  // Ajout sécurisé d'une mission bénévole à Google Calendar via calendarUtils
   const handleAddShiftToGoogleCalendar = (shift) => {
     if (!event.date) {
       alert("Impossible d'ajouter à l'agenda : date de l'événement inconnue.");
       return;
     }
-    const eventDate = new Date(event.date);
-    if (isNaN(eventDate.getTime())) {
-      alert("Impossible d'ajouter à l'agenda : date invalide.");
-      return;
-    }
-    
-    const formatToUTCISO8601 = (date) => {
-        return date.toISOString().replace(/-|:|\.\d\d\d/g, '');
-    };
-    
-    const startStr = formatToUTCISO8601(eventDate);
-    const endDate = new Date(eventDate.getTime() + 2 * 60 * 60 * 1000);
-    const endStr = formatToUTCISO8601(endDate);
-    
-    const title = encodeURIComponent(`Bénévolat : ${shift.nomTache}`);
-    const dates = `${startStr}/${endStr}`;
-    const details = encodeURIComponent(`Événement : ${event.titre || 'Événement Roda'}\nMission : ${shift.nomTache}\nHoraires : ${shift.horaires || 'Non précisés'}\n\nMerci pour ton aide !`);
-    const location = encodeURIComponent(event.lieu || '');
-    
-    const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&details=${details}&location=${location}`;
-    window.open(googleCalendarUrl, '_blank', 'noopener,noreferrer');
+    // Construction des détails spécifiques au créneau bénévole
+    const shiftDetails = `Événement : ${event.titre || 'Événement Roda'}\nMission : ${shift.nomTache}\nHoraires : ${shift.horaires || 'Non précisés'}\n\nMerci pour ton aide !`;
+    openGoogleCalendar(event, {
+      titlePrefix: 'Bénévolat : ',
+      customDetails: shiftDetails,
+    });
   };
 
   const handleToggleJoin = async (shiftId) => {

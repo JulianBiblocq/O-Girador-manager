@@ -74,6 +74,9 @@ export function resolveTypeEffectiveConfig(type = '', rawConfig = {}) {
     requiresValidation: rawConfig.requiresValidation !== undefined
       ? Boolean(rawConfig.requiresValidation)
       : false,
+    hasCommissionsByDefault: rawConfig.hasCommissionsByDefault !== undefined
+      ? Boolean(rawConfig.hasCommissionsByDefault)
+      : (isPresta || isStage),
     defaultDeadlineHours: rawConfig.defaultDeadlineHours !== undefined
       ? rawConfig.defaultDeadlineHours
       : '',
@@ -97,6 +100,7 @@ export function buildConfigSummary(config = {}) {
   if (config.enableCarpool) badges.push('🚗 Covoit');
   if (config.includesPercussion) badges.push('🥁 Percu');
   if (config.includesDance) badges.push('💃 Danse');
+  if (config.hasCommissionsByDefault) badges.push('🎪 Commissions');
   if (config.requiresValidation) badges.push('🔒 Valid. admin');
   if (config.defaultDeadlineHours && Number(config.defaultDeadlineHours) > 0) {
     badges.push(`⏳ Délai ${config.defaultDeadlineHours}h`);

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { collection, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { notifyMembersByTag } from '../utils/inAppNotificationService';
+import { sendEventDiscussionNotifications } from '../services/notificationService';
 
 /**
  * Hook useEventComments
@@ -96,7 +97,27 @@ export function useEventComments(eventId, user, profileData, event) {
         return [...prev, { id: docRef.id, ...commentPayload, dateCreation: new Date() }];
       });
 
-      // 3. Récupération des paramètres de l'association pour l'étiquette de notification
+      // 3. Diffusion groupée des notifications in-app aux participants confirmés et organisateurs
+      try {
+        let fullEvent = event;
+        if (!fullEvent || !fullEvent.inscriptions) {
+          const eventDocSnap = await getDoc(doc(db, 'events', eventId));
+          if (eventDocSnap.exists()) {
+            fullEvent = { id: eventDocSnap.id, ...eventDocSnap.data() };
+          }
+        }
+        await sendEventDiscussionNotifications({
+          event: fullEvent || { id: eventId, titre: event?.titre || 'Événement', groupId: effectiveGroupId },
+          authorName,
+          text: cleanText,
+          currentUserId: user.uid,
+          groupId: effectiveGroupId
+        });
+      } catch (notifErr) {
+        console.warn("useEventComments - Erreur envoi notifications discussion :", notifErr);
+      }
+
+      // 4. Récupération des paramètres de l'association pour l'étiquette de notification
       let tagConfigured = '';
       try {
         const assocRef = doc(db, 'associations', effectiveGroupId);
@@ -109,9 +130,9 @@ export function useEventComments(eventId, user, profileData, event) {
       }
 
       const eventTitle = event?.titre || event?.nom || 'Événement';
-      const excerpt = cleanText.length > 90 ? cleanText.slice(0, 90) + '...' : cleanText;
+      const excerpt = cleanText.length > 80 ? cleanText.slice(0, 77) + '...' : cleanText;
 
-      // 4. Notification interne pour le Conseil d'Administration et le Bureau
+      // 5. Notification interne pour le Conseil d'Administration et le Bureau
       try {
         notifyMembersByTag({
           groupId: effectiveGroupId,
@@ -125,7 +146,7 @@ export function useEventComments(eventId, user, profileData, event) {
         console.warn("useEventComments - Erreur notification CA :", notifErr);
       }
 
-      // 5. Notification pour l'étiquette configurée (si différente)
+      // 6. Notification pour l'étiquette configurée (si différente)
       if (tagConfigured) {
         try {
           await addDoc(collection(db, 'notifications_queue'), {
@@ -142,7 +163,7 @@ export function useEventComments(eventId, user, profileData, event) {
         }
       }
 
-      // 5. Notification pour le créateur de l'événement (s'il n'est pas le commenteur lui-même)
+      // 7. Notification pour le créateur de l'événement (s'il n'est pas le commenteur lui-même)
       const eventCreatorId = event?.createdBy || event?.auteurId;
       if (eventCreatorId && eventCreatorId !== user.uid) {
         try {

@@ -70,7 +70,8 @@ export default function TabAgenda({
       agendaEnableAdresse: true,
       agendaEnableUrl: true,
       agendaEnableVolunteerShifts: isPresta || isStage,
-      isPublic: isPresta
+      isPublic: isPresta,
+      hasCommissionsByDefault: isPresta || isStage
     };
 
     const updatedConfigs = {

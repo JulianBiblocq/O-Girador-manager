@@ -19,7 +19,8 @@ export default function EventTabsNav({
   canAccessAdminTab,
   attendeesCount = 0,
   _carsCount = 0,
-  hasProgram = false
+  hasProgram = false,
+  commentsCount = 0
 }) {
   const tabs = [
     {
@@ -39,6 +40,12 @@ export default function EventTabsNav({
       label: 'Scène & Programme',
       icon: '🎵',
       badge: hasProgram ? '•' : null
+    },
+    {
+      id: 'discussion',
+      label: 'Discussion',
+      icon: '💬',
+      badge: commentsCount > 0 ? `${commentsCount}` : null
     }
   ];
 

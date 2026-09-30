@@ -487,7 +487,7 @@ export default function LayoutShell({
               isDefisAuthorized={isDefisAuthorized}
             />
             <NotificationCenter 
-              currentUser={currentProfile}
+              currentUser={profileData || currentProfile}
               groupId={currentGroupId}
               onNavigateToUrl={onNotificationNavigate}
             />
@@ -845,7 +845,7 @@ export default function LayoutShell({
                   />
 
                   <NotificationCenter 
-                    currentUser={currentProfile}
+                    currentUser={profileData || currentProfile}
                     groupId={currentGroupId}
                     onNavigateToUrl={onNotificationNavigate}
                   />
@@ -909,7 +909,7 @@ export default function LayoutShell({
                     />
 
                     <NotificationCenter 
-                      currentUser={currentProfile}
+                      currentUser={profileData || currentProfile}
                       groupId={currentGroupId}
                       onNavigateToUrl={onNotificationNavigate}
                     />
@@ -952,7 +952,7 @@ export default function LayoutShell({
                                 data-tab-active="false"
                                 disabled={true}
                                 title={isRestrictedTitle}
-                                className="shrink-0 whitespace-nowrap min-h-[40px] lg:min-h-0 px-3.5 py-1.5 lg:px-2.5 lg:py-1 text-sm lg:text-xs font-black uppercase tracking-wider lg:tracking-wide rounded-[4px_6px_3px_5px] border-2 transition-all opacity-50 grayscale cursor-not-allowed bg-cordel-bg/50 text-encre-noire/50 border-encre-noire/20 select-none shadow-none flex items-center justify-center gap-1.5"
+                                className="shrink-0 whitespace-nowrap min-h-[40px] px-3.5 py-1.5 text-sm lg:min-h-0 lg:px-2.5 lg:py-1 lg:text-xs font-black uppercase tracking-wider lg:tracking-wide rounded-[4px_6px_3px_5px] border-2 transition-all opacity-50 grayscale cursor-not-allowed bg-cordel-bg/50 text-encre-noire/50 border-encre-noire/20 select-none shadow-none flex items-center justify-center gap-1.5"
                               >
                                 <span className="text-[11px] opacity-75">🔒</span>
                                 <span>{displayLabel}</span>
@@ -967,7 +967,7 @@ export default function LayoutShell({
                               data-tab-id={tab.id}
                               data-tab-active={isActive ? "true" : "false"}
                               onClick={() => onNavigateToTab && onNavigateToTab(tab.id)}
-                              className={`shrink-0 whitespace-nowrap min-h-[40px] lg:min-h-0 px-3.5 py-1.5 lg:px-2.5 lg:py-1 text-sm lg:text-xs font-black uppercase tracking-wider lg:tracking-wide rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer flex items-center justify-center ${
+                              className={`shrink-0 whitespace-nowrap min-h-[40px] px-3.5 py-1.5 text-sm lg:min-h-0 lg:px-2.5 lg:py-1 lg:text-xs font-black uppercase tracking-wider lg:tracking-wide rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer flex items-center justify-center ${
                                 isActive
                                   ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
                                   : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
@@ -981,7 +981,7 @@ export default function LayoutShell({
                     </div>
 
                     {/* Sur mobile uniquement : bouton d'aide contextuelle à droite du ruban défilant */}
-                    <div className="lg:hidden flex items-center gap-1.5 shrink-0 ml-auto">
+                    <div className="lg:hidden flex items-center gap-1.5 shrink-0 ml-auto self-start pt-2">
                       <InfoPoleHelpButton 
                         key={`help_btn_mob_${activePoleObj?.id || currentPole}_${currentTab || 'default'}`}
                         currentPole={activePoleObj?.id || currentPole} 

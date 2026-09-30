@@ -24,7 +24,8 @@ export default function EventCommissionsHub({
     stats,
     getCommissionProgress,
     addCommission,
-    updateCommission
+    updateCommission,
+    deleteCommission
   } = useEventCommissions(eventId);
 
   const [editingCommission, setEditingCommission] = useState(null);
@@ -129,7 +130,7 @@ export default function EventCommissionsHub({
               </div>
             ) : commissions.length === 0 ? (
               <div className="p-8 rounded-lg border-2 border-dashed border-encre-noire/30 text-center bg-cordel-bg/40 flex flex-col items-center justify-center gap-2">
-                <span className="text-3xl">🪘</span>
+                <span className="text-3xl">🎪</span>
                 <p className="text-xs font-bold text-encre-noire">
                   Aucune commission n'est encore configurée pour cet événement.
                 </p>
@@ -181,6 +182,7 @@ export default function EventCommissionsHub({
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onSave={handleSaveCommission}
+          onDelete={(commId) => deleteCommission(eventId, commId)}
         />
       )}
     </div>

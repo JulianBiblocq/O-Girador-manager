@@ -72,6 +72,9 @@ export default function VaralBookletCover({
   } else if (category?.id === 'Administratif' || category?.id === 'DocumentsFixes' || category?.nom === 'Administratif') {
     colorClass = 'bleu-ardoise';
     opacityClass = 'opacity-100';
+  } else if (category?.id?.startsWith('projet_') || category?.isProjectRope || docItem.type === 'cordel_commission' || docType === 'cordel_commission') {
+    colorClass = 'ocre';
+    opacityClass = 'opacity-100';
   } else {
     colorClass = getDeterministicColor(docItem.id);
     opacityClass = isArchived 
@@ -91,6 +94,7 @@ export default function VaralBookletCover({
     drive: '📂',
     report: '📜',
     compte_rendu: '📜',
+    cordel_commission: '🎪',
     statuts: '⚖️',
     culture_fiche: '📖',
     instrument_model: '🛠️',

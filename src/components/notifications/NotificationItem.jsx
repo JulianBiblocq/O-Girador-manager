@@ -55,6 +55,8 @@ function getNotificationIcon(type) {
       return '💬';
     case 'forum_new_thread':
       return <XiloMegaphone size={16} className="text-cordel-wood" />;
+    case 'event_discussion':
+      return '💬';
     case 'event_new':
     case 'event_roadmap':
       return '📅';
@@ -125,9 +127,9 @@ export default function NotificationItem({ notification, onSelect, onDelete }) {
           </div>
         </div>
 
-        {notification.message && (
+        {(notification.body || notification.message) && (
           <p className="text-[11px] text-encre-noire/85 leading-snug line-clamp-2 break-words">
-            {notification.message}
+            {notification.body || notification.message}
           </p>
         )}
 

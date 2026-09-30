@@ -5,6 +5,7 @@ import MemberTreasuryRow from '../MemberTreasuryRow';
 import { useTranslation } from '../LanguageContext';
 import CotisationsBlock from './CotisationsBlock';
 import FormulesManager from '../association-settings/FormulesManager';
+import { syncHelloAssoPayments } from '../../services/helloAssoService';
 
 export default function TreasuryCotisations({
   members = [],
@@ -22,6 +23,10 @@ export default function TreasuryCotisations({
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterCaution, setFilterCaution] = useState('all');
+
+  // État de synchronisation manuelle HelloAsso
+  const [isSyncingHelloAsso, setIsSyncingHelloAsso] = useState(false);
+  const [syncFeedback, setSyncFeedback] = useState(null);
 
   // État de l'accordéon de configuration
   const [showConfig, setShowConfig] = useState(false);
@@ -69,10 +74,10 @@ export default function TreasuryCotisations({
 
   // Statistiques globales
   const totalActive = members.length;
-  const countPaid = members.filter(m => m.paymentStatus === 'paid').length;
-  const countPartial = members.filter(m => m.paymentStatus === 'partial').length;
+  const countPaid = members.filter(m => m.paymentStatus === 'paid' || m.cotisation?.statut === 'a_jour').length;
+  const countPartial = members.filter(m => m.paymentStatus === 'partial' || m.paymentStatus === 'en_cours' || m.cotisation?.statut === 'en_cours').length;
   const countExempted = members.filter(m => m.paymentStatus === 'exempted').length;
-  const countUnpaid = members.filter(m => !m.paymentStatus || m.paymentStatus === 'unpaid').length;
+  const countUnpaid = members.filter(m => (!m.paymentStatus || m.paymentStatus === 'unpaid') && m.cotisation?.statut !== 'a_jour' && m.cotisation?.statut !== 'en_cours').length;
 
   const baseAdhesionAmount = associationSettings?.montantAdhesion !== undefined 
     ? associationSettings.montantAdhesion 
@@ -88,13 +93,61 @@ export default function TreasuryCotisations({
     const matchesSearch = fullName.includes(searchQuery.toLowerCase());
 
     const status = member.paymentStatus || 'unpaid';
-    const matchesStatus = filterStatus === 'all' || status === filterStatus;
+    let matchesStatus = false;
+    if (filterStatus === 'all') {
+      matchesStatus = true;
+    } else if (filterStatus === 'paid') {
+      matchesStatus = status === 'paid' || member.cotisation?.statut === 'a_jour';
+    } else if (filterStatus === 'partial') {
+      matchesStatus = status === 'partial' || status === 'en_cours' || member.cotisation?.statut === 'en_cours';
+    } else if (filterStatus === 'en_cours') {
+      matchesStatus = status === 'en_cours' || member.cotisation?.statut === 'en_cours';
+    } else if (filterStatus === 'unpaid') {
+      matchesStatus = (!member.paymentStatus || member.paymentStatus === 'unpaid') && member.cotisation?.statut !== 'a_jour' && member.cotisation?.statut !== 'en_cours';
+    } else {
+      matchesStatus = status === filterStatus;
+    }
 
     const caution = cautionsByMember?.[member.id] || { statutGlobal: 'na' };
     const matchesCaution = filterCaution === 'all' || caution.statutGlobal === filterCaution;
 
     return matchesSearch && matchesStatus && matchesCaution;
   });
+
+  // Action de resynchronisation manuelle HelloAsso
+  const handleSyncHelloAsso = async () => {
+    if (!groupId) {
+      alert("Identifiant de groupe manquant.");
+      return;
+    }
+    setIsSyncingHelloAsso(true);
+    setSyncFeedback(null);
+    try {
+      const result = await syncHelloAssoPayments(groupId);
+      if (result.success) {
+        setSyncFeedback({
+          type: 'success',
+          message: `Synchronisation terminée avec succès : ${result.syncedMembersCount} profil(s) mis à jour, ${result.syncedTxCount} écriture(s) comptable(s) synchronisée(s).`
+        });
+      } else {
+        setSyncFeedback({
+          type: 'error',
+          message: `Erreur lors de la synchronisation HelloAsso : ${result.error || "Échec inattendu."}`
+        });
+      }
+    } catch (err) {
+      console.error("handleSyncHelloAsso - Erreur :", err);
+      setSyncFeedback({
+        type: 'error',
+        message: `Erreur lors de la synchronisation : ${err.message || err}`
+      });
+    } finally {
+      setIsSyncingHelloAsso(false);
+      setTimeout(() => {
+        setSyncFeedback(null);
+      }, 7000);
+    }
+  };
 
   const handleCopyUrl = () => {
     navigator.clipboard.writeText(webhookUrl).then(() => {
@@ -190,7 +243,8 @@ export default function TreasuryCotisations({
       const totalDue = baseAmount + optionsAmount;
 
       let paymentStatusStr = t('widgetTreasury.unpaid') || "Non payé";
-      if (member.paymentStatus === 'paid') paymentStatusStr = t('widgetTreasury.upToDate') || "À jour";
+      if (member.paymentStatus === 'paid' || member.cotisation?.statut === 'a_jour') paymentStatusStr = t('widgetTreasury.upToDate') || "À jour";
+      else if (member.paymentStatus === 'en_cours' || member.cotisation?.statut === 'en_cours') paymentStatusStr = "En cours (3x)";
       else if (member.paymentStatus === 'partial') paymentStatusStr = t('widgetTreasury.partial') || "Partiel";
       else if (member.paymentStatus === 'exempted') paymentStatusStr = t('widgetTreasury.exempted') || "Exonéré";
 
@@ -246,7 +300,7 @@ export default function TreasuryCotisations({
           <div className="text-xl font-black text-[var(--color-cordel-vert)]">{countPaid}</div>
         </div>
         <div className="border border-encre-noire/25 p-2 bg-amber-100/35 dark:bg-amber-950/15 rounded">
-          <div className="text-[10px] uppercase font-bold text-[var(--color-cordel-ocre)] opacity-80">{t('widgetTreasury.partial') || "Partiel"}</div>
+          <div className="text-[10px] uppercase font-bold text-[var(--color-cordel-ocre)] opacity-80">{t('widgetTreasury.partial') || "Partiel / 3x"}</div>
           <div className="text-xl font-black text-[var(--color-cordel-ocre)]">{countPartial}</div>
         </div>
         <div className="border border-encre-noire/25 p-2 bg-blue-100/35 dark:bg-blue-950/15 rounded">
@@ -308,6 +362,29 @@ export default function TreasuryCotisations({
         )}
       </CordelCard>
 
+      {/* Message de notification de synchronisation HelloAsso */}
+      {syncFeedback && (
+        <div
+          className={`p-3 rounded-[4px_6px_3px_5px] border-2 text-xs font-bold flex items-center justify-between shadow-[2px_2px_0px_0px_#181716] ${
+            syncFeedback.type === 'success'
+              ? 'bg-emerald-50 dark:bg-emerald-950/40 text-[var(--color-cordel-vert)] border-[var(--color-cordel-vert)]'
+              : 'bg-red-50 dark:bg-red-950/40 text-[var(--theme-primary)] border-[var(--theme-primary)]'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <span>{syncFeedback.type === 'success' ? '✅' : '⚠️'}</span>
+            <span>{syncFeedback.message}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSyncFeedback(null)}
+            className="text-xs font-black opacity-70 hover:opacity-100 px-1 cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* Barre d'outils, Recherche et Filtres */}
       <CordelCard variant="default" useExtremeBorder={false} className="p-4 bg-cordel-bg flex flex-col md:flex-row gap-3 items-end">
         <div className="flex-1 flex flex-col gap-1 text-left w-full">
@@ -335,6 +412,7 @@ export default function TreasuryCotisations({
             <option value="all">{t('widgetTreasury.allStatuses') || "Tous les statuts"}</option>
             <option value="paid">{t('widgetTreasury.statusPaid') || "À jour"}</option>
             <option value="partial">{t('widgetTreasury.statusPartial') || "Partiel"}</option>
+            <option value="en_cours">⏳ En cours (3x)</option>
             <option value="exempted">{t('widgetTreasury.statusExempted') || "Exonéré"}</option>
             <option value="unpaid">{t('widgetTreasury.statusUnpaid') || "Non payé"}</option>
           </select>
@@ -355,6 +433,27 @@ export default function TreasuryCotisations({
             <option value="na">Sans prêt (N/A)</option>
           </select>
         </div>
+
+        {/* Bouton de resynchronisation manuelle HelloAsso */}
+        <button
+          type="button"
+          onClick={handleSyncHelloAsso}
+          disabled={isSyncingHelloAsso}
+          title="Forcer la vérification et resynchronisation des paiements HelloAsso"
+          className="text-[10px] font-black uppercase tracking-wider bg-[var(--color-cordel-vert)] hover:brightness-110 text-white border-2 border-encre-noire px-3 py-1.5 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all cursor-pointer flex items-center justify-center gap-1.5 w-full md:w-auto h-[34px] disabled:opacity-50 disabled:cursor-not-allowed select-none"
+        >
+          {isSyncingHelloAsso ? (
+            <>
+              <span className="inline-block animate-spin">🔄</span>
+              <span>Synchro...</span>
+            </>
+          ) : (
+            <>
+              <span>🔄</span>
+              <span>Synchroniser HelloAsso</span>
+            </>
+          )}
+        </button>
 
         <button
           type="button"

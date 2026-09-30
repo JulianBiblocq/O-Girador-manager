@@ -116,7 +116,7 @@ export default function TabProgram({
 
       {/* 3. Plan de Scène & Placement */}
       {showStageLayout && (
-        <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
+        <CordelCard id="event-stage-layout" variant="default" useExtremeBorder={true} className="py-4 px-5">
           <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-1.5 mb-3">
             <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
               <span>🎪</span>

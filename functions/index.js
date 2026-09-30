@@ -16,6 +16,11 @@ const crypto = require("crypto");
 const { getFirestore, FieldValue, Timestamp } = require("firebase-admin/firestore");
 const { getMessaging } = require("firebase-admin/messaging");
 const { getAuth } = require("firebase-admin/auth");
+const {
+  detectHelloAssoOptions,
+  detectInstallmentPayment,
+  findUserIdentifierFromCustomFields
+} = require("./helloasso");
 
 // Initialisation de Firebase Admin SDK s'il n'est pas déjà initialisé
 if (!getApps().length) {
@@ -1129,6 +1134,11 @@ exports.helloAssoWebhook = onRequest(
         console.warn("helloAssoWebhook - Impossible de lire les credentials :", credErr.message);
       }
 
+      // 1. Analyse des options souscrites et détection du paiement échelonné (3x)
+      const optionsAnalysis = detectHelloAssoOptions(items, data);
+      const installmentAnalysis = detectInstallmentPayment(data);
+      const customUserId = findUserIdentifierFromCustomFields(data.customFields, data.metadata, data);
+
       // Enregistrement du log de la notification (traçabilité complète)
       const logEntry = {
         eventType,
@@ -1138,6 +1148,10 @@ exports.helloAssoWebhook = onRequest(
         amountEuros,
         helloAssoOrderId,
         paymentDate,
+        formule: optionsAnalysis.formulePrincipale,
+        isInstallment: installmentAnalysis.isInstallment,
+        installmentNumber: installmentAnalysis.installmentNumber,
+        customUserId,
         items: items.map(item => ({
           id: item.id || null,
           name: item.name || "",
@@ -1150,129 +1164,240 @@ exports.helloAssoWebhook = onRequest(
         matchedUserId: null
       };
 
-      // Matching du membre par email dans le groupe
+      // 2. Réconciliation de l'adhérent par customField (priorité 1) puis par email (priorité 2)
       let matchedUserId = null;
       let matchedUserName = "";
+      let matchedUserDoc = null;
 
-      if (payerEmail) {
-        const usersSnap = await db
+      // Priorité 1 : identifiant utilisateur customField
+      if (customUserId) {
+        try {
+          const directUserSnap = await db.collection("users").doc(customUserId).get();
+          if (directUserSnap.exists) {
+            const uData = directUserSnap.data();
+            if (!uData.groupId || uData.groupId === groupId || uData.groupId.toLowerCase() === groupId.toLowerCase()) {
+              matchedUserId = directUserSnap.id;
+              matchedUserName = `${uData.prenom || ""} ${uData.nom || ""}`.trim();
+              matchedUserDoc = directUserSnap;
+            }
+          }
+        } catch (idErr) {
+          console.warn("helloAssoWebhook - Erreur recherche directe customUserId :", idErr.message);
+        }
+      }
+
+      // Priorité 2 : adresse e-mail du payeur
+      if (!matchedUserId && payerEmail) {
+        let usersSnap = await db
           .collection("users")
           .where("groupId", "==", groupId)
           .where("email", "==", payerEmail)
           .limit(1)
           .get();
 
+        if (usersSnap.empty && groupId !== groupId.toLowerCase()) {
+          usersSnap = await db
+            .collection("users")
+            .where("groupId", "==", groupId.toLowerCase())
+            .where("email", "==", payerEmail)
+            .limit(1)
+            .get();
+        }
+
         if (!usersSnap.empty) {
           const userDoc = usersSnap.docs[0];
           matchedUserId = userDoc.id;
+          matchedUserDoc = userDoc;
           const userData = userDoc.data();
           matchedUserName = `${userData.prenom || ""} ${userData.nom || ""}`.trim();
+        }
+      }
 
-          // Mise à jour du statut de paiement du membre
+      // 3. Mise à jour du profil adhérent sans écraser les saisies manuelles du trésorier
+      if (matchedUserId && matchedUserDoc) {
+        const userData = matchedUserDoc.data();
+        const nowIso = new Date().toISOString();
+
+        // Protection contre l'écrasement des saisies manuelles préalables du trésorier
+        const isManualOverride = Boolean(
+          userData.saisieManuelle === true ||
+          userData.cotisationManuelle === true ||
+          (userData.cotisation?.modeReglement && userData.cotisation.modeReglement !== 'helloasso') ||
+          (userData.modeReglement && userData.modeReglement !== 'helloasso' && userData.paymentStatus === 'paid')
+        );
+
+        const isFullyPaid = installmentAnalysis.isComplete;
+        const isInstallmentActive = installmentAnalysis.isInstallment && !installmentAnalysis.isComplete;
+        const cotisationStatut = isInstallmentActive ? 'en_cours' : (isFullyPaid ? 'a_jour' : 'en_cours');
+        const paymentStatusField = isInstallmentActive ? 'en_cours' : 'paid';
+
+        if (!isManualOverride) {
           await db.collection("users").doc(matchedUserId).update({
-            paymentStatus: "paid",
+            paymentStatus: paymentStatusField,
+            cotisation: {
+              aJour: true,
+              statut: cotisationStatut,
+              formule: optionsAnalysis.formulePrincipale,
+              options: optionsAnalysis.optionsAdditionnelles.map(o => o.nom),
+              montantTotal: amountEuros,
+              modeReglement: 'helloasso',
+              derniereSynchro: nowIso
+            },
             helloAssoLastPayment: {
               date: paymentDate,
               amount: amountEuros,
               orderId: helloAssoOrderId,
+              formule: optionsAnalysis.formulePrincipale,
+              isInstallment: installmentAnalysis.isInstallment,
+              installmentNumber: installmentAnalysis.installmentNumber,
               eventType: eventType,
               updatedAt: FieldValue.serverTimestamp()
             }
           });
-
-          logEntry.matched = true;
-          logEntry.matchedUserId = matchedUserId;
-          logEntry.matchedUserName = matchedUserName;
-
-          console.log("helloAssoWebhook - Membre trouvé et mis à jour :", {
-            userId: matchedUserId,
-            userName: matchedUserName,
-            newStatus: "paid",
-            amount: amountEuros
-          });
-
-          // Notification interne in-app pour les trésoriers
-          try {
-            const treasurersSnap = await db.collection("users")
-              .where("groupId", "==", groupId)
-              .get();
-            const treasurerPromises = [];
-            treasurersSnap.forEach((tDoc) => {
-              const tData = tDoc.data();
-              const uTags = [
-                ...(Array.isArray(tData.userTags) ? tData.userTags : []),
-                ...(Array.isArray(tData.tags) ? tData.tags : []),
-                ...(tData.role ? [tData.role] : [])
-              ].map(t => typeof t === 'string' ? t.toLowerCase().trim() : (t?.nom || t?.name || t?.id || '').toLowerCase().trim());
-              if (uTags.includes('trésorier') || uTags.includes('tresorier')) {
-                treasurerPromises.push(
-                  db.collection("users").doc(tDoc.id).collection("in_app_notifications").add({
-                    title: "💳 Cotisation réglée",
-                    titre: "💳 Cotisation réglée",
-                    message: `${matchedUserName} a réglé son adhésion`,
-                    targetUrl: "/treasury?tab=cotisations",
-                    icon: "💳",
-                    read: false,
-                    isRead: false,
-                    groupId,
-                    createdAt: FieldValue.serverTimestamp()
-                  })
-                );
-              }
-            });
-            await Promise.allSettled(treasurerPromises);
-          } catch (notifErr) {
-            console.warn("helloAssoWebhook - Notification trésorier ignorée :", notifErr.message);
-          }
         } else {
-          console.warn("helloAssoWebhook - Aucun membre trouvé pour l'email :", payerEmail, "dans le groupe :", groupId, "- Enregistrement dans pending_payments");
-          // Sas pending_payments pour réconciliation automatique lors de l'onboarding futur
-          await db.collection("pending_payments").doc(payerEmail).set({
-            groupId,
-            payerEmail,
-            payerFirstName,
-            payerLastName,
-            amountEuros,
-            orderId: helloAssoOrderId,
-            eventType,
-            paymentDate,
-            items: items.map(item => ({
-              id: item.id || null,
-              name: item.name || "",
-              amount: (typeof item.amount === "number" ? item.amount : (item.amount?.total || 0)) / 100,
-              type: item.type || ""
-            })),
-            reconciled: false,
-            createdAt: FieldValue.serverTimestamp()
-          }, { merge: true });
+          // Préservation du mode de règlement manuel du trésorier (chèque, espèces...)
+          const existingCotisation = userData.cotisation || {};
+          await db.collection("users").doc(matchedUserId).update({
+            helloAssoLastPayment: {
+              date: paymentDate,
+              amount: amountEuros,
+              orderId: helloAssoOrderId,
+              formule: optionsAnalysis.formulePrincipale,
+              isInstallment: installmentAnalysis.isInstallment,
+              installmentNumber: installmentAnalysis.installmentNumber,
+              eventType: eventType,
+              updatedAt: FieldValue.serverTimestamp()
+            },
+            cotisation: {
+              ...existingCotisation,
+              derniereSynchro: nowIso
+            }
+          });
         }
+
+        logEntry.matched = true;
+        logEntry.matchedUserId = matchedUserId;
+        logEntry.matchedUserName = matchedUserName;
+
+        console.log("helloAssoWebhook - Membre réconcilié et mis à jour :", {
+          userId: matchedUserId,
+          userName: matchedUserName,
+          formule: optionsAnalysis.formulePrincipale,
+          newStatus: paymentStatusField,
+          amount: amountEuros
+        });
+
+        // Notification interne in-app pour les trésoriers
+        try {
+          const treasurersSnap = await db.collection("users")
+            .where("groupId", "==", groupId)
+            .get();
+          const treasurerPromises = [];
+          treasurersSnap.forEach((tDoc) => {
+            const tData = tDoc.data();
+            const uTags = [
+              ...(Array.isArray(tData.userTags) ? tData.userTags : []),
+              ...(Array.isArray(tData.tags) ? tData.tags : []),
+              ...(tData.role ? [tData.role] : [])
+            ].map(t => typeof t === 'string' ? t.toLowerCase().trim() : (t?.nom || t?.name || t?.id || '').toLowerCase().trim());
+            if (uTags.includes('trésorier') || uTags.includes('tresorier')) {
+              treasurerPromises.push(
+                db.collection("users").doc(tDoc.id).collection("in_app_notifications").add({
+                  title: "💳 Cotisation réglée",
+                  titre: "💳 Cotisation réglée",
+                  message: `${matchedUserName} a réglé son adhésion (${optionsAnalysis.formulePrincipale})`,
+                  targetUrl: "/treasury?tab=cotisations",
+                  icon: "💳",
+                  read: false,
+                  isRead: false,
+                  groupId,
+                  createdAt: FieldValue.serverTimestamp()
+                })
+              );
+            }
+          });
+          await Promise.allSettled(treasurerPromises);
+        } catch (notifErr) {
+          console.warn("helloAssoWebhook - Notification trésorier ignorée :", notifErr.message);
+        }
+      } else if (payerEmail) {
+        console.warn("helloAssoWebhook - Aucun membre trouvé pour l'email :", payerEmail, "dans le groupe :", groupId, "- Enregistrement dans pending_payments");
+        // Sas pending_payments pour réconciliation automatique lors de l'onboarding futur
+        await db.collection("pending_payments").doc(payerEmail).set({
+          groupId,
+          payerEmail,
+          payerFirstName,
+          payerLastName,
+          amountEuros,
+          orderId: helloAssoOrderId,
+          formule: optionsAnalysis.formulePrincipale,
+          eventType,
+          paymentDate,
+          items: items.map(item => ({
+            id: item.id || null,
+            name: item.name || "",
+            amount: (typeof item.amount === "number" ? item.amount : (item.amount?.total || 0)) / 100,
+            type: item.type || ""
+          })),
+          reconciled: false,
+          createdAt: FieldValue.serverTimestamp()
+        }, { merge: true });
       } else {
-        console.warn("helloAssoWebhook - Aucun email de payeur dans la notification.");
+        console.warn("helloAssoWebhook - Aucun identifiant ni email de payeur dans la notification.");
       }
 
-      // Écriture comptable systématique dans la collection racine transactions
-      if (amountEuros > 0) {
+      // 4. Écriture comptable dans la collection racine 'transactions' sans doublon
+      const paymentRefId = String(data.id || data.payment?.id || data.order?.id || helloAssoOrderId || `ha_${Date.now()}`);
+      if (amountEuros > 0 && paymentRefId) {
         try {
-          const txDoc = await db.collection("transactions").add({
-            groupId,
-            date: Timestamp.fromDate(new Date(paymentDate)),
-            type: "recette",
-            montant: amountEuros,
-            categorie: "Cotisations",
-            libelle: `Paiement HelloAsso - ${matchedUserName || (payerFirstName + " " + payerLastName).trim() || payerEmail} (${eventType})`,
-            justificatifNom: helloAssoOrderId ? `HelloAsso #${helloAssoOrderId}` : "Notification HelloAsso",
-            helloAssoOrderId: helloAssoOrderId || null,
-            userId: matchedUserId || null,
-            source: "helloasso",
-            createdAt: FieldValue.serverTimestamp()
-          });
-          logEntry.transactionId = txDoc.id;
+          // Vérification anti-doublon via refExterne ou helloAssoOrderId
+          const existingTxSnap = await db.collection("transactions")
+            .where("groupId", "==", groupId)
+            .where("refExterne", "==", paymentRefId)
+            .limit(1)
+            .get();
+
+          let alreadyExists = !existingTxSnap.empty;
+          if (!alreadyExists && helloAssoOrderId) {
+            const existingOrderSnap = await db.collection("transactions")
+              .where("groupId", "==", groupId)
+              .where("helloAssoOrderId", "==", String(helloAssoOrderId))
+              .limit(1)
+              .get();
+            alreadyExists = !existingOrderSnap.empty;
+            if (alreadyExists) {
+              logEntry.transactionId = existingOrderSnap.docs[0].id;
+            }
+          } else if (alreadyExists) {
+            logEntry.transactionId = existingTxSnap.docs[0].id;
+          }
+
+          if (!alreadyExists) {
+            const txDoc = await db.collection("transactions").add({
+              groupId,
+              date: Timestamp.fromDate(new Date(paymentDate)),
+              type: "recette",
+              categorie: "Cotisation",
+              montant: amountEuros,
+              libelle: `Paiement HelloAsso - ${matchedUserName || (payerFirstName + " " + payerLastName).trim() || payerEmail} (${optionsAnalysis.formulePrincipale})`,
+              justificatif: "HelloAsso",
+              justificatifNom: `HelloAsso #${paymentRefId}`,
+              refExterne: paymentRefId,
+              helloAssoOrderId: helloAssoOrderId || null,
+              helloAssoPaymentId: paymentRefId,
+              formule: optionsAnalysis.formulePrincipale,
+              userId: matchedUserId || null,
+              source: "helloasso",
+              createdAt: FieldValue.serverTimestamp()
+            });
+            logEntry.transactionId = txDoc.id;
+          }
         } catch (txErr) {
           console.error("helloAssoWebhook - Erreur enregistrement transaction comptable :", txErr.message);
         }
       }
 
-      // Écriture du log dans Firestore
+      // 5. Écriture du log dans Firestore
       await db
         .collection("associations").doc(groupId)
         .collection("helloasso_logs")

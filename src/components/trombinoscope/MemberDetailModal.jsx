@@ -2,6 +2,15 @@ import React, { useMemo } from 'react';
 import XiloAvatar from '../XiloAvatar';
 import MemberDetailCardContent from './MemberDetailCardContent';
 import { filterUserAssignedTags } from '../../utils/tagUtils';
+import {
+  getEffectiveMemberTags,
+  isDefaultMemberBadge,
+  isInstitutionalTag,
+  isPedagogicalTag,
+  getCanonicalTagKey,
+  resolveMemberLevel,
+  resolvePedagogicalRoles
+} from './trombinoscopeUtils';
 
 /**
  * Modale de consultation détaillée d'un membre (Lightbox Cordel).
@@ -10,51 +19,48 @@ import { filterUserAssignedTags } from '../../utils/tagUtils';
  * les paramètres de confidentialité (téléphone, anniversaire, adresse).
  */
 export default function MemberDetailModal({
-  member,
-  isOpen,
-  onClose,
-  isOnline = false,
-  isCurrentUser = false,
-  fieldsConfig = {},
-  tagsDisponibles = [],
-  majoriteFeminine = false,
-  getPupitreName = (i) => i,
-  onContactUser,
-  onEditPhoto,
-  t = (key) => key,
-  tRole = (r) => r
+  member, isOpen, onClose, isOnline = false, isCurrentUser = false,
+  fieldsConfig = {}, tagsDisponibles = [], majoriteFeminine = false,
+  getPupitreName = (i) => i, onContactUser, onEditPhoto, t = (k) => k, tRole = (r) => r
 }) {
-  const memberTags = member?.tags || [];
-  // Tags valides du membre calculés inconditionnellement
-  const validTags = useMemo(() => filterUserAssignedTags(memberTags, tagsDisponibles), [memberTags, tagsDisponibles]);
+  // Tags valides du membre calculés avec expansion automatique et déduplication canonique
+  const validTags = useMemo(() => {
+    if (!member) return [];
+    const effectiveTags = getEffectiveMemberTags(member);
+    const assignedFromConfig = filterUserAssignedTags(effectiveTags, tagsDisponibles);
+    const seen = new Set();
+    const resultList = [];
+    const addTag = (tag) => {
+      const key = getCanonicalTagKey(tag);
+      if (key && !seen.has(key)) { seen.add(key); resultList.push(tag); }
+    };
+    assignedFromConfig.forEach(addTag);
+    (Array.isArray(member.tags) ? member.tags : []).forEach(addTag);
+    effectiveTags.forEach((tag) => { if (isInstitutionalTag(tag)) addTag(tag); });
+    const { isMestreBatucada, isMestreDanse } = resolvePedagogicalRoles(member);
+
+    return resultList.filter((tag) => {
+      const rawTagId = typeof tag === 'object' ? (tag.id || tag.nom || tag.label || '') : String(tag);
+      const rawTagLabel = typeof tag === 'object' ? (tag.nom || tag.label || tag.id || '') : String(tag);
+      if (!isDefaultMemberBadge(rawTagId) && !isDefaultMemberBadge(rawTagLabel)) {
+        if ((isMestreBatucada || isMestreDanse) && (isPedagogicalTag(rawTagId) || isPedagogicalTag(rawTagLabel))) {
+          return false;
+        }
+        return true;
+      }
+      return false;
+    });
+  }, [member, tagsDisponibles]);
 
   if (!isOpen || !member) return null;
 
   const {
-    prenom = '',
-    nom = '',
-    surnom = '',
-    photoURL = null,
-    role = 'membre',
-    genre,
-    telephone = '',
-    dateNaissance = '',
-    adresseVille = '',
-    adresseCP = '',
-    afficherTelephone,
-    afficherDateNaissance,
-    afficherVille,
-    visibiliteAdresse,
-    publierTelephone,
-    publierDateNaissance,
-    niveau = '',
-    niveauDanse = '',
-    niveauxParInstrument = {},
-    instrumentsJoues = [],
-    instrument = '',
-    isDependent = false,
-    isGhost = false,
-    primaryInstrumentName = ''
+    prenom = '', nom = '', surnom = '', photoURL = null, role = 'membre', genre,
+    telephone = '', dateNaissance = '', adresseVille = '', adresseCP = '',
+    afficherTelephone, afficherDateNaissance, afficherVille, visibiliteAdresse,
+    publierTelephone, publierDateNaissance, niveau = '', niveauDanse = '',
+    niveauxParInstrument = {}, instrumentsJoues = [], instrument = '',
+    isDependent = false, isGhost = false, primaryInstrumentName = ''
   } = member;
 
   const fullName = `${prenom} ${nom}`.trim() || 'Membre';
@@ -102,20 +108,14 @@ export default function MemberDetailModal({
           <div className="relative group">
             <XiloAvatar src={photoURL} name={fullName} size={96} />
             {isOnline && (
-              <span
-                className="absolute bottom-0 right-0 z-20 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center shadow-xs"
-                title="En ligne"
-              >
+              <span className="absolute bottom-0 right-0 z-20 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center shadow-xs" title="En ligne">
                 <span className="w-1.5 h-1.5 bg-white rounded-full animate-ping" />
               </span>
             )}
             {isCurrentUser && onEditPhoto && (
               <button
                 type="button"
-                onClick={() => {
-                  onEditPhoto(photoURL);
-                  onClose();
-                }}
+                onClick={() => { onEditPhoto(photoURL); onClose(); }}
                 className="absolute -top-1 -right-1 z-30 w-7 h-7 rounded-full bg-encre-noire text-white border border-white flex items-center justify-center text-xs hover:scale-110 shadow-xs cursor-pointer"
                 title="Modifier ma photo"
               >
@@ -139,39 +139,45 @@ export default function MemberDetailModal({
                 "{surnom}"
               </span>
             )}
-            <div className="flex items-center gap-1 mt-1">
-              <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] rotate-[-2deg]">
-                {tRole(role, genre)}
-              </span>
-              {isDependent && (
-                <span className="theme-stamp-badge text-[8px] bg-pink-100 text-pink-900 border border-stone-900">
-                  👶 Enfant
-                </span>
-              )}
-            </div>
+            {/* Badges de responsabilité et niveau */}
+            {(() => {
+              const { isMestreBatucada, isMestreDanse, pedagogicalTitle } = resolvePedagogicalRoles(member);
+              const translatedRole = role === 'mestre' ? null : tRole(role, genre);
+              const isAlreadyInTags = validTags.some((t) => String(typeof t === 'object' ? (t.nom || t.label || t.id) : t).toLowerCase().trim() === String(translatedRole).toLowerCase().trim());
+              const showRoleBadge = Boolean(translatedRole) && !isDefaultMemberBadge(role) && !isDefaultMemberBadge(translatedRole) && !isAlreadyInTags;
+              const memberLevel = resolveMemberLevel(member);
+              const hasPedagogicalBadge = (isMestreBatucada || isMestreDanse) && Boolean(pedagogicalTitle);
+              if (!hasPedagogicalBadge && !showRoleBadge && !memberLevel && !isDependent) return null;
+
+              return (
+                <div className="flex flex-wrap items-center justify-center gap-1 mt-1">
+                  {hasPedagogicalBadge && (
+                    <span className="theme-stamp-badge bg-amber-400 text-stone-900 border-stone-900 text-[8px] font-black rotate-[-2deg] shadow-xs">
+                      {isMestreDanse ? '💃👑 ' : '👑 '}{pedagogicalTitle}
+                    </span>
+                  )}
+                  {showRoleBadge && <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] rotate-[-2deg]">{translatedRole}</span>}
+                  {memberLevel && (
+                    <span className={`theme-stamp-badge text-[8px] font-black ${
+                      memberLevel === 'La référence' ? 'bg-amber-100 text-amber-900 border-amber-600' : 'bg-emerald-100 text-emerald-900 border-emerald-600'
+                    }`}>
+                      {memberLevel === 'La référence' ? '🏆 ' : '🌱 '}{memberLevel}
+                    </span>
+                  )}
+                  {isDependent && <span className="theme-stamp-badge text-[8px] bg-pink-100 text-pink-900 border border-stone-900">👶 Enfant</span>}
+                </div>
+              );
+            })()}
           </div>
 
           {/* Contenu détaillé (Musique, Coordonnées, Tags, Action) */}
           <MemberDetailCardContent
-            member={member}
-            percussions={percussions}
-            hasDanse={hasDanse}
-            niveauDanse={niveauDanse}
-            niveauxParInstrument={niveauxParInstrument}
-            niveau={niveau}
-            getPupitreName={getPupitreName}
-            showPhone={showPhone}
-            telephone={telephone}
-            showBirthdate={showBirthdate}
-            dateNaissance={dateNaissance}
-            displayCity={displayCity}
-            validTags={validTags}
-            majoriteFeminine={majoriteFeminine}
-            tagsDisponibles={tagsDisponibles}
-            isCurrentUser={isCurrentUser}
-            onContactUser={onContactUser}
-            onClose={onClose}
-            t={t}
+            member={member} percussions={percussions} hasDanse={hasDanse} niveauDanse={niveauDanse}
+            niveauxParInstrument={niveauxParInstrument} niveau={niveau} getPupitreName={getPupitreName}
+            showPhone={showPhone} telephone={telephone} showBirthdate={showBirthdate} dateNaissance={dateNaissance}
+            displayCity={displayCity} validTags={validTags} majoriteFeminine={majoriteFeminine}
+            tagsDisponibles={tagsDisponibles} isCurrentUser={isCurrentUser} onContactUser={onContactUser}
+            onClose={onClose} t={t}
           />
         </div>
       </div>

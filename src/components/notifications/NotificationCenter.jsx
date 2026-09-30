@@ -7,6 +7,7 @@
 import React, { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useInAppNotifications } from '../../hooks/useInAppNotifications';
+import useConfirm from '../../hooks/useConfirm';
 import NotificationItem from './NotificationItem';
 
 export default function NotificationCenter({
@@ -25,6 +26,8 @@ export default function NotificationCenter({
     deleteNotification,
     clearAllNotifications
   } = useInAppNotifications(userId, groupId);
+
+  const confirm = useConfirm();
 
   const [isOpen, setIsOpen] = useState(false);
   const [panelStyle, setPanelStyle] = useState({});
@@ -159,19 +162,26 @@ export default function NotificationCenter({
     setIsOpen(false);
 
     // 3. Déclencher la navigation SPA
-    if (onNavigateToUrl && notification.targetUrl) {
-      onNavigateToUrl(notification.targetUrl, notification);
+    const destinationUrl = notification.targetUrl || notification.link;
+    if (onNavigateToUrl && destinationUrl) {
+      onNavigateToUrl(destinationUrl, notification);
     }
   }, [markAsRead, onNavigateToUrl]);
 
   // Purge collective de l'historique après confirmation
-  const handleClearAll = useCallback(() => {
+  const handleClearAll = useCallback(async () => {
     if (notifications.length === 0) return;
-    const confirmed = window.confirm("Voulez-vous vraiment effacer tout l'historique de vos notifications ?");
+    const confirmed = await confirm({
+      title: "Effacer les notifications ?",
+      message: "Voulez-vous vraiment effacer tout l'historique de vos notifications internes ?",
+      confirmLabel: "Tout effacer",
+      cancelLabel: "Annuler",
+      variant: "danger"
+    });
     if (confirmed) {
       clearAllNotifications();
     }
-  }, [notifications.length, clearAllNotifications]);
+  }, [notifications.length, confirm, clearAllNotifications]);
 
   return (
     <div className={`relative inline-block ${className}`}>
