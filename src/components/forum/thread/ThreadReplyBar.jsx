@@ -37,6 +37,8 @@ export default function ThreadReplyBar({
   replyingTo = null,
   onCancelReply,
   onOpenAddPoll,
+  onExpand,
+  onAutoResize,
   t
 }) {
   const [isReplyExpanded, setIsReplyExpanded] = useState(false);
@@ -44,6 +46,28 @@ export default function ThreadReplyBar({
   const [isCompactEmojiOpen, setIsCompactEmojiOpen] = useState(false);
   const [compactMentionQuery, setCompactMentionQuery] = useState(null);
   const compactInputRef = useRef(null);
+
+  // Défilement automatique vers le bas lors du dépliage du champ de saisie
+  React.useEffect(() => {
+    if (isReplyExpanded && onExpand) {
+      const timer = setTimeout(() => {
+        onExpand();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isReplyExpanded, onExpand]);
+
+  // Ajustement dynamique de la hauteur du champ de saisie compact (auto-resize jusqu'à max-h-32 = 128px)
+  React.useEffect(() => {
+    const el = compactInputRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    const nextHeight = Math.min(el.scrollHeight, 128); // 128px correspond à max-h-32
+    el.style.height = `${nextHeight}px`;
+    if (onAutoResize) {
+      onAutoResize();
+    }
+  }, [replyText, isReplyExpanded, onAutoResize]);
 
   if (isReadOnly) {
     return (
@@ -58,7 +82,7 @@ export default function ThreadReplyBar({
   return (
     <form
       onSubmit={onSubmit}
-      className="shrink-0 border-t border-dashed border-cordel-master-dark/20 bg-[var(--theme-bg,var(--color-cordel-papier,#fbf6eb))] pt-2 pb-[max(env(safe-area-inset-bottom),0.75rem)] flex flex-col gap-2 select-none"
+      className="shrink-0 border-t border-dashed border-cordel-master-dark/25 bg-[var(--theme-bg)] pt-2 pb-[max(env(safe-area-inset-bottom),0.75rem)] flex flex-col gap-2 select-none"
     >
       {/* Bandeau contextuel élégant de réponse / citation */}
       {replyingTo && (
@@ -102,7 +126,7 @@ export default function ThreadReplyBar({
             />
           </div>
 
-          <div className="relative flex items-center gap-2 p-1.5 bg-cordel-bg-light border-2 border-encre-noire rounded-[6px_8px_6px_8px] shadow-[1.5px_1.5px_0px_0px_#181716]">
+          <div className="relative flex items-end gap-1.5 sm:gap-2 p-1.5 bg-cordel-bg-light border-2 border-encre-noire rounded-[6px_8px_6px_8px] shadow-[1.5px_1.5px_0px_0px_#181716]">
             {isCompactEmojiOpen && (
               <EmojiPickerPopover
                 onSelectEmoji={(emoji) => {
@@ -133,7 +157,7 @@ export default function ThreadReplyBar({
             <button
               type="button"
               onClick={() => setIsReplyExpanded(true)}
-              className="w-7 h-7 flex items-center justify-center font-black text-xs text-cordel-wood hover:text-encre-noire bg-cordel-bg hover:bg-white rounded border border-cordel-master-dark/30 cursor-pointer shrink-0 transition-all"
+              className="w-7 h-7 flex items-center justify-center font-black text-xs text-cordel-wood hover:text-encre-noire bg-cordel-bg hover:bg-white rounded border border-cordel-master-dark/30 cursor-pointer shrink-0 transition-all mb-0.5"
               title="Options de réponse (Groupe cible, mentions, mise en forme)"
             >
               ➕
@@ -142,7 +166,7 @@ export default function ThreadReplyBar({
             <button
               type="button"
               onClick={() => setIsReplyExpanded(true)}
-              className="w-7 h-7 flex items-center justify-center text-xs text-cordel-wood hover:text-encre-noire bg-cordel-bg hover:bg-white rounded border border-cordel-master-dark/30 cursor-pointer shrink-0 transition-all"
+              className="w-7 h-7 flex items-center justify-center text-xs text-cordel-wood hover:text-encre-noire bg-cordel-bg hover:bg-white rounded border border-cordel-master-dark/30 cursor-pointer shrink-0 transition-all mb-0.5"
               title="Ajouter une pièce jointe ou une photo (déplier l'éditeur)"
             >
               📎
@@ -151,7 +175,7 @@ export default function ThreadReplyBar({
             <button
               type="button"
               onClick={() => setIsCompactEmojiOpen(prev => !prev)}
-              className={`w-7 h-7 flex items-center justify-center text-sm rounded border transition-all cursor-pointer shrink-0 ${
+              className={`w-7 h-7 flex items-center justify-center text-sm rounded border transition-all cursor-pointer shrink-0 mb-0.5 ${
                 isCompactEmojiOpen
                   ? 'bg-cordel-wood text-white border-encre-noire'
                   : 'bg-cordel-bg hover:bg-white border-cordel-master-dark/30'
@@ -162,22 +186,31 @@ export default function ThreadReplyBar({
             </button>
 
             {/* Dictée vocale au microphone */}
-            <VoiceDictationButton
-              size="sm"
-              onTranscript={(spokenText) => {
-                setReplyText(prev => {
-                  const trimmed = (prev || '').trim();
-                  return trimmed ? `${trimmed} ${spokenText}` : spokenText;
-                });
-              }}
-              disabled={sending}
-              title="Dicter votre réponse au microphone"
-            />
+            <div className="mb-0.5">
+              <VoiceDictationButton
+                size="sm"
+                onTranscript={(spokenText) => {
+                  setReplyText(prev => {
+                    const trimmed = (prev || '').trim();
+                    return trimmed ? `${trimmed} ${spokenText}` : spokenText;
+                  });
+                }}
+                disabled={sending}
+                title="Dicter votre réponse au microphone"
+              />
+            </div>
 
-            <input
+            <textarea
               ref={compactInputRef}
-              type="text"
+              rows={1}
               value={replyText ? (replyText.includes('<') ? replyText.replace(/<[^>]*>/g, '') : replyText) : ''}
+              onInput={(e) => {
+                const val = e.target.value;
+                setReplyText(val);
+                const cursor = e.target.selectionStart;
+                const match = getMentionQueryAtCursor(val, cursor);
+                setCompactMentionQuery(match);
+              }}
               onChange={(e) => {
                 const val = e.target.value;
                 setReplyText(val);
@@ -185,15 +218,24 @@ export default function ThreadReplyBar({
                 const match = getMentionQueryAtCursor(val, cursor);
                 setCompactMentionQuery(match);
               }}
+              onKeyDown={(e) => {
+                // Touche Entrée simple (sans Shift) : envoi du message si aucune suggestion de mention ouverte
+                if (e.key === 'Enter' && !e.shiftKey && !compactMentionQuery) {
+                  e.preventDefault();
+                  if (!sending && hasValidContent(replyText)) {
+                    onSubmit(e);
+                  }
+                }
+              }}
               placeholder={(t && t('forum.writeReplyPlaceholder')) || "Écrire une réponse..."}
               disabled={sending}
-              className="flex-1 bg-transparent text-xs font-semibold text-encre-noire placeholder:opacity-50 outline-none px-1"
+              className="flex-1 bg-transparent text-xs font-semibold text-encre-noire placeholder:opacity-50 outline-none px-1 resize-none max-h-32 overflow-y-auto leading-relaxed py-1 min-h-[28px]"
             />
             <CordelButton
               type="submit"
               variant="ocre"
               disabled={sending || !hasValidContent(replyText)}
-              className="text-xs px-3 py-1 uppercase font-bold tracking-wider shrink-0"
+              className="text-xs px-3 py-1 uppercase font-bold tracking-wider shrink-0 mb-0.5"
             >
               {sending ? "..." : "➤"}
             </CordelButton>

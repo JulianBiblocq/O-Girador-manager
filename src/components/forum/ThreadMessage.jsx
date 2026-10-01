@@ -148,14 +148,14 @@ function ThreadMessage({
     >
       <div
         className={`
-          border-2 p-3 shadow-[2px_2px_0px_0px_#181716] transition-colors relative group
+          border-2 p-3 shadow-[2px_2px_0px_0px_#181716] transition-colors relative group min-w-[220px] max-w-full
           ${isDirectlyMentioned
-            ? 'theme-bg-jaune border-cordel-wood rounded-[6px_10px_6px_10px] shadow-[3px_3px_0px_0px_#8b2a1a] ring-2 ring-cordel-wood/40'
+            ? 'theme-bg-jaune border-cordel-wood rounded-[6px_10px_6px_10px] shadow-[3px_3px_0px_0px_#8b2a1a] ring-2 ring-cordel-wood/40 text-encre-noire'
             : isTagTargeted
-              ? 'theme-bg-jaune border-cordel-wood rounded-[6px_10px_6px_10px] shadow-[2.5px_2.5px_0px_0px_#8b2a1a]'
+              ? 'theme-bg-jaune border-cordel-wood rounded-[6px_10px_6px_10px] shadow-[2.5px_2.5px_0px_0px_#8b2a1a] text-encre-noire'
               : isCurrentUser
-                ? 'theme-bg-vert border-encre-noire rounded-[10px_2px_8px_10px]'
-                : 'bg-[var(--cordel-hover-bg)] border-encre-noire text-encre-noire rounded-[2px_10px_10px_8px]'}
+                ? 'theme-bg-vert border-encre-noire text-white rounded-[10px_2px_8px_10px]'
+                : 'bg-white border-encre-noire text-encre-noire rounded-[2px_10px_10px_8px]'}
         `}
       >
         {isDirectlyMentioned ? (
@@ -223,7 +223,10 @@ function ThreadMessage({
           </div>
         </div>
 
-        <FormattedMessageContent content={reply.message} />
+        <FormattedMessageContent 
+          content={reply.message} 
+          className={isCurrentUser ? '!text-white [&_*]:!text-white' : '!text-encre-noire [&_*]:!text-encre-noire'}
+        />
 
         <ReactionBar
           reactions={reply.reactions}

@@ -13,6 +13,8 @@ import { useConversationMessages } from '../hooks/useConversationMessages';
 import { uploadChatAttachment } from '../utils/attachmentUploadUtils';
 import { dispatchInAppAndPushNotification, NOTIFICATION_TYPES } from '../utils/inAppNotificationService';
 import VoiceDictationButton from './common/VoiceDictationButton';
+import MessageReadReceipt from './forum/MessageReadReceipt';
+import { isMessageReadByAll, shouldMarkConversationAsRead, getTimestampMs } from '../utils/readReceiptUtils';
 
 /**
  * Composant PrivateChatView
@@ -51,33 +53,79 @@ export default function PrivateChatView({
   const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
   const messagesEndRef = useRef(null);
   const attachmentInputRef = useRef(null);
+  const privateChatInputRef = useRef(null);
 
+  // Auto-resize dynamique du champ de saisie jusqu'à max-h-32 (128px)
+  useEffect(() => {
+    const el = privateChatInputRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    const nextHeight = Math.min(el.scrollHeight, 128);
+    el.style.height = `${nextHeight}px`;
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [inputText]);
 
-  const isGroup = conversation?.type === 'group';
+  const conversationId = conversation?.id;
+  const groupId = profileData?.groupId || conversation?.groupId || '';
+
+  // Synchronisation et écoute temps réel du document de conversation pour actualisation immédiate de readStatus
+  const [liveConversation, setLiveConversation] = useState(conversation || null);
+
+  useEffect(() => {
+    if (conversation) {
+      setLiveConversation(conversation);
+    }
+  }, [conversation]);
+
+  useEffect(() => {
+    if (!conversationId) return;
+
+    const unsub = onSnapshot(
+      doc(db, 'conversations', conversationId),
+      (snap) => {
+        if (snap.exists()) {
+          setLiveConversation((prev) => ({
+            ...(prev || {}),
+            id: snap.id,
+            ...snap.data()
+          }));
+        }
+      },
+      (err) => {
+        console.warn('PrivateChatView - Écoute temps réel de la conversation non disponible :', err);
+      }
+    );
+
+    return () => unsub();
+  }, [conversationId]);
+
+  const effectiveConversation = liveConversation || conversation;
+  const isGroup = effectiveConversation?.type === 'group';
+  const effectiveReadStatus = effectiveConversation?.readStatus || {};
+  const effectiveParticipantIds = effectiveConversation?.participantIds || [];
 
   // 1. Détermination du partenaire direct ou du groupe
   const effectiveOtherUser = useMemo(() => {
     if (isGroup) return null;
     if (otherUser?.id) return otherUser;
     if (recipientId) return usersMap[recipientId] || { id: recipientId };
-    if (conversation?.participantIds) {
-      const otherId = conversation.participantIds.find(id => id !== user?.uid);
+    if (effectiveParticipantIds.length > 0) {
+      const otherId = effectiveParticipantIds.find((id) => id !== user?.uid);
       return usersMap[otherId] || { id: otherId };
     }
     return null;
-  }, [isGroup, otherUser, recipientId, usersMap, conversation?.participantIds, user?.uid]);
+  }, [isGroup, otherUser, recipientId, usersMap, effectiveParticipantIds, user?.uid]);
 
   const headerTitle = useMemo(() => {
     if (isGroup) {
-      return conversation?.name || 'Groupe Privé';
+      return effectiveConversation?.name || 'Groupe Privé';
     }
     return `${effectiveOtherUser?.prenom || ''} ${effectiveOtherUser?.nom || ''}`.trim() || effectiveOtherUser?.email || "Membre";
-  }, [isGroup, conversation?.name, effectiveOtherUser]);
+  }, [isGroup, effectiveConversation?.name, effectiveOtherUser]);
 
   // 2. Gestion des messages via le hook useConversationMessages
-  const conversationId = conversation?.id;
-  const groupId = profileData?.groupId || conversation?.groupId || '';
-
   const { 
     messages: convMessages, 
     sendMessage: sendConvMessage, 
@@ -89,8 +137,8 @@ export default function PrivateChatView({
     groupId,
     user,
     profileData,
-    conversation?.participantIds || [],
-    conversation
+    effectiveParticipantIds.length > 0 ? effectiveParticipantIds : (conversation?.participantIds || []),
+    effectiveConversation
   );
 
   // Suppression d'un de ses propres messages
@@ -224,13 +272,6 @@ export default function PrivateChatView({
     };
   }, [isGroup, user?.uid, effectiveOtherUser?.id]);
 
-  // Acquittement de lecture de la conversation moderne
-  useEffect(() => {
-    if (conversationId && onMarkAsRead) {
-      onMarkAsRead(conversationId);
-    }
-  }, [conversationId, convMessages.length, onMarkAsRead]);
-
   // 4. Fusion unifiée des messages modernes et historiques (sans doublons, tri chronologique)
   const activeMessages = useMemo(() => {
     if (isGroup) {
@@ -271,6 +312,40 @@ export default function PrivateChatView({
     combined.sort((a, b) => new Date(a.timestamp || 0).getTime() - new Date(b.timestamp || 0).getTime());
     return combined;
   }, [isGroup, convMessages, legacyMessages, user?.uid, profileData, effectiveOtherUser]);
+
+  // Acquittement sécurisé de lecture de la conversation (avec garde-fou anti-boucle d'écriture)
+  const lastMarkedTimestampRef = useRef(0);
+
+  useEffect(() => {
+    if (!conversationId || !user?.uid) return;
+
+    const shouldMark = shouldMarkConversationAsRead({
+      activeMessages,
+      currentUserId: user.uid,
+      readStatus: effectiveReadStatus
+    });
+
+    if (shouldMark) {
+      const lastMsg = activeMessages[activeMessages.length - 1];
+      const lastMsgTime = getTimestampMs(
+        lastMsg?.timestamp || lastMsg?.dateCreation || lastMsg?.createdAt
+      );
+
+      if (lastMsgTime > lastMarkedTimestampRef.current) {
+        lastMarkedTimestampRef.current = lastMsgTime;
+        if (onMarkAsRead) {
+          onMarkAsRead(conversationId);
+        } else {
+          const nowIso = new Date().toISOString();
+          updateDoc(doc(db, 'conversations', conversationId), {
+            [`readStatus.${user.uid}`]: nowIso
+          }).catch((err) => {
+            console.warn('PrivateChatView - Erreur actualisation readStatus :', err);
+          });
+        }
+      }
+    }
+  }, [conversationId, activeMessages, effectiveReadStatus, user?.uid, onMarkAsRead]);
 
   // Défilement automatique vers le bas
   useEffect(() => {
@@ -518,7 +593,7 @@ export default function PrivateChatView({
       </div>
 
       {/* 2. Zone des messages */}
-      <div className="flex-1 overflow-y-auto p-4 pb-8 flex flex-col gap-3.5 bg-cordel-bg-light/40 scrollbar-thin">
+      <div className="flex-1 overflow-y-auto p-4 pb-10 sm:pb-12 flex flex-col gap-3.5 bg-cordel-bg-light/40 scrollbar-thin">
         {activeMessages.length === 0 ? (
           <div className="flex-1 flex flex-col justify-center items-center opacity-50 select-none">
             <span className="text-xl mb-2">{isGroup ? '👥' : '✉️'}</span>
@@ -528,7 +603,7 @@ export default function PrivateChatView({
           </div>
         ) : (
           activeMessages.map((msg) => {
-            const isMe = msg.senderId === user.uid;
+            const isMe = msg.senderId === user.uid || msg.auteurId === user.uid;
             const senderProfile = usersMap[msg.senderId] || { prenom: msg.senderName || 'Membre' };
             const senderDisplayName = msg.senderName || `${senderProfile.prenom || ''} ${senderProfile.nom || ''}`.trim() || 'Membre';
 
@@ -680,6 +755,22 @@ export default function PrivateChatView({
                         }`}>
                           {formatMessageTime(msg.timestamp)}
                         </span>
+                        {isMe && (
+                          <MessageReadReceipt
+                            status={
+                              isMessageReadByAll({
+                                message: msg,
+                                currentUserId: user?.uid,
+                                readStatus: effectiveReadStatus,
+                                participantIds: effectiveParticipantIds,
+                                isGroup,
+                                otherUserId: effectiveOtherUser?.id
+                              })
+                                ? 'read'
+                                : 'sent'
+                            }
+                          />
+                        )}
                       </div>
                     </div>
                   </div>
@@ -730,7 +821,7 @@ export default function PrivateChatView({
             );
           })
         )}
-        <div ref={messagesEndRef} className="h-2 shrink-0" />
+        <div ref={messagesEndRef} className="h-4 shrink-0" />
       </div>
 
       {/* 3. Zone de saisie et d'envoi */}
@@ -768,7 +859,7 @@ export default function PrivateChatView({
 
         <form 
           onSubmit={handleSendMessage}
-          className="relative flex items-center gap-2"
+          className="relative flex items-end gap-2"
         >
           {isEmojiPickerOpen && (
             <EmojiPickerPopover
@@ -783,7 +874,7 @@ export default function PrivateChatView({
           <button
             type="button"
             onClick={() => setIsEmojiPickerOpen(prev => !prev)}
-            className={`w-9 h-[38px] flex items-center justify-center text-sm rounded border-2 transition-all cursor-pointer shrink-0 ${
+            className={`w-9 h-[38px] flex items-center justify-center text-sm rounded border-2 transition-all cursor-pointer shrink-0 mb-0.5 ${
               isEmojiPickerOpen
                 ? 'bg-cordel-wood text-white border-encre-noire'
                 : 'bg-cordel-bg hover:bg-white border-encre-noire/40'
@@ -807,7 +898,7 @@ export default function PrivateChatView({
             type="button"
             onClick={() => attachmentInputRef.current?.click()}
             disabled={sending || isUploadingAttachment}
-            className="w-9 h-[38px] flex items-center justify-center text-sm rounded border-2 bg-cordel-bg hover:bg-white border-encre-noire/40 transition-all cursor-pointer shrink-0 disabled:opacity-50"
+            className="w-9 h-[38px] flex items-center justify-center text-sm rounded border-2 bg-cordel-bg hover:bg-white border-encre-noire/40 transition-all cursor-pointer shrink-0 disabled:opacity-50 mb-0.5"
             title="Joindre une photo ou un fichier depuis votre appareil"
           >
             {isUploadingAttachment ? (
@@ -821,38 +912,49 @@ export default function PrivateChatView({
             type="button"
             onClick={() => setIsFramaspaceModalOpen(true)}
             disabled={sending || isUploadingAttachment}
-            className="w-9 h-[38px] flex items-center justify-center text-sm rounded border-2 bg-cordel-bg hover:bg-white border-encre-noire/40 transition-all cursor-pointer shrink-0 disabled:opacity-50"
+            className="w-9 h-[38px] flex items-center justify-center text-sm rounded border-2 bg-cordel-bg hover:bg-white border-encre-noire/40 transition-all cursor-pointer shrink-0 disabled:opacity-50 mb-0.5"
             title="Partager une photo du Cloud Framaspace (0 Mo sur Firebase)"
           >
             📸
           </button>
 
           {/* Bouton de dictée vocale au microphone */}
-          <VoiceDictationButton
-            onTranscript={(spokenText) => {
-              setInputText(prev => {
-                const trimmed = (prev || '').trim();
-                return trimmed ? `${trimmed} ${spokenText}` : spokenText;
-              });
-            }}
-            disabled={sending || isUploadingAttachment}
-            title="Dicter votre message à la voix (microphone)"
-          />
+          <div className="mb-0.5">
+            <VoiceDictationButton
+              onTranscript={(spokenText) => {
+                setInputText(prev => {
+                  const trimmed = (prev || '').trim();
+                  return trimmed ? `${trimmed} ${spokenText}` : spokenText;
+                });
+              }}
+              disabled={sending || isUploadingAttachment}
+              title="Dicter votre message à la voix (microphone)"
+            />
+          </div>
 
-          <input 
-            type="text"
+          <textarea 
+            ref={privateChatInputRef}
+            rows={1}
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                if (!sending && inputText.trim()) {
+                  handleSendMessage(e);
+                }
+              }
+            }}
             placeholder={isGroup ? `Message au groupe ${conversation?.name || ''}...` : "Rédiger un message..."}
             disabled={sending}
-            className="theme-input text-xs font-bold py-2 bg-cordel-bg-light flex-grow"
+            className="theme-input text-xs font-bold py-2 bg-cordel-bg-light flex-grow resize-none max-h-32 overflow-y-auto min-h-[38px] leading-relaxed"
           />
           <CordelButton
             type="submit"
             variant="vert"
             useExtremeBorder={true}
             disabled={sending || !inputText.trim()}
-            className="px-4 py-2 text-[10px] font-black uppercase tracking-wider min-h-[38px] shrink-0"
+            className="px-4 py-2 text-[10px] font-black uppercase tracking-wider min-h-[38px] shrink-0 mb-0.5"
           >
             Envoyer
           </CordelButton>

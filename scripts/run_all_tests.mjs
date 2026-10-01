@@ -94,6 +94,7 @@ const testScripts = [
   'scripts/test_levels_and_sementes.mjs',
   'scripts/test_mestre_pedagogical_roles.mjs',
   'scripts/test_read_receipt.mjs',
+  'scripts/test_porte_voix_read_receipts.mjs',
   'scripts/test_search_input_padding.mjs'
 ];
 

@@ -37,7 +37,7 @@ export default function ThreadView({
   };
 
   return (
-    <div className="flex flex-col h-full max-h-[100dvh] overflow-hidden text-left gap-2 sm:gap-3">
+    <div className="flex flex-col h-[100dvh] max-h-[100dvh] overflow-hidden text-left bg-[var(--theme-bg)]">
       {/* Barre d'en-tête supérieure fixe en flux (z-20 pour rester sous les modales) */}
       <div className="shrink-0 z-20 bg-cordel-bg/95 backdrop-blur-sm flex justify-between items-center border-b-2 border-dashed border-cordel-master-dark/30 py-2 select-none">
         <CordelButton variant="default" onClick={onClose} className="px-3 py-1 text-xs">
@@ -66,7 +66,7 @@ export default function ThreadView({
           </p>
         </CordelCard>
       ) : (
-        <div className="flex flex-col flex-1 min-h-0 overflow-hidden gap-2">
+        <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
           {/* En-tête du sujet et actions de modération */}
           <div className="shrink-0">
             <ThreadHeader
@@ -154,6 +154,8 @@ export default function ThreadView({
             replyingTo={threadData.replyingTo}
             onCancelReply={threadData.cancelReply}
             onOpenAddPoll={() => threadData.setIsAddPollOpen(true)}
+            onExpand={threadData.scrollToBottom}
+            onAutoResize={threadData.scrollToBottom}
             t={t}
           />
 

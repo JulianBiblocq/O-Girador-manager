@@ -46,21 +46,28 @@ export default function ThreadMessageList({
   onToggleReaction,
   t
 }) {
-  // Prise en charge résiliente : prop direct reponses, champ thread.reponses ou repli thread.message
-  const reponses = passedReponses || thread?.reponses || (thread?.message ? [{
-    auteurId: thread.auteurId,
-    auteurNom: thread.auteurNom || 'Auteur',
-    message: thread.message,
-    dateCreation: thread.dateCreation,
-    targetTag: thread.targetTag || null
-  }] : []);
+  // Prise en charge ultra-résiliente : prop direct reponses, champ thread.reponses ou repli thread.message
+  const rawReponses = Array.isArray(passedReponses)
+    ? passedReponses
+    : Array.isArray(thread?.reponses)
+      ? thread.reponses
+      : (thread?.reponses && typeof thread.reponses === 'object')
+        ? (Array.isArray(thread.reponses._elements) ? thread.reponses._elements : Object.values(thread.reponses))
+        : (thread?.message ? [{
+            auteurId: thread.auteurId,
+            auteurNom: thread.auteurNom || 'Auteur',
+            message: thread.message,
+            dateCreation: thread.dateCreation,
+            targetTag: thread.targetTag || null
+          }] : []);
+  const reponses = Array.isArray(rawReponses) ? rawReponses : [];
 
   return (
     <div className="relative flex flex-col flex-1 min-h-0 overflow-hidden">
       <div
         ref={messagesContainerRef}
         onScroll={onScroll}
-        className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y px-4 py-3 pb-8 bg-cordel-bg-light border-2 border-dashed border-cordel-master-dark/20 rounded-md select-text flex flex-col gap-3"
+        className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y px-4 py-3 pb-10 sm:pb-12 bg-cordel-bg-light border-2 border-dashed border-cordel-master-dark/20 rounded-md select-text flex flex-col gap-3"
       >
         {reponses.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full min-h-[160px] text-center text-xs opacity-60 font-semibold italic select-none py-8">
@@ -116,7 +123,7 @@ export default function ThreadMessageList({
           );
         })
       )}
-        <div ref={messagesEndRef} className="h-2 shrink-0" />
+        <div ref={messagesEndRef} className="h-4 shrink-0" />
       </div>
 
       {/* Pastille flottante de défilement rapide vers le bas (↓) */}

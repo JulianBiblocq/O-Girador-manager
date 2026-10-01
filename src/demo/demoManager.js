@@ -289,6 +289,26 @@ export const updateDemoDoc = (collectionName, docId, updates) => {
   // Traiter chaque champ en gérant la notation pointée (ex: "attendees.demo_user")
   Object.keys(updates).forEach((key) => {
     const val = updates[key];
+
+    // Résolution des FieldValue Firebase (arrayUnion, arrayRemove, increment) en mode Démo
+    const resolveFieldValue = (currentVal, updateVal) => {
+      if (updateVal && typeof updateVal === 'object') {
+        if (Array.isArray(updateVal._elements)) {
+          const currentArr = Array.isArray(currentVal) ? [...currentVal] : [];
+          if (updateVal._methodName === 'arrayRemove') {
+            return currentArr.filter((item) => !updateVal._elements.includes(item));
+          }
+          // arrayUnion
+          return [...currentArr, ...updateVal._elements];
+        }
+        if (typeof updateVal._operand === 'number') {
+          const currentNum = typeof currentVal === 'number' ? currentVal : 0;
+          return currentNum + updateVal._operand;
+        }
+      }
+      return updateVal;
+    };
+
     if (key.includes('.')) {
       const parts = key.split('.');
       let cur = targetDoc;
@@ -298,9 +318,10 @@ export const updateDemoDoc = (collectionName, docId, updates) => {
         }
         cur = cur[parts[i]];
       }
-      cur[parts[parts.length - 1]] = val;
+      const lastKey = parts[parts.length - 1];
+      cur[lastKey] = resolveFieldValue(cur[lastKey], val);
     } else {
-      targetDoc[key] = val;
+      targetDoc[key] = resolveFieldValue(targetDoc[key], val);
     }
   });
 

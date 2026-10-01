@@ -284,6 +284,7 @@ export function useThreadData({
   useEffect(() => {
     if (!loading && thread && !hasScrolledInitialRef.current) {
       hasScrolledInitialRef.current = true;
+      previousRepliesCountRef.current = thread.reponses?.length || 0;
       setTimeout(() => {
         const container = messagesContainerRef.current;
         if (!container) return;
@@ -297,6 +298,27 @@ export function useThreadData({
       }, 150);
     }
   }, [loading, thread]);
+
+  const previousRepliesCountRef = useRef(0);
+
+  // Défilement automatique vers l'ancre finale à chaque nouveau message reçu
+  useEffect(() => {
+    const currentRepliesCount = thread?.reponses?.length || 0;
+    if (hasScrolledInitialRef.current && currentRepliesCount > previousRepliesCountRef.current) {
+      const timer = setTimeout(() => {
+        const container = messagesContainerRef.current;
+        if (container) {
+          container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+        }
+        if (messagesEndRef.current) {
+          messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      }, 100);
+      previousRepliesCountRef.current = currentRepliesCount;
+      return () => clearTimeout(timer);
+    }
+    previousRepliesCountRef.current = currentRepliesCount;
+  }, [thread?.reponses?.length]);
 
   // Gestion du défilement manuel pour afficher la pastille flottante
   const handleScroll = useCallback(() => {
@@ -312,7 +334,7 @@ export function useThreadData({
       container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
     }
     if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
   }, []);
 
