@@ -206,12 +206,12 @@ export default function EventRepertoireProgramSelector({
       ) : (
         <div className="flex flex-col gap-2.5">
           {/* Barre d'action rapide : Menu d'ajout et bascule vers les cases à cocher */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-row items-center gap-2 w-full">
             <select
               value={selectedPieceToAdd}
               onChange={(e) => handleAddPiece(e.target.value)}
               disabled={disabled || availableToAdd.length === 0}
-              className="theme-input text-xs font-bold py-1.5 bg-white flex-1 cursor-pointer"
+              className="theme-input text-xs font-bold py-1.5 bg-white flex-1 min-w-0 truncate cursor-pointer"
             >
               <option value="">
                 {availableToAdd.length === 0 ? "✓ Tous les morceaux sont au programme" : "+ Ajouter un morceau du répertoire..."}
@@ -231,10 +231,14 @@ export default function EventRepertoireProgramSelector({
             <button
               type="button"
               onClick={() => setShowCheckboxes(!showCheckboxes)}
-              className="text-[10px] font-black uppercase px-2.5 py-1.5 rounded border border-cordel-master-dark/30 bg-cordel-bg-light hover:bg-neutral-100 transition-colors cursor-pointer shrink-0"
-              title="Afficher la vue multi-sélection sous forme de cases à cocher"
+              title={showCheckboxes ? "Fermer le classeur" : "Parcourir le répertoire"}
+              aria-label={showCheckboxes ? "Fermer le classeur" : "Parcourir le répertoire"}
+              className="shrink-0 flex items-center justify-center px-3 py-2 sm:px-4 sm:py-2.5 rounded border border-[var(--color-cordel-encre,#181716)] bg-white text-sm font-bold uppercase hover:bg-neutral-50 shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer transition-colors"
             >
-              {showCheckboxes ? 'Fermer le classeur' : '📋 Parcourir'}
+              <span className="text-base">{showCheckboxes ? '✕' : '📋'}</span>
+              <span className="hidden sm:inline ml-1.5 tracking-wide">
+                {showCheckboxes ? 'Fermer' : 'Parcourir'}
+              </span>
             </button>
           </div>
 

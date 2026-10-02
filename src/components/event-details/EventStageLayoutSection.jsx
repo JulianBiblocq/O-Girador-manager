@@ -8,6 +8,9 @@ import { useInstrumentColor } from '../../hooks/useInstrumentColor';
 import useConfirm from '../../hooks/useConfirm';
 import { useGroupNomenclature } from '../../hooks/useGroupNomenclature';
 import { getVoiceLabel } from '../../constants/nomenclature';
+import UserStagePositionBanner from './stage-layout/UserStagePositionBanner';
+import StageVisualGrid from './stage-layout/StageVisualGrid';
+import StageLayoutFullscreenModal from './stage-layout/StageLayoutFullscreenModal';
 
 export default function EventStageLayoutSection({
   event,
@@ -22,6 +25,8 @@ export default function EventStageLayoutSection({
   const { confirm } = useConfirm();
   const { getColorForInstrument } = useInstrumentColor(profileData?.groupId);
   const { nomenclature: groupNomenclature } = useGroupNomenclature(profileData?.groupId || event?.groupId);
+  const currentUserId = user?.uid || profileData?.uid || profileData?.id;
+
   // Vérifier if a layout exists
   const hasLayout = event.stageLayout?.placements && Object.keys(event.stageLayout.placements).length > 0;
 
@@ -30,6 +35,7 @@ export default function EventStageLayoutSection({
 
   // Accordion open/close state: default open for admins or if there is a layout
   const [isOpen, setIsOpen] = useState(canEditLayout || hasLayout);
+  const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
 
   const [layout, setLayout] = useState({
     rows: 5,
@@ -127,15 +133,6 @@ export default function EventStageLayoutSection({
   // Instrument color mapping matching the project design system
   const getInstrumentColorClass = (inst) => {
     return 'border-encre-noire/30 text-encre-noire';
-  };
-
-  // Fonction utilitaire pour formater les noms pour les cellules de la grille (ex: "Julien B.")
-  const formatMemberName = (fullName) => {
-    if (!fullName) return '';
-    const parts = fullName.trim().split(/\s+/).filter(Boolean);
-    if (parts.length <= 1) return fullName.trim();
-    const initial = parts[1][0] ? parts[1][0].toUpperCase() : '';
-    return initial ? `${parts[0]} ${initial}.` : parts[0];
   };
 
   // Détection des danseurs pour l'avant-scène
@@ -477,14 +474,6 @@ export default function EventStageLayoutSection({
     }
   };
 
-  // Build grid cells to afficher
-  const gridCells = [];
-  for (let r = 1; r <= layout.rows; r++) {
-    for (let c = 1; c <= layout.cols; c++) {
-      gridCells.push({ row: r, col: c });
-    }
-  }
-
   // If no layout is defined and in readOnly mode, display creation prompt for admins
   if (readOnly && !hasLayout) {
     if (!canEditLayout) {
@@ -544,6 +533,15 @@ export default function EventStageLayoutSection({
 
       {isOpen && (
         <div className="flex flex-col gap-5 text-left">
+          {/* Encart d'en-tête personnalisé "Ta position" (Action 1) */}
+          <UserStagePositionBanner
+            currentUserId={currentUserId}
+            activePlacements={activePlacements}
+            presentMembers={presentMembers}
+            groupNomenclature={groupNomenclature}
+            groupId={profileData?.groupId || event?.groupId}
+          />
+
           {/* Link to Mestre Space Editor when in readOnly mode */}
           {readOnly && canEditLayout && onGoToStageLayoutEditor && (
             <div className="flex justify-end -mb-2">
@@ -728,338 +726,31 @@ export default function EventStageLayoutSection({
 
           {/* Main layout view: Grid and list */}
           <div className="flex flex-col lg:flex-row gap-5 items-start w-full">
-            {/* The Visual Stage Layout Grid */}
-            <div data-tour="mestre-stage-grid" className="flex-1 w-full overflow-x-auto pb-4">
-              <div className="w-full min-w-[500px] max-w-[560px] mx-auto flex flex-col items-center">
-                            {(() => {
-                let marcante = 0; let meiao = 0; let repique = 0;
-                let caixaCount = 0; let tarolCount = 0;
-                Object.entries(activePlacements).forEach(([uid, pos]) => {
-                  const m = presentMembers.find(x => x.id === uid);
-                  if (m && m.instrument.toLowerCase().includes('alfaia')) {
-                    if (pos.voice === 'marcante') marcante++;
-                    else if (pos.voice === 'meião' || pos.voice === 'meiao' || pos.voice === 'meian') meiao++;
-                    else if (pos.voice === 'repique') repique++;
-                  }
-                  if (m && (m.instrument.toLowerCase().includes('caixa') || m.instrument.toLowerCase().includes('tarol'))) {
-                    if (pos.voice === 'tarol') tarolCount++;
-                    else caixaCount++;
-                  }
-                });
-                const totalAlfaia = marcante + meiao + repique;
-                const totalCaixas = caixaCount + tarolCount;
-                if (totalAlfaia > 0 || totalCaixas > 0) {
-                  return (
-                    <div className="w-full flex flex-wrap justify-center gap-2 mb-4">
-                      {totalAlfaia > 0 && (
-                        <div className="bg-cordel-wood/10 border border-cordel-wood text-cordel-wood text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-wider shadow-sm flex items-center gap-2">
-                          <span>🥁 Alfaias :</span>
-                          <span>{marcante} {getVoiceLabel('marcante', groupNomenclature, true)}</span>
-                          <span className="opacity-50">|</span>
-                          <span>{meiao} {getVoiceLabel('meião', groupNomenclature, true)}</span>
-                          <span className="opacity-50">|</span>
-                          <span>{repique} {getVoiceLabel('repique', groupNomenclature, true)}</span>
-                          <span className="opacity-50">|</span>
-                          <span>(Total : {totalAlfaia})</span>
-                        </div>
-                      )}
-                      {totalCaixas > 0 && (
-                        <div className="bg-[#2d6a4f]/10 border border-[#2d6a4f] text-[#2d6a4f] text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-wider shadow-sm flex items-center gap-2">
-                          <span>🥁 Caixas :</span>
-                          <span>{caixaCount} Caixa{caixaCount > 1 ? 's' : ''}</span>
-                          <span className="opacity-50">|</span>
-                          <span>{tarolCount} Tarol{tarolCount > 1 ? 's' : ''}</span>
-                          <span className="opacity-50">|</span>
-                          <span>(Total : {totalCaixas})</span>
-                        </div>
-                      )}
-                    </div>
-                  );
-                }
-                return null;
-              })()}
-              <div className="text-[9px] uppercase tracking-wider font-extrabold opacity-60 mb-2">
-                {t('eventDetails.stageFront') || "▲ AVANT DE LA SCÈNE (PUBLIC) ▲"}
-              </div>
-
-              {/* Zone Avant-scène / Danse */}
-              <div className="w-full flex flex-col items-center mb-4 select-none bg-cordel-bg-light/20 p-2.5 rounded border border-dashed border-cordel-wood/30">
-                <span className="text-[8px] uppercase tracking-widest font-black text-cordel-wood mb-2 opacity-80">
-                  💃 Avant-scène / Danse
-                </span>
-                <div className="flex flex-col gap-2 w-full items-center">
-                  {(() => {
-                    const rowsList = [];
-                    for (let r = 1; r <= (layout.danceRows || 1); r++) {
-                      rowsList.push(-r);
-                    }
-                    return rowsList.map((rowVal) => (
-                      <div key={`dance-row-${rowVal}`} className="flex gap-2 justify-center">
-                        {(() => {
-                          const colsList = [];
-                          for (let c = 1; c <= (layout.danceCols || 5); c++) {
-                            colsList.push(c);
-                          }
-                          return colsList.map((c) => {
-                            const cellKey = `dance-${rowVal}-${c}`;
-                            const memberId = Object.keys(activePlacements).find(
-                              (uid) => activePlacements[uid]?.row === rowVal && activePlacements[uid]?.col === c
-                            );
-                            const member = memberId ? presentMembers.find((m) => m.id === memberId) : null;
-                            const isSelected = selectedMemberId && selectedMemberId === memberId;
-                            const isDragOver = dragOverCellKey === cellKey;
-
-                            return (
-                              <div
-                                key={cellKey}
-                                draggable={isEditingMode && !!member}
-                                onDragStart={(e) => member && handleDragStart(e, member.id)}
-                                onDragEnd={handleDragEnd}
-                                onDragOver={(e) => handleDragOver(e, cellKey)}
-                                onDragLeave={(e) => handleDragLeave(e, cellKey)}
-                                onDrop={(e) => handleDrop(e, rowVal, c)}
-                                onClick={() => !readOnly && handleCellClick(rowVal, c)}
-                                className={`
-                                  relative flex flex-col items-center justify-center p-1 rounded border transition-all text-center
-                                  w-16 h-16 shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:scale-[1.03]
-                                  ${!readOnly ? (member ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer') : 'cursor-default'}
-                                  ${member 
-                                    ? `${getInstrumentColorClass(member.instrument)} border-2` 
-                                    : 'border-dashed border-cordel-wood/30 bg-orange-50/10 hover:bg-orange-100/20'}
-                                  ${isSelected ? 'ring-2 ring-cordel-wood scale-[1.03] outline-none z-10' : ''}
-                                  ${isDragOver ? 'ring-3 ring-[#2d6a4f] bg-emerald-100/70 scale-105 z-20' : ''}
-                                `}
-                                style={member ? { backgroundColor: getColorForInstrument(member.instrument, 'pastel') } : undefined}
-                                title={member ? `Danse : ${member.name}` : `Emplacement Danse ${Math.abs(rowVal)}, ${c}`}
-                              >
-                                {member ? (
-                                  <>
-                                    <XiloAvatar
-                                      src={member.photoURL}
-                                      name={member.name}
-                                      size={18}
-                                      className="pointer-events-none mb-0.5 border border-encre-noire/10"
-                                    />
-                                    <span className="text-[8px] font-black leading-none truncate max-w-full">
-                                      {formatMemberName(member.name)}
-                                    </span>
-                                    <span className="text-[6px] opacity-75 font-semibold leading-none mt-0.5 uppercase truncate max-w-full">
-                                      Danse
-                                    </span>
-                                    
-                                    {/* Admin retirer placement button */}
-                                    {isEditingMode && (
-                                      <button
-                                        type="button"
-                                        onClick={(e) => handleUnplaceMember(e, member.id)}
-                                        className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 rounded-full bg-red-600 text-white text-[7px] font-black flex items-center justify-center border border-encre-noire shadow hover:bg-red-800 transition-colors cursor-pointer"
-                                        title="Retirer"
-                                      >
-                                        ✕
-                                      </button>
-                                    )}
-                                  </>
-                                ) : (
-                                  isEditingMode ? (
-                                    <span className="text-cordel-wood/40 text-[9px] font-black leading-none">+ Placer</span>
-                                  ) : (
-                                    <span className="text-neutral-400/50 text-[8px] italic">Vide</span>
-                                  )
-                                )}
-                              </div>
-                            );
-                          });
-                        })()}
-                      </div>
-                    ));
-                  })()}
-                </div>
-              </div>
-
-              {/* Case Mestre dédiée, centrée devant la grille */}
-              <div className="flex flex-col items-center mb-5 mt-1 select-none">
-                <span className="text-[8px] uppercase tracking-widest font-black text-cordel-wood mb-1 opacity-80">
-                  👑 Chef d'orchestre (Mestre)
-                </span>
-                {(() => {
-                  const cellKey = 'mestre-0-0';
-                  const mestreMemberId = Object.keys(activePlacements).find(
-                    (uid) => activePlacements[uid]?.row === 0 && activePlacements[uid]?.col === 0
-                  );
-                  const mestreMember = mestreMemberId ? presentMembers.find((m) => m.id === mestreMemberId) : null;
-                  const isSelected = selectedMemberId && selectedMemberId === mestreMemberId;
-                  const isDragOver = dragOverCellKey === cellKey;
-
-                  return (
-                    <div
-                      draggable={isEditingMode && !!mestreMember}
-                      onDragStart={(e) => mestreMember && handleDragStart(e, mestreMember.id)}
-                      onDragEnd={handleDragEnd}
-                      onDragOver={(e) => handleDragOver(e, cellKey)}
-                      onDragLeave={(e) => handleDragLeave(e, cellKey)}
-                      onDrop={(e) => handleDrop(e, 0, 0)}
-                      onClick={() => handleCellClick(0, 0)}
-                      className={`
-                        relative flex flex-col items-center justify-center p-2 rounded border-2 transition-all text-center
-                        w-20 h-20 shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:scale-[1.03]
-                        ${mestreMember ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'}
-                        ${mestreMember 
-                          ? `${getInstrumentColorClass(mestreMember.instrument)} border-double border-4` 
-                          : 'border-dashed border-cordel-wood/40 bg-amber-50/20 hover:bg-amber-100/30'}
-                        ${isSelected ? 'ring-2 ring-cordel-wood scale-[1.03] outline-none z-10' : ''}
-                        ${isDragOver ? 'ring-3 ring-[#2d6a4f] bg-emerald-100/70 scale-105 z-20' : ''}
-                      `}
-                      style={mestreMember ? { backgroundColor: getColorForInstrument(mestreMember.instrument, 'pastel') } : undefined}
-                      title={mestreMember ? `Mestre : ${mestreMember.name} (${mestreMember.instrument})` : "Case Mestre"}
-                    >
-                      {mestreMember ? (
-                        <>
-                          <XiloAvatar
-                            src={mestreMember.photoURL}
-                            name={mestreMember.name}
-                            size={24}
-                            className="pointer-events-none mb-1 border border-encre-noire/10"
-                          />
-                          <span className="text-[9px] font-black leading-none truncate max-w-full">
-                            {formatMemberName(mestreMember.name)}
-                          </span>
-                          <span className="text-[7px] opacity-75 font-semibold leading-none mt-0.5 uppercase truncate max-w-full">
-                            {(() => {
-                              const isAlf = mestreMember.instrument.toLowerCase().includes('alfaia');
-                              const isCx = mestreMember.instrument.toLowerCase().includes('caixa') || mestreMember.instrument.toLowerCase().includes('tarol');
-                              const assignedVoice = activePlacements[mestreMember.id]?.voice;
-
-                              if (isAlf && assignedVoice) {
-                                return `${mestreMember.instrument.split(' ')[0]} (${getVoiceLabel(assignedVoice, groupNomenclature, true)})`;
-                              }
-                              if (isCx && assignedVoice) {
-                                return assignedVoice.toLowerCase() === 'tarol' ? 'Tarol' : 'Caixa';
-                              }
-                              return mestreMember.instrument.split(' ')[0];
-                            })()}
-                          </span>
-                          
-                          {/* Admin retirer placement button */}
-                          {isEditingMode && (
-                            <button
-                              type="button"
-                              onClick={(e) => handleUnplaceMember(e, mestreMember.id)}
-                              className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-red-600 text-white text-[8px] font-black flex items-center justify-center border border-encre-noire shadow hover:bg-red-800 transition-colors cursor-pointer"
-                              title="Retirer le Mestre"
-                            >
-                              ✕
-                            </button>
-                          )}
-                        </>
-                      ) : (
-                        isEditingMode ? (
-                          <span className="text-cordel-wood/40 text-[10px] font-black leading-none">+ Mestre</span>
-                        ) : (
-                          <span className="text-neutral-400/50 text-[9px] italic">Vide</span>
-                        )
-                      )}
-                    </div>
-                  );
-                })()}
-              </div>
-
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateRows: `repeat(${layout.rows}, minmax(0, 1fr))`,
-                  gridTemplateColumns: `repeat(${layout.cols}, minmax(0, 1fr))`,
-                  gap: '8px',
-                  width: '100%',
-                  aspectRatio: `${layout.cols} / ${layout.rows}`,
-                  maxWidth: '560px',
-                }}
-                className="p-4 border-2 border-encre-noire bg-cordel-bg-light/10 rounded-[8px_12px_9px_11px] shadow-[inset_2px_2px_5px_rgba(0,0,0,0.15)] relative select-none"
-              >
-                {gridCells.map(({ row, col }) => {
-                  const cellKey = `${row}-${col}`;
-                  const memberId = Object.keys(activePlacements).find(
-                    (uid) => activePlacements[uid]?.row === row && activePlacements[uid]?.col === col
-                  );
-                  const member = memberId ? presentMembers.find((m) => m.id === memberId) : null;
-                  const isSelected = selectedMemberId && selectedMemberId === memberId;
-                  const isDragOver = dragOverCellKey === cellKey;
-
-                  return (
-                    <div
-                      key={cellKey}
-                      draggable={isEditingMode && !!member}
-                      onDragStart={(e) => member && handleDragStart(e, member.id)}
-                      onDragEnd={handleDragEnd}
-                      onDragOver={(e) => handleDragOver(e, cellKey)}
-                      onDragLeave={(e) => handleDragLeave(e, cellKey)}
-                      onDrop={(e) => handleDrop(e, row, col)}
-                      onClick={() => !readOnly && handleCellClick(row, col)}
-                      className={`
-                        relative flex flex-col items-center justify-center p-1 rounded border transition-all aspect-square text-center
-                        ${!readOnly ? (member ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer') : 'cursor-default'}
-                        ${member 
-                          ? `${getInstrumentColorClass(member.instrument)} border-2 shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:scale-[1.03]` 
-                          : 'border-dashed border-encre-noire/15 bg-white/20 dark:bg-black/10 hover:bg-white/40 dark:hover:bg-black/20 hover:scale-[1.01]'}
-                        ${isSelected ? 'ring-2 ring-cordel-wood scale-[1.03] outline-none z-10' : ''}
-                        ${isDragOver ? 'ring-3 ring-[#2d6a4f] bg-emerald-100/70 scale-105 z-20' : ''}
-                      `}
-                      style={member ? { backgroundColor: getColorForInstrument(member.instrument, 'pastel') } : undefined}
-                      title={member ? `${member.name} (${member.instrument})` : `Cellule L${row}-C${col}`}
-                    >
-                      {member ? (
-                        <>
-                          <XiloAvatar
-                            src={member.photoURL}
-                            name={member.name}
-                            size={20}
-                            className="hidden sm:block pointer-events-none mb-0.5 border border-encre-noire/10"
-                          />
-                          <span className="text-[9px] sm:text-[10px] font-black leading-none truncate max-w-full">
-                            {formatMemberName(member.name)}
-                          </span>
-                          <span className="text-[7px] sm:text-[8px] opacity-75 font-semibold leading-none mt-0.5 uppercase truncate max-w-full">
-                            {(() => {
-                              const isAlf = member.instrument.toLowerCase().includes('alfaia');
-                              const isCx = member.instrument.toLowerCase().includes('caixa') || member.instrument.toLowerCase().includes('tarol');
-                              const assignedVoice = activePlacements[member.id]?.voice;
-
-                              if (isAlf && assignedVoice) {
-                                return `${member.instrument.split(' ')[0]} (${getVoiceLabel(assignedVoice, groupNomenclature, true)})`;
-                              }
-                              if (isCx && assignedVoice) {
-                                return assignedVoice.toLowerCase() === 'tarol' ? 'Tarol' : 'Caixa';
-                              }
-                              return member.instrument.split(' ')[0];
-                            })()}
-                          </span>
-                          
-                          {/* Admin retirer placement cross button */}
-                          {isEditingMode && (
-                            <button
-                              type="button"
-                              onClick={(e) => handleUnplaceMember(e, member.id)}
-                              className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-red-600 text-white text-[8px] font-black flex items-center justify-center border border-encre-noire shadow hover:bg-red-800 transition-colors cursor-pointer"
-                              title="Retirer ce musicien"
-                            >
-                              ✕
-                            </button>
-                          )}
-                        </>
-                      ) : (
-                        isEditingMode && (
-                          <span className="text-encre-noire/25 text-xs sm:text-sm font-black">+</span>
-                        )
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div className="text-[9px] uppercase tracking-wider font-extrabold opacity-60 mt-2">
-                {t('eventDetails.stageBack') || "▼ FOND DE LA SCÈNE ▼"}
-              </div>
+            {/* Grille visuelle responsive de la scène (Actions 2, 3, 4) */}
+            <div className="flex-1 w-full min-w-0">
+              <StageVisualGrid
+                layout={layout}
+                activePlacements={activePlacements}
+                presentMembers={presentMembers}
+                currentUserId={currentUserId}
+                groupNomenclature={groupNomenclature}
+                getColorForInstrument={getColorForInstrument}
+                isEditingMode={isEditingMode}
+                readOnly={readOnly}
+                selectedMemberId={selectedMemberId}
+                dragOverCellKey={dragOverCellKey}
+                onCellClick={handleCellClick}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onUnplaceMember={handleUnplaceMember}
+                t={t}
+                onOpenFullscreen={() => setIsFullscreenOpen(true)}
+                isFullscreen={false}
+              />
             </div>
-          </div>
 
             {/* List of present members to place (only visible in edit mode) */}
             {isEditingMode && (
@@ -1149,6 +840,35 @@ export default function EventStageLayoutSection({
           )}
         </div>
       )}
+
+      {/* Modale Plein Écran / Zoom à la demande (Action 3) */}
+      <StageLayoutFullscreenModal
+        isOpen={isFullscreenOpen}
+        onClose={() => setIsFullscreenOpen(false)}
+        eventTitle={event.title || event.nom || t?.('eventDetails.stageLayoutTitle') || 'Plan de Scène'}
+      >
+        <div className="w-full flex flex-col gap-3">
+          <UserStagePositionBanner
+            currentUserId={currentUserId}
+            activePlacements={activePlacements}
+            presentMembers={presentMembers}
+            groupNomenclature={groupNomenclature}
+            groupId={profileData?.groupId || event?.groupId}
+          />
+          <StageVisualGrid
+            layout={layout}
+            activePlacements={activePlacements}
+            presentMembers={presentMembers}
+            currentUserId={currentUserId}
+            groupNomenclature={groupNomenclature}
+            getColorForInstrument={getColorForInstrument}
+            isEditingMode={false}
+            readOnly={true}
+            t={t}
+            isFullscreen={true}
+          />
+        </div>
+      </StageLayoutFullscreenModal>
     </CordelCard>
   );
 }

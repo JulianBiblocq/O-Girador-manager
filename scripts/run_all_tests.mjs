@@ -95,7 +95,9 @@ const testScripts = [
   'scripts/test_mestre_pedagogical_roles.mjs',
   'scripts/test_read_receipt.mjs',
   'scripts/test_porte_voix_read_receipts.mjs',
-  'scripts/test_search_input_padding.mjs'
+  'scripts/test_search_input_padding.mjs',
+  'scripts/test_stage_layout_mobile.mjs',
+  'scripts/test_repertoire_selector_responsive.mjs'
 ];
 
 console.log("===============================================================");
