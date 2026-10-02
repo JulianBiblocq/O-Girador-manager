@@ -30,17 +30,47 @@ import { db } from '../firebase.js';
  * @param {Object} [rawData={}] Données brutes de la commande
  * @returns {Object} { formulePrincipale, optionsAdditionnelles, dons, detailsOptions }
  */
-export function detectHelloAssoOptions(items = [], rawData = {}) {
+/**
+ * Normalise une chaîne de caractères en minuscules et sans accents pour une comparaison tolérante.
+ *
+ * @param {string} str Chaîne brute à assainir
+ * @returns {string} Chaîne normalisée
+ */
+function normalizeStr(str) {
+  if (!str || typeof str !== 'string') return '';
+  return str
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+}
+
+/**
+ * Détecte les options d'adhésion et matérielles depuis les items HelloAsso.
+ *
+ * @param {Array<Object>} items Liste des articles du panier HelloAsso
+ * @param {Object} [rawData={}] Données brutes de la commande
+ * @param {Array<Object>} [configuredOptions=[]] Liste des options configurées dans l'association
+ * @returns {Object} { formulePrincipale, optionsAdditionnelles, montantDons, detailsOptions, adhesionBase, pratiqueDanse, pratiquePercussion, selectedOptions }
+ */
+export function detectHelloAssoOptions(items = [], rawData = {}, configuredOptions = []) {
   const safeItems = Array.isArray(items) ? items : [];
+  const safeConfiguredOptions = Array.isArray(configuredOptions) ? configuredOptions : [];
 
   let formulePrincipale = null;
   const optionsAdditionnelles = [];
   let montantDons = 0;
   const detailsOptions = [];
 
+  let hasAdhesionBase = false;
+  let hasDanse = false;
+  let hasPercussion = false;
+  const matchedOptionIds = new Set();
+
   for (const item of safeItems) {
     const rawName = (item.name || item.customName || '').trim();
     const cleanNameLower = rawName.toLowerCase();
+    const cleanNormalized = normalizeStr(rawName);
     const itemType = (item.type || '').toLowerCase();
     const rawAmount = typeof item.amount === 'number' ? item.amount : (item.amount?.total || 0);
     const amountEuros = rawAmount > 0 ? (rawAmount / 100) : 0;
@@ -53,16 +83,79 @@ export function detectHelloAssoOptions(items = [], rawData = {}) {
     detailsOptions.push(parsedItem);
 
     // Détection des dons
-    if (itemType === 'donation' || cleanNameLower.includes('don ') || cleanNameLower === 'don' || cleanNameLower.includes('pourboire')) {
+    if (itemType === 'donation' || cleanNormalized.includes('don ') || cleanNormalized === 'don' || cleanNormalized.includes('pourboire')) {
       montantDons += amountEuros;
       continue;
     }
 
-    // Détection des options matérielles / costumes
-    const isCostume = cleanNameLower.includes('costume') || cleanNameLower.includes('tenue') || cleanNameLower.includes('t-shirt') || cleanNameLower.includes('jupe') || cleanNameLower.includes('veste');
-    const isInstrument = cleanNameLower.includes('instrument') || cleanNameLower.includes('alfaia') || cleanNameLower.includes('caixa') || cleanNameLower.includes('tarol') || cleanNameLower.includes('gonguê') || cleanNameLower.includes('agbê') || cleanNameLower.includes('timbal');
+    // Détection de l'adhésion de base (mots-clés : adhésion, adhesion, cotisation, membership)
+    if (
+      cleanNormalized.includes('adhesion') ||
+      cleanNormalized.includes('cotisation') ||
+      itemType === 'membership' ||
+      cleanNormalized.includes('adherent') ||
+      cleanNormalized.includes('membre')
+    ) {
+      hasAdhesionBase = true;
+    }
 
-    if (isCostume || isInstrument || cleanNameLower.includes('option') || cleanNameLower.includes('location')) {
+    // Détection de la pratique Danse
+    if (
+      cleanNormalized.includes('danse') ||
+      cleanNormalized.includes('danseur') ||
+      cleanNormalized.includes('danseuse') ||
+      cleanNormalized.includes('dansador')
+    ) {
+      hasDanse = true;
+    }
+
+    // Détection de la pratique Percussion
+    const isPercussionInstrument = (
+      cleanNormalized.includes('percussion') ||
+      cleanNormalized.includes('batucada') ||
+      cleanNormalized.includes('alfaia') ||
+      cleanNormalized.includes('caixa') ||
+      cleanNormalized.includes('tarol') ||
+      cleanNormalized.includes('gongue') ||
+      cleanNormalized.includes('agbe') ||
+      cleanNormalized.includes('mineiro') ||
+      cleanNormalized.includes('timbal')
+    );
+    if (isPercussionInstrument) {
+      hasPercussion = true;
+    }
+
+    // Rapprochement avec les options de cotisation configurées de l'association
+    for (const opt of safeConfiguredOptions) {
+      const optId = opt?.id || opt?.code;
+      if (!optId) continue;
+      const optNomNormalized = normalizeStr(opt.nom || opt.name || opt.label || '');
+      const optIdNormalized = normalizeStr(optId);
+
+      const isNameMatch = optNomNormalized.length >= 3 && (
+        cleanNormalized.includes(optNomNormalized) ||
+        optNomNormalized.includes(cleanNormalized)
+      );
+      const isIdMatch = optIdNormalized.length >= 3 && cleanNormalized.includes(optIdNormalized);
+      const isDanseOptionMatch = optNomNormalized.includes('danse') && cleanNormalized.includes('danse');
+      const isAlfaiaMatch = optNomNormalized.includes('alfaia') && cleanNormalized.includes('alfaia');
+      const isCaixaMatch = optNomNormalized.includes('caixa') && cleanNormalized.includes('caixa');
+      const isTarolMatch = optNomNormalized.includes('tarol') && cleanNormalized.includes('tarol');
+      const isGongueMatch = optNomNormalized.includes('gongue') && cleanNormalized.includes('gongue');
+      const isAgbeMatch = optNomNormalized.includes('agbe') && cleanNormalized.includes('agbe');
+      const isCostumeMatch = (optNomNormalized.includes('costume') || optNomNormalized.includes('tenue')) &&
+                             (cleanNormalized.includes('costume') || cleanNormalized.includes('tenue') || cleanNormalized.includes('jupe'));
+
+      if (isNameMatch || isIdMatch || isDanseOptionMatch || isAlfaiaMatch || isCaixaMatch || isTarolMatch || isGongueMatch || isAgbeMatch || isCostumeMatch) {
+        matchedOptionIds.add(optId);
+      }
+    }
+
+    // Détection des options matérielles / costumes
+    const isCostume = cleanNormalized.includes('costume') || cleanNormalized.includes('tenue') || cleanNormalized.includes('t-shirt') || cleanNormalized.includes('jupe') || cleanNormalized.includes('veste');
+    const isInstrument = cleanNormalized.includes('instrument') || isPercussionInstrument;
+
+    if (isCostume || isInstrument || cleanNormalized.includes('option') || cleanNormalized.includes('location')) {
       optionsAdditionnelles.push({
         nom: rawName,
         montant: amountEuros,
@@ -73,11 +166,11 @@ export function detectHelloAssoOptions(items = [], rawData = {}) {
 
     // Détection de la formule d'adhésion principale
     if (!formulePrincipale) {
-      if (cleanNameLower.includes('solidaire') || cleanNameLower.includes('réduit') || cleanNameLower.includes('reduit') || cleanNameLower.includes('étudiant') || cleanNameLower.includes('chômeur') || cleanNameLower.includes('rsa')) {
+      if (cleanNormalized.includes('solidaire') || cleanNormalized.includes('reduit') || cleanNormalized.includes('etudiant') || cleanNormalized.includes('chomeur') || cleanNormalized.includes('rsa')) {
         formulePrincipale = rawName || 'Tarif Solidaire / Réduit';
-      } else if (cleanNameLower.includes('bienfaiteur') || cleanNameLower.includes('soutien')) {
+      } else if (cleanNormalized.includes('bienfaiteur') || cleanNormalized.includes('soutien')) {
         formulePrincipale = rawName || 'Adhésion Soutien';
-      } else if (cleanNameLower.includes('adhésion') || cleanNameLower.includes('adhesion') || cleanNameLower.includes('cotisation') || itemType === 'membership') {
+      } else if (cleanNormalized.includes('adhesion') || cleanNormalized.includes('cotisation') || itemType === 'membership') {
         formulePrincipale = rawName || 'Formule Standard';
       }
     }
@@ -88,11 +181,19 @@ export function detectHelloAssoOptions(items = [], rawData = {}) {
     formulePrincipale = safeItems[0].name || 'Adhésion HelloAsso';
   }
 
+  if (formulePrincipale) {
+    hasAdhesionBase = true;
+  }
+
   return {
     formulePrincipale: formulePrincipale || 'Adhésion Standard',
     optionsAdditionnelles,
     montantDons,
-    detailsOptions
+    detailsOptions,
+    adhesionBase: hasAdhesionBase,
+    pratiqueDanse: hasDanse,
+    pratiquePercussion: hasPercussion,
+    selectedOptions: Array.from(matchedOptionIds)
   };
 }
 
@@ -384,14 +485,25 @@ export async function processHelloAssoPayment(dbInstance, groupId, payload) {
   const paymentId = String(data.id || data.order?.id || payload.id || `ha_${Date.now()}`);
   const paymentDate = data.date || data.order?.date || new Date().toISOString();
 
-  // 1. Analyse des options et formules
-  const optionsAnalysis = detectHelloAssoOptions(data.items || data.order?.items || [], data);
+  // 1. Récupération des options configurées dans l'association pour le mapping dynamique
+  let configuredOptions = [];
+  try {
+    const assocSnap = await getDoc(doc(dbInstance, 'associations', groupId));
+    if (assocSnap.exists()) {
+      configuredOptions = assocSnap.data()?.optionsCotisation || [];
+    }
+  } catch (err) {
+    console.warn("processHelloAssoPayment - Impossible de lire optionsCotisation :", err);
+  }
+
+  // 2. Analyse tolérante des options et formules
+  const optionsAnalysis = detectHelloAssoOptions(data.items || data.order?.items || [], data, configuredOptions);
   const installmentAnalysis = detectInstallmentPayment(data);
 
-  // 2. Recherche du customField utilisateur
+  // 3. Recherche du customField utilisateur
   const customUserId = findUserIdentifierFromCustomFields(data.customFields, data.metadata, data);
 
-  // 3. Réconciliation du membre
+  // 4. Réconciliation du membre
   const matchedMember = await matchMemberFromPayment(dbInstance, groupId, {
     customUserId,
     payerEmail
@@ -421,15 +533,17 @@ export async function processHelloAssoPayment(dbInstance, groupId, payload) {
     const paymentStatusField = isInstallmentActive ? 'en_cours' : 'paid';
 
     if (!isManualOverride) {
-      await updateDoc(userRef, {
+      const updatePayload = {
         paymentStatus: paymentStatusField,
+        cotisationAjour: isFullyPaid || isInstallmentActive,
         cotisation: {
           aJour: true,
           statut: cotisationStatut,
           formule: optionsAnalysis.formulePrincipale,
           montantTotal: amountEuros,
           modeReglement: 'helloasso',
-          derniereSynchro: nowIso
+          derniereSynchro: nowIso,
+          options: optionsAnalysis.optionsAdditionnelles || []
         },
         helloAssoLastPayment: {
           paymentId,
@@ -441,12 +555,28 @@ export async function processHelloAssoPayment(dbInstance, groupId, payload) {
           installmentNumber: installmentAnalysis.installmentNumber,
           updatedAt: serverTimestamp()
         }
-      });
+      };
+
+      if (optionsAnalysis.adhesionBase) {
+        updatePayload.adhesionBase = true;
+      }
+      if (optionsAnalysis.pratiqueDanse) {
+        updatePayload.pratiqueDanse = true;
+      }
+      if (optionsAnalysis.pratiquePercussion) {
+        updatePayload.pratiquePercussion = true;
+      }
+      if (optionsAnalysis.selectedOptions && optionsAnalysis.selectedOptions.length > 0) {
+        const existingSelected = Array.isArray(matchedMember.selectedOptions) ? matchedMember.selectedOptions : [];
+        updatePayload.selectedOptions = Array.from(new Set([...existingSelected, ...optionsAnalysis.selectedOptions]));
+      }
+
+      await updateDoc(userRef, updatePayload);
       updatedMember = true;
     } else {
       // Conservation du statut manuel du trésorier tout en enregistrant les métadonnées de paiement HelloAsso
       const existingCotisation = matchedMember.cotisation || {};
-      await updateDoc(userRef, {
+      const overridePayload = {
         helloAssoLastPayment: {
           paymentId,
           orderId: paymentId,
@@ -461,7 +591,21 @@ export async function processHelloAssoPayment(dbInstance, groupId, payload) {
           ...existingCotisation,
           derniereSynchro: nowIso
         }
-      });
+      };
+      if (optionsAnalysis.selectedOptions && optionsAnalysis.selectedOptions.length > 0) {
+        const existingSelected = Array.isArray(matchedMember.selectedOptions) ? matchedMember.selectedOptions : [];
+        overridePayload.selectedOptions = Array.from(new Set([...existingSelected, ...optionsAnalysis.selectedOptions]));
+      }
+      if (optionsAnalysis.adhesionBase && !matchedMember.adhesionBase) {
+        overridePayload.adhesionBase = true;
+      }
+      if (optionsAnalysis.pratiqueDanse && !matchedMember.pratiqueDanse) {
+        overridePayload.pratiqueDanse = true;
+      }
+      if (optionsAnalysis.pratiquePercussion && !matchedMember.pratiquePercussion) {
+        overridePayload.pratiquePercussion = true;
+      }
+      await updateDoc(userRef, overridePayload);
       updatedMember = true;
     }
   }

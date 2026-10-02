@@ -44,8 +44,27 @@ export default function ThreadReplyBar({
   const [isReplyExpanded, setIsReplyExpanded] = useState(false);
   const [isTargetingExpanded, setIsTargetingExpanded] = useState(false);
   const [isCompactEmojiOpen, setIsCompactEmojiOpen] = useState(false);
+  const [isMobileToolsOpen, setIsMobileToolsOpen] = useState(false);
   const [compactMentionQuery, setCompactMentionQuery] = useState(null);
   const compactInputRef = useRef(null);
+  const mobileToolsRef = useRef(null);
+
+  // Fermeture du tiroir popover mobile des outils lors d'un clic en dehors
+  React.useEffect(() => {
+    function handleClickOutside(event) {
+      if (mobileToolsRef.current && !mobileToolsRef.current.contains(event.target)) {
+        setIsMobileToolsOpen(false);
+      }
+    }
+    if (isMobileToolsOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [isMobileToolsOpen]);
 
   // Défilement automatique vers le bas lors du dépliage du champ de saisie
   React.useEffect(() => {
@@ -154,50 +173,138 @@ export default function ThreadReplyBar({
               />
             )}
 
-            <button
-              type="button"
-              onClick={() => setIsReplyExpanded(true)}
-              className="w-7 h-7 flex items-center justify-center font-black text-xs text-cordel-wood hover:text-encre-noire bg-cordel-bg hover:bg-white rounded border border-cordel-master-dark/30 cursor-pointer shrink-0 transition-all mb-0.5"
-              title="Options de réponse (Groupe cible, mentions, mise en forme)"
-            >
-              ➕
-            </button>
+            {/* 1. Mode mobile (< md) : Bouton d'action unique carré « + » rétractable */}
+            <div className="relative md:hidden shrink-0 mb-0.5" ref={mobileToolsRef}>
+              <button
+                type="button"
+                onClick={() => setIsMobileToolsOpen(prev => !prev)}
+                className={`w-7 h-7 flex items-center justify-center font-black text-sm rounded border transition-all cursor-pointer select-none ${
+                  isMobileToolsOpen
+                    ? 'bg-cordel-wood text-white border-encre-noire shadow-none scale-95'
+                    : 'bg-cordel-wood text-cordel-bg-light border-encre-noire hover:opacity-90 shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px]'
+                }`}
+                title="Outils de réponse"
+                aria-expanded={isMobileToolsOpen}
+              >
+                <span className={`transition-transform duration-200 inline-block leading-none ${isMobileToolsOpen ? 'rotate-45' : ''}`}>＋</span>
+              </button>
 
-            <button
-              type="button"
-              onClick={() => setIsReplyExpanded(true)}
-              className="w-7 h-7 flex items-center justify-center text-xs text-cordel-wood hover:text-encre-noire bg-cordel-bg hover:bg-white rounded border border-cordel-master-dark/30 cursor-pointer shrink-0 transition-all mb-0.5"
-              title="Ajouter une pièce jointe ou une photo (déplier l'éditeur)"
-            >
-              📎
-            </button>
+              {/* Popover flottant des 4 outils sur mobile */}
+              {isMobileToolsOpen && (
+                <div className="absolute bottom-10 left-0 z-40 bg-cordel-bg-light border-2 border-encre-noire p-2 rounded-[6px_8px_6px_8px] shadow-[3px_3px_0px_0px_#181716] flex flex-col gap-1.5 min-w-[200px] animate-fade-in text-left">
+                  <div className="text-[8px] font-black uppercase tracking-wider text-cordel-wood border-b border-dashed border-encre-noire/20 pb-1 mb-0.5 select-none">
+                    Outils de réponse
+                  </div>
 
-            <button
-              type="button"
-              onClick={() => setIsCompactEmojiOpen(prev => !prev)}
-              className={`w-7 h-7 flex items-center justify-center text-sm rounded border transition-all cursor-pointer shrink-0 mb-0.5 ${
-                isCompactEmojiOpen
-                  ? 'bg-cordel-wood text-white border-encre-noire'
-                  : 'bg-cordel-bg hover:bg-white border-cordel-master-dark/30'
-              }`}
-              title="Choisir un émoticône"
-            >
-              😀
-            </button>
+                  {/* 1. Émojis */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsMobileToolsOpen(false);
+                      setIsCompactEmojiOpen(prev => !prev);
+                    }}
+                    className="flex items-center gap-2.5 p-1.5 rounded hover:bg-neutral-200/60 dark:hover:bg-neutral-800/60 transition-colors text-left w-full cursor-pointer text-xs font-bold text-encre-noire"
+                  >
+                    <span className="text-sm shrink-0">😀</span>
+                    <span className="truncate">Émojis</span>
+                  </button>
 
-            {/* Dictée vocale au microphone */}
-            <div className="mb-0.5">
-              <VoiceDictationButton
-                size="sm"
-                onTranscript={(spokenText) => {
-                  setReplyText(prev => {
-                    const trimmed = (prev || '').trim();
-                    return trimmed ? `${trimmed} ${spokenText}` : spokenText;
-                  });
-                }}
-                disabled={sending}
-                title="Dicter votre réponse au microphone"
-              />
+                  {/* 2. Pièce jointe / Photo */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsMobileToolsOpen(false);
+                      setIsReplyExpanded(true);
+                    }}
+                    className="flex items-center gap-2.5 p-1.5 rounded hover:bg-neutral-200/60 dark:hover:bg-neutral-800/60 transition-colors text-left w-full cursor-pointer text-xs font-bold text-encre-noire"
+                  >
+                    <span className="text-sm shrink-0">📎</span>
+                    <span className="truncate">Pièce jointe / Photo</span>
+                  </button>
+
+                  {/* 3. Options avancées / Sondage */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsMobileToolsOpen(false);
+                      setIsReplyExpanded(true);
+                    }}
+                    className="flex items-center gap-2.5 p-1.5 rounded hover:bg-neutral-200/60 dark:hover:bg-neutral-800/60 transition-colors text-left w-full cursor-pointer text-xs font-bold text-encre-noire"
+                  >
+                    <span className="text-sm shrink-0">📝</span>
+                    <span className="truncate">Formatage enrichi</span>
+                  </button>
+
+                  {/* 4. Micro / Dictée vocale */}
+                  <div className="flex items-center justify-between p-1.5 rounded hover:bg-neutral-200/60 dark:hover:bg-neutral-800/60 transition-colors">
+                    <span className="text-xs font-bold text-encre-noire flex items-center gap-2.5">
+                      <span className="text-sm shrink-0">🎙️</span>
+                      <span>Dictée vocale</span>
+                    </span>
+                    <VoiceDictationButton
+                      size="sm"
+                      onTranscript={(spokenText) => {
+                        setReplyText(prev => {
+                          const trimmed = (prev || '').trim();
+                          return trimmed ? `${trimmed} ${spokenText}` : spokenText;
+                        });
+                        setIsMobileToolsOpen(false);
+                      }}
+                      disabled={sending}
+                      title="Dicter votre message"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 2. Mode grand écran (>= md) : Affichage en ligne */}
+            <div className="hidden md:flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsReplyExpanded(true)}
+                className="w-7 h-7 flex items-center justify-center font-black text-xs text-cordel-wood hover:text-encre-noire bg-cordel-bg hover:bg-white rounded border border-cordel-master-dark/30 cursor-pointer shrink-0 transition-all mb-0.5"
+                title="Options de réponse (Groupe cible, mentions, mise en forme)"
+              >
+                ➕
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsReplyExpanded(true)}
+                className="w-7 h-7 flex items-center justify-center text-xs text-cordel-wood hover:text-encre-noire bg-cordel-bg hover:bg-white rounded border border-cordel-master-dark/30 cursor-pointer shrink-0 transition-all mb-0.5"
+                title="Ajouter une pièce jointe ou une photo (déplier l'éditeur)"
+              >
+                📎
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsCompactEmojiOpen(prev => !prev)}
+                className={`w-7 h-7 flex items-center justify-center text-sm rounded border transition-all cursor-pointer shrink-0 mb-0.5 ${
+                  isCompactEmojiOpen
+                    ? 'bg-cordel-wood text-white border-encre-noire'
+                    : 'bg-cordel-bg hover:bg-white border-cordel-master-dark/30'
+                }`}
+                title="Choisir un émoticône"
+              >
+                😀
+              </button>
+
+              {/* Dictée vocale au microphone */}
+              <div className="mb-0.5">
+                <VoiceDictationButton
+                  size="sm"
+                  onTranscript={(spokenText) => {
+                    setReplyText(prev => {
+                      const trimmed = (prev || '').trim();
+                      return trimmed ? `${trimmed} ${spokenText}` : spokenText;
+                    });
+                  }}
+                  disabled={sending}
+                  title="Dicter votre réponse au microphone"
+                />
+              </div>
             </div>
 
             <textarea
@@ -229,7 +336,7 @@ export default function ThreadReplyBar({
               }}
               placeholder={(t && t('forum.writeReplyPlaceholder')) || "Écrire une réponse..."}
               disabled={sending}
-              className="flex-1 bg-transparent text-xs font-semibold text-encre-noire placeholder:opacity-50 outline-none px-1 resize-none max-h-32 overflow-y-auto leading-relaxed py-1 min-h-[28px]"
+              className="flex-1 min-w-0 bg-transparent text-xs font-semibold text-encre-noire placeholder:opacity-50 outline-none px-1 resize-none max-h-32 overflow-y-auto leading-relaxed py-1 min-h-[28px]"
             />
             <CordelButton
               type="submit"

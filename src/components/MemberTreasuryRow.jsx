@@ -38,20 +38,35 @@ function MemberTreasuryRow({
   const fullName = `${member.prenom || ''} ${member.nom || ''}`;
   const currentStatus = member.paymentStatus || 'unpaid';
   const hasBaseAdhesion = member.adhesionBase !== false; // Par défaut vrai
-  const selectedOptionIds = member.selectedOptions || [];
+  const selectedOptionIds = Array.isArray(member.selectedOptions) ? member.selectedOptions : [];
+
+  // Résolution tolérante des options (par ID ou nom insensible à la casse, avec fallback sur member.cotisation.options)
+  const resolveOption = (optKey) => {
+    if (!optKey) return null;
+    const strKey = String(optKey).trim().toLowerCase();
+    return optionsCotisation.find(o => 
+      o.id === optKey || 
+      (o.nom && String(o.nom).trim().toLowerCase() === strKey)
+    );
+  };
+
+  const rawCotisationOptions = Array.isArray(member.cotisation?.options) 
+    ? member.cotisation.options 
+    : (typeof member.cotisation?.options === 'string' ? member.cotisation.options.split(',').map(s => s.trim()) : []);
+
+  const effectiveOptionKeys = selectedOptionIds.length > 0 ? selectedOptionIds : rawCotisationOptions;
+
+  // Options choisies résolues
+  const activeOptions = effectiveOptionKeys
+    .map(optKey => resolveOption(optKey) || (typeof optKey === 'string' && optKey ? { id: optKey, nom: optKey, montant: 0 } : null))
+    .filter(Boolean);
 
   // Calcul du montant total des cotisations
   const baseAmount = hasBaseAdhesion ? baseAdhesionAmount : 0;
-  const optionsAmount = selectedOptionIds.reduce((sum, optId) => {
-    const opt = optionsCotisation.find(o => o.id === optId);
-    return sum + (opt ? parseFloat(opt.montant) || 0 : 0);
+  const optionsAmount = activeOptions.reduce((sum, opt) => {
+    return sum + (parseFloat(opt.montant) || 0);
   }, 0);
   const totalDue = baseAmount + optionsAmount;
-
-  // Options choisies
-  const activeOptions = selectedOptionIds
-    .map(optId => optionsCotisation.find(o => o.id === optId))
-    .filter(Boolean);
 
   const handleToggleBaseAdhesion = async () => {
     try {
@@ -68,10 +83,23 @@ function MemberTreasuryRow({
   const handleToggleOption = async (optionId, isChecked) => {
     try {
       let updatedOptions;
+      const targetOpt = optionsCotisation.find(o => o.id === optionId);
+      const targetNom = targetOpt?.nom ? String(targetOpt.nom).trim().toLowerCase() : null;
       if (isChecked) {
-        updatedOptions = [...selectedOptionIds, optionId];
+        updatedOptions = Array.from(new Set([
+          ...selectedOptionIds.filter(id => {
+            if (id === optionId) return false;
+            if (targetNom && String(id).trim().toLowerCase() === targetNom) return false;
+            return true;
+          }),
+          optionId
+        ]));
       } else {
-        updatedOptions = selectedOptionIds.filter(id => id !== optionId);
+        updatedOptions = selectedOptionIds.filter(id => {
+          if (id === optionId) return false;
+          if (targetNom && String(id).trim().toLowerCase() === targetNom) return false;
+          return true;
+        });
       }
       const userRef = doc(db, 'users', member.id);
       await updateDoc(userRef, {
@@ -210,7 +238,9 @@ function MemberTreasuryRow({
               <span className="text-[9px] italic text-neutral-400 p-1">{t('widgetTreasury.noOptionAvailable')}</span>
             ) : (
               optionsCotisation.map(opt => {
-                const isSelected = selectedOptionIds.includes(opt.id);
+                const isSelected = selectedOptionIds.includes(opt.id) ||
+                  selectedOptionIds.some(id => resolveOption(id)?.id === opt.id) ||
+                  activeOptions.some(ao => ao.id === opt.id);
                 return (
                   <label 
                     key={opt.id} 

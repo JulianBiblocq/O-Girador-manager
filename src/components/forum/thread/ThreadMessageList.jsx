@@ -26,6 +26,7 @@ import ThreadMessageItem from './ThreadMessageItem';
  * @param {Function} props.t Fonction de traduction
  */
 export default function ThreadMessageList({
+  headerContent = null,
   thread,
   reponses: passedReponses,
   firstUnreadIdx = -1,
@@ -64,11 +65,13 @@ export default function ThreadMessageList({
 
   return (
     <div className="relative flex flex-col flex-1 min-h-0 overflow-hidden">
+      {/* Étage 2 — Fil des messages : unique zone autorisée à défiler verticalement */}
       <div
         ref={messagesContainerRef}
         onScroll={onScroll}
-        className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y px-4 py-3 pb-10 sm:pb-12 bg-cordel-bg-light border-2 border-dashed border-cordel-master-dark/20 rounded-md select-text flex flex-col gap-3"
+        className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y px-4 py-2 bg-cordel-bg-light select-text flex flex-col gap-3"
       >
+        {headerContent}
         {reponses.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full min-h-[160px] text-center text-xs opacity-60 font-semibold italic select-none py-8">
             <span>📭 {(t && t('forum.noReplies')) || "Aucun message dans cette discussion pour le moment."}</span>
@@ -123,7 +126,8 @@ export default function ThreadMessageList({
           );
         })
       )}
-        <div ref={messagesEndRef} className="h-4 shrink-0" />
+        {/* Coussin d'espacement (pb-4) et ancre invisible de fin de liste pour le scroll automatique */}
+        <div ref={messagesEndRef} className="h-6 shrink-0 pb-4 pointer-events-none" aria-hidden="true" />
       </div>
 
       {/* Pastille flottante de défilement rapide vers le bas (↓) */}

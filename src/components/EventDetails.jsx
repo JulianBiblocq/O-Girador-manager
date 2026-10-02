@@ -320,6 +320,9 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
     handleRequestRegistrationChange,
     handleCancelRegistrationChangeRequest,
     handleProcessRegistrationChangeRequest,
+    handleLateCancellation,
+    handleLateRegistration,
+    handleCancelLateRegistration,
     dependents,
     familyMembers,
     familyResponses,
@@ -1887,6 +1890,9 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
                 handleRequestRegistrationChange={handleRequestRegistrationChange}
                 handleCancelRegistrationChangeRequest={handleCancelRegistrationChangeRequest}
                 handleProcessRegistrationChangeRequest={handleProcessRegistrationChangeRequest}
+                handleLateCancellation={handleLateCancellation}
+                handleLateRegistration={handleLateRegistration}
+                handleCancelLateRegistration={handleCancelLateRegistration}
                 isRegistrationDeadlinePassed={isRegistrationDeadlinePassed}
                 t={t}
                 currentConfig={currentConfig}
@@ -1974,6 +1980,9 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
                 handleRequestRegistrationChange={handleRequestRegistrationChange}
                 handleCancelRegistrationChangeRequest={handleCancelRegistrationChangeRequest}
                 handleProcessRegistrationChangeRequest={handleProcessRegistrationChangeRequest}
+                handleLateCancellation={handleLateCancellation}
+                handleLateRegistration={handleLateRegistration}
+                handleCancelLateRegistration={handleCancelLateRegistration}
                 isRegistrationDeadlinePassed={isRegistrationDeadlinePassed}
                 t={t}
                 handleAddInviteExterne={handleAddInviteExterne}

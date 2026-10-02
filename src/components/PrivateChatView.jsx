@@ -43,6 +43,7 @@ export default function PrivateChatView({
   const [inputText, setInputText] = useState(initialText || '');
   const [sending, setSending] = useState(false);
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
+  const [isMobileToolsOpen, setIsMobileToolsOpen] = useState(false);
   const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
   const [isFramaspaceModalOpen, setIsFramaspaceModalOpen] = useState(false);
   const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
@@ -54,6 +55,24 @@ export default function PrivateChatView({
   const messagesEndRef = useRef(null);
   const attachmentInputRef = useRef(null);
   const privateChatInputRef = useRef(null);
+  const mobileToolsRef = useRef(null);
+
+  // Fermeture du tiroir popover mobile des outils lors d'un clic en dehors
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (mobileToolsRef.current && !mobileToolsRef.current.contains(event.target)) {
+        setIsMobileToolsOpen(false);
+      }
+    }
+    if (isMobileToolsOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [isMobileToolsOpen]);
 
   // Auto-resize dynamique du champ de saisie jusqu'à max-h-32 (128px)
   useEffect(() => {
@@ -538,7 +557,7 @@ export default function PrivateChatView({
   };
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-130px)] sm:h-[560px] max-h-[100dvh] border-2 border-encre-noire rounded-[8px_12px_10px_9px] shadow-[4px_4px_0px_0px_#181716] overflow-hidden bg-cordel-bg text-left select-none">
+    <div className="fixed inset-0 z-40 md:relative md:inset-auto md:z-auto flex flex-col h-[100dvh] max-h-[100dvh] md:h-[calc(100vh-130px)] md:max-h-[calc(100vh-130px)] overflow-hidden w-full overscroll-contain bg-cordel-bg text-left select-none md:border-2 md:border-encre-noire md:rounded-[8px_12px_10px_9px] md:shadow-[4px_4px_0px_0px_#181716]">
       
       {/* 1. En-tête de la discussion */}
       <div className="flex items-center justify-between border-b-2 border-dashed border-encre-noire/20 p-3 bg-white/40 dark:bg-black/10">
@@ -592,8 +611,8 @@ export default function PrivateChatView({
         )}
       </div>
 
-      {/* 2. Zone des messages */}
-      <div className="flex-1 overflow-y-auto p-4 pb-10 sm:pb-12 flex flex-col gap-3.5 bg-cordel-bg-light/40 scrollbar-thin">
+      {/* 2. Zone des messages : unique zone autorisée à défiler verticalement */}
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 py-2 flex flex-col gap-3.5 bg-cordel-bg-light/40 scrollbar-thin">
         {activeMessages.length === 0 ? (
           <div className="flex-1 flex flex-col justify-center items-center opacity-50 select-none">
             <span className="text-xl mb-2">{isGroup ? '👥' : '✉️'}</span>
@@ -821,11 +840,12 @@ export default function PrivateChatView({
             );
           })
         )}
-        <div ref={messagesEndRef} className="h-4 shrink-0" />
+        {/* Coussin d'espacement (pb-4) et ancre invisible de fin de liste pour le scroll automatique */}
+        <div ref={messagesEndRef} className="h-6 shrink-0 pb-4 pointer-events-none" aria-hidden="true" />
       </div>
 
-      {/* 3. Zone de saisie et d'envoi */}
-      <div className="shrink-0 flex flex-col border-t-2 border-dashed border-encre-noire/20 p-2.5 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] bg-white/40 dark:bg-black/10 select-none">
+      {/* 3. Zone de saisie et d'envoi dockée en bas d'écran */}
+      <div className="shrink-0 flex flex-col border-t-2 border-dashed border-encre-noire/20 p-2.5 pb-[max(env(safe-area-inset-bottom),0.75rem)] bg-white/40 dark:bg-black/10 select-none">
         
         {/* Bandeau de réponse / citation active */}
         {replyingTo && (
@@ -871,19 +891,6 @@ export default function PrivateChatView({
             />
           )}
 
-          <button
-            type="button"
-            onClick={() => setIsEmojiPickerOpen(prev => !prev)}
-            className={`w-9 h-[38px] flex items-center justify-center text-sm rounded border-2 transition-all cursor-pointer shrink-0 mb-0.5 ${
-              isEmojiPickerOpen
-                ? 'bg-cordel-wood text-white border-encre-noire'
-                : 'bg-cordel-bg hover:bg-white border-encre-noire/40'
-            }`}
-            title="Choisir un émoticône"
-          >
-            😀
-          </button>
-
           {/* Sélecteur de fichier direct depuis l'appareil (photo ou document) */}
           <input
             ref={attachmentInputRef}
@@ -894,42 +901,145 @@ export default function PrivateChatView({
             className="hidden"
           />
 
-          <button
-            type="button"
-            onClick={() => attachmentInputRef.current?.click()}
-            disabled={sending || isUploadingAttachment}
-            className="w-9 h-[38px] flex items-center justify-center text-sm rounded border-2 bg-cordel-bg hover:bg-white border-encre-noire/40 transition-all cursor-pointer shrink-0 disabled:opacity-50 mb-0.5"
-            title="Joindre une photo ou un fichier depuis votre appareil"
-          >
-            {isUploadingAttachment ? (
-              <span className="inline-block animate-spin text-xs">⏳</span>
-            ) : (
-              <span>📎</span>
+          {/* 1. Mode mobile (< md) : Bouton d'action unique carré « + » rétractable */}
+          <div className="relative md:hidden shrink-0 mb-0.5" ref={mobileToolsRef}>
+            <button
+              type="button"
+              onClick={() => setIsMobileToolsOpen(prev => !prev)}
+              className={`w-9 h-[38px] flex items-center justify-center font-black text-lg rounded border-2 transition-all cursor-pointer select-none ${
+                isMobileToolsOpen
+                  ? 'bg-cordel-wood text-white border-encre-noire shadow-none scale-95'
+                  : 'bg-cordel-wood text-cordel-bg-light border-encre-noire hover:opacity-90 shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px]'
+              }`}
+              title="Outils et pièces jointes"
+              aria-expanded={isMobileToolsOpen}
+            >
+              <span className={`transition-transform duration-200 inline-block leading-none ${isMobileToolsOpen ? 'rotate-45' : ''}`}>＋</span>
+            </button>
+
+            {/* Mini-tiroir / popover flottant propre présentant les 4 actions */}
+            {isMobileToolsOpen && (
+              <div className="absolute bottom-12 left-0 z-40 bg-cordel-bg-light border-2 border-encre-noire p-2 rounded-[6px_8px_6px_8px] shadow-[3px_3px_0px_0px_#181716] flex flex-col gap-1.5 min-w-[200px] animate-fade-in text-left">
+                <div className="text-[8px] font-black uppercase tracking-wider text-cordel-wood border-b border-dashed border-encre-noire/20 pb-1 mb-0.5 select-none">
+                  Outils de discussion
+                </div>
+
+                {/* 1. Émojis */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileToolsOpen(false);
+                    setIsEmojiPickerOpen(prev => !prev);
+                  }}
+                  className="flex items-center gap-2.5 p-1.5 rounded hover:bg-neutral-200/60 dark:hover:bg-neutral-800/60 transition-colors text-left w-full cursor-pointer text-xs font-bold text-encre-noire"
+                >
+                  <span className="text-base shrink-0">😀</span>
+                  <span className="truncate">Émojis</span>
+                </button>
+
+                {/* 2. Pièce jointe */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileToolsOpen(false);
+                    attachmentInputRef.current?.click();
+                  }}
+                  disabled={sending || isUploadingAttachment}
+                  className="flex items-center gap-2.5 p-1.5 rounded hover:bg-neutral-200/60 dark:hover:bg-neutral-800/60 transition-colors text-left w-full cursor-pointer text-xs font-bold text-encre-noire disabled:opacity-50"
+                >
+                  <span className="text-base shrink-0">{isUploadingAttachment ? '⏳' : '📎'}</span>
+                  <span className="truncate">Pièce jointe / Fichier</span>
+                </button>
+
+                {/* 3. Photo / Média Framaspace */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileToolsOpen(false);
+                    setIsFramaspaceModalOpen(true);
+                  }}
+                  disabled={sending || isUploadingAttachment}
+                  className="flex items-center gap-2.5 p-1.5 rounded hover:bg-neutral-200/60 dark:hover:bg-neutral-800/60 transition-colors text-left w-full cursor-pointer text-xs font-bold text-encre-noire disabled:opacity-50"
+                >
+                  <span className="text-base shrink-0">📸</span>
+                  <span className="truncate">Photo Framaspace</span>
+                </button>
+
+                {/* 4. Micro / Dictée vocale */}
+                <div className="flex items-center justify-between p-1.5 rounded hover:bg-neutral-200/60 dark:hover:bg-neutral-800/60 transition-colors">
+                  <span className="text-xs font-bold text-encre-noire flex items-center gap-2.5">
+                    <span className="text-base shrink-0">🎙️</span>
+                    <span>Dictée vocale</span>
+                  </span>
+                  <VoiceDictationButton
+                    size="sm"
+                    onTranscript={(spokenText) => {
+                      setInputText(prev => {
+                        const trimmed = (prev || '').trim();
+                        return trimmed ? `${trimmed} ${spokenText}` : spokenText;
+                      });
+                      setIsMobileToolsOpen(false);
+                    }}
+                    disabled={sending || isUploadingAttachment}
+                    title="Dicter votre message à la voix"
+                  />
+                </div>
+              </div>
             )}
-          </button>
+          </div>
 
-          <button
-            type="button"
-            onClick={() => setIsFramaspaceModalOpen(true)}
-            disabled={sending || isUploadingAttachment}
-            className="w-9 h-[38px] flex items-center justify-center text-sm rounded border-2 bg-cordel-bg hover:bg-white border-encre-noire/40 transition-all cursor-pointer shrink-0 disabled:opacity-50 mb-0.5"
-            title="Partager une photo du Cloud Framaspace (0 Mo sur Firebase)"
-          >
-            📸
-          </button>
+          {/* 2. Mode grand écran (>= md) : Affichage déplié des 4 icônes en ligne */}
+          <div className="hidden md:flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setIsEmojiPickerOpen(prev => !prev)}
+              className={`w-9 h-[38px] flex items-center justify-center text-sm rounded border-2 transition-all cursor-pointer shrink-0 mb-0.5 ${
+                isEmojiPickerOpen
+                  ? 'bg-cordel-wood text-white border-encre-noire'
+                  : 'bg-cordel-bg hover:bg-white border-encre-noire/40'
+              }`}
+              title="Choisir un émoticône"
+            >
+              😀
+            </button>
 
-          {/* Bouton de dictée vocale au microphone */}
-          <div className="mb-0.5">
-            <VoiceDictationButton
-              onTranscript={(spokenText) => {
-                setInputText(prev => {
-                  const trimmed = (prev || '').trim();
-                  return trimmed ? `${trimmed} ${spokenText}` : spokenText;
-                });
-              }}
+            <button
+              type="button"
+              onClick={() => attachmentInputRef.current?.click()}
               disabled={sending || isUploadingAttachment}
-              title="Dicter votre message à la voix (microphone)"
-            />
+              className="w-9 h-[38px] flex items-center justify-center text-sm rounded border-2 bg-cordel-bg hover:bg-white border-encre-noire/40 transition-all cursor-pointer shrink-0 disabled:opacity-50 mb-0.5"
+              title="Joindre une photo ou un fichier depuis votre appareil"
+            >
+              {isUploadingAttachment ? (
+                <span className="inline-block animate-spin text-xs">⏳</span>
+              ) : (
+                <span>📎</span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsFramaspaceModalOpen(true)}
+              disabled={sending || isUploadingAttachment}
+              className="w-9 h-[38px] flex items-center justify-center text-sm rounded border-2 bg-cordel-bg hover:bg-white border-encre-noire/40 transition-all cursor-pointer shrink-0 disabled:opacity-50 mb-0.5"
+              title="Partager une photo du Cloud Framaspace (0 Mo sur Firebase)"
+            >
+              📸
+            </button>
+
+            {/* Bouton de dictée vocale au microphone */}
+            <div className="mb-0.5">
+              <VoiceDictationButton
+                onTranscript={(spokenText) => {
+                  setInputText(prev => {
+                    const trimmed = (prev || '').trim();
+                    return trimmed ? `${trimmed} ${spokenText}` : spokenText;
+                  });
+                }}
+                disabled={sending || isUploadingAttachment}
+                title="Dicter votre message à la voix (microphone)"
+              />
+            </div>
           </div>
 
           <textarea 
@@ -947,7 +1057,7 @@ export default function PrivateChatView({
             }}
             placeholder={isGroup ? `Message au groupe ${conversation?.name || ''}...` : "Rédiger un message..."}
             disabled={sending}
-            className="theme-input text-xs font-bold py-2 bg-cordel-bg-light flex-grow resize-none max-h-32 overflow-y-auto min-h-[38px] leading-relaxed"
+            className="theme-input text-xs font-bold py-2 bg-cordel-bg-light flex-1 min-w-0 resize-none max-h-32 overflow-y-auto min-h-[38px] leading-relaxed"
           />
           <CordelButton
             type="submit"

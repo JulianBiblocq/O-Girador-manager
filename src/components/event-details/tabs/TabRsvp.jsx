@@ -48,6 +48,9 @@ export default function TabRsvp({
   handleRequestRegistrationChange,
   handleCancelRegistrationChangeRequest,
   handleProcessRegistrationChangeRequest,
+  handleLateCancellation,
+  handleLateRegistration,
+  handleCancelLateRegistration,
   isRegistrationDeadlinePassed,
   t,
   currentConfig,
@@ -130,6 +133,9 @@ export default function TabRsvp({
             handleRequestRegistrationChange={handleRequestRegistrationChange}
             handleCancelRegistrationChangeRequest={handleCancelRegistrationChangeRequest}
             handleProcessRegistrationChangeRequest={handleProcessRegistrationChangeRequest}
+            handleLateCancellation={handleLateCancellation}
+            handleLateRegistration={handleLateRegistration}
+            handleCancelLateRegistration={handleCancelLateRegistration}
             isRegistrationDeadlinePassed={isRegistrationDeadlinePassed}
             t={t}
             agendaRequireInstrument={currentConfig?.agendaRequireInstrument}

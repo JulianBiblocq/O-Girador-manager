@@ -8,6 +8,8 @@ import { useInstrumentColor } from '../../hooks/useInstrumentColor';
 import EventTransportSelector from './EventTransportSelector';
 import RSVPAccordionSection from './RSVPAccordionSection';
 import { getInstrumentIconPath } from '../../utils/instrumentUtils';
+import LateCancellationModal from '../agenda/LateCancellationModal';
+import LateRegistrationModal from '../agenda/LateRegistrationModal';
 
 export default function EventRSVPSection({
   event,
@@ -48,6 +50,9 @@ export default function EventRSVPSection({
   handleRequestRegistrationChange,
   handleCancelRegistrationChangeRequest,
   handleProcessRegistrationChangeRequest,
+  handleLateCancellation,
+  handleLateRegistration,
+  handleCancelLateRegistration,
   isRegistrationDeadlinePassed,
   t,
   agendaRequireInstrument = false,
@@ -112,6 +117,37 @@ export default function EventRSVPSection({
   const [requestMessage, setRequestMessage] = useState('');
   const [requestInstrument, setRequestInstrument] = useState(() => instrumentChoisi || profileData?.instrument || profileData?.instrumentsJoues?.[0] || 'Autre');
   const [submittingRequest, setSubmittingRequest] = useState(false);
+
+  // Gestion des modales du sas bienveillant Cordel (Cas 1 : Désistement tardif, Cas 2 : Demande de place tardive)
+  const [isLateCancellationOpen, setIsLateCancellationOpen] = useState(false);
+  const [isLateRegistrationOpen, setIsLateRegistrationOpen] = useState(false);
+  const [submittingLateAction, setSubmittingLateAction] = useState(false);
+
+  const onConfirmLateCancellation = async (message) => {
+    if (!handleLateCancellation) return;
+    setSubmittingLateAction(true);
+    try {
+      await handleLateCancellation(message);
+      setIsLateCancellationOpen(false);
+    } catch (err) {
+      console.error("Erreur lors de l'annulation tardive :", err);
+    } finally {
+      setSubmittingLateAction(false);
+    }
+  };
+
+  const onConfirmLateRegistration = async ({ message, instrumentChoisi }) => {
+    if (!handleLateRegistration) return;
+    setSubmittingLateAction(true);
+    try {
+      await handleLateRegistration({ message, instrumentChoisi });
+      setIsLateRegistrationOpen(false);
+    } catch (err) {
+      console.error("Erreur lors de l'inscription tardive :", err);
+    } finally {
+      setSubmittingLateAction(false);
+    }
+  };
 
   // Demande en attente de l'adhérent connecté
   const userPendingRequest = (event?.demandesModificationInscription || []).find(
@@ -224,27 +260,100 @@ export default function EventRSVPSection({
               Votre présence
             </h4>
             {existingResponse && (
-              <div className="text-xs font-bold text-encre-noire mb-2 text-left">
-                Votre réponse enregistrée : <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-black ${
+              <div className="text-xs font-bold text-encre-noire mb-1 text-left flex items-center gap-1.5 flex-wrap">
+                <span>Votre réponse enregistrée :</span>
+                <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-black ${
                   existingResponse.status === 'present' ? 'bg-[var(--color-cordel-vert)] text-white' :
                   existingResponse.status === 'absent' ? 'bg-cordel-wood text-white' :
-                  existingResponse.status === 'confirm' ? 'bg-orange-500 text-white' : 'bg-neutral-200'
+                  existingResponse.status === 'confirm' ? 'bg-orange-500 text-white' :
+                  existingResponse.status === 'en_attente_tardive' ? 'bg-[var(--color-cordel-ocre)] text-white' : 'bg-neutral-200'
                 }`}>{
                   existingResponse.status === 'present' ? 'Présent' :
                   existingResponse.status === 'absent' ? 'Absent' :
-                  existingResponse.status === 'confirm' ? 'À confirmer' : existingResponse.status
+                  existingResponse.status === 'confirm' ? 'À confirmer' :
+                  existingResponse.status === 'en_attente_tardive' ? 'Demande tardive en attente' :
+                  existingResponse.status
                 }</span>
                 {existingResponse.instrumentChoisi && (
-                  <span className="ml-2 opacity-75">(Instrument : {existingResponse.instrumentChoisi})</span>
+                  <span className="opacity-75 font-normal">({existingResponse.instrumentChoisi})</span>
                 )}
               </div>
             )}
-            <div className="text-xs font-extrabold text-amber-800 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 p-4 rounded-[6px_10px_8px_12px] border-2 border-dashed border-amber-600/30 flex flex-col items-center justify-center gap-1.5 leading-relaxed">
+            <div className="text-xs font-extrabold text-amber-800 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 p-3.5 rounded-[6px_10px_8px_12px] border-2 border-dashed border-amber-600/30 flex flex-col items-center justify-center gap-1 leading-relaxed">
               <span>{t('eventDetails.registrationClosed') || "🔒 Les inscriptions pour cet événement sont closes."}</span>
             </div>
 
-            {/* Demande de modification d'inscription au bureau (si deadline passée) */}
-            {userPendingRequest ? (
+            {/* Sas bienveillant : Inscription ou Désistement tardif */}
+            {existingResponse?.status === 'en_attente_tardive' ? (
+              <div className="text-xs font-bold text-encre-noire bg-amber-50/90 dark:bg-amber-950/30 p-3.5 rounded-[6px_10px_8px_12px] border-2 border-dashed border-[var(--color-cordel-ocre)] flex flex-col gap-2.5 text-left">
+                <div className="flex items-center justify-between">
+                  <span className="text-[var(--color-cordel-ocre)] uppercase tracking-wider font-extrabold text-[11px] flex items-center gap-1.5">
+                    <span>⏳</span> Demande de place de dernière minute en attente
+                  </span>
+                  {handleCancelLateRegistration && (
+                    <button
+                      type="button"
+                      onClick={handleCancelLateRegistration}
+                      disabled={submittingLateAction}
+                      className="text-cordel-wood underline hover:opacity-80 text-[10px] font-bold cursor-pointer"
+                    >
+                      Annuler ma demande
+                    </button>
+                  )}
+                </div>
+                <p className="text-[11px] text-cordel-master-dark/85 leading-relaxed font-normal">
+                  Votre demande de place a bien été transmise aux organisateurs et au Mestre. Vous recevrez une alerte dès son arbitrage en régie.
+                </p>
+                {existingResponse.instrumentChoisi && (
+                  <p className="text-[11px] font-semibold text-encre-noire">
+                    Pupitre / Instrument souhaité : <strong className="text-cordel-wood">{existingResponse.instrumentChoisi}</strong>
+                  </p>
+                )}
+                {existingResponse.message && (
+                  <p className="text-[11px] italic opacity-85 border-l-2 border-[var(--color-cordel-ocre)] pl-2">
+                    « {existingResponse.message} »
+                  </p>
+                )}
+              </div>
+            ) : existingResponse?.status === 'present' ? (
+              /* Cas 1 : Le membre est inscrit Présent mais doit se désister après la date limite */
+              <div className="flex flex-col gap-2.5 text-left bg-stone-50 dark:bg-stone-900/40 p-3.5 rounded-[6px_10px_8px_12px] border border-encre-noire/15">
+                <p className="text-[11px] text-cordel-master-dark/85 leading-relaxed">
+                  Vous êtes actuellement inscrit(e) parmi les membres présents pour cette sortie. Un imprévu ? Vous pouvez signaler votre désistement avec un mot pour l'organisation.
+                </p>
+                <CordelButton
+                  type="button"
+                  variant="danger"
+                  onClick={() => setIsLateCancellationOpen(true)}
+                  className="w-full py-2.5 font-bold uppercase tracking-wider text-xs flex items-center justify-center gap-2 cursor-pointer mt-1"
+                >
+                  <span>⚠️</span> Signaler un désistement tardif
+                </CordelButton>
+              </div>
+            ) : (
+              /* Cas 2 : Le membre est non-inscrit ou absent mais souhaite demander une place tardive */
+              <div className="flex flex-col gap-2.5 text-left bg-stone-50 dark:bg-stone-900/40 p-3.5 rounded-[6px_10px_8px_12px] border border-encre-noire/15">
+                {existingResponse?.motifAnnulationTardive && (
+                  <div className="text-[11px] italic text-cordel-wood bg-red-50 dark:bg-red-950/20 p-2 rounded border border-dashed border-cordel-wood/30">
+                    Désistement précédent : « {existingResponse.motifAnnulationTardive} »
+                  </div>
+                )}
+                <p className="text-[11px] text-cordel-master-dark/85 leading-relaxed">
+                  Les pupitres sont en cours de calage, mais vous pouvez déposer une demande pour voir s'il reste une place disponible ou s'il y a eu un désistement.
+                </p>
+                <CordelButton
+                  type="button"
+                  variant="ocre"
+                  onClick={() => setIsLateRegistrationOpen(true)}
+                  className="w-full py-2.5 font-bold uppercase tracking-wider text-xs flex items-center justify-center gap-2 cursor-pointer mt-1"
+                >
+                  <span>📩</span> Demander une place de dernière minute
+                </CordelButton>
+              </div>
+            )}
+
+            {/* Demande de modification d'inscription au bureau (si requête legacy en attente) */}
+            {userPendingRequest && existingResponse?.status !== 'en_attente_tardive' && (
               <div className="text-xs font-bold text-encre-noire bg-amber-50/90 dark:bg-amber-950/30 p-3 rounded-[6px_10px_8px_12px] border-2 border-dashed border-[var(--color-cordel-ocre)] flex flex-col gap-2 text-left">
                 <div className="flex items-center justify-between">
                   <span className="text-[var(--color-cordel-ocre)] uppercase tracking-wider font-extrabold text-[10px] flex items-center gap-1">
@@ -269,107 +378,6 @@ export default function EventRSVPSection({
                     « {userPendingRequest.message} »
                   </p>
                 )}
-              </div>
-            ) : !isRequestModalOpen ? (
-              <CordelButton
-                type="button"
-                variant="ocre"
-                onClick={() => {
-                  setRequestStatusTarget(existingResponse?.status === 'present' ? 'absent' : 'present');
-                  setIsRequestModalOpen(true);
-                }}
-                className="w-full py-2.5 font-bold uppercase tracking-wider text-xs flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                📩 Demander une modification au bureau (Inscription tardive / Désistement)
-              </CordelButton>
-            ) : (
-              <div className="p-3 bg-cordel-bg-light/90 border-2 border-dashed border-cordel-master-dark/30 rounded-[6px_10px_8px_12px] flex flex-col gap-2.5 text-left">
-                <div className="flex items-center justify-between">
-                  <h5 className="font-extrabold text-[11px] uppercase tracking-wider text-cordel-wood">
-                    Demande de modification au bureau
-                  </h5>
-                  <button
-                    type="button"
-                    onClick={() => setIsRequestModalOpen(false)}
-                    className="text-xs text-encre-noire/60 hover:text-encre-noire cursor-pointer font-bold"
-                  >
-                    ✕
-                  </button>
-                </div>
-                
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setRequestStatusTarget('present')}
-                    className={`flex-1 py-1.5 text-xs font-bold rounded border cursor-pointer transition-all ${
-                      requestStatusTarget === 'present'
-                        ? 'bg-[var(--color-cordel-vert)] text-white border-[#2d6a4f]'
-                        : 'bg-white/60 text-encre-noire border-encre-noire/20'
-                    }`}
-                  >
-                    ✅ Je serai Présent
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setRequestStatusTarget('absent')}
-                    className={`flex-1 py-1.5 text-xs font-bold rounded border cursor-pointer transition-all ${
-                      requestStatusTarget === 'absent'
-                        ? 'bg-cordel-wood text-white border-cordel-wood'
-                        : 'bg-white/60 text-encre-noire border-encre-noire/20'
-                    }`}
-                  >
-                    ❌ Je serai Absent
-                  </button>
-                </div>
-
-                {requestStatusTarget === 'present' && instrumentsDisponibles?.length > 0 && (
-                  <div>
-                    <label className="block text-[10px] font-bold text-encre-noire/80 mb-1">
-                      Instrument souhaité :
-                    </label>
-                    <select
-                      value={requestInstrument}
-                      onChange={(e) => setRequestInstrument(e.target.value)}
-                      className="w-full text-xs p-1.5 border rounded bg-white dark:bg-neutral-900 border-encre-noire/20 text-encre-noire"
-                    >
-                      {instrumentsDisponibles.map(inst => (
-                        <option key={inst} value={inst}>{inst}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                <div>
-                  <label className="block text-[10px] font-bold text-encre-noire/80 mb-1">
-                    Motif ou message pour le bureau (optionnel) :
-                  </label>
-                  <textarea
-                    value={requestMessage}
-                    onChange={(e) => setRequestMessage(e.target.value)}
-                    rows={2}
-                    placeholder="Ex : Changement de planning imprévu, je suis disponible finalement..."
-                    className="w-full text-xs p-1.5 border rounded bg-white dark:bg-neutral-900 border-encre-noire/20 text-encre-noire resize-none"
-                  />
-                </div>
-
-                <div className="flex gap-2 justify-end mt-1">
-                  <button
-                    type="button"
-                    onClick={() => setIsRequestModalOpen(false)}
-                    className="px-3 py-1.5 text-xs font-semibold text-encre-noire/75 hover:text-encre-noire cursor-pointer"
-                  >
-                    Annuler
-                  </button>
-                  <CordelButton
-                    type="button"
-                    variant="primary"
-                    onClick={onSubmitRegistrationRequest}
-                    disabled={submittingRequest}
-                    className="py-1.5 px-3 text-xs font-bold uppercase tracking-wider"
-                  >
-                    {submittingRequest ? "Envoi..." : "Envoyer au bureau"}
-                  </CordelButton>
-                </div>
               </div>
             )}
           </CordelCard>
@@ -1151,6 +1159,14 @@ export default function EventRSVPSection({
                     <div key={i.userId} className="inline-flex items-center gap-1.5 bg-white/80 dark:bg-black/40 px-2 py-1 rounded border border-dashed border-encre-noire/10 text-xs font-semibold text-encre-noire">
                       <XiloAvatar src={userInfo.photoURL} name={i.userName} size={18} />
                       <span>{i.userName}</span>
+                      {i.motifAnnulationTardive && (
+                        <span 
+                          className="text-[9px] font-semibold text-cordel-wood bg-red-100 dark:bg-red-950/40 px-1.5 py-0.5 rounded border border-red-300 dark:border-red-800/60 max-w-[150px] truncate"
+                          title={`Désistement tardif : ${i.motifAnnulationTardive}${i.dateAnnulationTardive ? ` (${new Date(i.dateAnnulationTardive).toLocaleDateString()})` : ''}`}
+                        >
+                          ⚠️ « {i.motifAnnulationTardive} »
+                        </span>
+                      )}
                       <div className="flex items-center gap-1 ml-1.5 border-l border-encre-noire/15 pl-1.5">
                         <button
                           type="button"
@@ -1235,7 +1251,7 @@ export default function EventRSVPSection({
             {/* 3. Accordéon En attente de validation */}
             <RSVPAccordionSection
               title="En attente de validation"
-              count={(event.inscriptions || []).filter(i => i.status === 'pending').length}
+              count={(event.inscriptions || []).filter(i => i.status === 'pending' || i.status === 'en_attente_tardive').length}
               icon="⏳"
               colorVariant="yellow"
               isExpanded={expandedSections.pending}
@@ -1243,12 +1259,26 @@ export default function EventRSVPSection({
               emptyText="Aucune inscription en attente"
             >
               <div className="flex flex-wrap gap-1.5 items-center">
-                {(event.inscriptions || []).filter(i => i.status === 'pending').map(i => {
+                {(event.inscriptions || []).filter(i => i.status === 'pending' || i.status === 'en_attente_tardive').map(i => {
                   const userInfo = resolveMemberInfo(i.userId, i.userName);
+                  const isLate = i.status === 'en_attente_tardive';
                   return (
                     <div key={i.userId} className="inline-flex items-center gap-1.5 bg-white/80 dark:bg-black/40 px-2 py-1 rounded border border-dashed border-yellow-500/40 text-xs font-semibold text-encre-noire">
                       <XiloAvatar src={userInfo.photoURL} name={i.userName} size={18} />
                       <span>{i.userName}</span>
+                      {isLate && (
+                        <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500 text-white" title={i.message || 'Demande tardive'}>
+                          Tardive
+                        </span>
+                      )}
+                      {i.instrumentChoisi && (
+                        <span className="text-[10px] opacity-75 font-normal">({i.instrumentChoisi})</span>
+                      )}
+                      {i.message && (
+                        <span className="text-[10px] italic text-cordel-master-dark/80 max-w-[140px] truncate" title={`Message : ${i.message}`}>
+                          « {i.message} »
+                        </span>
+                      )}
                       <div className="flex items-center gap-1 ml-1.5 border-l border-encre-noire/15 pl-1.5 font-bold">
                         <button
                           type="button"
@@ -1278,7 +1308,7 @@ export default function EventRSVPSection({
                     </div>
                   );
                 })}
-                {(event.inscriptions || []).filter(i => i.status === 'pending').length === 0 && (
+                {(event.inscriptions || []).filter(i => i.status === 'pending' || i.status === 'en_attente_tardive').length === 0 && (
                   <span className="opacity-60 italic">Aucune inscription en attente</span>
                 )}
               </div>
@@ -1659,8 +1689,33 @@ export default function EventRSVPSection({
     );
   };
 
+  const renderModals = () => (
+    <>
+      <LateCancellationModal
+        isOpen={isLateCancellationOpen}
+        onClose={() => setIsLateCancellationOpen(false)}
+        onConfirm={onConfirmLateCancellation}
+        saving={submittingLateAction}
+      />
+      <LateRegistrationModal
+        isOpen={isLateRegistrationOpen}
+        onClose={() => setIsLateRegistrationOpen(false)}
+        onConfirm={onConfirmLateRegistration}
+        saving={submittingLateAction}
+        instrumentsDisponibles={instrumentsDisponibles}
+        defaultInstrument={instrumentChoisi || profileData?.instrument || profileData?.instrumentsJoues?.[0] || 'Autre'}
+        includesPercussion={event?.includesPercussion !== false}
+      />
+    </>
+  );
+
   if (mode === 'rsvp') {
-    return renderRSVPForm();
+    return (
+      <>
+        {renderRSVPForm()}
+        {renderModals()}
+      </>
+    );
   }
 
   if (mode === 'attendance') {
@@ -1671,6 +1726,7 @@ export default function EventRSVPSection({
     <>
       {renderRSVPForm()}
       {renderAttendanceTable()}
+      {renderModals()}
     </>
   );
 }

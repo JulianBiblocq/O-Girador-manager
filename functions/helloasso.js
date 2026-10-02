@@ -4,19 +4,47 @@
  */
 
 /**
- * Détecte les options d'adhésion et matérielles depuis les items HelloAsso.
+ * Normalise une chaîne de caractères en minuscules et sans accents pour une comparaison tolérante.
+ *
+ * @param {string} str Chaîne brute à assainir
+ * @returns {string} Chaîne normalisée
  */
-function detectHelloAssoOptions(items = [], rawData = {}) {
+function normalizeStr(str) {
+  if (!str || typeof str !== 'string') return '';
+  return str
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+}
+
+/**
+ * Détecte les options d'adhésion, les pratiques (danse/percussion) et matérielles depuis les items HelloAsso.
+ * Mappe également les identifiants normalisés d'options selon les options configurées de l'association.
+ *
+ * @param {Array<Object>} items Liste des articles du panier ou de la commande HelloAsso
+ * @param {Object} rawData Données brutes de la notification
+ * @param {Array<Object>} [configuredOptions=[]] Liste des options configurées dans l'association (optionsCotisation)
+ * @returns {Object} Analyse complète des options, drapeaux métier et identifiants
+ */
+function detectHelloAssoOptions(items = [], rawData = {}, configuredOptions = []) {
   const safeItems = Array.isArray(items) ? items : [];
+  const safeConfiguredOptions = Array.isArray(configuredOptions) ? configuredOptions : [];
 
   let formulePrincipale = null;
   const optionsAdditionnelles = [];
   let montantDons = 0;
   const detailsOptions = [];
 
+  let hasAdhesionBase = false;
+  let hasDanse = false;
+  let hasPercussion = false;
+  const matchedOptionIds = new Set();
+
   for (const item of safeItems) {
     const rawName = (item.name || item.customName || '').trim();
     const cleanNameLower = rawName.toLowerCase();
+    const cleanNormalized = normalizeStr(rawName);
     const itemType = (item.type || '').toLowerCase();
     const rawAmount = typeof item.amount === 'number' ? item.amount : (item.amount?.total || 0);
     const amountEuros = rawAmount > 0 ? (rawAmount / 100) : 0;
@@ -27,15 +55,83 @@ function detectHelloAssoOptions(items = [], rawData = {}) {
       amount: amountEuros
     });
 
-    if (itemType === 'donation' || cleanNameLower.includes('don ') || cleanNameLower === 'don' || cleanNameLower.includes('pourboire')) {
+    // 1. Détection des dons et pourboires
+    if (itemType === 'donation' || cleanNormalized.includes('don ') || cleanNormalized === 'don' || cleanNormalized.includes('pourboire')) {
       montantDons += amountEuros;
       continue;
     }
 
-    const isCostume = cleanNameLower.includes('costume') || cleanNameLower.includes('tenue') || cleanNameLower.includes('t-shirt') || cleanNameLower.includes('jupe') || cleanNameLower.includes('veste');
-    const isInstrument = cleanNameLower.includes('instrument') || cleanNameLower.includes('alfaia') || cleanNameLower.includes('caixa') || cleanNameLower.includes('tarol') || cleanNameLower.includes('gonguê') || cleanNameLower.includes('agbê') || cleanNameLower.includes('timbal');
+    // 2. Détection de l'adhésion de base (mots-clés : adhésion, adhesion, cotisation, membership)
+    if (
+      cleanNormalized.includes('adhesion') ||
+      cleanNormalized.includes('cotisation') ||
+      itemType === 'membership' ||
+      cleanNormalized.includes('adherent') ||
+      cleanNormalized.includes('membre')
+    ) {
+      hasAdhesionBase = true;
+    }
 
-    if (isCostume || isInstrument || cleanNameLower.includes('option') || cleanNameLower.includes('location')) {
+    // 3. Détection de la pratique Danse (mots-clés : danse, danseur, danseuse, dansador...)
+    if (
+      cleanNormalized.includes('danse') ||
+      cleanNormalized.includes('danseur') ||
+      cleanNormalized.includes('danseuse') ||
+      cleanNormalized.includes('dansador')
+    ) {
+      hasDanse = true;
+    }
+
+    // 4. Détection de la pratique Percussion (mots-clés : percussion, batucada, alfaia, caixa, tarol...)
+    const isPercussionInstrument = (
+      cleanNormalized.includes('percussion') ||
+      cleanNormalized.includes('batucada') ||
+      cleanNormalized.includes('alfaia') ||
+      cleanNormalized.includes('caixa') ||
+      cleanNormalized.includes('tarol') ||
+      cleanNormalized.includes('gongue') ||
+      cleanNormalized.includes('agbe') ||
+      cleanNormalized.includes('mineiro') ||
+      cleanNormalized.includes('timbal')
+    );
+    if (isPercussionInstrument) {
+      hasPercussion = true;
+    }
+
+    // 5. Rapprochement avec les options de cotisation configurées de l'association
+    for (const opt of safeConfiguredOptions) {
+      const optId = opt?.id || opt?.code;
+      if (!optId) continue;
+      const optNomNormalized = normalizeStr(opt.nom || opt.name || opt.label || '');
+      const optIdNormalized = normalizeStr(optId);
+
+      // Correspondance par nom complet, sous-chaîne significative ou identifiant
+      const isNameMatch = optNomNormalized.length >= 3 && (
+        cleanNormalized.includes(optNomNormalized) ||
+        optNomNormalized.includes(cleanNormalized)
+      );
+      const isIdMatch = optIdNormalized.length >= 3 && cleanNormalized.includes(optIdNormalized);
+
+      // Correspondance sémantique par famille (ex: option danse <-> item danse, option alfaia <-> item alfaia)
+      const isDanseOptionMatch = optNomNormalized.includes('danse') && cleanNormalized.includes('danse');
+      const isAlfaiaMatch = optNomNormalized.includes('alfaia') && cleanNormalized.includes('alfaia');
+      const isCaixaMatch = optNomNormalized.includes('caixa') && cleanNormalized.includes('caixa');
+      const isTarolMatch = optNomNormalized.includes('tarol') && cleanNormalized.includes('tarol');
+      const isGongueMatch = optNomNormalized.includes('gongue') && cleanNormalized.includes('gongue');
+      const isAgbeMatch = optNomNormalized.includes('agbe') && cleanNormalized.includes('agbe');
+      const isCostumeMatch = (optNomNormalized.includes('costume') || optNomNormalized.includes('tenue')) &&
+                             (cleanNormalized.includes('costume') || cleanNormalized.includes('tenue') || cleanNormalized.includes('jupe'));
+
+      if (isNameMatch || isIdMatch || isDanseOptionMatch || isAlfaiaMatch || isCaixaMatch || isTarolMatch || isGongueMatch || isAgbeMatch || isCostumeMatch) {
+        matchedOptionIds.add(optId);
+      }
+    }
+
+    // 6. Typage des options additionnelles matérielles / costumes
+    const isCostume = cleanNormalized.includes('costume') || cleanNormalized.includes('tenue') || cleanNormalized.includes('t-shirt') || cleanNormalized.includes('jupe') || cleanNormalized.includes('veste');
+    const isInstrument = cleanNormalized.includes('instrument') || isPercussionInstrument;
+
+    if (isCostume || isInstrument || cleanNormalized.includes('option') || cleanNormalized.includes('location')) {
       optionsAdditionnelles.push({
         nom: rawName,
         montant: amountEuros,
@@ -44,26 +140,37 @@ function detectHelloAssoOptions(items = [], rawData = {}) {
       continue;
     }
 
+    // 7. Détection de la formule d'adhésion principale
     if (!formulePrincipale) {
-      if (cleanNameLower.includes('solidaire') || cleanNameLower.includes('réduit') || cleanNameLower.includes('reduit') || cleanNameLower.includes('étudiant') || cleanNameLower.includes('chômeur') || cleanNameLower.includes('rsa')) {
+      if (cleanNormalized.includes('solidaire') || cleanNormalized.includes('reduit') || cleanNormalized.includes('etudiant') || cleanNormalized.includes('chomeur') || cleanNormalized.includes('rsa')) {
         formulePrincipale = rawName || 'Tarif Solidaire / Réduit';
-      } else if (cleanNameLower.includes('bienfaiteur') || cleanNameLower.includes('soutien')) {
+      } else if (cleanNormalized.includes('bienfaiteur') || cleanNormalized.includes('soutien')) {
         formulePrincipale = rawName || 'Adhésion Soutien';
-      } else if (cleanNameLower.includes('adhésion') || cleanNameLower.includes('adhesion') || cleanNameLower.includes('cotisation') || itemType === 'membership') {
+      } else if (cleanNormalized.includes('adhesion') || cleanNormalized.includes('cotisation') || itemType === 'membership') {
         formulePrincipale = rawName || 'Formule Standard';
       }
     }
   }
 
+  // Repli sur le premier item si aucune formule explicite n'a été isolée
   if (!formulePrincipale && safeItems.length > 0) {
     formulePrincipale = safeItems[0].name || 'Adhésion HelloAsso';
+  }
+
+  // Si une formule d'adhésion principale est trouvée, considérer l'adhésion de base comme acquise
+  if (formulePrincipale) {
+    hasAdhesionBase = true;
   }
 
   return {
     formulePrincipale: formulePrincipale || 'Adhésion Standard',
     optionsAdditionnelles,
     montantDons,
-    detailsOptions
+    detailsOptions,
+    adhesionBase: hasAdhesionBase,
+    pratiqueDanse: hasDanse,
+    pratiquePercussion: hasPercussion,
+    selectedOptions: Array.from(matchedOptionIds)
   };
 }
 

@@ -290,7 +290,11 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
               date: pendingData.paymentDate || new Date().toISOString(),
               amount: pendingData.amountEuros || 0,
               orderId: pendingData.orderId || null,
-              eventType: pendingData.eventType || 'Order'
+              eventType: pendingData.eventType || 'Order',
+              adhesionBase: pendingData.adhesionBase || false,
+              pratiqueDanse: pendingData.pratiqueDanse || false,
+              pratiquePercussion: pendingData.pratiquePercussion || false,
+              selectedOptions: Array.isArray(pendingData.selectedOptions) ? pendingData.selectedOptions : []
             };
             pendingTxId = pendingData.transactionId || null;
             pendingRefToClean = pendingRef;
@@ -312,6 +316,9 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
         (profileData?.role && profileData.role !== 'nouveau')
       );
 
+      const effectivePercussion = isPercussion || Boolean(pendingPaymentData?.pratiquePercussion);
+      const effectiveDanse = isDanse || Boolean(pendingPaymentData?.pratiqueDanse);
+
       const userDoc = {
         nom: formData.lastName,
         prenom: formData.firstName,
@@ -326,8 +333,10 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
         droitImage: demanderDroitImage ? formData.droitImage : false,
         lateralite: isFieldVisible('lateralite') ? formData.lateralite : "droitier",
         dateNaissance: isFieldVisible('dateNaissance') ? formData.dateNaissance : "",
-        pratiquePercussion: isPercussion,
-        pratiqueDanse: isDanse,
+        pratiquePercussion: effectivePercussion,
+        pratiqueDanse: effectiveDanse,
+        adhesionBase: pendingPaymentData ? (pendingPaymentData.adhesionBase !== false) : true,
+        selectedOptions: pendingPaymentData?.selectedOptions || [],
         estAncienMembre: isAncien,
         souhaiteChangerInstrument: Boolean(formData.souhaiteChangerInstrument),
         volontaireAncienInstrument: Boolean(formData.volontaireAncienInstrument),
@@ -376,6 +385,7 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
         sanitizedUserDoc.paymentStatus = pendingPaymentData ? "paid" : "unpaid";
 
         if (pendingPaymentData) {
+          sanitizedUserDoc.cotisationAjour = true;
           sanitizedUserDoc.helloAssoLastPayment = sanitizeUserDocPayload(pendingPaymentData);
         }
 

@@ -4,6 +4,7 @@ import { db } from '../firebase';
 import { useFamilyMembers } from './useFamilyMembers';
 import useConfirm from './useConfirm';
 import { cleanFirestorePayload } from '../utils/firestoreUtils';
+import { notifyMembersByTag } from '../utils/inAppNotificationService';
 
 // Vérification sécurisée du dépassement de la date limite d'inscription (jusqu'à 23h59:59 si format YYYY-MM-DD)
 export const checkRegistrationDeadlinePassed = (deadline) => {
@@ -156,13 +157,22 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
       profileData?.isSystemAdmin === true ||
       (profileData?.tags || []).some(t => ['bureau', 'admin', 'direction', 'organisateur', 'ca'].includes(t?.toLowerCase?.()));
 
+    const targetStatus = overrideStatus !== null ? overrideStatus : status;
+
     if (isRegistrationDeadlinePassed && !isAuthorized) {
+      if (targetStatus === 'absent' && existingResponse?.status === 'present') {
+        return handleLateCancellation(overrideOptions.messageText || '');
+      }
+      if (targetStatus === 'present' && existingResponse?.status !== 'present') {
+        return handleLateRegistration({
+          message: overrideOptions.messageText || '',
+          instrumentChoisi: overrideOptions.instrumentChoisi
+        });
+      }
       alert("Les inscriptions pour cet événement sont closes.");
       setSaving(false);
       return;
     }
-
-    const targetStatus = overrideStatus !== null ? overrideStatus : status;
 
     if (isMusicLevelRestricted && targetStatus !== 'absent') {
       alert("🔒 Inscription restreinte. Rendez-vous dans la section 'Discussions et questions logistiques' en bas de page pour échanger avec l'organisation.");
@@ -383,9 +393,19 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
         return ins;
       });
 
+      // Synchroniser avec les éventuelles demandes de modification d'inscription en attente
+      const currentRequests = event.demandesModificationInscription || [];
+      const updatedRequests = currentRequests.map(req => {
+        if (req.userId === userId && req.status === 'pending') {
+          return { ...req, status: targetStatus === 'present' ? 'accepted' : 'rejected' };
+        }
+        return req;
+      });
+
       const eventRef = doc(db, 'events', event.id);
       await updateDoc(eventRef, {
-        inscriptions: updatedInscriptions
+        inscriptions: updatedInscriptions,
+        demandesModificationInscription: updatedRequests
       });
 
       triggerToast(targetStatus === 'present' ? "Inscription validée" : "Inscription refusée");
@@ -721,6 +741,206 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
     }
   };
 
+  /**
+   * Cas 1 — Annulation tardive (Passage de Présent ➔ Absent après la date limite) :
+   * Enregistre le désistement avec le motif et l'horodatage, et notifie les Mestres et responsables.
+   *
+   * @param {string} messageText Mot ou explication laissé par l'adhérent
+   */
+  const handleLateCancellation = async (messageText = '') => {
+    if (!event?.id || !user?.uid) return;
+    setSaving(true);
+
+    try {
+      const currentInscriptions = event.inscriptions || [];
+      const updatedInscriptions = currentInscriptions.filter(ins => ins.userId !== user.uid);
+      const memberName = `${profileData?.prenom || ''} ${profileData?.nom || ''}`.trim() || user?.displayName || 'Membre';
+
+      const cancelledResponse = {
+        userId: user.uid,
+        userName: memberName,
+        status: 'absent',
+        transport: null,
+        places: 0,
+        instruments: "",
+        instrumentChoisi: null,
+        instrumentImposeParMestre: false,
+        demandeRemboursementKm: false,
+        besoinTransportInstrument: false,
+        motifAnnulationTardive: (messageText || '').trim(),
+        dateAnnulationTardive: new Date().toISOString()
+      };
+
+      updatedInscriptions.push(cancelledResponse);
+
+      const eventUpdates = {
+        inscriptions: updatedInscriptions
+      };
+
+      // Retrait de la recherche de covoiturage si la personne cherchait une place
+      if (event.covoiturage?.recherchePlace) {
+        const freshRecherche = (event.covoiturage.recherchePlace || []).filter(p => p.uid !== user.uid);
+        if (freshRecherche.length !== event.covoiturage.recherchePlace.length) {
+          eventUpdates.covoiturage = {
+            ...event.covoiturage,
+            recherchePlace: freshRecherche
+          };
+        }
+      }
+
+      const eventRef = doc(db, 'events', event.id);
+      await updateDoc(eventRef, cleanFirestorePayload(eventUpdates));
+
+      setStatus('absent');
+
+      // Déclenchement de la notification in-app aux Mestres et responsables de date
+      try {
+        const eventTitle = event.titre || event.title || 'Sortie';
+        await notifyMembersByTag({
+          groupId: event.groupId || profileData?.groupId,
+          tags: ['mestre', 'admin', 'bureau', 'direction', 'organisateur'],
+          title: `⚠️ Désistement tardif : ${memberName}`,
+          message: messageText?.trim()
+            ? `${memberName} s'est désisté de "${eventTitle}" : "${messageText.trim()}"`
+            : `${memberName} a annulé sa participation après date limite pour "${eventTitle}".`,
+          targetUrl: `/app/agenda?eventId=${event.id}&tab=rsvp`,
+          icon: '⚠️',
+          priority: 'high'
+        });
+      } catch (notifErr) {
+        console.warn("useEventRSVP - Échec notification désistement tardif :", notifErr);
+      }
+
+      triggerToast("Désistement enregistré. Les organisateurs ont été prévenus.");
+    } catch (error) {
+      console.error("useEventRSVP - Erreur lors de l'annulation tardive :", error);
+      alert("Erreur lors de l'enregistrement de votre désistement.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  /**
+   * Cas 2 — Inscription tardive (Demande de place après date limite) :
+   * Enregistre l'adhérent avec le statut 'en_attente_tardive' (sans incrémenter les quotas validés)
+   * et alerte les responsables pour arbitrage depuis la régie.
+   *
+   * @param {Object} params { message, instrumentChoisi }
+   */
+  const handleLateRegistration = async ({ message = '', instrumentChoisi: reqInstrument = null } = {}) => {
+    if (!event?.id || !user?.uid) return;
+    setSaving(true);
+
+    try {
+      const currentInscriptions = event.inscriptions || [];
+      const updatedInscriptions = currentInscriptions.filter(ins => ins.userId !== user.uid);
+      const memberName = `${profileData?.prenom || ''} ${profileData?.nom || ''}`.trim() || user?.displayName || 'Membre';
+
+      const chosenInst = reqInstrument || instrumentChoisi || profileData?.instrument || profileData?.instrumentsJoues?.[0] || 'Autre';
+
+      const lateResponse = {
+        userId: user.uid,
+        userName: memberName,
+        status: 'en_attente_tardive',
+        transport: null,
+        places: 0,
+        instruments: "",
+        instrumentChoisi: chosenInst,
+        instrumentImposeParMestre: false,
+        demandeRemboursementKm: false,
+        besoinTransportInstrument: false,
+        messageDemandeTardive: (message || '').trim(),
+        dateDemandeTardive: new Date().toISOString()
+      };
+
+      updatedInscriptions.push(lateResponse);
+
+      // Inscription miroir dans demandesModificationInscription pour compatibilité avec le bureau
+      const currentRequests = event.demandesModificationInscription || [];
+      const otherRequests = currentRequests.filter(req => req.userId !== user.uid || req.status !== 'pending');
+      const newRequest = {
+        id: `req_${user.uid}_${Date.now()}`,
+        userId: user.uid,
+        userName: memberName,
+        userEmail: user?.email || '',
+        userAvatar: profileData?.photoURL || profileData?.avatar || null,
+        currentStatus: existingResponse?.status || 'non_inscrit',
+        requestedStatus: 'present',
+        instrumentChoisi: chosenInst,
+        transport: null,
+        message: (message || '').trim(),
+        createdAt: new Date().toISOString(),
+        status: 'pending',
+        isLateRequest: true
+      };
+
+      const eventUpdates = {
+        inscriptions: updatedInscriptions,
+        demandesModificationInscription: [...otherRequests, newRequest]
+      };
+
+      const eventRef = doc(db, 'events', event.id);
+      await updateDoc(eventRef, cleanFirestorePayload(eventUpdates));
+
+      setStatus('en_attente_tardive');
+
+      // Alerte in-app aux responsables de date et mestres
+      try {
+        const eventTitle = event.titre || event.title || 'Sortie';
+        await notifyMembersByTag({
+          groupId: event.groupId || profileData?.groupId,
+          tags: ['mestre', 'admin', 'bureau', 'direction', 'organisateur'],
+          title: `🎟️ Inscription tardive : ${memberName}`,
+          message: message?.trim()
+            ? `${memberName} demande une place pour "${eventTitle}" : "${message.trim()}"`
+            : `${memberName} demande une place après date limite pour "${eventTitle}".`,
+          targetUrl: `/app/agenda?eventId=${event.id}&tab=rsvp`,
+          icon: '🎟️',
+          priority: 'normal'
+        });
+      } catch (notifErr) {
+        console.warn("useEventRSVP - Échec notification inscription tardive :", notifErr);
+      }
+
+      triggerToast("Demande de place transmise aux responsables !");
+    } catch (error) {
+      console.error("useEventRSVP - Erreur lors de l'inscription tardive :", error);
+      alert("Erreur lors de l'envoi de votre demande.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  /**
+   * Annulation par le membre de sa demande de place tardive en attente.
+   */
+  const handleCancelLateRegistration = async () => {
+    if (!event?.id || !user?.uid) return;
+    setSaving(true);
+    try {
+      const currentInscriptions = event.inscriptions || [];
+      const updatedInscriptions = currentInscriptions.filter(ins => ins.userId !== user.uid);
+      const currentRequests = event.demandesModificationInscription || [];
+      const updatedRequests = currentRequests.filter(req => req.userId !== user.uid || req.status !== 'pending');
+
+      const eventUpdates = {
+        inscriptions: updatedInscriptions,
+        demandesModificationInscription: updatedRequests
+      };
+
+      const eventRef = doc(db, 'events', event.id);
+      await updateDoc(eventRef, cleanFirestorePayload(eventUpdates));
+
+      setStatus('absent');
+      triggerToast("Demande de place annulée.");
+    } catch (error) {
+      console.error("useEventRSVP - Erreur annulation demande tardive :", error);
+      alert("Erreur lors de l'annulation de la demande.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return {
     status,
     setStatus,
@@ -760,6 +980,9 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
     handleRemoveInviteExterne,
     handleRequestRegistrationChange,
     handleCancelRegistrationChangeRequest,
-    handleProcessRegistrationChangeRequest
+    handleProcessRegistrationChangeRequest,
+    handleLateCancellation,
+    handleLateRegistration,
+    handleCancelLateRegistration
   };
 }

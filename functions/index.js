@@ -1134,8 +1134,20 @@ exports.helloAssoWebhook = onRequest(
         console.warn("helloAssoWebhook - Impossible de lire les credentials :", credErr.message);
       }
 
+      // 0. Récupération des options de cotisation configurées de l'association
+      let configuredOptions = [];
+      try {
+        const assocDoc = await db.collection("associations").doc(groupId).get();
+        if (assocDoc.exists) {
+          const aData = assocDoc.data();
+          configuredOptions = Array.isArray(aData.optionsCotisation) ? aData.optionsCotisation : [];
+        }
+      } catch (assocReadErr) {
+        console.warn("helloAssoWebhook - Erreur lecture options association :", assocReadErr.message);
+      }
+
       // 1. Analyse des options souscrites et détection du paiement échelonné (3x)
-      const optionsAnalysis = detectHelloAssoOptions(items, data);
+      const optionsAnalysis = detectHelloAssoOptions(items, data, configuredOptions);
       const installmentAnalysis = detectInstallmentPayment(data);
       const customUserId = findUserIdentifierFromCustomFields(data.customFields, data.metadata, data);
 
@@ -1152,6 +1164,10 @@ exports.helloAssoWebhook = onRequest(
         isInstallment: installmentAnalysis.isInstallment,
         installmentNumber: installmentAnalysis.installmentNumber,
         customUserId,
+        adhesionBase: optionsAnalysis.adhesionBase,
+        pratiqueDanse: optionsAnalysis.pratiqueDanse,
+        pratiquePercussion: optionsAnalysis.pratiquePercussion,
+        selectedOptions: optionsAnalysis.selectedOptions,
         items: items.map(item => ({
           id: item.id || null,
           name: item.name || "",
@@ -1232,8 +1248,9 @@ exports.helloAssoWebhook = onRequest(
         const paymentStatusField = isInstallmentActive ? 'en_cours' : 'paid';
 
         if (!isManualOverride) {
-          await db.collection("users").doc(matchedUserId).update({
+          const userUpdatePayload = {
             paymentStatus: paymentStatusField,
+            cotisationAjour: isFullyPaid,
             cotisation: {
               aJour: true,
               statut: cotisationStatut,
@@ -1253,11 +1270,31 @@ exports.helloAssoWebhook = onRequest(
               eventType: eventType,
               updatedAt: FieldValue.serverTimestamp()
             }
-          });
+          };
+
+          // Valorisation automatique des champs métier réels de l'adhérent
+          if (optionsAnalysis.adhesionBase) {
+            userUpdatePayload.adhesionBase = true;
+          }
+
+          if (optionsAnalysis.pratiqueDanse) {
+            userUpdatePayload.pratiqueDanse = true;
+          }
+
+          if (optionsAnalysis.pratiquePercussion && userData.pratiquePercussion === undefined) {
+            userUpdatePayload.pratiquePercussion = true;
+          }
+
+          if (optionsAnalysis.selectedOptions && optionsAnalysis.selectedOptions.length > 0) {
+            const currentSelected = Array.isArray(userData.selectedOptions) ? userData.selectedOptions : [];
+            userUpdatePayload.selectedOptions = Array.from(new Set([...currentSelected, ...optionsAnalysis.selectedOptions]));
+          }
+
+          await db.collection("users").doc(matchedUserId).update(userUpdatePayload);
         } else {
           // Préservation du mode de règlement manuel du trésorier (chèque, espèces...)
           const existingCotisation = userData.cotisation || {};
-          await db.collection("users").doc(matchedUserId).update({
+          const overrideUpdate = {
             helloAssoLastPayment: {
               date: paymentDate,
               amount: amountEuros,
@@ -1272,7 +1309,21 @@ exports.helloAssoWebhook = onRequest(
               ...existingCotisation,
               derniereSynchro: nowIso
             }
-          });
+          };
+
+          // Complément non destructif des options si non renseignées
+          if (optionsAnalysis.adhesionBase && userData.adhesionBase === undefined) {
+            overrideUpdate.adhesionBase = true;
+          }
+          if (optionsAnalysis.pratiqueDanse && !userData.pratiqueDanse) {
+            overrideUpdate.pratiqueDanse = true;
+          }
+          if (optionsAnalysis.selectedOptions && optionsAnalysis.selectedOptions.length > 0) {
+            const currentSelected = Array.isArray(userData.selectedOptions) ? userData.selectedOptions : [];
+            overrideUpdate.selectedOptions = Array.from(new Set([...currentSelected, ...optionsAnalysis.selectedOptions]));
+          }
+
+          await db.collection("users").doc(matchedUserId).update(overrideUpdate);
         }
 
         logEntry.matched = true;
@@ -1283,6 +1334,9 @@ exports.helloAssoWebhook = onRequest(
           userId: matchedUserId,
           userName: matchedUserName,
           formule: optionsAnalysis.formulePrincipale,
+          adhesionBase: optionsAnalysis.adhesionBase,
+          pratiqueDanse: optionsAnalysis.pratiqueDanse,
+          selectedOptions: optionsAnalysis.selectedOptions,
           newStatus: paymentStatusField,
           amount: amountEuros
         });
@@ -1322,7 +1376,7 @@ exports.helloAssoWebhook = onRequest(
         }
       } else if (payerEmail) {
         console.warn("helloAssoWebhook - Aucun membre trouvé pour l'email :", payerEmail, "dans le groupe :", groupId, "- Enregistrement dans pending_payments");
-        // Sas pending_payments pour réconciliation automatique lors de l'onboarding futur
+        // Sas pending_payments pour réconciliation automatique lors de l'onboarding futur ou via onUserCreate
         await db.collection("pending_payments").doc(payerEmail).set({
           groupId,
           payerEmail,
@@ -1333,6 +1387,11 @@ exports.helloAssoWebhook = onRequest(
           formule: optionsAnalysis.formulePrincipale,
           eventType,
           paymentDate,
+          adhesionBase: optionsAnalysis.adhesionBase,
+          pratiqueDanse: optionsAnalysis.pratiqueDanse,
+          pratiquePercussion: optionsAnalysis.pratiquePercussion,
+          selectedOptions: optionsAnalysis.selectedOptions,
+          options: optionsAnalysis.optionsAdditionnelles.map(o => o.nom),
           items: items.map(item => ({
             id: item.id || null,
             name: item.name || "",
@@ -1431,6 +1490,95 @@ exports.helloAssoWebhook = onRequest(
     }
   }
 );
+
+/**
+ * Cloud Function Trigger (v2) : onUserCreate
+ * Réconciliation automatique différée lors de la création d'un document utilisateur dans 'users/{userId}'.
+ * Si un paiement HelloAsso en attente existe dans 'pending_payments', applique automatiquement
+ * les drapeaux métier (paymentStatus: 'paid', adhesionBase, pratiqueDanse, selectedOptions, etc.).
+ */
+exports.onUserCreate = onDocumentCreated("users/{userId}", async (event) => {
+  const snap = event.data;
+  if (!snap) return;
+
+  const userData = snap.data();
+  const userId = event.params.userId;
+  const rawEmail = userData?.email;
+  if (!rawEmail || typeof rawEmail !== 'string') return;
+
+  const cleanEmail = rawEmail.trim().toLowerCase();
+  const db = getFirestore();
+
+  try {
+    const pendingDocRef = db.collection("pending_payments").doc(cleanEmail);
+    const pendingSnap = await pendingDocRef.get();
+
+    if (!pendingSnap.exists) {
+      return;
+    }
+
+    const pendingData = pendingSnap.data();
+    if (pendingData.reconciled === true) {
+      return;
+    }
+
+    const updates = {
+      paymentStatus: "paid",
+      cotisationAjour: true,
+      cotisation: {
+        aJour: true,
+        statut: "a_jour",
+        formule: pendingData.formule || "Adhésion Standard",
+        options: Array.isArray(pendingData.options) ? pendingData.options : [],
+        montantTotal: pendingData.amountEuros || 0,
+        modeReglement: "helloasso",
+        derniereSynchro: new Date().toISOString()
+      },
+      helloAssoLastPayment: {
+        date: pendingData.paymentDate || new Date().toISOString(),
+        amount: pendingData.amountEuros || 0,
+        orderId: pendingData.orderId || null,
+        formule: pendingData.formule || "Adhésion Standard",
+        eventType: pendingData.eventType || "Order",
+        updatedAt: FieldValue.serverTimestamp()
+      }
+    };
+
+    // Valorisation des drapeaux métier si présents dans le paiement
+    if (pendingData.adhesionBase !== undefined) {
+      updates.adhesionBase = pendingData.adhesionBase;
+    } else {
+      updates.adhesionBase = true;
+    }
+
+    if (pendingData.pratiqueDanse) {
+      updates.pratiqueDanse = true;
+    }
+
+    if (pendingData.pratiquePercussion && userData.pratiquePercussion === undefined) {
+      updates.pratiquePercussion = true;
+    }
+
+    if (Array.isArray(pendingData.selectedOptions) && pendingData.selectedOptions.length > 0) {
+      const currentSelected = Array.isArray(userData.selectedOptions) ? userData.selectedOptions : [];
+      updates.selectedOptions = Array.from(new Set([...currentSelected, ...pendingData.selectedOptions]));
+    }
+
+    await db.collection("users").doc(userId).update(updates);
+
+    // Marquer le sas pending_payments comme réconcilié
+    await pendingDocRef.update({
+      reconciled: true,
+      reconciledUserId: userId,
+      reconciledAt: FieldValue.serverTimestamp()
+    });
+
+    console.log(`onUserCreate - Adhérent ${userId} (${cleanEmail}) réconcilié automatiquement avec succès depuis pending_payments.`);
+  } catch (err) {
+    console.error(`onUserCreate - Erreur réconciliation différée pour ${cleanEmail} :`, err);
+  }
+});
+exports.onUserCreated = exports.onUserCreate;
 
 /**
  * Cloud Function Callable (v2) : provisionNewMestre
