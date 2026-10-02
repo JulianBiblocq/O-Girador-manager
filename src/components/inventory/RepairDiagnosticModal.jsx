@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
+import { useTranslation } from '../LanguageContext';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { XiloClose } from '../XiloIcons';
@@ -11,6 +12,7 @@ export default function RepairDiagnosticModal({
   instrumentModels = [],
   onClose
 }) {
+  const { t } = useTranslation();
   const [replacingPartId, setReplacingPartId] = useState(null);
   const [selectedReplacementId, setSelectedReplacementId] = useState('');
   const [saving, setSaving] = useState(false);
@@ -60,7 +62,7 @@ export default function RepairDiagnosticModal({
       handleCancelReplace();
     } catch (err) {
       console.error("Erreur lors du remplacement :", err);
-      alert("Une erreur est survenue lors de l'échange de pièces.");
+      alert(t('logistics.errorExchangeParts'));
     } finally {
       setSaving(false);
     }
@@ -77,17 +79,17 @@ export default function RepairDiagnosticModal({
         </button>
 
         <h3 className="font-extrabold text-sm text-cordel-wood uppercase tracking-wider mb-2 flex items-center gap-2 border-b-2 border-dashed border-cordel-master-dark/30 pb-3">
-          🩺 Diagnostic & Réparation : {instrument.nom}
+          {t('logistics.diagnosticRepairTitle')} {instrument.nom}
         </h3>
         
         <p className="text-xs opacity-80 mb-4 mt-2">
-          Cet instrument est en réparation. Inspectez sa nomenclature ci-dessous et signalez les pièces défectueuses. Vous pouvez piocher dans le stock de pièces détachées pour effectuer un remplacement direct.
+          {t('logistics.diagnosticRepairDesc')}
         </p>
 
         <div className="flex flex-col gap-3 max-h-[60vh] overflow-y-auto pr-2">
           {currentParts.length === 0 ? (
             <div className="p-4 text-center bg-white/40 border border-dashed border-encre-noire/20 rounded">
-              <span className="text-[10px] font-bold italic opacity-60">Cet instrument n'a aucune pièce structurelle enregistrée dans sa nomenclature.</span>
+              <span className="text-[10px] font-bold italic opacity-60">{t('logistics.noStructuralPartInNomenclature')}</span>
             </div>
           ) : (
             currentParts.map(part => {
@@ -117,18 +119,18 @@ export default function RepairDiagnosticModal({
                         disabled={saving}
                         className="text-[9px] font-black uppercase tracking-wider bg-cordel-rouge/10 text-cordel-rouge px-3 py-1 border border-cordel-rouge/30 rounded hover:bg-cordel-rouge/20 transition-colors cursor-pointer"
                       >
-                        ⚠️ Remplacer
+                        {t('logistics.btnReplace')}
                       </button>
                     )}
                   </div>
 
                   {isReplacing && (
                     <div className="mt-2 p-3 bg-cordel-bg border-l-4 border-cordel-wood rounded shadow-inner flex flex-col gap-3">
-                      <span className="text-[10px] font-bold uppercase text-cordel-wood">Pièce de rechange :</span>
+                      <span className="text-[10px] font-bold uppercase text-cordel-wood">{t('logistics.replacementPart')}</span>
                       
                       {compatibleStock.length === 0 ? (
                         <div className="text-[10px] italic text-cordel-rouge">
-                          Aucune pièce de type "{part.typePiece}" disponible en stock.
+                          {t('logistics.noPartTypeInStock', { type: part.typePiece })}
                         </div>
                       ) : (
                         <select
@@ -136,12 +138,12 @@ export default function RepairDiagnosticModal({
                           onChange={(e) => setSelectedReplacementId(e.target.value)}
                           className="theme-input text-xs font-bold py-1.5 w-full bg-white"
                         >
-                          <option value="">-- Sélectionner une pièce en stock --</option>
+                          <option value="">{t('logistics.selectPartInStockPrompt')}</option>
                           {compatibleStock.map(sp => {
                             const modelName = sp.modelId ? (instrumentModels.find(m => m.id === sp.modelId)?.nom || 'Inconnu') : '';
                             return (
                               <option key={sp.id} value={sp.id}>
-                                {sp.nom} (État : {sp.etat}) {modelName ? ` - [${modelName}]` : ''}
+                                {sp.nom} ({t('logistics.statePrefix')} {sp.etat}) {modelName ? ` - [${modelName}]` : ''}
                               </option>
                             );
                           })}
@@ -150,7 +152,7 @@ export default function RepairDiagnosticModal({
 
                       <div className="flex justify-end gap-2 mt-1">
                         <CordelButton variant="default" onClick={handleCancelReplace} disabled={saving} className="px-3 py-1 text-[10px]">
-                          Annuler
+                          {t('logistics.btnCancel')}
                         </CordelButton>
                         {compatibleStock.length > 0 && (
                           <CordelButton 

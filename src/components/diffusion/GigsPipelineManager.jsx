@@ -11,10 +11,12 @@ import DiffusionContactsManager from './DiffusionContactsManager';
 import useConfirm from '../../hooks/useConfirm';
 import { matchesGigStatus } from '../../utils/diffusionUtils.js';
 import { HorizontalRibbonContainer } from '../navigation/HorizontalTabRibbon';
+import { useTranslation } from '../LanguageContext';
 
 export { matchesGigStatus };
 
 export default function GigsPipelineManager({ groupId, associationSettings: propAssocSettings = {}, onBack, initialTab = 'pipeline' }) {
+  const { t } = useTranslation();
   const { confirm } = useConfirm();
   const [activeTab, setActiveTab] = useState(initialTab); // 'pipeline' | 'contacts'
 
@@ -139,7 +141,7 @@ export default function GigsPipelineManager({ groupId, associationSettings: prop
               }`}
             >
               <span>🎯</span>
-              <span>Suivi des Prestations (Pipeline)</span>
+              <span>{t('diffusion.tabPipeline')}</span>
             </button>
 
             <button
@@ -154,7 +156,7 @@ export default function GigsPipelineManager({ groupId, associationSettings: prop
               }`}
             >
               <span>📇</span>
-              <span>Carnet de Contacts CRM</span>
+              <span>{t('diffusion.tabCrm')}</span>
             </button>
           </HorizontalRibbonContainer>
         </div>
@@ -166,7 +168,7 @@ export default function GigsPipelineManager({ groupId, associationSettings: prop
             onClick={handleOpenCreate}
             className="text-xs font-black uppercase bg-cordel-vert text-white border border-encre-noire px-3.5 py-1.5 min-h-[38px] rounded shadow-[1.5px_1.5px_0px_0px_#181716] hover:brightness-105 cursor-pointer flex items-center gap-1.5 shrink-0"
           >
-            <span>➕ Nouveau dossier</span>
+            <span>{t('diffusion.btnNewDossier')}</span>
           </button>
         )}
       </div>
@@ -177,26 +179,30 @@ export default function GigsPipelineManager({ groupId, associationSettings: prop
         <>
           {/* Introduction explicative */}
           <div className="text-xs text-encre-noire dark:text-cordel-bg-light opacity-85 border border-dashed border-cordel-master-dark/30 p-3.5 rounded-[6px_4px_8px_5px] bg-[#fdfaf2] dark:bg-[#201d1a] leading-relaxed">
-            🤝 <strong>Pôle Diffusion (Produção) :</strong> Centralisez et suivez en équipe les opportunités de concerts et prestations. Visualisez l'avancement de chaque dossier dans l'entonnoir (demande, option, devis, contrat, facturation).
+            🤝 {t('diffusion.bannerDesc')}
           </div>
 
       {/* Synthèse des chiffres clés */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <CordelCard variant="default" useExtremeBorder={false} className="p-3.5 bg-white flex flex-col gap-1 border-2 border-stone-200">
-          <span className="text-[10px] font-extrabold uppercase text-stone-500">Dossiers Actifs</span>
-          <span className="text-lg font-black text-cordel-wood font-mono">{totalActifs} dossiers</span>
+          <span className="text-[10px] font-extrabold uppercase text-stone-500">{t('diffusion.metricActiveDossiers')}</span>
+          <span className="text-lg font-black text-cordel-wood font-mono">
+            {totalActifs === 1 ? t('diffusion.metricDossiersCount', { count: totalActifs }) : t('diffusion.metricDossiersCountPlural', { count: totalActifs })}
+          </span>
         </CordelCard>
 
         <CordelCard variant="default" useExtremeBorder={false} className="p-3.5 bg-white flex flex-col gap-1 border-2 border-emerald-300">
-          <span className="text-[10px] font-extrabold uppercase text-emerald-900">Montant Engagé (Pipeline)</span>
+          <span className="text-[10px] font-extrabold uppercase text-emerald-900">{t('diffusion.metricCommittedAmount')}</span>
           <span className="text-lg font-black text-emerald-800 font-mono">
             {montantTotalEngage.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
           </span>
         </CordelCard>
 
         <CordelCard variant="default" useExtremeBorder={false} className="p-3.5 bg-white flex flex-col gap-1 border-2 border-amber-300">
-          <span className="text-[10px] font-extrabold uppercase text-amber-900">Relances à Effectuer</span>
-          <span className="text-lg font-black text-amber-800 font-mono">{relancesDuesCount} relance(s)</span>
+          <span className="text-[10px] font-extrabold uppercase text-amber-900">{t('diffusion.metricFollowUps')}</span>
+          <span className="text-lg font-black text-amber-800 font-mono">
+            {relancesDuesCount === 1 ? t('diffusion.metricFollowUpsCount', { count: relancesDuesCount }) : t('diffusion.metricFollowUpsCountPlural', { count: relancesDuesCount })}
+          </span>
         </CordelCard>
       </div>
 
@@ -204,7 +210,7 @@ export default function GigsPipelineManager({ groupId, associationSettings: prop
       <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-stone-100 border border-stone-200 rounded">
         {/* Choix de vue */}
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-bold uppercase text-stone-600">Mode d'affichage :</span>
+          <span className="text-[10px] font-bold uppercase text-stone-600">{t('diffusion.displayModeLabel')}</span>
           <div className="flex rounded border border-stone-300 overflow-hidden bg-white">
             <button
               type="button"
@@ -213,7 +219,7 @@ export default function GigsPipelineManager({ groupId, associationSettings: prop
                 viewMode === 'kanban' ? 'bg-cordel-wood text-white' : 'text-stone-700 hover:bg-stone-50'
               }`}
             >
-              📊 Vue par étapes
+              📊 {t('diffusion.viewSteps')}
             </button>
             <button
               type="button"
@@ -222,20 +228,20 @@ export default function GigsPipelineManager({ groupId, associationSettings: prop
                 viewMode === 'table' ? 'bg-cordel-wood text-white' : 'text-stone-700 hover:bg-stone-50'
               }`}
             >
-              📋 Vue Tableau
+              📋 {t('diffusion.viewTable')}
             </button>
           </div>
         </div>
 
         {/* Filtre par Statut */}
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-bold uppercase text-stone-600">Filtrer par étape :</span>
+          <span className="text-[10px] font-bold uppercase text-stone-600">{t('diffusion.filterByStep')}</span>
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
             className="text-xs font-bold px-2.5 py-1 border border-stone-300 rounded bg-white cursor-pointer"
           >
-            <option value="all">Toutes les étapes</option>
+            <option value="all">{t('diffusion.allSteps')}</option>
             {GIG_STATUSES.map(st => (
               <option key={st.id} value={st.id}>{st.label}</option>
             ))}
@@ -252,7 +258,7 @@ export default function GigsPipelineManager({ groupId, associationSettings: prop
         <div className="py-12 text-center text-xs font-bold text-red-600">{error}</div>
       ) : filteredGigs.length === 0 ? (
         <div className="py-12 text-center text-xs italic text-stone-500 bg-white p-6 rounded border border-dashed" data-tour="gigs-kanban-board">
-          Aucun dossier de prestation trouvé. Cliquez sur "Nouveau dossier" pour démarrer.
+          {t('diffusion.emptyDossiersNotice')}
         </div>
       ) : viewMode === 'kanban' ? (
         /* VUE KANBAN (COLONNES PAR ÉTAPE) */

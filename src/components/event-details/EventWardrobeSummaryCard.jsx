@@ -3,6 +3,7 @@ import { doc, updateDoc, writeBatch, collection, getDocs, query, where, addDoc }
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Composant Modulaire : EventWardrobeSummaryCard
@@ -22,6 +23,7 @@ export default function EventWardrobeSummaryCard({
   profileData,
   isAuthorized
 }) {
+  const { t } = useTranslation();
   const [sendingReminderUserId, setSendingReminderUserId] = useState(null);
   const [remindedUserIds, setRemindedUserIds] = useState([]);
   const [batchUpdating, setBatchUpdating] = useState(false);
@@ -213,18 +215,18 @@ export default function EventWardrobeSummaryCard({
           <div className="flex items-center gap-2">
             <span className="text-xl">🎭</span>
             <h4 className="text-xs font-heading font-black tracking-wider text-cordel-wood uppercase">
-              Bilan du Vestiaire Post-Prestation
+              {t('costumerie.bilanDuVestiairePostPrestation')}
             </h4>
           </div>
           <p className="text-[10px] text-cordel-master-dark font-medium mt-0.5">
-            Réconciliation des tenues de scène et suivi des retours au local.
+            {t('costumerie.reconciliationDesTenuesDeScene')}
           </p>
         </div>
 
         {/* Jauge globale de conformité */}
         <div className="flex items-center gap-2 shrink-0 bg-cordel-bg-light/90 px-3 py-1.5 rounded border border-cordel-master-dark/20">
           <span className="text-[10px] font-black uppercase text-cordel-master-dark">
-            Déclarations :
+            {t('costumerie.declarations')}
           </span>
           <span className="text-xs font-black text-cordel-wood">
             {totalDeclared} / {totalPresents}
@@ -256,14 +258,14 @@ export default function EventWardrobeSummaryCard({
         <div className="p-3 rounded-[6px_10px_8px_12px] bg-emerald-50/80 border-2 border-[#2d6a4f] flex flex-col shadow-[1.5px_1.5px_0px_0px_#2d6a4f]">
           <div className="flex items-center justify-between">
             <span className="text-xs font-black text-[var(--color-cordel-vert)] flex items-center gap-1.5 uppercase">
-              <span>📦</span> Au bac asso
+              <span>📦</span> {t('costumerie.auBacAsso')}
             </span>
             <span className="text-base font-black text-[var(--color-cordel-vert)]">
               {renduInscriptions.length}
             </span>
           </div>
           <p className="text-[9.5px] text-cordel-master-dark/80 font-semibold mt-1">
-            Déposées au local dans la malle commune après la sortie.
+            {t('costumerie.deposeesAuLocalDansLa')}
           </p>
         </div>
 
@@ -271,14 +273,14 @@ export default function EventWardrobeSummaryCard({
         <div className="p-3 rounded-[6px_10px_8px_12px] bg-amber-50/80 border-2 border-[#c05621] flex flex-col shadow-[1.5px_1.5px_0px_0px_#c05621]">
           <div className="flex items-center justify-between">
             <span className="text-xs font-black text-[var(--color-cordel-ocre)] flex items-center gap-1.5 uppercase">
-              <span>🧺</span> Lavage maison
+              <span>🧺</span> {t('costumerie.lavageMaison')}
             </span>
             <span className="text-base font-black text-[var(--color-cordel-ocre)]">
               {lavageInscriptions.length}
             </span>
           </div>
           <p className="text-[9.5px] text-cordel-master-dark/80 font-semibold mt-1">
-            Emportées par les membres pour entretien à domicile.
+            {t('costumerie.emporteesParLesMembresPour')}
           </p>
         </div>
 
@@ -286,14 +288,14 @@ export default function EventWardrobeSummaryCard({
         <div className="p-3 rounded-[6px_10px_8px_12px] bg-red-50/80 border-2 border-[var(--theme-primary)] flex flex-col shadow-[1.5px_1.5px_0px_0px_#8b2a1a]">
           <div className="flex items-center justify-between">
             <span className="text-xs font-black text-[var(--theme-primary)] flex items-center gap-1.5 uppercase">
-              <span>🧵</span> À retoucher
+              <span>🧵</span> {t('costumerie.aRetoucher')}
             </span>
             <span className="text-base font-black text-[var(--theme-primary)]">
               {retoucheInscriptions.length}
             </span>
           </div>
           <p className="text-[9.5px] text-cordel-master-dark/80 font-semibold mt-1">
-            Signalées avec une réparation ou un accroc à traiter.
+            {t('costumerie.signaleesAvecUneReparationOu')}
           </p>
         </div>
       </div>
@@ -302,7 +304,7 @@ export default function EventWardrobeSummaryCard({
       {retoucheInscriptions.length > 0 && (
         <div className="mb-4 p-3 bg-red-50/90 border border-dashed border-[var(--theme-primary)]/40 rounded-[6px_10px_8px_12px]">
           <h5 className="text-[10px] font-black uppercase text-[var(--theme-primary)] flex items-center gap-1.5 tracking-wider mb-2">
-            <span>⚠️</span> Signalements pour l'Atelier Couture ({retoucheInscriptions.length}) :
+            <span>⚠️</span> {t('costumerie.signalementsPourLAtelierCouture')}{retoucheInscriptions.length}) :
           </h5>
           <div className="space-y-1.5">
             {retoucheInscriptions.map((ins, idx) => (
@@ -326,11 +328,11 @@ export default function EventWardrobeSummaryCard({
       <div className="mb-4 border-t border-dashed border-cordel-master-dark/20 pt-3">
         <div className="flex items-center justify-between mb-2">
           <h5 className="text-[10.5px] font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
-            <span>⏳</span> Membres en attente de déclaration ({pendingInscriptions.length}) :
+            <span>⏳</span> {t('costumerie.membresEnAttenteDeDeclaration')}{pendingInscriptions.length}) :
           </h5>
           {pendingInscriptions.length === 0 && (
             <span className="text-[9.5px] font-black uppercase text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300">
-              🎉 Toutes les déclarations ont été reçues !
+              {t('costumerie.toutesLesDeclarationsOntEte')}
             </span>
           )}
         </div>
@@ -361,7 +363,7 @@ export default function EventWardrobeSummaryCard({
                   <div className="flex items-center gap-2 self-end sm:self-center">
                     {alreadySentToday ? (
                       <span className="text-[9.5px] font-black text-emerald-800 bg-emerald-100/90 border border-emerald-300 px-2.5 py-1 rounded">
-                        Déjà relancé aujourd'hui ✅
+                        {t('costumerie.dejaRelanceAujourdHui')}
                       </span>
                     ) : (
                       <CordelButton
@@ -387,17 +389,17 @@ export default function EventWardrobeSummaryCard({
         <div className="pt-3 border-t-2 border-dashed border-cordel-master-dark/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-cordel-bg-light/50 p-3 rounded-[6px_10px_8px_12px]">
           <div>
             <span className="text-xs font-black text-encre-noire flex items-center gap-1.5">
-              <span>🧺</span> Action groupée de gestion du bac :
+              <span>🧺</span> {t('costumerie.actionGroupeeDeGestionDu')}
             </span>
             <p className="text-[10px] text-cordel-master-dark font-medium mt-0.5">
-              Bascule simultanément les {renduInscriptions.length} tenues déposées au bac en statut « Au sale / À laver » dans l'inventaire physique.
+              {t('costumerie.basculeSimultanementLes')} {renduInscriptions.length} {t('costumerie.tenuesDeposeesAuBacEn')}
             </p>
           </div>
 
           <div className="shrink-0">
             {isBacAlreadyProcessed ? (
               <span className="text-[10.5px] font-black uppercase text-emerald-900 bg-emerald-100 border border-emerald-400 px-3 py-1.5 rounded flex items-center gap-1.5">
-                ✅ Bac traité ({event.costumesBacDate ? new Date(event.costumesBacDate).toLocaleDateString('fr-FR') : 'Au sale'})
+                {t('costumerie.bacTraite')}{event.costumesBacDate ? new Date(event.costumesBacDate).toLocaleDateString('fr-FR') : 'Au sale'})
               </span>
             ) : (
               <CordelButton

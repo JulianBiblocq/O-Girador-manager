@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import CordelButton from '../CordelButton';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Encart informatif et repliable pour afficher les presets complets du Séquenceur
@@ -14,6 +15,7 @@ export default function RepertoireUnlinkedPresetsBanner({
   onImportPreset,
   importingPresetId = null
 }) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
 
   if (!unlinkedPresets || unlinkedPresets.length === 0) return null;
@@ -26,11 +28,11 @@ export default function RepertoireUnlinkedPresetsBanner({
           <div>
             <h4 className="text-xs font-black uppercase tracking-wider text-[var(--color-cordel-ocre,#c05621)] flex items-center gap-1.5">
               <span>
-                {unlinkedPresets.length} preset{unlinkedPresets.length > 1 ? 's' : ''} du Séquenceur non répertorié{unlinkedPresets.length > 1 ? 's' : ''}
+                {unlinkedPresets.length} {t('mestre.sequenceur.presetSingular')}{unlinkedPresets.length > 1 ? 's' : ''} {t('mestre.sequenceur.unlinkedPresetsNotice')}{unlinkedPresets.length > 1 ? 's' : ''}
               </span>
             </h4>
             <p className="text-[10.5px] text-encre-noire/70 font-bold mt-0.5 leading-snug">
-              Des morceaux complets existent dans le Séquenceur sans fiche associée dans le Répertoire de saison.
+              {t('mestre.sequenceur.unlinkedPresetsDesc')}
             </p>
           </div>
         </div>
@@ -43,7 +45,9 @@ export default function RepertoireUnlinkedPresetsBanner({
             onClick={() => setIsOpen(!isOpen)}
             className="py-1 px-3 text-[10px] font-black uppercase tracking-wider"
           >
-            {isOpen ? 'Masquer la liste ▲' : `Afficher (${unlinkedPresets.length}) ▼`}
+            {isOpen
+              ? t('mestre.btnTogglePresetsHide', { count: unlinkedPresets.length })
+              : t('mestre.btnTogglePresetsShow', { count: unlinkedPresets.length })}
           </CordelButton>
         </div>
       </div>
@@ -67,16 +71,16 @@ export default function RepertoireUnlinkedPresetsBanner({
                     </span>
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-[8.5px] uppercase font-black px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-300">
-                        Preset complet
+                        {t('mestre.sequenceur.completePresetBadge')}
                       </span>
                       {preset.audioUrl && (
                         <span className="text-[8.5px] uppercase font-black px-1.5 py-0.5 rounded bg-purple-50 text-purple-900 border border-purple-300">
-                          🎵 Audio
+                          {t('mestre.sequenceur.audioBadge')}
                         </span>
                       )}
                       {preset.bpm && (
                         <span className="text-[9px] font-bold text-encre-noire/60">
-                          {preset.bpm} BPM
+                          {preset.bpm} {t('mestre.sequenceur.bpmBadge')}
                         </span>
                       )}
                     </div>
@@ -89,10 +93,10 @@ export default function RepertoireUnlinkedPresetsBanner({
                     disabled={isImporting}
                     onClick={() => onImportPreset && onImportPreset(preset)}
                     className="py-1 px-2.5 text-[9.5px] font-black uppercase tracking-wider w-full flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50"
-                    title={`Importer « ${pTitle} » dans le Répertoire`}
+                    title={t('mestre.sequenceur.importPieceTitle', { title: pTitle })}
                   >
                     <span>{isImporting ? '⏳' : '➕'}</span>
-                    <span>{isImporting ? 'Importation...' : 'Importer dans le Répertoire'}</span>
+                    <span>{isImporting ? t('common.importing') : t('mestre.sequenceur.importBtn')}</span>
                   </CordelButton>
                 </div>
               );

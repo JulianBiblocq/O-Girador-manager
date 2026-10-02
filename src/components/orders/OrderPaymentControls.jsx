@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { doc, updateDoc, addDoc, collection, Timestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
+import { useTranslation } from '../LanguageContext';
 import { createInAppNotification } from '../../utils/inAppNotificationService';
 import useConfirm from '../../hooks/useConfirm';
 
@@ -14,6 +15,7 @@ import useConfirm from '../../hooks/useConfirm';
  *    dans 'transactions' avec traçabilité requestId).
  */
 export default function OrderPaymentControls({ request, groupId }) {
+  const { t } = useTranslation();
   const confirm = useConfirm();
   const initialAmount = request.montantFacture !== undefined
     ? String(request.montantFacture)
@@ -34,7 +36,7 @@ export default function OrderPaymentControls({ request, groupId }) {
   const handleNotifyMember = async () => {
     const cleanMontant = parseMontant(montantInput);
     if (isNaN(cleanMontant) || cleanMontant <= 0) {
-      alert("Veuillez saisir un montant facturé valide supérieur à 0 €.");
+      alert(t('logistics.pleaseEnterValidAmount'));
       return;
     }
 
@@ -100,7 +102,7 @@ export default function OrderPaymentControls({ request, groupId }) {
 
     const cleanMontant = parseMontant(montantInput || request.montantFacture);
     if (isNaN(cleanMontant) || cleanMontant <= 0) {
-      alert("Veuillez saisir un montant facturé valide supérieur à 0 € avant d'enregistrer le paiement.");
+      alert(t('logistics.pleaseEnterValidAmountBeforePayment'));
       return;
     }
 
@@ -186,21 +188,21 @@ export default function OrderPaymentControls({ request, groupId }) {
     <div className="flex flex-col gap-1.5 p-2 rounded bg-white/70 dark:bg-black/30 border border-cordel-master-dark/15 text-xs text-left w-full mt-1.5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-[9px] uppercase font-black tracking-wider text-cordel-wood flex items-center gap-1">
-          🪙 Facturation & Virement :
+          {t('logistics.billingTransferTitle')}
         </span>
 
         {/* Badge statut paiement */}
         {isPaid ? (
           <span className="theme-stamp-badge font-black uppercase text-[8px] px-2 py-0.5 bg-[var(--color-cordel-vert)]/15 text-[var(--color-cordel-vert)] border border-[var(--color-cordel-vert)]/40 rounded">
-            🟢 Réglé
+            {t('logistics.badgeSettled')}
           </span>
         ) : currentStatus === 'en_attente' ? (
           <span className="theme-stamp-badge font-black uppercase text-[8px] px-2 py-0.5 bg-[var(--color-cordel-ocre)]/15 text-[var(--color-cordel-ocre)] border border-[var(--color-cordel-ocre)]/40 rounded animate-pulse">
-            🟠 Virement attendu
+            {t('logistics.badgeTransferExpected')}
           </span>
         ) : (
           <span className="theme-stamp-badge font-black uppercase text-[8px] px-2 py-0.5 bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border border-neutral-400/30 rounded">
-            ⚪ Non facturé
+            {t('logistics.badgeNotBilled')}
           </span>
         )}
       </div>
@@ -209,7 +211,7 @@ export default function OrderPaymentControls({ request, groupId }) {
       <div className="flex flex-wrap items-center gap-2 mt-0.5">
         <div className="flex items-center gap-1">
           <label className="text-[8.5px] uppercase font-extrabold text-cordel-master-dark/70">
-            Montant :
+            {t('logistics.amountColon')}
           </label>
           <div className="relative w-24">
             <input
@@ -232,9 +234,9 @@ export default function OrderPaymentControls({ request, groupId }) {
               onClick={handleNotifyMember}
               disabled={processing || !montantInput}
               className="px-2 py-1 text-[8.5px] font-black uppercase tracking-wider bg-amber-600 hover:bg-amber-700 text-white rounded border border-amber-900 shadow-[1px_1px_0px_0px_#181716] cursor-pointer disabled:opacity-50 select-none"
-              title="Fixer le montant et envoyer un push FCM à l'adhérent"
+              title={t('logistics.setAmountAndNotifyTitle')}
             >
-              🔔 Notifier ({currentStatus === 'en_attente' ? 'Rappeler' : 'Demander'})
+              {t('logistics.notifyBtnPrefix', { count: currentStatus === 'en_attente' ? t('logistics.notifyBtnRemind') : t('logistics.notifyBtnAsk') })}
             </button>
 
             <button
@@ -242,16 +244,16 @@ export default function OrderPaymentControls({ request, groupId }) {
               onClick={handleMarkAsPaid}
               disabled={processing || isPaid || !montantInput}
               className="px-2 py-1 text-[8.5px] font-black uppercase tracking-wider bg-[var(--color-cordel-vert)] hover:opacity-90 text-white rounded border border-green-950 shadow-[1px_1px_0px_0px_#181716] cursor-pointer disabled:opacity-50 select-none"
-              title="Valider la réception du virement et insérer la recette comptable"
+              title={t('logistics.validateReceiptAndInsertEntryTitle')}
             >
-              ✓ Marquer comme payé
+              {t('logistics.btnMarkAsPaid')}
             </button>
           </div>
         )}
 
         {isPaid && request.datePaiement && (
           <span className="text-[9px] font-bold text-green-700 dark:text-green-400 italic">
-            Payé le {new Date(request.datePaiement).toLocaleDateString('fr-FR')}
+            {t('logistics.paidOnDatePrefix')} {new Date(request.datePaiement).toLocaleDateString('fr-FR')}
           </span>
         )}
 

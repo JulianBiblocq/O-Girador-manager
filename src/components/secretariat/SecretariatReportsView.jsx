@@ -589,7 +589,7 @@ export default function SecretariatReportsView({ groupId, onBack }) {
             title="Exporter la synthèse générale d'activité au format tableur CSV"
           >
             <span>📥</span>
-            <span>Bilan AG (CSV)</span>
+            <span>{t('governance.btnAgReportCsv')}</span>
           </button>
 
           <button
@@ -600,7 +600,7 @@ export default function SecretariatReportsView({ groupId, onBack }) {
             title="Exporter l'assiduité brute événement par événement (date, titre, type, lieu, nombre de présents)"
           >
             <span>📋</span>
-            <span>Assiduité & Présences (CSV)</span>
+            <span>{t('governance.btnAttendanceCsv')}</span>
           </button>
 
           <button
@@ -779,19 +779,19 @@ export default function SecretariatReportsView({ groupId, onBack }) {
             {/* Cartes métriques adhérents */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               <div className="p-2.5 bg-cordel-bg/80 border border-encre-noire/20 rounded-[4px_6px_3px_5px] flex flex-col items-center text-center">
-                <span className="text-[9px] font-black uppercase text-encre-noire/60">Enregistrés</span>
+                <span className="text-[9px] font-black uppercase text-encre-noire/60">{t('governance.metricCotisations')}</span>
                 <span className="text-lg font-black text-cordel-wood">{indicators.totalMembers}</span>
               </div>
               <div className="p-2.5 bg-cordel-bg/80 border border-encre-noire/20 rounded-[4px_6px_3px_5px] flex flex-col items-center text-center">
-                <span className="text-[9px] font-black uppercase text-encre-noire/60">Actifs</span>
+                <span className="text-[9px] font-black uppercase text-encre-noire/60">{t('governance.metricActifs')}</span>
                 <span className="text-lg font-black text-emerald-800">{indicators.activeMembers}</span>
               </div>
               <div className="p-2.5 bg-cordel-bg/80 border border-encre-noire/20 rounded-[4px_6px_3px_5px] flex flex-col items-center text-center">
-                <span className="text-[9px] font-black uppercase text-encre-noire/60">À jour</span>
+                <span className="text-[9px] font-black uppercase text-encre-noire/60">{t('governance.metricAJour')}</span>
                 <span className="text-lg font-black text-[var(--color-cordel-vert)]">{indicators.cotisationsUpToDate}</span>
               </div>
               <div className="p-2.5 bg-cordel-bg/80 border border-encre-noire/20 rounded-[4px_6px_3px_5px] flex flex-col items-center text-center">
-                <span className="text-[9px] font-black uppercase text-encre-noire/60">En attente</span>
+                <span className="text-[9px] font-black uppercase text-encre-noire/60">{t('governance.metricEnAttente')}</span>
                 <span className="text-lg font-black text-[var(--color-cordel-ocre)]">{indicators.cotisationsPending}</span>
               </div>
             </div>
@@ -805,7 +805,7 @@ export default function SecretariatReportsView({ groupId, onBack }) {
                 {indicators.sortedPupitres.map(pupitre => (
                   <div key={pupitre.name} className="flex flex-col gap-1">
                     <div className="flex justify-between items-center text-[11px] font-bold">
-                      <span>{pupitre.name}</span>
+                      <span>{pupitre.name === 'En attente' || pupitre.name === 'Non défini' ? t('governance.pupitrePending') : pupitre.name}</span>
                       <span className="text-encre-noire/70">
                         {pupitre.count} membre{pupitre.count > 1 ? 's' : ''} ({pupitre.percent}%)
                       </span>
@@ -847,19 +847,19 @@ export default function SecretariatReportsView({ groupId, onBack }) {
             {/* Cartes événements par type */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               <div className="p-2.5 bg-cordel-bg/80 border border-encre-noire/20 rounded-[4px_6px_3px_5px] flex flex-col items-center text-center">
-                <span className="text-[9px] font-black uppercase text-encre-noire/60">Prestations</span>
+                <span className="text-[9px] font-black uppercase text-encre-noire/60">{t('governance.metricPrestations')}</span>
                 <span className="text-lg font-black text-cordel-wood">{indicators.eventsByType.prestation}</span>
               </div>
               <div className="p-2.5 bg-cordel-bg/80 border border-encre-noire/20 rounded-[4px_6px_3px_5px] flex flex-col items-center text-center">
-                <span className="text-[9px] font-black uppercase text-encre-noire/60">Répétitions</span>
+                <span className="text-[9px] font-black uppercase text-encre-noire/60">{t('governance.metricRepetitions')}</span>
                 <span className="text-lg font-black text-encre-noire">{indicators.eventsByType.repetition}</span>
               </div>
               <div className="p-2.5 bg-cordel-bg/80 border border-encre-noire/20 rounded-[4px_6px_3px_5px] flex flex-col items-center text-center">
-                <span className="text-[9px] font-black uppercase text-encre-noire/60">Stages / Ateliers</span>
+                <span className="text-[9px] font-black uppercase text-encre-noire/60">{t('governance.metricStagesAteliers')}</span>
                 <span className="text-lg font-black text-encre-noire">{indicators.eventsByType.stage + indicators.eventsByType.atelier}</span>
               </div>
               <div className="p-2.5 bg-cordel-bg/80 border border-encre-noire/20 rounded-[4px_6px_3px_5px] flex flex-col items-center text-center">
-                <span className="text-[9px] font-black uppercase text-encre-noire/60">Réunions / AG</span>
+                <span className="text-[9px] font-black uppercase text-encre-noire/60">{t('governance.metricReunionsAg')}</span>
                 <span className="text-lg font-black text-encre-noire">{indicators.eventsByType.reunion}</span>
               </div>
             </div>
@@ -871,7 +871,7 @@ export default function SecretariatReportsView({ groupId, onBack }) {
                   <span className="text-[10px] font-black uppercase tracking-wider text-encre-noire/70 block">
                     {t('secretariatReports.avgPresence') || "Moyenne musiciens / prestation"}
                   </span>
-                  <span className="text-xs text-encre-noire/60">Effectif moyen déployé sur scène</span>
+                  <span className="text-xs text-encre-noire/60">{t('governance.avgEffectifScene')}</span>
                 </div>
                 <span className="text-xl font-black text-emerald-800">
                   {indicators.avgPresencePrestation}
@@ -883,7 +883,7 @@ export default function SecretariatReportsView({ groupId, onBack }) {
                   <span className="text-[10px] font-black uppercase tracking-wider text-encre-noire/70 block">
                     {t('secretariatReports.totalMobilisations') || "Mobilisations cumulées"}
                   </span>
-                  <span className="text-xs text-encre-noire/60">Total présences enregistrées</span>
+                  <span className="text-xs text-encre-noire/60">{t('governance.totalPresencesRecorded')}</span>
                 </div>
                 <span className="text-xl font-black text-cordel-wood">
                   {indicators.totalPresencesAll}
@@ -922,18 +922,18 @@ export default function SecretariatReportsView({ groupId, onBack }) {
               {/* Costumerie */}
               <div className="p-3 bg-cordel-bg/70 border border-encre-noire/20 rounded flex flex-col gap-2">
                 <span className="text-[10px] font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
-                  <span>👗</span> Costumerie & Confection
+                  <span>👗</span> {t('governance.wardrobeCraftTitle')}
                 </span>
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-encre-noire/80">Costumes confectionnés :</span>
+                  <span className="text-encre-noire/80">{t('governance.costumesCrafted')}</span>
                   <span className="font-black text-[var(--color-cordel-vert)]">{indicators.coutureFinished}</span>
                 </div>
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-encre-noire/80">Chantiers en cours :</span>
+                  <span className="text-encre-noire/80">{t('governance.ongoingWorkshops')}</span>
                   <span className="font-black text-[var(--color-cordel-ocre)]">{indicators.coutureInProgress}</span>
                 </div>
                 <div className="flex justify-between items-center text-xs border-t border-dashed border-encre-noire/15 pt-1">
-                  <span className="text-encre-noire/80 font-bold">Total projets suivis :</span>
+                  <span className="text-encre-noire/80 font-bold">{t('governance.totalMonitoredProjects')}</span>
                   <span className="font-black text-encre-noire">{indicators.totalCouture}</span>
                 </div>
               </div>
@@ -941,18 +941,18 @@ export default function SecretariatReportsView({ groupId, onBack }) {
               {/* Lutherie & Instruments */}
               <div className="p-3 bg-cordel-bg/70 border border-encre-noire/20 rounded flex flex-col gap-2">
                 <span className="text-[10px] font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
-                  <span>🎻</span> Lutherie & Matériel
+                  <span>🎻</span> {t('governance.metricLutherieMaterial')}
                 </span>
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-encre-noire/80">Instruments en service :</span>
+                  <span className="text-encre-noire/80">{t('governance.metricInstrumentsInService')}</span>
                   <span className="font-black text-[var(--color-cordel-vert)]">{indicators.instrumentsInService}</span>
                 </div>
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-encre-noire/80">En maintenance / HS :</span>
+                  <span className="text-encre-noire/80">{t('governance.instrumentsUnderMaintenance')}</span>
                   <span className="font-black text-[var(--theme-primary)]">{indicators.instrumentsMaintenance}</span>
                 </div>
                 <div className="flex justify-between items-center text-xs border-t border-dashed border-encre-noire/15 pt-1">
-                  <span className="text-encre-noire/80 font-bold">Pièces suivies en stock :</span>
+                  <span className="text-encre-noire/80 font-bold">{t('governance.trackedPartsStock')}</span>
                   <span className="font-black text-encre-noire">{indicators.totalParts}</span>
                 </div>
               </div>
@@ -984,7 +984,7 @@ export default function SecretariatReportsView({ groupId, onBack }) {
                 <span className="text-xl font-black text-[var(--color-cordel-vert)] mt-1">
                   +{indicators.recettesGlobales.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
                 </span>
-                <span className="text-[9.5px] text-emerald-900/70 mt-1">Cotisations, billetterie, dons</span>
+                <span className="text-[9.5px] text-emerald-900/70 mt-1">{t('governance.syntheticIncomeDesc')}</span>
               </div>
 
               <div className="p-3 bg-red-50/80 border-2 border-red-800/40 rounded flex flex-col">
@@ -994,7 +994,7 @@ export default function SecretariatReportsView({ groupId, onBack }) {
                 <span className="text-xl font-black text-[var(--theme-primary)] mt-1">
                   -{indicators.depensesGlobales.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
                 </span>
-                <span className="text-[9.5px] text-red-900/70 mt-1">Frais, déplacements, achats</span>
+                <span className="text-[9.5px] text-red-900/70 mt-1">{t('governance.syntheticExpenseDesc')}</span>
               </div>
             </div>
 

@@ -476,7 +476,7 @@ export default function RepertoirePieceModal({
     if (!file) return;
 
     if (file.size > 25 * 1024 * 1024) {
-      alert("Le fichier audio est trop volumineux (maximum 25 Mo).");
+      alert(t('mestre.repertoire.errAudioTooLarge'));
       return;
     }
 
@@ -490,7 +490,7 @@ export default function RepertoirePieceModal({
       setCustomAudioUrl(downloadUrl);
     } catch (err) {
       console.error("Erreur lors du téléversement audio :", err);
-      alert("Erreur lors de l'envoi du fichier audio.");
+      alert(t('mestre.repertoire.errUploadAudio'));
     } finally {
       setUploadingAudio(false);
       e.target.value = '';
@@ -763,7 +763,7 @@ export default function RepertoirePieceModal({
               type="button"
               onClick={onClose}
               className="text-stone-400 hover:text-stone-700 font-black text-lg p-1 cursor-pointer transition-colors"
-              title="Fermer"
+              title={t('common.close')}
             >
               ✕
             </button>
@@ -790,9 +790,9 @@ export default function RepertoirePieceModal({
                   type="button"
                   onClick={() => setTitre(selectedSong.titre)}
                   className="text-[9.5px] font-extrabold text-amber-800 hover:text-amber-950 underline cursor-pointer flex items-center gap-1"
-                  title="Injecter le titre de la toada sélectionnée"
+                  title={t('mestre.repertoire.injectToadaTitle')}
                 >
-                  <span>💡 Suggérer « {selectedSong.titre} »</span>
+                  <span>{t('mestre.repertoire.suggestPrefix')}{selectedSong.titre} »</span>
                 </button>
               )}
             </div>
@@ -810,7 +810,7 @@ export default function RepertoirePieceModal({
             {detectedSuggestions?.hasAny && (
               <div className="flex items-center gap-1.5 flex-wrap pt-1 animate-fade-in">
                 <span className="text-[8.5px] uppercase font-bold text-amber-900">
-                  Correspondances détectées :
+                  {t('mestre.repertoire.matchesDetected')}
                 </span>
                 {detectedSuggestions.seqMatch && (
                   <button
@@ -820,9 +820,9 @@ export default function RepertoirePieceModal({
                       setSelectedSeqType(detectedSuggestions.seqMatch._collection || null);
                     }}
                     className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-extrabold bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 rounded cursor-pointer transition-colors shadow-2xs"
-                    title="Lier au Preset Séquenceur détecté"
+                    title={t('mestre.repertoire.linkToPresetTitle')}
                   >
-                    <span>🥁 Lier au Preset « {detectedSuggestions.seqMatch.titre || detectedSuggestions.seqMatch.name} »</span>
+                    <span>{t('mestre.repertoire.linkToPresetBtn')}{detectedSuggestions.seqMatch.titre || detectedSuggestions.seqMatch.name} »</span>
                   </button>
                 )}
                 {detectedSuggestions.toadaMatch && (
@@ -830,9 +830,9 @@ export default function RepertoirePieceModal({
                     type="button"
                     onClick={() => setSelectedToadaId(detectedSuggestions.toadaMatch.id)}
                     className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-extrabold bg-emerald-100 hover:bg-emerald-200 text-emerald-950 border border-emerald-300 rounded cursor-pointer transition-colors shadow-2xs"
-                    title="Lier à la Toada détectée"
+                    title={t('mestre.repertoire.linkToToadaTitle')}
                   >
-                    <span>🗣️ Lier à la Toada « {detectedSuggestions.toadaMatch.titre} »</span>
+                    <span>{t('mestre.repertoire.linkToToadaBtn')}{detectedSuggestions.toadaMatch.titre} »</span>
                   </button>
                 )}
                 {detectedSuggestions.choreoMatch && (
@@ -840,9 +840,9 @@ export default function RepertoirePieceModal({
                     type="button"
                     onClick={() => setSelectedChoreoId(detectedSuggestions.choreoMatch.id)}
                     className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-extrabold bg-pink-100 hover:bg-pink-200 text-pink-950 border border-pink-300 rounded cursor-pointer transition-colors shadow-2xs"
-                    title="Lier à la chorégraphie Dançad'Or détectée"
+                    title={t('mestre.repertoire.linkToDanceTitle')}
                   >
-                    <span>💃 Lier à la Danse « {detectedSuggestions.choreoMatch.nom} »</span>
+                    <span>{t('mestre.repertoire.linkToDanceBtn')}{detectedSuggestions.choreoMatch.nom} »</span>
                   </button>
                 )}
                 {detectedSuggestions.cultureMatch && (
@@ -850,9 +850,9 @@ export default function RepertoirePieceModal({
                     type="button"
                     onClick={() => setSelectedCultureIds(prev => prev.includes(detectedSuggestions.cultureMatch.id) ? prev : [...prev, detectedSuggestions.cultureMatch.id])}
                     className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-extrabold bg-blue-100 hover:bg-blue-200 text-blue-950 border border-blue-300 rounded cursor-pointer transition-colors shadow-2xs"
-                    title="Lier à la fiche Varal Culture détectée"
+                    title={t('mestre.repertoire.linkToCultureTitle')}
                   >
-                    <span>📖 Lier à la Culture « {detectedSuggestions.cultureMatch.titre || detectedSuggestions.cultureMatch.name} »</span>
+                    <span>{t('mestre.repertoire.linkToCultureBtn')}{detectedSuggestions.cultureMatch.titre || detectedSuggestions.cultureMatch.name} »</span>
                   </button>
                 )}
               </div>
@@ -918,7 +918,7 @@ export default function RepertoirePieceModal({
                 {t('repertoire.fieldMaturity')}
               </label>
               <p className="text-[9.5px] text-encre-noire/60 leading-tight mb-1">
-                La validation est libre : un morceau peut être prêt même sans ressource externe attachée.
+                {t('mestre.repertoire.validationNoticeFree')}
               </p>
               <div className="flex flex-col gap-1.5 text-xs font-bold">
                 <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -962,7 +962,7 @@ export default function RepertoirePieceModal({
                 className="flex items-center gap-1.5 text-[10px] uppercase font-black tracking-wider text-cordel-wood hover:text-cordel-master-dark cursor-pointer select-none text-left"
               >
                 <span>{collapsedSections.liaisons ? '▶' : '▼'}</span>
-                <span>🔗 Liaisons transversales vivantes (Varal, Séquenceur, Danse)</span>
+                <span>{t('mestre.repertoire.liveCrossLinksHeading')}</span>
               </button>
               <button
                 type="button"
@@ -1045,10 +1045,10 @@ export default function RepertoirePieceModal({
                     type="button"
                     onClick={() => setTitre(selectedSong.titre)}
                     className="mt-1 inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-black text-amber-950 bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded shadow-xs cursor-pointer transition-all text-left"
-                    title="Cliquer pour utiliser le nom de cette toada comme titre du morceau"
+                    title={t('mestre.repertoire.useToadaNameAsTitle')}
                   >
                     <span>💡</span>
-                    <span>Définir comme titre : <u>« {selectedSong.titre} »</u></span>
+                    <span>{t('mestre.repertoire.setAsTitleLabel')} <u>« {selectedSong.titre} »</u></span>
                   </button>
                 )}
 
@@ -1057,10 +1057,10 @@ export default function RepertoirePieceModal({
                     type="button"
                     onClick={() => setToadaToPreview(selectedSong)}
                     className="mt-1 inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[9.5px] font-bold text-emerald-950 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded shadow-2xs cursor-pointer transition-all text-left w-fit"
-                    title="Consulter les paroles complètes de ce chant"
+                    title={t('mestre.repertoire.consultLyricsTitle')}
                   >
                     <span>🗣️</span>
-                    <span>Lire les paroles de « {selectedSong.titre} » ↗</span>
+                    <span>{t('mestre.repertoire.readLyricsOf')}{selectedSong.titre} » ↗</span>
                   </button>
                 )}
               </div>
@@ -1086,7 +1086,7 @@ export default function RepertoirePieceModal({
                 >
                   <option value="">-- {t('repertoire.sequencerPlaceholder')} --</option>
                   {presetsList.length > 0 && (
-                    <optgroup label="⭐ 🎛️ Préréglages Complets (Presets - Audio & Tablature en direct)">
+                    <optgroup label={t('mestre.repertoire.optGroupPresets')}>
                       {presetsList.map((rhythm) => (
                         <option key={rhythm.id} value={rhythm.jsonUrl || rhythm.id}>
                           ⭐ {rhythm.displayTitle || rhythm.titre}
@@ -1097,7 +1097,7 @@ export default function RepertoirePieceModal({
                     </optgroup>
                   )}
                   {sectionsList.length > 0 && (
-                    <optgroup label="📑 Séquences & Arrangements (Sections)">
+                    <optgroup label={t('mestre.repertoire.optGroupSections')}>
                       {sectionsList.map((rhythm) => (
                         <option key={rhythm.id} value={rhythm.jsonUrl || rhythm.id}>
                           📑 {rhythm.displayTitle || rhythm.titre}
@@ -1106,7 +1106,7 @@ export default function RepertoirePieceModal({
                     </optgroup>
                   )}
                   {patternsList.length > 0 && (
-                    <optgroup label="🥁 Motifs individuels & Fichiers JSON">
+                    <optgroup label={t('mestre.repertoire.optGroupPatterns')}>
                       {patternsList.map((rhythm) => (
                         <option key={rhythm.id} value={rhythm.jsonUrl || rhythm.id}>
                           🥁 {rhythm.displayTitle || rhythm.titre}
@@ -1116,7 +1116,7 @@ export default function RepertoirePieceModal({
                   )}
                 </select>
                 <span className="text-[8.5px] opacity-65 italic">
-                  Liaison vivante : audio, BPM, signes et tablature seront lus en direct depuis ce preset.
+                  {t('mestre.repertoire.livePresetNotice')}
                 </span>
               </div>
 
@@ -1125,16 +1125,16 @@ export default function RepertoirePieceModal({
                 <div className="flex items-center justify-between">
                   <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center gap-1">
                     <span>🎵</span>
-                    <span>Audio de référence</span>
+                    <span>{t('mestre.repertoire.referenceAudioHeading')}</span>
                   </label>
                   {effectiveAudioUrl && (
                     <button
                       type="button"
                       onClick={() => setCustomAudioUrl('')}
                       className="text-[9px] text-cordel-wood hover:underline font-bold cursor-pointer"
-                      title="Dissocier cet enregistrement audio personnalisé"
+                      title={t('mestre.repertoire.detachCustomAudioTitle')}
                     >
-                      Effacer
+                      {t('mestre.repertoire.btnErase')}
                     </button>
                   )}
                 </div>
@@ -1149,7 +1149,7 @@ export default function RepertoirePieceModal({
                     {selectedPreset?.audioUrl ? `✓ Audio direct du preset Séquenceur (recommandé)` : `-- Aucun audio personnalisé --`}
                   </option>
                   {audioMastersList.length > 0 && (
-                    <optgroup label="🎧 Masters Audio & Enregistrements du Séquenceur">
+                    <optgroup label={t('mestre.repertoire.optGroupMastersAudio')}>
                       {audioMastersList.map((a) => (
                         <option key={a.id || a.audioUrl} value={a.audioUrl || a.jsonUrl}>
                           🎧 {a.titre || a.displayTitle}
@@ -1159,9 +1159,9 @@ export default function RepertoirePieceModal({
                   )}
                   {customAudioUrl &&
                     !audioMastersList.some((a) => (a.audioUrl || a.jsonUrl) === customAudioUrl) && (
-                      <optgroup label="🔗 Audio personnalisé">
+                      <optgroup label={t('mestre.repertoire.optGroupCustomAudio')}>
                         <option value={customAudioUrl}>
-                          🎵 Fichier lié ({customAudioUrl.split('/').pop()?.split('?')[0] || 'Lien externe'})
+                          {t('mestre.repertoire.linkedFilePrefix')}{customAudioUrl.split('/').pop()?.split('?')[0] || 'Lien externe'})
                         </option>
                       </optgroup>
                     )}
@@ -1180,7 +1180,7 @@ export default function RepertoirePieceModal({
                     />
                   </label>
 
-                  <span className="text-[9px] opacity-50">ou</span>
+                  <span className="text-[9px] opacity-50">{t('mestre.repertoire.orWord')}</span>
 
                   <button
                     type="button"
@@ -1192,7 +1192,7 @@ export default function RepertoirePieceModal({
                     }}
                     className="inline-flex items-center gap-1 px-2.5 py-1 text-[9.5px] font-black uppercase text-encre-noire bg-cordel-bg-light hover:bg-stone-200 border border-encre-noire/30 rounded shadow-xs cursor-pointer"
                   >
-                    <span>🔗 Coller une URL</span>
+                    <span>{t('mestre.repertoire.pasteUrlLabel')}</span>
                   </button>
                 </div>
 
@@ -1200,7 +1200,7 @@ export default function RepertoirePieceModal({
                 {effectiveAudioUrl && (
                   <div className="mt-1 p-2 rounded bg-cordel-bg/80 border border-encre-noire/15 flex flex-col gap-1">
                     <span className="text-[8.5px] font-bold uppercase tracking-wider text-cordel-wood">
-                      ▶ Pré-écoute de l'audio :
+                      {t('mestre.repertoire.audioPreviewLabel')}
                     </span>
                     <audio controls src={effectiveAudioUrl} className="w-full h-7 rounded" preload="metadata" />
                   </div>
@@ -1263,16 +1263,16 @@ export default function RepertoirePieceModal({
                 )}
                 {selectedChoreoId && (
                   <span className="bg-pink-50 text-pink-900 px-2 py-0.5 rounded border border-pink-200">
-                    💃 Chorégraphie liée
+                    {t('mestre.repertoire.linkedChoreographyHeading')}
                   </span>
                 )}
                 {selectedCultureIds.length > 0 && (
                   <span className="bg-blue-50 text-blue-900 px-2 py-0.5 rounded border border-blue-200">
-                    📖 {selectedCultureIds.length} fiche(s) culture
+                    📖 {selectedCultureIds.length} {t('mestre.repertoire.cultureSheetsCountLabel')}
                   </span>
                 )}
                 {!selectedSong && !selectedPreset && !selectedChoreoId && selectedCultureIds.length === 0 && (
-                  <span className="italic opacity-60">Aucune liaison transversale active</span>
+                  <span className="italic opacity-60">{t('mestre.repertoire.noActiveCrossLinks')}</span>
                 )}
               </div>
             )}
@@ -1288,7 +1288,7 @@ export default function RepertoirePieceModal({
                   className="flex items-center gap-1.5 text-[10px] uppercase font-black tracking-wider text-cordel-master-dark hover:text-cordel-wood cursor-pointer select-none transition-colors"
                 >
                   <span>📄</span>
-                  <span>Tablature résolue du Séquenceur</span>
+                  <span>{t('mestre.repertoire.resolvedTablatureHeading')}</span>
                   <span className="text-[11px] font-bold text-cordel-wood underline ml-1">
                     {showTabPreview ? '▲ Replier' : '▼ Déplier l\'aperçu (calcul à la volée)'}
                   </span>
@@ -1314,14 +1314,14 @@ export default function RepertoirePieceModal({
                 className="flex items-center gap-1.5 text-[10px] uppercase font-black tracking-wider text-cordel-wood hover:text-cordel-master-dark cursor-pointer select-none text-left"
               >
                 <span>{collapsedSections.histoire ? '▶' : '▼'}</span>
-                <span>🎬 Vidéo de référence &amp; Histoire culturelle</span>
+                <span>{t('mestre.repertoire.refVideoAndCultureHeading')}</span>
               </button>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setIsCultureModalOpen(true)}
                   className="text-[9.5px] font-extrabold text-amber-900 hover:text-amber-950 underline cursor-pointer flex items-center gap-1"
-                  title="Créer une fiche sur le Varal Culture pré-remplie avec ces informations"
+                  title={t('mestre.repertoire.createCultureSheetVaralTitle')}
                 >
                   <span>📜</span>
                   <span className="hidden sm:inline">{t('repertoire.btnCreateCultureFiche')}</span>
@@ -1344,7 +1344,7 @@ export default function RepertoirePieceModal({
               <div className="flex items-center justify-between">
                 <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center gap-1">
                   <span>🎬</span>
-                  <span>Lien vidéo YouTube propre au morceau</span>
+                  <span>{t('mestre.repertoire.youtubeVideoPieceLabel')}</span>
                 </label>
                 {videoUrl && (
                   <button
@@ -1352,7 +1352,7 @@ export default function RepertoirePieceModal({
                     onClick={() => setVideoUrl('')}
                     className="text-[8.5px] text-cordel-wood hover:underline font-bold cursor-pointer"
                   >
-                    Effacer
+                    {t('mestre.repertoire.btnErase')}
                   </button>
                 )}
               </div>
@@ -1376,15 +1376,15 @@ export default function RepertoirePieceModal({
                   }}
                   disabled={submitting}
                   className="text-[9.5px] uppercase font-black tracking-wider py-2 px-3 shrink-0 flex items-center justify-center gap-1.5 shadow-2xs"
-                  title="Choisir parmi les playlists YouTube configurées de l'association"
+                  title={t('mestre.repertoire.chooseFromPlaylistsTitle')}
                 >
-                  <span>🎬 Choisir parmi nos vidéos</span>
+                  <span>{t('mestre.repertoire.btnChooseFromVideos')}</span>
                 </CordelButton>
               </div>
               {videoUrl && parseYouTubeMedia(videoUrl)?.isValid && (
                 <span className="text-[8.5px] text-green-800 font-bold flex items-center gap-1">
                   <span>✓</span>
-                  <span>Vidéo YouTube reconnue (ID : {parseYouTubeMedia(videoUrl).videoId})</span>
+                  <span>{t('mestre.repertoire.youtubeVideoRecognizedPrefix')} {parseYouTubeMedia(videoUrl).videoId})</span>
                 </span>
               )}
             </div>
@@ -1394,7 +1394,7 @@ export default function RepertoirePieceModal({
               <div className="flex items-center justify-between">
                 <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center gap-1">
                   <span>📜</span>
-                  <span>Notes d'histoire &amp; contexte artistique</span>
+                  <span>{t('mestre.repertoire.historyNotesHeading')}</span>
                 </label>
                 {histoire && (
                   <button
@@ -1402,7 +1402,7 @@ export default function RepertoirePieceModal({
                     onClick={() => setHistoire('')}
                     className="text-[8.5px] text-cordel-wood hover:underline font-bold cursor-pointer"
                   >
-                    Effacer
+                    {t('mestre.repertoire.btnErase')}
                   </button>
                 )}
               </div>
@@ -1411,7 +1411,7 @@ export default function RepertoirePieceModal({
                 value={histoire}
                 onChange={(e) => setHistoire(e.target.value)}
                 disabled={submitting}
-                placeholder="Renseignez l'histoire spécifique, la nation d'origine ou l'inspiration du morceau..."
+                placeholder={t('mestre.repertoire.historyNotesPlaceholder')}
                 className="theme-input text-xs font-medium p-2 bg-cordel-bg-light border border-encre-noire/30 rounded leading-relaxed font-serif"
               />
             </div>
@@ -1420,14 +1420,14 @@ export default function RepertoirePieceModal({
             <div className="flex items-center gap-2 text-[9px] text-cordel-master-dark/70 font-semibold py-0.5">
               {videoUrl ? (
                 <span className="bg-red-50 text-red-900 px-2 py-0.5 rounded border border-red-200">
-                  🎬 Vidéo principale configurée
+                  {t('mestre.repertoire.mainVideoConfigured')}
                 </span>
               ) : (
-                <span className="italic opacity-60">Pas de vidéo principale</span>
+                <span className="italic opacity-60">{t('mestre.repertoire.noMainVideo')}</span>
               )}
               {histoire ? (
                 <span className="bg-amber-50 text-amber-900 px-2 py-0.5 rounded border border-amber-200 truncate max-w-xs">
-                  📜 Contexte historique renseigné
+                  {t('mestre.repertoire.historyContextProvided')}
                 </span>
               ) : null}
             </div>
@@ -1455,7 +1455,7 @@ export default function RepertoirePieceModal({
               className="flex items-center gap-1.5 text-[10px] uppercase font-black tracking-wider text-cordel-wood hover:text-cordel-master-dark cursor-pointer select-none text-left"
             >
               <span>{collapsedSections.sinais ? '▶' : '▼'}</span>
-              <span>✌️ Signes du Mestre associés {isSequenced ? '&amp; Mesures' : ''} ({sinaisDoMestre.length})</span>
+              <span>{t('mestre.repertoire.mestreSignalsHeading')} {isSequenced ? '& Mesures' : ''} ({sinaisDoMestre.length})</span>
             </button>
             <button
               type="button"
@@ -1478,10 +1478,10 @@ export default function RepertoirePieceModal({
             <div className="text-[9px] text-cordel-master-dark/70 font-semibold py-0.5">
               {sinaisDoMestre.length > 0 ? (
                 <span className="bg-amber-50 text-amber-900 px-2 py-0.5 rounded border border-amber-200">
-                  ✌️ {sinaisDoMestre.length} signe(s) configuré(s)
+                  ✌️ {sinaisDoMestre.length} {t('mestre.repertoire.configuredSignalsCount')}
                 </span>
               ) : (
-                <span className="italic opacity-60">Aucun signe du Mestre associé</span>
+                <span className="italic opacity-60">{t('mestre.repertoire.noSignalsAssociated')}</span>
               )}
             </div>
           )}
@@ -1521,7 +1521,7 @@ export default function RepertoirePieceModal({
               {notes.trim() ? (
                 <span className="italic">« {notes.slice(0, 80)}... »</span>
               ) : (
-                <span className="italic opacity-60">Aucune note particulière</span>
+                <span className="italic opacity-60">{t('mestre.repertoire.noSpecialNotes')}</span>
               )}
             </div>
           )}
@@ -1544,7 +1544,7 @@ export default function RepertoirePieceModal({
             disabled={submitting}
             className="px-4 py-2 text-xs font-bold"
           >
-            Annuler
+            {t('common.cancel')}
           </CordelButton>
           <CordelButton
             type="submit"
@@ -1588,14 +1588,14 @@ export default function RepertoirePieceModal({
               <div className="flex items-center gap-2">
                 <span className="text-base">🗣️</span>
                 <span className="text-xs font-black uppercase text-cordel-wood tracking-wider">
-                  Chant &amp; Paroles {toadaToPreview.titre ? `— ${toadaToPreview.titre}` : ''}
+                  {t('mestre.repertoire.songAndLyricsHeading')} {toadaToPreview.titre ? `— ${toadaToPreview.titre}` : ''}
                 </span>
               </div>
               <button
                 type="button"
                 onClick={() => setToadaToPreview(null)}
                 className="w-7 h-7 rounded-full bg-encre-noire text-white font-black text-sm flex items-center justify-center border-2 border-white shadow-md hover:bg-red-700 transition-colors cursor-pointer"
-                title="Fermer"
+                title={t('common.close')}
               >
                 ✕
               </button>

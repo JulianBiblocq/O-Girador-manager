@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useTranslation } from '../LanguageContext';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 
@@ -19,6 +20,7 @@ export default function RepertoirePieceStatusSelector({
   groupId,
   onStatusChange
 }) {
+  const { t } = useTranslation();
   const [openSeasonMenu, setOpenSeasonMenu] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const menuRef = useRef(null);
@@ -99,22 +101,22 @@ export default function RepertoirePieceStatusSelector({
   // Styles et pastilles sémantiques Cordel pour la saison
   const seasonConfig = {
     saison: {
-      label: 'Au programme',
+      label: t('mestre.statusInSeason'),
       icon: '🟢',
       badgeClass: 'bg-green-100 text-green-950 border-green-600 hover:bg-green-200'
     },
     chantier: {
-      label: 'En préparation',
+      label: t('mestre.repertoire.statusInPreparation'),
       icon: '🟡',
       badgeClass: 'bg-amber-100 text-amber-950 border-amber-600 hover:bg-amber-200'
     },
     archive: {
-      label: 'Au frigo',
+      label: t('mestre.repertoire.statusArchived'),
       icon: '⚪',
       badgeClass: 'bg-stone-200 text-stone-800 border-stone-400 hover:bg-stone-300'
     }
   }[statutSaison] || {
-    label: 'Au programme',
+    label: t('mestre.statusInSeason'),
     icon: '🟢',
     badgeClass: 'bg-green-100 text-green-950 border-green-600 hover:bg-green-200'
   };
@@ -133,7 +135,7 @@ export default function RepertoirePieceStatusSelector({
           className={`px-2 py-0.5 border border-dashed rounded-[4px_6px_3px_5px] font-black uppercase text-[9px] flex items-center gap-1 cursor-pointer transition-all active:scale-95 shadow-2xs select-none ${seasonConfig.badgeClass} ${
             isUpdating ? 'opacity-50 cursor-wait' : ''
           }`}
-          title="Modifier le statut de la saison : Au programme / En préparation / Au frigo"
+          title={t('mestre.repertoire.changeSeasonStatusTitle')}
         >
           <span>{seasonConfig.icon}</span>
           <span className="truncate max-w-[100px]">{seasonConfig.label}</span>
@@ -144,7 +146,7 @@ export default function RepertoirePieceStatusSelector({
         {openSeasonMenu && (
           <div className="absolute right-0 top-full mt-1.5 z-40 min-w-[210px] p-1.5 bg-[#fdfaf2] border-2 border-encre-noire rounded-[6px_8px_5px_7px] shadow-[3px_3px_0px_0px_#181716] flex flex-col gap-1 text-left animate-fade-in">
             <div className="px-2 py-1 text-[8.5px] uppercase font-black tracking-wider text-cordel-wood border-b border-dashed border-cordel-wood/25">
-              Statut de la saison
+              {t('mestre.repertoire.seasonStatusHeading')}
             </div>
 
             <button
@@ -158,7 +160,7 @@ export default function RepertoirePieceStatusSelector({
             >
               <span className="flex items-center gap-1.5">
                 <span>🟢</span>
-                <span>Au programme cette année</span>
+                <span>{t('mestre.repertoire.statusInProgramThisYear')}</span>
               </span>
               {statutSaison === 'saison' && <span className="text-xs font-black text-green-800">✓</span>}
             </button>
@@ -174,7 +176,7 @@ export default function RepertoirePieceStatusSelector({
             >
               <span className="flex items-center gap-1.5">
                 <span>🟡</span>
-                <span>En préparation / Chantier</span>
+                <span>{t('mestre.repertoire.statusInPreparation')}</span>
               </span>
               {statutSaison === 'chantier' && <span className="text-xs font-black text-amber-800">✓</span>}
             </button>
@@ -190,7 +192,7 @@ export default function RepertoirePieceStatusSelector({
             >
               <span className="flex items-center gap-1.5">
                 <span>⚪</span>
-                <span>Au frigo / Archives</span>
+                <span>{t('mestre.repertoire.statusArchived')}</span>
               </span>
               {statutSaison === 'archive' && <span className="text-xs font-black text-stone-800">✓</span>}
             </button>
@@ -211,7 +213,7 @@ export default function RepertoirePieceStatusSelector({
         title={`Maturité artistique : ${isPret ? 'Validé pour la scène' : 'En chantier / En répétition'}. Cliquer pour basculer.`}
       >
         <span>{isPret ? '🟢' : '🟡'}</span>
-        <span>{isPret ? 'Validé / Prêt' : 'En chantier'}</span>
+        <span>{isPret ? t('mestre.statusReady') : t('mestre.repertoire.statusInPreparation')}</span>
       </button>
     </div>
   );

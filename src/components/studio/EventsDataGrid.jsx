@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import EventsDataGridRow from './EventsDataGridRow';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * EventsDataGrid - Data Grid displaying events in 15 columns
@@ -14,6 +15,7 @@ export default function EventsDataGrid({
   lieuxImportants = [],
   defaultLocationsByEventType = {}
 }) {
+  const { t } = useTranslation();
   const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' });
 
   // Gérer header click to cycle sorting direction
@@ -142,7 +144,7 @@ export default function EventsDataGrid({
               title="Cliquer pour trier par Titre"
             >
               <div className="flex items-center gap-1">
-                <span>1. Titre</span>
+                <span>{t('secretariat.thColTitle') || "1. Titre"}</span>
                 {renderSortChevron('titre')}
               </div>
             </th>
@@ -153,7 +155,7 @@ export default function EventsDataGrid({
               title="Cliquer pour trier par Type"
             >
               <div className="flex items-center gap-1">
-                <span>2. Type</span>
+                <span>{t('secretariat.thColType') || "2. Type"}</span>
                 {renderSortChevron('type')}
               </div>
             </th>
@@ -164,7 +166,7 @@ export default function EventsDataGrid({
               title="Cliquer pour trier par Description"
             >
               <div className="flex items-center gap-1">
-                <span>3. Description</span>
+                <span>{t('secretariat.thColDescription') || "3. Description"}</span>
                 {renderSortChevron('description')}
               </div>
             </th>
@@ -175,7 +177,7 @@ export default function EventsDataGrid({
               title="Cliquer pour trier par Date"
             >
               <div className="flex items-center gap-1">
-                <span>4. Date</span>
+                <span>{t('secretariat.thColDate') || "4. Date"}</span>
                 {renderSortChevron('date')}
               </div>
             </th>
@@ -186,7 +188,7 @@ export default function EventsDataGrid({
               title="Cliquer pour trier par Heure début"
             >
               <div className="flex items-center gap-1">
-                <span>5. Heure début</span>
+                <span>{t('secretariat.thColStartTime') || "5. Heure début"}</span>
                 {renderSortChevron('heureDebut')}
               </div>
             </th>
@@ -197,7 +199,7 @@ export default function EventsDataGrid({
               title="Cliquer pour trier par Heure fin"
             >
               <div className="flex items-center gap-1">
-                <span>6. Heure fin</span>
+                <span>{t('secretariat.thColEndTime') || "6. Heure fin"}</span>
                 {renderSortChevron('heureFin')}
               </div>
             </th>
@@ -208,7 +210,7 @@ export default function EventsDataGrid({
               title="Cliquer pour trier par Lieu simple"
             >
               <div className="flex items-center gap-1">
-                <span>7. Lieu simple</span>
+                <span>{t('secretariat.thColSimpleLocation') || "7. Lieu simple"}</span>
                 {renderSortChevron('lieuSimple')}
               </div>
             </th>
@@ -219,7 +221,7 @@ export default function EventsDataGrid({
               title="Cliquer pour trier par Date limite"
             >
               <div className="flex items-center gap-1">
-                <span>8. Date limite</span>
+                <span>{t('secretariat.thColDeadline') || "8. Date limite"}</span>
                 {renderSortChevron('dateLimiteInscription')}
               </div>
             </th>

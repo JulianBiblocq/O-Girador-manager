@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '../../LanguageContext';
 
 /**
  * Sous-composant : ReportTerritoryCard
@@ -13,6 +14,7 @@ import React from 'react';
  * @param {string} [props.className] Classes CSS additionnelles
  */
 export default function ReportTerritoryCard({ territorialStats = {}, className = '' }) {
+  const { t } = useTranslation();
   const {
     totalAudited = 0,
     totalActiveMembers = 0,
@@ -32,16 +34,16 @@ export default function ReportTerritoryCard({ territorialStats = {}, className =
         <div>
           <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-cordel-wood flex items-center gap-2">
             <span>📍</span>
-            <span>Ancrage Territorial & Commune (Cerfa)</span>
+            <span>{t('governance.ancrageTerritorialTitle')}</span>
           </h3>
           <p className="text-[10px] text-encre-noire/70 font-medium">
-            Répartition géographique des adhérents par rapport au siège social associatif.
+            {t('governance.territorialSubtitle')}
           </p>
         </div>
 
         {siegeVille && (
           <span className="hidden sm:inline-block text-[9.5px] font-black uppercase tracking-wider px-2 py-1 bg-cordel-bg border border-encre-noire/30 rounded-[3px_5px_3px_4px] text-cordel-wood">
-            Siège : {siegeVille} {siegeCP ? `(${siegeCP})` : ''}
+            {t('governance.badgeHeadquarters', { city: siegeVille, cp: siegeCP || '' })}
           </span>
         )}
       </div>
@@ -50,29 +52,29 @@ export default function ReportTerritoryCard({ territorialStats = {}, className =
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
         {/* Adhérents de la commune du siège */}
         <div className="p-2.5 bg-cordel-bg/80 border border-encre-noire/20 rounded-[4px_6px_3px_5px] flex flex-col items-center text-center">
-          <span className="text-[9px] font-black uppercase text-encre-noire/60">Commune siège</span>
+          <span className="text-[9px] font-black uppercase text-encre-noire/60">{t('governance.headquartersCommune')}</span>
           <span className="text-lg font-black text-[var(--color-cordel-vert)]">
             {communeMembersCount} <span className="text-xs font-bold text-encre-noire/60">({communeMembersPercent}%)</span>
           </span>
-          <span className="text-[8.5px] text-[var(--color-cordel-vert)] font-bold mt-0.5">Critère subvention</span>
+          <span className="text-[8.5px] text-[var(--color-cordel-vert)] font-bold mt-0.5">{t('governance.subventionCriterion')}</span>
         </div>
 
         {/* Adhérents extérieurs */}
         <div className="p-2.5 bg-cordel-bg/80 border border-encre-noire/20 rounded-[4px_6px_3px_5px] flex flex-col items-center text-center">
-          <span className="text-[9px] font-black uppercase text-encre-noire/60">Communes extérieures</span>
+          <span className="text-[9px] font-black uppercase text-encre-noire/60">{t('governance.externalCommunes')}</span>
           <span className="text-lg font-black text-[var(--theme-primary)]">
             {externalMembersCount} <span className="text-xs font-bold text-encre-noire/60">({externalMembersPercent}%)</span>
           </span>
-          <span className="text-[8.5px] text-[var(--theme-primary)] font-bold mt-0.5">Rayonnement extra-communal</span>
+          <span className="text-[8.5px] text-[var(--theme-primary)] font-bold mt-0.5">{t('governance.extraCommunalReach')}</span>
         </div>
 
         {/* Total adhérents audités */}
         <div className="col-span-2 sm:col-span-1 p-2.5 bg-cordel-bg/80 border border-encre-noire/20 rounded-[4px_6px_3px_5px] flex flex-col items-center text-center">
-          <span className="text-[9px] font-black uppercase text-encre-noire/60">Adresses auditées</span>
+          <span className="text-[9px] font-black uppercase text-encre-noire/60">{t('governance.auditedAddresses')}</span>
           <span className="text-lg font-black text-cordel-wood">
             {totalAudited} <span className="text-xs font-bold text-encre-noire/50">/ {totalActiveMembers}</span>
           </span>
-          <span className="text-[8.5px] text-encre-noire/60 font-medium mt-0.5">Fiches profils complètes</span>
+          <span className="text-[8.5px] text-encre-noire/60 font-medium mt-0.5">{t('governance.completeProfilesCount')}</span>
         </div>
       </div>
 
@@ -81,10 +83,10 @@ export default function ReportTerritoryCard({ territorialStats = {}, className =
         <div className="flex justify-between items-center text-[10px] font-bold">
           <span className="text-[var(--color-cordel-vert)] flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-[var(--color-cordel-vert)]" />
-            Commune ({communeMembersPercent}%)
+            {t('governance.legendCommune', { pct: communeMembersPercent })}
           </span>
           <span className="text-[var(--theme-primary)] flex items-center gap-1">
-            Extérieurs ({externalMembersPercent}%)
+            {t('governance.legendExternals', { pct: externalMembersPercent })}
             <span className="w-2 h-2 rounded-full bg-[var(--theme-primary)]" />
           </span>
         </div>
@@ -107,7 +109,7 @@ export default function ReportTerritoryCard({ territorialStats = {}, className =
       {topCommunes.length > 0 && (
         <div className="flex flex-col gap-2 pt-2 border-t border-dashed border-cordel-master-dark/15">
           <span className="text-[10px] font-black uppercase tracking-widest text-cordel-master-dark/70">
-            Top communes des adhérents :
+            {t('governance.topCommunes')}
           </span>
           <div className="flex flex-wrap gap-1.5">
             {topCommunes.map((c, idx) => (

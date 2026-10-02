@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '../../LanguageContext';
 
 /**
  * Sous-composant : ReportAudienceCard
@@ -13,6 +14,7 @@ import React from 'react';
  * @param {string} [props.className] Classes CSS additionnelles
  */
 export default function ReportAudienceCard({ audienceStats = {}, className = '' }) {
+  const { t } = useTranslation();
   const {
     vitrineViews = 0,
     vitrineRequestsTotal = 0,
@@ -27,7 +29,7 @@ export default function ReportAudienceCard({ audienceStats = {}, className = '' 
         <div>
           <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-cordel-wood flex items-center gap-2">
             <span>🌐</span>
-            <span>Rayonnement & Vitrine Publique</span>
+            <span>{t('governance.showcaseTrafficTitle')}</span>
           </h3>
           <p className="text-[10px] text-encre-noire/70 font-medium">
             Trafic du site vitrine, demandes de dates reçues et concrétisation des sollicitations.
@@ -44,39 +46,39 @@ export default function ReportAudienceCard({ audienceStats = {}, className = '' 
         {/* 1. Consultations vitrine */}
         <div className="p-3 bg-cordel-bg/80 border border-encre-noire/20 rounded-[4px_6px_3px_5px] flex flex-col items-center text-center">
           <span className="text-[9px] font-black uppercase text-encre-noire/60">
-            Consultations vitrine
+            {t('governance.metricShowcaseViews')}
           </span>
           <span className="text-xl font-black text-cordel-wood mt-0.5">
             {vitrineViews.toLocaleString('fr-FR')}
           </span>
           <span className="text-[8.5px] text-encre-noire/60 font-medium mt-0.5">
-            Visites uniques cumulées
+            {t('governance.cumulatedUniqueVisitors')}
           </span>
         </div>
 
         {/* 2. Demandes de booking reçues */}
         <div className="p-3 bg-cordel-bg/80 border border-encre-noire/20 rounded-[4px_6px_3px_5px] flex flex-col items-center text-center">
           <span className="text-[9px] font-black uppercase text-encre-noire/60">
-            Demandes reçues
+            {t('governance.metricFormsReceived')}
           </span>
           <span className="text-xl font-black text-encre-noire mt-0.5">
             {vitrineRequestsTotal}
           </span>
           <span className="text-[8.5px] text-encre-noire/60 font-medium mt-0.5">
-            Via le site public sur la période
+            {t('governance.publicSitePeriod')}
           </span>
         </div>
 
         {/* 3. Concrétisation / Devis émis */}
         <div className="p-3 bg-cordel-bg/80 border border-encre-noire/20 rounded-[4px_6px_3px_5px] flex flex-col items-center text-center">
           <span className="text-[9px] font-black uppercase text-encre-noire/60">
-            Concrétisations
+            {t('governance.metricTrafficConcentration')}
           </span>
           <span className="text-xl font-black text-[var(--color-cordel-vert)] mt-0.5">
             {vitrineRequestsConverted} <span className="text-xs font-bold text-encre-noire/60">({conversionRate}%)</span>
           </span>
           <span className="text-[8.5px] text-[var(--color-cordel-vert)] font-bold mt-0.5">
-            Devis, contrats ou dates confirmées
+            {t('governance.confirmedGigsCount')}
           </span>
         </div>
       </div>
@@ -85,7 +87,7 @@ export default function ReportAudienceCard({ audienceStats = {}, className = '' 
       <div className="flex flex-col gap-1.5 pt-1 border-t border-dashed border-cordel-master-dark/15">
         <div className="flex justify-between items-center text-[10px] font-bold">
           <span className="text-encre-noire/80">
-            Taux de concrétisation des demandes du site web :
+            {t('governance.metricTrafficConcentration')} :
           </span>
           <span className="font-black text-[var(--color-cordel-vert)]">
             {conversionRate}%
@@ -104,7 +106,7 @@ export default function ReportAudienceCard({ audienceStats = {}, className = '' 
       <div className="text-[9px] font-medium text-encre-noire/60 bg-cordel-bg/50 border border-dashed border-cordel-master-dark/20 p-2 rounded flex items-center gap-1.5">
         <span>ℹ️</span>
         <span>
-          Indicateur clé pour attester auprès des financeurs publics de la visibilité numérique et de la capacité de captation d'opportunités culturelles.
+          {t('governance.publicShowcaseImpactNotice')}
         </span>
       </div>
     </div>

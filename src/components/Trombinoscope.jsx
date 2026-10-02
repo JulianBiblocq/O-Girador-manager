@@ -441,7 +441,7 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Prénom, nom, surnom..."
+              placeholder={t('trombi.searchPlaceholder')}
               className="theme-input w-full pl-10 pr-8 py-1.5 text-xs font-bold"
             />
             {searchQuery && (
@@ -463,7 +463,7 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
               onChange={(e) => setFilterInstrument(e.target.value)}
               className="theme-input w-full md:w-auto text-xs font-bold py-1.5 px-2 bg-cordel-bg-light cursor-pointer"
             >
-              <option value="all">Tous les pupitres</option>
+              <option value="all">{t('trombi.allPupitres')}</option>
               {FIVE_PUPITRES.map((pupitre) => (
                 <option key={pupitre.id} value={pupitre.id}>{pupitre.label}</option>
               ))}
@@ -480,7 +480,7 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
               onChange={(e) => setFilterTag(e.target.value)}
               className="theme-input w-full md:w-auto text-xs font-bold py-1.5 px-2 bg-cordel-bg-light cursor-pointer"
             >
-              <option value="all">🏷️ Toutes les étiquettes</option>
+              <option value="all">🏷️ {t('trombi.allTags')}</option>
               {availableFilterTags.map((tag) => (
                 <option key={tag.id} value={tag.id}>{tag.label}</option>
               ))}
@@ -500,11 +500,11 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
               title="Réinitialiser tous les filtres"
             >
               <span>✕</span>
-              <span>{totalFilteredCount} {totalFilteredCount > 1 ? 'membres' : 'membre'}</span>
+              <span>{totalFilteredCount > 1 ? t('trombi.membersCountPlural', { count: totalFilteredCount }) : t('trombi.membersCount', { count: totalFilteredCount })}</span>
             </button>
           ) : (
             <div className="w-full md:w-auto shrink-0 text-center md:text-right px-2 py-1 text-[11px] font-extrabold text-stone-600 dark:text-stone-300 whitespace-nowrap">
-              {totalFilteredCount} {totalFilteredCount > 1 ? 'membres' : 'membre'}
+              {totalFilteredCount > 1 ? t('trombi.membersCountPlural', { count: totalFilteredCount }) : t('trombi.membersCount', { count: totalFilteredCount })}
             </div>
           )}
         </CordelCard>

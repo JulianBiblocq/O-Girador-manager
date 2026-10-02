@@ -4,6 +4,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../../firebase';
 import CordelButton from '../CordelButton';
 import { XiloClose } from '../XiloIcons';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * WorkshopEditorModal Component
@@ -12,6 +13,7 @@ import { XiloClose } from '../XiloIcons';
  * and multiple image & PDF file uploads to Firebase Storage under `workshops_media/`.
  */
 export default function WorkshopEditorModal({ groupId, workshop, onClose, onSaved }) {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     titre: workshop?.titre || '',
     description: workshop?.description || '',
@@ -42,7 +44,7 @@ export default function WorkshopEditorModal({ groupId, workshop, onClose, onSave
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) {
-      alert("Veuillez sélectionner un fichier image (JPG, PNG, WebP).");
+      alert(t('mestre.repertoire.alertSelectImageFile'));
       return;
     }
 
@@ -59,7 +61,7 @@ export default function WorkshopEditorModal({ groupId, workshop, onClose, onSave
       }));
     } catch (err) {
       console.error("WorkshopEditorModal - Image upload error:", err);
-      alert("Erreur lors du téléversement de l'image.");
+      alert(t('mestre.repertoire.alertUploadImageError'));
     } finally {
       setUploadingImage(false);
       e.target.value = '';
@@ -78,7 +80,7 @@ export default function WorkshopEditorModal({ groupId, workshop, onClose, onSave
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
-      alert("Veuillez sélectionner un fichier au format PDF.");
+      alert(t('mestre.repertoire.alertSelectPdfFile'));
       return;
     }
 
@@ -95,7 +97,7 @@ export default function WorkshopEditorModal({ groupId, workshop, onClose, onSave
       }));
     } catch (err) {
       console.error("WorkshopEditorModal - PDF upload error:", err);
-      alert("Erreur lors du téléversement du document PDF.");
+      alert(t('mestre.repertoire.alertUploadPdfError'));
     } finally {
       setUploadingPdf(false);
       e.target.value = '';
@@ -162,7 +164,7 @@ export default function WorkshopEditorModal({ groupId, workshop, onClose, onSave
         <div className="flex-shrink-0 p-4 border-b-2 border-dashed border-cordel-master-dark/25 flex justify-between items-start bg-cordel-bg">
           <div>
             <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] uppercase tracking-wider mb-1 inline-block">
-              🧵 Éditeur de Tutoriel Atelier Couture
+              {t('mestre.repertoire.workshopEditorTitle')}
             </span>
             <h3 className="font-heading font-black text-lg text-encre-noire tracking-wide">
               {workshop ? "Modifier le Tutoriel" : "+ Créer un Tutoriel Multimédia"}
@@ -172,7 +174,7 @@ export default function WorkshopEditorModal({ groupId, workshop, onClose, onSave
             type="button"
             onClick={onClose}
             className="text-base font-extrabold text-cordel-wood hover:text-red-600 cursor-pointer p-1"
-            title="Fermer (Échap)"
+            title={t('mestre.repertoire.closeEscapeTitle')}
           >
             <XiloClose size={20} />
           </button>
@@ -192,7 +194,7 @@ export default function WorkshopEditorModal({ groupId, workshop, onClose, onSave
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="sm:col-span-2 flex flex-col gap-1">
                 <label className="text-[10px] uppercase font-extrabold text-cordel-wood">
-                  Titre du Tutoriel <span className="text-red-500">*</span>
+                  {t('mestre.repertoire.workshopTitleLabel')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -200,14 +202,14 @@ export default function WorkshopEditorModal({ groupId, workshop, onClose, onSave
                   value={formData.titre}
                   onChange={handleChange}
                   required
-                  placeholder="ex: Tutoriel : Bracelets de Maracatu"
+                  placeholder={t('mestre.repertoire.workshopTitlePlaceholder')}
                   className="theme-input font-bold text-xs"
                 />
               </div>
 
               <div className="flex flex-col gap-1">
                 <label className="text-[10px] uppercase font-extrabold text-cordel-wood">
-                  Coût estimé (€)
+                  {t('mestre.repertoire.estimatedCostLabel')}
                 </label>
                 <input
                   type="number"
@@ -216,7 +218,7 @@ export default function WorkshopEditorModal({ groupId, workshop, onClose, onSave
                   name="cost"
                   value={formData.cost}
                   onChange={handleChange}
-                  placeholder="ex: 15.00"
+                  placeholder={t('mestre.repertoire.costPlaceholder')}
                   className="theme-input font-bold text-xs"
                 />
               </div>
@@ -226,21 +228,21 @@ export default function WorkshopEditorModal({ groupId, workshop, onClose, onSave
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="sm:col-span-2 flex flex-col gap-1">
                 <label className="text-[10px] uppercase font-extrabold text-cordel-wood">
-                  Description courte / Résumé
+                  {t('mestre.repertoire.shortDescLabel')}
                 </label>
                 <input
                   type="text"
                   name="description"
                   value={formData.description}
                   onChange={handleChange}
-                  placeholder="ex: Fiche de confection complète des bracelets dorés et rubans"
+                  placeholder={t('mestre.repertoire.shortDescPlaceholder')}
                   className="theme-input font-bold text-xs"
                 />
               </div>
 
               <div className="flex flex-col gap-1">
                 <label className="text-[10px] uppercase font-extrabold text-cordel-wood">
-                  Statut de publication
+                  {t('mestre.repertoire.publicationStatusLabel')}
                 </label>
                 <label className="flex items-center gap-2 mt-2 cursor-pointer font-bold select-none">
                   <input
@@ -258,14 +260,14 @@ export default function WorkshopEditorModal({ groupId, workshop, onClose, onSave
             {/* Material List */}
             <div className="flex flex-col gap-1">
               <label className="text-[10px] uppercase font-extrabold text-cordel-wood">
-                Liste du matériel nécessaire & Fournitures
+                {t('mestre.repertoire.materialsAndSuppliesLabel')}
               </label>
               <textarea
                 rows={3}
                 name="materiel"
                 value={formData.materiel}
                 onChange={handleChange}
-                placeholder="ex: 2m de tissu satin rouge, Fil doré N°40, 10 boutons à pression..."
+                placeholder={t('mestre.repertoire.materialsPlaceholder')}
                 className="theme-input text-xs resize-none"
               />
             </div>
@@ -273,14 +275,14 @@ export default function WorkshopEditorModal({ groupId, workshop, onClose, onSave
             {/* Step-by-Step Content instructions */}
             <div className="flex flex-col gap-1">
               <label className="text-[10px] uppercase font-extrabold text-cordel-wood">
-                Instructions & Étapes de fabrication
+                {t('mestre.repertoire.instructionsAndStepsLabel')}
               </label>
               <textarea
                 rows={6}
                 name="content"
                 value={formData.content}
                 onChange={handleChange}
-                placeholder="Détaillez les étapes pas-à-pas pour coudre la pièce..."
+                placeholder={t('mestre.repertoire.stepsInstructionsPlaceholder')}
                 className="theme-input text-xs font-mono resize-none"
               />
             </div>
@@ -288,7 +290,7 @@ export default function WorkshopEditorModal({ groupId, workshop, onClose, onSave
             {/* Video Tutorial URL */}
             <div className="flex flex-col gap-1">
               <label className="text-[10px] uppercase font-extrabold text-cordel-wood">
-                Lien Vidéo Tutoriel (YouTube, Vimeo, Google Drive...)
+                {t('mestre.repertoire.tutorialVideoLinkLabel')}
               </label>
               <input
                 type="url"
@@ -304,7 +306,7 @@ export default function WorkshopEditorModal({ groupId, workshop, onClose, onSave
             <div className="flex flex-col gap-2 p-3 bg-cordel-bg-light/60 border border-dashed border-cordel-master-dark/20 rounded">
               <div className="flex justify-between items-center">
                 <label className="text-[10px] uppercase font-extrabold text-cordel-wood">
-                  📸 Galerie de Photos & Schémas ({formData.images.length})
+                  {t('mestre.repertoire.galleryPhotosPrefix')}{formData.images.length})
                 </label>
                 <label className="cursor-pointer bg-cordel-wood text-white px-2.5 py-1 rounded text-[10px] font-bold hover:opacity-90">
                   {uploadingImage ? "Envoi en cours..." : "+ Ajouter des images"}
@@ -327,7 +329,7 @@ export default function WorkshopEditorModal({ groupId, workshop, onClose, onSave
                         type="button"
                         onClick={() => handleRemoveImage(idx)}
                         className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 text-xs font-extrabold flex items-center justify-center cursor-pointer shadow-xs hover:bg-red-800"
-                        title="Supprimer cette photo"
+                        title={t('mestre.repertoire.deletePhotoTitle')}
                       >
                         ✕
                       </button>
@@ -341,7 +343,7 @@ export default function WorkshopEditorModal({ groupId, workshop, onClose, onSave
             <div className="flex flex-col gap-2 p-3 bg-cordel-bg-light/60 border border-dashed border-cordel-master-dark/20 rounded">
               <div className="flex justify-between items-center">
                 <label className="text-[10px] uppercase font-extrabold text-cordel-wood">
-                  📄 Patrons Couture PDF & Fiches Techniques ({formData.pdfFiles.length})
+                  {t('mestre.repertoire.sewingPatternsPdfPrefix')}{formData.pdfFiles.length})
                 </label>
                 <label className="cursor-pointer bg-cordel-wood text-white px-2.5 py-1 rounded text-[10px] font-bold hover:opacity-90">
                   {uploadingPdf ? "Envoi en cours..." : "+ Ajouter des PDF"}
@@ -366,9 +368,9 @@ export default function WorkshopEditorModal({ groupId, workshop, onClose, onSave
                         type="button"
                         onClick={() => handleRemovePdf(idx)}
                         className="text-red-700 hover:text-red-900 font-extrabold text-xs px-1.5 py-0.5"
-                        title="Supprimer ce document"
+                        title={t('mestre.repertoire.deleteDocumentTitle')}
                       >
-                        ✕ Supprimer
+                        {t('mestre.repertoire.btnDeleteWithIcon')}
                       </button>
                     </div>
                   ))}
@@ -386,7 +388,7 @@ export default function WorkshopEditorModal({ groupId, workshop, onClose, onSave
               disabled={saving}
               className="py-2 px-4 text-xs font-bold uppercase"
             >
-              Annuler
+              {t('common.cancel')}
             </CordelButton>
             <CordelButton
               type="submit"

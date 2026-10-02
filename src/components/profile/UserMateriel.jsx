@@ -111,7 +111,7 @@ export default function UserMateriel({ user, profileData, onBack }) {
     e.preventDefault();
     if (!movementModalInst) return;
     if (movementType === 'transfer' && !movementToUser) {
-      alert("Veuillez sélectionner un membre pour le transfert.");
+      alert(t('logistics.pleaseSelectMemberForTransfer'));
       return;
     }
 
@@ -151,7 +151,7 @@ export default function UserMateriel({ user, profileData, onBack }) {
       setMovementNote('');
     } catch (err) {
       console.error("UserMateriel - Erreur lors de la déclaration :", err);
-      alert("Erreur lors de l'envoi de la déclaration.");
+      alert(t('logistics.errorSendingDeclaration'));
     } finally {
       setSubmittingMovement(false);
     }
@@ -222,7 +222,7 @@ export default function UserMateriel({ user, profileData, onBack }) {
       setReportTargetPartId('ALL');
     } catch (err) {
       console.error("Erreur lors du signalement :", err);
-      alert("Erreur lors du signalement de casse.");
+      alert(t('logistics.errorReportingBreakage'));
     } finally {
       setSubmittingReport(false);
     }
@@ -238,14 +238,14 @@ export default function UserMateriel({ user, profileData, onBack }) {
 
     return (
       <div className="mt-2 pt-2 border-t border-dashed border-cordel-master-dark/20 flex flex-col gap-1">
-        <span className="text-[9px] font-bold uppercase tracking-wider text-cordel-wood mb-1">Détail des pièces (Nomenclature) :</span>
+        <span className="text-[9px] font-bold uppercase tracking-wider text-cordel-wood mb-1">{t('logistics.partsNomenclatureDetail')}</span>
         {parts.map(part => (
           <div key={part.id} className="flex justify-between items-center bg-white/40 px-2 py-1 rounded text-[9px] border border-cordel-master-dark/10">
             <span className="font-bold text-encre-noire truncate pr-2">{part.nom}</span>
             {part.status === 'À réparer' ? (
-              <span className="text-red-600 font-bold shrink-0">En réparation</span>
+              <span className="text-red-600 font-bold shrink-0">{t('logistics.inRepair')}</span>
             ) : (
-              <span className="text-green-700 font-bold shrink-0">OK</span>
+              <span className="text-green-700 font-bold shrink-0">{t('logistics.statusOk')}</span>
             )}
           </div>
         ))}
@@ -268,13 +268,13 @@ export default function UserMateriel({ user, profileData, onBack }) {
 
       {/* Description */}
       <p className="text-xs text-cordel-master-dark opacity-75 text-left leading-relaxed">
-        Consultez la liste de vos instruments personnels, du matériel prêté par l'association et des instruments qui vous sont assignés au local.
+        {t('logistics.myInstrumentsNotice')}
       </p>
 
       {/* Content */}
       {loadingInst ? (
         <div className="flex justify-center items-center py-12">
-          <span className="text-xs uppercase tracking-widest font-black animate-pulse opacity-60">⏳ Chargement de votre matériel...</span>
+          <span className="text-xs uppercase tracking-widest font-black animate-pulse opacity-60">{t('logistics.loadingYourMaterial')}</span>
         </div>
       ) : (
         <div className="flex flex-col gap-5 mt-2">
@@ -328,7 +328,7 @@ export default function UserMateriel({ user, profileData, onBack }) {
                         <img src={getInstrumentIconPath(inst.type)} alt={inst.type} className="w-6 h-6 object-contain shrink-0" />
                         <div className="flex flex-col min-w-0">
                           <span className="text-xs font-bold truncate text-encre-noire">{inst.nom}</span>
-                          <span className="text-[9px] opacity-70 text-cordel-master-dark truncate">Stock Association</span>
+                          <span className="text-[9px] opacity-70 text-cordel-master-dark truncate">{t('logistics.stockAssociation')}</span>
                         </div>
                       </div>
                       <span className={`theme-stamp-badge ${inst.etat === 'À réparer' ? 'border-red-600 text-red-600' : 'theme-stamp-badge-dark'} text-[7px] shrink-0`}>
@@ -338,7 +338,7 @@ export default function UserMateriel({ user, profileData, onBack }) {
 
                     {inst.kit && (
                       <div className="text-[9px] italic text-cordel-wood bg-cordel-wood/5 p-1.5 rounded border-l-2 border-cordel-wood">
-                        <span className="font-bold">Kit :</span> {inst.kit}
+                        <span className="font-bold">{t('logistics.kitColon')}</span> {inst.kit}
                       </div>
                     )}
 
@@ -353,19 +353,19 @@ export default function UserMateriel({ user, profileData, onBack }) {
                         }}
                         className="text-[9px] font-bold uppercase tracking-wider text-red-600 border border-red-600/30 hover:bg-red-600/10 px-2 py-1 rounded transition-colors"
                       >
-                        ⚠️ Signaler une casse
+                        {t('logistics.btnReportBreakage')}
                       </button>
                       
                       {inst.pendingMovement ? (
                         <span className="text-[9px] font-bold text-cordel-ocre bg-cordel-ocre/10 px-2 py-1 rounded border border-cordel-ocre/30">
-                          ⏳ En attente de validation logistique
+                          {t('logistics.waitingLogisticsValidation')}
                         </span>
                       ) : (
                         <button
                           onClick={() => setMovementModalInst(inst)}
                           className="text-[9px] font-bold uppercase tracking-wider text-cordel-wood border border-cordel-wood/30 hover:bg-cordel-wood/10 px-2 py-1 rounded transition-colors"
                         >
-                          🔄 Déclarer un mouvement
+                          {t('logistics.btnDeclareMovement')}
                         </button>
                       )}
                     </div>
@@ -393,7 +393,7 @@ export default function UserMateriel({ user, profileData, onBack }) {
                         <img src={getInstrumentIconPath(inst.type)} alt={inst.type} className="w-6 h-6 object-contain shrink-0" />
                         <div className="flex flex-col min-w-0">
                           <span className="text-xs font-bold truncate text-encre-noire">{inst.nom}</span>
-                          <span className="text-[9px] opacity-70 text-cordel-master-dark truncate">Au Local</span>
+                          <span className="text-[9px] opacity-70 text-cordel-master-dark truncate">{t('logistics.locationAtLocal')}</span>
                         </div>
                       </div>
                       <span className="theme-stamp-badge theme-stamp-badge-wood text-[7px] shrink-0">
@@ -423,23 +423,23 @@ export default function UserMateriel({ user, profileData, onBack }) {
               </button>
 
               <h3 className="text-sm font-extrabold text-cordel-wood uppercase tracking-wider flex items-center gap-2 border-b border-dashed border-cordel-wood/20 pb-2">
-                🔄 Déclarer un mouvement
+                {t('logistics.declareMovementTitle')}
               </h3>
 
               <div className="text-xs font-bold text-encre-noire">
-                Instrument : {movementModalInst.nom}
+                {t('logistics.instrumentLabel')} {movementModalInst.nom}
               </div>
 
               {movementModalInst.kit && (
                 <div className="bg-cordel-ocre/10 border border-cordel-ocre/30 rounded p-2 text-[10px] text-cordel-wood leading-relaxed">
-                  <span className="font-black">Attention :</span> Vous vous apprêtez à transférer cet instrument avec son kit complet : <span className="font-bold">{movementModalInst.kit}</span>.
+                  <span className="font-black">{t('logistics.warningLabel')}</span> {t('logistics.transferFullKitWarning')} <span className="font-bold">{movementModalInst.kit}</span>.
                 </div>
               )}
 
               <form onSubmit={handleSubmitMovement} className="flex flex-col gap-3 mt-2">
                 <div className="flex flex-col gap-1">
                   <label className="text-[10px] font-bold uppercase tracking-wider text-cordel-master-dark">
-                    Type de mouvement
+                    {t('logistics.movementTypeField')}
                   </label>
                   <select 
                     value={movementType} 
@@ -447,15 +447,15 @@ export default function UserMateriel({ user, profileData, onBack }) {
                     className="theme-input text-xs font-bold py-1.5"
                     disabled={submittingMovement}
                   >
-                    <option value="return_to_local">J'ai rendu cet instrument au local</option>
-                    <option value="transfer">Je l'ai transmis à un autre membre</option>
+                    <option value="return_to_local">{t('logistics.returnedInstrumentToLocal')}</option>
+                    <option value="transfer">{t('logistics.transferredToAnotherMember')}</option>
                   </select>
                 </div>
 
                 {movementType === 'transfer' && (
                   <div className="flex flex-col gap-1">
                     <label className="text-[10px] font-bold uppercase tracking-wider text-cordel-master-dark">
-                      Membre cible
+                      {t('logistics.targetMemberField')}
                     </label>
                     <select 
                       value={movementToUser} 
@@ -464,7 +464,7 @@ export default function UserMateriel({ user, profileData, onBack }) {
                       required
                       disabled={submittingMovement || loadingUsers}
                     >
-                      <option value="">-- Choisir un membre --</option>
+                      <option value="">{t('logistics.chooseMemberPrompt')}</option>
                       {usersList.map(u => (
                         <option key={u.id} value={u.id}>{u.prenom} {u.nom}</option>
                       ))}
@@ -474,12 +474,12 @@ export default function UserMateriel({ user, profileData, onBack }) {
 
                 <div className="flex flex-col gap-1">
                   <label className="text-[10px] font-bold uppercase tracking-wider text-cordel-master-dark">
-                    Observations (Optionnel)
+                    {t('logistics.observationsOptionalField')}
                   </label>
                   <textarea 
                     value={movementNote} 
                     onChange={(e) => setMovementNote(e.target.value)}
-                    placeholder="Ex: Il manque une baguette, la fermeture de la housse est coincée..."
+                    placeholder={t('logistics.observationsPlaceholder')}
                     className="theme-input text-xs font-bold py-1.5 resize-none h-16"
                     disabled={submittingMovement}
                   />
@@ -487,7 +487,7 @@ export default function UserMateriel({ user, profileData, onBack }) {
 
                 <div className="flex justify-end gap-2 mt-2 pt-3 border-t border-dashed border-cordel-master-dark/15">
                   <CordelButton type="button" variant="default" onClick={() => setMovementModalInst(null)} disabled={submittingMovement} className="text-xs px-3 py-1.5">
-                    Annuler
+                    {t('logistics.btnCancel')}
                   </CordelButton>
                   <CordelButton type="submit" variant="ocre" disabled={submittingMovement || (movementType === 'transfer' && !movementToUser)} className="text-xs px-4 py-1.5 font-bold">
                     {submittingMovement ? 'Envoi...' : 'Envoyer la déclaration'}
@@ -515,33 +515,33 @@ export default function UserMateriel({ user, profileData, onBack }) {
             </button>
             
             <h3 className="text-sm font-extrabold text-cordel-wood uppercase tracking-wider pr-8 leading-tight">
-              Signaler une casse
+              {t('logistics.reportBreakageTitle')}
             </h3>
             
             <p className="text-xs text-cordel-master-dark opacity-90">
-              Sur l'instrument <strong>{reportInstrumentModal.nom}</strong>.
+              {t('logistics.onInstrumentNotice')} <strong>{reportInstrumentModal.nom}</strong>.
             </p>
 
             <form onSubmit={handleSubmitReport} className="flex flex-col gap-4 mt-2">
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold uppercase text-encre-noire">Que souhaitez-vous signaler ?</label>
+                <label className="text-[10px] font-bold uppercase text-encre-noire">{t('logistics.whatDoYouWantToReport')}</label>
                 <select 
                   value={reportTargetPartId}
                   onChange={(e) => setReportTargetPartId(e.target.value)}
                   className="theme-input text-xs font-bold py-1.5"
                   disabled={submittingReport}
                 >
-                  <option value="ALL">L'instrument entier / Je ne sais pas</option>
+                  <option value="ALL">{t('logistics.wholeInstrumentOrUnsure')}</option>
                   {/* Optionnel: Pièces réelles si l'instrument a une nomenclature */}
                   {(reportInstrumentModal.nomenclature || []).map(partId => {
                     const p = allInventoryParts.find(x => x.id === partId);
-                    return p ? <option key={p.id} value={p.id}>{p.nom} (En stock)</option> : null;
+                    return p ? <option key={p.id} value={p.id}>{p.nom} {t('logistics.inStockParentheses')}</option> : null;
                   })}
                   {/* Optionnel: Pièces théoriques si modèle mais pas de nomenclature physique */}
                   {(!reportInstrumentModal.nomenclature || reportInstrumentModal.nomenclature.length === 0) && reportInstrumentModal.modelId && (() => {
                     const model = instrumentModels.find(m => m.id === reportInstrumentModal.modelId);
                     return (model?.parts || []).map(p => (
-                      <option key={p.id} value={p.id}>{p.nom} (Modèle)</option>
+                      <option key={p.id} value={p.id}>{p.nom} {t('logistics.modelParentheses')}</option>
                     ));
                   })()}
                 </select>
@@ -561,13 +561,13 @@ export default function UserMateriel({ user, profileData, onBack }) {
                     if (compatibleParts.length > 0) {
                       return (
                         <div className="bg-[var(--color-cordel-vert)]/10 border border-[#2d6a4f]/30 p-2 rounded text-[10px] text-[var(--color-cordel-vert)]">
-                          <span className="font-black">Bonne nouvelle :</span> L'atelier dispose de {compatibleParts.length} pièce(s) de type "{typePiece}" en stock pour un remplacement éventuel.
+                          <span className="font-black">{t('logistics.goodNewsBadge')}</span> {t('logistics.workshopHasPartsPrefix')} {compatibleParts.length} {t('logistics.partsOfTypeMiddle')}{typePiece}{t('logistics.partsInStockForReplacementSuffix')}
                         </div>
                       );
                     } else {
                       return (
                         <div className="bg-[var(--theme-primary)]/10 border border-[var(--theme-primary)]/30 p-2 rounded text-[10px] text-[var(--theme-primary)]">
-                          <span className="font-black">Information :</span> L'atelier n'a actuellement aucune pièce de type "{typePiece}" en stock. Le responsable logistique sera notifié.
+                          <span className="font-black">{t('logistics.informationBadge')}</span> {t('logistics.workshopHasNoPartsPrefix')}{typePiece}{t('logistics.logisticsOfficerWillBeNotifiedSuffix')}
                         </div>
                       );
                     }
@@ -577,12 +577,12 @@ export default function UserMateriel({ user, profileData, onBack }) {
               })()}
 
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold uppercase text-encre-noire">Description du problème</label>
+                <label className="text-[10px] font-bold uppercase text-encre-noire">{t('logistics.problemDescriptionField')}</label>
                 <textarea
                   value={reportDescription}
                   onChange={e => setReportDescription(e.target.value)}
                   className="theme-input text-xs py-2 min-h-[80px]"
-                  placeholder="Expliquez ce qui est cassé ou défectueux..."
+                  placeholder={t('logistics.explainProblemPlaceholder')}
                   required
                 />
               </div>

@@ -22,6 +22,14 @@ export default function TreasuryOperations({
     ? associationSettings.categoriesTransactions
     : defaultCategories;
 
+  const getCategoryLabel = (cat) => {
+    if (!cat) return '';
+    const upper = String(cat).toUpperCase();
+    if (upper === 'MATÉRIEL' || upper === 'MATERIEL') return t('treasury.catMaterial');
+    if (upper === 'COTISATION' || upper === 'COTISATIONS') return t('treasury.tagCotisations');
+    return cat;
+  };
+
   const [txForm, setTxForm] = useState({
     date: new Date().toISOString().split('T')[0],
     type: 'depense',
@@ -141,7 +149,7 @@ export default function TreasuryOperations({
                   onClick={() => setIsAddingCategory(!isAddingCategory)}
                   className="text-[8px] font-black uppercase text-cordel-wood hover:underline cursor-pointer"
                 >
-                  {isAddingCategory ? "Annuler" : "➕ Nouvelle catégorie"}
+                  {isAddingCategory ? (t('common.cancel') || "Annuler") : t('treasury.btnNewCategory')}
                 </button>
               </div>
 
@@ -172,7 +180,7 @@ export default function TreasuryOperations({
                   className="theme-input w-full text-xs font-bold bg-cordel-bg-light"
                 >
                   {categories.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
+                    <option key={cat} value={cat}>{getCategoryLabel(cat)}</option>
                   ))}
                 </select>
               )}
@@ -214,18 +222,21 @@ export default function TreasuryOperations({
                 <span>{t('treasury.fieldReceipt')}</span>
                 <span className="text-[8px] font-normal italic opacity-60">{t('treasury.uploadReceiptNotice')}</span>
               </label>
-              <input 
-                type="file"
-                accept="image/*,.pdf"
-                onChange={(e) => setDocumentFile(e.target.files?.[0] || null)}
-                disabled={savingTx}
-                className="theme-input w-full text-[10px] py-1 bg-cordel-bg-light file:mr-2 file:py-0.5 file:px-2 file:rounded file:border file:border-encre-noire file:text-[9px] file:font-black file:bg-cordel-wood file:text-cordel-bg-light cursor-pointer"
-              />
-              {documentFile && (
-                <span className="text-[9px] font-bold text-green-700 truncate">
-                  📎 {documentFile.name}
+              <div className="flex items-center gap-2 mt-1">
+                <label className="text-[9px] font-black uppercase tracking-wider bg-cordel-wood text-cordel-bg-light border border-encre-noire px-2.5 py-1.5 rounded shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer shrink-0 select-none">
+                  📁 {t('treasury.chooseFileBtn')}
+                  <input 
+                    type="file"
+                    accept="image/*,.pdf"
+                    onChange={(e) => setDocumentFile(e.target.files?.[0] || null)}
+                    disabled={savingTx}
+                    className="hidden"
+                  />
+                </label>
+                <span className="text-[10px] text-stone-600 dark:text-stone-300 truncate">
+                  {documentFile ? `📎 ${documentFile.name}` : t('treasury.noFileChosen')}
                 </span>
-              )}
+              </div>
             </div>
 
             <CordelButton 
@@ -244,9 +255,18 @@ export default function TreasuryOperations({
       {/* List */}
       <div className="col-span-2 flex flex-col gap-3">
         <CordelCard variant="default" useExtremeBorder={true} className="p-4 flex-1">
-          <h4 className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1 mb-3 text-left flex items-center gap-1.5">
-            <span>{t('treasury.operationsJournalTitle')}</span>
-            <Tooltip text="Historique complet des mouvements financiers crédités et débités du compte de l'association." />
+          <h4 className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1 mb-3 text-left flex items-center justify-between gap-1.5">
+            <div className="flex items-center gap-1.5">
+              <span>{t('treasury.operationsJournalTitle')}</span>
+              <Tooltip text="Historique complet des mouvements financiers crédités et débités du compte de l'association." />
+            </div>
+            {transactions.length > 0 && (
+              <span className="text-[9px] font-black text-cordel-master-dark/60 bg-cordel-bg-light px-2 py-0.5 rounded border border-encre-noire/15">
+                {transactions.length > 1
+                  ? t('treasury.entriesCountPlural', { count: transactions.length })
+                  : t('treasury.entriesCount', { count: transactions.length })}
+              </span>
+            )}
           </h4>
           
           {transactions.length === 0 ? (
@@ -273,16 +293,19 @@ export default function TreasuryOperations({
                 const txDateStr = effectiveDate
                   ? effectiveDate.toISOString().split('T')[0]
                   : (typeof tx.date === 'string' && tx.date && !tx.date.includes('[object') ? tx.date.substring(0, 10) : '—');
+                const displayLibelle = typeof tx.libelle === 'string' && tx.libelle.includes('Paiement HelloAsso')
+                  ? tx.libelle.replace('Paiement HelloAsso', t('treasury.helloassoPaymentLabel'))
+                  : tx.libelle;
                 return (
                   <div key={tx.id} className="grid grid-cols-12 gap-2 items-center text-xs border-b border-dashed border-encre-noire/5 py-2 px-1 hover:bg-cordel-hover/10 rounded">
                     <div className="col-span-2 font-semibold text-left">{txDateStr}</div>
                     <div className="col-span-2 text-left">
                       <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] px-1.5 py-0.5">
-                        {tx.categorie}
+                        {getCategoryLabel(tx.categorie)}
                       </span>
                     </div>
-                    <div className="col-span-3 font-bold text-encre-noire dark:text-cordel-bg-light truncate text-left" title={tx.libelle}>
-                      {tx.libelle}
+                    <div className="col-span-3 font-bold text-encre-noire dark:text-cordel-bg-light truncate text-left" title={displayLibelle}>
+                      {displayLibelle}
                     </div>
                     <div className="col-span-2 text-center">
                       {tx.justificatifUrl ? (

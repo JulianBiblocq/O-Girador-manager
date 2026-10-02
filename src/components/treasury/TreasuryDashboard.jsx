@@ -102,7 +102,7 @@ export default function TreasuryDashboard({
     <div className="flex flex-col gap-6 w-full">
       {/* Introduction */}
       <div className="text-xs text-encre-noire dark:text-cordel-bg-light opacity-80 border border-dashed border-cordel-master-dark/30 p-3.5 rounded-[6px_4px_8px_5px] bg-[#fdfaf2] dark:bg-[#201d1a] leading-relaxed">
-        🪙 <strong>{t('treasury.dashboardTitle')}</strong> : Suivez en temps réel l'état des finances de l'association. Ce tableau synthétise toutes les écritures comptables (cotisations, recettes/dépenses d'événements, frais kilométriques et opérations libres) sur la période choisie.
+        🪙 <strong>{t('treasury.dashboardTitle')}</strong> : {t('treasury.dashboardBannerDesc')}
       </div>
 
       {/* Date Filters */}
@@ -172,7 +172,7 @@ export default function TreasuryDashboard({
       {/* Global Balance Table */}
       <CordelCard variant="default" useExtremeBorder={false} className="p-5">
         <h3 className="text-xs font-black tracking-widest text-cordel-wood uppercase border-b border-dashed border-cordel-master-dark/15 pb-2 mb-4 text-left flex items-center gap-1.5">
-          <span>📊 Bilan Financier Détaillé</span>
+          <span>📊 {t('treasury.detailedFinancialBalance')}</span>
           <Tooltip text="Ventilation complète des recettes et dépenses par catégorie pour le rapport de gestion." />
         </h3>
         
@@ -186,15 +186,15 @@ export default function TreasuryDashboard({
             
             <div className="flex flex-col gap-2.5">
               <div className="flex justify-between items-center text-xs border-b border-dashed border-encre-noire/10 pb-1.5 text-left">
-                <span className="font-semibold text-encre-noire">Cotisations & Adhésions</span>
+                <span className="font-semibold text-encre-noire">{t('treasury.catCotisationsAdhesions')}</span>
                 <span className="font-black text-green-700">{categoriesBreakdown.recette['Cotisations'].toFixed(2)} €</span>
               </div>
               <div className="flex justify-between items-center text-xs border-b border-dashed border-encre-noire/10 pb-1.5 text-left">
-                <span className="font-semibold text-encre-noire">Recettes Événements (Prestations, etc.)</span>
+                <span className="font-semibold text-encre-noire">{t('treasury.catRecettesEvents')}</span>
                 <span className="font-black text-green-700">{categoriesBreakdown.recette['Événements'].toFixed(2)} €</span>
               </div>
               <div className="flex justify-between items-center text-xs border-b border-dashed border-encre-noire/10 pb-1.5 text-left">
-                <span className="font-semibold text-encre-noire">Opérations Diverses</span>
+                <span className="font-semibold text-encre-noire">{t('treasury.catOperationsDiverses')}</span>
                 <span className="font-black text-green-700">{categoriesBreakdown.recette['Opérations Diverses'].toFixed(2)} €</span>
               </div>
             </div>
@@ -209,15 +209,15 @@ export default function TreasuryDashboard({
             
             <div className="flex flex-col gap-2.5">
               <div className="flex justify-between items-center text-xs border-b border-dashed border-encre-noire/10 pb-1.5 text-left">
-                <span className="font-semibold text-encre-noire">Frais Événements</span>
+                <span className="font-semibold text-encre-noire">{t('treasury.catFraisEvents')}</span>
                 <span className="font-black text-red-700">{categoriesBreakdown.depense['Événements'].toFixed(2)} €</span>
               </div>
               <div className="flex justify-between items-center text-xs border-b border-dashed border-encre-noire/10 pb-1.5 text-left">
-                <span className="font-semibold text-encre-noire">Défraiements Kilométriques</span>
+                <span className="font-semibold text-encre-noire">{t('treasury.catDefraiementsKm')}</span>
                 <span className="font-black text-red-700">{categoriesBreakdown.depense['Frais Kilométriques'].toFixed(2)} €</span>
               </div>
               <div className="flex justify-between items-center text-xs border-b border-dashed border-encre-noire/10 pb-1.5 text-left">
-                <span className="font-semibold text-encre-noire">Opérations Diverses</span>
+                <span className="font-semibold text-encre-noire">{t('treasury.catOperationsDiverses')}</span>
                 <span className="font-black text-red-700">{categoriesBreakdown.depense['Opérations Diverses'].toFixed(2)} €</span>
               </div>
             </div>
@@ -240,10 +240,10 @@ export default function TreasuryDashboard({
             <span className="text-xl">📊</span>
             <div className="text-left">
               <h4 className="text-xs font-black text-encre-noire uppercase tracking-wide">
-                Rapports Financiers & Exports Comptables
+                {t('treasury.reportsExportsTitle')}
               </h4>
               <p className="text-[10px] font-semibold text-cordel-master-dark/75">
-                Générez le Grand Livre, le bilan par événement ou exportez toutes les écritures au format CSV.
+                {t('treasury.reportsExportsSubtitle')}
               </p>
             </div>
           </div>
@@ -264,9 +264,9 @@ export default function TreasuryDashboard({
           onClick={() => setShowBankDetails(!showBankDetails)}
         >
           <h3 className="text-xs font-extrabold tracking-wider text-cordel-wood uppercase flex items-center gap-1.5">
-            <span>🏦 Coordonnées Bancaires & Mentions de Facturation</span>
+            <span>🏦 {t('treasury.bankDetailsBillingTitle')}</span>
           </h3>
-          <span className="text-xs font-black">{showBankDetails ? '▲ Masquer' : '▼ Déployer'}</span>
+          <span className="text-xs font-black">{showBankDetails ? `▲ ${t('treasury.toggleCollapse')}` : `▼ ${t('treasury.toggleExpand')}`}</span>
         </div>
 
         {showBankDetails && (

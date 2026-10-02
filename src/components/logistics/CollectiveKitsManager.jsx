@@ -4,6 +4,7 @@ import CordelButton from '../CordelButton';
 import { useCollectiveKits, calculateKitStatus } from '../../hooks/useCollectiveKits';
 import KitDetailModal from './KitDetailModal';
 import useConfirm from '../../hooks/useConfirm';
+import { useTranslation } from '../LanguageContext';
 
 const TYPE_ICONS = { maquillage: '💄', secours: '🩹', outils_live: '🔧', autre: '🧰' };
 const SUGGESTED_KITS = [
@@ -15,6 +16,7 @@ const SUGGESTED_KITS = [
 ];
 
 export default function CollectiveKitsManager({ groupId, user, profileData }) {
+  const { t } = useTranslation();
   const confirm = useConfirm();
   const { kits, loading, addKit, updateKit, deleteKit, initDefaultKits } = useCollectiveKits(groupId);
   const [selectedKit, setSelectedKit] = useState(null);
@@ -50,21 +52,21 @@ export default function CollectiveKitsManager({ groupId, user, profileData }) {
         <div>
           <h3 className="text-sm uppercase font-black tracking-wider text-cordel-wood flex items-center gap-2">
             <span>🧰</span>
-            <span>Malles Collectives &amp; Trousses Régie</span>
+            <span>{t('logistics.collectiveKitsTitle')}</span>
           </h3>
           <p className="text-[11px] text-cordel-master-dark/80 mt-0.5">
-            Suivi des malles de scène (costumes, maquillage, confettis, pharmacie, outillage) et préparation départ.
+            {t('logistics.collectiveKitsDesc')}
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {kits.length === 0 && (
             <button type="button" onClick={initDefaultKits} className="text-[10px] font-black uppercase bg-neutral-200 hover:bg-neutral-300 text-encre-noire border border-encre-noire px-2.5 py-1.5 rounded shadow-xs cursor-pointer">
-              ⚡ Initialiser les 3 kits régie types
+              ⚡ {t('logistics.btnInitDefaultKits')}
             </button>
           )}
           <div data-tour="kits-add-btn">
             <CordelButton variant="vert" onClick={() => setShowAddForm(!showAddForm)}>
-              {showAddForm ? 'Fermer' : '+ Nouvelle Malle / Caisse'}
+              {showAddForm ? (t('common.close') || 'Fermer') : t('logistics.btnNewKitCase')}
             </CordelButton>
           </div>
         </div>
@@ -89,7 +91,7 @@ export default function CollectiveKitsManager({ groupId, user, profileData }) {
               <option value="autre">🧰 Autre Malle / Matériel</option>
             </select>
             <input type="text" placeholder="Emplacement..." value={newKitEmplacement} onChange={(e) => setNewKitEmplacement(e.target.value)} className="theme-input text-xs py-1 px-2 rounded flex-1 min-w-[110px]" />
-            <CordelButton type="submit" variant="ocre">Créer</CordelButton>
+            <CordelButton type="submit" variant="ocre">{t('documents.btnCreateInline', 'Créer')}</CordelButton>
           </div>
         </form>
       )}
@@ -99,8 +101,9 @@ export default function CollectiveKitsManager({ groupId, user, profileData }) {
       ) : kits.length === 0 ? (
         <CordelCard variant="default" useExtremeBorder={false} className="py-6 px-4 text-center">
           <span className="text-3xl block mb-2">🧰</span>
-          <p className="text-xs font-bold text-neutral-700">Aucune mallette ou trousse collective enregistrée.</p>
-          <p className="text-[11px] text-neutral-500 mt-1">Cliquez sur « Initialiser les 3 kits régie types » pour créer instantanément les trousses types.</p>
+          <p className="text-xs font-bold text-neutral-700">
+            {t('logistics.emptyCollectiveKitsNotice')}
+          </p>
         </CordelCard>
       ) : (
         <div data-tour="kits-grid" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from '../LanguageContext';
 import JSZip from 'jszip';
 import { collection, doc, writeBatch } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -8,6 +9,7 @@ import CordelButton from '../CordelButton';
 import { XiloClose } from '../XiloIcons';
 
 export default function ImportModelWizardModal({ groupId, file, suppliesList = [], toolsList = [], onClose, onSuccess }) {
+  const { t } = useTranslation();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -205,14 +207,14 @@ export default function ImportModelWizardModal({ groupId, file, suppliesList = [
         <p className="text-[10px] text-stone-600 font-bold uppercase tracking-wider">{manifest.model?.type}</p>
         
         <ul className="mt-3 space-y-1.5 text-[11px] text-encre-noire font-medium">
-          <li>• <strong className="text-cordel-ocre">{manifest.model?.parts?.length || 0}</strong> pièces répertoriées</li>
-          <li>• <strong className="text-cordel-vert">{extractedImages.size}</strong> images embarquées dans l'archive</li>
-          <li>• Format détecté : <span className="uppercase text-stone-500">{manifest.version === 'legacy' ? 'JSON Simple' : 'Master Bundle ZIP'}</span></li>
+          <li>• <strong className="text-cordel-ocre">{manifest.model?.parts?.length || 0}</strong> {t('lutherie.partsListedSuffix')}</li>
+          <li>• <strong className="text-cordel-vert">{extractedImages.size}</strong> {t('lutherie.embeddedImagesInArchive')}</li>
+          <li>{t('lutherie.detectedFormatPrefix')} <span className="uppercase text-stone-500">{manifest.version === 'legacy' ? 'JSON Simple' : 'Master Bundle ZIP'}</span></li>
         </ul>
       </div>
       
       <div className="flex justify-end mt-2">
-        <CordelButton variant="vert" onClick={() => setStep(2)}>Suivant ➔</CordelButton>
+        <CordelButton variant="vert" onClick={() => setStep(2)}>{t('lutherie.btnNext')}</CordelButton>
       </div>
     </div>
   );
@@ -222,12 +224,12 @@ export default function ImportModelWizardModal({ groupId, file, suppliesList = [
     return (
       <div className="flex flex-col gap-3 text-left">
         <p className="text-[10px] text-stone-600 italic">
-          Le modèle requiert ces matières premières. Si elles manquent dans votre association, vous pouvez les créer automatiquement avec un stock à zéro.
+          {t('lutherie.suppliesRequirementDesc')}
         </p>
         
         <div className="max-h-48 overflow-y-auto border border-dashed border-cordel-wood/30 rounded p-2 flex flex-col gap-2">
           {suppliesEntries.length === 0 ? (
-            <span className="text-[10px] italic opacity-50">Aucune fourniture déclarée ou format legacy.</span>
+            <span className="text-[10px] italic opacity-50">{t('lutherie.noSuppliesDeclaredOrLegacy')}</span>
           ) : (
             suppliesEntries.map(([key, data]) => {
               const alreadyExists = suppliesList.some(s => s.nom.trim().toLowerCase() === key);
@@ -239,7 +241,7 @@ export default function ImportModelWizardModal({ groupId, file, suppliesList = [
                   </div>
                   {alreadyExists ? (
                     <span className="text-green-600 font-bold text-[9px] flex items-center gap-1">
-                      ✅ En stock
+                      {t('lutherie.inStockBadge')}
                     </span>
                   ) : (
                     <label className="flex items-center gap-1.5 cursor-pointer text-cordel-wood font-bold text-[9px]">
@@ -249,7 +251,7 @@ export default function ImportModelWizardModal({ groupId, file, suppliesList = [
                         onChange={() => toggleSupply(key)}
                         className="text-cordel-ocre focus:ring-cordel-ocre"
                       />
-                      Créer la fiche
+                      {t('lutherie.createSupplySheetLabel')}
                     </label>
                   )}
                 </div>
@@ -259,8 +261,8 @@ export default function ImportModelWizardModal({ groupId, file, suppliesList = [
         </div>
 
         <div className="flex justify-between mt-2">
-          <CordelButton variant="default" onClick={() => setStep(1)}>⬅ Retour</CordelButton>
-          <CordelButton variant="vert" onClick={() => setStep(3)}>Suivant ➔</CordelButton>
+          <CordelButton variant="default" onClick={() => setStep(1)}>{t('lutherie.btnBack')}</CordelButton>
+          <CordelButton variant="vert" onClick={() => setStep(3)}>{t('lutherie.btnNext')}</CordelButton>
         </div>
       </div>
     );
@@ -271,12 +273,12 @@ export default function ImportModelWizardModal({ groupId, file, suppliesList = [
     return (
       <div className="flex flex-col gap-3 text-left">
         <p className="text-[10px] text-stone-600 italic">
-          Même principe pour l'outillage requis (marteaux, scies...).
+          {t('lutherie.toolsRequirementDesc')}
         </p>
         
         <div className="max-h-48 overflow-y-auto border border-dashed border-cordel-wood/30 rounded p-2 flex flex-col gap-2">
           {toolsEntries.length === 0 ? (
-            <span className="text-[10px] italic opacity-50">Aucun outil déclaré ou format legacy.</span>
+            <span className="text-[10px] italic opacity-50">{t('lutherie.noToolsDeclaredOrLegacy')}</span>
           ) : (
             toolsEntries.map(([key, data]) => {
               const alreadyExists = toolsList.some(t => t.nom.trim().toLowerCase() === key);
@@ -288,7 +290,7 @@ export default function ImportModelWizardModal({ groupId, file, suppliesList = [
                   </div>
                   {alreadyExists ? (
                     <span className="text-green-600 font-bold text-[9px] flex items-center gap-1">
-                      ✅ Disponible
+                      {t('lutherie.availableBadge')}
                     </span>
                   ) : (
                     <label className="flex items-center gap-1.5 cursor-pointer text-cordel-wood font-bold text-[9px]">
@@ -298,7 +300,7 @@ export default function ImportModelWizardModal({ groupId, file, suppliesList = [
                         onChange={() => toggleTool(key)}
                         className="text-cordel-ocre focus:ring-cordel-ocre"
                       />
-                      Créer l'outil
+                      {t('lutherie.createToolLabel')}
                     </label>
                   )}
                 </div>
@@ -308,9 +310,9 @@ export default function ImportModelWizardModal({ groupId, file, suppliesList = [
         </div>
 
         <div className="flex justify-between mt-2 pt-2 border-t border-dashed border-cordel-master-dark/20">
-          <CordelButton variant="default" onClick={() => setStep(2)}>⬅ Retour</CordelButton>
+          <CordelButton variant="default" onClick={() => setStep(2)}>{t('lutherie.btnBack')}</CordelButton>
           <CordelButton variant="vert" useExtremeBorder={true} onClick={handleFinalizeImport} disabled={loading}>
-            🚀 Importer le modèle
+            {t('lutherie.btnImportModelAction')}
           </CordelButton>
         </div>
       </div>
@@ -331,23 +333,23 @@ export default function ImportModelWizardModal({ groupId, file, suppliesList = [
           </button>
 
           <h3 className="text-sm font-black text-cordel-wood uppercase border-b-2 border-dashed border-cordel-wood/20 pb-2">
-            📦 Assistant d'Importation
+            {t('lutherie.importWizardTitle')}
           </h3>
 
           {/* Stepper */}
           {manifest && !error && (
             <div className="flex justify-center items-center gap-2 text-[10px] font-bold text-stone-400 mb-2">
-              <span className={step >= 1 ? 'text-cordel-wood' : ''}>1. Inspection</span>
+              <span className={step >= 1 ? 'text-cordel-wood' : ''}>{t('lutherie.stepInspection')}</span>
               <span>-</span>
-              <span className={step >= 2 ? 'text-cordel-wood' : ''}>2. Fournitures</span>
+              <span className={step >= 2 ? 'text-cordel-wood' : ''}>{t('lutherie.stepSupplies')}</span>
               <span>-</span>
-              <span className={step >= 3 ? 'text-cordel-wood' : ''}>3. Outillage</span>
+              <span className={step >= 3 ? 'text-cordel-wood' : ''}>{t('lutherie.stepTools')}</span>
             </div>
           )}
 
           {loading && !manifest && !error && (
             <div className="text-center py-6 text-xs text-stone-500 font-bold uppercase tracking-wider animate-pulse">
-              Lecture de l'archive...
+              {t('lutherie.readingArchiveNotice')}
             </div>
           )}
 

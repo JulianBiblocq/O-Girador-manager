@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Sous-composant : PartHistoryLogs
@@ -10,6 +11,7 @@ import React, { useState } from 'react';
  * @param {Array} props.historique Liste des événements de contrôle [{ date, action, etape, validateur, note }]
  */
 export default function PartHistoryLogs({ historique = [] }) {
+  const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
 
   if (!historique || historique.length === 0) return null;
@@ -24,7 +26,7 @@ export default function PartHistoryLogs({ historique = [] }) {
         <div className="flex items-center gap-2">
           <span className="text-xs">📜</span>
           <span className="text-[11px] font-black uppercase tracking-wider text-cordel-wood">
-            Journal des contrôles &amp; logs ({historique.length})
+            {t('lutherie.logsTitleWithCount', { count: historique.length })}
           </span>
         </div>
         <span className="text-xs text-cordel-wood font-bold">
@@ -63,7 +65,7 @@ export default function PartHistoryLogs({ historique = [] }) {
                     </span>
                     {log.etape !== undefined && (
                       <span className="text-[9px] font-bold text-stone-600">
-                        Étape {log.etape + 1}
+                        {t('lutherie.stepNumberBadge', { step: log.etape + 1 })}
                       </span>
                     )}
                   </div>
@@ -74,7 +76,7 @@ export default function PartHistoryLogs({ historique = [] }) {
 
                 {log.validateur && (
                   <span className="text-[9.5px] font-semibold text-stone-700">
-                    Par : <strong className="text-cordel-wood">{log.validateur}</strong>
+                    {t('lutherie.validatedByPrefix')} <strong className="text-cordel-wood">{log.validateur}</strong>
                   </span>
                 )}
 

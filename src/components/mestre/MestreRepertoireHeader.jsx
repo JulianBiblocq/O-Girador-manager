@@ -27,10 +27,10 @@ export default function MestreRepertoireHeader({
       <div>
         <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase flex items-center gap-2">
           <span>📜</span>
-          <span>Direction Artistique — {t('repertoire.catalogTitle') || 'Répertoire de la Troupe'}</span>
+          <span>{t('mestre.repertoire.headerArtisticDirection')} {t('repertoire.catalogTitle') || 'Répertoire de la Troupe'}</span>
         </h2>
         <p className="text-[11px] font-bold text-encre-noire/70 mt-0.5">
-          Architecture réactive vivante liée au Séquenceur, au Varal et à Dançad'Or
+          {t('mestre.repertoire.headerSubtitleArchitecture')}
         </p>
       </div>
 
@@ -48,32 +48,32 @@ export default function MestreRepertoireHeader({
             <>
               <span className="flex items-center gap-1">
                 <span className="text-[10px]">🟢</span>
-                <span>Ouvert au groupe</span>
+                <span>{t('mestre.repertoire.statusOpenToGroup')}</span>
               </span>
               <button
                 type="button"
                 onClick={onToggleRepertoire}
                 disabled={isToggling}
                 className="ml-1 text-[10px] font-black uppercase text-[var(--color-cordel-rouge,#8b2a1a)] hover:underline cursor-pointer disabled:opacity-50"
-                title="Masquer le répertoire aux adhérents"
+                title={t('mestre.repertoire.hideRepertoireTitle')}
               >
-                Masquer
+                {t('mestre.repertoire.btnHide')}
               </button>
             </>
           ) : (
             <>
               <span className="flex items-center gap-1 text-stone-600">
                 <span className="text-[10px]">🔒</span>
-                <span>Masqué</span>
+                <span>{t('mestre.repertoire.statusHidden')}</span>
               </span>
               <button
                 type="button"
                 onClick={onToggleRepertoire}
                 disabled={isToggling}
                 className="ml-1 text-[10px] font-black uppercase text-emerald-800 hover:text-emerald-950 hover:underline cursor-pointer disabled:opacity-50"
-                title="Ouvrir le répertoire aux adhérents"
+                title={t('mestre.repertoire.openRepertoireTitle')}
               >
-                Ouvrir
+                {t('mestre.repertoire.btnOpen')}
               </button>
             </>
           )}
@@ -86,10 +86,10 @@ export default function MestreRepertoireHeader({
           useExtremeBorder={true}
           onClick={onOpenBatchVideo}
           className="py-1 px-2.5 text-xs font-black uppercase tracking-wider shrink-0 flex items-center gap-1.5"
-          title="Affecter une vidéo à plusieurs morceaux du répertoire"
+          title={t('mestre.repertoire.batchAssignVideoTitle')}
         >
           <span>🎬</span>
-          <span>Affecter vidéo par lot</span>
+          <span>{t('mestre.repertoire.btnBatchAssignVideo')}</span>
         </CordelButton>
 
         {/* 3. Bouton principal : ➕ AJOUTER UN MORCEAU */}
@@ -100,7 +100,7 @@ export default function MestreRepertoireHeader({
           onClick={onAddPiece}
           className="py-1 px-3 text-xs font-black uppercase tracking-wider shrink-0"
         >
-          ➕ Ajouter un morceau
+          {t('mestre.repertoire.addPiece')}
         </CordelButton>
       </div>
     </div>

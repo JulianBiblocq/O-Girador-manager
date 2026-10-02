@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../../../firebase';
+import { useTranslation } from '../../LanguageContext';
 
 /**
  * Composant : AgSlideshowModal
@@ -29,6 +30,7 @@ export default function AgSlideshowModal({
   endDate = '',
   periodLabel = ''
 }) {
+  const { t } = useTranslation();
   const [currentSlide, setCurrentSlide] = useState(1);
   const totalSlides = 6;
 
@@ -188,11 +190,11 @@ export default function AgSlideshowModal({
                   <span className="text-2xl font-black text-cordel-wood mt-0.5">{indicators.totalMembers}</span>
                 </div>
                 <div className="p-3 bg-white border border-encre-noire/20 rounded flex flex-col items-center text-center">
-                  <span className="text-[10px] font-black uppercase text-encre-noire/60">Membres Actifs</span>
+                  <span className="text-[10px] font-black uppercase text-encre-noire/60">{t('governance.metricActifs')}</span>
                   <span className="text-2xl font-black text-emerald-800 mt-0.5">{indicators.activeMembers}</span>
                 </div>
                 <div className="p-3 bg-white border border-encre-noire/20 rounded flex flex-col items-center text-center">
-                  <span className="text-[10px] font-black uppercase text-encre-noire/60">Cotisations à jour</span>
+                  <span className="text-[10px] font-black uppercase text-encre-noire/60">{t('governance.metricAJour')}</span>
                   <span className="text-2xl font-black text-[var(--color-cordel-vert)] mt-0.5">
                     {indicators.cotisationsUpToDate} <span className="text-xs font-bold text-encre-noire/50">
                       ({indicators.totalMembers ? Math.round((indicators.cotisationsUpToDate / indicators.totalMembers) * 100) : 0}%)
@@ -284,7 +286,7 @@ export default function AgSlideshowModal({
                   Territoire & Bénévolat
                 </span>
                 <h2 className="text-xl sm:text-2xl font-black uppercase text-encre-noire">
-                  Vie de Troupe & Ancrage Communal (Cerfa 12156)
+                  {t('governance.volunteeringCerfaTitle')}
                 </h2>
               </div>
               <span className="text-2xl">🥁</span>
@@ -368,7 +370,7 @@ export default function AgSlideshowModal({
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="p-3 bg-[#fcf7ed] border-2 border-encre-noire rounded-[6px_10px_7px_9px] shadow-[2px_2px_0px_0px_#181716] flex flex-col items-center text-center">
-                <span className="text-[10px] font-black uppercase text-encre-noire/60">Prestations</span>
+                <span className="text-[10px] font-black uppercase text-encre-noire/60">{t('governance.metricPrestations')}</span>
                 <span className="text-2xl font-black text-cordel-wood mt-0.5">{indicators.eventsByType?.prestation || 0}</span>
                 <span className="text-[9px] text-encre-noire/70 mt-1">Concerts et sorties</span>
               </div>
@@ -397,17 +399,17 @@ export default function AgSlideshowModal({
             {/* Rayonnement Vitrine publique */}
             <div className="bg-[#fcf7ed] border-2 border-encre-noire rounded-[6px_10px_7px_9px] p-4 shadow-[2px_2px_0px_0px_#181716] flex flex-col gap-3 mt-1">
               <span className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
-                <span>🌐</span> Rayonnement numérique & Vitrine publique
+                <span>🌐</span> {t('governance.showcaseTrafficTitle')}
               </span>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="p-2.5 bg-white border border-encre-noire/20 rounded text-center">
-                  <span className="text-[9px] font-bold text-encre-noire/60 uppercase block">Consultations Vitrine</span>
+                  <span className="text-[9px] font-bold text-encre-noire/60 uppercase block">{t('governance.metricShowcaseViews')}</span>
                   <span className="text-lg font-black text-cordel-wood">{audience.vitrineViews?.toLocaleString('fr-FR')}</span>
                 </div>
 
                 <div className="p-2.5 bg-white border border-encre-noire/20 rounded text-center">
-                  <span className="text-[9px] font-bold text-encre-noire/60 uppercase block">Demandes reçues</span>
+                  <span className="text-[9px] font-bold text-encre-noire/60 uppercase block">{t('governance.metricFormsReceived')}</span>
                   <span className="text-lg font-black text-encre-noire">{audience.vitrineRequestsTotal}</span>
                 </div>
 

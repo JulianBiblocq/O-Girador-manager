@@ -1,0 +1,4982 @@
+{
+  "logistics": {
+    "name": "Pôle Logistique",
+    "namespace": "logistics",
+    "totalStrings": 237,
+    "cleanFiles": [
+      "src/components/inventory/InventoryItemModal.jsx",
+      "src/components/inventory/InstrumentAttributionSection.jsx",
+      "src/components/inventory/InstrumentVisualizer.jsx"
+    ],
+    "dirtyFiles": [
+      {
+        "file": "src/components/InventoryManager.jsx",
+        "count": 15,
+        "items": [
+          {
+            "line": 294,
+            "text": "Instruments",
+            "context": "Configuration statique (propriété label)",
+            "suggestedKey": "logistics.instruments"
+          },
+          {
+            "line": 295,
+            "text": "Pupitres",
+            "context": "Configuration statique (propriété label)",
+            "suggestedKey": "logistics.pupitres"
+          },
+          {
+            "line": 296,
+            "text": "Kits & Accessoires",
+            "context": "Configuration statique (propriété label)",
+            "suggestedKey": "logistics.kitsAccessoires"
+          },
+          {
+            "line": 297,
+            "text": "Covoiturage & Convois",
+            "context": "Configuration statique (propriété label)",
+            "suggestedKey": "logistics.covoiturageConvois"
+          },
+          {
+            "line": 298,
+            "text": "Pièces Détachées",
+            "context": "Configuration statique (propriété label)",
+            "suggestedKey": "logistics.piecesDetachees"
+          },
+          {
+            "line": 299,
+            "text": "Projets",
+            "context": "Configuration statique (propriété label)",
+            "suggestedKey": "logistics.projets"
+          },
+          {
+            "line": 300,
+            "text": "Matières Premières",
+            "context": "Configuration statique (propriété label)",
+            "suggestedKey": "logistics.matieresPremieres"
+          },
+          {
+            "line": 301,
+            "text": "Outillage",
+            "context": "Configuration statique (propriété label)",
+            "suggestedKey": "logistics.outillage"
+          },
+          {
+            "line": 347,
+            "text": "⏳ Chargement de l'inventaire...",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.chargementDeLInventaire"
+          },
+          {
+            "line": 508,
+            "text": "🎺 Gestion des Pupitres & Catalogue des Instruments",
+            "context": "Titre",
+            "suggestedKey": "logistics.gestionDesPupitresCatalogueDes"
+          },
+          {
+            "line": 511,
+            "text": "Configurez les familles de pupitres, les attributions de couleurs et les modèles du parc instrumental.",
+            "context": "Paragraphe",
+            "suggestedKey": "logistics.configurezLesFamillesDePupitres"
+          },
+          {
+            "line": 550,
+            "text": "🎒 Accessoires & Kits par Pupitre (Housses, Sangles, Mailloches)",
+            "context": "Titre",
+            "suggestedKey": "logistics.accessoiresKitsParPupitreHousses"
+          },
+          {
+            "line": 553,
+            "text": "Configurez les kits de transport, housses, mailloches, sangles et accessoires opérationnels par pupitre.",
+            "context": "Paragraphe",
+            "suggestedKey": "logistics.configurezLesKitsDeTransport"
+          },
+          {
+            "line": 586,
+            "text": "🚗 Configuration Covoiturage & Convois",
+            "context": "Titre",
+            "suggestedKey": "logistics.configurationCovoiturageConvois"
+          },
+          {
+            "line": 589,
+            "text": "Gérez la flotte de véhicules de la troupe et le point de rassemblement habituel pour les départs en convoi.",
+            "context": "Paragraphe",
+            "suggestedKey": "logistics.gerezLaFlotteDeVehicules"
+          }
+        ]
+      },
+      {
+        "file": "src/components/inventory/InventoryItemCard.jsx",
+        "count": 13,
+        "items": [
+          {
+            "line": 78,
+            "text": "🎒 Kit:",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.kit"
+          },
+          {
+            "line": 85,
+            "text": "Prêt gracieux de l'association",
+            "context": "Attribut title",
+            "suggestedKey": "logistics.pretGracieuxDeLAssociation"
+          },
+          {
+            "line": 85,
+            "text": "🎁 Prêt gratuit",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.pretGratuit"
+          },
+          {
+            "line": 90,
+            "text": "Mis à disposition avec cotisation instrument",
+            "context": "Attribut title",
+            "suggestedKey": "logistics.misADispositionAvecCotisation"
+          },
+          {
+            "line": 90,
+            "text": "💳 Cotisation",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.cotisation"
+          },
+          {
+            "line": 95,
+            "text": "Instrument personnel du membre",
+            "context": "Attribut title",
+            "suggestedKey": "logistics.instrumentPersonnelDuMembre"
+          },
+          {
+            "line": 95,
+            "text": "👤 Personnel",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.personnel"
+          },
+          {
+            "line": 128,
+            "text": "Nomenclature (Pièces) :",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.nomenclaturePieces"
+          },
+          {
+            "line": 146,
+            "text": "🤝 Emprunté par :",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.empruntePar"
+          },
+          {
+            "line": 150,
+            "text": "✅ En stock",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.enStock"
+          },
+          {
+            "line": 161,
+            "text": "Éditer",
+            "context": "Attribut title",
+            "suggestedKey": "logistics.editer"
+          },
+          {
+            "line": 170,
+            "text": "Diagnostiquer (Réparation)",
+            "context": "Attribut title",
+            "suggestedKey": "logistics.diagnostiquerReparation"
+          },
+          {
+            "line": 179,
+            "text": "Supprimer",
+            "context": "Attribut title",
+            "suggestedKey": "logistics.supprimer"
+          }
+        ]
+      },
+      {
+        "file": "src/components/inventory/InstrumentsDataTable.jsx",
+        "count": 46,
+        "items": [
+          {
+            "line": 67,
+            "text": "Cliquer pour trier par Nom / Réf",
+            "context": "Attribut title",
+            "suggestedKey": "logistics.cliquerPourTrierParNom"
+          },
+          {
+            "line": 70,
+            "text": "Nom / Réf",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.nomRef"
+          },
+          {
+            "line": 78,
+            "text": "Cliquer pour trier par Famille / Type",
+            "context": "Attribut title",
+            "suggestedKey": "logistics.cliquerPourTrierParFamille"
+          },
+          {
+            "line": 81,
+            "text": "Famille / Type",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.familleType"
+          },
+          {
+            "line": 89,
+            "text": "Cliquer pour trier par Propriétaire",
+            "context": "Attribut title",
+            "suggestedKey": "logistics.cliquerPourTrierParProprietaire"
+          },
+          {
+            "line": 92,
+            "text": "Propriétaire",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.proprietaire"
+          },
+          {
+            "line": 100,
+            "text": "Cliquer pour trier par Localisation",
+            "context": "Attribut title",
+            "suggestedKey": "logistics.cliquerPourTrierParLocalisation"
+          },
+          {
+            "line": 103,
+            "text": "Localisation",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.localisation"
+          },
+          {
+            "line": 111,
+            "text": "Cliquer pour trier par État",
+            "context": "Attribut title",
+            "suggestedKey": "logistics.cliquerPourTrierParEtat"
+          },
+          {
+            "line": 114,
+            "text": "État",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.etat"
+          },
+          {
+            "line": 122,
+            "text": "Cliquer pour trier par Kit",
+            "context": "Attribut title",
+            "suggestedKey": "logistics.cliquerPourTrierParKit"
+          },
+          {
+            "line": 125,
+            "text": "Kit",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.kit"
+          },
+          {
+            "line": 133,
+            "text": "Cliquer pour trier par Statut / Prêt",
+            "context": "Attribut title",
+            "suggestedKey": "logistics.cliquerPourTrierParStatut"
+          },
+          {
+            "line": 136,
+            "text": "Statut / Prêt",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.statutPret"
+          },
+          {
+            "line": 144,
+            "text": "Cliquer pour trier par Assignations",
+            "context": "Attribut title",
+            "suggestedKey": "logistics.cliquerPourTrierParAssignations"
+          },
+          {
+            "line": 147,
+            "text": "Assignations",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.assignations"
+          },
+          {
+            "line": 152,
+            "text": "Actions",
+            "context": "En-tête th",
+            "suggestedKey": "logistics.actions"
+          },
+          {
+            "line": 182,
+            "text": "Nom de l'instrument",
+            "context": "Attribut placeholder",
+            "suggestedKey": "logistics.nomDeLInstrument"
+          },
+          {
+            "line": 183,
+            "text": "Cliquer pour modifier le nom",
+            "context": "Attribut title",
+            "suggestedKey": "logistics.cliquerPourModifierLeNom"
+          },
+          {
+            "line": 195,
+            "text": "Modifier la famille d'instrument",
+            "context": "Attribut title",
+            "suggestedKey": "logistics.modifierLaFamilleDInstrument"
+          },
+          {
+            "line": 210,
+            "text": "Modifier le propriétaire",
+            "context": "Attribut title",
+            "suggestedKey": "logistics.modifierLeProprietaire"
+          },
+          {
+            "line": 212,
+            "text": "🏢 Association",
+            "context": "Option select",
+            "suggestedKey": "logistics.association"
+          },
+          {
+            "line": 213,
+            "text": "Membres",
+            "context": "Attribut label",
+            "suggestedKey": "logistics.membres"
+          },
+          {
+            "line": 228,
+            "text": "Modifier le lieu de stockage",
+            "context": "Attribut title",
+            "suggestedKey": "logistics.modifierLeLieuDeStockage"
+          },
+          {
+            "line": 230,
+            "text": "📍 Local",
+            "context": "Option select",
+            "suggestedKey": "logistics.local"
+          },
+          {
+            "line": 231,
+            "text": "Chez un membre",
+            "context": "Attribut label",
+            "suggestedKey": "logistics.chezUnMembre"
+          },
+          {
+            "line": 233,
+            "text": "🏠 Chez",
+            "context": "Option select",
+            "suggestedKey": "logistics.chez"
+          },
+          {
+            "line": 252,
+            "text": "Modifier l'état",
+            "context": "Attribut title",
+            "suggestedKey": "logistics.modifierLEtat"
+          },
+          {
+            "line": 289,
+            "text": "Modifier le statut d'utilisation",
+            "context": "Attribut title",
+            "suggestedKey": "logistics.modifierLeStatutDUtilisation"
+          },
+          {
+            "line": 291,
+            "text": "En stock",
+            "context": "Option select",
+            "suggestedKey": "logistics.enStock"
+          },
+          {
+            "line": 292,
+            "text": "Emprunté",
+            "context": "Option select",
+            "suggestedKey": "logistics.emprunte"
+          },
+          {
+            "line": 293,
+            "text": "En réparation",
+            "context": "Option select",
+            "suggestedKey": "logistics.enReparation"
+          },
+          {
+            "line": 303,
+            "text": "Membre emprunteur",
+            "context": "Attribut title",
+            "suggestedKey": "logistics.membreEmprunteur"
+          },
+          {
+            "line": 305,
+            "text": "🤝 Emprunteur...",
+            "context": "Option select",
+            "suggestedKey": "logistics.emprunteur"
+          },
+          {
+            "line": 318,
+            "text": "Restituer l'instrument au local",
+            "context": "Attribut title",
+            "suggestedKey": "logistics.restituerLInstrumentAuLocal"
+          },
+          {
+            "line": 329,
+            "text": "Prêt gracieux de l'association",
+            "context": "Attribut title",
+            "suggestedKey": "logistics.pretGracieuxDeLAssociation"
+          },
+          {
+            "line": 329,
+            "text": "🎁 Prêt gratuit",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.pretGratuit"
+          },
+          {
+            "line": 334,
+            "text": "Mis à disposition avec cotisation",
+            "context": "Attribut title",
+            "suggestedKey": "logistics.misADispositionAvecCotisation"
+          },
+          {
+            "line": 334,
+            "text": "💳 Cotisation",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.cotisation"
+          },
+          {
+            "line": 339,
+            "text": "Instrument personnel du membre",
+            "context": "Attribut title",
+            "suggestedKey": "logistics.instrumentPersonnelDuMembre"
+          },
+          {
+            "line": 339,
+            "text": "👤 Personnel",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.personnel"
+          },
+          {
+            "line": 414,
+            "text": "Assigner un membre en 1 clic",
+            "context": "Attribut title",
+            "suggestedKey": "logistics.assignerUnMembreEn1"
+          },
+          {
+            "line": 416,
+            "text": "+ Assigner membre...",
+            "context": "Option select",
+            "suggestedKey": "logistics.assignerMembre"
+          },
+          {
+            "line": 440,
+            "text": "Formulaire d'édition complet (assignations, kit, nomenclature...)",
+            "context": "Attribut title",
+            "suggestedKey": "logistics.formulaireDEditionCompletAssignations"
+          },
+          {
+            "line": 453,
+            "text": "Diagnostiquer (Réparation en atelier)",
+            "context": "Attribut title",
+            "suggestedKey": "logistics.diagnostiquerReparationEnAtelier"
+          },
+          {
+            "line": 466,
+            "text": "Supprimer définitivement de l'inventaire",
+            "context": "Attribut title",
+            "suggestedKey": "logistics.supprimerDefinitivementDeLInventaire"
+          }
+        ]
+      },
+      {
+        "file": "src/components/inventory/InstrumentEditModal.jsx",
+        "count": 25,
+        "items": [
+          {
+            "line": 70,
+            "text": "Fermer le formulaire",
+            "context": "Attribut title",
+            "suggestedKey": "logistics.fermerLeFormulaire"
+          },
+          {
+            "line": 123,
+            "text": "Modèle d'Instrument (Fabrication)",
+            "context": "Label de champ",
+            "suggestedKey": "logistics.modeleDInstrumentFabrication"
+          },
+          {
+            "line": 133,
+            "text": "-- Aucun modèle spécifique --",
+            "context": "Option select",
+            "suggestedKey": "logistics.aucunModeleSpecifique"
+          },
+          {
+            "line": 144,
+            "text": "État physique",
+            "context": "Label de champ",
+            "suggestedKey": "logistics.etatPhysique"
+          },
+          {
+            "line": 165,
+            "text": "Kit / Accessoires associés",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.kitAccessoiresAssocies"
+          },
+          {
+            "line": 177,
+            "text": "Aucun kit d'accessoires configuré pour ce pupitre.",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.aucunKitDAccessoiresConfigure"
+          },
+          {
+            "line": 230,
+            "text": "Propriétaire",
+            "context": "Label de champ",
+            "suggestedKey": "logistics.proprietaire"
+          },
+          {
+            "line": 240,
+            "text": "🏢 Association",
+            "context": "Option select",
+            "suggestedKey": "logistics.association"
+          },
+          {
+            "line": 242,
+            "text": "Personnel :",
+            "context": "Option select",
+            "suggestedKey": "logistics.personnel"
+          },
+          {
+            "line": 249,
+            "text": "Localisation Physique",
+            "context": "Label de champ",
+            "suggestedKey": "logistics.localisationPhysique"
+          },
+          {
+            "line": 259,
+            "text": "📍 Local de l'association",
+            "context": "Option select",
+            "suggestedKey": "logistics.localDeLAssociation"
+          },
+          {
+            "line": 261,
+            "text": "Chez :",
+            "context": "Option select",
+            "suggestedKey": "logistics.chez"
+          },
+          {
+            "line": 268,
+            "text": "Statut de l'instrument",
+            "context": "Label de champ",
+            "suggestedKey": "logistics.statutDeLInstrument"
+          },
+          {
+            "line": 278,
+            "text": "En stock",
+            "context": "Option select",
+            "suggestedKey": "logistics.enStock"
+          },
+          {
+            "line": 279,
+            "text": "Emprunté",
+            "context": "Option select",
+            "suggestedKey": "logistics.emprunte"
+          },
+          {
+            "line": 280,
+            "text": "En réparation",
+            "context": "Option select",
+            "suggestedKey": "logistics.enReparation"
+          },
+          {
+            "line": 287,
+            "text": "Membre emprunteur",
+            "context": "Label de champ",
+            "suggestedKey": "logistics.membreEmprunteur"
+          },
+          {
+            "line": 297,
+            "text": "-- Non spécifié --",
+            "context": "Option select",
+            "suggestedKey": "logistics.nonSpecifie"
+          },
+          {
+            "line": 315,
+            "text": "Assignations (Membres réguliers désignés)",
+            "context": "Label de champ",
+            "suggestedKey": "logistics.assignationsMembresReguliersDesignes"
+          },
+          {
+            "line": 320,
+            "text": "Aucun membre disponible",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.aucunMembreDisponible"
+          },
+          {
+            "line": 349,
+            "text": "Nomenclature (Pièces détachées assignées à l'instrument)",
+            "context": "Label de champ",
+            "suggestedKey": "logistics.nomenclaturePiecesDetacheesAssigneesA"
+          },
+          {
+            "line": 358,
+            "text": "Aucune pièce disponible en stock.",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.aucunePieceDisponibleEnStock"
+          },
+          {
+            "line": 402,
+            "text": "📜 Historique des mouvements & prêts (",
+            "context": "Label de champ",
+            "suggestedKey": "logistics.historiqueDesMouvementsPrets"
+          },
+          {
+            "line": 432,
+            "text": "🗑️ Retirer",
+            "context": "Bouton",
+            "suggestedKey": "logistics.retirer"
+          },
+          {
+            "line": 444,
+            "text": "Annuler",
+            "context": "Nœud JSX",
+            "suggestedKey": "logistics.annuler"
+          }
+        ]
+      },
+      {
+        "file": "src/components/inventory/RepairDiagnosticModal.jsx",
+        "count": 11,
+        "items": [
+          {
+            "line": 63,
+            "text": "Une erreur est survenue lors de l'échange de pièces.",
+            "context": "Dialogue / Message (alert)",
+            "suggestedKey": "logistics.uneErreurEstSurvenueLors"
+          },
+          {
+            "line": 79,
+            "text": "🩺 Diagnostic & Réparation :",
+            "context": "Titre",
+            "suggestedKey": "logistics.diagnosticReparation"
+          },
+          {
+            "line": 83,
+            "text": "Cet instrument est en réparation. Inspectez sa nomenclature ci-dessous et signalez les pièces défectueuses. Vous pouvez piocher dans le stock de pièces détachées pour effectuer un remplacement direct.",
+            "context": "Paragraphe",
+            "suggestedKey": "logistics.cetInstrumentEstEnReparation"
+          },
+          {
+            "line": 90,
+            "text": "Cet instrument n'a aucune pièce structurelle enregistrée dans sa nomenclature.",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.cetInstrumentNAAucune"
+          },
+          {
+            "line": 119,
+            "text": "⚠️ Remplacer",
+            "context": "Bouton",
+            "suggestedKey": "logistics.remplacer"
+          },
+          {
+            "line": 127,
+            "text": "Pièce de rechange :",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.pieceDeRechange"
+          },
+          {
+            "line": 130,
+            "text": "Aucune pièce de type \"",
+            "context": "Nœud JSX",
+            "suggestedKey": "logistics.aucunePieceDeType"
+          },
+          {
+            "line": 131,
+            "text": "\" disponible en stock.",
+            "context": "Nœud JSX",
+            "suggestedKey": "logistics.disponibleEnStock"
+          },
+          {
+            "line": 139,
+            "text": "-- Sélectionner une pièce en stock --",
+            "context": "Option select",
+            "suggestedKey": "logistics.selectionnerUnePieceEnStock"
+          },
+          {
+            "line": 144,
+            "text": "(État :",
+            "context": "Option select",
+            "suggestedKey": "logistics.etat"
+          },
+          {
+            "line": 152,
+            "text": "Annuler",
+            "context": "Nœud JSX",
+            "suggestedKey": "logistics.annuler"
+          }
+        ]
+      },
+      {
+        "file": "src/components/inventory/InstrumentCautionFields.jsx",
+        "count": 1,
+        "items": [
+          {
+            "line": 90,
+            "text": "ex: CHQ-849201",
+            "context": "Attribut placeholder",
+            "suggestedKey": "logistics.exChq849201"
+          }
+        ]
+      },
+      {
+        "file": "src/components/inventory/InventoryFilterBar.jsx",
+        "count": 12,
+        "items": [
+          {
+            "line": 36,
+            "text": "🔍 Rechercher un matériel...",
+            "context": "Attribut placeholder",
+            "suggestedKey": "logistics.rechercherUnMateriel"
+          },
+          {
+            "line": 49,
+            "text": "Tous",
+            "context": "Bouton",
+            "suggestedKey": "logistics.tous"
+          },
+          {
+            "line": 60,
+            "text": "Association",
+            "context": "Bouton",
+            "suggestedKey": "logistics.association"
+          },
+          {
+            "line": 71,
+            "text": "Personnels",
+            "context": "Bouton",
+            "suggestedKey": "logistics.personnels"
+          },
+          {
+            "line": 82,
+            "text": "🛠️ À réparer",
+            "context": "Bouton",
+            "suggestedKey": "logistics.aReparer"
+          },
+          {
+            "line": 95,
+            "text": "Vue Tableau",
+            "context": "Attribut title",
+            "suggestedKey": "logistics.vueTableau"
+          },
+          {
+            "line": 96,
+            "text": "📊 Liste",
+            "context": "Bouton",
+            "suggestedKey": "logistics.liste"
+          },
+          {
+            "line": 103,
+            "text": "Vue Cartes",
+            "context": "Attribut title",
+            "suggestedKey": "logistics.vueCartes"
+          },
+          {
+            "line": 104,
+            "text": "🎴 Cartes",
+            "context": "Bouton",
+            "suggestedKey": "logistics.cartes"
+          },
+          {
+            "line": 114,
+            "text": "Exporter l'inventaire au format CSV",
+            "context": "Attribut title",
+            "suggestedKey": "logistics.exporterLInventaireAuFormat"
+          },
+          {
+            "line": 115,
+            "text": "📥 CSV",
+            "context": "Bouton",
+            "suggestedKey": "logistics.csv"
+          },
+          {
+            "line": 120,
+            "text": "+ Nouveau Matériel",
+            "context": "Nœud JSX",
+            "suggestedKey": "logistics.nouveauMateriel"
+          }
+        ]
+      },
+      {
+        "file": "src/components/inventory/InventoryMovementsBanner.jsx",
+        "count": 3,
+        "items": [
+          {
+            "line": 26,
+            "text": "⏳ Mouvements en attente (",
+            "context": "Titre",
+            "suggestedKey": "logistics.mouvementsEnAttente"
+          },
+          {
+            "line": 75,
+            "text": "Refuser le mouvement",
+            "context": "Attribut title",
+            "suggestedKey": "logistics.refuserLeMouvement"
+          },
+          {
+            "line": 83,
+            "text": "✅ Valider",
+            "context": "Bouton",
+            "suggestedKey": "logistics.valider"
+          }
+        ]
+      },
+      {
+        "file": "src/components/OrdersManager.jsx",
+        "count": 36,
+        "items": [
+          {
+            "line": 64,
+            "text": "Image de l'article téléversée avec succès !",
+            "context": "Dialogue / Message (alert)",
+            "suggestedKey": "logistics.imageDeLArticleTeleversee"
+          },
+          {
+            "line": 67,
+            "text": "Erreur lors du téléversement de l'image de l'article.",
+            "context": "Dialogue / Message (alert)",
+            "suggestedKey": "logistics.erreurLorsDuTeleversementDe"
+          },
+          {
+            "line": 81,
+            "text": "Erreur lors de la sauvegarde des articles.",
+            "context": "Dialogue / Message (alert)",
+            "suggestedKey": "logistics.erreurLorsDeLaSauvegarde"
+          },
+          {
+            "line": 305,
+            "text": "Erreur lors du réapprovisionnement.",
+            "context": "Dialogue / Message (alert)",
+            "suggestedKey": "logistics.erreurLorsDuReapprovisionnement"
+          },
+          {
+            "line": 355,
+            "text": "Erreur lors de la suppression de la demande.",
+            "context": "Dialogue / Message (alert)",
+            "suggestedKey": "logistics.erreurLorsDeLaSuppression"
+          },
+          {
+            "line": 386,
+            "text": "Erreur lors de la suppression de la campagne.",
+            "context": "Dialogue / Message (alert)",
+            "suggestedKey": "logistics.erreurLorsDeLaSuppression"
+          },
+          {
+            "line": 517,
+            "text": "Aucune commande groupée en cours",
+            "context": "Attribut title",
+            "suggestedKey": "logistics.aucuneCommandeGroupeeEnCours"
+          },
+          {
+            "line": 553,
+            "text": "Supprimer cette campagne et toutes ses demandes",
+            "context": "Attribut title",
+            "suggestedKey": "logistics.supprimerCetteCampagneEtToutes"
+          },
+          {
+            "line": 600,
+            "text": "📦 Constructeur de Campagne (Gestion des Articles)",
+            "context": "Titre",
+            "suggestedKey": "logistics.constructeurDeCampagneGestionDes"
+          },
+          {
+            "line": 606,
+            "text": "Aucun article configuré dans cette campagne. Utilisez le formulaire ci-dessous pour en ajouter.",
+            "context": "Paragraphe",
+            "suggestedKey": "logistics.aucunArticleConfigureDansCette"
+          },
+          {
+            "line": 621,
+            "text": "Provenance :",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.provenance"
+          },
+          {
+            "line": 622,
+            "text": "• Tarif :",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.tarif"
+          },
+          {
+            "line": 633,
+            "text": "Modifier",
+            "context": "Bouton",
+            "suggestedKey": "logistics.modifier"
+          },
+          {
+            "line": 640,
+            "text": "Supprimer",
+            "context": "Bouton",
+            "suggestedKey": "logistics.supprimer"
+          },
+          {
+            "line": 658,
+            "text": "Nom de l'article",
+            "context": "Label de champ",
+            "suggestedKey": "logistics.nomDeLArticle"
+          },
+          {
+            "line": 664,
+            "text": "Ex : Baguettes, Housse...",
+            "context": "Attribut placeholder",
+            "suggestedKey": "logistics.exBaguettesHousse"
+          },
+          {
+            "line": 669,
+            "text": "Provenance (Fournisseur/URL)",
+            "context": "Label de champ",
+            "suggestedKey": "logistics.provenanceFournisseurUrl"
+          },
+          {
+            "line": 674,
+            "text": "Ex : Contemporanea, URL...",
+            "context": "Attribut placeholder",
+            "suggestedKey": "logistics.exContemporaneaUrl"
+          },
+          {
+            "line": 679,
+            "text": "Tarif (€, optionnel)",
+            "context": "Label de champ",
+            "suggestedKey": "logistics.tarifOptionnel"
+          },
+          {
+            "line": 686,
+            "text": "Ex : 25 (vide = libre)",
+            "context": "Attribut placeholder",
+            "suggestedKey": "logistics.ex25VideLibre"
+          },
+          {
+            "line": 694,
+            "text": "Lien de l'image (URL)",
+            "context": "Label de champ",
+            "suggestedKey": "logistics.lienDeLImageUrl"
+          },
+          {
+            "line": 699,
+            "text": "Ex : https://site.com/image.jpg",
+            "context": "Attribut placeholder",
+            "suggestedKey": "logistics.exHttpsSiteComImage"
+          },
+          {
+            "line": 704,
+            "text": "Ou téléverser une photo",
+            "context": "Label de champ",
+            "suggestedKey": "logistics.ouTeleverserUnePhoto"
+          },
+          {
+            "line": 717,
+            "text": "✓ Photo prête",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.photoPrete"
+          },
+          {
+            "line": 730,
+            "text": "Annuler",
+            "context": "Bouton",
+            "suggestedKey": "logistics.annuler"
+          },
+          {
+            "line": 838,
+            "text": "💡 Suggestion :",
+            "context": "Paragraphe",
+            "suggestedKey": "logistics.suggestion"
+          },
+          {
+            "line": 858,
+            "text": "📦 Réceptionner",
+            "context": "Bouton",
+            "suggestedKey": "logistics.receptionner"
+          },
+          {
+            "line": 876,
+            "text": "Annuler réception",
+            "context": "Bouton",
+            "suggestedKey": "logistics.annulerReception"
+          },
+          {
+            "line": 894,
+            "text": "Supprimer cette demande",
+            "context": "Attribut title",
+            "suggestedKey": "logistics.supprimerCetteDemande"
+          },
+          {
+            "line": 913,
+            "text": "📦 Réapprovisionnement Stock",
+            "context": "Titre",
+            "suggestedKey": "logistics.reapprovisionnementStock"
+          },
+          {
+            "line": 916,
+            "text": "L'article",
+            "context": "Paragraphe",
+            "suggestedKey": "logistics.lArticle"
+          },
+          {
+            "line": 917,
+            "text": "correspond à la fourniture",
+            "context": "Paragraphe",
+            "suggestedKey": "logistics.correspondALaFourniture"
+          },
+          {
+            "line": 920,
+            "text": "Voulez-vous ajouter",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.voulezVousAjouter"
+          },
+          {
+            "line": 921,
+            "text": "au stock ?",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.auStock"
+          },
+          {
+            "line": 928,
+            "text": "Non, ignorer",
+            "context": "Nœud JSX",
+            "suggestedKey": "logistics.nonIgnorer"
+          },
+          {
+            "line": 931,
+            "text": "Oui, réapprovisionner",
+            "context": "Nœud JSX",
+            "suggestedKey": "logistics.ouiReapprovisionner"
+          }
+        ]
+      },
+      {
+        "file": "src/components/orders/OrderPaymentControls.jsx",
+        "count": 12,
+        "items": [
+          {
+            "line": 37,
+            "text": "Veuillez saisir un montant facturé valide supérieur à 0 €.",
+            "context": "Dialogue / Message (alert)",
+            "suggestedKey": "logistics.veuillezSaisirUnMontantFacture"
+          },
+          {
+            "line": 103,
+            "text": "Veuillez saisir un montant facturé valide supérieur à 0 € avant d'enregistrer le paiement.",
+            "context": "Dialogue / Message (alert)",
+            "suggestedKey": "logistics.veuillezSaisirUnMontantFacture"
+          },
+          {
+            "line": 188,
+            "text": "🪙 Facturation & Virement :",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.facturationVirement"
+          },
+          {
+            "line": 194,
+            "text": "🟢 Réglé",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.regle"
+          },
+          {
+            "line": 198,
+            "text": "🟠 Virement attendu",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.virementAttendu"
+          },
+          {
+            "line": 202,
+            "text": "⚪ Non facturé",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.nonFacture"
+          },
+          {
+            "line": 211,
+            "text": "Montant :",
+            "context": "Label de champ",
+            "suggestedKey": "logistics.montant"
+          },
+          {
+            "line": 235,
+            "text": "Fixer le montant et envoyer un push FCM à l'adhérent",
+            "context": "Attribut title",
+            "suggestedKey": "logistics.fixerLeMontantEtEnvoyer"
+          },
+          {
+            "line": 236,
+            "text": "🔔 Notifier (",
+            "context": "Bouton",
+            "suggestedKey": "logistics.notifier"
+          },
+          {
+            "line": 245,
+            "text": "Valider la réception du virement et insérer la recette comptable",
+            "context": "Attribut title",
+            "suggestedKey": "logistics.validerLaReceptionDuVirement"
+          },
+          {
+            "line": 246,
+            "text": "✓ Marquer comme payé",
+            "context": "Bouton",
+            "suggestedKey": "logistics.marquerCommePaye"
+          },
+          {
+            "line": 253,
+            "text": "Payé le",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.payeLe"
+          }
+        ]
+      },
+      {
+        "file": "src/components/orders/MemberOrdersPaymentAlert.jsx",
+        "count": 9,
+        "items": [
+          {
+            "line": 79,
+            "text": "Erreur lors de la déclaration du virement.",
+            "context": "Dialogue / Message (alert)",
+            "suggestedKey": "logistics.erreurLorsDeLaDeclaration"
+          },
+          {
+            "line": 104,
+            "text": "Règlement attendu : Commande de matériel",
+            "context": "Titre",
+            "suggestedKey": "logistics.reglementAttenduCommandeDeMateriel"
+          },
+          {
+            "line": 107,
+            "text": "Vous devez régler",
+            "context": "Paragraphe",
+            "suggestedKey": "logistics.vousDevezRegler"
+          },
+          {
+            "line": 108,
+            "text": "pour",
+            "context": "Paragraphe",
+            "suggestedKey": "logistics.pour"
+          },
+          {
+            "line": 114,
+            "text": "🟠 En attente de virement",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.enAttenteDeVirement"
+          },
+          {
+            "line": 122,
+            "text": "💡 Libellé requis :",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.libelleRequis"
+          },
+          {
+            "line": 145,
+            "text": "Virement déclaré — En attente de pointage trésorier",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.virementDeclareEnAttenteDe"
+          },
+          {
+            "line": 166,
+            "text": "Commandes groupées réglées (",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.commandesGroupeesReglees"
+          },
+          {
+            "line": 185,
+            "text": "🟢 Réglé le",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.regleLe"
+          }
+        ]
+      },
+      {
+        "file": "src/components/association-settings/blocks/AccessoriesKitsBlock.jsx",
+        "count": 14,
+        "items": [
+          {
+            "line": 71,
+            "text": "Erreur lors de la sauvegarde automatique du kit.",
+            "context": "Dialogue / Message (alert)",
+            "suggestedKey": "logistics.erreurLorsDeLaSauvegarde"
+          },
+          {
+            "line": 160,
+            "text": "Kits d'Accessoires (Logistique)",
+            "context": "Titre",
+            "suggestedKey": "logistics.kitsDAccessoiresLogistique"
+          },
+          {
+            "line": 161,
+            "text": "Sauvegarde auto...",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.sauvegardeAuto"
+          },
+          {
+            "line": 163,
+            "text": "Associez des fournitures (ex: Housses, Sangles, Baguettes) à un type d'instrument (Pupitre). Lors de l'assignation du kit complet sur un instrument, le stock de chaque fourniture sera automatiquement décrémenté.",
+            "context": "Paragraphe",
+            "suggestedKey": "logistics.associezDesFournituresExHousses"
+          },
+          {
+            "line": 180,
+            "text": "Éditer ce kit",
+            "context": "Attribut title",
+            "suggestedKey": "logistics.editerCeKit"
+          },
+          {
+            "line": 189,
+            "text": "Retirer ce kit",
+            "context": "Attribut title",
+            "suggestedKey": "logistics.retirerCeKit"
+          },
+          {
+            "line": 209,
+            "text": "Aucun kit d'accessoires configuré.",
+            "context": "Nœud JSX",
+            "suggestedKey": "logistics.aucunKitDAccessoiresConfigure"
+          },
+          {
+            "line": 216,
+            "text": "Pupitre / Instrument Principal",
+            "context": "Label de champ",
+            "suggestedKey": "logistics.pupitreInstrumentPrincipal"
+          },
+          {
+            "line": 225,
+            "text": "-- Choisir un instrument --",
+            "context": "Option select",
+            "suggestedKey": "logistics.choisirUnInstrument"
+          },
+          {
+            "line": 233,
+            "text": "Sélectionnez les fournitures du kit",
+            "context": "Label de champ",
+            "suggestedKey": "logistics.selectionnezLesFournituresDuKit"
+          },
+          {
+            "line": 253,
+            "text": "🔍 Rechercher...",
+            "context": "Attribut placeholder",
+            "suggestedKey": "logistics.rechercher"
+          },
+          {
+            "line": 261,
+            "text": "Aucune fourniture trouvée.",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.aucuneFournitureTrouvee"
+          },
+          {
+            "line": 282,
+            "text": "en stock)",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.enStock"
+          },
+          {
+            "line": 297,
+            "text": "Annuler",
+            "context": "Bouton",
+            "suggestedKey": "logistics.annuler"
+          }
+        ]
+      },
+      {
+        "file": "src/components/profile/UserMateriel.jsx",
+        "count": 40,
+        "items": [
+          {
+            "line": 114,
+            "text": "Veuillez sélectionner un membre pour le transfert.",
+            "context": "Dialogue / Message (alert)",
+            "suggestedKey": "logistics.veuillezSelectionnerUnMembrePour"
+          },
+          {
+            "line": 154,
+            "text": "Erreur lors de l'envoi de la déclaration.",
+            "context": "Dialogue / Message (alert)",
+            "suggestedKey": "logistics.erreurLorsDeLEnvoi"
+          },
+          {
+            "line": 225,
+            "text": "Erreur lors du signalement de casse.",
+            "context": "Dialogue / Message (alert)",
+            "suggestedKey": "logistics.erreurLorsDuSignalementDe"
+          },
+          {
+            "line": 241,
+            "text": "Détail des pièces (Nomenclature) :",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.detailDesPiecesNomenclature"
+          },
+          {
+            "line": 246,
+            "text": "En réparation",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.enReparation"
+          },
+          {
+            "line": 248,
+            "text": "OK",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.ok"
+          },
+          {
+            "line": 277,
+            "text": "⏳ Chargement de votre matériel...",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.chargementDeVotreMateriel"
+          },
+          {
+            "line": 331,
+            "text": "Stock Association",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.stockAssociation"
+          },
+          {
+            "line": 341,
+            "text": "Kit :",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.kit"
+          },
+          {
+            "line": 355,
+            "text": "⚠️ Signaler une casse",
+            "context": "Bouton",
+            "suggestedKey": "logistics.signalerUneCasse"
+          },
+          {
+            "line": 360,
+            "text": "⏳ En attente de validation logistique",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.enAttenteDeValidationLogistique"
+          },
+          {
+            "line": 367,
+            "text": "🔄 Déclarer un mouvement",
+            "context": "Bouton",
+            "suggestedKey": "logistics.declarerUnMouvement"
+          },
+          {
+            "line": 396,
+            "text": "Au Local",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.auLocal"
+          },
+          {
+            "line": 425,
+            "text": "🔄 Déclarer un mouvement",
+            "context": "Titre",
+            "suggestedKey": "logistics.declarerUnMouvement"
+          },
+          {
+            "line": 429,
+            "text": "Instrument :",
+            "context": "Nœud JSX",
+            "suggestedKey": "logistics.instrument"
+          },
+          {
+            "line": 435,
+            "text": "Attention :",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.attention"
+          },
+          {
+            "line": 435,
+            "text": "Vous vous apprêtez à transférer cet instrument avec son kit complet :",
+            "context": "Nœud JSX",
+            "suggestedKey": "logistics.vousVousAppretezATransferer"
+          },
+          {
+            "line": 441,
+            "text": "Type de mouvement",
+            "context": "Label de champ",
+            "suggestedKey": "logistics.typeDeMouvement"
+          },
+          {
+            "line": 450,
+            "text": "J'ai rendu cet instrument au local",
+            "context": "Option select",
+            "suggestedKey": "logistics.jAiRenduCetInstrument"
+          },
+          {
+            "line": 451,
+            "text": "Je l'ai transmis à un autre membre",
+            "context": "Option select",
+            "suggestedKey": "logistics.jeLAiTransmisA"
+          },
+          {
+            "line": 457,
+            "text": "Membre cible",
+            "context": "Label de champ",
+            "suggestedKey": "logistics.membreCible"
+          },
+          {
+            "line": 467,
+            "text": "-- Choisir un membre --",
+            "context": "Option select",
+            "suggestedKey": "logistics.choisirUnMembre"
+          },
+          {
+            "line": 476,
+            "text": "Observations (Optionnel)",
+            "context": "Label de champ",
+            "suggestedKey": "logistics.observationsOptionnel"
+          },
+          {
+            "line": 482,
+            "text": "Ex: Il manque une baguette, la fermeture de la housse est coincée...",
+            "context": "Attribut placeholder",
+            "suggestedKey": "logistics.exIlManqueUneBaguette"
+          },
+          {
+            "line": 489,
+            "text": "Annuler",
+            "context": "Nœud JSX",
+            "suggestedKey": "logistics.annuler"
+          },
+          {
+            "line": 517,
+            "text": "Signaler une casse",
+            "context": "Titre",
+            "suggestedKey": "logistics.signalerUneCasse"
+          },
+          {
+            "line": 521,
+            "text": "Sur l'instrument",
+            "context": "Paragraphe",
+            "suggestedKey": "logistics.surLInstrument"
+          },
+          {
+            "line": 527,
+            "text": "Que souhaitez-vous signaler ?",
+            "context": "Label de champ",
+            "suggestedKey": "logistics.queSouhaitezVousSignaler"
+          },
+          {
+            "line": 534,
+            "text": "L'instrument entier / Je ne sais pas",
+            "context": "Option select",
+            "suggestedKey": "logistics.lInstrumentEntierJeNe"
+          },
+          {
+            "line": 538,
+            "text": "(En stock)",
+            "context": "Option select",
+            "suggestedKey": "logistics.enStock"
+          },
+          {
+            "line": 544,
+            "text": "(Modèle)",
+            "context": "Option select",
+            "suggestedKey": "logistics.modele"
+          },
+          {
+            "line": 564,
+            "text": "Bonne nouvelle :",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.bonneNouvelle"
+          },
+          {
+            "line": 564,
+            "text": "L'atelier dispose de",
+            "context": "Nœud JSX",
+            "suggestedKey": "logistics.lAtelierDisposeDe"
+          },
+          {
+            "line": 564,
+            "text": "pièce(s) de type \"",
+            "context": "Nœud JSX",
+            "suggestedKey": "logistics.pieceSDeType"
+          },
+          {
+            "line": 564,
+            "text": "\" en stock pour un remplacement éventuel.",
+            "context": "Nœud JSX",
+            "suggestedKey": "logistics.enStockPourUnRemplacement"
+          },
+          {
+            "line": 570,
+            "text": "Information :",
+            "context": "Span / Badge",
+            "suggestedKey": "logistics.information"
+          },
+          {
+            "line": 570,
+            "text": "L'atelier n'a actuellement aucune pièce de type \"",
+            "context": "Nœud JSX",
+            "suggestedKey": "logistics.lAtelierNAActuellement"
+          },
+          {
+            "line": 570,
+            "text": "\" en stock. Le responsable logistique sera notifié.",
+            "context": "Nœud JSX",
+            "suggestedKey": "logistics.enStockLeResponsableLogistique"
+          },
+          {
+            "line": 580,
+            "text": "Description du problème",
+            "context": "Label de champ",
+            "suggestedKey": "logistics.descriptionDuProbleme"
+          },
+          {
+            "line": 585,
+            "text": "Expliquez ce qui est cassé ou défectueux...",
+            "context": "Attribut placeholder",
+            "suggestedKey": "logistics.expliquezCeQuiEstCasse"
+          }
+        ]
+      }
+    ]
+  },
+  "lutherie": {
+    "name": "Pôle Lutherie & Artisanat Instrumental",
+    "namespace": "lutherie",
+    "totalStrings": 300,
+    "cleanFiles": [],
+    "dirtyFiles": [
+      {
+        "file": "src/components/inventory/InventoryProjectsView.jsx",
+        "count": 55,
+        "items": [
+          {
+            "line": 332,
+            "text": "Une erreur est survenue lors de la clôture du chantier.",
+            "context": "Dialogue / Message (alert)",
+            "suggestedKey": "lutherie.uneErreurEstSurvenueLors"
+          },
+          {
+            "line": 337,
+            "text": "Chargement de l'atelier...",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.chargementDeLAtelier"
+          },
+          {
+            "line": 348,
+            "text": "Modèle introuvable. Il a peut-être été supprimé.",
+            "context": "Paragraphe",
+            "suggestedKey": "lutherie.modeleIntrouvableIlAPeut"
+          },
+          {
+            "line": 349,
+            "text": "Retour",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.retour"
+          },
+          {
+            "line": 491,
+            "text": "Projet :",
+            "context": "Titre",
+            "suggestedKey": "lutherie.projet"
+          },
+          {
+            "line": 492,
+            "text": "Modèle :",
+            "context": "Paragraphe",
+            "suggestedKey": "lutherie.modele"
+          },
+          {
+            "line": 497,
+            "text": "👤 Artisan :",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.artisan"
+          },
+          {
+            "line": 509,
+            "text": "-- Projet collectif (Atelier) --",
+            "context": "Option select",
+            "suggestedKey": "lutherie.projetCollectifAtelier"
+          },
+          {
+            "line": 518,
+            "text": "Fermer le projet",
+            "context": "Bouton",
+            "suggestedKey": "lutherie.fermerLeProjet"
+          },
+          {
+            "line": 530,
+            "text": "Pièces & Phases requises",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.piecesPhasesRequises"
+          },
+          {
+            "line": 532,
+            "text": "validée",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.validee"
+          },
+          {
+            "line": 539,
+            "text": "🖼️ Schéma",
+            "context": "Bouton",
+            "suggestedKey": "lutherie.schema"
+          },
+          {
+            "line": 545,
+            "text": "📋 Liste",
+            "context": "Bouton",
+            "suggestedKey": "lutherie.liste"
+          },
+          {
+            "line": 600,
+            "text": "🥁 Clôturer l'assemblage & Baptiser l'instrument",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.cloturerLAssemblageBaptiserL"
+          },
+          {
+            "line": 615,
+            "text": "Mallette de la séance (",
+            "context": "Titre",
+            "suggestedKey": "lutherie.malletteDeLaSeance"
+          },
+          {
+            "line": 615,
+            "text": "phase",
+            "context": "Titre",
+            "suggestedKey": "lutherie.phase"
+          },
+          {
+            "line": 620,
+            "text": "Vider la mallette de séance",
+            "context": "Attribut title",
+            "suggestedKey": "lutherie.viderLaMalletteDeSeance"
+          },
+          {
+            "line": 621,
+            "text": "Vider",
+            "context": "Bouton",
+            "suggestedKey": "lutherie.vider"
+          },
+          {
+            "line": 630,
+            "text": "🛠️ Outils à emporter (",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.outilsAEmporter"
+          },
+          {
+            "line": 654,
+            "text": "Emplacement / Atelier de l'outil",
+            "context": "Attribut title",
+            "suggestedKey": "lutherie.emplacementAtelierDeLOutil"
+          },
+          {
+            "line": 660,
+            "text": "Non inventorié",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.nonInventorie"
+          },
+          {
+            "line": 669,
+            "text": "Aucun outil requis pour les phases sélectionnées",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.aucunOutilRequisPourLes"
+          },
+          {
+            "line": 676,
+            "text": "📦 Matériaux & Fournitures (",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.materiauxFournitures"
+          },
+          {
+            "line": 700,
+            "text": "Non répertorié",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.nonRepertorie"
+          },
+          {
+            "line": 709,
+            "text": "Aucun matériau requis pour les phases sélectionnées",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.aucunMateriauRequisPourLes"
+          },
+          {
+            "line": 721,
+            "text": "Programmer cet atelier sur l'Agenda",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.programmerCetAtelierSurL"
+          },
+          {
+            "line": 730,
+            "text": "Mallette de la séance d'atelier",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.malletteDeLaSeanceD"
+          },
+          {
+            "line": 732,
+            "text": "Cliquez sur le bouton",
+            "context": "Paragraphe",
+            "suggestedKey": "lutherie.cliquezSurLeBouton"
+          },
+          {
+            "line": 733,
+            "text": "\"+ Mallette séance\"",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.malletteSeance"
+          },
+          {
+            "line": 733,
+            "text": "à côté d'une ou plusieurs phases pour préparer la liste des outils et matériaux à emporter pour votre atelier.",
+            "context": "Paragraphe",
+            "suggestedKey": "lutherie.aCoteDUneOu"
+          },
+          {
+            "line": 740,
+            "text": "Feuille de route",
+            "context": "Titre",
+            "suggestedKey": "lutherie.feuilleDeRoute"
+          },
+          {
+            "line": 742,
+            "text": "Liste consolidée pour les",
+            "context": "Paragraphe",
+            "suggestedKey": "lutherie.listeConsolideePourLes"
+          },
+          {
+            "line": 743,
+            "text": "pièces restant à fabriquer",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.piecesRestantAFabriquer"
+          },
+          {
+            "line": 748,
+            "text": "🛒 Matériaux & Fournitures",
+            "context": "Titre",
+            "suggestedKey": "lutherie.materiauxFournitures"
+          },
+          {
+            "line": 749,
+            "text": "Aucun",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.aucun"
+          },
+          {
+            "line": 768,
+            "text": "Non répertorié",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.nonRepertorie"
+          },
+          {
+            "line": 780,
+            "text": "🧰 Outils à préparer",
+            "context": "Titre",
+            "suggestedKey": "lutherie.outilsAPreparer"
+          },
+          {
+            "line": 781,
+            "text": "Aucun",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.aucun"
+          },
+          {
+            "line": 798,
+            "text": "Emplacement / Atelier de l'outil",
+            "context": "Attribut title",
+            "suggestedKey": "lutherie.emplacementAtelierDeLOutil"
+          },
+          {
+            "line": 804,
+            "text": "Non répertorié",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.nonRepertorie"
+          },
+          {
+            "line": 877,
+            "text": "🛠️ L'Atelier (Projets en cours)",
+            "context": "Titre",
+            "suggestedKey": "lutherie.lAtelierProjetsEnCours"
+          },
+          {
+            "line": 880,
+            "text": "Assemblez des pièces pour créer de nouveaux instruments.",
+            "context": "Paragraphe",
+            "suggestedKey": "lutherie.assemblezDesPiecesPourCreer"
+          },
+          {
+            "line": 888,
+            "text": "+ Démarrer un projet",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.demarrerUnProjet"
+          },
+          {
+            "line": 896,
+            "text": "Nouveau projet d'assemblage",
+            "context": "Titre",
+            "suggestedKey": "lutherie.nouveauProjetDAssemblage"
+          },
+          {
+            "line": 900,
+            "text": "Nom de l'instrument (ex: Alfaia N°12)",
+            "context": "Attribut placeholder",
+            "suggestedKey": "lutherie.nomDeLInstrumentEx"
+          },
+          {
+            "line": 912,
+            "text": "-- Choisir un Modèle du Varal --",
+            "context": "Option select",
+            "suggestedKey": "lutherie.choisirUnModeleDuVaral"
+          },
+          {
+            "line": 922,
+            "text": "-- Artisan : Projet collectif (Atelier) --",
+            "context": "Option select",
+            "suggestedKey": "lutherie.artisanProjetCollectifAtelier"
+          },
+          {
+            "line": 930,
+            "text": "Annuler",
+            "context": "Bouton",
+            "suggestedKey": "lutherie.annuler"
+          },
+          {
+            "line": 931,
+            "text": "Créer",
+            "context": "Bouton",
+            "suggestedKey": "lutherie.creer"
+          },
+          {
+            "line": 939,
+            "text": "Aucun projet en cours dans l'atelier.",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.aucunProjetEnCoursDans"
+          },
+          {
+            "line": 955,
+            "text": "Modèle :",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.modele"
+          },
+          {
+            "line": 968,
+            "text": "Progression assemblage",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.progressionAssemblage"
+          },
+          {
+            "line": 969,
+            "text": "pièces",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.pieces"
+          },
+          {
+            "line": 983,
+            "text": "Ouvrir l'établi",
+            "context": "Bouton",
+            "suggestedKey": "lutherie.ouvrirLEtabli"
+          },
+          {
+            "line": 989,
+            "text": "Annuler",
+            "context": "Bouton",
+            "suggestedKey": "lutherie.annuler"
+          }
+        ]
+      },
+      {
+        "file": "src/components/inventory/AssemblySlotItem.jsx",
+        "count": 14,
+        "items": [
+          {
+            "line": 165,
+            "text": "Ouvrir le tutoriel complet dans le Varal",
+            "context": "Attribut title",
+            "suggestedKey": "lutherie.ouvrirLeTutorielCompletDans"
+          },
+          {
+            "line": 167,
+            "text": "Voir le tutoriel (",
+            "context": "Bouton",
+            "suggestedKey": "lutherie.voirLeTutoriel"
+          },
+          {
+            "line": 167,
+            "text": "étapes)",
+            "context": "Bouton",
+            "suggestedKey": "lutherie.etapes"
+          },
+          {
+            "line": 187,
+            "text": "Assigné :",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.assigne"
+          },
+          {
+            "line": 194,
+            "text": "Désassigner cette pièce du projet",
+            "context": "Attribut title",
+            "suggestedKey": "lutherie.desassignerCettePieceDuProjet"
+          },
+          {
+            "line": 195,
+            "text": "Retirer",
+            "context": "Bouton",
+            "suggestedKey": "lutherie.retirer"
+          },
+          {
+            "line": 209,
+            "text": "Continuer :",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.continuer"
+          },
+          {
+            "line": 217,
+            "text": "-- Piocher dans le stock (",
+            "context": "Option select",
+            "suggestedKey": "lutherie.piocherDansLeStock"
+          },
+          {
+            "line": 219,
+            "text": "⭐ Continuer :",
+            "context": "Option select",
+            "suggestedKey": "lutherie.continuer"
+          },
+          {
+            "line": 220,
+            "text": "(pièce du projet)",
+            "context": "Option select",
+            "suggestedKey": "lutherie.pieceDuProjet"
+          },
+          {
+            "line": 240,
+            "text": "Continuer :",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.continuer"
+          },
+          {
+            "line": 243,
+            "text": "⏳ En attente de fourniture",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.enAttenteDeFourniture"
+          },
+          {
+            "line": 285,
+            "text": "Progression de fabrication",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.progressionDeFabrication"
+          },
+          {
+            "line": 365,
+            "text": "Ouvrir la fiche tutoriel complète",
+            "context": "Bouton",
+            "suggestedKey": "lutherie.ouvrirLaFicheTutorielComplete"
+          }
+        ]
+      },
+      {
+        "file": "src/components/inventory/InstrumentBaptismModal.jsx",
+        "count": 14,
+        "items": [
+          {
+            "line": 21,
+            "text": "Le nom ou numéro d'inventaire est requis.",
+            "context": "Dialogue / Message (alert)",
+            "suggestedKey": "lutherie.leNomOuNumeroD"
+          },
+          {
+            "line": 34,
+            "text": "Baptême de l'Instrument",
+            "context": "Titre",
+            "suggestedKey": "lutherie.baptemeDeLInstrument"
+          },
+          {
+            "line": 36,
+            "text": "Finalisez l'assemblage et intégrez l'instrument au parc officiel.",
+            "context": "Paragraphe",
+            "suggestedKey": "lutherie.finalisezLAssemblageEtIntegrez"
+          },
+          {
+            "line": 45,
+            "text": "Modèle (Lecture seule)",
+            "context": "Label de champ",
+            "suggestedKey": "lutherie.modeleLectureSeule"
+          },
+          {
+            "line": 55,
+            "text": "Nom / N° d'inventaire *",
+            "context": "Label de champ",
+            "suggestedKey": "lutherie.nomNDInventaire"
+          },
+          {
+            "line": 63,
+            "text": "ex. Alfaia #6 — La Roazhon",
+            "context": "Attribut placeholder",
+            "suggestedKey": "lutherie.exAlfaia6LaRoazhon"
+          },
+          {
+            "line": 69,
+            "text": "Localisation Physique",
+            "context": "Label de champ",
+            "suggestedKey": "lutherie.localisationPhysique"
+          },
+          {
+            "line": 76,
+            "text": "ex. Local, Camion, chez un membre...",
+            "context": "Attribut placeholder",
+            "suggestedKey": "lutherie.exLocalCamionChezUn"
+          },
+          {
+            "line": 81,
+            "text": "Propriétaire",
+            "context": "Label de champ",
+            "suggestedKey": "lutherie.proprietaire"
+          },
+          {
+            "line": 88,
+            "text": "Association ou nom d'un membre",
+            "context": "Attribut placeholder",
+            "suggestedKey": "lutherie.associationOuNomDUn"
+          },
+          {
+            "line": 93,
+            "text": "Kit d'accessoires initial",
+            "context": "Label de champ",
+            "suggestedKey": "lutherie.kitDAccessoiresInitial"
+          },
+          {
+            "line": 99,
+            "text": "Sangle, housse, mailloches...",
+            "context": "Attribut placeholder",
+            "suggestedKey": "lutherie.sangleHousseMailloches"
+          },
+          {
+            "line": 104,
+            "text": "Annuler",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.annuler"
+          },
+          {
+            "line": 107,
+            "text": "Créer l'instrument",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.creerLInstrument"
+          }
+        ]
+      },
+      {
+        "file": "src/components/inventory/ImportModelWizardModal.jsx",
+        "count": 21,
+        "items": [
+          {
+            "line": 208,
+            "text": "pièces répertoriées",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.piecesRepertoriees"
+          },
+          {
+            "line": 209,
+            "text": "images embarquées dans l'archive",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.imagesEmbarqueesDansLArchive"
+          },
+          {
+            "line": 210,
+            "text": "• Format détecté :",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.formatDetecte"
+          },
+          {
+            "line": 215,
+            "text": "Suivant ➔",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.suivant"
+          },
+          {
+            "line": 224,
+            "text": "Le modèle requiert ces matières premières. Si elles manquent dans votre association, vous pouvez les créer automatiquement avec un stock à zéro.",
+            "context": "Paragraphe",
+            "suggestedKey": "lutherie.leModeleRequiertCesMatieres"
+          },
+          {
+            "line": 230,
+            "text": "Aucune fourniture déclarée ou format legacy.",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.aucuneFournitureDeclareeOuFormat"
+          },
+          {
+            "line": 241,
+            "text": "✅ En stock",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.enStock"
+          },
+          {
+            "line": 251,
+            "text": "Créer la fiche",
+            "context": "Label de champ",
+            "suggestedKey": "lutherie.creerLaFiche"
+          },
+          {
+            "line": 262,
+            "text": "⬅ Retour",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.retour"
+          },
+          {
+            "line": 263,
+            "text": "Suivant ➔",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.suivant"
+          },
+          {
+            "line": 273,
+            "text": "Même principe pour l'outillage requis (marteaux, scies...).",
+            "context": "Paragraphe",
+            "suggestedKey": "lutherie.memePrincipePourLOutillage"
+          },
+          {
+            "line": 279,
+            "text": "Aucun outil déclaré ou format legacy.",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.aucunOutilDeclareOuFormat"
+          },
+          {
+            "line": 290,
+            "text": "✅ Disponible",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.disponible"
+          },
+          {
+            "line": 300,
+            "text": "Créer l'outil",
+            "context": "Label de champ",
+            "suggestedKey": "lutherie.creerLOutil"
+          },
+          {
+            "line": 311,
+            "text": "⬅ Retour",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.retour"
+          },
+          {
+            "line": 312,
+            "text": "🚀 Importer le modèle",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.importerLeModele"
+          },
+          {
+            "line": 333,
+            "text": "📦 Assistant d'Importation",
+            "context": "Titre",
+            "suggestedKey": "lutherie.assistantDImportation"
+          },
+          {
+            "line": 340,
+            "text": "1. Inspection",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.1Inspection"
+          },
+          {
+            "line": 342,
+            "text": "2. Fournitures",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.2Fournitures"
+          },
+          {
+            "line": 344,
+            "text": "3. Outillage",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.3Outillage"
+          },
+          {
+            "line": 349,
+            "text": "Lecture de l'archive...",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.lectureDeLArchive"
+          }
+        ]
+      },
+      {
+        "file": "src/components/varal/InstrumentModelsManager.jsx",
+        "count": 15,
+        "items": [
+          {
+            "line": 32,
+            "text": "Erreur lors de la sauvegarde du modèle.",
+            "context": "Dialogue / Message (alert)",
+            "suggestedKey": "lutherie.erreurLorsDeLaSauvegarde"
+          },
+          {
+            "line": 48,
+            "text": "Erreur lors de la suppression.",
+            "context": "Dialogue / Message (alert)",
+            "suggestedKey": "lutherie.erreurLorsDeLaSuppression"
+          },
+          {
+            "line": 75,
+            "text": "🎉 Félicitations ! Votre partage a rapporté 25 Points d'Axé à votre association.",
+            "context": "Dialogue / Message (alert)",
+            "suggestedKey": "lutherie.felicitationsVotrePartageARapporte"
+          },
+          {
+            "line": 82,
+            "text": "Erreur lors de la modification de l'état public.",
+            "context": "Dialogue / Message (alert)",
+            "suggestedKey": "lutherie.erreurLorsDeLaModification"
+          },
+          {
+            "line": 92,
+            "text": "Une erreur est survenue lors de la création du bundle.",
+            "context": "Dialogue / Message (alert)",
+            "suggestedKey": "lutherie.uneErreurEstSurvenueLors"
+          },
+          {
+            "line": 111,
+            "text": "Chargement des modèles...",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.chargementDesModeles"
+          },
+          {
+            "line": 115,
+            "text": "Accès non autorisé à cette section.",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.accesNonAutoriseACette"
+          },
+          {
+            "line": 136,
+            "text": "Modèles d'Instruments & Tutos",
+            "context": "Titre",
+            "suggestedKey": "lutherie.modelesDInstrumentsTutos"
+          },
+          {
+            "line": 139,
+            "text": "📥 Importer Master Bundle",
+            "context": "Label de champ",
+            "suggestedKey": "lutherie.importerMasterBundle"
+          },
+          {
+            "line": 147,
+            "text": "+ Créer un Modèle",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.creerUnModele"
+          },
+          {
+            "line": 153,
+            "text": "Gérez ici la \"recette\" de fabrication de vos instruments (les pièces requises, le matériel, les outils) et créez les chapitres du Varal associés à chaque pièce.",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.gerezIciLaRecetteDe"
+          },
+          {
+            "line": 159,
+            "text": "Aucun modèle d'instrument défini pour le moment.",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.aucunModeleDInstrumentDefini"
+          },
+          {
+            "line": 179,
+            "text": "Pièces à fabriquer",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.piecesAFabriquer"
+          },
+          {
+            "line": 193,
+            "text": "Éditer",
+            "context": "Bouton",
+            "suggestedKey": "lutherie.editer"
+          },
+          {
+            "line": 199,
+            "text": "Supprimer",
+            "context": "Bouton",
+            "suggestedKey": "lutherie.supprimer"
+          }
+        ]
+      },
+      {
+        "file": "src/components/inventory/InventoryPartsView.jsx",
+        "count": 66,
+        "items": [
+          {
+            "line": 98,
+            "text": "currentStepIndex",
+            "context": "Configuration statique (propriété name)",
+            "suggestedKey": "lutherie.currentstepindex"
+          },
+          {
+            "line": 101,
+            "text": "statutEtape",
+            "context": "Configuration statique (propriété name)",
+            "suggestedKey": "lutherie.statutetape"
+          },
+          {
+            "line": 103,
+            "text": "statutEtape",
+            "context": "Configuration statique (propriété name)",
+            "suggestedKey": "lutherie.statutetape"
+          },
+          {
+            "line": 122,
+            "text": "partId",
+            "context": "Configuration statique (propriété name)",
+            "suggestedKey": "lutherie.partid"
+          },
+          {
+            "line": 123,
+            "text": "typePiece",
+            "context": "Configuration statique (propriété name)",
+            "suggestedKey": "lutherie.typepiece"
+          },
+          {
+            "line": 125,
+            "text": "nom",
+            "context": "Configuration statique (propriété name)",
+            "suggestedKey": "lutherie.nom"
+          },
+          {
+            "line": 128,
+            "text": "partId",
+            "context": "Configuration statique (propriété name)",
+            "suggestedKey": "lutherie.partid"
+          },
+          {
+            "line": 139,
+            "text": "partId",
+            "context": "Configuration statique (propriété name)",
+            "suggestedKey": "lutherie.partid"
+          },
+          {
+            "line": 140,
+            "text": "typePiece",
+            "context": "Configuration statique (propriété name)",
+            "suggestedKey": "lutherie.typepiece"
+          },
+          {
+            "line": 143,
+            "text": "partId",
+            "context": "Configuration statique (propriété name)",
+            "suggestedKey": "lutherie.partid"
+          },
+          {
+            "line": 146,
+            "text": "typePiece",
+            "context": "Configuration statique (propriété name)",
+            "suggestedKey": "lutherie.typepiece"
+          },
+          {
+            "line": 148,
+            "text": "nom",
+            "context": "Configuration statique (propriété name)",
+            "suggestedKey": "lutherie.nom"
+          },
+          {
+            "line": 173,
+            "text": "Affectation actuelle",
+            "context": "Label de champ",
+            "suggestedKey": "lutherie.affectationActuelle"
+          },
+          {
+            "line": 178,
+            "text": "Information en lecture seule",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.informationEnLectureSeule"
+          },
+          {
+            "line": 186,
+            "text": "⚡ Lot de",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.lotDe"
+          },
+          {
+            "line": 187,
+            "text": "pièces groupées",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.piecesGroupees"
+          },
+          {
+            "line": 189,
+            "text": "Cette référence compte",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.cetteReferenceCompte"
+          },
+          {
+            "line": 190,
+            "text": "unités groupées. Vous pouvez la scinder pour créer",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.unitesGroupeesVousPouvezLa"
+          },
+          {
+            "line": 190,
+            "text": "pièces distinctes et les affecter chacune à un projet différent.",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.piecesDistinctesEtLesAffecter"
+          },
+          {
+            "line": 204,
+            "text": "⚡ Scinder en",
+            "context": "Bouton",
+            "suggestedKey": "lutherie.scinderEn"
+          },
+          {
+            "line": 205,
+            "text": "pièces",
+            "context": "Bouton",
+            "suggestedKey": "lutherie.pieces"
+          },
+          {
+            "line": 212,
+            "text": "Nom / Référence de la pièce",
+            "context": "Label de champ",
+            "suggestedKey": "lutherie.nomReferenceDeLaPiece"
+          },
+          {
+            "line": 221,
+            "text": "Ex: Calebasse Agbê ou Fût Alfaia",
+            "context": "Attribut placeholder",
+            "suggestedKey": "lutherie.exCalebasseAgbeOuFut"
+          },
+          {
+            "line": 229,
+            "text": "Modèle d'instrument (Ref)",
+            "context": "Label de champ",
+            "suggestedKey": "lutherie.modeleDInstrumentRef"
+          },
+          {
+            "line": 239,
+            "text": "-- Indépendant / Aucun modèle --",
+            "context": "Option select",
+            "suggestedKey": "lutherie.independantAucunModele"
+          },
+          {
+            "line": 252,
+            "text": "Pièce du modèle (",
+            "context": "Label de champ",
+            "suggestedKey": "lutherie.pieceDuModele"
+          },
+          {
+            "line": 262,
+            "text": "-- Sélectionnez une pièce du modèle --",
+            "context": "Option select",
+            "suggestedKey": "lutherie.selectionnezUnePieceDuModele"
+          },
+          {
+            "line": 268,
+            "text": "+ Autre / Saisie personnalisée...",
+            "context": "Option select",
+            "suggestedKey": "lutherie.autreSaisiePersonnalisee"
+          },
+          {
+            "line": 274,
+            "text": "Catégorie / Type de pièce",
+            "context": "Label de champ",
+            "suggestedKey": "lutherie.categorieTypeDePiece"
+          },
+          {
+            "line": 284,
+            "text": "partId",
+            "context": "Configuration statique (propriété name)",
+            "suggestedKey": "lutherie.partid"
+          },
+          {
+            "line": 285,
+            "text": "typePiece",
+            "context": "Configuration statique (propriété name)",
+            "suggestedKey": "lutherie.typepiece"
+          },
+          {
+            "line": 289,
+            "text": "↺ Choisir dans le modèle",
+            "context": "Bouton",
+            "suggestedKey": "lutherie.choisirDansLeModele"
+          },
+          {
+            "line": 310,
+            "text": "État",
+            "context": "Label de champ",
+            "suggestedKey": "lutherie.etat"
+          },
+          {
+            "line": 326,
+            "text": "Quantité",
+            "context": "Label de champ",
+            "suggestedKey": "lutherie.quantite"
+          },
+          {
+            "line": 331,
+            "text": "pièces distinctes (#1 à #",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.piecesDistinctes1A"
+          },
+          {
+            "line": 346,
+            "text": "Chaque pièce sera créée de façon autonome et numérotée pour être affectée individuellement à un projet.",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.chaquePieceSeraCreeeDe"
+          },
+          {
+            "line": 357,
+            "text": "Étape de fabrication",
+            "context": "Label de champ",
+            "suggestedKey": "lutherie.etapeDeFabrication"
+          },
+          {
+            "line": 379,
+            "text": "Étape",
+            "context": "Option select",
+            "suggestedKey": "lutherie.etape"
+          },
+          {
+            "line": 383,
+            "text": "✅ Prête / Terminée (Toutes étapes validées)",
+            "context": "Option select",
+            "suggestedKey": "lutherie.preteTermineeToutesEtapesValidees"
+          },
+          {
+            "line": 392,
+            "text": "Étape",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.etape"
+          },
+          {
+            "line": 420,
+            "text": "Index d'usinage (ex: 0)",
+            "context": "Attribut placeholder",
+            "suggestedKey": "lutherie.indexDUsinageEx0"
+          },
+          {
+            "line": 427,
+            "text": "Statut",
+            "context": "Label de champ",
+            "suggestedKey": "lutherie.statut"
+          },
+          {
+            "line": 443,
+            "text": "Notes Atelier",
+            "context": "Label de champ",
+            "suggestedKey": "lutherie.notesAtelier"
+          },
+          {
+            "line": 451,
+            "text": "Particularités, cotes, essence de bois...",
+            "context": "Attribut placeholder",
+            "suggestedKey": "lutherie.particularitesCotesEssenceDeBois"
+          },
+          {
+            "line": 463,
+            "text": "🗑️ Retirer",
+            "context": "Bouton",
+            "suggestedKey": "lutherie.retirer"
+          },
+          {
+            "line": 475,
+            "text": "Annuler",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.annuler"
+          },
+          {
+            "line": 497,
+            "text": "Rechercher une pièce...",
+            "context": "Attribut placeholder",
+            "suggestedKey": "lutherie.rechercherUnePiece"
+          },
+          {
+            "line": 508,
+            "text": "Toutes les pièces",
+            "context": "Option select",
+            "suggestedKey": "lutherie.toutesLesPieces"
+          },
+          {
+            "line": 509,
+            "text": "🟢 Libres uniquement",
+            "context": "Option select",
+            "suggestedKey": "lutherie.libresUniquement"
+          },
+          {
+            "line": 510,
+            "text": "🟠 En projet d'assemblage",
+            "context": "Option select",
+            "suggestedKey": "lutherie.enProjetDAssemblage"
+          },
+          {
+            "line": 511,
+            "text": "🔵 Montées sur instrument",
+            "context": "Option select",
+            "suggestedKey": "lutherie.monteesSurInstrument"
+          },
+          {
+            "line": 519,
+            "text": "+ Ajouter Pièce",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.ajouterPiece"
+          },
+          {
+            "line": 528,
+            "text": "Nom / Réf",
+            "context": "En-tête th",
+            "suggestedKey": "lutherie.nomRef"
+          },
+          {
+            "line": 530,
+            "text": "Affectation",
+            "context": "En-tête th",
+            "suggestedKey": "lutherie.affectation"
+          },
+          {
+            "line": 531,
+            "text": "État",
+            "context": "En-tête th",
+            "suggestedKey": "lutherie.etat"
+          },
+          {
+            "line": 532,
+            "text": "Statut",
+            "context": "En-tête th",
+            "suggestedKey": "lutherie.statut"
+          },
+          {
+            "line": 533,
+            "text": "Avancement",
+            "context": "En-tête th",
+            "suggestedKey": "lutherie.avancement"
+          },
+          {
+            "line": 534,
+            "text": "Actions",
+            "context": "En-tête th",
+            "suggestedKey": "lutherie.actions"
+          },
+          {
+            "line": 540,
+            "text": "Aucune pièce détachée trouvée.",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.aucunePieceDetacheeTrouvee"
+          },
+          {
+            "line": 561,
+            "text": "Lot de",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.lotDe"
+          },
+          {
+            "line": 567,
+            "text": "Modèle :",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.modele"
+          },
+          {
+            "line": 601,
+            "text": "Terminée (",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.terminee"
+          },
+          {
+            "line": 623,
+            "text": "Étape",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.etape"
+          },
+          {
+            "line": 663,
+            "text": "Scinder",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.scinder"
+          },
+          {
+            "line": 670,
+            "text": "Modifier la pièce",
+            "context": "Attribut title",
+            "suggestedKey": "lutherie.modifierLaPiece"
+          },
+          {
+            "line": 677,
+            "text": "Supprimer la pièce",
+            "context": "Attribut title",
+            "suggestedKey": "lutherie.supprimerLaPiece"
+          }
+        ]
+      },
+      {
+        "file": "src/components/inventory/PartAssignmentBadge.jsx",
+        "count": 3,
+        "items": [
+          {
+            "line": 11,
+            "text": "Disponible",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.disponible"
+          },
+          {
+            "line": 20,
+            "text": "En Projet",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.enProjet"
+          },
+          {
+            "line": 33,
+            "text": "Montée",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.montee"
+          }
+        ]
+      },
+      {
+        "file": "src/components/inventory/PartHistoryLogs.jsx",
+        "count": 3,
+        "items": [
+          {
+            "line": 26,
+            "text": "Journal des contrôles & logs (",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.journalDesControlesLogs"
+          },
+          {
+            "line": 65,
+            "text": "Étape",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.etape"
+          },
+          {
+            "line": 76,
+            "text": "Par :",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.par"
+          }
+        ]
+      },
+      {
+        "file": "src/components/inventory/PartWorkflowModal.jsx",
+        "count": 15,
+        "items": [
+          {
+            "line": 183,
+            "text": "Pièce assignée :",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.pieceAssignee"
+          },
+          {
+            "line": 187,
+            "text": "Étape",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.etape"
+          },
+          {
+            "line": 192,
+            "text": "Terminée ✅ (",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.terminee"
+          },
+          {
+            "line": 210,
+            "text": "Étape",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.etape"
+          },
+          {
+            "line": 227,
+            "text": "Tester mes connaissances sur cette étape de fabrication",
+            "context": "Attribut title",
+            "suggestedKey": "lutherie.testerMesConnaissancesSurCette"
+          },
+          {
+            "line": 230,
+            "text": "Quiz de l'étape",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.quizDeLEtape"
+          },
+          {
+            "line": 250,
+            "text": "Outils :",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.outils"
+          },
+          {
+            "line": 256,
+            "text": "Matériaux :",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.materiaux"
+          },
+          {
+            "line": 266,
+            "text": "Remarques d'atelier :",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.remarquesDAtelier"
+          },
+          {
+            "line": 294,
+            "text": "Fermer maintenant",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.fermerMaintenant"
+          },
+          {
+            "line": 313,
+            "text": "⏳ En attente de vérification par un Mestre",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.enAttenteDeVerificationPar"
+          },
+          {
+            "line": 317,
+            "text": "Espace Mestre / Validateur",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.espaceMestreValidateur"
+          },
+          {
+            "line": 322,
+            "text": "🔄 Retouche",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.retouche"
+          },
+          {
+            "line": 332,
+            "text": "Consigne pour la retouche...",
+            "context": "Attribut placeholder",
+            "suggestedKey": "lutherie.consignePourLaRetouche"
+          },
+          {
+            "line": 355,
+            "text": "Cette pièce est prête et terminée !",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.cettePieceEstPreteEt"
+          }
+        ]
+      },
+      {
+        "file": "src/components/inventory/SuppliesListView.jsx",
+        "count": 32,
+        "items": [
+          {
+            "line": 74,
+            "text": "Erreur lors de l'enregistrement de la fourniture. Veuillez vérifier vos droits d'accès.",
+            "context": "Dialogue / Message (alert)",
+            "suggestedKey": "lutherie.erreurLorsDeLEnregistrement"
+          },
+          {
+            "line": 127,
+            "text": "Chargement des fournitures...",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.chargementDesFournitures"
+          },
+          {
+            "line": 134,
+            "text": "📦 Stock Matériaux & Accessoires (",
+            "context": "Titre",
+            "suggestedKey": "lutherie.stockMateriauxAccessoires"
+          },
+          {
+            "line": 154,
+            "text": "Matières premières requises par les tutoriels du Varal :",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.matieresPremieresRequisesParLes"
+          },
+          {
+            "line": 181,
+            "text": "Nom de l'article *",
+            "context": "Label de champ",
+            "suggestedKey": "lutherie.nomDeLArticle"
+          },
+          {
+            "line": 189,
+            "text": "Ex: Calebasse, Corde nylon",
+            "context": "Attribut placeholder",
+            "suggestedKey": "lutherie.exCalebasseCordeNylon"
+          },
+          {
+            "line": 196,
+            "text": "Catégorie",
+            "context": "Label de champ",
+            "suggestedKey": "lutherie.categorie"
+          },
+          {
+            "line": 197,
+            "text": "Ex: Corderie, Bois, Végétal",
+            "context": "Attribut placeholder",
+            "suggestedKey": "lutherie.exCorderieBoisVegetal"
+          },
+          {
+            "line": 200,
+            "text": "Stock initial",
+            "context": "Label de champ",
+            "suggestedKey": "lutherie.stockInitial"
+          },
+          {
+            "line": 204,
+            "text": "Unité",
+            "context": "Label de champ",
+            "suggestedKey": "lutherie.unite"
+          },
+          {
+            "line": 206,
+            "text": "Unités",
+            "context": "Option select",
+            "suggestedKey": "lutherie.unites"
+          },
+          {
+            "line": 207,
+            "text": "Mètres",
+            "context": "Option select",
+            "suggestedKey": "lutherie.metres"
+          },
+          {
+            "line": 208,
+            "text": "Bobines",
+            "context": "Option select",
+            "suggestedKey": "lutherie.bobines"
+          },
+          {
+            "line": 209,
+            "text": "Kg",
+            "context": "Option select",
+            "suggestedKey": "lutherie.kg"
+          },
+          {
+            "line": 210,
+            "text": "Litres",
+            "context": "Option select",
+            "suggestedKey": "lutherie.litres"
+          },
+          {
+            "line": 214,
+            "text": "Seuil Critique",
+            "context": "Label de champ",
+            "suggestedKey": "lutherie.seuilCritique"
+          },
+          {
+            "line": 218,
+            "text": "Format Achat",
+            "context": "Label de champ",
+            "suggestedKey": "lutherie.formatAchat"
+          },
+          {
+            "line": 219,
+            "text": "Ex: Lot de 10",
+            "context": "Attribut placeholder",
+            "suggestedKey": "lutherie.exLotDe10"
+          },
+          {
+            "line": 222,
+            "text": "Fournisseur",
+            "context": "Label de champ",
+            "suggestedKey": "lutherie.fournisseur"
+          },
+          {
+            "line": 226,
+            "text": "Lien d'achat (URL)",
+            "context": "Label de champ",
+            "suggestedKey": "lutherie.lienDAchatUrl"
+          },
+          {
+            "line": 245,
+            "text": "Article",
+            "context": "En-tête th",
+            "suggestedKey": "lutherie.article"
+          },
+          {
+            "line": 246,
+            "text": "Catégorie",
+            "context": "En-tête th",
+            "suggestedKey": "lutherie.categorie"
+          },
+          {
+            "line": 247,
+            "text": "Stock",
+            "context": "En-tête th",
+            "suggestedKey": "lutherie.stock"
+          },
+          {
+            "line": 248,
+            "text": "Fournisseur",
+            "context": "En-tête th",
+            "suggestedKey": "lutherie.fournisseur"
+          },
+          {
+            "line": 249,
+            "text": "Actions",
+            "context": "En-tête th",
+            "suggestedKey": "lutherie.actions"
+          },
+          {
+            "line": 262,
+            "text": "📖 Tuto Varal",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.tutoVaral"
+          },
+          {
+            "line": 286,
+            "text": "⚠️ Stock Critique",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.stockCritique"
+          },
+          {
+            "line": 309,
+            "text": "🛒 Commander",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.commander"
+          },
+          {
+            "line": 317,
+            "text": "Éditer",
+            "context": "Attribut title",
+            "suggestedKey": "lutherie.editer"
+          },
+          {
+            "line": 318,
+            "text": "Éditer",
+            "context": "Bouton",
+            "suggestedKey": "lutherie.editer"
+          },
+          {
+            "line": 324,
+            "text": "Supprimer",
+            "context": "Attribut title",
+            "suggestedKey": "lutherie.supprimer"
+          },
+          {
+            "line": 338,
+            "text": "Aucune fourniture enregistrée pour le domaine \"",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.aucuneFournitureEnregistreePourLe"
+          }
+        ]
+      },
+      {
+        "file": "src/components/inventory/WorkshopToolsListView.jsx",
+        "count": 26,
+        "items": [
+          {
+            "line": 88,
+            "text": "Erreur lors de l'enregistrement de l'outil. Veuillez vérifier vos droits d'accès.",
+            "context": "Dialogue / Message (alert)",
+            "suggestedKey": "lutherie.erreurLorsDeLEnregistrement"
+          },
+          {
+            "line": 121,
+            "text": "Chargement de l'outillage...",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.chargementDeLOutillage"
+          },
+          {
+            "line": 128,
+            "text": "🛠️ Matériel & Outillage (",
+            "context": "Titre",
+            "suggestedKey": "lutherie.materielOutillage"
+          },
+          {
+            "line": 135,
+            "text": "Rechercher un outil...",
+            "context": "Attribut placeholder",
+            "suggestedKey": "lutherie.rechercherUnOutil"
+          },
+          {
+            "line": 145,
+            "text": "Tous",
+            "context": "Option select",
+            "suggestedKey": "lutherie.tous"
+          },
+          {
+            "line": 146,
+            "text": "Résidents locaux",
+            "context": "Option select",
+            "suggestedKey": "lutherie.residentsLocaux"
+          },
+          {
+            "line": 147,
+            "text": "Mobiles",
+            "context": "Option select",
+            "suggestedKey": "lutherie.mobiles"
+          },
+          {
+            "line": 167,
+            "text": "Outils requis par les tutoriels du Varal :",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.outilsRequisParLesTutoriels"
+          },
+          {
+            "line": 194,
+            "text": "Nom de l'outil *",
+            "context": "Label de champ",
+            "suggestedKey": "lutherie.nomDeLOutil"
+          },
+          {
+            "line": 202,
+            "text": "Ex: Scie fine, Ciseau à bois",
+            "context": "Attribut placeholder",
+            "suggestedKey": "lutherie.exScieFineCiseauA"
+          },
+          {
+            "line": 210,
+            "text": "Emplacement / Gardien",
+            "context": "Label de champ",
+            "suggestedKey": "lutherie.emplacementGardien"
+          },
+          {
+            "line": 217,
+            "text": "Ex: Atelier de Dorian, Local...",
+            "context": "Attribut placeholder",
+            "suggestedKey": "lutherie.exAtelierDeDorianLocal"
+          },
+          {
+            "line": 225,
+            "text": "État initial",
+            "context": "Label de champ",
+            "suggestedKey": "lutherie.etatInitial"
+          },
+          {
+            "line": 227,
+            "text": "Neuf",
+            "context": "Option select",
+            "suggestedKey": "lutherie.neuf"
+          },
+          {
+            "line": 228,
+            "text": "Bon",
+            "context": "Option select",
+            "suggestedKey": "lutherie.bon"
+          },
+          {
+            "line": 229,
+            "text": "À réparer",
+            "context": "Option select",
+            "suggestedKey": "lutherie.aReparer"
+          },
+          {
+            "line": 235,
+            "text": "Résident au local (non mobile)",
+            "context": "Label de champ",
+            "suggestedKey": "lutherie.residentAuLocalNonMobile"
+          },
+          {
+            "line": 261,
+            "text": "📖 Requis en tutoriel",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.requisEnTutoriel"
+          },
+          {
+            "line": 270,
+            "text": "Éditer",
+            "context": "Attribut title",
+            "suggestedKey": "lutherie.editer"
+          },
+          {
+            "line": 271,
+            "text": "Éditer",
+            "context": "Bouton",
+            "suggestedKey": "lutherie.editer"
+          },
+          {
+            "line": 277,
+            "text": "Supprimer cet outil",
+            "context": "Attribut title",
+            "suggestedKey": "lutherie.supprimerCetOutil"
+          },
+          {
+            "line": 287,
+            "text": "À emmener",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.aEmmener"
+          },
+          {
+            "line": 318,
+            "text": "Neuf",
+            "context": "Option select",
+            "suggestedKey": "lutherie.neuf"
+          },
+          {
+            "line": 319,
+            "text": "Bon",
+            "context": "Option select",
+            "suggestedKey": "lutherie.bon"
+          },
+          {
+            "line": 320,
+            "text": "À réparer",
+            "context": "Option select",
+            "suggestedKey": "lutherie.aReparer"
+          },
+          {
+            "line": 328,
+            "text": "Aucun outil ne correspond à votre recherche.",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.aucunOutilNeCorrespondA"
+          }
+        ]
+      },
+      {
+        "file": "src/components/profile/StudentInstrumentsWorkshop.jsx",
+        "count": 21,
+        "items": [
+          {
+            "line": 91,
+            "text": "Chargement de votre atelier...",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.chargementDeVotreAtelier"
+          },
+          {
+            "line": 135,
+            "text": "Modèle :",
+            "context": "Paragraphe",
+            "suggestedKey": "lutherie.modele"
+          },
+          {
+            "line": 136,
+            "text": ") • Progression terminée :",
+            "context": "Paragraphe",
+            "suggestedKey": "lutherie.progressionTerminee"
+          },
+          {
+            "line": 136,
+            "text": "pièces",
+            "context": "Paragraphe",
+            "suggestedKey": "lutherie.pieces"
+          },
+          {
+            "line": 144,
+            "text": "← Retour à mes projets",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.retourAMesProjets"
+          },
+          {
+            "line": 152,
+            "text": "Conseil d'atelier :",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.conseilDAtelier"
+          },
+          {
+            "line": 152,
+            "text": "Dépliez les étapes de chaque pièce pour suivre les consignes et ouvrir le tutoriel du Varal. Quand votre geste est terminé (ponçage, découpe, vernis), cliquez sur la pièce pour",
+            "context": "Paragraphe",
+            "suggestedKey": "lutherie.depliezLesEtapesDeChaque"
+          },
+          {
+            "line": 152,
+            "text": "soumettre votre étape au Mestre",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.soumettreVotreEtapeAuMestre"
+          },
+          {
+            "line": 159,
+            "text": "Composants de votre instrument",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.composantsDeVotreInstrument"
+          },
+          {
+            "line": 161,
+            "text": "terminés",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.termines"
+          },
+          {
+            "line": 243,
+            "text": "Mes Instruments en Fabrication",
+            "context": "Titre",
+            "suggestedKey": "lutherie.mesInstrumentsEnFabrication"
+          },
+          {
+            "line": 245,
+            "text": "Instruments qui vous sont nominativement attribués pour votre apprentissage ou votre équipement.",
+            "context": "Paragraphe",
+            "suggestedKey": "lutherie.instrumentsQuiVousSontNominativement"
+          },
+          {
+            "line": 254,
+            "text": "Vous n'avez pas encore d'instrument personnel en cours de fabrication.",
+            "context": "Paragraphe",
+            "suggestedKey": "lutherie.vousNAvezPasEncore"
+          },
+          {
+            "line": 257,
+            "text": "Rapprochez-vous de votre Mestre pour qu'il vous attribue un projet d'instrument (Alfaia, Agbê, Gongoque...).",
+            "context": "Paragraphe",
+            "suggestedKey": "lutherie.rapprochezVousDeVotreMestre"
+          },
+          {
+            "line": 274,
+            "text": "Modèle :",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.modele"
+          },
+          {
+            "line": 278,
+            "text": "Mon Instrument",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.monInstrument"
+          },
+          {
+            "line": 286,
+            "text": "Assemblage des pièces",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.assemblageDesPieces"
+          },
+          {
+            "line": 302,
+            "text": "Ouvrir mon Établi →",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.ouvrirMonEtabli"
+          },
+          {
+            "line": 319,
+            "text": "Projets Collectifs de l'Atelier (",
+            "context": "Titre",
+            "suggestedKey": "lutherie.projetsCollectifsDeLAtelier"
+          },
+          {
+            "line": 321,
+            "text": "Instruments construits pour le parc commun de l'association.",
+            "context": "Paragraphe",
+            "suggestedKey": "lutherie.instrumentsConstruitsPourLeParc"
+          },
+          {
+            "line": 340,
+            "text": "Consulter →",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.consulter"
+          }
+        ]
+      },
+      {
+        "file": "src/components/profile/MonAtelier.jsx",
+        "count": 15,
+        "items": [
+          {
+            "line": 17,
+            "text": "🥁 Instruments",
+            "context": "Configuration statique (propriété label)",
+            "suggestedKey": "lutherie.instruments"
+          },
+          {
+            "line": 18,
+            "text": "🧵 Vestiaire & Costumes",
+            "context": "Configuration statique (propriété label)",
+            "suggestedKey": "lutherie.vestiaireCostumes"
+          },
+          {
+            "line": 19,
+            "text": "📚 Édition & Reliure",
+            "context": "Configuration statique (propriété label)",
+            "suggestedKey": "lutherie.editionReliure"
+          },
+          {
+            "line": 29,
+            "text": "L'Atelier d'Artisanat",
+            "context": "Titre",
+            "suggestedKey": "lutherie.lAtelierDArtisanat"
+          },
+          {
+            "line": 33,
+            "text": "Espace de fabrication collective et d'apprentissage manuel : construisez vos instruments, confectionnez vos costumes et préparez vos supports.",
+            "context": "Paragraphe",
+            "suggestedKey": "lutherie.espaceDeFabricationCollectiveEt"
+          },
+          {
+            "line": 42,
+            "text": "← Accueil",
+            "context": "Bouton",
+            "suggestedKey": "lutherie.accueil"
+          },
+          {
+            "line": 90,
+            "text": "Atelier Reliure & Édition Artisanale",
+            "context": "Titre",
+            "suggestedKey": "lutherie.atelierReliureEditionArtisanale"
+          },
+          {
+            "line": 93,
+            "text": "Cet atelier accueillera très prochainement les tutoriels de confection et d'impression pour :",
+            "context": "Paragraphe",
+            "suggestedKey": "lutherie.cetAtelierAccueilleraTresProchainement"
+          },
+          {
+            "line": 97,
+            "text": "Impression & reliure à la japonaise",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.impressionReliureALaJaponaise"
+          },
+          {
+            "line": 97,
+            "text": "des carnets de toadas et paroles de l'association.",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.desCarnetsDeToadasEt"
+          },
+          {
+            "line": 98,
+            "text": "Tirage et gravure sur bois (Xilogravura)",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.tirageEtGravureSurBois"
+          },
+          {
+            "line": 98,
+            "text": "pour les couvertures et affiches culturelles.",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.pourLesCouverturesEtAffiches"
+          },
+          {
+            "line": 99,
+            "text": "Planches de chants et accords",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.planchesDeChantsEtAccords"
+          },
+          {
+            "line": 99,
+            "text": "à glisser dans votre housse d'instrument.",
+            "context": "Nœud JSX",
+            "suggestedKey": "lutherie.aGlisserDansVotreHousse"
+          },
+          {
+            "line": 102,
+            "text": "Module en préparation • Bientôt disponible",
+            "context": "Span / Badge",
+            "suggestedKey": "lutherie.moduleEnPreparationBientotDisponible"
+          }
+        ]
+      }
+    ]
+  },
+  "costumerie": {
+    "name": "Pôle Costumerie & Artisanat Textile",
+    "namespace": "costumerie",
+    "totalStrings": 250,
+    "cleanFiles": [
+      "src/components/profile/CostumeChecklist.jsx"
+    ],
+    "dirtyFiles": [
+      {
+        "file": "src/components/mestre/WardrobeManager.jsx",
+        "count": 60,
+        "items": [
+          {
+            "line": 164,
+            "text": "Erreur lors de l'enregistrement de la pièce.",
+            "context": "Dialogue / Message (alert)",
+            "suggestedKey": "costumerie.erreurLorsDeLEnregistrement"
+          },
+          {
+            "line": 195,
+            "text": "Erreur de suppression.",
+            "context": "Dialogue / Message (alert)",
+            "suggestedKey": "costumerie.erreurDeSuppression"
+          },
+          {
+            "line": 222,
+            "text": "Erreur d'enregistrement.",
+            "context": "Dialogue / Message (alert)",
+            "suggestedKey": "costumerie.erreurDEnregistrement"
+          },
+          {
+            "line": 250,
+            "text": "Erreur de suppression.",
+            "context": "Dialogue / Message (alert)",
+            "suggestedKey": "costumerie.erreurDeSuppression"
+          },
+          {
+            "line": 258,
+            "text": "🚨 ACCÈS REFUSÉ",
+            "context": "Titre",
+            "suggestedKey": "costumerie.accesRefuse"
+          },
+          {
+            "line": 261,
+            "text": "Vous n'avez pas accès au module Vestiaire de l'association.",
+            "context": "Paragraphe",
+            "suggestedKey": "costumerie.vousNAvezPasAcces"
+          },
+          {
+            "line": 265,
+            "text": "⬅️ Retour",
+            "context": "Nœud JSX",
+            "suggestedKey": "costumerie.retour"
+          },
+          {
+            "line": 278,
+            "text": "← Retour",
+            "context": "Nœud JSX",
+            "suggestedKey": "costumerie.retour"
+          },
+          {
+            "line": 281,
+            "text": "🧵 Gestion de la Costumerie",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.gestionDeLaCostumerie"
+          },
+          {
+            "line": 303,
+            "text": "Établi de confection",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.etabliDeConfection"
+          },
+          {
+            "line": 317,
+            "text": "Stock & Prêts",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.stockPrets"
+          },
+          {
+            "line": 331,
+            "text": "Tissus & Mercerie",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.tissusMercerie"
+          },
+          {
+            "line": 345,
+            "text": "Outillage",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.outillage"
+          },
+          {
+            "line": 359,
+            "text": "Mensurations",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.mensurations"
+          },
+          {
+            "line": 388,
+            "text": "📦 Stock physique & Emprunts de pièces",
+            "context": "Titre",
+            "suggestedKey": "costumerie.stockPhysiqueEmpruntsDePieces"
+          },
+          {
+            "line": 392,
+            "text": "Total :",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.total"
+          },
+          {
+            "line": 393,
+            "text": "pièce",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.piece"
+          },
+          {
+            "line": 393,
+            "text": "répertoriée",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.repertoriee"
+          },
+          {
+            "line": 424,
+            "text": "ex: Jupe, Chemise, Chapeau",
+            "context": "Attribut placeholder",
+            "suggestedKey": "costumerie.exJupeChemiseChapeau"
+          },
+          {
+            "line": 430,
+            "text": "Taille",
+            "context": "Label de champ",
+            "suggestedKey": "costumerie.taille"
+          },
+          {
+            "line": 437,
+            "text": "XS",
+            "context": "Option select",
+            "suggestedKey": "costumerie.xs"
+          },
+          {
+            "line": 441,
+            "text": "XL",
+            "context": "Option select",
+            "suggestedKey": "costumerie.xl"
+          },
+          {
+            "line": 442,
+            "text": "XXL",
+            "context": "Option select",
+            "suggestedKey": "costumerie.xxl"
+          },
+          {
+            "line": 447,
+            "text": "État",
+            "context": "Label de champ",
+            "suggestedKey": "costumerie.etat"
+          },
+          {
+            "line": 454,
+            "text": "Neuf",
+            "context": "Option select",
+            "suggestedKey": "costumerie.neuf"
+          },
+          {
+            "line": 455,
+            "text": "Bon",
+            "context": "Option select",
+            "suggestedKey": "costumerie.bon"
+          },
+          {
+            "line": 456,
+            "text": "Moyen",
+            "context": "Option select",
+            "suggestedKey": "costumerie.moyen"
+          },
+          {
+            "line": 457,
+            "text": "Abîmé",
+            "context": "Option select",
+            "suggestedKey": "costumerie.abime"
+          },
+          {
+            "line": 462,
+            "text": "Statut",
+            "context": "Label de champ",
+            "suggestedKey": "costumerie.statut"
+          },
+          {
+            "line": 469,
+            "text": "Au local",
+            "context": "Option select",
+            "suggestedKey": "costumerie.auLocal"
+          },
+          {
+            "line": 470,
+            "text": "Emprunté",
+            "context": "Option select",
+            "suggestedKey": "costumerie.emprunte"
+          },
+          {
+            "line": 471,
+            "text": "En réparation",
+            "context": "Option select",
+            "suggestedKey": "costumerie.enReparation"
+          },
+          {
+            "line": 477,
+            "text": "Emprunteur",
+            "context": "Label de champ",
+            "suggestedKey": "costumerie.emprunteur"
+          },
+          {
+            "line": 485,
+            "text": "Sélectionner un membre...",
+            "context": "Option select",
+            "suggestedKey": "costumerie.selectionnerUnMembre"
+          },
+          {
+            "line": 516,
+            "text": "Emprunteur",
+            "context": "En-tête th",
+            "suggestedKey": "costumerie.emprunteur"
+          },
+          {
+            "line": 523,
+            "text": "L'inventaire des costumes est vide.",
+            "context": "Nœud JSX",
+            "suggestedKey": "costumerie.lInventaireDesCostumesEst"
+          },
+          {
+            "line": 557,
+            "text": "Éditer",
+            "context": "Bouton",
+            "suggestedKey": "costumerie.editer"
+          },
+          {
+            "line": 564,
+            "text": "Supprimer",
+            "context": "Bouton",
+            "suggestedKey": "costumerie.supprimer"
+          },
+          {
+            "line": 584,
+            "text": "Projets couture :",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.projetsCouture"
+          },
+          {
+            "line": 585,
+            "text": "projet",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.projet"
+          },
+          {
+            "line": 585,
+            "text": "en cours",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.enCours"
+          },
+          {
+            "line": 610,
+            "text": "Nom du projet",
+            "context": "Label de champ",
+            "suggestedKey": "costumerie.nomDuProjet"
+          },
+          {
+            "line": 617,
+            "text": "ex: Nouvelles Jupes Blanches",
+            "context": "Attribut placeholder",
+            "suggestedKey": "costumerie.exNouvellesJupesBlanches"
+          },
+          {
+            "line": 623,
+            "text": "Coût estimé (€)",
+            "context": "Label de champ",
+            "suggestedKey": "costumerie.coutEstime"
+          },
+          {
+            "line": 630,
+            "text": "ex: 150.00",
+            "context": "Attribut placeholder",
+            "suggestedKey": "costumerie.ex15000"
+          },
+          {
+            "line": 636,
+            "text": "Statut",
+            "context": "Label de champ",
+            "suggestedKey": "costumerie.statut"
+          },
+          {
+            "line": 643,
+            "text": "À commencer",
+            "context": "Option select",
+            "suggestedKey": "costumerie.aCommencer"
+          },
+          {
+            "line": 644,
+            "text": "En cours",
+            "context": "Option select",
+            "suggestedKey": "costumerie.enCours"
+          },
+          {
+            "line": 645,
+            "text": "Terminé",
+            "context": "Option select",
+            "suggestedKey": "costumerie.termine"
+          },
+          {
+            "line": 650,
+            "text": "Besoins / Accessoires (Métrage de tissu, fils, boutons...)",
+            "context": "Label de champ",
+            "suggestedKey": "costumerie.besoinsAccessoiresMetrageDeTissu"
+          },
+          {
+            "line": 655,
+            "text": "ex: 20m de Tissu Coton Blanc, Fil résistant blanc, 15m de Ceinture élastique...",
+            "context": "Attribut placeholder",
+            "suggestedKey": "costumerie.ex20mDeTissuCoton"
+          },
+          {
+            "line": 679,
+            "text": "Projet",
+            "context": "En-tête th",
+            "suggestedKey": "costumerie.projet"
+          },
+          {
+            "line": 680,
+            "text": "Besoins répertoriés",
+            "context": "En-tête th",
+            "suggestedKey": "costumerie.besoinsRepertories"
+          },
+          {
+            "line": 681,
+            "text": "Coût estimé",
+            "context": "En-tête th",
+            "suggestedKey": "costumerie.coutEstime"
+          },
+          {
+            "line": 682,
+            "text": "Statut",
+            "context": "En-tête th",
+            "suggestedKey": "costumerie.statut"
+          },
+          {
+            "line": 683,
+            "text": "Actions",
+            "context": "En-tête th",
+            "suggestedKey": "costumerie.actions"
+          },
+          {
+            "line": 689,
+            "text": "Aucun projet couture pour le moment.",
+            "context": "Nœud JSX",
+            "suggestedKey": "costumerie.aucunProjetCouturePourLe"
+          },
+          {
+            "line": 697,
+            "text": "Aucun besoin saisi",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.aucunBesoinSaisi"
+          },
+          {
+            "line": 710,
+            "text": "Éditer",
+            "context": "Bouton",
+            "suggestedKey": "costumerie.editer"
+          },
+          {
+            "line": 717,
+            "text": "Supprimer",
+            "context": "Bouton",
+            "suggestedKey": "costumerie.supprimer"
+          }
+        ]
+      },
+      {
+        "file": "src/components/mestre/CostumesAdminManager.jsx",
+        "count": 35,
+        "items": [
+          {
+            "line": 146,
+            "text": "Veuillez saisir un titre pour le costume.",
+            "context": "Dialogue / Message (alert)",
+            "suggestedKey": "costumerie.veuillezSaisirUnTitrePour"
+          },
+          {
+            "line": 199,
+            "text": "🎭 Gestion des Costumes & Pièces",
+            "context": "Titre",
+            "suggestedKey": "costumerie.gestionDesCostumesPieces"
+          },
+          {
+            "line": 202,
+            "text": "Définissez les costumes de la troupe, associez leurs pièces et les instructions de l'Atelier Couture.",
+            "context": "Paragraphe",
+            "suggestedKey": "costumerie.definissezLesCostumesDeLa"
+          },
+          {
+            "line": 212,
+            "text": "+ Créer un Costume",
+            "context": "Nœud JSX",
+            "suggestedKey": "costumerie.creerUnCostume"
+          },
+          {
+            "line": 219,
+            "text": "⏳ Chargement des costumes...",
+            "context": "Nœud JSX",
+            "suggestedKey": "costumerie.chargementDesCostumes"
+          },
+          {
+            "line": 222,
+            "text": "Aucun costume créé. Cliquez sur \"+ Créer un Costume\" pour commencer.",
+            "context": "Paragraphe",
+            "suggestedKey": "costumerie.aucunCostumeCreeCliquezSur"
+          },
+          {
+            "line": 245,
+            "text": "✏️ Éditer",
+            "context": "Bouton",
+            "suggestedKey": "costumerie.editer"
+          },
+          {
+            "line": 266,
+            "text": "Pièces associées (",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.piecesAssociees"
+          },
+          {
+            "line": 270,
+            "text": "Aucune pièce liée.",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.aucunePieceLiee"
+          },
+          {
+            "line": 311,
+            "text": "Fermer (Échap)",
+            "context": "Attribut title",
+            "suggestedKey": "costumerie.fermerEchap"
+          },
+          {
+            "line": 323,
+            "text": "Titre du Costume *",
+            "context": "Label de champ",
+            "suggestedKey": "costumerie.titreDuCostume"
+          },
+          {
+            "line": 330,
+            "text": "Ex: Costume Blanc Percussion",
+            "context": "Attribut placeholder",
+            "suggestedKey": "costumerie.exCostumeBlancPercussion"
+          },
+          {
+            "line": 339,
+            "text": "Catégorie Cible",
+            "context": "Label de champ",
+            "suggestedKey": "costumerie.categorieCible"
+          },
+          {
+            "line": 348,
+            "text": "💃 Danse",
+            "context": "Option select",
+            "suggestedKey": "costumerie.danse"
+          },
+          {
+            "line": 349,
+            "text": "🥁 Percussion",
+            "context": "Option select",
+            "suggestedKey": "costumerie.percussion"
+          },
+          {
+            "line": 350,
+            "text": "🌐 Tous les pupitres",
+            "context": "Option select",
+            "suggestedKey": "costumerie.tousLesPupitres"
+          },
+          {
+            "line": 357,
+            "text": "Description (facultative)",
+            "context": "Label de champ",
+            "suggestedKey": "costumerie.descriptionFacultative"
+          },
+          {
+            "line": 363,
+            "text": "Description du costume, événements associés...",
+            "context": "Attribut placeholder",
+            "suggestedKey": "costumerie.descriptionDuCostumeEvenementsAssocies"
+          },
+          {
+            "line": 372,
+            "text": "📌 Pièces composant ce costume (",
+            "context": "Titre",
+            "suggestedKey": "costumerie.piecesComposantCeCostume"
+          },
+          {
+            "line": 379,
+            "text": "Aucune pièce ajoutée pour le moment.",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.aucunePieceAjouteePourLe"
+          },
+          {
+            "line": 397,
+            "text": "Éditer",
+            "context": "Bouton",
+            "suggestedKey": "costumerie.editer"
+          },
+          {
+            "line": 404,
+            "text": "Supprimer",
+            "context": "Bouton",
+            "suggestedKey": "costumerie.supprimer"
+          },
+          {
+            "line": 421,
+            "text": "Nom de la pièce (ex: Jupe Roda)...",
+            "context": "Attribut placeholder",
+            "suggestedKey": "costumerie.nomDeLaPieceEx"
+          },
+          {
+            "line": 431,
+            "text": "👑 Tête / Accessoire haut",
+            "context": "Option select",
+            "suggestedKey": "costumerie.teteAccessoireHaut"
+          },
+          {
+            "line": 432,
+            "text": "👕 Torse / Haut",
+            "context": "Option select",
+            "suggestedKey": "costumerie.torseHaut"
+          },
+          {
+            "line": 433,
+            "text": "👖 Jambes / Bas",
+            "context": "Option select",
+            "suggestedKey": "costumerie.jambesBas"
+          },
+          {
+            "line": 434,
+            "text": "👟 Pieds / Chaussures",
+            "context": "Option select",
+            "suggestedKey": "costumerie.piedsChaussures"
+          },
+          {
+            "line": 435,
+            "text": "🎒 Accessoire / Portatif",
+            "context": "Option select",
+            "suggestedKey": "costumerie.accessoirePortatif"
+          },
+          {
+            "line": 447,
+            "text": "Pièce obligatoire pour ce costume",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.pieceObligatoirePourCeCostume"
+          },
+          {
+            "line": 456,
+            "text": "Description / Matériaux (ex: Fait avec des perles de l'association)",
+            "context": "Attribut placeholder",
+            "suggestedKey": "costumerie.descriptionMateriauxExFaitAvec"
+          },
+          {
+            "line": 464,
+            "text": "🧵 Liaison avec un tutoriel de l'Atelier Couture",
+            "context": "Label de champ",
+            "suggestedKey": "costumerie.liaisonAvecUnTutorielDe"
+          },
+          {
+            "line": 472,
+            "text": "-- Aucun tutoriel lié --",
+            "context": "Option select",
+            "suggestedKey": "costumerie.aucunTutorielLie"
+          },
+          {
+            "line": 477,
+            "text": "Lier cette pièce à un tutoriel débloque le bouton \"Tutoriel de fabrication\" sur la fiche du membre.",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.lierCettePieceAUn"
+          },
+          {
+            "line": 489,
+            "text": "+ Valider cette pièce",
+            "context": "Nœud JSX",
+            "suggestedKey": "costumerie.validerCettePiece"
+          },
+          {
+            "line": 504,
+            "text": "Annuler",
+            "context": "Nœud JSX",
+            "suggestedKey": "costumerie.annuler"
+          }
+        ]
+      },
+      {
+        "file": "src/components/mestre/CostumeSizesTable.jsx",
+        "count": 13,
+        "items": [
+          {
+            "line": 22,
+            "text": "🚨 ACCÈS REFUSÉ",
+            "context": "Titre",
+            "suggestedKey": "costumerie.accesRefuse"
+          },
+          {
+            "line": 25,
+            "text": "Vous n'avez pas l'autorisation d'accéder au tableau des tailles et mensurations du Vestiaire.",
+            "context": "Paragraphe",
+            "suggestedKey": "costumerie.vousNAvezPasL"
+          },
+          {
+            "line": 68,
+            "text": "👔 Tableau des Tailles / Vestiaire",
+            "context": "Titre",
+            "suggestedKey": "costumerie.tableauDesTaillesVestiaire"
+          },
+          {
+            "line": 72,
+            "text": "Membre",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.membre"
+          },
+          {
+            "line": 72,
+            "text": "au total",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.auTotal"
+          },
+          {
+            "line": 80,
+            "text": "👕 Synthèse des Tailles Hauts / T-Shirts",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.syntheseDesTaillesHautsT"
+          },
+          {
+            "line": 97,
+            "text": "👖 Synthèse des Tailles Bas / Pantalons",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.syntheseDesTaillesBasPantalons"
+          },
+          {
+            "line": 119,
+            "text": "Rechercher par nom, prénom ou instrument...",
+            "context": "Attribut placeholder",
+            "suggestedKey": "costumerie.rechercherParNomPrenomOu"
+          },
+          {
+            "line": 130,
+            "text": "Membre",
+            "context": "En-tête th",
+            "suggestedKey": "costumerie.membre"
+          },
+          {
+            "line": 131,
+            "text": "Pupitre",
+            "context": "En-tête th",
+            "suggestedKey": "costumerie.pupitre"
+          },
+          {
+            "line": 132,
+            "text": "Taille T-Shirt",
+            "context": "En-tête th",
+            "suggestedKey": "costumerie.tailleTShirt"
+          },
+          {
+            "line": 133,
+            "text": "Taille Pantalon",
+            "context": "En-tête th",
+            "suggestedKey": "costumerie.taillePantalon"
+          },
+          {
+            "line": 139,
+            "text": "Aucun membre trouvé correspondant à la recherche.",
+            "context": "Nœud JSX",
+            "suggestedKey": "costumerie.aucunMembreTrouveCorrespondantA"
+          }
+        ]
+      },
+      {
+        "file": "src/components/profile/MonVestiaire.jsx",
+        "count": 22,
+        "items": [
+          {
+            "line": 182,
+            "text": "🎭 Mon Vestiaire & Garde-Robe",
+            "context": "Titre",
+            "suggestedKey": "costumerie.monVestiaireGardeRobe"
+          },
+          {
+            "line": 185,
+            "text": "Mannequin d'habillage visuel, validation de vos pièces et Atelier Couture.",
+            "context": "Paragraphe",
+            "suggestedKey": "costumerie.mannequinDHabillageVisuelValidation"
+          },
+          {
+            "line": 190,
+            "text": "← Retour",
+            "context": "Nœud JSX",
+            "suggestedKey": "costumerie.retour"
+          },
+          {
+            "line": 207,
+            "text": "Tous les Costumes (",
+            "context": "Bouton",
+            "suggestedKey": "costumerie.tousLesCostumes"
+          },
+          {
+            "line": 218,
+            "text": "💃 Danse",
+            "context": "Bouton",
+            "suggestedKey": "costumerie.danse"
+          },
+          {
+            "line": 229,
+            "text": "🥁 Percussion",
+            "context": "Bouton",
+            "suggestedKey": "costumerie.percussion"
+          },
+          {
+            "line": 244,
+            "text": "🎨 Mannequin",
+            "context": "Bouton",
+            "suggestedKey": "costumerie.mannequin"
+          },
+          {
+            "line": 255,
+            "text": "📋 Liste",
+            "context": "Bouton",
+            "suggestedKey": "costumerie.liste"
+          },
+          {
+            "line": 264,
+            "text": "⏳ Chargement de votre vestiaire...",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.chargementDeVotreVestiaire"
+          },
+          {
+            "line": 321,
+            "text": "✅ Costume Validé !",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.costumeValide"
+          },
+          {
+            "line": 326,
+            "text": "Progression :",
+            "context": "Nœud JSX",
+            "suggestedKey": "costumerie.progression"
+          },
+          {
+            "line": 327,
+            "text": "obligatoire(s)",
+            "context": "Nœud JSX",
+            "suggestedKey": "costumerie.obligatoireS"
+          },
+          {
+            "line": 354,
+            "text": "Pièces requises (",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.piecesRequises"
+          },
+          {
+            "line": 359,
+            "text": "Aucune pièce définie pour ce costume.",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.aucunePieceDefiniePourCe"
+          },
+          {
+            "line": 404,
+            "text": "Voir le tutoriel de fabrication dans l'Atelier Couture",
+            "context": "Attribut title",
+            "suggestedKey": "costumerie.voirLeTutorielDeFabrication"
+          },
+          {
+            "line": 405,
+            "text": "🧵 Tutoriel de fabrication",
+            "context": "Bouton",
+            "suggestedKey": "costumerie.tutorielDeFabrication"
+          },
+          {
+            "line": 432,
+            "text": "📌 Élément de costume",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.elementDeCostume"
+          },
+          {
+            "line": 443,
+            "text": "Fermer (Échap)",
+            "context": "Attribut title",
+            "suggestedKey": "costumerie.fermerEchap"
+          },
+          {
+            "line": 453,
+            "text": "Location:",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.location"
+          },
+          {
+            "line": 457,
+            "text": "★ Obligatoire",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.obligatoire"
+          },
+          {
+            "line": 461,
+            "text": "Optionnel",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.optionnel"
+          },
+          {
+            "line": 503,
+            "text": "🧵 Tutoriel de fabrication",
+            "context": "Nœud JSX",
+            "suggestedKey": "costumerie.tutorielDeFabrication"
+          }
+        ]
+      },
+      {
+        "file": "src/components/profile/CostumeVisualizer.jsx",
+        "count": 3,
+        "items": [
+          {
+            "line": 66,
+            "text": "🎨 Mannequin d'Habillage Visuel",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.mannequinDHabillageVisuel"
+          },
+          {
+            "line": 69,
+            "text": "Cliquez sur un marqueur du corps ou du panier pour valider une pièce et voir son tutoriel.",
+            "context": "Paragraphe",
+            "suggestedKey": "costumerie.cliquezSurUnMarqueurDu"
+          },
+          {
+            "line": 123,
+            "text": "Panier",
+            "context": "Nœud JSX",
+            "suggestedKey": "costumerie.panier"
+          }
+        ]
+      },
+      {
+        "file": "src/components/profile/PostEventCostumeReturnModal.jsx",
+        "count": 15,
+        "items": [
+          {
+            "line": 155,
+            "text": "Retour des Costumes",
+            "context": "Titre",
+            "suggestedKey": "costumerie.retourDesCostumes"
+          },
+          {
+            "line": 168,
+            "text": "Fermer",
+            "context": "Attribut title",
+            "suggestedKey": "costumerie.fermer"
+          },
+          {
+            "line": 175,
+            "text": "Merci pour ta participation à cette prestation ! Afin d'assurer le suivi de la garde-robe collective, indique ce que tu as fait de ta tenue de scène.",
+            "context": "Nœud JSX",
+            "suggestedKey": "costumerie.merciPourTaParticipationA"
+          },
+          {
+            "line": 183,
+            "text": "Statut actuel enregistré :",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.statutActuelEnregistre"
+          },
+          {
+            "line": 184,
+            "text": ". Tu peux le modifier ci-dessous si la situation a évolué.",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.tuPeuxLeModifierCi"
+          },
+          {
+            "line": 192,
+            "text": "Choisis une option :",
+            "context": "Label de champ",
+            "suggestedKey": "costumerie.choisisUneOption"
+          },
+          {
+            "line": 215,
+            "text": "Rendu au bac / malle collective",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.renduAuBacMalleCollective"
+          },
+          {
+            "line": 217,
+            "text": "J'ai replié et rangé mon costume propre dans le bac ou la cantine collective après la sortie.",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.jAiReplieEtRange"
+          },
+          {
+            "line": 242,
+            "text": "En lavage à domicile",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.enLavageADomicile"
+          },
+          {
+            "line": 244,
+            "text": "J'ai emporté mon costume à la maison pour le laver. Je m'engage à le rapporter propre à la prochaine répétition.",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.jAiEmporteMonCostume"
+          },
+          {
+            "line": 269,
+            "text": "Retouche / réparation nécessaire",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.retoucheReparationNecessaire"
+          },
+          {
+            "line": 271,
+            "text": "Un élément a été abîmé (bouton décousu, déchirure, ornement détaché, tâche tenace...).",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.unElementAEteAbime"
+          },
+          {
+            "line": 281,
+            "text": "Description du problème pour l'Atelier Couture * :",
+            "context": "Label de champ",
+            "suggestedKey": "costumerie.descriptionDuProblemePourL"
+          },
+          {
+            "line": 288,
+            "text": "Ex : Bouton manquant sur la chemise côté gauche, couture défaite au bas de la jupe...",
+            "context": "Attribut placeholder",
+            "suggestedKey": "costumerie.exBoutonManquantSurLa"
+          },
+          {
+            "line": 316,
+            "text": "Fermer",
+            "context": "Nœud JSX",
+            "suggestedKey": "costumerie.fermer"
+          }
+        ]
+      },
+      {
+        "file": "src/components/profile/AtelierCouture.jsx",
+        "count": 19,
+        "items": [
+          {
+            "line": 165,
+            "text": "Erreur lors de la suppression du tutoriel.",
+            "context": "Dialogue / Message (alert)",
+            "suggestedKey": "costumerie.erreurLorsDeLaSuppression"
+          },
+          {
+            "line": 177,
+            "text": "🧵 Atelier Couture & Bibliothèque de Tutoriels",
+            "context": "Titre",
+            "suggestedKey": "costumerie.atelierCoutureBibliothequeDeTutoriels"
+          },
+          {
+            "line": 180,
+            "text": "Fiches techniques multimédias, liste du matériel, patrons et tutoriels vidéo de confection.",
+            "context": "Paragraphe",
+            "suggestedKey": "costumerie.fichesTechniquesMultimediasListeDu"
+          },
+          {
+            "line": 193,
+            "text": "+ Créer un Tutoriel",
+            "context": "Nœud JSX",
+            "suggestedKey": "costumerie.creerUnTutoriel"
+          },
+          {
+            "line": 204,
+            "text": "Retour",
+            "context": "Nœud JSX",
+            "suggestedKey": "costumerie.retour"
+          },
+          {
+            "line": 213,
+            "text": "⏳ Chargement des tutoriels...",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.chargementDesTutoriels"
+          },
+          {
+            "line": 240,
+            "text": "Coût :",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.cout"
+          },
+          {
+            "line": 265,
+            "text": "Modifier ce tutoriel",
+            "context": "Attribut title",
+            "suggestedKey": "costumerie.modifierCeTutoriel"
+          },
+          {
+            "line": 266,
+            "text": "✏️ Éditer",
+            "context": "Bouton",
+            "suggestedKey": "costumerie.editer"
+          },
+          {
+            "line": 273,
+            "text": "Supprimer ce tutoriel",
+            "context": "Attribut title",
+            "suggestedKey": "costumerie.supprimerCeTutoriel"
+          },
+          {
+            "line": 293,
+            "text": "🧵 Matériel Nécessaire",
+            "context": "Titre",
+            "suggestedKey": "costumerie.materielNecessaire"
+          },
+          {
+            "line": 305,
+            "text": "📜 Étapes de Fabrication pas à pas",
+            "context": "Titre",
+            "suggestedKey": "costumerie.etapesDeFabricationPasA"
+          },
+          {
+            "line": 317,
+            "text": "🎬 Tutoriel Vidéo de démonstration",
+            "context": "Titre",
+            "suggestedKey": "costumerie.tutorielVideoDeDemonstration"
+          },
+          {
+            "line": 335,
+            "text": "🎨 Patrons & Images de démonstration (",
+            "context": "Titre",
+            "suggestedKey": "costumerie.patronsImagesDeDemonstration"
+          },
+          {
+            "line": 346,
+            "text": "🔍 Agrrandir",
+            "context": "Nœud JSX",
+            "suggestedKey": "costumerie.agrrandir"
+          },
+          {
+            "line": 358,
+            "text": "📄 Documents Joints (PDF / Patrons à imprimer)",
+            "context": "Titre",
+            "suggestedKey": "costumerie.documentsJointsPdfPatronsA"
+          },
+          {
+            "line": 371,
+            "text": "Ouvrir / Télécharger ↗",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.ouvrirTelecharger"
+          },
+          {
+            "line": 420,
+            "text": "🧵 Matériel Nécessaire",
+            "context": "Titre",
+            "suggestedKey": "costumerie.materielNecessaire"
+          },
+          {
+            "line": 429,
+            "text": "📜 Étapes de Fabrication pas à pas",
+            "context": "Titre",
+            "suggestedKey": "costumerie.etapesDeFabricationPasA"
+          }
+        ]
+      },
+      {
+        "file": "src/components/profile/CollectiveWorkshopView.jsx",
+        "count": 31,
+        "items": [
+          {
+            "line": 139,
+            "text": "🧵 Atelier Costumes & Confections",
+            "context": "Titre",
+            "suggestedKey": "costumerie.atelierCostumesConfections"
+          },
+          {
+            "line": 142,
+            "text": "Parc Mutualisé",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.parcMutualise"
+          },
+          {
+            "line": 146,
+            "text": "Costumes confectionnés pour le stock associatif de la troupe, suivi de vos réalisations et accès aux tutoriels.",
+            "context": "Paragraphe",
+            "suggestedKey": "costumerie.costumesConfectionnesPourLeStock"
+          },
+          {
+            "line": 151,
+            "text": "← Retour",
+            "context": "Nœud JSX",
+            "suggestedKey": "costumerie.retour"
+          },
+          {
+            "line": 170,
+            "text": "Fiches Techniques Atelier",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.fichesTechniquesAtelier"
+          },
+          {
+            "line": 173,
+            "text": "Tutoriels pas-à-pas, vidéos et listes de matériel",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.tutorielsPasAPasVideos"
+          },
+          {
+            "line": 178,
+            "text": "Ouvrir →",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.ouvrir"
+          },
+          {
+            "line": 194,
+            "text": "Patrons & Documents Varal",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.patronsDocumentsVaral"
+          },
+          {
+            "line": 197,
+            "text": "Patrons de couture téléchargeables, PDF et fiches",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.patronsDeCoutureTelechargeablesPdf"
+          },
+          {
+            "line": 202,
+            "text": "Consulter →",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.consulter"
+          },
+          {
+            "line": 212,
+            "text": "Mes Confections pour la Troupe",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.mesConfectionsPourLaTroupe"
+          },
+          {
+            "line": 215,
+            "text": "Pièces apportées au stock commun",
+            "context": "Titre",
+            "suggestedKey": "costumerie.piecesApporteesAuStockCommun"
+          },
+          {
+            "line": 218,
+            "text": "Déclarez ici le nombre de pièces de costumes ou d'accessoires que vous avez cousues ou décorées pour l'association.",
+            "context": "Paragraphe",
+            "suggestedKey": "costumerie.declarezIciLeNombreDe"
+          },
+          {
+            "line": 240,
+            "text": "OK",
+            "context": "Bouton",
+            "suggestedKey": "costumerie.ok"
+          },
+          {
+            "line": 260,
+            "text": "Diminuer",
+            "context": "Attribut title",
+            "suggestedKey": "costumerie.diminuer"
+          },
+          {
+            "line": 268,
+            "text": "Cliquer pour modifier directement le nombre",
+            "context": "Attribut title",
+            "suggestedKey": "costumerie.cliquerPourModifierDirectementLe"
+          },
+          {
+            "line": 283,
+            "text": "Ajouter une pièce confectionnée",
+            "context": "Attribut title",
+            "suggestedKey": "costumerie.ajouterUnePieceConfectionnee"
+          },
+          {
+            "line": 296,
+            "text": "💡 Vous n'avez pas encore déclaré de pièces pour le stock collectif. Participez aux prochains chantiers ou ateliers couture pour enrichir notre vestiaire !",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.vousNAvezPasEncore"
+          },
+          {
+            "line": 299,
+            "text": "Merci pour votre contribution au stock collectif ! Chaque pièce renforce l'autonomie et l'éclat de la troupe.",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.merciPourVotreContributionAu"
+          },
+          {
+            "line": 303,
+            "text": "Formidable investissement ! Vous faites partie des artisans piliers du vestiaire de l'association.",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.formidableInvestissementVousFaitesPartie"
+          },
+          {
+            "line": 314,
+            "text": "Chantier Collectif de la Troupe",
+            "context": "Titre",
+            "suggestedKey": "costumerie.chantierCollectifDeLaTroupe"
+          },
+          {
+            "line": 319,
+            "text": "projet(s) enregistré(s)",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.projetSEnregistreS"
+          },
+          {
+            "line": 324,
+            "text": "⏳ Chargement des projets textiles...",
+            "context": "Nœud JSX",
+            "suggestedKey": "costumerie.chargementDesProjetsTextiles"
+          },
+          {
+            "line": 329,
+            "text": "Aucun chantier couture spécifique n'est ouvert pour le moment.",
+            "context": "Paragraphe",
+            "suggestedKey": "costumerie.aucunChantierCoutureSpecifiqueN"
+          },
+          {
+            "line": 332,
+            "text": "Les confections libres sont les bienvenues pour renouveler les basiques (chemises blanches, bracelets, rubans).",
+            "context": "Paragraphe",
+            "suggestedKey": "costumerie.lesConfectionsLibresSontLes"
+          },
+          {
+            "line": 373,
+            "text": "Besoins :",
+            "context": "Nœud JSX",
+            "suggestedKey": "costumerie.besoins"
+          },
+          {
+            "line": 380,
+            "text": "Budget prévu :",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.budgetPrevu"
+          },
+          {
+            "line": 396,
+            "text": "Tutoriels & Fiches de Confection",
+            "context": "Titre",
+            "suggestedKey": "costumerie.tutorielsFichesDeConfection"
+          },
+          {
+            "line": 401,
+            "text": "fiche(s)",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.ficheS"
+          },
+          {
+            "line": 428,
+            "text": "Libre",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.libre"
+          },
+          {
+            "line": 435,
+            "text": "Voir fiche →",
+            "context": "Bouton",
+            "suggestedKey": "costumerie.voirFiche"
+          }
+        ]
+      },
+      {
+        "file": "src/components/association-settings/blocks/WardrobeBlock.jsx",
+        "count": 11,
+        "items": [
+          {
+            "line": 31,
+            "text": "👔 Vestiaire : Tenues types (Marque Blanche)",
+            "context": "Titre",
+            "suggestedKey": "costumerie.vestiaireTenuesTypesMarqueBlanche"
+          },
+          {
+            "line": 36,
+            "text": "Définissez les tenues officielles de votre association. Les adhérents pourront se référer à ces codes vestimentaires.",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.definissezLesTenuesOfficiellesDe"
+          },
+          {
+            "line": 42,
+            "text": "Aucune tenue type configurée pour le moment.",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.aucuneTenueTypeConfigureePour"
+          },
+          {
+            "line": 51,
+            "text": "Pièces :",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.pieces"
+          },
+          {
+            "line": 58,
+            "text": "Supprimer cette tenue",
+            "context": "Attribut title",
+            "suggestedKey": "costumerie.supprimerCetteTenue"
+          },
+          {
+            "line": 69,
+            "text": "➕ Ajouter une nouvelle tenue type",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.ajouterUneNouvelleTenueType"
+          },
+          {
+            "line": 75,
+            "text": "Nom de la tenue",
+            "context": "Label de champ",
+            "suggestedKey": "costumerie.nomDeLaTenue"
+          },
+          {
+            "line": 83,
+            "text": "ex: Costume Blanc",
+            "context": "Attribut placeholder",
+            "suggestedKey": "costumerie.exCostumeBlanc"
+          },
+          {
+            "line": 89,
+            "text": "Pièces incluses",
+            "context": "Label de champ",
+            "suggestedKey": "costumerie.piecesIncluses"
+          },
+          {
+            "line": 97,
+            "text": "ex: Pantalon, Chemise, Ceinture",
+            "context": "Attribut placeholder",
+            "suggestedKey": "costumerie.exPantalonChemiseCeinture"
+          },
+          {
+            "line": 109,
+            "text": "Ajouter la tenue",
+            "context": "Bouton",
+            "suggestedKey": "costumerie.ajouterLaTenue"
+          }
+        ]
+      },
+      {
+        "file": "src/components/association-settings/modules/WardrobeMemberModeCard.jsx",
+        "count": 7,
+        "items": [
+          {
+            "line": 10,
+            "text": "Garde-robe personnelle",
+            "context": "Configuration statique (propriété label)",
+            "suggestedKey": "costumerie.gardeRobePersonnelle"
+          },
+          {
+            "line": 20,
+            "text": "Confection collective & Atelier",
+            "context": "Configuration statique (propriété label)",
+            "suggestedKey": "costumerie.confectionCollectiveAtelier"
+          },
+          {
+            "line": 30,
+            "text": "Désactivé (Masqué pour les membres)",
+            "context": "Configuration statique (propriété label)",
+            "suggestedKey": "costumerie.desactiveMasquePourLesMembres"
+          },
+          {
+            "line": 51,
+            "text": "👗 Mode du Vestiaire Adhérent",
+            "context": "Titre",
+            "suggestedKey": "costumerie.modeDuVestiaireAdherent"
+          },
+          {
+            "line": 54,
+            "text": "Définissez comment les adhérents interagissent avec les costumes au sein de votre association.",
+            "context": "Paragraphe",
+            "suggestedKey": "costumerie.definissezCommentLesAdherentsInteragissent"
+          },
+          {
+            "line": 58,
+            "text": "Actuel :",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.actuel"
+          },
+          {
+            "line": 116,
+            "text": "Mode actif pour la troupe",
+            "context": "Nœud JSX",
+            "suggestedKey": "costumerie.modeActifPourLaTroupe"
+          }
+        ]
+      },
+      {
+        "file": "src/components/documents/CostumerieDocumentsTable.jsx",
+        "count": 17,
+        "items": [
+          {
+            "line": 57,
+            "text": "Patrons & Fiches de Confection",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.patronsFichesDeConfection"
+          },
+          {
+            "line": 60,
+            "text": "Fiches de coupe, patrons téléchargeables, métrages et guides de confection de la troupe.",
+            "context": "Paragraphe",
+            "suggestedKey": "costumerie.fichesDeCoupePatronsTelechargeables"
+          },
+          {
+            "line": 71,
+            "text": "🪢 Vue Varal",
+            "context": "Bouton",
+            "suggestedKey": "costumerie.vueVaral"
+          },
+          {
+            "line": 82,
+            "text": "➕ Nouveau patron / fiche",
+            "context": "Nœud JSX",
+            "suggestedKey": "costumerie.nouveauPatronFiche"
+          },
+          {
+            "line": 97,
+            "text": "⬅️ Annuler et revenir au tableau de couture",
+            "context": "Bouton",
+            "suggestedKey": "costumerie.annulerEtRevenirAuTableau"
+          },
+          {
+            "line": 116,
+            "text": "Aucun patron ou fiche de confection enregistré pour le moment.",
+            "context": "Nœud JSX",
+            "suggestedKey": "costumerie.aucunPatronOuFicheDe"
+          },
+          {
+            "line": 124,
+            "text": "Nom du costume / pièce",
+            "context": "En-tête th",
+            "suggestedKey": "costumerie.nomDuCostumePiece"
+          },
+          {
+            "line": 125,
+            "text": "Patron PDF joint",
+            "context": "En-tête th",
+            "suggestedKey": "costumerie.patronPdfJoint"
+          },
+          {
+            "line": 126,
+            "text": "Actions",
+            "context": "En-tête th",
+            "suggestedKey": "costumerie.actions"
+          },
+          {
+            "line": 161,
+            "text": "Aucun fichier",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.aucunFichier"
+          },
+          {
+            "line": 169,
+            "text": "Consulter la fiche",
+            "context": "Attribut title",
+            "suggestedKey": "costumerie.consulterLaFiche"
+          },
+          {
+            "line": 170,
+            "text": "👁️ Voir",
+            "context": "Bouton",
+            "suggestedKey": "costumerie.voir"
+          },
+          {
+            "line": 178,
+            "text": "Télécharger le patron PDF",
+            "context": "Attribut title",
+            "suggestedKey": "costumerie.telechargerLePatronPdf"
+          },
+          {
+            "line": 179,
+            "text": "⬇️ Patron",
+            "context": "Bouton",
+            "suggestedKey": "costumerie.patron"
+          },
+          {
+            "line": 189,
+            "text": "Modifier cette fiche",
+            "context": "Attribut title",
+            "suggestedKey": "costumerie.modifierCetteFiche"
+          },
+          {
+            "line": 190,
+            "text": "✏️ Éditer",
+            "context": "Bouton",
+            "suggestedKey": "costumerie.editer"
+          },
+          {
+            "line": 197,
+            "text": "Supprimer la fiche",
+            "context": "Attribut title",
+            "suggestedKey": "costumerie.supprimerLaFiche"
+          }
+        ]
+      },
+      {
+        "file": "src/components/event-details/EventWardrobeSummaryCard.jsx",
+        "count": 17,
+        "items": [
+          {
+            "line": 215,
+            "text": "Bilan du Vestiaire Post-Prestation",
+            "context": "Titre",
+            "suggestedKey": "costumerie.bilanDuVestiairePostPrestation"
+          },
+          {
+            "line": 219,
+            "text": "Réconciliation des tenues de scène et suivi des retours au local.",
+            "context": "Paragraphe",
+            "suggestedKey": "costumerie.reconciliationDesTenuesDeScene"
+          },
+          {
+            "line": 226,
+            "text": "Déclarations :",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.declarations"
+          },
+          {
+            "line": 259,
+            "text": "Au bac asso",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.auBacAsso"
+          },
+          {
+            "line": 265,
+            "text": "Déposées au local dans la malle commune après la sortie.",
+            "context": "Paragraphe",
+            "suggestedKey": "costumerie.deposeesAuLocalDansLa"
+          },
+          {
+            "line": 274,
+            "text": "Lavage maison",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.lavageMaison"
+          },
+          {
+            "line": 280,
+            "text": "Emportées par les membres pour entretien à domicile.",
+            "context": "Paragraphe",
+            "suggestedKey": "costumerie.emporteesParLesMembresPour"
+          },
+          {
+            "line": 289,
+            "text": "À retoucher",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.aRetoucher"
+          },
+          {
+            "line": 295,
+            "text": "Signalées avec une réparation ou un accroc à traiter.",
+            "context": "Paragraphe",
+            "suggestedKey": "costumerie.signaleesAvecUneReparationOu"
+          },
+          {
+            "line": 305,
+            "text": "Signalements pour l'Atelier Couture (",
+            "context": "Titre",
+            "suggestedKey": "costumerie.signalementsPourLAtelierCouture"
+          },
+          {
+            "line": 329,
+            "text": "Membres en attente de déclaration (",
+            "context": "Titre",
+            "suggestedKey": "costumerie.membresEnAttenteDeDeclaration"
+          },
+          {
+            "line": 332,
+            "text": "🎉 Toutes les déclarations ont été reçues !",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.toutesLesDeclarationsOntEte"
+          },
+          {
+            "line": 363,
+            "text": "Déjà relancé aujourd'hui ✅",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.dejaRelanceAujourdHui"
+          },
+          {
+            "line": 390,
+            "text": "Action groupée de gestion du bac :",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.actionGroupeeDeGestionDu"
+          },
+          {
+            "line": 392,
+            "text": "Bascule simultanément les",
+            "context": "Paragraphe",
+            "suggestedKey": "costumerie.basculeSimultanementLes"
+          },
+          {
+            "line": 393,
+            "text": "tenues déposées au bac en statut « Au sale / À laver » dans l'inventaire physique.",
+            "context": "Paragraphe",
+            "suggestedKey": "costumerie.tenuesDeposeesAuBacEn"
+          },
+          {
+            "line": 399,
+            "text": "✅ Bac traité (",
+            "context": "Span / Badge",
+            "suggestedKey": "costumerie.bacTraite"
+          }
+        ]
+      }
+    ]
+  }
+}

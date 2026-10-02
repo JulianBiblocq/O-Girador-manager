@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '../../LanguageContext';
 
 /**
  * Sous-composant : ReportVolunteerCard
@@ -13,6 +14,7 @@ import React from 'react';
  * @param {string} [props.className] Classes CSS additionnelles
  */
 export default function ReportVolunteerCard({ volunteeringStats = {}, className = '' }) {
+  const { t } = useTranslation();
   const {
     totalPublicPlayingHours = 0,
     totalCollectiveVolunteerHours = 0,
@@ -29,15 +31,15 @@ export default function ReportVolunteerCard({ volunteeringStats = {}, className 
         <div>
           <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-cordel-wood flex items-center gap-2">
             <span>🤝</span>
-            <span>Bénévolat & Vie de Troupe (Cerfa 12156)</span>
+            <span>{t('governance.volunteeringCerfaTitle')}</span>
           </h3>
           <p className="text-[10px] text-encre-noire/70 font-medium">
-            Valorisation du temps bénévole et des représentations publiques pour les dossiers de subvention.
+            {t('governance.cerfaSubtitle')}
           </p>
         </div>
 
         <span className="hidden sm:inline-block text-[9.5px] font-black uppercase tracking-wider px-2 py-1 bg-cordel-bg border border-encre-noire/30 rounded-[3px_5px_3px_4px] text-encre-noire/80">
-          {eventsAuditedCount} événement{eventsAuditedCount > 1 ? 's' : ''} analysé{eventsAuditedCount > 1 ? 's' : ''}
+          {t('governance.eventsAnalyzedCount', { count: eventsAuditedCount })}
         </span>
       </div>
 
@@ -48,7 +50,7 @@ export default function ReportVolunteerCard({ volunteeringStats = {}, className 
             Volume Global Valorisable Cerfa
           </span>
           <span className="text-xs font-semibold text-emerald-950/80">
-            Temps cumulé d'engagement associatif (heures-participants + forfaits statutaires)
+            {t('governance.volunteeringHoursDesc')}
           </span>
         </div>
 
@@ -66,14 +68,14 @@ export default function ReportVolunteerCard({ volunteeringStats = {}, className 
         <div className="p-3 bg-cordel-bg/80 border border-encre-noire/20 rounded-[4px_6px_3px_5px] flex flex-col justify-between">
           <div>
             <span className="text-[9px] font-black uppercase text-encre-noire/60 block">
-              Activité collective
+              {t('governance.collectiveActivity')}
             </span>
             <span className="text-base font-black text-cordel-wood mt-0.5 block">
               {totalCollectiveVolunteerHours.toLocaleString('fr-FR')} h
             </span>
           </div>
           <span className="text-[8.5px] text-encre-noire/60 font-medium mt-1">
-            Répétitions, ateliers, concerts & AG
+            {t('governance.collectiveActivityDesc')}
           </span>
         </div>
 
@@ -81,14 +83,14 @@ export default function ReportVolunteerCard({ volunteeringStats = {}, className 
         <div className="p-3 bg-cordel-bg/80 border border-encre-noire/20 rounded-[4px_6px_3px_5px] flex flex-col justify-between">
           <div>
             <span className="text-[9px] font-black uppercase text-encre-noire/60 block">
-              Jeu en public (scène)
+              {t('governance.publicPerformance')}
             </span>
             <span className="text-base font-black text-emerald-800 mt-0.5 block">
               {totalPublicPlayingHours} h
             </span>
           </div>
           <span className="text-[8.5px] text-emerald-900/70 font-medium mt-1">
-            Durée cumulée des concerts & sorties
+            {t('governance.publicPerformanceDesc')}
           </span>
         </div>
 
@@ -96,14 +98,14 @@ export default function ReportVolunteerCard({ volunteeringStats = {}, className 
         <div className="p-3 bg-cordel-bg/80 border border-encre-noire/20 rounded-[4px_6px_3px_5px] flex flex-col justify-between">
           <div>
             <span className="text-[9px] font-black uppercase text-encre-noire/60 block">
-              Forfaits bureau & atelier
+              {t('governance.boardWorkshopPackages')}
             </span>
             <span className="text-base font-black text-[var(--color-cordel-ocre)] mt-0.5 block">
               {forfaitHeuresAdmin + forfaitHeuresArtisanat} h
             </span>
           </div>
           <span className="text-[8.5px] text-[var(--color-cordel-ocre)] font-medium mt-1">
-            {forfaitHeuresAdmin}h gestion + {forfaitHeuresArtisanat}h lutherie/couture
+            {t('governance.boardWorkshopPackagesDesc', { gestion: forfaitHeuresAdmin, atelier: forfaitHeuresArtisanat })}
           </span>
         </div>
       </div>
@@ -112,7 +114,7 @@ export default function ReportVolunteerCard({ volunteeringStats = {}, className 
       <div className="text-[9px] font-medium text-encre-noire/60 bg-cordel-bg/50 border border-dashed border-cordel-master-dark/20 p-2 rounded flex items-center gap-1.5">
         <span>ℹ️</span>
         <span>
-          Pour le Cerfa 12156, le bénévolat est valorisé au compte 864 / 875 (taux horaire indicatif SMIC chargé ou valorisation statutaire).
+          {t('governance.cerfaNoticeValuation')}
         </span>
       </div>
     </div>

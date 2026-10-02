@@ -67,7 +67,7 @@ export default function MestreCustomCategories({ groupId, onBack }) {
     );
 
     if (exists) {
-      alert("Cette catégorie de pratique existe déjà !");
+      alert(t('mestre.casting.categoryAlreadyExistsAlert'));
       return;
     }
 
@@ -179,7 +179,7 @@ export default function MestreCustomCategories({ groupId, onBack }) {
       <div className="flex flex-col items-center justify-center py-16 space-y-4">
         <div className="animate-spin text-4xl select-none">⏳</div>
         <p className="font-semibold text-xs uppercase tracking-widest text-cordel-master-dark opacity-60">
-          Chargement des catégories de pratique...
+          {t('mestre.casting.loadingPracticeCategories')}
         </p>
       </div>
     );
@@ -191,16 +191,15 @@ export default function MestreCustomCategories({ groupId, onBack }) {
       <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-dashed border-cordel-master-dark/30">
         <div>
           <div className="flex items-center gap-2 text-[10px] font-bold text-cordel-master-dark uppercase tracking-wider mb-1">
-            <span>Mestria</span>
+            <span>{t('mestre.casting.breadcrumbMestria')}</span>
             <span>›</span>
-            <span className="text-[var(--color-cordel-vert)] dark:text-emerald-400">Catégories de pratique</span>
+            <span className="text-[var(--color-cordel-vert)] dark:text-emerald-400">{t('mestre.casting.breadcrumbPracticeCategories')}</span>
           </div>
           <h2 className="text-xl font-black text-cordel-wood uppercase flex items-center gap-2">
-            <span>🏷️</span> Catégories & Niveaux de Pratique
+            <span>🏷️</span> {t('mestre.casting.customCategoriesTitle')}
           </h2>
-          <p className="text-xs text-cordel-master-dark/75 mt-0.5">
-            Configurez les sections, niveaux ou groupes de pratique (ex : Débutants, Avancés, Danse, Percussion, Équipe Pro...).
-            Ces catégories servent à cibler les convocations d'agenda et à orienter le casting.
+          <p className="text-xs text-cordel-master-dark/75 mt-0.5 whitespace-pre-line">
+            {t('mestre.casting.customCategoriesSubtitle')}
           </p>
         </div>
 
@@ -210,7 +209,7 @@ export default function MestreCustomCategories({ groupId, onBack }) {
             onClick={onBack}
             className="text-xs font-bold"
           >
-            ⬅️ Retour
+            {t('mestre.casting.btnBackArrow')}
           </CordelButton>
         )}
       </div>
@@ -218,13 +217,13 @@ export default function MestreCustomCategories({ groupId, onBack }) {
       {/* Formulaire d'ajout d'une catégorie */}
       <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
         <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-2">
-          ➕ Ajouter une nouvelle catégorie
+          {t('mestre.casting.addCategoryHeading')}
         </h3>
         <div className="flex flex-col gap-3">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
             <div className="flex flex-col gap-1 md:col-span-2">
               <label htmlFor="mestreNewCatName" className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                Intitulé de la section ou du niveau
+                {t('mestre.casting.categoryLabelField')}
               </label>
               <input
                 id="mestreNewCatName"
@@ -237,7 +236,7 @@ export default function MestreCustomCategories({ groupId, onBack }) {
                     handleAddCategory();
                   }
                 }}
-                placeholder="Ex: Section Danse Avancée, Percussion Pro, Débutants 1ère année..."
+                placeholder={t('mestre.casting.categoryPlaceholder')}
                 className="theme-input text-xs font-bold py-2 bg-cordel-bg-light w-full"
                 disabled={saving}
               />
@@ -245,7 +244,7 @@ export default function MestreCustomCategories({ groupId, onBack }) {
 
             <div className="flex flex-col gap-1">
               <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                Couleur de badge
+                {t('mestre.casting.badgeColorLabel')}
               </label>
               <div className="flex items-center gap-2">
                 <input
@@ -265,7 +264,7 @@ export default function MestreCustomCategories({ groupId, onBack }) {
           {/* Pastilles rapides de couleurs */}
           <div className="flex flex-wrap items-center gap-1.5 pt-1">
             <span className="text-[9px] uppercase font-bold text-cordel-master-dark/60 mr-1">
-              Palette Cordel :
+              {t('mestre.casting.cordelPaletteColon')}
             </span>
             {CORDEL_COLOR_PRESETS.map((preset) => (
               <button
@@ -288,7 +287,7 @@ export default function MestreCustomCategories({ groupId, onBack }) {
               disabled={saving || !newCatName.trim()}
               className="py-1.5 text-xs px-4 uppercase tracking-widest font-black"
             >
-              + Ajouter la catégorie
+              {t('mestre.casting.btnAddCategory')}
             </CordelButton>
           </div>
         </div>
@@ -298,17 +297,17 @@ export default function MestreCustomCategories({ groupId, onBack }) {
       <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood">
-            📋 Catégories configurées ({categories.length})
+            {t('mestre.casting.configuredCategoriesCount')}{categories.length})
           </h3>
           <span className="text-[10px] font-semibold text-cordel-master-dark/70">
-            Utilisées dans l'agenda, les castings et les filtres trombinoscope
+            {t('mestre.casting.categoriesUsageSubtitle')}
           </span>
         </div>
 
         {categories.length === 0 ? (
           <div className="p-6 text-center border border-dashed border-cordel-master-dark/20 rounded bg-cordel-bg-light/40">
             <p className="text-xs italic text-cordel-master-dark/70">
-              Aucune catégorie de pratique enregistrée pour l'instant.
+              {t('mestre.casting.noCategoriesSaved')}
             </p>
           </div>
         ) : (
@@ -333,7 +332,7 @@ export default function MestreCustomCategories({ groupId, onBack }) {
         {/* Action de synchronisation batch des anciens membres */}
         <div className="mt-4 pt-3 border-t border-dashed border-cordel-master-dark/15 flex flex-wrap items-center justify-between gap-2">
           <div className="text-[10px] text-cordel-master-dark/70 max-w-md">
-            <span>🔄 Mettre à jour rétroactivement les anciens profils membres qui utilisent encore les intitulés par défaut.</span>
+            <span>{t('mestre.casting.retroactiveUpdateDesc')}</span>
             {migrationStatus && (
               <p className="font-bold text-[var(--color-cordel-vert)] mt-1">{migrationStatus}</p>
             )}

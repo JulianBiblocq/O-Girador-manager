@@ -34,7 +34,8 @@ export default function UserStagePositionBanner({
   const myExactRole = resolveExactRole({
     member: myMemberInfo,
     placement: myPlacement,
-    groupNomenclature
+    groupNomenclature,
+    t
   });
 
   const proximity = getProximityNeighbors({
@@ -78,7 +79,7 @@ export default function UserStagePositionBanner({
 
           {proximity.isMestre ? (
             <div className="text-[11px] font-bold text-cordel-wood italic">
-              👑 {proximity.specialPositionNote || (t ? (t('agenda.centerStageFrontNotice') || 'Devant la scène, au centre face à la troupe') : 'Devant la scène, au centre face à la troupe')}
+              👑 {t ? (t('mestre.mestrePositionDesc') || t('agenda.centerStageFrontNotice') || 'Devant la scène, au centre face à la troupe') : (proximity.specialPositionNote || 'Devant la scène, au centre face à la troupe')}
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-2 text-[10px] sm:text-[11px]">

@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { useTranslation } from '../LanguageContext';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 
 export default function InstrumentBaptismModal({ project, model, onClose, onValidate }) {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     nom: `${model.nom} - ${project.nom}`,
     kitAccessoires: '',
@@ -18,7 +20,7 @@ export default function InstrumentBaptismModal({ project, model, onClose, onVali
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.nom.trim()) {
-      alert("Le nom ou numéro d'inventaire est requis.");
+      alert(t('lutherie.alertNameOrInventoryRequired'));
       return;
     }
     onValidate(formData);
@@ -31,18 +33,18 @@ export default function InstrumentBaptismModal({ project, model, onClose, onVali
           <div className="flex justify-between items-start border-b-2 border-dashed border-cordel-master-dark/20 pb-2">
             <div>
               <h3 className="text-sm font-black text-cordel-wood uppercase flex items-center gap-2">
-                <span>🥁</span> Baptême de l'Instrument
+                <span>🥁</span> {t('lutherie.instrumentBaptismTitle')}
               </h3>
               <p className="text-[10px] text-stone-600 font-medium">
-                Finalisez l'assemblage et intégrez l'instrument au parc officiel.
+                {t('lutherie.instrumentBaptismDesc')}
               </p>
             </div>
-            <button onClick={onClose} className="text-stone-400 hover:text-stone-700 text-lg">×</button>
+            <button onClick={onClose} className="text-stone-400 hover:text-stone-700 text-lg cursor-pointer">×</button>
           </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
             <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-bold uppercase text-encre-noire">Modèle (Lecture seule)</label>
+              <label className="text-[10px] font-bold uppercase text-encre-noire">{t('lutherie.modelReadOnlyLabel')}</label>
               <input
                 type="text"
                 value={model.nom}
@@ -52,7 +54,7 @@ export default function InstrumentBaptismModal({ project, model, onClose, onVali
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-bold uppercase text-encre-noire">Nom / N° d'inventaire *</label>
+              <label className="text-[10px] font-bold uppercase text-encre-noire">{t('lutherie.nameOrInventoryNumberLabel')}</label>
               <input
                 type="text"
                 name="nom"
@@ -60,52 +62,52 @@ export default function InstrumentBaptismModal({ project, model, onClose, onVali
                 onChange={handleChange}
                 required
                 className="theme-input"
-                placeholder="ex. Alfaia #6 — La Roazhon"
+                placeholder={t('lutherie.nameOrInventoryPlaceholder')}
                 autoFocus
               />
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-bold uppercase text-encre-noire">Localisation Physique</label>
+              <label className="text-[10px] font-bold uppercase text-encre-noire">{t('lutherie.physicalLocationLabel')}</label>
               <input
                 type="text"
                 name="localisationPhysique"
                 value={formData.localisationPhysique}
                 onChange={handleChange}
                 className="theme-input"
-                placeholder="ex. Local, Camion, chez un membre..."
+                placeholder={t('lutherie.physicalLocationPlaceholder')}
               />
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-bold uppercase text-encre-noire">Propriétaire</label>
+              <label className="text-[10px] font-bold uppercase text-encre-noire">{t('lutherie.ownerLabel')}</label>
               <input
                 type="text"
                 name="proprietaire"
                 value={formData.proprietaire}
                 onChange={handleChange}
                 className="theme-input"
-                placeholder="Association ou nom d'un membre"
+                placeholder={t('lutherie.ownerPlaceholder')}
               />
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-bold uppercase text-encre-noire">Kit d'accessoires initial</label>
+              <label className="text-[10px] font-bold uppercase text-encre-noire">{t('lutherie.initialAccessoriesKitLabel')}</label>
               <textarea
                 name="kitAccessoires"
                 value={formData.kitAccessoires}
                 onChange={handleChange}
                 className="theme-input h-16 resize-none"
-                placeholder="Sangle, housse, mailloches..."
+                placeholder={t('lutherie.initialAccessoriesKitPlaceholder')}
               />
             </div>
 
             <div className="flex justify-end gap-2 mt-2 pt-3 border-t border-dashed border-cordel-master-dark/20">
               <CordelButton variant="secondary" type="button" onClick={onClose}>
-                Annuler
+                {t('lutherie.btnCancel')}
               </CordelButton>
               <CordelButton variant="vert" type="submit">
-                Créer l'instrument
+                {t('lutherie.btnCreateInstrument')}
               </CordelButton>
             </div>
           </form>

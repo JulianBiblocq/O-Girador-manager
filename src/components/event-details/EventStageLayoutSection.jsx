@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from '../LanguageContext';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
@@ -23,6 +24,7 @@ export default function EventStageLayoutSection({
   readOnly = false,
   onGoToStageLayoutEditor
 }) {
+  const { t: tr } = useTranslation();
   const { confirm } = useConfirm();
   const { getColorForInstrument } = useInstrumentColor(profileData?.groupId);
   const { nomenclature: groupNomenclature } = useGroupNomenclature(profileData?.groupId || event?.groupId);
@@ -246,7 +248,7 @@ export default function EventStageLayoutSection({
       if (row < 0) {
         const selectedMember = presentMembers.find(m => m.id === selectedMemberId);
         if (!isDancer(selectedMember)) {
-          alert("⚠️ Seuls les danseurs et danseuses peuvent être placés sur l'Avant-Scène.");
+          alert(tr('mestre.stageLayout.alertDancersOnlyFrontStage'));
           return;
         }
       }
@@ -316,7 +318,7 @@ export default function EventStageLayoutSection({
     if (targetRow < 0) {
       const member = presentMembers.find(m => m.id === memberId);
       if (!isDancer(member)) {
-        alert("⚠️ Seuls les danseurs et danseuses peuvent être placés sur l'Avant-Scène.");
+        alert(tr('mestre.stageLayout.alertDancersOnlyFrontStage'));
         setDraggedMemberId(null);
         return;
       }
@@ -495,14 +497,14 @@ export default function EventStageLayoutSection({
     return (
       <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
         <div className="text-center py-4 flex flex-col items-center gap-3">
-          <span className="text-xs font-bold opacity-60">🎭 Aucun plan de scène n'a encore été configuré pour cet événement.</span>
+          <span className="text-xs font-bold opacity-60">{tr('mestre.stageLayout.noLayoutConfiguredNotice')}</span>
           {onGoToStageLayoutEditor && (
             <button
               type="button"
               onClick={() => onGoToStageLayoutEditor(event.id)}
               className="text-[10px] font-black uppercase bg-cordel-ocre text-encre-noire border border-encre-noire px-4 py-2 rounded shadow-[2px_2px_0px_0px_#181716] cursor-pointer hover:brightness-95"
             >
-              🛠️ Créer le plan de scène dans l'Espace Mestre
+              {tr('mestre.stageLayout.createLayoutInMestreSpace')}
             </button>
           )}
         </div>
@@ -524,7 +526,7 @@ export default function EventStageLayoutSection({
       {/* Header / Basculer Accordion Button */}
       {isAuthorized && !isPublished && (
         <div className="mb-3 px-3 py-1.5 bg-amber-100 border border-amber-500 text-amber-900 rounded font-black text-[10px] uppercase tracking-wider flex items-center gap-2 w-fit shadow-[1.5px_1.5px_0px_0px_#181716]">
-          <span>🔒 Brouillon / Masqué aux adhérents</span>
+          <span>{tr('mestre.stageLayout.draftHiddenBadge')}</span>
         </div>
       )}
       {isAuthorized && isPublished && (
@@ -563,7 +565,7 @@ export default function EventStageLayoutSection({
                 onClick={() => onGoToStageLayoutEditor(event.id)}
                 className="text-[10px] font-black uppercase bg-cordel-ocre text-encre-noire border border-encre-noire px-3 py-1.5 rounded shadow-[1.5px_1.5px_0px_0px_#181716] cursor-pointer hover:brightness-95 flex items-center gap-1.5"
               >
-                🛠️ Placer / Modifier dans l'Espace Mestre
+                {tr('mestre.stageLayout.placeOrEditInMestreSpace')}
               </button>
             </div>
           )}
@@ -578,9 +580,9 @@ export default function EventStageLayoutSection({
                 <div className="flex flex-col gap-2">
                   {/* Percussion line */}
                   <div className="flex gap-4 items-center">
-                    <span className="font-extrabold text-[10px] uppercase text-cordel-wood w-24">🥁 Percussions :</span>
+                    <span className="font-extrabold text-[10px] uppercase text-cordel-wood w-24">{tr('mestre.stageLayout.percussionsColon')}</span>
                     <label className="flex items-center gap-2 font-bold text-[11px]">
-                      Lignes:
+                      {tr('mestre.stageLayout.rowsColon')}
                       <input
                         type="number"
                         min="2"
@@ -591,7 +593,7 @@ export default function EventStageLayoutSection({
                       />
                     </label>
                     <label className="flex items-center gap-2 font-bold text-[11px]">
-                      Colonnes:
+                      {tr('mestre.stageLayout.colsColon')}
                       <input
                         type="number"
                         min="2"
@@ -604,9 +606,9 @@ export default function EventStageLayoutSection({
                   </div>
                   {/* Danse line */}
                   <div className="flex gap-4 items-center">
-                    <span className="font-extrabold text-[10px] uppercase text-cordel-wood w-24">💃 Danse :</span>
+                    <span className="font-extrabold text-[10px] uppercase text-cordel-wood w-24">{tr('mestre.stageLayout.danceColon')}</span>
                     <label className="flex items-center gap-2 font-bold text-[11px]">
-                      Lignes:
+                      {tr('mestre.stageLayout.rowsColon')}
                       <input
                         type="number"
                         min="1"
@@ -617,7 +619,7 @@ export default function EventStageLayoutSection({
                       />
                     </label>
                     <label className="flex items-center gap-2 font-bold text-[11px]">
-                      Colonnes:
+                      {tr('mestre.stageLayout.colsColon')}
                       <input
                         type="number"
                         min="1"
@@ -647,9 +649,9 @@ export default function EventStageLayoutSection({
                         type="button"
                         onClick={() => { setSelectedMemberId(null); setPendingVoice(null); }}
                         className="text-red-700 hover:text-red-900 font-bold ml-3 px-2 py-0.5 rounded bg-red-100/60 hover:bg-red-200 border border-red-300 transition-colors cursor-pointer text-[10px] uppercase tracking-wider"
-                        title="Désélectionner (ou touche Échap)"
+                        title={tr('mestre.stageLayout.deselectTitle')}
                       >
-                        ✕ Désélectionner
+                        {tr('mestre.stageLayout.deselectBtn')}
                       </button>
                     </div>
                     {(() => {
@@ -662,7 +664,7 @@ export default function EventStageLayoutSection({
                         return (
                           <div className="flex flex-col gap-1.5 bg-white/60 dark:bg-black/40 p-2.5 rounded border border-dashed border-cordel-master-dark/20 mt-1">
                             <span className="text-[10px] font-black uppercase text-cordel-master-dark">
-                              Voix attribuée pour la scène :
+                              {tr('mestre.stageLayout.assignedVoiceForStageColon')}
                             </span>
                             <div className="flex gap-4">
                               {[
@@ -683,7 +685,7 @@ export default function EventStageLayoutSection({
                                       className="w-3.5 h-3.5 accent-cordel-wood cursor-pointer"
                                     />
                                     <span className="text-[11px] font-bold text-cordel-master-dark">
-                                      {label} {!isCompetent && <span className="text-[9px] opacity-60">(hors profil)</span>}
+                                      {label} {!isCompetent && <span className="text-[9px] opacity-60">{tr('mestre.stageLayout.outOfProfileBadge')}</span>}
                                     </span>
                                   </label>
                                 );
@@ -702,7 +704,7 @@ export default function EventStageLayoutSection({
                         return (
                           <div className="flex flex-col gap-1.5 bg-white/60 dark:bg-black/40 p-2.5 rounded border border-dashed border-cordel-master-dark/20 mt-1">
                             <span className="text-[10px] font-black uppercase text-cordel-master-dark">
-                              Instrument attribué pour la scène :
+                              {tr('mestre.stageLayout.assignedInstrumentForStageColon')}
                             </span>
                             <div className="flex gap-4">
                               {[
@@ -777,7 +779,7 @@ export default function EventStageLayoutSection({
                 <div className="flex flex-col gap-2.5 max-h-[360px] overflow-y-auto pr-1">
                   {Object.keys(groupedUnplaced).length === 0 ? (
                     <span className="italic opacity-60 text-[11px] text-center my-4">
-                      Tous les membres présents ont été placés.
+                      {tr('mestre.stageLayout.allPresentMembersPlaced')}
                     </span>
                   ) : (
                     Object.keys(groupedUnplaced).map((inst) => (
@@ -827,7 +829,7 @@ export default function EventStageLayoutSection({
                   onChange={(e) => setIsPublished(e.target.checked)}
                   className="w-4 h-4 cursor-pointer"
                 />
-                Publier le plan de scène dans l'agenda
+                {tr('mestre.stageLayout.publishLayoutInAgendaCheckbox')}
               </label>
 
               <div className="flex gap-3">

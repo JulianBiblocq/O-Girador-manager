@@ -1,0 +1,1633 @@
+[
+  {
+    "file": "src/components/mestre/MestreRepertoireView.jsx",
+    "line": 111,
+    "text": "Erreur lors de la modification du statut du répertoire.",
+    "context": "Message runtime (showToast)",
+    "suggestedKey": "mestre.repertoireErreurLorsDeLaModification"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireView.jsx",
+    "line": 255,
+    "text": "Erreur lors de la suppression.",
+    "context": "Message runtime (alert)",
+    "suggestedKey": "mestre.repertoireErreurLorsDeLaSuppression"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireView.jsx",
+    "line": 301,
+    "text": "Erreur lors de l'importation du morceau dans le Répertoire.",
+    "context": "Message runtime (showToast)",
+    "suggestedKey": "mestre.repertoireErreurLorsDeLImportation"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireView.jsx",
+    "line": 351,
+    "text": "Erreur lors de la synchronisation avec le Séquenceur.",
+    "context": "Message runtime (showToast)",
+    "suggestedKey": "mestre.repertoireErreurLorsDeLaSynchronisation"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireView.jsx",
+    "line": 481,
+    "text": "⏳ Chargement du répertoire vivant...",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireChargementDuRepertoireVivant"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireView.jsx",
+    "line": 502,
+    "text": "➕ Ajouter un premier morceau",
+    "context": "Nœud JSX",
+    "suggestedKey": "mestre.repertoireAjouterUnPremierMorceau"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireView.jsx",
+    "line": 527,
+    "text": "Cliquer pour ouvrir et modifier la fiche de ce morceau",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireCliquerPourOuvrirEtModifier"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireView.jsx",
+    "line": 572,
+    "text": "Audio",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireAudio"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireView.jsx",
+    "line": 584,
+    "text": "La fiche de ce chant n'a pas pu être trouvée sur le Varal.",
+    "context": "Message runtime (showToast)",
+    "suggestedKey": "mestre.repertoireLaFicheDeCeChant"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireView.jsx",
+    "line": 654,
+    "text": "Tablature vivante",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireTablatureVivante"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireView.jsx",
+    "line": 672,
+    "text": "Consulter l'aide-mémoire des signes du Mestre",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireConsulterLAideMemoireDes"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireView.jsx",
+    "line": 675,
+    "text": "Signe",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireSigne"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireView.jsx",
+    "line": 689,
+    "text": "Afficher les entraînements associés",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireAfficherLesEntrainementsAssocies"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireView.jsx",
+    "line": 692,
+    "text": "entraînement",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireEntrainement"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireView.jsx",
+    "line": 699,
+    "text": "Autonome (joué de mémoire)",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireAutonomeJoueDeMemoire"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireView.jsx",
+    "line": 711,
+    "text": "Audio de référence :",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireAudioDeReference"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireView.jsx",
+    "line": 714,
+    "text": "✓ direct séquenceur",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireDirectSequenceur"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireView.jsx",
+    "line": 716,
+    "text": "✓ direct toada",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireDirectToada"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireView.jsx",
+    "line": 786,
+    "text": "✋ Signes :",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireSignes"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireView.jsx",
+    "line": 837,
+    "text": "Entraînements (",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireEntrainements"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireView.jsx",
+    "line": 839,
+    "text": "sequenciador",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireSequenciador"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireView.jsx",
+    "line": 862,
+    "text": "Ouvrir et travailler ce morceau dans le Séquenceur avec SSO",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireOuvrirEtTravaillerCeMorceau"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireView.jsx",
+    "line": 904,
+    "text": "Consulter et imprimer la tablature (calculée à la volée)",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireConsulterEtImprimerLaTablature"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireView.jsx",
+    "line": 907,
+    "text": "Tablature",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireTablature"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireView.jsx",
+    "line": 922,
+    "text": "La fiche de ce chant n'a pas pu être trouvée sur le Varal.",
+    "context": "Message runtime (showToast)",
+    "suggestedKey": "mestre.repertoireLaFicheDeCeChant"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireView.jsx",
+    "line": 929,
+    "text": "Toada",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireToada"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireView.jsx",
+    "line": 942,
+    "text": "Consulter les fiches culturelles associées",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireConsulterLesFichesCulturellesAssociees"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireView.jsx",
+    "line": 945,
+    "text": "fiches Culture",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireFichesCulture"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireView.jsx",
+    "line": 962,
+    "text": "Consulter la fiche culturelle du Varal associée",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireConsulterLaFicheCulturelleDu"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireView.jsx",
+    "line": 965,
+    "text": "Fiche Culture",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireFicheCulture"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireView.jsx",
+    "line": 975,
+    "text": "Créer une fiche du Varal Culture pré-remplie avec le Contexte & Histoire du morceau (contexteHistorique)",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireCreerUneFicheDuVaral"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireView.jsx",
+    "line": 978,
+    "text": "Fiche Culture",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireFicheCulture"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireView.jsx",
+    "line": 991,
+    "text": "Ajouter au fil conducteur d'une répétition ou d'un concert",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireAjouterAuFilConducteurD"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireView.jsx",
+    "line": 992,
+    "text": "➕ Programmer",
+    "context": "Nœud JSX",
+    "suggestedKey": "mestre.repertoireProgrammer"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireView.jsx",
+    "line": 1005,
+    "text": "Modifier les informations",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireModifierLesInformations"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireView.jsx",
+    "line": 1121,
+    "text": "Fiches Culturelles —",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireFichesCulturelles"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireView.jsx",
+    "line": 1133,
+    "text": "Sélectionnez la fiche culturelle à consulter :",
+    "context": "Paragraphe",
+    "suggestedKey": "mestre.repertoireSelectionnezLaFicheCulturelleA"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireView.jsx",
+    "line": 1155,
+    "text": "Consulter ↗",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireConsulter"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireHeader.jsx",
+    "line": 30,
+    "text": "Direction Artistique —",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireDirectionArtistique"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireHeader.jsx",
+    "line": 32,
+    "text": "Architecture réactive vivante liée au Séquenceur, au Varal et à Dançad'Or",
+    "context": "Paragraphe",
+    "suggestedKey": "mestre.repertoireArchitectureReactiveVivanteLieeAu"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireHeader.jsx",
+    "line": 51,
+    "text": "Ouvert au groupe",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireOuvertAuGroupe"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireHeader.jsx",
+    "line": 58,
+    "text": "Masquer le répertoire aux adhérents",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireMasquerLeRepertoireAuxAdherents"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireHeader.jsx",
+    "line": 59,
+    "text": "Masquer",
+    "context": "Bouton",
+    "suggestedKey": "mestre.repertoireMasquer"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireHeader.jsx",
+    "line": 67,
+    "text": "Masqué",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireMasque"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireHeader.jsx",
+    "line": 74,
+    "text": "Ouvrir le répertoire aux adhérents",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireOuvrirLeRepertoireAuxAdherents"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireHeader.jsx",
+    "line": 75,
+    "text": "Ouvrir",
+    "context": "Bouton",
+    "suggestedKey": "mestre.repertoireOuvrir"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireHeader.jsx",
+    "line": 89,
+    "text": "Affecter une vidéo à plusieurs morceaux du répertoire",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireAffecterUneVideoAPlusieurs"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireHeader.jsx",
+    "line": 92,
+    "text": "Affecter vidéo par lot",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireAffecterVideoParLot"
+  },
+  {
+    "file": "src/components/mestre/MestreRepertoireHeader.jsx",
+    "line": 102,
+    "text": "➕ Ajouter un morceau",
+    "context": "Nœud JSX",
+    "suggestedKey": "mestre.repertoireAjouterUnMorceau"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 479,
+    "text": "Le fichier audio est trop volumineux (maximum 25 Mo).",
+    "context": "Message runtime (alert)",
+    "suggestedKey": "mestre.repertoireLeFichierAudioEstTrop"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 493,
+    "text": "Erreur lors de l'envoi du fichier audio.",
+    "context": "Message runtime (alert)",
+    "suggestedKey": "mestre.repertoireErreurLorsDeLEnvoi"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 766,
+    "text": "Fermer",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireFermer"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 793,
+    "text": "Injecter le titre de la toada sélectionnée",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireInjecterLeTitreDeLa"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 795,
+    "text": "💡 Suggérer «",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireSuggerer"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 812,
+    "text": "Correspondances détectées :",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireCorrespondancesDetectees"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 823,
+    "text": "Lier au Preset Séquenceur détecté",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireLierAuPresetSequenceurDetecte"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 825,
+    "text": "🥁 Lier au Preset «",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireLierAuPreset"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 833,
+    "text": "Lier à la Toada détectée",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireLierALaToadaDetectee"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 835,
+    "text": "🗣️ Lier à la Toada «",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireLierALaToada"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 843,
+    "text": "Lier à la chorégraphie Dançad'Or détectée",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireLierALaChoregraphieDancad"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 845,
+    "text": "💃 Lier à la Danse «",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireLierALaDanse"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 853,
+    "text": "Lier à la fiche Varal Culture détectée",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireLierALaFicheVaral"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 855,
+    "text": "📖 Lier à la Culture «",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireLierALaCulture"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 920,
+    "text": "La validation est libre : un morceau peut être prêt même sans ressource externe attachée.",
+    "context": "Paragraphe",
+    "suggestedKey": "mestre.repertoireLaValidationEstLibreUn"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 965,
+    "text": "🔗 Liaisons transversales vivantes (Varal, Séquenceur, Danse)",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireLiaisonsTransversalesVivantesVaralSequenceur"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 1048,
+    "text": "Cliquer pour utiliser le nom de cette toada comme titre du morceau",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireCliquerPourUtiliserLeNom"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 1051,
+    "text": "Définir comme titre :",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireDefinirCommeTitre"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 1060,
+    "text": "Consulter les paroles complètes de ce chant",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireConsulterLesParolesCompletesDe"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 1063,
+    "text": "Lire les paroles de «",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireLireLesParolesDe"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 1089,
+    "text": "⭐ 🎛️ Préréglages Complets (Presets - Audio & Tablature en direct)",
+    "context": "Attribut label",
+    "suggestedKey": "mestre.repertoirePrereglagesCompletsPresetsAudioTablature"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 1100,
+    "text": "📑 Séquences & Arrangements (Sections)",
+    "context": "Attribut label",
+    "suggestedKey": "mestre.repertoireSequencesArrangementsSections"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 1109,
+    "text": "🥁 Motifs individuels & Fichiers JSON",
+    "context": "Attribut label",
+    "suggestedKey": "mestre.repertoireMotifsIndividuelsFichiersJson"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 1118,
+    "text": "Liaison vivante : audio, BPM, signes et tablature seront lus en direct depuis ce preset.",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireLiaisonVivanteAudioBpmSignes"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 1128,
+    "text": "Audio de référence",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireAudioDeReference"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 1135,
+    "text": "Dissocier cet enregistrement audio personnalisé",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireDissocierCetEnregistrementAudioPersonnalise"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 1136,
+    "text": "Effacer",
+    "context": "Bouton",
+    "suggestedKey": "mestre.repertoireEffacer"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 1152,
+    "text": "🎧 Masters Audio & Enregistrements du Séquenceur",
+    "context": "Attribut label",
+    "suggestedKey": "mestre.repertoireMastersAudioEnregistrementsDuSequenceur"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 1162,
+    "text": "🔗 Audio personnalisé",
+    "context": "Attribut label",
+    "suggestedKey": "mestre.repertoireAudioPersonnalise"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 1163,
+    "text": "🎵 Fichier lié (",
+    "context": "Option select",
+    "suggestedKey": "mestre.repertoireFichierLie"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 1183,
+    "text": "ou",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireOu"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 1195,
+    "text": "🔗 Coller une URL",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireCollerUneUrl"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 1202,
+    "text": "▶ Pré-écoute de l'audio :",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoirePreEcouteDeLAudio"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 1265,
+    "text": "💃 Chorégraphie liée",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireChoregraphieLiee"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 1271,
+    "text": "fiche(s) culture",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireFicheSCulture"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 1275,
+    "text": "Aucune liaison transversale active",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireAucuneLiaisonTransversaleActive"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 1291,
+    "text": "Tablature résolue du Séquenceur",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireTablatureResolueDuSequenceur"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 1317,
+    "text": "🎬 Vidéo de référence & Histoire culturelle",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireVideoDeReferenceHistoireCulturelle"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 1324,
+    "text": "Créer une fiche sur le Varal Culture pré-remplie avec ces informations",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireCreerUneFicheSurLe"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 1347,
+    "text": "Lien vidéo YouTube propre au morceau",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireLienVideoYoutubePropreAu"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 1354,
+    "text": "Effacer",
+    "context": "Bouton",
+    "suggestedKey": "mestre.repertoireEffacer"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 1379,
+    "text": "Choisir parmi les playlists YouTube configurées de l'association",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireChoisirParmiLesPlaylistsYoutube"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 1381,
+    "text": "🎬 Choisir parmi nos vidéos",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireChoisirParmiNosVideos"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 1387,
+    "text": "Vidéo YouTube reconnue (ID :",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireVideoYoutubeReconnueId"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 1397,
+    "text": "Notes d'histoire & contexte artistique",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireNotesDHistoireContexteArtistique"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 1404,
+    "text": "Effacer",
+    "context": "Bouton",
+    "suggestedKey": "mestre.repertoireEffacer"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 1414,
+    "text": "Renseignez l'histoire spécifique, la nation d'origine ou l'inspiration du morceau...",
+    "context": "Attribut placeholder",
+    "suggestedKey": "mestre.repertoireRenseignezLHistoireSpecifiqueLa"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 1422,
+    "text": "🎬 Vidéo principale configurée",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireVideoPrincipaleConfiguree"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 1426,
+    "text": "Pas de vidéo principale",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoirePasDeVideoPrincipale"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 1429,
+    "text": "📜 Contexte historique renseigné",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireContexteHistoriqueRenseigne"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 1458,
+    "text": "✌️ Signes du Mestre associés",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireSignesDuMestreAssocies"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 1481,
+    "text": "signe(s) configuré(s)",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireSigneSConfigureS"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 1484,
+    "text": "Aucun signe du Mestre associé",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireAucunSigneDuMestreAssocie"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 1524,
+    "text": "Aucune note particulière",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireAucuneNoteParticuliere"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 1546,
+    "text": "Annuler",
+    "context": "Nœud JSX",
+    "suggestedKey": "mestre.repertoireAnnuler"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 1590,
+    "text": "Chant & Paroles",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireChantParoles"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceModal.jsx",
+    "line": 1598,
+    "text": "Fermer",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireFermer"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceStatusSelector.jsx",
+    "line": 136,
+    "text": "Modifier le statut de la saison : Au programme / En préparation / Au frigo",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireModifierLeStatutDeLa"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceStatusSelector.jsx",
+    "line": 146,
+    "text": "Statut de la saison",
+    "context": "Nœud JSX",
+    "suggestedKey": "mestre.repertoireStatutDeLaSaison"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceStatusSelector.jsx",
+    "line": 161,
+    "text": "Au programme cette année",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireAuProgrammeCetteAnnee"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceStatusSelector.jsx",
+    "line": 177,
+    "text": "En préparation / Chantier",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireEnPreparationChantier"
+  },
+  {
+    "file": "src/components/mestre/RepertoirePieceStatusSelector.jsx",
+    "line": 193,
+    "text": "Au frigo / Archives",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireAuFrigoArchives"
+  },
+  {
+    "file": "src/components/mestre/ProgramPieceModal.jsx",
+    "line": 194,
+    "text": "Fermer",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireFermer"
+  },
+  {
+    "file": "src/components/mestre/ProgramPieceModal.jsx",
+    "line": 220,
+    "text": "🎵 Audio lié",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireAudioLie"
+  },
+  {
+    "file": "src/components/mestre/ProgramPieceModal.jsx",
+    "line": 224,
+    "text": "🗣️ Toada liée",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireToadaLiee"
+  },
+  {
+    "file": "src/components/mestre/ProgramPieceModal.jsx",
+    "line": 225,
+    "text": "💃 Danse liée",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireDanseLiee"
+  },
+  {
+    "file": "src/components/mestre/ProgramPieceModal.jsx",
+    "line": 227,
+    "text": "📖 Culture liée",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireCultureLiee"
+  },
+  {
+    "file": "src/components/mestre/ProgramPieceModal.jsx",
+    "line": 230,
+    "text": "Morceau autonome (sans ressource externe)",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireMorceauAutonomeSansRessourceExterne"
+  },
+  {
+    "file": "src/components/mestre/ProgramPieceModal.jsx",
+    "line": 248,
+    "text": "Chargement de l'agenda...",
+    "context": "Paragraphe",
+    "suggestedKey": "mestre.repertoireChargementDeLAgenda"
+  },
+  {
+    "file": "src/components/mestre/ProgramPieceModal.jsx",
+    "line": 275,
+    "text": "Consignes & Notes d'intention pour la séance (optionnel)",
+    "context": "Label de champ",
+    "suggestedKey": "mestre.repertoireConsignesNotesDIntentionPour"
+  },
+  {
+    "file": "src/components/mestre/ProgramPieceModal.jsx",
+    "line": 280,
+    "text": "Ex: Travailler l'appel du Mestre, caler le tempo à 120 BPM, vérifier la relance des caixas...",
+    "context": "Attribut placeholder",
+    "suggestedKey": "mestre.repertoireExTravaillerLAppelDu"
+  },
+  {
+    "file": "src/components/mestre/ProgramPieceModal.jsx",
+    "line": 296,
+    "text": "Annuler",
+    "context": "Nœud JSX",
+    "suggestedKey": "mestre.repertoireAnnuler"
+  },
+  {
+    "file": "src/components/mestre/ProgramRehearsalModal.jsx",
+    "line": 158,
+    "text": "Programmer en répétition",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireProgrammerEnRepetition"
+  },
+  {
+    "file": "src/components/mestre/ProgramRehearsalModal.jsx",
+    "line": 164,
+    "text": "Fermer",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireFermer"
+  },
+  {
+    "file": "src/components/mestre/ProgramRehearsalModal.jsx",
+    "line": 181,
+    "text": "demande",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireDemande"
+  },
+  {
+    "file": "src/components/mestre/ProgramRehearsalModal.jsx",
+    "line": 181,
+    "text": "d'élèves",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireDEleves"
+  },
+  {
+    "file": "src/components/mestre/ProgramRehearsalModal.jsx",
+    "line": 187,
+    "text": "% maîtrise",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireMaitrise"
+  },
+  {
+    "file": "src/components/mestre/ProgramRehearsalModal.jsx",
+    "line": 206,
+    "text": "1. Choisir la répétition cible *",
+    "context": "Label de champ",
+    "suggestedKey": "mestre.repertoire1ChoisirLaRepetitionCible"
+  },
+  {
+    "file": "src/components/mestre/ProgramRehearsalModal.jsx",
+    "line": 210,
+    "text": "Recherche des répétitions à venir...",
+    "context": "Nœud JSX",
+    "suggestedKey": "mestre.repertoireRechercheDesRepetitionsAVenir"
+  },
+  {
+    "file": "src/components/mestre/ProgramRehearsalModal.jsx",
+    "line": 214,
+    "text": "⚠️ Aucune répétition planifiée dans l'Agenda à compter d'aujourd'hui. Veuillez d'abord créer une répétition dans l'Agenda.",
+    "context": "Nœud JSX",
+    "suggestedKey": "mestre.repertoireAucuneRepetitionPlanifieeDansL"
+  },
+  {
+    "file": "src/components/mestre/ProgramRehearsalModal.jsx",
+    "line": 239,
+    "text": "2. Note d'intention pour le fil conducteur (modifiable)",
+    "context": "Label de champ",
+    "suggestedKey": "mestre.repertoire2NoteDIntentionPour"
+  },
+  {
+    "file": "src/components/mestre/ProgramRehearsalModal.jsx",
+    "line": 247,
+    "text": "Ex: Travailler le calage rythmique et le pont vers le chant...",
+    "context": "Attribut placeholder",
+    "suggestedKey": "mestre.repertoireExTravaillerLeCalageRythmique"
+  },
+  {
+    "file": "src/components/mestre/ProgramRehearsalModal.jsx",
+    "line": 250,
+    "text": "Cette note apparaîtra directement dans l'onglet « Fil conducteur » de l'événement.",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireCetteNoteApparaitraDirectementDans"
+  },
+  {
+    "file": "src/components/mestre/ProgramRehearsalModal.jsx",
+    "line": 262,
+    "text": "Annuler",
+    "context": "Nœud JSX",
+    "suggestedKey": "mestre.repertoireAnnuler"
+  },
+  {
+    "file": "src/components/mestre/RepertoireCulturePicker.jsx",
+    "line": 131,
+    "text": "liée",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireLiee"
+  },
+  {
+    "file": "src/components/mestre/RepertoireCulturePicker.jsx",
+    "line": 142,
+    "text": "Créer une fiche sur le Varal Culture pré-remplie",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireCreerUneFicheSurLe"
+  },
+  {
+    "file": "src/components/mestre/RepertoireCulturePicker.jsx",
+    "line": 177,
+    "text": "Détacher cette fiche culturelle",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireDetacherCetteFicheCulturelle"
+  },
+  {
+    "file": "src/components/mestre/RepertoireCulturePicker.jsx",
+    "line": 186,
+    "text": "Aucune fiche culturelle liée pour le moment. Cochez les fiches correspondantes ci-dessous.",
+    "context": "Paragraphe",
+    "suggestedKey": "mestre.repertoireAucuneFicheCulturelleLieePour"
+  },
+  {
+    "file": "src/components/mestre/RepertoireCulturePicker.jsx",
+    "line": 212,
+    "text": "Effacer la recherche",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireEffacerLaRecherche"
+  },
+  {
+    "file": "src/components/mestre/RepertoireModalNavArrows.jsx",
+    "line": 84,
+    "text": "Morceau précédent",
+    "context": "Attribut aria-label",
+    "suggestedKey": "mestre.repertoireMorceauPrecedent"
+  },
+  {
+    "file": "src/components/mestre/RepertoireModalNavArrows.jsx",
+    "line": 91,
+    "text": "Précédent (",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoirePrecedent"
+  },
+  {
+    "file": "src/components/mestre/RepertoireModalNavArrows.jsx",
+    "line": 97,
+    "text": "Raccourci : touche ←",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireRaccourciTouche"
+  },
+  {
+    "file": "src/components/mestre/RepertoireModalNavArrows.jsx",
+    "line": 121,
+    "text": "Morceau suivant",
+    "context": "Attribut aria-label",
+    "suggestedKey": "mestre.repertoireMorceauSuivant"
+  },
+  {
+    "file": "src/components/mestre/RepertoireModalNavArrows.jsx",
+    "line": 128,
+    "text": "Suivant (",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireSuivant"
+  },
+  {
+    "file": "src/components/mestre/RepertoireModalNavArrows.jsx",
+    "line": 134,
+    "text": "Raccourci : touche →",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireRaccourciTouche"
+  },
+  {
+    "file": "src/components/mestre/RepertoireVideoModal.jsx",
+    "line": 37,
+    "text": "Ouvrir dans un nouvel onglet",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireOuvrirDansUnNouvelOnglet"
+  },
+  {
+    "file": "src/components/mestre/RepertoireVideoModal.jsx",
+    "line": 40,
+    "text": "Plein écran externe",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoirePleinEcranExterne"
+  },
+  {
+    "file": "src/components/mestre/RepertoireVideoModal.jsx",
+    "line": 46,
+    "text": "Fermer",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireFermer"
+  },
+  {
+    "file": "src/components/mestre/RepertoireVideoModal.jsx",
+    "line": 62,
+    "text": "Votre navigateur ne supporte pas la lecture directe de vidéos.",
+    "context": "Nœud JSX",
+    "suggestedKey": "mestre.repertoireVotreNavigateurNeSupportePas"
+  },
+  {
+    "file": "src/components/mestre/RepertoireVideoModal.jsx",
+    "line": 76,
+    "text": "Impossible d'intégrer ce lien directement dans l'application.",
+    "context": "Paragraphe",
+    "suggestedKey": "mestre.repertoireImpossibleDIntegrerCeLien"
+  },
+  {
+    "file": "src/components/mestre/RepertoireVideoModal.jsx",
+    "line": 84,
+    "text": "Ouvrir la vidéo dans un nouvel onglet ↗",
+    "context": "Nœud JSX",
+    "suggestedKey": "mestre.repertoireOuvrirLaVideoDansUn"
+  },
+  {
+    "file": "src/components/mestre/RepertoireVideoModal.jsx",
+    "line": 99,
+    "text": "Fermer",
+    "context": "Nœud JSX",
+    "suggestedKey": "mestre.repertoireFermer"
+  },
+  {
+    "file": "src/components/mestre/RepertoireVideosPicker.jsx",
+    "line": 104,
+    "text": "Choisir parmi les vidéos de l'asso",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireChoisirParmiLesVideosDe"
+  },
+  {
+    "file": "src/components/mestre/RepertoireVideosPicker.jsx",
+    "line": 106,
+    "text": "🎬 Vidéos asso",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireVideosAsso"
+  },
+  {
+    "file": "src/components/mestre/RepertoireVideosPicker.jsx",
+    "line": 122,
+    "text": "Aucune vidéo rattachée pour le moment.",
+    "context": "Nœud JSX",
+    "suggestedKey": "mestre.repertoireAucuneVideoRattacheePourLe"
+  },
+  {
+    "file": "src/components/mestre/RepertoireVideosPicker.jsx",
+    "line": 145,
+    "text": "Vidéo #",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireVideo"
+  },
+  {
+    "file": "src/components/mestre/RepertoireVideosPicker.jsx",
+    "line": 159,
+    "text": "Live / Captation",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireLiveCaptation"
+  },
+  {
+    "file": "src/components/mestre/RepertoireVideosPicker.jsx",
+    "line": 172,
+    "text": "Supprimer cette vidéo",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireSupprimerCetteVideo"
+  },
+  {
+    "file": "src/components/mestre/RepertoireVideosPicker.jsx",
+    "line": 184,
+    "text": "Libellé :",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireLibelle"
+  },
+  {
+    "file": "src/components/mestre/RepertoireVideosPicker.jsx",
+    "line": 211,
+    "text": "Lien URL :",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireLienUrl"
+  },
+  {
+    "file": "src/components/mestre/SignalZoomModal.jsx",
+    "line": 28,
+    "text": "Signal",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireSignal"
+  },
+  {
+    "file": "src/components/mestre/SignalZoomModal.jsx",
+    "line": 39,
+    "text": "Fermer",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireFermer"
+  },
+  {
+    "file": "src/components/mestre/SignalZoomModal.jsx",
+    "line": 73,
+    "text": "Fermer",
+    "context": "Nœud JSX",
+    "suggestedKey": "mestre.repertoireFermer"
+  },
+  {
+    "file": "src/components/mestre/TablatureModal.jsx",
+    "line": 52,
+    "text": "Partition textuelle monospace générée depuis le Séquenceur",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoirePartitionTextuelleMonospaceGenereeDepuis"
+  },
+  {
+    "file": "src/components/mestre/TablatureModal.jsx",
+    "line": 62,
+    "text": "Fermer",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireFermer"
+  },
+  {
+    "file": "src/components/mestre/TablatureModal.jsx",
+    "line": 77,
+    "text": "Lancer l'impression papier de cette tablature",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireLancerLImpressionPapierDe"
+  },
+  {
+    "file": "src/components/mestre/TablatureModal.jsx",
+    "line": 91,
+    "text": "Copier l'intégralité du texte dans le presse-papier",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireCopierLIntegraliteDuTexte"
+  },
+  {
+    "file": "src/components/mestre/TablatureModal.jsx",
+    "line": 98,
+    "text": "Astuce : défilement horizontal disponible pour les longues mesures.",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireAstuceDefilementHorizontalDisponiblePour"
+  },
+  {
+    "file": "src/components/mestre/TablatureModal.jsx",
+    "line": 127,
+    "text": "Fermer",
+    "context": "Nœud JSX",
+    "suggestedKey": "mestre.repertoireFermer"
+  },
+  {
+    "file": "src/components/mestre/VideoInstrumentCheckboxes.jsx",
+    "line": 64,
+    "text": "Classée dans le bloc « Live / Ensemble »",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireClasseeDansLeBlocLive"
+  },
+  {
+    "file": "src/components/mestre/VideoInstrumentCheckboxes.jsx",
+    "line": 77,
+    "text": "(Tous pupitres / vue générale)",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireTousPupitresVueGenerale"
+  },
+  {
+    "file": "src/components/mestre/VideoInstrumentCheckboxes.jsx",
+    "line": 82,
+    "text": "sélectionné",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireSelectionne"
+  },
+  {
+    "file": "src/components/mestre/VideoInstrumentCheckboxes.jsx",
+    "line": 92,
+    "text": "Associer à tous les instruments",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireAssocierATousLesInstruments"
+  },
+  {
+    "file": "src/components/mestre/VideoInstrumentCheckboxes.jsx",
+    "line": 100,
+    "text": "Décocher tous les instruments",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireDecocherTousLesInstruments"
+  },
+  {
+    "file": "src/components/mestre/WorkshopEditorModal.jsx",
+    "line": 45,
+    "text": "Veuillez sélectionner un fichier image (JPG, PNG, WebP).",
+    "context": "Message runtime (alert)",
+    "suggestedKey": "mestre.repertoireVeuillezSelectionnerUnFichierImage"
+  },
+  {
+    "file": "src/components/mestre/WorkshopEditorModal.jsx",
+    "line": 62,
+    "text": "Erreur lors du téléversement de l'image.",
+    "context": "Message runtime (alert)",
+    "suggestedKey": "mestre.repertoireErreurLorsDuTeleversementDe"
+  },
+  {
+    "file": "src/components/mestre/WorkshopEditorModal.jsx",
+    "line": 81,
+    "text": "Veuillez sélectionner un fichier au format PDF.",
+    "context": "Message runtime (alert)",
+    "suggestedKey": "mestre.repertoireVeuillezSelectionnerUnFichierAu"
+  },
+  {
+    "file": "src/components/mestre/WorkshopEditorModal.jsx",
+    "line": 98,
+    "text": "Erreur lors du téléversement du document PDF.",
+    "context": "Message runtime (alert)",
+    "suggestedKey": "mestre.repertoireErreurLorsDuTeleversementDu"
+  },
+  {
+    "file": "src/components/mestre/WorkshopEditorModal.jsx",
+    "line": 164,
+    "text": "🧵 Éditeur de Tutoriel Atelier Couture",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireEditeurDeTutorielAtelierCouture"
+  },
+  {
+    "file": "src/components/mestre/WorkshopEditorModal.jsx",
+    "line": 175,
+    "text": "Fermer (Échap)",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireFermerEchap"
+  },
+  {
+    "file": "src/components/mestre/WorkshopEditorModal.jsx",
+    "line": 194,
+    "text": "Titre du Tutoriel",
+    "context": "Label de champ",
+    "suggestedKey": "mestre.repertoireTitreDuTutoriel"
+  },
+  {
+    "file": "src/components/mestre/WorkshopEditorModal.jsx",
+    "line": 203,
+    "text": "ex: Tutoriel : Bracelets de Maracatu",
+    "context": "Attribut placeholder",
+    "suggestedKey": "mestre.repertoireExTutorielBraceletsDeMaracatu"
+  },
+  {
+    "file": "src/components/mestre/WorkshopEditorModal.jsx",
+    "line": 209,
+    "text": "Coût estimé (€)",
+    "context": "Label de champ",
+    "suggestedKey": "mestre.repertoireCoutEstime"
+  },
+  {
+    "file": "src/components/mestre/WorkshopEditorModal.jsx",
+    "line": 219,
+    "text": "ex: 15.00",
+    "context": "Attribut placeholder",
+    "suggestedKey": "mestre.repertoireEx1500"
+  },
+  {
+    "file": "src/components/mestre/WorkshopEditorModal.jsx",
+    "line": 228,
+    "text": "Description courte / Résumé",
+    "context": "Label de champ",
+    "suggestedKey": "mestre.repertoireDescriptionCourteResume"
+  },
+  {
+    "file": "src/components/mestre/WorkshopEditorModal.jsx",
+    "line": 236,
+    "text": "ex: Fiche de confection complète des bracelets dorés et rubans",
+    "context": "Attribut placeholder",
+    "suggestedKey": "mestre.repertoireExFicheDeConfectionComplete"
+  },
+  {
+    "file": "src/components/mestre/WorkshopEditorModal.jsx",
+    "line": 242,
+    "text": "Statut de publication",
+    "context": "Label de champ",
+    "suggestedKey": "mestre.repertoireStatutDePublication"
+  },
+  {
+    "file": "src/components/mestre/WorkshopEditorModal.jsx",
+    "line": 260,
+    "text": "Liste du matériel nécessaire & Fournitures",
+    "context": "Label de champ",
+    "suggestedKey": "mestre.repertoireListeDuMaterielNecessaireFournitures"
+  },
+  {
+    "file": "src/components/mestre/WorkshopEditorModal.jsx",
+    "line": 268,
+    "text": "ex: 2m de tissu satin rouge, Fil doré N°40, 10 boutons à pression...",
+    "context": "Attribut placeholder",
+    "suggestedKey": "mestre.repertoireEx2mDeTissuSatin"
+  },
+  {
+    "file": "src/components/mestre/WorkshopEditorModal.jsx",
+    "line": 275,
+    "text": "Instructions & Étapes de fabrication",
+    "context": "Label de champ",
+    "suggestedKey": "mestre.repertoireInstructionsEtapesDeFabrication"
+  },
+  {
+    "file": "src/components/mestre/WorkshopEditorModal.jsx",
+    "line": 283,
+    "text": "Détaillez les étapes pas-à-pas pour coudre la pièce...",
+    "context": "Attribut placeholder",
+    "suggestedKey": "mestre.repertoireDetaillezLesEtapesPasA"
+  },
+  {
+    "file": "src/components/mestre/WorkshopEditorModal.jsx",
+    "line": 290,
+    "text": "Lien Vidéo Tutoriel (YouTube, Vimeo, Google Drive...)",
+    "context": "Label de champ",
+    "suggestedKey": "mestre.repertoireLienVideoTutorielYoutubeVimeo"
+  },
+  {
+    "file": "src/components/mestre/WorkshopEditorModal.jsx",
+    "line": 306,
+    "text": "📸 Galerie de Photos & Schémas (",
+    "context": "Label de champ",
+    "suggestedKey": "mestre.repertoireGalerieDePhotosSchemas"
+  },
+  {
+    "file": "src/components/mestre/WorkshopEditorModal.jsx",
+    "line": 330,
+    "text": "Supprimer cette photo",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireSupprimerCettePhoto"
+  },
+  {
+    "file": "src/components/mestre/WorkshopEditorModal.jsx",
+    "line": 343,
+    "text": "📄 Patrons Couture PDF & Fiches Techniques (",
+    "context": "Label de champ",
+    "suggestedKey": "mestre.repertoirePatronsCouturePdfFichesTechniques"
+  },
+  {
+    "file": "src/components/mestre/WorkshopEditorModal.jsx",
+    "line": 369,
+    "text": "Supprimer ce document",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireSupprimerCeDocument"
+  },
+  {
+    "file": "src/components/mestre/WorkshopEditorModal.jsx",
+    "line": 370,
+    "text": "✕ Supprimer",
+    "context": "Bouton",
+    "suggestedKey": "mestre.repertoireSupprimer"
+  },
+  {
+    "file": "src/components/mestre/WorkshopEditorModal.jsx",
+    "line": 388,
+    "text": "Annuler",
+    "context": "Nœud JSX",
+    "suggestedKey": "mestre.repertoireAnnuler"
+  },
+  {
+    "file": "src/components/mestre/CreateCultureFicheModal.jsx",
+    "line": 148,
+    "text": "Créer la fiche Varal Culture",
+    "context": "Titre",
+    "suggestedKey": "mestre.repertoireCreerLaFicheVaralCulture"
+  },
+  {
+    "file": "src/components/mestre/CreateCultureFicheModal.jsx",
+    "line": 151,
+    "text": "Passerelle automatique depuis «",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoirePasserelleAutomatiqueDepuis"
+  },
+  {
+    "file": "src/components/mestre/CreateCultureFicheModal.jsx",
+    "line": 161,
+    "text": "Fermer",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireFermer"
+  },
+  {
+    "file": "src/components/mestre/CreateCultureFicheModal.jsx",
+    "line": 177,
+    "text": "Titre de la fiche Culture",
+    "context": "Label de champ",
+    "suggestedKey": "mestre.repertoireTitreDeLaFicheCulture"
+  },
+  {
+    "file": "src/components/mestre/CreateCultureFicheModal.jsx",
+    "line": 187,
+    "text": "Ex: Baque de Luanda, Maracatu de Baque Virado...",
+    "context": "Attribut placeholder",
+    "suggestedKey": "mestre.repertoireExBaqueDeLuandaMaracatu"
+  },
+  {
+    "file": "src/components/mestre/CreateCultureFicheModal.jsx",
+    "line": 192,
+    "text": "Catégorie",
+    "context": "Label de champ",
+    "suggestedKey": "mestre.repertoireCategorie"
+  },
+  {
+    "file": "src/components/mestre/CreateCultureFicheModal.jsx",
+    "line": 201,
+    "text": "📖 Histoire",
+    "context": "Option select",
+    "suggestedKey": "mestre.repertoireHistoire"
+  },
+  {
+    "file": "src/components/mestre/CreateCultureFicheModal.jsx",
+    "line": 202,
+    "text": "🥁 Musique & Danse",
+    "context": "Option select",
+    "suggestedKey": "mestre.repertoireMusiqueDanse"
+  },
+  {
+    "file": "src/components/mestre/CreateCultureFicheModal.jsx",
+    "line": 203,
+    "text": "👑 Tradition & Cour",
+    "context": "Option select",
+    "suggestedKey": "mestre.repertoireTraditionCour"
+  },
+  {
+    "file": "src/components/mestre/CreateCultureFicheModal.jsx",
+    "line": 204,
+    "text": "🌿 Orixás",
+    "context": "Option select",
+    "suggestedKey": "mestre.repertoireOrixas"
+  },
+  {
+    "file": "src/components/mestre/CreateCultureFicheModal.jsx",
+    "line": 205,
+    "text": "📍 Territoire",
+    "context": "Option select",
+    "suggestedKey": "mestre.repertoireTerritoire"
+  },
+  {
+    "file": "src/components/mestre/CreateCultureFicheModal.jsx",
+    "line": 214,
+    "text": "Vidéo YouTube associée",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireVideoYoutubeAssociee"
+  },
+  {
+    "file": "src/components/mestre/CreateCultureFicheModal.jsx",
+    "line": 227,
+    "text": "Lien YouTube valide reconnu (ID :",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireLienYoutubeValideReconnuId"
+  },
+  {
+    "file": "src/components/mestre/CreateCultureFicheModal.jsx",
+    "line": 237,
+    "text": "Chapitre introductif / Histoire",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireChapitreIntroductifHistoire"
+  },
+  {
+    "file": "src/components/mestre/CreateCultureFicheModal.jsx",
+    "line": 245,
+    "text": "Titre du chapitre",
+    "context": "Attribut placeholder",
+    "suggestedKey": "mestre.repertoireTitreDuChapitre"
+  },
+  {
+    "file": "src/components/mestre/CreateCultureFicheModal.jsx",
+    "line": 255,
+    "text": "Rédigez ou complétez le contexte historique, les origines, la nation ou l'anecdote de ce morceau...",
+    "context": "Attribut placeholder",
+    "suggestedKey": "mestre.repertoireRedigezOuCompletezLeContexte"
+  },
+  {
+    "file": "src/components/mestre/CreateCultureFicheModal.jsx",
+    "line": 264,
+    "text": "Le saviez-vous ? (Anecdote facultative)",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireLeSaviezVousAnecdoteFacultative"
+  },
+  {
+    "file": "src/components/mestre/CreateCultureFicheModal.jsx",
+    "line": 272,
+    "text": "Ex: Cette chanson était traditionnellement chantée au lever du soleil...",
+    "context": "Attribut placeholder",
+    "suggestedKey": "mestre.repertoireExCetteChansonEtaitTraditionnellement"
+  },
+  {
+    "file": "src/components/mestre/CreateCultureFicheModal.jsx",
+    "line": 278,
+    "text": "🔗 La fiche sera automatiquement enregistrée sur le Varal et liée à ce morceau.",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireLaFicheSeraAutomatiquementEnregistree"
+  },
+  {
+    "file": "src/components/mestre/CreateCultureFicheModal.jsx",
+    "line": 290,
+    "text": "Annuler",
+    "context": "Nœud JSX",
+    "suggestedKey": "mestre.repertoireAnnuler"
+  },
+  {
+    "file": "src/components/repertoire/BatchAssignVideoModal.jsx",
+    "line": 132,
+    "text": "1. Pupitres cibles ou Répétition générale",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoire1PupitresCiblesOuRepetition"
+  },
+  {
+    "file": "src/components/repertoire/BatchAssignVideoModal.jsx",
+    "line": 152,
+    "text": "déjà présent",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireDejaPresent"
+  },
+  {
+    "file": "src/components/repertoire/BatchAssignVideoModal.jsx",
+    "line": 161,
+    "text": "Annuler",
+    "context": "Nœud JSX",
+    "suggestedKey": "mestre.repertoireAnnuler"
+  },
+  {
+    "file": "src/components/repertoire/BatchAssignVideoSource.jsx",
+    "line": 22,
+    "text": "Source de la vidéo",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireSourceDeLaVideo"
+  },
+  {
+    "file": "src/components/repertoire/BatchAssignVideoSource.jsx",
+    "line": 29,
+    "text": "Piocher une vidéo parmi les playlists de l'association",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoirePiocherUneVideoParmiLes"
+  },
+  {
+    "file": "src/components/repertoire/BatchAssignVideoSource.jsx",
+    "line": 32,
+    "text": "Piocher dans mes playlists",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoirePiocherDansMesPlaylists"
+  },
+  {
+    "file": "src/components/repertoire/BatchAssignVideoSource.jsx",
+    "line": 44,
+    "text": "Afficher les vidéos de mes playlists",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireAfficherLesVideosDeMes"
+  },
+  {
+    "file": "src/components/repertoire/BatchAssignVideoSource.jsx",
+    "line": 55,
+    "text": "Cliquer pour changer de vidéo depuis vos playlists",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireCliquerPourChangerDeVideo"
+  },
+  {
+    "file": "src/components/repertoire/BatchAssignVideoSource.jsx",
+    "line": 60,
+    "text": "Miniature",
+    "context": "Attribut alt",
+    "suggestedKey": "mestre.repertoireMiniature"
+  },
+  {
+    "file": "src/components/repertoire/BatchAssignVideoSource.jsx",
+    "line": 63,
+    "text": "Changer",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireChanger"
+  },
+  {
+    "file": "src/components/repertoire/BatchAssignVideoSource.jsx",
+    "line": 72,
+    "text": "Cliquer pour choisir depuis vos playlists",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireCliquerPourChoisirDepuisVos"
+  },
+  {
+    "file": "src/components/repertoire/BatchAssignVideoSource.jsx",
+    "line": 76,
+    "text": "Playlists",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoirePlaylists"
+  },
+  {
+    "file": "src/components/repertoire/BatchAssignVideoSource.jsx",
+    "line": 101,
+    "text": "Parcourir les playlists YouTube",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireParcourirLesPlaylistsYoutube"
+  },
+  {
+    "file": "src/components/repertoire/BatchAssignVideoSource.jsx",
+    "line": 104,
+    "text": "Playlists",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoirePlaylists"
+  },
+  {
+    "file": "src/components/repertoire/PieceVideoSection.jsx",
+    "line": 162,
+    "text": "Ouvrir la vidéo dans un nouvel onglet",
+    "context": "Attribut title",
+    "suggestedKey": "mestre.repertoireOuvrirLaVideoDansUn"
+  },
+  {
+    "file": "src/components/repertoire/RepertoirePasserelleButton.jsx",
+    "line": 90,
+    "text": "Fiche Répertoire :",
+    "context": "Span / Badge",
+    "suggestedKey": "mestre.repertoireFicheRepertoire"
+  }
+]

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../../firebase';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Bouton passerelle Varal ➔ Répertoire (< 110 lignes).
@@ -22,6 +23,7 @@ export default function RepertoirePasserelleButton({
   onNavigateToView = null,
   className = ''
 }) {
+  const { t } = useTranslation();
   const [localPieces, setLocalPieces] = useState([]);
 
   // Écoute de secours si les morceaux ne sont pas fournis
@@ -88,7 +90,7 @@ export default function RepertoirePasserelleButton({
     >
       <span>📜</span>
       <span className="truncate max-w-[220px]">
-        Fiche Répertoire : {matchedPiece.titre || 'Morceau'}
+        {t('mestre.repertoire.repertoireSheetPrefix')} {matchedPiece.titre || (t('common.piece') || 'Morceau')}
       </span>
       <span className="text-[10px] font-black">↗</span>
     </button>

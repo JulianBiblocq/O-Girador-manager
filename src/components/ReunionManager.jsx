@@ -276,9 +276,37 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
           ⬅️ {selectedEventId ? "Liste des réunions" : t('common.back') || "Retour"}
         </button>
         
-        <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase flex items-center gap-2">
-          <XiloCalendar size={16} /> Studio Réunions & Sondages
-        </h2>
+        <div className="flex items-center gap-3">
+          <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase flex items-center gap-2">
+            <XiloCalendar size={16} /> {t('governance.studioTitle')}
+          </h2>
+          <div className="flex items-center gap-1.5">
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedEventId('');
+                  const formEl = document.getElementById('meeting-form-section');
+                  if (formEl) formEl.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="text-[9.5px] font-black uppercase tracking-wider px-2.5 py-1 bg-[var(--color-cordel-vert)] text-white rounded border border-encre-noire shadow-2xs hover:brightness-110 cursor-pointer"
+              >
+                ➕ {t('governance.btnNewMeeting')}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedEventId('');
+                const tableEl = document.getElementById('meetings-studio-table');
+                if (tableEl) tableEl.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="text-[9.5px] font-black uppercase tracking-wider px-2.5 py-1 bg-amber-100 text-amber-900 rounded border border-amber-800/40 shadow-2xs hover:bg-amber-200 cursor-pointer"
+            >
+              📜 {t('governance.btnReportsArchives')}
+            </button>
+          </div>
+        </div>
       </div>
 
       {selectedEventId && selectedEvent ? (
@@ -305,10 +333,10 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
           
           {/* Formulaire de création avancée */}
           {isAdmin && (
-            <div className="md:col-span-5">
+            <div className="md:col-span-5" id="meeting-form-section">
               <CordelCard variant="default" useExtremeBorder={true} className="p-5 flex flex-col gap-4 bg-cordel-bg">
                 <h3 className="text-xs font-black uppercase tracking-wider text-cordel-wood border-b border-dashed border-encre-noire/15 pb-2">
-                  ➕ Créer une Réunion ou un Sondage
+                  ➕ {t('governance.formCreateMeetingTitle')}
                 </h3>
                 
                 {/* Switch Mode : Date Fixe vs Sondage */}
@@ -322,7 +350,7 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
                         : 'text-cordel-master-dark opacity-75 hover:opacity-100'
                     }`}
                   >
-                    📅 Date Fixe
+                    📅 {t('governance.tabFixedDate')}
                   </button>
                   <button
                     type="button"
@@ -333,7 +361,7 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
                         : 'text-cordel-master-dark opacity-75 hover:opacity-100'
                     }`}
                   >
-                    📊 Sondage Multi-Dates
+                    📊 {t('governance.tabMultiDatePoll')}
                   </button>
                 </div>
 
@@ -341,14 +369,14 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
                   {/* Titre */}
                   <div className="flex flex-col gap-1">
                     <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                      Titre de la réunion *
+                      {t('common.title') || "Titre de la réunion"} *
                     </label>
                     <input 
                       type="text" 
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
                       required
-                      placeholder="Ex: Assemblée Générale / Réunion de Bureau"
+                      placeholder={t('governance.placeholderMeetingTitle')}
                       className="theme-input bg-white w-full py-1.5 text-xs font-bold"
                     />
                   </div>
@@ -356,7 +384,7 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
                   {/* Lieu de la réunion avec sélecteur intelligent */}
                   <div className="flex flex-col gap-1">
                     <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                      Lieu de la réunion
+                      {t('governance.meetingLocationLabel')}
                     </label>
                     <LocationSelector
                       value={lieu}
@@ -365,7 +393,7 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
                         setLieu(val);
                         setLieuId(foundPreset ? foundPreset.id : null);
                       }}
-                      placeholder="Ex: Salle de réunion, Local..."
+                      placeholder={t('governance.locationPlaceholder')}
                     />
                   </div>
 
@@ -374,7 +402,7 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div className="flex flex-col gap-1 sm:col-span-2">
                         <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                          Jour *
+                          {t('governance.fieldDayRequired')}
                         </label>
                         <input 
                           type="date" 
@@ -386,7 +414,7 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
                       </div>
                       <div className="flex flex-col gap-1">
                         <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                          Heure début *
+                          {t('governance.startTime')} *
                         </label>
                         <input 
                           type="time" 
@@ -398,7 +426,7 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
                       </div>
                       <div className="flex flex-col gap-1">
                         <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                          Heure fin
+                          {t('governance.endTime')}
                         </label>
                         <input 
                           type="time" 
@@ -524,7 +552,7 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
                   <div className="border-t border-dashed border-cordel-master-dark/20 pt-3 flex flex-col gap-2">
                     <div className="flex items-center justify-between flex-wrap gap-1">
                       <label className="text-[9.5px] uppercase font-black text-cordel-wood">
-                        📋 Ordre du jour de la réunion
+                        📋 {t('governance.agendaSectionTitle')}
                       </label>
                       <CordelButton
                         type="button"
@@ -533,7 +561,7 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
                         onClick={() => setIsImportModalOpen(true)}
                         className="text-[8.5px] font-extrabold uppercase px-2 py-0.5"
                       >
-                        📥 Importer un modèle
+                        📥 {t('governance.btnImportTemplate')}
                       </CordelButton>
                     </div>
 
@@ -543,12 +571,13 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
                         type="text"
                         value={newPointTitle}
                         onChange={(e) => setNewPointTitle(e.target.value)}
-                        placeholder="Point à traiter..."
+                        placeholder={t('governance.agendaPointPlaceholder')}
                         className="theme-input text-xs flex-1 bg-white py-1"
                       />
                       <button
                         type="button"
                         onClick={handleAddAgendaPoint}
+                        title={t('governance.btnAddAgendaPoint')}
                         className="text-xs font-extrabold px-2.5 py-1 bg-cordel-wood text-white rounded hover:brightness-95 cursor-pointer"
                       >
                         ＋
@@ -578,7 +607,7 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
                       type="url"
                       value={lienDocument}
                       onChange={(e) => setLienDocument(e.target.value)}
-                      placeholder="Lien du document / Ordre du jour PDF (facultatif)"
+                      placeholder={t('governance.optionalDocLink')}
                       className="theme-input text-[11px] w-full py-1 bg-white"
                     />
                   </div>
@@ -590,7 +619,7 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
                     useExtremeBorder={true}
                     className="text-xs py-2.5 mt-2 font-extrabold uppercase tracking-wider w-full"
                   >
-                    {isSubmitting ? "Création en cours..." : (creationMode === 'poll' ? "🚀 Lancer le Sondage" : "📅 Planifier la Réunion")}
+                    {isSubmitting ? "Création en cours..." : (creationMode === 'poll' ? "🚀 Lancer le Sondage" : `📅 ${t('governance.btnScheduleMeeting')}`)}
                   </CordelButton>
                 </form>
               </CordelCard>
@@ -598,9 +627,9 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
           )}
 
           {/* Colonne Droite: Tableau des réunions et sondages */}
-          <div className={isAdmin ? "md:col-span-7 flex flex-col gap-4" : "col-span-12 flex flex-col gap-4"}>
+          <div id="meetings-studio-table" className={isAdmin ? "md:col-span-7 flex flex-col gap-4" : "col-span-12 flex flex-col gap-4"}>
             <p className="text-xs opacity-75 leading-relaxed">
-              Consultez et gérez les ordres du jour, les votes de sondages et les comptes-rendus de toutes les réunions.
+              {t('governance.studioSubtitle')}
             </p>
 
             {loading ? (
@@ -619,11 +648,11 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
                   <table className="w-full text-xs text-left border-collapse">
                     <thead>
                       <tr className="bg-cordel-master-dark text-cordel-bg-light uppercase tracking-wider text-[9px] font-black border-b border-encre-noire">
-                        <th className="py-2.5 px-3">Réunion / Sondage</th>
-                        <th className="py-2.5 px-3">Date / Créneau</th>
-                        <th className="py-2.5 px-3">Ordre du jour</th>
-                        <th className="py-2.5 px-3">Votes / Statut</th>
-                        <th className="py-2.5 px-3 text-right">Action</th>
+                        <th className="py-2.5 px-3">{t('governance.thMeetingTheme')}</th>
+                        <th className="py-2.5 px-3">{t('governance.thDateSlot')}</th>
+                        <th className="py-2.5 px-3">{t('governance.thAgenda')}</th>
+                        <th className="py-2.5 px-3">{t('governance.thVotesStatus')}</th>
+                        <th className="py-2.5 px-3 text-right">{t('governance.thAction')}</th>
                       </tr>
                     </thead>
                     <tbody>

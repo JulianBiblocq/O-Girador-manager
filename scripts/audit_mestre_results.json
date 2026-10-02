@@ -1,0 +1,83 @@
+{
+  "repertoire": {
+    "name": "Répertoire & Modales Associées",
+    "category": "repertoire",
+    "totalStrings": 0,
+    "cleanFiles": [
+      "src/components/mestre/MestreRepertoireView.jsx",
+      "src/components/mestre/MestreRepertoireHeader.jsx",
+      "src/components/mestre/RepertoirePieceModal.jsx",
+      "src/components/mestre/RepertoirePieceStatusSelector.jsx",
+      "src/components/mestre/ProgramPieceModal.jsx",
+      "src/components/mestre/ProgramRehearsalModal.jsx",
+      "src/components/mestre/RepertoireCulturePicker.jsx",
+      "src/components/mestre/RepertoireModalNavArrows.jsx",
+      "src/components/mestre/RepertoireVideoModal.jsx",
+      "src/components/mestre/RepertoireVideosPicker.jsx",
+      "src/components/mestre/SignalZoomModal.jsx",
+      "src/components/mestre/TablatureModal.jsx",
+      "src/components/mestre/VideoInstrumentCheckboxes.jsx",
+      "src/components/mestre/WorkshopEditorModal.jsx",
+      "src/components/mestre/CreateCultureFicheModal.jsx",
+      "src/components/repertoire/BatchAssignVideoModal.jsx",
+      "src/components/repertoire/BatchAssignVideoSource.jsx",
+      "src/components/repertoire/PieceVideoSection.jsx",
+      "src/components/repertoire/RepertoirePasserelleButton.jsx"
+    ],
+    "dirtyFiles": []
+  },
+  "sequenceurGateway": {
+    "name": "Passerelle Séquenciad'Or, Presets & Signes",
+    "category": "sequenceur",
+    "totalStrings": 0,
+    "cleanFiles": [
+      "src/components/mestre/RepertoireUnlinkedPresetsBanner.jsx",
+      "src/components/mestre/RepertoireTrainingsManager.jsx",
+      "src/components/mestre/RepertoireSinaisDoMestreEditor.jsx",
+      "src/components/mestre/reflex/SignalReflexCard.jsx"
+    ],
+    "dirtyFiles": []
+  },
+  "casting": {
+    "name": "Orientation, Casting & Disciplines",
+    "category": "casting",
+    "totalStrings": 0,
+    "cleanFiles": [
+      "src/components/mestre/MestreOrientationCasting.jsx",
+      "src/components/mestre/MestreCustomCategories.jsx",
+      "src/components/mestre/CategoryCardItem.jsx"
+    ],
+    "dirtyFiles": []
+  },
+  "stageLayout": {
+    "name": "Régie Scénique & Plateau",
+    "category": "stageLayout",
+    "totalStrings": 0,
+    "cleanFiles": [
+      "src/components/mestre/MestreStageLayout.jsx",
+      "src/components/event-details/EventStageLayoutSection.jsx"
+    ],
+    "dirtyFiles": []
+  },
+  "editorial": {
+    "name": "Consignes Artistiques & Mot du Mestre",
+    "category": "editorial",
+    "totalStrings": 0,
+    "cleanFiles": [
+      "src/components/mestre/MestreMotMestre.jsx"
+    ],
+    "dirtyFiles": []
+  },
+  "pedagogy": {
+    "name": "Pédagogie & Évaluations du Mestre",
+    "category": "pedagogy",
+    "totalStrings": 0,
+    "cleanFiles": [
+      "src/components/mestre/MestrePedagogyDashboard.jsx",
+      "src/components/mestre/MestrePedagogyNotepad.jsx",
+      "src/components/mestre/MestreAutoEvalConfig.jsx",
+      "src/components/mestre/CustomQuizConfigPanel.jsx"
+    ],
+    "dirtyFiles": []
+  }
+}

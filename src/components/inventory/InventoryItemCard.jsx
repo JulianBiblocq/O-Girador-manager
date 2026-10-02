@@ -1,6 +1,7 @@
 import React from 'react';
 import CordelCard from '../CordelCard';
 import { normalizeInstrumentAttribution } from './inventoryConstants';
+import { useTranslation } from '../LanguageContext';
 
 const INSTRUMENT_ICONS = {
   Alfaia: 'icones/alfaia.svg',
@@ -27,7 +28,9 @@ const INSTRUMENT_ICONS = {
  * @param {string} props.kitCompletionText Texte formaté du statut du kit
  * @param {Function} props.t Fonction de traduction
  */
-export default function InventoryItemCard({ item, usersMap, onEdit, onDelete, _onToggleBorrow, onDiagnose, inventoryParts, kitCompletionText, _t }) {
+export default function InventoryItemCard({ item, usersMap, onEdit, onDelete, _onToggleBorrow, onDiagnose, inventoryParts, kitCompletionText, t: propT }) {
+  const { t: hookT } = useTranslation();
+  const t = propT || hookT;
   const iconPath = INSTRUMENT_ICONS[item.type] || 'favicon.svg';
   const attr = normalizeInstrumentAttribution(item);
 
@@ -76,24 +79,24 @@ export default function InventoryItemCard({ item, usersMap, onEdit, onDelete, _o
             )}
             {kitCompletionText && kitCompletionText !== "-" && (
               <span className="bg-cordel-bg-light px-2 py-0.5 rounded border border-cordel-master-dark/15">
-                🎒 Kit: {kitCompletionText}
+                {t('logistics.kitLabel')} {kitCompletionText}
               </span>
             )}
 
             {/* Badge sobre de régime d'attribution */}
             {attr.regimeMiseADisposition === 'pret_gratuit' && (
-              <span className="bg-cordel-bg-light px-2 py-0.5 rounded border border-cordel-master-dark/15 text-[9.5px] font-bold text-[var(--color-cordel-vert)]" title="Prêt gracieux de l'association">
-                🎁 Prêt gratuit
+              <span className="bg-cordel-bg-light px-2 py-0.5 rounded border border-cordel-master-dark/15 text-[9.5px] font-bold text-[var(--color-cordel-vert)]" title={t('logistics.pretGracieuxTitle')}>
+                {t('logistics.pretGratuitBadge')}
               </span>
             )}
             {attr.regimeMiseADisposition === 'cotisation' && (
-              <span className="bg-cordel-bg-light px-2 py-0.5 rounded border border-cordel-master-dark/15 text-[9.5px] font-bold text-[var(--color-cordel-ocre)]" title="Mis à disposition avec cotisation instrument">
-                💳 Cotisation
+              <span className="bg-cordel-bg-light px-2 py-0.5 rounded border border-cordel-master-dark/15 text-[9.5px] font-bold text-[var(--color-cordel-ocre)]" title={t('logistics.misADispositionCotisationTitle')}>
+                {t('logistics.cotisationBadge')}
               </span>
             )}
             {attr.regimeMiseADisposition === 'personnel' && (
-              <span className="bg-cordel-bg-light px-2 py-0.5 rounded border border-cordel-master-dark/15 text-[9.5px] font-bold text-stone-600 dark:text-stone-400" title="Instrument personnel du membre">
-                👤 Personnel
+              <span className="bg-cordel-bg-light px-2 py-0.5 rounded border border-cordel-master-dark/15 text-[9.5px] font-bold text-stone-600 dark:text-stone-400" title={t('logistics.instrumentPersonnelMembreTitle')}>
+                {t('logistics.personnelBadge')}
               </span>
             )}
 
@@ -125,7 +128,7 @@ export default function InventoryItemCard({ item, usersMap, onEdit, onDelete, _o
       {/* Nomenclature (Pièces détachées) */}
       {inventoryParts && item.nomenclature && item.nomenclature.length > 0 && (
         <div className="flex flex-col gap-1 pt-1.5 border-t border-dashed border-cordel-master-dark/10">
-          <span className="text-[9px] uppercase font-bold tracking-wider text-cordel-wood mb-0.5">Nomenclature (Pièces) :</span>
+          <span className="text-[9px] uppercase font-bold tracking-wider text-cordel-wood mb-0.5">{t('logistics.nomenclaturePiecesTitle')}</span>
           <div className="flex flex-wrap gap-1">
             {item.nomenclature.map(partId => {
               const part = inventoryParts.find(p => p.id === partId);
@@ -144,11 +147,11 @@ export default function InventoryItemCard({ item, usersMap, onEdit, onDelete, _o
       <div className="pt-2 border-t border-dashed border-cordel-master-dark/20 text-xs flex items-center justify-between gap-2">
         {isBorrowed ? (
           <span className="text-[var(--color-cordel-ocre)] bg-[var(--color-cordel-ocre)]/10 px-2 py-1 rounded border border-[#c05621]/30 font-extrabold text-[10.5px]">
-            🤝 Emprunté par : <strong>{borrowerName}</strong>
+            {t('logistics.borrowedBy')} <strong>{borrowerName}</strong>
           </span>
         ) : (
           <span className="text-[var(--color-cordel-vert)] bg-[var(--color-cordel-vert)]/10 px-2 py-1 rounded border border-[#2d6a4f]/30 font-bold text-[10.5px]">
-            ✅ En stock
+            {t('logistics.inStockBadge')}
           </span>
         )}
 
@@ -158,7 +161,7 @@ export default function InventoryItemCard({ item, usersMap, onEdit, onDelete, _o
             type="button"
             onClick={() => onEdit(item)}
             className="p-1 px-2 text-xs font-bold bg-cordel-bg hover:bg-neutral-200 border border-encre-noire rounded cursor-pointer"
-            title="Éditer"
+            title={t('logistics.editTitle')}
           >
             ✏️
           </button>
@@ -167,7 +170,7 @@ export default function InventoryItemCard({ item, usersMap, onEdit, onDelete, _o
               type="button"
               onClick={() => onDiagnose(item)}
               className="p-1 px-2 text-xs font-bold bg-cordel-rouge/10 hover:bg-cordel-rouge text-cordel-rouge hover:text-white border border-cordel-rouge/40 rounded cursor-pointer transition-colors"
-              title="Diagnostiquer (Réparation)"
+              title={t('logistics.diagnoseRepairTitle')}
             >
               🩺
             </button>
@@ -176,7 +179,7 @@ export default function InventoryItemCard({ item, usersMap, onEdit, onDelete, _o
             type="button"
             onClick={() => onDelete(item.id)}
             className="p-1 px-2 text-xs font-bold bg-[var(--theme-primary)]/10 hover:bg-[var(--theme-primary)] text-[var(--theme-primary)] hover:text-white border border-[var(--theme-primary)]/40 rounded cursor-pointer transition-colors"
-            title="Supprimer"
+            title={t('logistics.deleteTitle')}
           >
             🗑️
           </button>

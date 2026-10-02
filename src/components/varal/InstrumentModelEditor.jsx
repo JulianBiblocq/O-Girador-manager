@@ -4,10 +4,12 @@ import CordelButton from '../CordelButton';
 import { XiloClose } from '../XiloIcons';
 import PartEditor from './PartEditor';
 import useConfirm from '../../hooks/useConfirm';
+import { useTranslation } from '../LanguageContext';
 
 const INSTRUMENT_TYPES = ['Alfaia', 'Caixa', 'Agbê', 'Gonguê', 'Mineiro', 'Apito', 'Timbal', 'Maintenance', 'Costume', 'Autre'];
 
 export default function InstrumentModelEditor({ model, existingModels, varalCategories, tools = [], supplies = [], onSave, onCancel }) {
+  const { t } = useTranslation();
   const confirm = useConfirm();
   const allTypes = useMemo(() => {
     const types = new Set(INSTRUMENT_TYPES);
@@ -118,25 +120,25 @@ export default function InstrumentModelEditor({ model, existingModels, varalCate
       </button>
 
       <h3 className="text-sm font-bold text-cordel-wood mb-4">
-        {model ? `Éditer le Modèle : ${model.nom}` : "Nouveau Modèle d'Instrument"}
+        {model ? (t('lutherie.editModelTitle', { name: model.nom }) || `Éditer le Modèle : ${model.nom}`) : t('lutherie.modalNewModelTitle', "Nouveau modèle d'instrument")}
       </h3>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] uppercase font-bold text-cordel-master-dark">Nom du modèle</label>
+            <label className="text-[10px] uppercase font-bold text-cordel-master-dark">{t('lutherie.modelNameLabel', "Nom du modèle")}</label>
             <input 
               type="text" 
               name="nom" 
               value={formData.nom} 
               onChange={handleChange} 
               className="theme-input text-xs font-bold py-2"
-              placeholder="Ex: Alfaia 18 pouces"
+              placeholder={t('lutherie.modelNamePlaceholder', "Ex : Alfaia 18 pouces")}
               required
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] uppercase font-bold text-cordel-master-dark">Famille / Catégorie</label>
+            <label className="text-[10px] uppercase font-bold text-cordel-master-dark">{t('lutherie.familyCategoryLabel', "Famille / Catégorie")}</label>
             {!isCustomType ? (
               <select
                 name="type"
@@ -145,7 +147,7 @@ export default function InstrumentModelEditor({ model, existingModels, varalCate
                 className="theme-input text-xs font-bold py-2 bg-white cursor-pointer"
               >
                 {allTypes.map(t => <option key={t} value={t}>{t}</option>)}
-                <option value="---custom---">+ Nouvelle catégorie...</option>
+                <option value="---custom---">{t('lutherie.btnNewCategory', "+ Nouvelle catégorie...")}</option>
               </select>
             ) : (
               <div className="flex items-center gap-2">
@@ -155,7 +157,7 @@ export default function InstrumentModelEditor({ model, existingModels, varalCate
                   value={formData.type} 
                   onChange={handleChange} 
                   className="theme-input text-xs font-bold py-2 flex-1"
-                  placeholder="Nom de la nouvelle catégorie..."
+                  placeholder={t('lutherie.newCategoryPlaceholder', "Nom de la nouvelle catégorie...")}
                   autoFocus
                 />
                 <button 
@@ -166,7 +168,7 @@ export default function InstrumentModelEditor({ model, existingModels, varalCate
                   }}
                   className="text-[10px] text-cordel-master-dark underline cursor-pointer hover:text-black"
                 >
-                  Annuler
+                  {t('common.cancel', "Annuler")}
                 </button>
               </div>
             )}
@@ -175,7 +177,7 @@ export default function InstrumentModelEditor({ model, existingModels, varalCate
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] uppercase font-bold text-cordel-master-dark">Corde à linge (Varal)</label>
+            <label className="text-[10px] uppercase font-bold text-cordel-master-dark">{t('lutherie.varalLineLabel', "Corde à linge (Varal)")}</label>
             <select
               name="categoryId"
               value={formData.categoryId}
@@ -187,18 +189,18 @@ export default function InstrumentModelEditor({ model, existingModels, varalCate
               ))}
             </select>
             <span className="text-[9px] text-cordel-master-dark opacity-75">
-              Choisissez sur quelle ligne afficher ce modèle.
+              {t('lutherie.varalLineHelp', "Choisissez sur quelle ligne afficher ce modèle.")}
             </span>
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] uppercase font-bold text-cordel-master-dark">Description / Chapeau</label>
+            <label className="text-[10px] uppercase font-bold text-cordel-master-dark">{t('lutherie.modelDescriptionLabel', "Description / Chapeau")}</label>
             <textarea 
               name="description" 
               value={formData.description} 
               onChange={handleChange} 
               className="theme-input text-xs py-2 h-16 resize-none"
-              placeholder="Une courte introduction sur cet instrument..."
+              placeholder={t('lutherie.modelDescriptionPlaceholder', "Une courte introduction sur cet instrument...")}
             />
           </div>
         </div>
@@ -206,17 +208,17 @@ export default function InstrumentModelEditor({ model, existingModels, varalCate
         {/* Vue compilée du matériel et outils */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-2 p-3 bg-cordel-master-dark/5 rounded border border-dashed border-cordel-master-dark/20">
           <div>
-            <h5 className="text-[10px] font-bold text-cordel-wood uppercase mb-1">Résumé Matériaux requis</h5>
+            <h5 className="text-[10px] font-bold text-cordel-wood uppercase mb-1">{t('lutherie.summaryMaterialsRequired', "Résumé matériaux requis")}</h5>
             <div className="flex flex-wrap gap-1">
-              {aggregatedData.materiels.length === 0 ? <span className="text-[9px] opacity-60">Aucun matériel défini</span> : aggregatedData.materiels.map((m, i) => (
+              {aggregatedData.materiels.length === 0 ? <span className="text-[9px] opacity-60">{t('lutherie.noMaterialsDefined', "Aucun matériel défini")}</span> : aggregatedData.materiels.map((m, i) => (
                 <span key={i} className="text-[9px] bg-white px-1.5 py-0.5 rounded border border-cordel-master-dark/20">{m}</span>
               ))}
             </div>
           </div>
           <div>
-            <h5 className="text-[10px] font-bold text-cordel-wood uppercase mb-1">Résumé Outils requis</h5>
+            <h5 className="text-[10px] font-bold text-cordel-wood uppercase mb-1">{t('lutherie.summaryToolsRequired', "Résumé outils requis")}</h5>
             <div className="flex flex-wrap gap-1">
-              {aggregatedData.outils.length === 0 ? <span className="text-[9px] opacity-60">Aucun outil défini</span> : aggregatedData.outils.map((o, i) => (
+              {aggregatedData.outils.length === 0 ? <span className="text-[9px] opacity-60">{t('lutherie.noToolsDefined', "Aucun outil défini")}</span> : aggregatedData.outils.map((o, i) => (
                 <span key={i} className="text-[9px] bg-white px-1.5 py-0.5 rounded border border-cordel-master-dark/20">{o}</span>
               ))}
             </div>
@@ -226,19 +228,19 @@ export default function InstrumentModelEditor({ model, existingModels, varalCate
         {/* Liste des pièces */}
         <div className="flex flex-col gap-2">
           <div className="flex justify-between items-center border-b border-dashed border-cordel-master-dark/30 pb-2">
-            <label className="text-[10px] uppercase font-bold text-cordel-master-dark">Nomenclature (Pièces à fabriquer)</label>
+            <label className="text-[10px] uppercase font-bold text-cordel-master-dark">{t('lutherie.nomenclaturePiecesToMake', "Nomenclature (pièces à fabriquer)")}</label>
             <button 
               type="button" 
               onClick={() => setEditingPart({ id: 'new' })}
               className="text-[10px] bg-cordel-wood text-white px-3 py-1 rounded font-bold shadow hover:brightness-110"
             >
-              + Ajouter une pièce
+              {t('lutherie.btnAddPiece', "+ Ajouter une pièce")}
             </button>
           </div>
           
           {formData.parts.length === 0 && (
             <div className="text-center py-6 border border-dashed border-stone-300 rounded bg-white/50">
-              <span className="text-[10px] text-stone-500 italic">Aucune pièce définie. Ajoutez les éléments qui composent cet instrument.</span>
+              <span className="text-[10px] text-stone-500 italic">{t('lutherie.noPiecesDefined', "Aucune pièce définie. Ajoutez les éléments qui composent cet instrument.")}</span>
             </div>
           )}
 
@@ -257,14 +259,14 @@ export default function InstrumentModelEditor({ model, existingModels, varalCate
                     onClick={() => setEditingPart(part)}
                     className="text-[10px] font-bold text-cordel-wood hover:underline"
                   >
-                    Éditer
+                    {t('common.edit', "Éditer")}
                   </button>
                   <button 
                     type="button" 
                     onClick={() => handleDeletePart(part.id)}
                     className="text-[10px] font-bold text-red-500 hover:underline"
                   >
-                    Supprimer
+                    {t('common.delete', "Supprimer")}
                   </button>
                 </div>
               </div>
@@ -273,8 +275,8 @@ export default function InstrumentModelEditor({ model, existingModels, varalCate
         </div>
 
         <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-dashed border-cordel-master-dark/20">
-          <CordelButton type="button" variant="default" onClick={onCancel}>Annuler</CordelButton>
-          <CordelButton type="submit" variant="vert" useExtremeBorder={true}>💾 Enregistrer le Modèle</CordelButton>
+          <CordelButton type="button" variant="default" onClick={onCancel}>{t('common.cancel', "Annuler")}</CordelButton>
+          <CordelButton type="submit" variant="vert" useExtremeBorder={true}>💾 {t('lutherie.btnSaveModel', "Enregistrer le modèle")}</CordelButton>
         </div>
       </form>
     </CordelCard>

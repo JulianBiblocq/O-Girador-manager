@@ -217,7 +217,7 @@ export default function MestreStageLayout({
       return (
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[4px_6px_3px_5px] text-[9.5px] font-black uppercase bg-green-100 text-green-900 border border-green-300">
           <span>🟢</span>
-          <span>Publié</span>
+          <span>{t('mestre.stageLayout.statusPublished')}</span>
         </span>
       );
     }
@@ -226,14 +226,14 @@ export default function MestreStageLayout({
       return (
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[4px_6px_3px_5px] text-[9.5px] font-black uppercase bg-amber-100 text-amber-900 border border-amber-300">
           <span>🟡</span>
-          <span>Brouillon</span>
+          <span>{t('mestre.stageLayout.statusDraft')}</span>
         </span>
       );
     }
     return (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[4px_6px_3px_5px] text-[9.5px] font-bold uppercase text-stone-500 bg-stone-100 border border-stone-200">
         <span>⚪</span>
-        <span>À créer</span>
+        <span>{t('mestre.stageLayout.statusToCreate')}</span>
       </span>
     );
   };
@@ -253,7 +253,7 @@ export default function MestreStageLayout({
                 onClick={() => onSelectEventId('')}
                 className="py-1 px-3 text-xs font-black uppercase tracking-wider bg-stone-100 hover:bg-stone-200 border border-encre-noire/30 shrink-0"
               >
-                ← Liste des événements
+                {t('mestre.stageLayout.backToEventsList')}
               </CordelButton>
 
               <div className="flex flex-col">
@@ -275,7 +275,7 @@ export default function MestreStageLayout({
             {/* Sélecteur rapide d'événement en haut à droite */}
             <div className="flex items-center gap-2 w-full md:w-auto shrink-0">
               <label htmlFor="stage-quick-select" className="text-[9.5px] font-black uppercase tracking-wider text-cordel-master-dark/70 whitespace-nowrap">
-                Changer :
+                {t('mestre.stageLayout.changeColon')}
               </label>
               <select
                 id="stage-quick-select"
@@ -297,9 +297,9 @@ export default function MestreStageLayout({
                   useExtremeBorder={false}
                   onClick={() => onOpenDetails(activeEvent)}
                   className="py-1 px-2 text-[10px] font-black uppercase tracking-wider bg-cordel-bg hover:bg-neutral-100 shrink-0"
-                  title="Ouvrir les détails complets de cet événement"
+                  title={t('mestre.stageLayout.openEventDetailsTitle')}
                 >
-                  🔍 Détails
+                  {t('mestre.stageLayout.detailsBtn')}
                 </CordelButton>
               )}
             </div>
@@ -325,10 +325,10 @@ export default function MestreStageLayout({
             <div>
               <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase flex items-center gap-2">
                 <span>🎭</span>
-                <span>Direction Artistique — Plans de Scène &amp; Cortejo</span>
+                <span>{t('mestre.stageLayout.headerTitle')}</span>
               </h2>
               <p className="text-[11px] font-bold text-encre-noire/70 mt-0.5">
-                Sélectionnez une prestation pour concevoir ou modifier la disposition scénique de la troupe
+                {t('mestre.stageLayout.headerSubtitle')}
               </p>
             </div>
 
@@ -384,7 +384,7 @@ export default function MestreStageLayout({
                   : 'bg-black/5 dark:bg-white/10 text-cordel-master-dark/70 hover:bg-black/10 border-encre-noire/20'
               }`}
             >
-              🎭 Prestations &amp; Sorties ({counts.prestation})
+              {t('mestre.stageLayout.filterGigsCount')}{counts.prestation})
             </button>
 
             <button
@@ -396,7 +396,7 @@ export default function MestreStageLayout({
                   : 'bg-black/5 dark:bg-white/10 text-cordel-master-dark/70 hover:bg-black/10 border-encre-noire/20'
               }`}
             >
-              📐 Avec plan de scène ({counts.withStage})
+              {t('mestre.stageLayout.filterWithLayoutCount')}{counts.withStage})
             </button>
 
             <button
@@ -408,7 +408,7 @@ export default function MestreStageLayout({
                   : 'bg-black/5 dark:bg-white/10 text-cordel-master-dark/70 hover:bg-black/10 border-encre-noire/20'
               }`}
             >
-              👥 Tous les événements ({counts.all})
+              {t('mestre.stageLayout.filterAllEventsCount')}{counts.all})
             </button>
           </div>
 
@@ -416,7 +416,7 @@ export default function MestreStageLayout({
           {loading ? (
             <div className="flex justify-center items-center py-16">
               <span className="text-xs uppercase tracking-widest font-black animate-pulse opacity-60">
-                ⏳ Chargement des dates...
+                {t('mestre.stageLayout.loadingDates')}
               </span>
             </div>
           ) : displayEvents.length === 0 ? (
@@ -434,7 +434,7 @@ export default function MestreStageLayout({
                   onClick={() => setStageFilter('all')}
                   className="py-1 px-3 text-xs font-black uppercase tracking-wider mt-1"
                 >
-                  Afficher tous les événements
+                  {t('mestre.stageLayout.showAllEvents')}
                 </CordelButton>
               )}
             </CordelCard>
@@ -448,7 +448,7 @@ export default function MestreStageLayout({
                     <th className="p-2 md:p-3 border-r border-encre-noire/15">{t('mestre.eventType') || "Type"}</th>
                     <th className="p-2 md:p-3 border-r border-encre-noire/15">{t('mestre.eventLocation') || "Lieu"}</th>
                     <th className="p-2 md:p-3 border-r border-encre-noire/15 text-center">{t('mestre.eventInscriptions') || "Inscriptions"}</th>
-                    <th className="p-2 md:p-3 border-r border-encre-noire/15 text-center">Plan de scène</th>
+                    <th className="p-2 md:p-3 border-r border-encre-noire/15 text-center">{t('mestre.stageLayout.thStageLayout')}</th>
                     <th className="p-2 md:p-3 text-center">{t('common.actions') || "Actions"}</th>
                   </tr>
                 </thead>

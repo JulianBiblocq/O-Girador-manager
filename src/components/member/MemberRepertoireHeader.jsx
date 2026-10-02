@@ -21,7 +21,7 @@ export default function MemberRepertoireHeader({
           {t('repertoire.catalogTitle') || 'Répertoire de la Saison'}
         </h2>
         <p className="text-[11px] font-bold text-encre-noire/70 mt-0.5">
-          Morceaux au programme, entraînements et demandes de révision
+          {t('repertoire.memberSubtitle')}
         </p>
       </div>
 
@@ -31,9 +31,9 @@ export default function MemberRepertoireHeader({
             type="button"
             onClick={onToggleAllExpanded}
             className="text-xs font-black uppercase tracking-wider bg-cordel-bg border-2 border-encre-noire px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer hover:bg-neutral-200 shrink-0 transition-all select-none"
-            title={allExpanded ? 'Tout replier' : 'Tout déplier'}
+            title={allExpanded ? t('repertoire.btnCollapseAll') : t('repertoire.btnExpandAll')}
           >
-            {allExpanded ? '⊟ Tout replier' : '⊞ Tout déplier'}
+            {allExpanded ? `⊟ ${t('repertoire.btnCollapseAll')}` : `⊞ ${t('repertoire.btnExpandAll')}`}
           </button>
         )}
 

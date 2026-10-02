@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from '../LanguageContext';
 import { doc, setDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
@@ -16,6 +17,7 @@ export default function CustomQuizConfigPanel({
   associatedSignalId,    // String: id of the linked signal
   mestreSignals = []     // Array of available signals
 }) {
+  const { t } = useTranslation();
   const [newQuestionText, setNewQuestionText] = useState('');
   const [newQuestionCorrect, setNewQuestionCorrect] = useState('');
   const [newQuestionBad1, setNewQuestionBad1] = useState('');
@@ -131,7 +133,7 @@ export default function CustomQuizConfigPanel({
   if (!selectedItem) {
     return (
       <div className="text-center p-8 bg-[#fdfaf2] border-2 border-dashed border-encre-noire/20 rounded opacity-60">
-        <p className="text-sm font-bold">Sélectionnez un élément à gauche pour configurer son QCM.</p>
+        <p className="text-sm font-bold">{t('mestre.pedagogy.selectItemToConfigureNotice')}</p>
       </div>
     );
   }
@@ -141,7 +143,7 @@ export default function CustomQuizConfigPanel({
       <div className="flex flex-col gap-3">
         <div className="flex justify-between items-center bg-[#fdfaf2] p-3 border-2 border-dashed border-cordel-wood/30 rounded">
           <span className="text-[10px] font-black uppercase tracking-widest text-cordel-master-dark/80">
-            Visibilité Élèves (Mon Parcours)
+            {t('mestre.pedagogy.studentVisibilityLabel')}
           </span>
           <label className="flex items-center gap-2 cursor-pointer">
             <input 
@@ -159,14 +161,14 @@ export default function CustomQuizConfigPanel({
         {itemType === 'rhythm' && (
           <div className="flex justify-between items-center bg-[#fdfaf2] p-3 border-2 border-dashed border-[var(--theme-primary)]/30 rounded mt-1">
             <span className="text-[10px] font-black uppercase tracking-widest text-[var(--theme-primary)]">
-              Signal du Maître Associé
+              {t('mestre.pedagogy.associatedMestreSignalLabel')}
             </span>
             <select
               value={associatedSignalId || ''}
               onChange={handleUpdateSignal}
               className="p-1 border-2 border-encre-noire/30 rounded text-xs font-bold bg-white text-encre-noire max-w-[200px]"
             >
-              <option value="">-- Aucun signal --</option>
+              <option value="">{t('mestre.pedagogy.noSignalOption')}</option>
               {mestreSignals.map(s => (
                 <option key={s.id} value={s.id}>{s.name}</option>
               ))}
@@ -175,12 +177,12 @@ export default function CustomQuizConfigPanel({
         )}
         
         <span className="text-[10px] font-black uppercase tracking-widest text-cordel-master-dark/60 mt-2">
-          Questions actives pour : {selectedItem.titre || selectedItem.name || selectedItem.id}
+          {t('mestre.pedagogy.activeQuestionsForColon')} {selectedItem.titre || selectedItem.name || selectedItem.id}
         </span>
         
         {!(customQuestions?.length > 0) ? (
           <div className="text-center p-6 bg-[#fdfaf2] border border-dashed border-encre-noire/20 rounded">
-            <p className="text-xs font-medium opacity-60">Aucune question personnalisée pour cet élément.</p>
+            <p className="text-xs font-medium opacity-60">{t('mestre.pedagogy.noCustomQuestionsNotice')}</p>
           </div>
         ) : (
           <div className="flex flex-col gap-3">
@@ -189,7 +191,7 @@ export default function CustomQuizConfigPanel({
                 <span className="text-xs font-bold text-encre-noire mb-1">{q.texte}</span>
                 {q.audioUrl && (
                   <div className="flex items-center gap-2 mb-2 text-[10px] text-cordel-wood bg-cordel-wood/10 p-1.5 rounded w-fit">
-                    <span>🎵</span> Audio attaché
+                    <span>🎵</span> {t('mestre.pedagogy.audioAttachedBadge')}
                   </div>
                 )}
                 <span className="text-[10px] text-[var(--color-cordel-vert)] font-bold">✓ {q.bonneReponse}</span>
@@ -203,7 +205,7 @@ export default function CustomQuizConfigPanel({
                 <button 
                   onClick={() => handleRemoveQuestion(q)}
                   className="absolute top-2 right-2 text-cordel-master-dark/40 hover:text-cordel-rouge font-black px-2"
-                  title="Supprimer la question"
+                  title={t('mestre.pedagogy.deleteQuestionTitle')}
                   type="button"
                 >
                   ✕
@@ -217,12 +219,12 @@ export default function CustomQuizConfigPanel({
       <form onSubmit={handleAddQuestion} className="flex flex-col gap-3 bg-[#fdfaf2] p-4 rounded border-2 border-encre-noire/10 relative">
         {showValidation && (
           <div className="absolute -top-3 right-4 bg-[var(--color-cordel-vert)] text-white text-[10px] font-bold px-3 py-1 rounded shadow-md animate-fadeIn z-10">
-            ✓ Question ajoutée !
+            {t('mestre.pedagogy.questionAddedToast')}
           </div>
         )}
         <div className="flex justify-between items-center mb-1">
           <span className="text-[10px] font-black uppercase tracking-widest text-cordel-wood">
-            + Nouvelle Question
+            {t('mestre.pedagogy.newQuestionHeading')}
           </span>
           {allItems.length > 1 && (
             <button 
@@ -230,7 +232,7 @@ export default function CustomQuizConfigPanel({
               onClick={handleGenerateAutoQuestion}
               className="text-[9px] font-bold text-[var(--color-cordel-vert)] bg-[var(--color-cordel-vert)]/10 px-2 py-1 rounded hover:bg-[var(--color-cordel-vert)]/20 transition-colors"
             >
-              ⚡ Générer auto.
+              {t('mestre.pedagogy.generateAutoBtn')}
             </button>
           )}
         </div>
@@ -238,20 +240,20 @@ export default function CustomQuizConfigPanel({
           type="text"
           value={newQuestionText}
           onChange={(e) => setNewQuestionText(e.target.value)}
-          placeholder="La question (ex: Quel est ce pattern ?)"
+          placeholder={t('mestre.pedagogy.questionPlaceholder')}
           className="p-2 border-2 border-encre-noire/30 rounded text-xs font-bold"
           required
         />
         
         {availableMedia && availableMedia.length > 0 && (
           <div className="flex flex-col gap-1 mt-2">
-            <label className="text-[9px] font-black uppercase text-encre-noire/60">Audio / Média lié (Optionnel)</label>
+            <label className="text-[9px] font-black uppercase text-encre-noire/60">{t('mestre.pedagogy.audioMediaLinkedLabel')}</label>
             <select
               value={selectedMediaUrl}
               onChange={(e) => setSelectedMediaUrl(e.target.value)}
               className="p-2 border-2 border-encre-noire/30 rounded text-xs font-medium bg-white"
             >
-              <option value="">-- Aucun média (Texte uniquement) --</option>
+              <option value="">{t('mestre.pedagogy.noMediaTextOnlyOption')}</option>
               {availableMedia.map(m => (
                 <option key={m.url} value={m.url}>
                   {m.isAudio ? '🎧' : '📄'} {m.fileName}
@@ -265,7 +267,7 @@ export default function CustomQuizConfigPanel({
           type="text"
           value={newQuestionCorrect}
           onChange={(e) => setNewQuestionCorrect(e.target.value)}
-          placeholder="La BONNE réponse"
+          placeholder={t('mestre.pedagogy.correctAnswerPlaceholder')}
           className="p-2 border-2 border-[#2d6a4f]/50 bg-[var(--color-cordel-vert)]/5 rounded text-xs font-bold text-[var(--color-cordel-vert)] mt-2"
           required
         />
@@ -274,7 +276,7 @@ export default function CustomQuizConfigPanel({
             type="text"
             value={newQuestionBad1}
             onChange={(e) => setNewQuestionBad1(e.target.value)}
-            placeholder="Fausse réponse 1"
+            placeholder={t('mestre.pedagogy.distractor1Placeholder')}
             className="p-2 border-2 border-encre-noire/20 rounded text-xs font-medium"
             required
           />
@@ -282,19 +284,19 @@ export default function CustomQuizConfigPanel({
             type="text"
             value={newQuestionBad2}
             onChange={(e) => setNewQuestionBad2(e.target.value)}
-            placeholder="Fausse réponse 2 (opt)"
+            placeholder={t('mestre.pedagogy.distractor2Placeholder')}
             className="p-2 border-2 border-encre-noire/20 rounded text-xs font-medium"
           />
           <input
             type="text"
             value={newQuestionBad3}
             onChange={(e) => setNewQuestionBad3(e.target.value)}
-            placeholder="Fausse réponse 3 (opt)"
+            placeholder={t('mestre.pedagogy.distractor3Placeholder')}
             className="p-2 border-2 border-encre-noire/20 rounded text-xs font-medium"
           />
         </div>
         <CordelButton variant="primary" type="submit" disabled={!newQuestionText.trim() || !newQuestionCorrect.trim() || !newQuestionBad1.trim()} className="text-[10px] self-end mt-2">
-          Ajouter au Quiz
+          {t('mestre.pedagogy.addToQuizBtn')}
         </CordelButton>
       </form>
     </CordelCard>

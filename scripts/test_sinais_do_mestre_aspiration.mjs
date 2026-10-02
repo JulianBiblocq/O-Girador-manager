@@ -59,13 +59,13 @@ const viewCode = fs.readFileSync(viewPath, 'utf8');
 assert(
   viewCode.includes('piece.sinaisDoMestre') &&
   viewCode.includes('sig.mesure') &&
-  viewCode.includes('Signes :'),
+  (viewCode.includes('Signes :') || viewCode.includes('signalsLabel')),
   "MestreRepertoireView doit afficher le bloc ordonné de vignettes réelles avec mesure pour sinaisDoMestre"
 );
 
 // Vérification du badge de synthèse
 assert(
-  viewCode.includes('Signe') && viewCode.includes('piece.sinaisDoMestre?.length'),
+  (viewCode.includes('Signe') || viewCode.includes('signalBadge')) && viewCode.includes('piece.sinaisDoMestre?.length'),
   "MestreRepertoireView doit afficher le badge de synthèse discret du nombre de signes"
 );
 console.log("  ✅ [PASS] MestreRepertoireView validé (vignettes réelles par mesure, badge de synthèse).");

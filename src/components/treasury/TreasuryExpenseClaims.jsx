@@ -6,6 +6,7 @@ import ExpenseRefusalModal from '../expenses/ExpenseRefusalModal';
 import { useExpenseClaims } from '../../hooks/useExpenseClaims';
 import { getCurrentSeason, getSeasonOptions, isPastSeason, DEFAULT_SEASON_START_MONTH } from '../../utils/seasonUtils';
 import useConfirm from '../../hooks/useConfirm';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Interface du Trésorier : Gestion des Notes de Frais & Achats.
@@ -21,6 +22,7 @@ export default function TreasuryExpenseClaims({
   _hasAccessTresorerie,
   associationSettings
 }) {
+  const { t } = useTranslation();
   const confirm = useConfirm();
   // 1. Récupération des notes de frais via le hook avec mois de rentrée dynamique
   const {
@@ -209,26 +211,26 @@ export default function TreasuryExpenseClaims({
       case 'reimbursed':
         return (
           <span className="theme-stamp-badge font-black uppercase text-[8.5px] px-2 py-0.5 bg-[var(--color-cordel-vert)]/15 text-[var(--color-cordel-vert)] border border-[var(--color-cordel-vert)]/40 rounded whitespace-nowrap">
-            🟢 Remboursée
+            🟢 {t('treasury.statusReimbursedBadge')}
           </span>
         );
       case 'approved':
         return (
           <span className="theme-stamp-badge font-black uppercase text-[8.5px] px-2 py-0.5 bg-blue-100 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 border border-blue-600/35 rounded whitespace-nowrap">
-            🔵 Validée (à payer)
+            🔵 {t('treasury.statusApprovedToPay')}
           </span>
         );
       case 'rejected':
         return (
           <span className="theme-stamp-badge font-black uppercase text-[8.5px] px-2 py-0.5 bg-[var(--color-cordel-rouge)]/15 text-[var(--color-cordel-rouge)] border border-[var(--color-cordel-rouge)]/40 rounded whitespace-nowrap">
-            🔴 Refusée
+            🔴 {t('treasury.statusRejectedBadge')}
           </span>
         );
       case 'pending':
       default:
         return (
           <span className="theme-stamp-badge font-black uppercase text-[8.5px] px-2 py-0.5 bg-[var(--color-cordel-ocre)]/15 text-[var(--color-cordel-ocre)] border border-[var(--color-cordel-ocre)]/40 rounded whitespace-nowrap">
-            🟠 En attente
+            🟠 {t('common.pending', 'En attente')}
           </span>
         );
     }
@@ -240,21 +242,21 @@ export default function TreasuryExpenseClaims({
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
         <CordelCard className="p-4 flex flex-col gap-1 items-center bg-white/60 dark:bg-black/20">
           <span className="text-[9px] font-black uppercase tracking-wider text-cordel-master-dark/60">
-            Notes à traiter
+            {t('treasury.notesToProcess')}
           </span>
           <div className="flex items-baseline gap-2">
             <span className="text-xl font-black text-cordel-wood">
               {stats.pendingCount}
             </span>
             <span className="text-[10px] font-bold text-blue-700">
-              (+{stats.approvedCount} prêtes à payer)
+              {t('treasury.readyToPayCount', { count: stats.approvedCount })}
             </span>
           </div>
         </CordelCard>
 
         <CordelCard className="p-4 flex flex-col gap-1 items-center bg-white/60 dark:bg-black/20">
           <span className="text-[9px] font-black uppercase tracking-wider text-cordel-master-dark/60">
-            Total dû aux membres
+            {t('treasury.totalDueMembers')}
           </span>
           <span className="text-xl font-black text-[var(--color-cordel-ocre)]">
             {stats.totalUnpaidAmount.toFixed(2)} €
@@ -263,7 +265,7 @@ export default function TreasuryExpenseClaims({
 
         <CordelCard className="p-4 flex flex-col gap-1 items-center bg-white/60 dark:bg-black/20">
           <span className="text-[9px] font-black uppercase tracking-wider text-cordel-master-dark/60">
-            Remboursé sur la saison ({selectedSeason})
+            {t('treasury.refundedOnSeasonYear', { season: selectedSeason })}
           </span>
           <span className="text-xl font-black text-[var(--color-cordel-vert)]">
             {stats.totalReimbursedSeason.toFixed(2)} €
@@ -278,7 +280,7 @@ export default function TreasuryExpenseClaims({
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-1.5">
               <label htmlFor="treasurySeasonSelect" className="text-[10px] uppercase font-extrabold text-cordel-master-dark">
-                📅 Saison :
+                📅 {t('treasury.seasonSelectorLabel')}
               </label>
               <select
                 id="treasurySeasonSelect"
@@ -305,7 +307,7 @@ export default function TreasuryExpenseClaims({
                 onChange={(e) => setShowAllUnpaid(e.target.checked)}
                 className="w-4 h-4 accent-cordel-wood cursor-pointer"
               />
-              <span>🚨 Afficher tous les impayés / reports (toutes saisons)</span>
+              <span>🚨 {t('treasury.showAllUnpaid')}</span>
             </label>
           </div>
 
@@ -315,7 +317,7 @@ export default function TreasuryExpenseClaims({
               type="text"
               value={searchMember}
               onChange={(e) => setSearchMember(e.target.value)}
-              placeholder="Rechercher membre ou motif..."
+              placeholder={t('treasury.searchMemberReason')}
               className="theme-input text-xs font-semibold py-1 px-2.5 bg-cordel-bg-light rounded border border-cordel-master-dark/30 w-full md:w-56"
             />
 
@@ -324,11 +326,11 @@ export default function TreasuryExpenseClaims({
               onChange={(e) => setStatusFilter(e.target.value)}
               className="theme-input text-xs font-bold py-1 px-2.5 bg-cordel-bg-light rounded border border-cordel-master-dark/30 cursor-pointer"
             >
-              <option value="all">Tous les statuts</option>
-              <option value="pending">🟠 En attente</option>
-              <option value="approved">🔵 Validée (à payer)</option>
-              <option value="reimbursed">🟢 Remboursée</option>
-              <option value="rejected">🔴 Refusée</option>
+              <option value="all">{t('treasury.allStatuses')}</option>
+              <option value="pending">🟠 {t('common.pending', 'En attente')}</option>
+              <option value="approved">🔵 {t('treasury.statusApprovedToPay')}</option>
+              <option value="reimbursed">🟢 {t('treasury.statusReimbursedBadge')}</option>
+              <option value="rejected">🔴 {t('treasury.statusRejectedBadge')}</option>
             </select>
           </div>
         </div>
@@ -338,7 +340,7 @@ export default function TreasuryExpenseClaims({
       <CordelCard variant="default" useExtremeBorder={true} className="p-4 flex flex-col gap-3 overflow-hidden">
         <div className="flex justify-between items-center border-b border-dashed border-cordel-master-dark/20 pb-2">
           <h3 className="text-xs font-black uppercase tracking-wider text-cordel-wood">
-            Demandes de remboursement ({filteredClaims.length})
+            {t('treasury.refundRequestsTitle', { count: filteredClaims.length })}
           </h3>
           {showAllUnpaid && (
             <span className="text-[10px] font-black uppercase text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/40 px-2 py-0.5 rounded border border-amber-600/30">
@@ -364,14 +366,14 @@ export default function TreasuryExpenseClaims({
             <table className="w-full text-left border-collapse text-xs min-w-[700px]">
               <thead>
                 <tr className="border-b-2 border-encre-noire/20 text-[9px] uppercase font-black text-cordel-master-dark/70 tracking-wider">
-                  <th className="py-2 px-2">Date</th>
-                  <th className="py-2 px-2">Saison</th>
-                  <th className="py-2 px-2">Membre</th>
-                  <th className="py-2 px-2">Motif</th>
-                  <th className="py-2 px-2 text-right">Montant</th>
-                  <th className="py-2 px-2 text-center">Justificatif</th>
-                  <th className="py-2 px-2">IBAN du membre</th>
-                  <th className="py-2 px-2 text-center">Statut</th>
+                  <th className="py-2 px-2">{t('treasury.thDate')}</th>
+                  <th className="py-2 px-2">{t('treasury.thSeason')}</th>
+                  <th className="py-2 px-2">{t('treasury.thMember')}</th>
+                  <th className="py-2 px-2">{t('treasury.thReason')}</th>
+                  <th className="py-2 px-2 text-right">{t('treasury.thAmount')}</th>
+                  <th className="py-2 px-2 text-center">{t('treasury.thReceipt')}</th>
+                  <th className="py-2 px-2">{t('treasury.thMemberIban')}</th>
+                  <th className="py-2 px-2 text-center">{t('treasury.thStatus')}</th>
                   <th className="py-2 px-2 text-right">Actions</th>
                 </tr>
               </thead>
@@ -447,7 +449,7 @@ export default function TreasuryExpenseClaims({
                             className="inline-flex items-center gap-1 text-[10px] font-bold text-cordel-wood hover:underline bg-white/60 dark:bg-black/30 px-2 py-1 rounded border border-cordel-master-dark/20"
                             title="Ouvrir le justificatif"
                           >
-                            📎 Voir ↗
+                            📎 {t('treasury.btnViewReceipt')} ↗
                           </a>
                         ) : (
                           <span className="text-[10px] text-neutral-400 italic">Aucun</span>
@@ -473,12 +475,12 @@ export default function TreasuryExpenseClaims({
                               }`}
                               title="Copier l'IBAN complet dans le presse-papier"
                             >
-                              {isIbanCopied ? '✓ Copié !' : '📋 Copier'}
+                              {isIbanCopied ? '✓ Copié !' : `📋 ${t('treasury.btnCopyIban')}`}
                             </button>
                           </div>
                         ) : (
                           <span className="text-[9px] italic text-neutral-400">
-                            Non renseigné
+                            {t('treasury.ibanNotProvided')}
                           </span>
                         )}
                       </td>
@@ -513,7 +515,7 @@ export default function TreasuryExpenseClaims({
                               className="px-2 py-1 text-[9px] font-black uppercase tracking-wider bg-[var(--color-cordel-rouge)] hover:opacity-90 text-white rounded border border-red-950 shadow-[1px_1px_0px_0px_#181716] cursor-pointer select-none"
                               title="Refuser la note de frais avec motif"
                             >
-                              ✕ Refuser
+                              ✕ {t('treasury.btnReject')}
                             </button>
                           )}
 
@@ -526,21 +528,21 @@ export default function TreasuryExpenseClaims({
                               className="px-2.5 py-1 text-[9px] font-black uppercase tracking-wider bg-[var(--color-cordel-vert)] hover:opacity-90 text-white rounded border border-green-950 shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer select-none"
                               title="Marquer comme payée, enregistrer en comptabilité et notifier le membre"
                             >
-                              💸 Rembourser
+                              💸 {t('treasury.btnReimburseAction')}
                             </button>
                           )}
 
                           {/* Statut remboursé : date rappel */}
                           {claim.status === 'reimbursed' && (
                             <span className="text-[9px] text-green-700 dark:text-green-400 font-bold italic">
-                              Payé le {formatDate(claim.reimbursedAt)}
+                              {t('treasury.paidOnDateNotice', { date: formatDate(claim.reimbursedAt) })}
                             </span>
                           )}
 
                           {/* Statut rejeté : date rappel */}
                           {claim.status === 'rejected' && (
                             <span className="text-[9px] text-red-700 font-bold italic">
-                              Refusé
+                              {t('treasury.rejectedStatusNotice')}
                             </span>
                           )}
                         </div>

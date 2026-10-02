@@ -89,8 +89,8 @@ const modalCode = fs.readFileSync(modalPath, 'utf8');
 
 assert(modalCode.includes('selectedCultureIds'), "RepertoirePieceModal doit gérer l'état selectedCultureIds");
 assert(modalCode.includes('cultureDocIds: Array.from'), "RepertoirePieceModal doit persister cultureDocIds dédoublonné");
-assert(modalCode.includes('Détacher cette fiche culturelle'), "RepertoirePieceModal doit proposer un bouton pour détacher chaque fiche");
-assert(modalCode.includes('Rattacher une fiche culturelle'), "RepertoirePieceModal doit proposer d'ajouter une fiche supplémentaire");
+assert(modalCode.includes('Détacher cette fiche culturelle') || modalCode.includes('detachCultureSheetTitle'), "RepertoirePieceModal doit proposer un bouton pour détacher chaque fiche");
+assert(modalCode.includes('Rattacher une fiche culturelle') || modalCode.includes('attachCultureSheetHeading'), "RepertoirePieceModal doit proposer d'ajouter une fiche supplémentaire");
 console.log("  ✅ [PASS] RepertoirePieceModal respecte la saisie multi-fiches.");
 
 // --- Test 4 : Contrôle statique de MestreRepertoireView.jsx ---
@@ -100,7 +100,7 @@ const viewCode = fs.readFileSync(viewPath, 'utf8');
 
 assert(viewCode.includes('activeCultureDocs'), "MestreRepertoireView doit exploiter activeCultureDocs");
 assert(viewCode.includes('culturePickerData'), "MestreRepertoireView doit gérer culturePickerData pour le choix multi-fiches");
-assert(viewCode.includes('fiches Culture'), "MestreRepertoireView doit afficher le libellé groupé en cas de fiches multiples");
+assert(viewCode.includes('fiches Culture') || viewCode.includes('cultureSheetsBadge'), "MestreRepertoireView doit afficher le libellé groupé en cas de fiches multiples");
 console.log("  ✅ [PASS] MestreRepertoireView propose l'affichage multi-fiches.");
 
 console.log("\n===============================================================");

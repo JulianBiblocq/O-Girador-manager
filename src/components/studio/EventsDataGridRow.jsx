@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import EventToggleSwitch from './EventToggleSwitch';
 import { DEFAULT_CUSTOM_CATEGORIES } from '../../utils/categoryUtils';
+import { useTranslation } from '../LanguageContext';
 
 const toDateValue = (rawDate) => {
   if (!rawDate) return '';
@@ -32,6 +33,7 @@ function EventsDataGridRow({
   defaultLocationsByEventType = {},
   customCategories = DEFAULT_CUSTOM_CATEGORIES
 }) {
+  const { t } = useTranslation();
   const isUpdatingRow = updatingEventId === event.id;
 
   // Local form state to emp�cher losing focus during keystrokes
@@ -121,12 +123,12 @@ function EventsDataGridRow({
           onChange={(e) => handleSelectChange('type', e.target.value, event.type || 'prestation')}
           className="theme-input w-full text-[11px] py-1 px-2 font-bold capitalize cursor-pointer"
         >
-          <option value="prestation">Prestation</option>
-          <option value="repetition">Répétition</option>
-          <option value="stage">Stage</option>
-          <option value="atelier">Atelier</option>
-          <option value="reunion">Réunion</option>
-          <option value="general">Général</option>
+          <option value="prestation">{t('secretariat.eventTypePrestation') || "Prestation"}</option>
+          <option value="repetition">{t('secretariat.eventTypeRepetition') || "Répétition"}</option>
+          <option value="stage">{t('secretariat.eventTypeStage') || "Stage"}</option>
+          <option value="atelier">{t('secretariat.eventTypeAtelier') || "Atelier"}</option>
+          <option value="reunion">{t('secretariat.eventTypeReunion') || "Réunion"}</option>
+          <option value="autre">{t('secretariat.eventTypeAutre') || "Autre"}</option>
         </select>
       </td>
 
@@ -138,7 +140,7 @@ function EventsDataGridRow({
           onChange={(e) => handleChange('description', e.target.value)}
           onBlur={() => handleBlur('description', event.description || '')}
           onKeyDown={(e) => handleKeyDown(e, 'description', event.description || '')}
-          placeholder="Description..."
+          placeholder={t('secretariat.inputDescriptionPlaceholder') || "Description..."}
           className="theme-input w-full py-1 px-2 text-xs font-normal"
         />
       </td>

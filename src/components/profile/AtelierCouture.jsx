@@ -162,7 +162,7 @@ export default function AtelierCouture({ groupId, activePiece, onClearActivePiec
       await deleteDoc(doc(db, 'workshops', ws.id));
     } catch (err) {
       console.error("Error deleting workshop:", err);
-      alert("Erreur lors de la suppression du tutoriel.");
+      alert(t('costumerie.erreurLorsDeLaSuppression'));
     }
   };
 
@@ -175,10 +175,10 @@ export default function AtelierCouture({ groupId, activePiece, onClearActivePiec
       <div className="flex justify-between items-center pb-2 border-b-2 border-dashed border-cordel-master-dark/30 gap-3 flex-wrap">
         <div>
           <h2 className="text-base font-heading font-black tracking-wider text-cordel-wood uppercase">
-            🧵 Atelier Couture & Bibliothèque de Tutoriels
+            {t('costumerie.atelierCoutureBibliothequeDeTutoriels')}
           </h2>
           <p className="text-[10px] text-cordel-master-dark opacity-75">
-            Fiches techniques multimédias, liste du matériel, patrons et tutoriels vidéo de confection.
+            {t('costumerie.fichesTechniquesMultimediasListeDu')}
           </p>
         </div>
 
@@ -191,7 +191,7 @@ export default function AtelierCouture({ groupId, activePiece, onClearActivePiec
               onClick={handleOpenAddTutorial}
               className="text-[10px] px-3 py-1.5 font-black uppercase tracking-wider"
             >
-              + Créer un Tutoriel
+              {t('costumerie.creerUnTutoriel')}
             </CordelButton>
           )}
 
@@ -202,7 +202,7 @@ export default function AtelierCouture({ groupId, activePiece, onClearActivePiec
               onClick={onBack}
               className="text-[10px] px-3 py-1.5 font-bold uppercase tracking-wider"
             >
-              Retour
+              {t('costumerie.btnBack')}
             </CordelButton>
           )}
         </div>
@@ -210,7 +210,7 @@ export default function AtelierCouture({ groupId, activePiece, onClearActivePiec
 
       {loading ? (
         <div className="flex justify-center items-center py-12">
-          <span className="text-xs uppercase tracking-widest font-black animate-pulse opacity-60">⏳ Chargement des tutoriels...</span>
+          <span className="text-xs uppercase tracking-widest font-black animate-pulse opacity-60">{t('costumerie.chargementDesTutoriels')}</span>
         </div>
       ) : (
         <div className="flex flex-col gap-5">
@@ -238,7 +238,7 @@ export default function AtelierCouture({ groupId, activePiece, onClearActivePiec
                       </h3>
                       {ws.cost > 0 && (
                         <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] font-black uppercase">
-                          Coût : {ws.cost} €
+                          {t('costumerie.cout')} {ws.cost} €
                         </span>
                       )}
                       {isAuthorized && (
@@ -262,15 +262,15 @@ export default function AtelierCouture({ groupId, activePiece, onClearActivePiec
                           type="button"
                           onClick={(e) => handleOpenEditTutorial(ws, e)}
                           className="text-[9px] font-bold uppercase bg-amber-100 text-amber-900 px-2 py-1 rounded border border-amber-400 hover:bg-amber-200 cursor-pointer"
-                          title="Modifier ce tutoriel"
+                          title={t('costumerie.modifierCeTutoriel')}
                         >
-                          ✏️ Éditer
+                          {t('costumerie.btnEditPencil')}
                         </button>
                         <button
                           type="button"
                           onClick={(e) => handleDeleteTutorial(ws, e)}
                           className="text-[9px] font-bold uppercase bg-red-100 text-red-900 px-2 py-1 rounded border border-red-400 hover:bg-red-200 cursor-pointer"
-                          title="Supprimer ce tutoriel"
+                          title={t('costumerie.supprimerCeTutoriel')}
                         >
                           🗑️
                         </button>
@@ -291,7 +291,7 @@ export default function AtelierCouture({ groupId, activePiece, onClearActivePiec
                     {ws.materiel && (
                       <div className="bg-amber-50/70 dark:bg-amber-950/30 p-3.5 rounded border border-dashed border-amber-600/30 flex flex-col gap-1.5">
                         <h4 className="font-heading font-black text-xs text-cordel-wood uppercase tracking-wider flex items-center gap-1.5">
-                          🧵 Matériel Nécessaire
+                          {t('costumerie.materielNecessaire')}
                         </h4>
                         <div className="whitespace-pre-wrap font-medium opacity-90 pl-1">
                           {ws.materiel}
@@ -303,7 +303,7 @@ export default function AtelierCouture({ groupId, activePiece, onClearActivePiec
                     {ws.content && (
                       <div className="flex flex-col gap-1.5">
                         <h4 className="font-heading font-black text-xs text-cordel-wood uppercase tracking-wider flex items-center gap-1.5">
-                          📜 Étapes de Fabrication pas à pas
+                          {t('costumerie.etapesDeFabricationPasA')}
                         </h4>
                         <div className="bg-white/60 dark:bg-black/30 p-4 rounded border border-dashed border-cordel-master-dark/20 whitespace-pre-wrap leading-relaxed">
                           {ws.content}
@@ -315,7 +315,7 @@ export default function AtelierCouture({ groupId, activePiece, onClearActivePiec
                     {embedVideo && (
                       <div className="flex flex-col gap-2">
                         <h4 className="font-heading font-black text-xs text-cordel-wood uppercase tracking-wider flex items-center gap-1.5">
-                          🎬 Tutoriel Vidéo de démonstration
+                          {t('costumerie.tutorielVideoDeDemonstration')}
                         </h4>
                         <div className="relative w-full aspect-video rounded-lg overflow-hidden border-2 border-encre-noire shadow-md bg-black">
                           <iframe
@@ -333,7 +333,7 @@ export default function AtelierCouture({ groupId, activePiece, onClearActivePiec
                     {ws.images && ws.images.length > 0 && (
                       <div className="flex flex-col gap-2">
                         <h4 className="font-heading font-black text-xs text-cordel-wood uppercase tracking-wider flex items-center gap-1.5">
-                          🎨 Patrons & Images de démonstration ({ws.images.length})
+                          {t('costumerie.patronsImagesDeDemonstration')}{ws.images.length})
                         </h4>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                           {ws.images.map((img, idx) => (
@@ -344,7 +344,7 @@ export default function AtelierCouture({ groupId, activePiece, onClearActivePiec
                             >
                               <img src={img.url} alt={img.name || 'Patron'} className="w-full h-full object-cover" />
                               <div className="absolute inset-0 bg-encre-noire/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[10px] font-black uppercase tracking-wider">
-                                🔍 Agrrandir
+                                {t('costumerie.agrrandir')}
                               </div>
                             </div>
                           ))}
@@ -356,7 +356,7 @@ export default function AtelierCouture({ groupId, activePiece, onClearActivePiec
                     {ws.pdfFiles && ws.pdfFiles.length > 0 && (
                       <div className="flex flex-col gap-2">
                         <h4 className="font-heading font-black text-xs text-cordel-wood uppercase tracking-wider flex items-center gap-1.5">
-                          📄 Documents Joints (PDF / Patrons à imprimer)
+                          {t('costumerie.documentsJointsPdfPatronsA')}
                         </h4>
                         <div className="flex flex-wrap gap-2">
                           {ws.pdfFiles.map((pdf, idx) => (
@@ -368,7 +368,7 @@ export default function AtelierCouture({ groupId, activePiece, onClearActivePiec
                               className="flex items-center gap-2 bg-cordel-wood text-white hover:bg-cordel-wood/90 px-3 py-2 rounded font-extrabold text-xs border border-encre-noire shadow-[2px_2px_0px_0px_#181716] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all"
                             >
                               <span>📄 {pdf.name}</span>
-                              <span className="text-[9px] uppercase bg-white/20 px-1.5 py-0.5 rounded">Ouvrir / Télécharger ↗</span>
+                              <span className="text-[9px] uppercase bg-white/20 px-1.5 py-0.5 rounded">{t('costumerie.ouvrirTelecharger')}</span>
                             </a>
                           ))}
                         </div>
@@ -418,7 +418,7 @@ export default function AtelierCouture({ groupId, activePiece, onClearActivePiec
                   <div className="mt-4 pt-4 border-t-2 border-dashed border-cordel-master-dark/20 flex flex-col gap-4 text-xs text-encre-noire leading-relaxed">
                     <div className="bg-amber-50/70 p-3.5 rounded border border-dashed border-amber-600/30 flex flex-col gap-1.5">
                       <h4 className="font-heading font-black text-xs text-cordel-wood uppercase tracking-wider">
-                        🧵 Matériel Nécessaire
+                        {t('costumerie.materielNecessaire')}
                       </h4>
                       <div className="whitespace-pre-wrap font-medium opacity-90 pl-1">
                         {value.materiel}
@@ -427,7 +427,7 @@ export default function AtelierCouture({ groupId, activePiece, onClearActivePiec
 
                     <div className="flex flex-col gap-1.5">
                       <h4 className="font-heading font-black text-xs text-cordel-wood uppercase tracking-wider">
-                        📜 Étapes de Fabrication pas à pas
+                        {t('costumerie.etapesDeFabricationPasA')}
                       </h4>
                       <div className="bg-white/60 p-4 rounded border border-dashed border-cordel-master-dark/20 whitespace-pre-wrap leading-relaxed">
                         {value.content}

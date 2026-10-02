@@ -41,7 +41,7 @@ export default function PageAccessBadgeIndicator({
   return (
     <div className="flex items-center gap-1.5 flex-wrap text-xs mb-3 mt-1 px-1 select-none animate-fade-in w-full">
       <span className="flex items-center gap-1.5 text-stone-500 font-black uppercase tracking-wider text-[9px] mr-1" title="Cet onglet est restreint aux membres possédant une de ces étiquettes.">
-        🔓 Réservé :
+        🔓 {t('governance.badgeReservedRoles', { roles: '' }).trim()}
       </span>
       {authorizedTagIds.map(tagId => {
         // Résolution du libellé selon le tagId, au neutre/homme par défaut

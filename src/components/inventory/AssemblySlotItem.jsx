@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from '../LanguageContext';
 import { getStepSignal, getCompletedStepsCount, getStepProgressRatio } from '../../utils/workshopProjectionUtils';
 
 /**
@@ -29,6 +30,7 @@ export default function AssemblySlotItem({
   onOpenVaralTutorial,
   availableStock = []
 }) {
+  const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
 
   const isAssigned = !!invPart;
@@ -162,9 +164,9 @@ export default function AssemblySlotItem({
                     onOpenVaralTutorial(slot);
                   }}
                   className="text-[9px] text-[var(--color-cordel-wood)] hover:text-black font-bold underline flex items-center gap-1 cursor-pointer transition-colors"
-                  title="Ouvrir le tutoriel complet dans le Varal"
+                  title={t('lutherie.titleOpenFullTutorial')}
                 >
-                  <span>🧵</span> Voir le tutoriel ({totalSteps} étapes)
+                  <span>🧵</span> {t('lutherie.btnViewTutorialWithSteps', { count: totalSteps })}
                 </button>
               </div>
             )}
@@ -185,15 +187,15 @@ export default function AssemblySlotItem({
                     : 'text-[var(--color-cordel-ocre)] bg-white border-[var(--color-cordel-ocre)]/40 shadow-xs'
                 }`}
               >
-                Assigné : {invPart.nom}
+                {t('lutherie.assignedPrefix', { name: invPart.nom })}
               </span>
               <button
                 type="button"
                 onClick={() => onAssignPart(slot.slotId, null)}
                 className="text-[9px] text-[var(--color-cordel-rouge)] hover:underline font-bold px-1 py-0.5 cursor-pointer"
-                title="Désassigner cette pièce du projet"
+                title={t('lutherie.titleUnassignPart')}
               >
-                Retirer
+                {t('lutherie.btnRemove')}
               </button>
             </div>
           ) : availableStock.length > 0 ? (
@@ -206,7 +208,7 @@ export default function AssemblySlotItem({
                   title={`Continuer avec la pièce "${defaultProjectPiece.nom}" déjà utilisée dans le projet`}
                 >
                   <span>⭐</span>
-                  <span>Continuer : {defaultProjectPiece.nom}</span>
+                  <span>{t('lutherie.btnContinuePiece', { name: defaultProjectPiece.nom })}</span>
                 </button>
               )}
               <select
@@ -214,10 +216,10 @@ export default function AssemblySlotItem({
                 value=""
                 className="theme-input text-[10px] py-1 px-2 bg-white max-w-[190px] border border-stone-300 rounded shadow-xs cursor-pointer"
               >
-                <option value="">-- Piocher dans le stock ({availableStock.length}) --</option>
+                <option value="">{t('lutherie.optPickFromStock', { count: availableStock.length })}</option>
                 {defaultProjectPiece && (
                   <option value={defaultProjectPiece.id}>
-                    ⭐ Continuer : {defaultProjectPiece.nom} (pièce du projet)
+                    {t('lutherie.optContinueProjectPiece', { name: defaultProjectPiece.nom })}
                   </option>
                 )}
                 {availableStock.map((sp) => (
@@ -237,11 +239,11 @@ export default function AssemblySlotItem({
                   title={`Continuer avec la pièce "${defaultProjectPiece.nom}" déjà utilisée dans le projet`}
                 >
                   <span>⭐</span>
-                  <span>Continuer : {defaultProjectPiece.nom}</span>
+                  <span>{t('lutherie.btnContinuePiece', { name: defaultProjectPiece.nom })}</span>
                 </button>
               )}
               <span className="text-[9.5px] italic text-stone-500 bg-stone-100/80 px-2 py-1 rounded border border-stone-200 select-none">
-                ⏳ En attente de fourniture
+                {t('lutherie.waitingForSupply')}
               </span>
             </div>
           )}
@@ -282,9 +284,9 @@ export default function AssemblySlotItem({
         >
           {/* Jauge graphique d'avancement */}
           <div className="flex items-center justify-between text-[10px] font-bold text-stone-600 mb-1">
-            <span>Progression de fabrication</span>
+            <span>{t('lutherie.manufacturingProgress')}</span>
             <span className="font-black text-black">
-              {isAssigned ? getStepProgressRatio(totalSteps, currentStep, statutEtape) : `0 / ${totalSteps} terminées`}
+              {isAssigned ? getStepProgressRatio(totalSteps, currentStep, statutEtape) : t('lutherie.zeroCompletedSteps', { total: totalSteps })}
             </span>
           </div>
           <div className="w-full bg-stone-200 h-1.5 rounded-full overflow-hidden mb-2">
@@ -362,7 +364,7 @@ export default function AssemblySlotItem({
               onClick={() => onOpenVaralTutorial(slot)}
               className="text-[9px] text-[var(--color-cordel-wood)] hover:underline font-bold flex items-center gap-1 cursor-pointer"
             >
-              <span>📖</span> Ouvrir la fiche tutoriel complète
+              <span>📖</span> {t('lutherie.btnOpenFullTutorialSheet')}
             </button>
           </div>
         </div>

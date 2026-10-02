@@ -180,15 +180,15 @@ export default function MonVestiaire({
       <div className="flex justify-between items-center pb-2 border-b-2 border-dashed border-cordel-master-dark/30 gap-3">
         <div>
           <h2 className="text-base font-heading font-black tracking-wider text-cordel-wood uppercase">
-            🎭 Mon Vestiaire & Garde-Robe
+            {t('costumerie.monVestiaireGardeRobe')}
           </h2>
           <p className="text-[10px] text-cordel-master-dark opacity-75">
-            Mannequin d'habillage visuel, validation de vos pièces et Atelier Couture.
+            {t('costumerie.mannequinDHabillageVisuelValidation')}
           </p>
         </div>
         {onBack && (
           <CordelButton variant="default" onClick={onBack} className="px-3 py-1 text-xs font-bold uppercase">
-            ← Retour
+            {t('costumerie.btnBackArrowSimple')}
           </CordelButton>
         )}
       </div>
@@ -205,7 +205,7 @@ export default function MonVestiaire({
                 : 'bg-cordel-bg text-cordel-master-dark border-cordel-master-dark/30 hover:bg-white/40'
             }`}
           >
-            Tous les Costumes ({costumes.length})
+            {t('costumerie.tousLesCostumes')}{costumes.length})
           </button>
           <button
             type="button"
@@ -216,7 +216,7 @@ export default function MonVestiaire({
                 : 'bg-cordel-bg text-cordel-master-dark border-cordel-master-dark/30 hover:bg-white/40'
             }`}
           >
-            💃 Danse
+            {t('costumerie.danse')}
           </button>
           <button
             type="button"
@@ -227,7 +227,7 @@ export default function MonVestiaire({
                 : 'bg-cordel-bg text-cordel-master-dark border-cordel-master-dark/30 hover:bg-white/40'
             }`}
           >
-            🥁 Percussion
+            {t('costumerie.percussion')}
           </button>
         </div>
 
@@ -242,7 +242,7 @@ export default function MonVestiaire({
                 : 'text-cordel-master-dark hover:bg-white/60'
             }`}
           >
-            🎨 Mannequin
+            {t('costumerie.mannequin')}
           </button>
           <button
             type="button"
@@ -253,7 +253,7 @@ export default function MonVestiaire({
                 : 'text-cordel-master-dark hover:bg-white/60'
             }`}
           >
-            📋 Liste
+            {t('costumerie.liste')}
           </button>
         </div>
       </div>
@@ -261,7 +261,7 @@ export default function MonVestiaire({
       {/* Costumes Display */}
       {loading ? (
         <div className="flex justify-center items-center py-12">
-          <span className="text-xs uppercase tracking-widest font-black animate-pulse opacity-60">⏳ Chargement de votre vestiaire...</span>
+          <span className="text-xs uppercase tracking-widest font-black animate-pulse opacity-60">{t('costumerie.chargementDeVotreVestiaire')}</span>
         </div>
       ) : filteredCostumes.length === 0 ? (
         <CordelCard variant="default" useExtremeBorder={false} className="p-8 text-center bg-cordel-bg">
@@ -319,12 +319,12 @@ export default function MonVestiaire({
                   {isFullyValidated ? (
                     <div className="animate-bounce flex items-center gap-1.5 self-start sm:self-center">
                       <span className="theme-stamp-badge bg-emerald-700 text-white text-[10px] px-3 py-1 font-black uppercase tracking-widest border border-emerald-900 shadow-[2px_2px_0px_0px_#064e3b]">
-                        ✅ Costume Validé !
+                        {t('costumerie.costumeValide')}
                       </span>
                     </div>
                   ) : (
                     <div className="text-[10px] font-extrabold text-cordel-wood self-start sm:self-center">
-                      Progression : {checkedMandatoryCount}/{totalMandatory} obligatoire(s)
+                      {t('costumerie.progression')} {checkedMandatoryCount}/{totalMandatory} {t('costumerie.obligatoireS')}
                     </div>
                   )}
                 </div>
@@ -352,11 +352,11 @@ export default function MonVestiaire({
                   /* View Mode 2: Standard Checklist Grid */
                   <div className="flex flex-col gap-2 mt-1">
                     <span className="text-[9px] font-black uppercase tracking-widest text-cordel-master-dark opacity-70">
-                      Pièces requises ({pieces.length}) :
+                      {t('costumerie.piecesRequises')}{pieces.length}) :
                     </span>
 
                     {pieces.length === 0 ? (
-                      <span className="text-[10px] italic opacity-60">Aucune pièce définie pour ce costume.</span>
+                      <span className="text-[10px] italic opacity-60">{t('costumerie.aucunePieceDefiniePourCe')}</span>
                     ) : (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {pieces.map((piece) => {
@@ -392,7 +392,7 @@ export default function MonVestiaire({
                                     </span>
                                   )}
                                   <span className="text-[8px] font-semibold text-cordel-master-dark opacity-70">
-                                    {piece.isMandatory !== false ? "★ Obligatoire" : "Optionnel"}
+                                    {piece.isMandatory !== false ? t('costumerie.obligatoire') : t('costumerie.optionnel')}
                                   </span>
                                 </div>
                               </label>
@@ -401,9 +401,9 @@ export default function MonVestiaire({
                                 type="button"
                                 onClick={() => handleOpenTutorial(piece)}
                                 className="text-[9px] font-black uppercase tracking-wider bg-cordel-wood text-white hover:bg-cordel-wood/90 border border-encre-noire px-2.5 py-1 rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer shrink-0 flex items-center gap-1"
-                                title="Voir le tutoriel de fabrication dans l'Atelier Couture"
+                                title={t('costumerie.voirLeTutorielDeFabrication')}
                               >
-                                🧵 Tutoriel de fabrication
+                                {t('costumerie.tutorielDeFabrication')}
                               </button>
                             </div>
                           );
@@ -430,7 +430,7 @@ export default function MonVestiaire({
             <div className="flex-shrink-0 p-4 border-b-2 border-dashed border-cordel-master-dark/25 flex justify-between items-start bg-cordel-bg">
               <div>
                 <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] uppercase tracking-wider mb-1 inline-block">
-                  📌 Élément de costume
+                  {t('costumerie.elementDeCostume')}
                 </span>
                 <h3 className="font-heading font-black text-base text-encre-noire tracking-wide">
                   {actionPiece.name}
@@ -440,7 +440,7 @@ export default function MonVestiaire({
                 type="button"
                 onClick={() => setActionPiece(null)}
                 className="text-base font-extrabold text-cordel-wood hover:text-red-600 cursor-pointer"
-                title="Fermer (Échap)"
+                title={t('costumerie.fermerEchap')}
               >
                 ✕
               </button>
@@ -451,15 +451,15 @@ export default function MonVestiaire({
               {/* Status & Location badges */}
               <div className="flex items-center gap-2">
                 <span className="theme-stamp-badge theme-stamp-badge-dark text-[8px] uppercase">
-                  Location: {actionPiece.emplacement || 'Corps'}
+                  {t('costumerie.location')} {actionPiece.emplacement || 'Corps'}
                 </span>
                 {actionPiece.isMandatory !== false ? (
                   <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] uppercase">
-                    ★ Obligatoire
+                    {t('costumerie.obligatoire')}
                   </span>
                 ) : (
                   <span className="theme-stamp-badge theme-stamp-badge-ocre text-[8px] uppercase opacity-80">
-                    Optionnel
+                    {t('costumerie.optionnel')}
                   </span>
                 )}
               </div>
@@ -501,7 +501,7 @@ export default function MonVestiaire({
                       }}
                       className="w-full py-2 text-xs font-bold uppercase tracking-wider"
                     >
-                      🧵 Tutoriel de fabrication
+                      {t('costumerie.tutorielDeFabrication')}
                     </CordelButton>
                   </>
                 );

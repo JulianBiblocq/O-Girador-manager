@@ -1,6 +1,7 @@
 import React from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
+import { useTranslation } from '../LanguageContext';
 import { getEmbedVideoUrl } from '../../utils/videoUtils';
 
 /**
@@ -12,6 +13,7 @@ import { getEmbedVideoUrl } from '../../utils/videoUtils';
  * @param {Object|null} video - Objet vidéo { titre, url }
  */
 export default function RepertoireVideoModal({ isOpen, onClose, video }) {
+  const { t } = useTranslation();
   if (!isOpen || !video || !video.url) return null;
 
   const { type, embedUrl } = getEmbedVideoUrl(video.url);
@@ -34,16 +36,16 @@ export default function RepertoireVideoModal({ isOpen, onClose, video }) {
               target="_blank"
               rel="noopener noreferrer"
               className="text-[10px] font-black uppercase text-cordel-wood hover:underline inline-flex items-center gap-1 bg-amber-100/60 px-2 py-1 rounded border border-amber-300"
-              title="Ouvrir dans un nouvel onglet"
+              title={t('mestre.repertoire.openInNewTabTitle')}
             >
               <span>↗</span>
-              <span className="hidden sm:inline">Plein écran externe</span>
+              <span className="hidden sm:inline">{t('mestre.repertoire.fullscreenExternalBtn')}</span>
             </a>
             <button
               type="button"
               onClick={onClose}
               className="text-stone-400 hover:text-stone-700 font-black text-lg px-1.5 py-0.5 cursor-pointer transition-colors"
-              title="Fermer"
+              title={t('common.close')}
             >
               ✕
             </button>
@@ -60,7 +62,7 @@ export default function RepertoireVideoModal({ isOpen, onClose, video }) {
               src={embedUrl}
               className="w-full h-full object-contain"
             >
-              Votre navigateur ne supporte pas la lecture directe de vidéos.
+              {t('mestre.repertoire.browserNoVideoSupport')}
             </video>
           ) : embedUrl ? (
             <iframe
@@ -74,7 +76,7 @@ export default function RepertoireVideoModal({ isOpen, onClose, video }) {
             <div className="flex flex-col items-center justify-center gap-3 p-6 text-white text-center">
               <span className="text-3xl">⚠️</span>
               <p className="text-xs font-bold opacity-80">
-                Impossible d'intégrer ce lien directement dans l'application.
+                {t('mestre.repertoire.cannotEmbedDirectlyNotice')}
               </p>
               <a
                 href={video.url}
@@ -82,7 +84,7 @@ export default function RepertoireVideoModal({ isOpen, onClose, video }) {
                 rel="noopener noreferrer"
                 className="theme-btn theme-bg-ocre text-encre-noire px-3 py-1.5 text-xs font-black rounded"
               >
-                Ouvrir la vidéo dans un nouvel onglet ↗
+                {t('mestre.repertoire.openVideoInNewTabBtn')}
               </a>
             </div>
           )}
@@ -97,7 +99,7 @@ export default function RepertoireVideoModal({ isOpen, onClose, video }) {
             onClick={onClose}
             className="py-1 px-4 text-xs font-black uppercase tracking-wider bg-stone-100 hover:bg-stone-200"
           >
-            Fermer
+            {t('common.close')}
           </CordelButton>
         </div>
       </CordelCard>

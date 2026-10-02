@@ -254,7 +254,7 @@ export default function ReportsExports({
           entries.push({
             id: `cot_base_${member.id}`,
             date: paymentDateStr,
-            category: "Cotisation (Adhésion)",
+            category: t('treasury.catCotisationAdhesion'),
             label: `Adhésion de ${fullName}${status === 'partial' ? ' (Partielle)' : ''}`,
             debit: 0,
             credit: baseAmount
@@ -267,7 +267,7 @@ export default function ReportsExports({
             entries.push({
               id: `cot_opt_${member.id}_${optId}`,
               date: paymentDateStr,
-              category: "Cotisation (Option)",
+              category: t('treasury.catCotisationOption'),
               label: `Option ${opt.nom} - ${fullName}`,
               debit: 0,
               credit: parseFloat(opt.montant) || 0
@@ -536,14 +536,14 @@ export default function ReportsExports({
 
       {/* Intro info box */}
       <div className="text-xs text-encre-noire dark:text-cordel-bg-light opacity-80 border border-dashed border-cordel-master-dark/30 p-3.5 rounded-[6px_4px_8px_5px] bg-[#fdfaf2] dark:bg-[#201d1a] leading-relaxed">
-        📊 <strong>Grand Livre Comptable en Direct</strong> : Visualisez le bilan de votre association pour la période choisie avant d'exporter les données au format CSV (Excel, LibreOffice, Google Sheets).
+        📊 {t('treasury.ledgerBannerDesc')}
       </div>
 
       {/* Date Filters & Actions Card */}
       <CordelCard variant="default" useExtremeBorder={true} className="p-4 flex flex-col gap-4">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 border-b border-dashed border-cordel-master-dark/15 pb-2">
           <h3 className="text-xs font-extrabold tracking-wider text-cordel-wood uppercase">
-            📅 Période du Bilan
+            📅 {t('treasury.ledgerPeriodTitle')}
           </h3>
           <CordelButton
             variant="ocre"
@@ -552,14 +552,14 @@ export default function ReportsExports({
             disabled={exportingAccounting || ledgerEntries.length === 0}
             className="text-xs px-3 py-1.5 font-black uppercase tracking-wider shrink-0"
           >
-            {exportingAccounting ? "Génération..." : "📥 Exporter en CSV"}
+            {exportingAccounting ? t('common.loading') : `📥 ${t('treasury.btnExportCsvLedger')}`}
           </CordelButton>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1.5">
             <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              Date de début
+              {t('treasury.dateStart')}
             </label>
             <input 
               type="date" 
@@ -573,7 +573,7 @@ export default function ReportsExports({
           </div>
           <div className="flex flex-col gap-1.5">
             <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              Date de fin
+              {t('treasury.dateEnd')}
             </label>
             <input 
               type="date" 
@@ -591,15 +591,15 @@ export default function ReportsExports({
       {/* Summary KPI Badges */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="border border-encre-noire/20 p-3 bg-green-50/50 dark:bg-green-950/20 rounded-[5px_3px_6px_4px] text-center shadow-xs">
-          <div className="text-[9px] uppercase font-black text-green-800 dark:text-green-300 opacity-80 tracking-wider">Total Recettes (+)</div>
+          <div className="text-[9px] uppercase font-black text-green-800 dark:text-green-300 opacity-80 tracking-wider">{t('treasury.totalIncomePlus')}</div>
           <div className="text-xl font-black text-green-700 dark:text-green-300 mt-0.5">{totalCredit.toFixed(2)} €</div>
         </div>
         <div className="border border-encre-noire/20 p-3 bg-red-50/50 dark:bg-red-950/20 rounded-[4px_6px_3px_5px] text-center shadow-xs">
-          <div className="text-[9px] uppercase font-black text-red-800 dark:text-red-300 opacity-80 tracking-wider">Total Dépenses (-)</div>
+          <div className="text-[9px] uppercase font-black text-red-800 dark:text-red-300 opacity-80 tracking-wider">{t('treasury.totalExpensesMinus')}</div>
           <div className="text-xl font-black text-red-700 dark:text-red-300 mt-0.5">{totalDebit.toFixed(2)} €</div>
         </div>
         <div className={`border-2 border-encre-noire p-3 rounded-[6px_4px_5px_3px] text-center shadow-[2px_2px_0px_0px_#181716] ${soldePeriode >= 0 ? 'bg-[#e2ecc8] dark:bg-emerald-950/30' : 'bg-[#f7d6d0] dark:bg-rose-950/30'}`}>
-          <div className="text-[9px] uppercase font-black text-encre-noire tracking-wider">Solde Période</div>
+          <div className="text-[9px] uppercase font-black text-encre-noire tracking-wider">{t('treasury.periodBalance')}</div>
           <div className={`text-xl font-black mt-0.5 ${soldePeriode >= 0 ? 'text-green-800 dark:text-green-300' : 'text-red-800 dark:text-red-300'}`}>
             {soldePeriode >= 0 ? '+' : ''}{soldePeriode.toFixed(2)} €
           </div>
@@ -612,10 +612,12 @@ export default function ReportsExports({
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-dashed border-cordel-master-dark/15 pb-2">
           <div className="flex items-center gap-2">
             <h3 className="text-xs font-extrabold tracking-wider text-cordel-wood uppercase">
-              📜 Grand Livre Comptable en Direct
+              📜 {t('treasury.ledgerTableTitle')}
             </h3>
             <span className="text-[10px] font-black text-cordel-master-dark/60 bg-cordel-bg-light px-2 py-0.5 rounded border border-encre-noire/15">
-              {filteredEntries.length} écriture{filteredEntries.length > 1 ? 's' : ''}
+              {filteredEntries.length > 1 
+                ? t('treasury.entriesCountPlural', { count: filteredEntries.length }) 
+                : t('treasury.entriesCount', { count: filteredEntries.length })}
             </span>
           </div>
 
@@ -623,7 +625,7 @@ export default function ReportsExports({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="🔍 Filtrer par libellé, membre..."
+            placeholder={t('treasury.filterLedgerPlaceholder')}
             className="theme-input text-xs font-semibold py-1 px-2.5 w-full sm:w-64 bg-cordel-bg-light"
           />
         </div>
@@ -644,17 +646,27 @@ export default function ReportsExports({
             <table className="w-full text-left text-xs border-collapse min-w-[600px]">
               <thead className="bg-cordel-wood text-white sticky top-0 z-10 text-[10px] uppercase font-black tracking-wider select-none">
                 <tr>
-                  <th className="p-2 border-b border-encre-noire">Date</th>
-                  <th className="p-2 border-b border-encre-noire">Catégorie</th>
-                  <th className="p-2 border-b border-encre-noire">Libellé / Détail</th>
-                  <th className="p-2 border-b border-encre-noire text-right text-red-200">Débit (-)</th>
-                  <th className="p-2 border-b border-encre-noire text-right text-green-200">Crédit (+)</th>
+                  <th className="p-2 border-b border-encre-noire">{t('treasury.thDate')}</th>
+                  <th className="p-2 border-b border-encre-noire">{t('treasury.thCategory')}</th>
+                  <th className="p-2 border-b border-encre-noire">{t('treasury.thLabelDetail')}</th>
+                  <th className="p-2 border-b border-encre-noire text-right text-red-200">{t('treasury.thDebit')}</th>
+                  <th className="p-2 border-b border-encre-noire text-right text-green-200">{t('treasury.thCredit')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-encre-noire/15 text-[11px] font-semibold">
                 {filteredEntries.map((entry) => {
                   const isDebit = entry.debit > 0;
                   const isCredit = entry.credit > 0;
+                  const displayCat = (() => {
+                    if (entry.category === 'Cotisation (Adhésion)') return t('treasury.catCotisationAdhesion');
+                    if (entry.category === 'Cotisation (Option)') return t('treasury.catCotisationOption');
+                    const upper = String(entry.category || '').toUpperCase();
+                    if (upper === 'COTISATION' || upper === 'COTISATIONS') return t('treasury.tagCotisations');
+                    return entry.category;
+                  })();
+                  const displayLabel = typeof entry.label === 'string' && entry.label.includes('Paiement HelloAsso')
+                    ? entry.label.replace('Paiement HelloAsso', t('treasury.helloassoPaymentLabel'))
+                    : entry.label;
 
                   return (
                     <tr key={entry.id} className="hover:bg-amber-50/50 dark:hover:bg-amber-950/20 transition-colors">
@@ -667,11 +679,11 @@ export default function ReportsExports({
                             ? 'bg-green-100 dark:bg-green-950/40 text-green-800 dark:text-green-300 border-green-400/40' 
                             : 'bg-red-100 dark:bg-red-950/40 text-red-800 dark:text-red-300 border-red-400/40'
                         }`}>
-                          {entry.category}
+                          {displayCat}
                         </span>
                       </td>
                       <td className="p-2 font-bold text-encre-noire dark:text-cordel-bg-light">
-                        {entry.label}
+                        {displayLabel}
                       </td>
                       <td className="p-2 text-right font-mono font-black text-red-700 dark:text-red-400">
                         {isDebit ? `${entry.debit.toFixed(2)} €` : '-'}
@@ -686,7 +698,7 @@ export default function ReportsExports({
               {/* Footer Row */}
               <tfoot className="bg-cordel-bg-light border-t-2 border-encre-noire text-[11px] font-black sticky bottom-0 z-10">
                 <tr>
-                  <td colSpan={3} className="p-2 uppercase text-cordel-wood">Total Période</td>
+                  <td colSpan={3} className="p-2 uppercase text-cordel-wood">{t('treasury.totalPeriod')}</td>
                   <td className="p-2 text-right font-mono text-red-800">{totalDebit.toFixed(2)} €</td>
                   <td className="p-2 text-right font-mono text-green-800">{totalCredit.toFixed(2)} €</td>
                 </tr>

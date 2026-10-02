@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '../LanguageContext';
 import CordelCard from '../CordelCard';
 import { XiloClose } from '../XiloIcons';
 import { INSTRUMENT_ICONS } from './inventoryConstants';
@@ -19,12 +20,14 @@ export default function InventoryMovementsBanner({
   onApproveMovement,
   onRejectMovement
 }) {
+  const { t } = useTranslation();
+
   if (!pendingMovements || pendingMovements.length === 0) return null;
 
   return (
     <CordelCard variant="default" useExtremeBorder={true} className="p-4 mb-4 bg-cordel-ocre/10 border-cordel-ocre">
       <h3 className="text-xs font-extrabold tracking-wider text-cordel-wood uppercase mb-3 flex items-center gap-2">
-        ⏳ Mouvements en attente ({pendingMovements.length})
+        {t('logistics.pendingMovementsTitle', { count: pendingMovements.length })}
       </h3>
 
       <div className="flex flex-col gap-3">
@@ -72,7 +75,7 @@ export default function InventoryMovementsBanner({
                   type="button"
                   onClick={() => onRejectMovement && onRejectMovement(inst)}
                   className="p-1.5 bg-cordel-rouge/10 text-cordel-rouge rounded hover:bg-cordel-rouge/20 border border-cordel-rouge/30 transition-colors cursor-pointer"
-                  title="Refuser le mouvement"
+                  title={t('logistics.refuseMovementTitle')}
                 >
                   <XiloClose size={12} />
                 </button>
@@ -81,7 +84,7 @@ export default function InventoryMovementsBanner({
                   onClick={() => onApproveMovement && onApproveMovement(inst)}
                   className="px-3 py-1 bg-cordel-vert text-white rounded text-[10px] font-bold uppercase tracking-wider shadow-[1px_1px_0px_0px_#181716] hover:brightness-110 active:translate-y-[1px] active:shadow-none transition-all cursor-pointer"
                 >
-                  ✅ Valider
+                  {t('logistics.btnValidate')}
                 </button>
               </div>
             </div>

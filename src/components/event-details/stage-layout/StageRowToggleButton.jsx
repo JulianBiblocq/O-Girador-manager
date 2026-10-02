@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '../../LanguageContext';
 
 /**
  * Bouton de commande discrète à bascule pour décaler une ligne en quinconce
@@ -16,10 +17,16 @@ export default function StageRowToggleButton({
   onToggle,
   label
 }) {
+  const { t } = useTranslation();
   const isDance = typeof rowIndex === 'number' && rowIndex < 0;
-  const shortRowTag = isDance ? `D${Math.abs(rowIndex)}` : `R${rowIndex}`;
-  const defaultLabel = isDance ? `Danse ${Math.abs(rowIndex)}` : `Rang ${rowIndex}`;
-  const displayLabel = label || defaultLabel;
+  const numIndex = isDance ? Math.abs(rowIndex) : rowIndex;
+  const shortRowTag = isDance ? `D${numIndex}` : `R${numIndex}`;
+
+  const rowText = isDance
+    ? t('mestre.danceRowAligned', { index: numIndex })
+    : isStaggered
+      ? t('mestre.rowStaggered', { index: numIndex })
+      : t('mestre.rowAligned', { index: numIndex });
 
   return (
     <button
@@ -40,28 +47,22 @@ export default function StageRowToggleButton({
       `}
       title={
         isStaggered
-          ? `${displayLabel} en quinconce — Cliquer pour aligner`
-          : `Décaler ${displayLabel} en quinconce (demi-case)`
+          ? `${rowText} — Cliquer pour aligner`
+          : `${rowText} — Cliquer pour décaler`
       }
     >
       <span className="text-[10px] leading-none" aria-hidden="true">⇄</span>
       <span className="hidden sm:inline font-bold">
-        {displayLabel} :
+        {rowText}
       </span>
       <span className="sm:hidden font-extrabold text-[8.5px]">
         {shortRowTag}
       </span>
-      <span className="truncate">
+      <span className="sm:hidden truncate">
         {isStaggered ? (
-          <>
-            <span className="hidden sm:inline">Quinconce</span>
-            <span className="sm:hidden font-black text-[9px] leading-none">✓</span>
-          </>
+          <span className="font-black text-[9px] leading-none">✓</span>
         ) : (
-          <>
-            <span className="hidden sm:inline">Aligné</span>
-            <span className="sm:hidden font-medium text-[8px] leading-none">|</span>
-          </>
+          <span className="font-medium text-[8px] leading-none">|</span>
         )}
       </span>
     </button>

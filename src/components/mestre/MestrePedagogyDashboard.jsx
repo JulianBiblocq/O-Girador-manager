@@ -555,10 +555,10 @@ export default function MestrePedagogyDashboard({ profileData }) {
       usersData.forEach(u => emptyEvals[u.id] = {});
       setEvaluationsMap(emptyEvals);
       
-      alert("Toutes les évaluations ont été remises à zéro avec succès.");
+      alert(t('mestre.pedagogy.allEvalsResetSuccess'));
     } catch (e) {
       console.error(e);
-      alert("Erreur lors de la remise à zéro.");
+      alert(t('mestre.pedagogy.errResettingEvals'));
     } finally {
       setLoadingData(false);
     }
@@ -673,7 +673,7 @@ export default function MestrePedagogyDashboard({ profileData }) {
       setRefreshTrigger(v => v + 1);
     } catch (err) {
       console.error("Erreur lors de la purge E2E :", err);
-      alert("Erreur lors de la suppression des données de test.");
+      alert(t('mestre.pedagogy.errDeletingTestData'));
     } finally {
       setPurgingE2E(false);
     }
@@ -682,7 +682,7 @@ export default function MestrePedagogyDashboard({ profileData }) {
   if (!isAuthorized) {
     return (
       <div className="p-8 text-center text-xs font-black uppercase text-cordel-rouge">
-        Accès réservé au Mestre et à l'équipe pédagogique.
+        {t('mestre.pedagogy.accessRestrictedMestrePedagogy')}
       </div>
     );
   }
@@ -707,7 +707,7 @@ export default function MestrePedagogyDashboard({ profileData }) {
         {pinnedSuccessItem && (
           <div className="animate-fadeIn bg-[var(--color-cordel-vert,#2d6a4f)] text-white text-[11px] font-black uppercase px-3 py-1.5 rounded-[4px_6px_3px_5px] border border-encre-noire shadow-xs flex items-center gap-1.5">
             <span>✓</span>
-            <span>Épinglé : {pinnedSuccessItem}</span>
+            <span>{t('mestre.pedagogy.pinnedColon')} {pinnedSuccessItem}</span>
           </div>
         )}
         {programDirectSuccess && (
@@ -724,7 +724,7 @@ export default function MestrePedagogyDashboard({ profileData }) {
           <div className="flex items-center gap-2">
             <span className="text-base">🧹</span>
             <span>
-              <strong>{detectedE2EItems.length} élément(s) de test E2E détecté(s) :</strong> Ces séquences issues des tests automatisés sont automatiquement masquées de vos pupitres et de la Danse.
+              <strong>{detectedE2EItems.length} {t('mestre.pedagogy.e2eElementsDetected')}</strong> {t('mestre.pedagogy.e2eSequencesHiddenNotice')}
             </span>
           </div>
           <button
@@ -732,7 +732,7 @@ export default function MestrePedagogyDashboard({ profileData }) {
             onClick={handlePurgeE2ETests}
             disabled={purgingE2E}
             className="shrink-0 px-3.5 py-1.5 bg-[var(--color-cordel-rouge,#8b2a1a)] text-white text-[10px] font-black uppercase tracking-wider rounded border border-encre-noire shadow-xs hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
-            title="Supprimer définitivement tous les artefacts de tests E2E de la base Firestore"
+            title={t('mestre.pedagogy.deleteE2eArtifactsTitle')}
           >
             <span>{purgingE2E ? '⏳ Purge en cours...' : '🗑️ Purger de la base'}</span>
           </button>
@@ -749,7 +749,7 @@ export default function MestrePedagogyDashboard({ profileData }) {
       {/* ========================================================================= */}
       {/* ZONE 1 : BANDEAU SYNTHÈSE DES POINTS CHAUDS (< 60%)                       */}
       {/* ========================================================================= */}
-      <section aria-label="Points chauds de répétition">
+      <section aria-label={t('mestre.pedagogy.hotspotsAriaLabel')}>
         <CordelCard variant="default" className="p-4 bg-[#fdfaf2] border-2 border-encre-noire shadow-[2px_3px_0px_0px_#181716]">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-3 pb-2 border-b border-dashed border-cordel-master-dark/20">
             <h2 className="text-xs md:text-sm font-black uppercase tracking-wider text-cordel-wood flex items-center gap-2">
@@ -763,11 +763,11 @@ export default function MestrePedagogyDashboard({ profileData }) {
 
           {isLoading ? (
             <div className="text-center py-4 text-xs font-bold text-cordel-master-dark/50 animate-pulse">
-              Analyse des points chauds...
+              {t('mestre.pedagogy.analyzingHotspots')}
             </div>
           ) : hotPoints.length === 0 ? (
             <div className="p-3 bg-[var(--color-cordel-vert,#2d6a4f)]/10 border border-[var(--color-cordel-vert,#2d6a4f)]/30 rounded text-center text-xs font-black text-[var(--color-cordel-vert,#2d6a4f)]">
-              ✨ Aucun point critique sous 60%. Tous les rythmes et chants évalués sont au vert !
+              {t('mestre.pedagogy.noCriticalHotspotsNotice')}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -779,7 +779,7 @@ export default function MestrePedagogyDashboard({ profileData }) {
                   <div className="flex flex-col gap-1">
                     <div className="flex justify-between items-center">
                       <span className="text-[9px] font-black uppercase tracking-wider text-[var(--color-cordel-rouge,#8b2a1a)]">
-                        Priorité #{idx + 1}
+                        {t('mestre.pedagogy.priorityPrefix')}{idx + 1}
                       </span>
                       <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-[var(--color-cordel-rouge,#8b2a1a)]/15 text-[var(--color-cordel-rouge,#8b2a1a)]">
                         {item.pct}%
@@ -801,7 +801,7 @@ export default function MestrePedagogyDashboard({ profileData }) {
                       type="button"
                       onClick={() => setItemToProgramDirect(item)}
                       className="text-[9px] font-black uppercase tracking-wider px-2 py-1 bg-[var(--color-cordel-vert,#2d6a4f)] text-white border border-[#1b4332] rounded hover:brightness-110 active:scale-95 transition-all flex items-center gap-1 cursor-pointer shadow-xs"
-                      title="Programmer directement dans le fil conducteur de la prochaine répétition"
+                      title={t('mestre.pedagogy.programInNextRehearsalTitle')}
                     >
                       <span>⚡</span>
                       <span>{t('pedagogy.btnProgramRehearsal')}</span>
@@ -811,7 +811,7 @@ export default function MestrePedagogyDashboard({ profileData }) {
                       type="button"
                       onClick={() => handlePinNote(item.titre, item.discipline, item.requestCount || 0)}
                       className="text-[9px] font-black uppercase tracking-wider px-2 py-1 bg-white text-encre-noire border border-encre-noire/30 rounded hover:bg-neutral-100 active:scale-95 transition-all flex items-center gap-1 cursor-pointer shadow-xs"
-                      title="Épingler directement dans le bloc-notes de répétition"
+                      title={t('mestre.pedagogy.pinInNotepadTitle')}
                     >
                       <span>📌</span>
                       <span>{t('pedagogy.btnPinToNotepad')}</span>
@@ -827,7 +827,7 @@ export default function MestrePedagogyDashboard({ profileData }) {
       {/* ========================================================================= */}
       {/* ENCART COMPACT : RÉSULTATS AUX DÉFIS DE LA TROUPE                          */}
       {/* ========================================================================= */}
-      <section aria-label="Résultats aux défis de la troupe">
+      <section aria-label={t('mestre.pedagogy.challengesResultsAriaLabel')}>
         <DefisSummaryCard
           metrics={troupeChallengeMetrics}
           pieces={repertoire}
@@ -839,7 +839,7 @@ export default function MestrePedagogyDashboard({ profileData }) {
       {/* ========================================================================= */}
       {/* ZONE 2 : SÉLECTEUR DE DISCIPLINE & MATRICES                               */}
       {/* ========================================================================= */}
-      <section aria-label="Matrices d'aisance par discipline" className="flex flex-col gap-4">
+      <section aria-label={t('mestre.pedagogy.fluencyMatricesAriaLabel')} className="flex flex-col gap-4">
         
         {/* Barre de navigation des 3 matrices */}
         <div className="flex border-b-2 border-dashed border-cordel-master-dark/30 gap-2 overflow-x-auto select-none pt-2">
@@ -853,7 +853,7 @@ export default function MestrePedagogyDashboard({ profileData }) {
             }`}
           >
             <span>🥁</span>
-            <span>Percussion</span>
+            <span>{t('mestre.pedagogy.disciplinePercussion')}</span>
           </button>
 
           <button
@@ -879,7 +879,7 @@ export default function MestrePedagogyDashboard({ profileData }) {
             }`}
           >
             <span>📜</span>
-            <span>Chants &amp; Toadas</span>
+            <span>{t('mestre.pedagogy.disciplineChantsToadas')}</span>
           </button>
 
           <button
@@ -892,7 +892,7 @@ export default function MestrePedagogyDashboard({ profileData }) {
             }`}
           >
             <span>⚡</span>
-            <span>Entraînements ({resolvedTrainings.length})</span>
+            <span>{t('mestre.pedagogy.disciplineTrainingsCount')}{resolvedTrainings.length})</span>
           </button>
 
           <button
@@ -903,16 +903,16 @@ export default function MestrePedagogyDashboard({ profileData }) {
                 ? 'text-cordel-rouge border-b-4 border-cordel-rouge bg-cordel-rouge/5' 
                 : 'text-cordel-master-dark/40 hover:text-cordel-rouge'
             }`}
-            title="Administration annuelle"
+            title={t('mestre.pedagogy.annualAdminTitle')}
           >
             <span>⚙️</span>
-            <span>Saison</span>
+            <span>{t('mestre.pedagogy.seasonWord')}</span>
           </button>
         </div>
 
         {isLoading ? (
           <div className="text-center p-12 opacity-50 animate-pulse font-black uppercase text-xs">
-            Calcul des matrices pédagogiques en cours...
+            {t('mestre.pedagogy.calculatingMatrices')}
           </div>
         ) : (
           <div className="flex flex-col gap-6 w-full">
@@ -974,27 +974,27 @@ export default function MestrePedagogyDashboard({ profileData }) {
                 <CordelCard variant="default" className="p-8 border-cordel-rouge/30 bg-cordel-rouge/5">
                   <h3 className="text-lg font-black uppercase tracking-wider text-cordel-rouge mb-3 flex items-center gap-2">
                     <span>⚠️</span>
-                    <span>Remise à zéro annuelle</span>
+                    <span>{t('mestre.pedagogy.annualResetHeading')}</span>
                   </h3>
                   <p className="text-xs md:text-sm font-bold text-encre-noire/80 mb-6 leading-relaxed">
-                    Pour préparer la nouvelle saison, vous pouvez remettre à zéro l'ensemble des évaluations de tous les membres (Rythmes, Chants, Danse...). Les membres conserveront leurs badges d'ancienneté et leurs comptes, mais devront repasser les tests et auto-évaluations pour remplir à nouveau leur parcours.
+                    {t('mestre.pedagogy.annualResetDesc')}
                   </p>
                   <button
                     type="button"
                     onClick={handleResetAllEvaluations}
                     className="px-6 py-3 bg-[var(--color-cordel-rouge,#8b2a1a)] text-white font-black uppercase tracking-widest rounded shadow hover:brightness-110 active:scale-95 transition-all cursor-pointer"
                   >
-                    🔄 Réinitialiser les compteurs
+                    {t('mestre.pedagogy.btnResetCounters')}
                   </button>
                 </CordelCard>
 
                 <CordelCard variant="default" className="p-8 border-[var(--color-cordel-ocre,#c05621)]/30 bg-[var(--color-cordel-ocre,#c05621)]/5">
                   <h3 className="text-lg font-black uppercase tracking-wider text-[var(--color-cordel-ocre,#c05621)] mb-3 flex items-center gap-2">
                     <span>🧹</span>
-                    <span>Dépollution des tests automatisés (E2E)</span>
+                    <span>{t('mestre.pedagogy.cleanupE2eHeading')}</span>
                   </h3>
                   <p className="text-xs md:text-sm font-bold text-encre-noire/80 mb-6 leading-relaxed">
-                    Si des tests automatisés ont généré des séquences temporaires, des motifs de test ou des évaluations fictives (préfixe E2E ou fs_pattern/fs_section), vous pouvez purger définitivement ces données résiduelles de Firestore en un clic.
+                    {t('mestre.pedagogy.cleanupE2eDesc')}
                   </p>
                   <div className="flex items-center gap-4">
                     <button
@@ -1006,7 +1006,7 @@ export default function MestrePedagogyDashboard({ profileData }) {
                       <span>{purgingE2E ? '⏳ Purge en cours...' : '🗑️ Purger les artefacts E2E de Firestore'}</span>
                     </button>
                     <span className="text-xs font-bold text-encre-noire/60">
-                      {detectedE2EItems.length} élément(s) de test actuellement détecté(s)
+                      {detectedE2EItems.length} {t('mestre.pedagogy.testElementsCountLabel')}
                     </span>
                   </div>
                 </CordelCard>
@@ -1020,15 +1020,15 @@ export default function MestrePedagogyDashboard({ profileData }) {
       {/* ========================================================================= */}
       {/* ZONE 3 : BLOC-NOTES PERSISTANT & PROGRAMMATION VERS L'AGENDA               */}
       {/* ========================================================================= */}
-      <section aria-label="Bloc-notes persistant et ordre du jour de répétition" className="w-full mt-4">
+      <section aria-label={t('mestre.pedagogy.notepadAriaLabel')} className="w-full mt-4">
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between pb-1">
             <h2 className="text-sm font-black uppercase tracking-widest text-cordel-wood flex items-center gap-2">
               <span>📓</span>
-              <span>Ordre du jour &amp; Bloc-notes de répétition</span>
+              <span>{t('mestre.pedagogy.notepadHeading')}</span>
             </h2>
             <span className="text-[10px] text-encre-noire/60 font-semibold">
-              Persisté dans Firestore • Passerelle directe vers l'Agenda
+              {t('mestre.pedagogy.notepadSubtitle')}
             </span>
           </div>
 

@@ -191,7 +191,7 @@ export default function ProgramPieceModal({
             type="button"
             onClick={onClose}
             className="text-stone-400 hover:text-stone-700 font-black text-lg p-1 cursor-pointer transition-colors"
-            title="Fermer"
+            title={t('common.close')}
           >
             ✕
           </button>
@@ -218,16 +218,16 @@ export default function ProgramPieceModal({
             )}
             {piece.audioUrl && (
               <span className="px-1.5 py-0.5 rounded bg-purple-50 border border-purple-200">
-                🎵 Audio lié
+                {t('mestre.repertoire.audioLinkedBadge')}
               </span>
             )}
-            {piece.toadaDocId && <span className="px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-200">🗣️ Toada liée</span>}
-            {piece.dancadorChoreoId && <span className="px-1.5 py-0.5 rounded bg-pink-50 border border-pink-200">💃 Danse liée</span>}
+            {piece.toadaDocId && <span className="px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-200">{t('mestre.repertoire.toadaLinkedBadge')}</span>}
+            {piece.dancadorChoreoId && <span className="px-1.5 py-0.5 rounded bg-pink-50 border border-pink-200">{t('mestre.repertoire.danceLinkedBadge')}</span>}
             {(piece.hasCulture || piece.cultureDocId || (Array.isArray(piece.cultureDocIds) && piece.cultureDocIds.length > 0)) && (
-              <span className="px-1.5 py-0.5 rounded bg-blue-50 border border-blue-200">📖 Culture liée</span>
+              <span className="px-1.5 py-0.5 rounded bg-blue-50 border border-blue-200">{t('mestre.repertoire.cultureLinkedBadge')}</span>
             )}
             {!piece.sequenceurFileUrl && !piece.sequenceurId && !piece.audioUrl && !piece.toadaDocId && !piece.dancadorChoreoId && !piece.cultureDocId && (!piece.cultureDocIds || piece.cultureDocIds.length === 0) && (
-              <span className="italic opacity-60">Morceau autonome (sans ressource externe)</span>
+              <span className="italic opacity-60">{t('mestre.repertoire.autonomousResourceNotice')}</span>
             )}
           </div>
         </div>
@@ -245,7 +245,7 @@ export default function ProgramPieceModal({
               {t('repertoire.programSelectEvent')} *
             </label>
             {loadingEvents ? (
-              <p className="text-xs italic opacity-60">Chargement de l'agenda...</p>
+              <p className="text-xs italic opacity-60">{t('mestre.repertoire.loadingAgenda')}</p>
             ) : events.length === 0 ? (
               <p className="text-xs italic text-red-700 font-semibold bg-red-50 p-2 rounded border border-red-200">
                 {t('repertoire.programNoUpcomingEvents')}
@@ -273,11 +273,11 @@ export default function ProgramPieceModal({
           {/* Notes d'intention spécifiques pour cette séance */}
           <div className="flex flex-col gap-1">
             <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              Consignes &amp; Notes d'intention pour la séance (optionnel)
+              {t('mestre.repertoire.rehearsalNotesLabel')}
             </label>
             <textarea
               rows={3}
-              placeholder="Ex: Travailler l'appel du Mestre, caler le tempo à 120 BPM, vérifier la relance des caixas..."
+              placeholder={t('mestre.repertoire.rehearsalNotesPlaceholder')}
               value={customNotes}
               onChange={(e) => setCustomNotes(e.target.value)}
               disabled={submitting}
@@ -294,7 +294,7 @@ export default function ProgramPieceModal({
               disabled={submitting}
               className="px-4 py-2 text-xs font-bold"
             >
-              Annuler
+              {t('common.cancel')}
             </CordelButton>
             <CordelButton
               type="submit"

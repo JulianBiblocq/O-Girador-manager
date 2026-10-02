@@ -1,5 +1,6 @@
 import React from 'react';
 import CordelCard from '../../CordelCard';
+import { useTranslation } from '../../LanguageContext';
 
 /**
  * Modes disponibles pour le fonctionnement du Vestiaire dans l'espace adhérent.
@@ -7,6 +8,7 @@ import CordelCard from '../../CordelCard';
 export const WARDROBE_MEMBER_MODES = [
   {
     id: 'personal',
+    labelKey: 'costumerie.gardeRobePersonnelle',
     label: 'Garde-robe personnelle',
     badge: 'Individuel',
     icon: '👗',
@@ -17,6 +19,7 @@ export const WARDROBE_MEMBER_MODES = [
   },
   {
     id: 'collective_workshop',
+    labelKey: 'costumerie.confectionCollectiveAtelier',
     label: 'Confection collective & Atelier',
     badge: 'Mutualisé',
     icon: '🧵',
@@ -27,6 +30,7 @@ export const WARDROBE_MEMBER_MODES = [
   },
   {
     id: 'disabled',
+    labelKey: 'costumerie.desactiveMasquePourLesMembres',
     label: 'Désactivé (Masqué pour les membres)',
     badge: 'Masqué Adhérents',
     icon: '🚫',
@@ -42,21 +46,24 @@ export const WARDROBE_MEMBER_MODES = [
  * Permet de basculer entre 'personal', 'collective_workshop' et 'disabled'.
  */
 export default function WardrobeMemberModeCard({ formData = {}, handleChange, saving = false }) {
+  const { t } = useTranslation();
   const currentMode = formData.wardrobeMemberMode || 'personal';
+  const currentModeObj = WARDROBE_MEMBER_MODES.find(m => m.id === currentMode);
 
   return (
     <CordelCard variant="default" useExtremeBorder={true} className="p-4 mb-4 text-left">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 pb-2 border-b border-dashed border-cordel-master-dark/20">
         <div>
           <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood flex items-center gap-1.5">
-            👗 Mode du Vestiaire Adhérent
+            <span>👗</span>
+            <span>{t('costumerie.modeDuVestiaireAdherent')}</span>
           </h3>
           <p className="text-[10px] text-cordel-master-dark/70 font-semibold mt-0.5">
-            Définissez comment les adhérents interagissent avec les costumes au sein de votre association.
+            {t('costumerie.definissezCommentLesAdherentsInteragissent')}
           </p>
         </div>
         <span className="text-[9px] uppercase font-black px-2 py-0.5 rounded bg-[var(--theme-card-bg)] border border-cordel-master-dark/30 text-cordel-master-dark self-start sm:self-center">
-          Actuel : {WARDROBE_MEMBER_MODES.find(m => m.id === currentMode)?.label || 'Personnel'}
+          {t('costumerie.actuel')} {currentModeObj ? t(currentModeObj.labelKey) : 'Personnel'}
         </span>
       </div>
 
@@ -97,7 +104,7 @@ export default function WardrobeMemberModeCard({ formData = {}, handleChange, sa
                 </div>
 
                 <h4 className="text-[11px] font-black uppercase text-encre-noire tracking-wide">
-                  {mode.label}
+                  {mode.labelKey ? t(mode.labelKey) : mode.label}
                 </h4>
 
                 <p className="text-[9.5px] font-semibold text-cordel-master-dark/85 mt-1 leading-snug">
@@ -113,7 +120,7 @@ export default function WardrobeMemberModeCard({ formData = {}, handleChange, sa
               {/* Pastille sélectionné */}
               {isSelected && (
                 <div className="mt-2.5 flex items-center gap-1 text-[8.5px] font-black uppercase text-[var(--color-cordel-vert,#2d6a4f)]">
-                  <span>✓</span> Mode actif pour la troupe
+                  <span>✓</span> {t('costumerie.modeActifPourLaTroupe')}
                 </div>
               )}
             </div>

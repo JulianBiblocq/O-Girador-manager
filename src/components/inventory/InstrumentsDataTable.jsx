@@ -1,6 +1,7 @@
 import React from 'react';
 import { XiloChisel } from '../XiloIcons';
 import XiloAvatar from '../XiloAvatar';
+import { useTranslation } from '../LanguageContext';
 import {
   INSTRUMENT_TYPES,
   ETAT_OPTIONS,
@@ -43,8 +44,10 @@ export default function InstrumentsDataTable({
   onDelete,
   onDiagnose,
   logisticsKits = [],
-  t
+  t: propT
 }) {
+  const { t: hookT } = useTranslation();
+  const t = propT || hookT;
   const renderSortChevron = (key) => {
     if (sortConfig.key !== key) {
       return <span className="opacity-30 text-[9px] ml-1 font-bold select-none">↕️</span>;
@@ -64,10 +67,10 @@ export default function InstrumentsDataTable({
             <th 
               onClick={() => onSortHeaderClick && onSortHeaderClick('nom')}
               className="p-3 border-r border-encre-noire/15 cursor-pointer hover:bg-black/5 transition-colors sticky top-0 left-0 z-30 bg-cordel-bg-light"
-              title="Cliquer pour trier par Nom / Réf"
+              title={t('logistics.sortByNomRefTitle')}
             >
               <div className="flex items-center gap-1">
-                <span>Nom / Réf</span>
+                <span>{t('logistics.thNomRef')}</span>
                 {renderSortChevron('nom')}
               </div>
             </th>
@@ -75,10 +78,10 @@ export default function InstrumentsDataTable({
             <th 
               onClick={() => onSortHeaderClick && onSortHeaderClick('type')}
               className="p-3 border-r border-encre-noire/15 cursor-pointer hover:bg-black/5 transition-colors sticky top-0 z-20"
-              title="Cliquer pour trier par Famille / Type"
+              title={t('logistics.sortByFamilleTitle')}
             >
               <div className="flex items-center gap-1">
-                <span>Famille / Type</span>
+                <span>{t('logistics.thFamilleType')}</span>
                 {renderSortChevron('type')}
               </div>
             </th>
@@ -86,10 +89,10 @@ export default function InstrumentsDataTable({
             <th 
               onClick={() => onSortHeaderClick && onSortHeaderClick('proprietaire')}
               className="p-3 border-r border-encre-noire/15 cursor-pointer hover:bg-black/5 transition-colors sticky top-0 z-20"
-              title="Cliquer pour trier par Propriétaire"
+              title={t('logistics.sortByProprietaireTitle')}
             >
               <div className="flex items-center gap-1">
-                <span>Propriétaire</span>
+                <span>{t('logistics.thProprietaire')}</span>
                 {renderSortChevron('proprietaire')}
               </div>
             </th>
@@ -97,10 +100,10 @@ export default function InstrumentsDataTable({
             <th 
               onClick={() => onSortHeaderClick && onSortHeaderClick('localisation')}
               className="p-3 border-r border-encre-noire/15 cursor-pointer hover:bg-black/5 transition-colors sticky top-0 z-20"
-              title="Cliquer pour trier par Localisation"
+              title={t('logistics.sortByLocalisationTitle')}
             >
               <div className="flex items-center gap-1">
-                <span>Localisation</span>
+                <span>{t('logistics.thLocalisation')}</span>
                 {renderSortChevron('localisation')}
               </div>
             </th>
@@ -108,10 +111,10 @@ export default function InstrumentsDataTable({
             <th 
               onClick={() => onSortHeaderClick && onSortHeaderClick('etat')}
               className="p-3 border-r border-encre-noire/15 cursor-pointer hover:bg-black/5 transition-colors sticky top-0 z-20"
-              title="Cliquer pour trier par État"
+              title={t('logistics.sortByEtatTitle')}
             >
               <div className="flex items-center gap-1">
-                <span>État</span>
+                <span>{t('logistics.thEtat')}</span>
                 {renderSortChevron('etat')}
               </div>
             </th>
@@ -119,10 +122,10 @@ export default function InstrumentsDataTable({
             <th 
               onClick={() => onSortHeaderClick && onSortHeaderClick('kit')}
               className="p-3 border-r border-encre-noire/15 cursor-pointer hover:bg-black/5 transition-colors sticky top-0 z-20"
-              title="Cliquer pour trier par Kit"
+              title={t('logistics.sortByKitTitle')}
             >
               <div className="flex items-center gap-1 justify-center">
-                <span>Kit</span>
+                <span>{t('logistics.thKit')}</span>
                 {renderSortChevron('kit')}
               </div>
             </th>
@@ -130,10 +133,10 @@ export default function InstrumentsDataTable({
             <th 
               onClick={() => onSortHeaderClick && onSortHeaderClick('status')}
               className="p-3 border-r border-encre-noire/15 cursor-pointer hover:bg-black/5 transition-colors sticky top-0 z-20"
-              title="Cliquer pour trier par Statut / Prêt"
+              title={t('logistics.sortByStatutPretTitle')}
             >
               <div className="flex items-center gap-1">
-                <span>Statut / Prêt</span>
+                <span>{t('logistics.thStatutPret')}</span>
                 {renderSortChevron('status')}
               </div>
             </th>
@@ -141,15 +144,15 @@ export default function InstrumentsDataTable({
             <th 
               onClick={() => onSortHeaderClick && onSortHeaderClick('assignations')}
               className="p-3 border-r border-encre-noire/15 cursor-pointer hover:bg-black/5 transition-colors sticky top-0 z-20"
-              title="Cliquer pour trier par Assignations"
+              title={t('logistics.sortByAssignationsTitle')}
             >
               <div className="flex items-center gap-1">
-                <span>Assignations</span>
+                <span>{t('logistics.thAssignations')}</span>
                 {renderSortChevron('assignations')}
               </div>
             </th>
 
-            <th className="p-3 text-right sticky top-0 z-20">Actions</th>
+            <th className="p-3 text-right sticky top-0 z-20">{t('logistics.thActions')}</th>
           </tr>
         </thead>
 
@@ -179,8 +182,8 @@ export default function InstrumentsDataTable({
                         if (e.key === 'Enter') e.target.blur();
                       }}
                       className="theme-input text-xs font-extrabold py-1 px-1.5 bg-white/80 dark:bg-stone-800/80 focus:bg-white border-encre-noire/20 hover:border-encre-noire w-full rounded"
-                      placeholder="Nom de l'instrument"
-                      title="Cliquer pour modifier le nom"
+                      placeholder={t('logistics.instrumentNamePlaceholder')}
+                      title={t('logistics.clickToEditNameTitle')}
                     />
                   </div>
                 </td>
@@ -192,7 +195,7 @@ export default function InstrumentsDataTable({
                     onClick={(e) => e.stopPropagation()}
                     onChange={(e) => onInlineFieldChange && onInlineFieldChange(inst.id, 'type', e.target.value)}
                     className="theme-input text-xs font-bold py-1 px-2 bg-cordel-bg-light/90 border-encre-noire/20 hover:border-encre-noire w-full rounded text-cordel-wood cursor-pointer"
-                    title="Modifier la famille d'instrument"
+                    title={t('logistics.editInstrumentFamilyTitle')}
                   >
                     {INSTRUMENT_TYPES.map((tVal) => (
                       <option key={tVal} value={tVal}>{tVal}</option>
@@ -207,10 +210,10 @@ export default function InstrumentsDataTable({
                     onClick={(e) => e.stopPropagation()}
                     onChange={(e) => onInlineFieldChange && onInlineFieldChange(inst.id, 'proprietaire', e.target.value)}
                     className="theme-input text-xs font-bold py-1 px-2 bg-cordel-bg-light/90 border-encre-noire/20 hover:border-encre-noire w-full rounded text-cordel-master-dark cursor-pointer"
-                    title="Modifier le propriétaire"
+                    title={t('logistics.editOwnerTitle')}
                   >
-                    <option value="Association">🏢 Association</option>
-                    <optgroup label="Membres">
+                    <option value="Association">{t('logistics.ownerAssociation')}</option>
+                    <optgroup label={t('logistics.groupMembers')}>
                       {usersList.map((u) => (
                         <option key={u.id} value={u.id}>👤 {u.prenom} {u.nom}</option>
                       ))}
@@ -225,12 +228,12 @@ export default function InstrumentsDataTable({
                     onClick={(e) => e.stopPropagation()}
                     onChange={(e) => onInlineFieldChange && onInlineFieldChange(inst.id, 'localisationPhysique', e.target.value)}
                     className="theme-input text-xs font-bold py-1 px-2 bg-cordel-bg-light/90 border-encre-noire/20 hover:border-encre-noire w-full rounded text-encre-noire cursor-pointer"
-                    title="Modifier le lieu de stockage"
+                    title={t('logistics.editStorageLocationTitle')}
                   >
-                    <option value="Local">📍 Local</option>
-                    <optgroup label="Chez un membre">
+                    <option value="Local">{t('logistics.locationLocal')}</option>
+                    <optgroup label={t('logistics.groupAtMember')}>
                       {usersList.map((u) => (
-                        <option key={u.id} value={u.id}>🏠 Chez {u.prenom} {u.nom}</option>
+                        <option key={u.id} value={u.id}>{t('logistics.locationAtMemberPrefix')} {u.prenom} {u.nom}</option>
                       ))}
                     </optgroup>
                   </select>
@@ -249,7 +252,7 @@ export default function InstrumentsDataTable({
                           ? 'bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-400 border-green-400'
                           : 'bg-cordel-bg-light/90 text-cordel-wood border-encre-noire/20'
                     }`}
-                    title="Modifier l'état"
+                    title={t('logistics.editStateTitle')}
                   >
                     {ETAT_OPTIONS.map((eOpt) => (
                       <option key={eOpt} value={eOpt}>{getEtatLabel(eOpt, t)}</option>
@@ -286,11 +289,11 @@ export default function InstrumentsDataTable({
                             ? 'bg-red-100 dark:bg-red-950/30 border-red-400 text-red-800 dark:text-red-300'
                             : 'bg-green-100 dark:bg-green-950/30 border-green-400 text-green-800 dark:text-green-300'
                       }`}
-                      title="Modifier le statut d'utilisation"
+                      title={t('logistics.editUsageStatusTitle')}
                     >
-                      <option value="En stock">En stock</option>
-                      <option value="Emprunté">Emprunté</option>
-                      <option value="En réparation">En réparation</option>
+                      <option value="En stock">{t('logistics.statusInStock')}</option>
+                      <option value="Emprunté">{t('logistics.statusBorrowed')}</option>
+                      <option value="En réparation">{t('logistics.statusInRepair')}</option>
                     </select>
 
                     {inst.status === 'Emprunté' && (
@@ -300,9 +303,9 @@ export default function InstrumentsDataTable({
                           onClick={(e) => e.stopPropagation()}
                           onChange={(e) => onAssignBorrower?.(inst.id, e.target.value)}
                           className="theme-input text-[9px] font-bold py-0.5 px-1 bg-white dark:bg-stone-800 border-amber-400 w-full"
-                          title="Membre emprunteur"
+                          title={t('logistics.borrowingMemberTitle')}
                         >
-                          <option value="">🤝 Emprunteur...</option>
+                          <option value="">{t('logistics.borrowerSelectPrompt')}</option>
                           {usersList.map((u) => (
                             <option key={u.id} value={u.id}>{u.prenom} {u.nom}</option>
                           ))}
@@ -315,7 +318,7 @@ export default function InstrumentsDataTable({
                               onReturnInstrument?.(inst.id);
                             }}
                             className="text-[8px] font-black uppercase bg-cordel-wood text-white px-1.5 py-1 rounded border border-encre-noire hover:brightness-110 cursor-pointer shrink-0"
-                            title="Restituer l'instrument au local"
+                            title={t('logistics.returnInstrumentToLocalTitle')}
                           >
                             ↩️
                           </button>
@@ -326,18 +329,18 @@ export default function InstrumentsDataTable({
                     {/* Badges sobres régime d'attribution et caution */}
                     <div className="flex flex-wrap items-center gap-1 mt-1">
                       {attr.regimeMiseADisposition === 'pret_gratuit' && (
-                        <span className="text-[8px] font-bold text-[var(--color-cordel-vert)] bg-white/70 dark:bg-stone-800/70 px-1 py-0.5 rounded border border-[#2d6a4f]/25" title="Prêt gracieux de l'association">
-                          🎁 Prêt gratuit
+                        <span className="text-[8px] font-bold text-[var(--color-cordel-vert)] bg-white/70 dark:bg-stone-800/70 px-1 py-0.5 rounded border border-[#2d6a4f]/25" title={t('logistics.pretGracieuxTitle')}>
+                          {t('logistics.pretGratuitBadge')}
                         </span>
                       )}
                       {attr.regimeMiseADisposition === 'cotisation' && (
-                        <span className="text-[8px] font-bold text-[var(--color-cordel-ocre)] bg-white/70 dark:bg-stone-800/70 px-1 py-0.5 rounded border border-[#c05621]/25" title="Mis à disposition avec cotisation">
-                          💳 Cotisation
+                        <span className="text-[8px] font-bold text-[var(--color-cordel-ocre)] bg-white/70 dark:bg-stone-800/70 px-1 py-0.5 rounded border border-[#c05621]/25" title={t('logistics.misADispositionCotisationSimpleTitle')}>
+                          {t('logistics.cotisationBadge')}
                         </span>
                       )}
                       {attr.regimeMiseADisposition === 'personnel' && (
-                        <span className="text-[8px] font-bold text-stone-600 dark:text-stone-300 bg-white/70 dark:bg-stone-800/70 px-1 py-0.5 rounded border border-stone-300" title="Instrument personnel du membre">
-                          👤 Personnel
+                        <span className="text-[8px] font-bold text-stone-600 dark:text-stone-300 bg-white/70 dark:bg-stone-800/70 px-1 py-0.5 rounded border border-stone-300" title={t('logistics.instrumentPersonnelMembreTitle')}>
+                          {t('logistics.personnelBadge')}
                         </span>
                       )}
 
@@ -411,9 +414,9 @@ export default function InstrumentsDataTable({
                             }
                           }}
                           className="theme-input text-[9px] font-bold py-0.5 px-1 bg-white dark:bg-stone-800 border-dashed border-encre-noire/30 w-full cursor-pointer hover:border-encre-noire transition-colors"
-                          title="Assigner un membre en 1 clic"
+                          title={t('logistics.assignMemberQuickTitle')}
                         >
-                          <option value="">+ Assigner membre...</option>
+                          <option value="">{t('logistics.assignMemberPrompt')}</option>
                           {usersList
                             .filter((u) => !(inst.assignations || []).includes(u.id))
                             .map((u) => (
@@ -437,7 +440,7 @@ export default function InstrumentsDataTable({
                         onOpenEdit?.(inst);
                       }}
                       className="p-1.5 border border-encre-noire bg-cordel-bg-light hover:bg-cordel-hover text-encre-noire rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer"
-                      title="Formulaire d'édition complet (assignations, kit, nomenclature...)"
+                      title={t('logistics.fullEditFormTitle')}
                     >
                       <XiloChisel size={10} />
                     </button>
@@ -450,7 +453,7 @@ export default function InstrumentsDataTable({
                           onDiagnose?.(inst);
                         }}
                         className="p-1.5 border border-cordel-rouge/40 bg-cordel-rouge/10 hover:bg-cordel-rouge text-cordel-rouge hover:text-white rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer transition-colors text-[10px]"
-                        title="Diagnostiquer (Réparation en atelier)"
+                        title={t('logistics.diagnoseWorkshopTitle')}
                       >
                         🩺
                       </button>
@@ -463,7 +466,7 @@ export default function InstrumentsDataTable({
                         onDelete?.(inst.id);
                       }}
                       className="p-1.5 border border-red-700 bg-red-50 hover:bg-red-100 text-red-700 rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer text-[10px]"
-                      title="Supprimer définitivement de l'inventaire"
+                      title={t('logistics.deletePermanentTitle')}
                     >
                       🗑️
                     </button>

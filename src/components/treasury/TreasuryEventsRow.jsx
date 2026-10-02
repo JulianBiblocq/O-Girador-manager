@@ -3,6 +3,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { formatLocationShort } from '../../utils/locationUtils';
 import { useEventFinance } from '../../hooks/useEventFinance';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Composant de ligne pour la synthèse financière d'un événement dans la trésorerie.
@@ -12,6 +13,7 @@ import { useEventFinance } from '../../hooks/useEventFinance';
  * @param {Array} lieuxImportants - Lieux importants de l'association
  */
 export default function TreasuryEventsRow({ evt, groupId, lieuxImportants = [] }) {
+  const { t } = useTranslation();
   const {
     hasLinkedInvoice,
     totalRecettes,
@@ -155,7 +157,7 @@ export default function TreasuryEventsRow({ evt, groupId, lieuxImportants = [] }
               }}
               className="text-[9px] text-stone-500 hover:text-stone-800 underline cursor-pointer"
             >
-              Éditer
+              {t('treasury.btnEdit')}
             </button>
           </>
         ) : (

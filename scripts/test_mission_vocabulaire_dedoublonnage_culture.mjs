@@ -101,7 +101,7 @@ assert('RepertoireTrainingsManager.jsx existe', fs.existsSync(trainingsManagerPa
 
 const trainingsManagerCode = fs.readFileSync(trainingsManagerPath, 'utf8');
 assert('RepertoireTrainingsManager gère excludedTrainingIds et onChangeExcludedIds', trainingsManagerCode.includes('excludedTrainingIds') && trainingsManagerCode.includes('onChangeExcludedIds'));
-assert('RepertoireTrainingsManager propose le bouton [✕] de détachement', trainingsManagerCode.includes('handleDetachTraining') && trainingsManagerCode.includes('Détacher'));
+assert('RepertoireTrainingsManager propose le bouton [✕] de détachement', trainingsManagerCode.includes('handleDetachTraining') && (trainingsManagerCode.includes('Détacher') || trainingsManagerCode.includes('detachTrainingTitle')));
 assert('RepertoireTrainingsManager propose le menu sélecteur d\'ajout', trainingsManagerCode.includes('Associer un autre entraînement existant'));
 
 const modalCode = fs.readFileSync(path.resolve('src/components/mestre/RepertoirePieceModal.jsx'), 'utf8');
@@ -125,7 +125,10 @@ assert('RepertoireCulturePicker extrait dynamiquement categoriesDisponibles sans
   culturePickerCode.includes('rubrique') &&
   culturePickerCode.includes("'Toutes'")
 );
-assert('RepertoireCulturePicker affiche les badges Cordel amovibles [✕]', culturePickerCode.includes('handleRemoveDoc') && culturePickerCode.includes('Détacher cette fiche culturelle'));
+assert('RepertoireCulturePicker affiche les badges Cordel amovibles [✕]',
+  culturePickerCode.includes('handleRemoveDoc') &&
+  (culturePickerCode.includes('Détacher cette fiche culturelle') || culturePickerCode.includes('detachCultureSheetTitle'))
+);
 assert('RepertoireCulturePicker propose les résultats sous forme de lignes avec cases à cocher', culturePickerCode.includes('type="checkbox"') && culturePickerCode.includes('handleToggleDoc'));
 
 assert('RepertoirePieceModal intègre RepertoireCulturePicker', modalCode.includes('<RepertoireCulturePicker'));

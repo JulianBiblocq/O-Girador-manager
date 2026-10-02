@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import RichTextEditor from '../../RichTextEditor';
+import { useTranslation } from '../../LanguageContext';
 
 /**
  * Sous-formulaire pour les tutoriels de confection et fiches de lutherie :
@@ -34,6 +35,7 @@ export default function DocumentFormFabricationFields({
   setAnecdote,
   isSubmitting = false
 }) {
+  const { t } = useTranslation();
   const [newMaterielInput, setNewMaterielInput] = useState('');
   const [newOutilInput, setNewOutilInput] = useState('');
 
@@ -138,12 +140,12 @@ export default function DocumentFormFabricationFields({
 
   return (
     <div className="flex flex-col gap-4 mt-2 border-t-2 border-dashed border-cordel-master-dark/20 pt-4">
-      {/* 0. Choix de la thématique : Lutherie ou Costumerie */}
+      {/* 0. Choix de la thématique : Lutherie, Costumerie ou Artisanat */}
       <div className="flex flex-col gap-1">
         <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-          Thématique de confection
+          {t('lutherie.categoryLabel') || "Thématique de confection"}
         </label>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <button
             type="button"
             onClick={() => setThematiqueFabrication && setThematiqueFabrication('lutherie')}
@@ -153,7 +155,7 @@ export default function DocumentFormFabricationFields({
                 : 'bg-encre-noire/5 text-encre-noire border-encre-noire/20 hover:bg-encre-noire/10'
             }`}
           >
-            <span>🛠️</span> Lutherie & Instruments
+            <span>🪓</span> {t('lutherie.craftDomainLutherie')}
           </button>
           <button
             type="button"
@@ -164,7 +166,18 @@ export default function DocumentFormFabricationFields({
                 : 'bg-encre-noire/5 text-encre-noire border-encre-noire/20 hover:bg-encre-noire/10'
             }`}
           >
-            <span>🧵</span> Costumerie & Patrons
+            <span>🧵</span> {t('lutherie.craftDomainCostumerie')}
+          </button>
+          <button
+            type="button"
+            onClick={() => setThematiqueFabrication && setThematiqueFabrication('artisanat')}
+            className={`py-2 px-3 text-xs font-bold uppercase rounded border transition-all cursor-pointer flex items-center justify-center gap-2 ${
+              thematiqueFabrication === 'artisanat'
+                ? 'bg-[var(--color-cordel-ocre)] text-[#fdfaf2] border-black shadow-[2px_2px_0px_0px_#181716]'
+                : 'bg-encre-noire/5 text-encre-noire border-encre-noire/20 hover:bg-encre-noire/10'
+            }`}
+          >
+            <span>🎨</span> {t('lutherie.craftDomainArtisanat')}
           </button>
         </div>
       </div>
@@ -227,7 +240,7 @@ export default function DocumentFormFabricationFields({
       {/* 1. Visuel animé en boucle */}
       <div className="flex flex-col gap-1">
         <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-          Visuel animé en boucle (GIF ou petite vidéo MP4)
+          {t('documents.loopingVisual')}
         </label>
         <div className="flex gap-2 p-1 bg-encre-noire/5 rounded w-fit mb-1">
           <button
@@ -237,7 +250,7 @@ export default function DocumentFormFabricationFields({
               visuelAnimeType === 'url' ? 'bg-cordel-wood text-[#fdfaf2] shadow-sm' : 'text-encre-noire hover:bg-encre-noire/10'
             }`}
           >
-            Lien URL
+            {t('documents.btnUrlLink')}
           </button>
           <button
             type="button"
@@ -246,7 +259,7 @@ export default function DocumentFormFabricationFields({
               visuelAnimeType === 'file' ? 'bg-cordel-wood text-[#fdfaf2] shadow-sm' : 'text-encre-noire hover:bg-encre-noire/10'
             }`}
           >
-            Uploader fichier
+            {t('documents.btnUploadFile')}
           </button>
         </div>
         
@@ -278,14 +291,22 @@ export default function DocumentFormFabricationFields({
       {/* 2. Instrument ou élément concerné */}
       <div className="flex flex-col gap-1">
         <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-          {thematiqueFabrication === 'costumerie' ? 'Costume, rôle ou élément concerné' : 'Instrument concerné'}
+          {thematiqueFabrication === 'costumerie'
+            ? t('lutherie.labelTargetCostume')
+            : thematiqueFabrication === 'artisanat'
+              ? t('lutherie.labelTargetCraft')
+              : t('lutherie.labelTargetInstrument')}
         </label>
         <input
           type="text"
           value={instrumentConcerne}
           onChange={(e) => setInstrumentConcerne(e.target.value)}
           disabled={isSubmitting}
-          placeholder={thematiqueFabrication === 'costumerie' ? 'Ex: Veste de Rei, Jupe de Dama, Coiffe, Cape...' : 'Ex: Alfaia, Agbê, Mineiro...'}
+          placeholder={thematiqueFabrication === 'costumerie'
+            ? t('lutherie.placeholderTargetCostume')
+            : thematiqueFabrication === 'artisanat'
+              ? t('lutherie.placeholderTargetCraft')
+              : t('lutherie.placeholderTargetInstrument')}
           className="theme-input w-full disabled:opacity-50 text-xs"
         />
       </div>
@@ -295,7 +316,7 @@ export default function DocumentFormFabricationFields({
         {/* Matériel requis */}
         <div className="flex flex-col gap-1">
           <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-            Matériel Requis
+            {t('documents.materialsRequired')}
           </label>
           <div className="flex flex-wrap gap-2 mb-2">
             {materielRequisList.map(mat => (
@@ -322,7 +343,7 @@ export default function DocumentFormFabricationFields({
         {/* Outils nécessaires */}
         <div className="flex flex-col gap-1">
           <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-            Outils Nécessaires
+            {t('documents.toolsRequired')}
           </label>
           <div className="flex flex-wrap gap-2 mb-2">
             {outilsNecessairesList.map(outil => (
@@ -351,7 +372,7 @@ export default function DocumentFormFabricationFields({
       <div className="flex flex-col gap-1 mt-2 border-t-2 border-dashed border-cordel-master-dark/20 pt-4">
         <div className="flex items-center justify-between mb-2">
           <label className="text-[11px] uppercase font-bold tracking-wider text-cordel-wood flex items-center gap-1">
-            🛠️ Étapes de Confection (Pas à Pas)
+            🛠️ {t('documents.confectionSteps')}
           </label>
           <button
             type="button"
@@ -359,13 +380,13 @@ export default function DocumentFormFabricationFields({
             disabled={isSubmitting}
             className="text-[10px] uppercase font-bold px-2 py-1 bg-cordel-wood text-[#fdfaf2] rounded hover:opacity-90 transition-opacity shadow-sm cursor-pointer"
           >
-            + Ajouter une étape
+            {t('documents.btnAddStep')}
           </button>
         </div>
 
         {etapesFabrication.length === 0 ? (
           <p className="text-xs text-cordel-master-dark/70 italic text-center py-2">
-            Aucune étape définie pour le moment.
+            {t('documents.noStepsDefined')}
           </p>
         ) : (
           <div className="flex flex-col gap-6">
@@ -531,7 +552,7 @@ export default function DocumentFormFabricationFields({
       {/* 5. Contenu descriptif additionnel */}
       <div className="flex flex-col gap-1 mt-2">
         <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-          Contenu descriptif ou introduction
+          {t('documents.descriptiveContent')}
         </label>
         <div className="mt-1">
           <RichTextEditor
@@ -550,13 +571,13 @@ export default function DocumentFormFabricationFields({
       {/* 6. Conseils / Astuces */}
       <div className="flex flex-col gap-1 mt-2">
         <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-          Astuces & Conseils du luthier
+          {t('lutherie.tipsAndTricks')}
         </label>
         <textarea
           value={anecdote}
           onChange={(e) => setAnecdote(e.target.value)}
           disabled={isSubmitting}
-          placeholder="Ex: Toujours huiler le cuir avant de serrer..."
+          placeholder={t('lutherie.tipsPlaceholder')}
           className="theme-input w-full disabled:opacity-50 text-xs min-h-[60px] resize-y"
         />
       </div>

@@ -15,8 +15,22 @@ import {
   filterDistractorsByLength
 } from './quizSanitizer.js';
 import { detectAlfaiaSticks } from './sequencerParser.js';
+import {
+  extractI18nVocabPool,
+  sanitizeQuizText as sanitizeQuizTextI18n,
+  hasLeak as hasLeakI18n,
+  getSmartDistractors,
+  generateI18nTranslationQuiz
+} from './quizI18nEngine.js';
 
-export { sanitizeQuizText, hasLeak, filterDistractorsByLength };
+export {
+  sanitizeQuizText,
+  hasLeak,
+  filterDistractorsByLength,
+  extractI18nVocabPool,
+  getSmartDistractors,
+  generateI18nTranslationQuiz
+};
 
 const shuffleArray = (array) => {
   const arr = [...array];

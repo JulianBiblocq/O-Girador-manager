@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from '../LanguageContext';
 import CordelButton from '../CordelButton';
 
 /**
@@ -17,6 +18,7 @@ export default function CategoryCardItem({
   cordelPresets,
   allCategories
 }) {
+  const { t } = useTranslation();
   const [editName, setEditName] = useState(category.name || '');
   const [editColor, setEditColor] = useState(category.color || '#8b2a1a');
 
@@ -37,7 +39,7 @@ export default function CategoryCardItem({
     );
 
     if (exists) {
-      alert("Une autre catégorie de pratique porte déjà cet intitulé !");
+      alert(t('mestre.casting.categoryAlreadyExistsAlert'));
       return;
     }
 
@@ -68,16 +70,16 @@ export default function CategoryCardItem({
       >
         <div className="flex items-center justify-between gap-2">
           <span className="text-[10px] uppercase font-black tracking-wider text-cordel-wood">
-            ✏️ Modifier la catégorie
+            {t('mestre.casting.editCategoryHeading')}
           </span>
           <span className="text-[9px] text-cordel-master-dark/60 font-semibold">
-            (Entrée pour valider, Échap pour annuler)
+            {t('mestre.casting.keyShortcutsHint')}
           </span>
         </div>
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor={`edit-cat-${category.id}`} className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
-            Nouvel intitulé
+            {t('mestre.casting.newCategoryLabel')}
           </label>
           <input
             id={`edit-cat-${category.id}`}
@@ -87,7 +89,7 @@ export default function CategoryCardItem({
             onKeyDown={handleKeyDown}
             autoFocus
             disabled={disabled}
-            placeholder="Ex: Première année, Plus d'un an..."
+            placeholder={t('mestre.casting.categoryExamplesPlaceholder')}
             className="theme-input text-xs font-bold py-1.5 px-2 bg-white w-full border border-cordel-master-dark/30 rounded"
           />
         </div>
@@ -100,7 +102,7 @@ export default function CategoryCardItem({
               onChange={(e) => setEditColor(e.target.value)}
               disabled={disabled}
               className="w-7 h-7 p-0 border-0 rounded cursor-pointer bg-transparent"
-              title="Choisir une couleur"
+              title={t('mestre.casting.chooseColorTitle')}
             />
             <div className="flex items-center gap-1">
               {cordelPresets.slice(0, 5).map((preset) => (
@@ -123,7 +125,7 @@ export default function CategoryCardItem({
               disabled={disabled}
               className="text-[10px] py-1 px-2 font-bold"
             >
-              Annuler
+              {t('mestre.casting.cancelBtn')}
             </CordelButton>
             <CordelButton
               type="button"
@@ -133,7 +135,7 @@ export default function CategoryCardItem({
               disabled={disabled || !editName.trim()}
               className="text-[10px] py-1 px-3 uppercase font-black"
             >
-              💾 Valider
+              {t('mestre.casting.btnValidateSave')}
             </CordelButton>
           </div>
         </div>
@@ -163,7 +165,7 @@ export default function CategoryCardItem({
           onClick={onStartEdit}
           disabled={disabled}
           className="text-xs text-cordel-master-dark/80 hover:text-cordel-wood hover:bg-amber-100 dark:hover:bg-amber-950/40 p-1 rounded font-bold cursor-pointer transition-colors"
-          title="Modifier l'intitulé et la couleur de cette catégorie"
+          title={t('mestre.casting.editCategoryTitle')}
         >
           ✏️
         </button>
@@ -172,7 +174,7 @@ export default function CategoryCardItem({
           onClick={() => onRemove(category.id, category.name)}
           disabled={disabled}
           className="text-xs text-[var(--theme-primary)] hover:bg-red-100 dark:hover:bg-red-950/40 p-1 rounded font-bold cursor-pointer transition-colors"
-          title="Supprimer cette catégorie"
+          title={t('mestre.casting.deleteCategoryTitle')}
         >
           ✕
         </button>

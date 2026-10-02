@@ -171,6 +171,9 @@ export default function DocumentUploadForm({
   // 6. Sous-états Fabrication
   const [thematiqueFabrication, setThematiqueFabrication] = useState(() => {
     if (documentToEdit?.thematiqueFabrication) return documentToEdit.thematiqueFabrication;
+    if (documentToEdit?.domaine === 'artisanat' || documentToEdit?.sousCategorie === 'artisanat' || /reliure|artisanat|pochoir|cuir|carnet/i.test(documentToEdit?.titre || '')) {
+      return 'artisanat';
+    }
     if (documentToEdit?.sousCategorie === 'costumerie' || /costume|couture|patron/i.test(documentToEdit?.titre || '')) {
       return 'costumerie';
     }
@@ -308,10 +311,10 @@ export default function DocumentUploadForm({
           disabled={isSubmitting}
           className="flex items-center gap-1 text-xs font-bold text-cordel-master-dark hover:text-cordel-wood hover:underline cursor-pointer disabled:opacity-50"
         >
-          <span>←</span> Retour au Varal
+          <span>←</span> {category === 'TutosFabrication' ? t('lutherie.btnCancelAndReturnLutherie') : category === 'Costumes' || category === 'Costumerie' ? t('costumerie.btnCancelAndReturnCostume') : t('documents.btnBackToVaral')}
         </button>
         <span className="text-[10px] uppercase tracking-wider font-extrabold text-cordel-wood bg-cordel-wood/10 px-2 py-0.5 rounded">
-          {isEditMode ? "Mode Édition" : "Nouveau Document"}
+          {isEditMode ? t('documents.badgeEditMode') : t('documents.badgeNewDocument')}
         </span>
       </div>
 
@@ -319,14 +322,14 @@ export default function DocumentUploadForm({
         {/* Corde Native (Fixe / Non modifiable) */}
         <div className="flex flex-col gap-1">
           <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-            Corde associée (Catégorie native)
+            {t('documents.associatedLine')}
           </label>
           <div className="theme-input w-full bg-cordel-wood/10 text-cordel-wood font-extrabold text-xs py-2 px-3 border-2 border-cordel-wood/40 select-none flex items-center justify-between">
             <span className="flex items-center gap-2">
               <span>🪢</span> Corde : {currentCategoryName}
             </span>
             <span className="text-[9px] uppercase font-bold text-cordel-master-dark/60 tracking-wider">
-              (Fixé)
+              {t('documents.badgeFixed')}
             </span>
           </div>
         </div>
@@ -341,7 +344,7 @@ export default function DocumentUploadForm({
                 importMode === 'manual' ? 'bg-cordel-wood text-[#fdfaf2] shadow-sm' : 'text-cordel-master-dark hover:bg-black/5'
               }`}
             >
-              ✍️ Saisie Manuelle
+              ✍️ {t('documents.manualEntry')}
             </button>
             <button
               type="button"
@@ -350,7 +353,7 @@ export default function DocumentUploadForm({
                 importMode === 'import' ? 'bg-cordel-wood text-[#fdfaf2] shadow-sm' : 'text-cordel-master-dark hover:bg-black/5'
               }`}
             >
-              📥 Import par lot (.json)
+              📥 {t('documents.bulkImport')}
             </button>
           </div>
         )}
@@ -370,7 +373,7 @@ export default function DocumentUploadForm({
             {/* Titre */}
             <div className="flex flex-col gap-1">
               <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                {category === 'TutosFabrication' ? "Nom de l'atelier / tutoriel" : t('documents.docTitleLabel')}
+                {category === 'TutosFabrication' ? t('documents.workshopTutorialName') : t('documents.docTitleLabel')}
               </label>
               <input
                 type="text"
@@ -422,7 +425,7 @@ export default function DocumentUploadForm({
             {category === 'TutosFabrication' && !isEditMode && importMode === 'manual' && (
               <div className="flex flex-col gap-1">
                 <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  Format du Tutoriel
+                  {t('documents.tutorialFormat')}
                 </label>
                 <select
                   value={tutoFabType}
@@ -430,8 +433,8 @@ export default function DocumentUploadForm({
                   disabled={isSubmitting}
                   className="theme-input w-full disabled:opacity-50 cursor-pointer"
                 >
-                  <option value="fabrication">Créer une fiche de fabrication (Saisie manuelle)</option>
-                  <option value="web">Lien URL externe (Vidéo YouTube, etc.)</option>
+                  <option value="fabrication">{t('documents.formatManualSheet')}</option>
+                  <option value="web">{t('documents.optExternalUrlVideo', "Lien URL externe (Vidéo YouTube, etc.)")}</option>
                 </select>
               </div>
             )}
@@ -486,7 +489,7 @@ export default function DocumentUploadForm({
             {computedType === 'pdf' && !isEditMode && (
               <div className="flex flex-col gap-1">
                 <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  Document PDF
+                  {t('documents.pdfDocumentLabel')}
                 </label>
                 <input
                   type="file"
@@ -656,7 +659,7 @@ export default function DocumentUploadForm({
                   className="w-4 h-4 text-cordel-wood rounded focus:ring-cordel-wood cursor-pointer"
                 />
                 <label htmlFor="isArchivedCheck" className="text-xs font-bold text-cordel-master-dark cursor-pointer select-none">
-                  📦 Archiver (Griser sur la page principale et marquer comme ancienne année)
+                  📦 {t('documents.archiveNotice')}
                 </label>
               </div>
             </div>
@@ -671,7 +674,7 @@ export default function DocumentUploadForm({
                 className="w-4 h-4 text-cordel-rouge rounded focus:ring-cordel-rouge cursor-pointer"
               />
               <label htmlFor="isHiddenCheck" className="text-xs font-bold text-cordel-master-dark cursor-pointer select-none">
-                👁️ Masquer sur le Varal (Brouillon / En préparation)
+                👁️ {t('documents.hideOnVaralNotice')}
               </label>
             </div>
           </>

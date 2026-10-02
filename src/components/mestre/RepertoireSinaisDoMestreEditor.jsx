@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import useMestreSignals from '../../hooks/useMestreSignals';
 import CordelButton from '../CordelButton';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Interface d'édition des Signes du Mestre pour une fiche du répertoire.
@@ -21,6 +22,7 @@ export default function RepertoireSinaisDoMestreEditor({
   disabled = false,
   isSequenced = false
 }) {
+  const { t } = useTranslation();
   const { signals = [], loading: loadingSignals } = useMestreSignals(groupId);
   const signalsMap = useMemo(() => new Map(signals.map((s) => [s.id, s])), [signals]);
 
@@ -182,7 +184,7 @@ export default function RepertoireSinaisDoMestreEditor({
         <div className="flex items-center gap-1.5">
           <span className="text-sm">✋</span>
           <label className="text-[10px] uppercase font-black tracking-wider text-cordel-master-dark">
-            Signes du Mestre associés ({sortedSinais.length})
+            {t('mestre.sequenceur.mestreSignalsLinkedHeading')}{sortedSinais.length})
           </label>
         </div>
 
@@ -210,7 +212,7 @@ export default function RepertoireSinaisDoMestreEditor({
               disabled={disabled}
               className="text-[9px] text-stone-500 hover:text-stone-700 font-bold uppercase underline cursor-pointer ml-1 select-none"
             >
-              Tout effacer
+              {t('mestre.sequenceur.clearAllBtn')}
             </button>
           )}
         </div>
@@ -271,7 +273,7 @@ export default function RepertoireSinaisDoMestreEditor({
                   onClick={() => handleRemove(sig)}
                   disabled={disabled}
                   className="w-4 h-4 rounded-full bg-stone-200 hover:bg-red-700 hover:text-white text-stone-600 flex items-center justify-center text-[9px] font-black ml-0.5 cursor-pointer transition-colors"
-                  title="Supprimer ce signe"
+                  title={t('mestre.sequenceur.deleteSignalTitle')}
                 >
                   ✕
                 </button>
@@ -287,14 +289,14 @@ export default function RepertoireSinaisDoMestreEditor({
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <span className="text-[10px] font-black uppercase text-amber-950 flex items-center gap-1">
               <span>📖</span>
-              <span>Bibliothèque des Signes du Mestre ({signals.length})</span>
+              <span>{t('mestre.sequenceur.signalsLibraryHeading')}{signals.length})</span>
             </span>
 
             {/* Réglage de la mesure cible pour le prochain ajout (uniquement si le morceau est séquencé) */}
             {isSequenced && (
               <div className="flex items-center gap-1.5">
                 <label className="text-[9px] font-bold text-amber-900 uppercase">
-                  Mesure :
+                  {t('mestre.sequenceur.barLabelColon')}
                 </label>
                 <input
                   type="number"
@@ -310,7 +312,7 @@ export default function RepertoireSinaisDoMestreEditor({
           {/* Recherche rapide */}
           <input
             type="text"
-            placeholder="Filtrer les gestes (ex: opanijé, luanda, samba...)"
+            placeholder={t('mestre.sequenceur.filterGesturesPlaceholder')}
             value={searchFilter}
             onChange={(e) => setSearchFilter(e.target.value)}
             className="w-full text-[10px] font-semibold p-1.5 bg-white border border-amber-300 rounded"
@@ -318,11 +320,11 @@ export default function RepertoireSinaisDoMestreEditor({
 
           {loadingSignals ? (
             <div className="py-3 text-center text-xs font-bold text-amber-800 animate-pulse">
-              Chargement des signaux...
+              {t('mestre.sequenceur.loadingSignals')}
             </div>
           ) : filteredCatalogSignals.length === 0 ? (
             <div className="py-2 text-center text-[10px] text-amber-900/60 italic">
-              Aucun signe ne correspond dans la bibliothèque.
+              {t('mestre.sequenceur.noMatchingSignals')}
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-48 overflow-y-auto p-1 bg-white/60 rounded border border-amber-200">
@@ -404,7 +406,7 @@ export default function RepertoireSinaisDoMestreEditor({
                 <input
                   type="number"
                   min="1"
-                  placeholder="Mesure"
+                  placeholder={t('mestre.sequenceur.barMeasureWord')}
                   value={customMesure}
                   onChange={(e) => setCustomMesure(e.target.value)}
                   className="w-16 text-[10px] font-black p-1 bg-white border border-amber-300 rounded text-center"
@@ -425,7 +427,7 @@ export default function RepertoireSinaisDoMestreEditor({
                 disabled={!customNom.trim()}
                 className="py-1 px-2 text-[9px] font-black uppercase tracking-wider shrink-0 bg-stone-100"
               >
-                Ajouter
+                {t('mestre.sequenceur.btnAdd')}
               </CordelButton>
             </div>
           )}

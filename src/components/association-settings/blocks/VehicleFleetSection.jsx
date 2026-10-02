@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../../../firebase';
+import { useTranslation } from '../../LanguageContext';
 
 /**
  * Composant : VehicleFleetSection
@@ -13,6 +14,7 @@ import { db } from '../../../firebase';
  * @param {string} props.groupId Identifiant de l'association
  */
 export default function VehicleFleetSection({ groupId }) {
+  const { t } = useTranslation();
   const [vehiclesList, setVehiclesList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterQuery, setFilterQuery] = useState('');
@@ -80,10 +82,10 @@ export default function VehicleFleetSection({ groupId }) {
         <div>
           <h4 className="font-extrabold text-xs uppercase tracking-wider text-cordel-wood flex items-center gap-2">
             <span>🚐</span>
-            <span>Parc de Véhicules de la Troupe</span>
+            <span>{t('logistics.troopFleetTitle')}</span>
           </h4>
           <p className="text-[10px] text-cordel-master-dark/75 mt-0.5">
-            Capacités de transport déclarées par les adhérents sur leur profil membre.
+            {t('logistics.troopFleetDesc')}
           </p>
         </div>
 
@@ -92,7 +94,7 @@ export default function VehicleFleetSection({ groupId }) {
           type="text"
           value={filterQuery}
           onChange={(e) => setFilterQuery(e.target.value)}
-          placeholder="Rechercher un membre ou un véhicule..."
+          placeholder={t('logistics.searchMemberOrVehiclePlaceholder')}
           className="theme-input text-xs font-medium py-1 px-2.5 w-full sm:w-64 bg-cordel-bg-light"
         />
       </div>
@@ -105,7 +107,7 @@ export default function VehicleFleetSection({ groupId }) {
             {loading ? "..." : totalVehicules}
           </span>
           <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 tracking-wider">
-            Véhicules
+            {loading ? "..." : (totalVehicules > 1 ? t('logistics.kpiVehiclesPlural', { count: totalVehicules }) : t('logistics.kpiVehicles', { count: totalVehicules }))}
           </span>
         </div>
 
@@ -115,7 +117,7 @@ export default function VehicleFleetSection({ groupId }) {
             {loading ? "..." : totalPlacesAssises}
           </span>
           <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 tracking-wider">
-            Places Passagers
+            {loading ? "..." : t('logistics.kpiPassengerSeats', { count: totalPlacesAssises })}
           </span>
         </div>
 
@@ -125,17 +127,17 @@ export default function VehicleFleetSection({ groupId }) {
             {loading ? "..." : totalCapaciteAlfaias}
           </span>
           <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 tracking-wider">
-            Volume Alfaias
+            {loading ? "..." : t('logistics.kpiCargoVolume', { count: totalCapaciteAlfaias })}
           </span>
         </div>
 
         <div className="bg-cordel-bg-light p-2.5 rounded border border-encre-noire/15 flex flex-col items-center text-center shadow-xs">
           <span className="text-base">🔗</span>
           <span className="text-xs sm:text-sm font-black text-amber-900 mt-0.5">
-            {loading ? "..." : `${totalAttelages} att. / ${totalBarresToit} gal.`}
+            {loading ? "..." : `${totalAttelages} / ${totalBarresToit}`}
           </span>
           <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 tracking-wider">
-            Équipements
+            {loading ? "..." : t('logistics.kpiEquipments', { hitch: totalAttelages, rack: totalBarresToit })}
           </span>
         </div>
       </div>
@@ -168,18 +170,18 @@ export default function VehicleFleetSection({ groupId }) {
                       👤 {fullName} {member.surnom ? <span className="opacity-75 font-normal">("{member.surnom}")</span> : null}
                     </span>
                     <span className="text-[9px] font-black uppercase tracking-wider bg-cordel-bg px-2 py-0.5 rounded border border-encre-noire/15 shrink-0">
-                      {member.vehicleType || 'Berline'}
+                      {member.vehicleType === 'Break / Ludospace' ? t('logistics.vehicleTypeLudospace') : (member.vehicleType || 'Berline')}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 text-[11px] font-bold text-encre-noire/90">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-cordel-wood">👥 Places :</span>
-                      <span>{member.defaultPassengerSeats !== undefined ? member.defaultPassengerSeats : 3}</span>
+                      <span className="text-cordel-wood">👥</span>
+                      <span>{t('logistics.labelSeatsCount', { count: member.defaultPassengerSeats !== undefined ? member.defaultPassengerSeats : 3 })}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-cordel-wood">🥁 Coffre :</span>
-                      <span>~{member.defaultTrunkCapacity !== undefined ? member.defaultTrunkCapacity : 1} fûts</span>
+                      <span className="text-cordel-wood">🥁</span>
+                      <span>{t('logistics.labelTrunkFuts', { count: member.defaultTrunkCapacity !== undefined ? member.defaultTrunkCapacity : 1 })}</span>
                     </div>
                   </div>
 
@@ -193,7 +195,7 @@ export default function VehicleFleetSection({ groupId }) {
                       )}
                       {member.hasTowHitch && (
                         <span className="text-[8.5px] font-bold bg-white/80 border border-encre-noire/20 px-1.5 py-0.5 rounded text-encre-noire">
-                          🔗 Attelage remorque
+                          🔗 {t('logistics.badgeTrailerHitch')}
                         </span>
                       )}
                     </div>
@@ -204,7 +206,7 @@ export default function VehicleFleetSection({ groupId }) {
                 {member.telephone && (
                   <div className="text-[10px] text-cordel-master-dark/80 pt-1.5 border-t border-dashed border-cordel-master-dark/10 flex items-center justify-between">
                     <span className="font-semibold">📞 {member.telephone}</span>
-                    <span className="text-[9px] italic opacity-60">Prêt pour convoi</span>
+                    <span className="text-[9px] italic opacity-60">{t('logistics.statusReadyForConvoy')}</span>
                   </div>
                 )}
               </div>

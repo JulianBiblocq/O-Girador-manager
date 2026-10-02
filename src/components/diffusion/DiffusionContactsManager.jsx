@@ -4,6 +4,7 @@ import { db } from '../../firebase';
 import CordelButton from '../CordelButton';
 import useConfirm from '../../hooks/useConfirm';
 import { isToRelance } from '../../utils/diffusionUtils.js';
+import { useTranslation } from '../LanguageContext';
 
 export { isToRelance };
 
@@ -11,6 +12,7 @@ export { isToRelance };
  * Composant de gestion du Carnet de Contacts (CRM Global) du Pôle Diffusion.
  */
 export default function DiffusionContactsManager({ groupId, associationSettings = {} }) {
+  const { t } = useTranslation();
   const { confirm } = useConfirm();
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -158,7 +160,7 @@ export default function DiffusionContactsManager({ groupId, associationSettings 
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="🔍 Rechercher une structure, un nom, un email..."
+            placeholder={t('diffusion.searchContactsPlaceholder')}
             className="text-xs font-bold px-3 py-2 border border-stone-300 rounded bg-white w-full sm:w-64"
           />
 
@@ -167,7 +169,7 @@ export default function DiffusionContactsManager({ groupId, associationSettings 
             onChange={(e) => setFilterType(e.target.value)}
             className="text-xs font-bold px-3 py-2 border border-stone-300 rounded bg-white"
           >
-            <option value="all">Tous les types</option>
+            <option value="all">{t('diffusion.filterAllContactTypes')}</option>
             <option value="Festival">Festival</option>
             <option value="Carnaval">Carnaval / Parade</option>
             <option value="Mairie">Mairie / Collectivité</option>
@@ -184,7 +186,7 @@ export default function DiffusionContactsManager({ groupId, associationSettings 
           onClick={handleOpenCreate}
           className="text-xs font-extrabold flex items-center gap-1.5"
         >
-          <span>➕ Ajouter un contact</span>
+          <span>{t('diffusion.btnAddContact')}</span>
         </CordelButton>
       </div>
 
@@ -285,10 +287,10 @@ export default function DiffusionContactsManager({ groupId, associationSettings 
         <div data-tour="contacts-table" className="py-12 px-6 rounded-lg border border-dashed border-stone-300 bg-white text-center flex flex-col items-center gap-3">
           <span className="text-3xl">📇</span>
           <p className="text-xs font-bold text-stone-700">
-            Aucun contact trouvé dans le carnet de prospection.
+            {t('diffusion.emptyContactsNotice')}
           </p>
           <CordelButton type="button" variant="vert" onClick={handleOpenCreate} className="text-xs">
-            + Ajouter le premier contact
+            {t('diffusion.btnAddFirstContact')}
           </CordelButton>
         </div>
       )}

@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
+import { useTranslation } from '../LanguageContext';
 import CordelCard from '../CordelCard';
 import AssociationBankDetailsBox from '../treasury/AssociationBankDetailsBox';
 import { notifyMembersByTag } from '../../utils/inAppNotificationService';
 
 // Bloc d'alerte et suivi des paiements de commandes de matériel adhérent
 export default function MemberOrdersPaymentAlert({ groupId, currentUser, profileData }) {
+  const { t } = useTranslation();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedRequestId, setExpandedRequestId] = useState(null);
@@ -76,7 +78,7 @@ export default function MemberOrdersPaymentAlert({ groupId, currentUser, profile
       }).catch((err) => console.warn("MemberOrdersPaymentAlert - Notif ignorée :", err));
     } catch (err) {
       console.error("MemberOrdersPaymentAlert - Erreur virement :", err);
-      alert("Erreur lors de la déclaration du virement.");
+      alert(t('logistics.errorDeclareTransfer'));
     } finally {
       setDeclaringPaymentId(null);
     }
@@ -102,17 +104,17 @@ export default function MemberOrdersPaymentAlert({ groupId, currentUser, profile
                 <span className="text-base animate-bounce">📦</span>
                 <div>
                   <h4 className="text-xs font-black uppercase tracking-wider text-[var(--color-cordel-ocre)]">
-                    Règlement attendu : Commande de matériel
+                    {t('logistics.paymentExpectedMaterialOrder')}
                   </h4>
                   <p className="text-xs font-bold text-encre-noire dark:text-cordel-bg-light mt-0.5 leading-snug">
-                    Vous devez régler <strong>{montant.toFixed(2)} €</strong> pour{' '}
+                    {t('logistics.youMustPayPrefix')} <strong>{montant.toFixed(2)} €</strong> {t('logistics.forReasonPrefix')}{' '}
                     <span className="text-cordel-wood">{req.quantite}x {req.article}</span>.
                   </p>
                 </div>
               </div>
 
               <span className="theme-stamp-badge font-black uppercase text-[9px] px-2 py-0.5 bg-amber-200 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200 border border-amber-500/40 rounded shrink-0">
-                🟠 En attente de virement
+                {t('logistics.badgeAwaitingTransfer')}
               </span>
             </div>
 
@@ -120,7 +122,7 @@ export default function MemberOrdersPaymentAlert({ groupId, currentUser, profile
             <div className="flex flex-col gap-2 pt-1 border-t border-dashed border-amber-600/30">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="text-[10px] font-semibold text-cordel-master-dark">
-                  💡 Libellé requis : <strong>{virementLabel}</strong>
+                  {t('logistics.requiredReferenceLabel')} <strong>{virementLabel}</strong>
                 </span>
                 <button
                   type="button"
@@ -142,7 +144,7 @@ export default function MemberOrdersPaymentAlert({ groupId, currentUser, profile
               <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-dashed border-amber-600/20">
                 {req.virementDeclare ? (
                   <span className="text-[10px] font-black text-green-700 dark:text-green-400 flex items-center gap-1.5">
-                    <span>✓</span> Virement déclaré — En attente de pointage trésorier
+                    <span>✓</span> {t('logistics.transferDeclaredWaitingTreasurer')}
                   </span>
                 ) : (
                   <button
@@ -164,7 +166,7 @@ export default function MemberOrdersPaymentAlert({ groupId, currentUser, profile
       {paidRequests.length > 0 && (
         <CordelCard variant="default" useExtremeBorder={false} className="p-3 bg-white/40 dark:bg-black/10 flex flex-col gap-2">
           <span className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark/70">
-            Commandes groupées réglées ({paidRequests.length}) :
+            {t('logistics.groupOrdersSettledPrefix', { count: paidRequests.length })} :
           </span>
           <div className="flex flex-col gap-1.5">
             {paidRequests.map((req) => (
@@ -183,7 +185,7 @@ export default function MemberOrdersPaymentAlert({ groupId, currentUser, profile
                   )}
                 </div>
                 <span className="theme-stamp-badge font-black uppercase text-[8.5px] px-2 py-0.5 bg-[var(--color-cordel-vert)]/15 text-[var(--color-cordel-vert)] border border-[var(--color-cordel-vert)]/40 rounded">
-                  🟢 Réglé le {formatDateDisplay(req.datePaiement)}
+                  {t('logistics.badgeSettledOnDate')} {formatDateDisplay(req.datePaiement)}
                 </span>
               </div>
             ))}

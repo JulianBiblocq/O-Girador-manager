@@ -108,7 +108,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
       showToast(newValue ? '🟢 Répertoire ouvert aux adhérents !' : '🔒 Répertoire masqué aux adhérents.');
     } catch (err) {
       console.error('Erreur lors du basculement du statut du répertoire :', err);
-      showToast('Erreur lors de la modification du statut du répertoire.');
+      showToast(t('mestre.repertoire.errStatusChange'));
     } finally {
       setTogglingRepertoire(false);
     }
@@ -252,7 +252,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
       showToast(`« ${piece.titre} » retiré du répertoire.`);
     } catch (e) {
       console.error("Erreur suppression morceau répertoire :", e);
-      alert("Erreur lors de la suppression.");
+      alert(t('mestre.repertoire.errDelete'));
     }
   };
 
@@ -298,7 +298,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
       showToast(`« ${newPieceData.titre} » importé dans le Répertoire (liaison vivante) !`);
     } catch (err) {
       console.error("Erreur lors de l'importation du preset :", err);
-      showToast("Erreur lors de l'importation du morceau dans le Répertoire.");
+      showToast(t('mestre.repertoire.errImportPiece'));
     } finally {
       setImportingPresetId(null);
     }
@@ -348,7 +348,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
       showToast(`« ${piece.titre} » synchronisé avec le Séquenceur !`);
     } catch (err) {
       console.error("Erreur lors de la synchronisation avec le Séquenceur :", err);
-      showToast("Erreur lors de la synchronisation avec le Séquenceur.");
+      showToast(t('mestre.repertoire.errSyncSequencer'));
     } finally {
       setSyncingPieceId(null);
     }
@@ -479,7 +479,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
       {loading ? (
         <div className="flex justify-center items-center py-16">
           <span className="text-xs uppercase tracking-widest font-black animate-pulse opacity-60">
-            ⏳ Chargement du répertoire vivant...
+            {t('mestre.repertoire.loadingRepertoire')}
           </span>
         </div>
       ) : filteredPieces.length === 0 ? (
@@ -500,7 +500,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
               }}
               className="py-1 px-3 text-xs font-black uppercase tracking-wider mt-1"
             >
-              ➕ Ajouter un premier morceau
+              {t('mestre.repertoire.addFirstPiece')}
             </CordelButton>
           )}
         </CordelCard>
@@ -524,7 +524,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                           setIsEditModalOpen(true);
                         }}
                         className="font-extrabold text-sm md:text-base text-encre-noire leading-tight cursor-pointer hover:text-cordel-wood hover:underline transition-colors"
-                        title="Cliquer pour ouvrir et modifier la fiche de ce morceau"
+                        title={t('mestre.repertoire.clickToEditPiece')}
                       >
                         {piece.titre}
                       </h3>
@@ -569,7 +569,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                         title={piece.preset?.audioUrl ? "Audio direct du Séquenceur" : "Audio de référence lié"}
                       >
                         <span>🎵</span>
-                        <span>Audio</span>
+                        <span>{t('mestre.repertoire.badgeAudio')}</span>
                       </span>
                     )}
 
@@ -581,7 +581,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                           if (toadaToOpen) {
                             setActiveToadaToView(toadaToOpen);
                           } else {
-                            showToast("La fiche de ce chant n'a pas pu être trouvée sur le Varal.");
+                            showToast(t('mestre.repertoire.errSongNotFoundOnVaral'));
                           }
                         }}
                         className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300 transition-colors shadow-2xs cursor-pointer select-none"
@@ -651,7 +651,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                     {piece.hasTablature && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-stone-100 text-stone-800 border border-stone-300">
                         <span>📄</span>
-                        <span>Tablature vivante</span>
+                        <span>{t('mestre.repertoire.tablatureVivante')}</span>
                       </span>
                     )}
 
@@ -669,10 +669,10 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                           type="button"
                           onClick={() => setActiveSignalsModalPiece(piece)}
                           className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-amber-50 hover:bg-amber-100 text-amber-950 border border-amber-300 transition-colors shadow-2xs cursor-pointer select-none"
-                          title="Consulter l'aide-mémoire des signes du Mestre"
+                          title={t('mestre.repertoire.consultSignalsTitle')}
                         >
                           <span>🖐️</span>
-                          <span>{effectiveSignalsCount} Signe{effectiveSignalsCount > 1 ? 's' : ''}</span>
+                          <span>{effectiveSignalsCount} {t('mestre.repertoire.signalBadge')}{effectiveSignalsCount > 1 ? 's' : ''}</span>
                         </button>
                       );
                     })()}
@@ -686,10 +686,10 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                           type="button"
                           onClick={() => setActiveTrainingDetailsPieceId(activeTrainingDetailsPieceId === piece.id ? null : piece.id)}
                           className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-400 transition-colors shadow-2xs cursor-pointer select-none"
-                          title="Afficher les entraînements associés"
+                          title={t('mestre.repertoire.showTrainingsTitle')}
                         >
                           <span>⚡</span>
-                          <span>{pieceTrainings.length} entraînement{pieceTrainings.length > 1 ? 's' : ''}</span>
+                          <span>{pieceTrainings.length} {t('mestre.repertoire.trainingSingular')}{pieceTrainings.length > 1 ? 's' : ''}</span>
                           <span className="text-[8px] opacity-70">{activeTrainingDetailsPieceId === piece.id ? '▲' : '▼'}</span>
                         </button>
                       );
@@ -697,7 +697,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
 
                     {!piece.hasSequencer && !piece.hasAudio && !piece.hasTablature && !piece.hasToada && !piece.hasChoreography && !piece.hasCulture && (!piece.activeSinaisDoMestre || piece.activeSinaisDoMestre.length === 0) && (
                       <span className="text-[9.5px] italic text-encre-noire/50">
-                        Autonome (joué de mémoire)
+                        {t('mestre.repertoire.autonomousBadge')}
                       </span>
                     )}
                   </div>
@@ -708,12 +708,12 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                       <div className="flex items-center justify-between">
                         <span className="text-[9px] font-black uppercase tracking-wider text-cordel-master-dark flex items-center gap-1">
                           <span>🎵</span>
-                          <span>Audio de référence :</span>
+                          <span>{t('mestre.repertoire.referenceAudioLabel')}</span>
                         </span>
                         {piece.preset?.audioUrl ? (
-                          <span className="text-[8.5px] text-amber-800 font-bold lowercase">✓ direct séquenceur</span>
+                          <span className="text-[8.5px] text-amber-800 font-bold lowercase">{t('mestre.repertoire.directSequencer')}</span>
                         ) : piece.activeToada?.audioUrl ? (
-                          <span className="text-[8.5px] text-emerald-800 font-bold lowercase">✓ direct toada</span>
+                          <span className="text-[8.5px] text-emerald-800 font-bold lowercase">{t('mestre.repertoire.directToada')}</span>
                         ) : null}
                       </div>
                       <audio controls src={piece.activeAudioUrl} className="w-full mt-1.5 h-7 rounded border border-encre-noire/10" preload="none" />
@@ -784,7 +784,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                     return (
                       <div className="flex items-center gap-1.5 flex-wrap pt-1">
                         <span className="text-[9px] font-black uppercase tracking-wider text-cordel-master-dark/70 mr-0.5">
-                          ✋ Signes :
+                          {t('mestre.repertoire.signalsLabel')}
                         </span>
                         {realSignals.map((sig, idx) => (
                           <button
@@ -834,10 +834,10 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                         <div className="flex items-center justify-between border-b border-dashed border-amber-300/60 pb-1.5">
                           <span className="text-[10px] font-black uppercase tracking-wider text-amber-950 flex items-center gap-1.5">
                             <span>⚡</span>
-                            <span>Entraînements ({pieceTrainings.length})</span>
+                            <span>{t('mestre.repertoire.trainingsPrefix')}{pieceTrainings.length})</span>
                           </span>
                           <span className="text-[9px] text-amber-900/70 font-bold">
-                            sequenciador
+                            {t('mestre.repertoire.sequencerBadge')}
                           </span>
                         </div>
                         <TrainingCompactCard
@@ -859,15 +859,15 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                         type="button"
                         onClick={() => openSequencerWithCrossApp(sequenceurUrl, piece)}
                         className="text-[10px] font-black uppercase tracking-wider text-cordel-wood hover:underline inline-flex items-center gap-1.5 bg-transparent border-none p-0 cursor-pointer font-extrabold w-fit shrink-0"
-                        title="Ouvrir et travailler ce morceau dans le Séquenceur avec SSO"
+                        title={t('mestre.repertoire.openInSequencerTitle')}
                       >
                         <span>🥁</span>
                         <span>
                           {piece.preset?._collection === 'presets' || piece.sequenceurType === 'presets'
-                            ? 'Ouvrir le Preset ➔'
+                            ? t('mestre.btnOpenPreset')
                             : piece.sequenceurType === 'sections'
-                              ? 'Ouvrir la Séquence ➔'
-                              : 'Ouvrir Séquenceur ➔'}
+                              ? (t('mestre.btnOpenSequence') || 'Ouvrir la Séquence ➔')
+                              : (t('mestre.btnOpenSequencer') || 'Ouvrir Séquenceur ➔')}
                         </span>
                       </button>
                     ) : null}
@@ -883,10 +883,10 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                       <span className={syncingPieceId === piece.id ? 'animate-spin inline-block' : ''}>🔄</span>
                       <span>
                         {syncingPieceId === piece.id
-                          ? 'Synchronisation...'
+                          ? (t('common.saving') || 'Synchronisation...')
                           : piece.sequenceurId
-                            ? 'Synchroniser'
-                            : 'Lier Séquenceur'}
+                            ? t('mestre.btnSynchronize')
+                            : t('mestre.btnLinkSequenceur')}
                       </span>
                     </button>
                   </div>
@@ -901,10 +901,10 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                         useExtremeBorder={false}
                         onClick={() => handleOpenTablatureModal(piece)}
                         className="py-1 px-2 text-[9.5px] uppercase tracking-wider font-black bg-stone-100 hover:bg-stone-200 border border-encre-noire/25 text-encre-noire flex items-center gap-1 shrink-0"
-                        title="Consulter et imprimer la tablature (calculée à la volée)"
+                        title={t('mestre.repertoire.consultTablatureTitle')}
                       >
                         <span>📄</span>
-                        <span>Tablature</span>
+                        <span>{t('mestre.repertoire.tablatureBadge')}</span>
                       </CordelButton>
                     )}
 
@@ -919,14 +919,14 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                           if (toadaToOpen) {
                             setActiveToadaToView(toadaToOpen);
                           } else {
-                            showToast("La fiche de ce chant n'a pas pu être trouvée sur le Varal.");
+                            showToast(t('mestre.repertoire.errSongNotFoundOnVaral'));
                           }
                         }}
                         className="py-1 px-2 text-[9.5px] uppercase tracking-wider font-black bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-950 flex items-center gap-1 shrink-0"
                         title={piece.activeToada?.titre ? `Lire les paroles de « ${piece.activeToada.titre} »` : "Lire les paroles du chant associé (Toada du Varal)"}
                       >
                         <span>🗣️</span>
-                        <span>Toada</span>
+                        <span>{t('mestre.repertoire.toadaBadge')}</span>
                       </CordelButton>
                     )}
 
@@ -939,10 +939,10 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                           useExtremeBorder={false}
                           onClick={() => setCulturePickerData({ piece, docs: piece.activeCultureDocs })}
                           className="py-1 px-2 text-[9.5px] uppercase tracking-wider font-black bg-blue-50 hover:bg-blue-100 border border-blue-300 text-blue-950 flex items-center gap-1 shrink-0"
-                          title="Consulter les fiches culturelles associées"
+                          title={t('mestre.repertoire.consultCultureSheetsTitle')}
                         >
                           <span>📖</span>
-                          <span>{piece.activeCultureDocs.length} fiches Culture</span>
+                          <span>{piece.activeCultureDocs.length} {t('mestre.repertoire.cultureSheetsBadge')}</span>
                         </CordelButton>
                       ) : (
                         <CordelButton
@@ -959,23 +959,24 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                             setActiveCultureDocToView({ ...docToOpen, docs: piece.activeCultureDocs || [docToOpen], piece });
                           }}
                           className="py-1 px-2 text-[9.5px] uppercase tracking-wider font-black bg-blue-50 hover:bg-blue-100 border border-blue-300 text-blue-950 flex items-center gap-1 shrink-0"
-                          title="Consulter la fiche culturelle du Varal associée"
+                          title={t('mestre.repertoire.consultSingleCultureTitle')}
                         >
                           <span>📖</span>
-                          <span>Fiche Culture</span>
+                          <span>{t('mestre.repertoire.singleCultureBadge')}</span>
                         </CordelButton>
                       )
                     ) : (
+                      /* Bouton de passerelle Contexte & Histoire vers la fiche culture */
                       <CordelButton
                         type="button"
                         variant="default"
                         useExtremeBorder={false}
                         onClick={() => setPieceForCultureCreation(piece)}
                         className="py-1 px-2 text-[9.5px] uppercase tracking-wider font-black bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-950 flex items-center gap-1 shrink-0"
-                        title="Créer une fiche du Varal Culture pré-remplie avec le Contexte & Histoire du morceau (contexteHistorique)"
+                        title={t('mestre.repertoire.createCultureFromContextTitle')}
                       >
                         <span>➕</span>
-                        <span>Fiche Culture</span>
+                        <span>{t('mestre.repertoire.singleCultureBadge')}</span>
                       </CordelButton>
                     )}
 
@@ -988,9 +989,9 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                         setIsProgramModalOpen(true);
                       }}
                       className="py-1 px-2 text-[9.5px] uppercase tracking-wider font-black shrink-0"
-                      title="Ajouter au fil conducteur d'une répétition ou d'un concert"
+                      title={t('mestre.repertoire.addToProgramTitle')}
                     >
-                      ➕ Programmer
+                      {t('mestre.repertoire.btnProgram')}
                     </CordelButton>
 
                     <CordelButton
@@ -1002,7 +1003,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                         setIsEditModalOpen(true);
                       }}
                       className="py-1 px-2 text-[9.5px] uppercase tracking-wider font-black bg-stone-100 hover:bg-stone-200 border border-encre-noire/20 shrink-0"
-                      title="Modifier les informations"
+                      title={t('mestre.repertoire.editPieceInfoTitle')}
                     >
                       ✏️
                     </CordelButton>
@@ -1119,7 +1120,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
               <div className="flex items-center gap-2">
                 <span className="text-lg">📖</span>
                 <span className="text-xs font-black uppercase text-cordel-wood tracking-wider">
-                  Fiches Culturelles — {culturePickerData.piece?.titre}
+                  {t('mestre.repertoire.cultureSheetsModalHeading')} {culturePickerData.piece?.titre}
                 </span>
               </div>
               <button
@@ -1131,7 +1132,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
               </button>
             </div>
             <p className="text-xs text-cordel-master-dark/80 mb-3 font-semibold">
-              Sélectionnez la fiche culturelle à consulter :
+              {t('mestre.repertoire.selectCultureToConsult')}
             </p>
             <div className="flex flex-col gap-2 max-h-[60vh] overflow-y-auto">
               {culturePickerData.docs.map((docItem, idx) => (
@@ -1152,7 +1153,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                     <span>📖</span>
                     <span className="truncate">{docItem.titre || docItem.name || 'Fiche Culture'}</span>
                   </span>
-                  <span className="text-[10px] text-blue-700 underline shrink-0 font-black">Consulter ↗</span>
+                  <span className="text-[10px] text-blue-700 underline shrink-0 font-black">{t('mestre.repertoire.btnConsultExternal')}</span>
                 </button>
               ))}
             </div>

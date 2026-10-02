@@ -1,20 +1,10 @@
 import React, { useState } from 'react';
 import PatternVisualizer from '../../pedagogy/PatternVisualizer';
+import { useTranslation } from '../../LanguageContext';
 import {
   extractPupitrePattern,
   generateDistractors
 } from '../../../utils/reflexGameUtils';
-
-const PREVIEW_PUPITRES = [
-  { key: 'caixa', label: 'Caixa' },
-  { key: 'tarol', label: 'Tarol' },
-  { key: 'gongue', label: 'Gonguê' },
-  { key: 'alfaia', label: 'Alfaia' },
-  { key: 'marcante', label: 'Marcante' },
-  { key: 'agbe', label: 'Agbê' },
-  { key: 'mineiro', label: 'Mineiro' },
-  { key: 'timbal', label: 'Timbal' }
-];
 
 /**
  * Carte de configuration Mestre pour un signal du morceau.
@@ -33,8 +23,20 @@ export default function SignalReflexCard({
   override = {},
   onChangeOverride
 }) {
+  const { t } = useTranslation();
   const [previewPupitre, setPreviewPupitre] = useState('caixa');
   const [randomSeed, setRandomSeed] = useState(0);
+
+  const previewPupitres = [
+    { key: 'caixa', label: 'Caixa' },
+    { key: 'tarol', label: 'Tarol' },
+    { key: 'gongue', label: t('mestre.sequenceur.instrumentGongue') },
+    { key: 'alfaia', label: 'Alfaia' },
+    { key: 'marcante', label: t('mestre.sequenceur.voiceMarcante') },
+    { key: 'agbe', label: t('mestre.sequenceur.instrumentAgbe') },
+    { key: 'mineiro', label: 'Mineiro' },
+    { key: 'timbal', label: 'Timbal' }
+  ];
 
   const isInteractive = override.isInteractive !== undefined
     ? Boolean(override.isInteractive)
@@ -113,10 +115,10 @@ export default function SignalReflexCard({
           <span className="text-lg">🖐️</span>
           <div>
             <h4 className="text-xs sm:text-sm font-black uppercase text-encre-noire">
-              Mesure {signal.mesure} : {signal.name}
+              {t('mestre.sequenceur.barMeasureWord')} {signal.mesure} : {signal.name}
             </h4>
             <p className="text-[10px] font-bold text-cordel-master-dark/70">
-              Temps 1 ciblé : <strong>Mesure {signal.targetMeasure}</strong> (à ~{signal.pauseTime.toFixed(1)}s)
+              {t('mestre.sequenceur.targetedDownbeatColon')} <strong>{t('mestre.sequenceur.barMeasureWord')} {signal.targetMeasure}</strong> (à ~{signal.pauseTime.toFixed(1)}s)
             </p>
           </div>
         </div>
@@ -132,7 +134,7 @@ export default function SignalReflexCard({
                 : 'text-stone-700 hover:text-stone-900'
             }`}
           >
-            🎯 Défi interactif
+            {t('mestre.sequenceur.interactiveChallengeBtn')}
           </button>
           <button
             type="button"
@@ -143,7 +145,7 @@ export default function SignalReflexCard({
                 : 'text-stone-700 hover:text-stone-900'
             }`}
           >
-            👁️ Simple repère
+            {t('mestre.sequenceur.simpleGuideBtn')}
           </button>
         </div>
       </div>
@@ -155,14 +157,14 @@ export default function SignalReflexCard({
           <div className="flex items-center justify-between gap-2 flex-wrap text-xs">
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-black uppercase text-cordel-wood">
-                Aperçu pour le pupitre :
+                {t('mestre.sequenceur.sectionPreviewColon')}
               </span>
               <select
                 value={previewPupitre}
                 onChange={(e) => setPreviewPupitre(e.target.value)}
                 className="theme-input text-xs font-bold py-0.5 px-2 bg-white border border-encre-noire/30 rounded"
               >
-                {PREVIEW_PUPITRES.map((p) => (
+                {previewPupitres.map((p) => (
                   <option key={p.key} value={p.key}>
                     {p.label}
                   </option>
@@ -175,10 +177,10 @@ export default function SignalReflexCard({
                 type="button"
                 onClick={handleRegenerate}
                 className="px-2 py-1 text-[9px] font-black uppercase rounded bg-stone-100 hover:bg-stone-200 border border-encre-noire/30 text-stone-800 transition-all cursor-pointer flex items-center gap-1 shadow-2xs"
-                title="Générer 3 nouvelles variations de leurres"
+                title={t('mestre.sequenceur.generateDistractorsTitle')}
               >
                 <span>🎲</span>
-                <span>Renouveler</span>
+                <span>{t('mestre.sequenceur.renewBtn')}</span>
               </button>
               <button
                 type="button"
@@ -201,7 +203,7 @@ export default function SignalReflexCard({
             <div className="p-2.5 rounded bg-emerald-50/80 border-2 border-[var(--color-cordel-vert,#2d6a4f)] flex flex-col gap-1">
               <span className="text-[9.5px] font-black uppercase tracking-wider text-[var(--color-cordel-vert,#2d6a4f)] flex items-center gap-1">
                 <span>✓</span>
-                <span>Bonne Tablature (Temps 1 Mesure {signal.targetMeasure})</span>
+                <span>{t('mestre.sequenceur.correctTablatureHeading')} {signal.targetMeasure})</span>
               </span>
               <div className="pointer-events-none scale-90 -my-1">
                 <PatternVisualizer patternArray={correctPattern} beatResolution={4} />
@@ -214,7 +216,7 @@ export default function SignalReflexCard({
                 <span className="text-[9.5px] font-extrabold uppercase tracking-wider text-cordel-wood flex items-center gap-1">
                   <span>⚠️</span>
                   <span>
-                    Leurre #{dIdx + 1}
+                    {t('mestre.sequenceur.distractorPrefix')}{dIdx + 1}
                     {dIdx === 0 ? ' (Inattention)' : dIdx === 1 ? ' (Catalogue)' : ' (Variation)'}
                   </span>
                 </span>
@@ -228,7 +230,7 @@ export default function SignalReflexCard({
       ) : (
         <div className="p-3 bg-amber-50/70 border border-dashed border-amber-300 rounded text-center">
           <p className="text-[11px] font-bold text-amber-900 italic">
-            Ce signal s'affichera sous forme de repère visuel à la mesure {signal.mesure} sans interrompre le son.
+            {t('mestre.sequenceur.signalVisualGuideNotice')} {signal.mesure} {t('mestre.sequenceur.withoutInterruptingSound')}
           </p>
         </div>
       )}

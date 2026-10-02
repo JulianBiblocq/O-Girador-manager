@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { loadGoogleMaps } from '../../../utils/googleMaps';
 import AddressAutocomplete from '../../AddressAutocomplete';
+import { useTranslation } from '../../LanguageContext';
 
 const geocodeByAddress = async (address) => {
   const maps = await loadGoogleMaps();
@@ -115,6 +116,7 @@ export default function DepartureLocationAccordion({
   handleChange,
   saving = false
 }) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
 
   const handleAddressSelect = async (addressData) => {
@@ -136,7 +138,7 @@ export default function DepartureLocationAccordion({
         <div className="flex items-center gap-2">
           <span className="text-sm">📍</span>
           <span className="text-xs font-black uppercase tracking-wider text-cordel-wood">
-            Point de ralliement habituel
+            {t('logistics.rallyPointTitle')}
           </span>
           {currentAddress && !isOpen && (
             <span className="text-[10px] font-semibold text-cordel-master-dark/70 truncate max-w-xs">
@@ -149,7 +151,7 @@ export default function DepartureLocationAccordion({
           onClick={() => setIsOpen(prev => !prev)}
           className="text-[10px] font-black uppercase tracking-wider text-cordel-wood hover:text-encre-noire px-2.5 py-1 rounded border border-cordel-master-dark/30 bg-cordel-bg hover:bg-white cursor-pointer transition-all shadow-2xs flex items-center gap-1"
         >
-          <span>🗺️ {isOpen ? "Masquer la carte ▴" : "Voir le point de départ du local ▾"}</span>
+          <span>🗺️ {isOpen ? "Masquer la carte ▴" : `${t('logistics.btnViewLocalDeparturePoint')} ▾`}</span>
         </button>
       </div>
 

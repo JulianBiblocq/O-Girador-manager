@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import DocumentUploadForm from '../DocumentUploadForm';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Vue et tableau unique du Pôle Lutherie (varal-lutherie) : "Fiches & Tutoriels de Lutherie"
@@ -17,6 +18,7 @@ export default function LutherieDocumentsTable({
   onDeleteDoc,
   onToggleViewMode
 }) {
+  const { t } = useTranslation();
   const [isAdding, setIsAdding] = useState(false);
   const [docUnderEdit, setDocUnderEdit] = useState(null);
 
@@ -54,6 +56,9 @@ export default function LutherieDocumentsTable({
         d.categorie === 'TutosFabrication' ||
         d.domaine === 'lutherie' ||
         d.domain === 'lutherie' ||
+        d.domaine === 'artisanat' ||
+        d.domain === 'artisanat' ||
+        d.thematiqueFabrication === 'artisanat' ||
         d.isVirtualAtelier === true ||
         d.isWorkshopVirtual === true ||
         d.type === 'instrument_model' ||
@@ -82,11 +87,10 @@ export default function LutherieDocumentsTable({
         <div>
           <h3 className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
             <span>🪓</span>
-            <span>Fiches & Tutoriels de Lutherie</span>
-            <span className="text-[10px] font-bold text-encre-noire/60">({lutherieDocs.length})</span>
+            <span>{t('lutherie.tutorialsTitle', { count: lutherieDocs.length })}</span>
           </h3>
           <p className="text-[10px] text-cordel-master-dark/70">
-            Guide de fabrication, fûts, cercles, peaux et réglages d'instruments.
+            {t('lutherie.tutorialsSubtitle')}
           </p>
         </div>
 
@@ -97,7 +101,7 @@ export default function LutherieDocumentsTable({
               onClick={onToggleViewMode}
               className="px-2.5 py-1 text-[9.5px] font-black uppercase tracking-wider rounded border border-cordel-master-dark/30 bg-cordel-bg hover:bg-white text-encre-noire cursor-pointer transition-all shadow-2xs"
             >
-              🪢 Vue Varal
+              🪢 {t('lutherie.btnVaralView')}
             </button>
           )}
 
@@ -108,7 +112,7 @@ export default function LutherieDocumentsTable({
               onClick={handleStartAdd}
               className="text-[10px] px-3 py-1 font-black uppercase tracking-wider"
             >
-              ➕ Nouvelle fiche lutherie
+              {t('lutherie.btnNewTutorial')}
             </CordelButton>
           )}
         </div>
@@ -123,7 +127,7 @@ export default function LutherieDocumentsTable({
               onClick={() => { setIsAdding(false); setDocUnderEdit(null); }}
               className="text-[10px] font-black uppercase text-cordel-wood hover:underline cursor-pointer"
             >
-              ⬅️ Annuler et revenir au tableau de lutherie
+              ⬅️ {t('lutherie.btnCancelAndReturnLutherie')}
             </button>
           </div>
           <DocumentUploadForm
@@ -149,17 +153,35 @@ export default function LutherieDocumentsTable({
               <table className="min-w-full divide-y divide-cordel-master-dark/15 text-xs text-left">
                 <thead>
                   <tr className="bg-cordel-master-dark/5 text-[9px] font-black uppercase tracking-wider text-cordel-master-dark">
-                    <th className="px-3 py-2">Modèle d'instrument</th>
-                    <th className="px-3 py-2">Étape / Chapitre</th>
-                    <th className="px-3 py-2">Auteur</th>
-                    <th className="px-3 py-2 text-right">Actions</th>
+                    <th className="px-3 py-2">{t('lutherie.thInstrumentModel')}</th>
+                    <th className="px-3 py-2">{t('lutherie.thStepChapter')}</th>
+                    <th className="px-3 py-2">{t('lutherie.thAuthor')}</th>
+                    <th className="px-3 py-2 text-right">{t('common.actions') || "Actions"}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-cordel-master-dark/10 font-semibold">
                   {lutherieDocs.map((docItem) => {
                     const instrumentName = docItem.instrumentName || docItem.instrumentModel || docItem.modele || docItem.titre || "Instrument";
-                    const etape = docItem.etape || docItem.chapitre || docItem.partName || docItem.sousTitre || "Tutoriel complet";
-                    const auteur = docItem.auteur || docItem.authorName || docItem.createur || "Atelier Lutherie";
+                    const partsCount = typeof docItem.partsCount === 'number'
+                      ? docItem.partsCount
+                      : (Array.isArray(docItem.modelData?.parts) ? docItem.modelData.parts.length : (Array.isArray(docItem.parts) ? docItem.parts.length : null));
+                    const modelType = docItem.familleInstrument || docItem.modelData?.type || docItem.type || docItem.instrument || '';
+
+                    let etape = docItem.etape || docItem.chapitre || docItem.partName || docItem.sousTitre || "Tutoriel complet";
+                    if (partsCount !== null) {
+                      const formatKey = partsCount <= 1 ? 'lutherie.piecesCountFormatSingular' : 'lutherie.piecesCountFormat';
+                      etape = t(formatKey, { count: partsCount, model: modelType });
+                    } else if (typeof etape === 'string' && etape.includes('pièce')) {
+                      const match = etape.match(/^(\d+)\s+pièces?\s*•?\s*(.*)$/i);
+                      if (match) {
+                        const c = parseInt(match[1], 10);
+                        const m = match[2]?.trim() || modelType;
+                        const formatKey = c <= 1 ? 'lutherie.piecesCountFormatSingular' : 'lutherie.piecesCountFormat';
+                        etape = t(formatKey, { count: c, model: m });
+                      }
+                    }
+
+                    const auteur = docItem.auteur || docItem.authorName || docItem.createur || t('lutherie.authorWorkshopDefault');
                     const isVirtual = docItem.isVirtualWorkshopDoc === true;
 
                     return (
@@ -185,9 +207,9 @@ export default function LutherieDocumentsTable({
                             type="button"
                             onClick={() => onSelectDoc && onSelectDoc(docItem)}
                             className="px-2 py-0.5 text-[9px] font-black uppercase rounded bg-cordel-bg border border-encre-noire shadow-2xs hover:bg-white cursor-pointer"
-                            title="Consulter la fiche technique"
+                            title={t('lutherie.btnConsult')}
                           >
-                            👁️ Consulter
+                            👁️ {t('lutherie.btnConsult')}
                           </button>
                           {canWrite && !isVirtual && (
                             <>
@@ -195,9 +217,9 @@ export default function LutherieDocumentsTable({
                                 type="button"
                                 onClick={() => handleStartEdit(docItem)}
                                 className="px-2 py-0.5 text-[9px] font-black uppercase rounded bg-amber-100 border border-amber-900 shadow-2xs hover:bg-amber-200 cursor-pointer"
-                                title="Modifier cette fiche"
+                                title={t('lutherie.btnEditTutorial')}
                               >
-                                ✏️ Éditer
+                                ✏️ {t('lutherie.btnEditTutorial')}
                               </button>
                               <button
                                 type="button"

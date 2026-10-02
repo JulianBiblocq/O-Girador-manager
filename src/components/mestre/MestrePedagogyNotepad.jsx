@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from '../LanguageContext';
 import { collection, getDocs, doc, deleteDoc, updateDoc, onSnapshot, arrayUnion } from 'firebase/firestore';
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 
 export default function MestrePedagogyNotepad({ groupId }) {
+  const { t } = useTranslation();
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedNotes, setSelectedNotes] = useState(new Set());
@@ -134,20 +136,20 @@ export default function MestrePedagogyNotepad({ groupId }) {
     <CordelCard variant="default" className="flex flex-col h-full bg-[#fdfaf2] border-2 border-encre-noire relative overflow-hidden">
       <div className="bg-cordel-wood text-[#fdfaf2] p-4 text-center border-b-2 border-encre-noire">
         <h3 className="font-heading text-2xl tracking-widest uppercase">
-          📌 Bloc-Notes
+          {t('mestre.pedagogy.notepadTitle')}
         </h3>
         <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mt-1">
-          À Travailler en Répétition
+          {t('mestre.pedagogy.toWorkInRehearsalSubtitle')}
         </p>
       </div>
 
       <div className="p-4 flex-1 overflow-y-auto flex flex-col gap-3 min-h-[300px]">
         {loading ? (
-          <div className="text-center opacity-50 font-black text-xs animate-pulse p-4">Chargement...</div>
+          <div className="text-center opacity-50 font-black text-xs animate-pulse p-4">{t('mestre.pedagogy.loadingGeneric')}</div>
         ) : notes.length === 0 ? (
           <div className="text-center opacity-50 font-medium text-xs p-4 flex flex-col items-center gap-2">
             <span className="text-2xl">🌱</span>
-            Aucun point épinglé.
+            {t('mestre.pedagogy.noPinnedPoints')}
           </div>
         ) : (
           notes.map(note => (
@@ -170,13 +172,13 @@ export default function MestrePedagogyNotepad({ groupId }) {
                   <h4 className="text-xs font-black uppercase text-encre-noire">{note.titre}</h4>
                   <p className="text-[11px] font-medium leading-snug text-encre-noire/80">{note.contenu}</p>
                   <span className="text-[9px] font-black uppercase tracking-widest text-cordel-master-dark/40 mt-1">
-                    Épinglé par {note.createdBy}
+                    {t('mestre.pedagogy.pinnedByPrefix')} {note.createdBy}
                   </span>
                 </div>
                 <button 
                   onClick={(e) => { e.stopPropagation(); handleDeleteNote(note.id); }}
                   className="text-cordel-master-dark/40 hover:text-cordel-rouge transition-colors"
-                  title="Supprimer cette note"
+                  title={t('mestre.pedagogy.deleteNoteTitle')}
                 >
                   ✕
                 </button>
@@ -194,7 +196,7 @@ export default function MestrePedagogyNotepad({ groupId }) {
             disabled={selectedNotes.size === 0}
             className="w-full text-xs"
           >
-            📅 Programmer ({selectedNotes.size})
+            {t('mestre.pedagogy.programCountPrefix')}{selectedNotes.size})
           </CordelButton>
         </div>
       )}
@@ -205,11 +207,11 @@ export default function MestrePedagogyNotepad({ groupId }) {
           <CordelCard className="w-full max-w-md p-6 flex flex-col gap-4 animate-scale-in">
             <h3 className="text-lg font-black uppercase tracking-widest text-cordel-wood border-b-2 border-dashed border-cordel-wood/30 pb-2 flex items-center gap-2">
               <span>📅</span>
-              <span>Ajouter à une répétition</span>
+              <span>{t('mestre.pedagogy.addToRehearsalHeading')}</span>
             </h3>
             
             <p className="text-xs font-medium text-encre-noire/80 leading-relaxed">
-              Les {selectedNotes.size} note{selectedNotes.size > 1 ? 's' : ''} sélectionnée{selectedNotes.size > 1 ? 's' : ''} ser{selectedNotes.size > 1 ? 'ont' : 'a'} ajoutée{selectedNotes.size > 1 ? 's' : ''} au fil conducteur de la répétition choisie.
+              {t('mestre.pedagogy.thePluralWord')} {selectedNotes.size} {t('mestre.pedagogy.noteWord')}{selectedNotes.size > 1 ? 's' : ''} {t('mestre.pedagogy.selectedWord')}{selectedNotes.size > 1 ? 's' : ''} {t('mestre.pedagogy.willBePrefix')}{selectedNotes.size > 1 ? 'ont' : 'a'} {t('mestre.pedagogy.addedWord')}{selectedNotes.size > 1 ? 's' : ''} {t('mestre.pedagogy.toRehearsalRoadbookNotice')}
             </p>
 
             <select
@@ -218,10 +220,10 @@ export default function MestrePedagogyNotepad({ groupId }) {
               className="w-full p-2 border-2 border-encre-noire rounded text-sm font-bold bg-[#fdfaf2] text-encre-noire cursor-pointer"
             >
               {events.length === 0 ? (
-                <option value="" disabled>-- Aucune répétition à venir trouvée --</option>
+                <option value="" disabled>{t('mestre.pedagogy.noUpcomingRehearsalsFound')}</option>
               ) : (
                 <>
-                  <option value="" disabled>-- Choisir une répétition --</option>
+                  <option value="" disabled>{t('mestre.pedagogy.chooseRehearsalPlaceholder')}</option>
                   {events.map(ev => {
                     const evDate = ev.dateDebut || ev.date;
                     const formattedDate = evDate ? new Date(evDate).toLocaleDateString('fr-FR') : 'Date indéfinie';
@@ -237,7 +239,7 @@ export default function MestrePedagogyNotepad({ groupId }) {
 
             <div className="flex gap-2 justify-end mt-4">
               <CordelButton variant="secondary" onClick={() => setIsModalOpen(false)}>
-                Annuler
+                {t('mestre.pedagogy.cancelBtn')}
               </CordelButton>
               <CordelButton 
                 variant="primary" 

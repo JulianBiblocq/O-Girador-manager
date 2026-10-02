@@ -40,7 +40,7 @@ export function isStageDancer(member) {
  * @param {object} params.groupNomenclature Nomenclature personnalisée du groupe
  * @returns {string} Libellé exact du rôle et de la nuance
  */
-export function resolveExactRole({ member, placement, groupNomenclature }) {
+export function resolveExactRole({ member, placement, groupNomenclature, t = null }) {
   if (!placement) {
     return member?.instrument || 'Participant';
   }
@@ -48,6 +48,9 @@ export function resolveExactRole({ member, placement, groupNomenclature }) {
   // Cas 1 : Chef d'orchestre (Mestre) placé sur la case dédiée
   if (placement.row === 0 && placement.col === 0) {
     const baseInst = member?.instrument || 'Mestre';
+    if (t) {
+      return t('mestre.conductorRoleMestre', { instrument: baseInst });
+    }
     return `Chef d'orchestre (Mestre) — ${baseInst}`;
   }
 

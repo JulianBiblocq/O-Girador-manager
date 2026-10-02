@@ -289,6 +289,13 @@ export default function TreasuryCotisations({
 
   return (
     <div className="flex flex-col gap-6 w-full">
+      {/* Badge Réservé : Trésorier */}
+      <div className="flex items-center justify-between">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[3px_5px_4px_3px] text-[10px] font-black uppercase tracking-wider bg-cordel-wood text-white border border-encre-noire shadow-[1px_1px_0px_0px_#181716]">
+          🔒 {t('treasury.badgeReservedTreasurer')}
+        </span>
+      </div>
+
       {/* Barre de Statistiques */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-center">
         <div className="border border-encre-noire/25 p-2 bg-white/40 dark:bg-black/10 rounded">
@@ -319,7 +326,9 @@ export default function TreasuryCotisations({
           <h3 className="text-xs font-extrabold tracking-wider text-cordel-wood uppercase">
             ⚙️ {t('treasury.contributionsTitle')} - {t('common.settings')}
           </h3>
-          <span className="text-xs font-black">{showConfig ? '▲ Masquer' : '▼ Déployer'}</span>
+          <span className="text-xs font-black">
+            {showConfig ? `▲ ${t('treasury.btnCollapseConfig') || 'Replier'}` : `▼ ${t('treasury.btnDeployConfig') || 'Déployer'}`}
+          </span>
         </div>
 
         {showConfig && (
@@ -389,13 +398,13 @@ export default function TreasuryCotisations({
       <CordelCard variant="default" useExtremeBorder={false} className="p-4 bg-cordel-bg flex flex-col md:flex-row gap-3 items-end">
         <div className="flex-1 flex flex-col gap-1 text-left w-full">
           <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-wood">
-            🔍 Rechercher un membre
+            🔍 {t('treasury.searchMemberPlaceholder')}
           </label>
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={t('widgetTreasury.searchPlaceholder') || "Rechercher par nom..."}
+            placeholder={t('treasury.searchMemberPlaceholder')}
             className="theme-input w-full text-xs font-bold py-1.5"
           />
         </div>
@@ -420,14 +429,14 @@ export default function TreasuryCotisations({
 
         <div className="flex flex-col gap-1 text-left min-w-[140px] w-full md:w-auto">
           <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-wood">
-            Caution instrument
+            {t('treasury.cautionInstrumentLabel') || "Caution instrument"}
           </label>
           <select
             value={filterCaution}
             onChange={(e) => setFilterCaution(e.target.value)}
             className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
           >
-            <option value="all">Toutes les cautions</option>
+            <option value="all">{t('treasury.filterAllCautions')}</option>
             <option value="en_attente">⏳ Cautions en attente</option>
             <option value="recue">✓ Cautions reçues</option>
             <option value="na">Sans prêt (N/A)</option>
@@ -450,7 +459,7 @@ export default function TreasuryCotisations({
           ) : (
             <>
               <span>🔄</span>
-              <span>Synchroniser HelloAsso</span>
+              <span>{t('treasury.btnSyncHelloasso')}</span>
             </>
           )}
         </button>
@@ -478,7 +487,7 @@ export default function TreasuryCotisations({
               <div className="col-span-1 text-center">{t('treasury.membershipFormula')}</div>
               <div className="col-span-2 text-left">{t('widgetTreasury.tableOptions') || "Options"}</div>
               <div className="col-span-2 text-center">{t('treasury.amountDue')}</div>
-              <div className="col-span-2 text-center">Caution instrument</div>
+              <div className="col-span-2 text-center">{t('treasury.thCautionInstrument') || "Caution instrument"}</div>
               <div className="col-span-2 text-right">{t('treasury.paymentStatus')}</div>
             </div>
 

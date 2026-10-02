@@ -157,28 +157,28 @@ export default function StudioEventsManager({ groupId, onBack }) {
                 </button>
               )}
               <h2 className="panel-title text-xl font-black text-cordel-wood flex items-center gap-2">
-                📅 Gestion des événements
+                📅 {t('secretariat.eventsManagementTitle') || "Gestion des événements"}
               </h2>
             </div>
             <p className="text-xs text-cordel-master-dark/70 font-medium mt-1">
-              Tableau de bord d'édition rapide et globale des événements pour l'administration.
+              {t('secretariat.eventsManagementSubtitle') || "Tableau de bord d'édition rapide et globale des événements pour l'administration."}
             </p>
           </div>
 
           {/* Quick Statistics Badges */}
           <div className="flex items-center gap-2 flex-wrap text-xs select-none">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700/60 font-bold">
-              Total : {countTotal}
+              {t('secretariat.kpiTotal', { count: countTotal })}
             </span>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700/60 font-bold">
               <img src="/icones/alfaia.svg" alt="Perc" className="w-3 h-3 object-contain dark:invert" />
-              Perc: {countPercussion}
+              {t('secretariat.kpiPerc', { count: countPercussion })}
             </span>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-pink-100 dark:bg-pink-950/60 text-pink-900 dark:text-pink-200 border border-pink-300 dark:border-pink-700/60 font-bold">
-              💃 Danse: {countDance}
+              💃 {t('secretariat.kpiDanse', { count: countDance })}
             </span>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-emerald-100 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700/60 font-bold">
-              🔒 Validation: {countValidation}
+              🔒 {t('secretariat.kpiValidation', { count: countValidation })}
             </span>
             <button
               type="button"
@@ -187,7 +187,7 @@ export default function StudioEventsManager({ groupId, onBack }) {
               title="⚡ Planifier une série de répétitions pour la saison"
             >
               <span>⚡</span>
-              <span>Planifier une série</span>
+              <span>{t('secretariat.btnScheduleSeries') || "Planifier une série"}</span>
             </button>
           </div>
         </div>
@@ -213,7 +213,7 @@ export default function StudioEventsManager({ groupId, onBack }) {
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="🔍 Rechercher par titre, lieu..."
+                placeholder={t('secretariat.searchEventsPlaceholder') || "Rechercher par titre, lieu..."}
                 className="theme-input w-full text-xs py-1.5 px-3"
               />
             </div>
@@ -261,7 +261,7 @@ export default function StudioEventsManager({ groupId, onBack }) {
 
           <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
             <span className="text-[10px] font-black uppercase tracking-wider text-cordel-master-dark/60 shrink-0">
-              Type :
+              {t('secretariat.filterTypeLabel') || "Type :"}
             </span>
             <button
               type="button"
@@ -272,22 +272,35 @@ export default function StudioEventsManager({ groupId, onBack }) {
                   : 'bg-black/5 dark:bg-white/10 text-cordel-master-dark/70 hover:bg-black/10'
               }`}
             >
-              Tous ({events.length})
+              {t('secretariat.filterAllTypes', { count: events.length })}
             </button>
-            {availableTypes.map((type) => (
-              <button
-                key={type}
-                type="button"
-                onClick={() => setTypeFilter(type)}
-                className={`text-[10px] font-bold px-2.5 py-1 rounded capitalize transition-all cursor-pointer ${
-                  typeFilter === type
-                    ? 'bg-cordel-wood text-white border border-encre-noire'
-                    : 'bg-black/5 dark:bg-white/10 text-cordel-master-dark/70 hover:bg-black/10'
-                }`}
-              >
-                {type} ({events.filter((e) => e.type === type).length})
-              </button>
-            ))}
+            {availableTypes.map((type) => {
+              const typeKeyMap = {
+                repetition: 'eventTypeRepetition',
+                prestation: 'eventTypePrestation',
+                atelier: 'eventTypeAtelier',
+                autre: 'eventTypeAutre',
+                stage: 'eventTypeStage',
+                reunion: 'eventTypeReunion',
+              };
+              const label = typeKeyMap[type.toLowerCase()]
+                ? t(`secretariat.${typeKeyMap[type.toLowerCase()]}`)
+                : type;
+              return (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => setTypeFilter(type)}
+                  className={`text-[10px] font-bold px-2.5 py-1 rounded capitalize transition-all cursor-pointer ${
+                    typeFilter === type
+                      ? 'bg-cordel-wood text-white border border-encre-noire'
+                      : 'bg-black/5 dark:bg-white/10 text-cordel-master-dark/70 hover:bg-black/10'
+                  }`}
+                >
+                  {label} ({events.filter((e) => e.type === type).length})
+                </button>
+              );
+            })}
           </div>
         </div>
       </CordelCard>
@@ -296,7 +309,7 @@ export default function StudioEventsManager({ groupId, onBack }) {
       {loading ? (
         <CordelCard variant="default" className="py-12 text-center">
           <div className="text-sm font-bold text-cordel-wood animate-pulse flex items-center justify-center gap-2">
-            ⏳ Chargement des événements en direct...
+            ⏳ {t('common.loading') || "Chargement des événements en direct..."}
           </div>
         </CordelCard>
       ) : (

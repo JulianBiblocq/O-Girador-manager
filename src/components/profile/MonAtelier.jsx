@@ -2,21 +2,24 @@ import React, { useState } from 'react';
 import CordelCard from '../CordelCard';
 import StudentInstrumentsWorkshop from './StudentInstrumentsWorkshop';
 import AtelierCouture from './AtelierCouture';
+import AtelierArtisanat from './AtelierArtisanat';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Composant principal « Mon Atelier » pour l'espace membre / élève.
  * Propose une navigation par sous-onglets thématiques :
  * - 🥁 Instruments : Suivi de fabrication d'instruments, tutoriels Varal et soumission au Mestre.
  * - 🧵 Vestiaire & Costumes : Confection et personnalisation des tenues, bracelets et chapeaux.
- * - 📚 Édition & Reliure : Préparé pour l'impression et la reliure artisanale des carnets de toadas.
+ * - 🎨 Artisanat : Reliure de carnets de toadas, pochoirs, travail du cuir et accessoires.
  */
 export default function MonAtelier({ user, profileData, onBack, initialSubTab = 'instruments' }) {
+  const { t } = useTranslation();
   const [activeSubTab, setActiveSubTab] = useState(initialSubTab);
 
   const subTabs = [
-    { id: 'instruments', label: '🥁 Instruments', description: 'Fabrication et assemblage' },
-    { id: 'vestiaire', label: '🧵 Vestiaire & Costumes', description: 'Couture et ornements' },
-    { id: 'edition', label: '📚 Édition & Reliure', description: 'Carnets de toadas et livrets' }
+    { id: 'instruments', label: t('workshopMember.tabInstruments'), icon: '🥁', description: 'Fabrication et assemblage' },
+    { id: 'vestiaire', label: t('workshopMember.tabCostumes'), icon: '🧵', description: 'Couture et ornements' },
+    { id: 'artisanat', label: t('workshopMember.tabCrafts'), icon: '🎨', description: 'Reliure, pochoirs et accessoires' }
   ];
 
   return (
@@ -27,11 +30,11 @@ export default function MonAtelier({ user, profileData, onBack, initialSubTab = 
           <div className="flex items-center gap-2">
             <span className="text-2xl">🛠️</span>
             <h2 className="text-xl font-black text-cordel-wood uppercase tracking-wider">
-              L'Atelier d'Artisanat
+              {t('lutherie.craftWorkshopTitle')}
             </h2>
           </div>
           <p className="text-xs text-stone-600 mt-1">
-            Espace de fabrication collective et d'apprentissage manuel : construisez vos instruments, confectionnez vos costumes et préparez vos supports.
+            {t('lutherie.craftWorkshopDesc')}
           </p>
         </div>
 
@@ -40,7 +43,7 @@ export default function MonAtelier({ user, profileData, onBack, initialSubTab = 
             onClick={onBack}
             className="text-xs font-bold px-3 py-1.5 bg-white border border-encre-noire rounded shadow-xs hover:bg-stone-100 self-start sm:self-auto cursor-pointer"
           >
-            ← Accueil
+            {t('lutherie.btnHomeBack')}
           </button>
         )}
       </div>
@@ -59,6 +62,7 @@ export default function MonAtelier({ user, profileData, onBack, initialSubTab = 
                   : 'text-stone-500 hover:text-stone-800 border-transparent hover:bg-stone-100/60'
               }`}
             >
+              <span>{tab.icon}</span>
               <span>{tab.label}</span>
             </button>
           );
@@ -83,26 +87,13 @@ export default function MonAtelier({ user, profileData, onBack, initialSubTab = 
           </div>
         )}
 
-        {activeSubTab === 'edition' && (
-          <CordelCard variant="default" className="p-8 text-center bg-white/50 border-dashed max-w-2xl mx-auto flex flex-col items-center gap-4">
-            <span className="text-4xl">📚</span>
-            <div>
-              <h3 className="text-sm font-extrabold text-cordel-wood uppercase tracking-wider">
-                Atelier Reliure & Édition Artisanale
-              </h3>
-              <p className="text-xs text-stone-600 mt-2 leading-relaxed">
-                Cet atelier accueillera très prochainement les tutoriels de confection et d'impression pour :
-              </p>
-              <ul className="text-xs text-stone-700 mt-3 space-y-1 text-left list-disc list-inside bg-stone-50 p-4 rounded border border-stone-200">
-                <li><strong>Impression & reliure à la japonaise</strong> des carnets de toadas et paroles de l'association.</li>
-                <li><strong>Tirage et gravure sur bois (Xilogravura)</strong> pour les couvertures et affiches culturelles.</li>
-                <li><strong>Planches de chants et accords</strong> à glisser dans votre housse d'instrument.</li>
-              </ul>
-            </div>
-            <span className="text-[10px] font-bold text-[var(--color-cordel-ocre)] uppercase tracking-wider bg-amber-100/60 px-3 py-1 rounded-full border border-amber-300">
-              Module en préparation • Bientôt disponible
-            </span>
-          </CordelCard>
+        {activeSubTab === 'artisanat' && (
+          <AtelierArtisanat
+            groupId={profileData?.groupId}
+            user={user}
+            profileData={profileData}
+            onBack={() => setActiveSubTab('instruments')}
+          />
         )}
       </div>
     </div>

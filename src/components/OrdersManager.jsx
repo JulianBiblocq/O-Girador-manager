@@ -61,10 +61,10 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
       const snapshot = await uploadBytes(fileRef, file);
       const downloadURL = await getDownloadURL(snapshot.ref);
       setArticleImageUrl(downloadURL);
-      alert("Image de l'article téléversée avec succès !");
+      alert(t('logistics.articleImageUploadedSuccess'));
     } catch (error) {
       console.error("OrdersManager - Erreur upload image article :", error);
-      alert("Erreur lors du téléversement de l'image de l'article.");
+      alert(t('logistics.articleImageUploadError'));
     } finally {
       setUploadingArticleImage(false);
     }
@@ -78,7 +78,7 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
       setSelectedCampaign(prev => ({ ...prev, articles: updatedArticles }));
     } catch (err) {
       console.error("OrdersManager - Erreur maj articles :", err);
-      alert("Erreur lors de la sauvegarde des articles.");
+      alert(t('logistics.errorSaveArticles'));
     } finally {
       setSaving(false);
     }
@@ -302,7 +302,7 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
       setRestockConfirmData(null);
     } catch (e) {
       console.error("OrdersManager - Erreur de réassort :", e);
-      alert("Erreur lors du réapprovisionnement.");
+      alert(t('logistics.errorRestocking'));
     } finally {
       setSaving(false);
     }
@@ -352,7 +352,7 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
       await deleteDoc(doc(db, 'campaignRequests', requestId));
     } catch (err) {
       console.error("OrdersManager - Erreur lors de la suppression de la demande:", err);
-      alert("Erreur lors de la suppression de la demande.");
+      alert(t('logistics.errorDeleteRequest'));
     } finally {
       setSaving(false);
     }
@@ -383,7 +383,7 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
       }
     } catch (err) {
       console.error("OrdersManager - Erreur lors de la suppression de la campagne:", err);
-      alert("Erreur lors de la suppression de la campagne.");
+      alert(t('logistics.errorDeleteCampaign'));
     } finally {
       setSaving(false);
     }
@@ -514,9 +514,9 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
               {campaigns.length === 0 ? (
                 <EmptyState
                   icon="📦"
-                  title="Aucune commande groupée en cours"
-                  description="Créez une nouvelle campagne d'achats groupés (T-shirts, peaux d'alfaia, goodies...) pour collecter les commandes des membres."
-                  actionLabel="+ Créer une commande groupée"
+                  title={t('logistics.noGroupOrderInProgress')}
+                  description={t('logistics.emptyOrdersNoticeDesc')}
+                  actionLabel={t('logistics.btnCreateOrderCampaign')}
                   onAction={() => setIsCreating(true)}
                   className="col-span-full"
                 />
@@ -550,7 +550,7 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
                         }}
                         disabled={saving}
                         className="text-[9px] font-bold p-1 text-red-700 hover:bg-red-100 rounded border border-red-300 cursor-pointer"
-                        title="Supprimer cette campagne et toutes ses demandes"
+                        title={t('logistics.deleteCampaignAndRequestsTitle')}
                       >
                         🗑️
                       </button>
@@ -598,13 +598,13 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
                 {/* Constructeur de Campagne (Gestion des Articles) */}
                 <CordelCard variant="default" useExtremeBorder={false} className="py-4 px-5">
                   <h4 className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1 mb-2.5">
-                    📦 Constructeur de Campagne (Gestion des Articles)
+                    {t('logistics.campaignBuilderTitle')}
                   </h4>
                   
                   {/* Article List */}
                   {!(selectedCampaign.articles && selectedCampaign.articles.length > 0) ? (
                     <p className="text-[10px] italic opacity-60 mb-3">
-                      Aucun article configuré dans cette campagne. Utilisez le formulaire ci-dessous pour en ajouter.
+                      {t('logistics.noArticleConfiguredInCampaign')}
                     </p>
                   ) : (
                     <div className="flex flex-col gap-2 mb-4">
@@ -619,7 +619,7 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
                             <div className="flex flex-col gap-0.5 min-w-0">
                               <span className="font-bold text-encre-noire truncate">{art.nom}</span>
                               <span className="text-[9px] text-cordel-master-dark/70 font-medium truncate">
-                                Provenance : {art.provenance || 'Non spécifiée'} • Tarif : {art.prix !== undefined && art.prix !== 0 ? `${art.prix}€` : 'Libre/Optionnel'}
+                                {t('logistics.sourceLabel')} {art.provenance || 'Non spécifiée'} {t('logistics.priceDotLabel')} {art.prix !== undefined && art.prix !== 0 ? `${art.prix}€` : 'Libre/Optionnel'}
                               </span>
                             </div>
                           </div>
@@ -631,14 +631,14 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
                                 onClick={() => startEditArticle(art)}
                                 className="text-[8.5px] font-bold text-cordel-wood hover:underline cursor-pointer"
                               >
-                                Modifier
+                                {t('logistics.btnEdit')}
                               </button>
                               <button
                                 type="button"
                                 onClick={() => handleDeleteArticle(art.id)}
                                 className="text-[8.5px] font-bold text-red-700 hover:underline cursor-pointer"
                               >
-                                Supprimer
+                                {t('logistics.btnDelete')}
                               </button>
                             </div>
                           )}
@@ -655,35 +655,35 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
                       </h5>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         <div className="flex flex-col gap-1">
-                          <label className="text-[8px] uppercase font-bold text-cordel-master-dark">Nom de l'article</label>
+                          <label className="text-[8px] uppercase font-bold text-cordel-master-dark">{t('logistics.articleName')}</label>
                           <input
                             type="text"
                             required
                             value={articleName}
                             onChange={(e) => setArticleName(e.target.value)}
-                            placeholder="Ex : Baguettes, Housse..."
+                            placeholder={t('logistics.articleNamePlaceholder')}
                             className="theme-input text-xs py-1 px-2"
                           />
                         </div>
                         <div className="flex flex-col gap-1">
-                          <label className="text-[8px] uppercase font-bold text-cordel-master-dark">Provenance (Fournisseur/URL)</label>
+                          <label className="text-[8px] uppercase font-bold text-cordel-master-dark">{t('logistics.supplierUrlField')}</label>
                           <input
                             type="text"
                             value={articleProvenance}
                             onChange={(e) => setArticleProvenance(e.target.value)}
-                            placeholder="Ex : Contemporanea, URL..."
+                            placeholder={t('logistics.supplierUrlPlaceholder')}
                             className="theme-input text-xs py-1 px-2"
                           />
                         </div>
                         <div className="flex flex-col gap-1">
-                          <label className="text-[8px] uppercase font-bold text-cordel-master-dark">Tarif (€, optionnel)</label>
+                          <label className="text-[8px] uppercase font-bold text-cordel-master-dark">{t('logistics.priceOptionalField')}</label>
                           <input
                             type="number"
                             step="any"
                             min="0"
                             value={articleTarif}
                             onChange={(e) => setArticleTarif(e.target.value)}
-                            placeholder="Ex : 25 (vide = libre)"
+                            placeholder={t('logistics.pricePlaceholder')}
                             className="theme-input text-xs py-1 px-2"
                           />
                         </div>
@@ -691,17 +691,17 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
                       
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
                         <div className="flex flex-col gap-1">
-                          <label className="text-[8px] uppercase font-bold text-cordel-master-dark">Lien de l'image (URL)</label>
+                          <label className="text-[8px] uppercase font-bold text-cordel-master-dark">{t('logistics.imageUrlField')}</label>
                           <input
                             type="url"
                             value={articleImageUrl}
                             onChange={(e) => setArticleImageUrl(e.target.value)}
-                            placeholder="Ex : https://site.com/image.jpg"
+                            placeholder={t('logistics.imageUrlPlaceholder')}
                             className="theme-input text-xs py-1 px-2"
                           />
                         </div>
                         <div className="flex flex-col gap-1">
-                          <label className="text-[8px] uppercase font-bold text-cordel-master-dark">Ou téléverser une photo</label>
+                          <label className="text-[8px] uppercase font-bold text-cordel-master-dark">{t('logistics.orUploadPhotoField')}</label>
                           <div className="flex items-center gap-2">
                             <label className="text-[9px] font-black uppercase tracking-widest bg-white border border-encre-noire px-3 py-1.5 rounded shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:bg-neutral-100 cursor-pointer select-none">
                               {uploadingArticleImage ? "⏳ Téléversement..." : "Parcourir..."}
@@ -715,7 +715,7 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
                             </label>
                             {articleImageUrl && (
                               <span className="text-[8.5px] font-bold text-green-700 truncate max-w-xs">
-                                ✓ Photo prête
+                                {t('logistics.photoReadyBadge')}
                               </span>
                             )}
                           </div>
@@ -728,7 +728,7 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
                             onClick={cancelEditArticle}
                             className="text-[9px] font-black uppercase tracking-widest bg-white border border-encre-noire px-3 py-1.5 rounded-[4px] shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer"
                           >
-                            Annuler
+                            {t('logistics.btnCancel')}
                           </button>
                         )}
                         <CordelButton
@@ -836,7 +836,7 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
                           )}
                           {req.suggestion && (
                             <p className="text-[10px] font-bold text-cordel-wood mt-0.5 bg-[#fdfaf2] dark:bg-[#1a1816] border border-dashed border-cordel-wood/25 px-1.5 py-0.5 rounded">
-                              💡 Suggestion : {req.suggestion}
+                              {t('logistics.suggestionLabel')} {req.suggestion}
                             </p>
                           )}
 
@@ -856,7 +856,7 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
                                     disabled={saving}
                                     className="text-[8.5px] font-bold text-blue-800 hover:text-blue-900 bg-blue-500/10 px-1.5 py-0.5 rounded border border-dashed border-blue-400 cursor-pointer"
                                   >
-                                    📦 Réceptionner
+                                    {t('logistics.btnReceive')}
                                   </button>
                                   <button
                                     type="button"
@@ -874,7 +874,7 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
                                   disabled={saving}
                                   className="text-[8.5px] font-bold text-amber-800 hover:text-amber-900 bg-amber-500/10 px-1.5 py-0.5 rounded border border-dashed border-amber-400 cursor-pointer"
                                 >
-                                  Annuler réception
+                                  {t('logistics.btnCancelReceipt')}
                                 </button>
                               ) : (
                                 <button
@@ -891,7 +891,7 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
                                 onClick={() => handleDeleteRequest(req.id)}
                                 disabled={saving}
                                 className="text-[8.5px] font-bold text-red-600 hover:text-red-800 bg-red-500/10 px-1.5 py-0.5 rounded border border-dashed border-red-300 cursor-pointer"
-                                title="Supprimer cette demande"
+                                title={t('logistics.deleteThisRequestTitle')}
                               >
                                 🗑️
                               </button>
@@ -911,14 +911,14 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
                 <div className="w-full max-w-sm">
                   <CordelCard variant="default" className="p-5 flex flex-col gap-4">
                     <h3 className="text-sm font-black text-cordel-wood uppercase">
-                      📦 Réapprovisionnement Stock
+                      {t('logistics.restockStockTitle')}
                     </h3>
                     <p className="text-[11px] text-stone-700 leading-relaxed">
-                      L'article <strong className="text-encre-noire">{getArticleLabel(restockConfirmData.request.article)}</strong> correspond à la fourniture <strong className="text-cordel-ocre">{restockConfirmData.supply.nom}</strong>.
+                      {t('logistics.articleMatchesSupplyPrefix')} <strong className="text-encre-noire">{getArticleLabel(restockConfirmData.request.article)}</strong> {t('logistics.articleMatchesSupplyMiddle')} <strong className="text-cordel-ocre">{restockConfirmData.supply.nom}</strong>.
                     </p>
                     <div className="p-3 bg-cordel-ocre/10 border border-cordel-ocre rounded text-center">
                       <span className="text-[10px] font-bold uppercase text-cordel-wood">
-                        Voulez-vous ajouter <strong className="text-lg">+{restockConfirmData.amount}</strong> {restockConfirmData.supply.unite} au stock ?
+                        {t('logistics.addToStockQuestionPrefix')} <strong className="text-lg">+{restockConfirmData.amount}</strong> {restockConfirmData.supply.unite} {t('logistics.addToStockQuestionSuffix')}
                       </span>
                     </div>
                     <div className="flex justify-end gap-2 mt-2 pt-3 border-t border-dashed border-cordel-master-dark/20">
@@ -926,10 +926,10 @@ export default function OrdersManager({ groupId, onBack, role, isSystemAdmin, ha
                         handleValidateRequest(restockConfirmData.request.id, 'recu');
                         setRestockConfirmData(null);
                       }} disabled={saving}>
-                        Non, ignorer
+                        {t('logistics.btnNoIgnore')}
                       </CordelButton>
                       <CordelButton variant="vert" onClick={handleConfirmRestock} disabled={saving}>
-                        Oui, réapprovisionner
+                        {t('logistics.btnYesRestock')}
                       </CordelButton>
                     </div>
                   </CordelCard>

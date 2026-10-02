@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import KilometricReimbursementManager from '../KilometricReimbursementManager';
 import TreasuryExpenseClaims from './TreasuryExpenseClaims';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Conteneur principal de l'onglet Trésorerie "Frais" (frais-km).
@@ -17,6 +18,7 @@ export default function TreasuryFraisTab({
   onBack,
   associationSettings
 }) {
+  const { t } = useTranslation();
   const [activeSubTab, setActiveSubTab] = useState('expenses'); // 'expenses' | 'km'
 
   return (
@@ -33,7 +35,7 @@ export default function TreasuryFraisTab({
                 : 'bg-white/60 dark:bg-black/20 border border-dashed border-cordel-master-dark/35 text-encre-noire hover:bg-cordel-hover'
             }`}
           >
-            🧾 Notes de frais & Achats
+            🧾 {t('treasury.tabExpensesReceipts')}
           </button>
 
           <button
@@ -45,7 +47,7 @@ export default function TreasuryFraisTab({
                 : 'bg-white/60 dark:bg-black/20 border border-dashed border-cordel-master-dark/35 text-encre-noire hover:bg-cordel-hover'
             }`}
           >
-            🚗 Frais kilométriques (Covoiturage)
+            🚗 {t('treasury.tabMileageCarpool')}
           </button>
         </div>
 
@@ -55,7 +57,7 @@ export default function TreasuryFraisTab({
             onClick={onBack}
             className="text-[10px] font-black uppercase tracking-wider text-cordel-master-dark hover:text-cordel-wood cursor-pointer transition-colors"
           >
-            ⬅️ Retour
+            ⬅️ {t('treasury.btnBack')}
           </button>
         )}
       </div>

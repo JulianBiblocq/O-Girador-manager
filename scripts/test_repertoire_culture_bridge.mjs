@@ -105,7 +105,7 @@ assert(
 // Vérification de l'encart Contexte & Histoire
 assert(
   viewCode.includes('contexteHistorique') &&
-  viewCode.includes('Contexte &'),
+  (viewCode.includes('Contexte &') || viewCode.includes('createCultureFromContextTitle')),
   "MestreRepertoireView doit afficher un encart lisible pour le contexte & l'histoire"
 );
 

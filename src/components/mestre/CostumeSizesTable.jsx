@@ -20,10 +20,10 @@ export default function CostumeSizesTable({ allUsers = [], profileData = {} }) {
       <div className="flex flex-col gap-4 text-left select-none w-full max-w-3xl mx-auto mt-4">
         <CordelCard variant="default" useExtremeBorder={true} className="p-8">
           <h2 className="text-sm font-black text-red-700 uppercase tracking-widest">
-            🚨 ACCÈS REFUSÉ
+            {t('costumerie.accesRefuse')}
           </h2>
           <p className="text-xs opacity-75 mt-3 leading-relaxed">
-            Vous n'avez pas l'autorisation d'accéder au tableau des tailles et mensurations du Vestiaire.
+            {t('costumerie.vousNAvezPasL')}
           </p>
         </CordelCard>
       </div>
@@ -66,10 +66,10 @@ export default function CostumeSizesTable({ allUsers = [], profileData = {} }) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center pb-2 border-b-2 border-dashed border-cordel-master-dark/30 gap-2">
         <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase">
-          👔 Tableau des Tailles / Vestiaire
+          {t('costumerie.tableauDesTaillesVestiaire')}
         </h2>
         <span className="text-[10px] uppercase font-black text-cordel-master-dark bg-cordel-bg border border-encre-noire px-2 py-0.5 rounded">
-          {associationUsers.length} Membre{associationUsers.length > 1 ? 's' : ''} au total
+          {associationUsers.length} {t('costumerie.membre')}{associationUsers.length > 1 ? 's' : ''} {t('costumerie.auTotal')}
         </span>
       </div>
 
@@ -78,14 +78,22 @@ export default function CostumeSizesTable({ allUsers = [], profileData = {} }) {
         {/* T-Shirt Stats */}
         <CordelCard variant="default" useExtremeBorder={true} className="py-3 px-4">
           <span className="text-[10px] uppercase font-black text-cordel-wood block mb-2">
-            👕 Synthèse des Tailles Hauts / T-Shirts
+            {t('costumerie.syntheseDesTaillesHautsT')}
           </span>
           <div className="flex flex-wrap gap-2 text-xs">
             {Object.entries(tshirtsCounts).map(([size, count]) => (
               count > 0 && (
                 <div key={size} className="bg-amber-50/50 border border-encre-noire/10 px-2 py-1 rounded flex gap-1.5 items-center">
-                  <span className="font-extrabold text-cordel-wood">{size} :</span>
-                  <span className="font-black bg-white/70 px-1.5 py-0.5 rounded border border-encre-noire/5">{count}</span>
+                  {size === "Non renseigné" ? (
+                    <span className="font-extrabold text-cordel-wood">
+                      {t('costumerie.notSpecifiedCount', { count })}
+                    </span>
+                  ) : (
+                    <>
+                      <span className="font-extrabold text-cordel-wood">{size} :</span>
+                      <span className="font-black bg-white/70 px-1.5 py-0.5 rounded border border-encre-noire/5">{count}</span>
+                    </>
+                  )}
                 </div>
               )
             ))}
@@ -95,14 +103,22 @@ export default function CostumeSizesTable({ allUsers = [], profileData = {} }) {
         {/* Pants Stats */}
         <CordelCard variant="default" useExtremeBorder={true} className="py-3 px-4">
           <span className="text-[10px] uppercase font-black text-cordel-wood block mb-2">
-            👖 Synthèse des Tailles Bas / Pantalons
+            {t('costumerie.syntheseDesTaillesBasPantalons')}
           </span>
           <div className="flex flex-wrap gap-2 text-xs">
             {Object.entries(pantsCounts).map(([size, count]) => (
               count > 0 && (
                 <div key={size} className="bg-amber-50/50 border border-encre-noire/10 px-2 py-1 rounded flex gap-1.5 items-center">
-                  <span className="font-extrabold text-cordel-wood">{size} :</span>
-                  <span className="font-black bg-white/70 px-1.5 py-0.5 rounded border border-encre-noire/5">{count}</span>
+                  {size === "Non renseigné" ? (
+                    <span className="font-extrabold text-cordel-wood">
+                      {t('costumerie.notSpecifiedCount', { count })}
+                    </span>
+                  ) : (
+                    <>
+                      <span className="font-extrabold text-cordel-wood">{size} :</span>
+                      <span className="font-black bg-white/70 px-1.5 py-0.5 rounded border border-encre-noire/5">{count}</span>
+                    </>
+                  )}
                 </div>
               )
             ))}
@@ -116,7 +132,7 @@ export default function CostumeSizesTable({ allUsers = [], profileData = {} }) {
           type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Rechercher par nom, prénom ou instrument..."
+          placeholder={t('costumerie.rechercherParNomPrenomOu')}
           className="theme-input text-xs font-bold py-1.5 px-3 bg-cordel-bg-light flex-1"
         />
       </div>
@@ -127,17 +143,17 @@ export default function CostumeSizesTable({ allUsers = [], profileData = {} }) {
           <table className="w-full text-left text-xs font-semibold leading-normal border-collapse">
             <thead>
               <tr className="bg-cordel-bg border-b border-encre-noire text-[9px] uppercase font-black text-cordel-master-dark tracking-wider select-none">
-                <th className="py-2 px-2 md:py-2.5 md:px-4">Membre</th>
-                <th className="py-2 px-2 md:py-2.5 md:px-4">Pupitre</th>
-                <th className="py-2 px-2 md:py-2.5 md:px-4 text-center">Taille T-Shirt</th>
-                <th className="py-2 px-2 md:py-2.5 md:px-4 text-center">Taille Pantalon</th>
+                <th className="py-2 px-2 md:py-2.5 md:px-4">{t('costumerie.membre')}</th>
+                <th className="py-2 px-2 md:py-2.5 md:px-4">{t('costumerie.pupitre')}</th>
+                <th className="py-2 px-2 md:py-2.5 md:px-4 text-center">{t('costumerie.tailleTShirt')}</th>
+                <th className="py-2 px-2 md:py-2.5 md:px-4 text-center">{t('costumerie.taillePantalon')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-encre-noire/10">
               {filteredUsers.length === 0 ? (
                 <tr>
                   <td colSpan="4" className="py-8 text-center italic opacity-60">
-                    Aucun membre trouvé correspondant à la recherche.
+                    {t('costumerie.aucunMembreTrouveCorrespondantA')}
                   </td>
                 </tr>
               ) : (

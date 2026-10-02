@@ -1,12 +1,15 @@
 import React, { useState, useMemo } from 'react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../../firebase';
+import { useTranslation } from '../../LanguageContext';
 import CordelCard from '../../CordelCard';
 import CordelButton from '../../CordelButton';
 import { XiloCaixa } from '../../XiloIcons';
 import useConfirm from '../../../hooks/useConfirm';
 
-export default function AccessoriesKitsBlock({ formData = {}, handleChange, saving, t, groupId, supplies = [] }) {
+export default function AccessoriesKitsBlock({ formData = {}, handleChange, saving, t: propT, groupId, supplies = [] }) {
+  const { t: hookT } = useTranslation();
+  const t = propT || hookT;
   const confirm = useConfirm();
   const [newKitPupitre, setNewKitPupitre] = useState('');
   const [selectedSupplyIds, setSelectedSupplyIds] = useState([]);
@@ -68,7 +71,7 @@ export default function AccessoriesKitsBlock({ formData = {}, handleChange, savi
       await updateDoc(doc(db, 'associations', groupId), { logisticsKits: newKits });
     } catch (err) {
       console.error("Error auto-saving logisticsKits:", err);
-      alert("Erreur lors de la sauvegarde automatique du kit.");
+      alert(t('logistics.errorSaveKitAuto'));
     } finally {
       setIsSavingLocal(false);
     }
@@ -157,11 +160,11 @@ export default function AccessoriesKitsBlock({ formData = {}, handleChange, savi
   return (
     <CordelCard variant="default" useExtremeBorder={true} className="p-4 bg-cordel-bg text-left select-none">
       <h3 className="text-sm font-extrabold tracking-wider text-cordel-wood uppercase flex items-center mb-1">
-        <XiloCaixa size={16} className="inline mr-2" /> Kits d'Accessoires (Logistique)
-        {isSavingLocal && <span className="ml-2 text-[9px] font-bold text-amber-600 animate-pulse bg-amber-100 px-2 py-0.5 rounded">Sauvegarde auto...</span>}
+        <XiloCaixa size={16} className="inline mr-2" /> {t('logistics.accessoriesKitsTitle')}
+        {isSavingLocal && <span className="ml-2 text-[9px] font-bold text-amber-600 animate-pulse bg-amber-100 px-2 py-0.5 rounded">{t('logistics.autoSavingBadge')}</span>}
       </h3>
       <p className="text-[10px] text-cordel-master-dark opacity-80 mb-4 leading-relaxed font-semibold">
-        Associez des fournitures (ex: Housses, Sangles, Baguettes) à un type d'instrument (Pupitre). Lors de l'assignation du kit complet sur un instrument, le stock de chaque fourniture sera automatiquement décrémenté.
+        {t('logistics.accessoriesKitsExplanation')}
       </p>
 
       <div className="flex flex-col gap-3">
@@ -177,7 +180,7 @@ export default function AccessoriesKitsBlock({ formData = {}, handleChange, savi
                       onClick={() => handleEditKit(index)}
                       disabled={isUIBusy}
                       className="text-[10px] text-blue-700 hover:text-blue-900 font-bold cursor-pointer disabled:opacity-50 px-1"
-                      title="Éditer ce kit"
+                      title={t('logistics.editThisKitTitle')}
                     >
                       ✏️
                     </button>
@@ -186,7 +189,7 @@ export default function AccessoriesKitsBlock({ formData = {}, handleChange, savi
                       onClick={() => handleRemoveKit(index)}
                       disabled={isUIBusy}
                       className="text-[10px] text-red-600 hover:text-red-800 font-bold ml-1 cursor-pointer disabled:opacity-50 px-1"
-                      title="Retirer ce kit"
+                      title={t('logistics.removeThisKitTitle')}
                     >
                       🗑️
                     </button>
@@ -207,14 +210,14 @@ export default function AccessoriesKitsBlock({ formData = {}, handleChange, savi
           </div>
         ) : (
           <div className="text-center p-4 bg-cordel-bg-light/50 rounded border border-dashed border-cordel-master-dark/20 text-xs text-cordel-master-dark opacity-70 italic font-bold">
-            Aucun kit d'accessoires configuré.
+            {t('logistics.noAccessoriesKitConfigured')}
           </div>
         )}
 
         <div className={`mt-2 pt-3 border-t border-dashed flex flex-col items-start gap-3 transition-colors ${editingIndex !== null ? 'border-cordel-wood/30 bg-cordel-wood/5 p-2 rounded' : 'border-cordel-master-dark/20'}`}>
           <div className="w-full sm:w-1/2 flex flex-col gap-1">
             <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              Pupitre / Instrument Principal
+              {t('logistics.pupitreMainInstrumentField')}
             </label>
             <select
               value={newKitPupitre}
@@ -222,7 +225,7 @@ export default function AccessoriesKitsBlock({ formData = {}, handleChange, savi
               className="theme-input text-xs py-1.5 px-2 bg-white/80 cursor-pointer"
               disabled={isUIBusy}
             >
-              <option value="">-- Choisir un instrument --</option>
+              <option value="">{t('logistics.chooseAnInstrumentPrompt')}</option>
               {allPupitres.map(p => (
                 <option key={p} value={p}>{p}</option>
               ))}
@@ -231,7 +234,7 @@ export default function AccessoriesKitsBlock({ formData = {}, handleChange, savi
 
           <div className="w-full flex flex-col gap-2 mt-2">
             <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              Sélectionnez les fournitures du kit
+              {t('logistics.selectKitSuppliesField')}
             </label>
             
             <div className="flex flex-col sm:flex-row gap-2">
@@ -242,7 +245,7 @@ export default function AccessoriesKitsBlock({ formData = {}, handleChange, savi
                 disabled={isUIBusy}
               >
                 {allCategories.map(c => (
-                  <option key={c} value={c}>{c === 'Toutes' ? '-- Toutes Catégories --' : c}</option>
+                  <option key={c} value={c}>{c === 'Toutes' ? t('logistics.filterAllCategories') : c}</option>
                 ))}
               </select>
               
@@ -250,7 +253,7 @@ export default function AccessoriesKitsBlock({ formData = {}, handleChange, savi
                 type="text"
                 value={searchSupply}
                 onChange={(e) => setSearchSupply(e.target.value)}
-                placeholder="🔍 Rechercher..."
+                placeholder={t('logistics.searchSuppliesPlaceholder')}
                 className="theme-input text-xs py-1.5 px-2 bg-white/80 flex-[2]"
                 disabled={isUIBusy}
               />
@@ -258,7 +261,7 @@ export default function AccessoriesKitsBlock({ formData = {}, handleChange, savi
 
             <div className="flex flex-wrap gap-2 p-3 mt-1 border-2 border-dashed border-[var(--cordel-border)] rounded-[4px_8px_3px_6px] bg-[var(--cordel-master-bg)] max-h-48 overflow-y-auto">
               {filteredSupplies.length === 0 ? (
-                <span className="text-[10px] italic text-cordel-master-dark">Aucune fourniture trouvée.</span>
+                <span className="text-[10px] italic text-cordel-master-dark">{t('logistics.noSupplyFound')}</span>
               ) : (
                 filteredSupplies.map(sup => {
                   const isSelected = selectedSupplyIds.includes(sup.id);
@@ -279,7 +282,7 @@ export default function AccessoriesKitsBlock({ formData = {}, handleChange, savi
                         className="hidden"
                       />
                       <span>{sup.nom}</span>
-                      <span className="opacity-70 text-[8px]">({sup.quantiteStock} en stock)</span>
+                      <span className="opacity-70 text-[8px]">({sup.quantiteStock} {t('logistics.inStockSuffix')}</span>
                     </label>
                   );
                 })
@@ -295,7 +298,7 @@ export default function AccessoriesKitsBlock({ formData = {}, handleChange, savi
                 disabled={isUIBusy}
                 className="text-[10px] font-black uppercase py-1.5 px-3 h-[30px] text-cordel-master-dark hover:text-encre-noire transition-colors cursor-pointer"
               >
-                Annuler
+                {t('logistics.btnCancel')}
               </button>
             )}
             <CordelButton
@@ -305,7 +308,7 @@ export default function AccessoriesKitsBlock({ formData = {}, handleChange, savi
               onClick={handleAddOrEditKit}
               className="text-[10px] font-black uppercase py-1.5 px-4 h-[30px]"
             >
-              {editingIndex !== null ? "✓ Enregistrer modification" : "+ Ajouter Kit"}
+              {editingIndex !== null ? "✓ Enregistrer modification" : t('logistics.btnAddKit')}
             </CordelButton>
           </div>
         </div>

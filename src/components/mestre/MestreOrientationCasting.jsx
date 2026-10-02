@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { collection, query, where, onSnapshot, doc, updateDoc, addDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
+import { useTranslation } from '../LanguageContext';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import XiloAvatar from '../XiloAvatar';
@@ -94,6 +95,7 @@ const sanitizeMemberDanseWishes = (memberData, memberId) => {
  * Permet la validation à 1-clic des vœux d'instruments et la gestion des pupitres.
  */
 export default function MestreOrientationCasting({ user, profileData, _onNavigateToMember }) {
+  const { t } = useTranslation();
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [instrumentsDisponibles, setInstrumentsDisponibles] = useState(DEFAULT_INSTRUMENTS);
@@ -539,7 +541,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
       setMembers(prev => prev.map(m => m.id === memberId ? { ...m, ...updatePayload } : m));
     } catch (err) {
       console.error(err);
-      alert("Erreur de sauvegarde");
+      alert(t('mestre.casting.errSave'));
     } finally {
       setSaving(false);
     }
@@ -553,7 +555,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
       setMembers(prev => prev.map(m => m.id === memberId ? { ...m, niveauMusique: newLevel, niveau: newLevel } : m));
     } catch (err) {
       console.error(err);
-      alert("Erreur de sauvegarde");
+      alert(t('mestre.casting.errSave'));
     } finally {
       setSaving(false);
     }
@@ -586,7 +588,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
       } : m));
     } catch (err) {
       console.error(err);
-      alert("Erreur de sauvegarde");
+      alert(t('mestre.casting.errSave'));
     } finally {
       setSaving(false);
     }
@@ -606,7 +608,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
       } : m));
     } catch (err) {
       console.error(err);
-      alert("Erreur de sauvegarde");
+      alert(t('mestre.casting.errSave'));
     } finally {
       setSaving(false);
     }
@@ -629,7 +631,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
       setMembers(prev => prev.map(m => m.id === memberId ? { ...m, ...updatePayload } : m));
     } catch (err) {
       console.error(err);
-      alert("Erreur de sauvegarde");
+      alert(t('mestre.casting.errSave'));
     } finally {
       setSaving(false);
     }
@@ -649,7 +651,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
       } : m));
     } catch (err) {
       console.error(err);
-      alert("Erreur de sauvegarde");
+      alert(t('mestre.casting.errSave'));
     } finally {
       setSaving(false);
     }
@@ -678,7 +680,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
       });
     } catch (err) {
       console.error(err);
-      alert("Erreur de sauvegarde");
+      alert(t('mestre.casting.errSave'));
     } finally {
       setSaving(false);
     }
@@ -715,7 +717,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
       await updateDoc(userRef, { competencesAlfaia: newList });
     } catch (err) {
       console.error(err);
-      alert("Erreur de sauvegarde de la voix d'Alfaia");
+      alert(t('mestre.casting.errSaveAlfaiaVoice'));
     } finally {
       setSaving(false);
     }
@@ -744,7 +746,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
       await updateDoc(userRef, payload);
     } catch (err) {
       console.error(err);
-      alert("Erreur de sauvegarde");
+      alert(t('mestre.casting.errSave'));
     } finally {
       setSaving(false);
     }
@@ -765,7 +767,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
       setMembers(prev => prev.map(m => m.id === memberId ? { ...m, ...payload } : m));
     } catch (err) {
       console.error(err);
-      alert("Erreur de sauvegarde");
+      alert(t('mestre.casting.errSave'));
     } finally {
       setSaving(false);
     }
@@ -783,10 +785,10 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
           read: false,
           groupId: groupId || member.groupId || ''
         });
-        alert("Message envoyé !");
+        alert(t('mestre.casting.msgSentSuccess'));
       } catch (err) {
         console.error(err);
-        alert("Erreur lors de l'envoi.");
+        alert(t('mestre.casting.errSendingMsg'));
       }
     }
   };
@@ -816,7 +818,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
       setMembers(prev => prev.map(m => m.id === member.id ? { ...m, ...updatePayload } : m));
     } catch (err) {
       console.error("MestreOrientationCasting - Erreur de validation rapide du vœu :", err);
-      alert("Erreur lors de la validation de l'orientation.");
+      alert(t('mestre.casting.errValidatingOrientation'));
     } finally {
       setSaving(false);
     }
@@ -826,7 +828,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
   const handleExportCSV = () => {
     const listToExport = filteredMembers.length > 0 ? filteredMembers : activeMembers;
     if (listToExport.length === 0) {
-      alert("Aucun membre à exporter.");
+      alert(t('mestre.casting.noMembersToExport'));
       return;
     }
 
@@ -924,7 +926,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
     return (
       <div className="flex flex-col gap-1 mt-1 bg-black/5 dark:bg-white/5 p-1.5 rounded border border-dashed border-cordel-master-dark/15 w-max">
         <span className="text-[8px] font-black uppercase text-cordel-master-dark opacity-80">
-          Voix Alfaia :
+          {t('mestre.casting.voiceAlfaiaColon')}
         </span>
         <div className="flex gap-2">
           {['marcante', 'meião', 'repique'].map(voiceKey => {
@@ -963,7 +965,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
       setMembers(prev => prev.map(m => m.id === member.id ? { ...m, ...payload } : m));
     } catch (err) {
       console.error("MestreOrientationCasting - Erreur attribution Caixas :", err);
-      alert("Erreur de sauvegarde de l'attribution Caixas");
+      alert(t('mestre.casting.errSaveCaixasAttribution'));
     } finally {
       setSaving(false);
     }
@@ -977,7 +979,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
     return (
       <div className="flex flex-col gap-1 mt-1 bg-black/5 dark:bg-white/5 p-1.5 rounded border border-dashed border-cordel-master-dark/15 w-max">
         <span className="text-[8px] font-black uppercase text-cordel-master-dark opacity-80">
-          Attribution Caixas :
+          {t('mestre.casting.attributionCaixasColon')}
         </span>
         <div className="flex gap-2.5">
           {['Caixa', 'Tarol'].map(instChoice => {
@@ -1009,7 +1011,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
       <div className="flex flex-col items-center justify-center p-8 gap-3">
         <div className="animate-spin text-2xl">⏳</div>
         <p className="text-xs font-bold text-cordel-wood uppercase tracking-wider">
-          Chargement du Tableau d'Orientation & Casting...
+          {t('mestre.casting.loadingCastingTable')}
         </p>
       </div>
     );
@@ -1026,10 +1028,10 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
         <div>
           <h2 className="panel-title text-xl font-black uppercase tracking-wider text-cordel-wood flex items-center gap-2">
             <span>🎭</span>
-            <span>Orientation, Casting & Pupitres</span>
+            <span>{t('mestre.casting.orientationCastingTitle')}</span>
           </h2>
           <p className="text-xs font-semibold text-cordel-master-dark/80 mt-0.5">
-            Tableau de bord de répartition des pupitres et validation directe des vœux par la Mestria.
+            {t('mestre.casting.orientationCastingSubtitle')}
           </p>
         </div>
 
@@ -1037,12 +1039,12 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
         <div className="flex items-center gap-2 flex-wrap">
           {unassignedCount > 0 && (
             <span className="theme-stamp-badge theme-stamp-badge-wood text-[9px]">
-              ⚠️ {unassignedCount} Non affecté{unassignedCount > 1 ? 's' : ''}
+              ⚠️ {unassignedCount} {t('mestre.casting.unassignedBadge')}{unassignedCount > 1 ? 's' : ''}
             </span>
           )}
           {wishCount > 0 && (
             <span className="theme-stamp-badge theme-stamp-badge-dark text-[9px]">
-              ✨ {wishCount} Vœux formulés
+              ✨ {wishCount} {t('mestre.casting.wishesFormulatedBadge')}
             </span>
           )}
         </div>
@@ -1051,7 +1053,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
       {/* 1. Jauges des Quotas (Bandeau visuel interactif des pupitres) */}
       <CordelCard data-tour="mestre-orientation-gauges" variant="default" useExtremeBorder={false} className="flex flex-col gap-3">
         <h3 className="font-bold text-xs uppercase tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1 flex items-center justify-between">
-          <span>📊 Quotas & Effectifs par Pupitre (Cliquez pour filtrer)</span>
+          <span>{t('mestre.casting.quotasEffectifsHeading')}</span>
           <span className="text-[9px] text-cordel-master-dark/70 font-semibold normal-case">
             {selectedPupitreFilter ? 'Filtre actif • Cliquez à nouveau pour réinitialiser' : 'Calculé en temps réel sur les membres actifs'}
           </span>
@@ -1095,12 +1097,12 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                     </div>
                     {pupitre.isGroup && (
                       <span className="theme-stamp-badge theme-stamp-badge-wood text-[7.5px] px-1 py-0.2 shrink-0">
-                        🔗 Lié
+                        {t('mestre.casting.linkedBadge')}
                       </span>
                     )}
                     {isSelected && (
                       <span className="text-[7.5px] bg-cordel-wood text-white px-1 rounded font-black">
-                        Actif
+                        {t('mestre.casting.activeBadge')}
                       </span>
                     )}
                   </div>
@@ -1127,7 +1129,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
 
                 {isLow && (
                   <span className="text-[7.5px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 mt-1 block">
-                    ⚠️ Effectif vide
+                    {t('mestre.casting.emptyRosterBadge')}
                   </span>
                 )}
               </div>
@@ -1141,7 +1143,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-dashed border-cordel-master-dark/15 pb-2">
           <div className="flex items-center gap-2 flex-wrap">
             <h3 className="font-bold text-xs uppercase tracking-wider text-cordel-wood">
-              📋 Tableau d'Affectation
+              {t('mestre.casting.assignmentTableHeading')}
             </h3>
             {/* Filtre Tous / Vœux en attente / Section Danse */}
             <div className="flex items-center gap-1.5 text-xs flex-wrap">
@@ -1153,7 +1155,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                 }}
                 className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${!showPendingOnly && !selectedPupitreFilter ? 'bg-cordel-wood text-white shadow-xs' : 'bg-white/60 dark:bg-black/20 text-cordel-master-dark border border-cordel-master-dark/20'}`}
               >
-                Tous ({activeMembers.length})
+                {t('mestre.casting.filterAllCount')}{activeMembers.length})
               </button>
               <button
                 type="button"
@@ -1163,7 +1165,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                 }}
                 className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 ${showPendingOnly ? 'bg-amber-600 text-white shadow-xs' : 'bg-amber-100 text-amber-900 border border-amber-300'}`}
               >
-                <span>⏳ Vœux en attente</span>
+                <span>{t('mestre.casting.filterPendingWishes')}</span>
                 {pendingMembersCount > 0 && (
                   <span className="bg-red-500 text-white text-[8px] px-1.5 py-0.2 rounded-full font-black">
                     {pendingMembersCount}
@@ -1178,7 +1180,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                 }}
                 className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 ${selectedPupitreFilter === 'single-Danse' ? 'bg-[var(--color-cordel-vert,#2d6a4f)] text-white shadow-xs' : 'bg-emerald-50 text-emerald-900 border border-emerald-300'}`}
               >
-                <span>💃 Section Danse</span>
+                <span>{t('mestre.casting.filterDanceSection')}</span>
                 <span className="bg-emerald-700 text-white text-[8px] px-1.5 py-0.2 rounded-full font-black">
                   {dancersCount}
                 </span>
@@ -1191,7 +1193,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
             <div className="w-full sm:w-52">
               <input
                 type="text"
-                placeholder="🔍 Rechercher un membre ou vœu..."
+                placeholder={t('mestre.casting.searchMemberPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="theme-input w-full text-xs py-1 px-2.5"
@@ -1203,9 +1205,9 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
               variant="wood"
               onClick={handleExportCSV}
               className="text-[10px] py-1 px-2.5 shrink-0 flex items-center gap-1 font-bold shadow-xs cursor-pointer"
-              title="Exporter les affectations et vœux au format CSV (Excel)"
+              title={t('mestre.casting.exportCsvTitle')}
             >
-              <span>📥 Exporter (CSV)</span>
+              <span>{t('mestre.casting.exportCsvBtn')}</span>
             </CordelButton>
           </div>
         </div>
@@ -1215,17 +1217,17 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
           <table className="w-full text-left text-xs border-collapse min-w-[650px]">
             <thead>
               <tr className="border-b-2 border-dashed border-cordel-master-dark/20 text-[9.5px] uppercase tracking-wider font-extrabold text-cordel-wood">
-                <th className="py-2 px-2">Membre</th>
-                <th className="py-2 px-2">Inst. Maîtrisé (Historique)</th>
-                <th data-tour="mestre-orientation-assignment" className="py-2 px-2">Orientation Saison & Vœux</th>
-                <th className="py-2 px-2 text-right">Danse & Niveau</th>
+                <th className="py-2 px-2">{t('mestre.casting.thMember')}</th>
+                <th className="py-2 px-2">{t('mestre.casting.thMasteredInst')}</th>
+                <th data-tour="mestre-orientation-assignment" className="py-2 px-2">{t('mestre.casting.thSeasonOrientation')}</th>
+                <th className="py-2 px-2 text-right">{t('mestre.casting.thDanceAndLevel')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-dashed divide-cordel-master-dark/15">
               {filteredMembers.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="py-6 text-center text-xs font-bold text-cordel-master-dark/60 italic">
-                    Aucun membre ne correspond aux critères de recherche.
+                    {t('mestre.casting.noMembersFoundSearch')}
                   </td>
                 </tr>
               ) : (
@@ -1265,7 +1267,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                                 className="text-[10px] font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 px-1 py-0.5 rounded flex items-center gap-0.5 transition-colors cursor-pointer ml-1"
                                 title={`Envoyer un message privé à ${m.prenom}`}
                               >
-                                ✉️ MP
+                                {t('mestre.casting.privateMsgBtn')}
                               </button>
                             </span>
                             {m.surnom && (
@@ -1281,7 +1283,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                       <td className="py-2.5 px-2">
                         <div className="flex flex-col gap-1.5 text-left">
                           <div className="flex flex-col gap-1">
-                            <span className="text-[9px] font-black uppercase text-cordel-master-dark opacity-60">Inst. Principal</span>
+                            <span className="text-[9px] font-black uppercase text-cordel-master-dark opacity-60">{t('mestre.casting.primaryInstrumentLabel')}</span>
                             <div className="flex items-center gap-1">
                               {(() => {
                                 const resolvedMain = resolvePupitreForInstrument(m.instrumentPrincipal || m.instrument);
@@ -1292,7 +1294,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                                     disabled={saving}
                                     className="theme-input text-[10px] py-1 bg-white min-w-[130px] font-bold"
                                   >
-                                    <option value="">-- Aucun --</option>
+                                    <option value="">{t('mestre.casting.optionNone')}</option>
                                     {resolvedMain && !pupitresList.includes(resolvedMain) && (
                                       <option value={resolvedMain}>{resolvedMain}</option>
                                     )}
@@ -1310,7 +1312,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                                   disabled={saving}
                                   className="theme-input text-[10px] py-1 bg-white max-w-[80px]"
                                 >
-                                  <option value="aucun">- Niv. -</option>
+                                  <option value="aucun">{t('mestre.casting.optionLevelShort')}</option>
                                   {customCategories.map(cat => {
                                     const catName = getCategoryName(cat);
                                     return (
@@ -1332,7 +1334,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                                   className="w-2.5 h-2.5 accent-cordel-wood cursor-pointer"
                                 />
                                 <span className="text-[9px] font-semibold text-cordel-master-dark/70 uppercase">
-                                  Dispo en secours
+                                  {t('mestre.casting.reliefAvailableBadge')}
                                 </span>
                               </label>
                             )}
@@ -1345,7 +1347,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                           </div>
 
                           <div className="flex flex-col gap-1 pt-1 border-t border-dashed border-cordel-master-dark/10">
-                            <span className="text-[9px] font-black uppercase text-cordel-master-dark opacity-60">2ème Inst. Historique</span>
+                            <span className="text-[9px] font-black uppercase text-cordel-master-dark opacity-60">{t('mestre.casting.secondInstrumentHistoryLabel')}</span>
                             <div className="flex items-center gap-1">
                               {(() => {
                                 const resolvedSec = resolvePupitreForInstrument(m.instrumentSecondaire);
@@ -1356,7 +1358,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                                     disabled={saving}
                                     className="theme-input text-[10px] py-1 bg-white min-w-[130px]"
                                   >
-                                    <option value="">-- Aucun --</option>
+                                    <option value="">{t('mestre.casting.optionNone')}</option>
                                     {resolvedSec && !pupitresList.includes(resolvedSec) && (
                                       <option value={resolvedSec}>{resolvedSec}</option>
                                     )}
@@ -1373,7 +1375,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                                   disabled={saving}
                                   className="theme-input text-[10px] py-1 bg-white max-w-[80px]"
                                 >
-                                  <option value="aucun">- Niv. -</option>
+                                  <option value="aucun">{t('mestre.casting.optionLevelShort')}</option>
                                   {customCategories.map(cat => {
                                     const catName = getCategoryName(cat);
                                     return (
@@ -1395,7 +1397,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                                   className="w-2.5 h-2.5 accent-cordel-wood cursor-pointer"
                                 />
                                 <span className="text-[9px] font-semibold text-cordel-master-dark/70 uppercase">
-                                  Dispo en secours
+                                  {t('mestre.casting.reliefAvailableBadge')}
                                 </span>
                               </label>
                             )}
@@ -1415,7 +1417,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                           {hasWishes || m.souhaiteChangerInstrument ? (
                             <div className="flex flex-col gap-1">
                               <span className="text-[9px] font-black uppercase text-cordel-master-dark opacity-60">
-                                Vœux actuels :
+                                {t('mestre.casting.currentWishesColon')}
                               </span>
                               <div className="flex flex-wrap gap-1.5">
                                 {wishesList.map((wish, idx) => (
@@ -1434,7 +1436,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                                 ))}
                                 {wishesList.length === 0 && m.souhaiteChangerInstrument && (
                                   <span className="text-[10px] italic text-cordel-master-dark/60 font-semibold">
-                                    Souhaite changer
+                                    {t('mestre.casting.wishesToChangeBadge')}
                                   </span>
                                 )}
                               </div>
@@ -1451,7 +1453,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                                     className="w-3 h-3 accent-cordel-wood cursor-pointer"
                                   />
                                   <span className="text-[10px] font-bold text-cordel-master-dark/80">
-                                    🔄 Poursuite ({mainInst})
+                                    {t('mestre.casting.continuationPrefix')}{mainInst})
                                   </span>
                                 </label>
                                 {/* Voix Alfaia si la poursuite concerne l'Alfaia */}
@@ -1465,7 +1467,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                           {!(m.poursuiteInstrumentPrincipal !== false && mainInst && mainInst !== 'En attente' && mainInst.toLowerCase() !== 'danse' && !hasWishes && !m.souhaiteChangerInstrument) && (
                             <div className="flex flex-col gap-1 pt-1 border-t border-dashed border-cordel-master-dark/20 w-full max-w-[180px]">
                               <span className="text-[9px] font-black uppercase text-cordel-master-dark opacity-60">
-                                Apprentissage Saison :
+                                {t('mestre.casting.seasonLearningColon')}
                               </span>
                               {(() => {
                                 const resolvedSaison = resolvePupitreForInstrument(m.instrumentSaison);
@@ -1476,7 +1478,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                                     disabled={saving}
                                     className="theme-input text-[10px] py-1 bg-white w-full"
                                   >
-                                    <option value="">-- Aucun --</option>
+                                    <option value="">{t('mestre.casting.optionNone')}</option>
                                     {resolvedSaison && !pupitresList.includes(resolvedSaison) && (
                                       <option value={resolvedSaison}>{resolvedSaison}</option>
                                     )}
@@ -1494,7 +1496,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                                   disabled={saving}
                                   className="theme-input text-[10px] py-0.5 bg-white w-full text-cordel-master-dark/80"
                                 >
-                                  <option value="aucun">-- Niveau --</option>
+                                  <option value="aucun">{t('mestre.casting.optionLevelFull')}</option>
                                   {customCategories.map(cat => {
                                     const catName = getCategoryName(cat);
                                     return (
@@ -1515,7 +1517,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                                     className="w-2.5 h-2.5 accent-cordel-wood cursor-pointer"
                                   />
                                   <span className="text-[9px] font-semibold text-cordel-master-dark/70 uppercase">
-                                    Dispo en secours
+                                    {t('mestre.casting.reliefAvailableBadge')}
                                   </span>
                                 </label>
                               )}
@@ -1538,8 +1540,8 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                           disabled={saving}
                           className={`theme-input text-[10px] py-1 bg-white font-bold ${(m.pratiqueDanse || (m.niveauDanse && m.niveauDanse !== 'aucun')) ? 'text-amber-900 border-amber-400 bg-amber-50/50' : 'text-cordel-master-dark/60 border-cordel-master-dark/20'}`}
                         >
-                          <option value="aucun">Non inscrit(e)</option>
-                          <option value="debutant">💃 Débutant</option>
+                          <option value="aucun">{t('mestre.casting.danceNotEnrolled')}</option>
+                          <option value="debutant">{t('mestre.casting.danceBeginner')}</option>
                           {customCategories
                             .filter(cat => {
                               const name = getCategoryName(cat);

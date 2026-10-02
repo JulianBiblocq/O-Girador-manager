@@ -5,6 +5,7 @@ import { XiloClose, XiloChisel } from '../XiloIcons';
 import { useInventoryProjects } from '../../hooks/useInventoryProjects';
 import PartAssignmentBadge from './PartAssignmentBadge';
 import { getStepSignal, getStepProgressRatio } from '../../utils/workshopProjectionUtils';
+import { useTranslation } from '../LanguageContext';
 
 const ETAT_OPTIONS = ['Neuf', 'Bon', 'Usé', 'À réparer', 'Au rebut'];
 const STATUS_OPTIONS = ['En stock', 'Assemblé'];
@@ -27,6 +28,8 @@ export default function InventoryPartsView({
   saving,
   t: _t
 }) {
+  const { t: hookT } = useTranslation();
+  const t = typeof _t === 'function' ? _t : hookT;
   const [searchQuery, setSearchQuery] = useState('');
   const [isCustomType, setIsCustomType] = useState(false);
   const [assignmentFilter, setAssignmentFilter] = useState('all');
@@ -165,17 +168,17 @@ export default function InventoryPartsView({
           </button>
 
           <h3 className="panel-title text-sm font-bold text-cordel-wood mb-4">
-            {editingPartId ? "Modifier une pièce" : "Ajouter une pièce détachée"}
+            {editingPartId ? (t('lutherie.titleEditPart') || "Modifier une pièce") : (t('lutherie.btnAddPart') || "Ajouter une pièce détachée")}
           </h3>
 
           {editingPartId && (
             <div className="mb-4">
               <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark block mb-1">
-                Affectation actuelle
+                {t('lutherie.currentAssignmentLabel')}
               </label>
               <div className="bg-stone-50 border border-stone-200 p-2 rounded flex items-center justify-between">
                 <PartAssignmentBadge assignment={assignmentsMap[editingPartId]} />
-                <span className="text-[9px] text-stone-500 italic">Information en lecture seule</span>
+                <span className="text-[9px] text-stone-500 italic">{t('lutherie.readOnlyInfoNotice')}</span>
               </div>
             </div>
           )}
@@ -184,10 +187,10 @@ export default function InventoryPartsView({
             <div className="mb-4 bg-amber-50 border border-amber-300 p-2.5 rounded flex items-center justify-between gap-3 text-left">
               <div className="flex flex-col gap-0.5">
                 <span className="text-[10px] font-black text-amber-900 uppercase">
-                  ⚡ Lot de {partFormData.quantite} pièces groupées
+                  {t('lutherie.batchOfCountPartsGrouped', { count: partFormData.quantite })}
                 </span>
                 <span className="text-[9px] text-stone-600">
-                  Cette référence compte {partFormData.quantite} unités groupées. Vous pouvez la scinder pour créer {partFormData.quantite} pièces distinctes et les affecter chacune à un projet différent.
+                  {t('lutherie.batchReferenceExplanationPrefix')} {partFormData.quantite} {t('lutherie.batchUnitsGroupedMiddle')} {partFormData.quantite} {t('lutherie.batchDistinctPartsSuffix')}
                 </span>
               </div>
               <button
@@ -202,7 +205,7 @@ export default function InventoryPartsView({
                 }}
                 className="text-[9px] font-black uppercase bg-amber-600 hover:bg-amber-700 text-white px-2.5 py-1.5 rounded shadow-xs cursor-pointer shrink-0 transition-all active:scale-95"
               >
-                ⚡ Scinder en {partFormData.quantite} pièces
+                {t('lutherie.btnSplitInCount', { count: partFormData.quantite })}
               </button>
             </div>
           )}
@@ -210,7 +213,7 @@ export default function InventoryPartsView({
           <form onSubmit={handleSavePart} className="flex flex-col gap-3.5">
             <div className="flex flex-col gap-1">
               <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                Nom / Référence de la pièce
+                {t('lutherie.partNameRefLabel')}
               </label>
               <input
                 type="text"
@@ -218,7 +221,7 @@ export default function InventoryPartsView({
                 value={partFormData.nom}
                 onChange={handlePartInputChange}
                 required
-                placeholder="Ex: Calebasse Agbê ou Fût Alfaia"
+                placeholder={t('lutherie.partNamePlaceholder')}
                 disabled={saving}
                 className="theme-input text-xs font-bold py-1.5"
               />
@@ -227,7 +230,7 @@ export default function InventoryPartsView({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="flex flex-col gap-1">
                 <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  Modèle d'instrument (Ref)
+                  {t('lutherie.instrumentModelRefLabel')}
                 </label>
                 <select
                   name="modelId"
@@ -236,7 +239,7 @@ export default function InventoryPartsView({
                   disabled={saving}
                   className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light cursor-pointer"
                 >
-                  <option value="">-- Indépendant / Aucun modèle --</option>
+                  <option value="">{t('lutherie.optIndependentNoModel')}</option>
                   {instrumentModels.map(m => (
                     <option key={m.id} value={m.id}>
                       {m.nom} {m.type ? `(${m.type})` : ''}
@@ -250,7 +253,7 @@ export default function InventoryPartsView({
                 {hasModelParts && !isCustomType ? (
                   <>
                     <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                      Pièce du modèle ({selectedModel?.nom})
+                      {t('lutherie.modelPartLabelWithNom', { nom: selectedModel?.nom })}
                     </label>
                     <select
                       name="partId"
@@ -259,20 +262,20 @@ export default function InventoryPartsView({
                       disabled={saving}
                       className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light cursor-pointer"
                     >
-                      <option value="">-- Sélectionnez une pièce du modèle --</option>
+                      <option value="">{t('lutherie.optSelectModelPartPrompt')}</option>
                       {modelParts.map(p => (
                         <option key={p.id} value={p.id}>
                           {p.nom} {p.chapitres?.length > 0 ? `(${p.chapitres.length} étapes)` : ''}
                         </option>
                       ))}
-                      <option value="__autre__">+ Autre / Saisie personnalisée...</option>
+                      <option value="__autre__">{t('lutherie.optCustomEntry')}</option>
                     </select>
                   </>
                 ) : (
                   <>
                     <div className="flex justify-between items-center">
                       <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                        Catégorie / Type de pièce {isCustomType && hasModelParts ? '(Personnalisée)' : ''}
+                        {t('lutherie.partCategoryTypeLabel')} {isCustomType && hasModelParts ? '(Personnalisée)' : ''}
                       </label>
                       {hasModelParts && isCustomType && (
                         <button
@@ -287,7 +290,7 @@ export default function InventoryPartsView({
                           }}
                           className="text-[8px] text-[var(--color-cordel-wood)] hover:underline font-bold cursor-pointer"
                         >
-                          ↺ Choisir dans le modèle
+                          {t('lutherie.btnPickFromModel')}
                         </button>
                       )}
                     </div>
@@ -308,7 +311,7 @@ export default function InventoryPartsView({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="flex flex-col gap-1">
                 <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  État
+                  {t('lutherie.stateLabel')}
                 </label>
                 <select
                   name="etat"
@@ -324,11 +327,11 @@ export default function InventoryPartsView({
               <div className="flex flex-col gap-1">
                 <div className="flex justify-between items-center">
                   <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                    Quantité {editingPartId ? "unitaire" : "à créer (pièces indépendantes)"}
+                    {t('lutherie.quantityLabel')} {editingPartId ? "unitaire" : "à créer (pièces indépendantes)"}
                   </label>
                   {!editingPartId && (parseInt(partFormData.quantite, 10) || 1) > 1 && (
                     <span className="text-[8px] font-black text-[var(--color-cordel-vert)]">
-                      {partFormData.quantite} pièces distinctes (#1 à #{partFormData.quantite})
+                      {partFormData.quantite} {t('lutherie.distinctPartsNumberedNotice', { count: partFormData.quantite })}
                     </span>
                   )}
                 </div>
@@ -344,7 +347,7 @@ export default function InventoryPartsView({
                 />
                 {!editingPartId && (
                   <span className="text-[8px] text-stone-500 italic">
-                    Chaque pièce sera créée de façon autonome et numérotée pour être affectée individuellement à un projet.
+                    {t('lutherie.partsAutonomyNotice')}
                   </span>
                 )}
               </div>
@@ -355,13 +358,13 @@ export default function InventoryPartsView({
               <div className="flex flex-col gap-1">
                 <div className="flex justify-between items-center">
                   <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                    Étape de fabrication {currentPartSteps.length > 0 ? `(${currentPartSteps.length} étapes définies)` : ''}
+                    {t('lutherie.manufacturingStepLabel')} {currentPartSteps.length > 0 ? `(${currentPartSteps.length} étapes définies)` : ''}
                   </label>
                   {currentPartSteps.length > 0 && (
                     <span className="text-[8px] font-bold text-cordel-wood">
                       {partFormData.statutEtape === 'terminee'
                         ? '✅ Terminée' 
-                        : `Étape ${(parseInt(partFormData.currentStepIndex, 10) || 0) + 1} / ${currentPartSteps.length} • ${getStepProgressRatio(currentPartSteps.length, partFormData.currentStepIndex, partFormData.statutEtape)}`}
+                        : `${t('lutherie.stepLabelWithIndex', { step: (parseInt(partFormData.currentStepIndex, 10) || 0) + 1 })} / ${currentPartSteps.length} • ${getStepProgressRatio(currentPartSteps.length, partFormData.currentStepIndex, partFormData.statutEtape)}`}
                     </span>
                   )}
                 </div>
@@ -377,11 +380,11 @@ export default function InventoryPartsView({
                     >
                       {currentPartSteps.map((step, idx) => (
                         <option key={step.id || idx} value={idx}>
-                          Étape {idx + 1} : {step.titre || `Étape ${idx + 1}`}
+                          {t('lutherie.optStepNumber', { num: idx + 1, nom: step.titre || `Étape ${idx + 1}` })}
                         </option>
                       ))}
                       <option value={currentPartSteps.length}>
-                        ✅ Prête / Terminée (Toutes étapes validées)
+                        {t('lutherie.optReadyAllStepsValidated')}
                       </option>
                     </select>
 
@@ -389,7 +392,7 @@ export default function InventoryPartsView({
                     {currentPartSteps[partFormData.currentStepIndex] && (
                       <div className="bg-amber-50/80 border border-amber-200 p-2 rounded text-left mt-0.5 flex flex-col gap-1">
                         <span className="text-[9px] font-black text-cordel-wood flex items-center gap-1">
-                          <span>📌</span> Étape {(parseInt(partFormData.currentStepIndex, 10) || 0) + 1} : {currentPartSteps[partFormData.currentStepIndex].titre || 'Consigne'}
+                          <span>📌</span> {t('lutherie.stepLabelWithIndex', { step: (parseInt(partFormData.currentStepIndex, 10) || 0) + 1 })} : {currentPartSteps[partFormData.currentStepIndex].titre || 'Consigne'}
                         </span>
                         {currentPartSteps[partFormData.currentStepIndex].texte && (
                           <p className="text-[9px] text-stone-700 leading-snug line-clamp-2 whitespace-pre-line">
@@ -417,7 +420,7 @@ export default function InventoryPartsView({
                     value={partFormData.currentStepIndex || 0}
                     onChange={handlePartInputChange}
                     disabled={saving}
-                    placeholder="Index d'usinage (ex: 0)"
+                    placeholder={t('lutherie.machiningIndexPlaceholder')}
                     className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
                   />
                 )}
@@ -425,7 +428,7 @@ export default function InventoryPartsView({
 
               <div className="flex flex-col gap-1">
                 <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  Statut
+                  {t('lutherie.statusLabel')}
                 </label>
                 <select
                   name="status"
@@ -441,14 +444,14 @@ export default function InventoryPartsView({
 
             <div className="flex flex-col gap-1">
               <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                Notes Atelier
+                {t('lutherie.workshopNotesLabel')}
               </label>
               <textarea
                 name="notesAtelier"
                 value={partFormData.notesAtelier || ''}
                 onChange={handlePartInputChange}
                 disabled={saving}
-                placeholder="Particularités, cotes, essence de bois..."
+                placeholder={t('lutherie.workshopNotesPlaceholder')}
                 className="theme-input text-xs py-1.5 bg-cordel-bg-light min-h-[50px]"
               />
             </div>
@@ -461,7 +464,7 @@ export default function InventoryPartsView({
                   disabled={saving}
                   className="text-[9px] font-black uppercase tracking-wider bg-cordel-wood text-cordel-bg-light px-3 py-1.5 border border-encre-noire rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-110 cursor-pointer disabled:opacity-50"
                 >
-                  🗑️ Retirer
+                  {t('lutherie.btnRemovePart')}
                 </button>
               ) : <div />}
 
@@ -473,7 +476,7 @@ export default function InventoryPartsView({
                   onClick={() => setIsPartFormOpen(false)}
                   className="text-xs px-3 py-1.5"
                 >
-                  Annuler
+                  {t('common.cancel') || "Annuler"}
                 </CordelButton>
                 <CordelButton
                   type="submit"
@@ -482,7 +485,7 @@ export default function InventoryPartsView({
                   disabled={saving || !partFormData.nom.trim()}
                   className="text-xs px-4 py-1.5 font-bold"
                 >
-                  {saving ? "..." : "Enregistrer"}
+                  {saving ? "..." : (t('common.save') || "Enregistrer")}
                 </CordelButton>
               </div>
             </div>
@@ -494,7 +497,7 @@ export default function InventoryPartsView({
             <div className="flex items-center gap-3">
               <input
                 type="text"
-                placeholder="Rechercher une pièce..."
+                placeholder={t('lutherie.searchPartPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="theme-input text-xs py-1.5 px-3 w-64 border-none shadow-none bg-transparent"
@@ -505,10 +508,10 @@ export default function InventoryPartsView({
                 onChange={(e) => setAssignmentFilter(e.target.value)}
                 className="theme-input text-xs py-1.5 px-2 bg-white border border-stone-300 rounded text-stone-700 font-bold cursor-pointer"
               >
-                <option value="all">Toutes les pièces</option>
-                <option value="libre">🟢 Libres uniquement</option>
-                <option value="projet">🟠 En projet d'assemblage</option>
-                <option value="instrument">🔵 Montées sur instrument</option>
+                <option value="all">{t('lutherie.optAllParts')}</option>
+                <option value="libre">{t('lutherie.optFreeOnly')}</option>
+                <option value="projet">{t('lutherie.optInAssemblyProject')}</option>
+                <option value="instrument">{t('lutherie.optMountedOnInstrument')}</option>
               </select>
             </div>
             <CordelButton
@@ -517,7 +520,7 @@ export default function InventoryPartsView({
               onClick={handleOpenPartAdd}
               className="text-xs px-3 py-1.5 font-bold shrink-0"
             >
-              + Ajouter Pièce
+              {t('lutherie.btnAddPart')}
             </CordelButton>
           </div>
 
@@ -525,20 +528,20 @@ export default function InventoryPartsView({
             <table className="w-full text-left text-xs border-collapse min-w-[650px]">
               <thead className="bg-cordel-bg-light border-b-2 border-encre-noire text-[10px] uppercase tracking-wider text-cordel-wood font-black select-none sticky top-0 z-20">
                 <tr>
-                  <th className="p-3 border-r border-encre-noire/15 sticky top-0 left-0 bg-cordel-bg-light z-30">Nom / Réf</th>
-                  <th className="p-3 border-r border-encre-noire/15 sticky top-0 z-20">Type</th>
-                  <th className="p-3 border-r border-encre-noire/15 sticky top-0 z-20">Affectation</th>
-                  <th className="p-3 border-r border-encre-noire/15 sticky top-0 z-20">État</th>
-                  <th className="p-3 border-r border-encre-noire/15 sticky top-0 z-20">Statut</th>
-                  <th className="p-3 border-r border-encre-noire/15 sticky top-0 z-20">Avancement</th>
-                  <th className="p-3 text-right sticky top-0 z-20">Actions</th>
+                  <th className="p-3 border-r border-encre-noire/15 sticky top-0 left-0 bg-cordel-bg-light z-30">{t('lutherie.thNomRef')}</th>
+                  <th className="p-3 border-r border-encre-noire/15 sticky top-0 z-20">{t('common.type') || "Type"}</th>
+                  <th className="p-3 border-r border-encre-noire/15 sticky top-0 z-20">{t('lutherie.thAssignment')}</th>
+                  <th className="p-3 border-r border-encre-noire/15 sticky top-0 z-20">{t('lutherie.thState')}</th>
+                  <th className="p-3 border-r border-encre-noire/15 sticky top-0 z-20">{t('lutherie.thStatus')}</th>
+                  <th className="p-3 border-r border-encre-noire/15 sticky top-0 z-20">{t('lutherie.thProgress')}</th>
+                  <th className="p-3 text-right sticky top-0 z-20">{t('lutherie.thActions')}</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredParts.length === 0 ? (
                   <tr>
                     <td colSpan="6" className="p-8 text-center text-xs opacity-60 font-bold italic">
-                      Aucune pièce détachée trouvée.
+                      {t('lutherie.noSparePartsFound')}
                     </td>
                   </tr>
                 ) : (
@@ -559,13 +562,13 @@ export default function InventoryPartsView({
                             <span>{part.nom}</span>
                             {parseInt(part.quantite, 10) > 1 && (
                               <span className="px-1.5 py-0.2 rounded text-[8px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-300">
-                                Lot de {part.quantite}
+                                {t('lutherie.batchOfCountBadge', { count: part.quantite })}
                               </span>
                             )}
                           </div>
                           {part.modelId && (
                             <div className="text-[9px] text-cordel-master-dark opacity-80 mt-0.5">
-                              Modèle : {model?.nom || 'Inconnu'}
+                              {t('lutherie.modelLabel')} {model?.nom || 'Inconnu'}
                             </div>
                           )}
                         </td>
@@ -582,7 +585,7 @@ export default function InventoryPartsView({
                             part.etat === 'Usé' ? 'bg-[var(--color-cordel-ocre)]/10 text-[var(--color-cordel-ocre)] border-[var(--color-cordel-ocre)]/30' :
                             'bg-[var(--color-cordel-rouge)]/10 text-[var(--color-cordel-rouge)] border-[var(--color-cordel-rouge)]/30'
                           }`}>
-                            {part.etat}
+                            {part.etat === 'Neuf' ? t('lutherie.stateNew') : part.etat}
                           </span>
                         </td>
                         <td className="p-2 border-r border-encre-noire/10">
@@ -590,7 +593,7 @@ export default function InventoryPartsView({
                             part.status === 'En stock' ? 'bg-green-100 text-green-800 border-green-300' :
                             'bg-gray-100 text-gray-600 border-gray-300'
                           }`}>
-                            {part.status}
+                            {part.status === 'En stock' ? t('lutherie.statusInStock') : part.status}
                           </span>
                         </td>
                         <td className="p-2 border-r border-encre-noire/10">
@@ -598,7 +601,7 @@ export default function InventoryPartsView({
                             isTerminee ? (
                               <div className="flex flex-col gap-1">
                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-[var(--color-cordel-vert)]/15 text-[var(--color-cordel-vert)] border border-[var(--color-cordel-vert)]/40">
-                                  <span>✅</span> Terminée ({totalEtapes}/{totalEtapes})
+                                  <span>✅</span> {t('lutherie.completedEtapesRatio', { count: totalEtapes, total: totalEtapes })}
                                 </span>
                                 <div className="flex items-center gap-0.5">
                                   {Array.from({ length: totalEtapes }, (_, idx) => (
@@ -620,7 +623,7 @@ export default function InventoryPartsView({
                                     : 'bg-[var(--color-cordel-ocre)]/15 text-[var(--color-cordel-ocre)] border-[var(--color-cordel-ocre)]/40'
                                 }`}>
                                   <span>{isWaiting ? '⏳' : '🛠️'}</span>
-                                  <span>Étape {Math.min(currentStep + 1, totalEtapes)} / {totalEtapes} • {getStepProgressRatio(totalEtapes, currentStep, statutEtape)}</span>
+                                  <span>{t('lutherie.stepLabelWithIndex', { step: Math.min(currentStep + 1, totalEtapes) })} / {totalEtapes} • {getStepProgressRatio(totalEtapes, currentStep, statutEtape)}</span>
                                 </span>
                                 {/* Mini pastilles colorées pour chaque étape */}
                                 <div className="flex items-center gap-0.5">
@@ -660,21 +663,21 @@ export default function InventoryPartsView({
                                 title={`Cette référence regroupe ${part.quantite} unités. Cliquer pour scinder en ${part.quantite} pièces distinctes.`}
                               >
                                 <span>⚡</span>
-                                <span className="hidden sm:inline">Scinder</span>
+                                <span className="hidden sm:inline">{t('lutherie.btnSplit')}</span>
                                 <span>({part.quantite})</span>
                               </button>
                             )}
                             <button
                               onClick={() => handleOpenPartEdit(part)}
                               className="p-1.5 border border-encre-noire bg-cordel-bg-light hover:bg-cordel-hover text-encre-noire rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer"
-                              title="Modifier la pièce"
+                              title={t('lutherie.titleEditPart')}
                             >
                               <XiloChisel size={10} />
                             </button>
                             <button
                               onClick={() => handleDeletePart(part.id)}
                               className="p-1.5 border border-red-700 bg-red-50 hover:bg-red-100 text-red-700 rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer text-[10px]"
-                              title="Supprimer la pièce"
+                              title={t('lutherie.titleDeletePart')}
                             >
                               🗑️
                             </button>

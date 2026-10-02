@@ -14,7 +14,7 @@ const content = fs.readFileSync(filePath, 'utf8');
 let errors = 0;
 
 // 1. Vérification de la marge intérieure gauche (pl-10 ou pl-9)
-if (content.includes('pl-10') && content.includes('placeholder="Prénom, nom, surnom..."')) {
+if (content.includes('pl-10') && (content.includes('placeholder="Prénom, nom, surnom..."') || content.includes('placeholder={t(\'trombi.searchPlaceholder\')}'))) {
   console.log("  ✅ [PASS] Balise <input> dotée de la classe de décalage gauche 'pl-10'");
 } else {
   console.error("  ❌ [FAIL] Balise <input> ne contient pas 'pl-10'");

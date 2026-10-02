@@ -315,7 +315,7 @@ export default function VaralCategoryRope({
                 }`}
                 title="Afficher tous les livrets de cette corde"
               >
-                Tous ({documents.length})
+                {t('documents.filterAllWithCount', { count: documents.length })}
               </button>
               <button
                 type="button"
@@ -327,7 +327,7 @@ export default function VaralCategoryRope({
                 title="Afficher uniquement les livrets visibles aux membres"
               >
                 <span>👁️</span>
-                <span>Visibles ({visibleCount})</span>
+                <span>{t('documents.filterVisibleWithCount', { count: visibleCount })}</span>
               </button>
               {hiddenCount > 0 && (
                 <button
@@ -354,7 +354,7 @@ export default function VaralCategoryRope({
                   title="Afficher uniquement les livrets archivés (anciennes saisons)"
                 >
                   <span>📦</span>
-                  <span>Archivés ({archivedCount})</span>
+                  <span>{t('documents.filterArchivedWithCount', { count: archivedCount })}</span>
                 </button>
               )}
             </div>

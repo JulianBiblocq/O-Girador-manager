@@ -3,6 +3,7 @@ import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
+import { useTranslation } from '../LanguageContext';
 import { cleanFirestorePayload } from '../../utils/firestoreUtils';
 import { parseYouTubeMedia } from '../../utils/mediaUrlUtils';
 
@@ -25,6 +26,7 @@ export default function CreateCultureFicheModal({
   piece,
   onSuccess
 }) {
+  const { t } = useTranslation();
   const [titre, setTitre] = useState('');
   const [categorieFiche, setCategorieFiche] = useState('Histoire');
   const [videoUrl, setVideoUrl] = useState('');
@@ -146,10 +148,10 @@ export default function CreateCultureFicheModal({
             <span className="text-xl">📜</span>
             <div className="flex flex-col">
               <h3 className="text-sm md:text-base font-black uppercase tracking-wider text-cordel-wood">
-                Créer la fiche Varal Culture
+                {t('mestre.repertoire.createVaralCultureHeading')}
               </h3>
               <span className="text-[10px] text-encre-noire/60 font-semibold">
-                Passerelle automatique depuis « {piece.titre || 'le morceau'} »
+                {t('mestre.repertoire.autoGatewayFromPrefix')} « {piece.titre || 'le morceau'} »
               </span>
             </div>
           </div>
@@ -158,7 +160,7 @@ export default function CreateCultureFicheModal({
             type="button"
             onClick={onClose}
             className="text-stone-400 hover:text-stone-700 font-black text-xl p-1 cursor-pointer transition-colors"
-            title="Fermer"
+            title={t('common.close')}
           >
             ✕
           </button>
@@ -175,7 +177,7 @@ export default function CreateCultureFicheModal({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="sm:col-span-2 flex flex-col gap-1">
               <label className="text-[10px] uppercase font-black tracking-wider text-cordel-master-dark">
-                Titre de la fiche Culture <span className="text-red-600">*</span>
+                {t('mestre.repertoire.cultureSheetTitleLabel')} <span className="text-red-600">*</span>
               </label>
               <input
                 type="text"
@@ -184,13 +186,13 @@ export default function CreateCultureFicheModal({
                 onChange={(e) => setTitre(e.target.value)}
                 disabled={isSubmitting}
                 className="theme-input text-xs font-bold p-2.5 bg-cordel-bg-light border-2 border-encre-noire rounded"
-                placeholder="Ex: Baque de Luanda, Maracatu de Baque Virado..."
+                placeholder={t('mestre.repertoire.cultureSheetTitlePlaceholder')}
               />
             </div>
 
             <div className="flex flex-col gap-1">
               <label className="text-[10px] uppercase font-black tracking-wider text-cordel-master-dark">
-                Catégorie
+                {t('mestre.repertoire.categoryLabel')}
               </label>
               <select
                 value={categorieFiche}
@@ -198,11 +200,11 @@ export default function CreateCultureFicheModal({
                 disabled={isSubmitting}
                 className="theme-input text-xs font-semibold p-2.5 bg-cordel-bg-light border border-encre-noire/30 rounded cursor-pointer"
               >
-                <option value="Histoire">📖 Histoire</option>
-                <option value="Musique & Danse">🥁 Musique &amp; Danse</option>
-                <option value="Tradition">👑 Tradition &amp; Cour</option>
-                <option value="Orixás">🌿 Orixás</option>
-                <option value="Territoire">📍 Territoire</option>
+                <option value="Histoire">{t('mestre.repertoire.catHistory')}</option>
+                <option value="Musique & Danse">{t('mestre.repertoire.catMusicAndDance')}</option>
+                <option value="Tradition">{t('mestre.repertoire.catTraditionAndCourt')}</option>
+                <option value="Orixás">{t('mestre.repertoire.catOrixas')}</option>
+                <option value="Territoire">{t('mestre.repertoire.catTerritory')}</option>
               </select>
             </div>
           </div>
@@ -211,7 +213,7 @@ export default function CreateCultureFicheModal({
           <div className="flex flex-col gap-1.5 p-3 rounded bg-white border border-encre-noire/15 shadow-xs">
             <label className="text-[10px] uppercase font-black tracking-wider text-cordel-master-dark flex items-center gap-1.5">
               <span>🎬</span>
-              <span>Vidéo YouTube associée</span>
+              <span>{t('mestre.repertoire.associatedYoutubeVideoHeading')}</span>
             </label>
             <input
               type="url"
@@ -224,7 +226,7 @@ export default function CreateCultureFicheModal({
             {ytParsed && ytParsed.isValid && (
               <span className="text-[9px] text-green-800 font-bold flex items-center gap-1 mt-0.5">
                 <span>✓</span>
-                <span>Lien YouTube valide reconnu (ID : {ytParsed.videoId})</span>
+                <span>{t('mestre.repertoire.validYoutubeLinkPrefix')} {ytParsed.videoId})</span>
               </span>
             )}
           </div>
@@ -234,7 +236,7 @@ export default function CreateCultureFicheModal({
             <div className="flex items-center justify-between">
               <label className="text-[10px] uppercase font-black tracking-wider text-cordel-master-dark flex items-center gap-1.5">
                 <span>📖</span>
-                <span>Chapitre introductif / Histoire</span>
+                <span>{t('mestre.repertoire.introChapterHeading')}</span>
               </label>
               <input
                 type="text"
@@ -242,7 +244,7 @@ export default function CreateCultureFicheModal({
                 onChange={(e) => setSousTitre(e.target.value)}
                 disabled={isSubmitting}
                 className="text-[10px] font-bold p-1 bg-cordel-bg-light border border-encre-noire/25 rounded w-44"
-                placeholder="Titre du chapitre"
+                placeholder={t('mestre.repertoire.chapterTitlePlaceholder')}
               />
             </div>
 
@@ -252,7 +254,7 @@ export default function CreateCultureFicheModal({
               value={texte}
               onChange={(e) => setTexte(e.target.value)}
               disabled={isSubmitting}
-              placeholder="Rédigez ou complétez le contexte historique, les origines, la nation ou l'anecdote de ce morceau..."
+              placeholder={t('mestre.repertoire.chapterContentPlaceholder')}
               className="theme-input text-xs font-medium p-2.5 bg-cordel-bg-light border border-encre-noire/30 rounded leading-relaxed font-serif"
             />
           </div>
@@ -261,7 +263,7 @@ export default function CreateCultureFicheModal({
           <div className="flex flex-col gap-1">
             <label className="text-[10px] uppercase font-black tracking-wider text-cordel-master-dark flex items-center gap-1.5">
               <span>💡</span>
-              <span>Le saviez-vous ? (Anecdote facultative)</span>
+              <span>{t('mestre.repertoire.didYouKnowHeading')}</span>
             </label>
             <input
               type="text"
@@ -269,14 +271,14 @@ export default function CreateCultureFicheModal({
               onChange={(e) => setAnecdote(e.target.value)}
               disabled={isSubmitting}
               className="theme-input text-xs font-medium p-2 bg-cordel-bg-light border border-encre-noire/30 rounded"
-              placeholder="Ex: Cette chanson était traditionnellement chantée au lever du soleil..."
+              placeholder={t('mestre.repertoire.anecdotePlaceholder')}
             />
           </div>
 
           {/* Actions */}
           <div className="flex justify-between items-center gap-2 pt-3 border-t border-dashed border-cordel-master-dark/15 mt-1">
             <span className="text-[9.5px] italic text-encre-noire/60">
-              🔗 La fiche sera automatiquement enregistrée sur le Varal et liée à ce morceau.
+              {t('mestre.repertoire.ficheSavedAndLinkedNotice')}
             </span>
 
             <div className="flex items-center gap-2">
@@ -288,7 +290,7 @@ export default function CreateCultureFicheModal({
                 disabled={isSubmitting}
                 className="px-4 py-2 text-xs font-bold"
               >
-                Annuler
+                {t('common.cancel')}
               </CordelButton>
 
               <CordelButton

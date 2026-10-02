@@ -1,0 +1,516 @@
+/**
+ * Script de construction du dictionnaire bilingue FR/PT-BR pour le Pôle Mestria (Lot 2)
+ * Couvre les 5 sous-namespaces :
+ * - mestre.sequenceur (Passerelle Séquenceur, Presets & Signes)
+ * - mestre.casting (Orientation, Casting, Quotas & Disciplines)
+ * - mestre.stageLayout (Régie Scénique & Plateau)
+ * - mestre.editorial (Mot du Mestre & Consignes Artistiques)
+ * - mestre.pedagogy (Pédagogie, Points Chauds, Bloc-notes, Auto-éval & QCM)
+ */
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const rootDir = path.resolve(__dirname, '..');
+
+const auditResults = JSON.parse(fs.readFileSync(path.join(rootDir, 'scripts/audit_mestre_results.json'), 'utf8'));
+
+// Dictionnaires par catégorie
+const sequenceurTranslations = {
+  // RepertoireUnlinkedPresetsBanner.jsx
+  "preset": { key: "presetSingular", fr: "preset", pt: "preset" },
+  "du Séquenceur non répertorié": { key: "unlinkedPresetsNotice", fr: "du Séquenceur non répertorié", pt: "do Sequenciador não listado" },
+  "Des morceaux complets existent dans le Séquenceur sans fiche associée dans le Répertoire de saison.": {
+    key: "unlinkedPresetsDesc",
+    fr: "Des morceaux complets existent dans le Séquenceur sans fiche associée dans le Répertoire de saison.",
+    pt: "Existem músicas completas no Sequenciador sem ficha associada no Repertório da temporada."
+  },
+  "Preset complet": { key: "completePresetBadge", fr: "Preset complet", pt: "Preset completo" },
+  "🎵 Audio": { key: "audioBadge", fr: "🎵 Audio", pt: "🎵 Áudio" },
+  "BPM": { key: "bpmBadge", fr: "BPM", pt: "BPM" },
+
+  // RepertoireTrainingsManager.jsx
+  "Entraînements rattachés au morceau": { key: "trainingsLinkedHeading", fr: "Entraînements rattachés au morceau", pt: "Treinos vinculados à música" },
+  "rattaché": { key: "linkedSingular", fr: "rattaché", pt: "vinculado" },
+  "Les entraînements du preset sequenciador sont détectés automatiquement. Cliquez sur": {
+    key: "trainingsAutoDetectedNotice",
+    fr: "Les entraînements du preset sequenciador sont détectés automatiquement. Cliquez sur",
+    pt: "Os treinos do preset do sequenciador são detectados automaticamente. Clique em"
+  },
+  "pour détacher un entraînement ou utilisez le sélecteur pour en associer d'autres.": {
+    key: "trainingsDetachOrAssociateNotice",
+    fr: "pour détacher un entraînement ou utilisez le sélecteur pour en associer d'autres.",
+    pt: "para desvincular um treino ou use o seletor para associar outros."
+  },
+  "manuel": { key: "manualBadge", fr: "manuel", pt: "manual" },
+  "Détacher cet entraînement du morceau": { key: "detachTrainingTitle", fr: "Détacher cet entraînement du morceau", pt: "Desvincular este treino da música" },
+  "Aucun entraînement rattaché à ce morceau pour le moment.": {
+    key: "noTrainingsLinked",
+    fr: "Aucun entraînement rattaché à ce morceau pour le moment.",
+    pt: "Nenhum treino vinculado a esta música no momento."
+  },
+  "BPM)": { key: "bpmCloseParen", fr: "BPM)", pt: "BPM)" },
+
+  // RepertoireSinaisDoMestreEditor.jsx
+  "Signes du Mestre associés (": { key: "mestreSignalsLinkedHeading", fr: "Signes du Mestre associés (", pt: "Sinais do Mestre vinculados (" },
+  "Tout effacer": { key: "clearAllBtn", fr: "Tout effacer", pt: "Limpar tudo" },
+  "Supprimer ce signe": { key: "deleteSignalTitle", fr: "Supprimer ce signe", pt: "Excluir este sinal" },
+  "Bibliothèque des Signes du Mestre (": { key: "signalsLibraryHeading", fr: "Bibliothèque des Signes du Mestre (", pt: "Biblioteca de Sinais do Mestre (" },
+  "Mesure :": { key: "barLabelColon", fr: "Mesure :", pt: "Compasso:" },
+  "Filtrer les gestes (ex: opanijé, luanda, samba...)": {
+    key: "filterGesturesPlaceholder",
+    fr: "Filtrer les gestes (ex: opanijé, luanda, samba...)",
+    pt: "Filtrar os gestos (ex: opanijé, luanda, samba...)"
+  },
+  "Chargement des signaux...": { key: "loadingSignals", fr: "Chargement des signaux...", pt: "Carregando sinais..." },
+  "Aucun signe ne correspond dans la bibliothèque.": {
+    key: "noMatchingSignals",
+    fr: "Aucun signe ne correspond dans la bibliothèque.",
+    pt: "Nenhum sinal correspondente na biblioteca."
+  },
+  "Mesure": { key: "barMeasureWord", fr: "Mesure", pt: "Compasso" },
+  "Ajouter": { key: "btnAdd", fr: "Ajouter", pt: "Adicionar" },
+
+  // SignalReflexCard.jsx
+  "Gonguê": { key: "instrumentGongue", fr: "Gonguê", pt: "Gonguê" },
+  "Marcante": { key: "voiceMarcante", fr: "Marcante", pt: "Marcante" },
+  "Agbê": { key: "instrumentAgbe", fr: "Agbê", pt: "Agbê" },
+  "Temps 1 ciblé :": { key: "targetedDownbeatColon", fr: "Temps 1 ciblé :", pt: "Tempo 1 visado:" },
+  "🎯 Défi interactif": { key: "interactiveChallengeBtn", fr: "🎯 Défi interactif", pt: "🎯 Desafio interativo" },
+  "👁️ Simple repère": { key: "simpleGuideBtn", fr: "👁️ Simple repère", pt: "👁️ Ponto de referência" },
+  "Aperçu pour le pupitre :": { key: "sectionPreviewColon", fr: "Aperçu pour le pupitre :", pt: "Prévia para o naipe:" },
+  "Générer 3 nouvelles variations de leurres": { key: "generateDistractorsTitle", fr: "Générer 3 nouvelles variations de leurres", pt: "Gerar 3 novas variações de opções falsas" },
+  "Renouveler": { key: "renewBtn", fr: "Renouveler", pt: "Renovar" },
+  "Bonne Tablature (Temps 1 Mesure": { key: "correctTablatureHeading", fr: "Bonne Tablature (Temps 1 Mesure", pt: "Tablatura Correta (Tempo 1 Compasso" },
+  "Leurre #": { key: "distractorPrefix", fr: "Leurre #", pt: "Opção falsa #" },
+  "Ce signal s'affichera sous forme de repère visuel à la mesure": {
+    key: "signalVisualGuideNotice",
+    fr: "Ce signal s'affichera sous forme de repère visuel à la mesure",
+    pt: "Este sinal será exibido como referência visual no compasso"
+  },
+  "sans interrompre le son.": { key: "withoutInterruptingSound", fr: "sans interrompre le son.", pt: "sem interromper o som." }
+};
+
+const stageLayoutTranslations = {
+  // MestreStageLayout.jsx
+  "Publié": { key: "statusPublished", fr: "Publié", pt: "Publicado" },
+  "Brouillon": { key: "statusDraft", fr: "Brouillon", pt: "Rascunho" },
+  "À créer": { key: "statusToCreate", fr: "À créer", pt: "A criar" },
+  "← Liste des événements": { key: "backToEventsList", fr: "← Liste des événements", pt: "← Lista de eventos" },
+  "Changer :": { key: "changeColon", fr: "Changer :", pt: "Alterar:" },
+  "Ouvrir les détails complets de cet événement": { key: "openEventDetailsTitle", fr: "Ouvrir les détails complets de cet événement", pt: "Abrir detalhes completos deste evento" },
+  "🔍 Détails": { key: "detailsBtn", fr: "🔍 Détails", pt: "🔍 Detalhes" },
+  "Direction Artistique — Plans de Scène & Cortejo": { key: "headerTitle", fr: "Direction Artistique — Plans de Scène & Cortejo", pt: "Direção Artística — Disposição de Palco & Cortejo" },
+  "Sélectionnez une prestation pour concevoir ou modifier la disposition scénique de la troupe": {
+    key: "headerSubtitle",
+    fr: "Sélectionnez une prestation pour concevoir ou modifier la disposition scénique de la troupe",
+    pt: "Selecione uma apresentação para conceber ou editar a disposição cênica do grupo"
+  },
+  "🎭 Prestations & Sorties (": { key: "filterGigsCount", fr: "🎭 Prestations & Sorties (", pt: "🎭 Apresentações & Cortejos (" },
+  "📐 Avec plan de scène (": { key: "filterWithLayoutCount", fr: "📐 Avec plan de scène (", pt: "📐 Com plano de palco (" },
+  "👥 Tous les événements (": { key: "filterAllEventsCount", fr: "👥 Tous les événements (", pt: "👥 Todos os eventos (" },
+  "⏳ Chargement des dates...": { key: "loadingDates", fr: "⏳ Chargement des dates...", pt: "⏳ Carregando datas..." },
+  "Afficher tous les événements": { key: "showAllEvents", fr: "Afficher tous les événements", pt: "Exibir todos os eventos" },
+  "Plan de scène": { key: "thStageLayout", fr: "Plan de scène", pt: "Plano de palco" },
+
+  // EventStageLayoutSection.jsx
+  "⚠️ Seuls les danseurs et danseuses peuvent être placés sur l'Avant-Scène.": {
+    key: "alertDancersOnlyFrontStage",
+    fr: "⚠️ Seuls les danseurs et danseuses peuvent être placés sur l'Avant-Scène.",
+    pt: "⚠️ Apenas dançarinos e dançarinas podem ser posicionados na frente do palco."
+  },
+  "🎭 Aucun plan de scène n'a encore été configuré pour cet événement.": {
+    key: "noLayoutConfiguredNotice",
+    fr: "🎭 Aucun plan de scène n'a encore été configuré pour cet événement.",
+    pt: "🎭 Nenhum plano de palco configurado para este evento."
+  },
+  "🛠️ Créer le plan de scène dans l'Espace Mestre": {
+    key: "createLayoutInMestreSpace",
+    fr: "🛠️ Créer le plan de scène dans l'Espace Mestre",
+    pt: "🛠️ Criar plano de palco no Espaço do Mestre"
+  },
+  "🔒 Brouillon / Masqué aux adhérents": { key: "draftHiddenBadge", fr: "🔒 Brouillon / Masqué aux adhérents", pt: "🔒 Rascunho / Oculto aos integrantes" },
+  "🛠️ Placer / Modifier dans l'Espace Mestre": {
+    key: "placeOrEditInMestreSpace",
+    fr: "🛠️ Placer / Modifier dans l'Espace Mestre",
+    pt: "🛠️ Posicionar / Editar no Espaço do Mestre"
+  },
+  "🥁 Percussions :": { key: "percussionsColon", fr: "🥁 Percussions :", pt: "🥁 Percussão:" },
+  "Lignes:": { key: "rowsColon", fr: "Lignes:", pt: "Linhas:" },
+  "Colonnes:": { key: "colsColon", fr: "Colonnes:", pt: "Colunas:" },
+  "💃 Danse :": { key: "danceColon", fr: "💃 Danse :", pt: "💃 Dança:" },
+  "Désélectionner (ou touche Échap)": { key: "deselectTitle", fr: "Désélectionner (ou touche Échap)", pt: "Desmarcar (ou tecla Esc)" },
+  "✕ Désélectionner": { key: "deselectBtn", fr: "✕ Désélectionner", pt: "✕ Desmarcar" },
+  "Voix attribuée pour la scène :": { key: "assignedVoiceForStageColon", fr: "Voix attribuée pour la scène :", pt: "Naipe/voz atribuída para o palco:" },
+  "(hors profil)": { key: "outOfProfileBadge", fr: "(hors profil)", pt: "(fora do perfil)" },
+  "Instrument attribué pour la scène :": { key: "assignedInstrumentForStageColon", fr: "Instrument attribué pour la scène :", pt: "Instrumento atribuído para o palco:" },
+  "Tous les membres présents ont été placés.": {
+    key: "allPresentMembersPlaced",
+    fr: "Tous les membres présents ont été placés.",
+    pt: "Todos os integrantes presentes foram posicionados."
+  },
+  "Publier le plan de scène dans l'agenda": {
+    key: "publishLayoutInAgendaCheckbox",
+    fr: "Publier le plan de scène dans l'agenda",
+    pt: "Publicar o plano de palco na agenda"
+  }
+};
+
+const editorialTranslations = {
+  // MestreMotMestre.jsx
+  "Le mot du Mestre a été mis à jour avec succès !": {
+    key: "motMestreUpdateSuccess",
+    fr: "Le mot du Mestre a été mis à jour avec succès !",
+    pt: "A mensagem do Mestre foi atualizada com sucesso!"
+  },
+  "Gestion du Mot du Mestre": { key: "manageHeading", fr: "Gestion du Mot du Mestre", pt: "Gestão da Mensagem do Mestre" },
+  "Publier et afficher sur le tableau de bord des membres": {
+    key: "publishOnMemberDashboardLabel",
+    fr: "Publier et afficher sur le tableau de bord des membres",
+    pt: "Publicar e exibir no painel dos integrantes"
+  },
+  "Message du Mestre (Éditeur)": { key: "editorLabel", fr: "Message du Mestre (Éditeur)", pt: "Mensagem do Mestre (Editor)" },
+  "Rédigez votre message à l'attention des membres...": {
+    key: "editorPlaceholder",
+    fr: "Rédigez votre message à l'attention des membres...",
+    pt: "Escreva sua mensagem direcionada aos integrantes..."
+  },
+  "Signature / Auteur du message": { key: "signatureLabel", fr: "Signature / Auteur du message", pt: "Assinatura / Autor da mensagem" },
+  "Ex : Mestre, L'équipe...": { key: "signaturePlaceholder", fr: "Ex : Mestre, L'équipe...", pt: "Ex: Mestre, A equipe..." },
+  "🚀 Bouton d'action / Call to Action (Optionnel)": {
+    key: "ctaSectionHeading",
+    fr: "🚀 Bouton d'action / Call to Action (Optionnel)",
+    pt: "🚀 Botão de Ação / Chamada (Opcional)"
+  },
+  "Texte du bouton": { key: "ctaTextLabel", fr: "Texte du bouton", pt: "Texto do botão" },
+  "Ex : Mettre à jour mon profil": { key: "ctaTextPlaceholder", fr: "Ex : Mettre à jour mon profil", pt: "Ex: Atualizar meu perfil" },
+  "Page / Route de redirection": { key: "ctaRouteLabel", fr: "Page / Route de redirection", pt: "Página / Rota de redirecionamento" },
+  "Ex : /profil ou mestre-orientation": { key: "ctaRoutePlaceholder", fr: "Ex : /profil ou mestre-orientation", pt: "Ex: /profil ou mestre-orientation" }
+};
+
+const castingTranslations = {
+  // MestreOrientationCasting.jsx
+  "Erreur de sauvegarde": { key: "errSave", fr: "Erreur de sauvegarde", pt: "Erro ao salvar" },
+  "Erreur de sauvegarde de la voix d'Alfaia": { key: "errSaveAlfaiaVoice", fr: "Erreur de sauvegarde de la voix d'Alfaia", pt: "Erro ao salvar o naipe de Alfaia" },
+  "Message envoyé !": { key: "msgSentSuccess", fr: "Message envoyé !", pt: "Mensagem enviada!" },
+  "Erreur lors de l'envoi.": { key: "errSendingMsg", fr: "Erreur lors de l'envoi.", pt: "Erro ao enviar." },
+  "Erreur lors de la validation de l'orientation.": { key: "errValidatingOrientation", fr: "Erreur lors de la validation de l'orientation.", pt: "Erro ao validar a orientação." },
+  "Aucun membre à exporter.": { key: "noMembersToExport", fr: "Aucun membre à exporter.", pt: "Nenhum integrante para exportar." },
+  "Voix Alfaia :": { key: "voiceAlfaiaColon", fr: "Voix Alfaia :", pt: "Naipe de Alfaia:" },
+  "Erreur de sauvegarde de l'attribution Caixas": { key: "errSaveCaixasAttribution", fr: "Erreur de sauvegarde de l'attribution Caixas", pt: "Erro ao salvar a atribuição de Caixas" },
+  "Attribution Caixas :": { key: "attributionCaixasColon", fr: "Attribution Caixas :", pt: "Atribuição de Caixas:" },
+  "Chargement du Tableau d'Orientation & Casting...": { key: "loadingCastingTable", fr: "Chargement du Tableau d'Orientation & Casting...", pt: "Carregando painel de orientação e elenco..." },
+  "Orientation, Casting & Pupitres": { key: "orientationCastingTitle", fr: "Orientation, Casting & Pupitres", pt: "Orientação, Elenco & Naipes" },
+  "Tableau de bord de répartition des pupitres et validation directe des vœux par la Mestria.": {
+    key: "orientationCastingSubtitle",
+    fr: "Tableau de bord de répartition des pupitres et validation directe des vœux par la Mestria.",
+    pt: "Painel de distribuição dos naipes e validação direta das preferências pela Mestria."
+  },
+  "Non affecté": { key: "unassignedBadge", fr: "Non affecté", pt: "Não atribuído" },
+  "Vœux formulés": { key: "wishesFormulatedBadge", fr: "Vœux formulés", pt: "Preferências enviadas" },
+  "📊 Quotas & Effectifs par Pupitre (Cliquez pour filtrer)": {
+    key: "quotasEffectifsHeading",
+    fr: "📊 Quotas & Effectifs par Pupitre (Cliquez pour filtrer)",
+    pt: "📊 Cotas & Efetivo por Naipe (Clique para filtrar)"
+  },
+  "🔗 Lié": { key: "linkedBadge", fr: "🔗 Lié", pt: "🔗 Vinculado" },
+  "Actif": { key: "activeBadge", fr: "Actif", pt: "Ativo" },
+  "⚠️ Effectif vide": { key: "emptyRosterBadge", fr: "⚠️ Effectif vide", pt: "⚠️ Naipe vazio" },
+  "📋 Tableau d'Affectation": { key: "assignmentTableHeading", fr: "📋 Tableau d'Affectation", pt: "📋 Tabela de Distribuição" },
+  "Tous (": { key: "filterAllCount", fr: "Tous (", pt: "Todos (" },
+  "⏳ Vœux en attente": { key: "filterPendingWishes", fr: "⏳ Vœux en attente", pt: "⏳ Preferências pendentes" },
+  "💃 Section Danse": { key: "filterDanceSection", fr: "💃 Section Danse", pt: "💃 Seção de Dança" },
+  "🔍 Rechercher un membre ou vœu...": { key: "searchMemberPlaceholder", fr: "🔍 Rechercher un membre ou vœu...", pt: "🔍 Buscar integrante ou preferência..." },
+  "Exporter les affectations et vœux au format CSV (Excel)": {
+    key: "exportCsvTitle",
+    fr: "Exporter les affectations et vœux au format CSV (Excel)",
+    pt: "Exportar atribuições e preferências em formato CSV (Excel)"
+  },
+  "📥 Exporter (CSV)": { key: "exportCsvBtn", fr: "📥 Exporter (CSV)", pt: "📥 Exportar (CSV)" },
+  "Membre": { key: "thMember", fr: "Membre", pt: "Integrante" },
+  "Inst. Maîtrisé (Historique)": { key: "thMasteredInst", fr: "Inst. Maîtrisé (Historique)", pt: "Inst. Dominado (Histórico)" },
+  "Orientation Saison & Vœux": { key: "thSeasonOrientation", fr: "Orientation Saison & Vœux", pt: "Orientação na Temporada & Votos" },
+  "Danse & Niveau": { key: "thDanceAndLevel", fr: "Danse & Niveau", pt: "Dança & Nível" },
+  "Aucun membre ne correspond aux critères de recherche.": {
+    key: "noMembersFoundSearch",
+    fr: "Aucun membre ne correspond aux critères de recherche.",
+    pt: "Nenhum integrante corresponde aos critérios de busca."
+  },
+  "✉️ MP": { key: "privateMsgBtn", fr: "✉️ MP", pt: "✉️ Mensagem" },
+  "Inst. Principal": { key: "primaryInstrumentLabel", fr: "Inst. Principal", pt: "Inst. Principal" },
+  "-- Aucun --": { key: "optionNone", fr: "-- Aucun --", pt: "-- Nenhum --" },
+  "- Niv. -": { key: "optionLevelShort", fr: "- Niv. -", pt: "- Nível -" },
+  "Dispo en secours": { key: "reliefAvailableBadge", fr: "Dispo en secours", pt: "Disponível de apoio" },
+  "2ème Inst. Historique": { key: "secondInstrumentHistoryLabel", fr: "2ème Inst. Historique", pt: "2º Inst. Histórico" },
+  "Vœux actuels :": { key: "currentWishesColon", fr: "Vœux actuels :", pt: "Preferências atuais:" },
+  "Souhaite changer": { key: "wishesToChangeBadge", fr: "Souhaite changer", pt: "Deseja mudar" },
+  "🔄 Poursuite (": { key: "continuationPrefix", fr: "🔄 Poursuite (", pt: "🔄 Continuidade (" },
+  "Apprentissage Saison :": { key: "seasonLearningColon", fr: "Apprentissage Saison :", pt: "Aprendizado na Temporada:" },
+  "-- Niveau --": { key: "optionLevelFull", fr: "-- Niveau --", pt: "-- Nível --" },
+  "Non inscrit(e)": { key: "danceNotEnrolled", fr: "Non inscrit(e)", pt: "Não inscrito(a)" },
+  "💃 Débutant": { key: "danceBeginner", fr: "💃 Débutant", pt: "💃 Iniciante" },
+
+  // MestreCustomCategories.jsx
+  "Gestion des Sections & Disciplines": { key: "customCategoriesHeading", fr: "Gestion des Sections & Disciplines", pt: "Gestão das Seções & Disciplinas" },
+  "Personnalisez les intitulés de sections artistiques et les niveaux de pratique utilisés dans l'agenda, les castings et le trombinoscope.": {
+    key: "customCategoriesDesc",
+    fr: "Personnalisez les intitulés de sections artistiques et les niveaux de pratique utilisés dans l'agenda, les castings et le trombinoscope.",
+    pt: "Personalize os nomes das seções artísticas e níveis de prática usados na agenda, no elenco e no mural de integrantes."
+  },
+  "Sections & Niveaux": { key: "sectionsAndLevelsTab", fr: "Sections & Niveaux", pt: "Seções & Níveis" },
+  "Casting & Pupitres": { key: "castingAndSectionsTab", fr: "Casting & Pupitres", pt: "Elenco & Naipes" },
+  "Chargement des catégories...": { key: "loadingCategories", fr: "Chargement des catégories...", pt: "Carregando categorias..." },
+  "Erreur lors de la suppression de la catégorie.": { key: "errDeletingCategory", fr: "Erreur lors de la suppression de la catégorie.", pt: "Erro ao excluir categoria." },
+  "Erreur lors de la création de la catégorie.": { key: "errCreatingCategory", fr: "Erreur lors de la création de la catégorie.", pt: "Erro ao criar categoria." },
+  "Erreur lors de la mise à jour des profils.": { key: "errUpdatingProfiles", fr: "Erreur lors de la mise à jour des profils.", pt: "Erro ao atualizar perfis." },
+  "➕ Ajouter une nouvelle catégorie": { key: "addCategoryHeading", fr: "➕ Ajouter une nouvelle catégorie", pt: "➕ Adicionar nova categoria" },
+  "Intitulé de la section ou du niveau": { key: "categoryLabelField", fr: "Intitulé de la section ou du niveau", pt: "Nome da seção ou nível" },
+  "Ex: Section Danse Avancée, Percussion Pro, Débutants 1ère année...": {
+    key: "categoryPlaceholder",
+    fr: "Ex: Section Danse Avancée, Percussion Pro, Débutants 1ère année...",
+    pt: "Ex: Seção de Dança Avançada, Percussão Pro, Iniciantes 1º ano..."
+  },
+  "Couleur de badge": { key: "badgeColorLabel", fr: "Couleur de badge", pt: "Cor do crachá/etiqueta" },
+  "Palette Cordel :": { key: "cordelPaletteColon", fr: "Palette Cordel :", pt: "Paleta Cordel:" },
+  "+ Ajouter la catégorie": { key: "btnAddCategory", fr: "+ Ajouter la catégorie", pt: "+ Adicionar categoria" },
+  "📋 Catégories configurées (": { key: "configuredCategoriesCount", fr: "📋 Catégories configurées (", pt: "📋 Categorias configuradas (" },
+  "Utilisées dans l'agenda, les castings et les filtres trombinoscope": {
+    key: "categoriesUsageSubtitle",
+    fr: "Utilisées dans l'agenda, les castings et les filtres trombinoscope",
+    pt: "Usadas na agenda, no elenco e nos filtros do mural"
+  },
+  "Aucune catégorie de pratique enregistrée pour l'instant.": {
+    key: "noCategoriesSaved",
+    fr: "Aucune catégorie de pratique enregistrée pour l'instant.",
+    pt: "Nenhuma categoria de prática registrada no momento."
+  },
+  "🔄 Mettre à jour rétroactivement les anciens profils membres qui utilisent encore les intitulés par défaut.": {
+    key: "retroactiveUpdateDesc",
+    fr: "🔄 Mettre à jour rétroactivement les anciens profils membres qui utilisent encore les intitulés par défaut.",
+    pt: "🔄 Atualizar retroativamente perfis antigos que ainda usam os nomes padrão."
+  },
+
+  // CategoryCardItem.jsx
+  "Une autre catégorie de pratique porte déjà cet intitulé !": {
+    key: "categoryAlreadyExistsAlert",
+    fr: "Une autre catégorie de pratique porte déjà cet intitulé !",
+    pt: "Outra categoria de prática já possui este nome!"
+  },
+  "✏️ Modifier la catégorie": { key: "editCategoryHeading", fr: "✏️ Modifier la catégorie", pt: "✏️ Editar categoria" },
+  "(Entrée pour valider, Échap pour annuler)": {
+    key: "keyShortcutsHint",
+    fr: "(Entrée pour valider, Échap pour annuler)",
+    pt: "(Enter para confirmar, Esc para cancelar)"
+  },
+  "Nouvel intitulé": { key: "newCategoryLabel", fr: "Nouvel intitulé", pt: "Novo nome" },
+  "Ex: Première année, Plus d'un an...": { key: "categoryExamplesPlaceholder", fr: "Ex: Première année, Plus d'un an...", pt: "Ex: Primeiro ano, Mais de um ano..." },
+  "Choisir une couleur": { key: "chooseColorTitle", fr: "Choisir une couleur", pt: "Escolher uma cor" },
+  "💾 Valider": { key: "btnValidateSave", fr: "💾 Valider", pt: "💾 Confirmar" },
+  "Modifier l'intitulé et la couleur de cette catégorie": {
+    key: "editCategoryTitle",
+    fr: "Modifier l'intitulé et la couleur de cette catégorie",
+    pt: "Editar nome e cor desta categoria"
+  },
+  "Cette catégorie de pratique existe déjà !": { key: "categoryAlreadyExistsAlert", fr: "Cette catégorie de pratique existe déjà !", pt: "Esta categoria de prática já existe!" },
+  "Chargement des catégories de pratique...": { key: "loadingPracticeCategories", fr: "Chargement des catégories de pratique...", pt: "Carregando categorias de prática..." },
+  "Mestria": { key: "breadcrumbMestria", fr: "Mestria", pt: "Mestria" },
+  "Catégories de pratique": { key: "breadcrumbPracticeCategories", fr: "Catégories de pratique", pt: "Categorias de prática" },
+  "Catégories & Niveaux de Pratique": { key: "customCategoriesTitle", fr: "Catégories & Niveaux de Pratique", pt: "Categorias & Níveis de Prática" },
+  "Configurez les sections, niveaux ou groupes de pratique (ex : Débutants, Avancés, Danse, Percussion, Équipe Pro...).\n            Ces catégories servent à cibler les convocations d'agenda et à orienter le casting.": {
+    key: "customCategoriesSubtitle",
+    fr: "Configurez les sections, niveaux ou groupes de pratique (ex : Débutants, Avancés, Danse, Percussion, Équipe Pro...). Ces catégories servent à cibler les convocations d'agenda et à orienter le casting.",
+    pt: "Configure as seções, níveis ou grupos de prática (ex: Iniciantes, Avançados, Dança, Percussão, Equipe Pro...). Essas categorias servem para direcionar convocações e orientar o elenco."
+  },
+  "⬅️ Retour": { key: "btnBackArrow", fr: "⬅️ Retour", pt: "⬅️ Voltar" },
+  "Annuler": { key: "cancelBtn", fr: "Annuler", pt: "Cancelar" },
+  "Supprimer cette catégorie": { key: "deleteCategoryTitle", fr: "Supprimer cette catégorie", pt: "Excluir esta categoria" }
+};
+
+const pedagogyTranslations = {
+  // MestrePedagogyDashboard.jsx
+  "Toutes les évaluations ont été remises à zéro avec succès.": {
+    key: "allEvalsResetSuccess",
+    fr: "Toutes les évaluations ont été remises à zéro avec succès.",
+    pt: "Todas as avaliações foram zeradas com sucesso."
+  },
+  "Erreur lors de la remise à zéro.": { key: "errResettingEvals", fr: "Erreur lors de la remise à zéro.", pt: "Erro ao zerar as avaliações." },
+  "Erreur lors de la suppression des données de test.": { key: "errDeletingTestData", fr: "Erreur lors de la suppression des données de test.", pt: "Erro ao excluir dados de teste." },
+  "Accès réservé au Mestre et à l'équipe pédagogique.": {
+    key: "accessRestrictedMestrePedagogy",
+    fr: "Accès réservé au Mestre et à l'équipe pédagogique.",
+    pt: "Acesso reservado ao Mestre e à equipe pedagógica."
+  },
+  "Épinglé :": { key: "pinnedColon", fr: "Épinglé :", pt: "Fixado:" },
+  "élément(s) de test E2E détecté(s) :": { key: "e2eElementsDetected", fr: "élément(s) de test E2E détecté(s) :", pt: "elemento(s) de teste E2E detectado(s):" },
+  "Ces séquences issues des tests automatisés sont automatiquement masquées de vos pupitres et de la Danse.": {
+    key: "e2eSequencesHiddenNotice",
+    fr: "Ces séquences issues des tests automatisés sont automatiquement masquées de vos pupitres et de la Danse.",
+    pt: "Essas sequências de testes automatizados são automaticamente ocultadas dos naipes e da Dança."
+  },
+  "Supprimer définitivement tous les artefacts de tests E2E de la base Firestore": {
+    key: "deleteE2eArtifactsTitle",
+    fr: "Supprimer définitivement tous les artefacts de tests E2E de la base Firestore",
+    pt: "Excluir permanentemente todos os artefatos de teste E2E do Firestore"
+  },
+  "Points chauds de répétition": { key: "hotspotsAriaLabel", fr: "Points chauds de répétition", pt: "Pontos críticos de ensaio" },
+  "Analyse des points chauds...": { key: "analyzingHotspots", fr: "Analyse des points chauds...", pt: "Analisando pontos críticos..." },
+  "✨ Aucun point critique sous 60%. Tous les rythmes et chants évalués sont au vert !": {
+    key: "noCriticalHotspotsNotice",
+    fr: "✨ Aucun point critique sous 60%. Tous les rythmes et chants évalués sont au vert !",
+    pt: "✨ Nenhum ponto crítico abaixo de 60%. Todos os toques e toadas avaliados estão aprovados!"
+  },
+  "Priorité #": { key: "priorityPrefix", fr: "Priorité #", pt: "Prioridade #" },
+  "Programmer directement dans le fil conducteur de la prochaine répétition": {
+    key: "programInNextRehearsalTitle",
+    fr: "Programmer directement dans le fil conducteur de la prochaine répétition",
+    pt: "Programar diretamente no roteiro do próximo ensaio"
+  },
+  "Épingler directement dans le bloc-notes de répétition": {
+    key: "pinInNotepadTitle",
+    fr: "Épingler directement dans le bloc-notes de répétition",
+    pt: "Fixar diretamente no bloco de notas do ensaio"
+  },
+  "Résultats aux défis de la troupe": { key: "challengesResultsAriaLabel", fr: "Résultats aux défis de la troupe", pt: "Resultados dos desafios do grupo" },
+  "Matrices d'aisance par discipline": { key: "fluencyMatricesAriaLabel", fr: "Matrices d'aisance par discipline", pt: "Matrizes de desenvoltura por disciplina" },
+  "Percussion": { key: "disciplinePercussion", fr: "Percussion", pt: "Percussão" },
+  "Chants & Toadas": { key: "disciplineChantsToadas", fr: "Chants & Toadas", pt: "Cantos & Toadas" },
+  "Entraînements (": { key: "disciplineTrainingsCount", fr: "Entraînements (", pt: "Treinos (" },
+  "Administration annuelle": { key: "annualAdminTitle", fr: "Administration annuelle", pt: "Administração anual" },
+  "Saison": { key: "seasonWord", fr: "Saison", pt: "Temporada" },
+  "Calcul des matrices pédagogiques en cours...": { key: "calculatingMatrices", fr: "Calcul des matrices pédagogiques en cours...", pt: "Calculando matrizes pedagógicas..." },
+  "Remise à zéro annuelle": { key: "annualResetHeading", fr: "Remise à zéro annuelle", pt: "Zerar temporada anual" },
+  "Pour préparer la nouvelle saison, vous pouvez remettre à zéro l'ensemble des évaluations de tous les membres (Rythmes, Chants, Danse...). Les membres conserveront leurs badges d'ancienneté et leurs comptes, mais devront repasser les tests et auto-évaluations pour remplir à nouveau leur parcours.": {
+    key: "annualResetDesc",
+    fr: "Pour préparer la nouvelle saison, vous pouvez remettre à zéro l'ensemble des évaluations de tous les membres (Rythmes, Chants, Danse...). Les membres conserveront leurs badges d'ancienneté et leurs comptes, mais devront repasser les tests et auto-évaluations pour remplir à nouveau leur parcours.",
+    pt: "Para preparar a nova temporada, você pode zerar as avaliações de todos os integrantes (Toques, Toadas, Dança...). Os integrantes mantêm seus crachás e contas, mas refarão os testes para preencher sua trajetória."
+  },
+  "🔄 Réinitialiser les compteurs": { key: "btnResetCounters", fr: "🔄 Réinitialiser les compteurs", pt: "🔄 Reiniciar contadores" },
+  "Dépollution des tests automatisés (E2E)": { key: "cleanupE2eHeading", fr: "Dépollution des tests automatisés (E2E)", pt: "Limpeza de testes automatizados (E2E)" },
+  "Si des tests automatisés ont généré des séquences temporaires, des motifs de test ou des évaluations fictives (préfixe E2E ou fs_pattern/fs_section), vous pouvez purger définitivement ces données résiduelles de Firestore en un clic.": {
+    key: "cleanupE2eDesc",
+    fr: "Si des tests automatisés ont généré des séquences temporaires, des motifs de test ou des évaluations fictives (préfixe E2E ou fs_pattern/fs_section), vous pouvez purger définitivement ces données résiduelles de Firestore en un clic.",
+    pt: "Se testes automatizados geraram sequências temporárias ou avaliações fictícias (prefixo E2E ou fs_pattern/fs_section), você pode purgar esses dados residuais do Firestore em um clique."
+  },
+  "élément(s) de test actuellement détecté(s)": { key: "testElementsCountLabel", fr: "élément(s) de test actuellement détecté(s)", pt: "elemento(s) de teste detectado(s) atualmente" },
+  "Bloc-notes persistant et ordre du jour de répétition": { key: "notepadAriaLabel", fr: "Bloc-notes persistant et ordre du jour de répétition", pt: "Bloco de notas persistente e pauta de ensaio" },
+  "Ordre du jour & Bloc-notes de répétition": { key: "notepadHeading", fr: "Ordre du jour & Bloc-notes de répétition", pt: "Pauta & Bloco de Notas de Ensaio" },
+  "Persisté dans Firestore • Passerelle directe vers l'Agenda": { key: "notepadSubtitle", fr: "Persisté dans Firestore • Passerelle directe vers l'Agenda", pt: "Salvo no Firestore • Acesso direto à Agenda" },
+
+  // MestrePedagogyNotepad.jsx
+  "📌 Bloc-Notes": { key: "notepadTitle", fr: "📌 Bloc-Notes", pt: "📌 Bloco de Notas" },
+  "À Travailler en Répétition": { key: "toWorkInRehearsalSubtitle", fr: "À Travailler en Répétition", pt: "A Praticar no Ensaio" },
+  "Chargement...": { key: "loadingGeneric", fr: "Chargement...", pt: "Carregando..." },
+  "Aucun point épinglé.": { key: "noPinnedPoints", fr: "Aucun point épinglé.", pt: "Nenhum ponto fixado." },
+  "Épinglé par": { key: "pinnedByPrefix", fr: "Épinglé par", pt: "Fixado por" },
+  "Supprimer cette note": { key: "deleteNoteTitle", fr: "Supprimer cette note", pt: "Excluir esta nota" },
+  "📅 Programmer (": { key: "programCountPrefix", fr: "📅 Programmer (", pt: "📅 Programar (" },
+  "Ajouter à une répétition": { key: "addToRehearsalHeading", fr: "Ajouter à une répétition", pt: "Adicionar a um ensaio" },
+  "Les": { key: "thePluralWord", fr: "Les", pt: "As" },
+  "note": { key: "noteWord", fr: "note", pt: "nota" },
+  "sélectionnée": { key: "selectedWord", fr: "sélectionnée", pt: "selecionada" },
+  "ser": { key: "willBePrefix", fr: "ser", pt: "ser" },
+  "ajoutée": { key: "addedWord", fr: "ajoutée", pt: "adicionada" },
+  "au fil conducteur de la répétition choisie.": { key: "toRehearsalRoadbookNotice", fr: "au fil conducteur de la répétition choisie.", pt: "ao roteiro do ensaio escolhido." },
+  "-- Aucune répétition à venir trouvée --": { key: "noUpcomingRehearsalsFound", fr: "-- Aucune répétition à venir trouvée --", pt: "-- Nenhum ensaio próximo encontrado --" },
+  "-- Choisir une répétition --": { key: "chooseRehearsalPlaceholder", fr: "-- Choisir une répétition --", pt: "-- Escolha um ensaio --" },
+  "Annuler": { key: "cancelBtn", fr: "Annuler", pt: "Cancelar" },
+
+  // MestreAutoEvalConfig.jsx
+  "Accès refusé.": { key: "accessDenied", fr: "Accès refusé.", pt: "Acesso negado." },
+  "Visibilité des Onglets": { key: "tabVisibilityTab", fr: "Visibilité des Onglets", pt: "Visibilidade das Abas" },
+  "Visibilité des Rythmes": { key: "rhythmVisibilityTab", fr: "Visibilité des Rythmes", pt: "Visibilidade dos Toques" },
+  "Configuration Globale QCM": { key: "globalQuizConfigTab", fr: "Configuration Globale QCM", pt: "Configuração Geral de Testes" },
+  "QCM Percussion": { key: "percussionQuizTab", fr: "QCM Percussion", pt: "Teste de Percussão" },
+  "QCM Danse": { key: "danceQuizTab", fr: "QCM Danse", pt: "Teste de Dança" },
+  "QCM Chant": { key: "songQuizTab", fr: "QCM Chant", pt: "Teste de Canto" },
+  "QCM Atelier": { key: "workshopQuizTab", fr: "QCM Atelier", pt: "Teste de Oficina" },
+  "QCM Culture": { key: "cultureQuizTab", fr: "QCM Culture", pt: "Teste de Cultura" },
+  "Signaux du Maître": { key: "mestreSignalsTab", fr: "Signaux du Maître", pt: "Sinais do Mestre" },
+  "Banque de Leurres": { key: "distractorsBankTab", fr: "Banque de Leurres", pt: "Banco de Distratores" },
+  "📝 Auto-Évaluation": { key: "autoEvalHeading", fr: "📝 Auto-Évaluation", pt: "📝 Autoavaliação" },
+  "Paramétrez la difficulté des auto-évaluations, les questions personnalisées par pupitre et la configuration globale.": {
+    key: "autoEvalSubtitle",
+    fr: "Paramétrez la difficulté des auto-évaluations, les questions personnalisées par pupitre et la configuration globale.",
+    pt: "Configure a dificuldade das autoavaliações, as perguntas personalizadas por naipe e os parâmetros gerais."
+  },
+  "Chargement des configurations...": { key: "loadingConfigs", fr: "Chargement des configurations...", pt: "Carregando configurações..." },
+  "Visibilité des onglets dans Mon Parcours": { key: "tabsVisibilityHeading", fr: "Visibilité des onglets dans Mon Parcours", pt: "Visibilidade das abas em Minha Trajetória" },
+  "Activez ou désactivez les onglets visibles par les élèves dans leur espace Mon Parcours.": {
+    key: "tabsVisibilityDesc",
+    fr: "Activez ou désactivez les onglets visibles par les élèves dans leur espace Mon Parcours.",
+    pt: "Ative ou desative as abas visíveis pelos alunos no espaço Minha Trajetória."
+  },
+  "Chant": { key: "disciplineSinging", fr: "Chant", pt: "Canto" },
+  "Atelier (Fabrication/Entretien)": { key: "disciplineWorkshopCraft", fr: "Atelier (Fabrication/Entretien)", pt: "Oficina (Fabricação/Manutenção)" },
+  "Défis rythmiques (Entraînements & Réflexes)": { key: "disciplineRhythmChallenges", fr: "Défis rythmiques (Entraînements & Réflexes)", pt: "Desafios rítmicos (Treinos & Reflexos)" },
+  "Afficher l'onglet \"": { key: "showTabPrefix", fr: "Afficher l'onglet \"", pt: "Exibir a aba \"" },
+  "Désactivé par défaut. Révèle l'onglet des programmes métronomiques et défis de réaction dans Mon Parcours.": {
+    key: "rhythmChallengesTabHint",
+    fr: "Désactivé par défaut. Révèle l'onglet des programmes métronomiques et défis de réaction dans Mon Parcours.",
+    pt: "Desativado por padrão. Mostra a aba de treinos metronômicos e desafios de reflexo em Minha Trajetória."
+  },
+  "Visibilité des Rythmes (QCM & Carnet d'Aisance)": { key: "rhythmsVisibilityHeading", fr: "Visibilité des Rythmes (QCM & Carnet d'Aisance)", pt: "Visibilidade dos Toques (Testes & Caderno)" },
+  "Décochez les \"petites boucles\" ou patterns sans valeur pédagogique pour les masquer totalement de l'espace élève (et des QCM générés automatiquement).": {
+    key: "rhythmsVisibilityDesc",
+    fr: "Décochez les \"petites boucles\" ou patterns sans valeur pédagogique pour les masquer totalement de l'espace élève (et des QCM générés automatiquement).",
+    pt: "Desmarque loops curtos ou padrões sem valor pedagógico para ocultá-los do espaço do aluno (e dos testes gerados automaticamente)."
+  },
+  "Erreur lors de la sauvegarde.": { key: "errSavingGeneric", fr: "Erreur lors de la sauvegarde.", pt: "Erro ao salvar." },
+  "Masqué": { key: "hiddenBadge", fr: "Masqué", pt: "Oculto" },
+  "1. Sélection": { key: "step1Selection", fr: "1. Sélection", pt: "1. Seleção" },
+  "2. Questions Personnalisées": { key: "step2CustomQuestions", fr: "2. Questions Personnalisées", pt: "2. Perguntas Personalizadas" },
+  "1. Sélection (Danse)": { key: "step1SelectionDance", fr: "1. Sélection (Danse)", pt: "1. Seleção (Dança)" },
+  "1. Sélection Chant": { key: "step1SelectionSong", fr: "1. Sélection Chant", pt: "1. Seleção (Canto)" },
+  "1. Sélection Fiche Atelier": { key: "step1SelectionWorkshop", fr: "1. Sélection Fiche Atelier", pt: "1. Seleção (Ficha Oficina)" },
+  "1. Sélection Fiche Culture": { key: "step1SelectionCulture", fr: "1. Sélection Fiche Culture", pt: "1. Seleção (Ficha Cultura)" },
+
+  // CustomQuizConfigPanel.jsx
+  "Sélectionnez un élément à gauche pour configurer son QCM.": {
+    key: "selectItemToConfigureNotice",
+    fr: "Sélectionnez un élément à gauche pour configurer son QCM.",
+    pt: "Selecione um item à esquerda para configurar seu teste."
+  },
+  "Visibilité Élèves (Mon Parcours)": { key: "studentVisibilityLabel", fr: "Visibilité Élèves (Mon Parcours)", pt: "Visibilidade para Alunos (Minha Trajetória)" },
+  "Signal du Maître Associé": { key: "associatedMestreSignalLabel", fr: "Signal du Maître Associé", pt: "Sinal do Mestre Associado" },
+  "-- Aucun signal --": { key: "noSignalOption", fr: "-- Aucun signal --", pt: "-- Nenhum sinal --" },
+  "Questions actives pour :": { key: "activeQuestionsForColon", fr: "Questions actives pour :", pt: "Perguntas ativas para:" },
+  "Aucune question personnalisée pour cet élément.": {
+    key: "noCustomQuestionsNotice",
+    fr: "Aucune question personnalisée pour cet élément.",
+    pt: "Nenhuma pergunta personalizada para este item."
+  },
+  "Audio attaché": { key: "audioAttachedBadge", fr: "Audio attaché", pt: "Áudio anexado" },
+  "Supprimer la question": { key: "deleteQuestionTitle", fr: "Supprimer la question", pt: "Excluir pergunta" },
+  "✓ Question ajoutée !": { key: "questionAddedToast", fr: "✓ Question ajoutée !", pt: "✓ Pergunta adicionada!" },
+  "+ Nouvelle Question": { key: "newQuestionHeading", fr: "+ Nouvelle Question", pt: "+ Nova Pergunta" },
+  "⚡ Générer auto.": { key: "generateAutoBtn", fr: "⚡ Générer auto.", pt: "⚡ Gerar auto." },
+  "La question (ex: Quel est ce pattern ?)": { key: "questionPlaceholder", fr: "La question (ex: Quel est ce pattern ?)", pt: "A pergunta (ex: Qual é este toque?)" },
+  "Audio / Média lié (Optionnel)": { key: "audioMediaLinkedLabel", fr: "Audio / Média lié (Optionnel)", pt: "Áudio / Mídia vinculada (Opcional)" },
+  "-- Aucun média (Texte uniquement) --": { key: "noMediaTextOnlyOption", fr: "-- Aucun média (Texte uniquement) --", pt: "-- Sem mídia (Somente texto) --" },
+  "La BONNE réponse": { key: "correctAnswerPlaceholder", fr: "La BONNE réponse", pt: "A resposta CORRETA" },
+  "Fausse réponse 1": { key: "distractor1Placeholder", fr: "Fausse réponse 1", pt: "Opção incorreta 1" },
+  "Fausse réponse 2 (opt)": { key: "distractor2Placeholder", fr: "Fausse réponse 2 (opt)", pt: "Opção incorreta 2 (opc)" },
+  "Fausse réponse 3 (opt)": { key: "distractor3Placeholder", fr: "Fausse réponse 3 (opt)", pt: "Opção incorreta 3 (opc)" },
+  "Ajouter au Quiz": { key: "addToQuizBtn", fr: "Ajouter au Quiz", pt: "Adicionar ao Teste" }
+};
+
+const map = {
+  sequenceur: sequenceurTranslations,
+  stageLayout: stageLayoutTranslations,
+  editorial: editorialTranslations,
+  casting: castingTranslations,
+  pedagogy: pedagogyTranslations
+};
+
+fs.writeFileSync(path.join(rootDir, 'scripts/mestre_lot2_bilingual_map.json'), JSON.stringify(map, null, 2), 'utf8');
+
+console.log('✅ Mapping bilingue généré avec succès dans scripts/mestre_lot2_bilingual_map.json');
+let totalKeys = 0;
+for (const [cat, trans] of Object.entries(map)) {
+  const count = Object.keys(trans).length;
+  totalKeys += count;
+  console.log(`  - mestre.${cat} : ${count} clés`);
+}
+console.log(`Total clés créées : ${totalKeys}`);

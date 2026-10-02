@@ -64,6 +64,9 @@ function ChannelTreeItem({
     }
   }, [isActive, hasActiveThread, hasUnread]);
 
+  const { t } = useTranslation();
+  const channelDisplayName = (channel.name === 'Général' || channel.name === 'Geral') ? t('forum.defaultChannelGeneral') : channel.name;
+
   return (
     <div className="flex flex-col gap-1 w-full min-w-0">
       <div className="flex items-center gap-1 w-full min-w-0">
@@ -96,7 +99,7 @@ function ChannelTreeItem({
             <span className="shrink-0 font-bold text-cordel-wood opacity-75">
               {channel.readOnlyForMembers ? <XiloMegaphone size={12} className="text-cordel-wood inline" /> : (!channel.readRoles || channel.readRoles.includes('all') || channel.readRoles.length === 0) ? (level === 0 ? '📂' : '#') : '🔒'}
             </span>
-            <span className={`truncate ${hasUnread ? 'font-black text-encre-noire' : ''}`}>{channel.name}</span>
+            <span className={`truncate ${hasUnread ? 'font-black text-encre-noire' : ''}`}>{channelDisplayName}</span>
             {channelThreads.length > 0 && (
               <span className="text-[9px] opacity-60 font-normal shrink-0">({channelThreads.length})</span>
             )}
@@ -1005,7 +1008,7 @@ export default function Forum({
               className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider shrink-0 cursor-pointer"
               title="Gérer les salons, droits d'accès et modération"
             >
-              ⚙️ Salons
+              ⚙️ {t('forum.btnChannels')}
             </CordelButton>
           )}
         </div>
@@ -1044,7 +1047,7 @@ export default function Forum({
           }`}
         >
           <span className="shrink-0">✉️</span>
-          <span className="truncate">Messages privés</span>
+          <span className="truncate">{t('forum.tabPrivateMessages')}</span>
           {unreadDirectCount > 0 && (
             <span className="absolute -top-1.5 -right-1 min-w-[14px] h-3.5 px-1 bg-red-600 text-white text-[7px] font-black rounded-full flex items-center justify-center animate-pulse shadow-xs">
               {unreadDirectCount}
@@ -1066,7 +1069,7 @@ export default function Forum({
           }`}
         >
           <span className="shrink-0">👥</span>
-          <span className="truncate">Groupes</span>
+          <span className="truncate">{t('forum.tabGroups')}</span>
           {unreadGroupsCount > 0 && (
             <span className="absolute -top-1.5 -right-1 min-w-[14px] h-3.5 px-1 bg-red-600 text-white text-[7px] font-black rounded-full flex items-center justify-center animate-pulse shadow-xs">
               {unreadGroupsCount}
@@ -1300,7 +1303,7 @@ export default function Forum({
                   return (
                     <div className="flex items-center gap-1.5 text-xs font-black text-cordel-wood uppercase tracking-wider select-none flex-wrap bg-white/40 p-2 rounded border border-dashed border-cordel-master-dark/15">
                       <span className="text-encre-noire flex items-center gap-1">
-                        <XiloMegaphone size={12} className="text-cordel-wood" /> Porte-voix
+                        <XiloMegaphone size={12} className="text-cordel-wood" /> {translate('forum.title', "Porte-voix")}
                       </span>
                       {path.map((item, idx) => (
                         <React.Fragment key={item.id}>
@@ -1310,7 +1313,7 @@ export default function Forum({
                             onClick={() => handleSelectChannel(item.id)}
                             className={`hover:underline ${idx === path.length - 1 ? 'text-encre-noire font-extrabold' : 'text-cordel-wood'}`}
                           >
-                            {item.name}
+                            {(item.name === 'Général' || item.name === 'Geral') ? t('forum.defaultChannelGeneral') : item.name}
                           </button>
                         </React.Fragment>
                       ))}
@@ -1320,7 +1323,7 @@ export default function Forum({
 
                 <div className="flex justify-between items-center px-1 select-none flex-wrap gap-2">
                   <h2 className="panel-title text-sm font-extrabold text-cordel-master-dark opacity-80 uppercase">
-                    {activeChannel ? `📂 ${activeChannel.name}` : t('forum.threadsList')}
+                    {activeChannel ? `📂 ${(activeChannel.name === 'Général' || activeChannel.name === 'Geral') ? t('forum.defaultChannelGeneral') : activeChannel.name}` : t('forum.threadsList')}
                   </h2>
                   
                   <div className="flex items-center gap-2">

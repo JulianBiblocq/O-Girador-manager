@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { usePoleGuide, getGuideKey } from '../hooks/usePoleGuide';
 import PoleTourOverlay from './guided-tour/PoleTourOverlay';
+import { useTranslation } from './LanguageContext';
 
 /**
  * Composant : InfoPoleBanner
@@ -15,6 +16,7 @@ import PoleTourOverlay from './guided-tour/PoleTourOverlay';
  * @param {Function} [onClose] - Optionnel : callback de fermeture
  */
 export default function InfoPoleBanner({ currentPole, currentTab, forceShow = false, onClose }) {
+  const { t } = useTranslation();
   const { guide, guideKey, isHidden, hideBanner } = usePoleGuide(currentTab, currentPole);
   const [isTourOpen, setIsTourOpen] = useState(false);
 
@@ -51,8 +53,12 @@ export default function InfoPoleBanner({ currentPole, currentTab, forceShow = fa
     if (onClose) onClose();
   };
 
-  const bannerTitle = guide.titre || guide.title;
-  const bannerSteps = guide.etapes || guide.steps || [];
+  const isCaReunions = effectiveKey === 'ca-reunions' || currentTab === 'ca-reunions';
+  const bannerTitle = isCaReunions ? t('governance.meetingsTitle') : (guide.titre || guide.title);
+  const bannerDesc = isCaReunions ? t('governance.meetingsSubtitle') : guide.description;
+  const bannerSteps = isCaReunions
+    ? [t('governance.step1'), t('governance.step2'), t('governance.step3'), t('governance.step4')]
+    : (guide.etapes || guide.steps || []);
 
   // Vérification de la complétion préalable du parcours guidé pour cet onglet
   const isTourCompleted = typeof window !== 'undefined'
@@ -76,6 +82,33 @@ export default function InfoPoleBanner({ currentPole, currentTab, forceShow = fa
 
           {/* Actions : Visite guidée pas-à-pas et bouton de confirmation / masquage */}
           <div className="flex items-center gap-2 self-end sm:self-auto flex-wrap">
+            {isCaReunions && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const formEl = document.getElementById('meeting-form-section');
+                    if (formEl) formEl.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border border-encre-noire bg-[var(--color-cordel-vert)] text-white hover:brightness-110 transition-all cursor-pointer shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none flex items-center gap-1 shrink-0"
+                >
+                  <span>➕</span>
+                  <span>{t('governance.btnNewMeeting')}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const tableEl = document.getElementById('meetings-studio-table');
+                    if (tableEl) tableEl.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border border-amber-800/40 bg-amber-100 text-amber-900 hover:bg-amber-200 transition-all cursor-pointer shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none flex items-center gap-1 shrink-0"
+                >
+                  <span>📜</span>
+                  <span>{t('governance.btnReportsArchives')}</span>
+                </button>
+              </>
+            )}
+
             {/* Bouton interactif Visite Guidée */}
             <button
               type="button"
@@ -105,7 +138,7 @@ export default function InfoPoleBanner({ currentPole, currentTab, forceShow = fa
 
         {/* Texte de description explicative */}
         <p className="text-xs text-encre-noire/90 font-medium leading-relaxed mb-3">
-          {guide.description}
+          {bannerDesc}
         </p>
 
         {/* Liste numérotée des étapes logiques à suivre */}

@@ -2,6 +2,7 @@ import React from 'react';
 import CordelCard from '../../CordelCard';
 import VehicleFleetSection from './VehicleFleetSection';
 import DepartureLocationAccordion from './DepartureLocationAccordion';
+import { useTranslation } from '../../LanguageContext';
 
 /**
  * Bloc de gestion des convois et de la flotte de véhicules
@@ -10,6 +11,7 @@ import DepartureLocationAccordion from './DepartureLocationAccordion';
  * - Les barèmes financiers (€/km) sont gérés au niveau de la Trésorerie
  */
 export default function CarpoolBlock({ formData = {}, handleChange, saving = false, groupId }) {
+  const { t } = useTranslation();
   const effectiveGroupId = groupId || formData.groupId || formData.id || '';
 
   return (
@@ -20,10 +22,10 @@ export default function CarpoolBlock({ formData = {}, handleChange, saving = fal
           <div>
             <h3 className="text-sm uppercase font-extrabold tracking-wider text-cordel-wood flex items-center gap-2">
               <span>🚗</span>
-              <span>Flotte de véhicules & Départs en convoi</span>
+              <span>{t('logistics.fleetConvoysTitle')}</span>
             </h3>
             <p className="text-[11px] text-cordel-master-dark/70 mt-0.5">
-              Gestion des capacités de transport du groupe pour les sorties et prestations.
+              {t('logistics.fleetConvoysDesc')}
             </p>
           </div>
         </div>

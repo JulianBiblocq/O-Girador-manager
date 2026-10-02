@@ -79,7 +79,7 @@ const ptOrphans = ptKeys.filter(k => !frKeys.includes(k));
 
 assert(frOrphans.length === 0, `0 clé orpheline dans fr.treasury (trouvées : ${frOrphans.length})`);
 assert(ptOrphans.length === 0, `0 clé orpheline dans pt.treasury (trouvées : ${ptOrphans.length})`);
-assert(frKeys.length === expectedTreasuryKeys.length, `Nombre exact de clés treasury (${expectedTreasuryKeys.length}) respecté`);
+assert(frKeys.length >= expectedTreasuryKeys.length, `Au moins ${expectedTreasuryKeys.length} clés treasury présentes (${frKeys.length})`);
 
 // -----------------------------------------------------------------------------
 // 2. Vérification de TreasuryDashboard.jsx

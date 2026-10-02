@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '../LanguageContext';
 import { CAUTION_STATUS_OPTIONS, CAUTION_TYPES } from './inventoryConstants';
 
 /**
@@ -10,7 +11,9 @@ import { CAUTION_STATUS_OPTIONS, CAUTION_TYPES } from './inventoryConstants';
  * @param {boolean} props.saving État de sauvegarde
  * @param {Function} props.t Fonction de traduction
  */
-export default function InstrumentCautionFields({ caution, onChange, saving = false, t }) {
+export default function InstrumentCautionFields({ caution, onChange, saving = false, t: propT }) {
+  const { t: hookT } = useTranslation();
+  const t = propT || hookT;
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-dashed border-cordel-master-dark/15 animate-fadeIn">
       {/* Montant de la caution */}
@@ -49,7 +52,10 @@ export default function InstrumentCautionFields({ caution, onChange, saving = fa
         >
           {CAUTION_STATUS_OPTIONS.filter((s) => s.id !== 'non_requise').map((sOpt) => (
             <option key={sOpt.id} value={sOpt.id}>
-              {sOpt.label}
+              {sOpt.id === 'en_attente' ? (t && t('inventory.cautionStatusEnAttente')) || sOpt.label :
+               sOpt.id === 'recue' ? (t && t('inventory.cautionStatusRecue')) || sOpt.label :
+               sOpt.id === 'restituee' ? (t && t('inventory.cautionStatusRestituee')) || sOpt.label :
+               sOpt.id === 'non_requise' ? (t && t('lutherie.cautionNotRequired')) || sOpt.label : sOpt.label}
             </option>
           ))}
         </select>
@@ -68,7 +74,9 @@ export default function InstrumentCautionFields({ caution, onChange, saving = fa
         >
           {CAUTION_TYPES.map((tOpt) => (
             <option key={tOpt.id} value={tOpt.id}>
-              {tOpt.label}
+              {tOpt.id === 'cheque' ? (t && t('inventory.cautionTypeCheque')) || tOpt.label :
+               tOpt.id === 'especes' ? (t && t('inventory.cautionTypeEspeces')) || tOpt.label :
+               tOpt.id === 'virement' ? (t && t('inventory.cautionTypeVirement')) || tOpt.label : tOpt.label}
             </option>
           ))}
         </select>
@@ -87,7 +95,7 @@ export default function InstrumentCautionFields({ caution, onChange, saving = fa
             onChange('reference', e.target.value);
           }}
           disabled={saving}
-          placeholder="ex: CHQ-849201"
+          placeholder={t('logistics.cautionRefPlaceholder')}
           className="theme-input text-xs font-bold py-1 px-2 bg-white dark:bg-stone-800"
         />
       </div>

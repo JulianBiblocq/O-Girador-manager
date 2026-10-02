@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '../LanguageContext';
 import CordelButton from '../CordelButton';
 
 /**
@@ -23,8 +24,11 @@ export default function InventoryFilterBar({
   setViewMode,
   onOpenAdd,
   onExportCSV,
-  t: _t
+  t: propT
 }) {
+  const { t: hookT } = useTranslation();
+  const t = propT || hookT;
+
   return (
     <div data-tour="inventory-filter-bar" className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-3 bg-cordel-bg border-2 border-encre-noire rounded-[6px] shadow-[2px_2px_0px_0px_#181716] select-none">
       {/* Recherche textuelle & Onglets de filtrage */}
@@ -33,7 +37,7 @@ export default function InventoryFilterBar({
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="🔍 Rechercher un matériel..."
+          placeholder={t('logistics.searchMaterialPlaceholder')}
           className="p-1.5 px-3 bg-white border border-encre-noire rounded-[4px] text-xs font-bold text-encre-noire focus:outline-none focus:ring-2 focus:ring-cordel-master-dark min-w-[200px]"
         />
 
@@ -47,7 +51,7 @@ export default function InventoryFilterBar({
                 : 'text-encre-noire/70 hover:text-encre-noire hover:bg-black/5'
             }`}
           >
-            Tous
+            {t('logistics.filterAll')}
           </button>
           <button
             type="button"
@@ -58,7 +62,7 @@ export default function InventoryFilterBar({
                 : 'text-encre-noire/70 hover:text-encre-noire hover:bg-black/5'
             }`}
           >
-            Association
+            {t('logistics.filterAssociation')}
           </button>
           <button
             type="button"
@@ -69,7 +73,7 @@ export default function InventoryFilterBar({
                 : 'text-encre-noire/70 hover:text-encre-noire hover:bg-black/5'
             }`}
           >
-            Personnels
+            {t('logistics.filterPersonal')}
           </button>
           <button
             type="button"
@@ -80,7 +84,7 @@ export default function InventoryFilterBar({
                 : 'text-red-700/80 hover:text-red-900 hover:bg-red-50'
             }`}
           >
-            🛠️ À réparer
+            {t('logistics.filterToRepair')}
           </button>
         </div>
       </div>
@@ -92,17 +96,17 @@ export default function InventoryFilterBar({
             type="button"
             onClick={() => setViewMode('table')}
             className={`px-2 py-1 text-xs font-bold rounded ${viewMode === 'table' ? 'bg-cordel-bg border border-encre-noire' : 'text-neutral-500'}`}
-            title="Vue Tableau"
+            title={t('logistics.viewTableTitle')}
           >
-            📊 Liste
+            {t('logistics.btnList')}
           </button>
           <button
             type="button"
             onClick={() => setViewMode('cards')}
             className={`px-2 py-1 text-xs font-bold rounded ${viewMode === 'cards' ? 'bg-cordel-bg border border-encre-noire' : 'text-neutral-500'}`}
-            title="Vue Cartes"
+            title={t('logistics.viewCardsTitle')}
           >
-            🎴 Cartes
+            {t('logistics.btnCards')}
           </button>
         </div>
 
@@ -111,14 +115,14 @@ export default function InventoryFilterBar({
             type="button"
             onClick={onExportCSV}
             className="px-2.5 py-1.5 bg-cordel-bg text-encre-noire border border-encre-noire rounded text-xs font-bold hover:bg-neutral-100 shadow-xs cursor-pointer flex items-center gap-1"
-            title="Exporter l'inventaire au format CSV"
+            title={t('logistics.exportCsvTitle')}
           >
-            📥 CSV
+            {t('logistics.btnCsv')}
           </button>
         )}
 
         <CordelButton variant="vert" data-tour="inventory-add-btn" onClick={onOpenAdd} className="px-3 py-1.5 text-xs font-black">
-          + Nouveau Matériel
+          {t('logistics.btnNewMaterial')}
         </CordelButton>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from '../LanguageContext';
 import { collection, query, where, getDocs, doc, setDoc, updateDoc, getDoc } from 'firebase/firestore';
 import { ref, listAll, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../../firebase';
@@ -9,6 +10,7 @@ import MestreSignalsManager from '../pedagogy/MestreSignalsManager';
 import CustomQuizConfigPanel from './CustomQuizConfigPanel';
 
 export default function MestreAutoEvalConfig({ profileData, isEmbedded }) {
+  const { t } = useTranslation();
   const groupId = profileData?.groupId;
   const isAuthorized = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin;
 
@@ -253,19 +255,19 @@ export default function MestreAutoEvalConfig({ profileData, isEmbedded }) {
     }
   };
 
-  if (!isAuthorized) return <div className="p-8 text-center">Accès refusé.</div>;
+  if (!isAuthorized) return <div className="p-8 text-center">{t('mestre.pedagogy.accessDenied')}</div>;
 
   const sections = [
-    { id: 'visibilite', label: 'Visibilité des Onglets', icon: '👁️' },
-    { id: 'inclusions_qcm', label: 'Visibilité des Rythmes', icon: '🎯' },
-    { id: 'qcm_config', label: 'Configuration Globale QCM', icon: '⚙️' },
-    { id: 'percussion', label: 'QCM Percussion', icon: '🥁' },
-    { id: 'danse', label: 'QCM Danse', icon: '💃' },
-    { id: 'chant', label: 'QCM Chant', icon: '🎤' },
-    { id: 'atelier', label: 'QCM Atelier', icon: '🛠️' },
-    { id: 'culture', label: 'QCM Culture', icon: '📚' },
-    { id: 'signaux', label: 'Signaux du Maître', icon: '🚦' },
-    { id: 'leurres', label: 'Banque de Leurres', icon: '🎭' }
+    { id: 'visibilite', label: t('mestre.pedagogy.tabVisibilityTab'), icon: '👁️' },
+    { id: 'inclusions_qcm', label: t('mestre.pedagogy.rhythmVisibilityTab'), icon: '🎯' },
+    { id: 'qcm_config', label: t('mestre.pedagogy.globalQuizConfigTab'), icon: '⚙️' },
+    { id: 'percussion', label: t('mestre.pedagogy.percussionQuizTab'), icon: '🥁' },
+    { id: 'danse', label: t('mestre.pedagogy.danceQuizTab'), icon: '💃' },
+    { id: 'chant', label: t('mestre.pedagogy.songQuizTab'), icon: '🎤' },
+    { id: 'atelier', label: t('mestre.pedagogy.workshopQuizTab'), icon: '🛠️' },
+    { id: 'culture', label: t('mestre.pedagogy.cultureQuizTab'), icon: '📚' },
+    { id: 'signaux', label: t('mestre.pedagogy.mestreSignalsTab'), icon: '🚦' },
+    { id: 'leurres', label: t('mestre.pedagogy.distractorsBankTab'), icon: '🎭' }
   ];
 
   return (
@@ -274,10 +276,10 @@ export default function MestreAutoEvalConfig({ profileData, isEmbedded }) {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
           <div>
             <h1 className="text-3xl md:text-4xl font-heading tracking-widest text-cordel-wood uppercase">
-              📝 Auto-Évaluation
+              {t('mestre.pedagogy.autoEvalHeading')}
             </h1>
             <p className="text-xs md:text-sm text-cordel-master-dark opacity-80 max-w-2xl mt-2">
-              Paramétrez la difficulté des auto-évaluations, les questions personnalisées par pupitre et la configuration globale.
+              {t('mestre.pedagogy.autoEvalSubtitle')}
             </p>
           </div>
         </div>
@@ -305,27 +307,27 @@ export default function MestreAutoEvalConfig({ profileData, isEmbedded }) {
         <div className="w-full lg:w-3/4 flex flex-col gap-6">
           {loading ? (
             <div className="text-center p-12 opacity-50 animate-pulse font-black uppercase text-xs">
-              Chargement des configurations...
+              {t('mestre.pedagogy.loadingConfigs')}
             </div>
           ) : (
             <>
               {activeSection === 'visibilite' && (
                 <CordelCard variant="default" className="p-5 flex flex-col gap-4">
                   <h3 className="font-black text-base uppercase tracking-wider text-cordel-wood border-b-2 border-dashed border-cordel-wood/30 pb-2">
-                    Visibilité des onglets dans Mon Parcours
+                    {t('mestre.pedagogy.tabsVisibilityHeading')}
                   </h3>
                   <p className="text-xs text-encre-noire/70 mb-2">
-                    Activez ou désactivez les onglets visibles par les élèves dans leur espace Mon Parcours.
+                    {t('mestre.pedagogy.tabsVisibilityDesc')}
                   </p>
                   
                   <div className="flex flex-col gap-3">
                     {[
-                      { key: 'monParcoursPercussion', label: 'Percussion', isDefaultFalse: false },
+                      { key: 'monParcoursPercussion', label: t('mestre.pedagogy.disciplinePercussion'), isDefaultFalse: false },
                       { key: 'monParcoursDanse', label: 'Danse', isDefaultFalse: false },
-                      { key: 'monParcoursChant', label: 'Chant', isDefaultFalse: false },
-                      { key: 'monParcoursAtelier', label: 'Atelier (Fabrication/Entretien)', isDefaultFalse: false },
+                      { key: 'monParcoursChant', label: t('mestre.pedagogy.disciplineSinging'), isDefaultFalse: false },
+                      { key: 'monParcoursAtelier', label: t('mestre.pedagogy.disciplineWorkshopCraft'), isDefaultFalse: false },
                       { key: 'monParcoursCulture', label: 'Culture', isDefaultFalse: false },
-                      { key: 'defisRythmiques', label: 'Défis rythmiques (Entraînements & Réflexes)', isDefaultFalse: true }
+                      { key: 'defisRythmiques', label: t('mestre.pedagogy.disciplineRhythmChallenges'), isDefaultFalse: true }
                     ].map(mp => {
                       const isChecked = mp.isDefaultFalse
                         ? Boolean(enabledModules[mp.key] === true || enabledModules.monParcoursDefisRythmiques === true)
@@ -341,11 +343,11 @@ export default function MestreAutoEvalConfig({ profileData, isEmbedded }) {
                           />
                           <div className="flex flex-col">
                             <span className="text-xs font-bold text-encre-noire">
-                              Afficher l'onglet "{mp.label}"
+                              {t('mestre.pedagogy.showTabPrefix')}{mp.label}"
                             </span>
                             {mp.isDefaultFalse && (
                               <span className="text-[10px] text-encre-noire/60 font-semibold mt-0.5">
-                                Désactivé par défaut. Révèle l'onglet des programmes métronomiques et défis de réaction dans Mon Parcours.
+                                {t('mestre.pedagogy.rhythmChallengesTabHint')}
                               </span>
                             )}
                           </div>
@@ -359,10 +361,10 @@ export default function MestreAutoEvalConfig({ profileData, isEmbedded }) {
               {activeSection === 'inclusions_qcm' && (
                 <CordelCard variant="default" className="p-5 flex flex-col gap-4">
                   <h3 className="font-black text-base uppercase tracking-wider text-cordel-wood border-b-2 border-dashed border-cordel-wood/30 pb-2">
-                    Visibilité des Rythmes (QCM & Carnet d'Aisance)
+                    {t('mestre.pedagogy.rhythmsVisibilityHeading')}
                   </h3>
                   <p className="text-xs text-encre-noire/70 mb-2">
-                    Décochez les "petites boucles" ou patterns sans valeur pédagogique pour les masquer totalement de l'espace élève (et des QCM générés automatiquement).
+                    {t('mestre.pedagogy.rhythmsVisibilityDesc')}
                   </p>
                   
                   <div className="flex flex-col gap-2 max-h-[60vh] overflow-y-auto pr-2">
@@ -387,7 +389,7 @@ export default function MestreAutoEvalConfig({ profileData, isEmbedded }) {
                               });
                             } catch (err) {
                               console.error("Error updating exclusion status:", err);
-                              alert("Erreur lors de la sauvegarde.");
+                              alert(t('mestre.pedagogy.errSavingGeneric'));
                             }
                           }}
                           className="accent-cordel-wood w-4 h-4 cursor-pointer"
@@ -396,7 +398,7 @@ export default function MestreAutoEvalConfig({ profileData, isEmbedded }) {
                           {rhythm.titre}
                         </span>
                         {rhythmsMetadata[rhythm.id]?.isExcludedFromQcm && (
-                          <span className="ml-auto text-[9px] font-black uppercase text-encre-noire/40">Masqué</span>
+                          <span className="ml-auto text-[9px] font-black uppercase text-encre-noire/40">{t('mestre.pedagogy.hiddenBadge')}</span>
                         )}
                       </label>
                     ))}
@@ -425,7 +427,7 @@ export default function MestreAutoEvalConfig({ profileData, isEmbedded }) {
                 <div className="flex flex-col gap-6">
                   <div className="flex flex-col md:flex-row gap-6">
                     <div className="w-full md:w-1/3 flex flex-col gap-3">
-                      <h3 className="font-black text-xs uppercase tracking-widest text-cordel-wood mb-2 border-b-2 border-dashed border-cordel-wood/30 pb-2">1. Sélection</h3>
+                      <h3 className="font-black text-xs uppercase tracking-widest text-cordel-wood mb-2 border-b-2 border-dashed border-cordel-wood/30 pb-2">{t('mestre.pedagogy.step1Selection')}</h3>
                       {rhythms.map(rhythm => (
                         <button
                           key={rhythm.id}
@@ -442,7 +444,7 @@ export default function MestreAutoEvalConfig({ profileData, isEmbedded }) {
                     </div>
 
                     <div className="w-full md:w-2/3 flex flex-col gap-4">
-                      <h3 className="font-black text-xs uppercase tracking-widest text-cordel-wood mb-2 border-b-2 border-dashed border-cordel-wood/30 pb-2">2. Questions Personnalisées</h3>
+                      <h3 className="font-black text-xs uppercase tracking-widest text-cordel-wood mb-2 border-b-2 border-dashed border-cordel-wood/30 pb-2">{t('mestre.pedagogy.step2CustomQuestions')}</h3>
                       <CustomQuizConfigPanel
                         groupId={groupId}
                         selectedItem={selectedRhythm}
@@ -464,7 +466,7 @@ export default function MestreAutoEvalConfig({ profileData, isEmbedded }) {
                 <div className="flex flex-col gap-6">
                   <div className="flex flex-col md:flex-row gap-6">
                     <div className="w-full md:w-1/3 flex flex-col gap-3">
-                      <h3 className="font-black text-xs uppercase tracking-widest text-cordel-wood mb-2 border-b-2 border-dashed border-cordel-wood/30 pb-2">1. Sélection (Danse)</h3>
+                      <h3 className="font-black text-xs uppercase tracking-widest text-cordel-wood mb-2 border-b-2 border-dashed border-cordel-wood/30 pb-2">{t('mestre.pedagogy.step1SelectionDance')}</h3>
                       {rhythms.map(rhythm => (
                         <button
                           key={rhythm.id}
@@ -480,7 +482,7 @@ export default function MestreAutoEvalConfig({ profileData, isEmbedded }) {
                       ))}
                     </div>
                     <div className="w-full md:w-2/3 flex flex-col gap-4">
-                      <h3 className="font-black text-xs uppercase tracking-widest text-cordel-wood mb-2 border-b-2 border-dashed border-cordel-wood/30 pb-2">2. Questions Personnalisées</h3>
+                      <h3 className="font-black text-xs uppercase tracking-widest text-cordel-wood mb-2 border-b-2 border-dashed border-cordel-wood/30 pb-2">{t('mestre.pedagogy.step2CustomQuestions')}</h3>
                       <CustomQuizConfigPanel
                         groupId={groupId}
                         selectedItem={selectedDanseRhythm}
@@ -502,7 +504,7 @@ export default function MestreAutoEvalConfig({ profileData, isEmbedded }) {
                 <div className="flex flex-col gap-6">
                   <div className="flex flex-col md:flex-row gap-6">
                     <div className="w-full md:w-1/3 flex flex-col gap-3">
-                      <h3 className="font-black text-xs uppercase tracking-widest text-cordel-wood mb-2 border-b-2 border-dashed border-cordel-wood/30 pb-2">1. Sélection Chant</h3>
+                      <h3 className="font-black text-xs uppercase tracking-widest text-cordel-wood mb-2 border-b-2 border-dashed border-cordel-wood/30 pb-2">{t('mestre.pedagogy.step1SelectionSong')}</h3>
                       {songs.map(song => (
                         <button
                           key={song.id}
@@ -518,7 +520,7 @@ export default function MestreAutoEvalConfig({ profileData, isEmbedded }) {
                       ))}
                     </div>
                     <div className="w-full md:w-2/3 flex flex-col gap-4">
-                      <h3 className="font-black text-xs uppercase tracking-widest text-cordel-wood mb-2 border-b-2 border-dashed border-cordel-wood/30 pb-2">2. Questions Personnalisées</h3>
+                      <h3 className="font-black text-xs uppercase tracking-widest text-cordel-wood mb-2 border-b-2 border-dashed border-cordel-wood/30 pb-2">{t('mestre.pedagogy.step2CustomQuestions')}</h3>
                       <CustomQuizConfigPanel
                         groupId={groupId}
                         selectedItem={selectedSong}
@@ -538,7 +540,7 @@ export default function MestreAutoEvalConfig({ profileData, isEmbedded }) {
                 <div className="flex flex-col gap-6">
                   <div className="flex flex-col md:flex-row gap-6">
                     <div className="w-full md:w-1/3 flex flex-col gap-3">
-                      <h3 className="font-black text-xs uppercase tracking-widest text-cordel-wood mb-2 border-b-2 border-dashed border-cordel-wood/30 pb-2">1. Sélection Fiche Atelier</h3>
+                      <h3 className="font-black text-xs uppercase tracking-widest text-cordel-wood mb-2 border-b-2 border-dashed border-cordel-wood/30 pb-2">{t('mestre.pedagogy.step1SelectionWorkshop')}</h3>
                       {fiches.filter(f => {
                         const cat = f.categorie?.toLowerCase() || '';
                         return cat.includes('atelier') || cat.includes('lutherie') || cat.includes('fabrication') || cat.includes('entretien');
@@ -557,7 +559,7 @@ export default function MestreAutoEvalConfig({ profileData, isEmbedded }) {
                       ))}
                     </div>
                     <div className="w-full md:w-2/3 flex flex-col gap-4">
-                      <h3 className="font-black text-xs uppercase tracking-widest text-cordel-wood mb-2 border-b-2 border-dashed border-cordel-wood/30 pb-2">2. Questions Personnalisées</h3>
+                      <h3 className="font-black text-xs uppercase tracking-widest text-cordel-wood mb-2 border-b-2 border-dashed border-cordel-wood/30 pb-2">{t('mestre.pedagogy.step2CustomQuestions')}</h3>
                       <CustomQuizConfigPanel
                         groupId={groupId}
                         selectedItem={selectedAtelierFiche}
@@ -577,7 +579,7 @@ export default function MestreAutoEvalConfig({ profileData, isEmbedded }) {
                 <div className="flex flex-col gap-6">
                   <div className="flex flex-col md:flex-row gap-6">
                     <div className="w-full md:w-1/3 flex flex-col gap-3">
-                      <h3 className="font-black text-xs uppercase tracking-widest text-cordel-wood mb-2 border-b-2 border-dashed border-cordel-wood/30 pb-2">1. Sélection Fiche Culture</h3>
+                      <h3 className="font-black text-xs uppercase tracking-widest text-cordel-wood mb-2 border-b-2 border-dashed border-cordel-wood/30 pb-2">{t('mestre.pedagogy.step1SelectionCulture')}</h3>
                       {fiches.filter(f => f.categorie?.toLowerCase() === 'culture' || f.type === 'culture_fiche').map(fiche => (
                         <button
                           key={fiche.id}
@@ -593,7 +595,7 @@ export default function MestreAutoEvalConfig({ profileData, isEmbedded }) {
                       ))}
                     </div>
                     <div className="w-full md:w-2/3 flex flex-col gap-4">
-                      <h3 className="font-black text-xs uppercase tracking-widest text-cordel-wood mb-2 border-b-2 border-dashed border-cordel-wood/30 pb-2">2. Questions Personnalisées</h3>
+                      <h3 className="font-black text-xs uppercase tracking-widest text-cordel-wood mb-2 border-b-2 border-dashed border-cordel-wood/30 pb-2">{t('mestre.pedagogy.step2CustomQuestions')}</h3>
                       <CustomQuizConfigPanel
                         groupId={groupId}
                         selectedItem={selectedCultureFiche}

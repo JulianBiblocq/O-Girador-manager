@@ -62,7 +62,7 @@ export default function VideoInstrumentCheckboxes({
           </button>
           {isLiveOrGlobal && (
             <span className="text-[8.5px] text-amber-900 font-bold italic">
-              Classée dans le bloc « Live / Ensemble »
+              {t('mestre.repertoire.classifiedInLiveBlock')}
             </span>
           )}
         </div>
@@ -75,11 +75,11 @@ export default function VideoInstrumentCheckboxes({
           </span>
           {currentList.length === 0 ? (
             <span className="text-[8.5px] italic text-stone-500 font-medium">
-              (Tous pupitres / vue générale)
+              {t('mestre.repertoire.allInstrumentsGeneralView')}
             </span>
           ) : (
             <span className="text-[8.5px] font-bold text-[var(--color-cordel-vert,#2d6a4f)]">
-              ({currentList.length} sélectionné{currentList.length > 1 ? 's' : ''})
+              ({currentList.length} {t('mestre.repertoire.selectedSingular')}{currentList.length > 1 ? 's' : ''})
             </span>
           )}
         </div>
@@ -89,7 +89,7 @@ export default function VideoInstrumentCheckboxes({
             type="button"
             onClick={handleSelectAll}
             className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 cursor-pointer transition-colors"
-            title="Associer à tous les instruments"
+            title={t('mestre.repertoire.selectAllInstrumentsTitle')}
           >
             {t('repertoire.selectAll')}
           </button>
@@ -97,7 +97,7 @@ export default function VideoInstrumentCheckboxes({
             type="button"
             onClick={handleDeselectAll}
             className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-300 cursor-pointer transition-colors"
-            title="Décocher tous les instruments"
+            title={t('mestre.repertoire.uncheckAllInstrumentsTitle')}
           >
             {t('repertoire.deselectAll')}
           </button>

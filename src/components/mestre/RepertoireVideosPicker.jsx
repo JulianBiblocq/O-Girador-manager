@@ -101,9 +101,9 @@ export default function RepertoireVideosPicker({
               useExtremeBorder={false}
               onClick={() => onOpenPicker(null)}
               className="py-1 px-2 text-[9px] uppercase font-black tracking-wider flex items-center gap-1"
-              title="Choisir parmi les vidéos de l'asso"
+              title={t('mestre.repertoire.chooseFromAssoVideosTitle')}
             >
-              <span>🎬 Vidéos asso</span>
+              <span>{t('mestre.repertoire.btnAssoVideos')}</span>
             </CordelButton>
           )}
           <CordelButton
@@ -120,7 +120,7 @@ export default function RepertoireVideosPicker({
 
       {videos.length === 0 ? (
         <div className="py-2 text-center text-[10px] text-encre-noire/50 italic border border-dashed border-encre-noire/15 rounded bg-white/60">
-          Aucune vidéo rattachée pour le moment.
+          {t('mestre.repertoire.noVideosAttachedNotice')}
         </div>
       ) : (
         <div className="flex flex-col gap-1.5 mt-0.5">
@@ -143,7 +143,7 @@ export default function RepertoireVideosPicker({
                   <div className="flex items-center gap-1.5 min-w-0">
                     <span className="text-[9px] font-black text-stone-500">{isExp ? '▼' : '▶'}</span>
                     <span className="text-[9.5px] font-black uppercase tracking-wider text-cordel-wood shrink-0">
-                      Vidéo #{idx + 1}
+                      {t('mestre.repertoire.videoNumberPrefix')}{idx + 1}
                     </span>
                     {vid.titre && (
                       <span className="text-[9.5px] font-bold text-encre-noire truncate max-w-[150px] sm:max-w-[220px]">
@@ -157,7 +157,7 @@ export default function RepertoireVideosPicker({
                     )}
                     {vid.isLiveOrGlobal && (
                       <span className="text-[8px] font-black px-1.5 py-0.2 rounded bg-purple-100 text-purple-900 border border-purple-300">
-                        Live / Captation
+                        {t('mestre.repertoire.liveCaptureBadge')}
                       </span>
                     )}
                   </div>
@@ -169,7 +169,7 @@ export default function RepertoireVideosPicker({
                       handleRemove(vid.id);
                     }}
                     className="text-[10px] text-red-600 hover:text-red-700 font-black cursor-pointer uppercase flex items-center gap-0.5 px-1.5 py-0.5 rounded hover:bg-red-50 shrink-0"
-                    title="Supprimer cette vidéo"
+                    title={t('mestre.repertoire.deleteThisVideoTitle')}
                   >
                     <span>🗑️</span>
                   </button>
@@ -182,7 +182,7 @@ export default function RepertoireVideosPicker({
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center justify-between gap-1 flex-wrap">
                         <span className="text-[8.5px] font-black uppercase text-cordel-master-dark/70">
-                          Libellé :
+                          {t('mestre.repertoire.labelFieldPrefix')}
                         </span>
                         <div className="flex items-center gap-1 flex-wrap">
                           {SUGGESTIONS.map((sug) => (
@@ -209,7 +209,7 @@ export default function RepertoireVideosPicker({
                     {/* URL */}
                     <div className="flex flex-col gap-1">
                       <span className="text-[8.5px] font-black uppercase text-cordel-master-dark/70">
-                        Lien URL :
+                        {t('mestre.repertoire.urlFieldPrefix')}
                       </span>
                       <div className="flex items-center gap-1.5">
                         <input

@@ -291,14 +291,14 @@ export default function InventoryManager({
         <div className="border-b-2 border-dashed border-cordel-master-dark/20 pb-2 mb-2 select-none">
           <HorizontalRibbonContainer activeTabId={activeTab}>
             {[
-              { id: 'instruments', label: 'Instruments', icon: '🥁' },
-              { id: 'pupitres', label: 'Pupitres', icon: '🎵' },
-              { id: 'kits', label: 'Kits & Accessoires', icon: '🧰' },
-              { id: 'carpool', label: 'Covoiturage & Convois', icon: '🚗' },
-              { id: 'parts', label: 'Pièces Détachées', icon: '⚙️' },
-              { id: 'projects', label: 'Projets', icon: '🔨' },
-              { id: 'supplies', label: 'Matières Premières', icon: '🪵' },
-              { id: 'tools', label: 'Outillage', icon: '🪚' }
+              { id: 'instruments', label: t('logistics.tabInstruments'), icon: '🥁' },
+              { id: 'pupitres', label: t('logistics.tabPupitres'), icon: '🎵' },
+              { id: 'kits', label: t('logistics.tabKits'), icon: '🧰' },
+              { id: 'carpool', label: t('logistics.tabCarpool'), icon: '🚗' },
+              { id: 'parts', label: t('logistics.tabParts'), icon: '⚙️' },
+              { id: 'projects', label: t('logistics.tabProjects'), icon: '🔨' },
+              { id: 'supplies', label: t('logistics.tabSupplies'), icon: '🪵' },
+              { id: 'tools', label: t('logistics.tabTools'), icon: '🪚' }
             ].map((tabItem) => (
               <button
                 key={tabItem.id}
@@ -344,7 +344,7 @@ export default function InventoryManager({
 
           {loading ? (
             <div className="flex justify-center items-center py-12">
-              <span className="text-xs uppercase tracking-widest font-black animate-pulse opacity-60">⏳ Chargement de l'inventaire...</span>
+              <span className="text-xs uppercase tracking-widest font-black animate-pulse opacity-60">{t('logistics.loadingInventory')}</span>
             </div>
           ) : sortedInstruments.length === 0 ? (
             <CordelCard variant="default" useExtremeBorder={false} className="p-8 text-center bg-cordel-bg">
@@ -506,10 +506,10 @@ export default function InventoryManager({
         <div className="bg-cordel-bg p-5 rounded-b-lg border-2 border-encre-noire shadow-[4px_4px_0px_0px_#181716] flex flex-col gap-4 text-left">
           <div>
             <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-1">
-              🎺 Gestion des Pupitres & Catalogue des Instruments
+              {t('logistics.managePupitresCatalogTitle')}
             </h3>
             <p className="text-[10px] text-cordel-master-dark/75 leading-relaxed">
-              Configurez les familles de pupitres, les attributions de couleurs et les modèles du parc instrumental.
+              {t('logistics.managePupitresCatalogDesc')}
             </p>
           </div>
           <form onSubmit={(e) => { e.preventDefault(); handleSaveSettings(); }} className="flex flex-col gap-4">
@@ -548,10 +548,10 @@ export default function InventoryManager({
           <div className="pt-4 border-t-2 border-dashed border-cordel-master-dark/20 flex flex-col gap-4">
             <div>
               <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-1">
-                🎒 Accessoires &amp; Kits par Pupitre (Housses, Sangles, Mailloches)
+                {t('logistics.accessoriesKitsPupitreTitle')}
               </h3>
               <p className="text-[10px] text-cordel-master-dark/75 leading-relaxed">
-                Configurez les kits de transport, housses, mailloches, sangles et accessoires opérationnels par pupitre.
+                {t('logistics.accessoriesKitsPupitreDesc')}
               </p>
             </div>
             <form onSubmit={(e) => { e.preventDefault(); handleSaveSettings(); }} className="flex flex-col gap-4">
@@ -571,7 +571,7 @@ export default function InventoryManager({
                   disabled={savingSettings}
                   className="px-6 py-2 uppercase font-black tracking-wider text-xs shadow-[2px_2px_0px_0px_#181716]"
                 >
-                  {savingSettings ? "Enregistrement..." : "💾 Enregistrer les Kits Pupitres"}
+                  {savingSettings ? (t('common.saving') || "Enregistrement...") : `💾 ${t('logistics.btnSavePupitreKits')}`}
                 </CordelButton>
               </div>
             </form>
@@ -584,10 +584,10 @@ export default function InventoryManager({
         <div className="bg-cordel-bg p-5 rounded-b-lg border-2 border-encre-noire shadow-[4px_4px_0px_0px_#181716] flex flex-col gap-4 text-left">
           <div>
             <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-1">
-              🚗 Configuration Covoiturage & Convois
+              {t('logistics.carpoolConfigTitle')}
             </h3>
             <p className="text-[10px] text-cordel-master-dark/75 leading-relaxed">
-              Gérez la flotte de véhicules de la troupe et le point de rassemblement habituel pour les départs en convoi.
+              {t('logistics.carpoolConfigDesc')}
             </p>
           </div>
           <form onSubmit={(e) => { e.preventDefault(); handleSaveSettings(); }} className="flex flex-col gap-4">
@@ -605,7 +605,7 @@ export default function InventoryManager({
                 disabled={savingSettings}
                 className="px-6 py-2 uppercase font-black tracking-wider text-xs shadow-[2px_2px_0px_0px_#181716]"
               >
-                {savingSettings ? "Enregistrement..." : "💾 Enregistrer les Paramètres Covoiturage"}
+                {savingSettings ? (t('common.saving') || "Enregistrement...") : `💾 ${t('logistics.btnSaveCarpoolSettings')}`}
               </CordelButton>
             </div>
           </form>

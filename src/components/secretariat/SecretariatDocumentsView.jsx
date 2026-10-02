@@ -110,7 +110,7 @@ export default function SecretariatDocumentsView({
                 : 'bg-cordel-bg text-encre-noire/70 border-encre-noire/30 hover:border-encre-noire'
             }`}
           >
-            📋 Les 2 Tableaux
+            📋 {t('secretariatDocs.tabBothTables')}
           </button>
           <button
             type="button"
@@ -121,7 +121,7 @@ export default function SecretariatDocumentsView({
                 : 'bg-cordel-bg text-encre-noire/70 border-encre-noire/30 hover:border-encre-noire'
             }`}
           >
-            🏛️ Statuts permanents ({statutDocs.length})
+            🏛️ {t('secretariatDocs.tabPermanentDocsWithCount', { count: statutDocs.length })}
           </button>
           <button
             type="button"
@@ -132,7 +132,7 @@ export default function SecretariatDocumentsView({
                 : 'bg-cordel-bg text-encre-noire/70 border-encre-noire/30 hover:border-encre-noire'
             }`}
           >
-            📜 Comptes-Rendus & PV ({sortedReunions.length})
+            📜 {t('secretariatDocs.tabMeetingsReportsWithCount', { count: sortedReunions.length })}
           </button>
         </div>
 
@@ -143,7 +143,7 @@ export default function SecretariatDocumentsView({
             onClick={() => { setIsAdding(true); setDocumentToEdit(null); }}
             className="text-[10px] px-3 py-1 font-black uppercase tracking-wider shrink-0"
           >
-            ➕ Verser un document officiel
+            {t('secretariatDocs.btnUploadOfficialDoc')}
           </CordelButton>
         )}
       </div>
@@ -177,10 +177,9 @@ export default function SecretariatDocumentsView({
           <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-1">
             <h3 className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
               <span>🏛️</span>
-              <span>Tableau A : Documents administratifs permanents</span>
-              <span className="text-[10px] font-bold text-encre-noire/60">({statutDocs.length})</span>
+              <span>{t('secretariatDocs.tableATitle', { count: statutDocs.length })}</span>
             </h3>
-            <span className="text-[9.5px] italic text-encre-noire/60">Statuts, Règlement Intérieur, RIB, Assurance</span>
+            <span className="text-[9.5px] italic text-encre-noire/60">{t('secretariatDocs.tableASubtitle')}</span>
           </div>
           <StatutDocumentsTable
             docs={statutDocs}
@@ -198,10 +197,9 @@ export default function SecretariatDocumentsView({
           <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-1">
             <h3 className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
               <span>📜</span>
-              <span>Tableau B : Comptes-rendus & Procès-Verbaux de réunions</span>
-              <span className="text-[10px] font-bold text-encre-noire/60">({sortedReunions.length})</span>
+              <span>{t('secretariatDocs.tableBTitle', { count: sortedReunions.length })}</span>
             </h3>
-            <span className="text-[9.5px] italic text-encre-noire/60">Assemblées générales, réunions de CA et comités</span>
+            <span className="text-[9.5px] italic text-encre-noire/60">{t('secretariatDocs.tableBSubtitle')}</span>
           </div>
           <ReunionsPvTable
             reunions={sortedReunions}

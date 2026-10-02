@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '../../LanguageContext';
 
 /**
  * Constructeur de QCM et gestionnaire de lexique de vocabulaire
@@ -12,6 +13,7 @@ export default function DocumentFormQuizBuilder({
   isSubmitting = false,
   showLexiqueNotes = true
 }) {
+  const { t } = useTranslation();
   // Gestion du lexique
   const addNotesLexiqueItem = () => {
     setNotesLexique([...(Array.isArray(notesLexique) ? notesLexique : []), { mot: '', explication: '' }]);
@@ -74,7 +76,7 @@ export default function DocumentFormQuizBuilder({
         <div className="flex flex-col gap-4 mt-4 border-t-2 border-dashed border-cordel-master-dark/20 pt-4">
           <div className="flex items-center justify-between mb-2">
             <label className="text-[11px] uppercase font-bold tracking-wider text-cordel-wood flex items-center gap-1">
-              📖 Lexique / Vocabulaire
+              📖 {t('documents.lexiconVocabulary')}
             </label>
             <button
               type="button"
@@ -82,18 +84,17 @@ export default function DocumentFormQuizBuilder({
               disabled={isSubmitting}
               className="text-[10px] uppercase font-bold px-2 py-1 bg-cordel-wood text-[#fdfaf2] rounded hover:opacity-90 transition-opacity shadow-sm cursor-pointer"
             >
-              + Ajouter un mot
+              {t('documents.btnAddWord')}
             </button>
           </div>
 
           <p className="text-[10px] text-cordel-master-dark/80 italic mb-2 bg-[#fdfaf2] p-2 rounded border border-cordel-wood/20">
-            💡 <strong>Notice :</strong> Ajoutez ici les mots importants tirés du chant ou du tutoriel et leur définition. 
-            Ils seront automatiquement récupérés pour générer les questionnaires.
+            💡 {t('documents.lexiconNotice')}
           </p>
 
           {(!Array.isArray(notesLexique) || notesLexique.length === 0) ? (
             <p className="text-xs text-cordel-master-dark/70 italic text-center py-2">
-              Aucun mot de vocabulaire défini pour l'instant.
+              {t('documents.noWordsDefined')}
             </p>
           ) : (
             <div className="flex flex-col gap-4">
@@ -147,7 +148,7 @@ export default function DocumentFormQuizBuilder({
       <div className="flex flex-col gap-4 mt-6 pt-4 border-t-2 border-dashed border-cordel-master-dark/20">
         <div className="flex items-center justify-between">
           <label className="text-[11px] uppercase font-bold tracking-wider text-cordel-wood flex items-center gap-1">
-            ❓ Questions QCM
+            ❓ {t('documents.quizQuestions')}
           </label>
           <button
             type="button"
@@ -155,13 +156,13 @@ export default function DocumentFormQuizBuilder({
             disabled={isSubmitting}
             className="text-[10px] uppercase font-bold px-2 py-1 bg-cordel-wood text-[#fdfaf2] rounded hover:opacity-90 transition-opacity shadow-sm cursor-pointer"
           >
-            + Ajouter une question
+            {t('documents.btnAddQuestion')}
           </button>
         </div>
         
         {questionsQcm.length === 0 ? (
           <p className="text-xs text-cordel-master-dark/70 italic text-center py-2">
-            Aucune question pour le moment.
+            {t('documents.noQuestionsDefined')}
           </p>
         ) : (
           <div className="flex flex-col gap-6">

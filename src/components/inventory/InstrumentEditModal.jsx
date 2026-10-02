@@ -5,6 +5,7 @@ import { XiloClose } from '../XiloIcons';
 import XiloAvatar from '../XiloAvatar';
 import { INSTRUMENT_TYPES, ETAT_OPTIONS } from './inventoryConstants';
 import InstrumentAttributionSection from './InstrumentAttributionSection';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Modale / Formulaire complet d'ajout et d'édition d'un instrument,
@@ -44,8 +45,10 @@ export default function InstrumentEditModal({
   inventoryParts = [],
   logisticsKits = [],
   supplies = [],
-  t
+  t: propT
 }) {
+  const { t: hookT } = useTranslation();
+  const t = propT || hookT;
   if (!isOpen) return null;
 
   const handleFormSubmit = (e) => {
@@ -67,7 +70,7 @@ export default function InstrumentEditModal({
             onClick={onClose}
             disabled={saving}
             className="absolute top-3 right-3 p-1.5 border border-encre-noire bg-cordel-bg hover:bg-neutral-200 text-encre-noire rounded-md shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center justify-center disabled:opacity-50"
-            title="Fermer le formulaire"
+            title={t('logistics.closeFormTitle')}
           >
             <XiloClose size={10} />
           </button>
@@ -121,7 +124,7 @@ export default function InstrumentEditModal({
                 {/* Modèle d'Instrument (Fabrication / Lutherie) */}
                 <div className="flex flex-col gap-1">
                   <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                    Modèle d'Instrument (Fabrication)
+                    {t('logistics.instrumentModelFabrication')}
                   </label>
                   <select
                     name="modelId"
@@ -130,7 +133,7 @@ export default function InstrumentEditModal({
                     disabled={saving}
                     className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
                   >
-                    <option value="">-- Aucun modèle spécifique --</option>
+                    <option value="">{t('logistics.noSpecificModel')}</option>
                     {instrumentModels.map((m) => (
                       <option key={m.id} value={m.id}>{m.nom}</option>
                     ))}
@@ -142,7 +145,7 @@ export default function InstrumentEditModal({
                 {/* État physique */}
                 <div className="flex flex-col gap-1">
                   <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                    État physique
+                    {t('logistics.physicalState')}
                   </label>
                   <select
                     name="etat"
@@ -162,7 +165,7 @@ export default function InstrumentEditModal({
             {/* Kit Accessoires Dynamique */}
             <div className="flex flex-col gap-1 pt-1 border-t border-dashed border-cordel-master-dark/15">
               <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark mb-1 flex items-center justify-between">
-                <span>Kit / Accessoires associés</span>
+                <span>{t('logistics.kitAssociatedAccessories')}</span>
                 {kitAccessories.length > 0 && (
                   <span className="text-[9px] bg-cordel-master-dark/10 px-1 rounded text-cordel-master-dark font-bold">
                     {checkedKitItems.filter((accId) => 
@@ -175,7 +178,7 @@ export default function InstrumentEditModal({
               <div className="flex flex-col gap-1.5 p-2 bg-cordel-bg-light/50 border border-encre-noire/10 rounded">
                 {kitAccessories.length === 0 ? (
                   <span className="text-[9px] text-stone-500 italic mt-1">
-                    Aucun kit d'accessoires configuré pour ce pupitre.
+                    {t('logistics.noKitConfiguredForPupitre')}
                   </span>
                 ) : (
                   <div className="flex flex-wrap gap-1.5 mt-1">
@@ -228,7 +231,7 @@ export default function InstrumentEditModal({
             {/* Propriétaire */}
             <div className="flex flex-col gap-1">
               <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                Propriétaire
+                {t('logistics.fieldProprietaire')}
               </label>
               <select
                 name="proprietaire"
@@ -237,9 +240,9 @@ export default function InstrumentEditModal({
                 disabled={saving}
                 className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
               >
-                <option value="Association">🏢 Association</option>
+                <option value="Association">{t('logistics.ownerAssociation')}</option>
                 {usersList.map((u) => (
-                  <option key={u.id} value={u.id}>Personnel : {u.prenom} {u.nom}</option>
+                  <option key={u.id} value={u.id}>{t('logistics.ownerPersonalPrefix')} {u.prenom} {u.nom}</option>
                 ))}
               </select>
             </div>
@@ -247,7 +250,7 @@ export default function InstrumentEditModal({
             {/* Localisation Physique */}
             <div className="flex flex-col gap-1">
               <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                Localisation Physique
+                {t('logistics.physicalLocation')}
               </label>
               <select
                 name="localisationPhysique"
@@ -256,9 +259,9 @@ export default function InstrumentEditModal({
                 disabled={saving}
                 className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
               >
-                <option value="Local">📍 Local de l'association</option>
+                <option value="Local">{t('logistics.locationLocalAssoc')}</option>
                 {usersList.map((u) => (
-                  <option key={u.id} value={u.id}>Chez : {u.prenom} {u.nom}</option>
+                  <option key={u.id} value={u.id}>{t('logistics.locationAtMemberPrefixColon')} {u.prenom} {u.nom}</option>
                 ))}
               </select>
             </div>
@@ -266,7 +269,7 @@ export default function InstrumentEditModal({
             {/* Statut de l'instrument */}
             <div className="flex flex-col gap-1">
               <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                Statut de l'instrument
+                {t('logistics.instrumentStatusField')}
               </label>
               <select
                 name="status"
@@ -275,9 +278,9 @@ export default function InstrumentEditModal({
                 disabled={saving}
                 className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
               >
-                <option value="En stock">En stock</option>
-                <option value="Emprunté">Emprunté</option>
-                <option value="En réparation">En réparation</option>
+                <option value="En stock">{t('logistics.statusInStock')}</option>
+                <option value="Emprunté">{t('logistics.statusBorrowed')}</option>
+                <option value="En réparation">{t('logistics.statusInRepair')}</option>
               </select>
             </div>
 
@@ -285,7 +288,7 @@ export default function InstrumentEditModal({
             {formData.status === 'Emprunté' && (
               <div className="flex flex-col gap-1">
                 <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  Membre emprunteur
+                  {t('logistics.borrowingMemberField')}
                 </label>
                 <select
                   name="borrowedBy"
@@ -294,7 +297,7 @@ export default function InstrumentEditModal({
                   disabled={saving}
                   className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
                 >
-                  <option value="">-- Non spécifié --</option>
+                  <option value="">{t('logistics.notSpecified')}</option>
                   {usersList.map((u) => (
                     <option key={u.id} value={u.id}>{u.prenom} {u.nom}</option>
                   ))}
@@ -313,11 +316,11 @@ export default function InstrumentEditModal({
             {/* Assignations (Membres désignés) */}
             <div className="flex flex-col gap-1 border-t border-dashed border-cordel-master-dark/15 pt-2">
               <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                Assignations (Membres réguliers désignés)
+                {t('logistics.assignationsDesignatedMembers')}
               </label>
               <div className="max-h-28 overflow-y-auto border border-dashed border-encre-noire/25 rounded p-2 flex flex-wrap gap-1.5 bg-[#fdfaf2] dark:bg-[#201d1a]">
                 {usersList.length === 0 ? (
-                  <span className="text-[10px] opacity-60 font-semibold">Aucun membre disponible</span>
+                  <span className="text-[10px] opacity-60 font-semibold">{t('logistics.noMemberAvailable')}</span>
                 ) : (
                   usersList.map((u) => {
                     const isAssigned = (formData.assignations || []).includes(u.id);
@@ -347,7 +350,7 @@ export default function InstrumentEditModal({
             {/* Nomenclature (Pièces détachées assignées) */}
             <div className="flex flex-col gap-1 border-t border-dashed border-cordel-master-dark/15 pt-2">
               <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                Nomenclature (Pièces détachées assignées à l'instrument)
+                {t('logistics.nomenclatureAssignedParts')}
               </label>
               <div className="max-h-32 overflow-y-auto border border-dashed border-encre-noire/25 rounded p-2 flex flex-col gap-1.5 bg-[#fdfaf2] dark:bg-[#201d1a]">
                 {(() => {
@@ -355,7 +358,7 @@ export default function InstrumentEditModal({
                     (p) => p.status === 'En stock' || (formData.nomenclature || []).includes(p.id)
                   );
                   if (availableParts.length === 0) {
-                    return <span className="text-[10px] opacity-60 font-semibold">Aucune pièce disponible en stock.</span>;
+                    return <span className="text-[10px] opacity-60 font-semibold">{t('logistics.noPartAvailableInStock')}</span>;
                   }
                   return availableParts.map((part) => {
                     const isSelected = (formData.nomenclature || []).includes(part.id);
@@ -400,7 +403,7 @@ export default function InstrumentEditModal({
             {formData.historiqueMouvements && formData.historiqueMouvements.length > 0 && (
               <div className="flex flex-col gap-1 border-t border-dashed border-cordel-master-dark/15 pt-2">
                 <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  📜 Historique des mouvements &amp; prêts ({formData.historiqueMouvements.length})
+                  {t('logistics.movementHistoryPrefix', { count: formData.historiqueMouvements.length })}
                 </label>
                 <div className="max-h-28 overflow-y-auto border border-dashed border-encre-noire/25 rounded p-2 flex flex-col gap-1.5 bg-[#fdfaf2] dark:bg-[#201d1a]">
                   {formData.historiqueMouvements.slice().reverse().map((mvt, mIdx) => {
@@ -430,7 +433,7 @@ export default function InstrumentEditModal({
                   disabled={saving}
                   className="text-[9px] font-black uppercase tracking-wider bg-cordel-wood text-cordel-bg-light px-3 py-1.5 border border-encre-noire rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-110 cursor-pointer disabled:opacity-50"
                 >
-                  🗑️ Retirer
+                  {t('logistics.btnRemove')}
                 </button>
               ) : <div />}
 
@@ -442,7 +445,7 @@ export default function InstrumentEditModal({
                   onClick={onClose}
                   className="text-xs px-3 py-1.5"
                 >
-                  Annuler
+                  {t('logistics.btnCancel')}
                 </CordelButton>
                 <CordelButton
                   type="submit"
@@ -451,7 +454,7 @@ export default function InstrumentEditModal({
                   disabled={saving || !formData.nom?.trim()}
                   className="text-xs px-4 py-1.5 font-bold"
                 >
-                  {saving ? "..." : "Enregistrer"}
+                  {saving ? "..." : (t('common.save') || "Enregistrer")}
                 </CordelButton>
               </div>
             </div>

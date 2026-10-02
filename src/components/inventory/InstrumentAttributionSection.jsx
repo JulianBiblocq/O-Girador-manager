@@ -120,7 +120,7 @@ export default function InstrumentAttributionSection({
                 : 'bg-stone-200/60 text-stone-500 border-stone-300'
             }`}
           >
-            {cautionRequise ? "Exigée" : "Non requise"}
+            {cautionRequise ? ((t && t('inventory.cautionRequiredBadge')) || "Exigée") : ((t && t('lutherie.cautionNotRequired')) || "Non requise")}
           </span>
         </label>
 

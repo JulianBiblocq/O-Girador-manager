@@ -112,8 +112,8 @@ console.log('🧪 Test 3: Éradication de l’icône djembé & masquage conditio
 const trombiContent = fs.readFileSync(path.resolve('src/components/Trombinoscope.jsx'), 'utf8');
 
 // 3a. Vérification de la suppression de l'émoji djembé (🪘) dans le filtre déroulant
-assert.ok(trombiContent.includes('<option value="all">Tous les pupitres</option>'), 'Option globale doit être "Tous les pupitres" sans émoji djembé');
-assert.ok(!trombiContent.includes('🪘 Tous les pupitres'), 'L’émoji djembé ne doit plus figurer dans l’option globale');
+assert.ok(trombiContent.includes('<option value="all">Tous les pupitres</option>') || trombiContent.includes('<option value="all">{t(\'trombi.allPupitres\')}</option>'), 'Option globale doit être "Tous les pupitres" sans émoji djembé');
+assert.ok(!trombiContent.includes('🪘 Tous les pupitres') && !trombiContent.includes('🪘'), 'L’émoji djembé ne doit plus figurer dans l’option globale');
 
 // 3b. Masquage conditionnel strict de l'option Renforts dans le select
 assert.ok(trombiContent.includes('{hasRenforts && ('), 'Option Renforts doit être conditionnée à hasRenforts');

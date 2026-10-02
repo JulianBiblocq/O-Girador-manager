@@ -91,15 +91,15 @@ const passerelleContent = readFileSync(passerellePath, 'utf-8');
 const passerelleLines = passerelleContent.trim().split('\n').length;
 assert(passerelleLines < 120, `RepertoirePasserelleButton < 120 lignes (actuel: ${passerelleLines})`);
 assert(passerelleContent.includes('open-repertoire-piece'), 'Émission de l\'événement open-repertoire-piece');
-assert(passerelleContent.includes('Fiche Répertoire'), 'Libellé Cordel du bouton présent');
+assert(passerelleContent.includes('Fiche Répertoire') || passerelleContent.includes('repertoireSheetPrefix'), 'Libellé Cordel du bouton présent');
 
 console.log('\n▶️ Test 5 : Sélecteur de Toada dans RepertoirePieceModal.jsx');
 const pieceModalPath = resolve('src/components/mestre/RepertoirePieceModal.jsx');
 const pieceModalContent = readFileSync(pieceModalPath, 'utf-8');
 assert(pieceModalContent.includes('toadaFilterMode'), 'Gestion du filtre à bascule pour les Toadas');
 assert(pieceModalContent.includes('toadaUsageMap'), 'Détection des Toadas déjà liées à un autre morceau');
-assert(pieceModalContent.includes('Non attribuées'), 'Bouton de filtre pour les Toadas non attribuées');
-assert(pieceModalContent.includes('Déjà liée à'), 'Mention de morceau lié pour les Toadas déjà attribuées');
+assert(pieceModalContent.includes('Non attribuées') || pieceModalContent.includes('toadaFilterAvailable'), 'Bouton de filtre pour les Toadas non attribuées');
+assert(pieceModalContent.includes('Déjà liée à') || pieceModalContent.includes('toadaAlreadyLinked'), 'Mention de morceau lié pour les Toadas déjà attribuées');
 
 console.log('\n▶️ Test 6 : Passerelles retour intégrées dans SongCard et CultureCard');
 const songCardContent = readFileSync(resolve('src/components/SongCard.jsx'), 'utf-8');

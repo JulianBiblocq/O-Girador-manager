@@ -228,12 +228,12 @@ const InlineQuiz = ({ fiche, allSheets, allSongs, allModels }) => {
 // --- Utilitaire : détection de la catégorie culturelle pour le groupement ---
 const getCultureCategory = (fiche, t) => {
   const theme = ((fiche.themeCulture || '') + ' ' + (fiche.categorieFiche || '') + ' ' + (fiche.sousCategorieFiche || '')).toLowerCase();
-  if (theme.includes('orixa') || theme.includes('spiritualit')) return 'Orixás & Spiritualité';
+  if (theme.includes('orixa') || theme.includes('spiritualit')) return t ? t('pedagogy.categoryOrixas') : 'Orixás & Spiritualité';
   if (theme.includes('cortejo') || theme.includes('cortège')) return t ? t('pedagogy.categoryCortegeRoyal') : 'Cortège Royal';
-  if (theme.includes('cuisine') || theme.includes('gastronomi')) return 'Cuisine & Gastronomie';
+  if (theme.includes('cuisine') || theme.includes('gastronomi')) return t ? t('pedagogy.categoryCuisine') : 'Cuisine & Gastronomie';
   if (theme.includes('histoire')) return t ? t('pedagogy.categoryHistoire') : 'Histoire';
-  if (theme.includes('musique') || theme.includes('style')) return 'Musique & Styles';
-  if (theme.includes('territoire') || theme.includes('geograph')) return 'Territoire & Géographie';
+  if (theme.includes('musique') || theme.includes('style')) return t ? t('pedagogy.categoryMusiqueStyles') : 'Musique & Styles';
+  if (theme.includes('territoire') || theme.includes('geograph')) return t ? t('pedagogy.categoryTerritoire') : 'Territoire & Géographie';
   if (theme.includes('folklore')) return 'Folklore & Légendes';
   return 'Autres';
 };

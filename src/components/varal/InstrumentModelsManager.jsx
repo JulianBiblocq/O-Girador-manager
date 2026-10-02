@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from '../LanguageContext';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { useInstrumentModels } from '../../hooks/useInstrumentModels';
@@ -12,6 +13,7 @@ import { useSuppliesData } from '../../hooks/useSuppliesData';
 import useConfirm from '../../hooks/useConfirm';
 
 export default function InstrumentModelsManager({ groupId, isAuthorized, varalCategories }) {
+  const { t } = useTranslation();
   const confirm = useConfirm();
   const { models, loading, addModel, updateModel, deleteModel } = useInstrumentModels(groupId);
   const [editingModel, setEditingModel] = useState(null);
@@ -29,7 +31,7 @@ export default function InstrumentModelsManager({ groupId, isAuthorized, varalCa
       }
       setEditingModel(null);
     } catch (err) {
-      alert("Erreur lors de la sauvegarde du modèle.");
+      alert(t('lutherie.alertSaveModelError'));
     }
   };
 
@@ -45,7 +47,7 @@ export default function InstrumentModelsManager({ groupId, isAuthorized, varalCa
       try {
         await deleteModel(modelId);
       } catch (err) {
-        alert("Erreur lors de la suppression.");
+        alert(t('lutherie.alertDeleteModelError'));
       }
     }
   };
@@ -72,14 +74,14 @@ export default function InstrumentModelsManager({ groupId, isAuthorized, varalCa
           await updateDoc(assocRef, {
             contributionPoints: increment(25)
           });
-          alert("🎉 Félicitations ! Votre partage a rapporté 25 Points d'Axé à votre association.");
+          alert(t('lutherie.alertShareAxePointsSuccess'));
         }
       }
 
       await updateModel(model.id, updates);
     } catch (err) {
       console.error("Error toggling public state:", err);
-      alert("Erreur lors de la modification de l'état public.");
+      alert(t('lutherie.alertTogglePublicError'));
     }
   };
 
@@ -89,7 +91,7 @@ export default function InstrumentModelsManager({ groupId, isAuthorized, varalCa
       await exportInstrumentMasterBundle(model, supplies, tools);
     } catch (err) {
       console.error("Erreur lors de l'export :", err);
-      alert("Une erreur est survenue lors de la création du bundle.");
+      alert(t('lutherie.alertCreateBundleError'));
     } finally {
       setIsExporting(false);
     }
@@ -108,11 +110,11 @@ export default function InstrumentModelsManager({ groupId, isAuthorized, varalCa
   };
 
   if (loading) {
-    return <div className="p-8 text-center text-xs text-stone-500 font-bold uppercase tracking-wider animate-pulse">Chargement des modèles...</div>;
+    return <div className="p-8 text-center text-xs text-stone-500 font-bold uppercase tracking-wider animate-pulse">{t('lutherie.loadingModels')}</div>;
   }
 
   if (!isAuthorized) {
-    return <div className="p-8 text-center text-xs text-red-500 font-bold">Accès non autorisé à cette section.</div>;
+    return <div className="p-8 text-center text-xs text-red-500 font-bold">{t('lutherie.unauthorizedSection')}</div>;
   }
 
   if (editingModel) {
@@ -133,11 +135,11 @@ export default function InstrumentModelsManager({ groupId, isAuthorized, varalCa
     <div className="flex flex-col gap-4">
       <div className="flex justify-between items-center mb-2">
         <h3 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase flex items-center gap-2">
-          <XiloChisel size={16} /> Modèles d'Instruments & Tutos
+          <XiloChisel size={16} /> {t('lutherie.instrumentModelsTitle')}
         </h3>
         <div className="flex gap-2">
           <label className="cursor-pointer bg-white text-cordel-wood border border-cordel-wood text-xs px-4 py-1.5 shadow-[2px_2px_0px_0px_var(--color-cordel-wood)] rounded font-bold uppercase tracking-widest hover:bg-neutral-100 transition-colors">
-            📥 Importer Master Bundle
+            {t('lutherie.btnImportMasterBundle')}
             <input type="file" accept=".json,.zip" onChange={handleImportPack} className="hidden" />
           </label>
           <CordelButton 
@@ -145,18 +147,18 @@ export default function InstrumentModelsManager({ groupId, isAuthorized, varalCa
             onClick={() => setEditingModel({ id: 'new' })}
             className="text-xs px-4 py-1.5 shadow-[2px_2px_0px_0px_#181716]"
           >
-            + Créer un Modèle
+            {t('lutherie.btnCreateModel')}
           </CordelButton>
         </div>
       </div>
 
       <div className="text-xs text-stone-600 mb-4 leading-relaxed">
-        Gérez ici la "recette" de fabrication de vos instruments (les pièces requises, le matériel, les outils) et créez les chapitres du Varal associés à chaque pièce.
+        {t('lutherie.modelsRecipeDescription')}
       </div>
 
       {models.length === 0 ? (
         <CordelCard variant="default" className="p-8 text-center bg-white/50 border-dashed border-cordel-master-dark/30">
-          <span className="text-xs font-bold text-stone-500">Aucun modèle d'instrument défini pour le moment.</span>
+          <span className="text-xs font-bold text-stone-500">{t('lutherie.noModelDefinedYet')}</span>
         </CordelCard>
       ) : (
         <div data-tour="lutherie-models-grid" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -176,7 +178,7 @@ export default function InstrumentModelsManager({ groupId, isAuthorized, varalCa
               </p>
 
               <div data-tour="lutherie-model-blueprint" className="text-[10px] text-encre-noire font-bold bg-white/50 border border-dashed border-cordel-master-dark/20 rounded p-1.5 mt-auto">
-                {model.parts?.length || 0} Pièces à fabriquer
+                {t('lutherie.partsToBuildCount', { count: model.parts?.length || 0 })}
               </div>
 
               <div className="flex flex-wrap items-center justify-between gap-2 mt-2 pt-2 border-t border-dashed border-cordel-master-dark/20">
@@ -191,13 +193,13 @@ export default function InstrumentModelsManager({ groupId, isAuthorized, varalCa
                     onClick={() => setEditingModel(model)}
                     className="text-[10px] font-bold text-cordel-wood hover:underline"
                   >
-                    Éditer
+                    {t('lutherie.btnEdit')}
                   </button>
                   <button 
                     onClick={() => handleDeleteModel(model.id, model.nom)}
                     className="text-[10px] font-bold text-red-500 hover:underline"
                   >
-                    Supprimer
+                    {t('lutherie.btnDelete')}
                   </button>
                 </div>
                 <CordelButton 
@@ -206,7 +208,7 @@ export default function InstrumentModelsManager({ groupId, isAuthorized, varalCa
                   onClick={() => handleExportModel(model)}
                   disabled={isExporting}
                 >
-                  {isExporting ? "Export..." : "📦 Exporter Bundle"}
+                  {isExporting ? "Export..." : `📦 ${t('lutherie.btnExportBundle')}`}
                 </CordelButton>
               </div>
             </CordelCard>

@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Boutons de navigation Flèche Gauche (◀) et Flèche Droite (▶)
@@ -20,6 +21,7 @@ export default function RepertoireModalNavArrows({
   onNavigate,
   disabled = false
 }) {
+  const { t } = useTranslation();
   const isValid = Boolean(piecesList && piecesList.length > 1 && currentPiece);
   const currentIndex = isValid ? piecesList.findIndex((p) => p.id === currentPiece.id) : -1;
   const isNavigable = isValid && currentIndex !== -1;
@@ -81,7 +83,7 @@ export default function RepertoireModalNavArrows({
               ? `Morceau précédent : « ${prevPiece.titre} » (Touche Flèche Gauche ←)`
               : 'Premier morceau du classeur'
           }
-          aria-label="Morceau précédent"
+          aria-label={t('mestre.repertoire.previousPieceAria')}
         >
           <span className="text-lg md:text-xl font-black">◀</span>
 
@@ -89,13 +91,13 @@ export default function RepertoireModalNavArrows({
           {hasPrev && (
             <div className="hidden md:group-hover:flex absolute left-full ml-3 top-1/2 -translate-y-1/2 flex-col items-start p-2.5 bg-[#fdfaf2] border-2 border-encre-noire rounded-[4px_6px_3px_5px] shadow-[3px_3px_0px_0px_#181716] whitespace-nowrap pointer-events-none z-70 animate-fade-in text-left">
               <span className="text-[9px] uppercase font-black tracking-wider text-cordel-wood">
-                Précédent ({currentIndex} / {piecesList.length})
+                {t('mestre.repertoire.previousPiecePrefix')}{currentIndex} / {piecesList.length})
               </span>
               <span className="text-xs font-black text-encre-noire max-w-[220px] truncate">
                 {prevPiece.titre}
               </span>
               <span className="text-[8.5px] text-stone-500 italic mt-0.5">
-                Raccourci : touche ←
+                {t('mestre.repertoire.shortcutLeftArrow')}
               </span>
             </div>
           )}
@@ -118,7 +120,7 @@ export default function RepertoireModalNavArrows({
               ? `Morceau suivant : « ${nextPiece.titre} » (Touche Flèche Droite →)`
               : 'Dernier morceau du classeur'
           }
-          aria-label="Morceau suivant"
+          aria-label={t('mestre.repertoire.nextPieceAria')}
         >
           <span className="text-lg md:text-xl font-black">▶</span>
 
@@ -126,13 +128,13 @@ export default function RepertoireModalNavArrows({
           {hasNext && (
             <div className="hidden md:group-hover:flex absolute right-full mr-3 top-1/2 -translate-y-1/2 flex-col items-end p-2.5 bg-[#fdfaf2] border-2 border-encre-noire rounded-[4px_6px_3px_5px] shadow-[3px_3px_0px_0px_#181716] whitespace-nowrap pointer-events-none z-70 animate-fade-in text-right">
               <span className="text-[9px] uppercase font-black tracking-wider text-cordel-wood">
-                Suivant ({currentIndex + 2} / {piecesList.length})
+                {t('mestre.repertoire.nextPiecePrefix')}{currentIndex + 2} / {piecesList.length})
               </span>
               <span className="text-xs font-black text-encre-noire max-w-[220px] truncate">
                 {nextPiece.titre}
               </span>
               <span className="text-[8.5px] text-stone-500 italic mt-0.5">
-                Raccourci : touche →
+                {t('mestre.repertoire.shortcutRightArrow')}
               </span>
             </div>
           )}

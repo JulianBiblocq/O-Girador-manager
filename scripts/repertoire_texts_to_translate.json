@@ -1,0 +1,1067 @@
+{
+  "Erreur lors de la modification du statut du répertoire.": {
+    "key": "erreurLorsDeLaModification",
+    "fr": "Erreur lors de la modification du statut du répertoire.",
+    "pt": ""
+  },
+  "Erreur lors de la suppression.": {
+    "key": "erreurLorsDeLaSuppression",
+    "fr": "Erreur lors de la suppression.",
+    "pt": ""
+  },
+  "Erreur lors de l'importation du morceau dans le Répertoire.": {
+    "key": "erreurLorsDeLImportation",
+    "fr": "Erreur lors de l'importation du morceau dans le Répertoire.",
+    "pt": ""
+  },
+  "Erreur lors de la synchronisation avec le Séquenceur.": {
+    "key": "erreurLorsDeLaSynchronisation",
+    "fr": "Erreur lors de la synchronisation avec le Séquenceur.",
+    "pt": ""
+  },
+  "⏳ Chargement du répertoire vivant...": {
+    "key": "chargementDuRepertoireVivant",
+    "fr": "⏳ Chargement du répertoire vivant...",
+    "pt": ""
+  },
+  "➕ Ajouter un premier morceau": {
+    "key": "ajouterUnPremierMorceau",
+    "fr": "➕ Ajouter un premier morceau",
+    "pt": ""
+  },
+  "Cliquer pour ouvrir et modifier la fiche de ce morceau": {
+    "key": "cliquerPourOuvrirEtModifier",
+    "fr": "Cliquer pour ouvrir et modifier la fiche de ce morceau",
+    "pt": ""
+  },
+  "Audio": {
+    "key": "audio",
+    "fr": "Audio",
+    "pt": ""
+  },
+  "La fiche de ce chant n'a pas pu être trouvée sur le Varal.": {
+    "key": "laFicheDeCeChant",
+    "fr": "La fiche de ce chant n'a pas pu être trouvée sur le Varal.",
+    "pt": ""
+  },
+  "Tablature vivante": {
+    "key": "tablatureVivante",
+    "fr": "Tablature vivante",
+    "pt": ""
+  },
+  "Consulter l'aide-mémoire des signes du Mestre": {
+    "key": "consulterLAideMemoireDes",
+    "fr": "Consulter l'aide-mémoire des signes du Mestre",
+    "pt": ""
+  },
+  "Signe": {
+    "key": "signe",
+    "fr": "Signe",
+    "pt": ""
+  },
+  "Afficher les entraînements associés": {
+    "key": "afficherLesEntrainementsAssocies",
+    "fr": "Afficher les entraînements associés",
+    "pt": ""
+  },
+  "entraînement": {
+    "key": "entrainement",
+    "fr": "entraînement",
+    "pt": ""
+  },
+  "Autonome (joué de mémoire)": {
+    "key": "autonomeJoueDeMemoire",
+    "fr": "Autonome (joué de mémoire)",
+    "pt": ""
+  },
+  "Audio de référence :": {
+    "key": "audioDeReference",
+    "fr": "Audio de référence :",
+    "pt": ""
+  },
+  "✓ direct séquenceur": {
+    "key": "directSequenceur",
+    "fr": "✓ direct séquenceur",
+    "pt": ""
+  },
+  "✓ direct toada": {
+    "key": "directToada",
+    "fr": "✓ direct toada",
+    "pt": ""
+  },
+  "✋ Signes :": {
+    "key": "signes",
+    "fr": "✋ Signes :",
+    "pt": ""
+  },
+  "Entraînements (": {
+    "key": "entrainements",
+    "fr": "Entraînements (",
+    "pt": ""
+  },
+  "sequenciador": {
+    "key": "sequenciador",
+    "fr": "sequenciador",
+    "pt": ""
+  },
+  "Ouvrir et travailler ce morceau dans le Séquenceur avec SSO": {
+    "key": "ouvrirEtTravaillerCeMorceau",
+    "fr": "Ouvrir et travailler ce morceau dans le Séquenceur avec SSO",
+    "pt": ""
+  },
+  "Consulter et imprimer la tablature (calculée à la volée)": {
+    "key": "consulterEtImprimerLaTablature",
+    "fr": "Consulter et imprimer la tablature (calculée à la volée)",
+    "pt": ""
+  },
+  "Tablature": {
+    "key": "tablature",
+    "fr": "Tablature",
+    "pt": ""
+  },
+  "Toada": {
+    "key": "toada",
+    "fr": "Toada",
+    "pt": ""
+  },
+  "Consulter les fiches culturelles associées": {
+    "key": "consulterLesFichesCulturellesAssociees",
+    "fr": "Consulter les fiches culturelles associées",
+    "pt": ""
+  },
+  "fiches Culture": {
+    "key": "fichesCulture",
+    "fr": "fiches Culture",
+    "pt": ""
+  },
+  "Consulter la fiche culturelle du Varal associée": {
+    "key": "consulterLaFicheCulturelleDu",
+    "fr": "Consulter la fiche culturelle du Varal associée",
+    "pt": ""
+  },
+  "Fiche Culture": {
+    "key": "ficheCulture",
+    "fr": "Fiche Culture",
+    "pt": ""
+  },
+  "Créer une fiche du Varal Culture pré-remplie avec le Contexte & Histoire du morceau (contexteHistorique)": {
+    "key": "creerUneFicheDuVaral",
+    "fr": "Créer une fiche du Varal Culture pré-remplie avec le Contexte & Histoire du morceau (contexteHistorique)",
+    "pt": ""
+  },
+  "Ajouter au fil conducteur d'une répétition ou d'un concert": {
+    "key": "ajouterAuFilConducteurD",
+    "fr": "Ajouter au fil conducteur d'une répétition ou d'un concert",
+    "pt": ""
+  },
+  "➕ Programmer": {
+    "key": "programmer",
+    "fr": "➕ Programmer",
+    "pt": ""
+  },
+  "Modifier les informations": {
+    "key": "modifierLesInformations",
+    "fr": "Modifier les informations",
+    "pt": ""
+  },
+  "Fiches Culturelles —": {
+    "key": "fichesCulturelles",
+    "fr": "Fiches Culturelles —",
+    "pt": ""
+  },
+  "Sélectionnez la fiche culturelle à consulter :": {
+    "key": "selectionnezLaFicheCulturelleA",
+    "fr": "Sélectionnez la fiche culturelle à consulter :",
+    "pt": ""
+  },
+  "Consulter ↗": {
+    "key": "consulter",
+    "fr": "Consulter ↗",
+    "pt": ""
+  },
+  "Direction Artistique —": {
+    "key": "directionArtistique",
+    "fr": "Direction Artistique —",
+    "pt": ""
+  },
+  "Architecture réactive vivante liée au Séquenceur, au Varal et à Dançad'Or": {
+    "key": "architectureReactiveVivanteLieeAu",
+    "fr": "Architecture réactive vivante liée au Séquenceur, au Varal et à Dançad'Or",
+    "pt": ""
+  },
+  "Ouvert au groupe": {
+    "key": "ouvertAuGroupe",
+    "fr": "Ouvert au groupe",
+    "pt": ""
+  },
+  "Masquer le répertoire aux adhérents": {
+    "key": "masquerLeRepertoireAuxAdherents",
+    "fr": "Masquer le répertoire aux adhérents",
+    "pt": ""
+  },
+  "Masquer": {
+    "key": "masquer",
+    "fr": "Masquer",
+    "pt": ""
+  },
+  "Masqué": {
+    "key": "masque",
+    "fr": "Masqué",
+    "pt": ""
+  },
+  "Ouvrir le répertoire aux adhérents": {
+    "key": "ouvrirLeRepertoireAuxAdherents",
+    "fr": "Ouvrir le répertoire aux adhérents",
+    "pt": ""
+  },
+  "Ouvrir": {
+    "key": "ouvrir",
+    "fr": "Ouvrir",
+    "pt": ""
+  },
+  "Affecter une vidéo à plusieurs morceaux du répertoire": {
+    "key": "affecterUneVideoAPlusieurs",
+    "fr": "Affecter une vidéo à plusieurs morceaux du répertoire",
+    "pt": ""
+  },
+  "Affecter vidéo par lot": {
+    "key": "affecterVideoParLot",
+    "fr": "Affecter vidéo par lot",
+    "pt": ""
+  },
+  "➕ Ajouter un morceau": {
+    "key": "ajouterUnMorceau",
+    "fr": "➕ Ajouter un morceau",
+    "pt": ""
+  },
+  "Le fichier audio est trop volumineux (maximum 25 Mo).": {
+    "key": "leFichierAudioEstTrop",
+    "fr": "Le fichier audio est trop volumineux (maximum 25 Mo).",
+    "pt": ""
+  },
+  "Erreur lors de l'envoi du fichier audio.": {
+    "key": "erreurLorsDeLEnvoi",
+    "fr": "Erreur lors de l'envoi du fichier audio.",
+    "pt": ""
+  },
+  "Fermer": {
+    "key": "fermer",
+    "fr": "Fermer",
+    "pt": ""
+  },
+  "Injecter le titre de la toada sélectionnée": {
+    "key": "injecterLeTitreDeLa",
+    "fr": "Injecter le titre de la toada sélectionnée",
+    "pt": ""
+  },
+  "💡 Suggérer «": {
+    "key": "suggerer",
+    "fr": "💡 Suggérer «",
+    "pt": ""
+  },
+  "Correspondances détectées :": {
+    "key": "correspondancesDetectees",
+    "fr": "Correspondances détectées :",
+    "pt": ""
+  },
+  "Lier au Preset Séquenceur détecté": {
+    "key": "lierAuPresetSequenceurDetecte",
+    "fr": "Lier au Preset Séquenceur détecté",
+    "pt": ""
+  },
+  "🥁 Lier au Preset «": {
+    "key": "lierAuPreset",
+    "fr": "🥁 Lier au Preset «",
+    "pt": ""
+  },
+  "Lier à la Toada détectée": {
+    "key": "lierALaToadaDetectee",
+    "fr": "Lier à la Toada détectée",
+    "pt": ""
+  },
+  "🗣️ Lier à la Toada «": {
+    "key": "lierALaToada",
+    "fr": "🗣️ Lier à la Toada «",
+    "pt": ""
+  },
+  "Lier à la chorégraphie Dançad'Or détectée": {
+    "key": "lierALaChoregraphieDancad",
+    "fr": "Lier à la chorégraphie Dançad'Or détectée",
+    "pt": ""
+  },
+  "💃 Lier à la Danse «": {
+    "key": "lierALaDanse",
+    "fr": "💃 Lier à la Danse «",
+    "pt": ""
+  },
+  "Lier à la fiche Varal Culture détectée": {
+    "key": "lierALaFicheVaral",
+    "fr": "Lier à la fiche Varal Culture détectée",
+    "pt": ""
+  },
+  "📖 Lier à la Culture «": {
+    "key": "lierALaCulture",
+    "fr": "📖 Lier à la Culture «",
+    "pt": ""
+  },
+  "La validation est libre : un morceau peut être prêt même sans ressource externe attachée.": {
+    "key": "laValidationEstLibreUn",
+    "fr": "La validation est libre : un morceau peut être prêt même sans ressource externe attachée.",
+    "pt": ""
+  },
+  "🔗 Liaisons transversales vivantes (Varal, Séquenceur, Danse)": {
+    "key": "liaisonsTransversalesVivantesVaralSequenceur",
+    "fr": "🔗 Liaisons transversales vivantes (Varal, Séquenceur, Danse)",
+    "pt": ""
+  },
+  "Cliquer pour utiliser le nom de cette toada comme titre du morceau": {
+    "key": "cliquerPourUtiliserLeNom",
+    "fr": "Cliquer pour utiliser le nom de cette toada comme titre du morceau",
+    "pt": ""
+  },
+  "Définir comme titre :": {
+    "key": "definirCommeTitre",
+    "fr": "Définir comme titre :",
+    "pt": ""
+  },
+  "Consulter les paroles complètes de ce chant": {
+    "key": "consulterLesParolesCompletesDe",
+    "fr": "Consulter les paroles complètes de ce chant",
+    "pt": ""
+  },
+  "Lire les paroles de «": {
+    "key": "lireLesParolesDe",
+    "fr": "Lire les paroles de «",
+    "pt": ""
+  },
+  "⭐ 🎛️ Préréglages Complets (Presets - Audio & Tablature en direct)": {
+    "key": "prereglagesCompletsPresetsAudioTablature",
+    "fr": "⭐ 🎛️ Préréglages Complets (Presets - Audio & Tablature en direct)",
+    "pt": ""
+  },
+  "📑 Séquences & Arrangements (Sections)": {
+    "key": "sequencesArrangementsSections",
+    "fr": "📑 Séquences & Arrangements (Sections)",
+    "pt": ""
+  },
+  "🥁 Motifs individuels & Fichiers JSON": {
+    "key": "motifsIndividuelsFichiersJson",
+    "fr": "🥁 Motifs individuels & Fichiers JSON",
+    "pt": ""
+  },
+  "Liaison vivante : audio, BPM, signes et tablature seront lus en direct depuis ce preset.": {
+    "key": "liaisonVivanteAudioBpmSignes",
+    "fr": "Liaison vivante : audio, BPM, signes et tablature seront lus en direct depuis ce preset.",
+    "pt": ""
+  },
+  "Audio de référence": {
+    "key": "audioDeReference",
+    "fr": "Audio de référence",
+    "pt": ""
+  },
+  "Dissocier cet enregistrement audio personnalisé": {
+    "key": "dissocierCetEnregistrementAudioPersonnalise",
+    "fr": "Dissocier cet enregistrement audio personnalisé",
+    "pt": ""
+  },
+  "Effacer": {
+    "key": "effacer",
+    "fr": "Effacer",
+    "pt": ""
+  },
+  "🎧 Masters Audio & Enregistrements du Séquenceur": {
+    "key": "mastersAudioEnregistrementsDuSequenceur",
+    "fr": "🎧 Masters Audio & Enregistrements du Séquenceur",
+    "pt": ""
+  },
+  "🔗 Audio personnalisé": {
+    "key": "audioPersonnalise",
+    "fr": "🔗 Audio personnalisé",
+    "pt": ""
+  },
+  "🎵 Fichier lié (": {
+    "key": "fichierLie",
+    "fr": "🎵 Fichier lié (",
+    "pt": ""
+  },
+  "ou": {
+    "key": "ou",
+    "fr": "ou",
+    "pt": ""
+  },
+  "🔗 Coller une URL": {
+    "key": "collerUneUrl",
+    "fr": "🔗 Coller une URL",
+    "pt": ""
+  },
+  "▶ Pré-écoute de l'audio :": {
+    "key": "preEcouteDeLAudio",
+    "fr": "▶ Pré-écoute de l'audio :",
+    "pt": ""
+  },
+  "💃 Chorégraphie liée": {
+    "key": "choregraphieLiee",
+    "fr": "💃 Chorégraphie liée",
+    "pt": ""
+  },
+  "fiche(s) culture": {
+    "key": "ficheSCulture",
+    "fr": "fiche(s) culture",
+    "pt": ""
+  },
+  "Aucune liaison transversale active": {
+    "key": "aucuneLiaisonTransversaleActive",
+    "fr": "Aucune liaison transversale active",
+    "pt": ""
+  },
+  "Tablature résolue du Séquenceur": {
+    "key": "tablatureResolueDuSequenceur",
+    "fr": "Tablature résolue du Séquenceur",
+    "pt": ""
+  },
+  "🎬 Vidéo de référence & Histoire culturelle": {
+    "key": "videoDeReferenceHistoireCulturelle",
+    "fr": "🎬 Vidéo de référence & Histoire culturelle",
+    "pt": ""
+  },
+  "Créer une fiche sur le Varal Culture pré-remplie avec ces informations": {
+    "key": "creerUneFicheSurLe",
+    "fr": "Créer une fiche sur le Varal Culture pré-remplie avec ces informations",
+    "pt": ""
+  },
+  "Lien vidéo YouTube propre au morceau": {
+    "key": "lienVideoYoutubePropreAu",
+    "fr": "Lien vidéo YouTube propre au morceau",
+    "pt": ""
+  },
+  "Choisir parmi les playlists YouTube configurées de l'association": {
+    "key": "choisirParmiLesPlaylistsYoutube",
+    "fr": "Choisir parmi les playlists YouTube configurées de l'association",
+    "pt": ""
+  },
+  "🎬 Choisir parmi nos vidéos": {
+    "key": "choisirParmiNosVideos",
+    "fr": "🎬 Choisir parmi nos vidéos",
+    "pt": ""
+  },
+  "Vidéo YouTube reconnue (ID :": {
+    "key": "videoYoutubeReconnueId",
+    "fr": "Vidéo YouTube reconnue (ID :",
+    "pt": ""
+  },
+  "Notes d'histoire & contexte artistique": {
+    "key": "notesDHistoireContexteArtistique",
+    "fr": "Notes d'histoire & contexte artistique",
+    "pt": ""
+  },
+  "Renseignez l'histoire spécifique, la nation d'origine ou l'inspiration du morceau...": {
+    "key": "renseignezLHistoireSpecifiqueLa",
+    "fr": "Renseignez l'histoire spécifique, la nation d'origine ou l'inspiration du morceau...",
+    "pt": ""
+  },
+  "🎬 Vidéo principale configurée": {
+    "key": "videoPrincipaleConfiguree",
+    "fr": "🎬 Vidéo principale configurée",
+    "pt": ""
+  },
+  "Pas de vidéo principale": {
+    "key": "pasDeVideoPrincipale",
+    "fr": "Pas de vidéo principale",
+    "pt": ""
+  },
+  "📜 Contexte historique renseigné": {
+    "key": "contexteHistoriqueRenseigne",
+    "fr": "📜 Contexte historique renseigné",
+    "pt": ""
+  },
+  "✌️ Signes du Mestre associés": {
+    "key": "signesDuMestreAssocies",
+    "fr": "✌️ Signes du Mestre associés",
+    "pt": ""
+  },
+  "signe(s) configuré(s)": {
+    "key": "signeSConfigureS",
+    "fr": "signe(s) configuré(s)",
+    "pt": ""
+  },
+  "Aucun signe du Mestre associé": {
+    "key": "aucunSigneDuMestreAssocie",
+    "fr": "Aucun signe du Mestre associé",
+    "pt": ""
+  },
+  "Aucune note particulière": {
+    "key": "aucuneNoteParticuliere",
+    "fr": "Aucune note particulière",
+    "pt": ""
+  },
+  "Annuler": {
+    "key": "annuler",
+    "fr": "Annuler",
+    "pt": ""
+  },
+  "Chant & Paroles": {
+    "key": "chantParoles",
+    "fr": "Chant & Paroles",
+    "pt": ""
+  },
+  "Modifier le statut de la saison : Au programme / En préparation / Au frigo": {
+    "key": "modifierLeStatutDeLa",
+    "fr": "Modifier le statut de la saison : Au programme / En préparation / Au frigo",
+    "pt": ""
+  },
+  "Statut de la saison": {
+    "key": "statutDeLaSaison",
+    "fr": "Statut de la saison",
+    "pt": ""
+  },
+  "Au programme cette année": {
+    "key": "auProgrammeCetteAnnee",
+    "fr": "Au programme cette année",
+    "pt": ""
+  },
+  "En préparation / Chantier": {
+    "key": "enPreparationChantier",
+    "fr": "En préparation / Chantier",
+    "pt": ""
+  },
+  "Au frigo / Archives": {
+    "key": "auFrigoArchives",
+    "fr": "Au frigo / Archives",
+    "pt": ""
+  },
+  "🎵 Audio lié": {
+    "key": "audioLie",
+    "fr": "🎵 Audio lié",
+    "pt": ""
+  },
+  "🗣️ Toada liée": {
+    "key": "toadaLiee",
+    "fr": "🗣️ Toada liée",
+    "pt": ""
+  },
+  "💃 Danse liée": {
+    "key": "danseLiee",
+    "fr": "💃 Danse liée",
+    "pt": ""
+  },
+  "📖 Culture liée": {
+    "key": "cultureLiee",
+    "fr": "📖 Culture liée",
+    "pt": ""
+  },
+  "Morceau autonome (sans ressource externe)": {
+    "key": "morceauAutonomeSansRessourceExterne",
+    "fr": "Morceau autonome (sans ressource externe)",
+    "pt": ""
+  },
+  "Chargement de l'agenda...": {
+    "key": "chargementDeLAgenda",
+    "fr": "Chargement de l'agenda...",
+    "pt": ""
+  },
+  "Consignes & Notes d'intention pour la séance (optionnel)": {
+    "key": "consignesNotesDIntentionPour",
+    "fr": "Consignes & Notes d'intention pour la séance (optionnel)",
+    "pt": ""
+  },
+  "Ex: Travailler l'appel du Mestre, caler le tempo à 120 BPM, vérifier la relance des caixas...": {
+    "key": "exTravaillerLAppelDu",
+    "fr": "Ex: Travailler l'appel du Mestre, caler le tempo à 120 BPM, vérifier la relance des caixas...",
+    "pt": ""
+  },
+  "Programmer en répétition": {
+    "key": "programmerEnRepetition",
+    "fr": "Programmer en répétition",
+    "pt": ""
+  },
+  "demande": {
+    "key": "demande",
+    "fr": "demande",
+    "pt": ""
+  },
+  "d'élèves": {
+    "key": "dEleves",
+    "fr": "d'élèves",
+    "pt": ""
+  },
+  "% maîtrise": {
+    "key": "maitrise",
+    "fr": "% maîtrise",
+    "pt": ""
+  },
+  "1. Choisir la répétition cible *": {
+    "key": "1ChoisirLaRepetitionCible",
+    "fr": "1. Choisir la répétition cible *",
+    "pt": ""
+  },
+  "Recherche des répétitions à venir...": {
+    "key": "rechercheDesRepetitionsAVenir",
+    "fr": "Recherche des répétitions à venir...",
+    "pt": ""
+  },
+  "⚠️ Aucune répétition planifiée dans l'Agenda à compter d'aujourd'hui. Veuillez d'abord créer une répétition dans l'Agenda.": {
+    "key": "aucuneRepetitionPlanifieeDansL",
+    "fr": "⚠️ Aucune répétition planifiée dans l'Agenda à compter d'aujourd'hui. Veuillez d'abord créer une répétition dans l'Agenda.",
+    "pt": ""
+  },
+  "2. Note d'intention pour le fil conducteur (modifiable)": {
+    "key": "2NoteDIntentionPour",
+    "fr": "2. Note d'intention pour le fil conducteur (modifiable)",
+    "pt": ""
+  },
+  "Ex: Travailler le calage rythmique et le pont vers le chant...": {
+    "key": "exTravaillerLeCalageRythmique",
+    "fr": "Ex: Travailler le calage rythmique et le pont vers le chant...",
+    "pt": ""
+  },
+  "Cette note apparaîtra directement dans l'onglet « Fil conducteur » de l'événement.": {
+    "key": "cetteNoteApparaitraDirectementDans",
+    "fr": "Cette note apparaîtra directement dans l'onglet « Fil conducteur » de l'événement.",
+    "pt": ""
+  },
+  "liée": {
+    "key": "liee",
+    "fr": "liée",
+    "pt": ""
+  },
+  "Créer une fiche sur le Varal Culture pré-remplie": {
+    "key": "creerUneFicheSurLe",
+    "fr": "Créer une fiche sur le Varal Culture pré-remplie",
+    "pt": ""
+  },
+  "Détacher cette fiche culturelle": {
+    "key": "detacherCetteFicheCulturelle",
+    "fr": "Détacher cette fiche culturelle",
+    "pt": ""
+  },
+  "Aucune fiche culturelle liée pour le moment. Cochez les fiches correspondantes ci-dessous.": {
+    "key": "aucuneFicheCulturelleLieePour",
+    "fr": "Aucune fiche culturelle liée pour le moment. Cochez les fiches correspondantes ci-dessous.",
+    "pt": ""
+  },
+  "Effacer la recherche": {
+    "key": "effacerLaRecherche",
+    "fr": "Effacer la recherche",
+    "pt": ""
+  },
+  "Morceau précédent": {
+    "key": "morceauPrecedent",
+    "fr": "Morceau précédent",
+    "pt": ""
+  },
+  "Précédent (": {
+    "key": "precedent",
+    "fr": "Précédent (",
+    "pt": ""
+  },
+  "Raccourci : touche ←": {
+    "key": "raccourciTouche",
+    "fr": "Raccourci : touche ←",
+    "pt": ""
+  },
+  "Morceau suivant": {
+    "key": "morceauSuivant",
+    "fr": "Morceau suivant",
+    "pt": ""
+  },
+  "Suivant (": {
+    "key": "suivant",
+    "fr": "Suivant (",
+    "pt": ""
+  },
+  "Raccourci : touche →": {
+    "key": "raccourciTouche",
+    "fr": "Raccourci : touche →",
+    "pt": ""
+  },
+  "Ouvrir dans un nouvel onglet": {
+    "key": "ouvrirDansUnNouvelOnglet",
+    "fr": "Ouvrir dans un nouvel onglet",
+    "pt": ""
+  },
+  "Plein écran externe": {
+    "key": "pleinEcranExterne",
+    "fr": "Plein écran externe",
+    "pt": ""
+  },
+  "Votre navigateur ne supporte pas la lecture directe de vidéos.": {
+    "key": "votreNavigateurNeSupportePas",
+    "fr": "Votre navigateur ne supporte pas la lecture directe de vidéos.",
+    "pt": ""
+  },
+  "Impossible d'intégrer ce lien directement dans l'application.": {
+    "key": "impossibleDIntegrerCeLien",
+    "fr": "Impossible d'intégrer ce lien directement dans l'application.",
+    "pt": ""
+  },
+  "Ouvrir la vidéo dans un nouvel onglet ↗": {
+    "key": "ouvrirLaVideoDansUn",
+    "fr": "Ouvrir la vidéo dans un nouvel onglet ↗",
+    "pt": ""
+  },
+  "Choisir parmi les vidéos de l'asso": {
+    "key": "choisirParmiLesVideosDe",
+    "fr": "Choisir parmi les vidéos de l'asso",
+    "pt": ""
+  },
+  "🎬 Vidéos asso": {
+    "key": "videosAsso",
+    "fr": "🎬 Vidéos asso",
+    "pt": ""
+  },
+  "Aucune vidéo rattachée pour le moment.": {
+    "key": "aucuneVideoRattacheePourLe",
+    "fr": "Aucune vidéo rattachée pour le moment.",
+    "pt": ""
+  },
+  "Vidéo #": {
+    "key": "video",
+    "fr": "Vidéo #",
+    "pt": ""
+  },
+  "Live / Captation": {
+    "key": "liveCaptation",
+    "fr": "Live / Captation",
+    "pt": ""
+  },
+  "Supprimer cette vidéo": {
+    "key": "supprimerCetteVideo",
+    "fr": "Supprimer cette vidéo",
+    "pt": ""
+  },
+  "Libellé :": {
+    "key": "libelle",
+    "fr": "Libellé :",
+    "pt": ""
+  },
+  "Lien URL :": {
+    "key": "lienUrl",
+    "fr": "Lien URL :",
+    "pt": ""
+  },
+  "Signal": {
+    "key": "signal",
+    "fr": "Signal",
+    "pt": ""
+  },
+  "Partition textuelle monospace générée depuis le Séquenceur": {
+    "key": "partitionTextuelleMonospaceGenereeDepuis",
+    "fr": "Partition textuelle monospace générée depuis le Séquenceur",
+    "pt": ""
+  },
+  "Lancer l'impression papier de cette tablature": {
+    "key": "lancerLImpressionPapierDe",
+    "fr": "Lancer l'impression papier de cette tablature",
+    "pt": ""
+  },
+  "Copier l'intégralité du texte dans le presse-papier": {
+    "key": "copierLIntegraliteDuTexte",
+    "fr": "Copier l'intégralité du texte dans le presse-papier",
+    "pt": ""
+  },
+  "Astuce : défilement horizontal disponible pour les longues mesures.": {
+    "key": "astuceDefilementHorizontalDisponiblePour",
+    "fr": "Astuce : défilement horizontal disponible pour les longues mesures.",
+    "pt": ""
+  },
+  "Classée dans le bloc « Live / Ensemble »": {
+    "key": "classeeDansLeBlocLive",
+    "fr": "Classée dans le bloc « Live / Ensemble »",
+    "pt": ""
+  },
+  "(Tous pupitres / vue générale)": {
+    "key": "tousPupitresVueGenerale",
+    "fr": "(Tous pupitres / vue générale)",
+    "pt": ""
+  },
+  "sélectionné": {
+    "key": "selectionne",
+    "fr": "sélectionné",
+    "pt": ""
+  },
+  "Associer à tous les instruments": {
+    "key": "associerATousLesInstruments",
+    "fr": "Associer à tous les instruments",
+    "pt": ""
+  },
+  "Décocher tous les instruments": {
+    "key": "decocherTousLesInstruments",
+    "fr": "Décocher tous les instruments",
+    "pt": ""
+  },
+  "Veuillez sélectionner un fichier image (JPG, PNG, WebP).": {
+    "key": "veuillezSelectionnerUnFichierImage",
+    "fr": "Veuillez sélectionner un fichier image (JPG, PNG, WebP).",
+    "pt": ""
+  },
+  "Erreur lors du téléversement de l'image.": {
+    "key": "erreurLorsDuTeleversementDe",
+    "fr": "Erreur lors du téléversement de l'image.",
+    "pt": ""
+  },
+  "Veuillez sélectionner un fichier au format PDF.": {
+    "key": "veuillezSelectionnerUnFichierAu",
+    "fr": "Veuillez sélectionner un fichier au format PDF.",
+    "pt": ""
+  },
+  "Erreur lors du téléversement du document PDF.": {
+    "key": "erreurLorsDuTeleversementDu",
+    "fr": "Erreur lors du téléversement du document PDF.",
+    "pt": ""
+  },
+  "🧵 Éditeur de Tutoriel Atelier Couture": {
+    "key": "editeurDeTutorielAtelierCouture",
+    "fr": "🧵 Éditeur de Tutoriel Atelier Couture",
+    "pt": ""
+  },
+  "Fermer (Échap)": {
+    "key": "fermerEchap",
+    "fr": "Fermer (Échap)",
+    "pt": ""
+  },
+  "Titre du Tutoriel": {
+    "key": "titreDuTutoriel",
+    "fr": "Titre du Tutoriel",
+    "pt": ""
+  },
+  "ex: Tutoriel : Bracelets de Maracatu": {
+    "key": "exTutorielBraceletsDeMaracatu",
+    "fr": "ex: Tutoriel : Bracelets de Maracatu",
+    "pt": ""
+  },
+  "Coût estimé (€)": {
+    "key": "coutEstime",
+    "fr": "Coût estimé (€)",
+    "pt": ""
+  },
+  "ex: 15.00": {
+    "key": "ex1500",
+    "fr": "ex: 15.00",
+    "pt": ""
+  },
+  "Description courte / Résumé": {
+    "key": "descriptionCourteResume",
+    "fr": "Description courte / Résumé",
+    "pt": ""
+  },
+  "ex: Fiche de confection complète des bracelets dorés et rubans": {
+    "key": "exFicheDeConfectionComplete",
+    "fr": "ex: Fiche de confection complète des bracelets dorés et rubans",
+    "pt": ""
+  },
+  "Statut de publication": {
+    "key": "statutDePublication",
+    "fr": "Statut de publication",
+    "pt": ""
+  },
+  "Liste du matériel nécessaire & Fournitures": {
+    "key": "listeDuMaterielNecessaireFournitures",
+    "fr": "Liste du matériel nécessaire & Fournitures",
+    "pt": ""
+  },
+  "ex: 2m de tissu satin rouge, Fil doré N°40, 10 boutons à pression...": {
+    "key": "ex2mDeTissuSatin",
+    "fr": "ex: 2m de tissu satin rouge, Fil doré N°40, 10 boutons à pression...",
+    "pt": ""
+  },
+  "Instructions & Étapes de fabrication": {
+    "key": "instructionsEtapesDeFabrication",
+    "fr": "Instructions & Étapes de fabrication",
+    "pt": ""
+  },
+  "Détaillez les étapes pas-à-pas pour coudre la pièce...": {
+    "key": "detaillezLesEtapesPasA",
+    "fr": "Détaillez les étapes pas-à-pas pour coudre la pièce...",
+    "pt": ""
+  },
+  "Lien Vidéo Tutoriel (YouTube, Vimeo, Google Drive...)": {
+    "key": "lienVideoTutorielYoutubeVimeo",
+    "fr": "Lien Vidéo Tutoriel (YouTube, Vimeo, Google Drive...)",
+    "pt": ""
+  },
+  "📸 Galerie de Photos & Schémas (": {
+    "key": "galerieDePhotosSchemas",
+    "fr": "📸 Galerie de Photos & Schémas (",
+    "pt": ""
+  },
+  "Supprimer cette photo": {
+    "key": "supprimerCettePhoto",
+    "fr": "Supprimer cette photo",
+    "pt": ""
+  },
+  "📄 Patrons Couture PDF & Fiches Techniques (": {
+    "key": "patronsCouturePdfFichesTechniques",
+    "fr": "📄 Patrons Couture PDF & Fiches Techniques (",
+    "pt": ""
+  },
+  "Supprimer ce document": {
+    "key": "supprimerCeDocument",
+    "fr": "Supprimer ce document",
+    "pt": ""
+  },
+  "✕ Supprimer": {
+    "key": "supprimer",
+    "fr": "✕ Supprimer",
+    "pt": ""
+  },
+  "Créer la fiche Varal Culture": {
+    "key": "creerLaFicheVaralCulture",
+    "fr": "Créer la fiche Varal Culture",
+    "pt": ""
+  },
+  "Passerelle automatique depuis «": {
+    "key": "passerelleAutomatiqueDepuis",
+    "fr": "Passerelle automatique depuis «",
+    "pt": ""
+  },
+  "Titre de la fiche Culture": {
+    "key": "titreDeLaFicheCulture",
+    "fr": "Titre de la fiche Culture",
+    "pt": ""
+  },
+  "Ex: Baque de Luanda, Maracatu de Baque Virado...": {
+    "key": "exBaqueDeLuandaMaracatu",
+    "fr": "Ex: Baque de Luanda, Maracatu de Baque Virado...",
+    "pt": ""
+  },
+  "Catégorie": {
+    "key": "categorie",
+    "fr": "Catégorie",
+    "pt": ""
+  },
+  "📖 Histoire": {
+    "key": "histoire",
+    "fr": "📖 Histoire",
+    "pt": ""
+  },
+  "🥁 Musique & Danse": {
+    "key": "musiqueDanse",
+    "fr": "🥁 Musique & Danse",
+    "pt": ""
+  },
+  "👑 Tradition & Cour": {
+    "key": "traditionCour",
+    "fr": "👑 Tradition & Cour",
+    "pt": ""
+  },
+  "🌿 Orixás": {
+    "key": "orixas",
+    "fr": "🌿 Orixás",
+    "pt": ""
+  },
+  "📍 Territoire": {
+    "key": "territoire",
+    "fr": "📍 Territoire",
+    "pt": ""
+  },
+  "Vidéo YouTube associée": {
+    "key": "videoYoutubeAssociee",
+    "fr": "Vidéo YouTube associée",
+    "pt": ""
+  },
+  "Lien YouTube valide reconnu (ID :": {
+    "key": "lienYoutubeValideReconnuId",
+    "fr": "Lien YouTube valide reconnu (ID :",
+    "pt": ""
+  },
+  "Chapitre introductif / Histoire": {
+    "key": "chapitreIntroductifHistoire",
+    "fr": "Chapitre introductif / Histoire",
+    "pt": ""
+  },
+  "Titre du chapitre": {
+    "key": "titreDuChapitre",
+    "fr": "Titre du chapitre",
+    "pt": ""
+  },
+  "Rédigez ou complétez le contexte historique, les origines, la nation ou l'anecdote de ce morceau...": {
+    "key": "redigezOuCompletezLeContexte",
+    "fr": "Rédigez ou complétez le contexte historique, les origines, la nation ou l'anecdote de ce morceau...",
+    "pt": ""
+  },
+  "Le saviez-vous ? (Anecdote facultative)": {
+    "key": "leSaviezVousAnecdoteFacultative",
+    "fr": "Le saviez-vous ? (Anecdote facultative)",
+    "pt": ""
+  },
+  "Ex: Cette chanson était traditionnellement chantée au lever du soleil...": {
+    "key": "exCetteChansonEtaitTraditionnellement",
+    "fr": "Ex: Cette chanson était traditionnellement chantée au lever du soleil...",
+    "pt": ""
+  },
+  "🔗 La fiche sera automatiquement enregistrée sur le Varal et liée à ce morceau.": {
+    "key": "laFicheSeraAutomatiquementEnregistree",
+    "fr": "🔗 La fiche sera automatiquement enregistrée sur le Varal et liée à ce morceau.",
+    "pt": ""
+  },
+  "1. Pupitres cibles ou Répétition générale": {
+    "key": "1PupitresCiblesOuRepetition",
+    "fr": "1. Pupitres cibles ou Répétition générale",
+    "pt": ""
+  },
+  "déjà présent": {
+    "key": "dejaPresent",
+    "fr": "déjà présent",
+    "pt": ""
+  },
+  "Source de la vidéo": {
+    "key": "sourceDeLaVideo",
+    "fr": "Source de la vidéo",
+    "pt": ""
+  },
+  "Piocher une vidéo parmi les playlists de l'association": {
+    "key": "piocherUneVideoParmiLes",
+    "fr": "Piocher une vidéo parmi les playlists de l'association",
+    "pt": ""
+  },
+  "Piocher dans mes playlists": {
+    "key": "piocherDansMesPlaylists",
+    "fr": "Piocher dans mes playlists",
+    "pt": ""
+  },
+  "Afficher les vidéos de mes playlists": {
+    "key": "afficherLesVideosDeMes",
+    "fr": "Afficher les vidéos de mes playlists",
+    "pt": ""
+  },
+  "Cliquer pour changer de vidéo depuis vos playlists": {
+    "key": "cliquerPourChangerDeVideo",
+    "fr": "Cliquer pour changer de vidéo depuis vos playlists",
+    "pt": ""
+  },
+  "Miniature": {
+    "key": "miniature",
+    "fr": "Miniature",
+    "pt": ""
+  },
+  "Changer": {
+    "key": "changer",
+    "fr": "Changer",
+    "pt": ""
+  },
+  "Cliquer pour choisir depuis vos playlists": {
+    "key": "cliquerPourChoisirDepuisVos",
+    "fr": "Cliquer pour choisir depuis vos playlists",
+    "pt": ""
+  },
+  "Playlists": {
+    "key": "playlists",
+    "fr": "Playlists",
+    "pt": ""
+  },
+  "Parcourir les playlists YouTube": {
+    "key": "parcourirLesPlaylistsYoutube",
+    "fr": "Parcourir les playlists YouTube",
+    "pt": ""
+  },
+  "Ouvrir la vidéo dans un nouvel onglet": {
+    "key": "ouvrirLaVideoDansUn",
+    "fr": "Ouvrir la vidéo dans un nouvel onglet",
+    "pt": ""
+  },
+  "Fiche Répertoire :": {
+    "key": "ficheRepertoire",
+    "fr": "Fiche Répertoire :",
+    "pt": ""
+  }
+}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
+import { useTranslation } from '../LanguageContext';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import PieceTutorialModal from './PieceTutorialModal';
@@ -53,6 +54,7 @@ export default function CollectiveWorkshopView({
   onNavigateToPole,
   onBack
 }) {
+  const { t } = useTranslation();
   // Compteur déclaratif de pièces confectionnées par l'adhérent
   const initialCount = profileData?.piecesConfectionneesCount || 0;
   const [piecesCount, setPiecesCount] = useState(initialCount);
@@ -137,19 +139,19 @@ export default function CollectiveWorkshopView({
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-base font-heading font-black tracking-wider text-cordel-wood uppercase">
-              🧵 Atelier Costumes & Confections
+              {t('costumerie.atelierCostumesConfections')}
             </h2>
             <span className="theme-stamp-badge bg-emerald-800 text-white text-[8px] uppercase tracking-wider">
-              Parc Mutualisé
+              {t('costumerie.parcMutualise')}
             </span>
           </div>
           <p className="text-[10px] text-cordel-master-dark opacity-75 mt-0.5">
-            Costumes confectionnés pour le stock associatif de la troupe, suivi de vos réalisations et accès aux tutoriels.
+            {t('costumerie.costumesConfectionnesPourLeStock')}
           </p>
         </div>
         {onBack && (
           <CordelButton variant="default" onClick={onBack} className="px-3 py-1 text-xs font-bold uppercase self-start sm:self-center">
-            ← Retour
+            {t('costumerie.btnBackArrowSimple')}
           </CordelButton>
         )}
       </div>
@@ -168,15 +170,15 @@ export default function CollectiveWorkshopView({
             <span className="text-2xl group-hover:scale-110 transition-transform shrink-0">🪡</span>
             <div className="flex flex-col min-w-0">
               <span className="text-xs font-black uppercase text-encre-noire tracking-wide">
-                Fiches Techniques Atelier
+                {t('costumerie.fichesTechniquesAtelier')}
               </span>
               <span className="text-[9px] text-cordel-master-dark/75 font-semibold truncate">
-                Tutoriels pas-à-pas, vidéos et listes de matériel
+                {t('costumerie.tutorielsPasAPasVideos')}
               </span>
             </div>
           </div>
           <span className="text-xs text-cordel-wood font-extrabold shrink-0 group-hover:translate-x-0.5 transition-transform">
-            Ouvrir →
+            {t('costumerie.ouvrir')}
           </span>
         </button>
 
@@ -192,15 +194,15 @@ export default function CollectiveWorkshopView({
             <span className="text-2xl group-hover:scale-110 transition-transform shrink-0">📁</span>
             <div className="flex flex-col min-w-0">
               <span className="text-xs font-black uppercase text-encre-noire tracking-wide">
-                Patrons & Documents Varal
+                {t('costumerie.patronsDocumentsVaral')}
               </span>
               <span className="text-[9px] text-cordel-master-dark/75 font-semibold truncate">
-                Patrons de couture téléchargeables, PDF et fiches
+                {t('costumerie.patronsDeCoutureTelechargeablesPdf')}
               </span>
             </div>
           </div>
           <span className="text-xs text-cordel-wood font-extrabold shrink-0 group-hover:translate-x-0.5 transition-transform">
-            Consulter →
+            {t('costumerie.consulter')}
           </span>
         </button>
       </div>
@@ -210,13 +212,13 @@ export default function CollectiveWorkshopView({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-dashed border-cordel-master-dark/15 pb-3">
           <div className="flex flex-col">
             <span className="text-[9px] uppercase font-black tracking-widest text-cordel-wood">
-              Mes Confections pour la Troupe
+              {t('costumerie.mesConfectionsPourLaTroupe')}
             </span>
             <h3 className="text-sm font-heading font-black text-encre-noire uppercase tracking-wider mt-0.5">
-              Pièces apportées au stock commun
+              {t('costumerie.piecesApporteesAuStockCommun')}
             </h3>
             <p className="text-[10px] text-cordel-master-dark/75 font-semibold mt-0.5">
-              Déclarez ici le nombre de pièces de costumes ou d'accessoires que vous avez cousues ou décorées pour l'association.
+              {t('costumerie.declarezIciLeNombreDe')}
             </p>
           </div>
 
@@ -238,7 +240,7 @@ export default function CollectiveWorkshopView({
                   disabled={updatingCount}
                   className="px-2 py-1 text-[10px] font-black uppercase bg-emerald-800 text-white rounded hover:bg-emerald-900 cursor-pointer"
                 >
-                  OK
+                  {t('costumerie.ok')}
                 </button>
                 <button
                   type="button"
@@ -257,7 +259,7 @@ export default function CollectiveWorkshopView({
                   type="button"
                   onClick={() => handleUpdatePiecesCount(piecesCount - 1)}
                   disabled={piecesCount <= 0 || updatingCount}
-                  title="Diminuer"
+                  title={t('costumerie.diminuer')}
                   className="w-7 h-7 rounded border border-cordel-master-dark/30 bg-cordel-bg hover:bg-stone-200 disabled:opacity-30 disabled:cursor-not-allowed font-black text-sm flex items-center justify-center cursor-pointer transition-colors"
                 >
                   −
@@ -265,7 +267,7 @@ export default function CollectiveWorkshopView({
 
                 <div
                   onClick={() => setIsEditingCount(true)}
-                  title="Cliquer pour modifier directement le nombre"
+                  title={t('costumerie.cliquerPourModifierDirectementLe')}
                   className="px-3 py-1 flex items-baseline gap-1 cursor-pointer hover:bg-white/80 rounded transition-colors"
                 >
                   <span className="text-xl font-heading font-black text-encre-noire">
@@ -280,7 +282,7 @@ export default function CollectiveWorkshopView({
                   type="button"
                   onClick={() => handleUpdatePiecesCount(piecesCount + 1)}
                   disabled={updatingCount}
-                  title="Ajouter une pièce confectionnée"
+                  title={t('costumerie.ajouterUnePieceConfectionnee')}
                   className="w-7 h-7 rounded border border-emerald-800 bg-emerald-800 text-white hover:bg-emerald-900 font-black text-sm flex items-center justify-center cursor-pointer transition-colors shadow-2xs"
                 >
                   +
@@ -293,14 +295,14 @@ export default function CollectiveWorkshopView({
         {/* Message valorisant selon le nombre de pièces */}
         <div className="pt-2.5 flex items-center gap-2 text-[10px] font-semibold text-cordel-master-dark/85">
           {piecesCount === 0 ? (
-            <span>💡 Vous n'avez pas encore déclaré de pièces pour le stock collectif. Participez aux prochains chantiers ou ateliers couture pour enrichir notre vestiaire !</span>
+            <span>{t('costumerie.vousNAvezPasEncore')}</span>
           ) : piecesCount < 5 ? (
             <span className="text-emerald-900 flex items-center gap-1">
-              <span>🌟</span> Merci pour votre contribution au stock collectif ! Chaque pièce renforce l'autonomie et l'éclat de la troupe.
+              <span>🌟</span> {t('costumerie.merciPourVotreContributionAu')}
             </span>
           ) : (
             <span className="text-emerald-950 font-bold flex items-center gap-1">
-              <span>🏆</span> Formidable investissement ! Vous faites partie des artisans piliers du vestiaire de l'association.
+              <span>🏆</span> {t('costumerie.formidableInvestissementVousFaitesPartie')}
             </span>
           )}
         </div>
@@ -312,25 +314,25 @@ export default function CollectiveWorkshopView({
           <div className="flex items-center gap-1.5">
             <span className="text-base">🪡</span>
             <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood">
-              Chantier Collectif de la Troupe
+              {t('costumerie.chantierCollectifDeLaTroupe')}
             </h3>
           </div>
           <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70">
-            {coutureProjects.length} projet(s) enregistré(s)
+            {coutureProjects.length} {t('costumerie.projetSEnregistreS')}
           </span>
         </div>
 
         {loadingProjects ? (
           <div className="py-4 text-center text-xs opacity-60 animate-pulse">
-            ⏳ Chargement des projets textiles...
+            {t('costumerie.chargementDesProjetsTextiles')}
           </div>
         ) : coutureProjects.length === 0 ? (
           <div className="p-4 rounded border border-dashed border-cordel-master-dark/20 text-center bg-white/40">
             <p className="text-xs italic text-cordel-master-dark/80">
-              Aucun chantier couture spécifique n'est ouvert pour le moment.
+              {t('costumerie.aucunChantierCoutureSpecifiqueN')}
             </p>
             <p className="text-[9.5px] text-cordel-master-dark/60 mt-1">
-              Les confections libres sont les bienvenues pour renouveler les basiques (chemises blanches, bracelets, rubans).
+              {t('costumerie.lesConfectionsLibresSontLes')}
             </p>
           </div>
         ) : (
@@ -370,14 +372,14 @@ export default function CollectiveWorkshopView({
 
                     {proj.needs && (
                       <p className="text-[10px] text-cordel-master-dark font-medium leading-relaxed mt-1">
-                        <strong className="text-encre-noire">Besoins :</strong> {proj.needs}
+                        <strong className="text-encre-noire">{t('costumerie.besoins')}</strong> {proj.needs}
                       </p>
                     )}
                   </div>
 
                   {proj.cost > 0 && (
                     <div className="mt-2 pt-1.5 border-t border-dashed border-cordel-master-dark/15 text-[9px] font-bold text-cordel-wood flex justify-between items-center">
-                      <span>Budget prévu :</span>
+                      <span>{t('costumerie.budgetPrevu')}</span>
                       <span>{proj.cost} €</span>
                     </div>
                   )}
@@ -394,11 +396,11 @@ export default function CollectiveWorkshopView({
           <div className="flex items-center gap-1.5">
             <span className="text-base">📖</span>
             <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood">
-              Tutoriels & Fiches de Confection
+              {t('costumerie.tutorielsFichesDeConfection')}
             </h3>
           </div>
           <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70">
-            {allTutorials.length} fiche(s)
+            {allTutorials.length} {t('costumerie.ficheS')}
           </span>
         </div>
 
@@ -425,7 +427,7 @@ export default function CollectiveWorkshopView({
                     ~{tuto.cost} €
                   </span>
                 ) : (
-                  <span className="text-[8.5px] text-stone-400 font-medium">Libre</span>
+                  <span className="text-[8.5px] text-stone-400 font-medium">{t('costumerie.libre')}</span>
                 )}
 
                 <button
@@ -433,7 +435,7 @@ export default function CollectiveWorkshopView({
                   onClick={() => setActiveTutorial(tuto)}
                   className="text-[9px] font-black uppercase px-2.5 py-1 rounded bg-cordel-wood text-white hover:bg-cordel-wood/90 cursor-pointer shadow-2xs"
                 >
-                  Voir fiche →
+                  {t('costumerie.voirFiche')}
                 </button>
               </div>
             </div>

@@ -100,7 +100,19 @@ const testScripts = [
   'scripts/test_repertoire_selector_responsive.mjs',
   'scripts/test_treasury_i18n_mission.mjs',
   'scripts/test_atelier_quiz_i18n_mission.mjs',
-  'scripts/test_propose_challenge_modal_i18n.mjs'
+  'scripts/test_propose_challenge_modal_i18n.mjs',
+  'scripts/test_espace_adherent_i18n_mission.mjs',
+  'scripts/test_governance_secretariat_i18n_mission.mjs',
+  'scripts/test_treasury_final_lot_i18n_mission.mjs',
+  'scripts/test_diffusion_secretariat_cerfa_reunions_i18n_mission.mjs',
+  'scripts/test_secretariat_events_and_admin_export_i18n.mjs',
+  'scripts/test_treasury_finitions_i18n.mjs',
+  'scripts/test_logistics_i18n.mjs',
+  'scripts/test_lutherie_i18n.mjs',
+  'scripts/test_costumerie_i18n.mjs',
+  'scripts/test_mestre_repertoire_i18n.mjs',
+  'scripts/test_mestre_cockpit_i18n.mjs',
+  'scripts/test_i18n_quiz_generator.mjs'
 ];
 
 console.log("===============================================================");

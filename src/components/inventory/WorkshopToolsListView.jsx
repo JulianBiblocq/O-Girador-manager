@@ -3,13 +3,16 @@ import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { XiloClose } from '../XiloIcons';
 import useConfirm from '../../hooks/useConfirm';
+import { useTranslation } from '../LanguageContext';
 
 export default function WorkshopToolsListView({ tools, loading, addTool, updateTool, deleteTool, domaine, models = [], membersList = [] }) {
+  const { t } = useTranslation();
   const { confirm } = useConfirm();
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterResident, setFilterResident] = useState('all'); // 'all', 'resident', 'mobile'
+  const [craftFilter, setCraftFilter] = useState('all'); // 'all', 'lutherie', 'artisanat'
   
   // Extraction de tous les outils référencés dans les modèles et tutoriels du Varal
   const tutorialTools = useMemo(() => {
@@ -37,6 +40,7 @@ export default function WorkshopToolsListView({ tools, loading, addTool, updateT
 
   const [formData, setFormData] = useState({
     nom: '',
+    domaine: domaine || 'lutherie',
     isResident: true,
     emplacement: '',
     etat: 'bon'
@@ -53,6 +57,7 @@ export default function WorkshopToolsListView({ tools, loading, addTool, updateT
   const handleEdit = (tool) => {
     setFormData({
       nom: tool.nom || '',
+      domaine: tool.domaine || (tool.categorie?.toLowerCase().includes('artisanat') || tool.categorie?.toLowerCase().includes('reliure') ? 'artisanat' : (domaine || 'lutherie')),
       isResident: typeof tool.isResident !== 'undefined' ? tool.isResident : true,
       emplacement: tool.emplacement || '',
       etat: tool.etat || 'bon'
@@ -65,7 +70,7 @@ export default function WorkshopToolsListView({ tools, loading, addTool, updateT
     if (isAdding) {
       setIsAdding(false);
       setEditingId(null);
-      setFormData({ nom: '', isResident: true, emplacement: '', etat: 'bon' });
+      setFormData({ nom: '', domaine: domaine || 'lutherie', isResident: true, emplacement: '', etat: 'bon' });
     } else {
       setIsAdding(true);
     }
@@ -78,19 +83,20 @@ export default function WorkshopToolsListView({ tools, loading, addTool, updateT
     if (formData.nom) {
       setSubmitting(true);
       let ok;
+      const targetDomaine = formData.domaine || domaine || 'lutherie';
       if (editingId) {
-        ok = await updateTool(editingId, { ...formData, domaine: domaine || 'lutherie' });
+        ok = await updateTool(editingId, { ...formData, domaine: targetDomaine });
       } else {
-        ok = await addTool({ ...formData, domaine: domaine || 'lutherie' });
+        ok = await addTool({ ...formData, domaine: targetDomaine });
       }
       setSubmitting(false);
       if (!ok) {
-        alert("Erreur lors de l'enregistrement de l'outil. Veuillez vérifier vos droits d'accès.");
+        alert(t('lutherie.alertSaveToolError'));
         return;
       }
       setIsAdding(false);
       setEditingId(null);
-      setFormData({ nom: '', isResident: true, emplacement: '', etat: 'bon' });
+      setFormData({ nom: '', domaine: domaine || 'lutherie', isResident: true, emplacement: '', etat: 'bon' });
     }
   };
 
@@ -114,11 +120,13 @@ export default function WorkshopToolsListView({ tools, loading, addTool, updateT
     const matchResident = filterResident === 'all' 
       ? true 
       : (filterResident === 'resident' ? tool.isResident : !tool.isResident);
-    return matchSearch && matchResident;
+    const tDomaine = tool.domaine || (tool.categorie?.toLowerCase().includes('artisanat') || tool.categorie?.toLowerCase().includes('reliure') ? 'artisanat' : 'lutherie');
+    const matchCraft = craftFilter === 'all' ? true : tDomaine === craftFilter;
+    return matchSearch && matchResident && matchCraft;
   });
 
   if (loading) {
-    return <div className="p-4 text-center text-cordel-master-dark">Chargement de l'outillage...</div>;
+    return <div className="p-4 text-center text-cordel-master-dark">{t('lutherie.loadingTools')}</div>;
   }
 
   return (
@@ -126,28 +134,38 @@ export default function WorkshopToolsListView({ tools, loading, addTool, updateT
       {/* En-tête et contrôles */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-center bg-cordel-bg border-2 border-encre-noire p-3 shadow-[3px_3px_0px_0px_#181716] rounded gap-3">
         <h3 className="text-sm font-extrabold tracking-wider text-cordel-wood uppercase">
-          🛠️ Matériel & Outillage ({tools.length})
+          {t('lutherie.equipmentAndToolsTitle', { count: displayedTools.length })}
         </h3>
         
         <div className="flex flex-wrap items-center gap-2">
           <input 
             type="text" 
-            placeholder="Rechercher un outil..." 
+            placeholder={t('lutherie.searchToolPlaceholder')} 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="theme-input text-xs w-40"
+            className="theme-input text-xs w-36"
           />
+          {/* Filtre rapide par domaine d'atelier */}
+          <select 
+            value={craftFilter} 
+            onChange={(e) => setCraftFilter(e.target.value)}
+            className="theme-input text-xs bg-white font-bold cursor-pointer"
+          >
+            <option value="all">{t('lutherie.craftDomainAll')}</option>
+            <option value="lutherie">{t('lutherie.filterCategoryLutherie')}</option>
+            <option value="artisanat">{t('lutherie.filterCategoryArtisanat')}</option>
+          </select>
           <select 
             value={filterResident} 
             onChange={(e) => setFilterResident(e.target.value)}
             className="theme-input text-xs bg-white"
           >
-            <option value="all">Tous</option>
-            <option value="resident">Résidents locaux</option>
-            <option value="mobile">Mobiles</option>
+            <option value="all">{t('lutherie.optAllTools')}</option>
+            <option value="resident">{t('lutherie.optResidentLocal')}</option>
+            <option value="mobile">{t('lutherie.optMobileTools')}</option>
           </select>
           <CordelButton variant="default" onClick={handleToggleAdd} className="text-xs font-bold px-3 py-1.5">
-            {isAdding ? "Annuler" : editingId ? "Mode Édition..." : "+ Ajouter outil"}
+            {isAdding ? (t('common.cancel') || "Annuler") : editingId ? "Mode Édition..." : (domaine === 'costumerie' ? t('costumerie.btnAddTool') : t('lutherie.btnAddTool'))}
           </CordelButton>
         </div>
       </div>
@@ -164,24 +182,24 @@ export default function WorkshopToolsListView({ tools, loading, addTool, updateT
             {!editingId && tutorialTools.length > 0 && (
               <div className="bg-white/90 p-2.5 rounded border border-amber-300 flex flex-col gap-1.5 text-left">
                 <span className="text-[9.5px] font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1">
-                  <span>💡</span> Outils requis par les tutoriels du Varal :
+                  <span>💡</span> {t('lutherie.toolsRequiredByVaralTutos')}
                 </span>
                 <div className="flex flex-wrap gap-1">
-                  {tutorialTools.map(t => {
-                    const alreadyInStock = tools.some(existing => existing.nom.toLowerCase().trim() === t.toLowerCase().trim());
+                  {tutorialTools.map(tTool => {
+                    const alreadyInStock = tools.some(existing => existing.nom.toLowerCase().trim() === tTool.toLowerCase().trim());
                     return (
                       <button
-                        key={t}
+                        key={tTool}
                         type="button"
-                        onClick={() => setFormData(prev => ({ ...prev, nom: t }))}
+                        onClick={() => setFormData(prev => ({ ...prev, nom: tTool }))}
                         className={`text-[9px] px-2 py-0.5 rounded border font-bold flex items-center gap-1 cursor-pointer transition-colors ${
                           alreadyInStock
                             ? 'bg-stone-100 text-stone-500 border-stone-300'
                             : 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100 shadow-2xs'
                         }`}
-                        title={alreadyInStock ? 'Déjà répertorié au stock' : 'Cliquer pour sélectionner cet outil du tutoriel'}
+                        title={alreadyInStock ? t('lutherie.statusInStock') : 'Cliquer pour sélectionner cet outil du tutoriel'}
                       >
-                        <span>{alreadyInStock ? '✓' : '+'}</span> {t}
+                        <span>{alreadyInStock ? '✓' : '+'}</span> {tTool}
                       </button>
                     );
                   })}
@@ -189,9 +207,9 @@ export default function WorkshopToolsListView({ tools, loading, addTool, updateT
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-cordel-master-dark uppercase">Nom de l'outil *</label>
+                <label className="text-[10px] font-bold text-cordel-master-dark uppercase">{t('lutherie.toolNameRequiredLabel')}</label>
                 <input 
                   required 
                   name="nom" 
@@ -199,22 +217,30 @@ export default function WorkshopToolsListView({ tools, loading, addTool, updateT
                   value={formData.nom} 
                   onChange={handleChange} 
                   className="theme-input text-xs" 
-                  placeholder="Ex: Scie fine, Ciseau à bois" 
+                  placeholder={t('lutherie.toolNamePlaceholder')} 
                 />
                 <datalist id="tutorial-tools-datalist">
-                  {tutorialTools.map(t => <option key={t} value={t} />)}
+                  {tutorialTools.map(tTool => <option key={tTool} value={tTool} />)}
                 </datalist>
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-cordel-master-dark uppercase">Emplacement / Gardien</label>
+                <label className="text-[10px] font-bold text-cordel-master-dark uppercase">{t('lutherie.thCategory')}</label>
+                <select name="domaine" value={formData.domaine} onChange={handleChange} className="theme-input text-xs bg-white font-semibold">
+                  <option value="lutherie">{t('lutherie.filterCategoryLutherie')}</option>
+                  <option value="artisanat">{t('lutherie.filterCategoryArtisanat')}</option>
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-bold text-cordel-master-dark uppercase">{t('lutherie.locationKeeperLabel')}</label>
                 <input 
                   name="emplacement" 
                   list="locations-datalist"
                   value={formData.emplacement} 
                   onChange={handleChange} 
                   className="theme-input text-xs" 
-                  placeholder="Ex: Atelier de Dorian, Local..." 
+                  placeholder={t('lutherie.locationKeeperPlaceholder')} 
                 />
                 <datalist id="locations-datalist">
                   {suggestedLocations.map(l => <option key={l} value={l} />)}
@@ -222,25 +248,25 @@ export default function WorkshopToolsListView({ tools, loading, addTool, updateT
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-cordel-master-dark uppercase">État initial</label>
+                <label className="text-[10px] font-bold text-cordel-master-dark uppercase">{t('lutherie.initialConditionLabel')}</label>
                 <select name="etat" value={formData.etat} onChange={handleChange} className="theme-input text-xs">
-                  <option value="neuf">Neuf</option>
-                  <option value="bon">Bon</option>
-                  <option value="a_reparer">À réparer</option>
+                  <option value="neuf">{t('lutherie.stateNew')}</option>
+                  <option value="bon">{t('lutherie.optConditionGood')}</option>
+                  <option value="a_reparer">{t('lutherie.optConditionToRepair')}</option>
                 </select>
               </div>
 
               <div className="flex items-center gap-2 pb-2">
                 <input type="checkbox" id="isResidentCheck" name="isResident" checked={formData.isResident} onChange={handleChange} className="w-4 h-4 cursor-pointer" />
                 <label htmlFor="isResidentCheck" className="text-[10px] font-bold text-cordel-master-dark uppercase cursor-pointer">
-                  Résident au local (non mobile)
+                  {t('lutherie.residentAtLocalNonMobileLabel')}
                 </label>
               </div>
             </div>
 
             <div className="flex justify-end mt-2">
               <CordelButton type="submit" variant="vert" disabled={submitting} className="px-6 py-2 text-xs font-black uppercase">
-                {submitting ? "Enregistrement..." : editingId ? "💾 Mettre à jour" : "💾 Enregistrer l'outil"}
+                {submitting ? (t('common.saving') || "Enregistrement...") : editingId ? `💾 ${t('common.update', "Mettre à jour")}` : `💾 ${t('lutherie.btnSaveTool')}`}
               </CordelButton>
             </div>
           </form>
@@ -251,7 +277,7 @@ export default function WorkshopToolsListView({ tools, loading, addTool, updateT
       {displayedTools.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {displayedTools.map(tool => {
-            const isFromTutorial = tutorialTools.some(t => t.toLowerCase().trim() === tool.nom.toLowerCase().trim());
+            const isFromTutorial = tutorialTools.some(tTool => tTool.toLowerCase().trim() === tool.nom.toLowerCase().trim());
             return (
               <div key={tool.id} className="flex flex-col gap-2 p-3 bg-white border-2 border-encre-noire rounded shadow-[2px_2px_0px_0px_#181716] relative text-left">
                 <div className="flex justify-between items-start pr-12 gap-1">
@@ -259,7 +285,7 @@ export default function WorkshopToolsListView({ tools, loading, addTool, updateT
                     <h4 className="font-bold text-sm text-encre-noire">{tool.nom}</h4>
                     {isFromTutorial && (
                       <span className="text-[8.5px] font-black uppercase tracking-wider text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded w-fit mt-0.5">
-                        📖 Requis en tutoriel
+                        {t('lutherie.requiredInTutorialBadge')}
                       </span>
                     )}
                   </div>
@@ -267,14 +293,14 @@ export default function WorkshopToolsListView({ tools, loading, addTool, updateT
                     <button 
                       onClick={() => handleEdit(tool)}
                       className="p-1 text-cordel-wood/50 hover:text-cordel-wood transition-colors cursor-pointer text-[10px] font-bold uppercase"
-                      title="Éditer"
+                      title={t('lutherie.titleEditTool')}
                     >
-                      Éditer
+                      {t('lutherie.titleEditTool')}
                     </button>
                     <button 
                       onClick={() => handleDelete(tool.id, tool.nom)}
                       className="p-1 text-cordel-rouge/50 hover:text-cordel-rouge transition-colors cursor-pointer"
-                      title="Supprimer cet outil"
+                      title={t('lutherie.titleDeleteTool')}
                     >
                       <XiloClose size={14} />
                     </button>
@@ -285,7 +311,7 @@ export default function WorkshopToolsListView({ tools, loading, addTool, updateT
                   <span>📍 {tool.emplacement || 'Emplacement non défini'}</span>
                   {!tool.isResident && tool.emplacement && (
                     <span className="text-[8px] uppercase tracking-wider bg-amber-100 text-amber-900 px-1 rounded font-black">
-                      À emmener
+                      {t('lutherie.toTakeBadge')}
                     </span>
                   )}
                 </div>
@@ -315,9 +341,9 @@ export default function WorkshopToolsListView({ tools, loading, addTool, updateT
                         : 'bg-cordel-bg text-cordel-wood border-encre-noire/20'
                   }`}
                 >
-                  <option value="neuf">Neuf</option>
-                  <option value="bon">Bon</option>
-                  <option value="a_reparer">À réparer</option>
+                  <option value="neuf">{t('lutherie.stateNew')}</option>
+                  <option value="bon">{t('lutherie.optConditionGood')}</option>
+                  <option value="a_reparer">{t('lutherie.optConditionToRepair')}</option>
                 </select>
               </div>
             </div>
@@ -326,7 +352,7 @@ export default function WorkshopToolsListView({ tools, loading, addTool, updateT
         </div>
       ) : (
         <div className="text-center p-6 text-sm text-cordel-master-dark border-2 border-dashed border-cordel-master-dark/30 rounded bg-cordel-bg-light">
-          Aucun outil ne correspond à votre recherche.
+          {t('lutherie.noToolMatchingSearch')}
         </div>
       )}
     </div>

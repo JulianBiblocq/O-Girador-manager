@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from '../LanguageContext';
 import { XiloClose } from '../XiloIcons';
 import CordelButton from '../CordelButton';
 import { getStepSignal, getStepProgressRatio } from '../../utils/workshopProjectionUtils';
@@ -19,6 +20,7 @@ export default function PartWorkflowModal({
   validatorName,
   onFeedback
 }) {
+  const { t } = useTranslation();
   const [retoucheNote, setRetoucheNote] = useState('');
   const [showRetoucheInput, setShowRetoucheInput] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -181,16 +183,16 @@ export default function PartWorkflowModal({
             <h2 className="text-xl font-black text-cordel-wood uppercase tracking-wider">{slot.slotLabel}</h2>
             <div className="flex items-center gap-3 mt-2 flex-wrap">
               <span className="text-xs font-bold text-stone-500 bg-stone-200 px-2 py-1 rounded">
-                Pièce assignée : {invPart.nom}
+                {t('lutherie.assignedPartPrefix', { nom: invPart.nom })}
               </span>
               {totalSteps > 0 && !isCompleted && (
                 <span className="text-xs font-bold text-white bg-cordel-wood px-2 py-1 rounded shadow">
-                  Étape {Math.min(currentStep + 1, totalSteps)} / {totalSteps} • {getStepProgressRatio(totalSteps, currentStep, statutEtape)}
+                  {t('lutherie.stepProgressBadge', { current: Math.min(currentStep + 1, totalSteps), total: totalSteps, ratio: getStepProgressRatio(totalSteps, currentStep, statutEtape) })}
                 </span>
               )}
               {isCompleted && (
                 <span className="text-xs font-bold text-white bg-cordel-vert px-2 py-1 rounded shadow">
-                  Terminée ✅ ({totalSteps} / {totalSteps})
+                  {t('lutherie.stepCompletedBadge', { total: totalSteps })}
                 </span>
               )}
             </div>
@@ -207,7 +209,7 @@ export default function PartWorkflowModal({
                       className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-black border shadow-xs select-none transition-all ${signal.colorClass}`}
                     >
                       <span>{signal.icon}</span>
-                      <span>Étape {stepIdx + 1}</span>
+                      <span>{t('lutherie.stepLabelWithIndex', { step: stepIdx + 1 })}</span>
                     </div>
                   );
                 })}
@@ -224,10 +226,10 @@ export default function PartWorkflowModal({
                     type="button"
                     onClick={() => setShowStepQuiz(true)}
                     className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded bg-cordel-wood/10 text-cordel-wood border border-cordel-wood/30 hover:bg-cordel-wood hover:text-white transition-all cursor-pointer flex items-center gap-1 shrink-0 active:scale-95 shadow-xs"
-                    title="Tester mes connaissances sur cette étape de fabrication"
+                    title={t('lutherie.titleTestKnowledgeStep')}
                   >
                     <span>🎯</span>
-                    <span>Quiz de l'étape</span>
+                    <span>{t('lutherie.stepQuizBtnText')}</span>
                   </button>
                 </div>
 
@@ -247,13 +249,13 @@ export default function PartWorkflowModal({
                   <div className="mt-4 pt-4 border-t border-dashed border-encre-noire/10 flex flex-col gap-2">
                     {stepData.outils?.length > 0 && (
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] uppercase font-bold text-stone-500">Outils :</span>
+                        <span className="text-[10px] uppercase font-bold text-stone-500">{t('lutherie.toolsHeaderLabel')}</span>
                         {stepData.outils.map(o => <span key={o} className="text-[10px] bg-cordel-wood/10 text-cordel-wood px-2 rounded">{o}</span>)}
                       </div>
                     )}
                     {stepData.materiaux?.length > 0 && (
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] uppercase font-bold text-stone-500">Matériaux :</span>
+                        <span className="text-[10px] uppercase font-bold text-stone-500">{t('lutherie.materialsHeaderLabel')}</span>
                         {stepData.materiaux.map(m => <span key={m} className="text-[10px] bg-cordel-wood/10 text-cordel-wood px-2 rounded">{m}</span>)}
                       </div>
                     )}
@@ -263,7 +265,7 @@ export default function PartWorkflowModal({
 
               {invPart.notesAtelier && (
                 <div className="bg-cordel-ocre/10 p-3 rounded border border-cordel-ocre/30">
-                  <span className="text-[10px] uppercase font-bold text-cordel-ocre block mb-1">Remarques d'atelier :</span>
+                  <span className="text-[10px] uppercase font-bold text-cordel-ocre block mb-1">{t('lutherie.workshopRemarksHeader')}</span>
                   <p className="text-xs text-stone-700 whitespace-pre-wrap">{invPart.notesAtelier}</p>
                 </div>
               )}
@@ -292,7 +294,7 @@ export default function PartWorkflowModal({
                       onClick={handleClose} 
                       className="text-xs py-1.5 px-5 mt-2 font-black uppercase tracking-wider shadow-[2px_2px_0px_0px_#181716]"
                     >
-                      Fermer maintenant
+                      {t('lutherie.btnCloseNow')}
                     </CordelButton>
                   </div>
                 ) : (
@@ -310,17 +312,17 @@ export default function PartWorkflowModal({
 
                     {statutEtape === 'en_attente_controle' && (
                       <div className="flex flex-col gap-3 p-4 bg-amber-50 border border-amber-200 rounded text-center">
-                        <span className="text-amber-700 font-black animate-pulse">⏳ En attente de vérification par un Mestre</span>
+                        <span className="text-amber-700 font-black animate-pulse">{t('lutherie.waitingMestreReview')}</span>
                         
                         {isValidator && (
                           <div className="flex flex-col gap-2 mt-2">
-                            <span className="text-[10px] uppercase font-bold text-stone-500">Espace Mestre / Validateur</span>
+                            <span className="text-[10px] uppercase font-bold text-stone-500">{t('lutherie.mestreValidatorSpaceTitle')}</span>
                             <div className="grid grid-cols-2 gap-2">
                               <CordelButton variant="vert" onClick={handleValider} disabled={loading} className="justify-center font-bold">
                                 {loading ? "Validation..." : "✅ Valider"}
                               </CordelButton>
                               <CordelButton variant="danger" onClick={() => setShowRetoucheInput(!showRetoucheInput)} disabled={loading} className="justify-center font-bold">
-                                🔄 Retouche
+                                {t('lutherie.btnRework')}
                               </CordelButton>
                             </div>
                             
@@ -329,7 +331,7 @@ export default function PartWorkflowModal({
                                 <textarea 
                                   value={retoucheNote}
                                   onChange={e => setRetoucheNote(e.target.value)}
-                                  placeholder="Consigne pour la retouche..."
+                                  placeholder={t('lutherie.reworkNotePlaceholder')}
                                   className="theme-input text-xs p-2 min-h-[60px]"
                                 />
                                 <button 
@@ -353,7 +355,7 @@ export default function PartWorkflowModal({
           ) : (
             <div className="py-8 text-center text-cordel-vert font-bold flex flex-col items-center gap-2">
               <span className="text-4xl">✅</span>
-              Cette pièce est prête et terminée !
+              {t('lutherie.pieceReadyAndFinishedNotice')}
             </div>
           )}
 

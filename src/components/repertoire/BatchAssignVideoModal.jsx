@@ -129,7 +129,7 @@ export default function BatchAssignVideoModal({
           />
 
           <div className="p-3 bg-white rounded border border-encre-noire/20 flex flex-col gap-1.5">
-            <span className="text-[10px] font-black uppercase text-cordel-wood">1. Pupitres cibles ou Répétition générale</span>
+            <span className="text-[10px] font-black uppercase text-cordel-wood">{t('mestre.repertoire.stepTargetInstrumentsHeading')}</span>
             <VideoInstrumentCheckboxes selectedInstruments={selectedInstruments} instrumentsList={DEFAULT_INSTRUMENTS} onChange={setSelectedInstruments} isLiveOrGlobal={isLive} onToggleLive={setIsLive} />
           </div>
 
@@ -149,7 +149,7 @@ export default function BatchAssignVideoModal({
                   <label key={piece.id} className={`flex items-center gap-2 p-1.5 rounded border text-xs cursor-pointer select-none ${isChecked ? 'bg-amber-100/80 border-amber-400 font-black text-amber-950' : 'bg-[#fdfaf2] border-encre-noire/15 hover:bg-white text-stone-800'}`}>
                     <input type="checkbox" checked={isChecked} onChange={() => togglePiece(piece.id)} className="accent-amber-600 w-3.5 h-3.5" />
                     <span className="truncate flex-1">{piece.titre || 'Sans titre'}</span>
-                    {hasSame && <span className="text-[8px] px-1 py-0.2 rounded bg-stone-200 text-stone-600 shrink-0 font-normal">déjà présent</span>}
+                    {hasSame && <span className="text-[8px] px-1 py-0.2 rounded bg-stone-200 text-stone-600 shrink-0 font-normal">{t('mestre.repertoire.alreadyPresentBadge')}</span>}
                   </label>
                 );
               })}
@@ -158,7 +158,7 @@ export default function BatchAssignVideoModal({
         </div>
 
         <div className="p-3 border-t border-dashed border-cordel-master-dark/20 bg-cordel-bg-light flex items-center justify-between">
-          <CordelButton type="button" variant="default" onClick={onClose} disabled={submitting} className="text-xs">Annuler</CordelButton>
+          <CordelButton type="button" variant="default" onClick={onClose} disabled={submitting} className="text-xs">{t('common.cancel')}</CordelButton>
           <CordelButton type="button" variant="vert" onClick={handleConfirmBatch} disabled={submitting || selectedPieceIds.size === 0 || !videoUrl.trim()} className="text-xs font-black uppercase flex items-center gap-1.5">
             <span>💾</span>
             <span>{submitting ? 'Enregistrement...' : t('repertoire.btnBatchAssign')}</span>

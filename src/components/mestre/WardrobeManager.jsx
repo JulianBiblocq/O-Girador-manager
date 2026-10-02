@@ -161,7 +161,7 @@ export default function WardrobeManager({
       setEditingCostume(null);
     } catch (err) {
       console.error("Error saving costume piece:", err);
-      alert("Erreur lors de l'enregistrement de la pièce.");
+      alert(t('costumerie.erreurLorsDeLEnregistrement'));
     } finally {
       setSaving(false);
     }
@@ -192,7 +192,7 @@ export default function WardrobeManager({
       await deleteDoc(doc(db, 'wardrobeInventory', id));
     } catch (err) {
       console.error("Error deleting costume piece:", err);
-      alert("Erreur de suppression.");
+      alert(t('costumerie.erreurDeSuppression'));
     }
   };
 
@@ -219,7 +219,7 @@ export default function WardrobeManager({
       setEditingProject(null);
     } catch (err) {
       console.error("Error saving project:", err);
-      alert("Erreur d'enregistrement.");
+      alert(t('costumerie.erreurDEnregistrement'));
     }
   };
 
@@ -247,7 +247,7 @@ export default function WardrobeManager({
       await deleteDoc(doc(db, 'coutureProjects', id));
     } catch (err) {
       console.error("Error deleting project:", err);
-      alert("Erreur de suppression.");
+      alert(t('costumerie.erreurDeSuppression'));
     }
   };
 
@@ -256,14 +256,14 @@ export default function WardrobeManager({
       <div className="flex flex-col gap-4 text-left select-none w-full max-w-3xl mx-auto mt-4">
         <CordelCard variant="default" useExtremeBorder={true} className="p-8">
           <h2 className="text-sm font-black text-red-700 uppercase tracking-widest">
-            🚨 ACCÈS REFUSÉ
+            {t('costumerie.accesRefuse')}
           </h2>
           <p className="text-xs opacity-75 mt-3 leading-relaxed">
-            Vous n'avez pas accès au module Vestiaire de l'association.
+            {t('costumerie.vousNAvezPasAcces')}
           </p>
           <div className="mt-6 flex justify-center">
             <CordelButton variant="default" onClick={onBack} className="text-xs">
-              ⬅️ Retour
+              {t('costumerie.btnBackArrow')}
             </CordelButton>
           </div>
         </CordelCard>
@@ -276,10 +276,10 @@ export default function WardrobeManager({
       {/* Top Header Bar */}
       <div className="flex justify-between items-center border-b-2 border-dashed border-cordel-master-dark/30 pb-2">
         <CordelButton variant="default" onClick={onBack} className="px-3 py-1 text-xs">
-          ← Retour
+          {t('costumerie.btnBackArrowSimple')}
         </CordelButton>
         <span className="panel-title text-base font-extrabold tracking-wider text-cordel-wood uppercase">
-          🧵 Gestion de la Costumerie
+          {t('costumerie.gestionDeLaCostumerie')}
         </span>
         <div className="w-12"></div>
       </div>
@@ -300,7 +300,7 @@ export default function WardrobeManager({
               }`}
             >
               <span>🧵</span>
-              <span>Établi de confection</span>
+              <span>{t('costumerie.etabliDeConfection')}</span>
             </button>
             <button
               type="button"
@@ -314,7 +314,7 @@ export default function WardrobeManager({
               }`}
             >
               <span>📦</span>
-              <span>Stock & Prêts</span>
+              <span>{t('costumerie.stockPrets')}</span>
             </button>
             <button
               type="button"
@@ -328,7 +328,7 @@ export default function WardrobeManager({
               }`}
             >
               <span>🧶</span>
-              <span>Tissus & Mercerie</span>
+              <span>{t('costumerie.tissusMercerie')}</span>
             </button>
             <button
               type="button"
@@ -342,7 +342,7 @@ export default function WardrobeManager({
               }`}
             >
               <span>✂️</span>
-              <span>Outillage</span>
+              <span>{t('costumerie.outillage')}</span>
             </button>
             <button
               type="button"
@@ -356,7 +356,7 @@ export default function WardrobeManager({
               }`}
             >
               <span>📏</span>
-              <span>Mensurations</span>
+              <span>{t('costumerie.mensurations')}</span>
             </button>
           </HorizontalRibbonContainer>
         </div>
@@ -374,7 +374,7 @@ export default function WardrobeManager({
               />
               <div className="flex justify-end">
                 <CordelButton type="submit" variant="ocre" disabled={savingSettings} className="px-6 py-2 uppercase font-black tracking-wider text-xs shadow-[2px_2px_0px_0px_#181716]">
-                  {savingSettings ? "Enregistrement..." : "💾 Enregistrer Configuration"}
+                  {savingSettings ? (t('common.saving') || "Enregistrement...") : `💾 ${t('costumerie.btnSaveConfig')}`}
                 </CordelButton>
               </div>
             </form>
@@ -386,11 +386,11 @@ export default function WardrobeManager({
           {/* Section 2: Physical Items Inventory */}
           <div className="pt-4 border-t-2 border-dashed border-cordel-master-dark/20 flex flex-col gap-4">
             <h3 className="font-heading font-black text-sm text-cordel-wood uppercase tracking-wider text-left">
-              📦 Stock physique & Emprunts de pièces
+              {t('costumerie.stockPhysiqueEmpruntsDePieces')}
             </h3>
             <div className="flex justify-between items-center bg-white/40 dark:bg-black/20 p-3 rounded border border-dashed border-encre-noire/15">
               <span className="text-xs font-bold text-cordel-master-dark">
-                Total : {costumes.length} pièce{costumes.length > 1 ? 's' : ''} répertoriée{costumes.length > 1 ? 's' : ''}
+                {t('costumerie.total')} {costumes.length} {t('costumerie.piece')}{costumes.length > 1 ? 's' : ''} {t('costumerie.repertoriee')}{costumes.length > 1 ? 's' : ''}
               </span>
             <button
               type="button"
@@ -401,7 +401,7 @@ export default function WardrobeManager({
               }}
               className="text-[10px] font-black uppercase bg-cordel-vert hover:bg-cordel-vert/90 text-encre-noire border border-encre-noire px-3 py-1.5 rounded shadow-[1.5px_1.5px_0px_0px_#181716] cursor-pointer"
             >
-              {showCostumeForm ? "Fermer le formulaire" : "➕ Ajouter une pièce"}
+              {showCostumeForm ? "Fermer le formulaire" : t('costumerie.btnAddPiece')}
             </button>
           </div>
 
@@ -421,60 +421,60 @@ export default function WardrobeManager({
                     disabled={saving}
                     value={costumeForm.type}
                     onChange={(e) => setCostumeForm({ ...costumeForm, type: e.target.value })}
-                    placeholder="ex: Jupe, Chemise, Chapeau"
+                    placeholder={t('costumerie.exJupeChemiseChapeau')}
                     className="theme-input font-bold py-1.5 px-2 bg-cordel-bg-light"
                   />
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <label className="text-[9px] uppercase font-bold text-cordel-master-dark">Taille</label>
+                  <label className="text-[9px] uppercase font-bold text-cordel-master-dark">{t('costumerie.taille')}</label>
                   <select
                     disabled={saving}
                     value={costumeForm.taille}
                     onChange={(e) => setCostumeForm({ ...costumeForm, taille: e.target.value })}
                     className="theme-input font-bold py-1.5 px-2 bg-cordel-bg-light"
                   >
-                    <option value="XS">XS</option>
+                    <option value="XS">{t('costumerie.xs')}</option>
                     <option value="S">S</option>
                     <option value="M">M</option>
                     <option value="L">L</option>
-                    <option value="XL">XL</option>
-                    <option value="XXL">XXL</option>
+                    <option value="XL">{t('costumerie.xl')}</option>
+                    <option value="XXL">{t('costumerie.xxl')}</option>
                   </select>
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <label className="text-[9px] uppercase font-bold text-cordel-master-dark">État</label>
+                  <label className="text-[9px] uppercase font-bold text-cordel-master-dark">{t('costumerie.etat')}</label>
                   <select
                     disabled={saving}
                     value={costumeForm.etat}
                     onChange={(e) => setCostumeForm({ ...costumeForm, etat: e.target.value })}
                     className="theme-input font-bold py-1.5 px-2 bg-cordel-bg-light"
                   >
-                    <option value="Neuf">Neuf</option>
-                    <option value="Bon">Bon</option>
-                    <option value="Moyen">Moyen</option>
-                    <option value="Abîmé">Abîmé</option>
+                    <option value="Neuf">{t('costumerie.neuf')}</option>
+                    <option value="Bon">{t('costumerie.bon')}</option>
+                    <option value="Moyen">{t('costumerie.moyen')}</option>
+                    <option value="Abîmé">{t('costumerie.abime')}</option>
                   </select>
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <label className="text-[9px] uppercase font-bold text-cordel-master-dark">Statut</label>
+                  <label className="text-[9px] uppercase font-bold text-cordel-master-dark">{t('costumerie.statut')}</label>
                   <select
                     disabled={saving}
                     value={costumeForm.statut}
                     onChange={(e) => setCostumeForm({ ...costumeForm, statut: e.target.value })}
                     className="theme-input font-bold py-1.5 px-2 bg-cordel-bg-light"
                   >
-                    <option value="local">Au local</option>
-                    <option value="emprunte">Emprunté</option>
-                    <option value="reparation">En réparation</option>
+                    <option value="local">{t('costumerie.auLocal')}</option>
+                    <option value="emprunte">{t('costumerie.emprunte')}</option>
+                    <option value="reparation">{t('costumerie.enReparation')}</option>
                   </select>
                 </div>
 
                 {costumeForm.statut === 'emprunte' && (
                   <div className="flex flex-col gap-1 sm:col-span-2">
-                    <label className="text-[9px] uppercase font-bold text-cordel-master-dark">Emprunteur</label>
+                    <label className="text-[9px] uppercase font-bold text-cordel-master-dark">{t('costumerie.emprunteur')}</label>
                     <select
                       required
                       disabled={saving}
@@ -482,7 +482,7 @@ export default function WardrobeManager({
                       onChange={(e) => setCostumeForm({ ...costumeForm, emprunteurId: e.target.value })}
                       className="theme-input font-bold py-1.5 px-2 bg-cordel-bg-light"
                     >
-                      <option value="" disabled>Sélectionner un membre...</option>
+                      <option value="" disabled>{t('costumerie.selectionnerUnMembre')}</option>
                       {(allUsers || []).map(u => (
                         <option key={u.id} value={u.id}>{u.prenom} {u.nom}</option>
                       ))}
@@ -513,7 +513,7 @@ export default function WardrobeManager({
                     <th className="py-2 px-2 md:py-2.5 md:px-4 text-center">{t('onboarding.tshirtSize')}</th>
                     <th className="py-2 px-2 md:py-2.5 md:px-4 text-center">{t('common.status')}</th>
                     <th className="py-2 px-2 md:py-2.5 md:px-4">{t('common.status')}</th>
-                    <th data-tour="costumerie-pieces-assign" className="py-2 px-2 md:py-2.5 md:px-4">Emprunteur</th>
+                    <th data-tour="costumerie-pieces-assign" className="py-2 px-2 md:py-2.5 md:px-4">{t('costumerie.emprunteur')}</th>
                     <th className="py-2 px-2 md:py-2.5 md:px-4 text-right">{t('common.actions')}</th>
                   </tr>
                 </thead>
@@ -521,7 +521,7 @@ export default function WardrobeManager({
                   {(costumes || []).length === 0 ? (
                     <tr>
                       <td colSpan="6" className="py-8 text-center italic opacity-60">
-                        L'inventaire des costumes est vide.
+                        {t('costumerie.lInventaireDesCostumesEst')}
                       </td>
                     </tr>
                   ) : (
@@ -555,14 +555,14 @@ export default function WardrobeManager({
                               onClick={() => handleEditCostume(piece)}
                               className="text-[10px] font-black uppercase text-cordel-wood hover:underline cursor-pointer"
                             >
-                              Éditer
+                              {t('costumerie.btnEdit')}
                             </button>
                             <button
                               type="button"
                               onClick={() => handleDeleteCostume(piece.id)}
                               className="text-[10px] font-black uppercase text-red-600 hover:underline cursor-pointer"
                             >
-                              Supprimer
+                              {t('costumerie.supprimer')}
                             </button>
                           </div>
                         </td>
@@ -582,7 +582,7 @@ export default function WardrobeManager({
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-center bg-white/40 dark:bg-black/20 p-3 rounded border border-dashed border-encre-noire/15">
             <span className="text-xs font-bold text-cordel-master-dark">
-              Projets couture : {projects.length} projet{projects.length > 1 ? 's' : ''} en cours
+              {t('costumerie.projetsCouture')} {projects.length} {t('costumerie.labelProjectLower')}{projects.length > 1 ? 's' : ''} {t('costumerie.statusInProgressLower')}
             </span>
             <button
               data-tour="costumerie-new-project-btn"
@@ -594,7 +594,7 @@ export default function WardrobeManager({
               }}
               className="text-[10px] font-black uppercase bg-cordel-vert hover:bg-cordel-vert/90 text-encre-noire border border-encre-noire px-3 py-1.5 rounded shadow-[1.5px_1.5px_0px_0px_#181716] cursor-pointer"
             >
-              {showProjectForm ? "Fermer le formulaire" : "🧵 Créer un projet"}
+              {showProjectForm ? t('costumerie.btnCloseForm') : `🧵 ${t('costumerie.btnCreateProject')}`}
             </button>
           </div>
 
@@ -607,52 +607,52 @@ export default function WardrobeManager({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                 <div className="flex flex-col gap-1 sm:col-span-2">
-                  <label className="text-[9px] uppercase font-bold text-cordel-master-dark">Nom du projet</label>
+                  <label className="text-[9px] uppercase font-bold text-cordel-master-dark">{t('costumerie.nomDuProjet')}</label>
                   <input
                     type="text"
                     required
                     disabled={saving}
                     value={projectForm.name}
                     onChange={(e) => setProjectForm({ ...projectForm, name: e.target.value })}
-                    placeholder="ex: Nouvelles Jupes Blanches"
+                    placeholder={t('costumerie.exNouvellesJupesBlanches')}
                     className="theme-input font-bold py-1.5 px-2 bg-cordel-bg-light"
                   />
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <label className="text-[9px] uppercase font-bold text-cordel-master-dark">Coût estimé (€)</label>
+                  <label className="text-[9px] uppercase font-bold text-cordel-master-dark">{t('costumerie.costEstimatedEuro')}</label>
                   <input
                     type="number"
                     step="0.01"
                     disabled={saving}
                     value={projectForm.cost}
                     onChange={(e) => setProjectForm({ ...projectForm, cost: parseFloat(e.target.value) || 0 })}
-                    placeholder="ex: 150.00"
+                    placeholder={t('costumerie.ex15000')}
                     className="theme-input font-bold py-1.5 px-2 bg-cordel-bg-light"
                   />
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <label className="text-[9px] uppercase font-bold text-cordel-master-dark">Statut</label>
+                  <label className="text-[9px] uppercase font-bold text-cordel-master-dark">{t('costumerie.statut')}</label>
                   <select
                     disabled={saving}
                     value={projectForm.status}
                     onChange={(e) => setProjectForm({ ...projectForm, status: e.target.value })}
                     className="theme-input font-bold py-1.5 px-2 bg-cordel-bg-light"
                   >
-                    <option value="a_commencer">À commencer</option>
-                    <option value="en_cours">En cours</option>
-                    <option value="termine">Terminé</option>
+                    <option value="a_commencer">{t('costumerie.aCommencer')}</option>
+                    <option value="en_cours">{t('costumerie.statusInProgress')}</option>
+                    <option value="termine">{t('costumerie.termine')}</option>
                   </select>
                 </div>
 
                 <div className="flex flex-col gap-1 col-span-1 sm:col-span-4">
-                  <label className="text-[9px] uppercase font-bold text-cordel-master-dark">Besoins / Accessoires (Métrage de tissu, fils, boutons...)</label>
+                  <label className="text-[9px] uppercase font-bold text-cordel-master-dark">{t('costumerie.besoinsAccessoiresMetrageDeTissu')}</label>
                   <textarea
                     disabled={saving}
                     value={projectForm.needs}
                     onChange={(e) => setProjectForm({ ...projectForm, needs: e.target.value })}
-                    placeholder="ex: 20m de Tissu Coton Blanc, Fil résistant blanc, 15m de Ceinture élastique..."
+                    placeholder={t('costumerie.ex20mDeTissuCoton')}
                     className="theme-input font-bold py-1.5 px-2 bg-cordel-bg-light h-16 resize-none"
                   />
                 </div>
@@ -664,7 +664,7 @@ export default function WardrobeManager({
                   disabled={saving}
                   className="text-[10px] font-black uppercase bg-cordel-ocre text-encre-noire border border-encre-noire px-3 py-1.5 rounded shadow-[1.5px_1.5px_0px_0px_#181716] cursor-pointer"
                 >
-                  {saving ? "Enregistrement..." : "Créer le projet"}
+                  {saving ? (t('common.saving') || "Enregistrement...") : t('costumerie.btnCreateProjectAction')}
                 </button>
               </div>
             </form>
@@ -676,30 +676,30 @@ export default function WardrobeManager({
               <table className="w-full text-left text-xs font-semibold border-collapse">
                 <thead>
                   <tr className="bg-cordel-bg border-b border-encre-noire text-[9px] uppercase font-black text-cordel-master-dark tracking-wider select-none">
-                    <th className="py-2 px-2 md:py-2.5 md:px-4">Projet</th>
-                    <th className="py-2 px-2 md:py-2.5 md:px-4">Besoins répertoriés</th>
-                    <th className="py-2 px-2 md:py-2.5 md:px-4 text-center">Coût estimé</th>
-                    <th data-tour="costumerie-project-steps" className="py-2 px-2 md:py-2.5 md:px-4">Statut</th>
-                    <th className="py-2 px-2 md:py-2.5 md:px-4 text-right">Actions</th>
+                    <th className="py-2 px-2 md:py-2.5 md:px-4">{t('costumerie.labelProject')}</th>
+                    <th className="py-2 px-2 md:py-2.5 md:px-4">{t('costumerie.besoinsRepertories')}</th>
+                    <th className="py-2 px-2 md:py-2.5 md:px-4 text-center">{t('costumerie.costEstimated')}</th>
+                    <th data-tour="costumerie-project-steps" className="py-2 px-2 md:py-2.5 md:px-4">{t('costumerie.statut')}</th>
+                    <th className="py-2 px-2 md:py-2.5 md:px-4 text-right">{t('costumerie.actions')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-encre-noire/10">
                   {projects.length === 0 ? (
                     <tr>
                       <td colSpan="5" className="py-8 text-center italic opacity-60">
-                        Aucun projet couture pour le moment.
+                        {t('costumerie.aucunProjetCouturePourLe')}
                       </td>
                     </tr>
                   ) : (
                     projects.map((proj) => (
                       <tr key={proj.id} className="hover:bg-white/20 transition-colors">
                         <td className="py-2 px-2 md:py-2.5 md:px-4 font-bold text-cordel-wood uppercase text-[10px]">{proj.name}</td>
-                        <td className="py-2 px-2 md:py-2.5 md:px-4 max-w-xs truncate" title={proj.needs}>{proj.needs || <span className="italic opacity-50">Aucun besoin saisi</span>}</td>
+                        <td className="py-2 px-2 md:py-2.5 md:px-4 max-w-xs truncate" title={proj.needs}>{proj.needs || <span className="italic opacity-50">{t('costumerie.aucunBesoinSaisi')}</span>}</td>
                         <td className="py-2 px-2 md:py-2.5 md:px-4 text-center font-black">{proj.cost.toFixed(2)} €</td>
                         <td className="py-2 px-2 md:py-2.5 md:px-4 font-bold">
-                          {proj.status === 'a_commencer' && "⏳ À commencer"}
-                          {proj.status === 'en_cours' && "🧵 En cours"}
-                          {proj.status === 'termine' && "✅ Terminé"}
+                          {proj.status === 'a_commencer' && `⏳ ${t('costumerie.statusToStart')}`}
+                          {proj.status === 'en_cours' && `🧵 ${t('costumerie.statusInProgress')}`}
+                          {proj.status === 'termine' && `✅ ${t('costumerie.termine')}`}
                         </td>
                         <td className="py-2 px-2 md:py-2.5 md:px-4 text-right">
                           <div className="flex gap-2.5 justify-end">
@@ -708,14 +708,14 @@ export default function WardrobeManager({
                               onClick={() => handleEditProject(proj)}
                               className="text-[10px] font-black uppercase text-cordel-wood hover:underline cursor-pointer"
                             >
-                              Éditer
+                              {t('costumerie.btnEdit')}
                             </button>
                             <button
                               type="button"
                               onClick={() => handleDeleteProject(proj.id)}
                               className="text-[10px] font-black uppercase text-red-600 hover:underline cursor-pointer"
                             >
-                              Supprimer
+                              {t('costumerie.supprimer')}
                             </button>
                           </div>
                         </td>

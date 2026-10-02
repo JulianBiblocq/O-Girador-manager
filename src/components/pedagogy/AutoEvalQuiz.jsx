@@ -4,7 +4,7 @@ import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import SeloAxeStamp from '../SeloAxeStamp';
-import { generateQuizFromSheet, generateQuizFromSong, generateQuizFromSequencerJson, generateQuizFromInstrumentModel } from '../../utils/quizGenerator';
+import { generateQuizFromSheet, generateQuizFromSong, generateQuizFromSequencerJson, generateQuizFromInstrumentModel, generateI18nTranslationQuiz } from '../../utils/quizGenerator';
 import { normalizePartSteps } from '../../utils/workshopProjectionUtils';
 import PatternVisualizer from './PatternVisualizer';
 import FirestoreMediaRenderer from '../student/FirestoreMediaRenderer';
@@ -12,7 +12,28 @@ import { useTranslation } from '../LanguageContext';
 import useMestreSignals from '../../hooks/useMestreSignals';
 import { launchCrossApp } from '../../utils/crossAppAuth';
 
-export default function AutoEvalQuiz({ sheetData, allSheetsData, profileData, onClose, customQuizData, customQuizId, customQuizTitle, songData, allSongsData, instrumentModelData, allModelsData, qcmGlobalConfig, isSong, rhythms, sequenceurUrl, parsedSequencerJson, targetPartId = null, targetStepIndex = null }) {
+export default function AutoEvalQuiz({
+  sheetData,
+  allSheetsData,
+  profileData,
+  onClose,
+  customQuizData,
+  customQuizId,
+  customQuizTitle,
+  songData,
+  allSongsData,
+  instrumentModelData,
+  allModelsData,
+  qcmGlobalConfig,
+  isSong,
+  rhythms,
+  sequenceurUrl,
+  parsedSequencerJson,
+  targetPartId = null,
+  targetStepIndex = null,
+  isTranslationQuiz = false,
+  translationConfig = null
+}) {
   const { t } = useTranslation();
   const { signals: mestreSignals } = useMestreSignals(profileData?.groupId);
   const [questions, setQuestions] = useState([]);
@@ -54,6 +75,13 @@ export default function AutoEvalQuiz({ sheetData, allSheetsData, profileData, on
       }
       
       setQuestions(finalQuestions.sort(() => Math.random() - 0.5));
+    } else if (isTranslationQuiz || translationConfig) {
+      const generated = generateI18nTranslationQuiz({
+        count: 10,
+        difficulty: qcmGlobalConfig?.difficulty || 'confirme',
+        ...translationConfig
+      });
+      setQuestions(generated);
     } else if (isSong) {
       const generated = generateQuizFromSong(songData, allSongsData, allSheetsData, { ...qcmGlobalConfig, t });
       setQuestions(generated);
@@ -64,12 +92,16 @@ export default function AutoEvalQuiz({ sheetData, allSheetsData, profileData, on
       const generated = generateQuizFromSheet(sheetData, allSheetsData, allSongsData, { difficulty: qcmGlobalConfig?.difficulty || 'medium', t });
       setQuestions(generated);
     }
-  }, [sheetData, allSheetsData, customQuizData, parsedSequencerJson, isSong, songData, allSongsData, instrumentModelData, allModelsData, qcmGlobalConfig, customQuizTitle, mestreSignals, targetPartId, targetStepIndex, t]);
+  }, [sheetData, allSheetsData, customQuizData, parsedSequencerJson, isSong, songData, allSongsData, instrumentModelData, allModelsData, qcmGlobalConfig, customQuizTitle, mestreSignals, targetPartId, targetStepIndex, isTranslationQuiz, translationConfig, t]);
 
   if (questions.length === 0) {
     const isAdmin = profileData?.isSystemAdmin || profileData?.role === 'super-admin' || profileData?.role === 'mestre' || profileData?.role === 'admin';
-    const adminMsg = isSong ? "Impossible de générer un quiz pour ce chant avec la configuration actuelle." : (instrumentModelData ? "Ce modèle ne contient pas assez de pièces/matériels pour générer un quiz." : "Cette fiche ne contient pas assez de mots en gras ou de lexique pour générer un quiz.");
-    const studentMsg = isSong ? "Ce chant n'a pas de quiz associé pour le moment." : (instrumentModelData ? "Ce modèle n'a pas de quiz de fabrication pour le moment." : "Cette fiche n'a pas de quiz associé pour le moment.");
+    const adminMsg = isTranslationQuiz
+      ? "Le dictionnaire i18n ne contient pas assez d'entrées pour générer ce quiz."
+      : (isSong ? "Impossible de générer un quiz pour ce chant avec la configuration actuelle." : (instrumentModelData ? "Ce modèle ne contient pas assez de pièces/matériels pour générer un quiz." : "Cette fiche ne contient pas assez de mots en gras ou de lexique pour générer un quiz."));
+    const studentMsg = isTranslationQuiz
+      ? "Le quiz de traduction n'est pas disponible pour le moment."
+      : (isSong ? "Ce chant n'a pas de quiz associé pour le moment." : (instrumentModelData ? "Ce modèle n'a pas de quiz de fabrication pour le moment." : "Cette fiche n'a pas de quiz associé pour le moment."));
 
     return (
       <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
@@ -241,7 +273,7 @@ export default function AutoEvalQuiz({ sheetData, allSheetsData, profileData, on
           <div className="flex flex-col gap-5">
             <div className="flex justify-between items-end border-b-2 border-dashed border-cordel-master-dark/20 pb-2">
               <h3 className="text-sm font-extrabold text-cordel-wood uppercase tracking-wider">
-                🧠 Quiz : {isSong ? songData?.titre : (sheetData?.themeCulture === 'orixas' && sheetData?.personnageOrisha ? sheetData.personnageOrisha : (sheetData?.titre || customQuizTitle || 'Personnalisé'))}
+                🧠 Quiz : {isTranslationQuiz ? (customQuizTitle || t('pedagogy.translationQuizTitle', "Traduction & Vocabulaire")) : (isSong ? songData?.titre : (sheetData?.themeCulture === 'orixas' && sheetData?.personnageOrisha ? sheetData.personnageOrisha : (sheetData?.titre || customQuizTitle || 'Personnalisé')))}
               </h3>
               <span className="text-[10px] font-black text-cordel-master-dark/50">
                 {t('pedagogy.questionProgress', { current: currentIndex + 1, total: questions.length })}
@@ -414,7 +446,7 @@ export default function AutoEvalQuiz({ sheetData, allSheetsData, profileData, on
 
             <div className="flex justify-center flex-wrap gap-4 mt-6">
               <CordelButton variant="default" onClick={onClose} className="px-6 py-2 text-xs font-bold">
-                {isSuccess ? "Fermer" : (isSong ? "Relire le chant" : "Relire la fiche")}
+                {isSuccess ? "Fermer" : (isTranslationQuiz ? "Réessayer" : (isSong ? "Relire le chant" : "Relire la fiche"))}
               </CordelButton>
               {seqUrl && (
                 <button 

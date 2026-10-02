@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * CostumeVisualizer Component
@@ -11,6 +12,7 @@ import React from 'react';
  * @param {Function} props.onSelectPiece Callback fired when user clicks a piece marker
  */
 export default function CostumeVisualizer({ costume, checklist = {}, onSelectPiece }) {
+  const { t } = useTranslation();
   const pieces = costume?.pieces || [];
 
   // Fonction utilitaire pour infer body location if missing from older piece definitions
@@ -64,10 +66,10 @@ export default function CostumeVisualizer({ costume, checklist = {}, onSelectPie
     <div className="relative w-full max-w-lg mx-auto bg-cordel-bg p-4 rounded-xl border border-dashed border-cordel-master-dark/25 shadow-inner select-none flex flex-col items-center">
       <div className="text-center mb-2">
         <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] uppercase tracking-wider">
-          🎨 Mannequin d'Habillage Visuel
+          🎨 {t('costumerie.mannequinDHabillageVisuel')}
         </span>
         <p className="text-[9px] text-cordel-master-dark opacity-75 mt-0.5">
-          Cliquez sur un marqueur du corps ou du panier pour valider une pièce et voir son tutoriel.
+          {t('costumerie.cliquezSurUnMarqueurDu')}
         </p>
       </div>
 
@@ -121,7 +123,7 @@ export default function CostumeVisualizer({ costume, checklist = {}, onSelectPie
             <path d="M 16 28 L 44 48 M 24 26 L 40 52 M 36 26 L 20 52 M 44 28 L 16 48" strokeWidth="1" strokeDasharray="2 1" />
             {/* Basket Label */}
             <text x="30" y="66" textAnchor="middle" fontSize="7" fontWeight="bold" fill="currentColor" stroke="none">
-              Panier
+              {t('costumerie.panier')}
             </text>
           </g>
         </svg>

@@ -1,6 +1,7 @@
 import React from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Modale de zoom et d'inspection haute définition d'un geste du Mestre (mestre_signals).
@@ -11,6 +12,7 @@ import CordelButton from '../CordelButton';
  * @param {Object|null} signal - Données du signal { id, name, imageUrl, description, type }
  */
 export default function SignalZoomModal({ isOpen, onClose, signal }) {
+  const { t } = useTranslation();
   if (!isOpen || !signal) return null;
 
   return (
@@ -26,7 +28,7 @@ export default function SignalZoomModal({ isOpen, onClose, signal }) {
               </h3>
               {signal.type && (
                 <span className="text-[9.5px] font-black uppercase text-cordel-master-dark/60">
-                  Signal {signal.type}
+                  {t('mestre.repertoire.signalModalHeading')} {signal.type}
                 </span>
               )}
             </div>
@@ -36,7 +38,7 @@ export default function SignalZoomModal({ isOpen, onClose, signal }) {
             type="button"
             onClick={onClose}
             className="text-stone-400 hover:text-stone-700 font-black text-lg px-1.5 py-0.5 cursor-pointer transition-colors"
-            title="Fermer"
+            title={t('common.close')}
           >
             ✕
           </button>
@@ -71,7 +73,7 @@ export default function SignalZoomModal({ isOpen, onClose, signal }) {
             onClick={onClose}
             className="py-1 px-4 text-xs font-black uppercase tracking-wider bg-stone-100 hover:bg-stone-200"
           >
-            Fermer
+            {t('common.close')}
           </CordelButton>
         </div>
       </CordelCard>

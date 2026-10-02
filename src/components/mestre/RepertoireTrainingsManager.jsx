@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Sous-composant de gestion des entraînements rattachés à un morceau du Répertoire.
@@ -24,6 +25,7 @@ export default function RepertoireTrainingsManager({
   onChangeExcludedIds,
   disabled = false
 }) {
+  const { t } = useTranslation();
   const cleanSeqId = currentSeqId ? String(currentSeqId).trim() : '';
 
   // 1. Identification des entraînements liés automatiquement par preset sequenciador
@@ -128,29 +130,29 @@ export default function RepertoireTrainingsManager({
       <div className="flex items-center justify-between flex-wrap gap-2">
         <label className="text-[9.5px] uppercase font-black tracking-wider text-cordel-master-dark flex items-center gap-1.5">
           <span>⚡</span>
-          <span>Entraînements rattachés au morceau</span>
+          <span>{t('mestre.sequenceur.trainingsLinkedHeading')}</span>
           {attachedTrainings.length > 0 && (
             <span className="text-[9px] font-black text-amber-950 px-1.5 py-0.2 rounded-full bg-amber-200 border border-amber-300">
-              {attachedTrainings.length} rattaché{attachedTrainings.length > 1 ? 's' : ''}
+              {attachedTrainings.length} {t('mestre.sequenceur.linkedSingular')}{attachedTrainings.length > 1 ? 's' : ''}
             </span>
           )}
         </label>
       </div>
 
       <p className="text-[9.5px] text-encre-noire/65 leading-tight">
-        Les entraînements du preset sequenciador sont détectés automatiquement. Cliquez sur <span className="font-bold text-red-700">[✕]</span> pour détacher un entraînement ou utilisez le sélecteur pour en associer d'autres.
+        {t('mestre.sequenceur.trainingsAutoDetectedNotice')} <span className="font-bold text-red-700">[✕]</span> {t('mestre.sequenceur.trainingsDetachOrAssociateNotice')}
       </p>
 
       {/* Liste des entraînements actuellement rattachés sous forme de pastilles Cordel */}
       {attachedTrainings.length > 0 ? (
         <div className="flex flex-wrap items-center gap-2 p-2 bg-cordel-bg-light/60 border border-encre-noire/20 rounded">
-          {attachedTrainings.map((t) => {
-            const title = t.title || t.titre || t.name || 'Entraînement';
-            const tempoText = `${t.startBpm || 60} ➔ ${t.targetBpm || 100} BPM`;
+          {attachedTrainings.map((tr) => {
+            const title = tr.title || tr.titre || tr.name || 'Entraînement';
+            const tempoText = `${tr.startBpm || 60} ➔ ${tr.targetBpm || 100} BPM`;
 
             return (
               <span
-                key={t.id}
+                key={tr.id}
                 className="inline-flex items-center gap-2 px-2.5 py-1.5 text-xs font-bold rounded-[4px_6px_3px_5px] bg-white text-encre-noire border border-amber-300 shadow-2xs hover:border-amber-400 transition-all"
               >
                 <span>⚡</span>
@@ -162,24 +164,24 @@ export default function RepertoireTrainingsManager({
                 </span>
 
                 {/* Badge d'origine (auto sequenciador vs manuel) */}
-                {t.isAuto && !t.isManual && (
+                {tr.isAuto && !tr.isManual && (
                   <span className="text-[8px] font-extrabold uppercase px-1 py-0.2 rounded bg-amber-100 text-amber-900 border border-amber-300">
                     auto
                   </span>
                 )}
-                {t.isManual && !t.isAuto && (
+                {tr.isManual && !tr.isAuto && (
                   <span className="text-[8px] font-extrabold uppercase px-1 py-0.2 rounded bg-blue-50 text-blue-900 border border-blue-200">
-                    manuel
+                    {t('mestre.sequenceur.manualBadge')}
                   </span>
                 )}
 
                 {/* Bouton de suppression / détachement */}
                 <button
                   type="button"
-                  onClick={() => handleDetachTraining(t)}
+                  onClick={() => handleDetachTraining(tr)}
                   disabled={disabled}
                   className="text-stone-400 hover:text-red-700 font-black text-xs p-0.5 ml-0.5 cursor-pointer leading-none transition-colors"
-                  title="Détacher cet entraînement du morceau"
+                  title={t('mestre.sequenceur.detachTrainingTitle') || 'Détacher cet entraînement du morceau'}
                 >
                   ✕
                 </button>
@@ -189,7 +191,7 @@ export default function RepertoireTrainingsManager({
         </div>
       ) : (
         <p className="text-[10px] text-stone-500 italic p-2 bg-cordel-bg-light/40 border border-dashed border-encre-noire/15 rounded">
-          Aucun entraînement rattaché à ce morceau pour le moment.
+          {t('mestre.sequenceur.noTrainingsLinked')}
         </p>
       )}
 
@@ -213,7 +215,7 @@ export default function RepertoireTrainingsManager({
           </option>
           {availableToAdd.map((tr) => (
             <option key={tr.id} value={tr.id}>
-              ⚡ {tr.title || tr.titre || tr.name || 'Entraînement'} ({tr.startBpm || 60} ➔ {tr.targetBpm || 100} BPM)
+              ⚡ {tr.title || tr.titre || tr.name || 'Entraînement'} ({tr.startBpm || 60} ➔ {tr.targetBpm || 100} {t('mestre.sequenceur.bpmCloseParen')}
             </option>
           ))}
         </select>

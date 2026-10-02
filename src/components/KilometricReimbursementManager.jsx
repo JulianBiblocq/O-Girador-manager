@@ -369,24 +369,22 @@ export default function KilometricReimbursementManager({ groupId, onBack, role, 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="col-span-1 md:col-span-2 text-xs text-encre-noire dark:text-cordel-bg-light opacity-80 border border-dashed border-cordel-master-dark/30 p-3 rounded-[6px_4px_8px_5px] bg-[#fdfaf2] dark:bg-[#201d1a] leading-relaxed flex flex-col justify-center">
           <div>
-            🚗 Ce module compile les demandes de remboursement de frais de déplacement calculées automatiquement lors des événements. Un trajet en convoi n'est remboursé que s'il est considéré comme complet (selon la règle active). Les trajets individuels sont toujours comptabilisés s'ils sont signalés comme déplacements par propres moyens.
+            🚗 {t('treasury.mileageNoticeDesc')}
           </div>
         </div>
         
         <div className="border border-encre-noire/30 p-3 rounded-[4px_6px_3px_5px] bg-[var(--cordel-bg-light)] text-[10px] flex flex-col gap-1.5 justify-center shadow-[1.5px_1.5px_0px_0px_#181716]">
-          <span className="font-bold text-cordel-wood uppercase tracking-wide">Configuration Active :</span>
+          <span className="font-bold text-cordel-wood uppercase tracking-wide">{t('treasury.activeConfigTitle')}</span>
           <div>💵 <span className="font-black">{t('treasury.fiscalRatePerKm', { rate: indemniteKilometrique.toFixed(2) })}</span></div>
-          <div>🔌 Covoiturage actif : <span className="font-black">{enableCarpoolReimbursement ? "Oui" : "Non"}</span></div>
-          <div>⚙️ Règle de remboursement : <span className="font-black">
-            {reimbursementRule === 'full_cars_only' ? "Véhicules complets uniquement" : "Tous les conducteurs"}
-          </span></div>
+          <div>🔌 {t('treasury.carpoolStatusActive', { status: enableCarpoolReimbursement ? t('common.yes') : t('common.no') })}</div>
+          <div>⚙️ {t('treasury.refundRuleLabel', { rule: reimbursementRule === 'full_cars_only' ? t('treasury.ruleFullVehiclesOnly') : t('treasury.ruleAllVehicles') })}</div>
           {isAuthorized && (
             <button
               type="button"
               onClick={() => setShowConfigPanel(!showConfigPanel)}
               className="mt-2 text-[9px] font-black uppercase tracking-wider text-cordel-wood hover:underline text-left cursor-pointer flex items-center gap-1 select-none"
             >
-              ⚙️ {showConfigPanel ? "Masquer la configuration" : "Modifier les paramètres"}
+              ⚙️ {showConfigPanel ? "Masquer la configuration" : t('treasury.btnModifySettings')}
             </button>
           )}
         </div>
@@ -499,7 +497,7 @@ export default function KilometricReimbursementManager({ groupId, onBack, role, 
             }`}
           >
             <span>📊</span>
-            <span>Vue d'ensemble</span>
+            <span>{t('treasury.tabOverview')}</span>
           </button>
           <button
             type="button"
@@ -513,7 +511,7 @@ export default function KilometricReimbursementManager({ groupId, onBack, role, 
             }`}
           >
             <span>👥</span>
-            <span>Par Membre ({memberList.length})</span>
+            <span>{t('treasury.tabByMember', { count: memberList.length })}</span>
           </button>
           <button
             type="button"
@@ -527,7 +525,7 @@ export default function KilometricReimbursementManager({ groupId, onBack, role, 
             }`}
           >
             <span>📅</span>
-            <span>Par Événement ({eventList.length})</span>
+            <span>{t('treasury.tabByEvent', { count: eventList.length })}</span>
           </button>
         </HorizontalRibbonContainer>
       </div>
@@ -545,11 +543,11 @@ export default function KilometricReimbursementManager({ groupId, onBack, role, 
               {/* Summary stats */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <CordelCard className="p-4 flex flex-col gap-1 items-center bg-white/50">
-                  <span className="text-[9px] font-black uppercase tracking-wider text-cordel-master-dark/60">Trajets éligibles</span>
+                  <span className="text-[9px] font-black uppercase tracking-wider text-cordel-master-dark/60">{t('treasury.kpiEligibleTrips')}</span>
                   <span className="text-xl font-black text-cordel-wood">{totalTripsCount}</span>
                 </CordelCard>
                 <CordelCard className="p-4 flex flex-col gap-1 items-center bg-white/50">
-                  <span className="text-[9px] font-black uppercase tracking-wider text-cordel-master-dark/60">Kilomètres parcourus</span>
+                  <span className="text-[9px] font-black uppercase tracking-wider text-cordel-master-dark/60">{t('treasury.kpiKilometersTraveled')}</span>
                   <span className="text-xl font-black text-cordel-wood">{totalRefundedKm.toFixed(0)} km</span>
                 </CordelCard>
                 <CordelCard className="p-4 flex flex-col gap-1 items-center bg-white/50">
@@ -572,7 +570,7 @@ export default function KilometricReimbursementManager({ groupId, onBack, role, 
                 </div>
 
                 {memberList.length === 0 ? (
-                  <p className="text-xs italic opacity-60 text-center py-4">Aucune demande de défraiement calculée sur la période.</p>
+                  <p className="text-xs italic opacity-60 text-center py-4">{t('treasury.noMileageClaimsPeriod')}</p>
                 ) : (
                   <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto pr-1">
                     {memberList.slice(0, 5).map(m => (

@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from './LanguageContext';
 import CordelButton from './CordelButton';
 import { XiloClose } from './XiloIcons';
 import { getInstrumentStamp } from './InstrumentStampSVG';
@@ -21,6 +22,8 @@ import { getInstrumentStamp } from './InstrumentStampSVG';
  * }
  */
 export default function FabricationCard({ fabrication, onClose }) {
+  const { t } = useTranslation();
+
   const renderMedia = (url) => {
     if (!url) return null;
     const isVideo = url.toLowerCase().includes('.mp4') || url.toLowerCase().includes('video');
@@ -77,11 +80,19 @@ export default function FabricationCard({ fabrication, onClose }) {
     const etapeId = e.id || idx;
     return etapeId === selectedEtapeId;
   });
-  
-  const isCostumerie = fabrication?.thematiqueFabrication === 'costumerie' ||
+
+  const isArtisanat = fabrication?.thematiqueFabrication === 'artisanat' ||
+    fabrication?.domaine === 'artisanat' ||
+    fabrication?.sousCategorie === 'artisanat' ||
+    /artisanat|reliure|carnet|livre|cuir|accessoire|pochoir/i.test(fabrication?.titre || '') ||
+    /artisanat|reliure|carnet|livre|cuir|accessoire|pochoir/i.test(fabrication?.instrumentConcerne || '');
+
+  const isCostumerie = !isArtisanat && (
+    fabrication?.thematiqueFabrication === 'costumerie' ||
     fabrication?.sousCategorie === 'costumerie' ||
     /costume|couture|patron|habit|veste|coiffe/i.test(fabrication?.titre || '') ||
-    /costume|couture|patron/i.test(fabrication?.instrumentConcerne || '');
+    /costume|couture|patron/i.test(fabrication?.instrumentConcerne || '')
+  );
 
   // Modale principale
   const cardContent = (
@@ -100,18 +111,22 @@ export default function FabricationCard({ fabrication, onClose }) {
         <div className="flex-shrink-0 flex items-center justify-between p-3 sm:p-5 border-b-[var(--theme-border-width)] border-dashed border-[var(--color-cordel-wood)] bg-[#fdfaf2]">
           <div className="flex flex-col">
             <span className="text-[10px] uppercase font-black tracking-widest text-[var(--color-cordel-wood)] mb-1">
-              {isCostumerie ? "🧵 Atelier de Costumerie & Patrons" : "🛠️ Atelier de Lutherie & Fabrication"}
+              {isArtisanat 
+                ? `🎨 ${t('lutherie.craftDomainArtisanat')}` 
+                : isCostumerie 
+                  ? `🧵 ${t('lutherie.craftDomainCostumerie')}` 
+                  : `🛠️ ${t('lutherie.craftDomainLutherie')}`}
             </span>
             <h2 className="font-heading font-black text-2xl sm:text-3xl text-black leading-none">
               {fabrication.titre}
             </h2>
-            {(fabrication.instrumentConcerne || isCostumerie) && (
+            {(fabrication.instrumentConcerne || isCostumerie || isArtisanat) && (
               <div className="flex items-center gap-2 mt-2">
                 <span className="text-[9px] uppercase font-bold text-gray-700 bg-black/10 px-2 py-0.5 rounded">
-                  {fabrication.instrumentConcerne || (isCostumerie ? "Costumerie / Couture" : "Instrument")}
+                  {fabrication.instrumentConcerne || (isArtisanat ? t('lutherie.filterCategoryArtisanat') : isCostumerie ? t('lutherie.craftDomainCostumerie') : t('lutherie.filterCategoryLutherie'))}
                 </span>
                 <div className="w-5 h-5 text-[var(--color-cordel-wood)] flex-shrink-0 opacity-90">
-                  {getInstrumentStamp(isCostumerie ? "couture" : (fabrication.instrumentConcerne || "Alfaia"), "currentColor")}
+                  {getInstrumentStamp(isArtisanat ? "artisanat" : (isCostumerie ? "couture" : (fabrication.instrumentConcerne || "Alfaia")), "currentColor")}
                 </div>
               </div>
             )}

@@ -213,7 +213,9 @@ export default function AdminExport({ user, profileData, onBack }) {
           return val === 'confirme' ? 'Confirmé' : val === 'debutant' ? 'Débutant' : 'Aucun';
         }
         if (field.key === 'role') {
-          return tRole(val || 'membre', member.genre);
+          return (val === 'membre' || !val)
+            ? (member.genre === 'femme' ? t('secretariat.badgeMemberFem') : t('secretariat.badgeMemberMasc'))
+            : tRole(val, member.genre);
         }
         if (field.key === 'tags') {
           return Array.isArray(val) ? val.join(', ') : '';
@@ -305,7 +307,7 @@ export default function AdminExport({ user, profileData, onBack }) {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
           <div className="flex items-center gap-2 flex-wrap">
             <h3 className="text-sm font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
-              <XiloPeople size={16} className="inline" /> Annuaire des membres ({filteredMembers.length})
+              <XiloPeople size={16} className="inline" /> {t('secretariat.membersDirectoryTitle', { count: filteredMembers.length })}
             </h3>
             <CordelButton
               type="button"
@@ -314,7 +316,7 @@ export default function AdminExport({ user, profileData, onBack }) {
               onClick={() => setIsExportModalOpen(true)}
               className="px-3 py-1 text-xs font-black uppercase tracking-wider shadow-xs flex items-center gap-1.5 ml-2 cursor-pointer"
             >
-              📥 Exporter les données
+              📥 {t('secretariat.btnExportData') || "Exporter les données"}
             </CordelButton>
           </div>
 
@@ -325,18 +327,18 @@ export default function AdminExport({ user, profileData, onBack }) {
               onChange={(e) => setRoleFilter(e.target.value)}
               className="theme-input text-xs font-bold py-1 px-2 bg-white"
             >
-              <option value="all">Tous les rôles</option>
+              <option value="all">{t('secretariat.allRoles') || "Tous les rôles"}</option>
               <option value="mestre">Mestre</option>
               <option value="admin">Administrateur</option>
               <option value="bureau">Bureau</option>
               <option value="ca">Conseil d'Administration</option>
-              <option value="membre">Adhérent</option>
+              <option value="membre">{t('secretariat.badgeMemberMasc') || "Adhérent"}</option>
             </select>
 
             {/* Barre de recherche textuelle */}
             <input
               type="text"
-              placeholder="Rechercher nom, email, instrument..."
+              placeholder={t('secretariat.searchMemberDirectoryPlaceholder') || "Rechercher nom, email, instrument..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="theme-input text-xs w-full md:w-64"
@@ -357,11 +359,11 @@ export default function AdminExport({ user, profileData, onBack }) {
             <table className="min-w-full divide-y divide-cordel-master-dark/10 bg-cordel-bg/25">
               <thead>
                 <tr className="bg-cordel-master-dark/5 text-[9px] font-black uppercase tracking-wider text-cordel-master-dark">
-                  <th className="px-2 py-2 md:px-4 md:py-2.5 text-left">Nom complet</th>
-                  <th className="px-2 py-2 md:px-4 md:py-2.5 text-left">Email</th>
-                  <th className="px-2 py-2 md:px-4 md:py-2.5 text-left">Téléphone</th>
-                  <th className="px-2 py-2 md:px-4 md:py-2.5 text-left">Rôle</th>
-                  <th className="px-2 py-2 md:px-4 md:py-2.5 text-left">Instruments</th>
+                  <th className="px-2 py-2 md:px-4 md:py-2.5 text-left">{t('secretariat.thFullName') || "Nom complet"}</th>
+                  <th className="px-2 py-2 md:px-4 md:py-2.5 text-left">{t('secretariat.thEmail') || "Email"}</th>
+                  <th className="px-2 py-2 md:px-4 md:py-2.5 text-left">{t('secretariat.thPhone') || "Téléphone"}</th>
+                  <th className="px-2 py-2 md:px-4 md:py-2.5 text-left">{t('secretariat.thRole') || "Rôle"}</th>
+                  <th className="px-2 py-2 md:px-4 md:py-2.5 text-left">{t('secretariat.thInstruments') || "Instruments"}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-cordel-master-dark/5 text-xs font-semibold text-encre-noire">
@@ -378,7 +380,9 @@ export default function AdminExport({ user, profileData, onBack }) {
                     </td>
                     <td className="px-2 py-2 md:px-4 md:py-2.5 whitespace-nowrap">
                       <span className="theme-stamp-badge theme-stamp-badge-wood text-[7.5px] border-dashed">
-                        {tRole(member.role || 'membre', member.genre)}
+                        {member.role === 'membre' || !member.role
+                          ? (member.genre === 'femme' ? t('secretariat.badgeMemberFem') : t('secretariat.badgeMemberMasc'))
+                          : tRole(member.role, member.genre)}
                       </span>
                     </td>
                     <td className="px-2 py-2 md:px-4 md:py-2.5 max-w-[240px]">

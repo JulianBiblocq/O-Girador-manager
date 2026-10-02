@@ -3,11 +3,14 @@ import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { XiloClose } from '../XiloIcons';
 import useConfirm from '../../hooks/useConfirm';
+import { useTranslation } from '../LanguageContext';
 
 export default function SuppliesListView({ supplies, loading, addSupply, updateSupply, deleteSupply, adjustSupplyStock, domaine, models = [] }) {
+  const { t } = useTranslation();
   const { confirm } = useConfirm();
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [craftFilter, setCraftFilter] = useState('all'); // 'all', 'lutherie', 'artisanat'
 
   // Extraction de toutes les matières premières référencées dans les modèles et tutoriels du Varal
   const tutorialSupplies = useMemo(() => {
@@ -24,6 +27,7 @@ export default function SuppliesListView({ supplies, loading, addSupply, updateS
   }, [models]);
   const [formData, setFormData] = useState({
     nom: '',
+    domaine: domaine || 'lutherie',
     categorie: '',
     quantiteStock: 0,
     unite: 'unités',
@@ -45,6 +49,7 @@ export default function SuppliesListView({ supplies, loading, addSupply, updateS
   const handleEdit = (supply) => {
     setFormData({
       nom: supply.nom || '',
+      domaine: supply.domaine || (supply.categorie?.toLowerCase().includes('artisanat') || supply.categorie?.toLowerCase().includes('reliure') ? 'artisanat' : (domaine || 'lutherie')),
       categorie: supply.categorie || '',
       quantiteStock: supply.quantiteStock || 0,
       unite: supply.unite || 'unités',
@@ -64,20 +69,21 @@ export default function SuppliesListView({ supplies, loading, addSupply, updateS
     if (formData.nom) {
       setSubmitting(true);
       let ok;
+      const targetDomaine = formData.domaine || domaine || 'lutherie';
       if (editingId) {
-        ok = await updateSupply(editingId, { ...formData, domaine: domaine || 'lutherie' });
+        ok = await updateSupply(editingId, { ...formData, domaine: targetDomaine });
       } else {
-        ok = await addSupply({ ...formData, domaine: domaine || 'lutherie' });
+        ok = await addSupply({ ...formData, domaine: targetDomaine });
       }
       setSubmitting(false);
       if (!ok) {
-        alert("Erreur lors de l'enregistrement de la fourniture. Veuillez vérifier vos droits d'accès.");
+        alert(t('lutherie.alertSaveSupplyError'));
         return;
       }
       setIsAdding(false);
       setEditingId(null);
       setFormData({
-        nom: '', categorie: '', quantiteStock: 0, unite: 'unités',
+        nom: '', domaine: domaine || 'lutherie', categorie: '', quantiteStock: 0, unite: 'unités',
         seuilCritique: 0, conditionnementAchat: '', fournisseur: '',
         referenceFournisseur: '', urlFournisseur: '', notes: ''
       });
@@ -109,12 +115,20 @@ export default function SuppliesListView({ supplies, loading, addSupply, updateS
     }
   };
 
+  const displayedSupplies = useMemo(() => {
+    return supplies.filter(s => {
+      if (craftFilter === 'all') return true;
+      const sDomaine = s.domaine || (s.categorie?.toLowerCase().includes('artisanat') || s.categorie?.toLowerCase().includes('reliure') ? 'artisanat' : 'lutherie');
+      return sDomaine === craftFilter;
+    });
+  }, [supplies, craftFilter]);
+
   const handleToggleAdd = () => {
     if (isAdding) {
       setIsAdding(false);
       setEditingId(null);
       setFormData({
-        nom: '', categorie: '', quantiteStock: 0, unite: 'unités',
+        nom: '', domaine: domaine || 'lutherie', categorie: '', quantiteStock: 0, unite: 'unités',
         seuilCritique: 0, conditionnementAchat: '', fournisseur: '',
         referenceFournisseur: '', urlFournisseur: '', notes: ''
       });
@@ -124,19 +138,31 @@ export default function SuppliesListView({ supplies, loading, addSupply, updateS
   };
 
   if (loading) {
-    return <div className="p-4 text-center text-cordel-master-dark">Chargement des fournitures...</div>;
+    return <div className="p-4 text-center text-cordel-master-dark">{t('lutherie.loadingSupplies')}</div>;
   }
 
   return (
     <div className="flex flex-col gap-4">
-      {/* En-tête et bouton Ajout */}
-      <div className="flex justify-between items-center bg-cordel-bg border-2 border-encre-noire p-3 shadow-[3px_3px_0px_0px_#181716] rounded">
+      {/* En-tête et contrôles */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-cordel-bg border-2 border-encre-noire p-3 shadow-[3px_3px_0px_0px_#181716] rounded gap-2">
         <h3 className="text-sm font-extrabold tracking-wider text-cordel-wood uppercase">
-          📦 Stock Matériaux & Accessoires ({supplies.length})
+          {t('lutherie.materialsAndAccessoriesStockTitle', { count: displayedSupplies.length })}
         </h3>
-        <CordelButton variant="default" onClick={handleToggleAdd} className="text-xs font-bold px-3 py-1.5">
-          {isAdding ? "Annuler" : editingId ? "Mode Édition..." : "+ Ajouter une fourniture"}
-        </CordelButton>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Filtre rapide : Tout l'atelier / Lutherie / Artisanat */}
+          <select
+            value={craftFilter}
+            onChange={(e) => setCraftFilter(e.target.value)}
+            className="theme-input text-xs bg-white py-1.5 px-2 font-bold cursor-pointer"
+          >
+            <option value="all">{t('lutherie.craftDomainAll')}</option>
+            <option value="lutherie">{t('lutherie.filterCategoryLutherie')}</option>
+            <option value="artisanat">{t('lutherie.filterCategoryArtisanat')}</option>
+          </select>
+          <CordelButton variant="default" onClick={handleToggleAdd} className="text-xs font-bold px-3 py-1.5">
+            {isAdding ? (t('common.cancel') || "Annuler") : editingId ? "Mode Édition..." : (domaine === 'costumerie' ? t('costumerie.btnAddSupply') : t('lutherie.btnAddSupply'))}
+          </CordelButton>
+        </div>
       </div>
 
       {/* Formulaire d'ajout */}
@@ -151,7 +177,7 @@ export default function SuppliesListView({ supplies, loading, addSupply, updateS
             {!editingId && tutorialSupplies.length > 0 && (
               <div className="bg-white/90 p-2.5 rounded border border-amber-300 flex flex-col gap-1.5 text-left">
                 <span className="text-[9.5px] font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1">
-                  <span>💡</span> Matières premières requises par les tutoriels du Varal :
+                  <span>💡</span> {t('lutherie.rawMaterialsRequiredByVaralTutos')}
                 </span>
                 <div className="flex flex-wrap gap-1">
                   {tutorialSupplies.map(s => {
@@ -166,7 +192,7 @@ export default function SuppliesListView({ supplies, loading, addSupply, updateS
                             ? 'bg-stone-100 text-stone-500 border-stone-300'
                             : 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100 shadow-2xs'
                         }`}
-                        title={alreadyInStock ? 'Déjà répertorié au stock' : 'Cliquer pour sélectionner cette matière'}
+                        title={alreadyInStock ? t('lutherie.statusInStock') : 'Cliquer pour sélectionner cette matière'}
                       >
                         <span>{alreadyInStock ? '✓' : '+'}</span> {s}
                       </button>
@@ -178,7 +204,7 @@ export default function SuppliesListView({ supplies, loading, addSupply, updateS
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-cordel-master-dark uppercase">Nom de l'article *</label>
+                <label className="text-[10px] font-bold text-cordel-master-dark uppercase">{t('lutherie.itemNameRequiredLabel')}</label>
                 <input 
                   required 
                   name="nom" 
@@ -186,50 +212,57 @@ export default function SuppliesListView({ supplies, loading, addSupply, updateS
                   value={formData.nom} 
                   onChange={handleChange} 
                   className="theme-input text-xs" 
-                  placeholder="Ex: Calebasse, Corde nylon" 
+                  placeholder={t('lutherie.itemNamePlaceholder')} 
                 />
                 <datalist id="tutorial-supplies-datalist">
                   {tutorialSupplies.map(s => <option key={s} value={s} />)}
                 </datalist>
               </div>
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-cordel-master-dark uppercase">Catégorie</label>
-                <input name="categorie" value={formData.categorie} onChange={handleChange} className="theme-input text-xs" placeholder="Ex: Corderie, Bois, Végétal" />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-cordel-master-dark uppercase">Stock initial</label>
-                <input type="number" name="quantiteStock" value={formData.quantiteStock} onChange={handleChange} className="theme-input text-xs" min="0" step="0.1" />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-cordel-master-dark uppercase">Unité</label>
-                <select name="unite" value={formData.unite} onChange={handleChange} className="theme-input text-xs">
-                  <option value="unités">Unités</option>
-                  <option value="mètres">Mètres</option>
-                  <option value="bobines">Bobines</option>
-                  <option value="kg">Kg</option>
-                  <option value="litres">Litres</option>
+                <label className="text-[10px] font-bold text-cordel-master-dark uppercase">{t('lutherie.thCategory')}</label>
+                <select name="domaine" value={formData.domaine} onChange={handleChange} className="theme-input text-xs bg-white font-semibold">
+                  <option value="lutherie">{t('lutherie.filterCategoryLutherie')}</option>
+                  <option value="artisanat">{t('lutherie.filterCategoryArtisanat')}</option>
                 </select>
               </div>
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-cordel-master-dark uppercase">Seuil Critique</label>
+                <label className="text-[10px] font-bold text-cordel-master-dark uppercase">{t('lutherie.categoryLabel')}</label>
+                <input name="categorie" value={formData.categorie} onChange={handleChange} className="theme-input text-xs" placeholder={t('lutherie.categoryPlaceholder')} />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-bold text-cordel-master-dark uppercase">{t('lutherie.initialStockLabel')}</label>
+                <input type="number" name="quantiteStock" value={formData.quantiteStock} onChange={handleChange} className="theme-input text-xs" min="0" step="0.1" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-bold text-cordel-master-dark uppercase">{t('lutherie.unitLabel')}</label>
+                <select name="unite" value={formData.unite} onChange={handleChange} className="theme-input text-xs">
+                  <option value="unités">{t('lutherie.optUnitUnites')}</option>
+                  <option value="mètres">{t('lutherie.optUnitMetres')}</option>
+                  <option value="bobines">{t('lutherie.optUnitBobines')}</option>
+                  <option value="kg">{t('lutherie.optUnitKg')}</option>
+                  <option value="litres">{t('lutherie.optUnitLitres')}</option>
+                </select>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-bold text-cordel-master-dark uppercase">{t('lutherie.criticalThresholdLabel')}</label>
                 <input type="number" name="seuilCritique" value={formData.seuilCritique} onChange={handleChange} className="theme-input text-xs" min="0" step="0.1" />
               </div>
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-cordel-master-dark uppercase">Format Achat</label>
-                <input name="conditionnementAchat" value={formData.conditionnementAchat} onChange={handleChange} className="theme-input text-xs" placeholder="Ex: Lot de 10" />
+                <label className="text-[10px] font-bold text-cordel-master-dark uppercase">{t('lutherie.purchasePackageLabel')}</label>
+                <input name="conditionnementAchat" value={formData.conditionnementAchat} onChange={handleChange} className="theme-input text-xs" placeholder={t('lutherie.purchasePackagePlaceholder')} />
               </div>
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-cordel-master-dark uppercase">Fournisseur</label>
+                <label className="text-[10px] font-bold text-cordel-master-dark uppercase">{t('lutherie.supplierLabel')}</label>
                 <input name="fournisseur" value={formData.fournisseur} onChange={handleChange} className="theme-input text-xs" />
               </div>
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-cordel-master-dark uppercase">Lien d'achat (URL)</label>
+                <label className="text-[10px] font-bold text-cordel-master-dark uppercase">{t('lutherie.purchaseUrlLabel')}</label>
                 <input type="url" name="urlFournisseur" value={formData.urlFournisseur} onChange={handleChange} className="theme-input text-xs" />
               </div>
             </div>
             <div className="flex justify-end mt-2">
               <CordelButton type="submit" variant="vert" disabled={submitting} className="px-6 py-2 text-xs font-black uppercase">
-                {submitting ? "Enregistrement..." : editingId ? "💾 Mettre à jour" : "💾 Enregistrer la fourniture"}
+                {submitting ? "Enregistrement..." : editingId ? "💾 Mettre à jour" : `💾 ${t('lutherie.btnSaveSupply')}`}
               </CordelButton>
             </div>
           </form>
@@ -237,20 +270,20 @@ export default function SuppliesListView({ supplies, loading, addSupply, updateS
       )}
 
       {/* Tableau des fournitures */}
-      {supplies.length > 0 ? (
+      {displayedSupplies.length > 0 ? (
         <div className="w-full overflow-x-auto border-2 border-encre-noire bg-cordel-bg-light rounded shadow-[3px_3px_0px_0px_#181716]">
           <table className="w-full text-left border-collapse min-w-[600px]">
             <thead>
               <tr className="bg-cordel-bg border-b-2 border-encre-noire text-[10px] font-extrabold uppercase text-cordel-master-dark">
-                <th className="p-3 border-r border-encre-noire/20">Article</th>
-                <th className="p-3 border-r border-encre-noire/20 text-center">Catégorie</th>
-                <th className="p-3 border-r border-encre-noire/20 text-center">Stock</th>
-                <th className="p-3 border-r border-encre-noire/20 text-center">Fournisseur</th>
-                <th className="p-3 text-center">Actions</th>
+                <th className="p-3 border-r border-encre-noire/20">{t('lutherie.thArticle')}</th>
+                <th className="p-3 border-r border-encre-noire/20 text-center">{t('lutherie.thCategory')}</th>
+                <th className="p-3 border-r border-encre-noire/20 text-center">{t('lutherie.thStock')}</th>
+                <th className="p-3 border-r border-encre-noire/20 text-center">{t('lutherie.thSupplier')}</th>
+                <th className="p-3 text-center">{t('common.actions') || "Actions"}</th>
               </tr>
             </thead>
             <tbody>
-              {supplies.map(supply => {
+              {displayedSupplies.map(supply => {
                 const isCritical = supply.quantiteStock <= supply.seuilCritique;
                 const isFromTutorial = tutorialSupplies.some(s => s.toLowerCase().trim() === supply.nom.toLowerCase().trim());
                 return (
@@ -260,7 +293,7 @@ export default function SuppliesListView({ supplies, loading, addSupply, updateS
                         <span className="font-bold text-encre-noire text-sm">{supply.nom}</span>
                         {isFromTutorial && (
                           <span className="text-[8.5px] font-black uppercase tracking-wider text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded">
-                            📖 Tuto Varal
+                            {t('lutherie.tutoVaralBadge')}
                           </span>
                         )}
                       </div>
@@ -283,7 +316,7 @@ export default function SuppliesListView({ supplies, loading, addSupply, updateS
                           <button onClick={() => adjustSupplyStock(supply.id, 1)} className="hover:opacity-70 active:scale-95 px-1">+</button>
                         </div>
                         {isCritical && (
-                          <span className="text-[9px] uppercase font-bold text-cordel-rouge">⚠️ Stock Critique</span>
+                          <span className="text-[9px] uppercase font-bold text-cordel-rouge">{t('lutherie.criticalStockBadge')}</span>
                         )}
                       </div>
                     </td>
@@ -306,7 +339,7 @@ export default function SuppliesListView({ supplies, loading, addSupply, updateS
                                 : "Aucun lien web configuré — Cliquez pour modifier la fourniture"
                             }
                           >
-                            <span>🛒 Commander</span>
+                            <span>{t('lutherie.btnOrder')}</span>
                             {supply.urlFournisseur?.trim() && <span className="text-[9px]">↗</span>}
                           </button>
                         )}
@@ -314,14 +347,14 @@ export default function SuppliesListView({ supplies, loading, addSupply, updateS
                           <button 
                             onClick={() => handleEdit(supply)}
                             className="text-[10px] p-1.5 bg-cordel-wood/10 text-cordel-wood rounded hover:bg-cordel-wood/20 transition-colors font-bold uppercase"
-                            title="Éditer"
+                            title={t('lutherie.titleEditSupply')}
                           >
-                            Éditer
+                            {t('lutherie.titleEditSupply')}
                           </button>
                           <button 
                             onClick={() => handleDelete(supply.id, supply.nom)}
                             className="p-1.5 bg-cordel-rouge/10 text-cordel-rouge rounded hover:bg-cordel-rouge/20 transition-colors"
-                            title="Supprimer"
+                            title={t('lutherie.titleDeleteSupply')}
                           >
                             <XiloClose size={14} />
                           </button>
@@ -336,7 +369,7 @@ export default function SuppliesListView({ supplies, loading, addSupply, updateS
         </div>
       ) : (
         <div className="text-center p-6 text-sm text-cordel-master-dark border-2 border-dashed border-cordel-master-dark/30 rounded bg-cordel-bg-light">
-          Aucune fourniture enregistrée pour le domaine "{domaine}".
+          {t('lutherie.noSupplyRegisteredForDomain', { domaine })}
         </div>
       )}
     </div>

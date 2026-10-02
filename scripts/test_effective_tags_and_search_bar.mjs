@@ -161,8 +161,8 @@ console.log('✅ Barre de recherche configurée en 1 seule ligne horizontale con
 
 // 3.4 Champ de recherche flex-1 avec placeholder attendu
 assert.ok(
-  trombiContent.includes('placeholder="Prénom, nom, surnom..."'),
-  'Le placeholder doit être "Prénom, nom, surnom..."'
+  trombiContent.includes('placeholder="Prénom, nom, surnom..."') || trombiContent.includes('placeholder={t(\'trombi.searchPlaceholder\')}'),
+  'Le placeholder doit être "Prénom, nom, surnom..." ou la clé i18n t(\'trombi.searchPlaceholder\')'
 );
 assert.ok(
   trombiContent.includes('flex-1 min-w-0'),

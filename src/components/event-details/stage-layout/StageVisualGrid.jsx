@@ -117,7 +117,7 @@ export default function StageVisualGrid({
       {showDanceSection && (
         <div className="w-full flex flex-col items-center mb-3 select-none bg-cordel-bg-light/20 dark:bg-black/20 p-2 sm:p-2.5 rounded border border-dashed border-cordel-wood/30">
           <span className="text-[8px] uppercase tracking-widest font-black text-cordel-wood mb-1.5 opacity-80">
-            💃 Avant-scène / Danse
+            💃 {t ? (t('mestre.stageAreaFrontDance') || 'Avant-scène / Danse') : 'Avant-scène / Danse'}
           </span>
           <div className="flex flex-col gap-1.5 w-full items-center">
             {(() => {
@@ -230,7 +230,9 @@ export default function StageVisualGrid({
                                   )}
                                 </>
                               ) : isEditingMode ? (
-                                <span className="text-cordel-wood/40 text-[9px] font-black leading-none">+ Placer</span>
+                                <span className="text-cordel-wood/40 text-[9px] font-black leading-none">
+                                  {t ? (t('mestre.btnPlaceCell') || '+ Placer') : '+ Placer'}
+                                </span>
                               ) : null}
                             </div>
                           );

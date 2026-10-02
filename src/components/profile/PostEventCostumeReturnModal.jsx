@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
+import { useTranslation } from '../LanguageContext';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 
@@ -22,6 +23,7 @@ export default function PostEventCostumeReturnModal({
   onClose,
   onSuccess
 }) {
+  const { t } = useTranslation();
   // Recherche de l'inscription correspondante pour le membre connecté
   const inscriptions = Array.isArray(event?.inscriptions) ? event.inscriptions : [];
   const currentInscription = inscriptions.find((ins) => {
@@ -153,7 +155,7 @@ export default function PostEventCostumeReturnModal({
               <div className="flex items-center gap-2">
                 <span className="text-xl">🎭</span>
                 <h3 className="text-base font-heading font-black tracking-wider text-cordel-wood uppercase">
-                  Retour des Costumes
+                  {t('costumerie.retourDesCostumes')}
                 </h3>
               </div>
               <p className="text-[11px] font-bold text-cordel-master-dark mt-0.5">
@@ -165,7 +167,7 @@ export default function PostEventCostumeReturnModal({
               onClick={handleModalClose}
               disabled={saving}
               className="text-lg font-black text-cordel-master-dark hover:text-cordel-wood cursor-pointer p-1"
-              title="Fermer"
+              title={t('costumerie.fermer')}
             >
               ✕
             </button>
@@ -173,7 +175,7 @@ export default function PostEventCostumeReturnModal({
 
           {/* Rappel d'instruction amicale */}
           <div className="bg-cordel-bg-light/70 border border-dashed border-cordel-master-dark/20 rounded-[6px_10px_8px_12px] p-2.5 text-[11px] font-medium text-encre-noire leading-relaxed">
-            Merci pour ta participation à cette prestation ! Afin d'assurer le suivi de la garde-robe collective, indique ce que tu as fait de ta tenue de scène.
+            {t('costumerie.merciPourTaParticipationA')}
           </div>
 
           {/* Statut déjà renseigné si existant */}
@@ -181,7 +183,7 @@ export default function PostEventCostumeReturnModal({
             <div className="flex items-center gap-2 p-2 bg-emerald-50 border border-emerald-300 text-emerald-900 rounded text-[11px] font-bold">
               <span>ℹ️</span>
               <span>
-                Statut actuel enregistré : <strong className="uppercase">{existingStatus}</strong>. Tu peux le modifier ci-dessous si la situation a évolué.
+                {t('costumerie.statutActuelEnregistre')} <strong className="uppercase">{existingStatus}</strong>{t('costumerie.tuPeuxLeModifierCi')}
               </span>
             </div>
           )}
@@ -190,7 +192,7 @@ export default function PostEventCostumeReturnModal({
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
             <div className="flex flex-col gap-2.5">
               <label className="text-[10px] uppercase font-black tracking-wider text-cordel-master-dark">
-                Choisis une option :
+                {t('costumerie.choisisUneOption')}
               </label>
 
               {/* Option 1 : Rendu au bac */}
@@ -212,10 +214,10 @@ export default function PostEventCostumeReturnModal({
                 />
                 <div className="flex flex-col">
                   <span className="text-xs font-black text-encre-noire flex items-center gap-1.5">
-                    <span>📦</span> Rendu au bac / malle collective
+                    <span>📦</span> {t('costumerie.renduAuBacMalleCollective')}
                   </span>
                   <span className="text-[10px] text-cordel-master-dark/80 font-medium mt-0.5 leading-snug">
-                    J'ai replié et rangé mon costume propre dans le bac ou la cantine collective après la sortie.
+                    {t('costumerie.jAiReplieEtRange')}
                   </span>
                 </div>
               </label>
@@ -239,10 +241,10 @@ export default function PostEventCostumeReturnModal({
                 />
                 <div className="flex flex-col">
                   <span className="text-xs font-black text-encre-noire flex items-center gap-1.5">
-                    <span>🧺</span> En lavage à domicile
+                    <span>🧺</span> {t('costumerie.enLavageADomicile')}
                   </span>
                   <span className="text-[10px] text-cordel-master-dark/80 font-medium mt-0.5 leading-snug">
-                    J'ai emporté mon costume à la maison pour le laver. Je m'engage à le rapporter propre à la prochaine répétition.
+                    {t('costumerie.jAiEmporteMonCostume')}
                   </span>
                 </div>
               </label>
@@ -266,10 +268,10 @@ export default function PostEventCostumeReturnModal({
                 />
                 <div className="flex flex-col">
                   <span className="text-xs font-black text-encre-noire flex items-center gap-1.5">
-                    <span>🧵</span> Retouche / réparation nécessaire
+                    <span>🧵</span> {t('costumerie.retoucheReparationNecessaire')}
                   </span>
                   <span className="text-[10px] text-cordel-master-dark/80 font-medium mt-0.5 leading-snug">
-                    Un élément a été abîmé (bouton décousu, déchirure, ornement détaché, tâche tenace...).
+                    {t('costumerie.unElementAEteAbime')}
                   </span>
                 </div>
               </label>
@@ -279,13 +281,13 @@ export default function PostEventCostumeReturnModal({
             {selectedStatus === 'retouche' && (
               <div className="flex flex-col gap-1 mt-1 animate-fadeIn">
                 <label className="text-[10px] uppercase font-bold text-cordel-wood">
-                  Description du problème pour l'Atelier Couture * :
+                  {t('costumerie.descriptionDuProblemePourL')}
                 </label>
                 <textarea
                   rows={3}
                   value={retoucheNote}
                   onChange={(e) => setRetoucheNote(e.target.value)}
-                  placeholder="Ex : Bouton manquant sur la chemise côté gauche, couture défaite au bas de la jupe..."
+                  placeholder={t('costumerie.exBoutonManquantSurLa')}
                   required
                   disabled={saving}
                   className="theme-input text-xs font-medium py-2 px-2.5 bg-white border-red-400 focus:border-red-600 rounded"
@@ -314,7 +316,7 @@ export default function PostEventCostumeReturnModal({
                 disabled={saving}
                 className="px-3 py-2 text-xs font-bold uppercase"
               >
-                Fermer
+                {t('costumerie.fermer')}
               </CordelButton>
 
               <CordelButton

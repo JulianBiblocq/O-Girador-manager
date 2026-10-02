@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
+import { useTranslation } from '../LanguageContext';
 import { useInventoryProjects } from '../../hooks/useInventoryProjects';
 import { useInstrumentModels } from '../../hooks/useInstrumentModels';
 import { useInventoryData } from '../../hooks/useInventoryData';
@@ -14,6 +15,7 @@ import PartWorkflowModal from '../inventory/PartWorkflowModal';
  * de suivre les étapes avec le Varal, et de soumettre ses étapes terminées au Mestre.
  */
 export default function StudentInstrumentsWorkshop({ user, profileData, onNavigateToTab: _onNavigateToTab }) {
+  const { t } = useTranslation();
   const groupId = profileData?.groupId;
   const { projects, loading: pLoading } = useInventoryProjects(groupId);
   const { models, loading: mLoading } = useInstrumentModels(groupId);
@@ -89,7 +91,7 @@ export default function StudentInstrumentsWorkshop({ user, profileData, onNaviga
   if (pLoading || mLoading) {
     return (
       <div className="text-center py-10 text-stone-500 font-bold text-xs animate-pulse">
-        Chargement de votre atelier...
+        {t('lutherie.loadingYourWorkshop')}
       </div>
     );
   }
@@ -133,7 +135,7 @@ export default function StudentInstrumentsWorkshop({ user, profileData, onNaviga
               </h3>
             </div>
             <p className="text-[10px] text-stone-600 font-bold mt-0.5">
-              Modèle : {activeModel.nom} ({activeModel.type}) • Progression terminée : {completedSlotsCount} / {allSlots.length} pièces
+              {t('lutherie.modelProgressSummary', { modelNom: activeModel.nom, modelType: activeModel.type, completed: completedSlotsCount, total: allSlots.length })}
             </p>
           </div>
 
@@ -142,23 +144,23 @@ export default function StudentInstrumentsWorkshop({ user, profileData, onNaviga
             onClick={() => setActiveProjectId(null)}
             className="text-[10px] px-3 py-1 font-bold cursor-pointer"
           >
-            ← Retour à mes projets
+            {t('lutherie.btnBackToMyProjects')}
           </CordelButton>
         </div>
 
         {/* Message d'accompagnement pour l'élève */}
         <div className="bg-amber-50 border-l-4 border-[var(--color-cordel-ocre)] p-3 rounded text-left">
           <p className="text-xs text-stone-800 leading-relaxed">
-            <strong>Conseil d'atelier :</strong> Dépliez les étapes de chaque pièce pour suivre les consignes et ouvrir le tutoriel du Varal. Quand votre geste est terminé (ponçage, découpe, vernis), cliquez sur la pièce pour <strong>soumettre votre étape au Mestre</strong>.
+            <strong>{t('lutherie.workshopTipTitle')}</strong> {t('lutherie.workshopTipBodyPrefix')} <strong>{t('lutherie.submitStepToMestre')}</strong>.
           </p>
         </div>
 
         {/* Liste des pièces requises */}
         <div className="flex flex-col gap-3">
           <h4 className="text-xs font-bold text-encre-noire uppercase tracking-wider flex justify-between items-center">
-            <span>Composants de votre instrument</span>
+            <span>{t('lutherie.componentsOfYourInstrumentHeader')}</span>
             <span className="text-[10px] bg-cordel-wood text-white px-2 py-0.5 rounded-full font-bold">
-              {completedSlotsCount} / {allSlots.length} terminés
+              {t('lutherie.completedCountBadge', { completed: completedSlotsCount, total: allSlots.length })}
             </span>
           </h4>
 
@@ -240,10 +242,10 @@ export default function StudentInstrumentsWorkshop({ user, profileData, onNaviga
         <div className="flex justify-between items-center border-b border-dashed border-cordel-master-dark/30 pb-2">
           <div>
             <h3 className="text-sm font-extrabold tracking-wider text-cordel-wood uppercase flex items-center gap-2">
-              <span>🥁</span> Mes Instruments en Fabrication
+              <span>🥁</span> {t('lutherie.myInstrumentsInProgressTitle')}
             </h3>
             <p className="text-[10px] text-stone-500 mt-0.5">
-              Instruments qui vous sont nominativement attribués pour votre apprentissage ou votre équipement.
+              {t('lutherie.myInstrumentsSubtitle')}
             </p>
           </div>
         </div>
@@ -252,10 +254,10 @@ export default function StudentInstrumentsWorkshop({ user, profileData, onNaviga
           <CordelCard variant="default" className="p-6 text-center bg-white/40 border-dashed">
             <span className="text-2xl mb-1 block">🛠️</span>
             <p className="text-xs font-semibold text-stone-600">
-              Vous n'avez pas encore d'instrument personnel en cours de fabrication.
+              {t('lutherie.noPersonalInstrumentInProgress')}
             </p>
             <p className="text-[10px] text-stone-500 mt-1">
-              Rapprochez-vous de votre Mestre pour qu'il vous attribue un projet d'instrument (Alfaia, Agbê, Gongoque...).
+              {t('lutherie.askMestreForInstrumentProject')}
             </p>
           </CordelCard>
         ) : (
@@ -272,18 +274,18 @@ export default function StudentInstrumentsWorkshop({ user, profileData, onNaviga
                     <div>
                       <h4 className="text-sm font-black text-encre-noire">{proj.nom}</h4>
                       <span className="text-[9px] text-cordel-wood uppercase font-bold tracking-wider">
-                        Modèle : {model?.nom || 'Inconnu'}
+                        {t('lutherie.modelLabel')} {model?.nom || 'Inconnu'}
                       </span>
                     </div>
                     <span className="text-[9px] bg-[var(--color-cordel-vert)] text-white px-2 py-0.5 rounded font-bold uppercase">
-                      Mon Instrument
+                      {t('lutherie.myInstrumentTag')}
                     </span>
                   </div>
 
                   {/* Barre de progression */}
                   <div className="flex flex-col gap-1 mt-1">
                     <div className="flex justify-between text-[10px] font-bold text-stone-700">
-                      <span>Assemblage des pièces</span>
+                      <span>{t('lutherie.partsAssemblySummary')}</span>
                       <span>{assignedParts} / {totalParts}</span>
                     </div>
                     <div className="w-full bg-stone-200 h-2 rounded-full overflow-hidden">
@@ -300,7 +302,7 @@ export default function StudentInstrumentsWorkshop({ user, profileData, onNaviga
                       onClick={() => setActiveProjectId(proj.id)}
                       className="text-xs py-1 px-3"
                     >
-                      Ouvrir mon Établi →
+                      {t('lutherie.btnOpenMyWorkbench')}
                     </CordelButton>
                   </div>
                 </CordelCard>
@@ -316,10 +318,10 @@ export default function StudentInstrumentsWorkshop({ user, profileData, onNaviga
           <div className="flex justify-between items-center">
             <div>
               <h4 className="text-xs font-bold text-stone-600 uppercase tracking-wider flex items-center gap-1.5">
-                <span>🏛️</span> Projets Collectifs de l'Atelier ({collectiveProjects.length})
+                <span>🏛️</span> {t('lutherie.collectiveWorkshopProjectsTitleWithCount', { count: collectiveProjects.length })}
               </h4>
               <p className="text-[9px] text-stone-400">
-                Instruments construits pour le parc commun de l'association.
+                {t('lutherie.collectiveProjectsSubtitle')}
               </p>
             </div>
           </div>
@@ -338,7 +340,7 @@ export default function StudentInstrumentsWorkshop({ user, profileData, onNaviga
                     <span className="text-[9px] text-stone-500 font-semibold">{model?.nom || 'Instrument'}</span>
                   </div>
                   <span className="text-[10px] text-cordel-wood font-bold hover:underline">
-                    Consulter →
+                    {t('lutherie.btnConsultAction')}
                   </span>
                 </div>
               );

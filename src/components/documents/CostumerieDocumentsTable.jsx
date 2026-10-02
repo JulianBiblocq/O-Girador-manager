@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import DocumentUploadForm from '../DocumentUploadForm';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Vue et tableau unique du Pôle Costumerie (varal-costumerie) : "Patrons & Fiches de Confection"
@@ -17,6 +18,7 @@ export default function CostumerieDocumentsTable({
   onDeleteDoc,
   onToggleViewMode
 }) {
+  const { t } = useTranslation();
   const [isAdding, setIsAdding] = useState(false);
   const [docUnderEdit, setDocUnderEdit] = useState(null);
 
@@ -54,11 +56,11 @@ export default function CostumerieDocumentsTable({
         <div>
           <h3 className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
             <span>✂️</span>
-            <span>Patrons & Fiches de Confection</span>
+            <span>{t('costumerie.patronsFichesDeConfection')}</span>
             <span className="text-[10px] font-bold text-encre-noire/60">({costumeDocs.length})</span>
           </h3>
           <p className="text-[10px] text-cordel-master-dark/70">
-            Fiches de coupe, patrons téléchargeables, métrages et guides de confection de la troupe.
+            {t('costumerie.fichesDeCoupePatronsTelechargeables')}
           </p>
         </div>
 
@@ -69,7 +71,7 @@ export default function CostumerieDocumentsTable({
               onClick={onToggleViewMode}
               className="px-2.5 py-1 text-[9.5px] font-black uppercase tracking-wider rounded border border-cordel-master-dark/30 bg-cordel-bg hover:bg-white text-encre-noire cursor-pointer transition-all shadow-2xs"
             >
-              🪢 Vue Varal
+              {t('costumerie.vueVaral')}
             </button>
           )}
 
@@ -80,7 +82,7 @@ export default function CostumerieDocumentsTable({
               onClick={handleStartAdd}
               className="text-[10px] px-3 py-1 font-black uppercase tracking-wider"
             >
-              ➕ Nouveau patron / fiche
+              {t('costumerie.nouveauPatronFiche')}
             </CordelButton>
           )}
         </div>
@@ -95,7 +97,7 @@ export default function CostumerieDocumentsTable({
               onClick={() => { setIsAdding(false); setDocUnderEdit(null); }}
               className="text-[10px] font-black uppercase text-cordel-wood hover:underline cursor-pointer"
             >
-              ⬅️ Annuler et revenir au tableau de couture
+              {t('costumerie.annulerEtRevenirAuTableau')}
             </button>
           </div>
           <DocumentUploadForm
@@ -114,16 +116,16 @@ export default function CostumerieDocumentsTable({
         <CordelCard variant="default" useExtremeBorder={false} className="p-4 flex flex-col gap-3">
           {costumeDocs.length === 0 ? (
             <div className="text-center py-8 text-xs font-bold text-cordel-master-dark/60">
-              Aucun patron ou fiche de confection enregistré pour le moment.
+              {t('costumerie.aucunPatronOuFicheDe')}
             </div>
           ) : (
             <div className="w-full overflow-x-auto">
               <table className="min-w-full divide-y divide-cordel-master-dark/15 text-xs text-left">
                 <thead>
                   <tr className="bg-cordel-master-dark/5 text-[9px] font-black uppercase tracking-wider text-cordel-master-dark">
-                    <th className="px-3 py-2">Nom du costume / pièce</th>
-                    <th className="px-3 py-2">Patron PDF joint</th>
-                    <th className="px-3 py-2 text-right">Actions</th>
+                    <th className="px-3 py-2">{t('costumerie.nomDuCostumePiece')}</th>
+                    <th className="px-3 py-2">{t('costumerie.patronPdfJoint')}</th>
+                    <th className="px-3 py-2 text-right">{t('costumerie.actions')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-cordel-master-dark/10 font-semibold">
@@ -158,7 +160,7 @@ export default function CostumerieDocumentsTable({
                               <span>{hasPdf ? 'Patron PDF' : 'Fichier joint'}</span>
                             </span>
                           ) : (
-                            <span className="text-[10px] text-stone-400 italic">Aucun fichier</span>
+                            <span className="text-[10px] text-stone-400 italic">{t('costumerie.aucunFichier')}</span>
                           )}
                         </td>
                         <td className="px-3 py-2 text-right whitespace-nowrap space-x-1.5">
@@ -166,18 +168,18 @@ export default function CostumerieDocumentsTable({
                             type="button"
                             onClick={() => onSelectDoc && onSelectDoc(docItem)}
                             className="px-2 py-0.5 text-[9px] font-black uppercase rounded bg-cordel-bg border border-encre-noire shadow-2xs hover:bg-white cursor-pointer"
-                            title="Consulter la fiche"
+                            title={t('costumerie.consulterLaFiche')}
                           >
-                            👁️ Voir
+                            {t('costumerie.voir')}
                           </button>
                           {fileUrl && (
                             <button
                               type="button"
                               onClick={() => window.open(fileUrl, '_blank', 'noopener,noreferrer')}
                               className="px-2 py-0.5 text-[9px] font-black uppercase rounded bg-amber-100 text-amber-950 border border-amber-800/50 shadow-2xs hover:bg-amber-200 cursor-pointer"
-                              title="Télécharger le patron PDF"
+                              title={t('costumerie.telechargerLePatronPdf')}
                             >
-                              ⬇️ Patron
+                              {t('costumerie.patron')}
                             </button>
                           )}
                           {canWrite && (
@@ -186,15 +188,15 @@ export default function CostumerieDocumentsTable({
                                 type="button"
                                 onClick={() => handleStartEdit(docItem)}
                                 className="px-2 py-0.5 text-[9px] font-black uppercase rounded bg-amber-100 border border-amber-900 shadow-2xs hover:bg-amber-200 cursor-pointer"
-                                title="Modifier cette fiche"
+                                title={t('costumerie.modifierCetteFiche')}
                               >
-                                ✏️ Éditer
+                                {t('costumerie.btnEditPencil')}
                               </button>
                               <button
                                 type="button"
                                 onClick={() => onDeleteDoc && onDeleteDoc(docItem)}
                                 className="px-2 py-0.5 text-[9px] font-black uppercase rounded bg-red-100 text-red-900 border border-red-900 shadow-2xs hover:bg-red-200 cursor-pointer"
-                                title="Supprimer la fiche"
+                                title={t('costumerie.supprimerLaFiche')}
                               >
                                 🗑️
                               </button>

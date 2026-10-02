@@ -272,7 +272,9 @@ function MemberTreasuryRow({
       {/* 5. Caution Instrument (Col span 2) */}
       <div className="md:col-span-2 flex flex-col items-center justify-center gap-1 border-t md:border-t-0 border-dashed border-cordel-master-dark/10 pt-2 md:pt-0 relative" ref={cautionPopoverRef}>
         <div className="flex items-center justify-between w-full md:w-auto gap-2">
-          <span className="md:hidden text-[9px] font-extrabold uppercase tracking-wide text-cordel-master-dark">Caution :</span>
+          <span className="md:hidden text-[9px] font-extrabold uppercase tracking-wide text-cordel-master-dark">
+            {t('treasury.cautionInstrumentLabel') || "Caution"} :
+          </span>
           {caution.statutGlobal === 'na' ? (
             <span className="text-[8px] font-bold text-neutral-400 dark:text-neutral-500 italic px-1.5 py-0.5">
               N/A

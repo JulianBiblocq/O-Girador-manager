@@ -53,7 +53,7 @@ export default function MestreMotMestre({ groupId, profileData }) {
         motDuMestreActionText: actionText.trim(),
         motDuMestreActionLink: actionLink.trim()
       });
-      alert("Le mot du Mestre a été mis à jour avec succès !");
+      alert(t('mestre.editorial.motMestreUpdateSuccess'));
     } catch (error) {
       console.error("MestreMotMestre - Erreur de sauvegarde :", error);
       alert("Erreur lors de l'enregistrement : " + (error.message || error));
@@ -73,7 +73,7 @@ export default function MestreMotMestre({ groupId, profileData }) {
   return (
     <div className="w-full flex flex-col gap-4 text-left max-w-2xl mx-auto">
       <h3 className="text-base font-extrabold tracking-wider text-cordel-wood uppercase flex items-center gap-2">
-        <XiloMegaphone size={16} className="text-cordel-wood" /> Gestion du Mot du Mestre
+        <XiloMegaphone size={16} className="text-cordel-wood" /> {t('mestre.editorial.manageHeading')}
       </h3>
 
       <form onSubmit={handleSave} className="flex flex-col gap-4">
@@ -88,21 +88,21 @@ export default function MestreMotMestre({ groupId, profileData }) {
                 onChange={(e) => setPublie(e.target.checked)}
                 className="accent-cordel-wood scale-110"
               />
-              <span>Publier et afficher sur le tableau de bord des membres</span>
+              <span>{t('mestre.editorial.publishOnMemberDashboardLabel')}</span>
             </label>
           </div>
 
           {/* Éditeur de texte */}
           <div className="flex flex-col gap-1">
             <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              Message du Mestre (Éditeur)
+              {t('mestre.editorial.editorLabel')}
             </label>
             <textarea
               value={text}
               onChange={(e) => setText(e.target.value)}
               disabled={saving}
               rows={6}
-              placeholder="Rédigez votre message à l'attention des membres..."
+              placeholder={t('mestre.editorial.editorPlaceholder')}
               className="theme-input w-full p-3 font-medium text-sm leading-relaxed border border-encre-noire bg-cordel-bg-light rounded"
               required
             />
@@ -111,13 +111,13 @@ export default function MestreMotMestre({ groupId, profileData }) {
           {/* Signature / Auteur */}
           <div className="flex flex-col gap-1">
             <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              Signature / Auteur du message
+              {t('mestre.editorial.signatureLabel')}
             </label>
             <input
               type="text"
               value={auteur}
               onChange={(e) => setAuteur(e.target.value)}
-              placeholder="Ex : Mestre, L'équipe..."
+              placeholder={t('mestre.editorial.signaturePlaceholder')}
               disabled={saving}
               className="theme-input w-full py-1.5 px-3 font-bold text-sm bg-cordel-bg-light"
             />
@@ -126,32 +126,32 @@ export default function MestreMotMestre({ groupId, profileData }) {
           {/* Bouton d'action / CTA Optionnel */}
           <div className="flex flex-col gap-2 border-t border-dashed border-cordel-master-dark/15 pt-3">
             <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-wood flex items-center gap-1">
-              🚀 Bouton d'action / Call to Action (Optionnel)
+              {t('mestre.editorial.ctaSectionHeading')}
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="flex flex-col gap-1">
                 <label className="text-[9px] uppercase font-bold text-cordel-master-dark">
-                  Texte du bouton
+                  {t('mestre.editorial.ctaTextLabel')}
                 </label>
                 <input
                   type="text"
                   value={actionText}
                   onChange={(e) => setActionText(e.target.value)}
                   disabled={saving}
-                  placeholder="Ex : Mettre à jour mon profil"
+                  placeholder={t('mestre.editorial.ctaTextPlaceholder')}
                   className="theme-input w-full py-1.5 px-3 text-xs bg-cordel-bg-light"
                 />
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-[9px] uppercase font-bold text-cordel-master-dark">
-                  Page / Route de redirection
+                  {t('mestre.editorial.ctaRouteLabel')}
                 </label>
                 <input
                   type="text"
                   value={actionLink}
                   onChange={(e) => setActionLink(e.target.value)}
                   disabled={saving}
-                  placeholder="Ex : /profil ou mestre-orientation"
+                  placeholder={t('mestre.editorial.ctaRoutePlaceholder')}
                   className="theme-input w-full py-1.5 px-3 text-xs bg-cordel-bg-light"
                 />
               </div>
@@ -167,7 +167,7 @@ export default function MestreMotMestre({ groupId, profileData }) {
           disabled={saving}
           className="w-full py-3 text-xs font-bold uppercase tracking-widest"
         >
-          {saving ? "Enregistrement..." : "Enregistrer et publier"}
+          {saving ? (t('common.saving') || "Enregistrement...") : t('mestre.btnSaveAndPublish')}
         </CordelButton>
       </form>
     </div>

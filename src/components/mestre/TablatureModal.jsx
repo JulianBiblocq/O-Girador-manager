@@ -50,7 +50,7 @@ export default function TablatureModal({ isOpen, onClose, piece }) {
                 {t('repertoire.tablatureModalTitle')} : {pieceTitle}
               </h3>
               <span className="text-[10px] text-encre-noire/60 font-semibold truncate">
-                Partition textuelle monospace générée depuis le Séquenceur
+                {t('mestre.repertoire.monospaceTablatureSubtitle')}
               </span>
             </div>
           </div>
@@ -59,7 +59,7 @@ export default function TablatureModal({ isOpen, onClose, piece }) {
             type="button"
             onClick={onClose}
             className="text-stone-400 hover:text-stone-700 font-black text-xl p-1 cursor-pointer transition-colors leading-none"
-            title="Fermer"
+            title={t('common.close')}
           >
             ✕
           </button>
@@ -74,7 +74,7 @@ export default function TablatureModal({ isOpen, onClose, piece }) {
               useExtremeBorder={false}
               onClick={handlePrint}
               className="py-1 px-3 text-xs uppercase tracking-wider font-black flex items-center gap-1.5"
-              title="Lancer l'impression papier de cette tablature"
+              title={t('mestre.repertoire.printTablatureTitle')}
             >
               <span>🖨️</span>
               <span>{t('repertoire.btnPrintTablature')}</span>
@@ -88,7 +88,7 @@ export default function TablatureModal({ isOpen, onClose, piece }) {
                   ? 'bg-green-100 text-green-900 border-green-500'
                   : 'bg-white hover:bg-stone-100 text-encre-noire border-encre-noire/30'
               }`}
-              title="Copier l'intégralité du texte dans le presse-papier"
+              title={t('mestre.repertoire.copyTextToClipboardTitle')}
             >
               <span>{copied ? '✓' : '📋'}</span>
               <span>{copied ? t('repertoire.tablatureCopiedToast') : t('repertoire.btnCopyTablature')}</span>
@@ -96,7 +96,7 @@ export default function TablatureModal({ isOpen, onClose, piece }) {
           </div>
 
           <span className="text-[10px] italic text-encre-noire/60">
-            Astuce : défilement horizontal disponible pour les longues mesures.
+            {t('mestre.repertoire.horizontalScrollTip')}
           </span>
         </div>
 
@@ -125,7 +125,7 @@ export default function TablatureModal({ isOpen, onClose, piece }) {
             onClick={onClose}
             className="px-4 py-1.5 text-xs font-bold"
           >
-            Fermer
+            {t('common.close')}
           </CordelButton>
         </div>
       </CordelCard>

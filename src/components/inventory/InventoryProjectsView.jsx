@@ -17,8 +17,11 @@ import InstrumentBaptismModal from './InstrumentBaptismModal';
 import { canValidateWorkshop } from '../../utils/permissionUtils';
 import { doc, writeBatch } from 'firebase/firestore';
 import useConfirm from '../../hooks/useConfirm';
+import { useTranslation } from '../LanguageContext';
 
 export default function InventoryProjectsView({ groupId, isAuthorized, profileData, _t, inventoryParts, _onCreateInstrument, onNavigateToView }) {
+  const { t: hookT } = useTranslation();
+  const t = typeof _t === 'function' ? _t : hookT;
   const confirm = useConfirm();
   const { projects, loading: pLoading, addProject, updateProject, deleteProject } = useInventoryProjects(groupId);
   const { models, loading: mLoading } = useInstrumentModels(groupId);
@@ -329,12 +332,12 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
       });
     } catch (err) {
       console.error("Erreur lors de la clôture du chantier :", err);
-      alert("Une erreur est survenue lors de la clôture du chantier.");
+      alert(t('lutherie.alertCloseError'));
     }
   };
 
   if (pLoading || mLoading) {
-    return <div className="text-[10px] text-center p-4">Chargement de l'atelier...</div>;
+    return <div className="text-[10px] text-center p-4">{t('lutherie.loadingWorkshop')}</div>;
   }
 
   // VUE DETAIL : Projet en cours d'édition
@@ -345,8 +348,8 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
     if (!model) {
       return (
         <CordelCard variant="default" className="p-4">
-          <p className="text-red-500 text-xs">Modèle introuvable. Il a peut-être été supprimé.</p>
-          <CordelButton variant="default" onClick={() => setEditingProject(null)}>Retour</CordelButton>
+          <p className="text-red-500 text-xs">{t('lutherie.modelNotFoundDesc')}</p>
+          <CordelButton variant="default" onClick={() => setEditingProject(null)}>{t('lutherie.btnBack')}</CordelButton>
         </CordelCard>
       );
     }
@@ -488,13 +491,13 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
       <div className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 bg-cordel-bg-light border border-cordel-master-dark/20 p-3 rounded">
           <div>
-            <h3 className="text-sm font-black text-cordel-wood uppercase">Projet : {project.nom}</h3>
-            <p className="text-[10px] text-stone-500 font-bold">Modèle : {model.nom}</p>
+            <h3 className="text-sm font-black text-cordel-wood uppercase">{t('lutherie.projectLabel')} {project.nom}</h3>
+            <p className="text-[10px] text-stone-500 font-bold">{t('lutherie.modelLabel')} {model.nom}</p>
           </div>
           
           <div className="flex items-center gap-3 flex-wrap">
             <div className="flex items-center gap-1.5 bg-white px-2 py-1 border border-stone-300 rounded shadow-xs">
-              <span className="text-[10px] font-bold text-stone-500">👤 Artisan :</span>
+              <span className="text-[10px] font-bold text-stone-500">{t('lutherie.artisanLabel')}</span>
               <select
                 value={project.artisanId || ''}
                 onChange={async (e) => {
@@ -506,7 +509,7 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
                 }}
                 className="theme-input text-[10px] py-0.5 px-1 bg-transparent border-none cursor-pointer"
               >
-                <option value="">-- Projet collectif (Atelier) --</option>
+                <option value="">{t('lutherie.optCollectiveProject')}</option>
                 {membersList.map(m => (
                   <option key={m.id} value={m.id}>
                     {m.prenom} {m.nom} {m.instrument ? `(${m.instrument})` : ''}
@@ -516,7 +519,7 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
             </div>
 
             <button onClick={() => setEditingProject(null)} className="text-[10px] bg-white border border-encre-noire px-3 py-1 rounded shadow hover:bg-stone-100 cursor-pointer font-bold">
-              Fermer le projet
+              {t('lutherie.btnCloseProject')}
             </button>
           </div>
         </div>
@@ -527,9 +530,9 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
             <CordelCard data-tour="lutherie-project-slots" variant="default" useExtremeBorder={true} className="p-4 bg-white/50">
               <h4 className="text-xs font-bold text-encre-noire uppercase mb-3 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                 <div className="flex items-center gap-2">
-                  <span>Pièces & Phases requises</span>
+                  <span>{t('lutherie.piecesAndPhasesRequired')}</span>
                   <span className="text-[10px] bg-cordel-wood text-white px-2 py-0.5 rounded-full font-black">
-                    {finishedSlotsCount} / {allSlots.length} validée{allSlots.length > 1 ? 's' : ''}
+                    {finishedSlotsCount} / {allSlots.length} {t('lutherie.validatedBadge')}{allSlots.length > 1 ? 's' : ''}
                   </span>
                 </div>
                 <div className="flex gap-1 bg-cordel-master-dark/10 p-0.5 rounded">
@@ -537,13 +540,13 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
                     onClick={() => setViewMode('schema')} 
                     className={`text-[9px] px-2 py-1 rounded transition-colors ${viewMode === 'schema' ? 'bg-white shadow text-cordel-wood font-black' : 'text-stone-500 hover:text-cordel-wood'}`}
                   >
-                    🖼️ Schéma
+                    {t('lutherie.btnSchema')}
                   </button>
                   <button 
                     onClick={() => setViewMode('list')} 
                     className={`text-[9px] px-2 py-1 rounded transition-colors ${viewMode === 'list' ? 'bg-white shadow text-cordel-wood font-black' : 'text-stone-500 hover:text-cordel-wood'}`}
                   >
-                    📋 Liste
+                    {t('lutherie.btnList')}
                   </button>
                 </div>
               </h4>
@@ -598,7 +601,7 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
                     onClick={() => handleOpenBaptismModal(project, model)}
                     className="self-center shadow-lg"
                   >
-                    🥁 Clôturer l'assemblage & Baptiser l'instrument
+                    {t('lutherie.btnFinishAssemblyAndBaptize')}
                   </CordelButton>
                 </div>
               )}
@@ -612,14 +615,16 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
               <CordelCard variant="ocre" className="p-4 bg-[var(--color-cordel-wood)] text-white shadow-md">
                 <div className="flex justify-between items-center border-b border-white/20 pb-2 mb-3">
                   <h4 className="text-xs font-black uppercase flex items-center gap-2 tracking-wider">
-                    <span>🧰</span> Mallette de la séance ({selectedSessionSlots.length} phase{selectedSessionSlots.length > 1 ? 's' : ''})
+                    <span>🧰</span> {selectedSessionSlots.length > 1
+                      ? t('lutherie.sessionBagCountPlural', { count: selectedSessionSlots.length })
+                      : t('lutherie.sessionBagCountSingle', { count: selectedSessionSlots.length })}
                   </h4>
                   <button
                     onClick={() => setSelectedSessionSlots([])}
                     className="text-[9px] bg-white/20 hover:bg-white/30 text-white px-2 py-0.5 rounded cursor-pointer font-bold transition-colors"
-                    title="Vider la mallette de séance"
+                    title={t('lutherie.titleEmptySessionBag')}
                   >
-                    Vider
+                    {t('lutherie.btnEmpty')}
                   </button>
                 </div>
                 
@@ -628,13 +633,13 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
                   <div>
                     <div className="flex justify-between items-center mb-1.5">
                       <strong className="text-[10px] uppercase font-bold text-white/90">
-                        🛠️ Outils à emporter ({sessionOutils.size})
+                        {t('lutherie.toolsToTakeCount', { count: sessionOutils.size })}
                       </strong>
                     </div>
                     {sessionOutils.size > 0 ? (
                       <ul className="flex flex-col gap-1.5">
                         {Array.from(sessionOutils).map((outilNom, idx) => {
-                          const found = tools.find(t => t.nom?.toLowerCase().trim() === outilNom.toLowerCase().trim());
+                          const found = tools.find(tTool => tTool.nom?.toLowerCase().trim() === outilNom.toLowerCase().trim());
                           return (
                             <li key={idx} className="bg-white text-stone-900 px-2.5 py-1.5 rounded border border-stone-300 flex items-center justify-between gap-2 shadow-xs text-[10px]">
                               <span className="font-bold flex items-center gap-1.5 min-w-0 truncate">
@@ -651,14 +656,14 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
                                     {found.isResident ? '🏠 Au local' : '🚗 Mobile'}
                                   </span>
                                   {found.emplacement && (
-                                    <span className="bg-stone-100 text-stone-800 px-1.5 py-0.5 rounded border border-stone-200 font-bold" title="Emplacement / Atelier de l'outil">
+                                    <span className="bg-stone-100 text-stone-800 px-1.5 py-0.5 rounded border border-stone-200 font-bold" title={t('lutherie.titleToolLocation')}>
                                       📍 {found.emplacement}
                                     </span>
                                   )}
                                 </div>
                               ) : (
                                 <span className="text-[9px] text-stone-400 italic shrink-0">
-                                  Non inventorié
+                                  {t('lutherie.notInventoried')}
                                 </span>
                               )}
                             </li>
@@ -666,7 +671,7 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
                         })}
                       </ul>
                     ) : (
-                      <span className="text-[10px] text-white/70 italic">Aucun outil requis pour les phases sélectionnées</span>
+                      <span className="text-[10px] text-white/70 italic">{t('lutherie.noToolRequiredPhases')}</span>
                     )}
                   </div>
 
@@ -674,7 +679,7 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
                   <div className="border-t border-white/20 pt-2.5">
                     <div className="flex justify-between items-center mb-1.5">
                       <strong className="text-[10px] uppercase font-bold text-white/90">
-                        📦 Matériaux & Fournitures ({sessionMateriaux.size})
+                        {t('lutherie.suppliesToTakeCount', { count: sessionMateriaux.size })}
                       </strong>
                     </div>
                     {sessionMateriaux.size > 0 ? (
@@ -698,7 +703,7 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
                                 </span>
                               ) : (
                                 <span className="text-[9px] text-stone-400 italic shrink-0">
-                                  Non répertorié
+                                  {t('lutherie.notListed')}
                                 </span>
                               )}
                             </li>
@@ -706,7 +711,7 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
                         })}
                       </ul>
                     ) : (
-                      <span className="text-[10px] text-white/70 italic">Aucun matériau requis pour les phases sélectionnées</span>
+                      <span className="text-[10px] text-white/70 italic">{t('lutherie.noMaterialRequiredPhases')}</span>
                     )}
                   </div>
 
@@ -718,7 +723,7 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
                       className="w-full text-xs font-black uppercase tracking-wider px-3.5 py-2 rounded bg-cordel-vert text-white hover:bg-emerald-700 transition-all shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       <span>📅</span>
-                      <span>Programmer cet atelier sur l'Agenda</span>
+                      <span>{t('lutherie.scheduleWorkshopAgenda')}</span>
                     </button>
                   </div>
                 </div>
@@ -727,26 +732,26 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
               <CordelCard variant="default" className="p-3.5 bg-amber-50/70 border-dashed border-amber-300 text-stone-700">
                 <div className="flex items-center gap-2 mb-1 text-[11px] font-bold text-[var(--color-cordel-wood)]">
                   <span>🧰</span>
-                  <span>Mallette de la séance d'atelier</span>
+                  <span>{t('lutherie.workshopSessionBagTitle')}</span>
                 </div>
                 <p className="text-[10px] text-stone-600 leading-snug">
-                  Cliquez sur le bouton <strong>"+ Mallette séance"</strong> à côté d'une ou plusieurs phases pour préparer la liste des outils et matériaux à emporter pour votre atelier.
+                  {t('lutherie.clickOnButtonPrefix')} <strong>{t('lutherie.sessionBagBtnText')}</strong> {t('lutherie.sessionBagDescSuffix')}
                 </p>
               </CordelCard>
             )}
 
             <CordelCard variant="default" className="p-4 bg-cordel-master-dark/5 border-cordel-master-dark/20 shadow-none">
               <h4 className="text-xs font-extrabold text-cordel-wood uppercase mb-2 flex items-center gap-2">
-                <XiloChisel size={14} /> Feuille de route
+                <XiloChisel size={14} /> {t('lutherie.roadmapTitle')}
               </h4>
               <p className="text-[9px] text-stone-600 leading-relaxed mb-4">
-                Liste consolidée pour les <strong className="text-cordel-rouge">{missingSlots.length} pièces restant à fabriquer</strong>.
+                {t('lutherie.consolidatedListForPrefix')} <strong className="text-cordel-rouge">{missingSlots.length} {t('lutherie.piecesRemainingToBuild')}</strong>.
               </p>
 
               <div className="flex flex-col gap-4">
                 <div>
-                  <h5 className="text-[10px] font-bold text-encre-noire uppercase mb-1">🛒 Matériaux & Fournitures</h5>
-                  {missingMats.size === 0 ? <span className="text-[9px] italic opacity-50">Aucun</span> : (
+                  <h5 className="text-[10px] font-bold text-encre-noire uppercase mb-1">{t('lutherie.suppliesHeader')}</h5>
+                  {missingMats.size === 0 ? <span className="text-[9px] italic opacity-50">{t('lutherie.noneBadge')}</span> : (
                     <ul className="flex flex-col gap-1 text-[10px]">
                       {Array.from(missingMats).map((matNom, i) => {
                         const found = supplies.find(s => s.nom?.toLowerCase().trim() === matNom.toLowerCase().trim());
@@ -766,7 +771,7 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
                               </span>
                             ) : (
                               <span className="text-[9px] text-stone-400 italic">
-                                Non répertorié
+                                {t('lutherie.notListed')}
                               </span>
                             )}
                           </li>
@@ -777,11 +782,11 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
                 </div>
 
                 <div>
-                  <h5 className="text-[10px] font-bold text-encre-noire uppercase mb-1">🧰 Outils à préparer</h5>
-                  {missingOutils.size === 0 ? <span className="text-[9px] italic opacity-50">Aucun</span> : (
+                  <h5 className="text-[10px] font-bold text-encre-noire uppercase mb-1">{t('lutherie.toolsToPrepareHeader')}</h5>
+                  {missingOutils.size === 0 ? <span className="text-[9px] italic opacity-50">{t('lutherie.noneBadge')}</span> : (
                     <ul className="flex flex-col gap-1 text-[10px]">
                       {Array.from(missingOutils).map((outilNom, i) => {
-                        const found = tools.find(t => t.nom?.toLowerCase().trim() === outilNom.toLowerCase().trim());
+                        const found = tools.find(tTool => tTool.nom?.toLowerCase().trim() === outilNom.toLowerCase().trim());
                         return (
                           <li key={i} className="bg-white px-2 py-1 rounded border border-encre-noire/15 flex items-center justify-between gap-2">
                             <span className="font-bold flex items-center gap-1.5 text-stone-800">
@@ -795,14 +800,14 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
                                   {found.isResident ? '🏠 Au local' : '🚗 Mobile'}
                                 </span>
                                 {found.emplacement && (
-                                  <span className="bg-stone-100 text-stone-800 px-1.5 py-0.5 rounded border border-stone-200 font-bold" title="Emplacement / Atelier de l'outil">
+                                  <span className="bg-stone-100 text-stone-800 px-1.5 py-0.5 rounded border border-stone-200 font-bold" title={t('lutherie.titleToolLocation')}>
                                     📍 {found.emplacement}
                                   </span>
                                 )}
                               </div>
                             ) : (
                               <span className="text-[9px] text-stone-400 italic">
-                                Non répertorié
+                                {t('lutherie.notListed')}
                               </span>
                             )}
                           </li>
@@ -875,9 +880,9 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
       <div className="flex justify-between items-center border-b border-dashed border-cordel-master-dark/30 pb-2">
         <div className="flex flex-col">
           <h3 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase flex items-center gap-2">
-            🛠️ L'Atelier (Projets en cours)
+            {t('lutherie.workshopProjectsTitle')}
           </h3>
-          <p className="text-[10px] text-stone-500 mt-1">Assemblez des pièces pour créer de nouveaux instruments.</p>
+          <p className="text-[10px] text-stone-500 mt-1">{t('lutherie.workshopProjectsDesc')}</p>
         </div>
         {isAuthorized && (
           <CordelButton 
@@ -886,18 +891,18 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
             onClick={() => setIsAdding(true)}
             className="text-xs shadow-md"
           >
-            + Démarrer un projet
+            {t('lutherie.btnStartProject')}
           </CordelButton>
         )}
       </div>
 
       {isAdding && (
         <CordelCard variant="default" className="p-4 bg-cordel-vert/5 border-cordel-vert/30 mb-4">
-          <h4 className="text-xs font-bold text-encre-noire uppercase mb-3">Nouveau projet d'assemblage</h4>
+          <h4 className="text-xs font-bold text-encre-noire uppercase mb-3">{t('lutherie.newAssemblyProjectTitle')}</h4>
           <form onSubmit={handleCreateProject} className="flex flex-col sm:flex-row gap-3 flex-wrap">
             <input
               type="text"
-              placeholder="Nom de l'instrument (ex: Alfaia N°12)"
+              placeholder={t('lutherie.instrumentNamePlaceholder')}
               value={newProjectData.nom}
               onChange={e => setNewProjectData(prev => ({ ...prev, nom: e.target.value }))}
               required
@@ -909,7 +914,7 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
               required
               className="theme-input text-xs py-1.5 flex-1 min-w-[180px] bg-white"
             >
-              <option value="">-- Choisir un Modèle du Varal --</option>
+              <option value="">{t('lutherie.chooseVaralModelOpt')}</option>
               {models.map(m => (
                 <option key={m.id} value={m.id}>{m.nom} ({m.type})</option>
               ))}
@@ -919,7 +924,7 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
               onChange={e => setNewProjectData(prev => ({ ...prev, artisanId: e.target.value }))}
               className="theme-input text-xs py-1.5 flex-1 min-w-[180px] bg-white"
             >
-              <option value="">-- Artisan : Projet collectif (Atelier) --</option>
+              <option value="">{t('lutherie.artisanCollectiveProjectOpt')}</option>
               {membersList.map(m => (
                 <option key={m.id} value={m.id}>
                   👤 {m.prenom} {m.nom} {m.instrument ? `(${m.instrument})` : ''}
@@ -927,8 +932,8 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
               ))}
             </select>
             <div className="flex gap-2">
-              <button type="button" onClick={() => setIsAdding(false)} className="text-[10px] font-bold px-3 border rounded hover:bg-stone-100 cursor-pointer">Annuler</button>
-              <button type="submit" className="text-[10px] font-bold px-3 bg-cordel-vert text-white rounded cursor-pointer">Créer</button>
+              <button type="button" onClick={() => setIsAdding(false)} className="text-[10px] font-bold px-3 border rounded hover:bg-stone-100 cursor-pointer">{t('lutherie.btnCancel')}</button>
+              <button type="submit" className="text-[10px] font-bold px-3 bg-cordel-vert text-white rounded cursor-pointer">{t('lutherie.btnCreate')}</button>
             </div>
           </form>
         </CordelCard>
@@ -936,7 +941,7 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
 
       {projects.length === 0 && !isAdding ? (
         <div className="text-center py-10 bg-white/40 border border-dashed border-cordel-master-dark/30 rounded">
-          <span className="text-xs text-stone-500 font-bold">Aucun projet en cours dans l'atelier.</span>
+          <span className="text-xs text-stone-500 font-bold">{t('lutherie.noProjectsInWorkshop')}</span>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -952,7 +957,7 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
                   <div>
                     <h4 className="text-sm font-bold text-encre-noire">{proj.nom}</h4>
                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                      <span className="text-[9px] text-cordel-wood uppercase font-bold tracking-wider">Modèle : {model?.nom || 'Inconnu'}</span>
+                      <span className="text-[9px] text-cordel-wood uppercase font-bold tracking-wider">{t('lutherie.modelSummary', { nom: model?.nom || 'Inconnu' })}</span>
                       <span className="text-[9px] px-1.5 py-0.2 rounded font-semibold bg-stone-100 border border-stone-200 text-stone-700">
                         {proj.artisanNom ? `👤 ${proj.artisanNom}` : "🏛️ Projet d'atelier"}
                       </span>
@@ -965,8 +970,8 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
 
                 <div className="flex flex-col gap-1 mt-2">
                   <div className="flex justify-between text-[10px] font-bold">
-                    <span>Progression assemblage</span>
-                    <span>{assignedParts} / {totalParts} pièces</span>
+                    <span>{t('lutherie.assemblyProgress')}</span>
+                    <span>{t('lutherie.piecesCountRatio', { assigned: assignedParts, total: totalParts })}</span>
                   </div>
                   <div className="w-full bg-stone-200 h-2 rounded-full overflow-hidden">
                     <div 
@@ -981,13 +986,13 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
                     onClick={() => setEditingProject(proj)}
                     className="text-[10px] font-bold text-cordel-wood hover:underline"
                   >
-                    Ouvrir l'établi
+                    {t('lutherie.btnOpenWorkbench')}
                   </button>
                   <button 
                     onClick={() => handleDeleteProject(proj.id, proj.nom)}
                     className="text-[10px] font-bold text-red-500 hover:underline"
                   >
-                    Annuler
+                    {t('lutherie.btnCancel')}
                   </button>
                 </div>
               </CordelCard>

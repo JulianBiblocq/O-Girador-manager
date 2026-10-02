@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
+import { useTranslation } from '../LanguageContext';
 
 const defaultAccounts = [
   { id: 'acc_courant', name: 'Compte Courant', balance: 0, threshold: 0, updatedAt: null },
@@ -13,6 +14,7 @@ export default function BankAccountsTracker({
   handleSaveAssociationSettings,
   bilanOperationnel = 0
 }) {
+  const { t } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
   const [accounts, setAccounts] = useState(defaultAccounts);
   const [saving, setSaving] = useState(false);
@@ -119,8 +121,15 @@ export default function BankAccountsTracker({
     }
   };
 
+  const getAccountDisplayName = (acc) => {
+    if (acc.name === 'Compte Courant' || acc.id === 'acc_courant') return t('treasury.accountChecking');
+    if (acc.name === 'Livret A' || acc.id === 'acc_livreta') return t('treasury.accountSavings');
+    if (acc.name === 'Caisse Espèces' || acc.id === 'acc_caisse') return t('treasury.accountCash');
+    return acc.name || "Compte sans nom";
+  };
+
   const formatDate = (isoString) => {
-    if (!isoString) return "Jamais mis à jour";
+    if (!isoString) return t('treasury.neverUpdated');
     try {
       const date = new Date(isoString);
       return date.toLocaleDateString('fr-FR', {
@@ -140,7 +149,7 @@ export default function BankAccountsTracker({
       {/* Title */}
       <div className="flex justify-between items-center pb-2 border-b border-dashed border-cordel-master-dark/20">
         <h3 className="text-xs font-black tracking-widest text-cordel-wood uppercase">
-          🏦 Suivi & Projection de Trésorerie
+          🏦 {t('treasury.cashProjectionTitle')}
         </h3>
         {!isEditing && (
           <CordelButton
@@ -148,7 +157,7 @@ export default function BankAccountsTracker({
             onClick={() => setIsEditing(true)}
             className="text-[10px] py-1 px-3"
           >
-            ✏️ Éditer les soldes
+            ✏️ {t('treasury.btnEditBalances')}
           </CordelButton>
         )}
       </div>
@@ -158,7 +167,7 @@ export default function BankAccountsTracker({
         {/* Total current bank balance */}
         <div className="border border-encre-noire/25 p-3.5 bg-cordel-master-bg dark:bg-cordel-master-dark/10 rounded-[5px_3px_6px_4px] text-center shadow-[1px_1px_0px_0px_rgba(0,0,0,0.1)]">
           <div className="text-[10px] uppercase font-black text-cordel-wood opacity-80 tracking-wider">
-            Solde Bancaire Actuel
+            {t('treasury.currentBankBalance') || "Solde bancaire actuel"}
           </div>
           <div className="text-xl font-black text-cordel-wood mt-1">
             {totalBankBalance.toFixed(2)} €
@@ -168,7 +177,7 @@ export default function BankAccountsTracker({
         {/* Operating Balance Impact */}
         <div className="border border-encre-noire/25 p-3.5 bg-cordel-master-bg dark:bg-cordel-master-dark/10 rounded-[4px_6px_3px_5px] text-center shadow-[1px_1px_0px_0px_rgba(0,0,0,0.1)]">
           <div className="text-[10px] uppercase font-black text-encre-noire/80 dark:text-cordel-bg-light/80 tracking-wider">
-            Bilan Opérationnel (Période)
+            {t('treasury.operationalBalancePeriod') || "Bilan opérationnel (période)"}
           </div>
           <div className={`text-xl font-black mt-1 ${bilanOperationnel >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}>
             {bilanOperationnel >= 0 ? '+' : ''}{bilanOperationnel.toFixed(2)} €
@@ -178,7 +187,7 @@ export default function BankAccountsTracker({
         {/* Projected Bank Balance */}
         <div className={`border-2 border-encre-noire p-3.5 rounded-[6px_4px_5px_3px] text-center shadow-[2px_2px_0px_0px_#181716] ${projectedBalance >= 0 ? 'bg-[#e2ecc8] dark:bg-emerald-950/20' : 'bg-[#f7d6d0] dark:bg-rose-950/20'}`}>
           <div className="text-[10px] uppercase font-black text-encre-noire tracking-wider">
-            Trésorerie Projetée
+            {t('treasury.projectedTreasury') || "Trésorerie projetée"}
           </div>
           <div className={`text-xl font-black mt-1 ${projectedBalance >= 0 ? 'text-green-800 dark:text-green-300' : 'text-red-800 dark:text-red-300'}`}>
             {projectedBalance >= 0 ? '+' : ''}{projectedBalance.toFixed(2)} €
@@ -290,10 +299,10 @@ export default function BankAccountsTracker({
             <table className="w-full text-xs text-left border-collapse">
               <thead>
                 <tr className="bg-cordel-master-dark text-cordel-bg-light uppercase tracking-wider text-[9px] font-black border-b border-encre-noire">
-                  <th className="py-2 px-1.5 md:py-2.5 md:px-3">Nom du Compte</th>
-                  <th className="py-2 px-1.5 md:py-2.5 md:px-3 text-right">Solde Actuel</th>
-                  <th className="py-2 px-1.5 md:py-2.5 md:px-3 text-center">Seuil Alerte</th>
-                  <th className="py-2 px-1.5 md:py-2.5 md:px-3 text-right">Dernière Mise à jour</th>
+                  <th className="py-2 px-1.5 md:py-2.5 md:px-3">{t('treasury.thAccountName')}</th>
+                  <th className="py-2 px-1.5 md:py-2.5 md:px-3 text-right">{t('treasury.thCurrentBalance')}</th>
+                  <th className="py-2 px-1.5 md:py-2.5 md:px-3 text-center">{t('treasury.thAlertThreshold')}</th>
+                  <th className="py-2 px-1.5 md:py-2.5 md:px-3 text-right">{t('treasury.thLastUpdate')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -315,7 +324,7 @@ export default function BankAccountsTracker({
                         className="border-b border-dashed border-encre-noire/15 hover:bg-cordel-hover/30 transition-colors"
                       >
                         <td className="py-2 px-1.5 md:py-2.5 md:px-3 font-bold text-encre-noire dark:text-cordel-bg-light">
-                          {acc.name || "Compte sans nom"}
+                          {getAccountDisplayName(acc)}
                         </td>
                         <td className={`py-2 px-1.5 md:py-2.5 md:px-3 text-right font-black ${
                           isBelowThreshold 

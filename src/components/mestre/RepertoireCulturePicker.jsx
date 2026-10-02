@@ -128,7 +128,7 @@ export default function RepertoireCulturePicker({
           <span>{t('repertoire.fieldCultureDocs')}</span>
           {selectedCultureIds.length > 0 && (
             <span className="text-[9px] font-black text-white px-1.5 py-0.2 rounded-full bg-[var(--color-cordel-vert,#2d6a4f)]">
-              {selectedCultureIds.length} liée{selectedCultureIds.length > 1 ? 's' : ''}
+              {selectedCultureIds.length} {t('mestre.repertoire.linkedFeminine')}{selectedCultureIds.length > 1 ? 's' : ''}
             </span>
           )}
         </label>
@@ -139,7 +139,7 @@ export default function RepertoireCulturePicker({
             onClick={onOpenCreateModal}
             disabled={disabled}
             className="text-[9.5px] font-extrabold text-amber-900 hover:text-amber-950 underline cursor-pointer flex items-center gap-1 transition-colors"
-            title="Créer une fiche sur le Varal Culture pré-remplie"
+            title={t('mestre.repertoire.createPrefilledCultureSheetTitle')}
           >
             <span>📜</span>
             <span>{t('repertoire.btnCreateCultureFiche')}</span>
@@ -169,12 +169,13 @@ export default function RepertoireCulturePicker({
                     ({docCat})
                   </span>
                 )}
+                {/* Bouton [✕] : Détacher cette fiche culturelle */}
                 <button
                   type="button"
                   onClick={() => handleRemoveDoc(cId)}
                   disabled={disabled}
                   className="text-stone-400 hover:text-red-700 font-black text-xs p-0.5 ml-0.5 cursor-pointer leading-none transition-colors"
-                  title="Détacher cette fiche culturelle"
+                  title={t('mestre.repertoire.detachCultureSheetTitle')}
                 >
                   ✕
                 </button>
@@ -184,7 +185,7 @@ export default function RepertoireCulturePicker({
         </div>
       ) : (
         <p className="text-[10px] text-stone-500 italic px-2 py-1 bg-cordel-bg-light/40 border border-dashed border-encre-noire/15 rounded">
-          Aucune fiche culturelle liée pour le moment. Cochez les fiches correspondantes ci-dessous.
+          {t('mestre.repertoire.noCultureSheetsLinkedNotice')}
         </p>
       )}
 
@@ -209,7 +210,7 @@ export default function RepertoireCulturePicker({
               type="button"
               onClick={() => setSearchTerm('')}
               className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-stone-400 hover:text-stone-700 cursor-pointer font-bold"
-              title="Effacer la recherche"
+              title={t('mestre.repertoire.clearSearchTitle')}
             >
               ✕
             </button>

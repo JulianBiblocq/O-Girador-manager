@@ -159,7 +159,7 @@ export default function PieceVideoSection({
           target="_blank"
           rel="noopener noreferrer"
           className="text-[9.5px] text-stone-500 hover:text-cordel-wood font-medium underline lowercase shrink-0"
-          title="Ouvrir la vidéo dans un nouvel onglet"
+          title={t('mestre.repertoire.openVideoExternalTitle')}
         >
           {t('repertoire.openSource')}
         </a>
