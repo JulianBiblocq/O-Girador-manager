@@ -22,6 +22,7 @@ export default function QRScannerModal({ isOpen, onClose }) {
     if (!isOpen) return;
 
     let scannerInstance = null;
+    let isMounted = true;
 
     const startScanner = async () => {
       setErrorMessage('');
@@ -31,6 +32,7 @@ export default function QRScannerModal({ isOpen, onClose }) {
       try {
         // Attendre que l'élément DOM soit prêt
         await new Promise((resolve) => setTimeout(resolve, 300));
+        if (!isMounted) return;
         const element = document.getElementById('qr-reader-container');
         if (!element) return;
 
@@ -52,6 +54,7 @@ export default function QRScannerModal({ isOpen, onClose }) {
           onScanFailure
         );
       } catch (err) {
+        if (!isMounted) return;
         console.error("Erreur d'initialisation du scanner caméra :", err);
         setErrorMessage("Impossible d'accéder à la caméra. Vérifiez les permissions de votre navigateur.");
       }
@@ -61,6 +64,7 @@ export default function QRScannerModal({ isOpen, onClose }) {
 
     // Nettoyage lors de la fermeture de la modale
     return () => {
+      isMounted = false;
       if (html5QrcodeRef.current && isScanningRef.current) {
         isScanningRef.current = false;
         html5QrcodeRef.current

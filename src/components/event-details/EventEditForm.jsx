@@ -7,6 +7,7 @@ import EventFormFields from '../agenda/EventFormFields';
 import ImportAgendaModal from '../agenda/ImportAgendaModal';
 import EventRoadbookFormSection from './EventRoadbookFormSection';
 import { DEFAULT_CUSTOM_CATEGORIES } from '../../utils/categoryUtils';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * EventEditForm - Formulaire de modification d'événement unifié
@@ -78,10 +79,15 @@ export default function EventEditForm({
     return () => unsubscribe();
   }, [groupId]);
 
+  const { t: contextT } = useTranslation();
+  const tr = typeof t === 'function' ? t : contextT;
+
   const translate = (key, fallback) => {
-    if (!t) return fallback;
-    const val = t(key);
-    return val === key ? fallback : val;
+    if (typeof tr === 'function') {
+      const val = tr(key);
+      if (val && val !== key) return val;
+    }
+    return fallback;
   };
 
   // Consolidation des options de costumes
@@ -173,7 +179,7 @@ export default function EventEditForm({
                     : 'bg-white/50 border-dashed border-stone-300 text-stone-700'
                 }`}
               >
-                📸 Upload classique
+                📸 {tr('agenda.uploadClassicTab') || "Upload classique"}
               </button>
               <button
                 type="button"
@@ -184,7 +190,7 @@ export default function EventEditForm({
                     : 'bg-white/50 border-dashed border-stone-300 text-stone-700'
                 }`}
               >
-                🪢 Depuis le Varal ({varalPhotos.length})
+                🪢 {tr('agenda.fromVaralTab', { count: varalPhotos.length }) || `Depuis le Varal (${varalPhotos.length})`}
               </button>
               <button
                 type="button"
@@ -195,7 +201,7 @@ export default function EventEditForm({
                     : 'bg-white/50 border-dashed border-stone-300 text-stone-700'
                 }`}
               >
-                🔗 Lien URL externe
+                🔗 {tr('agenda.externalUrlTab') || "Lien URL externe"}
               </button>
             </div>
 
@@ -237,7 +243,7 @@ export default function EventEditForm({
                     onClick={() => setEditForm(prev => ({ ...prev, imageUrl: '' }))}
                     className="text-[10px] font-bold text-red-700 hover:underline select-none cursor-pointer"
                   >
-                    Supprimer l'image
+                    {tr('agenda.btnRemoveImage') || "Supprimer l'image"}
                   </button>
                 )}
               </div>
@@ -301,7 +307,7 @@ export default function EventEditForm({
             disabled={savingEvent}
             className="w-full py-3 text-xs font-black uppercase tracking-widest"
           >
-            {savingEvent ? translate('common.saving', "Enregistrement...") : "💾 Enregistrer les modifications"}
+            {savingEvent ? tr('common.saving') : "💾 " + tr('agenda.btnUpdateEvent')}
           </CordelButton>
 
           <CordelButton
@@ -312,7 +318,7 @@ export default function EventEditForm({
             onClick={handleDeleteEvent}
             className="w-full py-2.5 text-xs font-black uppercase tracking-widest"
           >
-            {savingEvent ? "Suppression..." : "🗑️ Supprimer l'événement"}
+            {savingEvent ? tr('common.saving') : `🗑️ ${tr('agenda.btnDeleteEventAction') || "Supprimer l'événement"}`}
           </CordelButton>
         </div>
       </CordelCard>

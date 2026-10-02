@@ -364,9 +364,9 @@ const startQuiz = (theme, specificToadaId = null) => {
              if (onExit) onExit(null);
              else setShowToadaProgress(false);
           }} 
-          className="absolute top-4 left-4 z-10 text-[10px] font-black uppercase text-encre-noire/50 hover:text-cordel-rouge"
+          className="absolute top-4 left-4 z-10 text-[10px] font-black uppercase text-encre-noire/50 hover:text-cordel-rouge cursor-pointer"
         >
-          🔙 Retour
+          🔙 {t('common.back') || "Retour"}
         </button>
         <div className="pt-8">
           <StudentToadasProgress 
@@ -389,9 +389,9 @@ const startQuiz = (theme, specificToadaId = null) => {
         {onExit && (
            <button 
              onClick={() => onExit(null)} 
-             className="absolute top-0 left-0 z-10 text-[10px] font-black uppercase text-encre-noire/50 hover:text-cordel-rouge"
+             className="absolute top-0 left-0 z-10 text-[10px] font-black uppercase text-encre-noire/50 hover:text-cordel-rouge cursor-pointer"
            >
-             🔙 Quitter le QCM
+             {t('pedagogy.backToWorkshop')}
            </button>
         )}
         <div className="text-center flex flex-col gap-2">
@@ -486,16 +486,28 @@ const startQuiz = (theme, specificToadaId = null) => {
     
     const q = questions[currentIndex];
     const promptText = q.questionText || q.prompt;
+    const promptDisplay = (q.targetWord || q.type === 'translation')
+      ? t('pedagogy.translatePrompt', { term: q.targetWord || q.prompt?.replace(/^Traduis\s*:\s*"?/, '').replace(/"?$/, '') })
+      : promptText;
     const choices = q.choices || q.options?.map(o => ({ text: o, isCorrect: o === q.correctAnswer })) || [];
 
     return (
       <div className="flex flex-col gap-6 w-full max-w-2xl mx-auto p-4 select-none">
+        {onExit && (
+          <button
+            type="button"
+            onClick={() => onExit()}
+            className="self-start text-xs font-bold text-cordel-master-dark hover:text-cordel-wood underline underline-offset-4 cursor-pointer -mb-2"
+          >
+            {t('pedagogy.backToWorkshop')}
+          </button>
+        )}
         <div className="flex justify-between items-center bg-white p-3 rounded-xl border-2 border-encre-noire/20 shadow-sm">
           <CordelButton variant="default" onClick={() => onExit ? onExit() : setStep('HOME')} className="text-[10px] px-3 py-1 font-black uppercase">
-            ✕ Quitter l'entraînement
+            {t('pedagogy.btnQuitTraining')}
           </CordelButton>
           <span className="font-black text-xs text-cordel-wood uppercase tracking-widest">
-            Question {currentIndex + 1} / {questions.length}
+            {t('pedagogy.questionProgress', { current: currentIndex + 1, total: questions.length })}
           </span>
           <span className="text-xs font-bold text-cordel-vert">
             ⭐ {score}
@@ -504,7 +516,7 @@ const startQuiz = (theme, specificToadaId = null) => {
 
         <CordelCard className="p-6 md:p-8 flex flex-col gap-8 items-center text-center min-h-[50vh] justify-center relative">
           <p className="text-xl md:text-2xl font-bold text-encre-noire leading-snug">
-            {promptText}
+            {promptDisplay}
           </p>
 
           {q.visualElement && q.visualElement.type === 'orixaBadge' && (

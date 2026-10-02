@@ -4,14 +4,21 @@ import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import XiloAvatar from '../XiloAvatar';
 import { openGoogleCalendar } from '../../utils/calendarUtils';
+import { useTranslation } from '../LanguageContext';
 
 export default function EventVolunteerSection({ event, user, allUsers = [], t }) {
+  const { t: contextT } = useTranslation();
+  const tr = typeof t === 'function' ? t : contextT;
   const [loading, setLoading] = useState(false);
   const [customNames, setCustomNames] = useState({});
 
   const volunteerShifts = event.volunteerShifts || [];
   if (volunteerShifts.length === 0) {
-    return null;
+    return (
+      <div className="text-center py-4 text-xs italic opacity-60">
+        {tr('agenda.noVolunteersNeeded') || "Aucun créneau bénévole requis pour cet événement."}
+      </div>
+    );
   }
 
   // Ajout sécurisé d'une mission bénévole à Google Calendar via calendarUtils
@@ -106,7 +113,7 @@ export default function EventVolunteerSection({ event, user, allUsers = [], t })
       <div className="text-left w-full">
         {/* Title */}
         <h4 className="font-extrabold text-xs uppercase tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1.5 mb-4 flex items-center gap-1.5 select-none">
-          🤝 Créneaux de Bénévolat / Logistique
+          🤝 {tr('agenda.volunteerSlotsTitle') || 'Créneaux Bénévoles'}
         </h4>
 
         {/* Shifts Grid */}
@@ -114,6 +121,7 @@ export default function EventVolunteerSection({ event, user, allUsers = [], t })
           {volunteerShifts.map((shift) => {
             const inscrits = shift.inscrits || [];
             const isUserRegistered = user?.uid ? inscrits.includes(user.uid) : false;
+            const isFull = Boolean(shift.neededCount && inscrits.length >= shift.neededCount);
 
             return (
               <div
@@ -128,7 +136,7 @@ export default function EventVolunteerSection({ event, user, allUsers = [], t })
                         {shift.nomTache}
                       </h5>
                       <span className="text-[10px] opacity-75 font-semibold block mt-0.5">
-                        ⏱️ Horaires : {shift.horaires}
+                        ⏱️ {tr('agenda.schedule') || 'Horaires'} : {shift.horaires}
                       </span>
                     </div>
 
@@ -136,15 +144,21 @@ export default function EventVolunteerSection({ event, user, allUsers = [], t })
                     <div className="flex flex-col gap-1 items-end">
                       <button
                         type="button"
-                        disabled={loading || !user?.uid}
+                        disabled={loading || !user?.uid || (!isUserRegistered && isFull)}
                         onClick={() => handleToggleJoin(shift.id)}
                         className={`text-[9px] font-black uppercase border px-2.5 py-1 rounded transition-all shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer disabled:opacity-50 select-none ${
                           isUserRegistered
                             ? 'bg-cordel-ocre text-encre-noire border-encre-noire'
+                            : isFull
+                            ? 'bg-neutral-200 text-neutral-500 border-neutral-400'
                             : 'bg-cordel-vert text-encre-noire border-encre-noire'
                         }`}
                       >
-                        {isUserRegistered ? "✕ Se désinscrire" : "＋ S'inscrire"}
+                        {isUserRegistered
+                          ? `✕ ${tr('agenda.volunteerLeave') || 'Me retirer'}`
+                          : isFull
+                          ? tr('agenda.volunteerFull') || 'Complet'
+                          : `＋ ${tr('agenda.volunteerJoin') || 'Je participe'}`}
                       </button>
 
                       {isUserRegistered && (

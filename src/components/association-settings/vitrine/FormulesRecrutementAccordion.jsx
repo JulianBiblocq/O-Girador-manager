@@ -1,6 +1,5 @@
 import React from 'react';
 import CordelAccordion from '../../CordelAccordion';
-import RichTextEditor from '../../RichTextEditor';
 import FormulesManager from '../FormulesManager';
 
 /**

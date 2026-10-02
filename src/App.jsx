@@ -20,7 +20,7 @@ import { useConversations } from './hooks/useConversations';
 import { lazyWithRetry } from './utils/pwaUtils';
 import { resolveEffectiveUserTags } from './utils/tagUtils';
 import { getMigratedRoleAndTags } from './utils/roleMigration';
-import { canEditVitrine, canAccessPole, canAccessTabPermission, canAccessMestre } from './utils/permissionUtils';
+import { canAccessPole, canAccessTabPermission, canAccessMestre } from './utils/permissionUtils';
 import PendingValidationScreen from './components/auth/PendingValidationScreen';
 import { useTenantContext } from './context/TenantContext';
 import TenantNotFound from './components/TenantNotFound';
@@ -274,7 +274,7 @@ function OrchestradorRedirector({ brandingStyle }) {
 
 export default function App() {
   useAppUpdate();
-  const { appMode, groupId: urlGroupId, urls, isLocalhost, isTenantLoading, tenantError } = useTenantContext();
+  const { appMode, groupId: urlGroupId, isTenantLoading, tenantError } = useTenantContext();
   const { t } = useTranslation();
 
   // Initialisation automatique du mode démo local si la route /demo ou ?demo=true est présente
@@ -331,12 +331,10 @@ export default function App() {
     }
   };
 
-  const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard', 'trombinoscope', 'forum', 'profil', 'system-admin', 'layout-editor', 'tag-manager'
   const [currentPole, setCurrentPole] = useState('accueil');
   const [currentTab, setCurrentTab] = useState('dashboard');
   const [selectedMestreEventId, setSelectedMestreEventId] = useState(null);
   const [activeMestreEventDetails, setActiveMestreEventDetails] = useState(null);
-  const [activeTutorialPiece, setActiveTutorialPiece] = useState(null);
 
   const handleGoToStageLayoutEditor = (eventId) => {
     setSelectedMestreEventId(eventId);
@@ -1503,9 +1501,7 @@ export default function App() {
   const hasAccessCostumerie = isMasterKeyActive || canAccessPole('costumerie', profileData, permissionsMatrice, userTags) || checkTabAccess('wardrobe-projects', 'costumerie') || checkTabAccess('wardrobe-models', 'costumerie') || checkTabAccess('wardrobe-pieces', 'costumerie') || checkTabAccess('wardrobe-supplies', 'costumerie') || checkTabAccess('wardrobe-tools', 'costumerie') || checkTabAccess('wardrobe-sizes', 'costumerie') || checkTabAccess('varal-costumerie', 'costumerie');
   const hasAccessStudio = isMasterKeyActive || canAccessPole('studio', profileData, permissionsMatrice, userTags) || checkTabAccess('studio-social', 'studio') || checkTabAccess('newsletter', 'studio') || checkTabAccess('varal-photos', 'studio') || checkTabAccess('studio-communication', 'studio') || checkTabAccess('studio-lexique', 'studio');
   const hasAccessPedagogie = isMasterKeyActive || canAccessPole('pedagogie', profileData, permissionsMatrice, userTags) || checkTabAccess('mestre-pedagogy-dashboard', 'pedagogie') || checkTabAccess('varal-manager', 'pedagogie') || checkTabAccess('mestre-pedagogy-qcm', 'pedagogie');
-  const hasAccessVitrine = isMasterKeyActive || checkTabAccess('vitrine-general', 'vitrine') || checkTabAccess('vitrine-editor', 'vitrine');
   const hasAccessConfig = isSystemOrSuperAdminOrMestre || isMasterKeyActive || checkTabAccess('config-identity', 'config') || checkTabAccess('config-profile', 'config') || checkTabAccess('config-agenda', 'config') || checkTabAccess('config-security', 'config') || checkTabAccess('config-comms', 'config') || checkTabAccess('config-modules', 'config');
-  const hasAccessForumMod = isMasterKeyActive || userTags.some(t => ['Modérateur', 'Modérateur Forum', 'Gestionnaire Porte-voix', 'Porte-voix'].includes(t));
 
   // Fonction utilitaire pour nettoyer les paramètres d'URL (ex: threadId, eventId) lors des navigations
   const cleanUrlParams = (keys = ['threadId', 'eventId']) => {
@@ -2645,7 +2641,7 @@ export default function App() {
                   <MestreOrientationCasting 
                     user={user}
                     profileData={profileData}
-                    onNavigateToMember={(mId) => {
+                    onNavigateToMember={() => {
                       setCurrentTab('trombinoscope');
                     }}
                   />

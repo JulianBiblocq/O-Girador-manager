@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { doc, onSnapshot, updateDoc, arrayUnion, collection, addDoc, runTransaction, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, arrayUnion, runTransaction, getDoc } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { getFirstUnreadIndex, toTimestamp, getLocalReadThreads, saveLocalReadThread } from '../utils/forumUnreadUtils';
 import { useForumModeration } from './useForumModeration';
@@ -282,10 +282,11 @@ export function useThreadData({
 
   // Gestion du défilement initial vers le séparateur ou le bas (confiné au conteneur interne pour préserver la stabilité du viewport mobile)
   useEffect(() => {
+    let timer = null;
     if (!loading && thread && !hasScrolledInitialRef.current) {
       hasScrolledInitialRef.current = true;
       previousRepliesCountRef.current = thread.reponses?.length || 0;
-      setTimeout(() => {
+      timer = setTimeout(() => {
         const container = messagesContainerRef.current;
         if (!container) return;
 
@@ -297,6 +298,9 @@ export function useThreadData({
         }
       }, 150);
     }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
   }, [loading, thread]);
 
   const previousRepliesCountRef = useRef(0);
@@ -369,7 +373,9 @@ export function useThreadData({
       const newReply = {
         message: finalMessage,
         auteurId: user?.uid || 'anonyme',
+        authorId: user?.uid || 'anonyme',
         auteurNom: `${profileData?.prenom || ''} ${profileData?.nom || ''}`.trim() || user?.email || 'Membre',
+        authorName: `${profileData?.prenom || ''} ${profileData?.nom || ''}`.trim() || user?.email || 'Membre',
         dateCreation: now,
         targetTag: selectedTarget || null,
         reactions: {},
@@ -378,8 +384,7 @@ export function useThreadData({
 
       await updateDoc(threadRef, {
         reponses: arrayUnion(newReply),
-        derniereModification: now,
-        nombreReponses: (thread?.nombreReponses || 0) + 1
+        derniereModification: now
       });
 
       setReplyingTo(null);
@@ -472,7 +477,7 @@ export function useThreadData({
 
       await updateDoc(threadRef, {
         reponses: replies,
-        nombreReponses: replies.length
+        derniereModification: new Date().toISOString()
       });
     } catch (err) {
       console.error("useThreadData - Erreur suppression réponse forum :", err);

@@ -97,7 +97,10 @@ const testScripts = [
   'scripts/test_porte_voix_read_receipts.mjs',
   'scripts/test_search_input_padding.mjs',
   'scripts/test_stage_layout_mobile.mjs',
-  'scripts/test_repertoire_selector_responsive.mjs'
+  'scripts/test_repertoire_selector_responsive.mjs',
+  'scripts/test_treasury_i18n_mission.mjs',
+  'scripts/test_atelier_quiz_i18n_mission.mjs',
+  'scripts/test_propose_challenge_modal_i18n.mjs'
 ];
 
 console.log("===============================================================");

@@ -45,11 +45,11 @@ export default function MonParcoursGuideBanner() {
           type="button"
           onClick={handleShow}
           className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 border-encre-noire bg-amber-100 hover:bg-amber-200 text-amber-900 transition-all cursor-pointer shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none flex items-center gap-1.5 shrink-0"
-          title={`💡 ${t('monParcoursGuideButton') || "Aide : Où apprendre et réviser ?"}`}
+          title={`💡 ${t('pedagogyQuiz.monParcoursGuideButton') || "Aide : Où apprendre et réviser ?"}`}
           aria-label="Afficher l'aide Où apprendre et réviser ?"
         >
           <span className="text-xs">💡</span>
-          <span>{t('monParcoursGuideButton') || "Aide : Où apprendre et réviser ?"}</span>
+          <span>{t('pedagogyQuiz.monParcoursGuideButton') || "Aide : Où apprendre et réviser ?"}</span>
         </button>
       </div>
     );
@@ -65,7 +65,7 @@ export default function MonParcoursGuideBanner() {
             💡
           </span>
           <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-cordel-wood">
-            {t('monParcoursGuideTitle') || "Où apprendre et réviser ?"}
+            {t('pedagogyQuiz.monParcoursGuideTitle') || "Où apprendre et réviser ?"}
           </h3>
         </div>
 
@@ -77,13 +77,13 @@ export default function MonParcoursGuideBanner() {
           title="Masquer ce guide (réouvrable à tout moment via le bouton 💡)"
         >
           <span>✓</span>
-          <span>Compris / Masquer</span>
+          <span>{t('common.understood') || "Compris / Masquer"}</span>
         </button>
       </div>
 
       {/* Texte descriptif */}
       <p className="text-xs text-encre-noire/90 font-medium leading-relaxed">
-        {t('monParcoursGuideDesc') || "Avant de tester tes acquis ici, retrouve tous les détails (fiches complètes, audios, explications) dans les Varals (cordes à linge) situés tout en bas de la page d'accueil !"}
+        {t('pedagogyQuiz.monParcoursGuideDesc') || "Avant de tester tes acquis ici, retrouve tous les détails (fiches complètes, audios, explications) dans les Varals (cordes à linge) situés tout en bas de la page d'accueil !"}
       </p>
     </div>
   );

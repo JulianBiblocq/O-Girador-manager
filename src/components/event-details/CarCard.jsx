@@ -1,5 +1,6 @@
 import React from 'react';
 import { calculateCarStatus } from '../../hooks/useEventCarpool';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Carte individuelle représentant un véhicule dans le covoiturage.
@@ -14,6 +15,7 @@ export default function CarCard({
   handleQuitterVoiture, handleConfirmJoin, handleAssignPassenger, handleRemovePassenger,
   onOpenDiscussion
 }) {
+  const { t } = useTranslation();
   const status = calculateCarStatus(voiture, { enableCarpoolReimbursement, reimbursementRule });
   const isUserChauffeur = voiture.chauffeurId === user?.uid;
   const passengersList = voiture.passengers || voiture.passagers || [];
@@ -48,7 +50,7 @@ export default function CarCard({
           </div>
           <div className="shrink-0 text-right">
             <span className="text-encre-noire whitespace-nowrap font-bold">
-              🚗 Libres : {status.availableSeats}/{voiture.passengerSeats || 0}
+              🚗 {status.availableSeats}/{voiture.passengerSeats || 0} {t('agenda.carpoolSeatsAvailable') || "places disponibles"}
             </span>
           </div>
         </div>
@@ -126,7 +128,7 @@ export default function CarCard({
           <div className="mt-1 p-2 bg-white/70 rounded border border-dashed border-encre-noire/25 text-[11px] font-bold space-y-1.5">
             <label className="flex items-center gap-2 cursor-pointer select-none">
               <input type="checkbox" checked={joinForm.isPassenger} onChange={(e) => setJoinForm(prev => ({ ...prev, isPassenger: e.target.checked }))} className="w-3.5 h-3.5" />
-              <span>Je monte dans la voiture (1 place)</span>
+              <span>{t('agenda.carpoolOfferSeats') ? `${t('agenda.carpoolOfferSeats')} (1 place)` : "Je monte dans la voiture (1 place)"}</span>
             </label>
             <label className="flex items-center justify-between gap-2">
               <span>Alfaias transportées :</span>
@@ -158,7 +160,7 @@ export default function CarCard({
               type="button"
               onClick={() => onOpenDiscussion(voiture)}
               className="text-[10px] font-bold bg-white hover:bg-neutral-100 text-[var(--color-cordel-encre)] border border-encre-noire px-2 py-1 rounded shadow-2xs flex items-center gap-1 cursor-pointer"
-              title="Discuter avec l'équipage de ce véhicule"
+              title={t('agenda.carpoolContactDriver') || "Contacter le conducteur"}
             >
               <span>💬 Équipage</span>
               {messageCount > 0 && <span className="bg-[var(--color-cordel-ocre)] text-white text-[8px] font-black px-1.5 py-0.2 rounded-full">{messageCount}</span>}

@@ -252,7 +252,7 @@ export default function EventReportSection({ event, user, profileData, associati
         pointsOrdreDuJour: localPoints,
         compteRenduStatus: 'brouillon'
       });
-      alert("Brouillon enregistré avec succès !");
+      alert(t('agenda.reportSaved') || "Compte-rendu enregistré avec succès !");
     } catch (err) {
       console.error("Error saving draft:", err);
       alert("Erreur lors de l'enregistrement du brouillon.");
@@ -594,7 +594,7 @@ export default function EventReportSection({ event, user, profileData, associati
       <div className="flex flex-col gap-3 pb-2 border-b-2 border-dashed border-cordel-master-dark/20">
         <div className="flex justify-between items-center">
           <h3 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase">
-            📋 Ordre du jour & Comptes-rendus
+            📋 {t('agenda.reportSectionTitle') || 'Ordre du jour & Comptes-rendus'}
           </h3>
           
           {/* Status Badge */}
@@ -687,7 +687,7 @@ export default function EventReportSection({ event, user, profileData, associati
         isAdmin ? (
           <div className="flex flex-col gap-4">
             {localPoints.length === 0 ? (
-              <p className="text-xs italic opacity-60 text-center py-4">L'ordre du jour est vide. Ajoutez des points ci-dessus pour commencer.</p>
+              <p className="text-xs italic opacity-60 text-center py-4">{t('agenda.noReportYet') || "L'ordre du jour est vide. Ajoutez des points ci-dessus pour commencer."}</p>
             ) : (
               localPoints.map((point, index) => (
                 <div key={point.id} className="theme-inner-panel p-4 rounded-[4px_6px_3px_5px] flex flex-col gap-2 relative">
@@ -775,7 +775,7 @@ export default function EventReportSection({ event, user, profileData, associati
                     <textarea
                       value={point.notesCR || ''}
                       onChange={(e) => handleNotesChange(point.id, e.target.value)}
-                      placeholder="Saisissez des notes ou parlez après avoir démarré la dictée vocale..."
+                      placeholder={t('agenda.reportPlaceholder') || "Saisissez des notes ou parlez après avoir démarré la dictée vocale..."}
                       className="theme-input text-xs w-full min-h-[70px] font-medium leading-relaxed resize-y bg-white/70"
                     />
 
@@ -820,7 +820,7 @@ export default function EventReportSection({ event, user, profileData, associati
                   disabled={isSaving}
                   className="text-xs py-2 px-4 font-bold"
                 >
-                  {isSaving ? "⏳ Enregistrement..." : "💾 Enregistrer le brouillon"}
+                  {isSaving ? "⏳ Enregistrement..." : (t('agenda.btnSaveReport') ? `💾 ${t('agenda.btnSaveReport')}` : "💾 Enregistrer le compte-rendu")}
                 </CordelButton>
                 <CordelButton 
                   variant="ocre" 
@@ -929,7 +929,7 @@ export default function EventReportSection({ event, user, profileData, associati
             <div className="flex flex-col gap-3">
               <span className="text-[9px] uppercase font-bold tracking-wider text-cordel-wood">📌 Ordre du jour actuel :</span>
               {localPoints.length === 0 ? (
-                <p className="text-xs italic opacity-60">L'ordre du jour n'a pas encore été rédigé.</p>
+                <p className="text-xs italic opacity-60">{t('agenda.noReportYet') || "L'ordre du jour n'a pas encore été rédigé."}</p>
               ) : (
                 <div className="flex flex-col gap-1.5">
                   {localPoints.map((p, idx) => (

@@ -105,13 +105,13 @@ export default function PieceSignalsModal({
         {/* En-tête Cordel épuré */}
         <div className="w-full flex justify-between items-center px-4 py-2.5 bg-stone-100/90 border-b-2 border-dashed border-cordel-master-dark/20 shrink-0">
           <span className="text-xs sm:text-sm font-black uppercase text-cordel-wood tracking-wider truncate pr-2">
-            🖐️ {t('signesTitle', 'Signes du Mestre')} — {piece.titre}
+            🖐️ {t('repertoire.signalsTitle') || 'Signes & Conventions du Mestre'} — {piece.titre}
           </span>
           <button
             type="button"
             onClick={onClose}
             className="w-7 h-7 rounded-full bg-encre-noire text-white font-black text-sm flex items-center justify-center border-2 border-white cursor-pointer hover:bg-stone-800 transition-colors shadow-2xs"
-            title="Fermer"
+            title={t('repertoire.closeModal') || "Fermer"}
           >
             ✕
           </button>
@@ -121,7 +121,7 @@ export default function PieceSignalsModal({
         <div className="flex-1 min-h-0 overflow-y-auto p-4 bg-cordel-bg-light">
           {resolvedSignals.length === 0 ? (
             <div className="p-8 text-center text-xs font-bold text-stone-500 bg-white/60 border border-dashed border-encre-noire/20 rounded">
-              Aucun signe ou convention n'a encore été associé à ce morceau.
+              {t('repertoire.emptySignals') || "Aucun appel ou signal particulier configuré pour ce morceau."}
             </div>
           ) : (
             <div className="flex flex-col gap-3">

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * File d'attente des membres en recherche de place de covoiturage ou de transport d'instrument.
@@ -15,12 +16,13 @@ export default function CarpoolSearchersQueue({
   handleChercherPlace,
   handleAnnulerCherchePlace
 }) {
+  const { t } = useTranslation();
   const isUserSearching = (searchers || []).some(p => p.uid === currentUser?.uid);
 
   return (
     <div className="mt-5 pt-4 border-t border-dashed border-cordel-master-dark/15 text-left">
       <h5 className="font-bold text-[10px] uppercase tracking-widest text-cordel-wood mb-2.5">
-        📋 Membres en recherche de place
+        📋 {t('agenda.carpoolSearchSeats') || "Membres en recherche de place"}
       </h5>
 
       {!isUserSearching ? (
@@ -33,7 +35,8 @@ export default function CarpoolSearchersQueue({
               disabled={submittingCovoit}
               className="accent-amber-700 w-4 h-4 cursor-pointer"
             />
-            <span>⚡ Retour direct après le jeu (impératif horaire)</span>
+            {/* ⚡ Retour direct après le jeu (impératif horaire) */}
+            <span>⚡ {t('agenda.directReturnImperative') || "Retour direct après le jeu (impératif horaire)"}</span>
           </label>
           <div className="flex flex-col sm:flex-row gap-1.5">
             <button
@@ -42,7 +45,7 @@ export default function CarpoolSearchersQueue({
               onClick={() => handleChercherPlace({ cherchePassager: true, chercheInstrument: false, doitRentrerDirect: doitRentrerDirectSearch })}
               className="text-[9px] font-black uppercase bg-cordel-bg-light hover:bg-cordel-hover border border-encre-noire px-2.5 py-1.5 rounded shadow-xs cursor-pointer flex-1 text-center"
             >
-              🚗 Place passager
+              🚗 {t('agenda.carpoolSearchSeats') || "Place passager"}
             </button>
             <button
               type="button"
@@ -58,7 +61,7 @@ export default function CarpoolSearchersQueue({
               onClick={() => handleChercherPlace({ cherchePassager: true, chercheInstrument: true, doitRentrerDirect: doitRentrerDirectSearch })}
               className="text-[9px] font-black uppercase bg-cordel-bg-light hover:bg-cordel-hover border border-encre-noire px-2.5 py-1.5 rounded shadow-xs cursor-pointer flex-1 text-center"
             >
-              🚗🥁 Les deux
+              🚗🥁 {t('agenda.filterBoth') || "Les deux"}
             </button>
           </div>
         </div>
@@ -76,7 +79,7 @@ export default function CarpoolSearchersQueue({
       )}
 
       {(searchers || []).length === 0 ? (
-        <p className="text-[11px] italic opacity-60">Aucun membre en recherche de place actuellement.</p>
+        <p className="text-[11px] italic opacity-60">{t('agenda.noCarpoolSearchers') || "Aucun membre en recherche de place actuellement."}</p>
       ) : (
         <div className="flex flex-wrap gap-1.5">
           {(searchers || []).map((p) => {

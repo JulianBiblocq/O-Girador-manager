@@ -120,7 +120,7 @@ export default function TabProgram({
           <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-1.5 mb-3">
             <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
               <span>🎪</span>
-              <span>Plan de scène & Disposition</span>
+              <span>{t ? (t('agenda.stagePlanAndLayout') || 'Plan de scène & Disposition') : 'Plan de scène & Disposition'}</span>
             </h4>
             {!event.isStageLayoutPublished && isAuthorized && (
               <span className="text-[9px] font-black uppercase px-2 py-0.5 bg-amber-100 border border-amber-400 text-amber-900 rounded">
@@ -146,7 +146,7 @@ export default function TabProgram({
         <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
           <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/20 pb-1.5 mb-3 flex items-center gap-1.5">
             <span>🙋</span>
-            <span>Missions bénévoles & Créneaux requis</span>
+            <span>{t ? (t('agenda.volunteerSlotsTitle') || 'Créneaux Bénévoles') : 'Créneaux Bénévoles'}</span>
           </h4>
           <EventVolunteerSection
             event={event}

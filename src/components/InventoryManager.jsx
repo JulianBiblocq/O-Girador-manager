@@ -267,21 +267,21 @@ export default function InventoryManager({
         
         <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase flex items-center gap-1">
           {activeTab === 'pupitres' ? (
-            <><XiloCaixa size={14} /> {(t && t('tabLogisticsPupitres')) || "Pupitres"}</>
+            <><XiloCaixa size={14} /> {(t && t('poles.tabLogisticsPupitres')) || "Pupitres"}</>
           ) : activeTab === 'kits' ? (
-            <>🎒 {(t && t('tabLogisticsKits')) || "Accessoires & Kits"}</>
+            <>🎒 {(t && t('poles.tabLogisticsKits')) || "Accessoires & Kits"}</>
           ) : activeTab === 'carpool' ? (
-            <>🚗 {(t && t('tabLogisticsCarpool')) || "Covoiturage & Convois"}</>
+            <>🚗 {(t && t('poles.tabLogisticsCarpool')) || "Covoiturage & Convois"}</>
           ) : activeTab === 'projects' ? (
-            <><XiloChisel size={14} /> {(t && t('tabInventoryProjects')) || "Établi & Chantiers"}</>
+            <><XiloChisel size={14} /> {(t && t('poles.tabInventoryProjects')) || "Établi & Chantiers"}</>
           ) : activeTab === 'parts' ? (
-            <><XiloChisel size={14} /> {(t && t('tabInventoryParts')) || "Pièces Détachées"}</>
+            <><XiloChisel size={14} /> {(t && t('poles.tabInventoryParts')) || "Pièces Détachées"}</>
           ) : activeTab === 'supplies' ? (
-            <><XiloChisel size={14} /> {(t && t('tabInventorySupplies')) || "Matières Premières"}</>
+            <><XiloChisel size={14} /> {(t && t('poles.tabInventorySupplies')) || "Matières Premières"}</>
           ) : activeTab === 'tools' ? (
-            <><XiloChisel size={14} /> {(t && t('tabWorkshopTools')) || "Outillage"}</>
+            <><XiloChisel size={14} /> {(t && t('poles.tabWorkshopTools')) || "Outillage"}</>
           ) : (
-            <><XiloCaixa size={14} /> {(t && (t('tabInventory') || t('inventory.title'))) || "Instruments"}</>
+            <><XiloCaixa size={14} /> {(t && (t('poles.tabInventory') || t('inventory.title'))) || "Instruments"}</>
           )}
         </h2>
       </div>

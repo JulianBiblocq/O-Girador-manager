@@ -9,7 +9,6 @@ import useConfirm from '../../hooks/useConfirm';
 import { useSequencerFirestoreData, isTestOrE2ESequence } from '../../hooks/useSequencerFirestoreData';
 import { calculateToadaScore } from '../../utils/toadaProgressEngine';
 import { normalizePupitreName } from '../../utils/secretariatMetrics';
-import XiloAvatar from '../XiloAvatar';
 import { subscribeGroupTrainings, computeTrainingStages } from '../../services/aisanceService';
 import { normalizeString } from '../../utils/repertoireMatcher';
 import DefisSummaryCard from '../pedagogy/DefisSummaryCard';
@@ -18,8 +17,10 @@ import DanseChoregraphieAnalytics from '../pedagogy/DanseChoregraphieAnalytics';
 import EntrainementMacroAnalytics from '../pedagogy/EntrainementMacroAnalytics';
 import { computeTroupeChallengeMetrics } from '../../utils/pedagogyDashboardCalculations';
 import { useDancadorSteps, useDancadorChoreographies } from '../../hooks/useDancadorData';
+import { useTranslation } from '../LanguageContext';
 
 export default function MestrePedagogyDashboard({ profileData }) {
+  const { t } = useTranslation();
   const { confirm } = useConfirm();
   const groupId = profileData?.groupId;
   const isAuthorized = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin;
@@ -421,8 +422,8 @@ export default function MestrePedagogyDashboard({ profileData }) {
               requestCount: reqCount,
               urgencyScore: urgencyScore,
               detail: reqCount > 0 
-                ? `🙋 ${reqCount} demande${reqCount > 1 ? 's' : ''} d'élèves • ${stats.total > 0 ? `${stats.okCount}/${stats.total} à l'aise (${stats.pct}%)` : 'Non évalué'}`
-                : `${stats.okCount}/${stats.total} à l'aise (${stats.pct}%)`,
+                ? `🙋 ${reqCount === 1 ? t('pedagogy.studentRequestsCount', { count: reqCount }) : t('pedagogy.studentRequestsCountPlural', { count: reqCount })} • ${stats.total > 0 ? t('pedagogy.masteryRate', { rate: stats.pct }) : 'Non évalué'}`
+                : (stats.total > 0 ? t('pedagogy.masteryRate', { rate: stats.pct }) : 'Non évalué'),
               rawItem: r,
               type: 'percussion',
               itemId: r.id
@@ -448,8 +449,8 @@ export default function MestrePedagogyDashboard({ profileData }) {
             requestCount: reqCount,
             urgencyScore: urgencyScore,
             detail: reqCount > 0 
-              ? `🙋 ${reqCount} demande${reqCount > 1 ? 's' : ''} de danseurs • ${stats.total > 0 ? `${stats.okCount}/${stats.total} à l'aise (${stats.pct}%)` : 'Non évalué'}`
-              : `${stats.okCount}/${stats.total} à l'aise (${stats.pct}%)`,
+              ? `🙋 ${reqCount === 1 ? t('pedagogy.studentRequestsCount', { count: reqCount }) : t('pedagogy.studentRequestsCountPlural', { count: reqCount })} • ${stats.total > 0 ? t('pedagogy.masteryRate', { rate: stats.pct }) : 'Non évalué'}`
+              : (stats.total > 0 ? t('pedagogy.masteryRate', { rate: stats.pct }) : 'Non évalué'),
             rawItem: r,
             type: 'danse',
             itemId: `danse_${r.id}`
@@ -697,10 +698,10 @@ export default function MestrePedagogyDashboard({ profileData }) {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b-2 border-dashed border-cordel-master-dark/20 pb-3">
         <div>
           <h1 className="text-3xl md:text-4xl font-heading tracking-widest text-cordel-wood uppercase">
-            📊 Cockpit Pédagogique
+            📊 {t('pedagogy.dashboardTitle')}
           </h1>
           <p className="text-xs md:text-sm text-cordel-master-dark opacity-80 mt-1">
-            Tableau de bord opérationnel de répétition : thermomètre des pupitres, points chauds et bloc-notes persistant.
+            {t('pedagogy.hotPointsNotice')}
           </p>
         </div>
         {pinnedSuccessItem && (
@@ -753,10 +754,10 @@ export default function MestrePedagogyDashboard({ profileData }) {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-3 pb-2 border-b border-dashed border-cordel-master-dark/20">
             <h2 className="text-xs md:text-sm font-black uppercase tracking-wider text-cordel-wood flex items-center gap-2">
               <span>⚠️</span>
-              <span>Points chauds pour la répétition (Priorités &lt; 60%)</span>
+              <span>{t('pedagogy.hotPointsTitle')}</span>
             </h2>
             <span className="text-[10px] text-encre-noire/60 font-semibold">
-              Top 3 des difficultés détectées dans le répertoire
+              {t('pedagogy.suggestedForNextRehearsal')}
             </span>
           </div>
 
@@ -803,7 +804,7 @@ export default function MestrePedagogyDashboard({ profileData }) {
                       title="Programmer directement dans le fil conducteur de la prochaine répétition"
                     >
                       <span>⚡</span>
-                      <span>Programmer en répétition</span>
+                      <span>{t('pedagogy.btnProgramRehearsal')}</span>
                     </button>
 
                     <button
@@ -813,7 +814,7 @@ export default function MestrePedagogyDashboard({ profileData }) {
                       title="Épingler directement dans le bloc-notes de répétition"
                     >
                       <span>📌</span>
-                      <span>Épingler</span>
+                      <span>{t('pedagogy.btnPinToNotepad')}</span>
                     </button>
                   </div>
                 </div>

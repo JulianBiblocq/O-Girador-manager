@@ -1,5 +1,6 @@
 import React from 'react';
 import { launchTrainingStage } from '../../utils/trainingLauncher';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Carte compacte d'entraînement réutilisable.
@@ -23,6 +24,7 @@ export default function TrainingCompactCard({
   mode = 'repertoire',
   className = ''
 }) {
+  const { t } = useTranslation();
   const items = Array.isArray(trainings)
     ? trainings
     : (training ? [training] : []);
@@ -60,7 +62,7 @@ export default function TrainingCompactCard({
                     {t.title}
                   </span>
                   <span className="text-[10px] text-encre-noire/70 font-bold">
-                    ({t.startBpm} ➔ {t.targetBpm} BPM)
+                    ({t('pedagogy.targetBpmRange', { start: t.startBpm, end: t.targetBpm })})
                   </span>
                 </div>
 
@@ -71,7 +73,7 @@ export default function TrainingCompactCard({
                   title="Ouvrir sequenciador sur cet entraînement"
                 >
                   <span>⚡</span>
-                  <span>Pratiquer</span>
+                  <span>{t('pedagogy.btnPractice')}</span>
                 </button>
               </div>
 
@@ -144,7 +146,7 @@ export default function TrainingCompactCard({
                       title={`Lancer sequenciador sur le palier ${stage.index + 1}`}
                     >
                       <span>⚡</span>
-                      <span>Pratiquer</span>
+                      <span>{t('pedagogy.btnPractice')}</span>
                     </button>
                   </div>
                 ))}

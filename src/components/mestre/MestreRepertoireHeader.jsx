@@ -1,5 +1,6 @@
 import React from 'react';
 import CordelButton from '../CordelButton';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * En-tête compact et barre d'actions du Répertoire Mestria (< 100 lignes).
@@ -18,13 +19,15 @@ export default function MestreRepertoireHeader({
   onOpenBatchVideo,
   onAddPiece
 }) {
+  const { t } = useTranslation();
+
   return (
     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 pb-3 border-b-2 border-dashed border-cordel-master-dark/30">
       {/* Titre et description de la direction artistique */}
       <div>
         <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase flex items-center gap-2">
           <span>📜</span>
-          <span>Direction Artistique — Répertoire de la Troupe</span>
+          <span>Direction Artistique — {t('repertoire.catalogTitle') || 'Répertoire de la Troupe'}</span>
         </h2>
         <p className="text-[11px] font-bold text-encre-noire/70 mt-0.5">
           Architecture réactive vivante liée au Séquenceur, au Varal et à Dançad'Or

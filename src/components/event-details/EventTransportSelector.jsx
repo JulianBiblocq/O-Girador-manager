@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Normalise la valeur du transport pour garantir une compatibilité
@@ -28,33 +29,34 @@ export const normalizeTransport = (value) => {
  * @param {boolean} props.disabled Indique si le sélecteur est désactivé (enregistrement, événement clos)
  */
 export default function EventTransportSelector({ value, onChange, disabled = false }) {
+  const { t } = useTranslation();
   const current = normalizeTransport(value);
 
   const options = [
     {
       id: 'autonome',
       icon: '🚶🚗',
-      label: "Par mes propres moyens",
-      description: "Je gère mon trajet en autonomie (aucun défraiement kilométrique asso)."
+      label: t('agenda.travelOwnMeans') || "Par mes propres moyens",
+      description: t('agenda.travelOwnMeansDesc') || "Je gère mon trajet en autonomie (aucun défraiement kilométrique asso)."
     },
     {
       id: 'cherche_place',
       icon: '🙋',
-      label: "Cherche une place en convoi",
-      description: "Je souhaite monter dans un véhicule du convoi au départ du local."
+      label: t('agenda.travelNeedRide') || "Cherche une place en convoi",
+      description: t('agenda.travelNeedRideDesc') || "Je souhaite monter dans un véhicule du convoi au départ du local."
     },
     {
       id: 'propose_voiture',
       icon: '🚘',
-      label: "Je propose mon véhicule",
-      description: "J'emmène des membres de la troupe et participe au convoi officiel."
+      label: t('agenda.travelOfferVehicle') || "Je propose mon véhicule",
+      description: t('agenda.travelOfferVehicleDesc') || "J'emmène des membres de la troupe et participe au convoi officiel."
     }
   ];
 
   return (
     <div className="flex flex-col gap-2 text-left">
       <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-        🚗 Mode de Déplacement pour ce trajet
+        🚗 {t('agenda.travelModeTitle') || "Mode de déplacement pour ce trajet"}
       </label>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">

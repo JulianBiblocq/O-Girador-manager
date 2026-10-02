@@ -10,6 +10,7 @@ import RSVPAccordionSection from './RSVPAccordionSection';
 import { getInstrumentIconPath } from '../../utils/instrumentUtils';
 import LateCancellationModal from '../agenda/LateCancellationModal';
 import LateRegistrationModal from '../agenda/LateRegistrationModal';
+import { useTranslation } from '../LanguageContext';
 
 export default function EventRSVPSection({
   event,
@@ -74,6 +75,8 @@ export default function EventRSVPSection({
   handleDownloadIcs,
   mode // 'rsvp' | 'attendance' | undefined (both)
 }) {
+  const { t: contextT } = useTranslation();
+  const tr = typeof t === 'function' ? t : contextT;
   const { getColorForInstrument } = useInstrumentColor(profileData?.groupId);
 
   const [isInviteFormOpen, setIsInviteFormOpen] = useState(false);
@@ -257,7 +260,7 @@ export default function EventRSVPSection({
         <div className="flex flex-col gap-4">
           <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col gap-4 text-center">
             <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood text-left">
-              Votre présence
+              {tr('agenda.myRsvp') || "Votre présence"}
             </h4>
             {existingResponse && (
               <div className="text-xs font-bold text-encre-noire mb-1 text-left flex items-center gap-1.5 flex-wrap">
@@ -268,10 +271,10 @@ export default function EventRSVPSection({
                   existingResponse.status === 'confirm' ? 'bg-orange-500 text-white' :
                   existingResponse.status === 'en_attente_tardive' ? 'bg-[var(--color-cordel-ocre)] text-white' : 'bg-neutral-200'
                 }`}>{
-                  existingResponse.status === 'present' ? 'Présent' :
-                  existingResponse.status === 'absent' ? 'Absent' :
-                  existingResponse.status === 'confirm' ? 'À confirmer' :
-                  existingResponse.status === 'en_attente_tardive' ? 'Demande tardive en attente' :
+                  existingResponse.status === 'present' ? (tr('agenda.present') || 'Présent') :
+                  existingResponse.status === 'absent' ? (tr('agenda.absent') || 'Absent') :
+                  existingResponse.status === 'confirm' ? (tr('agenda.confirm') || 'À confirmer') :
+                  existingResponse.status === 'en_attente_tardive' ? (tr('agenda.waitingResponse') || 'Demande tardive en attente') :
                   existingResponse.status
                 }</span>
                 {existingResponse.instrumentChoisi && (
@@ -357,7 +360,7 @@ export default function EventRSVPSection({
               <div className="text-xs font-bold text-encre-noire bg-amber-50/90 dark:bg-amber-950/30 p-3 rounded-[6px_10px_8px_12px] border-2 border-dashed border-[var(--color-cordel-ocre)] flex flex-col gap-2 text-left">
                 <div className="flex items-center justify-between">
                   <span className="text-[var(--color-cordel-ocre)] uppercase tracking-wider font-extrabold text-[10px] flex items-center gap-1">
-                    <span>⏳</span> Demande en attente de réponse du bureau
+                    <span>⏳</span> {tr('agenda.waitingResponse') || "Demande en attente de réponse du bureau"}
                   </span>
                   {handleCancelRegistrationChangeRequest && (
                     <button
@@ -370,7 +373,7 @@ export default function EventRSVPSection({
                   )}
                 </div>
                 <p className="text-[11px] leading-relaxed">
-                  Passage demandé : <strong className="uppercase">{userPendingRequest.requestedStatus === 'present' ? '✅ Présent' : '❌ Absent'}</strong>
+                  Passage demandé : <strong className="uppercase">{userPendingRequest.requestedStatus === 'present' ? `✅ ${tr('agenda.present') || 'Présent'}` : `❌ ${tr('agenda.absent') || 'Absent'}`}</strong>
                   {userPendingRequest.instrumentChoisi && <span className="ml-1">({userPendingRequest.instrumentChoisi})</span>}
                 </p>
                 {userPendingRequest.message && (
@@ -429,7 +432,7 @@ export default function EventRSVPSection({
         <form onSubmit={handleSave} className="flex flex-col gap-4">
           <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col gap-4">
             <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood">
-              Votre présence
+              {tr('agenda.myRsvp') || "Votre présence"}
             </h4>
             
             {/* Multi-Member Family RSVP Section */}
@@ -477,7 +480,7 @@ export default function EventRSVPSection({
                                 mResp.status === 'present' ? 'theme-bg-vert text-white shadow-sm' : 'bg-black/5 text-encre-noire/70 hover:bg-black/10'
                               } ${(mIsMusicRestricted || (m.isParent && isPrestationRestricted) || event.status === 'annule') ? 'opacity-40 cursor-not-allowed' : ''}`}
                             >
-                              ✅ Présent
+                              ✅ {tr('agenda.present') || 'Présent'}
                             </button>
                             {agendaEnableMaybeStatus && (
                               <button
@@ -488,7 +491,7 @@ export default function EventRSVPSection({
                                   mResp.status === 'confirm' ? 'theme-bg-ocre text-encre-noire shadow-sm' : 'bg-black/5 text-encre-noire/70 hover:bg-black/10'
                                 } ${(mIsMusicRestricted || (m.isParent && isPrestationRestricted) || event.status === 'annule') ? 'opacity-40 cursor-not-allowed' : ''}`}
                               >
-                                ⏳ À confirmer
+                                ⏳ {tr('agenda.confirm') || 'À confirmer'}
                               </button>
                             )}
                             <button
@@ -499,7 +502,7 @@ export default function EventRSVPSection({
                                 mResp.status === 'absent' ? 'bg-cordel-wood text-white shadow-sm' : 'bg-black/5 text-encre-noire/70 hover:bg-black/10'
                               }`}
                             >
-                              ❌ Absent
+                              ❌ {tr('agenda.absent') || 'Absent'}
                             </button>
                           </div>
                         </div>
@@ -565,7 +568,7 @@ export default function EventRSVPSection({
                   ${(isMusicLevelRestricted || isPrestationRestricted || event.status === 'annule') ? 'opacity-40 cursor-not-allowed' : ''}
                 `}
               >
-                <span>✅</span> Présent
+                <span>✅</span> {tr('agenda.present') || 'Présent'}
               </button>
               
               <button
@@ -580,7 +583,7 @@ export default function EventRSVPSection({
                   ${event.status === 'annule' ? 'opacity-40 cursor-not-allowed' : ''}
                 `}
               >
-                <span>❌</span> Absent
+                <span>❌</span> {tr('agenda.absent') || 'Absent'}
               </button>
 
               {agendaEnableMaybeStatus && (
@@ -596,7 +599,7 @@ export default function EventRSVPSection({
                     ${(isMusicLevelRestricted || isPrestationRestricted || event.status === 'annule') ? 'opacity-40 cursor-not-allowed' : ''}
                   `}
                 >
-                  <span>⏳</span> À confirmer
+                  <span>⏳</span> {tr('agenda.confirm') || 'À confirmer'}
                 </button>
               )}
             </div>
@@ -618,7 +621,7 @@ export default function EventRSVPSection({
             {/* Dance restriction warning message */}
             {isDanceLevelRestricted && (
               <div className="text-[11px] font-extrabold text-amber-900 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/20 p-3 rounded border border-dashed border-amber-600/30 flex items-center justify-center gap-1.5 mt-1 select-none text-center leading-relaxed">
-                🚫 La section Danse de cet événement est réservée au niveau confirmé.
+                🚫 {tr('agenda.reservedConfirmedNotice') || "Ce créneau horaire ou cet événement est réservé aux niveaux confirmés."}
               </div>
             )}
 
@@ -641,7 +644,7 @@ export default function EventRSVPSection({
                 {/* Choice of Instrument for Polyvalents or locked notice */}
                 <div className="flex flex-col gap-2">
                   <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood">
-                    Choix d'Instrument
+                    {tr('agenda.instrumentChoiceTitle') || "Choix d'Instrument"}
                   </h4>
                   {isInstrumentLocked ? (
                     <div className="text-[11px] font-extrabold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/20 p-2.5 rounded border border-dashed border-blue-500/30 flex items-center justify-center gap-1.5 select-none leading-relaxed">
@@ -650,7 +653,7 @@ export default function EventRSVPSection({
                   ) : (
                     <div className="flex flex-col gap-1 text-left">
                       <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
-                        Avec quel instrument vas-tu jouer pour cet événement ?
+                        {tr('agenda.instrumentChoiceQuestion') || "Avec quel instrument vas-tu jouer pour cet événement ?"}
                       </label>
                       <select
                         value={instrumentChoisi}
@@ -718,9 +721,9 @@ export default function EventRSVPSection({
                       className="w-4 h-4 border border-encre-noire bg-white rounded mt-0.5 shrink-0 accent-cordel-wood"
                     />
                     <span className="text-[11px] font-bold text-encre-noire leading-snug">
-                      🥁 J'ai besoin qu'on transporte mon Alfaia / instrument encombrant dans le convoi
+                      🥁 {tr('agenda.bulkyInstrumentNotice') || "J'ai besoin qu'on transporte mon Alfaia / instrument encombrant dans le convoi"}
                       <span className="block text-[9px] font-semibold text-cordel-master-dark/70 mt-0.5">
-                        Cochez cette case si vous vous déplacez par vos propres moyens ou cherchez une place mais devez confier un gros fût au convoi.
+                        {tr('agenda.bulkyInstrumentDesc') || "Cochez cette case si vous vous déplacez par vos propres moyens ou cherchez une place mais devez confier un gros fût au convoi."}
                       </span>
                     </span>
                   </label>
@@ -739,14 +742,10 @@ export default function EventRSVPSection({
               className="flex-1 py-3 font-black text-xs uppercase tracking-wider"
             >
               {saving 
-                ? "Validation..." 
-                : status === 'present' 
-                  ? "✅ Inscription validée (Présent)" 
-                  : status === 'absent' 
-                    ? "❌ Inscription enregistrée (Absent)" 
-                    : status === 'confirm' 
-                      ? "⏳ Inscription enregistrée (À confirmer)" 
-                      : "Valider mon inscription"}
+                ? (tr('common.saving') || "Validation...") 
+                : existingResponse
+                  ? (tr('agenda.updateResponse') || "Modifier ma réponse")
+                  : (tr('agenda.validateParticipation') || "Valider ma participation")}
             </CordelButton>
 
             <div className="relative flex-1">
@@ -883,23 +882,23 @@ export default function EventRSVPSection({
     return (
       <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5 select-none">
         <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1 mb-3">
-          👥 Tableau de présence / Inscriptions
+          👥 {tr('agenda.attendancePuzzleTitle') || "Tableau de présence / Inscriptions"}
         </h4>
 
         {isAuthorized && dietarySummary.hasAny && (
           <div className="bg-amber-50/90 dark:bg-amber-950/30 border-2 border-dashed border-amber-500/40 p-2.5 rounded text-left text-xs mb-3 flex flex-col gap-1">
             <div className="flex items-center gap-1.5 font-black text-amber-900 dark:text-amber-300 uppercase text-[11px]">
-              <span>🍽️</span> Logistique Repas & Spécificités ({dietarySummary.totalWithDiet} membre{dietarySummary.totalWithDiet > 1 ? 's' : ''})
+              <span>🍽️</span> {tr('agenda.mealsAndDietTitle') || "Logistique repas & spécificités"} ({dietarySummary.totalWithDiet} membre{dietarySummary.totalWithDiet > 1 ? 's' : ''})
             </div>
             <div className="text-[11px] text-amber-900 dark:text-amber-200 leading-snug">
               {dietarySummary.restrictionParts.length > 0 && (
                 <span className="font-extrabold mr-3">
-                  Régimes : {dietarySummary.restrictionParts.join(', ')}
+                  {tr('agenda.dietLabel') || "Régimes :"} {dietarySummary.restrictionParts.join(', ')}
                 </span>
               )}
               {dietarySummary.specificAllergies.length > 0 && (
                 <span className="font-bold text-red-800 dark:text-red-300">
-                  ⚠️ Allergies : {dietarySummary.specificAllergies.join(' | ')}
+                  ⚠️ {tr('agenda.allergiesLabel') || "Allergies :"} {dietarySummary.specificAllergies.join(' | ')}
                 </span>
               )}
             </div>
@@ -925,7 +924,7 @@ export default function EventRSVPSection({
                         Souhaite passer à : <span className={`font-black uppercase px-1 py-0.5 rounded text-[9px] ${
                           req.requestedStatus === 'present' ? 'bg-[var(--color-cordel-vert)] text-white' : 'bg-cordel-wood text-white'
                         }`}>
-                          {req.requestedStatus === 'present' ? '✅ Présent' : '❌ Absent'}
+                          {req.requestedStatus === 'present' ? `✅ ${tr('agenda.present') || 'Présent'}` : `❌ ${tr('agenda.absent') || 'Absent'}`}
                         </span>
                         {req.instrumentChoisi && <span className="ml-1.5 italic font-medium">({req.instrumentChoisi})</span>}
                         {req.message && <span className="ml-1.5 opacity-80">« {req.message} »</span>}
@@ -1120,9 +1119,10 @@ export default function EventRSVPSection({
         {isAuthorized && (
           <div className="flex flex-col gap-2.5 mt-3 pt-3 border-t-2 border-dashed border-cordel-master-dark/15">
             {/* Barre de contrôle des accordéons */}
+            {/* Suivi Administratif des Présences */}
             <div className="flex items-center justify-between px-1">
               <span className="text-[10px] uppercase font-bold tracking-wider text-cordel-wood/80">
-                🔒 Suivi Administratif des Présences
+                🔒 {tr('agenda.adminAttendanceTitle') || "Suivi administratif des présences"}
               </span>
               <div className="flex items-center gap-1.5 text-[9px] font-bold">
                 <button
@@ -1130,14 +1130,14 @@ export default function EventRSVPSection({
                   onClick={() => handleToggleAllSections(true)}
                   className="px-1.5 py-0.5 rounded bg-cordel-bg-light border border-cordel-master-dark/20 hover:bg-stone-200 text-cordel-master-dark cursor-pointer transition-colors"
                 >
-                  ▼ Tout déplier
+                  ▼ {tr('agenda.expandAll') || "Tout déplier"}
                 </button>
                 <button
                   type="button"
                   onClick={() => handleToggleAllSections(false)}
                   className="px-1.5 py-0.5 rounded bg-cordel-bg-light border border-cordel-master-dark/20 hover:bg-stone-200 text-cordel-master-dark cursor-pointer transition-colors"
                 >
-                  ▲ Tout replier
+                  ▲ {tr('agenda.collapseAll') || "Tout replier"}
                 </button>
               </div>
             </div>
@@ -1174,7 +1174,7 @@ export default function EventRSVPSection({
                           className="text-[var(--color-cordel-vert)] hover:text-white text-[9px] font-black cursor-pointer px-1 py-0.5 bg-[var(--color-cordel-vert)]/10 hover:bg-[var(--color-cordel-vert)] border border-[#2d6a4f]/30 rounded transition-colors"
                           title="Passer ce membre en Présent"
                         >
-                          ✓ Présent
+                          ✓ {tr('agenda.present') || 'Présent'}
                         </button>
                         <button
                           type="button"
@@ -1197,7 +1197,7 @@ export default function EventRSVPSection({
             {/* 2. Accordéon À confirmer (si option activée dans la config) */}
             {agendaEnableMaybeStatus && (
               <RSVPAccordionSection
-                title="À confirmer"
+                title={tr('agenda.confirm') || "À confirmer"}
                 count={(event.inscriptions || []).filter(i => i.status === 'confirm').length}
                 icon="⏳"
                 colorVariant="ocre"
@@ -1249,8 +1249,9 @@ export default function EventRSVPSection({
             )}
 
             {/* 3. Accordéon En attente de validation */}
+            {/* title="En attente de validation" */}
             <RSVPAccordionSection
-              title="En attente de validation"
+              title={tr('agenda.awaitingValidation') || "En attente de validation"}
               count={(event.inscriptions || []).filter(i => i.status === 'pending' || i.status === 'en_attente_tardive').length}
               icon="⏳"
               colorVariant="yellow"
@@ -1316,7 +1317,7 @@ export default function EventRSVPSection({
 
             {/* 4. Accordéon Inscriptions refusées */}
             <RSVPAccordionSection
-              title="Inscriptions refusées"
+              title={tr('agenda.rejectedRegistrations') || "Inscriptions refusées"}
               count={(event.inscriptions || []).filter(i => i.status === 'refused').length}
               icon="🚫"
               colorVariant="neutral"
@@ -1359,8 +1360,9 @@ export default function EventRSVPSection({
             </RSVPAccordionSection>
 
             {/* 5. Accordéon Sans réponse */}
+            {/* title="Sans réponse" */}
             <RSVPAccordionSection
-              title="Sans réponse"
+              title={tr('agenda.noResponse') || "Sans réponse"}
               count={unansweredUsers?.length || 0}
               icon="❓"
               colorVariant="neutral"
@@ -1390,7 +1392,7 @@ export default function EventRSVPSection({
                           className="text-[var(--color-cordel-vert)] hover:text-white text-[9px] font-black cursor-pointer px-1.5 py-0.5 bg-[var(--color-cordel-vert)]/10 hover:bg-[var(--color-cordel-vert)] border border-[#2d6a4f]/30 rounded transition-colors"
                           title="Marquer ce membre comme Présent"
                         >
-                          ✓ Présent
+                          ✓ {tr('agenda.present') || 'Présent'}
                         </button>
                         <button
                           type="button"
@@ -1398,7 +1400,7 @@ export default function EventRSVPSection({
                           className="text-cordel-wood hover:text-white text-[9px] font-black cursor-pointer px-1.5 py-0.5 bg-cordel-wood/10 hover:bg-cordel-wood border border-cordel-wood/30 rounded transition-colors"
                           title="Marquer ce membre comme Absent"
                         >
-                          ✗ Absent
+                          ✗ {tr('agenda.absent') || 'Absent'}
                         </button>
                       </div>
                     </div>
@@ -1411,9 +1413,10 @@ export default function EventRSVPSection({
             </RSVPAccordionSection>
 
             {/* 6. Accordéon Gestion des instruments par Mestre */}
+            {/* title="Gestion des instruments par Mestre" */}
             {(event.includesPercussion !== false) && (event.inscriptions || []).filter(i => i.status === 'present').length > 0 && (
               <RSVPAccordionSection
-                title="Gestion des instruments par Mestre"
+                title={tr('agenda.restaurantInstruments') || "Gestion des instruments du resto"}
                 count={(event.inscriptions || []).filter(i => i.status === 'present').length}
                 icon="🛠️"
                 colorVariant="ocre"
@@ -1494,14 +1497,14 @@ export default function EventRSVPSection({
                   }}
                   className="theme-btn text-[10px] font-black uppercase tracking-wider py-1.5 px-3 rounded-[4px_6px_3px_5px] flex items-center gap-1.5 hover:bg-cordel-hover cursor-pointer"
                 >
-                  ➕ Inscrire un membre
+                  ➕ {tr('agenda.btnAddMemberAttendance') || "Inscrire un membre"}
                 </button>
                 <button
                   type="button"
                   onClick={() => setIsInviteFormOpen(true)}
                   className="theme-btn text-[10px] font-black uppercase tracking-wider py-1.5 px-3 rounded-[4px_6px_3px_5px] flex items-center gap-1.5 hover:bg-cordel-hover cursor-pointer"
                 >
-                  👤 Ajouter un invité extérieur
+                  👤 {tr('agenda.btnAddExternalGuest') || "Ajouter un invité extérieur"}
                 </button>
               </div>
             ) : isManualRegisterOpen ? (
@@ -1695,7 +1698,9 @@ export default function EventRSVPSection({
         isOpen={isLateCancellationOpen}
         onClose={() => setIsLateCancellationOpen(false)}
         onConfirm={onConfirmLateCancellation}
-        saving={submittingLateAction}
+        submitting={submittingLateAction}
+        eventName={event?.titre}
+        t={tr}
       />
       <LateRegistrationModal
         isOpen={isLateRegistrationOpen}

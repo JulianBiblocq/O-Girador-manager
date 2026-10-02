@@ -10,8 +10,6 @@ import RepertoireVideoModal from './RepertoireVideoModal';
 import SignalZoomModal from './SignalZoomModal';
 import TablatureModal from './TablatureModal';
 import CreateCultureFicheModal from './CreateCultureFicheModal';
-import CultureCard from '../CultureCard';
-import SongCard from '../SongCard';
 import PieceSignalsModal from '../member/PieceSignalsModal';
 import PieceLyricsModal from '../member/PieceLyricsModal';
 import PieceCultureModal from '../member/PieceCultureModal';
@@ -33,9 +31,9 @@ import {
   findMatchingPreset,
   resolvePieceTrainings
 } from '../../utils/repertoireMatcher';
-import { subscribeGroupTrainings, computeTrainingStages } from '../../services/aisanceService';
-import { launchTrainingStage } from '../../utils/trainingLauncher';
+import { subscribeGroupTrainings } from '../../services/aisanceService';
 import TrainingCompactCard from '../pedagogy/TrainingCompactCard';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Vue principale du Répertoire de la troupe (Direction Artistique & Mestria).
@@ -49,6 +47,7 @@ import TrainingCompactCard from '../pedagogy/TrainingCompactCard';
  * @param {Object} [features] - Fonctionnalités et options activées pour le groupe
  */
 export default function MestreRepertoireView({ groupId, user: _user, profileData: _profileData, sequenceurUrl, features }) {
+  const { t } = useTranslation();
   const { confirm } = useConfirm();
   const [pieces, setPieces] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -238,10 +237,10 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
   // Suppression d'un morceau
   const handleDeletePiece = async (piece) => {
     const isOk = await confirm({
-      title: "Supprimer du répertoire",
-      message: `Êtes-vous sûr de vouloir supprimer définitivement le morceau « ${piece.titre} » du classeur de répertoire ?`,
-      confirmText: "Oui, supprimer",
-      cancelText: "Annuler",
+      title: t('repertoire.btnDeletePiece'),
+      message: t('repertoire.deleteConfirm'),
+      confirmText: t('common.yesDelete'),
+      cancelText: t('common.cancel'),
       variant: "danger"
     });
 
@@ -401,7 +400,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                 : 'bg-black/5 dark:bg-white/10 text-cordel-master-dark/70 hover:bg-black/10 border-encre-noire/20'
             }`}
           >
-            🟢 Au programme ({counts.saison})
+            🟢 {t('repertoire.filterReady') || "Au programme"} ({counts.saison})
           </button>
 
           <button
@@ -413,7 +412,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                 : 'bg-black/5 dark:bg-white/10 text-cordel-master-dark/70 hover:bg-black/10 border-encre-noire/20'
             }`}
           >
-            🟡 En préparation ({counts.chantier})
+            🟡 {t('repertoire.filterLearning') || "En préparation"} ({counts.chantier})
           </button>
 
           <button
@@ -425,7 +424,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                 : 'bg-black/5 dark:bg-white/10 text-cordel-master-dark/70 hover:bg-black/10 border-encre-noire/20'
             }`}
           >
-            ⚪ Archives ({counts.archive})
+            ⚪ {t('repertoire.filterArchived') || "Archives"} ({counts.archive})
           </button>
 
           <button
@@ -437,7 +436,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                 : 'bg-black/5 dark:bg-white/10 text-cordel-master-dark/70 hover:bg-black/10 border-encre-noire/20'
             }`}
           >
-            Tous ({counts.all})
+            {t('repertoire.filterAll') || "Tous"} ({counts.all})
           </button>
         </div>
 
@@ -445,7 +444,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
         <div className="relative w-full md:w-64">
           <input
             type="text"
-            placeholder="🔍 Rechercher un morceau..."
+            placeholder={t('repertoire.searchPlaceholder') ? `🔍 ${t('repertoire.searchPlaceholder')}` : '🔍 Rechercher un morceau...'}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="theme-input w-full text-xs font-bold py-1.5 px-3 bg-cordel-bg-light border-2 border-encre-noire rounded"
@@ -488,7 +487,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
           <span className="text-4xl">📜</span>
           <p className="text-xs font-bold opacity-75">
             {searchQuery
-              ? "Aucun morceau ne correspond à votre recherche."
+              ? (t('repertoire.noPiecesFound') || "Aucun morceau ne correspond à votre recherche.")
               : "Aucun morceau dans cette catégorie de répertoire."}
           </p>
           {!searchQuery && (
@@ -508,7 +507,6 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
           {filteredPieces.map((piece) => {
-            const isPret = piece.etatValidation === 'pret';
             const hasSequencer = Boolean(piece.sequenceurFileUrl || piece.sequenceurId);
 
             return (
@@ -856,7 +854,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 pt-3 border-t border-dashed border-cordel-master-dark/15 mt-1">
                   {/* Boutons d'accès et de synchronisation Séquenceur */}
                   <div className="flex items-center gap-2 flex-wrap">
-                    {piece.hasSequencer ? (
+                    {hasSequencer ? (
                       <button
                         type="button"
                         onClick={() => openSequencerWithCrossApp(sequenceurUrl, piece)}
@@ -1015,7 +1013,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                       useExtremeBorder={false}
                       onClick={() => handleDeletePiece(piece)}
                       className="py-1 px-2 text-[9.5px] uppercase tracking-wider font-black shrink-0"
-                      title="Supprimer du répertoire"
+                      title={t('repertoire.btnDeletePiece')}
                     >
                       🗑️
                     </CordelButton>
@@ -1046,9 +1044,8 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
         onClose={() => setIsProgramModalOpen(false)}
         groupId={groupId}
         piece={pieceToProgram}
-        onSuccess={(event, item) => {
-          const evName = event ? (event.titre || event.title || 'l\'événement') : 'l\'événement';
-          showToast(`« ${item.titre} » programmé sur ${evName} !`);
+        onSuccess={(_event, _item) => {
+          showToast(t('repertoire.programPieceSuccess'));
         }}
       />
 
@@ -1060,7 +1057,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
         piecesList={pieces}
         groupId={groupId}
         onSuccess={(count) => {
-          showToast(`Vidéo affectée à ${count} morceau${count > 1 ? 'x' : ''} !`);
+          showToast(t('repertoire.batchAssignSuccess', { count }));
         }}
       />
 

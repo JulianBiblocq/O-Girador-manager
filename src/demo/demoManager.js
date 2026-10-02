@@ -4,7 +4,7 @@
  * sans aucun contact avec les serveurs Firebase Firestore.
  */
 
-import { INITIAL_DEMO_DATA, DEMO_GROUP_ID, createDemoTimestamp } from '../data/demoData.js';
+import { INITIAL_DEMO_DATA, createDemoTimestamp } from '../data/demoData.js';
 
 const DEMO_ACTIVE_KEY = 'ogirador_demo_active';
 const DEMO_STATE_KEY = 'ogirador_demo_state';
@@ -144,7 +144,7 @@ export const resetDemoData = () => {
   if (typeof window === 'undefined') return;
   const initial = JSON.parse(JSON.stringify(INITIAL_DEMO_DATA));
   saveDemoState(initial);
-  console.log("[Mode Démo] Données réinitialisées avec succès (version 18 profils).");
+  // console.log("[Mode Démo] Données réinitialisées avec succès (version 18 profils).");
 };
 
 /**

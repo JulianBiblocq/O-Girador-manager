@@ -23,7 +23,7 @@ export * from '@firebase/storage';
  */
 export const uploadBytes = async (storageRef, fileOrBlob, metadata) => {
   if (isDemoMode()) {
-    console.log("[Mode Démo Storage] Simulation téléversement réussie :", fileOrBlob?.name || 'fichier_demo');
+    // console.log("[Mode Démo Storage] Simulation téléversement réussie :", fileOrBlob?.name || 'fichier_demo');
     return Promise.resolve({
       ref: storageRef,
       metadata: { ...metadata, name: fileOrBlob?.name || 'fichier_demo' }

@@ -3,6 +3,7 @@ import { collection, getDocs, doc, updateDoc, arrayUnion } from 'firebase/firest
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Modale de programmation rapide d'un morceau du répertoire dans un événement futur.
@@ -21,6 +22,7 @@ export default function ProgramPieceModal({
   piece,
   onSuccess
 }) {
+  const { t } = useTranslation();
   const [events, setEvents] = useState([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState('');
@@ -183,7 +185,7 @@ export default function ProgramPieceModal({
         <div className="border-b-2 border-dashed border-cordel-wood/30 pb-3 flex items-center justify-between">
           <h3 className="text-base md:text-lg font-black uppercase tracking-widest text-cordel-wood flex items-center gap-2">
             <span>➕</span>
-            <span>Programmer ce morceau</span>
+            <span>{t('repertoire.programModalTitle')}</span>
           </h3>
           <button
             type="button"
@@ -240,13 +242,13 @@ export default function ProgramPieceModal({
           {/* Sélection de l'événement futur */}
           <div className="flex flex-col gap-1">
             <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              Choisir un événement de destination (Répétition ou Concert) *
+              {t('repertoire.programSelectEvent')} *
             </label>
             {loadingEvents ? (
               <p className="text-xs italic opacity-60">Chargement de l'agenda...</p>
             ) : events.length === 0 ? (
               <p className="text-xs italic text-red-700 font-semibold bg-red-50 p-2 rounded border border-red-200">
-                Aucun événement futur (répétition ou prestation) trouvé dans l'agenda.
+                {t('repertoire.programNoUpcomingEvents')}
               </p>
             ) : (
               <select
@@ -301,7 +303,7 @@ export default function ProgramPieceModal({
               disabled={submitting || events.length === 0}
               className="px-5 py-2 text-xs font-black uppercase tracking-wider"
             >
-              {submitting ? "Injection..." : "➕ Injecter au fil conducteur"}
+              {submitting ? "Injection..." : `➕ ${t('repertoire.btnInjectProgram')}`}
             </CordelButton>
           </div>
         </form>

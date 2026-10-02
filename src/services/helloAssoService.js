@@ -18,8 +18,7 @@ import {
   where,
   limit,
   serverTimestamp,
-  Timestamp,
-  orderBy
+  Timestamp
 } from 'firebase/firestore';
 import { db } from '../firebase.js';
 

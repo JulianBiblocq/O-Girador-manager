@@ -1,6 +1,7 @@
 import React from 'react';
 import RoadbookKitsChecklist from './RoadbookKitsChecklist';
 import RoadbookCommissionsSection from './RoadbookCommissionsSection';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Contenu interactif de la feuille de route pour affichage écran et smartphone.
@@ -12,6 +13,7 @@ export default function RoadbookInteractiveContent({
   presentsByInstrument = {},
   commissions = []
 }) {
+  const { t } = useTranslation();
   const parcours = event.parcours || {};
   const hebergement = event.hebergement || {};
   const logistique = event.logistiqueDepart || {};
@@ -26,12 +28,12 @@ export default function RoadbookInteractiveContent({
       {/* Horaires et logistique générale */}
       <div className="bg-[var(--color-cordel-papier-card)] p-3 rounded-lg border border-[var(--theme-border-color)]">
         <h3 className="font-bold text-[var(--color-cordel-encre)] mb-2 flex items-center gap-1.5 uppercase text-xs tracking-wider">
-          ⏰ Horaires &amp; Rendez-vous
+          ⏰ {t('agenda.programAndSchedule')}
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-          <div><span className="font-medium text-[var(--color-cordel-marron)]">RDV Local :</span> <strong className="text-[var(--color-cordel-encre)]">{event.horaireCovoiturage || 'Non spécifié'}</strong></div>
-          <div><span className="font-medium text-[var(--color-cordel-marron)]">Jeu / Balances :</span> <strong className="text-[var(--color-cordel-encre)]">{event.horairesPassages || 'Selon organisation'}</strong></div>
-          {event.lieu && <div><span className="font-medium text-[var(--color-cordel-marron)]">Lieu :</span> <span className="font-semibold">{event.lieu}</span></div>}
+          <div><span className="font-medium text-[var(--color-cordel-marron)]">{t('agenda.meetingPoint')} :</span> <strong className="text-[var(--color-cordel-encre)]">{event.horaireCovoiturage || 'Non spécifié'}</strong></div>
+          <div><span className="font-medium text-[var(--color-cordel-marron)]">{t('agenda.schedule')} :</span> <strong className="text-[var(--color-cordel-encre)]">{event.horairesPassages || 'Selon organisation'}</strong></div>
+          {event.lieu && <div><span className="font-medium text-[var(--color-cordel-marron)]">{t('agenda.location')} :</span> <span className="font-semibold">{event.lieu}</span></div>}
           {event.tenueRequise && <div><span className="font-medium text-[var(--color-cordel-marron)]">Tenue :</span> <span className="font-semibold">{event.tenueRequise}</span></div>}
         </div>
       </div>
@@ -39,13 +41,13 @@ export default function RoadbookInteractiveContent({
       {/* Bloc Contacts Clés Jour J */}
       <div className="bg-[var(--color-cordel-papier-card)] p-3 rounded-lg border border-[var(--theme-border-color)]">
         <h3 className="font-bold text-[var(--color-cordel-encre)] mb-2 flex items-center gap-1.5 uppercase text-xs tracking-wider">
-          📞 Contacts Clés Jour J
+          📞 {t('agenda.keyContacts')}
         </h3>
         <div className="space-y-2 text-xs">
           {contacts.referentOrgaNom && (
             <div className="flex items-center justify-between bg-white/70 p-2 rounded border border-[var(--theme-border-color)]">
               <div>
-                <span className="text-[10px] uppercase font-bold text-[var(--color-cordel-marron)] block">Orga Concert</span>
+                <span className="text-[10px] uppercase font-bold text-[var(--color-cordel-marron)] block">{t('agenda.orgContact')}</span>
                 <span className="font-semibold text-[var(--color-cordel-encre)]">{contacts.referentOrgaNom}</span>
               </div>
               {contacts.referentOrgaTel ? (
@@ -59,7 +61,7 @@ export default function RoadbookInteractiveContent({
           {referentGroupe && (
             <div className="flex items-center justify-between bg-white/70 p-2 rounded border border-[var(--theme-border-color)]">
               <div>
-                <span className="text-[10px] uppercase font-bold text-[var(--color-cordel-marron)] block">Référent Groupe</span>
+                <span className="text-[10px] uppercase font-bold text-[var(--color-cordel-marron)] block">{t('agenda.refContact')}</span>
                 <span className="font-semibold text-[var(--color-cordel-encre)]">{referentGroupe.prenom} {referentGroupe.nom}</span>
               </div>
               {referentGroupe.telephone ? (
@@ -99,16 +101,16 @@ export default function RoadbookInteractiveContent({
       {/* Bloc Parcours / Scène */}
       <div className="bg-[var(--color-cordel-papier-card)] p-3 rounded-lg border border-[var(--theme-border-color)]">
         <h3 className="font-bold text-[var(--color-cordel-encre)] mb-2 flex items-center justify-between uppercase text-xs tracking-wider">
-          <span>{event.formatJeu === 'deambulation' ? '🗺️ Parcours Déambulation' : event.formatJeu === 'mixte' ? '🗺️ / 📐 Déambulation & Scène' : '📐 Scène & Plateforme'}</span>
+          <span>{event.formatJeu === 'deambulation' ? '🗺️ Parcours Déambulation' : event.formatJeu === 'mixte' ? '🗺️ / 📐 Déambulation & Scène' : `📐 ${t('agenda.stagePlan')}`}</span>
           {parcours.urlFichierParcours && (
             <a href={parcours.urlFichierParcours} target="_blank" rel="noopener noreferrer" className="text-[11px] font-bold text-[var(--color-cordel-ocre)] hover:underline flex items-center gap-1">
-              🗺️ Ouvrir le plan (PDF)
+              🗺️ {t('agenda.openParcoursPdf')}
             </a>
           )}
         </h3>
         {hasParcours ? (
           <div className="space-y-1.5 text-xs">
-            {parcours.pointDepart && <div><span className="font-medium text-[var(--color-cordel-marron)]">Départ :</span> <strong>{parcours.pointDepart}</strong></div>}
+            {parcours.pointDepart && <div><span className="font-medium text-[var(--color-cordel-marron)]">{t('agenda.departure') || 'Départ'} :</span> <strong>{parcours.pointDepart}</strong></div>}
             {parcours.itineraire && (
               <div>
                 <span className="font-medium text-[var(--color-cordel-marron)]">Itinéraire :</span>
@@ -123,10 +125,10 @@ export default function RoadbookInteractiveContent({
         )}
       </div>
 
-          {/* Bloc Hébergement (si renseigné) */}
+      {/* Bloc Hébergement (si renseigné) */}
       {hasHebergement && (
         <div className="bg-[var(--color-cordel-papier-card)] p-3 rounded-lg border border-[var(--theme-border-color)]">
-          <h3 className="font-bold text-[var(--color-cordel-encre)] mb-2 uppercase text-xs tracking-wider">🏨 Hébergement</h3>
+          <h3 className="font-bold text-[var(--color-cordel-encre)] mb-2 uppercase text-xs tracking-wider">🏨 {t('agenda.accommodation')}</h3>
           <div className="space-y-1 text-xs">
             {hebergement.type && <div><span className="font-medium text-[var(--color-cordel-marron)]">Type :</span> <strong>{hebergement.type}</strong></div>}
             {hebergement.adresse && <div><span className="font-medium text-[var(--color-cordel-marron)]">Adresse :</span> <strong>{hebergement.adresse}</strong></div>}

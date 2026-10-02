@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import CordelButton from '../CordelButton';
 import CordelCard from '../CordelCard';
 import { XiloSparkles, XiloShield, XiloEyeOff } from '../XiloIcons';
+import { useTranslation } from '../LanguageContext';
 
 export default function NotificationDiagnostic({ 
   notificationPermission, 
   isSubscribingPush, 
   onEnableNotifications 
 }) {
+  const { t } = useTranslation();
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
   const [livePermission, setLivePermission] = useState(notificationPermission || 'default');
@@ -34,7 +36,7 @@ export default function NotificationDiagnostic({
     switch (livePermission) {
       case 'granted':
         return {
-          label: 'Activé',
+          label: t('userProfile.statusActive'),
           color: 'text-emerald-700 dark:text-emerald-400',
           bg: 'bg-emerald-50 dark:bg-emerald-950/30',
           border: 'border-emerald-500/40',
@@ -42,7 +44,7 @@ export default function NotificationDiagnostic({
         };
       case 'denied':
         return {
-          label: 'Bloqué par votre appareil',
+          label: t('userProfile.statusInactive'),
           color: 'text-red-700 dark:text-red-400',
           bg: 'bg-red-50 dark:bg-red-950/30',
           border: 'border-red-500/40',
@@ -50,7 +52,7 @@ export default function NotificationDiagnostic({
         };
       default:
         return {
-          label: 'Non configuré',
+          label: t('userProfile.statusInactive'),
           color: 'text-amber-700 dark:text-amber-400',
           bg: 'bg-amber-50 dark:bg-amber-950/30',
           border: 'border-amber-500/40',
@@ -68,19 +70,19 @@ export default function NotificationDiagnostic({
   };
 
   return (
-    <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col gap-3">
+    <CordelCard variant="default" useExtremeBorder={true} className="flex flex-col gap-3">
       <div className={`p-3 rounded-[6px] text-left border-2 border-dashed ${status.bg} ${status.border}`}>
         <div className="flex items-center gap-2.5">
           <div className={status.color}>{status.icon}</div>
           <div className="flex-1">
             <h4 className={`font-black text-xs uppercase flex items-center justify-between gap-1.5 ${status.color}`}>
-              Diagnostic des Notifications
-              <span className="text-[10px] bg-white/50 px-2 py-0.5 rounded border border-current/20">
-                Statut : {status.label}
+              {t('userProfile.diagnosticTitle')}
+              <span className="text-[10px] bg-white/50 px-2 py-0.5 rounded border border-current/20 font-black">
+                {livePermission === 'granted' ? t('userProfile.statusActive') : t('userProfile.statusInactive')}
               </span>
             </h4>
             <p className={`text-[10px] opacity-90 font-medium ${status.color}`}>
-              Outil de déblocage pour la réception des alertes (répétitions, sondages, etc.)
+              {t('userProfile.diagnosticSubtitle')}
             </p>
           </div>
         </div>
@@ -123,7 +125,7 @@ export default function NotificationDiagnostic({
 
         {livePermission === 'granted' && (
           <p className="text-[11px] text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 p-2 rounded">
-            Tout est parfaitement configuré. Vous êtes prêt(e) à recevoir les alertes importantes du groupe.
+            {t('userProfile.diagnosticConfiguredSuccess')}
           </p>
         )}
 

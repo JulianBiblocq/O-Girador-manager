@@ -48,7 +48,7 @@ const calculateCarStatus = (car, associationSettings) => {
 };
 
 export default function KilometricReimbursementManager({ groupId, onBack, role, isSystemAdmin, hasAccessTresorerie, isEmbedded }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const [events, setEvents] = useState([]);
   const [members, setMembers] = useState([]);
   const [associationSettings, setAssociationSettings] = useState(null);
@@ -62,6 +62,14 @@ export default function KilometricReimbursementManager({ groupId, onBack, role, 
   const [formPointRassemblement, setFormPointRassemblement] = useState('');
   const [formReimbursementRule, setFormReimbursementRule] = useState('full_cars_only');
   const [savingSettings, setSavingSettings] = useState(false);
+  const [validatedTrips, setValidatedTrips] = useState({});
+  const [toastMessage, setToastMessage] = useState('');
+
+  const handleValidateTripRefund = (key) => {
+    setValidatedTrips(prev => ({ ...prev, [key]: true }));
+    setToastMessage(t('treasury.refundValidatedToast'));
+    setTimeout(() => setToastMessage(''), 3500);
+  };
 
   const isAuthorized = role === 'mestre' || role === 'super-admin' || role === 'admin' || role === 'bureau' || isSystemAdmin === true || hasAccessTresorerie === true;
 
@@ -352,7 +360,7 @@ export default function KilometricReimbursementManager({ groupId, onBack, role, 
           </button>
           
           <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase flex items-center gap-2">
-            <XiloCar size={16} /> {t('menu.kilometricReimbursement') || "Remboursements Kilométriques"}
+            <XiloCar size={16} /> {t('treasury.mileageTitle')}
           </h2>
         </div>
       )}
@@ -367,7 +375,7 @@ export default function KilometricReimbursementManager({ groupId, onBack, role, 
         
         <div className="border border-encre-noire/30 p-3 rounded-[4px_6px_3px_5px] bg-[var(--cordel-bg-light)] text-[10px] flex flex-col gap-1.5 justify-center shadow-[1.5px_1.5px_0px_0px_#181716]">
           <span className="font-bold text-cordel-wood uppercase tracking-wide">Configuration Active :</span>
-          <div>💵 Tarif kilométrique : <span className="font-black">{indemniteKilometrique.toFixed(2)} €/km</span></div>
+          <div>💵 <span className="font-black">{t('treasury.fiscalRatePerKm', { rate: indemniteKilometrique.toFixed(2) })}</span></div>
           <div>🔌 Covoiturage actif : <span className="font-black">{enableCarpoolReimbursement ? "Oui" : "Non"}</span></div>
           <div>⚙️ Règle de remboursement : <span className="font-black">
             {reimbursementRule === 'full_cars_only' ? "Véhicules complets uniquement" : "Tous les conducteurs"}
@@ -545,7 +553,7 @@ export default function KilometricReimbursementManager({ groupId, onBack, role, 
                   <span className="text-xl font-black text-cordel-wood">{totalRefundedKm.toFixed(0)} km</span>
                 </CordelCard>
                 <CordelCard className="p-4 flex flex-col gap-1 items-center bg-white/50">
-                  <span className="text-[9px] font-black uppercase tracking-wider text-cordel-master-dark/60">Montant total à défraier</span>
+                  <span className="text-[9px] font-black uppercase tracking-wider text-cordel-master-dark/60">{t('treasury.totalMileageDue')}</span>
                   <span className="text-xl font-black text-green-700">{totalRefundedAmount.toFixed(2)} €</span>
                 </CordelCard>
               </div>
@@ -554,7 +562,7 @@ export default function KilometricReimbursementManager({ groupId, onBack, role, 
               <CordelCard variant="default" className="p-5 flex flex-col gap-3">
                 <div className="flex justify-between items-center border-b border-dashed border-cordel-master-dark/20 pb-2 mb-2">
                   <h3 className="text-xs font-black uppercase tracking-wider text-cordel-wood">
-                    Résumé des remboursements dus
+                    {t('treasury.totalMileageDue')}
                   </h3>
                   {memberList.length > 0 && (
                     <CordelButton variant="default" onClick={handleExportCSV} className="text-[9px] py-1 px-2.5">
@@ -659,12 +667,12 @@ export default function KilometricReimbursementManager({ groupId, onBack, role, 
                                             <div className="flex flex-col">
                                               <span className="font-bold text-encre-noire">{trip.title}</span>
                                               <span className="text-[9px] opacity-60">
-                                                {new Date(trip.date).toLocaleDateString('fr-FR', {
+                                                {new Date(trip.date).toLocaleDateString(locale === 'pt' ? 'pt-BR' : 'fr-FR', {
                                                   day: 'numeric', month: 'short', year: 'numeric'
                                                 })} • Mode: {trip.type === 'convoi' ? '🚗 Convoi' : '🚶 Propres Moyens'}
                                               </span>
                                             </div>
-                                            <div className="flex items-center gap-4">
+                                            <div className="flex items-center gap-2">
                                               <span className="opacity-70 font-semibold">{trip.distance} km</span>
                                               <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border ${
                                                 trip.isEligible 
@@ -673,6 +681,19 @@ export default function KilometricReimbursementManager({ groupId, onBack, role, 
                                               }`}>
                                                 {trip.isEligible ? `${trip.refundAmount.toFixed(2)} €` : 'Non éligible'}
                                               </span>
+                                              {trip.isEligible && (
+                                                <button
+                                                  type="button"
+                                                  onClick={() => handleValidateTripRefund(`trip_${m.id}_${trip.eventId}`)}
+                                                  className={`text-[8px] font-black uppercase px-2 py-0.5 rounded transition-all cursor-pointer ${
+                                                    validatedTrips[`trip_${m.id}_${trip.eventId}`]
+                                                      ? 'bg-green-100 text-green-900 border border-green-400'
+                                                      : 'bg-cordel-wood text-white hover:brightness-110 shadow-[1px_1px_0px_0px_#181716]'
+                                                  }`}
+                                                >
+                                                  {validatedTrips[`trip_${m.id}_${trip.eventId}`] ? `✓ Payé` : t('treasury.btnValidateRefund')}
+                                                </button>
+                                              )}
                                             </div>
                                           </div>
                                         ))}
@@ -726,7 +747,7 @@ export default function KilometricReimbursementManager({ groupId, onBack, role, 
                                 }`}
                               >
                                 <td className="py-2 px-1.5 md:py-2.5 md:px-3 font-semibold">
-                                  {new Date(e.date).toLocaleDateString('fr-FR', {
+                                  {new Date(e.date).toLocaleDateString(locale === 'pt' ? 'pt-BR' : 'fr-FR', {
                                     day: '2-digit', month: '2-digit', year: 'numeric'
                                   })}
                                 </td>
@@ -757,7 +778,7 @@ export default function KilometricReimbursementManager({ groupId, onBack, role, 
                                                 Mode: {driver.type === 'convoi' ? '🚗 Convoi' : '🚶 Propres Moyens'}
                                               </span>
                                             </div>
-                                            <div className="flex items-center gap-4">
+                                            <div className="flex items-center gap-2">
                                               <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border ${
                                                 driver.isEligible 
                                                   ? 'bg-green-50 border-green-500 text-green-800'
@@ -765,6 +786,19 @@ export default function KilometricReimbursementManager({ groupId, onBack, role, 
                                               }`}>
                                                 {driver.isEligible ? `${driver.refundAmount.toFixed(2)} €` : 'Non éligible'}
                                               </span>
+                                              {driver.isEligible && (
+                                                <button
+                                                  type="button"
+                                                  onClick={() => handleValidateTripRefund(`event_${e.id}_${driver.id}`)}
+                                                  className={`text-[8px] font-black uppercase px-2 py-0.5 rounded transition-all cursor-pointer ${
+                                                    validatedTrips[`event_${e.id}_${driver.id}`]
+                                                      ? 'bg-green-100 text-green-900 border border-green-400'
+                                                      : 'bg-cordel-wood text-white hover:brightness-110 shadow-[1px_1px_0px_0px_#181716]'
+                                                  }`}
+                                                >
+                                                  {validatedTrips[`event_${e.id}_${driver.id}`] ? `✓ Payé` : t('treasury.btnValidateRefund')}
+                                                </button>
+                                              )}
                                             </div>
                                           </div>
                                         ))}
@@ -784,6 +818,14 @@ export default function KilometricReimbursementManager({ groupId, onBack, role, 
             </div>
           )}
         </>
+      )}
+
+      {/* Toast de validation du remboursement */}
+      {toastMessage && (
+        <div className="fixed bottom-4 right-4 z-50 bg-emerald-800 text-white font-black text-xs px-4 py-2.5 rounded shadow-lg border-2 border-encre-noire animate-fade-in flex items-center gap-2 select-none">
+          <span>✅</span>
+          <span>{toastMessage}</span>
+        </div>
       )}
     </div>
   );

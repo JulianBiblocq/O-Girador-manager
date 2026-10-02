@@ -184,7 +184,7 @@ function MemberTreasuryRow({
 
       {/* 2. Adhésion de Base (Col span 1) */}
       <div className="md:col-span-1 flex items-center md:justify-center gap-1.5 border-t md:border-t-0 border-dashed border-cordel-master-dark/10 pt-2 md:pt-0">
-        <span className="md:hidden text-[9px] font-extrabold uppercase tracking-wide text-cordel-master-dark">{t('widgetTreasury.tableBaseAdhesion')} :</span>
+        <span className="md:hidden text-[9px] font-extrabold uppercase tracking-wide text-cordel-master-dark">{t('treasury.membershipFormula')} :</span>
         <label className="flex items-center gap-1 cursor-pointer select-none">
           <input
             type="checkbox"
@@ -201,7 +201,7 @@ function MemberTreasuryRow({
       {/* 3. Formules / Options choisies (Col span 2) */}
       <div className="md:col-span-2 flex flex-col items-start gap-1 border-t md:border-t-0 border-dashed border-cordel-master-dark/10 pt-2 md:pt-0 relative" ref={dropdownRef}>
         <div className="flex items-center justify-between w-full md:w-auto gap-2">
-          <span className="md:hidden text-[9px] font-extrabold uppercase tracking-wide text-cordel-master-dark">{t('widgetTreasury.options')} :</span>
+          <span className="md:hidden text-[9px] font-extrabold uppercase tracking-wide text-cordel-master-dark">{t('treasury.membershipFormula')} :</span>
           <button
             type="button"
             onClick={() => setShowOptionsDropdown(!showOptionsDropdown)}
@@ -263,7 +263,7 @@ function MemberTreasuryRow({
 
       {/* 4. Total Dû (Col span 2) */}
       <div className="md:col-span-2 flex items-center md:justify-center gap-2 border-t md:border-t-0 border-dashed border-cordel-master-dark/10 pt-2 md:pt-0">
-        <span className="md:hidden text-[9px] font-extrabold uppercase tracking-wide text-cordel-master-dark">{t('widgetTreasury.tableTotalDue')} :</span>
+        <span className="md:hidden text-[9px] font-extrabold uppercase tracking-wide text-cordel-master-dark">{t('treasury.amountDue')} :</span>
         <span className="text-xs font-black text-cordel-wood bg-[#fbf5e6] dark:bg-black/25 px-2 py-0.5 border border-dashed border-cordel-wood/30 rounded">
           {totalDue} €
         </span>
@@ -362,7 +362,7 @@ function MemberTreasuryRow({
                           onClick={() => handleToggleInstrumentCaution(inst, 'recue')}
                           className="text-[7.5px] font-black uppercase px-2 py-0.5 rounded bg-[var(--color-cordel-vert)] text-white hover:bg-[#24543f] shadow-[1px_1px_0px_0px_#181716]"
                         >
-                          ✓ Valider chèque reçu
+                          ✓ {t('treasury.btnMarkAsPaid')}
                         </button>
                       )}
                     </div>
@@ -377,7 +377,7 @@ function MemberTreasuryRow({
       {/* 6. Statut de Paiement de la Cotisation (Col span 2) */}
       <div className="md:col-span-2 flex flex-col items-end justify-center gap-1 border-t md:border-t-0 border-dashed border-cordel-master-dark/10 pt-2 md:pt-0 justify-between w-full md:w-auto">
         <div className="flex items-center justify-between md:justify-end gap-2 w-full">
-          <span className="md:hidden text-[9px] font-extrabold uppercase tracking-wide text-cordel-master-dark">{t('widgetTreasury.statusLabel')} :</span>
+          <span className="md:hidden text-[9px] font-extrabold uppercase tracking-wide text-cordel-master-dark">{t('treasury.paymentStatus')} :</span>
           <select
             value={currentStatus}
             onChange={(e) => handleUpdateStatus(e.target.value)}
@@ -391,11 +391,11 @@ function MemberTreasuryRow({
                     : 'border-red-600/40 text-[var(--theme-primary)]'
             }`}
           >
-            <option value="unpaid">{t('widgetTreasury.statusUnpaid') || "Non payé"}</option>
-            <option value="partial">{t('widgetTreasury.statusPartial') || "Partiel"}</option>
-            <option value="en_cours">⏳ En cours (3x)</option>
-            <option value="paid">{t('widgetTreasury.statusPaid') || "À jour"}</option>
-            <option value="exempted">{t('widgetTreasury.statusExempted') || "Exonéré"}</option>
+            <option value="unpaid">{t('treasury.statusPending')}</option>
+            <option value="partial">{t('treasury.remainderToPay')}</option>
+            <option value="en_cours">⏳ {t('treasury.statusPending')} (3x)</option>
+            <option value="paid">{t('treasury.statusPaidCashCheck')}</option>
+            <option value="exempted">{t('treasury.statusExempted')}</option>
           </select>
         </div>
 
@@ -408,8 +408,8 @@ function MemberTreasuryRow({
             <span>💳</span>
             <span>
               {!isNaN(Number(member.helloAssoLastPayment.amount)) && Number(member.helloAssoLastPayment.amount) > 0
-                ? `${Number(member.helloAssoLastPayment.amount)} € (HelloAsso${member.helloAssoLastPayment.isInstallment ? ' - 3x' : ''})`
-                : `Paiement HelloAsso${member.helloAssoLastPayment.isInstallment ? ' (3x)' : ''}`}
+                ? `${Number(member.helloAssoLastPayment.amount)} € (${t('treasury.statusPaidOnline')}${member.helloAssoLastPayment.isInstallment ? ' - 3x' : ''})`
+                : `${t('treasury.statusPaidOnline')}${member.helloAssoLastPayment.isInstallment ? ' (3x)' : ''}`}
             </span>
           </div>
         )}

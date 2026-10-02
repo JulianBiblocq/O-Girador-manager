@@ -9,7 +9,6 @@ import {
   buildQuizOptions
 } from '../../utils/reflexGameUtils';
 import { saveReflexProgress } from '../../services/aisanceService';
-import { normalizeString } from '../../utils/repertoireMatcher';
 
 const AVAILABLE_PUPITRES = [
   { key: 'caixa', label: 'Caixa' },

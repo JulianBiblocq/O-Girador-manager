@@ -6,6 +6,7 @@ import CarCard from './CarCard';
 import CarpoolSearchersQueue from './CarpoolSearchersQueue';
 import CarpoolProposerForm from './CarpoolProposerForm';
 import CarDiscussionModal from './CarDiscussionModal';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Section principale de covoiturage pour un événement.
@@ -14,36 +15,15 @@ import CarDiscussionModal from './CarDiscussionModal';
  * @param {Object} props
  */
 export default function EventCarpoolSection({
-  event,
-  user,
-  profileData: _profileData,
-  isAuthorized,
-  enableCarpoolReimbursement,
-  indemniteKilometrique,
-  convoiDrivers,
-  individualDrivers: _individualDrivers,
-  submittingCovoit,
-  joiningVoitureId,
-  setJoiningVoitureId,
-  joinForm,
-  setJoinForm,
-  demandeRemboursementKm,
-  handleToggleRemboursement,
-  handleRetirerVoiture,
-  handleQuitterVoiture,
-  handleConfirmJoin,
-  handleChercherPlace,
-  handleAnnulerCherchePlace,
-  showProposerForm,
-  setShowProposerForm,
-  voitureForm,
-  setVoitureForm,
-  handleProposerVoiture,
-  reimbursementRule,
-  handleAssignPassenger,
-  handleRemovePassenger,
-  handleSendCarMessage
+  event, user, profileData: _profileData, isAuthorized,
+  enableCarpoolReimbursement, indemniteKilometrique, convoiDrivers, individualDrivers: _individualDrivers,
+  submittingCovoit, joiningVoitureId, setJoiningVoitureId, joinForm, setJoinForm,
+  demandeRemboursementKm, handleToggleRemboursement, handleRetirerVoiture, handleQuitterVoiture,
+  handleConfirmJoin, handleChercherPlace, handleAnnulerCherchePlace,
+  showProposerForm, setShowProposerForm, voitureForm, setVoitureForm,
+  handleProposerVoiture, reimbursementRule, handleAssignPassenger, handleRemovePassenger, handleSendCarMessage
 }) {
+  const { t } = useTranslation();
   const [discussionVoitureId, setDiscussionVoitureId] = useState(null);
   const [doitRentrerDirectSearch, setDoitRentrerDirectSearch] = useState(false);
 
@@ -69,7 +49,7 @@ export default function EventCarpoolSection({
       {event.enableCarpool !== false && (
         <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
           <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1 mb-3">
-            🚗 Convoi & Covoiturage (Départ du local)
+            🚗 {t('agenda.carpoolSectionTitle') || "Offres de covoiturage pour ce trajet"} ({t('agenda.departure') || "Départ"} du local)
           </h4>
 
           {/* 📊 Bandeau Jauge Convoi (Demande vs Offre) */}
@@ -78,13 +58,17 @@ export default function EventCarpoolSection({
               <span className="text-base">📊</span>
               <div>
                 <span className="font-bold text-encre-noire block">
-                  Jauge convoi : {gauge.offreTransport} place{gauge.offreTransport > 1 ? 's' : ''} offerte{gauge.offreTransport > 1 ? 's' : ''} / {gauge.demandeTransport} demandée{gauge.demandeTransport > 1 ? 's' : ''}
+                  {gauge.offreTransport > 1 
+                    ? t('agenda.convoyGaugePlural', { offered: gauge.offreTransport, requested: gauge.demandeTransport })
+                    : t('agenda.convoyGauge', { offered: gauge.offreTransport, requested: gauge.demandeTransport })
+                    || `Jauge convoi : ${gauge.offreTransport} place${gauge.offreTransport > 1 ? 's' : ''} offerte${gauge.offreTransport > 1 ? 's' : ''} / ${gauge.demandeTransport} demandée${gauge.demandeTransport > 1 ? 's' : ''}`
+                  }
                 </span>
                 <span className="text-[10px] text-encre-noire/70">
                   {gauge.isCapacitySufficient
                     ? "Capacité suffisante pour les besoins actuels"
                     : gauge.demandeTransport > gauge.offreTransport
-                      ? `Besoin d'au moins ${gauge.demandeTransport - gauge.offreTransport} place(s) supplémentaire(s)`
+                      ? (t('agenda.convoyNeedSeats', { count: gauge.demandeTransport - gauge.offreTransport }) || `Besoin d'au moins ${gauge.demandeTransport - gauge.offreTransport} place(s) supplémentaire(s)`)
                       : "Véhicules prêts"}
                 </span>
               </div>
@@ -95,7 +79,7 @@ export default function EventCarpoolSection({
                   ? "bg-green-100 border-green-400 text-green-800"
                   : "bg-amber-100 border-amber-400 text-amber-800"
               }`}>
-                {gauge.isCapacitySufficient ? "✅ Équilibré" : "⏳ Places recherchées"}
+                {gauge.isCapacitySufficient ? "✅ Équilibré" : `⏳ ${t('agenda.badgeSeatsSearched') || "Places recherchées"}`}
               </span>
             </div>
           </div>
@@ -103,7 +87,7 @@ export default function EventCarpoolSection({
           {/* Grille des véhicules */}
           <div className="flex flex-col gap-3">
             {voituresList.length === 0 ? (
-              <p className="text-[11px] italic opacity-60 text-left">Aucun chauffeur ne s'est encore déclaré pour cet événement.</p>
+              <p className="text-[11px] italic opacity-60 text-left">{t('agenda.carpoolNoOffers') || "Aucune proposition de covoiturage pour le moment."}</p>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                 {voituresList.map((voiture) => (
@@ -158,9 +142,9 @@ export default function EventCarpoolSection({
                       ? 'bg-neutral-200 text-neutral-500 border border-neutral-300 opacity-60 cursor-not-allowed shadow-none'
                       : 'theme-bg-ocre text-encre-noire hover:brightness-105 cursor-pointer'
                   }`}
-                  title={isProposerDisabled ? "Capacité de convoi suffisante pour les inscrits actuels." : "Proposer mon véhicule"}
+                  title={isProposerDisabled ? "Capacité de convoi suffisante pour les inscrits actuels." : (t('agenda.carpoolProposeVehicle') || "Proposer mon véhicule")}
                 >
-                  🚗 Proposer ma voiture pour le trajet
+                  🚗 {t('agenda.carpoolProposeVehicle') || "Je propose mon véhicule"}
                 </button>
                 {isProposerDisabled && (
                   <p className="text-[10px] italic font-bold text-amber-900 bg-amber-50 border border-dashed border-amber-300 p-2 rounded text-center">

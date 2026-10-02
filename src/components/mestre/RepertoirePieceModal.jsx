@@ -26,6 +26,7 @@ import {
   findMatchingCultureDoc,
   findMatchingChoreography
 } from '../../utils/repertoireMatcher';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Modale de création et d'édition d'un morceau du répertoire musical.
@@ -49,6 +50,7 @@ export default function RepertoirePieceModal({
   piecesList = null,
   onNavigatePiece = null
 }) {
+  const { t } = useTranslation();
   // Champs administratifs & de direction artistique
   const [titre, setTitre] = useState('');
   const [statutSaison, setStatutSaison] = useState('saison'); // 'saison' | 'chantier' | 'archive'
@@ -56,8 +58,6 @@ export default function RepertoirePieceModal({
   const [notes, setNotes] = useState('');
 
   // Vidéos personnalisables & Signes gestuels du Mestre (IDs)
-  const [videos, setVideos] = useState([]);
-  const [signalIds, setSignalIds] = useState([]);
   const [sinaisDoMestre, setSinaisDoMestre] = useState([]);
 
   // Pointeurs réactifs vers les applications et modules transversaux
@@ -231,24 +231,6 @@ export default function RepertoirePieceModal({
       setStatutSaison(pieceToEdit.statutSaison || 'saison');
       setEtatValidation(pieceToEdit.etatValidation || 'pret');
       setNotes(pieceToEdit.notes || '');
-      const rawVideos = Array.isArray(pieceToEdit.videos) ? pieceToEdit.videos : [];
-      const normalizedVideos = rawVideos.map((v) => {
-        let insts = [];
-        if (Array.isArray(v.instruments)) {
-          insts = v.instruments.filter(Boolean);
-        } else if (typeof v.instruments === 'string' && v.instruments.trim()) {
-          insts = v.instruments.split(',').map((s) => s.trim()).filter(Boolean);
-        } else if (v.pupitre) {
-          insts = [v.pupitre.trim()];
-        }
-        return {
-          ...v,
-          url: (v.url || '').trim(),
-          titre: (v.titre || '').trim(),
-          instruments: insts,
-          isLiveOrGlobal: Boolean(v.isLiveOrGlobal || insts.length === 0)
-        };
-      });
       const rawSigIds = Array.isArray(pieceToEdit.signalIds) ? pieceToEdit.signalIds : [];
       const rawSinais = Array.isArray(pieceToEdit.sinaisDoMestre) ? pieceToEdit.sinaisDoMestre : [];
       let initialSinais = rawSinais;
@@ -261,7 +243,6 @@ export default function RepertoirePieceModal({
           bar: null
         }));
       }
-      setSignalIds(rawSigIds);
       setSinaisDoMestre(initialSinais);
       setSelectedToadaId(pieceToEdit.toadaDocId || '');
 
@@ -285,8 +266,6 @@ export default function RepertoirePieceModal({
       setStatutSaison('saison');
       setEtatValidation('pret');
       setNotes('');
-      setVideos([]);
-      setSignalIds([]);
       setSinaisDoMestre([]);
       setSelectedToadaId('');
       setSelectedSeqUrl('');
@@ -578,7 +557,7 @@ export default function RepertoirePieceModal({
       if (typeof s !== 'object' || s === null) return s;
       if (!isSeq) {
         // Pour un morceau non séquencé, éliminer les résidus de numéro de mesure
-        const { mesure, bar, barIndex, ...rest } = s;
+        const { mesure: _mesure, bar: _bar, barIndex: _barIndex, ...rest } = s;
         return { ...rest, mesure: null, bar: null };
       }
       return s;
@@ -748,7 +727,7 @@ export default function RepertoirePieceModal({
           <div className="flex items-center gap-2 min-w-0">
             <h3 className="text-base md:text-lg font-black uppercase tracking-widest text-cordel-wood flex items-center gap-2 truncate">
               <span>📜</span>
-              <span className="truncate">{pieceToEdit ? "Modifier le morceau" : "Ajouter un morceau au répertoire"}</span>
+              <span className="truncate">{pieceToEdit ? t('repertoire.modalTitleEdit') : t('repertoire.modalTitleNew')}</span>
             </h3>
           </div>
 
@@ -804,7 +783,7 @@ export default function RepertoirePieceModal({
           <div className="flex flex-col gap-1">
             <div className="flex items-center justify-between gap-2">
               <label className="text-[10px] uppercase font-black tracking-wider text-cordel-master-dark">
-                Titre du morceau / Rythme <span className="text-red-600">*</span>
+                {t('repertoire.fieldTitle')}
               </label>
               {selectedSong && selectedSong.titre && titre.trim() !== selectedSong.titre && (
                 <button
@@ -820,7 +799,7 @@ export default function RepertoirePieceModal({
             <input
               type="text"
               required
-              placeholder="Ex: Baque de Luanda, Fatras, Virada Samambaia..."
+              placeholder={t('repertoire.titlePlaceholder')}
               value={titre}
               onChange={handleTitreChange}
               disabled={submitting}
@@ -885,7 +864,7 @@ export default function RepertoirePieceModal({
             {/* Statut de saison */}
             <div className="flex flex-col gap-1.5 p-3 rounded bg-white border border-encre-noire/15 shadow-xs">
               <label className="text-[10px] uppercase font-black tracking-wider text-cordel-wood">
-                Statut de la saison
+                {t('repertoire.fieldSeasonStatus')}
               </label>
               <div className="flex flex-col gap-1.5 text-xs font-bold">
                 <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -899,7 +878,7 @@ export default function RepertoirePieceModal({
                   />
                   <span className="flex items-center gap-1.5">
                     <span>🟢</span>
-                    <span>Au programme cette année</span>
+                    <span>{t('repertoire.seasonStatusProgram')}</span>
                   </span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -913,7 +892,7 @@ export default function RepertoirePieceModal({
                   />
                   <span className="flex items-center gap-1.5">
                     <span>🟡</span>
-                    <span>En préparation / Chantier</span>
+                    <span>{t('repertoire.seasonStatusPreparation')}</span>
                   </span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -927,7 +906,7 @@ export default function RepertoirePieceModal({
                   />
                   <span className="flex items-center gap-1.5">
                     <span>⚪</span>
-                    <span>Au frigo / Archives</span>
+                    <span>{t('repertoire.seasonStatusArchived')}</span>
                   </span>
                 </label>
               </div>
@@ -936,7 +915,7 @@ export default function RepertoirePieceModal({
             {/* État de validation artistique */}
             <div className="flex flex-col gap-1.5 p-3 rounded bg-white border border-encre-noire/15 shadow-xs">
               <label className="text-[10px] uppercase font-black tracking-wider text-cordel-wood">
-                Maturité artistique
+                {t('repertoire.fieldMaturity')}
               </label>
               <p className="text-[9.5px] text-encre-noire/60 leading-tight mb-1">
                 La validation est libre : un morceau peut être prêt même sans ressource externe attachée.
@@ -953,7 +932,7 @@ export default function RepertoirePieceModal({
                   />
                   <span className="flex items-center gap-1.5">
                     <span>🟢</span>
-                    <span>Validé / Prêt pour la scène</span>
+                    <span>{t('repertoire.maturityReady')}</span>
                   </span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -967,7 +946,7 @@ export default function RepertoirePieceModal({
                   />
                   <span className="flex items-center gap-1.5">
                     <span>🟡</span>
-                    <span>À affiner / En répétition</span>
+                    <span>{t('repertoire.maturityInProgress')}</span>
                   </span>
                 </label>
               </div>
@@ -1001,7 +980,7 @@ export default function RepertoirePieceModal({
                 <div className="flex items-center justify-between gap-1 flex-wrap">
                   <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center gap-1">
                     <span>🗣️</span>
-                    <span>Chant / Toada associée</span>
+                    <span>{t('repertoire.fieldToada')}</span>
                   </label>
 
                   {/* Filtre à bascule : Toutes | Non attribuées */}
@@ -1015,7 +994,7 @@ export default function RepertoirePieceModal({
                           : 'bg-white text-stone-600 border-stone-200 hover:bg-stone-50'
                       }`}
                     >
-                      Toutes ({toadasList.length})
+                      {t('repertoire.toadaFilterAll')} ({toadasList.length})
                     </button>
                     <button
                       type="button"
@@ -1026,7 +1005,7 @@ export default function RepertoirePieceModal({
                           : 'bg-white text-stone-600 border-stone-200 hover:bg-stone-50'
                       }`}
                     >
-                      Non attribuées ({availableToadasCount})
+                      {t('repertoire.toadaFilterAvailable')} ({availableToadasCount})
                     </button>
                   </div>
                 </div>
@@ -1037,7 +1016,7 @@ export default function RepertoirePieceModal({
                   disabled={submitting || loadingDocs}
                   className="theme-input text-xs font-semibold p-2 bg-cordel-bg-light border border-encre-noire/30 rounded cursor-pointer"
                 >
-                  <option value="">-- Aucun chant associé --</option>
+                  <option value="">-- {t('repertoire.toadaPlaceholder')} --</option>
                   {filteredToadas.map((song) => {
                     const linkedTitle = toadaUsageMap.get(song.id);
                     const isLinked = Boolean(linkedTitle);
@@ -1047,7 +1026,7 @@ export default function RepertoirePieceModal({
                         value={song.id}
                         style={isLinked ? { opacity: 0.5, color: '#888' } : {}}
                       >
-                        🗣️ {song.titre} {song.nacao ? `(${song.nacao})` : ''} {isLinked ? `— [✓ Déjà liée à : ${linkedTitle}]` : ''}
+                        🗣️ {song.titre} {song.nacao ? `(${song.nacao})` : ''} {isLinked ? `— [✓ ${t('repertoire.toadaAlreadyLinked', 'Déjà liée à : {{piece}}', { piece: linkedTitle })}]` : ''}
                       </option>
                     );
                   })}
@@ -1057,7 +1036,7 @@ export default function RepertoirePieceModal({
                 {currentSelectedLinkedPiece && (
                   <div className="flex items-center gap-1.5 px-2 py-1 text-[9.5px] font-bold text-amber-900 bg-amber-50 border border-amber-200 rounded">
                     <span>ℹ️</span>
-                    <span>Cette toada est déjà liée à : <u>« {currentSelectedLinkedPiece} »</u></span>
+                    <span>{t('repertoire.toadaAlreadyLinked', 'Déjà liée à : {{piece}}', { piece: currentSelectedLinkedPiece })}</span>
                   </div>
                 )}
 
@@ -1091,7 +1070,7 @@ export default function RepertoirePieceModal({
                 <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center justify-between">
                   <span className="flex items-center gap-1">
                     <span>🥁</span>
-                    <span>Séquence / Preset Séquenceur</span>
+                    <span>{t('repertoire.fieldSequencer')}</span>
                   </span>
                   {selectedSeqUrl && (
                     <span className="text-[8.5px] text-amber-700 font-bold lowercase">
@@ -1105,7 +1084,7 @@ export default function RepertoirePieceModal({
                   disabled={submitting || loadingRhythms}
                   className="theme-input text-xs font-semibold p-2 bg-cordel-bg-light border border-encre-noire/30 rounded cursor-pointer"
                 >
-                  <option value="">-- Aucun préréglage ou séquence liée --</option>
+                  <option value="">-- {t('repertoire.sequencerPlaceholder')} --</option>
                   {presetsList.length > 0 && (
                     <optgroup label="⭐ 🎛️ Préréglages Complets (Presets - Audio & Tablature en direct)">
                       {presetsList.map((rhythm) => (
@@ -1232,7 +1211,7 @@ export default function RepertoirePieceModal({
               <div className="flex flex-col gap-1">
                 <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center gap-1">
                   <span>💃</span>
-                  <span>Chorégraphie Dançad'Or associée</span>
+                  <span>{t('repertoire.fieldDancador')}</span>
                 </label>
                 <select
                   value={selectedChoreoId}
@@ -1240,7 +1219,7 @@ export default function RepertoirePieceModal({
                   disabled={submitting || loadingChoreos}
                   className="theme-input text-xs font-semibold p-2 bg-cordel-bg-light border border-encre-noire/30 rounded cursor-pointer"
                 >
-                  <option value="">-- Aucune chorégraphie liée --</option>
+                  <option value="">-- {t('repertoire.dancadorPlaceholder')} --</option>
                   {choreographies.map((choreo) => (
                     <option key={choreo.id} value={choreo.id}>
                       💃 {choreo.nom}
@@ -1345,7 +1324,7 @@ export default function RepertoirePieceModal({
                   title="Créer une fiche sur le Varal Culture pré-remplie avec ces informations"
                 >
                   <span>📜</span>
-                  <span className="hidden sm:inline">Créer fiche Culture</span>
+                  <span className="hidden sm:inline">{t('repertoire.btnCreateCultureFiche')}</span>
                 </button>
                 <button
                   type="button"
@@ -1517,7 +1496,7 @@ export default function RepertoirePieceModal({
               className="flex items-center gap-1.5 text-[10px] uppercase font-black tracking-wider text-cordel-master-dark hover:text-cordel-wood cursor-pointer select-none text-left"
             >
               <span>{collapsedSections.notes ? '▶' : '▼'}</span>
-              <span>📝 Notes du Mestre &amp; Consignes {notes.trim() ? '(renseignées)' : ''}</span>
+              <span>📝 {t('repertoire.fieldMestreNotes')} {notes.trim() ? '(renseignées)' : ''}</span>
             </button>
             <button
               type="button"
@@ -1531,7 +1510,7 @@ export default function RepertoirePieceModal({
           {!collapsedSections.notes ? (
             <textarea
               rows={3}
-              placeholder="Ex: Tempo cible 128 BPM, break avec virada en 2 temps, entrée soliste au repique..."
+              placeholder={t('repertoire.notesPlaceholder')}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               disabled={submitting}
@@ -1574,7 +1553,7 @@ export default function RepertoirePieceModal({
             disabled={submitting || !titre.trim()}
             className="px-5 py-2 text-xs font-black uppercase tracking-wider shadow-sm"
           >
-            {submitting ? "Enregistrement..." : (pieceToEdit ? "💾 Enregistrer les modifications" : "➕ Ajouter au répertoire")}
+            {submitting ? "Enregistrement..." : (pieceToEdit ? `💾 ${t('repertoire.btnSavePiece')}` : `➕ ${t('repertoire.btnSavePiece')}`)}
           </CordelButton>
         </div>
       </div>

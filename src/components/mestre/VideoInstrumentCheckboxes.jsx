@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Sélecteur multi-instruments par cases à cocher / puces Cordel pour une vidéo du répertoire (< 120 lignes).
@@ -17,6 +18,7 @@ export default function VideoInstrumentCheckboxes({
   isLiveOrGlobal = false,
   onToggleLive = null
 }) {
+  const { t } = useTranslation();
   const currentList = Array.isArray(selectedInstruments) ? selectedInstruments : [];
 
   const handleToggle = (inst) => {
@@ -55,7 +57,7 @@ export default function VideoInstrumentCheckboxes({
             }`}
           >
             <span>🎪</span>
-            <span>Vidéo Live / Répétition générale</span>
+            <span>{t('repertoire.videoIsLive')}</span>
             <span className="text-[8px] font-bold">({isLiveOrGlobal ? '✓ Actif' : '○ Non'})</span>
           </button>
           {isLiveOrGlobal && (
@@ -69,7 +71,7 @@ export default function VideoInstrumentCheckboxes({
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-1.5">
           <span className="text-[9px] font-black uppercase text-cordel-master-dark/80">
-            Instruments ciblés :
+            {t('repertoire.videoTargetInstruments')}
           </span>
           {currentList.length === 0 ? (
             <span className="text-[8.5px] italic text-stone-500 font-medium">
@@ -89,7 +91,7 @@ export default function VideoInstrumentCheckboxes({
             className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 cursor-pointer transition-colors"
             title="Associer à tous les instruments"
           >
-            Tout cocher
+            {t('repertoire.selectAll')}
           </button>
           <button
             type="button"
@@ -97,7 +99,7 @@ export default function VideoInstrumentCheckboxes({
             className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-300 cursor-pointer transition-colors"
             title="Décocher tous les instruments"
           >
-            Décocher tout
+            {t('repertoire.deselectAll')}
           </button>
         </div>
       </div>

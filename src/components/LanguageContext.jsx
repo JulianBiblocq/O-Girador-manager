@@ -51,14 +51,14 @@ export function LanguageProvider({ children }) {
       }
     }
 
-    // Remplacement dynamique des variables dans la chaîne (ex: {day})
+    // Remplacement dynamique des variables dans la chaîne (ex: {day} ou {{rate}})
     if (typeof value === 'string' && params !== undefined && params !== null) {
       if (typeof params === 'object') {
         Object.keys(params).forEach((paramKey) => {
-          value = value.replace(new RegExp(`\\{${paramKey}\\}`, 'g'), params[paramKey]);
+          value = value.replace(new RegExp(`\\{\\{?${paramKey}\\}\\}?`, 'g'), params[paramKey]);
         });
       } else {
-        value = value.replace(/\{day\}/g, String(params)).replace(/\{0\}/g, String(params));
+        value = value.replace(/\{\{?(day|0)\}\}?/g, String(params));
       }
     }
 

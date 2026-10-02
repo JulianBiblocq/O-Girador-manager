@@ -17,6 +17,7 @@ import { subscribeGroupTrainings } from '../../services/aisanceService';
 import { resolvePieceTrainings, buildResolutionDictionaries, resolvePieceLiveTechnicalData } from '../../utils/repertoireMatcher';
 import TrainingCompactCard from '../pedagogy/TrainingCompactCard';
 import { canonicalizeGroupId } from '../../utils/tenantUtils';
+import { useTranslation } from '../LanguageContext';
 
 export default function EventRevisionProgram({
   setlist = [],
@@ -37,6 +38,7 @@ export default function EventRevisionProgram({
   linkedPatterns = [],
   trainingsList: externalTrainingsList
 }) {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('filConducteur'); // 'filConducteur' | 'danse'
   const [selectedChoreoToAdd, setSelectedChoreoToAdd] = useState('');
   const [activeVideoToWatch, setActiveVideoToWatch] = useState(null);
@@ -219,7 +221,7 @@ export default function EventRevisionProgram({
           }`}
         >
           <span>🧭</span>
-          <span>Fil conducteur</span>
+          <span>{t('agenda.filConducteurTitle') || "Fil conducteur"}</span>
           {setlist.length > 0 && (
             <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-cordel-wood/10 text-cordel-wood font-black">
               {setlist.length}
@@ -236,7 +238,7 @@ export default function EventRevisionProgram({
           }`}
         >
           <span>💃</span>
-          <span>Danse</span>
+          <span>{t('agenda.danceTrackTitle') || "Danse"}</span>
           {eventChoreographies.length > 0 && (
             <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-cordel-wood/10 text-cordel-wood font-black">
               {eventChoreographies.length}
@@ -253,12 +255,12 @@ export default function EventRevisionProgram({
             <div className="p-3 mb-4 rounded bg-[#fdfaf2] border border-dashed border-[var(--color-cordel-ocre,#c05621)]/50 text-[11px] font-bold text-encre-noire/80 italic flex items-start gap-2 shadow-xs">
               <span className="text-base shrink-0 select-none">🧭</span>
               <span className="leading-snug">
-                Ce fil conducteur donne les intentions de travail de la séance. Il s'adapte en direct selon les forces en présence et les ajustements du moment.
+                {t('agenda.filConducteurNotice') || "Ce fil conducteur donne les intentions de travail de la séance. Il s'adapte en direct selon les forces en présence et les ajustements du moment."}
               </span>
             </div>
 
             {setlist.length === 0 && linkedSequencerRhythms.length === 0 ? (
-              <p className="text-[11px] italic opacity-60 mb-4">Aucun point de travail ou morceau n'est encore inscrit au fil conducteur de cette séance.</p>
+              <p className="text-[11px] italic opacity-60 mb-4">{t('agenda.programEmpty') || "Le programme de cet événement n'a pas encore été défini."}</p>
             ) : (
               <div className="flex flex-col gap-2.5 mb-4">
                 {/* Liste transversale du Fil Conducteur */}
@@ -518,7 +520,7 @@ export default function EventRevisionProgram({
               <div className="mt-4 pt-4 border-t border-dashed border-cordel-master-dark/15">
                 <h5 className="font-bold text-[10px] uppercase tracking-widest text-cordel-wood mb-2.5 flex items-center gap-1.5">
                   <span>➕</span>
-                  <span>Ajouter un morceau au fil conducteur</span>
+                  <span>{t('agenda.programAddPiece') || "Ajouter un morceau au programme"}</span>
                 </h5>
                 <form
                   onSubmit={(e) => {
@@ -539,7 +541,7 @@ export default function EventRevisionProgram({
                 >
                   <div className="flex flex-col gap-1 text-left">
                     <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                      Choisir un morceau du Répertoire
+                      {t('agenda.chooseFromRepertoire') || "Choisir un morceau du Répertoire"}
                     </label>
                     <select
                       value={selectedRepertoirePieceId}
@@ -560,7 +562,7 @@ export default function EventRevisionProgram({
                           ? "-- Chargement du répertoire... --"
                           : activeRepertoirePieces.length === 0
                             ? "-- Aucun morceau dans le répertoire --"
-                            : "-- Sélectionner un morceau du Répertoire (ou saisie libre ci-dessous) --"}
+                            : (t('agenda.programSelectFromRepertoire') || "-- Sélectionner un morceau du Répertoire (ou saisie libre ci-dessous) --")}
                       </option>
                       {activeRepertoirePieces.map((p) => (
                         <option key={p.id} value={p.id}>
@@ -572,11 +574,11 @@ export default function EventRevisionProgram({
 
                   <div className="flex flex-col gap-1 text-left">
                     <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                      Titre du morceau ou de l'intention *
+                      {t('agenda.pieceOrIntentionTitle') || "Titre du morceau ou de l'intention *"}
                     </label>
                     <input
                       type="text"
-                      placeholder="Ex: Baque de Luanda, Toada Ô Samambaia, Pas d'entrée..."
+                      placeholder={t('agenda.programCustomTitlePlaceholder') || "Titre du morceau (ou saisie libre)..."}
                       value={newMorceauTitre}
                       onChange={(e) => setNewMorceauTitre(e.target.value)}
                       disabled={updatingSetlist}
@@ -587,11 +589,11 @@ export default function EventRevisionProgram({
 
                   <div className="flex flex-col gap-1 text-left">
                     <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                      🎯 Notes d'intention / Focus de travail
+                      🎯 {t('agenda.intentNotesFocus') || "Notes d'intention / focus de travail"}
                     </label>
                     <input
                       type="text"
-                      placeholder="Notes de révision (ex: Bien caler le chant, break à 95 BPM...)"
+                      placeholder={t('agenda.programMestreNotesPlaceholder') || "Notes / consignes du Mestre..."}
                       value={newMorceauNotes}
                       onChange={(e) => setNewMorceauNotes(e.target.value)}
                       disabled={updatingSetlist}
@@ -605,7 +607,7 @@ export default function EventRevisionProgram({
                     disabled={updatingSetlist || (!newMorceauTitre.trim() && !selectedRepertoirePieceId)}
                     className="w-full py-2 text-[10px] font-black uppercase tracking-widest"
                   >
-                    {updatingSetlist ? "Enregistrement..." : "Ajouter au fil conducteur"}
+                    {updatingSetlist ? "Enregistrement..." : (t('agenda.programBtnSaveSet') || "Enregistrer le programme du set")}
                   </CordelButton>
                 </form>
               </div>
@@ -619,7 +621,7 @@ export default function EventRevisionProgram({
             {loadingChoreos || loadingSteps ? (
               <p className="text-[11px] italic opacity-60 mb-4">Chargement du catalogue Dançador...</p>
             ) : eventChoreographies.length === 0 ? (
-              <p className="text-[11px] italic opacity-60 mb-4">Aucune chorégraphie associée à cet événement.</p>
+              <p className="text-[11px] italic opacity-60 mb-4">{t('agenda.noChoreographyLinked') || "Aucune chorégraphie associée à cet événement."}</p>
             ) : (
               <div className="flex flex-col gap-4 mb-4">
                 {eventChoreographies.map((choreo) => {
@@ -702,12 +704,12 @@ export default function EventRevisionProgram({
             {isAuthorized && (
               <div className="mt-4 pt-4 border-t border-dashed border-cordel-master-dark/15">
                 <h5 className="font-bold text-[10px] uppercase tracking-widest text-cordel-wood mb-2.5">
-                  ➕ Ajouter une Chorégraphie
+                  ➕ {t('agenda.btnAddChoreography') || "Ajouter une chorégraphie"}
                 </h5>
                 <form onSubmit={submitAddChoreo} className="flex flex-col gap-2.5">
                   <div className="flex flex-col gap-1 text-left">
                     <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                      Choisir une chorégraphie de Dançador
+                      {t('agenda.chooseChoreography') || "Choisir une chorégraphie de Dançador"}
                     </label>
                     <select
                       value={selectedChoreoToAdd}
@@ -719,7 +721,7 @@ export default function EventRevisionProgram({
                         {loadingChoreos 
                           ? "-- Chargement du catalogue... --" 
                           : allChoreographies.length === 0 
-                            ? "-- Aucune chorégraphie publiée --" 
+                            ? (t('agenda.noPublishedChoreography') || "-- Aucune chorégraphie publiée --") 
                             : "-- Choisir une chorégraphie --"}
                       </option>
                       {allChoreographies.filter(c => !dancadorChoreoIds.includes(c.id)).map((choreo) => (
@@ -736,7 +738,7 @@ export default function EventRevisionProgram({
                     disabled={updatingSetlist || !selectedChoreoToAdd}
                     className="w-full py-2 text-[10px] font-black uppercase tracking-widest"
                   >
-                    {updatingSetlist ? "Enregistrement..." : "Ajouter au programme"}
+                    {updatingSetlist ? "Enregistrement..." : (t('agenda.btnAddToProgram') || "Ajouter au programme")}
                   </CordelButton>
                 </form>
               </div>

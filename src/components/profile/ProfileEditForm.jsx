@@ -68,7 +68,7 @@ export default function ProfileEditForm({
       )}
 
       {/* EN-TÊTE : IDENTITÉ & ACCORD DU VOCABULAIRE */}
-      <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col gap-4">
+      <CordelCard variant="default" useExtremeBorder={true} className="flex flex-col gap-4">
         <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/10 pb-1 flex items-center gap-1.5">
           <XiloUser size={14} /> Identité & Préférences Vocabulaire
         </h4>
@@ -130,7 +130,7 @@ export default function ProfileEditForm({
       </CordelCard>
 
       {/* BLOC 1 : PROFIL PUBLIC (Trombinoscope) */}
-      <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col gap-4">
+      <CordelCard variant="default" useExtremeBorder={true} className="flex flex-col gap-4">
         <div className="bg-emerald-50/90 dark:bg-emerald-950/30 border-2 border-dashed border-emerald-500/40 p-3 rounded-[6px] text-left">
           <div className="flex items-center gap-2.5">
             <XiloEye size={22} className="text-emerald-700 dark:text-emerald-400 shrink-0" />
@@ -178,7 +178,7 @@ export default function ProfileEditForm({
       </CordelCard>
 
       {/* BLOC 2 : COORDONNÉES & CONFIDENTIALITÉ */}
-      <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col gap-4">
+      <CordelCard variant="default" useExtremeBorder={true} className="flex flex-col gap-4">
         <div className="bg-amber-50/90 dark:bg-amber-950/30 border-2 border-dashed border-amber-500/40 p-3 rounded-[6px] text-left">
           <div className="flex items-center gap-2.5">
             <XiloLock size={22} className="text-amber-700 dark:text-amber-400 shrink-0" />
@@ -307,7 +307,7 @@ export default function ProfileEditForm({
       </CordelCard>
 
       {/* BLOC 3 : LOGISTIQUE, PLACEMENT SCÉNIQUE & SANTÉ (Strictement Confidentiel Admin / Mestre) */}
-      <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col gap-4">
+      <CordelCard variant="default" useExtremeBorder={true} className="flex flex-col gap-4">
         <div className="bg-sky-50/90 dark:bg-sky-950/30 border-2 border-dashed border-sky-500/40 p-3 rounded-[6px] text-left">
           <div className="flex items-center gap-2.5">
             <XiloShield size={22} className="text-sky-700 dark:text-sky-400 shrink-0" />
@@ -444,60 +444,66 @@ export default function ProfileEditForm({
             </label>
           </div>
         )}
+      </CordelCard>
 
-        {/* Préférences Alimentaires & Allergies (Confidentiel) */}
-        <div className="border-t border-dashed border-cordel-master-dark/15 pt-3.5 mt-1 flex flex-col gap-3 text-left">
-          <h5 className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood flex items-center gap-1.5">
-            🍽️ Préférences Alimentaires & Allergies (Confidentiel Admin)
-          </h5>
+      {/* BLOC : PRÉFÉRENCES ALIMENTAIRES & ALLERGIES */}
+      <CordelCard variant="default" useExtremeBorder={true} className="flex flex-col gap-3 text-left">
+        <h5 className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood flex items-center gap-1.5 border-b border-dashed border-cordel-master-dark/15 pb-1">
+          🍽️ {t('userProfile.dietSectionTitle')}
+        </h5>
 
-          <p className="text-[10px] text-cordel-master-dark/80 italic font-medium leading-tight">
-            💡 Ces informations permettent aux organisateurs de prévoir les repas adaptés lors des stages, répétitions ou prestations avec restauration.
-          </p>
+        <p className="text-[10px] text-cordel-master-dark/80 italic font-medium leading-tight">
+          💡 Ces informations permettent aux organisateurs de prévoir les repas adaptés lors des stages, répétitions ou prestations avec restauration.
+        </p>
 
-          <div className="flex flex-col gap-2 bg-cordel-bg-light/60 p-3 rounded border border-dashed border-cordel-master-dark/20">
-            <span className="text-[9px] uppercase font-bold text-cordel-master-dark">
-              Régime alimentaire :
-            </span>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {["Végétarien", "Végétalien", "Sans Gluten", "Sans Lactose"].map(option => {
-                const isChecked = (formData.dietaryRestrictions || []).includes(option);
-                return (
-                  <label key={option} className="flex items-center gap-2 text-xs font-semibold cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={() => {
-                        const current = formData.dietaryRestrictions || [];
-                        const updated = isChecked
-                          ? current.filter(item => item !== option)
-                          : [...current, option];
-                        setFormData(prev => ({ ...prev, dietaryRestrictions: updated }));
-                      }}
-                      disabled={saving}
-                      className="w-4 h-4 accent-cordel-wood cursor-pointer shrink-0"
-                    />
-                    <span>{option}</span>
-                  </label>
-                );
-              })}
-            </div>
+        <div className="flex flex-col gap-2 bg-cordel-bg-light/60 p-3 rounded border border-dashed border-cordel-master-dark/20">
+          <span className="text-[9px] uppercase font-bold text-cordel-master-dark">
+            {t('userProfile.dietLabel')}
+          </span>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {[
+              { id: 'Végétarien', label: t('userProfile.dietVegetarian') },
+              { id: 'Végan', label: t('userProfile.dietVegan') },
+              { id: 'Omnivore', label: t('userProfile.dietOmnivore') },
+              { id: 'Sans porc', label: t('userProfile.dietNoPork') },
+              { id: 'Sans gluten', label: t('userProfile.dietGlutenFree') }
+            ].map(({ id, label }) => {
+              const isChecked = (formData.dietaryRestrictions || []).includes(id);
+              return (
+                <label key={id} className="flex items-center gap-2 text-xs font-semibold cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => {
+                      const current = formData.dietaryRestrictions || [];
+                      const updated = isChecked
+                        ? current.filter(item => item !== id)
+                        : [...current, id];
+                      setFormData(prev => ({ ...prev, dietaryRestrictions: updated }));
+                    }}
+                    disabled={saving}
+                    className="w-4 h-4 accent-cordel-wood cursor-pointer shrink-0"
+                  />
+                  <span>{label}</span>
+                </label>
+              );
+            })}
           </div>
+        </div>
 
-          <div className="flex flex-col gap-1 bg-cordel-bg-light/60 p-3 rounded border border-dashed border-cordel-master-dark/20">
-            <label className="text-[9px] uppercase font-bold text-cordel-master-dark">
-              Allergies ou précisions (arachides, fruits de mer, etc.) :
-            </label>
-            <textarea
-              name="allergies"
-              value={formData.allergies || ''}
-              onChange={handleChange}
-              disabled={saving}
-              rows={2}
-              placeholder="Ex : Allergie sévère aux arachides, fruits à coque..."
-              className="theme-input w-full text-xs font-medium resize-y"
-            />
-          </div>
+        <div className="flex flex-col gap-1 bg-cordel-bg-light/60 p-3 rounded border border-dashed border-cordel-master-dark/20">
+          <label className="text-[9px] uppercase font-bold text-cordel-master-dark">
+            {t('userProfile.allergiesLabel')}
+          </label>
+          <textarea
+            name="allergies"
+            value={formData.allergies || ''}
+            onChange={handleChange}
+            disabled={saving}
+            rows={2}
+            placeholder="Ex : Allergie sévère aux arachides, fruits à coque..."
+            className="theme-input w-full text-xs font-medium resize-y"
+          />
         </div>
       </CordelCard>
 

@@ -9,6 +9,7 @@ import { useDancadorChoreographies } from '../../hooks/useDancadorData';
 import { useRepertoireVaralDocs } from '../../hooks/useRepertoireVaralDocs';
 import { buildResolutionDictionaries, resolvePieceLiveTechnicalData, getPieceTablature } from '../../utils/repertoireMatcher';
 import { subscribeGroupTrainings, subscribeUserAisance } from '../../services/aisanceService';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Vue Répertoire côté Adhérent / Élève (< 220 lignes).
@@ -16,6 +17,7 @@ import { subscribeGroupTrainings, subscribeUserAisance } from '../../services/ai
  * avec accordéons repliables et bascule globale Tout déplier / replier.
  */
 export default function MemberRepertoireView({ groupId, user, profileData, sequenceurUrl }) {
+  const { t } = useTranslation();
   const effectiveUserId = user?.uid || profileData?.uid || profileData?.id;
 
   const [pieces, setPieces] = useState([]);
@@ -44,17 +46,11 @@ export default function MemberRepertoireView({ groupId, user, profileData, seque
     const colRef = collection(db, 'associations', groupId, 'repertoire');
     const unsub = onSnapshot(colRef, (snap) => {
       const fetched = [];
-      snap.forEach((d) => {
-        const data = d.data();
-        if (data.statutSaison === 'saison') fetched.push({ id: d.id, ...data });
-      });
+      snap.forEach((d) => { if (d.data().statutSaison === 'saison') fetched.push({ id: d.id, ...d.data() }); });
       fetched.sort((a, b) => (a.titre || '').localeCompare(b.titre || ''));
       setPieces(fetched);
       setLoading(false);
-    }, (err) => {
-      console.error("Erreur écoute répertoire adhérent :", err);
-      setLoading(false);
-    });
+    }, (err) => { console.error("Erreur écoute répertoire adhérent :", err); setLoading(false); });
     return () => unsub();
   }, [groupId]);
 
@@ -80,15 +76,16 @@ export default function MemberRepertoireView({ groupId, user, profileData, seque
 
   // 4. Déploiement et centrage automatique si ciblé par URL ou passerelle
   useEffect(() => {
+    let t1, t2;
     const focusPiece = (id) => {
       if (!id) return;
       setExpandedPieces((prev) => new Set([...prev, id]));
-      setTimeout(() => {
+      t1 = setTimeout(() => {
         const el = document.getElementById(`piece-card-${id}`);
         if (el) {
           el.scrollIntoView({ behavior: 'smooth', block: 'center' });
           el.classList.add('ring-4', 'ring-amber-400');
-          setTimeout(() => el.classList.remove('ring-4', 'ring-amber-400'), 3000);
+          t2 = setTimeout(() => el.classList.remove('ring-4', 'ring-amber-400'), 3000);
         }
       }, 350);
     };
@@ -98,7 +95,11 @@ export default function MemberRepertoireView({ groupId, user, profileData, seque
     } catch (_e) {}
     const onCustom = (e) => focusPiece(e.detail?.pieceId);
     window.addEventListener('open-repertoire-piece', onCustom);
-    return () => window.removeEventListener('open-repertoire-piece', onCustom);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      window.removeEventListener('open-repertoire-piece', onCustom);
+    };
   }, [pieces]);
 
   // 5. Dictionnaires de résolution pour mapping direct O(1)
@@ -182,7 +183,7 @@ export default function MemberRepertoireView({ groupId, user, profileData, seque
         <div className="p-8 text-center text-xs font-bold text-stone-500 animate-pulse">Chargement du répertoire...</div>
       ) : resolvedPieces.length === 0 ? (
         <div className="p-8 text-center bg-white/70 border-2 border-dashed border-cordel-master-dark/30 rounded-lg text-xs font-bold text-stone-600">
-          {searchQuery ? 'Aucun morceau ne correspond à votre recherche.' : "Aucun morceau n'est actuellement au programme de la saison."}
+          {searchQuery ? (t('repertoire.noPiecesFound') || 'Aucun morceau ne correspond à votre recherche.') : "Aucun morceau n'est actuellement au programme de la saison."}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">

@@ -1,5 +1,6 @@
 import React from 'react';
 import RoadbookCommissionsPrintSection from './RoadbookCommissionsPrintSection';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Vue imprimable A4 de la feuille de route du concert / événement (Bloc 1 & 2).
@@ -11,6 +12,7 @@ export default function RoadbookPrintView({
   presentsByInstrument = {},
   commissions = []
 }) {
+  const { t } = useTranslation();
   const parcours = event.parcours || {};
   const hebergement = event.hebergement || {};
   const logistique = event.logistiqueDepart || {};
@@ -37,7 +39,7 @@ export default function RoadbookPrintView({
       <div className="border-b-2 border-black pb-2 mb-2 flex justify-between items-start">
         <div>
           <span className="text-[9px] uppercase tracking-wider font-bold block text-neutral-600">
-            Feuille de Route • {event.type || 'Concert / Prestation'}
+            {t('agenda.roadbookTitle') || 'Feuille de Route'} • {event.type || 'Concert / Prestation'}
           </span>
           <h1 className="text-lg font-black tracking-tight text-black m-0 uppercase">{event.titre || 'Événement'}</h1>
           <div className="text-[11px] font-bold mt-0.5">
@@ -46,8 +48,8 @@ export default function RoadbookPrintView({
           </div>
         </div>
         <div className="text-right border border-black p-1.5 rounded text-[9px] font-bold">
-          <div>RDV Local : <strong>{event.horaireCovoiturage || 'Non spécifié'}</strong></div>
-          <div>Jeu / Balances : <strong>{event.horairesPassages || 'Selon orga'}</strong></div>
+          <div>{t('agenda.meetingPoint') || 'RDV Local'} : <strong>{event.horaireCovoiturage || 'Non spécifié'}</strong></div>
+          <div>{t('agenda.schedule') || 'Jeu / Balances'} : <strong>{event.horairesPassages || 'Selon orga'}</strong></div>
         </div>
       </div>
 
@@ -56,10 +58,10 @@ export default function RoadbookPrintView({
         {/* Colonne Gauche : Contacts, Convois & Hébergement */}
         <div className="flex flex-col gap-2.5">
           <div className="border border-black p-2 rounded">
-            <h2 className="text-[10px] font-black uppercase border-b border-black pb-1 mb-1">📞 Contacts Clés Jour J</h2>
+            <h2 className="text-[10px] font-black uppercase border-b border-black pb-1 mb-1">📞 {t('agenda.keyContacts') || 'Contacts Clés Jour J'}</h2>
             <div className="space-y-1">
-              {contacts.referentOrgaNom && <div>Orga : <strong>{contacts.referentOrgaNom}</strong> {contacts.referentOrgaTel && `(${contacts.referentOrgaTel})`}</div>}
-              {referentGroupe && <div>Référent Groupe : <strong>{referentGroupe.prenom} {referentGroupe.nom}</strong> {referentGroupe.telephone && `(${referentGroupe.telephone})`}</div>}
+              {contacts.referentOrgaNom && <div>{t('agenda.orgContact') || 'Orga'} : <strong>{contacts.referentOrgaNom}</strong> {contacts.referentOrgaTel && `(${contacts.referentOrgaTel})`}</div>}
+              {referentGroupe && <div>{t('agenda.refContact') || 'Référent Groupe'} : <strong>{referentGroupe.prenom} {referentGroupe.nom}</strong> {referentGroupe.telephone && `(${referentGroupe.telephone})`}</div>}
               {(contacts.referentsPupitres || []).length > 0 && (
                 <div className="pt-1 border-t border-dotted border-neutral-400 mt-1">
                   <span className="font-bold text-[9px] block">Chefs de pupitre :</span>
@@ -99,7 +101,7 @@ export default function RoadbookPrintView({
           {/* Bloc Hébergement (si renseigné) */}
           {hasHebergement && (
             <div className="border border-black p-2 rounded">
-              <h2 className="text-[10px] font-black uppercase border-b border-black pb-1 mb-1">🏨 Hébergement</h2>
+              <h2 className="text-[10px] font-black uppercase border-b border-black pb-1 mb-1">🏨 {t('agenda.accommodation') || 'Hébergement'}</h2>
               {hebergement.type && <div>Type : <strong>{hebergement.type}</strong></div>}
               {hebergement.adresse && <div>Adresse : <strong>{hebergement.adresse}</strong></div>}
               {hebergement.codeAcces && <div>Codes / Clés : <strong>{hebergement.codeAcces}</strong></div>}
@@ -119,7 +121,7 @@ export default function RoadbookPrintView({
             </h2>
             {hasParcours ? (
               <div className="space-y-1 text-[9.5px]">
-                {parcours.pointDepart && <div>Départ : <strong>{parcours.pointDepart}</strong></div>}
+                {parcours.pointDepart && <div>{t('agenda.departure') || 'Départ'} : <strong>{parcours.pointDepart}</strong></div>}
                 {parcours.itineraire && <div>Itinéraire : <strong>{parcours.itineraire}</strong></div>}
                 {parcours.pointArrivee && <div>Arrivée : <strong>{parcours.pointArrivee}</strong></div>}
                 {parcours.ravitaillementEau && <div>Eau / Ravitaillement : <strong>{parcours.ravitaillementEau}</strong></div>}
@@ -129,8 +131,8 @@ export default function RoadbookPrintView({
               </div>
             ) : (
               <div className="text-[9.5px]">
-                <div>Lieu : <strong>{event.lieu || 'Non spécifié'}</strong></div>
-                <div>Passages / Balances : <strong>{event.horairesPassages || 'Selon régie'}</strong></div>
+                <div>{t('agenda.location') || 'Lieu'} : <strong>{event.lieu || 'Non spécifié'}</strong></div>
+                <div>{t('agenda.schedule') || 'Passages / Balances'} : <strong>{event.horairesPassages || 'Selon régie'}</strong></div>
               </div>
             )}
           </div>
@@ -138,7 +140,7 @@ export default function RoadbookPrintView({
           {/* Bloc Matériel & Checklist */}
           <div className="border border-black p-2 rounded">
             <h2 className="text-[10px] font-black uppercase border-b border-black pb-1 mb-1">
-              🎒 Matériel &amp; Checklist Logistique
+              🎒 {t('agenda.logisticsChecklist') || 'Matériel & Checklist Logistique'}
             </h2>
             {/* Décompte des fûts */}
             <div className="mb-1.5">
@@ -184,7 +186,7 @@ export default function RoadbookPrintView({
 
       {/* Pied de page A4 */}
       <div className="border-t border-neutral-400 mt-3 pt-1 text-center text-[8px] text-neutral-500 flex justify-between">
-        <span>O Girador • Feuille de route officielle générée le {new Date().toLocaleDateString('fr-FR')}</span>
+        <span>O Girador • {t('agenda.roadbookTitle') || 'Feuille de route officielle'} générée le {new Date().toLocaleDateString('fr-FR')}</span>
         <span>Document interne de concert</span>
       </div>
     </div>

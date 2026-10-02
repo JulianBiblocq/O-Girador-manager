@@ -9,8 +9,10 @@ import MonCarnetAisance from './MonCarnetAisance';
 import AtelierEntrainement from './AtelierEntrainement';
 import RodaQuizStatsBanner from './RodaQuizStatsBanner';
 import MonParcoursGuideBanner from './MonParcoursGuideBanner';
+import { useTranslation } from '../LanguageContext';
 
 export default function MonParcours({ profileData, sequenceurUrl, enabledModules = {} }) {
+  const { t } = useTranslation();
   const groupId = profileData?.groupId;
   const userId = profileData?.uid;
 
@@ -177,10 +179,10 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
       {/* En-tête */}
       <div className="flex flex-col items-center gap-2 mb-4">
         <h1 className="text-3xl md:text-4xl font-heading tracking-widest text-cordel-wood uppercase flex items-center gap-3">
-          <XiloCompass size={36} /> Mon Parcours
+          <XiloCompass size={36} /> {t('pedagogy.myJourneyTitle')}
         </h1>
         <p className="text-xs md:text-sm text-cordel-master-dark opacity-80 text-center max-w-2xl">
-          Déclare ton niveau d'aisance ou entraîne-toi avec les mini-jeux. Ton évolution est sauvegardée automatiquement.
+          {t('pedagogy.myJourneySubtitle')}
         </p>
         <MonParcoursGuideBanner />
       </div>
@@ -199,7 +201,7 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
           }`}
         >
           <span className="mr-2 block text-xl mb-1 text-center">📖</span>
-          Carnet d'Aisance
+          {t('pedagogy.aisanceTitle')}
         </button>
 
         <button
@@ -211,7 +213,7 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
           }`}
         >
           <span className="mr-2 block text-xl mb-1 text-center">🎯</span>
-          Atelier d'Entraînement
+          {t('pedagogy.tabTrainingWorkshop')}
         </button>
       </div>
 

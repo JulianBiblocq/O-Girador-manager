@@ -175,6 +175,7 @@ export const generateTranslationQuiz = (config = {}) => {
     return {
       id: `trans_${pair.key}_${index}`,
       type: 'translation',
+      targetWord: prompt,
       prompt: promptText,
       questionText: promptText,
       instruction: currentDirection === 'FR_PT' ? "Traduction Français ➔ Portugais" : "Traduction Portugais ➔ Français",

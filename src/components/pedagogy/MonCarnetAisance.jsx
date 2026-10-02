@@ -1,11 +1,9 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import CordelCard from '../CordelCard';
 import SongCard from '../SongCard';
-import { parseSequencerJson } from '../../utils/sequencerParser';
 import { generateQuizFromSheet, generateQuizFromInstrumentModel } from '../../utils/quizGenerator';
 import { useInstrumentModels } from '../../hooks/useInstrumentModels';
 import { useGroupNomenclature } from '../../hooks/useGroupNomenclature';
-import { getInstrumentLabel } from '../../constants/nomenclature';
 import AutoEvalQuizContainer from '../student/AutoEvalQuizContainer';
 import AutoEvalQuiz from './AutoEvalQuiz';
 import AtelierModelPartsProgress from './AtelierModelPartsProgress';
@@ -27,6 +25,7 @@ import { launchTrainingStage } from '../../utils/trainingLauncher';
 import { normalizeString } from '../../utils/repertoireMatcher';
 import GameStatsCard from '../games/GameStatsCard';
 import { isDefisEnLigneEnabled } from '../../utils/gameUtils';
+import { useTranslation } from '../LanguageContext';
 
 // Icône catégorielle pour les fiches culture (xilo-gravure SVG)
 export const CultureCategoryIcon = ({ docItem }) => {
@@ -88,6 +87,7 @@ const ComfortBar = ({ itemId, evaluations, handleSetEvaluation, comfortLevels })
 
 // --- Sous-composant : Mini QCM inline pour une fiche (Culture / Atelier) ---
 const InlineQuiz = ({ fiche, allSheets, allSongs, allModels }) => {
+  const { t } = useTranslation();
   const [questions, setQuestions] = useState([]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [selectedChoice, setSelectedChoice] = useState(null);
@@ -143,7 +143,7 @@ const InlineQuiz = ({ fiche, allSheets, allSongs, allModels }) => {
         onClick={startQuiz}
         className="mt-2 text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded border-2 border-dashed border-cordel-wood/40 text-cordel-wood bg-cordel-wood/5 hover:bg-cordel-wood/15 hover:border-cordel-wood/70 transition-all flex items-center gap-1.5"
       >
-        🎯 Tester mes connaissances
+        🎯 {t('pedagogy.btnTestKnowledge')}
       </button>
     );
   }
@@ -226,12 +226,12 @@ const InlineQuiz = ({ fiche, allSheets, allSongs, allModels }) => {
 };
 
 // --- Utilitaire : détection de la catégorie culturelle pour le groupement ---
-const getCultureCategory = (fiche) => {
+const getCultureCategory = (fiche, t) => {
   const theme = ((fiche.themeCulture || '') + ' ' + (fiche.categorieFiche || '') + ' ' + (fiche.sousCategorieFiche || '')).toLowerCase();
   if (theme.includes('orixa') || theme.includes('spiritualit')) return 'Orixás & Spiritualité';
-  if (theme.includes('cortejo') || theme.includes('cortège')) return 'Cortège Royal';
+  if (theme.includes('cortejo') || theme.includes('cortège')) return t ? t('pedagogy.categoryCortegeRoyal') : 'Cortège Royal';
   if (theme.includes('cuisine') || theme.includes('gastronomi')) return 'Cuisine & Gastronomie';
-  if (theme.includes('histoire')) return 'Histoire';
+  if (theme.includes('histoire')) return t ? t('pedagogy.categoryHistoire') : 'Histoire';
   if (theme.includes('musique') || theme.includes('style')) return 'Musique & Styles';
   if (theme.includes('territoire') || theme.includes('geograph')) return 'Territoire & Géographie';
   if (theme.includes('folklore')) return 'Folklore & Légendes';
@@ -256,16 +256,17 @@ export default function MonCarnetAisance({
   enabledModules = {},
   profileData
 }) {
+  const { t } = useTranslation();
   const { nomenclature: groupNomenclature } = useGroupNomenclature(profileData?.groupId);
   const isDefisAuthorized = isDefisEnLigneEnabled(enabledModules, profileData);
 
   // Niveaux de confort (barème à 4 paliers)
-  const comfortLevels = [
-    { level: 'decouverte', label: '🌱 En découverte' },
-    { level: 'pratique', label: '🌿 En pratique' },
-    { level: 'alaise', label: '🌳 À l\'aise' },
-    { level: 'referent', label: '👑 Référent' }
-  ];
+  const comfortLevels = useMemo(() => [
+    { level: 'decouverte', label: `🌱 ${t('pedagogy.comfortDiscovery')}` },
+    { level: 'pratique', label: `🌿 ${t('pedagogy.comfortPractice')}` },
+    { level: 'alaise', label: `🌳 ${t('pedagogy.comfortComfortable')}` },
+    { level: 'referent', label: `👑 ${t('pedagogy.comfortReferent')}` }
+  ], [t]);
 
   // Onglets dynamiques selon les modules activés par le Mestre
   const subTabs = useMemo(() => {
@@ -279,15 +280,15 @@ export default function MonCarnetAisance({
     if (isDefisRythmiquesEnabled) {
       tabs.push({ id: 'defis', label: '⚡ Défis Rythmiques' });
     }
-    tabs.push({ id: 'revision', label: '🧠 Révisions' });
+    tabs.push({ id: 'revision', label: `🧠 ${t('pedagogy.tabRevisions')}` });
     
     if (enabledModules?.monParcoursPercussion !== false) tabs.push({ id: 'rythmes', label: '🥁 Percussion' });
     if (enabledModules?.monParcoursDanse !== false) tabs.push({ id: 'danse', label: '💃 Danse' });
-    if (enabledModules?.monParcoursChant !== false) tabs.push({ id: 'chants', label: '🎤 Chants' });
-    if (enabledModules?.monParcoursAtelier !== false) tabs.push({ id: 'atelier', label: '🛠️ Atelier' });
-    if (enabledModules?.monParcoursCulture !== false) tabs.push({ id: 'culture', label: '📚 Culture' });
+    if (enabledModules?.monParcoursChant !== false) tabs.push({ id: 'chants', label: `🎤 ${t('pedagogy.tabSongs')}` });
+    if (enabledModules?.monParcoursAtelier !== false) tabs.push({ id: 'atelier', label: `🛠️ ${t('pedagogy.tabWorkshop')}` });
+    if (enabledModules?.monParcoursCulture !== false) tabs.push({ id: 'culture', label: `📚 ${t('pedagogy.tabCulture')}` });
     return tabs;
-  }, [enabledModules]);
+  }, [enabledModules, t]);
 
   const [activeSubTab, setActiveSubTab] = useState(subTabs.length > 0 ? subTabs[0].id : 'revision');
 
@@ -474,12 +475,12 @@ export default function MonCarnetAisance({
     const fiches = educationalSheets.filter(f => f.categorie?.toLowerCase() === 'culture' || f.type === 'culture_fiche');
     const groups = {};
     fiches.forEach(f => {
-      const cat = getCultureCategory(f);
+      const cat = getCultureCategory(f, t);
       if (!groups[cat]) groups[cat] = [];
       groups[cat].push(f);
     });
     return groups;
-  }, [educationalSheets]);
+  }, [educationalSheets, t]);
 
   // Fiches atelier filtrées + Modèles d'instruments
   const { models: instrumentModels = [] } = useInstrumentModels(profileData?.groupId);
@@ -571,10 +572,10 @@ export default function MonCarnetAisance({
             <div>
               <h3 className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
                 <span>⚡</span>
-                <span>Entraînement — Programmes d'Aisance au Métronome</span>
+                <span>{t('pedagogy.tempoTrainingTitle')}</span>
               </h3>
               <p className="text-[11px] font-bold text-cordel-master-dark opacity-85 mt-0.5">
-                Validez progressivement vos paliers de tempo. Cochez les paliers maîtrisés pour votre carnet et lancez sequenciador pré-paramétré.
+                {t('pedagogy.aisanceSubtitle')}
               </p>
             </div>
             {activeSeasonTrainings.length > 0 && (
@@ -697,7 +698,7 @@ export default function MonCarnetAisance({
                             title={`Lancer sequenciador au tempo de ce palier (${stage.startBpm} ➔ ${stage.targetBpm} BPM)`}
                           >
                             <span>⚡</span>
-                            <span>Pratiquer</span>
+                            <span>{t('pedagogy.btnPractice')}</span>
                           </button>
                         </div>
                       );
@@ -942,7 +943,7 @@ export default function MonCarnetAisance({
                           title={revisionsDemandees[`danse_${rhythm.id}`] ? "Demande de révision active pour cette danse" : "Signaler au Mestre le besoin de réviser cette danse"}
                         >
                           <span>🙋</span>
-                          <span>{revisionsDemandees[`danse_${rhythm.id}`] ? 'Révision demandée ✓' : 'Demander à réviser'}</span>
+                          <span>{revisionsDemandees[`danse_${rhythm.id}`] ? t('pedagogy.revisionRequestedNotice') : t('pedagogy.requestRevisionBtn')}</span>
                         </button>
                       )}
                     </div>
@@ -1023,7 +1024,7 @@ export default function MonCarnetAisance({
                       }`}
                     >
                       <span>🙋</span>
-                      <span>{revisionsDemandees[songDoc.id] ? 'Révision demandée ✓' : 'Demander à réviser'}</span>
+                      <span>{revisionsDemandees[songDoc.id] ? t('pedagogy.revisionRequestedNotice') : t('pedagogy.requestRevisionBtn')}</span>
                     </button>
                   )}
                   <button
@@ -1059,7 +1060,9 @@ export default function MonCarnetAisance({
                   <h3 className="text-sm font-black uppercase tracking-widest text-cordel-wood">
                     {catName}
                   </h3>
-                  <span className="text-[9px] font-bold text-encre-noire/40 ml-auto">{fiches.length} fiche{fiches.length > 1 ? 's' : ''}</span>
+                  <span className="text-[9px] font-bold text-encre-noire/40 ml-auto">
+                    {fiches.length > 1 ? t('pedagogy.fichesCountPlural', { count: fiches.length }) : t('pedagogy.fichesCount', { count: fiches.length })}
+                  </span>
                 </div>
 
                 {/* Fiches de cette catégorie avec échelle de confort + QCM inline */}

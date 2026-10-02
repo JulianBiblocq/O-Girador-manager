@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Composant accordéon réutilisable pour les sections de présences / inscriptions d'un événement.
@@ -16,6 +17,7 @@ export default function RSVPAccordionSection({
   emptyText = "Aucun membre",
   className = ""
 }) {
+  const { t } = useTranslation();
   // Styles d'en-tête selon la variante sémantique Cordel
   const getVariantStyles = () => {
     switch (colorVariant) {
@@ -73,7 +75,7 @@ export default function RSVPAccordionSection({
 
         <div className="flex items-center gap-1.5 text-xs font-black">
           <span className="text-[10px] opacity-60 uppercase font-semibold hidden sm:inline">
-            {isExpanded ? "Replier" : "Déplier"}
+            {isExpanded ? (t('agenda.toggleCollapse') || "Replier") : (t('agenda.toggleExpand') || "Déplier")}
           </span>
           <span className={`transform transition-transform duration-200 select-none ${isExpanded ? 'rotate-180' : 'rotate-0'}`}>
             ▼

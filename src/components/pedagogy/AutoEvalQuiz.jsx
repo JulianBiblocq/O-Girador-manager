@@ -244,7 +244,7 @@ export default function AutoEvalQuiz({ sheetData, allSheetsData, profileData, on
                 🧠 Quiz : {isSong ? songData?.titre : (sheetData?.themeCulture === 'orixas' && sheetData?.personnageOrisha ? sheetData.personnageOrisha : (sheetData?.titre || customQuizTitle || 'Personnalisé'))}
               </h3>
               <span className="text-[10px] font-black text-cordel-master-dark/50">
-                {currentIndex + 1} / {questions.length}
+                {t('pedagogy.questionProgress', { current: currentIndex + 1, total: questions.length })}
               </span>
             </div>
 
@@ -268,7 +268,9 @@ export default function AutoEvalQuiz({ sheetData, allSheetsData, profileData, on
               ) : null}
               
               <h3 className="text-xl font-bold text-encre-noire leading-tight">
-                {currentQuestion.questionText}
+                {currentQuestion.targetWord || currentQuestion.type === 'translation'
+                  ? t('pedagogy.translatePrompt', { term: currentQuestion.targetWord || currentQuestion.questionText?.replace(/^Traduis\s*:\s*"?/, '').replace(/"?$/, '') })
+                  : currentQuestion.questionText}
               </h3>
               
               {currentQuestion.visualElement && currentQuestion.visualElement.type === 'orixaBadge' && (
@@ -369,7 +371,7 @@ export default function AutoEvalQuiz({ sheetData, allSheetsData, profileData, on
             )}
 
             <div className="flex justify-between items-center mt-2">
-              <CordelButton variant="default" onClick={onClose} className="text-[10px] px-3 py-1 font-black uppercase">✕ Quitter l'entraînement</CordelButton>
+              <CordelButton variant="default" onClick={onClose} className="text-[10px] px-3 py-1 font-black uppercase">{t('pedagogy.btnQuitTraining')}</CordelButton>
               {showFeedback && (
                 <CordelButton variant="ocre" onClick={handleNext} className="text-[10px] font-black uppercase px-4 py-1.5 animate-pulse">
                   {currentIndex < questions.length - 1 ? "Question Suivante ➔" : "Voir le Résultat 🏆"}

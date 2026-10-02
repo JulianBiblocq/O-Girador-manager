@@ -7,8 +7,10 @@ import { generateQuizFromSheet, generateQuizFromSong } from '../../utils/quizGen
 import { generateTranslationQuiz } from '../../utils/translationQuizEngine';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
+import { useTranslation } from '../LanguageContext';
 
 export default function DailyRevisionSession({ profileData, allSongs = [], allSheets = [], onExit }) {
+  const { t } = useTranslation();
   const [sessionQuestions, setSessionQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isStarted, setIsStarted] = useState(false);
@@ -78,20 +80,22 @@ export default function DailyRevisionSession({ profileData, allSongs = [], allSh
         <CordelCard className="p-8 flex flex-col items-center text-center gap-6 bg-[#fdfaf2] border-2 border-dashed border-cordel-wood/30">
           
           <h2 className="text-3xl font-black uppercase font-heading text-cordel-wood tracking-widest mt-4">
-            Révision du Jour
+            {t('pedagogy.dailyRevisionTitle')}
           </h2>
           
           <p className="text-cordel-master-dark opacity-90 leading-relaxed">
-            Notre système a analysé tes précédentes réponses. Aujourd'hui, tu as <strong>{sessionQuestions.length} questions</strong> en attente de révision pour renforcer ta mémoire à long terme.
+            {sessionQuestions.length > 1
+              ? t('pedagogy.dailyRevisionDescPlural', { count: sessionQuestions.length })
+              : t('pedagogy.dailyRevisionDesc', { count: sessionQuestions.length })}
           </p>
 
           <div className="flex gap-4 mt-4">
             <CordelButton variant="primary" onClick={() => setIsStarted(true)}>
-              🚀 Démarrer la session ({sessionQuestions.length})
+              🚀 {t('pedagogy.btnStartSession', { count: sessionQuestions.length })}
             </CordelButton>
             {onExit && (
               <CordelButton variant="outline" onClick={onExit}>
-                Plus tard
+                {t('pedagogy.btnLater')}
               </CordelButton>
             )}
           </div>

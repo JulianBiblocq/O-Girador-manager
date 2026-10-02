@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useCollectiveKits, calculateKitStatus } from '../../hooks/useCollectiveKits';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Section Matériel & Checklist de la Feuille de Route interactive.
@@ -10,6 +11,7 @@ export default function RoadbookKitsChecklist({
   logistique = {},
   presentsByInstrument = {}
 }) {
+  const { t } = useTranslation();
   const { kits } = useCollectiveKits(event.groupId);
   const [openMaquillage, setOpenMaquillage] = useState(false);
   const [openSecours, setOpenSecours] = useState(false);
@@ -72,7 +74,7 @@ export default function RoadbookKitsChecklist({
   return (
     <div className="bg-[var(--color-cordel-papier-card,#f5efe6)] p-3 rounded-lg border border-[var(--theme-border-color,#181716)] text-left">
       <h3 className="font-bold text-[var(--color-cordel-encre,#181716)] mb-2 uppercase text-xs tracking-wider flex items-center justify-between">
-        <span>🎒 Matériel &amp; Checklist Logistique</span>
+        <span>🎒 {t('agenda.logisticsChecklist') || 'Matériel & Checklist Logistique'}</span>
         <span className="text-[10px] font-normal text-neutral-500 lowercase">contrôle régie</span>
       </h3>
 

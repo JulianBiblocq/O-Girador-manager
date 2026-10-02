@@ -2,13 +2,14 @@ import React from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { GAME_ROOM_THEMES } from '../../utils/gameUtils';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Micro-sélecteur de thème pour proposer un nouveau défi multijoueur.
  *
  * @param {boolean} isOpen Indique si la modale est affichée
  * @param {Function} onClose Callback de fermeture
- * @param {Function} onSelectTheme Callback de validation avec le thème choisi ('rythme' | 'culture')
+ * @param {Function} onSelectTheme Callback de validation avec le thème choisi ('rythme' | 'culture' | 'cadavre_exquis')
  * @param {boolean} isCreating Indique si la création du salon Firestore est en cours
  */
 export default function GameThemeSelectorModal({
@@ -17,7 +18,35 @@ export default function GameThemeSelectorModal({
   onSelectTheme,
   isCreating = false
 }) {
+  const { t } = useTranslation();
+
   if (!isOpen) return null;
+
+  const getThemeTitle = (themeId, fallback) => {
+    switch (themeId) {
+      case 'rythme':
+        return t('pedagogy.challengeRhythmTitle');
+      case 'culture':
+        return t('pedagogy.challengeCultureTitle');
+      case 'cadavre_exquis':
+        return t('pedagogy.challengeExquisiteCorpseTitle');
+      default:
+        return fallback;
+    }
+  };
+
+  const getThemeDesc = (themeId, fallback) => {
+    switch (themeId) {
+      case 'rythme':
+        return t('pedagogy.challengeRhythmDesc');
+      case 'culture':
+        return t('pedagogy.challengeCultureDesc');
+      case 'cadavre_exquis':
+        return t('pedagogy.challengeExquisiteCorpseDesc');
+      default:
+        return fallback;
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs select-none animate-fade-in">
@@ -30,7 +59,7 @@ export default function GameThemeSelectorModal({
           <div className="flex justify-between items-center pb-2.5 border-b-2 border-dashed border-cordel-master-dark/25 mb-4">
             <h3 className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
               <span>🎲</span>
-              <span>Proposer un Défi en direct</span>
+              <span>{t('pedagogy.proposeChallengeTitle')}</span>
             </h3>
 
             <button
@@ -38,14 +67,14 @@ export default function GameThemeSelectorModal({
               onClick={onClose}
               disabled={isCreating}
               className="p-1 min-w-[24px] min-h-[24px] flex items-center justify-center text-xs font-black border border-encre-noire rounded hover:bg-neutral-200 cursor-pointer"
-              aria-label="Fermer"
+              aria-label={t('common.close')}
             >
               ✕
             </button>
           </div>
 
           <p className="text-[11px] text-cordel-master-dark/80 font-semibold mb-4 leading-relaxed">
-            Choisissez le thème de l'arène. Un salon d'attente sera ouvert et vos camarades connectés pourront vous rejoindre en direct !
+            {t('pedagogy.proposeChallengeDesc')}
           </p>
 
           {/* Choix des thèmes */}
@@ -61,10 +90,10 @@ export default function GameThemeSelectorModal({
                 <span className="text-2xl select-none">{th.icon}</span>
                 <div className="flex-1">
                   <h4 className="text-xs font-black uppercase text-encre-noire flex items-center gap-1.5">
-                    {th.label}
+                    {getThemeTitle(th.id, th.label)}
                   </h4>
                   <p className="text-[10px] text-cordel-master-dark/75 font-medium mt-0.5 leading-snug">
-                    {th.description}
+                    {getThemeDesc(th.id, th.description)}
                   </p>
                 </div>
               </button>
@@ -79,7 +108,7 @@ export default function GameThemeSelectorModal({
               disabled={isCreating}
               className="w-full py-1.5 text-xs font-bold uppercase tracking-wider"
             >
-              Annuler
+              {t('pedagogy.btnCancelChallenge')}
             </CordelButton>
           </div>
         </CordelCard>

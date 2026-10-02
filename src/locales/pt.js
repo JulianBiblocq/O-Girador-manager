@@ -61,7 +61,11 @@ export const pt = {
     quizChant: "Quiz do canto",
     culture: "Cultura",
     lireFiche: "Ler a ficha",
-    quizCulture: "Quiz Cultura"
+    quizCulture: "Quiz Cultura",
+    reviserCeMorceau: "Revisar esta música",
+    searchPlaceholder: "Pesquisar...",
+    filterPlaceholder: "Filtrar...",
+    understood: "Entendido / Ocultar"
   },
   tags: {
     managerTitle: "Gerenciador de etiquetas",
@@ -335,7 +339,62 @@ export const pt = {
     incompleteAlert: "Perfil incompleto - Informações obrigatórias ausentes",
     pleaseComplete: "Por favor, preencha :",
     fillNow: "Preencher agora",
-    photoEnlargeTitle: "Clique para ampliar a foto"
+    photoEnlargeTitle: "Clique para ampliar a foto",
+
+    // Préférences alimentaires & santé
+    dietSectionTitle: "Preferências alimentares & alergias (Acesso restrito)",
+    dietLabel: "Dieta:",
+    allergiesLabel: "Alergias / Observações:",
+    noAllergiesReported: "Nenhuma alergia informada",
+    noDietSpecific: "Nenhuma restrição específica",
+    dietVegetarian: "Vegetariano",
+    dietVegan: "Vegano",
+    dietOmnivore: "Onívoro",
+    dietNoPork: "Sem carne suína",
+    dietGlutenFree: "Sem glúten",
+
+    // Véhicule associatif & Convoi
+    vehicleSectionTitle: "Veículo do integrante",
+    vehicleConvoyBadge: "Disponível para comboio",
+    vehicleCategory: "Categoria",
+    vehiclePassengerSeats: "Vagas para passageiros",
+    vehiclePassengerSeatsCount: "{{count}} vaga(s) livre(s)",
+    vehicleTrunkAlfaias: "Porta-malas (Alfaias)",
+    vehicleTrunkAlfaiasCount: "Até ~{{count}} tambor(es)",
+    vehicleTowHitch: "Engate para reboque",
+
+    // Notes de frais & Remboursements
+    expensesSectionTitle: "Meus reembolsos de despesas",
+    btnDeclareExpense: "+ Solicitar reembolso",
+    seasonLabel: "Temporada:",
+    seasonCurrentNotice: "{{season}} (em andamento)",
+    refundedOnSeason: "Reembolsado na temporada",
+    refundedSeasonDesc: "Solicitações aprovadas e pagas em {{season}}",
+    pendingRefund: "Aguardando reembolso",
+    pendingRefundDesc: "Todas as temporadas reunidas",
+    expenseHistoryTitle: "Histórico de solicitações ({{count}}):",
+    statusValidatedReadyToPay: "Aprovada / Pronta para pagamento",
+    statusRefunded: "Reembolsada ({{date}})",
+    statusRefused: "Recusada",
+    viewReceipt: "Ver comprovante ({{file}})",
+    refusalReason: "Motivo da recusa:",
+
+    // Diagnostic des notifications
+    diagnosticTitle: "Diagnóstico de notificações",
+    statusActive: "STATUS: ATIVADO",
+    statusInactive: "STATUS: DESATIVADO",
+    diagnosticSubtitle: "Ferramenta de verificação para recebimento de avisos (ensaios, enquetes, etc.)",
+    diagnosticConfiguredSuccess: "Tudo configurado corretamente. Você está pronto(a) para receber os avisos importantes do grupo.",
+
+    // Famille & Enfants
+    familySectionTitle: "Minha Família / Dependentes",
+    familySubtitle: "Gerencie aqui os perfis dos seus filhos sem smartphone nem e-mail. Eles aparecerão no Trombinoscópio e no Casting.",
+    btnAddChild: "+ Adicionar um dependente",
+    emptyFamilyNotice: "Nenhum dependente vinculado a este perfil. Clique em \"Adicionar um dependente\" para criar um.",
+
+    // Boutons d'action bas de page
+    btnConnectPc: "Conectar um computador",
+    btnSignOut: "Sair / Desconectar"
   },
   widgetMotMestre: {
     title: "A Palavra do Mestre",
@@ -412,6 +471,328 @@ export const pt = {
     noUpcoming: "Nenhum próximo evento.",
     noPast: "Nenhum evento passado no histórico.",
     pastEventsCount: "evento(s) passado(s)"
+  },
+  agenda: {
+    // Statuts de présence
+    present: "Presente",
+    absent: "Ausente",
+    confirm: "A confirmar",
+    waitingResponse: "Aguardando resposta",
+    myRsvp: "Minha confirmação",
+    validateParticipation: "Confirmar participação",
+    updateResponse: "Alterar resposta",
+    absenceReasonTitle: "Motivo da ausência",
+    absenceReasonPlaceholder: "Informe o motivo da sua ausência...",
+    confirmAbsence: "Confirmar ausência",
+    
+    // Filtres & Navigation
+    upcoming: "Próximos",
+    past: "Passados",
+    allSeasons: "Todas as temporadas",
+    seeAllDates: "Ver todos os eventos",
+    noUpcomingEvents: "Nenhum evento agendado no momento.",
+    noPastEvents: "Nenhum evento passado nesta temporada.",
+    
+    // Métadonnées & Cartes
+    canceledStamp: "CANCELADO",
+    confirmedStamp: "CONFIRMADO",
+    location: "Local",
+    departure: "Saída",
+    schedule: "Horários",
+    programToRevise: "Programa de ensaio",
+    carpoolAvailable: "Carona solidária disponível",
+    reservedConfirmed: "Reservado para avançados",
+
+    // Types d'événements
+    typePrestation: "Apresentação",
+    typeRepetition: "Ensaio",
+    typeStage: "Oficina / Workshop",
+    typeAtelier: "Ateliê de Fabricação",
+    typeReunion: "Reunião",
+
+    // Champs essentiels (Mode Express)
+    fieldTitle: "Título do evento",
+    titlePlaceholder: "Ex.: Ensaio geral, Apresentação...",
+    fieldType: "Tipo de evento",
+    fieldStartDate: "Data e hora de início",
+    fieldEndDate: "Data e hora de término",
+    fieldLocation: "Local",
+    locationSelectPlaceholder: "Escolher um local cadastrado...",
+    customAddressPlaceholder: "Ou informe um endereço específico...",
+    fieldDescription: "Descrição pública / Informações",
+    descPlaceholder: "Detalhes, orientações práticas, links úteis...",
+
+    // Interrupteurs rapides & Presets
+    togglePercussion: "Percussão",
+    toggleDance: "Dança",
+    toggleCarpool: "Carona solidária",
+    togglePublic: "Vitrine pública",
+    toggleRsvp: "Inscrições abertas",
+    toggleValidation: "Aprovação necessária",
+
+    // Tiroir avancé
+    advancedOptionsTitle: "Opções logísticas e avançadas",
+    deadlineRsvp: "Prazo limite para confirmação",
+    detailedSchedule: "Horários detalhados (concentração, passagem de som)",
+    schedulePlaceholder: "Ex.: Saída da sede 14h, passagem de som 16h, show 18h",
+    budgetTitle: "Orçamento previsto",
+    expectedRevenue: "Receitas previstas (€)",
+    estimatedExpenses: "Despesas estimadas (€)",
+    volunteerSlots: "Escalas de voluntários",
+
+    // Actions & Boutons
+    btnCreateQuick: "Salvar imediatamente",
+    btnSaveEvent: "Criar evento",
+    btnUpdateEvent: "Salvar alterações",
+    btnCancel: "Cancelar",
+    saveSuccess: "Evento salvo com sucesso!",
+
+    // Feuille de route (Roadbook)
+    roadbookTitle: "Roteiro Oficial de Apresentação",
+    generalInfo: "Informações Gerais",
+    programAndSchedule: "Programa & Horários",
+    meetingPoint: "Ponto de Encontro",
+    keyContacts: "Contatos Principais do Dia",
+    refContact: "Contato Responsável",
+    orgContact: "Organizador no Local",
+    stagePlan: "Mapa de Palco / Posicionamento",
+    openParcoursPdf: "Abrir mapa do cortejo (PDF)",
+    accommodation: "Hospedagem",
+    logisticsChecklist: "Material & Checklist de Logística",
+    printRoadbook: "Imprimir / PDF",
+    closeRoadbook: "Fechar",
+
+    // Comptes-rendus & Bilans
+    reportSectionTitle: "Relatório da apresentação",
+    reportPlaceholder: "Escreva aqui o balanço do evento, destaques, observações ou pontos a melhorar...",
+    btnSaveReport: "Salvar relatório",
+    reportSaved: "Relatório salvo com sucesso!",
+    noReportYet: "Nenhum relatório redigido até o momento.",
+
+    // Bénévolat & Renforts
+    volunteerSlotsTitle: "Escalas de Voluntários",
+    volunteerJoin: "Quero ajudar",
+    volunteerLeave: "Cancelar participação",
+    volunteerFull: "Lotado",
+    noVolunteersNeeded: "Nenhuma escala de voluntários necessária para este evento.",
+
+    // Avertissements & Statuts
+    reservedConfirmedNotice: "Este horário ou evento é reservado para integrantes do nível avançado.",
+    statusBusy: "Ocupado",
+
+    // Covoiturage & Trajet
+    carpoolSectionTitle: "Vagas de carona solidária para este trajeto",
+    carpoolOfferSeats: "Tenho vagas saindo de",
+    carpoolSearchSeats: "Procuro vaga saindo de",
+    carpoolProposeVehicle: "Ofereço meu veículo",
+    carpoolNoOffers: "Nenhuma oferta de carona até o momento.",
+    carpoolSeatsAvailable: "vagas disponíveis",
+    carpoolContactDriver: "Falar com o motorista",
+
+    // Boîte Média & Souvenirs
+    mediaBoxTitle: "Baú de memórias & vídeos",
+    mediaBoxSubtitle: "Compartilhe suas fotos e registros da apresentação",
+    mediaBoxBtnUpload: "Enviar mídias",
+    mediaBoxEmpty: "Nenhuma foto compartilhada para este evento.",
+
+    // Programme & Setlist
+    programAddPiece: "Adicionar música ao repertório do evento",
+    programSelectFromRepertoire: "Escolher uma música do Repertório...",
+    programCustomTitlePlaceholder: "Título da música (ou texto livre)...",
+    programMestreNotesPlaceholder: "Orientações e avisos do Mestre...",
+    programBtnSaveSet: "Salvar programação do set",
+    programEmpty: "A programação deste evento ainda não foi definida.",
+
+    // Espace d'échange
+    discussionTitle: "Espaço de conversa & dúvidas de logística",
+
+    // Logistique, Frais & Présences
+    travelExpensesTitle: "Despesas de deslocamento - Integrante",
+    estimatedMileage: "Reembolso estimado / trajeto ida e volta",
+    roundTripDistance: "Distância ida e volta",
+    ratePerKm: "Tarifa / km",
+    vehicleLoadTable: "Tabela de ocupação dos veículos (Carona & Instrumentos)",
+    attendancePuzzleTitle: "Controle de presenças / Escala",
+    waitingCount: "Aguardando",
+    awaitingValidation: "Aguardando aprovação",
+    restaurantInstruments: "Gestão dos instrumentos",
+    printRoadbookBtn: "Imprimer roteiro de apresentação",
+
+    // Administration avancée & Budget
+    adminSectionTitle: "Administração avançada do evento",
+    adminBtnEdit: "Editar evento",
+    adminBtnDelete: "Excluir",
+    adminBtnDuplicate: "Duplicar",
+    adminShowPublic: "Exibir no site público",
+    adminMediaCloudTitle: "Coleta de fotos & serviço de nuvem do evento",
+    forecastBudgetTitle: "Balanço financeiro previsto & custos da viagem",
+    forecastMarginBoard: "Painel de saldo previsto / margem",
+    estimatedIncome: "Receitas previstas",
+    estimatedTravelExpenses: "Despesas estimadas de viagem",
+
+    // Barre supérieure & Onglets événement
+    btnRoadbook: "Roteiro",
+    btnAddToCalendar: "Adicionar à agenda",
+    btnActionsMenu: "Ações",
+    tabDiscussion: "Discussão",
+    tabManagementReport: "Gestão & Balanço",
+
+    // Suivi administratif des présences & Casse-tête
+    adminAttendanceTitle: "Controle administrativo de presenças",
+    expandAll: "Expandir tudo",
+    collapseAll: "Recolher tudo",
+    toggleExpand: "Expandir",
+    toggleCollapse: "Recolher",
+    rejectedRegistrations: "Inscrições recusadas",
+    noResponse: "Sem resposta",
+    btnAddMemberAttendance: "Inscrever integrante",
+    btnAddExternalGuest: "Adicionar convidado externo",
+
+    // Convoi, Covoiturage & Spécificités
+    noDriversInConvoy: "Nenhum motorista cadastrado no comboio.",
+    convoyGauge: "Capacidade do comboio: {{offered}} vaga oferecida / {{requested}} solicitadas",
+    convoyGaugePlural: "Capacidade do comboio: {{offered}} vagas oferecidas / {{requested}} solicitadas",
+    convoyNeedSeats: "Necessário pelo menos {{count}} vaga(s) adicional(is)",
+    badgeSeatsSearched: "Vagas procuradas",
+    directReturnImperative: "Retorno imediato após o toque (restrição de horário)",
+    filterBoth: "Ambos",
+    noCarpoolSearchers: "Nenhum integrante procurando vaga no momento.",
+    mealsAndDietTitle: "Alimentação & restrições",
+    dietLabel: "Dietas:",
+    allergiesLabel: "Alergias:",
+
+    // Fil conducteur & Danse
+    filConducteurTitle: "Roteiro da sessão",
+    danceTrackTitle: "Dança",
+    filConducteurNotice: "Este roteiro apresenta os objetivos do ensaio. Ele se ajusta em tempo real conforme os presentes e as necessidades do momento.",
+    chooseFromRepertoire: "Escolher uma música do Repertório",
+    pieceOrIntentionTitle: "Título da música ou do objetivo *",
+    intentNotesFocus: "Orientações e foco do trabalho",
+
+    // Plan de scène & Disposition
+    stagePlanAndLayout: "Mapa de palco & posicionamento",
+    stagePublishedBadge: "Publicado (visível para o grupo)",
+    btnHideStagePlan: "Ocultar",
+    yourPosition: "Sua posição",
+    directCuesAroundYou: "Referências ao seu lado:",
+    centerStageFrontNotice: "À frente do palco, centralizado diante da roda",
+    conductorMestre: "Regente (Mestre)",
+    btnEnlarge: "Ampliar",
+
+    // Espace Discussion & Chat
+    commentsCount: "{{count}} comentário",
+    commentsCountPlural: "{{count}} comentários",
+    discussionIntro: "Tire dúvidas de logística (caronas, horários, material) aqui para alinhar com a organização e os demais participantes.",
+    discussionPlaceholder: "Faça uma pergunta de logística ou deixe um recado...",
+    btnSendComment: "Enviar",
+
+    // Administration & Statuts
+    currentStatusLabel: "Status atual",
+    statusValidatedMaintained: "Confirmado / Mantido",
+    btnMaintain: "Manter",
+    btnToConfirm: "A confirmar",
+    btnCancelEvent: "Cancelar",
+    publicVitrineNotice: "Este evento está atualmente visível para todos no site público.",
+    publicOnBadge: "Público (ON)",
+    modulesTogglesTitle: "Módulos & recursos do evento",
+    btnSendContract: "Enviar contrato",
+    btnPreparePublication: "Preparar publicação",
+    btnQrMediaPoster: "Cartaz e QR Code de mídia",
+    cloudFolderActive: "Pasta na nuvem ativa",
+    publicDropFolder: "Pasta de envio público (File drop)",
+    publicDropNotice: "Este link alimenta o QR Code e permite ao público enviar fotos e registros.",
+    btnQrCard: "Cartaz QR Code",
+    btnOpenUrl: "Abrir",
+
+    // Budget confidentiel
+    confidentialSectionNotice: "Seção confidencial (acesso restrito tesouraria / diretoria)",
+    autoDriversCalc: "Cálculo automático motoristas",
+    manualExtraExpenses: "Despesas extras manuais",
+    expenseItemDefault: "Despesa",
+
+    // Danse & Chorégraphies (Fil conducteur)
+    noChoreographyLinked: "Nenhuma coreografia vinculada a este evento.",
+    btnAddChoreography: "Adicionar uma coreografia",
+    chooseChoreography: "Escolher uma coreografia do Dançador",
+    noPublishedChoreography: "-- Nenhuma coreografia publicada --",
+    btnAddToProgram: "Adicionar à programação",
+
+    // RSVP & Choix d'instrument / Convoi
+    instrumentChoiceTitle: "Escolha do instrumento",
+    instrumentChoiceQuestion: "Com qual instrumento você vai tocar neste evento?",
+    travelModeTitle: "Meio de transporte para este trajeto",
+    travelOwnMeans: "Por meios próprios",
+    travelOwnMeansDesc: "Faço meu trajeto de forma autônoma (sem reembolso quilométrico).",
+    travelNeedRide: "Procuro vaga no comboio",
+    travelNeedRideDesc: "Desejo ir em um veículo do comboio saindo da sede.",
+    travelOfferVehicle: "Ofereço meu veículo",
+    travelOfferVehicleDesc: "Levo integrantes do grupo e participo do comboio oficial.",
+    bulkyInstrumentNotice: "Preciso de transporte para minha Alfaia / instrumento pesado no comboio",
+    bulkyInstrumentDesc: "Marque esta opção se você for por meios próprios ou procurar vaga, mas precisar enviar um tambor pesado no comboio.",
+    practicalInfoTitle: "Orientações & informações práticas",
+
+    // Boîte Média & QR Code
+    mediaBoxDesc: "Compartilhe suas fotos da apresentação ou mostre o QR Code para o público!",
+    btnViewQrCode: "Ver o QR Code",
+
+    // Formulaire d'édition — Localisation & Modules
+    customAddressOption: "Digitação livre / Outro endereço...",
+    btnAdjustMapMarker: "Ajustar o marcador no mapa",
+    visiblePublicNotice: "Visível na página e no site público se ativado",
+    activeModulesTitle: "2. Opções & módulos ativos",
+    interactiveToggles: "Seletores interativos",
+    togglePhotos: "Baú de fotos",
+    toggleVaralPhotos: "Varal de fotos",
+    toggleRoadbook: "Roteiro",
+    toggleCommissions: "Comissões",
+
+    // Formulaire d'édition — Niveaux, Tenues & Pupitres
+    percussionSectionTitle: "Naipe de Percussão",
+    danceSectionTitle: "Ala de Dança",
+    requiredLevel: "Nível necessário",
+    percussionOutfit: "Figurino Percussão",
+    danceOutfit: "Figurino Dança",
+    outfitWhiteBase: "Figurino base branca (Percussão)",
+    outfitFreeOption: "-- Livre / Não especificado --",
+    targetQuotasTitle: "Naipes necessários & cotas alvo (opcional)",
+    targetPupitresCount: "{{count}} naipe selecionado",
+    targetPupitresCountPlural: "{{count}} naipes selecionados",
+
+    // Formulaire d'édition — Horaires, Répertoire & Médias Cloud
+    convoyRdvField: "Concentração do comboio / Carona",
+    convoyRdvPlaceholder: "Ex.: 13h00 na sede",
+    distanceField: "Distância ida e volta (km)",
+    distancePlaceholder: "Ex.: 80",
+    repertoirePiecesProgramTitle: "Músicas do Repertório na programação",
+    countInProgram: "{{count}} na programação",
+    addPiecePlaceholder: "+ Adicionar uma música do repertório...",
+    btnBrowse: "Explorar",
+    photoCaptationsTitle: "Baú de fotos & registros",
+    enablePhotoBoxToggle: "Ativar baú de fotos / QR Code do público",
+    photoBoxDesc: "Gera o QR Code de envio para o público e provisiona automaticamente o álbum no Framaspace e no Varal de Fotos.",
+    framaspaceFolderReady: "Pasta Framaspace pronta para o QR Code",
+    allowVideoDropToggle: "Permitir envio de vídeos para esta data",
+    framaspaceLinkField: "Link Framaspace File Drop (Envio público)",
+    framaspaceLinkDesc: "Deixe em branco para usar a pasta geral da associação, ou clique em « ⚡ Criar pasta Framaspace » para isolar esta data.",
+    youtubeLinkField: "Vídeo ou playlist do YouTube (Retorno de naipe)",
+    btnChooseVideo: "Escolher um vídeo",
+    youtubeLinkDesc: "Link do registro final enviado ao YouTube para consulta direta pelo grupo.",
+    advancedOptionsDesc: "Prazo limite, escalas de voluntários, orçamento previsto e enquete de datas",
+    roadbookOptionTitle: "Roteiro de apresentação (opcional)",
+    btnConfigure: "Configurar",
+    uploadClassicTab: "Envio tradicional",
+    fromVaralTab: "Do Varal ({{count}})",
+    externalUrlTab: "Link URL externo",
+    btnRemoveImage: "Remover imagem",
+    btnDeleteEventAction: "Excluir evento",
+
+    // Botões de alternância dos módulos (TabAdmin)
+    modulePercussion: "Percussão",
+    moduleDanse: "Dança",
+    moduleCarpool: "Carona solidária",
+    moduleInscriptions: "Inscrições",
+    moduleValidation: "Aprovação",
+    modulePhotos: "Baú de fotos",
   },
   widgetAgenda: {
     title: "Agenda",
@@ -1715,7 +2096,15 @@ export const pt = {
     missingVerseInstruction: "Verso Ausente & Letra",
     missingVerseQuestion: "Complete o verso seguinte: \"{{extrait}}\"",
     alfaiaSticksInstruction: "Material & Baquetas",
-    alfaiaSticksQuestion: "Quais baquetas ou maçanetas são usadas para tocar \"{{pieceTitle}}\" no Alfaia?"
+    alfaiaSticksQuestion: "Quais baquetas ou maçanetas são usadas para tocar \"{{pieceTitle}}\" no Alfaia?",
+    monParcoursGuideButton: "Ajuda: Onde aprender e revisar?",
+    monParcoursGuideTitle: "Onde aprender e revisar?",
+    monParcoursGuideDesc: "Antes de testar seus conhecimentos aqui, encontre todos os detalhes (fichas completas, áudios, explicações) nos Varals localizados no final da página inicial!",
+    rodaQuizStatsTitle: "Resultados do Roda Quiz & Desafios",
+    rodaQuizNoGamesYet: "Nenhuma partida jogada ainda. Entre ou lance um desafio pelo botão Online!",
+    rodaQuizGamesPlayed: "Partidas jogadas",
+    rodaQuizWins: "Vitórias",
+    rodaQuizPodiumPresence: "Presença no pódio"
   },
   lexicon: {
     alfaia: "Alfaia",
@@ -1937,6 +2326,263 @@ export const pt = {
     makeupKit: "Maleta de Maquiagem",
     firstAidKit: "Kit de Primeiros Socorros & Protetores",
     toolsKit: "Ferramental de emergência ao vivo"
+  },
+  repertoire: {
+    // En-tête & Filtres
+    catalogTitle: "Repertório do grupo",
+    searchPlaceholder: "Pesquisar uma música, um ritmo, um autor...",
+    filterAll: "Todas as músicas",
+    filterReady: "Prontas para tocar",
+    filterLearning: "Em aprendizado",
+    filterArchived: "Arquivo",
+    noPiecesFound: "Nenhuma música encontrada com este critério.",
+
+    // Fiche morceau & Onglets rapides
+    tempoBpm: "{{bpm}} BPM",
+    lyricsTab: "Letras",
+    cultureTab: "Cultura & História",
+    signalsTab: "Sinais do Mestre",
+    sequencerTab: "Sequenciador",
+    audioRecord: "Ouvir gravação",
+    videoTutorial: "Vídeo tutorial",
+    revisePiece: "Revisar esta música",
+
+    // Modales de contenu & États vides
+    lyricsTitle: "Letras da música",
+    emptyLyrics: "Nenhuma letra cadastrada para esta música.",
+    cultureTitle: "Origem & Contexto cultural",
+    emptyCulture: "Nenhuma nota cultural redigida até o momento.",
+    signalsTitle: "Sinais & Convenções do Mestre",
+    emptySignals: "Nenhum sinal específico configurado para esta música.",
+    closeModal: "Fechar",
+
+    // Modale d'édition / création de morceau (RepertoirePieceModal)
+    modalTitleNew: "Criar música",
+    modalTitleEdit: "Editar música",
+    fieldTitle: "Título da música *",
+    titlePlaceholder: "Ex.: Baque de Luanda, Toada de Dona Fé...",
+    fieldSeasonStatus: "Status na temporada",
+    seasonStatusProgram: "No repertório (Ativo)",
+    seasonStatusPreparation: "Em preparação / Aprendizado",
+    seasonStatusArchived: "Arquivada",
+    fieldMaturity: "Maturidade artística",
+    maturityReady: "Pronta para o palco",
+    maturityInProgress: "Em construção",
+    fieldBpm: "Andamento (BPM)",
+    fieldSequencer: "Preset do Sequenciador",
+    sequencerPlaceholder: "Escolher um preset do sequenciador...",
+    fieldToada: "Toada vinculada",
+    toadaPlaceholder: "Escolher uma toada do Varal...",
+    toadaAlreadyLinked: "Já vinculada a: {{piece}}",
+    toadaFilterAll: "Todas as toadas",
+    toadaFilterAvailable: "Apenas disponíveis",
+    fieldCultureDocs: "Fichas culturais vinculadas",
+    addCultureDocPlaceholder: "+ Adicionar uma ficha cultural...",
+    btnCreateCultureFiche: "Criar ficha no Varal Cultural",
+    fieldDancador: "Coreografia do Dançador",
+    dancadorPlaceholder: "Escolher uma coreografia...",
+    fieldVideos: "Vídeos técnicos & tutoriais",
+    btnAddVideo: "+ Adicionar vídeo",
+    videoUrlPlaceholder: "Link do YouTube (URL)...",
+    videoTitlePlaceholder: "Título / Rótulo da pílula (ex: Demo)",
+    videoTargetInstruments: "Naipes / Instrumentos:",
+    selectAll: "Selecionar todos",
+    deselectAll: "Desmarcar todos",
+    videoIsLive: "Vídeo ao vivo / Ensaio geral",
+    fieldMestreNotes: "Notas de intenção / Avisos do Mestre",
+    notesPlaceholder: "Foco do ensaio, dinâmicas, convenções...",
+    btnSavePiece: "Salvar música",
+    btnDeletePiece: "Excluir esta música",
+    deleteConfirm: "Excluir definitivamente esta música do repertório?",
+
+    // Modale d'injection dans l'Agenda (ProgramPieceModal)
+    programModalTitle: "Incluir na Agenda",
+    programSelectEvent: "Escolher um evento (Ensaio, Apresentação...)",
+    programNoUpcomingEvents: "Nenhum evento futuro encontrado.",
+    programPieceSuccess: "Música adicionada à programação do evento!",
+    btnInjectProgram: "Incluir na programação",
+
+    // Modale Tablature & Partition (TablatureModal)
+    tablatureModalTitle: "Partitura & Tablatura textual",
+    btnPrintTablature: "Imprimir partitura",
+    btnCopyTablature: "Copiar texto",
+    tablatureCopiedToast: "Tablatura copiada para a área de transferência!",
+    emptyTablature: "Nenhuma tablatura gerada para esta música.",
+
+    // Affectation de vidéo par lot (BatchAssignVideoModal)
+    batchVideoModalTitle: "Atribuição de vídeo em lote",
+    batchSelectPieces: "Selecionar músicas de destino",
+    btnBatchAssign: "Atribuir às músicas selecionadas",
+    batchAssignSuccess: "Vídeo atribuído a {{count}} música(s)!",
+
+    // Pastilles & lecteur vidéo (PieceVideoSection)
+    subVoices: "Vozes / Naipes:",
+    videoLabel: "Vídeo",
+    generalView: "Visão geral",
+    pieceVideo: "Vídeo da música",
+    openSource: "abrir a fonte ↗",
+    openExternalVideo: "Abrir o vídeo externo ↗",
+  },
+  pedagogy: {
+    // Carnet d'Aisance individuel (Élève)
+    aisanceTitle: "Meu Caderno de Desempenho",
+    aisanceSubtitle: "Acompanhamento individual da sua evolução rítmica e de sinais",
+    validatedStages: "Etapas concluídas",
+    nextStageToReach: "Próxima etapa a alcançar",
+    tempoTrainingTitle: "Treino de andamento",
+    btnPractice: "Praticar",
+    targetBpmRange: "BPM {{start}} ➔ {{end}}",
+    stageLabel: "Etapa {{index}}",
+    requestRevisionBtn: "Pedir revisão no ensaio",
+    revisionRequestedNotice: "Revisão solicitada ao Mestre",
+
+    // Cockpit Pédagogique Mestre (Suivi de la troupe)
+    dashboardTitle: "Acompanhamento & Análise Pedagógica do Grupo",
+    hotPointsTitle: "Pontos Críticos & Prioridades de Ensaio",
+    hotPointsNotice: "Músicas que necessitam de atenção com base nos pedidos dos integrantes e nas avaliações.",
+    studentRequestsCount: "{{count}} solicitação de integrante",
+    studentRequestsCountPlural: "{{count}} solicitações de integrantes",
+    masteryRate: "Nível de domínio: {{rate}}%",
+    suggestedForNextRehearsal: "Sugerido para o próximo ensaio",
+    btnPinToNotepad: "Anotar no Bloco de Notas",
+    btnProgramRehearsal: "Incluir no ensaio",
+
+    // Résultats aux Défis & Jeux
+    challengeResultsTitle: "Desempenho nos Desafios",
+    blindTestSuccess: "Acertos no Teste às Cegas",
+    rhythmAccuracy: "Precisão Rítmica (Tempo 1)",
+    signalsRecognition: "Reconhecimento de Sinais",
+    btnTryChallenge: "Experimentar desafio",
+
+    // Signaux du Mestre & Gestes
+    signalsConventionsTitle: "Sinais & Convenções do Mestre",
+    signalsConventionsSubtitle: "Chamadas gestuais e códigos de regência para ensaios e apresentações",
+    btnCreateSignal: "Criar sinal",
+    signalNamePlaceholder: "Nome da chamada (ex: Virada, Parada, Corte)...",
+    signalInstructionPlaceholder: "Instrução de execução para a bateria...",
+    signalMeasureOffset: "Compasso de entrada / Disparo",
+    hideNamesToggle: "Ocultar nomes",
+    distractorBankTitle: "Banco de alternativas para testes",
+    btnSaveSignal: "Salvar sinal",
+
+    // En-tête Mon Parcours (Image 1)
+    myJourneyTitle: "Meu Percurso",
+    myJourneySubtitle: "Informe seu nível de domínio ou pratique com os mini-jogos. Sua evolução é salva automaticamente.",
+    tabTrainingWorkshop: "Oficina de Treino",
+
+    // Sous-onglets Atelier d'entraînement (Image 1)
+    tabRevisions: "Revisões",
+    tabSongs: "Toadas",
+    tabWorkshop: "Ateliê",
+    tabCulture: "Cultura",
+
+    // Révision du jour (Image 1)
+    dailyRevisionTitle: "Revisão do dia",
+    dailyRevisionDesc: "Nosso sistema analisou suas respostas anteriores. Hoje, você tem {{count}} questão pendente de revisão para fixar na memória.",
+    dailyRevisionDescPlural: "Nosso sistema analisou suas respostas anteriores. Hoje, você tem {{count}} questões pendentes de revisão para fixar na memória.",
+
+    // Mémorisation Toadas / Paroles masquées (Image 2)
+    btnAskToRevise: "Pedir revisão",
+    btnReveal: "Revelar",
+
+    // Fiches Culture & Échelle de confort (Image 3)
+    categoryHistoire: "História",
+    categoryCortegeRoyal: "Cortejo real",
+    fichesCount: "{{count}} ficha",
+    fichesCountPlural: "{{count}} fichas",
+    comfortDiscovery: "Descobrindo",
+    comfortPractice: "Praticando",
+    comfortComfortable: "Fluente",
+    comfortReferent: "Referência",
+    btnTestKnowledge: "Testar meus conhecimentos",
+
+    // Invite de session rapide (Image 1)
+    btnStartSession: "Iniciar a sessão ({{count}})",
+    btnLater: "Mais tarde",
+
+    // Hub de l'Atelier d'Entraînement (Image 2)
+    trainingHubTitle: "A Oficina de Treino",
+    trainingHubSubtitle: "Pratique no seu ritmo: memorização de letras, quiz cultural e desafios multijogador ao vivo.",
+    liveRodaStatsTitle: "Roda Quiz & Desafios ao vivo",
+    liveRodaStatsSubtitle: "Seu desempenho nas rodadas multijogador do grupo.",
+    statPlayed: "Jogadas",
+    statWins: "Vitórias",
+    statPodiums: "Pódios",
+
+    // Cartes des modes de jeu (Image 2)
+    cardSongsTitle: "Revisão de toadas & letras",
+    cardSongsDesc: "Modo flashcard e ocultação dinâmica. Pratique a memorização do texto e a compreensão das toadas.",
+    btnLaunchRevision: "Iniciar revisão 🚀",
+    cardLiveQuizTitle: "Roda Quiz & Desafios ao vivo",
+    cardLiveQuizDesc: "Arena multijogador em tempo real. Proponha uma rodada ou entre com seus colegas para testar seus reflexos na roda.",
+    btnLaunchChallenge: "Lançar um desafio 🎲",
+    cardCultureQuizTitle: "Quiz Cultura & Tradições",
+    cardCultureQuizDesc: "Perguntas baseadas nas fichas do Varal Cultural. Mergulhe na história, mitologia dos Orixás e raízes da tradição.",
+    btnLaunchQuiz: "Iniciar o quiz 📜",
+
+    // Écran du Quiz en cours (Image 3)
+    backToWorkshop: "← Voltar à Oficina",
+    btnQuitTraining: "✕ Sair do treino",
+    questionProgress: "PERGUNTA {{current}} / {{total}}",
+    translatePrompt: "Traduza: {{term}}",
+
+    // Modale Proposer un défi en direct
+    proposeChallengeTitle: "Propor um desafio ao vivo",
+    proposeChallengeDesc: "Escolha o tema da arena. Uma sala de espera será aberta e seus colegas conectados poderão entrar ao vivo!",
+    challengeRhythmTitle: "Desafio de Ritmo",
+    challengeRhythmDesc: "Andamento, viradas, variações e referências rítmicas",
+    challengeCultureTitle: "Desafio Cultural",
+    challengeCultureDesc: "História do Maracatu, toadas, tradições e instrumentos",
+    challengeExquisiteCorpseTitle: "Desafio em Cadeia (Cooperação)",
+    challengeExquisiteCorpseDesc: "Revezamento polirrítmico em cadeia e deliberação no Conselho de Bateria",
+    btnCancelChallenge: "Cancelar"
+  },
+  treasury: {
+    // Synthèse & Tableau de bord
+    dashboardTitle: "Tesouraria & Balanço Financeiro",
+    currentBalance: "Saldo atual",
+    totalIncome: "Total de receitas",
+    totalExpenses: "Total de despesas",
+    netMargin: "Resultado líquido",
+    fiscalYear: "Exercício financeiro",
+    btnExportCsv: "Exportar Livro Caixa (CSV)",
+
+    // Journal des Opérations
+    operationsJournalTitle: "Livro de lançamentos",
+    btnAddOperation: "+ Novo lançamento",
+    fieldDate: "Data do lançamento",
+    fieldLabel: "Descrição do lançamento",
+    labelPlaceholder: "Ex.: Compra de peles, Cachê apresentação, Seguro...",
+    fieldAmount: "Valor (€)",
+    fieldCategory: "Categoria contábil",
+    categoryIncome: "Receita",
+    categoryExpense: "Despesa",
+    fieldReceipt: "Comprovante (Nota fiscal, recibo)",
+    uploadReceiptNotice: "Formatos aceitos: PDF, PNG, JPG (máx. 5 MB)",
+    viewReceipt: "Ver comprovante",
+    noReceipt: "Nenhum comprovante anexado",
+    btnSaveOperation: "Salvar lançamento",
+    noOperationsFound: "Nenhum lançamento registrado neste exercício.",
+
+    // Suivi des Cotisations & Adhésions
+    contributionsTitle: "Gestão das Mensalidades",
+    membershipFormula: "Plano de associação",
+    amountDue: "Valor a pagar",
+    paymentStatus: "Situação do pagamento",
+    statusPaidOnline: "Pago online (HelloAsso)",
+    statusPaidCashCheck: "Pago (Cheque / Dinheiro)",
+    statusExempted: "Isento",
+    statusPending: "Aguardando pagamento",
+    remainderToPay: "Valor pendente",
+    btnMarkAsPaid: "Confirmar pagamento",
+
+    // Remboursements kilométriques
+    mileageTitle: "Reembolsos Quilométricos",
+    fiscalRatePerKm: "Tabela em vigor: {{rate}} € / km",
+    totalMileageDue: "Total a reembolsar aos motoristas",
+    btnValidateRefund: "Confirmar reembolso",
+    refundValidatedToast: "Reembolso confirmado com sucesso!"
   }
 };
+
 

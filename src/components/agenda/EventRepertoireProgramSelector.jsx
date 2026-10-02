@@ -3,6 +3,7 @@ import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../../firebase';
 import EventRepertoireItemCard from './EventRepertoireItemCard';
 import { canonicalizeGroupId } from '../../utils/tenantUtils';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * EventRepertoireProgramSelector - Sélecteur de morceaux du Répertoire pour l'Agenda
@@ -15,6 +16,7 @@ export default function EventRepertoireProgramSelector({
   groupId,
   disabled = false
 }) {
+  const { t } = useTranslation();
   const [allPieces, setAllPieces] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCheckboxes, setShowCheckboxes] = useState(false);
@@ -192,10 +194,10 @@ export default function EventRepertoireProgramSelector({
       <div className="flex items-center justify-between">
         <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center gap-1.5">
           <span>📜</span>
-          <span>Morceaux du répertoire au programme</span>
+          <span>{t('agenda.repertoirePiecesProgramTitle') || "Morceaux du répertoire au programme"}</span>
         </label>
         <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-cordel-wood/10 text-cordel-wood">
-          {currentSetlist.length} au programme
+          {t('agenda.countInProgram', { count: currentSetlist.length }) || `${currentSetlist.length} au programme`}
         </span>
       </div>
 
@@ -214,7 +216,7 @@ export default function EventRepertoireProgramSelector({
               className="theme-input text-xs font-bold py-1.5 bg-white flex-1 min-w-0 truncate cursor-pointer"
             >
               <option value="">
-                {availableToAdd.length === 0 ? "✓ Tous les morceaux sont au programme" : "+ Ajouter un morceau du répertoire..."}
+                {availableToAdd.length === 0 ? "✓ Tous les morceaux sont au programme" : (t('agenda.addPiecePlaceholder') || "+ Ajouter un morceau du répertoire...")}
               </option>
               {availableToAdd.map((p) => {
                 const b = getDisciplineBadges(p).map((x) => x.emoji).join(' ');
@@ -237,7 +239,7 @@ export default function EventRepertoireProgramSelector({
             >
               <span className="text-base">{showCheckboxes ? '✕' : '📋'}</span>
               <span className="hidden sm:inline ml-1.5 tracking-wide">
-                {showCheckboxes ? 'Fermer' : 'Parcourir'}
+                {showCheckboxes ? 'Fermer' : (t('agenda.btnBrowse') || 'Parcourir')}
               </span>
             </button>
           </div>

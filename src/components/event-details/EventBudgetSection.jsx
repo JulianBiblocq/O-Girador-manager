@@ -1,6 +1,7 @@
 import React from 'react';
 import CordelButton from '../CordelButton';
 import { useEventFinance } from '../../hooks/useEventFinance';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Composant de présentation du Bilan Financier d'un événement.
@@ -13,6 +14,7 @@ import { useEventFinance } from '../../hooks/useEventFinance';
  * @param {Function} onCreateQuote - Callback pour ouvrir la création de devis
  */
 export default function EventBudgetSection({ event, groupId, onCreateQuote }) {
+  const { t } = useTranslation();
   const {
     linkedInvoice,
     hasLinkedInvoice,
@@ -40,7 +42,7 @@ export default function EventBudgetSection({ event, groupId, onCreateQuote }) {
     <div className="flex flex-col gap-6 text-left w-full">
       {/* Badge indiquant la restriction de visibilité */}
       <div className="mb-1 px-3 py-1.5 bg-neutral-100 border border-neutral-400 text-neutral-700 rounded font-black text-[10px] uppercase tracking-wider flex items-center gap-2 w-fit shadow-[1.5px_1.5px_0px_0px_#181716]">
-        <span>🔒 Section confidentielle (Accès restreint Trésorerie / Bureau)</span>
+        <span>🔒 {t('agenda.confidentialSectionNotice') || "Section confidentielle (accès restreint trésorerie / bureau)"}</span>
       </div>
 
       {/* Grille principale : Revenus & Dépenses Hybrides */}
@@ -51,7 +53,7 @@ export default function EventBudgetSection({ event, groupId, onCreateQuote }) {
           <div>
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-cordel-vert)] dark:text-emerald-400 flex items-center gap-1.5">
-                <span>📈</span> Revenus (Entrées)
+                <span>📈</span> {t('agenda.estimatedIncome') || "Recettes estimées"}
               </span>
               {hasLinkedInvoice && (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--color-cordel-vert)]/15 text-[var(--color-cordel-vert)] dark:text-emerald-300">
@@ -104,7 +106,7 @@ export default function EventBudgetSection({ event, groupId, onCreateQuote }) {
           </div>
 
           <div className="mt-4 pt-3 border-t border-dashed border-[#2d6a4f]/20 flex justify-between items-center text-xs font-bold">
-            <span className="text-stone-600 dark:text-stone-400">Total Revenus :</span>
+            <span className="text-stone-600 dark:text-stone-400">{t('agenda.estimatedIncome') || "Total Revenus"} :</span>
             <span className="text-[var(--color-cordel-vert)] dark:text-emerald-400 font-extrabold text-sm">
               {totalRecettes.toFixed(2)} €
             </span>
@@ -116,7 +118,7 @@ export default function EventBudgetSection({ event, groupId, onCreateQuote }) {
           <div>
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-bold uppercase tracking-wider text-[var(--theme-primary)] dark:text-rose-400 flex items-center gap-1.5">
-                <span>📉</span> Dépenses (Sorties Hybrides)
+                <span>📉</span> {t('agenda.estimatedTravelExpenses') || "Dépenses déplacement estimées"}
               </span>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--theme-primary)]/15 text-[var(--theme-primary)] dark:text-rose-300">
                 Automatique + Manuel
@@ -130,9 +132,9 @@ export default function EventBudgetSection({ event, groupId, onCreateQuote }) {
                   <span>🚗</span>
                   <div>
                     <span className="font-semibold text-stone-800 dark:text-stone-200 block">
-                      Frais kilométriques (Covoiturage)
+                      {t('agenda.travelExpensesTitle') || "Frais de déplacement - Adhérent"}
                     </span>
-                    <span className="text-[10px] text-stone-500">Calcul automatique conducteurs</span>
+                    <span className="text-[10px] text-stone-500">{t('agenda.autoDriversCalc') || "Calcul automatique conducteurs"}</span>
                   </div>
                 </div>
                 <span className="font-bold text-[var(--theme-primary)] dark:text-rose-400">
@@ -143,7 +145,7 @@ export default function EventBudgetSection({ event, groupId, onCreateQuote }) {
               {/* Partie Manuelle : Frais annexes */}
               <div className="space-y-1 pt-1">
                 <span className="text-[11px] font-bold text-stone-600 dark:text-stone-400 block">
-                  Frais annexes manuels ({manualItems.length}) :
+                  {t('agenda.manualExtraExpenses') || "Frais annexes manuels"} ({manualItems.length}) :
                 </span>
                 {manualItems.length === 0 ? (
                   <p className="text-[11px] italic text-stone-400 pl-2">Aucun frais annexe.</p>
@@ -153,7 +155,7 @@ export default function EventBudgetSection({ event, groupId, onCreateQuote }) {
                       key={item.id || idx}
                       className="p-2 rounded bg-white/50 dark:bg-stone-800/50 flex justify-between items-center text-xs"
                     >
-                      <span className="text-stone-700 dark:text-stone-300">{item.intitule || 'Dépense'}</span>
+                      <span className="text-stone-700 dark:text-stone-300">{item.intitule || t('agenda.expenseItemDefault') || 'Dépense'}</span>
                       <span className="font-semibold text-[var(--theme-primary)] dark:text-rose-400">
                         {(parseFloat(item.montant) || 0).toFixed(2)} €
                       </span>
@@ -165,7 +167,7 @@ export default function EventBudgetSection({ event, groupId, onCreateQuote }) {
           </div>
 
           <div className="mt-4 pt-3 border-t border-dashed border-[var(--theme-primary)]/20 flex justify-between items-center text-xs font-bold">
-            <span className="text-stone-600 dark:text-stone-400">Total Sorties :</span>
+            <span className="text-stone-600 dark:text-stone-400">{t('agenda.estimatedTravelExpenses') || "Total Sorties"} :</span>
             <span className="text-[var(--theme-primary)] dark:text-rose-400 font-extrabold text-sm">
               {totalDepenses.toFixed(2)} €
             </span>
@@ -177,14 +179,14 @@ export default function EventBudgetSection({ event, groupId, onCreateQuote }) {
       <div className="p-4 rounded-[var(--theme-border-radius,6px)] bg-stone-100 dark:bg-stone-800/80 border border-stone-300 dark:border-stone-700 flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-6 text-xs font-bold">
           <div>
-            <span className="text-stone-500 uppercase tracking-wider block text-[10px]">Total Rentrées</span>
+            <span className="text-stone-500 uppercase tracking-wider block text-[10px]">{t('agenda.estimatedIncome') || "Total Rentrées"}</span>
             <span className="text-[var(--color-cordel-vert)] dark:text-emerald-400 text-base font-extrabold">
               {totalRecettes.toFixed(2)} €
             </span>
           </div>
 
           <div>
-            <span className="text-stone-500 uppercase tracking-wider block text-[10px]">Total Sorties</span>
+            <span className="text-stone-500 uppercase tracking-wider block text-[10px]">{t('agenda.estimatedTravelExpenses') || "Total Sorties"}</span>
             <span className="text-[var(--theme-primary)] dark:text-rose-400 text-base font-extrabold">
               {totalDepenses.toFixed(2)} €
             </span>
@@ -193,7 +195,7 @@ export default function EventBudgetSection({ event, groupId, onCreateQuote }) {
 
         <div>
           <span className="text-stone-500 uppercase tracking-wider block text-[10px] text-right sm:text-left">
-            Marge Nette Estimée
+            {t('agenda.forecastMarginBoard') || "Marge Nette Estimée"}
           </span>
           <span
             className={`inline-block px-3 py-1 text-sm font-extrabold rounded-md border ${

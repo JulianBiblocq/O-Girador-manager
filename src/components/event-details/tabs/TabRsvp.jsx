@@ -1,6 +1,7 @@
 import React from 'react';
 import CordelCard from '../../CordelCard';
 import EventRSVPSection from '../EventRSVPSection';
+import { useTranslation } from '../../LanguageContext';
 
 /**
  * Onglet 1 : Mon RSVP & Consignes (TabRsvp)
@@ -71,6 +72,9 @@ export default function TabRsvp({
   onOpenQrCodeModal,
   hasQrCode
 }) {
+  const { t: contextT } = useTranslation();
+  const tr = typeof t === 'function' ? t : contextT;
+
   return (
     <div className="flex flex-col gap-4 text-left">
       {/* 1. Vote Individuel de Présence & Inscription */}
@@ -79,7 +83,7 @@ export default function TabRsvp({
           <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-2 mb-3">
             <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
               <span>🎟️</span>
-              <span>Votre présence & Inscription</span>
+              <span>{tr('agenda.myRsvp') || "Votre présence & Inscription"}</span>
             </h4>
             {existingResponse && (
               <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded border ${
@@ -87,9 +91,17 @@ export default function TabRsvp({
                   ? 'bg-green-100 border-green-400 text-green-800'
                   : existingResponse.status === 'absent'
                   ? 'bg-red-100 border-red-400 text-red-800'
+                  : existingResponse.status === 'busy' || existingResponse.status === 'occupe'
+                  ? 'bg-orange-100 border-orange-400 text-orange-800'
                   : 'bg-amber-100 border-amber-400 text-amber-800'
               }`}>
-                {existingResponse.status === 'present' ? '✅ Présent' : existingResponse.status === 'absent' ? '❌ Absent' : '⏳ À confirmer'}
+                {existingResponse.status === 'present' 
+                  ? `✅ ${tr('agenda.present')}` 
+                  : existingResponse.status === 'absent' 
+                  ? `❌ ${tr('agenda.absent')}` 
+                  : (existingResponse.status === 'busy' || existingResponse.status === 'occupe')
+                  ? `⛔ ${tr('agenda.statusBusy') || 'Occupé'}`
+                  : `⏳ ${tr('agenda.confirm')}`}
               </span>
             )}
           </div>
@@ -165,7 +177,7 @@ export default function TabRsvp({
         <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
           <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/20 pb-1.5 mb-2.5 flex items-center gap-1.5">
             <span>📝</span>
-            <span>Consignes & Informations pratiques</span>
+            <span>{tr('agenda.practicalInfoTitle') || "Consignes & Informations pratiques"}</span>
           </h4>
           <div className="whitespace-pre-line text-xs font-medium text-encre-noire/90 leading-relaxed bg-cordel-bg-light/60 p-3 rounded-[6px] border border-dashed border-cordel-master-dark/15">
             {event.description}
@@ -184,7 +196,7 @@ export default function TabRsvp({
                   Boîte à Souvenirs & Vidéos
                 </span>
                 <span className="text-[11px] text-encre-noire/70">
-                  Partagez vos photos de la prestation ou faites flasher le QR Code aux spectateurs !
+                  {tr('agenda.mediaBoxDesc') || "Partagez vos photos de la prestation ou faites flasher le QR Code aux spectateurs !"}
                 </span>
               </div>
             </div>
@@ -196,7 +208,7 @@ export default function TabRsvp({
               title="Afficher le QR Code de dépôt de médias"
             >
               <span>📱</span>
-              <span>Voir le QR Code</span>
+              <span>{tr('agenda.btnViewQrCode') || "Voir le QR Code"}</span>
             </button>
           </div>
         </CordelCard>

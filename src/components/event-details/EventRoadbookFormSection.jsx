@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import EventRoadbookParcoursFields from './EventRoadbookParcoursFields';
 import EventRoadbookContactsFields from './EventRoadbookContactsFields';
 import EventLogisticsKitsSelector from './EventLogisticsKitsSelector';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Sous-composant de formulaire pour la Feuille de Route / Roadbook du Jour J.
@@ -14,6 +15,7 @@ import EventLogisticsKitsSelector from './EventLogisticsKitsSelector';
  * @param {Array<string>} [props.pupitresList] - Noms des vrais pupitres configurés
  * @param {string} [props.groupId] - ID du groupe
  * @param {boolean} [props.saving] - Indicateur de sauvegarde en cours
+ * @param {Function} [props.t] - Fonction de traduction
  */
 export default function EventRoadbookFormSection({
   editForm = {},
@@ -21,8 +23,11 @@ export default function EventRoadbookFormSection({
   allUsers = [],
   pupitresList = [],
   groupId,
-  saving = false
+  saving = false,
+  t
 }) {
+  const { t: contextT } = useTranslation();
+  const tr = typeof t === 'function' ? t : contextT;
   const [isOpen, setIsOpen] = useState(false);
 
   const formatJeu = editForm.formatJeu || 'scene';
@@ -50,11 +55,11 @@ export default function EventRoadbookFormSection({
         <div className="flex items-center gap-2">
           <span className="text-sm">📄</span>
           <span className="text-[10px] font-black uppercase tracking-wider text-cordel-wood">
-            Feuille de Route / Roadbook Concert (Optionnel)
+            {tr('agenda.roadbookOptionTitle') || "Feuille de route / Roadbook concert (optionnel)"}
           </span>
         </div>
         <span className="text-xs font-bold text-cordel-master-dark">
-          {isOpen ? '▲ Masquer' : '▼ Configurer'}
+          {isOpen ? '▲ Masquer' : `▼ ${tr('agenda.btnConfigure') || "Configurer"}`}
         </span>
       </div>
 

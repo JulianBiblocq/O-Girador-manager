@@ -2,6 +2,7 @@ import React from 'react';
 import RoadbookInteractiveContent from './RoadbookInteractiveContent';
 import RoadbookPrintView from './RoadbookPrintView';
 import { useEventCommissions } from '../../hooks/useEventCommissions';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Modale de consultation de la Feuille de Route (Roadbook) du jour J.
@@ -14,8 +15,13 @@ export default function RoadbookModal({
   allUsers = [],
   presentsByInstrument = {},
   onNavigateToStageLayout,
-  t = (key) => key
+  t
 }) {
+  const { t: contextT } = useTranslation();
+  const tr = (key) => {
+    const val = typeof t === 'function' ? t(key) : null;
+    return (val && val !== key) ? val : contextT(key);
+  };
   const hasCommissions = Boolean(event?.hasCommissions);
   const { commissions = [] } = useEventCommissions(hasCommissions && isOpen ? event.id : null);
 
@@ -52,7 +58,7 @@ export default function RoadbookModal({
             <span className="text-xl">📄</span>
             <div>
               <h2 id="roadbook-modal-title" className="font-bold text-base sm:text-lg text-encre-noire m-0 leading-tight">
-                {t('roadbook.title') || 'Feuille de Route'}
+                {tr('agenda.roadbookTitle') || 'Feuille de Route'}
               </h2>
               <span className="text-xs text-[var(--color-cordel-marron)] truncate block max-w-[200px] sm:max-w-md">
                 {event.titre || 'Événement'}
@@ -70,7 +76,7 @@ export default function RoadbookModal({
                 title="Consulter le plan de scène publié"
               >
                 <span>📐</span>
-                <span className="hidden sm:inline">{t('roadbook.btnStageLayout') || 'Plan de scène'}</span>
+                <span className="hidden sm:inline">{tr('agenda.stagePlan') || 'Plan de scène'}</span>
               </button>
             )}
 
@@ -81,14 +87,14 @@ export default function RoadbookModal({
               title="Imprimer ou générer le PDF A4"
             >
               <span>🖨️</span>
-              <span className="hidden sm:inline">{t('roadbook.btnPrint') || 'Imprimer / PDF'}</span>
+              <span className="hidden sm:inline">{tr('agenda.printRoadbook') || 'Imprimer / PDF'}</span>
             </button>
 
             <button
               type="button"
               onClick={onClose}
               className="p-1.5 rounded-full hover:bg-black/10 text-neutral-600 transition-colors ml-1"
-              aria-label="Fermer"
+              aria-label={tr('agenda.closeRoadbook') || 'Fermer'}
             >
               ✕
             </button>
@@ -115,7 +121,7 @@ export default function RoadbookModal({
             onClick={onClose}
             className="px-3 py-1 bg-white/90 dark:bg-stone-700 hover:bg-white text-encre-noire border border-encre-noire/30 rounded font-bold text-xs cursor-pointer shadow-xs"
           >
-            Fermer
+            {tr('agenda.closeRoadbook') || 'Fermer'}
           </button>
         </div>
       </div>

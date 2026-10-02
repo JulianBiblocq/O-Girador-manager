@@ -1,6 +1,7 @@
 import React from 'react';
 import CordelButton from '../CordelButton';
 import EventDisciplineBadges from '../agenda/EventDisciplineBadges';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * En-tête visuel pour la fiche détaillée d'un événement (Titre, badges, dates, illustration/vidéo et boutons de navigation).
@@ -13,6 +14,8 @@ import EventDisciplineBadges from '../agenda/EventDisciplineBadges';
  * @param {Function} props.t Fonction de traduction
  */
 export default function EventHeaderCard({ event, onClose, onPrev, onNext, t }) {
+  const { t: contextT } = useTranslation();
+  const tr = typeof t === 'function' ? t : contextT;
   const videoUrl = event.socialVideoUrl || event.videoUrl;
   const thumbnailCandidate = event.socialThumbnailUrl || event.imageUrl;
   const isVideo = Boolean(videoUrl || event.socialThumbnailUrl);
@@ -38,7 +41,19 @@ export default function EventHeaderCard({ event, onClose, onPrev, onNext, t }) {
             style={{ transform: 'rotate(-10deg)', color: 'var(--color-cordel-vert)', borderColor: 'var(--color-cordel-vert)' }}
             className="border-[3.5px] px-4 py-1 rounded-lg font-black text-sm tracking-widest uppercase opacity-80 bg-white/5 dark:bg-black/5 shadow-md block"
           >
-            VALIDÉ
+            {tr('agenda.confirmedStamp') || 'VALIDÉ'}
+          </span>
+        </div>
+      )}
+
+      {/* Tampon d'annulation (Règle 4: Rouge Terre Cuite) */}
+      {event.status === 'annule' && (
+        <div className="absolute top-4 right-2 pointer-events-none z-10 select-none">
+          <span 
+            style={{ transform: 'rotate(-10deg)', color: 'var(--color-cordel-rouge, #8b2a1a)', borderColor: 'var(--color-cordel-rouge, #8b2a1a)' }}
+            className="border-[3.5px] px-4 py-1 rounded-lg font-black text-sm tracking-widest uppercase opacity-80 bg-white/5 dark:bg-black/5 shadow-md block"
+          >
+            {tr('agenda.canceledStamp') || 'ANNULÉ'}
           </span>
         </div>
       )}
@@ -91,7 +106,7 @@ export default function EventHeaderCard({ event, onClose, onPrev, onNext, t }) {
           <EventDisciplineBadges includesPercussion={event.includesPercussion} includesDance={event.includesDance} size="normal" />
           {event.niveauRequis === 'confirme' && (
             <span className="text-[9.5px] font-extrabold uppercase px-2 py-0.5 bg-amber-200 text-amber-900 border border-amber-400 rounded">
-              ⭐ Confirmés
+              ⭐ {tr('agenda.reservedConfirmed') || 'Confirmés'}
             </span>
           )}
         </div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Encart compact affichant les statistiques de défis multijoueurs (Roda Quiz)
@@ -11,6 +12,7 @@ import CordelCard from '../CordelCard';
  * @param {string} groupId Identifiant de l'association
  */
 export default function GameStatsCard({ userId, groupId }) {
+  const { t } = useTranslation();
   const [stats, setStats] = useState({ played: 0, wins: 0, podiums: 0 });
   const [loading, setLoading] = useState(true);
 
@@ -53,10 +55,10 @@ export default function GameStatsCard({ userId, groupId }) {
         <div className="text-left">
           <h4 className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
             <span>🏆</span>
-            <span>Roda Quiz & Défis en direct</span>
+            <span>{t('pedagogy.liveRodaStatsTitle')}</span>
           </h4>
           <p className="text-[10px] font-bold text-cordel-master-dark/75 mt-0.5">
-            Vos performances lors des sessions multijoueurs de la troupe.
+            {t('pedagogy.liveRodaStatsSubtitle')}
           </p>
         </div>
 
@@ -69,7 +71,7 @@ export default function GameStatsCard({ userId, groupId }) {
               {loading ? '…' : stats.played}
             </span>
             <span className="text-[8.5px] uppercase font-bold text-cordel-master-dark/70 tracking-wider">
-              Jouées
+              {t('pedagogy.statPlayed')}
             </span>
           </div>
 
@@ -80,7 +82,7 @@ export default function GameStatsCard({ userId, groupId }) {
               {loading ? '…' : stats.wins}
             </span>
             <span className="text-[8.5px] uppercase font-bold text-cordel-master-dark/70 tracking-wider">
-              Victoires
+              {t('pedagogy.statWins')}
             </span>
           </div>
 
@@ -91,7 +93,7 @@ export default function GameStatsCard({ userId, groupId }) {
               {loading ? '…' : stats.podiums}
             </span>
             <span className="text-[8.5px] uppercase font-bold text-cordel-master-dark/70 tracking-wider">
-              Podiums
+              {t('pedagogy.statPodiums')}
             </span>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import React from 'react';
 import CordelButton from '../CordelButton';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Bloc de sélection et de prévisualisation de la source vidéo
@@ -14,6 +15,7 @@ export default function BatchAssignVideoSource({
   ytMedia,
   onOpenPicker
 }) {
+  const { t } = useTranslation();
   return (
     <div className="p-3 bg-white rounded border border-encre-noire/20 flex flex-col gap-2">
       <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -79,7 +81,7 @@ export default function BatchAssignVideoSource({
             type="text"
             value={videoTitle}
             onChange={(e) => setVideoTitle(e.target.value)}
-            placeholder="Titre / libellé de la vidéo (ex: Tuto de base, Captation...)"
+            placeholder={t('repertoire.videoTitlePlaceholder')}
             className="theme-input text-xs font-bold py-1 px-2 bg-[#fdfaf2] border border-encre-noire/30 rounded w-full"
           />
           <div className="flex items-center gap-1.5">
@@ -87,7 +89,7 @@ export default function BatchAssignVideoSource({
               type="url"
               value={videoUrl}
               onChange={(e) => setVideoUrl(e.target.value)}
-              placeholder="https://www.youtube.com/watch?v=..."
+              placeholder={t('repertoire.videoUrlPlaceholder')}
               className="theme-input text-xs font-mono py-1 px-2 bg-[#fdfaf2] border border-encre-noire/30 rounded flex-1"
             />
             <CordelButton

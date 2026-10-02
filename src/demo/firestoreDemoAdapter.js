@@ -24,7 +24,6 @@ import {
   addDemoDoc,
   deleteDemoDoc
 } from './demoManager';
-import { createDemoTimestamp } from '../data/demoData';
 
 // Réexportation intégrale de l'API Firestore originale
 export * from '@firebase/firestore';

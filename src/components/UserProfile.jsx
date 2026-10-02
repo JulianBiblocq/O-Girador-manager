@@ -35,7 +35,7 @@ import { getInstrumentIconPath } from '../utils/instrumentUtils';
 import { generateImageCharterPDF, generateMedicalAttestationPDF } from '../utils/pdfGenerator';
 import { useViewSimulator } from '../context/ViewSimulatorContext';
 
-export default function UserProfile({ user, profileData, associationName, onBack, onNavigateToTuto }) {
+export default function UserProfile({ user, profileData, associationName, onBack }) {
   const { t, locale } = useTranslation();
   const { tRole } = useTerminologie();
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -51,8 +51,6 @@ export default function UserProfile({ user, profileData, associationName, onBack
     setFormData,
     saving,
     uploadingPhoto,
-    myInstruments,
-    loadingInst,
     instrumentsDisponibles,
     linkedInstruments,
     tagsDisponibles,
@@ -75,8 +73,7 @@ export default function UserProfile({ user, profileData, associationName, onBack
     handleEditorComplete,
     handleChange,
     handleSave,
-    handleDisconnect,
-    handleForceUpdate
+    handleDisconnect
   } = useUserProfile(user, currentProfile, t);
 
   const visibleTags = filterUserAssignedTags(currentProfile?.tags, tagsDisponibles);
@@ -86,6 +83,17 @@ export default function UserProfile({ user, profileData, associationName, onBack
   const translate = (key, fallback) => {
     const val = t(key);
     return val === key ? fallback : val;
+  };
+
+  const translateDiet = (diet) => {
+    if (!diet) return '';
+    const d = String(diet).toLowerCase().trim();
+    if (d.includes('végétar') || d.includes('vegetar')) return t('userProfile.dietVegetarian');
+    if (d.includes('végan') || d.includes('vegan') || d.includes('végétal')) return t('userProfile.dietVegan');
+    if (d.includes('omnivore') || d.includes('onívoro')) return t('userProfile.dietOmnivore');
+    if (d.includes('porc') || d.includes('suína') || d.includes('suino')) return t('userProfile.dietNoPork');
+    if (d.includes('gluten') || d.includes('glúten')) return t('userProfile.dietGlutenFree');
+    return diet;
   };
 
   const FIELD_LABELS = {
@@ -152,7 +160,7 @@ export default function UserProfile({ user, profileData, associationName, onBack
       )}
 
       {/* Bloc d'identité utilisateur et photo de profil (Carte Cordel étanche avec padding généreux) */}
-      <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col items-center gap-3 pt-6 pb-5 px-4 select-none w-full relative">
+      <CordelCard variant="default" useExtremeBorder={true} className="flex flex-col items-center gap-3 pt-6 pb-5 px-4 select-none w-full relative">
         <div 
           className="relative inline-block cursor-pointer group hover:scale-105 transition-transform my-1" 
           onClick={() => (profileData?.photoURL || user?.photoURL) && setLightboxOpen(true)}
@@ -278,7 +286,7 @@ export default function UserProfile({ user, profileData, associationName, onBack
       {!isEditing ? (
         <div className="flex flex-col gap-4">
           {/* CARTE 1 : PROFIL PUBLIC */}
-          <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col gap-3">
+          <CordelCard variant="default" useExtremeBorder={true} className="flex flex-col gap-3">
             <div className="bg-emerald-50/90 dark:bg-emerald-950/30 border-2 border-dashed border-emerald-500/40 p-3 rounded-[6px] text-left">
               <div className="flex items-center gap-2.5">
                 <XiloEye size={22} className="text-emerald-700 dark:text-emerald-400 shrink-0" />
@@ -368,7 +376,7 @@ export default function UserProfile({ user, profileData, associationName, onBack
           </CordelCard>
 
           {/* CARTE 2 : COORDONNÉES & CONFIDENTIALITÉ */}
-          <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col gap-3">
+          <CordelCard variant="default" useExtremeBorder={true} className="flex flex-col gap-3">
             <div className="bg-amber-50/90 dark:bg-amber-950/30 border-2 border-dashed border-amber-500/40 p-3 rounded-[6px] text-left">
               <div className="flex items-center gap-2.5">
                 <XiloLock size={22} className="text-amber-700 dark:text-amber-400 shrink-0" />
@@ -463,7 +471,7 @@ export default function UserProfile({ user, profileData, associationName, onBack
           </CordelCard>
 
           {/* CARTE 3 : LOGISTIQUE, PLACEMENT SCÉNIQUE & SANTÉ */}
-          <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col gap-3">
+          <CordelCard variant="default" useExtremeBorder={true} className="flex flex-col gap-3">
             <div className="bg-sky-50/90 dark:bg-sky-950/30 border-2 border-dashed border-sky-500/40 p-3 rounded-[6px] text-left">
               <div className="flex items-center gap-2.5">
                 <XiloShield size={22} className="text-sky-700 dark:text-sky-400 shrink-0" />
@@ -554,67 +562,76 @@ export default function UserProfile({ user, profileData, associationName, onBack
                 </div>
               )}
 
-              {/* Préférences Alimentaires & Allergies */}
-              <div className="col-span-1 md:col-span-2 border-t border-dashed border-cordel-master-dark/15 pt-2 mt-1">
-                <span className="text-[10px] uppercase font-black text-cordel-wood flex items-center gap-1 mb-1">
-                  🍽️ Préférences Alimentaires & Allergies (Confidentiel Admin)
+            </div>
+          </CordelCard>
+
+          {/* CARTE : PRÉFÉRENCES ALIMENTAIRES & ALLERGIES */}
+          <CordelCard variant="default" useExtremeBorder={true} className="flex flex-col gap-3 text-left">
+            <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/15 pb-2">
+              <h4 className="font-black text-xs uppercase text-cordel-wood flex items-center gap-2">
+                <span>🍽️</span>
+                <span>{t('userProfile.dietSectionTitle')}</span>
+              </h4>
+            </div>
+
+            <div className="flex flex-col gap-2 text-xs">
+              <div>
+                <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 inline-block mr-1">
+                  {t('userProfile.dietLabel')}
                 </span>
-                <div className="flex flex-col gap-1 text-xs">
-                  <div>
-                    <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 inline-block mr-1">Régime :</span>
-                    {formData.dietaryRestrictions && formData.dietaryRestrictions.length > 0 ? (
-                      <span className="font-extrabold text-cordel-wood bg-cordel-bg-light px-2 py-0.5 rounded border border-dashed border-cordel-master-dark/20">
-                        {formData.dietaryRestrictions.join(', ')}
-                      </span>
-                    ) : (
-                      <span className="italic opacity-50">Aucun régime spécifique</span>
-                    )}
-                  </div>
-                  <div className="mt-0.5">
-                    <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 inline-block mr-1">Allergies / Précisions :</span>
-                    {formData.allergies && formData.allergies.trim() ? (
-                      <span className="font-bold text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/30 px-2 py-0.5 rounded border border-red-200 dark:border-red-900/40">
-                        ⚠️ {formData.allergies.trim()}
-                      </span>
-                    ) : (
-                      <span className="italic opacity-50">Aucune allergie signalée</span>
-                    )}
-                  </div>
-                </div>
+                {formData.dietaryRestrictions && formData.dietaryRestrictions.length > 0 ? (
+                  <span className="font-extrabold text-cordel-wood bg-cordel-bg-light px-2 py-0.5 rounded border border-dashed border-cordel-master-dark/20">
+                    {formData.dietaryRestrictions.map(diet => translateDiet(diet)).join(', ')}
+                  </span>
+                ) : (
+                  <span className="italic opacity-50">{t('userProfile.noDietSpecific')}</span>
+                )}
+              </div>
+              <div className="mt-0.5">
+                <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 inline-block mr-1">
+                  {t('userProfile.allergiesLabel')}
+                </span>
+                {formData.allergies && formData.allergies.trim() ? (
+                  <span className="font-bold text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/30 px-2 py-0.5 rounded border border-red-200 dark:border-red-900/40">
+                    ⚠️ {formData.allergies.trim()}
+                  </span>
+                ) : (
+                  <span className="italic opacity-50">{t('userProfile.noAllergiesReported')}</span>
+                )}
               </div>
             </div>
           </CordelCard>
 
-          {/* CARTE 3 : VÉHICULE & DÉPLACEMENTS (si motorisé) */}
+          {/* CARTE : VÉHICULE & DÉPLACEMENTS (si motorisé) */}
           {profileData?.hasVehicle && (
-            <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col gap-3 text-left">
+            <CordelCard variant="default" useExtremeBorder={true} className="flex flex-col gap-3 text-left">
               <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/15 pb-2">
                 <h4 className="font-black text-xs uppercase text-cordel-wood flex items-center gap-2">
                   <span>🚗</span>
-                  <span>Véhicule Associatif</span>
+                  <span>{t('userProfile.vehicleSectionTitle')}</span>
                 </h4>
                 <span className="theme-stamp-badge theme-stamp-badge-wood text-[9px] px-2 py-0.5 font-black uppercase">
-                  Motorisé convoi
+                  {t('userProfile.vehicleConvoyBadge')}
                 </span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
                 <div className="bg-cordel-bg-light/60 p-2 rounded border border-encre-noire/10 flex flex-col">
-                  <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70">Catégorie</span>
+                  <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70">{t('userProfile.vehicleCategory')}</span>
                   <span className="font-extrabold text-encre-noire mt-0.5">{profileData.vehicleType || 'Berline'}</span>
                 </div>
 
                 <div className="bg-cordel-bg-light/60 p-2 rounded border border-encre-noire/10 flex flex-col">
-                  <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70">Places passagers</span>
+                  <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70">{t('userProfile.vehiclePassengerSeats')}</span>
                   <span className="font-extrabold text-encre-noire mt-0.5">
-                    {profileData.defaultPassengerSeats !== undefined ? profileData.defaultPassengerSeats : 3} place(s) libre(s)
+                    {t('userProfile.vehiclePassengerSeatsCount', { count: profileData.defaultPassengerSeats !== undefined ? profileData.defaultPassengerSeats : 3 })}
                   </span>
                 </div>
 
                 <div className="bg-cordel-bg-light/60 p-2 rounded border border-encre-noire/10 flex flex-col">
-                  <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70">Coffre (Alfaias)</span>
+                  <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70">{t('userProfile.vehicleTrunkAlfaias')}</span>
                   <span className="font-extrabold text-cordel-wood mt-0.5">
-                    ~{profileData.defaultTrunkCapacity !== undefined ? profileData.defaultTrunkCapacity : 1} fût(s) max
+                    {t('userProfile.vehicleTrunkAlfaiasCount', { count: profileData.defaultTrunkCapacity !== undefined ? profileData.defaultTrunkCapacity : 1 })}
                   </span>
                 </div>
               </div>
@@ -628,7 +645,7 @@ export default function UserProfile({ user, profileData, associationName, onBack
                   )}
                   {profileData.hasTowHitch && (
                     <span className="bg-white/80 px-2 py-0.5 rounded border border-encre-noire/15 flex items-center gap-1 text-encre-noire">
-                      🔗 Crochet d'attelage
+                      🔗 {t('userProfile.vehicleTowHitch')}
                     </span>
                   )}
                 </div>
@@ -698,7 +715,7 @@ export default function UserProfile({ user, profileData, associationName, onBack
           useExtremeBorder={true}
           className="w-full sm:flex-1 py-3 border-2 border-encre-noire shadow-[3px_3px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-105 font-black transition-all text-xs uppercase tracking-widest flex items-center justify-center gap-2 select-none"
         >
-          📸 Connecter un PC
+          📸 {t('userProfile.btnConnectPc')}
         </CordelButton>
 
         <CordelButton 
@@ -708,7 +725,7 @@ export default function UserProfile({ user, profileData, associationName, onBack
           useExtremeBorder={true}
           className="w-full sm:flex-1 py-3 !bg-cordel-wood !text-cordel-bg-light border-2 border-encre-noire shadow-[3px_3px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-110 font-bold transition-all text-xs uppercase tracking-widest flex items-center justify-center gap-2 select-none"
         >
-          🚪 {t('userProfile.disconnectBtn')}
+          🚪 {t('userProfile.btnSignOut')}
         </CordelButton>
       </div>
 

@@ -54,10 +54,10 @@ export default function AgendaTemporalTabs({
                 ? 'bg-cordel-wood text-white font-black'
                 : 'bg-cordel-bg-light text-encre-noire hover:bg-amber-100/60'
             }`}
-            title={t('agendaTemporal.upcomingTab') || "Événements à venir"}
+            title={t('agenda.upcoming') || t('agendaTemporal.upcomingTab') || "Événements à venir"}
           >
             <span className="text-sm">📅</span>
-            <span>{t('agendaTemporal.upcomingTab') || "À venir"}</span>
+            <span>{t('agenda.upcoming') || t('agendaTemporal.upcomingTab') || "À venir"}</span>
             <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
               temporalTab === 'upcoming' 
                 ? 'bg-white/20 text-white' 
@@ -75,10 +75,10 @@ export default function AgendaTemporalTabs({
                 ? 'bg-cordel-wood text-white font-black'
                 : 'bg-cordel-bg-light text-encre-noire hover:bg-amber-100/60'
             }`}
-            title={t('agendaTemporal.pastTab') || "Événements passés"}
+            title={t('agenda.past') || t('agendaTemporal.pastTab') || "Événements passés"}
           >
             <span className="text-sm">🏛️</span>
-            <span>{t('agendaTemporal.pastTab') || "Passés"}</span>
+            <span>{t('agenda.past') || t('agendaTemporal.pastTab') || "Passés"}</span>
             <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
               temporalTab === 'past' 
                 ? 'bg-white/20 text-white' 
@@ -95,7 +95,7 @@ export default function AgendaTemporalTabs({
             <span>🏛️</span>
             <span>
               {activePastSeason === 'all'
-                ? (t('agendaTemporal.allSeasons') || 'Toutes les saisons')
+                ? (t('agenda.allSeasons') || t('agendaTemporal.allSeasons') || 'Toutes les saisons')
                 : `${t('agendaTemporal.seasonLabel') || 'Saison'} ${activePastSeason}`
               }
             </span>
@@ -156,7 +156,7 @@ export default function AgendaTemporalTabs({
                     : 'bg-cordel-bg-light text-encre-noire border-encre-noire/30 hover:bg-amber-100/60'
                 }`}
               >
-                <span>{t('agendaTemporal.allSeasons') || "Toutes les saisons"}</span>
+                <span>{t('agenda.allSeasons') || t('agendaTemporal.allSeasons') || "Toutes les saisons"}</span>
               </button>
             </div>
           </div>
@@ -175,7 +175,7 @@ export default function AgendaTemporalTabs({
               <div className="flex items-center gap-2">
                 <span className="text-xl">🍂</span>
                 <span className="text-xs font-bold text-encre-noire">
-                  {(t('agendaTemporal.noPastInCurrentSeason') || "Aucun événement passé pour la saison en cours ({{season}}).")
+                  {(t('agenda.noPastEvents') || t('agendaTemporal.noPastInCurrentSeason') || "Aucun événement passé pour la saison en cours ({{season}}).")
                     .replace('{{season}}', currentSeason)}
                 </span>
               </div>

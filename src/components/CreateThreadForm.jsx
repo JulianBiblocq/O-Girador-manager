@@ -117,7 +117,9 @@ export default function CreateThreadForm({ groupId, channelId, channels = [], us
         groupId: groupId,
         channelId: targetChannelId,
         auteurId: user.uid,
+        authorId: user.uid,
         auteurNom: authorName,
+        authorName: authorName,
         dateCreation: nowIso,
         derniereModification: nowIso,
         targetTag: selectedTarget || null,
@@ -127,7 +129,9 @@ export default function CreateThreadForm({ groupId, channelId, channels = [], us
         reponses: [
           {
             auteurId: user.uid,
+            authorId: user.uid,
             auteurNom: authorName,
+            authorName: authorName,
             message: cleanMessage,
             dateCreation: nowIso,
             targetTag: selectedTarget || null

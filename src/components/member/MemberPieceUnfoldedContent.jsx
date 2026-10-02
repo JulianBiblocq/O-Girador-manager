@@ -26,22 +26,15 @@ export default function MemberPieceUnfoldedContent({
   const { t } = useTranslation();
   const [isQuizModalOpen, setIsQuizModalOpen] = useState(false);
   const audioUrl = piece.activeAudioUrl || piece.audioUrl;
-  const hasToada = Boolean(
-    piece.activeToada && (
-      (typeof piece.activeToada.paroles === 'string' && piece.activeToada.paroles.trim() !== '') ||
-      (typeof piece.activeToada.texte === 'string' && piece.activeToada.texte.trim() !== '') ||
-      (Array.isArray(piece.activeToada.strophes) && piece.activeToada.strophes.length > 0) ||
-      (typeof piece.activeToada.titre === 'string' && piece.activeToada.titre.trim() !== '')
-    )
-  );
+  const hasToada = Boolean(piece.activeToada && (
+    (typeof piece.activeToada.paroles === 'string' && piece.activeToada.paroles.trim() !== '') ||
+    (typeof piece.activeToada.texte === 'string' && piece.activeToada.texte.trim() !== '') ||
+    (Array.isArray(piece.activeToada.strophes) && piece.activeToada.strophes.length > 0) ||
+    (typeof piece.activeToada.titre === 'string' && piece.activeToada.titre.trim() !== '')
+  ));
   const cultureDocs = Array.isArray(piece.activeCultureDocs) && piece.activeCultureDocs.length > 0
-    ? piece.activeCultureDocs
-    : (piece.activeCultureDoc ? [piece.activeCultureDoc] : []);
-  const hasCulture = Boolean(
-    cultureDocs.length > 0 ||
-    (Array.isArray(piece.cultureDocIds) && piece.cultureDocIds.length > 0) ||
-    piece.cultureDocId
-  );
+    ? piece.activeCultureDocs : (piece.activeCultureDoc ? [piece.activeCultureDoc] : []);
+  const hasCulture = Boolean(cultureDocs.length > 0 || (Array.isArray(piece.cultureDocIds) && piece.cultureDocIds.length > 0) || piece.cultureDocId);
   const hasSignals = Boolean(
     (Array.isArray(piece.sinaisDoMestre) && piece.sinaisDoMestre.length > 0) ||
     (Array.isArray(piece.activeSinaisDoMestre) && piece.activeSinaisDoMestre.length > 0) ||
@@ -65,6 +58,7 @@ export default function MemberPieceUnfoldedContent({
       {audioUrl && (
         <div className="flex items-center gap-2 p-2 rounded bg-cordel-bg-light border border-encre-noire/15">
           <span className="text-xs select-none">🎧</span>
+          <span className="text-[10px] font-bold text-stone-600 hidden sm:inline">{t('repertoire.audioRecord') || "Écouter l'audio"} :</span>
           <audio controls src={audioUrl} className="w-full h-8" preload="none" />
         </div>
       )}
@@ -80,7 +74,7 @@ export default function MemberPieceUnfoldedContent({
             title="Consulter les paroles complètes du chant"
           >
             <span>🗣️</span>
-            <span>{t('paroles', 'Paroles')}{piece.activeToada?.titre ? ` (${piece.activeToada.titre})` : ''}</span>
+            <span>{t('repertoire.lyricsTab') || 'Paroles'}{piece.activeToada?.titre ? ` (${piece.activeToada.titre})` : ''}</span>
           </button>
         )}
 
@@ -111,7 +105,7 @@ export default function MemberPieceUnfoldedContent({
             >
               <span>📖</span>
               <span>
-                {t('culture', 'Culture')}
+                {t('repertoire.cultureTab') || 'Culture & Histoire'}
                 {(cultureDocs[0]?.titre || cultureDocs[0]?.name)
                   ? ` : ${cultureDocs[0].titre || cultureDocs[0].name}`
                   : ''}
@@ -142,7 +136,7 @@ export default function MemberPieceUnfoldedContent({
             title="Consulter l'aide-mémoire des signes du Mestre"
           >
             <span>🖐️</span>
-            <span>{t('signes', 'Signes')}</span>
+            <span>{t('repertoire.signalsTab') || 'Signes du Mestre'}</span>
           </button>
         )}
 
@@ -154,6 +148,15 @@ export default function MemberPieceUnfoldedContent({
           </div>
         )}
 
+        {/* Passerelle Séquenceur si disponible */}
+        {(piece.sequenceurFileUrl || piece.sequenceurId || piece.hasSequencer) && sequenceurUrl && (
+          <a href={sequenceurUrl} target="_blank" rel="noopener noreferrer" className="px-2.5 py-1 text-xs font-bold rounded bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-950 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all select-none" title="Ouvrir le morceau dans le Séquenceur">
+            <span>🥁</span>
+            <span>{t('repertoire.sequencerTab') || 'Séquenceur'}</span>
+            <span className="text-[9px] opacity-70">↗</span>
+          </a>
+        )}
+
         {/* Passerelle Quiz Focus Répertoire */}
         <button
           type="button"
@@ -162,7 +165,7 @@ export default function MemberPieceUnfoldedContent({
           title="Lancer le QCM Focus Répertoire pour réviser ce morceau"
         >
           <span>🎯</span>
-          <span>{t('reviserCeMorceau', 'Réviser ce morceau')}</span>
+          <span>{t('repertoire.revisePiece') || 'Réviser ce morceau'}</span>
         </button>
       </div>
 

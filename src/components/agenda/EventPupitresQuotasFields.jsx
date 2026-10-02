@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Sous-composant pour la sélection des pupitres requis et quotas d'effectifs pour un événement.
@@ -16,6 +17,7 @@ export default function EventPupitresQuotasFields({
   pupitresList = [],
   disabled = false
 }) {
+  const { t } = useTranslation();
   // Liste de repli des pupitres unifiés si non encore chargés
   const availablePupitres = pupitresList && pupitresList.length > 0
     ? pupitresList
@@ -55,15 +57,19 @@ export default function EventPupitresQuotasFields({
     });
   };
 
+  const targetCount = Object.keys(quotasPupitres).length;
+
   return (
     <div className="flex flex-col gap-2 p-2.5 bg-white/70 dark:bg-stone-800/70 rounded border border-encre-noire/10 text-left">
       <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/15 pb-1">
         <span className="text-[10px] font-black uppercase text-cordel-wood flex items-center gap-1.5">
           <span>🎯</span>
-          <span>Pupitres Requis &amp; Quotas Cibles (Optionnel)</span>
+          <span>{t('agenda.targetQuotasTitle') || "Pupitres requis & quotas cibles (optionnel)"}</span>
         </span>
         <span className="text-[8px] font-bold text-neutral-500">
-          {Object.keys(quotasPupitres).length} pupitre{Object.keys(quotasPupitres).length > 1 ? 's' : ''} ciblé{Object.keys(quotasPupitres).length > 1 ? 's' : ''}
+          {targetCount > 1 
+            ? (t('agenda.targetPupitresCountPlural', { count: targetCount }) || `${targetCount} pupitres ciblés`)
+            : (t('agenda.targetPupitresCount', { count: targetCount }) || `${targetCount} pupitre ciblé`)}
         </span>
       </div>
 

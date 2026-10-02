@@ -296,19 +296,19 @@ export default function TreasuryCotisations({
           <div className="text-xl font-black text-encre-noire">{totalActive}</div>
         </div>
         <div className="border border-encre-noire/25 p-2 bg-green-100/35 dark:bg-green-950/15 rounded">
-          <div className="text-[10px] uppercase font-bold text-[var(--color-cordel-vert)] opacity-80">{t('widgetTreasury.upToDate') || "À jour"}</div>
+          <div className="text-[10px] uppercase font-bold text-[var(--color-cordel-vert)] opacity-80">{t('treasury.statusPaidCashCheck')}</div>
           <div className="text-xl font-black text-[var(--color-cordel-vert)]">{countPaid}</div>
         </div>
         <div className="border border-encre-noire/25 p-2 bg-amber-100/35 dark:bg-amber-950/15 rounded">
-          <div className="text-[10px] uppercase font-bold text-[var(--color-cordel-ocre)] opacity-80">{t('widgetTreasury.partial') || "Partiel / 3x"}</div>
+          <div className="text-[10px] uppercase font-bold text-[var(--color-cordel-ocre)] opacity-80">{t('treasury.remainderToPay')}</div>
           <div className="text-xl font-black text-[var(--color-cordel-ocre)]">{countPartial}</div>
         </div>
         <div className="border border-encre-noire/25 p-2 bg-blue-100/35 dark:bg-blue-950/15 rounded">
-          <div className="text-[10px] uppercase font-bold text-blue-700 dark:text-blue-400 opacity-80">{t('widgetTreasury.exempted') || "Exonéré"}</div>
+          <div className="text-[10px] uppercase font-bold text-blue-700 dark:text-blue-400 opacity-80">{t('treasury.statusExempted')}</div>
           <div className="text-xl font-black text-blue-700 dark:text-blue-400">{countExempted}</div>
         </div>
         <div className="border border-encre-noire/25 p-2 bg-red-100/35 dark:bg-red-950/15 rounded">
-          <div className="text-[10px] uppercase font-bold text-[var(--theme-primary)] opacity-80">{t('widgetTreasury.unpaid') || "Non payé"}</div>
+          <div className="text-[10px] uppercase font-bold text-[var(--theme-primary)] opacity-80">{t('treasury.statusPending')}</div>
           <div className="text-xl font-black text-[var(--theme-primary)]">{countUnpaid}</div>
         </div>
       </div>
@@ -317,7 +317,7 @@ export default function TreasuryCotisations({
       <CordelCard variant="default" useExtremeBorder={true} className="p-4">
         <div className="flex justify-between items-center cursor-pointer select-none" onClick={() => setShowConfig(!showConfig)}>
           <h3 className="text-xs font-extrabold tracking-wider text-cordel-wood uppercase">
-            ⚙️ Paramètres & Configuration des Cotisations
+            ⚙️ {t('treasury.contributionsTitle')} - {t('common.settings')}
           </h3>
           <span className="text-xs font-black">{showConfig ? '▲ Masquer' : '▼ Déployer'}</span>
         </div>
@@ -402,7 +402,7 @@ export default function TreasuryCotisations({
 
         <div className="flex flex-col gap-1 text-left min-w-[130px] w-full md:w-auto">
           <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-wood">
-            {t('widgetTreasury.statusLabel') || "Statut cotisation"}
+            {t('treasury.paymentStatus')}
           </label>
           <select
             value={filterStatus}
@@ -410,11 +410,11 @@ export default function TreasuryCotisations({
             className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
           >
             <option value="all">{t('widgetTreasury.allStatuses') || "Tous les statuts"}</option>
-            <option value="paid">{t('widgetTreasury.statusPaid') || "À jour"}</option>
-            <option value="partial">{t('widgetTreasury.statusPartial') || "Partiel"}</option>
-            <option value="en_cours">⏳ En cours (3x)</option>
-            <option value="exempted">{t('widgetTreasury.statusExempted') || "Exonéré"}</option>
-            <option value="unpaid">{t('widgetTreasury.statusUnpaid') || "Non payé"}</option>
+            <option value="paid">{t('treasury.statusPaidCashCheck')}</option>
+            <option value="partial">{t('treasury.remainderToPay')}</option>
+            <option value="en_cours">⏳ {t('treasury.statusPending')} (3x)</option>
+            <option value="exempted">{t('treasury.statusExempted')}</option>
+            <option value="unpaid">{t('treasury.statusPending')}</option>
           </select>
         </div>
 
@@ -475,11 +475,11 @@ export default function TreasuryCotisations({
             {/* En-tête Desktop à 6 colonnes (Total 12 colonnes de grille) */}
             <div className="hidden md:grid grid-cols-12 gap-3 px-4 py-2 border-b border-dashed border-cordel-master-dark/30 text-[9px] font-extrabold uppercase tracking-wider text-cordel-wood">
               <div className="col-span-3 text-left">{t('widgetTreasury.tableMemberName') || "Membre"}</div>
-              <div className="col-span-1 text-center">{t('widgetTreasury.tableBaseAdhesion') || "Base"}</div>
+              <div className="col-span-1 text-center">{t('treasury.membershipFormula')}</div>
               <div className="col-span-2 text-left">{t('widgetTreasury.tableOptions') || "Options"}</div>
-              <div className="col-span-2 text-center">{t('widgetTreasury.tableTotalDue') || "Total dû"}</div>
+              <div className="col-span-2 text-center">{t('treasury.amountDue')}</div>
               <div className="col-span-2 text-center">Caution instrument</div>
-              <div className="col-span-2 text-right">{t('widgetTreasury.tablePaymentStatus') || "Statut"}</div>
+              <div className="col-span-2 text-right">{t('treasury.paymentStatus')}</div>
             </div>
 
             {/* Lignes du tableau */}

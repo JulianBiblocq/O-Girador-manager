@@ -1,7 +1,7 @@
 import React from 'react';
 import CordelCard from '../CordelCard';
-import CordelButton from '../CordelButton';
 import { resolveEffectiveDropUrl, parseYouTubeMedia } from '../../utils/mediaUrlUtils';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Composant modulaire : EventMediaCaptureSection
@@ -14,6 +14,7 @@ import { resolveEffectiveDropUrl, parseYouTubeMedia } from '../../utils/mediaUrl
  * @param {string} [props.defaultDropUrl] - URL de repli configurée au niveau de l'association
  */
 export default function EventMediaCaptureSection({ event, defaultDropUrl = '' }) {
+  const { t } = useTranslation();
   if (!event) return null;
 
   // 1. Détermination de l'autorisation de dépôt de vidéos
@@ -52,10 +53,10 @@ export default function EventMediaCaptureSection({ event, defaultDropUrl = '' })
           <span className="text-xl">📹</span>
           <div>
             <h4 className="text-xs font-black uppercase tracking-wider text-cordel-wood">
-              Médias & Captations
+              {t('agenda.mediaBoxTitle') || "Boîte à souvenirs & vidéos"}
             </h4>
             <p className="text-[10px] text-encre-noire/70 font-semibold">
-              Dépôt participatif Framaspace et restitution vidéo
+              {t('agenda.mediaBoxSubtitle') || "Partagez vos photos et captations de la sortie"}
             </p>
           </div>
         </div>
@@ -72,7 +73,7 @@ export default function EventMediaCaptureSection({ event, defaultDropUrl = '' })
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-amber-50/80 border-2 border-dashed border-amber-500/40 rounded-[6px_9px_7px_8px]">
           <div className="flex flex-col text-left">
             <span className="text-xs font-black uppercase text-amber-950 flex items-center gap-1.5">
-              <span>📤</span> Partager vos prises de vue
+              <span>📤</span> {t('agenda.mediaBoxSubtitle') || "Partagez vos photos et captations de la sortie"}
             </span>
             <span className="text-[10px] text-stone-600 font-medium leading-tight mt-0.5">
               Déposez vos vidéos brutes directement dans le dossier sécurisé (sans compte Google ni YouTube).
@@ -94,7 +95,7 @@ export default function EventMediaCaptureSection({ event, defaultDropUrl = '' })
             title="Ouvrir le dossier Framaspace File Drop dans un nouvel onglet"
           >
             <span>📹</span>
-            <span>Déposer une vidéo</span>
+            <span>{t('agenda.mediaBoxBtnUpload') || "Déposer des médias"}</span>
             <span className="text-[10px] opacity-80">↗</span>
           </a>
         </div>

@@ -8,6 +8,7 @@
 
 import React, { useState, useEffect } from 'react';
 import CordelButton from '../CordelButton';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * @param {boolean} isOpen Indique si la modale est affichée
@@ -15,14 +16,18 @@ import CordelButton from '../CordelButton';
  * @param {Function} onConfirm Callback de confirmation avec le mot de l'adhérent (motTexte)
  * @param {string} [eventName] Intitulé de l'événement concerné
  * @param {boolean} [submitting=false] Indique si la requête est en cours
+ * @param {Function} [t] Fonction de traduction optionnelle
  */
 export default function LateCancellationModal({
   isOpen,
   onClose,
   onConfirm,
   eventName = '',
-  submitting = false
+  submitting = false,
+  t: propT
 }) {
+  const { t: contextT } = useTranslation();
+  const t = typeof propT === 'function' ? propT : contextT;
   const [message, setMessage] = useState('');
 
   // Réinitialisation du message à chaque ouverture
@@ -74,7 +79,7 @@ export default function LateCancellationModal({
             </span>
             <div className="flex flex-col">
               <h3 id="late-cancel-modal-title" className="text-sm font-black uppercase tracking-wider text-cordel-wood">
-                Désistement après date limite
+                {t('agenda.absenceReasonTitle') || "Motif de l'absence"}
               </h3>
               {eventName && (
                 <span className="text-[11px] font-bold text-cordel-master-dark/80 truncate max-w-[280px]">
@@ -106,7 +111,7 @@ export default function LateCancellationModal({
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <div className="flex flex-col gap-1">
             <label htmlFor="late-cancel-message" className="text-[11px] font-black uppercase tracking-wide text-cordel-wood">
-              Un petit mot pour l'équipe (optionnel) :
+              {t('agenda.absenceReasonTitle') || "Motif de l'absence"} (optionnel) :
             </label>
             <textarea
               id="late-cancel-message"
@@ -114,7 +119,7 @@ export default function LateCancellationModal({
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               disabled={submitting}
-              placeholder="Ex : Imprévu de dernière minute, désolé pour le contretemps..."
+              placeholder={t('agenda.absenceReasonPlaceholder') || "Précise la raison de ton absence..."}
               className="w-full text-xs font-semibold p-2.5 rounded-[4px_6px_5px_4px] bg-cordel-bg-light border-2 border-encre-noire/40 focus:border-encre-noire outline-none resize-none leading-relaxed text-encre-noire"
             />
           </div>
@@ -136,7 +141,7 @@ export default function LateCancellationModal({
               disabled={submitting}
               className="px-4 py-2 text-xs font-black uppercase tracking-wider"
             >
-              {submitting ? "Enregistrement..." : "Confirmer mon désistement"}
+              {submitting ? "Enregistrement..." : (t('agenda.confirmAbsence') || "Confirmer l'absence")}
             </CordelButton>
           </div>
         </form>

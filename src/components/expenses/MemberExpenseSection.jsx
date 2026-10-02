@@ -4,12 +4,14 @@ import CordelButton from '../CordelButton';
 import ExpenseClaimModal from './ExpenseClaimModal';
 import { useExpenseClaims } from '../../hooks/useExpenseClaims';
 import { getCurrentSeason, getSeasonOptions, isPastSeason, DEFAULT_SEASON_START_MONTH } from '../../utils/seasonUtils';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Section "Mes Remboursements de frais" affichée côté adhérent
  * (dans WidgetTreasury et dans le profil de l'utilisateur).
  */
 export default function MemberExpenseSection({ groupId, currentUser, profileData, saisonDebutMois }) {
+  const { t } = useTranslation();
   // Hook temps réel des notes de frais du membre
   const {
     claims,
@@ -104,29 +106,34 @@ export default function MemberExpenseSection({ groupId, currentUser, profileData
 
   const renderStatusBadge = (claim) => {
     switch (claim.status) {
-      case 'reimbursed':
+      case 'reimbursed': {
+        const dateStr = claim.reimbursedAt ? formatDateDisplay(claim.reimbursedAt) : '';
+        const label = dateStr 
+          ? t('userProfile.statusRefunded', { date: dateStr })
+          : t('userProfile.statusRefunded', { date: '' }).replace('()', '').trim();
         return (
           <span className="theme-stamp-badge font-black uppercase text-[9px] px-2 py-0.5 bg-[var(--color-cordel-vert)]/15 text-[var(--color-cordel-vert)] border border-[var(--color-cordel-vert)]/40 rounded">
-            🟢 Remboursée {claim.reimbursedAt ? `(${formatDateDisplay(claim.reimbursedAt)})` : ''}
+            🟢 {label}
           </span>
         );
+      }
       case 'approved':
         return (
           <span className="theme-stamp-badge font-black uppercase text-[9px] px-2 py-0.5 bg-blue-100 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 border border-blue-600/35 rounded">
-            🔵 Validée / Prête à payer
+            🔵 {t('userProfile.statusValidatedReadyToPay')}
           </span>
         );
       case 'rejected':
         return (
           <span className="theme-stamp-badge font-black uppercase text-[9px] px-2 py-0.5 bg-[var(--color-cordel-rouge)]/15 text-[var(--color-cordel-rouge)] border border-[var(--color-cordel-rouge)]/40 rounded">
-            🔴 Refusée
+            🔴 {t('userProfile.statusRefused')}
           </span>
         );
       case 'pending':
       default:
         return (
           <span className="theme-stamp-badge font-black uppercase text-[9px] px-2 py-0.5 bg-[var(--color-cordel-ocre)]/15 text-[var(--color-cordel-ocre)] border border-[var(--color-cordel-ocre)]/40 rounded">
-            🟠 En attente
+            🟠 {t('common.pending', 'En attente')}
           </span>
         );
     }
@@ -137,7 +144,7 @@ export default function MemberExpenseSection({ groupId, currentUser, profileData
       {/* En-tête de la section */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-dashed border-cordel-master-dark/20 pb-2">
         <h3 className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
-          🧾 Mes Remboursements de frais
+          🧾 {t('userProfile.expensesSectionTitle')}
         </h3>
         <CordelButton
           type="button"
@@ -146,14 +153,14 @@ export default function MemberExpenseSection({ groupId, currentUser, profileData
           onClick={() => setIsModalOpen(true)}
           className="py-1.5 px-3 text-[10px] font-black uppercase tracking-wider shadow-[2px_2px_0px_0px_#181716]"
         >
-          + Déclarer une note de frais
+          {t('userProfile.btnDeclareExpense')}
         </CordelButton>
       </div>
 
       {/* Sélecteur de saison */}
       <div className="flex items-center justify-between gap-2 bg-white/40 dark:bg-black/10 p-2.5 rounded border border-encre-noire/15 text-xs">
         <label htmlFor="memberSeasonSelector" className="text-[10px] uppercase font-extrabold text-cordel-master-dark flex items-center gap-1">
-          📅 Saison associative :
+          📅 {t('userProfile.seasonLabel')}
         </label>
         <select
           id="memberSeasonSelector"
@@ -163,7 +170,7 @@ export default function MemberExpenseSection({ groupId, currentUser, profileData
         >
           {seasonOptions.map((s) => (
             <option key={s} value={s}>
-              {s} {s === currentSeason ? ' (en cours)' : ''}
+              {s === currentSeason ? t('userProfile.seasonCurrentNotice', { season: s }) : s}
             </option>
           ))}
         </select>
@@ -174,13 +181,13 @@ export default function MemberExpenseSection({ groupId, currentUser, profileData
         {/* Remboursé sur la saison */}
         <div className="bg-[var(--color-cordel-vert)]/10 border border-dashed border-[var(--color-cordel-vert)]/35 p-3 rounded flex flex-col gap-1">
           <span className="text-[9px] uppercase font-extrabold tracking-wider text-[var(--color-cordel-vert)]">
-            Remboursé sur la saison
+            {t('userProfile.refundedOnSeason')}
           </span>
           <span className="text-lg font-black text-[var(--color-cordel-vert)]">
             {totalRembourseSaison.toFixed(2)} €
           </span>
           <span className="text-[8px] text-cordel-master-dark/60 font-semibold">
-            Notes validées et payées en {selectedSeason}
+            {t('userProfile.refundedSeasonDesc', { season: selectedSeason })}
           </span>
         </div>
 
@@ -188,7 +195,7 @@ export default function MemberExpenseSection({ groupId, currentUser, profileData
         <div className="bg-[var(--color-cordel-ocre)]/10 border border-dashed border-[var(--color-cordel-ocre)]/35 p-3 rounded flex flex-col gap-1">
           <div className="flex justify-between items-start">
             <span className="text-[9px] uppercase font-extrabold tracking-wider text-[var(--color-cordel-ocre)]">
-              En attente de remboursement
+              {t('userProfile.pendingRefund')}
             </span>
             {totalReportPasse > 0 && (
               <span className="text-[8px] font-black uppercase tracking-wider bg-amber-200 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200 px-1.5 py-0.5 rounded border border-amber-500/30">
@@ -203,7 +210,7 @@ export default function MemberExpenseSection({ groupId, currentUser, profileData
             {totalReportPasse > 0 ? (
               <span>Dont <strong>{totalReportPasse.toFixed(2)} €</strong> en report de saisons passées</span>
             ) : (
-              <span>Toutes saisons confondues</span>
+              <span>{t('userProfile.pendingRefundDesc')}</span>
             )}
           </span>
         </div>
@@ -212,7 +219,7 @@ export default function MemberExpenseSection({ groupId, currentUser, profileData
       {/* Liste des demandes */}
       <div className="flex flex-col gap-2 mt-1">
         <span className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
-          Historique des demandes ({notesFiltrees.length}) :
+          {t('userProfile.expenseHistoryTitle', { count: notesFiltrees.length })}
         </span>
 
         {loading ? (
@@ -274,7 +281,7 @@ export default function MemberExpenseSection({ groupId, currentUser, profileData
                         rel="noopener noreferrer"
                         className="font-bold text-cordel-wood hover:underline flex items-center gap-1"
                       >
-                        📎 Voir le justificatif ({claim.receiptNom || 'Fichier'}) ↗
+                        📎 {t('userProfile.viewReceipt', { file: claim.receiptNom || 'Fichier' })} ↗
                       </a>
                     ) : (
                       <span className="text-cordel-master-dark/50 italic">Aucun fichier</span>
@@ -282,7 +289,7 @@ export default function MemberExpenseSection({ groupId, currentUser, profileData
 
                     {claim.status === 'rejected' && claim.motifRefus && (
                       <div className="w-full bg-red-100/70 dark:bg-red-950/30 border border-dashed border-red-700/30 p-2 rounded text-[10px] text-red-900 dark:text-red-300">
-                        <strong>Motif du refus :</strong> {claim.motifRefus}
+                        <strong>{t('userProfile.refusalReason')}</strong> {claim.motifRefus}
                       </div>
                     )}
                   </div>

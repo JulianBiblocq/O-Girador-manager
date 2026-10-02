@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { collection, query, where, onSnapshot, or, doc, getDoc, setDoc, addDoc, updateDoc, limit, orderBy } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, getDoc, setDoc, addDoc, updateDoc, limit } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
@@ -9,7 +9,6 @@ import MoveThreadModal from './MoveThreadModal';
 import CreateThreadForm from './CreateThreadForm';
 import { useForumModeration } from '../hooks/useForumModeration';
 import { useTranslation } from './LanguageContext';
-import XiloAvatar from './XiloAvatar';
 import { XiloMegaphone } from './XiloIcons';
 import useConfirm from '../hooks/useConfirm';
 import { resolveEffectiveUserTags } from '../utils/tagUtils'; // Utilitaires pour la gestion et la résolution des étiquettes

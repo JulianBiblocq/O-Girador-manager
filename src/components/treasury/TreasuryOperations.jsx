@@ -5,6 +5,7 @@ import EmptyState from '../EmptyState';
 import Tooltip from '../Tooltip';
 import useConfirm from '../../hooks/useConfirm';
 import { getEffectiveTransactionDate } from '../../hooks/useTreasury';
+import { useTranslation } from '../LanguageContext';
 
 export default function TreasuryOperations({
   transactions,
@@ -14,6 +15,7 @@ export default function TreasuryOperations({
   associationSettings,
   handleSaveAssociationSettings
 }) {
+  const { t } = useTranslation();
   const { confirm } = useConfirm();
   const defaultCategories = ['Matériel', 'Intervenant', 'Local', 'Subvention', 'Don', 'Autre'];
   const categories = Array.isArray(associationSettings?.categoriesTransactions)
@@ -78,10 +80,10 @@ export default function TreasuryOperations({
 
   const onDelete = async (txId) => {
     const isOk = await confirm({
-      title: "Supprimer l'opération",
-      message: "Voulez-vous vraiment supprimer cette opération ?",
-      confirmText: "Oui, supprimer",
-      cancelText: "Annuler",
+      title: t('common.deleteConfirmTitle') || "Supprimer l'opération",
+      message: t('common.deleteConfirmMessage') || "Voulez-vous vraiment supprimer cette opération ?",
+      confirmText: t('common.yesDelete') || "Oui, supprimer",
+      cancelText: t('common.cancel') || "Annuler",
       variant: "danger"
     });
     if (!isOk) return;
@@ -99,12 +101,12 @@ export default function TreasuryOperations({
       <div className="col-span-1">
         <CordelCard variant="default" useExtremeBorder={true} className="p-4">
           <h4 className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1 mb-3 text-left">
-            Saisir une opération
+            {t('treasury.btnAddOperation')}
           </h4>
           <form onSubmit={onSubmit} className="flex flex-col gap-3 text-left">
             {/* Date */}
             <div className="flex flex-col gap-1">
-              <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">Date</label>
+              <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">{t('treasury.fieldDate')}</label>
               <input 
                 type="date"
                 value={txForm.date}
@@ -117,7 +119,7 @@ export default function TreasuryOperations({
 
             {/* Type */}
             <div className="flex flex-col gap-1">
-              <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">Type</label>
+              <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">{t('common.type') || "Type"}</label>
               <select
                 value={txForm.type}
                 onChange={(e) => setTxForm(prev => ({ ...prev, type: e.target.value }))}
@@ -125,15 +127,15 @@ export default function TreasuryOperations({
                 disabled={savingTx}
                 className="theme-input w-full text-xs font-bold bg-cordel-bg-light"
               >
-                <option value="depense">Dépense (Débit)</option>
-                <option value="recette">Recette (Crédit)</option>
+                <option value="depense">{t('treasury.categoryExpense')}</option>
+                <option value="recette">{t('treasury.categoryIncome')}</option>
               </select>
             </div>
 
             {/* Categorie */}
             <div className="flex flex-col gap-1">
               <div className="flex justify-between items-center select-none">
-                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">Catégorie</label>
+                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">{t('treasury.fieldCategory')}</label>
                 <button
                   type="button"
                   onClick={() => setIsAddingCategory(!isAddingCategory)}
@@ -178,10 +180,10 @@ export default function TreasuryOperations({
 
             {/* Libellé */}
             <div className="flex flex-col gap-1">
-              <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">Libellé</label>
+              <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">{t('treasury.fieldLabel')}</label>
               <input 
                 type="text"
-                placeholder="Ex: Achat peaux Alfaia"
+                placeholder={t('treasury.labelPlaceholder')}
                 value={txForm.libelle}
                 onChange={(e) => setTxForm(prev => ({ ...prev, libelle: e.target.value }))}
                 required
@@ -192,7 +194,7 @@ export default function TreasuryOperations({
 
             {/* Montant */}
             <div className="flex flex-col gap-1">
-              <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">Montant (€)</label>
+              <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">{t('treasury.fieldAmount')}</label>
               <input 
                 type="number"
                 min="0.01"
@@ -209,8 +211,8 @@ export default function TreasuryOperations({
             {/* Justificatif / Facture */}
             <div className="flex flex-col gap-1">
               <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark flex justify-between items-center">
-                <span>Justificatif / Facture</span>
-                <span className="text-[8px] font-normal italic opacity-60">Optionnel</span>
+                <span>{t('treasury.fieldReceipt')}</span>
+                <span className="text-[8px] font-normal italic opacity-60">{t('treasury.uploadReceiptNotice')}</span>
               </label>
               <input 
                 type="file"
@@ -233,7 +235,7 @@ export default function TreasuryOperations({
               disabled={savingTx}
               className="w-full text-xs py-2 mt-2 font-bold uppercase tracking-wider"
             >
-              {savingTx ? "Enregistrement..." : "Enregistrer"}
+              {savingTx ? t('common.saving', "Enregistrement...") : t('treasury.btnSaveOperation')}
             </CordelButton>
           </form>
         </CordelCard>
@@ -241,27 +243,27 @@ export default function TreasuryOperations({
 
       {/* List */}
       <div className="col-span-2 flex flex-col gap-3">
-        <CordelCard variant="default" useExtremeBorder={false} className="p-4 flex-1">
+        <CordelCard variant="default" useExtremeBorder={true} className="p-4 flex-1">
           <h4 className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1 mb-3 text-left flex items-center gap-1.5">
-            <span>Opérations Enregistrées</span>
+            <span>{t('treasury.operationsJournalTitle')}</span>
             <Tooltip text="Historique complet des mouvements financiers crédités et débités du compte de l'association." />
           </h4>
           
           {transactions.length === 0 ? (
             <EmptyState
               icon="💰"
-              title="Aucune opération financière enregistrée"
+              title={t('treasury.noOperationsFound')}
               description="Le livre de caisse est vide. Saisissez votre première recette ou dépense à l'aide du formulaire ci-contre."
             />
           ) : (
             <div className="flex flex-col gap-2 max-h-[500px] overflow-y-auto pr-1">
               {/* Header Table */}
               <div className="grid grid-cols-12 gap-2 text-[9px] font-extrabold uppercase tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1 px-1">
-                <div className="col-span-2 text-left">Date</div>
-                <div className="col-span-2 text-left">Catégorie</div>
-                <div className="col-span-3 text-left">Libellé</div>
-                <div className="col-span-2 text-center">Justificatif</div>
-                <div className="col-span-2 text-right">Montant</div>
+                <div className="col-span-2 text-left">{t('treasury.fieldDate')}</div>
+                <div className="col-span-2 text-left">{t('treasury.fieldCategory')}</div>
+                <div className="col-span-3 text-left">{t('treasury.fieldLabel')}</div>
+                <div className="col-span-2 text-center">{t('treasury.fieldReceipt')}</div>
+                <div className="col-span-2 text-right">{t('treasury.fieldAmount')}</div>
                 <div className="col-span-1 text-center"></div>
               </div>
 
@@ -289,12 +291,12 @@ export default function TreasuryOperations({
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 text-[9px] font-black text-amber-900 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/40 border border-amber-600/40 px-2 py-0.5 rounded hover:underline cursor-pointer"
-                          title={tx.justificatifNom || "Voir le justificatif"}
+                          title={tx.justificatifNom || t('treasury.viewReceipt')}
                         >
-                          📎 Voir
+                          📎 {t('treasury.viewReceipt')}
                         </a>
                       ) : (
-                        <span className="text-[9px] text-neutral-400 italic">-</span>
+                        <span className="text-[9px] text-neutral-400 italic" title={t('treasury.noReceipt')}>{t('treasury.noReceipt')}</span>
                       )}
                     </div>
                     <div className={`col-span-2 text-right font-black ${tx.type === 'recette' ? 'text-green-700' : 'text-red-700'}`}>
@@ -305,7 +307,7 @@ export default function TreasuryOperations({
                         type="button"
                         onClick={() => onDelete(tx.id)}
                         className="text-red-700 hover:text-red-900 font-bold hover:underline select-none text-[10px] cursor-pointer"
-                        title="Supprimer cette opération"
+                        title={t('common.delete') || "Supprimer cette opération"}
                       >
                         ❌
                       </button>

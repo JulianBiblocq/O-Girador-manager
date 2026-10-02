@@ -4,6 +4,7 @@ import CordelButton from '../CordelButton';
 import XiloAvatar from '../XiloAvatar';
 import { useEventComments } from '../../hooks/useEventComments';
 import useConfirm from '../../hooks/useConfirm';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Composant EventCommentsSection
@@ -11,6 +12,7 @@ import useConfirm from '../../hooks/useConfirm';
  * Affiche les commentaires sous forme de bulles de chat et permet aux membres d'échanger.
  */
 export default function EventCommentsSection({ event, user, profileData, autoFocus = false }) {
+  const { t } = useTranslation();
   const { confirm } = useConfirm();
   const eventId = event?.id || event?.uid;
   const { comments, loading, sending, addComment, deleteComment } = useEventComments(eventId, user, profileData, event);
@@ -107,16 +109,18 @@ export default function EventCommentsSection({ event, user, profileData, autoFoc
       {/* En-tête de la section */}
       <div className="flex justify-between items-center border-b border-dashed border-cordel-master-dark/20 pb-3">
         <h3 className="panel-title text-sm font-extrabold uppercase tracking-wider text-cordel-wood flex items-center gap-2">
-          💬 Discussion & Questions Logistiques
+          💬 {t('agenda.discussionTitle') || "Discussion & questions logistiques"}
         </h3>
         <span className="text-[10px] font-black uppercase tracking-widest text-cordel-master-dark opacity-60 bg-cordel-bg-light px-2 py-0.5 rounded border border-cordel-master-dark/15">
-          {comments.length} {comments.length > 1 ? 'commentaires' : 'commentaire'}
+          {comments.length > 1
+            ? (t('agenda.commentsCountPlural', { count: comments.length }) || `${comments.length} commentaires`)
+            : (t('agenda.commentsCount', { count: comments.length }) || `${comments.length} commentaire`)}
         </span>
       </div>
 
       {/* Explication d'aide */}
       <p className="text-[10.5px] font-semibold text-cordel-master-dark opacity-75 leading-relaxed -mt-1">
-        Posez vos questions logistiques (covoiturage, horaires, matériel) ici pour échanger avec les organisateurs et les autres participants de cet événement.
+        {t('agenda.discussionIntro') || "Posez vos questions logistiques (covoiturage, horaires, matériel) ici pour échanger avec les organisateurs et les autres participants de cet événement."}
       </p>
 
       {/* Zone d'affichage des commentaires (Bulles de chat) */}
@@ -202,7 +206,7 @@ export default function EventCommentsSection({ event, user, profileData, autoFoc
               rows={2}
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              placeholder="Poser une question logistique ou laisser un commentaire..."
+              placeholder={t('agenda.discussionPlaceholder') || "Poser une question logistique ou laisser un commentaire..."}
               className="theme-input text-xs font-semibold flex-1 py-2 px-3 resize-none"
               disabled={sending}
             />
@@ -213,7 +217,7 @@ export default function EventCommentsSection({ event, user, profileData, autoFoc
               disabled={sending || !inputText.trim()}
               className="px-4 text-xs font-extrabold uppercase tracking-wider shrink-0 !bg-amber-600 !text-white shadow-[2px_2px_0px_0px_#181716] self-end py-2.5"
             >
-              {sending ? "⏳ Envoi..." : "💬 Envoyer"}
+              {sending ? "⏳ Envoi..." : `💬 ${t('agenda.btnSendComment') || "Envoyer"}`}
             </CordelButton>
           </div>
         </form>

@@ -73,40 +73,41 @@ export default function FamilyMembersManager({
   };
 
   return (
-    <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col gap-4 text-left mt-4">
+    <CordelCard variant="default" useExtremeBorder={true} className="flex flex-col gap-4 text-left mt-4">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center pb-2 border-b-2 border-dashed border-cordel-master-dark/30 gap-2">
         <div>
           <h3 className="font-extrabold text-sm uppercase tracking-wider text-cordel-wood flex items-center gap-2">
-            <span>👨‍👩‍👧‍👦</span> {t('userProfile.familyHeading', "Ma Famille / Comptes rattachés")}
+            <span>👨‍👩‍👧‍👦</span> {t('userProfile.familySectionTitle', t('userProfile.familyHeading', "Ma Famille / Dépendants"))}
           </h3>
           <p className="text-[11px] text-cordel-master-dark/70 mt-0.5">
-            Gérez ici les profils de vos enfants sans smartphone ni email. Ils figureront dans le Trombinoscope et le Casting.
+            {t('userProfile.familySubtitle')}
           </p>
         </div>
 
         <CordelButton
           type="button"
           variant="ocre"
+          useExtremeBorder={true}
           onClick={handleOpenAddModal}
           className="text-xs py-1.5 px-3 whitespace-nowrap self-start sm:self-auto font-bold"
         >
-          ➕ Ajouter un enfant
+          {t('userProfile.btnAddChild')}
         </CordelButton>
       </div>
 
       {/* List */}
       {loading ? (
         <div className="py-4 text-center text-xs text-cordel-master-dark/60 animate-pulse">
-          Chargement des comptes rattachés...
+          {t('common.loading', 'Chargement...')}
         </div>
       ) : error ? (
         <div className="text-xs text-red-600 font-bold py-2">
-          Erreur de chargement des dépendants.
+          {t('userProfile.errorMsg', 'Erreur de chargement des dépendants.')}
         </div>
       ) : dependents.length === 0 ? (
         <div className="py-4 text-center text-xs italic text-cordel-master-dark/60 border border-dashed border-cordel-master-dark/20 rounded p-4 bg-cordel-bg-light/40">
-          Aucun compte enfant rattaché à ce profil. Cliquez sur "Ajouter un enfant" pour en créer un.
+          {t('userProfile.emptyFamilyNotice')}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

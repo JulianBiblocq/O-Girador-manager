@@ -849,10 +849,10 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
   // Texte descriptif de l'événement pour l'export agenda (Google Calendar / ICS)
   const getEventDetailsText = () => {
     let detailsText = `Type d'événement : ${event.type || ''}`;
-    if (event.lieu) detailsText += `\n📍 Lieu : ${event.lieu}`;
+    if (event.lieu) detailsText += `\n📍 ${t('agenda.location') || 'Lieu'} : ${event.lieu}`;
     if (event.tenueRequise) detailsText += `\n👕 Tenue requise : ${event.tenueRequise}`;
-    if (event.horairesPassages) detailsText += `\n⏱️ Horaires de passage : ${event.horairesPassages}`;
-    if (event.horaireCovoiturage) detailsText += `\n🚗 Covoiturage : ${event.horaireCovoiturage}`;
+    if (event.horairesPassages) detailsText += `\n⏱️ ${t('agenda.schedule') || 'Horaires'} : ${event.horairesPassages}`;
+    if (event.horaireCovoiturage) detailsText += `\n🚗 ${t('agenda.departure') || 'Départ / Covoiturage'} : ${event.horaireCovoiturage}`;
     if (event.niveauRequis) {
       const musLvl = event.niveauRequis === 'aucun' ? 'Pas de musicien' :
                      event.niveauRequis === 'debutant' ? 'Débutant' :
@@ -1111,7 +1111,7 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
       }
 
       setIsEditingEvent(false);
-      alert("Événement mis à jour avec succès !");
+      alert(t('agenda.saveSuccess'));
     } catch (err) {
       console.error("EventDetails - Erreur de modification événement :", err);
       alert("Erreur lors de l'enregistrement de l'événement.");
@@ -1516,10 +1516,10 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
                   setIsEditingEvent(true);
                 }}
                 className="text-[10px] font-black uppercase bg-cordel-bg border border-encre-noire px-2.5 sm:px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex items-center gap-1 transition-colors"
-                title="Modifier les détails de l'événement"
+                title={t('agenda.adminBtnEdit') || "Modifier les détails de l'événement"}
               >
                 <span>✏️</span>
-                <span className="hidden sm:inline">Modifier</span>
+                <span className="hidden sm:inline">{t('agenda.adminBtnEdit') || "Modifier"}</span>
               </button>
             )}
 
@@ -1532,7 +1532,7 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
                 title="Consulter la feuille de route opérationnelle du concert / événement"
               >
                 <span>📄</span>
-                <span className="hidden sm:inline">Feuille de route</span>
+                <span className="hidden sm:inline">{t('agenda.btnRoadbook') || "Feuille de route"}</span>
               </button>
             )}
 
@@ -1579,7 +1579,7 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
                 title="Ajouter cet événement à votre agenda personnel"
               >
                 <span>📅</span>
-                <span className="hidden sm:inline">Ajouter à mon agenda</span>
+                <span className="hidden sm:inline">{t('agenda.btnAddToCalendar') || "Ajouter à mon agenda"}</span>
               </button>
 
               {isHeaderCalendarMenuOpen && (
@@ -1629,7 +1629,7 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
                   aria-expanded={isMoreMenuOpen}
                 >
                   <span>•••</span>
-                  <span className="hidden md:inline text-[9px] font-bold uppercase tracking-wider ml-0.5">Actions</span>
+                  <span className="hidden md:inline text-[9px] font-bold uppercase tracking-wider ml-0.5">{t('agenda.btnActionsMenu') || "Actions"}</span>
                 </button>
 
                 {isMoreMenuOpen && (
@@ -1707,7 +1707,7 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
                             className="w-full px-3.5 py-2 text-[10px] font-black uppercase tracking-wider text-[var(--color-cordel-rouge,#8b2a1a)] hover:bg-red-50 cursor-pointer text-left flex items-center gap-2"
                           >
                             <span>🗑️</span>
-                            <span>Supprimer l'événement</span>
+                            <span>{t('agenda.adminBtnDelete') || "Supprimer l'événement"}</span>
                           </button>
                         </>
                       )}
@@ -1723,7 +1723,7 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
             onClick={() => setIsEditingEvent(false)}
             className="text-[10px] font-black uppercase bg-neutral-200 border border-encre-noire px-3 py-1.5 rounded"
           >
-            Annuler
+            {t('agenda.btnCancel')}
           </button>
         )}
       </div>
@@ -1786,22 +1786,22 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
               {/* Badges de Statut */}
               {event.status === 'a_confirmer' && (
                 <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-[var(--color-cordel-ocre,#c05621)] text-white border border-encre-noire shadow-xs">
-                  ⚠️ À confirmer
+                  ⚠️ {t('agenda.confirm') || 'À confirmer'}
                 </span>
               )}
               {event.status === 'annule' && (
                 <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-[var(--color-cordel-rouge,#8b2a1a)] text-white border border-encre-noire shadow-xs">
-                  🚫 Annulé
+                  🚫 {t('agenda.canceledStamp') || 'Annulé'}
                 </span>
               )}
               {event.status === 'confirme' && event.wasConfirmedLater && (
                 <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-[var(--color-cordel-vert,#2d6a4f)] text-white border border-encre-noire shadow-xs">
-                  ✓ Validé
+                  ✓ {t('agenda.confirmedStamp') || 'Validé'}
                 </span>
               )}
               {event.niveauRequis === 'confirme' && (
                 <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 bg-amber-200 text-amber-900 border border-amber-400 rounded">
-                  ⭐ Confirmés
+                  ⭐ {t('agenda.reservedConfirmed') || 'Confirmés'}
                 </span>
               )}
             </div>
@@ -2048,6 +2048,9 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
                 currentConfig={currentConfig}
                 onOpenQrCodeModal={handleOpenQrCodeModal}
                 hasQrCode={hasQrCode}
+                onEdit={() => setIsEditingEvent(true)}
+                onDelete={handleDeleteEvent}
+                t={t}
               />
             )}
 

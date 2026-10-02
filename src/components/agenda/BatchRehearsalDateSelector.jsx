@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 
 const DAYS_OF_WEEK = [
   { id: 1, label: 'Lun', full: 'Lundi' },

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AddressAutocomplete from './AddressAutocomplete';
 import ManualMapMarkerModal from './agenda/ManualMapMarkerModal';
+import { useTranslation } from './LanguageContext';
 
 /**
  * Composant de sélection intelligente de lieu pour les formulaires d'événements (Agenda & Studio Réunions).
@@ -16,6 +17,7 @@ export default function LocationSelector({
   placeholder = "Rechercher ou saisir l'adresse...",
   className = "theme-input text-xs w-full bg-white py-1.5"
 }) {
+  const { t } = useTranslation();
   const list = Array.isArray(lieuxImportants) ? lieuxImportants : [];
   
   // Extraction sécurisée sous forme de chaîne de caractères
@@ -84,7 +86,7 @@ export default function LocationSelector({
             onChange={handleSelectPreset}
             className="theme-input text-xs font-bold bg-amber-50/80 border border-amber-300 py-1.5 w-full rounded text-cordel-wood"
           >
-            <option value="custom">✍️ Saisie libre / Autre adresse...</option>
+            <option value="custom">✍️ {t('agenda.customAddressOption') || "Saisie libre / Autre adresse..."}</option>
             <optgroup label="📍 Lieux habituels de l'association">
               {list.map((lieu) => (
                 <option key={lieu.id} value={lieu.id}>
@@ -124,7 +126,7 @@ export default function LocationSelector({
           }}
           className="text-[10px] font-extrabold uppercase tracking-wider text-cordel-wood hover:underline flex items-center gap-1 cursor-pointer"
         >
-          📍 Ajuster le repère sur la carte
+          📍 {t('agenda.btnAdjustMapMarker') || "Ajuster le repère sur la carte"}
         </button>
       </div>
 

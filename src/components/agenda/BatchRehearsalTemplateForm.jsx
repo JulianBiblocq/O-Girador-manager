@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Sous-composant : Paramétrage du Modèle de répétition (Gabarit réutilisable)
@@ -10,6 +11,8 @@ export default function BatchRehearsalTemplateForm({
   lieuxImportants = [],
   t
 }) {
+  const { t: contextT } = useTranslation();
+  const tr = typeof t === 'function' ? t : contextT;
   const handleLieuSelectChange = (e) => {
     const selectedId = e.target.value;
     if (!selectedId) {
@@ -104,7 +107,7 @@ export default function BatchRehearsalTemplateForm({
             onChange={handleLieuSelectChange}
             className="w-full mb-2 px-3 py-1.5 text-xs font-bold bg-white border-2 border-encre-noire rounded shadow-2xs focus:outline-hidden focus:border-cordel-wood cursor-pointer"
           >
-            <option value="">-- Choisir un lieu répertorié ou personnalisé --</option>
+            <option value="">{tr('agenda.locationSelectPlaceholder')}</option>
             {lieuxImportants.map((lieu) => (
               <option key={lieu.id} value={lieu.id}>
                 📍 {lieu.nom} {lieu.adresse ? `(${lieu.adresse})` : ''}
@@ -117,7 +120,7 @@ export default function BatchRehearsalTemplateForm({
           type="text"
           value={template.lieu}
           onChange={(e) => setTemplate(prev => ({ ...prev, lieu: e.target.value, lieuId: null }))}
-          placeholder="Ex: Salle municipale, 10 rue des Arts"
+          placeholder={tr('agenda.customAddressPlaceholder')}
           className="w-full px-3 py-1.5 text-xs font-bold bg-white border-2 border-encre-noire rounded shadow-2xs focus:outline-hidden focus:border-cordel-wood"
         />
       </div>
@@ -131,7 +134,7 @@ export default function BatchRehearsalTemplateForm({
             onChange={(e) => setTemplate(prev => ({ ...prev, includesPercussion: e.target.checked }))}
             className="accent-cordel-wood w-4 h-4 cursor-pointer"
           />
-          <span className="text-[11px] font-bold">🥁 Percussion</span>
+          <span className="text-[11px] font-bold">🥁 {tr('agenda.togglePercussion')}</span>
         </label>
 
         <label className="flex items-center gap-2 p-2 bg-white border border-encre-noire/30 rounded cursor-pointer hover:bg-amber-50/50 transition-colors shadow-2xs">
@@ -141,7 +144,7 @@ export default function BatchRehearsalTemplateForm({
             onChange={(e) => setTemplate(prev => ({ ...prev, includesDance: e.target.checked }))}
             className="accent-cordel-wood w-4 h-4 cursor-pointer"
           />
-          <span className="text-[11px] font-bold">💃 Danse</span>
+          <span className="text-[11px] font-bold">💃 {tr('agenda.toggleDance')}</span>
         </label>
 
         <label className="flex items-center gap-2 p-2 bg-white border border-encre-noire/30 rounded cursor-pointer hover:bg-amber-50/50 transition-colors shadow-2xs">
@@ -152,7 +155,7 @@ export default function BatchRehearsalTemplateForm({
             className="accent-cordel-wood w-4 h-4 cursor-pointer"
           />
           <span className="text-[11px] font-bold" title="Visible par le grand public sur la vitrine">
-            🌐 Public
+            🌐 {tr('agenda.togglePublic')}
           </span>
         </label>
 
@@ -163,7 +166,7 @@ export default function BatchRehearsalTemplateForm({
             onChange={(e) => setTemplate(prev => ({ ...prev, enableCarpool: e.target.checked }))}
             className="accent-cordel-wood w-4 h-4 cursor-pointer"
           />
-          <span className="text-[11px] font-bold">🚗 Covoiturage</span>
+          <span className="text-[11px] font-bold">🚗 {tr('agenda.toggleCarpool')}</span>
         </label>
       </div>
     </div>

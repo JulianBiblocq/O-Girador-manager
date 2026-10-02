@@ -4,6 +4,7 @@ import MemberPieceUnfoldedContent from './MemberPieceUnfoldedContent';
 import PieceSignalsModal from './PieceSignalsModal';
 import PieceLyricsModal from './PieceLyricsModal';
 import PieceCultureModal from './PieceCultureModal';
+import { useTranslation } from '../LanguageContext';
 
 // Échelle des 4 niveaux de confort personnel de l'adhérent
 export const COMFORT_LEVELS = [
@@ -37,6 +38,7 @@ export default function MemberPieceCard({
   onOpenSignals = null,
   sequenceurUrl
 }) {
+  const { t } = useTranslation();
   const [isSignalsModalOpen, setIsSignalsModalOpen] = useState(false);
   const [isLyricsModalOpen, setIsLyricsModalOpen] = useState(false);
   const [isCultureModalOpen, setIsCultureModalOpen] = useState(false);
@@ -68,7 +70,7 @@ export default function MemberPieceCard({
             </h3>
             {piece.activeBpm && (
               <span className="text-[9.5px] font-bold text-stone-600 bg-black/5 px-1.5 py-0.5 rounded border border-encre-noire/15 flex-shrink-0">
-                {piece.activeBpm} BPM
+                {t ? t('repertoire.tempoBpm', { bpm: piece.activeBpm }) : `${piece.activeBpm} BPM`}
               </span>
             )}
           </div>
@@ -92,7 +94,7 @@ export default function MemberPieceCard({
               title={isRevisionRequested ? 'Annuler la demande' : 'Signaler au Mestre le besoin de réviser'}
             >
               <span>🙋</span>
-              <span>{isRevisionRequested ? 'Révision demandée ✓' : 'Demander à réviser'}</span>
+              <span>{isRevisionRequested ? (t('pedagogy.revisionRequestedNotice') || 'Révision demandée ✓') : (t('pedagogy.requestRevisionBtn') || 'Demander à réviser')}</span>
             </button>
           </div>
 

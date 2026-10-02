@@ -2,7 +2,6 @@ import React, { useState, useRef } from 'react';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import imageCompression from 'browser-image-compression';
 import { storage } from '../../firebase';
-import CordelButton from '../CordelButton';
 import StudioVaralPickerModal from './StudioVaralPickerModal';
 
 /**

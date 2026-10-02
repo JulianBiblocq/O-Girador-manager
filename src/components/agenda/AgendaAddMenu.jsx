@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import CordelButton from '../CordelButton';
-import { XiloCalendar } from '../XiloIcons';
 
 /**
  * Composant : AgendaAddMenu

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { parseYouTubeMedia } from '../../utils/mediaUrlUtils';
 import { groupVideosByFamily, getDefaultActiveBlockId } from '../../utils/repertoireVideoUtils';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Lecteur vidéo à 2 niveaux pour les fiches Répertoire (< 180 lignes).
@@ -19,6 +20,7 @@ export default function PieceVideoSection({
   userInstrument = '',
   instrumentsList = []
 }) {
+  const { t } = useTranslation();
   // Regroupement en familles de niveau 1
   const blocks = useMemo(() => {
     return groupVideosByFamily(videos, defaultVideoUrl, instrumentsList);
@@ -117,11 +119,11 @@ export default function PieceVideoSection({
       {/* Niveau 2 : Sous-pastilles au sein du bloc actif si plusieurs vidéos */}
       {currentVideos.length > 1 && (
         <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-thin select-none">
-          <span className="text-[9px] font-black uppercase text-stone-500 shrink-0">Sous-voix :</span>
+          <span className="text-[9px] font-black uppercase text-stone-500 shrink-0">{t('repertoire.subVoices')}</span>
           {currentVideos.map((vid, idx) => {
             const isSubActive = idx === activeVideoIndex;
-            const displayLabel = vid.titre || (vid.instruments?.length > 0 ? vid.instruments.join(', ') : `Vidéo #${idx + 1}`);
-            const instDesc = vid.instruments?.length > 0 ? vid.instruments.join(', ') : 'Vue générale';
+            const displayLabel = vid.titre || (vid.instruments?.length > 0 ? vid.instruments.join(', ') : `${t('repertoire.videoLabel')} #${idx + 1}`);
+            const instDesc = vid.instruments?.length > 0 ? vid.instruments.join(', ') : t('repertoire.generalView');
 
             return (
               <button
@@ -149,7 +151,7 @@ export default function PieceVideoSection({
           <span>🎬</span>
           <span className="truncate">
             {activeVideo?.instruments?.length > 0 ? `[${activeVideo.instruments.join(', ')}] ` : ''}
-            {activeVideo?.titre || currentBlock?.label || 'Vidéo du morceau'}
+            {activeVideo?.titre || currentBlock?.label || t('repertoire.pieceVideo')}
           </span>
         </span>
         <a
@@ -159,7 +161,7 @@ export default function PieceVideoSection({
           className="text-[9.5px] text-stone-500 hover:text-cordel-wood font-medium underline lowercase shrink-0"
           title="Ouvrir la vidéo dans un nouvel onglet"
         >
-          ouvrir la source ↗
+          {t('repertoire.openSource')}
         </a>
       </div>
 
@@ -170,7 +172,7 @@ export default function PieceVideoSection({
         ) : embedInfo?.embedUrl ? (
           <iframe
             src={embedInfo.embedUrl}
-            title={activeVideo?.titre || 'Vidéo'}
+            title={activeVideo?.titre || t('repertoire.videoLabel')}
             className="w-full h-full border-0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
@@ -180,7 +182,7 @@ export default function PieceVideoSection({
           <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center text-white gap-2">
             <span className="text-2xl">🎬</span>
             <a href={url} target="_blank" rel="noopener noreferrer" className="text-xs font-bold underline hover:text-amber-300">
-              Ouvrir la vidéo externe ↗
+              {t('repertoire.openExternalVideo')}
             </a>
           </div>
         )}

@@ -10,6 +10,7 @@ import EventRepertoireProgramSelector from './EventRepertoireProgramSelector';
 import { DEFAULT_CUSTOM_CATEGORIES } from '../../utils/categoryUtils';
 import EventMediaFields from './EventMediaFields';
 import EventPupitresQuotasFields from './EventPupitresQuotasFields';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * EventFormFields - Composant unifié pour les champs de formulaire d'événement
@@ -38,11 +39,15 @@ export default function EventFormFields({
   t
 }) {
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+  const { t: contextT } = useTranslation();
+  const tr = typeof t === 'function' ? t : contextT;
 
   const translate = (key, fallback) => {
-    if (!t) return fallback;
-    const val = t(key);
-    return val === key ? fallback : val;
+    if (typeof tr === 'function') {
+      const val = tr(key);
+      if (val && val !== key) return val;
+    }
+    return fallback;
   };
 
   // 1. Calcul d'heure de fin non destructif : s'applique uniquement si dateFin est vierge
@@ -220,7 +225,7 @@ export default function EventFormFields({
         {/* Titre */}
         <div className="flex flex-col gap-1">
           <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-            {translate('widgetAgenda.eventTitleLabel', "Titre de l'événement")} *
+            {tr('agenda.fieldTitle')} *
           </label>
           <input
             type="text"
@@ -229,7 +234,7 @@ export default function EventFormFields({
             onChange={handleChange}
             required
             disabled={saving}
-            placeholder="Ex : Carnaval des Enfants, Répétition générale..."
+            placeholder={tr('agenda.titlePlaceholder')}
             className="theme-input w-full font-bold text-sm disabled:opacity-50"
           />
         </div>
@@ -237,7 +242,7 @@ export default function EventFormFields({
         {/* Type d'événement */}
         <div className="flex flex-col gap-1">
           <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-            {translate('widgetAgenda.typeLabel', "Type d'événement")} *
+            {tr('agenda.fieldType')} *
           </label>
           <select
             name="type"
@@ -249,11 +254,11 @@ export default function EventFormFields({
           >
             {associationEventTypes.map(type => (
               <option key={type} value={type}>
-                {type === 'prestation' ? translate('widgetAgenda.typePrestation', "Prestation") :
-                 type === 'repetition' ? translate('widgetAgenda.typeRepetition', "Répétition") :
-                 type === 'stage' ? translate('widgetAgenda.typeStage', "Stage") :
-                 type === 'atelier' ? translate('widgetAgenda.typeAtelier', "Atelier") :
-                 type === 'reunion' ? translate('widgetAgenda.typeReunion', "Réunion") :
+                {type === 'prestation' ? tr('agenda.typePrestation') :
+                 type === 'repetition' ? tr('agenda.typeRepetition') :
+                 type === 'stage' ? tr('agenda.typeStage') :
+                 type === 'atelier' ? tr('agenda.typeAtelier') :
+                 type === 'reunion' ? tr('agenda.typeReunion') :
                  type.charAt(0).toUpperCase() + type.slice(1)}
               </option>
             ))}
@@ -266,7 +271,7 @@ export default function EventFormFields({
             {/* Date Début */}
             <div className="flex flex-col gap-1">
               <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                {translate('widgetAgenda.startDateLabel', "Date et heure de début")} *
+                {tr('agenda.fieldStartDate')} *
               </label>
               <input
                 type="datetime-local"
@@ -282,7 +287,7 @@ export default function EventFormFields({
             {/* Date Fin (calcul non destructif si vierge) */}
             <div className="flex flex-col gap-1">
               <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center justify-between">
-                <span>{translate('widgetAgenda.endDateLabel', "Date et heure de fin")}</span>
+                <span>{tr('agenda.fieldEndDate')}</span>
                 <span className="text-[8px] font-normal text-stone-500">(optionnel)</span>
               </label>
               <input
@@ -301,7 +306,7 @@ export default function EventFormFields({
         {createConfig.agendaEnableAdresse !== false && (
           <div className="flex flex-col gap-1">
             <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center justify-between">
-              <span>{translate('widgetAgenda.locationLabel', "Lieu de l'événement")}</span>
+              <span>{tr('agenda.fieldLocation')}</span>
               {defaultLocationsByEventType?.[formData.type] && (
                 <span className="text-[8px] font-normal text-stone-500">
                   Preset configuré pour "{formData.type}"
@@ -342,7 +347,7 @@ export default function EventFormFields({
                   }
                 }}
                 onOpenMapModal={() => setIsMapModalOpen(true)}
-                placeholder={translate('widgetAgenda.locationPlaceholder', "Ex : Place de la Mairie, Salle des Fêtes...")}
+                placeholder={tr('agenda.customAddressPlaceholder')}
                 className="theme-input w-full text-xs disabled:opacity-50"
               />
             </React.Suspense>
@@ -377,9 +382,9 @@ export default function EventFormFields({
         {/* Description */}
         <div className="flex flex-col gap-1">
           <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center justify-between">
-            <span>📝 {translate('widgetAgenda.descriptionLabel', "Description de l'événement")}</span>
+            <span>📝 {tr('agenda.fieldDescription')}</span>
             <span className="text-[8px] font-normal text-stone-500">
-              Visible sur la fiche & sur le site public si activé
+              {tr('agenda.visiblePublicNotice') || "Visible sur la fiche & sur le site public si activé"}
             </span>
           </label>
           <textarea
@@ -387,7 +392,7 @@ export default function EventFormFields({
             value={formData.description || ''}
             onChange={handleChange}
             disabled={saving}
-            placeholder="Programme, ambiance, consignes pratiques..."
+            placeholder={tr('agenda.descPlaceholder')}
             className="theme-input w-full min-h-[75px] text-xs font-medium py-1.5 disabled:opacity-50"
           />
         </div>
@@ -400,9 +405,9 @@ export default function EventFormFields({
         <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-2">
           <h4 className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
             <span>🎛️</span>
-            <span>2. Options & Modules Actifs</span>
+            <span>{tr('agenda.activeModulesTitle') || "2. Options & modules actifs"}</span>
           </h4>
-          <span className="text-[10px] text-stone-500 font-semibold">Toggles interactifs</span>
+          <span className="text-[10px] text-stone-500 font-semibold">{tr('agenda.interactiveToggles') || "Toggles interactifs"}</span>
         </div>
 
         {/* Barrette d'interrupteurs rapides */}
@@ -419,7 +424,7 @@ export default function EventFormFields({
             }`}
           >
             <span>🥁</span>
-            <span>Percussion</span>
+            <span>{tr('agenda.togglePercussion')}</span>
             <span className="ml-auto text-[10px]">{formData.includesPercussion !== false ? 'ON' : 'OFF'}</span>
           </button>
 
@@ -435,7 +440,7 @@ export default function EventFormFields({
             }`}
           >
             <span>💃</span>
-            <span>Danse</span>
+            <span>{tr('agenda.toggleDance')}</span>
             <span className="ml-auto text-[10px]">{formData.includesDance !== false ? 'ON' : 'OFF'}</span>
           </button>
 
@@ -451,7 +456,7 @@ export default function EventFormFields({
             }`}
           >
             <span>🚗</span>
-            <span>Covoiturage</span>
+            <span>{tr('agenda.toggleCarpool')}</span>
             <span className="ml-auto text-[10px]">{formData.enableCarpool !== false ? 'ON' : 'OFF'}</span>
           </button>
 
@@ -467,7 +472,7 @@ export default function EventFormFields({
             }`}
           >
             <span>🌍</span>
-            <span>Public</span>
+            <span>{tr('agenda.togglePublic')}</span>
             <span className="ml-auto text-[10px]">{Boolean(formData.isPublic) ? 'ON' : 'OFF'}</span>
           </button>
 
@@ -483,7 +488,7 @@ export default function EventFormFields({
             }`}
           >
             <span>📝</span>
-            <span>Inscriptions</span>
+            <span>{tr('agenda.toggleRsvp')}</span>
             <span className="ml-auto text-[10px]">{formData.enableInscriptions !== false ? 'ON' : 'OFF'}</span>
           </button>
 
@@ -499,7 +504,7 @@ export default function EventFormFields({
             }`}
           >
             <span>🔒</span>
-            <span>Validation</span>
+            <span>{tr('agenda.toggleValidation')}</span>
             <span className="ml-auto text-[10px]">{Boolean(formData.requiresValidation) ? 'ON' : 'OFF'}</span>
           </button>
 
@@ -516,7 +521,7 @@ export default function EventFormFields({
             title="Activer la boîte à photos / QR Code et le stockage Framaspace"
           >
             <span>📸</span>
-            <span>Boîte Photos</span>
+            <span>{tr('agenda.togglePhotos') || "Boîte photos"}</span>
             <span className="ml-auto text-[10px]">{formData.activerRecolteMedias !== false ? 'ON' : 'OFF'}</span>
           </button>
 
@@ -533,7 +538,7 @@ export default function EventFormFields({
             title="Afficher sur le Varal Photos des membres"
           >
             <span>🪢</span>
-            <span>Varal Photos</span>
+            <span>{tr('agenda.toggleVaralPhotos') || "Varal photos"}</span>
             <span className="ml-auto text-[10px]">{Boolean(formData.publierSurVaral) ? 'ON' : 'OFF'}</span>
           </button>
 
@@ -550,7 +555,7 @@ export default function EventFormFields({
             title="Activer la feuille de route opérationnelle (Roadbook jour J)"
           >
             <span>📄</span>
-            <span>Feuille de route</span>
+            <span>{tr('agenda.toggleRoadbook') || "Feuille de route"}</span>
             <span className="ml-auto text-[10px]">{formData.enableRoadbook !== false ? 'ON' : 'OFF'}</span>
           </button>
 
@@ -567,7 +572,7 @@ export default function EventFormFields({
             title="Activer la gestion par commissions (Tour de contrôle, rétro-planning, budget, bénévoles)"
           >
             <span>🎪</span>
-            <span>Commissions</span>
+            <span>{tr('agenda.toggleCommissions') || "Commissions"}</span>
             <span className="ml-auto text-[10px]">{Boolean(formData.hasCommissions) ? 'ON' : 'OFF'}</span>
           </button>
         </div>
@@ -581,10 +586,10 @@ export default function EventFormFields({
               {formData.includesPercussion !== false && (
                 <div className="flex flex-col gap-2 p-2.5 bg-amber-50/50 dark:bg-amber-950/10 rounded border border-amber-300/40">
                   <span className="text-[10px] font-black uppercase text-amber-900 dark:text-amber-300 flex items-center gap-1">
-                    🥁 Pupitre Percussion
+                    🥁 {tr('agenda.percussionSectionTitle') || "Pupitre Percussion"}
                   </span>
                   <div className="flex flex-col gap-1">
-                    <label className="text-[8px] uppercase font-bold text-stone-600">Niveau requis</label>
+                    <label className="text-[8px] uppercase font-bold text-stone-600">{tr('agenda.requiredLevel') || "Niveau requis"}</label>
                     <select
                       name="niveauRequis"
                       value={formData.niveauRequis || 'tous'}
@@ -600,7 +605,7 @@ export default function EventFormFields({
                     </select>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-[8px] uppercase font-bold text-stone-600">Tenue Percussion</label>
+                    <label className="text-[8px] uppercase font-bold text-stone-600">{tr('agenda.percussionOutfit') || "Tenue Percussion"}</label>
                     <select
                       name="dressCodePercussion"
                       value={formData.dressCodePercussion || ''}
@@ -608,7 +613,7 @@ export default function EventFormFields({
                       disabled={saving}
                       className="theme-input text-xs font-bold py-1 bg-white"
                     >
-                      <option value="">-- Libre / Non spécifiée --</option>
+                      <option value="">{tr('agenda.outfitFreeOption') || "-- Libre / Non spécifiée --"}</option>
                       {combinedCostumeOptions.map(opt => (
                         <option key={`perc-${opt.id}`} value={opt.name}>{opt.displayName || opt.name}</option>
                       ))}
@@ -621,10 +626,10 @@ export default function EventFormFields({
               {formData.includesDance !== false && (
                 <div className="flex flex-col gap-2 p-2.5 bg-pink-50/50 dark:bg-pink-950/10 rounded border border-pink-300/40">
                   <span className="text-[10px] font-black uppercase text-pink-900 dark:text-pink-300 flex items-center gap-1">
-                    💃 Section Danse
+                    💃 {tr('agenda.danceSectionTitle') || "Section Danse"}
                   </span>
                   <div className="flex flex-col gap-1">
-                    <label className="text-[8px] uppercase font-bold text-stone-600">Niveau requis</label>
+                    <label className="text-[8px] uppercase font-bold text-stone-600">{tr('agenda.requiredLevel') || "Niveau requis"}</label>
                     <select
                       name="niveauDanseRequis"
                       value={formData.niveauDanseRequis || 'aucun'}
@@ -640,7 +645,7 @@ export default function EventFormFields({
                     </select>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-[8px] uppercase font-bold text-stone-600">Tenue Danse</label>
+                    <label className="text-[8px] uppercase font-bold text-stone-600">{tr('agenda.danceOutfit') || "Tenue Danse"}</label>
                     <select
                       name="dressCodeDanse"
                       value={formData.dressCodeDanse || ''}
@@ -648,7 +653,7 @@ export default function EventFormFields({
                       disabled={saving}
                       className="theme-input text-xs font-bold py-1 bg-white"
                     >
-                      <option value="">-- Libre / Non spécifiée --</option>
+                      <option value="">{tr('agenda.outfitFreeOption') || "-- Libre / Non spécifiée --"}</option>
                       {combinedCostumeOptions.map(opt => (
                         <option key={`danse-${opt.id}`} value={opt.name}>{opt.displayName || opt.name}</option>
                       ))}
@@ -674,7 +679,7 @@ export default function EventFormFields({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-2.5 bg-emerald-50/50 dark:bg-emerald-950/10 rounded border border-emerald-300/40">
               <div className="flex flex-col gap-1">
                 <label className="text-[8px] uppercase font-bold text-emerald-900 dark:text-emerald-300">
-                  🚗 RDV Convoi / Covoiturage
+                  🚗 {tr('agenda.convoyRdvField') || "RDV convoi / Covoiturage"}
                 </label>
                 <input
                   type="text"
@@ -682,13 +687,13 @@ export default function EventFormFields({
                   value={formData.horaireCovoiturage || ''}
                   onChange={handleChange}
                   disabled={saving}
-                  placeholder="Ex : 13h00 au local"
+                  placeholder={tr('agenda.convoyRdvPlaceholder') || "Ex. : 13h00 au local"}
                   className="theme-input text-xs py-1 bg-white"
                 />
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-[8px] uppercase font-bold text-emerald-900 dark:text-emerald-300">
-                  Distance Aller-Retour (Km)
+                  {tr('agenda.distanceField') || "Distance aller-retour (km)"}
                 </label>
                 <input
                   type="number"
@@ -697,7 +702,7 @@ export default function EventFormFields({
                   value={formData.distanceAllerRetourKm || ''}
                   onChange={handleChange}
                   disabled={saving}
-                  placeholder="Ex : 80"
+                  placeholder={tr('agenda.distancePlaceholder') || "Ex. : 80"}
                   className="theme-input text-xs py-1 bg-white"
                 />
               </div>
@@ -760,8 +765,8 @@ export default function EventFormFields({
           ÉTAGE 3 : TIROIR AVANCÉ (Replié par défaut)
           ========================================================================= */}
       <CordelAccordion
-        title="3. Options Avancées, Budget & Sondage"
-        subtitle="Date limite, créneaux bénévoles, budget prévisionnel et sondage de dates"
+        title={tr('agenda.advancedOptionsTitle')}
+        subtitle={tr('agenda.advancedOptionsDesc') || "Date limite, créneaux bénévoles, budget prévisionnel et sondage de dates"}
         icon="⚙️"
         defaultOpen={false}
       >
@@ -769,7 +774,7 @@ export default function EventFormFields({
           {/* Date limite d'inscription */}
           <div className="flex flex-col gap-1">
             <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              {translate('widgetAgenda.deadlineLabel', "Date limite d'inscription (Optionnel)")}
+              {tr('agenda.deadlineRsvp')}
             </label>
             <input
               type="datetime-local"
@@ -785,7 +790,7 @@ export default function EventFormFields({
           {formData.type === 'prestation' && (
             <div className="flex flex-col gap-1">
               <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                {translate('widgetAgenda.stageTimesLabel', "Horaires de passages scéniques")}
+                {tr('agenda.detailedSchedule')}
               </label>
               <input
                 type="text"
@@ -793,7 +798,7 @@ export default function EventFormFields({
                 value={formData.horairesPassages || ''}
                 onChange={handleChange}
                 disabled={saving}
-                placeholder="Ex : 14:30 - 15:15"
+                placeholder={tr('agenda.schedulePlaceholder')}
                 className="theme-input w-full text-xs"
               />
             </div>
@@ -819,7 +824,7 @@ export default function EventFormFields({
           {createConfig.agendaEnableFinance !== false && (
             <div className="border-t border-dashed border-cordel-master-dark/15 pt-3 flex flex-col gap-2">
               <h5 className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood flex items-center gap-1">
-                💰 {translate('widgetAgenda.finBudgetTitle', "Budget & Dépenses Prévisionnelles")}
+                💰 {tr('agenda.budgetTitle')}
               </h5>
               <EventBudgetEditor
                 budgetDepenses={formData.budgetDepenses || []}
@@ -834,7 +839,7 @@ export default function EventFormFields({
             <div className="border-t border-dashed border-cordel-master-dark/15 pt-3 flex flex-col gap-2">
               <div className="flex justify-between items-center">
                 <h5 className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood flex items-center gap-1">
-                  🤝 Postes & Créneaux Bénévoles requis
+                  🤝 {tr('agenda.volunteerSlots')}
                 </h5>
                 <button
                   type="button"

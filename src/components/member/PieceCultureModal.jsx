@@ -45,7 +45,20 @@ export default function PieceCultureModal({
     return found || docsList[0];
   }, [docsList, selectedDocId]);
 
-  if (!isOpen || docsList.length === 0) return null;
+  if (!isOpen) return null;
+
+  if (docsList.length === 0) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/60 backdrop-blur-xs">
+        <div className="relative w-full max-w-md p-6 bg-[#fdfaf2] rounded-lg shadow-2xl border-2 border-encre-noire text-center">
+          <p className="text-xs font-bold text-stone-600 mb-4">{t('repertoire.emptyCulture') || "Aucune notice culturelle rédigée pour l'instant."}</p>
+          <button type="button" onClick={onClose} className="px-3 py-1 bg-stone-200 border border-encre-noire rounded font-bold text-xs cursor-pointer">
+            {t('repertoire.closeModal') || "Fermer"}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const docTitle = activeDoc?.titre || activeDoc?.name || piece?.titre || 'Fiche Culture';
 
@@ -56,13 +69,13 @@ export default function PieceCultureModal({
         <div className="w-full flex flex-col border-b-2 border-dashed border-cordel-master-dark/20 bg-stone-100/90 shrink-0">
           <div className="flex justify-between items-center px-4 py-2.5">
             <span className="text-xs sm:text-sm font-black uppercase text-blue-900 tracking-wider truncate pr-2">
-              📖 {t('culture', 'Culture')} — {docTitle}
+              📖 {t('repertoire.cultureTitle') || 'Origine & Contexte culturel'} — {docTitle}
             </span>
             <button
               type="button"
               onClick={onClose}
               className="w-7 h-7 rounded-full bg-encre-noire text-white font-black text-sm flex items-center justify-center border-2 border-white cursor-pointer hover:bg-stone-800 transition-colors shadow-2xs"
-              title="Fermer"
+              title={t('repertoire.closeModal') || "Fermer"}
             >
               ✕
             </button>

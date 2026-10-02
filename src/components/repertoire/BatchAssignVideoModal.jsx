@@ -9,6 +9,7 @@ import VideoInstrumentCheckboxes from '../mestre/VideoInstrumentCheckboxes';
 import { DEFAULT_INSTRUMENTS } from '../../hooks/useAssociationSettings';
 import YouTubeVideoPickerModal from '../common/YouTubeVideoPickerModal';
 import BatchAssignVideoSource from './BatchAssignVideoSource';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Modale Cordel d'affectation par lot inversée d'une vidéo vers plusieurs morceaux (< 180 lignes).
@@ -16,6 +17,7 @@ import BatchAssignVideoSource from './BatchAssignVideoSource';
 export default function BatchAssignVideoModal({
   isOpen, onClose, initialVideo = null, piecesList = [], groupId, onSuccess
 }) {
+  const { t } = useTranslation();
   const [videoUrl, setVideoUrl] = useState('');
   const [videoTitle, setVideoTitle] = useState('');
   const [selectedInstruments, setSelectedInstruments] = useState([]);
@@ -107,7 +109,7 @@ export default function BatchAssignVideoModal({
         <div className="flex items-center justify-between p-3.5 border-b-2 border-dashed border-cordel-master-dark/20 bg-cordel-bg-light shrink-0">
           <div className="flex items-center gap-2">
             <span className="text-xl">🎬</span>
-            <h3 className="text-sm font-black uppercase tracking-wider text-cordel-wood">Affectation vidéo par lot</h3>
+            <h3 className="text-sm font-black uppercase tracking-wider text-cordel-wood">{t('repertoire.batchVideoModalTitle')}</h3>
           </div>
           <button type="button" onClick={onClose} className="p-1 text-cordel-master-dark hover:text-cordel-wood cursor-pointer">
             <XiloClose size={18} />
@@ -133,10 +135,10 @@ export default function BatchAssignVideoModal({
 
           <div className="p-3 bg-white rounded border border-encre-noire/20 flex flex-col gap-2">
             <div className="flex items-center justify-between gap-2 flex-wrap border-b border-dashed border-encre-noire/15 pb-1.5">
-              <span className="text-[10px] font-black uppercase text-cordel-wood">2. Morceaux à affecter ({selectedPieceIds.size} / {sortedPieces.length})</span>
+              <span className="text-[10px] font-black uppercase text-cordel-wood">{t('repertoire.batchSelectPieces')} ({selectedPieceIds.size} / {sortedPieces.length})</span>
               <div className="flex items-center gap-1.5">
-                <button type="button" onClick={handleSelectAllPieces} className="text-[8.5px] font-black uppercase px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 cursor-pointer">Tout cocher</button>
-                <button type="button" onClick={handleDeselectAllPieces} className="text-[8.5px] font-black uppercase px-2 py-0.5 rounded bg-stone-100 text-stone-700 border border-stone-300 hover:bg-stone-200 cursor-pointer">Décocher tout</button>
+                <button type="button" onClick={handleSelectAllPieces} className="text-[8.5px] font-black uppercase px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 cursor-pointer">{t('repertoire.selectAll')}</button>
+                <button type="button" onClick={handleDeselectAllPieces} className="text-[8.5px] font-black uppercase px-2 py-0.5 rounded bg-stone-100 text-stone-700 border border-stone-300 hover:bg-stone-200 cursor-pointer">{t('repertoire.deselectAll')}</button>
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-48 overflow-y-auto p-1 scrollbar-thin">
@@ -159,7 +161,7 @@ export default function BatchAssignVideoModal({
           <CordelButton type="button" variant="default" onClick={onClose} disabled={submitting} className="text-xs">Annuler</CordelButton>
           <CordelButton type="button" variant="vert" onClick={handleConfirmBatch} disabled={submitting || selectedPieceIds.size === 0 || !videoUrl.trim()} className="text-xs font-black uppercase flex items-center gap-1.5">
             <span>💾</span>
-            <span>{submitting ? 'Enregistrement...' : `Affecter à ${selectedPieceIds.size} morceau${selectedPieceIds.size > 1 ? 'x' : ''}`}</span>
+            <span>{submitting ? 'Enregistrement...' : t('repertoire.btnBatchAssign')}</span>
           </CordelButton>
         </div>
       </CordelCard>

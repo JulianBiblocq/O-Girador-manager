@@ -54,7 +54,7 @@ export default function RodaQuizStatsBanner({ profileData }) {
       <div className="flex items-center gap-2.5 shrink-0">
         <span className="text-xl">🏆</span>
         <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-cordel-wood">
-          {t('rodaQuizStatsTitle') || "Résultats Roda Quiz & Défis"}
+          {t('pedagogyQuiz.rodaQuizStatsTitle') || "Résultats Roda Quiz & Défis"}
         </h3>
       </div>
 
@@ -65,7 +65,7 @@ export default function RodaQuizStatsBanner({ profileData }) {
         </span>
       ) : played === 0 ? (
         <p className="text-xs font-bold text-cordel-master-dark/80 italic">
-          {t('rodaQuizNoGamesYet') || "Aucune partie disputée pour l'instant. Rejoins ou lance un défi depuis le bouton En ligne !"}
+          {t('pedagogyQuiz.rodaQuizNoGamesYet') || "Aucune partie disputée pour l'instant. Rejoins ou lance un défi depuis le bouton En ligne !"}
         </p>
       ) : (
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
@@ -73,7 +73,7 @@ export default function RodaQuizStatsBanner({ profileData }) {
           <div className="flex items-center gap-1.5 px-3 py-1 bg-white border border-encre-noire/40 rounded-[5px_7px_5px_6px] shadow-2xs">
             <span className="text-xs">🎮</span>
             <span className="text-xs font-bold text-cordel-master-dark/80">
-              {t('rodaQuizGamesPlayed') || "Parties jouées"} :
+              {t('pedagogyQuiz.rodaQuizGamesPlayed') || "Parties jouées"} :
             </span>
             <span className="text-xs font-black text-encre-noire">{played}</span>
           </div>
@@ -82,7 +82,7 @@ export default function RodaQuizStatsBanner({ profileData }) {
           <div className="flex items-center gap-1.5 px-3 py-1 bg-white border border-encre-noire/40 rounded-[5px_7px_5px_6px] shadow-2xs">
             <span className="text-xs">🥇</span>
             <span className="text-xs font-bold text-cordel-master-dark/80">
-              {t('rodaQuizWins') || "Victoires"} :
+              {t('pedagogyQuiz.rodaQuizWins') || "Victoires"} :
             </span>
             <span className="text-xs font-black text-[var(--color-cordel-vert)]">{wins}</span>
           </div>
@@ -91,7 +91,7 @@ export default function RodaQuizStatsBanner({ profileData }) {
           <div className="flex items-center gap-1.5 px-3 py-1 bg-white border border-encre-noire/40 rounded-[5px_7px_5px_6px] shadow-2xs">
             <span className="text-xs">⚡</span>
             <span className="text-xs font-bold text-cordel-master-dark/80">
-              {t('rodaQuizPodiumPresence') || "Présence sur le podium"} :
+              {t('pedagogyQuiz.rodaQuizPodiumPresence') || "Présence sur le podium"} :
             </span>
             <span className="text-xs font-black text-[var(--color-cordel-ocre)]">{podiumPct} %</span>
           </div>

@@ -2,6 +2,7 @@ import React from 'react';
 import { resolvePieceTrainings } from '../../utils/repertoireMatcher';
 import { toggleStageCompletion } from '../../services/aisanceService';
 import { launchTrainingStage } from '../../utils/trainingLauncher';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Bloc d'Aisance et Entraînements pour la fiche morceau d'un élève.
@@ -23,6 +24,7 @@ export default function PieceAisanceSection({
   groupId,
   sequenceurUrl
 }) {
+  const { t } = useTranslation();
   // Résolution dynamique des entraînements associés (par presetId ou raccordement manuel, exclusions incluses)
   const pieceTrainings = resolvePieceTrainings(
     piece,
@@ -50,7 +52,7 @@ export default function PieceAisanceSection({
       <div className="flex items-center justify-between gap-2">
         <span className="text-[10px] font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
           <span>⚡</span>
-          <span>Entraînement au tempo</span>
+          <span>{t('pedagogy.tempoTrainingTitle')}</span>
         </span>
         <span className="text-[9px] font-bold text-stone-600 bg-amber-100/70 border border-amber-300/80 px-1.5 py-0.5 rounded">
           {pieceTrainings.length} entraînement{pieceTrainings.length > 1 ? 's' : ''}
@@ -58,29 +60,29 @@ export default function PieceAisanceSection({
       </div>
 
       <div className="flex flex-col gap-2">
-        {pieceTrainings.map((t) => {
-          const completedStages = aisanceMap[t.id] || [];
-          const stages = Array.isArray(t.stages) ? t.stages : [];
+        {pieceTrainings.map((tItem) => {
+          const completedStages = aisanceMap[tItem.id] || [];
+          const stages = Array.isArray(tItem.stages) ? tItem.stages : [];
 
           return (
             <div
-              key={t.id}
+              key={tItem.id}
               className="p-2.5 rounded bg-white/90 border border-encre-noire/15 shadow-2xs flex flex-col gap-2"
             >
               {/* En-tête de l'exercice */}
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <span className="text-xs font-black text-encre-noire uppercase">
-                  {t.title}
+                  {tItem.title}
                 </span>
                 <span className="text-[9.5px] font-bold text-stone-700 bg-stone-100 border border-stone-300 px-2 py-0.5 rounded">
-                  {t.startBpm} ➔ {t.targetBpm} BPM
+                  {t('pedagogy.targetBpmRange', { start: tItem.startBpm, end: tItem.targetBpm })}
                 </span>
               </div>
 
               {/* Description ou mesures ciblées si présentes */}
-              {t.description && (
+              {tItem.description && (
                 <p className="text-[9.5px] text-stone-600 italic">
-                  {t.description}
+                  {tItem.description}
                 </p>
               )}
 
@@ -101,17 +103,17 @@ export default function PieceAisanceSection({
                       >
                         <input
                           type="checkbox"
-                          id={`stage-${t.id}-${stage.index}`}
+                          id={`stage-${tItem.id}-${stage.index}`}
                           checked={isDone}
-                          onChange={() => handleTogglePalier(t.id, stage.index)}
+                          onChange={() => handleTogglePalier(tItem.id, stage.index)}
                           className="accent-emerald-700 cursor-pointer w-3.5 h-3.5"
-                          title={isDone ? 'Marquer comme non validé' : 'Valider ce palier d\'aisance'}
+                          title={isDone ? t('pedagogy.validatedStages') : t('pedagogy.nextStageToReach')}
                         />
                         <label
-                          htmlFor={`stage-${t.id}-${stage.index}`}
+                          htmlFor={`stage-${tItem.id}-${stage.index}`}
                           className="cursor-pointer select-none font-extrabold"
                         >
-                          P{stage.index + 1}
+                          {t('pedagogy.stageLabel', { index: stage.index + 1 })}
                         </label>
                         <span className="text-[8.5px] opacity-75">
                           ({stage.targetBpm} BPM)
@@ -120,15 +122,15 @@ export default function PieceAisanceSection({
                         <button
                           type="button"
                           onClick={() =>
-                            launchTrainingStage(t.presetId, t.id, stage.index, {
+                            launchTrainingStage(tItem.presetId, tItem.id, stage.index, {
                               baseUrl: sequenceurUrl
                             })
                           }
                           className="ml-1 px-1.5 py-0.5 text-[8px] font-black uppercase rounded bg-[var(--color-cordel-vert,#2d6a4f)] text-white hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center gap-0.5 shadow-2xs select-none"
-                          title={`Pratiquer le palier ${stage.index + 1} sur sequenciador`}
+                          title={`${t('pedagogy.btnPractice')} : ${t('pedagogy.stageLabel', { index: stage.index + 1 })}`}
                         >
                           <span>⚡</span>
-                          <span>Pratiquer</span>
+                          <span>{t('pedagogy.btnPractice')}</span>
                         </button>
                       </div>
                     );

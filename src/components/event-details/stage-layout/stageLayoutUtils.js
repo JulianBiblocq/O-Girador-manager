@@ -268,3 +268,38 @@ export function getCompactInstrumentStats({ activePlacements, presentMembers, gr
     totalPlaced: Object.keys(activePlacements).length
   };
 }
+
+/**
+ * Détermine si une rangée (positive pour percussion, négative pour danse) est configurée en quinconce.
+ * Supporte indifféremment un tableau d'index (ex: [1, 3] ou ['1', '3', '-1']) ou un objet ({ 1: true }).
+ *
+ * @param {number|string} rowIndex Index de la ligne
+ * @param {Array|object} staggeredRows Liste ou dictionnaire des lignes en quinconce
+ * @returns {boolean} Vrai si la ligne est en quinconce
+ */
+export function isRowStaggered(rowIndex, staggeredRows) {
+  if (!staggeredRows) return false;
+  if (Array.isArray(staggeredRows)) {
+    return staggeredRows.some((r) => String(r) === String(rowIndex));
+  }
+  if (typeof staggeredRows === 'object') {
+    return Boolean(staggeredRows[rowIndex] || staggeredRows[String(rowIndex)]);
+  }
+  return false;
+}
+
+/**
+ * Bascule l'état en quinconce d'une rangée et renvoie le tableau mis à jour.
+ *
+ * @param {number|string} rowIndex Index de la ligne à basculer
+ * @param {Array} staggeredRows Tableau actuel des lignes en quinconce
+ * @returns {Array} Nouveau tableau avec l'index ajouté ou retiré
+ */
+export function toggleStaggeredRow(rowIndex, staggeredRows = []) {
+  const current = Array.isArray(staggeredRows) ? staggeredRows : [];
+  const exists = current.some((r) => String(r) === String(rowIndex));
+  if (exists) {
+    return current.filter((r) => String(r) !== String(rowIndex));
+  }
+  return [...current, rowIndex];
+}

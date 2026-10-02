@@ -8,6 +8,7 @@ import ReunionAgendaManager from '../../ReunionAgendaManager';
 import EventReportSection from '../EventReportSection';
 import EventWardrobeSummaryCard from '../EventWardrobeSummaryCard';
 import { isEventStrictlyPassed } from '../../../utils/dateUtils';
+import { useTranslation } from '../../LanguageContext';
 
 /**
  * Onglet 4 : Gestion, Budget & Bilan (TabAdmin)
@@ -29,8 +30,15 @@ export default function TabAdmin({
   handlePreparePublication,
   currentConfig,
   onOpenQrCodeModal,
-  hasQrCode
+  hasQrCode,
+  onEdit,
+  onDelete,
+  onDuplicate,
+  t: propT
 }) {
+  const { t: contextT } = useTranslation();
+  const t = typeof propT === 'function' ? propT : contextT;
+  const tr = t;
   const [updatingPublic, setUpdatingPublic] = useState(false);
   const [updatingField, setUpdatingField] = useState(null);
 
@@ -79,21 +87,60 @@ export default function TabAdmin({
     <div className="flex flex-col gap-4 text-left">
       {/* 1. Statut de l'événement & Raccourcis Rapides Gestion */}
       <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
-        <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/20 pb-1.5 mb-3 flex items-center gap-1.5">
-          <span>⚙️</span>
-          <span>Pilotage & Statut de l'événement</span>
-        </h4>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-1.5 mb-3 gap-2">
+          <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
+            <span>⚙️</span>
+            <span>{tr('agenda.adminSectionTitle') || "Administration avancée de l'événement"}</span>
+          </h4>
+
+          {/* Boutons d'action d'en-tête (Modifier, Dupliquer, Supprimer) */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {onEdit && (
+              <button
+                type="button"
+                onClick={onEdit}
+                className="text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded bg-cordel-bg hover:bg-neutral-200 border border-encre-noire transition-all cursor-pointer flex items-center gap-1 shadow-xs"
+                title={tr('agenda.adminBtnEdit') || "Modifier l'événement"}
+              >
+                <span>✏️</span>
+                <span>{tr('agenda.adminBtnEdit') || "Modifier l'événement"}</span>
+              </button>
+            )}
+            {onDuplicate && (
+              <button
+                type="button"
+                onClick={onDuplicate}
+                className="text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded bg-blue-50 text-blue-900 hover:bg-blue-100 border border-blue-800 transition-all cursor-pointer flex items-center gap-1 shadow-xs"
+                title={tr('agenda.adminBtnDuplicate') || "Dupliquer"}
+              >
+                <span>📋</span>
+                <span>{tr('agenda.adminBtnDuplicate') || "Dupliquer"}</span>
+              </button>
+            )}
+            {onDelete && (
+              <button
+                type="button"
+                onClick={onDelete}
+                className="text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded bg-red-100 text-red-900 hover:bg-red-200 border border-red-700 transition-all cursor-pointer flex items-center gap-1 shadow-xs"
+                title={tr('agenda.adminBtnDelete') || "Supprimer"}
+              >
+                <span>🗑️</span>
+                <span>{tr('agenda.adminBtnDelete') || "Supprimer"}</span>
+              </button>
+            )}
+          </div>
+        </div>
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-cordel-bg-light rounded-[6px] border border-dashed border-cordel-master-dark/20 mb-3">
           <div className="flex flex-col">
-            <span className="text-[9px] font-bold uppercase text-cordel-wood">Statut actuel</span>
+            <span className="text-[9px] font-bold uppercase text-cordel-wood">{tr('agenda.currentStatusLabel') || "Statut actuel"}</span>
             <span className="text-xs font-black uppercase mt-0.5">
               {event.status === 'annule' ? (
-                <span className="text-red-600">❌ Annulé</span>
+                <span className="text-red-600">❌ {tr('agenda.statusCanceled') || "Annulé"}</span>
               ) : event.status === 'a_confirmer' ? (
-                <span className="text-orange-600">📙 À confirmer</span>
+                <span className="text-orange-600">📙 {tr('agenda.btnToConfirm') || "À confirmer"}</span>
               ) : (
-                <span className="text-green-700">✅ Validé / Maintenu</span>
+                <span className="text-green-700">✅ {tr('agenda.statusValidatedMaintained') || "Validé / Maintenu"}</span>
               )}
             </span>
           </div>
@@ -109,7 +156,7 @@ export default function TabAdmin({
                   : 'bg-green-100 text-green-800 border border-green-700 hover:bg-green-200 active:translate-x-[0.5px] active:translate-y-[0.5px] shadow-[1.5px_1.5px_0px_0px_#181716]'
               }`}
             >
-              Maintenir
+              {tr('agenda.btnMaintain') || "Maintenir"}
             </button>
             <button
               type="button"
@@ -121,7 +168,7 @@ export default function TabAdmin({
                   : 'bg-orange-100 text-orange-800 border border-orange-700 hover:bg-orange-200 active:translate-x-[0.5px] active:translate-y-[0.5px] shadow-[1.5px_1.5px_0px_0px_#181716]'
               }`}
             >
-              À confirmer
+              {tr('agenda.btnToConfirm') || "À confirmer"}
             </button>
             <button
               type="button"
@@ -133,7 +180,7 @@ export default function TabAdmin({
                   : 'bg-red-100 text-red-800 border border-red-700 hover:bg-red-200 active:translate-x-[0.5px] active:translate-y-[0.5px] shadow-[1.5px_1.5px_0px_0px_#181716]'
               }`}
             >
-              Annuler
+              {tr('agenda.btnCancelEvent') || "Annuler"}
             </button>
           </div>
         </div>
@@ -143,11 +190,11 @@ export default function TabAdmin({
           <div className="flex flex-col">
             <span className="text-xs font-bold text-encre-noire flex items-center gap-1.5">
               <span>🌍</span>
-              <span>Visibilité sur le site public vitrine</span>
+              <span>{tr('agenda.adminShowPublic') || "Afficher sur le site public vitrine"}</span>
             </span>
             <span className="text-[10px] text-encre-noire/70">
               {event.isPublic 
-                ? "Cet événement est actuellement visible de tous sur le site vitrine." 
+                ? (tr('agenda.publicVitrineNotice') || "Cet événement est actuellement visible de tous sur le site vitrine.") 
                 : "Cet événement est interne et réservé aux membres de la troupe."}
             </span>
           </div>
@@ -161,7 +208,7 @@ export default function TabAdmin({
                 : 'bg-neutral-200 text-neutral-700 border-neutral-300 hover:bg-neutral-300'
             }`}
           >
-            {event.isPublic ? "Public (Activé)" : "Interne (Désactivé)"}
+            {event.isPublic ? (tr('agenda.publicOnBadge') || `${tr('agenda.public') || "Public"} (ON)`) : `${tr('agenda.private') || "Interne"} (OFF)`}
           </button>
         </div>
 
@@ -169,7 +216,7 @@ export default function TabAdmin({
         {/* Barrette d'Interrupteurs Rapides (Pilotage Express) */}
         <div className="mt-3 pt-3 border-t border-dashed border-cordel-master-dark/15">
           <span className="text-[9px] font-bold uppercase tracking-wider text-cordel-wood block mb-2">
-            Interrupteurs & Modules de l'événement
+            {tr('agenda.modulesTogglesTitle') || "Interrupteurs & modules de l'événement"}
           </span>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 select-none">
             {/* 1. Percussion */}
@@ -183,7 +230,7 @@ export default function TabAdmin({
                   : 'bg-neutral-100 text-neutral-400 border-neutral-300'
               }`}
             >
-              <span className="flex items-center gap-1.5">🥁 Percussion</span>
+              <span className="flex items-center gap-1.5">🥁 {t('agenda.modulePercussion')}</span>
               <span className="text-[10px] font-black">{event.includesPercussion !== false ? 'ON' : 'OFF'}</span>
             </button>
 
@@ -198,7 +245,7 @@ export default function TabAdmin({
                   : 'bg-neutral-100 text-neutral-400 border-neutral-300'
               }`}
             >
-              <span className="flex items-center gap-1.5">💃 Danse</span>
+              <span className="flex items-center gap-1.5">💃 {t('agenda.moduleDanse')}</span>
               <span className="text-[10px] font-black">{event.includesDance !== false ? 'ON' : 'OFF'}</span>
             </button>
 
@@ -213,7 +260,7 @@ export default function TabAdmin({
                   : 'bg-neutral-100 text-neutral-400 border-neutral-300'
               }`}
             >
-              <span className="flex items-center gap-1.5">🚗 Covoiturage</span>
+              <span className="flex items-center gap-1.5">🚗 {t('agenda.moduleCarpool')}</span>
               <span className="text-[10px] font-black">{event.enableCarpool !== false ? 'ON' : 'OFF'}</span>
             </button>
 
@@ -228,7 +275,7 @@ export default function TabAdmin({
                   : 'bg-neutral-100 text-neutral-400 border-neutral-300'
               }`}
             >
-              <span className="flex items-center gap-1.5">📝 Inscriptions</span>
+              <span className="flex items-center gap-1.5">📝 {t('agenda.moduleInscriptions')}</span>
               <span className="text-[10px] font-black">{event.enableInscriptions !== false ? 'ON' : 'OFF'}</span>
             </button>
 
@@ -243,7 +290,7 @@ export default function TabAdmin({
                   : 'bg-neutral-100 text-neutral-400 border-neutral-300'
               }`}
             >
-              <span className="flex items-center gap-1.5">🔒 Validation</span>
+              <span className="flex items-center gap-1.5">🔒 {t('agenda.moduleValidation')}</span>
               <span className="text-[10px] font-black">{Boolean(event.requiresValidation) ? 'ON' : 'OFF'}</span>
             </button>
 
@@ -266,7 +313,8 @@ export default function TabAdmin({
                   }`}
                   title="Activer ou désactiver la boîte à photos et le QR Code pour cet événement"
                 >
-                  <span className="flex items-center gap-1.5">📸 Boîte Photos</span>
+                  {/* 📸 Boîte Photos */}
+                  <span className="flex items-center gap-1.5">📸 {t('agenda.modulePhotos', 'Boîte Photos')}</span>
                   <span className="text-[10px] font-black">{isRecolteActive ? 'ON' : 'OFF'}</span>
                 </button>
               );
@@ -282,7 +330,7 @@ export default function TabAdmin({
               onClick={() => setIsSendContractModalOpen(true)}
               className="text-[10px] font-black uppercase bg-cordel-vert text-white border border-encre-noire px-3 py-1.5 rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] hover:brightness-105 cursor-pointer flex items-center gap-1"
             >
-              📝 Envoyer un contrat (Brevo)
+              📝 {tr('agenda.btnSendContract') || "Envoyer un contrat"}
             </button>
           )}
 
@@ -293,7 +341,7 @@ export default function TabAdmin({
               className="text-[10px] font-black uppercase bg-cordel-ocre text-black border border-encre-noire px-3 py-1.5 rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] hover:brightness-95 cursor-pointer flex items-center gap-1.5"
             >
               <XiloMegaphone size={13} className="text-cordel-wood shrink-0" />
-              <span>Préparer la publication</span>
+              <span>{tr('agenda.btnPreparePublication') || "Préparer la publication"}</span>
             </button>
           )}
 
@@ -305,7 +353,7 @@ export default function TabAdmin({
               title="Afficher et imprimer le QR Code de récolte de photos et vidéos"
             >
               <span>📷</span>
-              <span>QR Code Médias & Affiche</span>
+              <span>{tr('agenda.btnQrMediaPoster') || "QR Code médias & affiche"}</span>
             </button>
           )}
         </div>
@@ -316,7 +364,7 @@ export default function TabAdmin({
         <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-1.5 mb-3">
           <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
             <span>📸</span>
-            <span>Récolte Photos & Espace Cloud de l'événement</span>
+            <span>{tr('agenda.adminMediaCloudTitle') || "Récolte photos & service cloud de l'événement"}</span>
           </h4>
           {(() => {
             const isTargetPrestation = ['prestation', 'concert', 'spectacle', 'festival'].includes(event.type);
@@ -334,7 +382,7 @@ export default function TabAdmin({
             if (event.lienDepotMedias) {
               return (
                 <span className="theme-stamp-badge theme-stamp-badge-vert text-[9px] uppercase tracking-wider font-black">
-                  ✓ Dossier Cloud Actif
+                  ✓ {tr('agenda.cloudFolderActive') || "Dossier Cloud actif"}
                 </span>
               );
             }
@@ -350,11 +398,11 @@ export default function TabAdmin({
           <div className="flex flex-col gap-1 text-xs">
             <span className="font-extrabold text-encre-noire flex items-center gap-1.5">
               <span>{event.lienDepotMedias ? '📂' : '📁'}</span>
-              <span>Dossier de dépôt public (File drop)</span>
+              <span>{tr('agenda.publicDropFolder') || "Dossier de dépôt public (File drop)"}</span>
             </span>
             <p className="text-[11px] text-encre-noire/70">
               {event.lienDepotMedias 
-                ? "Ce lien alimente automatiquement le QR-Code et permet aux spectateurs de déposer leurs souvenirs." 
+                ? (tr('agenda.publicDropNotice') || "Ce lien alimente automatiquement le QR-Code et permet aux spectateurs de déposer leurs souvenirs.") 
                 : "Aucun dossier Framaspace créé pour le moment. Vous pouvez le déclencher depuis le Studio Photos."}
             </p>
             {event.lienDepotMedias && (
@@ -373,7 +421,7 @@ export default function TabAdmin({
                 title="Afficher et imprimer le QR-Code pour la scène"
               >
                 <span>📱</span>
-                <span>Fiche QR Code</span>
+                <span>{tr('agenda.btnQrCard') || "Fiche QR Code"}</span>
               </button>
             )}
 
@@ -385,7 +433,7 @@ export default function TabAdmin({
                 title="Ouvrir le dossier Cloud dans un nouvel onglet"
               >
                 <span>↗</span>
-                <span>Ouvrir</span>
+                <span>{tr('agenda.btnOpenUrl') || "Ouvrir"}</span>
               </button>
             )}
           </div>
@@ -407,7 +455,7 @@ export default function TabAdmin({
         <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
           <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/20 pb-1.5 mb-3 flex items-center gap-1.5">
             <span>💰</span>
-            <span>Bilan financier prévisionnel & facturation</span>
+            <span>{tr('agenda.forecastBudgetTitle') || "Bilan financier prévisionnel & coûts du déplacement"}</span>
           </h4>
           <EventBudgetSection
             event={event}

@@ -3,10 +3,9 @@ import { collection, query, where, onSnapshot, doc, getDoc } from 'firebase/fire
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
-import XiloAvatar from './XiloAvatar';
 import { useTerminologie } from '../hooks/useTerminologie';
 import { useTranslation } from './LanguageContext';
-import { XiloCaixa, XiloPeople } from './XiloIcons';
+import { XiloPeople } from './XiloIcons';
 import { useInstrumentColor } from '../hooks/useInstrumentColor';
 import ImageLightboxModal from './ImageLightboxModal';
 import { formatTagGender, getTagId } from '../utils/tagUtils';
@@ -19,7 +18,6 @@ import MemberStampCard from './trombinoscope/MemberStampCard';
 import MemberDetailModal from './trombinoscope/MemberDetailModal';
 import {
   FIVE_PUPITRES,
-  isDanseMember,
   isRenfortMember,
   isChantReferent,
   resolveMemberPrimaryPupitre,
@@ -30,7 +28,6 @@ import {
 
 
 
-const DEFAULT_INSTRUMENTS = ["Alfaia", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"];
 
 export default function Trombinoscope({ user, profileData, onBack, onContactUser }) {
   const { t, locale } = useTranslation();
@@ -48,17 +45,12 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
   const [selectedMember, setSelectedMember] = useState(null);
 
   const fileInputRef = useRef(null);
-  const { uploadAvatar, compressAndPrepareFile, isCompressing, isUploading: isUploadingPhoto } = useAvatarUpload();
+  const { uploadAvatar, compressAndPrepareFile, isCompressing } = useAvatarUpload();
 
   useHardwareBack(showEditor, () => setShowEditor(false));
   useHardwareBack(!!lightboxPhoto, () => setLightboxPhoto(null));
   useHardwareBack(!!selectedMember, () => setSelectedMember(null));
 
-  const handleOpenLightbox = useCallback((url, name) => {
-    setLightboxPhoto({ url, name });
-  }, []);
-
-  const [instrumentsDisponibles, setInstrumentsDisponibles] = useState(DEFAULT_INSTRUMENTS);
   const [linkedInstruments, setLinkedInstruments] = useState([]);
 
   // États des filtres

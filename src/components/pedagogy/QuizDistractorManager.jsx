@@ -3,8 +3,10 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { distractorPool } from '../../data/distractorPool';
 import useConfirm from '../../hooks/useConfirm';
+import { useTranslation } from '../LanguageContext';
 
 export default function QuizDistractorManager({ profileData }) {
+  const { t } = useTranslation();
   const { confirm } = useConfirm();
   const [distractors, setDistractors] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -118,7 +120,9 @@ export default function QuizDistractorManager({ profileData }) {
     <div className="bg-[#fdfaf2] min-h-full">
       <div className="p-4 sm:p-6 bg-white border-b-2 border-encre-noire/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="font-heading text-3xl font-bold text-encre-noire tracking-wide">Banque de Leurres</h2>
+          <h2 className="font-heading text-3xl font-bold text-encre-noire tracking-wide">
+            {t('pedagogy.distractorBankTitle')}
+          </h2>
           <p className="text-sm text-encre-noire/70 mt-1">
             Gérez les fausses réponses (distracteurs) injectées dans vos quiz pédagogiques. 
             Une liste riche garantit des QCM variés !
@@ -136,7 +140,7 @@ export default function QuizDistractorManager({ profileData }) {
             disabled={saving}
             className="px-4 py-2 bg-cordel-vert text-white rounded font-bold hover:bg-[#20513b] transition-colors disabled:opacity-50"
           >
-            {saving ? 'Enregistrement...' : 'Enregistrer les modifications'}
+            {saving ? 'Enregistrement...' : t('pedagogy.btnSaveSignal')}
           </button>
         </div>
       </div>

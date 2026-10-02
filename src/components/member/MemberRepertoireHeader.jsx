@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * En-tête et barre d'actions du Répertoire adhérent.
@@ -11,11 +12,13 @@ export default function MemberRepertoireHeader({
   onToggleAllExpanded,
   hasPieces
 }) {
+  const { t } = useTranslation();
+
   return (
     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-3 border-b-2 border-dashed border-cordel-master-dark/30">
       <div>
         <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase">
-          Répertoire de la Saison
+          {t('repertoire.catalogTitle') || 'Répertoire de la Saison'}
         </h2>
         <p className="text-[11px] font-bold text-encre-noire/70 mt-0.5">
           Morceaux au programme, entraînements et demandes de révision
@@ -37,7 +40,7 @@ export default function MemberRepertoireHeader({
         <div className="relative w-full sm:w-64">
           <input
             type="text"
-            placeholder="🔍 Rechercher un morceau..."
+            placeholder={t('repertoire.searchPlaceholder') ? `🔍 ${t('repertoire.searchPlaceholder')}` : '🔍 Rechercher un morceau...'}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="theme-input w-full text-xs font-bold py-1.5 px-3 bg-cordel-bg-light border-2 border-encre-noire rounded"

@@ -4,6 +4,7 @@
 import React, { useMemo } from 'react';
 import CordelCard from '../CordelCard';
 import { launchCrossApp } from '../../utils/crossAppAuth';
+import { useTranslation } from '../LanguageContext';
 
 export default function CarnetPercussionSection({
   repertoire = [],
@@ -12,13 +13,16 @@ export default function CarnetPercussionSection({
   revisionsDemandees = {},
   handleToggleRevisionDemandee = null,
   sequenceurUrl,
-  comfortLevels = [
-    { level: 'decouverte', label: '🌱 En découverte' },
-    { level: 'pratique', label: '🌿 En pratique' },
-    { level: 'alaise', label: '🌳 À l\'aise' },
-    { level: 'referent', label: '👑 Référent' }
-  ]
+  comfortLevels
 }) {
+  const { t } = useTranslation();
+  const effectiveComfortLevels = useMemo(() => comfortLevels || [
+    { level: 'decouverte', label: `🌱 ${t('pedagogy.comfortDiscovery')}` },
+    { level: 'pratique', label: `🌿 ${t('pedagogy.comfortPractice')}` },
+    { level: 'alaise', label: `🌳 ${t('pedagogy.comfortComfortable')}` },
+    { level: 'referent', label: `👑 ${t('pedagogy.comfortReferent')}` }
+  ], [comfortLevels, t]);
+
   // 1. Filtrage sur les morceaux officiels de la saison (ou actifs)
   const seasonPieces = useMemo(() => {
     const saisons = (repertoire || []).filter((p) => p.statutSaison === 'saison');
@@ -104,7 +108,7 @@ export default function CarnetPercussionSection({
                       title={isRevRequested ? 'Demande de révision active pour ce morceau' : 'Signaler au Mestre le besoin de réviser ce morceau'}
                     >
                       <span>🙋</span>
-                      <span>{isRevRequested ? 'Révision demandée ✓' : 'Demander à réviser'}</span>
+                      <span>{isRevRequested ? t('pedagogy.revisionRequestedNotice') : t('pedagogy.requestRevisionBtn')}</span>
                     </button>
                   )}
                 </div>
@@ -112,7 +116,7 @@ export default function CarnetPercussionSection({
 
               {/* 4 jauges de confort */}
               <div className="flex flex-wrap gap-1 justify-end max-w-full sm:max-w-[60%]">
-                {comfortLevels.map((lvl) => {
+                {effectiveComfortLevels.map((lvl) => {
                   const isSelected = currentLevel === lvl.level;
                   return (
                     <button

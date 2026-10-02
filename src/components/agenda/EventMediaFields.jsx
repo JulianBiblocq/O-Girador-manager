@@ -3,6 +3,7 @@ import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../firebase';
 import { parseYouTubeMedia, isValidHttpUrl } from '../../utils/mediaUrlUtils';
 import YouTubeVideoPickerModal from '../common/YouTubeVideoPickerModal';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * EventMediaFields - Section « Médias & Captations » des formulaires d'événements :
@@ -18,6 +19,7 @@ export default function EventMediaFields({
   defaultDropUrl = '',
   groupId
 }) {
+  const { t } = useTranslation();
   const [provisioning, setProvisioning] = useState(false);
   const [provisionMsg, setProvisionMsg] = useState(null);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
@@ -116,7 +118,7 @@ export default function EventMediaFields({
       <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-1.5">
         <h5 className="text-[11px] uppercase font-black tracking-wider text-cordel-wood flex items-center gap-1.5">
           <span>📸</span>
-          <span>Boîte à Photos & Captations</span>
+          <span>{t('agenda.photoCaptationsTitle') || "Boîte à photos & captations"}</span>
         </h5>
         <span className="text-[9px] font-semibold text-cordel-master-dark/60 italic">
           Framaspace & Varal
@@ -134,10 +136,10 @@ export default function EventMediaFields({
             disabled={saving}
             className="w-4 h-4 rounded accent-amber-600 cursor-pointer"
           />
-          <span>📸 Activer la boîte à photos / QR Code spectateurs</span>
+          <span>📸 {t('agenda.enablePhotoBoxToggle') || "Activer la boîte à photos / QR Code spectateurs"}</span>
         </label>
         <span className="text-[9.5px] text-encre-noire/70 font-medium pl-6 leading-tight">
-          Génère le QR Code de dépôt spectateurs et provisionne automatiquement l'album sur Framaspace et le Varal Photos.
+          {t('agenda.photoBoxDesc') || "Génère le QR Code de dépôt spectateurs et provisionne automatiquement l'album sur Framaspace et le Varal Photos."}
         </span>
 
         {/* État du dossier Framaspace ou déclencheur rapide */}
@@ -146,7 +148,7 @@ export default function EventMediaFields({
             {formData.lienDepotMedias || formData.dropUrl ? (
               <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-400 flex items-center gap-1">
                 <span>✓</span>
-                <span>Dossier Framaspace prêt pour le QR-Code</span>
+                <span>{t('agenda.framaspaceFolderReady') || "Dossier Framaspace prêt pour le QR-Code"}</span>
               </span>
             ) : (
               <button
@@ -180,7 +182,7 @@ export default function EventMediaFields({
             disabled={saving}
             className="w-4 h-4 rounded accent-cordel-wood cursor-pointer"
           />
-          <span>📹 Autoriser le dépôt de vidéos pour cette date</span>
+          <span>📹 {t('agenda.allowVideoDropToggle') || "Autoriser le dépôt de vidéos pour cette date"}</span>
         </label>
       </div>
 
@@ -189,7 +191,7 @@ export default function EventMediaFields({
         <div className="flex flex-col gap-2 pl-6 pt-1 border-l-2 border-dashed border-cordel-wood/30">
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              <span>🔗 Lien Framaspace File Drop (Dépôt public)</span>
+              <span>🔗 {t('agenda.framaspaceLinkField') || "Lien Framaspace File Drop (Dépôt public)"}</span>
             </label>
             {!formData.dropUrl && !formData.lienDepotMedias && (
               <button
@@ -230,7 +232,7 @@ export default function EventMediaFields({
           />
           <p className="text-[9px] text-cordel-master-dark/70 font-medium leading-tight">
             {defaultDropUrl 
-              ? "Laissez vide pour utiliser le dossier général de l'association, ou cliquez sur « ⚡ Créer le dossier Framaspace » pour isoler cette date."
+              ? (t('agenda.framaspaceLinkDesc') || "Laissez vide pour utiliser le dossier général de l'association, ou cliquez sur « ⚡ Créer le dossier Framaspace » pour isoler cette date.")
               : "Cliquez sur « ⚡ Créer le dossier Framaspace » pour générer le lien automatiquement, ou collez une adresse existante."}
           </p>
         </div>
@@ -240,7 +242,7 @@ export default function EventMediaFields({
       <div className="flex flex-col gap-1 pt-1 border-t border-dashed border-cordel-master-dark/15">
         <div className="flex items-center justify-between">
           <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center gap-1.5">
-            <span>🎬 Vidéo ou Playlist YouTube (Restitution pupitre)</span>
+            <span>🎬 {t('agenda.youtubeLinkField') || "Vidéo ou playlist YouTube (Restitution pupitre)"}</span>
           </label>
           <div className="flex items-center gap-2">
             {youtubeAnalysis && (
@@ -255,7 +257,7 @@ export default function EventMediaFields({
               className="px-2 py-0.5 bg-[var(--color-cordel-ocre,#c05621)] text-white text-[8.5px] font-black uppercase rounded hover:brightness-110 active:scale-95 transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
               title="Choisir une vidéo parmi les playlists de l'association"
             >
-              <span>🎬 Choisir une vidéo</span>
+              <span>🎬 {t('agenda.btnChooseVideo') || "Choisir une vidéo"}</span>
             </button>
           </div>
         </div>
@@ -274,7 +276,7 @@ export default function EventMediaFields({
           </p>
         )}
         <p className="text-[9px] text-cordel-master-dark/70 font-medium leading-tight">
-          Lien de la captation finale téléversée sur YouTube pour consultation directe par le groupe.
+          {t('agenda.youtubeLinkDesc') || "Lien de la captation finale téléversée sur YouTube pour consultation directe par le groupe."}
         </p>
       </div>
 

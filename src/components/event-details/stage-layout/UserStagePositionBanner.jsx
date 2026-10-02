@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '../../LanguageContext';
 import { resolveExactRole, getProximityNeighbors } from './stageLayoutUtils';
 import { useInstrumentColor } from '../../../hooks/useInstrumentColor';
 
@@ -21,6 +22,7 @@ export default function UserStagePositionBanner({
   groupNomenclature,
   groupId
 }) {
+  const { t } = useTranslation();
   const { getColorForInstrument } = useInstrumentColor(groupId);
 
   if (!currentUserId || !activePlacements || !activePlacements[currentUserId]) {
@@ -55,7 +57,7 @@ export default function UserStagePositionBanner({
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-dashed border-cordel-wood/20 pb-1.5">
         <div className="flex items-center gap-1.5 text-xs font-black text-cordel-wood uppercase tracking-wider">
           <span className="text-sm">📍</span>
-          <span>Ta position</span>
+          <span>{t ? (t('agenda.yourPosition') || 'Ta position') : 'Ta position'}</span>
         </div>
 
         <div
@@ -71,12 +73,12 @@ export default function UserStagePositionBanner({
       {proximity && (
         <div className="flex flex-col gap-1">
           <span className="text-[9px] uppercase font-bold text-encre-noire/60 tracking-wider">
-            Repères directs à tes côtés :
+            {t ? (t('agenda.directCuesAroundYou') || 'Repères directs à tes côtés :') : 'Repères directs à tes côtés :'}
           </span>
 
           {proximity.isMestre ? (
             <div className="text-[11px] font-bold text-cordel-wood italic">
-              👑 {proximity.specialPositionNote || 'Devant la scène, au centre face à la troupe'}
+              👑 {proximity.specialPositionNote || (t ? (t('agenda.centerStageFrontNotice') || 'Devant la scène, au centre face à la troupe') : 'Devant la scène, au centre face à la troupe')}
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-2 text-[10px] sm:text-[11px]">

@@ -947,8 +947,8 @@ export default function WidgetAgenda({
             icon={temporalTab === 'upcoming' ? "📅" : "🏛️"}
             title={
               temporalTab === 'upcoming'
-                ? (t('widgetAgenda.noEvents') || "Aucun événement prévu pour le moment")
-                : (t('agendaTemporal.noPast') || "Aucun événement passé dans cette sélection")
+                ? (t('agenda.noUpcomingEvents') || t('widgetAgenda.noEvents') || "Aucun événement prévu pour le moment")
+                : (t('agenda.noPastEvents') || t('agendaTemporal.noPast') || "Aucun événement passé dans cette sélection")
             }
             description={
               temporalTab === 'upcoming'
@@ -1017,12 +1017,12 @@ export default function WidgetAgenda({
                         </div>
                         {event.status === 'annule' && (
                           <span className="text-red-600 font-bold ml-1.5 uppercase text-[8px] border border-red-600 px-1 rounded select-none">
-                            {t('widgetAgenda.canceled', 'Annulé') || 'ANNULÉ'}
+                            {t('agenda.canceledStamp') || 'ANNULÉ'}
                           </span>
                         )}
                         {event.status === 'a_confirmer' && (
                           <span className="text-orange-600 font-bold ml-1.5 uppercase text-[8px] border border-orange-600 px-1 rounded select-none">
-                            {t('common.toConfirm', 'À confirmer') || 'À CONFIRMER'}
+                            {t('agenda.confirm') || 'À CONFIRMER'}
                           </span>
                         )}
                         {event.status === 'sondage' && (
@@ -1047,11 +1047,11 @@ export default function WidgetAgenda({
                       <td className="p-1.5 md:p-2.5 text-center font-bold whitespace-nowrap">
                         {(() => {
                           if (event.enableInscriptions === false) return <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] uppercase font-bold bg-neutral-200 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"><XiloMegaphone size={11} className="text-cordel-wood" /> {t('widgetAgenda.informative', 'Informatif') || 'Informatif'}</span>;
-                          if (userStatus === 'present') return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-black badge-status-present">{t('common.present', 'Présent') || 'Présent'} ({presentCount})</span>;
-                          if (userStatus === 'absent') return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-black badge-status-absent">{t('common.absent', 'Absent') || 'Absent'} ({presentCount})</span>;
-                          if (userStatus === 'confirm') return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-black badge-status-confirm">{t('common.toConfirm', 'À confirmer') || 'À confirmer'} ({presentCount})</span>;
-                          if (userStatus === 'pending') return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-bold badge-status-pending">{t('common.pending', 'En attente') || 'En attente'} ({presentCount})</span>;
-                          return <span className="text-neutral-500 font-bold">{t('widgetAgenda.noAnswer', 'Sans réponse') || 'Sans réponse'} ({presentCount})</span>;
+                          if (userStatus === 'present') return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-black badge-status-present">{t('agenda.present')} ({presentCount})</span>;
+                          if (userStatus === 'absent') return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-black badge-status-absent">{t('agenda.absent')} ({presentCount})</span>;
+                          if (userStatus === 'confirm') return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-black badge-status-confirm">{t('agenda.confirm')} ({presentCount})</span>;
+                          if (userStatus === 'pending') return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-bold badge-status-pending">{t('agenda.waitingResponse') || 'En attente'} ({presentCount})</span>;
+                          return <span className="text-neutral-500 font-bold">{t('agenda.waitingResponse') || t('widgetAgenda.noAnswer', 'Sans réponse') || 'Sans réponse'} ({presentCount})</span>;
                         })()}
                       </td>
                     </tr>
@@ -1099,7 +1099,7 @@ export default function WidgetAgenda({
                           style={{ transform: 'rotate(-15deg)' }}
                           className="text-red-600 dark:text-red-500 border-[3.5px] border-red-600 dark:border-red-500 px-5 py-1.5 rounded-lg font-black text-[15px] tracking-widest uppercase opacity-80 bg-white/5 dark:bg-black/5"
                         >
-                          {t('widgetAgenda.canceled', 'Annulé') || 'ANNULÉ'}
+                          {t('agenda.canceledStamp') || 'ANNULÉ'}
                         </span>
                       </div>
                     )}
@@ -1109,7 +1109,7 @@ export default function WidgetAgenda({
                           style={{ transform: 'rotate(-15deg)' }}
                           className="text-orange-600 dark:text-orange-400 border-[3.5px] border-orange-600 dark:border-orange-400 px-5 py-1.5 rounded-lg font-black text-[15px] tracking-widest uppercase opacity-80 bg-white/5 dark:bg-black/5"
                         >
-                          {t('common.toConfirm', 'À confirmer') || 'À CONFIRMER'}
+                          {t('agenda.confirm') || 'À CONFIRMER'}
                         </span>
                       </div>
                     )}
@@ -1120,7 +1120,7 @@ export default function WidgetAgenda({
                           style={{ transform: 'rotate(-10deg)', color: 'var(--color-cordel-vert)', borderColor: 'var(--color-cordel-vert)' }}
                           className="border-[3.5px] px-5 py-1.5 rounded-lg font-black text-[15px] tracking-widest uppercase opacity-80 bg-white/5 dark:bg-black/5"
                         >
-                          {t('widgetAgenda.confirmed', 'Validé') || 'VALIDÉ'}
+                          {t('agenda.confirmedStamp') || 'CONFIRMÉ'}
                         </span>
                       </div>
                     )}
@@ -1185,17 +1185,17 @@ export default function WidgetAgenda({
                               const userInscription = (event.inscriptions || []).find(ins => ins.userId === user.uid);
                               const userStatus = userInscription ? userInscription.status : null;
                               if (userStatus === 'present') {
-                                return <span className="text-[8px] font-black px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-present leading-none select-none">{t('common.present')}</span>;
+                                return <span className="text-[8px] font-black px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-present leading-none select-none">{t('agenda.present')}</span>;
                               } else if (userStatus === 'pending') {
-                                return <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider bg-yellow-100 text-yellow-800 border border-yellow-300 leading-none select-none">{t('userProfile.pendingValidation') || 'En attente de validation'}</span>;
+                                return <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider bg-yellow-100 text-yellow-800 border border-yellow-300 leading-none select-none">{t('agenda.waitingResponse') || t('userProfile.pendingValidation') || 'En attente de validation'}</span>;
                               } else if (userStatus === 'refused') {
                                 return <span className="text-[8px] font-black px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-absent leading-none select-none">{t('userProfile.refused') || 'Refusé'}</span>;
                               } else if (userStatus === 'absent') {
-                                return <span className="text-[8px] font-black px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-absent leading-none select-none">{t('common.absent')}</span>;
+                                return <span className="text-[8px] font-black px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-absent leading-none select-none">{t('agenda.absent')}</span>;
                               } else if (userStatus === 'confirm') {
-                                return <span className="text-[8px] font-black px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-confirm leading-none select-none">{t('common.toConfirm')}</span>;
+                                return <span className="text-[8px] font-black px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-confirm leading-none select-none">{t('agenda.confirm')}</span>;
                               } else {
-                                return <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-pending leading-none select-none">{t('common.pending')}</span>;
+                                return <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-pending leading-none select-none">{t('agenda.waitingResponse') || t('common.pending')}</span>;
                               }
                             })()}
                           </div>
@@ -1229,7 +1229,7 @@ export default function WidgetAgenda({
                   onClick={() => setShowAll(!showAll)}
                   className="text-[10px] px-3 py-1.5 uppercase tracking-widest font-black"
                 >
-                  {showAll ? t('widgetAgenda.seeLessEvents') : t('widgetAgenda.seeAllEvents')}
+                  {showAll ? t('widgetAgenda.seeLessEvents') : (t('agenda.seeAllDates') || t('widgetAgenda.seeAllEvents'))}
                 </CordelButton>
               </div>
             )}

@@ -20,7 +20,7 @@ export default function EventLocationMapBox({ event, isAdmin, onOpenMapModal, t 
     <div className="flex flex-col gap-2 p-3 bg-cordel-bg-light/60 border-2 border-dashed border-cordel-master-dark/20 rounded-[6px] text-left">
       <div className="flex items-center justify-between">
         <h4 className="text-xs font-black text-cordel-wood uppercase tracking-wider flex items-center gap-1.5">
-          <span>📍</span> <span>{event.lieu || "Localisation de l'événement"}</span>
+          <span>📍</span> <span>{event.lieu ? `${t ? (t('agenda.location') || 'Lieu') : 'Lieu'} : ${event.lieu}` : ((t && t('agenda.location')) || "Localisation de l'événement")}</span>
         </h4>
 
         {isAdmin && onOpenMapModal && (

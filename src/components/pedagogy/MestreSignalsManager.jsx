@@ -3,12 +3,15 @@ import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import useConfirm from '../../hooks/useConfirm';
+import { useTranslation } from '../LanguageContext';
 
 export default function MestreSignalsManager({ profileData }) {
+  const { t } = useTranslation();
   const { confirm } = useConfirm();
   const [signals, setSignals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [hideNames, setHideNames] = useState(false);
   
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({
@@ -114,12 +117,22 @@ export default function MestreSignalsManager({ profileData }) {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b-2 border-dashed border-cordel-wood/30 pb-4">
         <div>
           <h3 className="font-black text-sm uppercase tracking-wider text-cordel-wood">
-            Configuration des Signaux
+            {t('pedagogy.signalsConventionsTitle')}
           </h3>
           <p className="text-xs text-encre-noire/70 mt-1">
-            Gérez la liste des signaux (visuels, sonores...) utilisés par le Mestre pour diriger la Roda. Ces signaux apparaîtront automatiquement dans les Quiz des rythmes.
+            {t('pedagogy.signalsConventionsSubtitle')}
           </p>
         </div>
+
+        <label className="flex items-center gap-2 cursor-pointer select-none text-xs font-bold text-encre-noire bg-white px-2.5 py-1.5 rounded border border-encre-noire/20 shadow-2xs">
+          <input
+            type="checkbox"
+            checked={hideNames}
+            onChange={(e) => setHideNames(e.target.checked)}
+            className="w-3.5 h-3.5 rounded border-encre-noire text-cordel-wood focus:ring-cordel-wood cursor-pointer"
+          />
+          <span>{t('pedagogy.hideNamesToggle')}</span>
+        </label>
       </div>
 
       <div className="flex flex-col xl:flex-row gap-6 items-start">
@@ -127,7 +140,7 @@ export default function MestreSignalsManager({ profileData }) {
         <div className="w-full xl:w-1/3 sticky top-4">
           <CordelCard variant="default" className="p-5">
             <h4 className="font-black text-xs uppercase tracking-widest text-cordel-wood mb-4 pb-2 border-b-2 border-dashed border-cordel-wood/30">
-              {editingId ? '✏️ Modifier le signal' : '➕ Nouveau signal'}
+              {editingId ? `✏️ ${t('pedagogy.btnSaveSignal')}` : `➕ ${t('pedagogy.btnCreateSignal')}`}
             </h4>
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div>
@@ -137,7 +150,7 @@ export default function MestreSignalsManager({ profileData }) {
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
-                  placeholder="Ex: Signal d'arrêt, Appel aux agbês..."
+                  placeholder={t('pedagogy.signalNamePlaceholder')}
                   className="w-full p-2 text-xs border-2 border-encre-noire/20 rounded focus:outline-none focus:border-cordel-wood bg-[#fdfaf2]"
                   required
                 />
@@ -163,7 +176,7 @@ export default function MestreSignalsManager({ profileData }) {
                   name="description"
                   value={formData.description}
                   onChange={handleInputChange}
-                  placeholder="Ex: Bras levé avec poing fermé..."
+                  placeholder={t('pedagogy.signalInstructionPlaceholder')}
                   className="w-full p-2 text-xs border-2 border-encre-noire/20 rounded focus:outline-none focus:border-cordel-wood bg-[#fdfaf2] min-h-[80px]"
                   required
                 />
@@ -196,7 +209,7 @@ export default function MestreSignalsManager({ profileData }) {
                   disabled={saving || !formData.name.trim()}
                   className="flex-1 py-2 text-[10px] font-black uppercase bg-cordel-wood text-white rounded shadow hover:bg-[#6a1f12] transition-colors disabled:opacity-50"
                 >
-                  {saving ? '...' : (editingId ? 'Mettre à jour' : 'Ajouter')}
+                  {saving ? '...' : t('pedagogy.btnSaveSignal')}
                 </button>
               </div>
             </form>
@@ -217,7 +230,9 @@ export default function MestreSignalsManager({ profileData }) {
                     <span className="text-lg" title={signal.type === 'visuel' ? 'Signal visuel' : (signal.type === 'sonore' ? 'Signal sonore' : 'Autre')}>
                       {signal.type === 'visuel' ? '👁️' : (signal.type === 'sonore' ? '🔊' : '🧩')}
                     </span>
-                    <h4 className="text-sm font-black text-encre-noire">{signal.name || signal.nom || 'Sans nom'}</h4>
+                    <h4 className="text-sm font-black text-encre-noire">
+                      {hideNames ? '••••••••' : (signal.name || signal.nom || 'Sans nom')}
+                    </h4>
                   </div>
                   <p className="text-xs text-encre-noire/70 ml-7">{signal.description}</p>
                 </div>

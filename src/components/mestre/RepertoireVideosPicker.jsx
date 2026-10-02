@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import CordelButton from '../CordelButton';
 import VideoInstrumentCheckboxes from './VideoInstrumentCheckboxes';
 import { DEFAULT_INSTRUMENTS } from '../../hooks/useAssociationSettings';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Sélecteur dynamique et accordéon compact de vidéos pour une pièce du répertoire (< 200 lignes).
@@ -19,6 +20,7 @@ export default function RepertoireVideosPicker({
   onOpenPicker,
   instrumentsList = DEFAULT_INSTRUMENTS
 }) {
+  const { t } = useTranslation();
   const SUGGESTIONS = ['Tuto', 'Captation', 'Répétition', 'Chorégraphie', 'Ralenti'];
 
   // État des accordéons individuels des vidéos (par défaut, la 1re est dépliée si plusieurs)
@@ -78,7 +80,7 @@ export default function RepertoireVideosPicker({
         <div className="flex items-center gap-1.5">
           <span className="text-sm">🎬</span>
           <label className="text-[10px] uppercase font-black tracking-wider text-cordel-master-dark">
-            Vidéos du morceau ({videos.length})
+            {t('repertoire.fieldVideos')} ({videos.length})
           </label>
         </div>
 
@@ -111,7 +113,7 @@ export default function RepertoireVideosPicker({
             onClick={handleAddVideo}
             className="py-1 px-2 text-[9px] uppercase font-black tracking-wider"
           >
-            ➕ Ajouter
+            {t('repertoire.btnAddVideo')}
           </CordelButton>
         </div>
       </div>
@@ -197,7 +199,7 @@ export default function RepertoireVideosPicker({
                       </div>
                       <input
                         type="text"
-                        placeholder="ex: Tuto Alfaia, Tuto Caixa/Tarol, Captation Recife 2024..."
+                        placeholder={t('repertoire.videoTitlePlaceholder')}
                         value={vid.titre || ''}
                         onChange={(e) => handleUpdate(vid.id, 'titre', e.target.value)}
                         className="theme-input text-xs font-bold py-1 px-2 bg-white border border-encre-noire/30 rounded"
@@ -212,7 +214,7 @@ export default function RepertoireVideosPicker({
                       <div className="flex items-center gap-1.5">
                         <input
                           type="url"
-                          placeholder="https://www.youtube.com/watch?v=... ou Vimeo / Drive / MP4"
+                          placeholder={t('repertoire.videoUrlPlaceholder')}
                           value={vid.url || ''}
                           onChange={(e) => handleUpdate(vid.id, 'url', e.target.value)}
                           className="theme-input text-xs font-mono py-1 px-2 bg-white border border-encre-noire/30 rounded flex-1"

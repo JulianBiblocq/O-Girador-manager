@@ -6,6 +6,7 @@ import EventCarpoolSection from '../EventCarpoolSection';
 import EventRSVPSection from '../EventRSVPSection';
 import EventWardrobeSummaryCard from '../EventWardrobeSummaryCard';
 import { isEventStrictlyPassed } from '../../../utils/dateUtils';
+import { useTranslation } from '../../LanguageContext';
 
 /**
  * Onglet 2 : Convoi, Véhicules & Présences (TabLogistics)
@@ -100,6 +101,8 @@ export default function TabLogistics({
   handleAddToGoogleCalendar,
   handleDownloadIcs
 }) {
+  const { t: contextT } = useTranslation();
+  const tr = typeof t === 'function' ? t : contextT;
   const [activatingCarpool, setActivatingCarpool] = useState(false);
 
   const handleEnableCarpool = async () => {
@@ -116,6 +119,7 @@ export default function TabLogistics({
   };
 
   const presentsCount = ((event.inscriptions || []).filter(ins => ins.status === 'present').length) + ((event.invitesExternes || []).length);
+  const pendingCount = ((event.inscriptions || []).filter(ins => ins.status === 'pending' || ins.status === 'en_attente_tardive').length);
   const voituresCount = (event.covoiturage?.voitures || []).length;
 
   // Calcul fiable du franchissement de l'événement avec reconstitution du timestamp exact
@@ -199,14 +203,21 @@ export default function TabLogistics({
       {/* 2. Tableau Nominatif des Présences par Pupitre & Invités Externes */}
       {currentConfig?.agendaEnableInscriptions !== false && (
         <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
-          <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-2 mb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-2 mb-3 gap-2">
             <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
               <span>👥</span>
-              <span>Tableau de présence ({presentsCount} inscrit{presentsCount > 1 ? 's' : ''})</span>
+              <span>{tr('agenda.attendancePuzzleTitle') || "Tableau de présence / Casse-tête"} ({presentsCount} {tr('agenda.statusRegistered') || 'inscrit'}{presentsCount > 1 ? 's' : ''})</span>
             </h4>
-            <span className="text-[10px] font-semibold text-encre-noire/70">
-              Répartition par pupitres & invités
-            </span>
+            <div className="flex items-center gap-2">
+              {pendingCount > 0 && (
+                <span className="theme-stamp-badge theme-stamp-badge-ocre text-[9px] font-bold uppercase tracking-wider" title={tr('agenda.awaitingValidation') || "En attente de validation"}>
+                  ⏳ {pendingCount} {tr('agenda.waitingCount') || "Attente"}
+                </span>
+              )}
+              <span className="text-[10px] font-semibold text-encre-noire/70">
+                {tr('agenda.awaitingValidation') ? `${tr('agenda.awaitingValidation')} & Pupitres` : "Répartition par pupitres & invités"}
+              </span>
+            </div>
           </div>
 
           <EventRSVPSection
@@ -272,6 +283,28 @@ export default function TabLogistics({
             handleDownloadIcs={handleDownloadIcs}
             mode="attendance"
           />
+
+          {/* Actions & utilitaires en bas de table de présence */}
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-3 mt-3 border-t border-dashed border-cordel-master-dark/20">
+            {event.enableRoadbook !== false && (
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="theme-btn text-[10px] font-black uppercase tracking-wider py-1.5 px-3 rounded-[4px_6px_3px_5px] flex items-center gap-1.5 bg-cordel-bg-light hover:bg-stone-200 cursor-pointer text-encre-noire border border-encre-noire/20"
+                title={tr('agenda.printRoadbookBtn') || "Imprimer la feuille de route"}
+              >
+                <span>📄</span>
+                <span>{tr('agenda.printRoadbookBtn') || "Imprimer la feuille de route"}</span>
+              </button>
+            )}
+
+            {event.includesPercussion !== false && (
+              <span className="text-[10px] font-bold text-cordel-wood flex items-center gap-1.5">
+                <span>🛠️</span>
+                <span>{tr('agenda.restaurantInstruments') || "Gestion des instruments du resto"}</span>
+              </span>
+            )}
+          </div>
         </CordelCard>
       )}
     </div>

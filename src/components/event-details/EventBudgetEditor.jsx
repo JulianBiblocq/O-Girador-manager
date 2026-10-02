@@ -1,5 +1,6 @@
 import React from 'react';
 import CordelButton from '../CordelButton';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Composant d'édition du budget d'un événement.
@@ -22,8 +23,11 @@ export default function EventBudgetEditor({
   covoiturageAmount = 0,
   totalRecettes = 0,
   documentStatusLabel = '',
-  disabled = false
+  disabled = false,
+  t
 }) {
+  const { t: contextT } = useTranslation();
+  const tr = typeof t === 'function' ? t : contextT;
   // Ajouter une ligne de dépense manuelle (frais annexes)
   const addDepense = () => {
     const newItems = [
@@ -85,7 +89,7 @@ export default function EventBudgetEditor({
             ) : (
               <div className="mt-2 flex flex-col gap-1 text-left">
                 <label className="text-[10px] uppercase font-bold text-stone-600 dark:text-stone-400">
-                  Montant manuel / historique (€)
+                  {tr('agenda.expectedRevenue')}
                 </label>
                 <input
                   type="number"
@@ -106,7 +110,7 @@ export default function EventBudgetEditor({
         <div className="flex flex-col gap-3 p-3 bg-[var(--theme-primary)]/5 border border-dashed border-[var(--theme-primary)]/30 rounded-[var(--theme-border-radius,6px)]">
           <div className="flex justify-between items-center mb-1">
             <span className="text-[11px] uppercase font-bold text-[var(--theme-primary)] dark:text-rose-400">
-              📉 Dépenses Hybrides
+              📉 {tr('agenda.estimatedExpenses')}
             </span>
             <CordelButton
               type="button"

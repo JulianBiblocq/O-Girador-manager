@@ -15,7 +15,9 @@ import {
   getProximityNeighbors,
   getVisibleStageColumns,
   hasDancersOnStage,
-  getCompactInstrumentStats
+  getCompactInstrumentStats,
+  isRowStaggered,
+  toggleStaggeredRow
 } from '../src/components/event-details/stage-layout/stageLayoutUtils.js';
 
 console.log('🧪 Démarrage des tests de l\'optimisation mobile du Plan de Scène...');
@@ -171,6 +173,31 @@ console.log('  ✅ Badge Alfaias compact :', stats.alfaiasBadge);
 console.log('  ✅ Badge Caixas compact :', stats.caixasBadge);
 console.log('  ✅ Badge Danse compact :', stats.danceBadge);
 
+// --------------------------------------------------------------------------
+// TEST 6 : Gestion des rangées en quinconce (staggeredRows)
+// --------------------------------------------------------------------------
+console.log('\n--- 6️⃣ Test de la gestion des rangées en quinconce (staggeredRows) ---');
+
+
+// Test isRowStaggered avec un tableau d'index
+assert.strictEqual(isRowStaggered(1, [1, 3]), true, 'La rangée 1 doit être reconnue en quinconce');
+assert.strictEqual(isRowStaggered(2, [1, 3]), false, 'La rangée 2 ne doit pas être en quinconce');
+assert.strictEqual(isRowStaggered('3', [1, 3]), true, 'La rangée "3" (string) doit être reconnue en quinconce');
+assert.strictEqual(isRowStaggered(-1, [-1]), true, 'La rangée danse -1 doit être reconnue en quinconce');
+assert.strictEqual(isRowStaggered(1, null), false, 'null doit renvoyer false sans planter');
+assert.strictEqual(isRowStaggered(1, { 1: true }), true, 'Rétrocompatibilité objet: { 1: true } doit renvoyer true');
+console.log('  ✅ isRowStaggered validé avec tableau, string, danse (-1) et objet legacy');
+
+// Test toggleStaggeredRow
+const toggled1 = toggleStaggeredRow(2, [1, 3]);
+assert.deepStrictEqual(toggled1, [1, 3, 2], 'Ajout du rang 2 au tableau');
+const toggled2 = toggleStaggeredRow(1, toggled1);
+assert.deepStrictEqual(toggled2, [3, 2], 'Retrait du rang 1 du tableau');
+const toggledDanse = toggleStaggeredRow(-1, []);
+assert.deepStrictEqual(toggledDanse, [-1], 'Ajout du rang danse -1');
+console.log('  ✅ toggleStaggeredRow validé (ajout, bascule et rangs danse)');
+
 console.log('\n===============================================================');
 console.log('🏆 TOUS LES TESTS DU PLAN DE SCÈNE MOBILE SONT 100% VALIDÉS !');
 console.log('===============================================================');
+

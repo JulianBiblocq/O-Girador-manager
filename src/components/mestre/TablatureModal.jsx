@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Modale de consultation et d'impression papier de la tablature d'un morceau.
@@ -12,6 +13,7 @@ import CordelButton from '../CordelButton';
  * @param {Object|null} piece - Morceau du répertoire dont la tablature est affichée
  */
 export default function TablatureModal({ isOpen, onClose, piece }) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
 
   if (!isOpen || !piece) return null;
@@ -45,7 +47,7 @@ export default function TablatureModal({ isOpen, onClose, piece }) {
             <span className="text-xl">📄</span>
             <div className="flex flex-col min-w-0">
               <h3 className="text-sm md:text-base font-black uppercase tracking-wider text-cordel-wood truncate">
-                Tablature : {pieceTitle}
+                {t('repertoire.tablatureModalTitle')} : {pieceTitle}
               </h3>
               <span className="text-[10px] text-encre-noire/60 font-semibold truncate">
                 Partition textuelle monospace générée depuis le Séquenceur
@@ -75,7 +77,7 @@ export default function TablatureModal({ isOpen, onClose, piece }) {
               title="Lancer l'impression papier de cette tablature"
             >
               <span>🖨️</span>
-              <span>Imprimer</span>
+              <span>{t('repertoire.btnPrintTablature')}</span>
             </CordelButton>
 
             <button
@@ -89,7 +91,7 @@ export default function TablatureModal({ isOpen, onClose, piece }) {
               title="Copier l'intégralité du texte dans le presse-papier"
             >
               <span>{copied ? '✓' : '📋'}</span>
-              <span>{copied ? 'Copié !' : 'Copier'}</span>
+              <span>{copied ? t('repertoire.tablatureCopiedToast') : t('repertoire.btnCopyTablature')}</span>
             </button>
           </div>
 
@@ -109,7 +111,7 @@ export default function TablatureModal({ isOpen, onClose, piece }) {
             </pre>
           ) : (
             <p className="text-xs text-encre-noire/60 italic p-4 text-center">
-              Aucune tablature n'a encore été générée pour ce morceau.
+              {t('repertoire.emptyTablature')}
             </p>
           )}
         </div>

@@ -1,5 +1,6 @@
 import React from 'react';
 import CordelCard from '../CordelCard';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Panneau d'administration des indemnités kilométriques du convoi (réservé aux gestionnaires).
@@ -16,23 +17,25 @@ export default function CarpoolAdminRefundPanel({
   indemniteKm = 0,
   convoiDrivers = []
 }) {
+  const { t } = useTranslation();
+
   return (
     <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5 select-none">
       <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1 mb-3">
-        {enableCarpoolReimbursement ? "🚗 Frais de déplacement (Admin)" : "🚗 Covoiturage & Convoi (Admin)"}
+        {enableCarpoolReimbursement ? `🚗 ${t('agenda.travelExpensesTitle') || "Frais de déplacement - Adhérent"}` : "🚗 Covoiturage & Convoi (Admin)"}
       </h4>
       <div className="text-xs flex flex-col gap-2.5 text-left theme-inner-panel p-3.5 rounded">
         {enableCarpoolReimbursement && (
           <>
             <div className="border-b border-dashed border-encre-noire/10 pb-2 mb-1 text-[11px] font-bold text-encre-noire/80">
-              ℹ️ Distance estimée : {distanceKm} km A/R - Indemnité prévue : {(distanceKm * indemniteKm).toFixed(2)} €
+              ℹ️ {t('agenda.estimatedMileage') || "Indemnités estimées / trajet aller-retour"} : {(distanceKm * indemniteKm).toFixed(2)} € ({distanceKm} km)
             </div>
             <div className="flex justify-between font-bold border-b border-dashed border-encre-noire/10 pb-1 mb-1">
-              <span>Distance A/R :</span>
+              <span>{t('agenda.roundTripDistance') || "Distance A/R"} :</span>
               <span>{distanceKm} km</span>
             </div>
             <div className="flex justify-between font-bold border-b border-dashed border-encre-noire/10 pb-1 mb-1.5">
-              <span>Tarif Km :</span>
+              <span>{t('agenda.ratePerKm') || "Tarif / km"} :</span>
               <span>{indemniteKm.toFixed(2)} €/km</span>
             </div>
           </>
@@ -40,10 +43,10 @@ export default function CarpoolAdminRefundPanel({
 
         <div className="mt-2">
           <strong className="text-cordel-wood uppercase text-[10px] tracking-wider block border-b border-dashed border-cordel-master-dark/10 pb-0.5 mb-1.5">
-            🚗 Chauffeurs du Convoi ({(convoiDrivers || []).length})
+            🚗 {t('agenda.vehicleLoadTable') || "Tableau de charge véhicules (Covoiturage & Matos)"} ({(convoiDrivers || []).length})
           </strong>
           {(convoiDrivers || []).length === 0 ? (
-            <p className="text-[11px] italic opacity-60 pl-2">Aucun conducteur déclaré dans le convoi.</p>
+            <p className="text-[11px] italic opacity-60 pl-2">{t('agenda.noDriversInConvoy') || "Aucun conducteur déclaré dans le convoi."}</p>
           ) : (
             <div className="flex flex-col gap-1.5 pl-2">
               {(convoiDrivers || []).map((driver) => {

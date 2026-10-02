@@ -123,7 +123,7 @@ export default function EventQuickActionsBar({ event, isAdmin, onToggleEdit, onD
             onClick={onToggleEdit}
             className="px-3 py-1 text-xs font-bold"
           >
-            ✏️ {t('common.edit') || "Éditer"}
+            ✏️ {(t && t('agenda.adminBtnEdit')) || (t && t('common.edit')) || "Éditer"}
           </CordelButton>
 
           {onDelete && (
@@ -131,7 +131,7 @@ export default function EventQuickActionsBar({ event, isAdmin, onToggleEdit, onD
               type="button"
               onClick={onDelete}
               className="p-1 px-2 bg-red-100 hover:bg-red-200 text-red-800 border border-red-400 rounded-[4px] text-xs font-bold shadow-xs cursor-pointer"
-              title="Supprimer l'événement"
+              title={(t && t('agenda.adminBtnDelete')) || "Supprimer l'événement"}
             >
               🗑️
             </button>

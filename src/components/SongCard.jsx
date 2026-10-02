@@ -5,6 +5,7 @@ import { db, auth } from '../firebase';
 import PrintConfigModal from './PrintConfigModal';
 import { parseLyricsString } from '../utils/lyricsParser';
 import RepertoirePasserelleButton from './repertoire/RepertoirePasserelleButton';
+import { useTranslation } from './LanguageContext';
 
 /**
  * Modèle de données attendu pour une chanson (Fiche de Chant)
@@ -35,6 +36,7 @@ function SongCard({
   groupId = null,
   onNavigateToView = null
 }) {
+  const { t } = useTranslation();
   const [activePuxador, setActivePuxador] = useState(false);
   const [activeChoeur, setActiveChoeur] = useState(false);
   const [localReveals, setLocalReveals] = useState({});
@@ -130,7 +132,7 @@ function SongCard({
       >
         <div className="absolute inset-0 bg-[#fdfaf2] dark:bg-[#1a1816] flex items-center justify-center transition-all group-hover:bg-[#fdfaf2]/90 dark:group-hover:bg-[#1a1816]/90 z-10">
           <span className="bg-cordel-wood text-white px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider shadow-md transform group-hover:scale-105 transition-transform">
-            👁️ Révéler
+            👁️ {t('pedagogy.btnReveal')}
           </span>
         </div>
         <div className="opacity-0 select-none">
@@ -333,7 +335,7 @@ function SongCard({
               title={effectiveIsRequested ? "Demande de révision active pour cette Toada" : "Signaler au Mestre le besoin de réviser ce chant"}
             >
               <span>🙋</span>
-              <span>{effectiveIsRequested ? 'Révision demandée ✓' : 'Demander à réviser'}</span>
+              <span>{effectiveIsRequested ? (t('pedagogy.revisionRequestedNotice') || 'Révision demandée ✓') : t('pedagogy.btnAskToRevise')}</span>
             </button>
           )}
         </div>

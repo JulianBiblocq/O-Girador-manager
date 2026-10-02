@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Formulaire de proposition d'un véhicule dans le covoiturage.
@@ -13,10 +14,12 @@ export default function CarpoolProposerForm({
   handleProposerVoiture,
   onCancel
 }) {
+  const { t } = useTranslation();
+
   return (
     <form onSubmit={handleProposerVoiture} className="flex flex-col gap-3 theme-inner-panel p-4 rounded text-left">
       <h5 className="font-bold text-[10px] uppercase tracking-widest text-cordel-wood">
-        Proposer un véhicule
+        {t('agenda.carpoolProposeVehicle') || "Je propose mon véhicule"}
       </h5>
 
       <div className="grid grid-cols-2 gap-3">

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import CordelCard from '../CordelCard';
 import EmailConfigSection from './email/EmailConfigSection';
 import BrevoIntegrationBlock from './blocks/BrevoIntegrationBlock';
 import TabAutomations from './TabAutomations';

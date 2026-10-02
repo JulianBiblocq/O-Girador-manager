@@ -11,6 +11,7 @@ import { getVoiceLabel } from '../../constants/nomenclature';
 import UserStagePositionBanner from './stage-layout/UserStagePositionBanner';
 import StageVisualGrid from './stage-layout/StageVisualGrid';
 import StageLayoutFullscreenModal from './stage-layout/StageLayoutFullscreenModal';
+import { toggleStaggeredRow } from './stage-layout/stageLayoutUtils';
 
 export default function EventStageLayoutSection({
   event,
@@ -42,6 +43,7 @@ export default function EventStageLayoutSection({
     cols: 5,
     danceRows: 1,
     danceCols: 5,
+    staggeredRows: [],
     placements: {}
   });
 
@@ -72,6 +74,7 @@ export default function EventStageLayoutSection({
         cols: event.stageLayout.cols || 5,
         danceRows: event.stageLayout.danceRows || 1,
         danceCols: event.stageLayout.danceCols || 5,
+        staggeredRows: event.stageLayout.staggeredRows || [],
         placements: event.stageLayout.placements || {}
       });
     } else {
@@ -80,6 +83,7 @@ export default function EventStageLayoutSection({
         cols: 5,
         danceRows: 1,
         danceCols: 5,
+        staggeredRows: [],
         placements: {}
       });
     }
@@ -444,10 +448,18 @@ export default function EventStageLayoutSection({
         cols: 5,
         danceRows: 1,
         danceCols: 5,
+        staggeredRows: [],
         placements: {}
       });
       setSelectedMemberId(null);
     }
+  };
+
+  const handleToggleStaggerRow = (rowIndex) => {
+    setLayout((prev) => ({
+      ...prev,
+      staggeredRows: toggleStaggeredRow(rowIndex, prev.staggeredRows || [])
+    }));
   };
 
   const handleSaveLayout = async () => {
@@ -462,6 +474,7 @@ export default function EventStageLayoutSection({
           cols: layout.cols,
           danceRows: layout.danceRows || 1,
           danceCols: layout.danceCols || 5,
+          staggeredRows: layout.staggeredRows || [],
           placements: activePlacements
         }
       });
@@ -516,7 +529,7 @@ export default function EventStageLayoutSection({
       )}
       {isAuthorized && isPublished && (
         <div className="mb-3 px-3 py-1.5 bg-emerald-100 border border-emerald-500 text-emerald-900 rounded font-black text-[10px] uppercase tracking-wider flex items-center gap-2 w-fit shadow-[1.5px_1.5px_0px_0px_#181716]">
-          <span>🌐 Publié (Visible par la troupe)</span>
+          <span>🌐 {t ? (t('agenda.stagePublishedBadge') || 'Publié (visible par la troupe)') : 'Publié (visible par la troupe)'}</span>
         </div>
       )}
       
@@ -528,7 +541,7 @@ export default function EventStageLayoutSection({
         <span className="flex items-center gap-2">
           🎭 {t('eventDetails.stageLayoutTitle') || "Plan de Scène / Cortejo"}
         </span>
-        <span className="text-[10px] opacity-75">{isOpen ? '▲ Masquer' : '▼ Afficher'}</span>
+        <span className="text-[10px] opacity-75">{isOpen ? `▲ ${t ? (t('agenda.btnHideStagePlan') || 'Masquer') : 'Masquer'}` : `▼ ${t ? (t('agenda.toggleExpand') || 'Afficher') : 'Afficher'}`}</span>
       </button>
 
       {isOpen && (
@@ -746,6 +759,7 @@ export default function EventStageLayoutSection({
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 onUnplaceMember={handleUnplaceMember}
+                onToggleStaggerRow={handleToggleStaggerRow}
                 t={t}
                 onOpenFullscreen={() => setIsFullscreenOpen(true)}
                 isFullscreen={false}

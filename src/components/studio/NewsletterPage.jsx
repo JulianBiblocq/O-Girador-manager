@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import CordelButton from '../CordelButton';
 import CordelCard from '../CordelCard';
 import NewsletterStepper from './newsletter/NewsletterStepper';

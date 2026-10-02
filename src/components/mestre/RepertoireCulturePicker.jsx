@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Normalise une chaîne de caractères (minuscules, sans accents) pour la recherche.
@@ -35,6 +36,7 @@ export default function RepertoireCulturePicker({
   onOpenCreateModal,
   disabled = false
 }) {
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('Toutes');
 
@@ -123,7 +125,7 @@ export default function RepertoireCulturePicker({
       <div className="flex items-center justify-between flex-wrap gap-2">
         <label className="text-[9.5px] uppercase font-black tracking-wider text-cordel-master-dark flex items-center gap-1.5">
           <span>📖</span>
-          <span>Fiche{selectedCultureIds.length > 1 ? 's' : ''} Culturelle{selectedCultureIds.length > 1 ? 's' : ''} associée{selectedCultureIds.length > 1 ? 's' : ''}</span>
+          <span>{t('repertoire.fieldCultureDocs')}</span>
           {selectedCultureIds.length > 0 && (
             <span className="text-[9px] font-black text-white px-1.5 py-0.2 rounded-full bg-[var(--color-cordel-vert,#2d6a4f)]">
               {selectedCultureIds.length} liée{selectedCultureIds.length > 1 ? 's' : ''}
@@ -140,7 +142,7 @@ export default function RepertoireCulturePicker({
             title="Créer une fiche sur le Varal Culture pré-remplie"
           >
             <span>📜</span>
-            <span>Créer une fiche Varal Culture</span>
+            <span>{t('repertoire.btnCreateCultureFiche')}</span>
           </button>
         )}
       </div>
@@ -195,7 +197,7 @@ export default function RepertoireCulturePicker({
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             disabled={disabled}
-            placeholder="Rechercher une fiche (titre, mot-clé, orixá, histoire...)..."
+            placeholder={t('repertoire.addCultureDocPlaceholder', 'Rechercher une fiche (titre, mot-clé, orixá, histoire...)...')}
             style={{ paddingLeft: '2.5rem', paddingRight: '2rem' }}
             className="theme-input w-full text-xs font-semibold py-2 bg-white border border-encre-noire/30 rounded focus:border-amber-600 focus:outline-hidden"
           />

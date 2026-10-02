@@ -1,5 +1,6 @@
 import React from 'react';
 import CordelCard from '../CordelCard';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Liste des types de véhicules disponibles pour la sélection
@@ -24,6 +25,7 @@ export const VEHICLE_TYPES = [
  * @param {boolean} props.disabled Indique si le formulaire est en cours de sauvegarde
  */
 export default function ProfileVehicleSection({ formData, handleChange, disabled = false }) {
+  const { t } = useTranslation();
   const hasVehicle = Boolean(formData.hasVehicle);
 
   const handleSeatsStep = (delta) => {
@@ -39,17 +41,17 @@ export default function ProfileVehicleSection({ formData, handleChange, disabled
   };
 
   return (
-    <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col gap-3 text-left">
+    <CordelCard variant="default" useExtremeBorder={true} className="flex flex-col gap-3 text-left">
       <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/15 pb-2">
         <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood flex items-center gap-2">
           <span>🚗</span>
-          <span>Véhicule & Déplacements Associatifs</span>
+          <span>{t('userProfile.vehicleSectionTitle')}</span>
         </h4>
 
         {/* Badge récapitulatif */}
         {hasVehicle && (
           <span className="text-[9px] font-black uppercase tracking-wider bg-emerald-100 border border-emerald-500 text-emerald-900 px-2 py-0.5 rounded shadow-xs">
-            Motorisé
+            {t('userProfile.vehicleConvoyBadge')}
           </span>
         )}
       </div>
@@ -80,7 +82,7 @@ export default function ProfileVehicleSection({ formData, handleChange, disabled
           {/* Type de véhicule */}
           <div className="flex flex-col gap-1">
             <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood">
-              Catégorie de véhicule
+              {t('userProfile.vehicleCategory')}
             </label>
             <select
               name="vehicleType"
@@ -102,8 +104,10 @@ export default function ProfileVehicleSection({ formData, handleChange, disabled
             {/* Places passagers libres */}
             <div className="flex flex-col gap-1 p-2.5 rounded border border-encre-noire/15 bg-cordel-bg/40">
               <label className="text-[9.5px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center justify-between">
-                <span>Places assises passagers</span>
-                <span className="text-[8.5px] font-normal italic opacity-75">(hors conducteur)</span>
+                <span>{t('userProfile.vehiclePassengerSeats')}</span>
+                <span className="text-[8.5px] font-normal italic opacity-75">
+                  ({t('userProfile.vehiclePassengerSeatsCount', { count: formData.defaultPassengerSeats !== undefined ? formData.defaultPassengerSeats : 3 })})
+                </span>
               </label>
               <div className="flex items-center gap-2 mt-1">
                 <button
@@ -141,8 +145,10 @@ export default function ProfileVehicleSection({ formData, handleChange, disabled
             {/* Capacité coffre pour Alfaias */}
             <div className="flex flex-col gap-1 p-2.5 rounded border border-encre-noire/15 bg-cordel-bg/40">
               <label className="text-[9.5px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center justify-between">
-                <span>Capacité coffre (Alfaias)</span>
-                <span className="text-[8.5px] font-normal italic opacity-75">(gros fûts)</span>
+                <span>{t('userProfile.vehicleTrunkAlfaias')}</span>
+                <span className="text-[8.5px] font-normal italic opacity-75">
+                  ({t('userProfile.vehicleTrunkAlfaiasCount', { count: formData.defaultTrunkCapacity !== undefined ? formData.defaultTrunkCapacity : 1 })})
+                </span>
               </label>
               <div className="flex items-center gap-2 mt-1">
                 <button
@@ -208,7 +214,7 @@ export default function ProfileVehicleSection({ formData, handleChange, disabled
                   className="w-3.5 h-3.5 rounded border border-encre-noire accent-cordel-wood cursor-pointer"
                 />
                 <span className="text-xs font-semibold text-encre-noire">
-                  🔗 Crochet d'attelage (remorque)
+                  🔗 {t('userProfile.vehicleTowHitch')}
                 </span>
               </label>
             </div>

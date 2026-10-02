@@ -3,6 +3,7 @@ import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import EventFormFields from './EventFormFields';
 import { DEFAULT_CUSTOM_CATEGORIES } from '../../utils/categoryUtils';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * EventCreateForm - Formulaire de création d'événement unifié
@@ -30,10 +31,15 @@ export default function EventCreateForm({
   defaultDropUrl = '',
   pupitresList = []
 }) {
+  const { t: contextT } = useTranslation();
+  const tr = typeof t === 'function' ? t : contextT;
+
   const translate = (key, fallback) => {
-    if (!t) return fallback;
-    const val = t(key);
-    return val === key ? fallback : val;
+    if (typeof tr === 'function') {
+      const val = tr(key);
+      if (val && val !== key) return val;
+    }
+    return fallback;
   };
 
   // Consolidation des options de costumes vestiaire + paramètres
@@ -101,7 +107,7 @@ export default function EventCreateForm({
             disabled={saving}
             className="text-xs px-4 py-2"
           >
-            {translate('common.cancel', "Annuler")}
+            {tr('agenda.btnCancel')}
           </CordelButton>
           <CordelButton 
             type="submit"
@@ -110,7 +116,7 @@ export default function EventCreateForm({
             disabled={saving}
             className="text-xs px-5 py-2 font-bold"
           >
-            {saving ? translate('common.saving', "Enregistrement...") : "✅ " + translate('common.validate', "Créer l'événement")}
+            {saving ? tr('common.saving') : "✅ " + tr('agenda.btnSaveEvent')}
           </CordelButton>
         </div>
       </form>

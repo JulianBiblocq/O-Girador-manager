@@ -1,5 +1,6 @@
 import React from 'react';
 import { HorizontalRibbonContainer } from '../navigation/HorizontalTabRibbon';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Barre de navigation par onglets pour la fiche détaillée d'un événement (Navigation Hub Cordel).
@@ -22,10 +23,11 @@ export default function EventTabsNav({
   hasProgram = false,
   commentsCount = 0
 }) {
+  const { t } = useTranslation();
   const tabs = [
     {
       id: 'rsvp',
-      label: 'Mon RSVP',
+      label: t('agenda.myRsvp') || 'Mon RSVP',
       icon: '🎟️',
       badge: null
     },
@@ -37,13 +39,13 @@ export default function EventTabsNav({
     },
     {
       id: 'program',
-      label: 'Scène & Programme',
+      label: t('agenda.programToRevise') || 'Scène & Programme',
       icon: '🎵',
       badge: hasProgram ? '•' : null
     },
     {
       id: 'discussion',
-      label: 'Discussion',
+      label: t('agenda.tabDiscussion') || 'Discussion',
       icon: '💬',
       badge: commentsCount > 0 ? `${commentsCount}` : null
     }
@@ -52,7 +54,7 @@ export default function EventTabsNav({
   if (canAccessAdminTab) {
     tabs.push({
       id: 'admin',
-      label: 'Gestion & Bilan',
+      label: t('agenda.tabManagementReport') || 'Gestion & Bilan',
       icon: '⚙️',
       badge: null
     });

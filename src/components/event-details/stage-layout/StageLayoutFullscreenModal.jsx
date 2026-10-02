@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import CordelButton from '../../CordelButton';
 
 /**
  * Modale Plein Écran / Zoom pour la consultation mobile du plan de scène

@@ -6,6 +6,7 @@ import CordelCard from '../CordelCard';
 import BlindTestTrialModal from './BlindTestTrialModal';
 import SignauxTrialModal from './SignauxTrialModal';
 import ReflexGameModal from './ReflexGameModal';
+import { useTranslation } from '../LanguageContext';
 
 export default function DefisSummaryCard({
   metrics = {
@@ -17,6 +18,7 @@ export default function DefisSummaryCard({
   profileData = {},
   groupId = null
 }) {
+  const { t } = useTranslation();
   const [activeModal, setActiveModal] = useState(null); // 'blind_test' | 'reflex' | 'signaux'
 
   // Sélection du premier morceau éligible pour le défi réflexe
@@ -37,7 +39,7 @@ export default function DefisSummaryCard({
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-1.5 pb-2 border-b border-dashed border-cordel-master-dark/20">
           <h2 className="text-xs md:text-sm font-black uppercase tracking-wider text-cordel-wood flex items-center gap-2">
             <span>🎯</span>
-            <span>Résultats aux Défis de la Troupe</span>
+            <span>{t('pedagogy.challengeResultsTitle')}</span>
           </h2>
           <span className="text-[10px] text-encre-noire/60 font-semibold">
             Scores moyens des adhérents • Accès formateur immédiat
@@ -52,7 +54,7 @@ export default function DefisSummaryCard({
             <div className="flex items-center gap-2.5">
               <span className="text-xl">🎧</span>
               <div className="flex flex-col">
-                <span className="text-xs font-black text-encre-noire">Blind Test</span>
+                <span className="text-xs font-black text-encre-noire">{t('pedagogy.blindTestSuccess')}</span>
                 <span className="text-[10px] text-encre-noire/60 font-bold">
                   {metrics.blindTest.count > 0 ? `${metrics.blindTest.count} quiz passés` : 'Historique troupe'}
                 </span>
@@ -69,7 +71,7 @@ export default function DefisSummaryCard({
                 className="text-[9.5px] font-black uppercase tracking-wider px-2 py-1 bg-white text-cordel-wood border border-cordel-wood/40 rounded hover:bg-neutral-50 active:scale-95 transition-all cursor-pointer shadow-2xs"
                 title="Tester le Blind Test en direct"
               >
-                🎮 Essayer
+                🎮 {t('pedagogy.btnTryChallenge')}
               </button>
             </div>
           </div>
@@ -79,7 +81,7 @@ export default function DefisSummaryCard({
             <div className="flex items-center gap-2.5">
               <span className="text-xl">⚡</span>
               <div className="flex flex-col">
-                <span className="text-xs font-black text-encre-noire">Précision / Temps 1</span>
+                <span className="text-xs font-black text-encre-noire">{t('pedagogy.rhythmAccuracy')}</span>
                 <span className="text-[10px] text-encre-noire/60 font-bold">
                   {metrics.reflex.count > 0 ? `${metrics.reflex.count} tests validés` : 'Arrêts au signal'}
                 </span>
@@ -96,7 +98,7 @@ export default function DefisSummaryCard({
                 className="text-[9.5px] font-black uppercase tracking-wider px-2 py-1 bg-white text-cordel-wood border border-cordel-wood/40 rounded hover:bg-neutral-50 active:scale-95 transition-all cursor-pointer shadow-2xs"
                 title="Tester le Défi Réflexe Temps 1"
               >
-                🎮 Essayer
+                🎮 {t('pedagogy.btnTryChallenge')}
               </button>
             </div>
           </div>
@@ -106,7 +108,7 @@ export default function DefisSummaryCard({
             <div className="flex items-center gap-2.5">
               <span className="text-xl">🖐️</span>
               <div className="flex flex-col">
-                <span className="text-xs font-black text-encre-noire">Signes du Mestre</span>
+                <span className="text-xs font-black text-encre-noire">{t('pedagogy.signalsRecognition')}</span>
                 <span className="text-[10px] text-encre-noire/60 font-bold">
                   {metrics.signals.count > 0 ? `${metrics.signals.count} évaluations` : 'Reconnaissance'}
                 </span>
@@ -123,7 +125,7 @@ export default function DefisSummaryCard({
                 className="text-[9.5px] font-black uppercase tracking-wider px-2 py-1 bg-white text-cordel-wood border border-cordel-wood/40 rounded hover:bg-neutral-50 active:scale-95 transition-all cursor-pointer shadow-2xs"
                 title="Tester le quiz des Signaux"
               >
-                🎮 Essayer
+                🎮 {t('pedagogy.btnTryChallenge')}
               </button>
             </div>
           </div>
