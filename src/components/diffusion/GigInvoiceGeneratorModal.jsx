@@ -4,6 +4,7 @@ import { db } from '../../firebase';
 import CordelButton from '../CordelButton';
 import { downloadInvoicePDF, generateInvoicePDF } from '../../utils/invoicePdfGenerator';
 import GigSendEmailModal from './GigSendEmailModal';
+import { useModalEscape } from '../../hooks/useModalEscape';
 
 /**
  * Modale de génération de Facture officielle pour le Pôle Diffusion et l'Agenda.
@@ -123,6 +124,9 @@ export default function GigInvoiceGeneratorModal({
     fetchLinkedEventData();
   }, [gig, isOpen]);
 
+  // Fermeture accessible avec la touche Échap
+  useModalEscape(isOpen, onClose, saving);
+
   if (!isOpen || !gig) return null;
 
   // Calculs financiers
@@ -235,36 +239,35 @@ export default function GigInvoiceGeneratorModal({
 
   return (
     <div
-        tabIndex={-1}
-        onKeyDown={(e) => e.key === 'Escape' && !saving && onClose()}
-        className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 select-none outline-none animate-fade-in"
-      >
-        <div className="relative w-full max-w-3xl max-h-[90vh] flex flex-col rounded-lg bg-white shadow-2xl border-2 border-cordel-master-dark/40 overflow-hidden text-left">
-          {/* 1. Header (Fixe) */}
-          <div className="flex-shrink-0 p-4 border-b border-dashed border-cordel-master-dark/20 flex items-center justify-between bg-white">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">🧾</span>
-              <div>
-                <h3 className="text-base font-extrabold uppercase text-cordel-wood">
-                  Génération de Facture Officielle
-                </h3>
-                <p className="text-[10px] text-stone-500 font-bold">
-                  Prestation : {gig.eventName} ({gig.date})
-                </p>
-              </div>
+      tabIndex={-1}
+      className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 select-none outline-none animate-fade-in"
+    >
+      <div className="relative w-full max-w-3xl max-h-[90dvh] flex flex-col rounded-lg bg-white shadow-2xl border-2 border-cordel-master-dark/40 overflow-hidden text-left">
+        {/* 1. Header (Fixe) */}
+        <div className="shrink-0 p-4 border-b border-dashed border-cordel-master-dark/20 flex items-center justify-between bg-white">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">🧾</span>
+            <div>
+              <h3 className="text-base font-extrabold uppercase text-cordel-wood">
+                Génération de Facture Officielle
+              </h3>
+              <p className="text-[10px] text-stone-500 font-bold">
+                Prestation : {gig.eventName} ({gig.date})
+              </p>
             </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="text-stone-400 hover:text-stone-800 font-bold text-lg cursor-pointer"
-              title="Fermer (Échap)"
-            >
-              ✕
-            </button>
           </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-stone-400 hover:text-stone-800 font-bold text-lg cursor-pointer"
+            title="Fermer (Échap)"
+          >
+            ✕
+          </button>
+        </div>
 
-          {/* 2. Body (Défilable verticalement) */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* 2. Body (Défilable verticalement) */}
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-4">
           {/* Identifiants & Dates Facture */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 bg-[#fdfaf2] border border-encre-noire/20 rounded">
             <div className="flex flex-col gap-1">
@@ -436,19 +439,19 @@ export default function GigInvoiceGeneratorModal({
           </div>
         </div>
 
-        {/* Boutons d'Action */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-dashed">
+        {/* 3. Footer (Fixe en bas) */}
+        <div className="shrink-0 p-4 border-t border-dashed border-cordel-master-dark/20 flex flex-wrap items-center justify-between gap-2 bg-[var(--theme-bg)] pb-[max(env(safe-area-inset-bottom),1rem)]">
           <button
             type="button"
             onClick={handleDownloadPDF}
-            className="text-[11px] font-bold text-stone-600 hover:text-stone-900 underline cursor-pointer flex items-center gap-1"
+            className="text-[11px] font-bold text-stone-600 hover:text-stone-900 underline cursor-pointer flex items-center gap-1 shrink-0"
             title="Télécharger directement le PDF de la facture sans envoyer d'e-mail"
           >
             <span>📥 Télécharger la Facture PDF (Secours)</span>
           </button>
 
-          <div className="flex items-center gap-2">
-            <CordelButton type="button" variant="default" onClick={onClose} className="text-xs">
+          <div className="flex items-center gap-2 shrink-0">
+            <CordelButton type="button" variant="default" onClick={onClose} className="text-xs shrink-0">
               Annuler
             </CordelButton>
             <CordelButton
@@ -456,7 +459,7 @@ export default function GigInvoiceGeneratorModal({
               variant="vert"
               onClick={handleSaveAndRegister}
               disabled={saving}
-              className="text-xs font-extrabold flex items-center gap-1.5"
+              className="text-xs font-extrabold flex items-center gap-1.5 shrink-0"
             >
               <span>{saving ? 'Émission...' : '✉️ Valider & Envoyer la Facture (Brevo)'}</span>
             </CordelButton>

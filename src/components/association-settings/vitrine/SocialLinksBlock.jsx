@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '../../../hooks/useTranslation';
 
 /**
  * Bloc d'édition des 8 liens vers les réseaux sociaux et plateformes musicales.
@@ -8,6 +9,7 @@ export default function SocialLinksBlock({
   handleChange,
   saving
 }) {
+  const { t } = useTranslation();
   const socialLinks = publicTheme.socialLinks || {};
 
   const handleSocialLinkChange = (network, value) => {
@@ -21,23 +23,25 @@ export default function SocialLinksBlock({
   };
 
   const NETWORKS = [
-    { key: 'facebook', label: '📘 Facebook', placeholder: 'https://facebook.com/votre-page' },
-    { key: 'instagram', label: '📸 Instagram', placeholder: 'https://instagram.com/votre-compte' },
-    { key: 'youtube', label: '🎬 YouTube', placeholder: 'https://youtube.com/@votre-chaine' },
-    { key: 'tiktok', label: '🎵 TikTok', placeholder: 'https://tiktok.com/@votre-compte' },
-    { key: 'snapchat', label: '👻 Snapchat', placeholder: 'https://snapchat.com/ajouter/...' },
-    { key: 'whatsapp', label: '💬 WhatsApp', placeholder: 'https://chat.whatsapp.com/...' },
-    { key: 'linkedin', label: '💼 LinkedIn', placeholder: 'https://linkedin.com/company/...' },
-    { key: 'spotify', label: '🎧 Spotify / Musique', placeholder: 'https://open.spotify.com/artist/...' }
+    { key: 'facebook', label: t('vitrine.admin.socialNewsletter.socialLinksBlock.facebook'), placeholder: 'https://facebook.com/votre-page' },
+    { key: 'instagram', label: t('vitrine.admin.socialNewsletter.socialLinksBlock.instagram'), placeholder: 'https://instagram.com/votre-compte' },
+    { key: 'youtube', label: t('vitrine.admin.socialNewsletter.socialLinksBlock.youtube'), placeholder: 'https://youtube.com/@votre-chaine' },
+    { key: 'tiktok', label: t('vitrine.admin.socialNewsletter.socialLinksBlock.tiktok'), placeholder: 'https://tiktok.com/@votre-compte' },
+    { key: 'snapchat', label: t('vitrine.admin.socialNewsletter.socialLinksBlock.snapchat'), placeholder: 'https://snapchat.com/ajouter/...' },
+    { key: 'whatsapp', label: t('vitrine.admin.socialNewsletter.socialLinksBlock.whatsapp'), placeholder: 'https://chat.whatsapp.com/...' },
+    { key: 'linkedin', label: t('vitrine.admin.socialNewsletter.socialLinksBlock.linkedin'), placeholder: 'https://linkedin.com/company/...' },
+    { key: 'spotify', label: t('vitrine.admin.socialNewsletter.socialLinksBlock.spotifyMusique'), placeholder: 'https://open.spotify.com/artist/...' }
   ];
 
   return (
     <div className="flex flex-col gap-3 p-3 bg-cordel-bg-light border border-encre-noire/20 rounded-[4px_6px_3px_5px]">
       <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-1.5">
         <span className="text-xs font-bold uppercase tracking-wider text-encre-noire">
-          🌐 Liens des Réseaux Sociaux
+          {t('vitrine.admin.socialNewsletter.socialLinksBlock.liensDesReseauxSociaux')}
         </span>
-        <span className="text-[10px] text-stone-500 font-normal">Affichage sur la vitrine</span>
+        <span className="text-[10px] text-stone-500 font-normal">
+          {t('vitrine.admin.socialNewsletter.socialLinksBlock.affichageSurLaVitrine')}
+        </span>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -60,3 +64,4 @@ export default function SocialLinksBlock({
     </div>
   );
 }
+

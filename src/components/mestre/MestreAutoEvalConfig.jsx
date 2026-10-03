@@ -326,7 +326,7 @@ export default function MestreAutoEvalConfig({ profileData, isEmbedded }) {
                       { key: 'monParcoursDanse', label: 'Danse', isDefaultFalse: false },
                       { key: 'monParcoursChant', label: t('mestre.pedagogy.disciplineSinging'), isDefaultFalse: false },
                       { key: 'monParcoursAtelier', label: t('mestre.pedagogy.disciplineWorkshopCraft'), isDefaultFalse: false },
-                      { key: 'monParcoursCulture', label: 'Culture', isDefaultFalse: false },
+                      { key: 'monParcoursCulture', label: t('pedagogy.admin.culture'), isDefaultFalse: false },
                       { key: 'defisRythmiques', label: t('mestre.pedagogy.disciplineRhythmChallenges'), isDefaultFalse: true }
                     ].map(mp => {
                       const isChecked = mp.isDefaultFalse

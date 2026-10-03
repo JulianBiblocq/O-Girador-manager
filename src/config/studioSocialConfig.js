@@ -9,25 +9,29 @@
 export const EMOJI_CATEGORIES = [
   {
     id: 'nature',
-    label: 'Éléments & Nature',
+    labelKey: 'studio.communication.elementsNature',
+    get label() { return 'Éléments & Nature'; },
     icon: '🌿',
     emojis: ['⚡', '🌩️', '🌧️', '☀️', '🔥', '🌊', '🌿', '🪴', '🌴', '🍃']
   },
   {
     id: 'rythme',
-    label: 'Rythme & Danse',
+    labelKey: 'studio.communication.rythmeDanse',
+    get label() { return 'Rythme & Danse'; },
     icon: '🥁',
     emojis: ['🥁', '💃', '🕺', '🤸', '🎶', '🔊']
   },
   {
     id: 'fete',
-    label: 'Fête & Cortège',
+    labelKey: 'studio.communication.feteCortege',
+    get label() { return 'Fête & Cortège'; },
     icon: '🎉',
     emojis: ['🎉', '🎊', '👑', '✨', '🥳', '🎭', '🎪', '🪅']
   },
   {
     id: 'pratique',
-    label: 'Infos pratiques',
+    labelKey: 'studio.communication.infosPratiques',
+    get label() { return 'Infos pratiques'; },
     icon: '📅',
     emojis: ['📅', '📍', '⏰', '🎟️', '🔗', '📸']
   }
@@ -56,8 +60,8 @@ export const DEFAULT_STUDIO_MENTIONS = [
  * Mentions par défaut pour les réseaux sociaux (format objet avec libellé et handle)
  */
 export const DEFAULT_STUDIO_MENTIONS_OBJECTS = [
-  { id: 'men-1', label: 'O Girador', handle: '@ogirador' },
-  { id: 'men-2', label: 'Maracatu', handle: '@maracatu' }
+  { id: 'men-1', labelKey: 'studio.communication.oGirador', get label() { return 'O Girador'; }, handle: '@ogirador' },
+  { id: 'men-2', labelKey: 'studio.communication.maracatu', get label() { return 'Maracatu'; }, handle: '@maracatu' }
 ];
 
 /**

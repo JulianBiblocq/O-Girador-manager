@@ -4,6 +4,7 @@ import { db } from '../../firebase';
 import XiloAvatar from '../XiloAvatar';
 import EmptyState from '../EmptyState';
 import useConfirm from '../../hooks/useConfirm';
+import useModalEscape from '../../hooks/useModalEscape';
 
 /**
  * Modale d'audit et de vue inverse des membres porteurs d'un badge spécifique.
@@ -21,6 +22,9 @@ export default function TagMembersAuditModal({ tag, members = [], groupId, onClo
   const [removingMemberId, setRemovingMemberId] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
   const toastTimerRef = useRef(null);
+
+  // Fermeture accessible avec touche Échap
+  useModalEscape(Boolean(tag), onClose);
 
   // Affichage temporisé du toast de succès (vert validation Cordel)
   const showToast = useCallback((msg) => {
@@ -99,7 +103,7 @@ export default function TagMembersAuditModal({ tag, members = [], groupId, onClo
       onClick={onClose}
     >
       <div 
-        className="relative w-full max-w-lg max-h-[85dvh] flex flex-col bg-cordel-bg border-2 border-encre-noire shadow-[4px_4px_0px_0px_#181716] rounded-[8px_12px_10px_14px] overflow-hidden text-encre-noire"
+        className="relative w-full max-w-lg max-h-[90dvh] flex flex-col bg-cordel-bg border-2 border-encre-noire shadow-[4px_4px_0px_0px_#181716] rounded-[8px_12px_10px_14px] overflow-hidden text-encre-noire mt-2 sm:mt-0"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Toast de validation Cordel flottant */}
@@ -112,7 +116,7 @@ export default function TagMembersAuditModal({ tag, members = [], groupId, onClo
 
         {/* En-tête de la modale */}
         <div className="p-4 border-b-2 border-encre-noire/20 bg-cordel-bg-light flex items-start justify-between gap-3 shrink-0">
-          <div className="flex flex-col gap-1.5 min-w-0 flex-1">
+          <div className="flex flex-col gap-1.5 min-w-0 flex-1 pr-2">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-[10px] font-black uppercase tracking-widest text-cordel-wood bg-cordel-wood/10 px-2 py-0.5 rounded border border-cordel-wood/30">
                 Audit d'attribution
@@ -146,10 +150,11 @@ export default function TagMembersAuditModal({ tag, members = [], groupId, onClo
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded border border-encre-noire bg-cordel-bg hover:bg-white text-encre-noire flex items-center justify-center font-black text-sm shadow-[1px_1px_0px_0px_#181716] cursor-pointer shrink-0 transition-transform active:scale-95"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center -mr-2 -mt-2 rounded-lg text-encre-noire hover:text-cordel-wood hover:bg-black/5 active:bg-black/10 transition-colors cursor-pointer shrink-0 select-none touch-manipulation"
             title="Fermer"
+            aria-label="Fermer"
           >
-            ✕
+            <span className="text-xl font-black leading-none pointer-events-none">✕</span>
           </button>
         </div>
 
@@ -231,14 +236,14 @@ export default function TagMembersAuditModal({ tag, members = [], groupId, onClo
         </div>
 
         {/* Pied de la modale */}
-        <div className="p-3 pb-safe border-t-2 border-encre-noire/20 bg-cordel-bg-light flex justify-between items-center shrink-0">
+        <div className="p-3 sm:p-4 border-t-2 border-encre-noire/20 bg-[var(--theme-bg)] flex justify-between items-center shrink-0 pb-[max(env(safe-area-inset-bottom),1rem)]">
           <span className="text-[10px] text-cordel-master-dark/60 font-medium italic">
             Les modifications sont immédiatement répercutées sur les permissions.
           </span>
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-1.5 border border-encre-noire bg-cordel-bg hover:bg-white text-encre-noire rounded font-extrabold text-xs shadow-[1px_1px_0px_0px_#181716] cursor-pointer transition-transform active:scale-95"
+            className="px-4 py-1.5 border border-encre-noire bg-cordel-bg hover:bg-white text-encre-noire rounded font-extrabold text-xs shadow-[1px_1px_0px_0px_#181716] cursor-pointer transition-transform active:scale-95 shrink-0"
           >
             Fermer
           </button>

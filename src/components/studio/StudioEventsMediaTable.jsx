@@ -160,7 +160,7 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false, onSw
       }, 2000);
     } catch (err) {
       console.error("Erreur sauvegarde lienDepotMedias :", err);
-      alert("Erreur lors de l'enregistrement du lien de dépôt.");
+      alert(t('studio.photos.erreurLorsDeLEnregistrement'));
     } finally {
       setRowStates((prev) => ({
         ...prev,
@@ -256,7 +256,7 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false, onSw
       }, 2000);
     } catch (err) {
       console.error("Erreur synchronisation albumPhotosUrl / documents :", err);
-      alert("Erreur lors de la synchronisation de l'album avec le Varal.");
+      alert(t('studio.photos.erreurLorsDeLaSynchronisation'));
     } finally {
       setRowStates((prev) => ({
         ...prev,
@@ -275,7 +275,7 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false, onSw
     const currentState = rowStates[event.id];
     const depotUrl = (currentState?.lienDepotMedias || event.lienDepotMedias || '').trim();
     if (!depotUrl) {
-      alert("Aucun lien de dépôt n'est disponible pour cet événement.");
+      alert(t('studio.photos.aucunLienDeDepotN'));
       return;
     }
 
@@ -567,7 +567,7 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false, onSw
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Rechercher un concert, répétition ou lieu..."
+            placeholder={t('studio.photos.rechercherUnConcertRepetitionOu')}
             className="theme-input w-full px-2.5 py-1 text-xs font-bold rounded border border-encre-noire bg-white text-encre-noire"
           />
           {searchQuery && (
@@ -592,7 +592,7 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false, onSw
                 : 'bg-cordel-bg text-encre-noire/80 border-encre-noire/40 hover:border-encre-noire'
             }`}
           >
-            📸 Prestations & Récoltes actives
+            {t('studio.photos.prestationsRecoltesActives')}
           </button>
           <button
             type="button"
@@ -603,7 +603,7 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false, onSw
                 : 'bg-cordel-bg text-encre-noire/80 border-encre-noire/40 hover:border-encre-noire'
             }`}
           >
-            🪢 Sur le Varal
+            {t('studio.photos.surLeVaral')}
           </button>
           <button
             type="button"
@@ -614,7 +614,7 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false, onSw
                 : 'bg-cordel-bg text-encre-noire/80 border-encre-noire/40 hover:border-encre-noire'
             }`}
           >
-            🌱 À venir
+            {t('studio.photos.aVenir')}
           </button>
           <button
             type="button"
@@ -625,7 +625,7 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false, onSw
                 : 'bg-cordel-bg text-encre-noire/80 border-encre-noire/40 hover:border-encre-noire'
             }`}
           >
-            📋 Toutes les dates ({events.length})
+            {t('studio.photos.toutesLesDates')} ({events.length})
           </button>
         </div>
       </div>
@@ -635,12 +635,12 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false, onSw
         <div className="py-12 flex flex-col items-center justify-center gap-2 bg-cordel-card-bg border-2 border-dashed border-encre-noire/30 rounded p-6">
           <span className="text-2xl animate-spin">⏳</span>
           <span className="text-xs font-black uppercase tracking-wider text-cordel-wood">
-            Chargement des événements de l'association...
+            {t('studio.photos.chargementDesEvenementsDeL')}
           </span>
         </div>
       ) : filteredEvents.length === 0 ? (
         <div className="py-10 text-center text-xs font-bold text-encre-noire/60 bg-cordel-card-bg border-2 border-dashed border-encre-noire/30 rounded p-6">
-          Aucun événement trouvé pour ces critères de recherche.
+          {t('studio.photos.aucunEvenementTrouvePourCes')}
         </div>
       ) : (
         <div className="flex flex-col gap-2.5">

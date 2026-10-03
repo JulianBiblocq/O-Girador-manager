@@ -293,7 +293,7 @@ export default function WardrobeManager({
               data-tab-id="couture"
               data-tab-active={currentActiveTab === 'couture' ? 'true' : 'false'}
               onClick={() => setLocalTab('couture')}
-              className={`shrink-0 whitespace-nowrap min-h-[40px] px-3.5 py-1.5 text-sm font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 select-none ${
+              className={`shrink-0 whitespace-nowrap min-h-[40px] lg:min-h-0 px-3.5 py-1.5 lg:px-2.5 lg:py-1 text-sm lg:text-xs font-black uppercase tracking-wider lg:tracking-wide rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 select-none ${
                 currentActiveTab === 'couture'
                   ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
                   : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
@@ -307,7 +307,7 @@ export default function WardrobeManager({
               data-tab-id="inventory"
               data-tab-active={currentActiveTab === 'inventory' ? 'true' : 'false'}
               onClick={() => setLocalTab('inventory')}
-              className={`shrink-0 whitespace-nowrap min-h-[40px] px-3.5 py-1.5 text-sm font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 select-none ${
+              className={`shrink-0 whitespace-nowrap min-h-[40px] lg:min-h-0 px-3.5 py-1.5 lg:px-2.5 lg:py-1 text-sm lg:text-xs font-black uppercase tracking-wider lg:tracking-wide rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 select-none ${
                 currentActiveTab === 'inventory'
                   ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
                   : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
@@ -321,7 +321,7 @@ export default function WardrobeManager({
               data-tab-id="supplies"
               data-tab-active={currentActiveTab === 'supplies' ? 'true' : 'false'}
               onClick={() => setLocalTab('supplies')}
-              className={`shrink-0 whitespace-nowrap min-h-[40px] px-3.5 py-1.5 text-sm font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 select-none ${
+              className={`shrink-0 whitespace-nowrap min-h-[40px] lg:min-h-0 px-3.5 py-1.5 lg:px-2.5 lg:py-1 text-sm lg:text-xs font-black uppercase tracking-wider lg:tracking-wide rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 select-none ${
                 currentActiveTab === 'supplies'
                   ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
                   : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
@@ -335,7 +335,7 @@ export default function WardrobeManager({
               data-tab-id="tools"
               data-tab-active={currentActiveTab === 'tools' ? 'true' : 'false'}
               onClick={() => setLocalTab('tools')}
-              className={`shrink-0 whitespace-nowrap min-h-[40px] px-3.5 py-1.5 text-sm font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 select-none ${
+              className={`shrink-0 whitespace-nowrap min-h-[40px] lg:min-h-0 px-3.5 py-1.5 lg:px-2.5 lg:py-1 text-sm lg:text-xs font-black uppercase tracking-wider lg:tracking-wide rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 select-none ${
                 currentActiveTab === 'tools'
                   ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
                   : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
@@ -349,7 +349,7 @@ export default function WardrobeManager({
               data-tab-id="sizes"
               data-tab-active={currentActiveTab === 'sizes' ? 'true' : 'false'}
               onClick={() => setLocalTab('sizes')}
-              className={`shrink-0 whitespace-nowrap min-h-[40px] px-3.5 py-1.5 text-sm font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 select-none ${
+              className={`shrink-0 whitespace-nowrap min-h-[40px] lg:min-h-0 px-3.5 py-1.5 lg:px-2.5 lg:py-1 text-sm lg:text-xs font-black uppercase tracking-wider lg:tracking-wide rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 select-none ${
                 currentActiveTab === 'sizes'
                   ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
                   : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from '../LanguageContext';
 import { CULTURAL_EQUIVALENCES } from '../../config/studioSocialConfig';
 
 export { CULTURAL_EQUIVALENCES };
@@ -15,6 +16,7 @@ export default function StudioWritingGuide({
   onInsertTerm,
   equivalences = CULTURAL_EQUIVALENCES
 }) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const effectiveEquivalences = Array.isArray(equivalences) && equivalences.length > 0
     ? equivalences
@@ -28,9 +30,9 @@ export default function StudioWritingGuide({
           type="button"
           onClick={() => setIsOpen((prev) => !prev)}
           className="text-[10.5px] font-black uppercase text-cordel-wood hover:text-encre-noire flex items-center gap-1.5 cursor-pointer select-none py-0.5"
-          title="Consulter les équivalences culturelles et bonnes pratiques"
+          title={t('studio.communication.consulterLesEquivalencesCulturellesEt')}
         >
-          <span>💡 Lexique & Recommandations de rédaction</span>
+          <span>{t('studio.communication.lexiqueRecommandationsDeRedaction')}</span>
           <span className="text-[9px] transition-transform duration-200">
             {isOpen ? '▲' : '▼'}
           </span>
@@ -38,7 +40,7 @@ export default function StudioWritingGuide({
 
         {isOpen && (
           <span className="text-[9px] text-cordel-master-dark/70 italic hidden sm:inline select-none">
-            Cliquez sur un terme vert pour l'insérer
+            {t('studio.communication.cliquezSurUnTermeVert')}
           </span>
         )}
       </div>
@@ -50,9 +52,9 @@ export default function StudioWritingGuide({
             <table className="w-full text-left text-[11px] border-collapse min-w-[340px]">
               <thead>
                 <tr className="border-b-2 border-encre-noire/20 text-[9.5px] uppercase font-black tracking-wider text-cordel-wood">
-                  <th className="py-1 px-2">Terme recommandé</th>
-                  <th className="py-1 px-2">À éviter / Imprécis</th>
-                  <th className="py-1 px-2">Contexte & Nuance</th>
+                  <th className="py-1 px-2">{t('studio.communication.termeRecommande')}</th>
+                  <th className="py-1 px-2">{t('studio.communication.aEviterImprecis')}</th>
+                  <th className="py-1 px-2">{t('studio.communication.contexteNuance')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-cordel-master-dark/10">

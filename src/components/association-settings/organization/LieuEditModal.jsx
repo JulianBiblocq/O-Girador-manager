@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import AddressAutocomplete from '../../AddressAutocomplete';
 import ManualMapMarkerModal from '../../agenda/ManualMapMarkerModal';
 import CordelButton from '../../CordelButton';
+import useModalEscape from '../../../hooks/useModalEscape';
 
 /**
  * Modale / Formulaire d'édition ou création d'un lieu important avec coordonnées GPS.
@@ -14,6 +15,9 @@ export default function LieuEditModal({ initialLieu, isOpen, onClose, onSave, sa
   const [latitude, setLatitude] = useState(initialLieu?.latitude ?? null);
   const [longitude, setLongitude] = useState(initialLieu?.longitude ?? null);
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+
+  // Fermeture accessible avec touche Échap
+  useModalEscape(isOpen, onClose, saving);
 
   // Réinitialisation ou synchronisation des états à chaque changement du lieu ou à l'ouverture
   React.useEffect(() => {
@@ -131,11 +135,11 @@ export default function LieuEditModal({ initialLieu, isOpen, onClose, onSave, sa
           </div>
 
           {/* Étage 3 : Actions fixes avec pb-safe */}
-          <div className="shrink-0 flex justify-end gap-2 p-4 pb-safe border-t border-dashed border-cordel-master-dark/20 bg-cordel-bg-light/40">
+          <div className="shrink-0 flex justify-end gap-2 p-4 border-t border-dashed border-cordel-master-dark/20 bg-[var(--theme-bg)] pb-[max(env(safe-area-inset-bottom),1rem)]">
             <button
               type="button"
               onClick={onClose}
-              className="text-xs font-bold px-3 py-1.5 bg-neutral-200 hover:bg-neutral-300 rounded text-encre-noire cursor-pointer"
+              className="text-xs font-bold px-3 py-1.5 bg-neutral-200 hover:bg-neutral-300 rounded text-encre-noire cursor-pointer shrink-0"
             >
               Annuler
             </button>
@@ -144,7 +148,7 @@ export default function LieuEditModal({ initialLieu, isOpen, onClose, onSave, sa
               variant="vert"
               useExtremeBorder={true}
               disabled={saving}
-              className="text-xs font-black uppercase px-4 py-1.5 cursor-pointer"
+              className="text-xs font-black uppercase px-4 py-1.5 cursor-pointer shrink-0"
             >
               Enregistrer
             </CordelButton>

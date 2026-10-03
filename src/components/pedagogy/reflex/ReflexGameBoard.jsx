@@ -1,5 +1,6 @@
 import React from 'react';
 import PatternVisualizer from '../PatternVisualizer';
+import { useTranslation } from '../../LanguageContext';
 
 /**
  * Plateau de jeu du Défi Réflexe présentant les 4 cartes de tablatures.
@@ -19,6 +20,7 @@ export default function ReflexGameBoard({
   onSelectOption,
   disabled = false
 }) {
+  const { t } = useTranslation();
   if (!Array.isArray(options) || options.length === 0) {
     return null;
   }
@@ -31,12 +33,8 @@ export default function ReflexGameBoard({
   return (
     <div className="w-full flex flex-col gap-3">
       <div className="flex items-center justify-between px-1">
-        <span className="text-[10px] font-black uppercase tracking-wider text-cordel-master-dark/70">
-          Quelle est la tablature du Temps 1 de la mesure suivante ?
-        </span>
-        <span className="text-[9px] font-bold text-encre-noire/50">
-          4 propositions
-        </span>
+        <span className="text-[10px] font-black uppercase tracking-wider text-cordel-master-dark/70">{t('pedagogy.reflex.quelleEstLaTablatureDu')}</span>
+        <span className="text-[9px] font-bold text-encre-noire/50">{t('pedagogy.reflex.quatrePropositions')}</span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -71,19 +69,19 @@ export default function ReflexGameBoard({
                   <span className="w-5 h-5 rounded-full bg-encre-noire/10 flex items-center justify-center text-[10px] font-bold">
                     {String.fromCharCode(65 + idx)}
                   </span>
-                  <span>Option {idx + 1}</span>
+                  <span>{t('pedagogy.reflex.option')} {idx + 1}</span>
                 </span>
 
                 {isSuccess && (
                   <span className="text-[10px] font-black uppercase tracking-wider text-[var(--color-cordel-vert,#2d6a4f)] flex items-center gap-1">
                     <span>✓</span>
-                    <span>Bonne réponse</span>
+                    <span>{t('pedagogy.reflex.bonneReponse')}</span>
                   </span>
                 )}
                 {isError && (
                   <span className="text-[10px] font-black uppercase tracking-wider text-[var(--color-cordel-rouge,#8b2a1a)] flex items-center gap-1">
                     <span>✗</span>
-                    <span>Erreur</span>
+                    <span>{t('pedagogy.reflex.erreur')}</span>
                   </span>
                 )}
               </div>

@@ -109,7 +109,7 @@ export default function AutoEvalQuiz({
           <p className="text-sm font-bold opacity-75 mb-4">
             {isAdmin ? adminMsg : studentMsg}
           </p>
-          <CordelButton variant="default" onClick={onClose}>Fermer</CordelButton>
+          <CordelButton variant="default" onClick={onClose}>{t('pedagogy.progress.fermer')}</CordelButton>
         </CordelCard>
       </div>
     );
@@ -240,7 +240,7 @@ export default function AutoEvalQuiz({
     }
   };
 
-  const percentage = score / questions.length;
+  const percentage = questions.length > 0 ? score / questions.length : 0;
   const isSuccess = percentage >= 0.75;
 
   const getSequencerUrl = () => {
@@ -267,13 +267,23 @@ export default function AutoEvalQuiz({
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4 select-none animate-fadeIn">
-      <CordelCard variant="default" useExtremeBorder={true} className="w-full max-w-lg p-6 text-left relative bg-cordel-bg shadow-xl">
+      <CordelCard variant="default" useExtremeBorder={true} className="w-full max-w-lg p-6 text-left relative bg-cordel-bg shadow-xl mt-2 sm:mt-0">
         
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute top-2 right-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-cordel-wood hover:bg-black/5 active:bg-black/10 transition-colors cursor-pointer select-none touch-manipulation z-10"
+          title={t('common.close', 'Fermer')}
+          aria-label={t('common.close', 'Fermer')}
+        >
+          <span className="text-xl font-black leading-none pointer-events-none">✕</span>
+        </button>
+
         {!isFinished ? (
           <div className="flex flex-col gap-5">
-            <div className="flex justify-between items-end border-b-2 border-dashed border-cordel-master-dark/20 pb-2">
+            <div className="flex justify-between items-end border-b-2 border-dashed border-cordel-master-dark/20 pb-2 pr-10">
               <h3 className="text-sm font-extrabold text-cordel-wood uppercase tracking-wider">
-                🧠 Quiz : {isTranslationQuiz ? (customQuizTitle || t('pedagogy.translationQuizTitle', "Traduction & Vocabulaire")) : (isSong ? songData?.titre : (sheetData?.themeCulture === 'orixas' && sheetData?.personnageOrisha ? sheetData.personnageOrisha : (sheetData?.titre || customQuizTitle || 'Personnalisé')))}
+                {t('pedagogy.progress.quiz')} {isTranslationQuiz ? (customQuizTitle || t('pedagogy.translationQuizTitle', "Traduction & Vocabulaire")) : (isSong ? songData?.titre : (sheetData?.themeCulture === 'orixas' && sheetData?.personnageOrisha ? sheetData.personnageOrisha : (sheetData?.titre || customQuizTitle || 'Personnalisé')))}
               </h3>
               <span className="text-[10px] font-black text-cordel-master-dark/50">
                 {t('pedagogy.questionProgress', { current: currentIndex + 1, total: questions.length })}
@@ -282,12 +292,12 @@ export default function AutoEvalQuiz({
 
             <div className="flex flex-col mb-4">
               <span className="text-[10px] font-black uppercase text-cordel-master-dark opacity-70 tracking-widest mb-1">
-                {currentQuestion.instruction || "Question"}
+                {currentQuestion.instruction || t('pedagogy.progress.question')}
               </span>
               
               {(currentQuestion.questionImage || currentQuestion.imageUrl) && (
                 <div className="w-full flex justify-center mb-4 mt-2">
-                  <img src={currentQuestion.questionImage || currentQuestion.imageUrl} alt="Illustration de la question" className="max-h-48 rounded-lg shadow-md border-2 border-cordel-master-dark/20 object-contain bg-white/50 p-2" />
+                  <img src={currentQuestion.questionImage || currentQuestion.imageUrl} alt={t('pedagogy.progress.illustrationDeLaQuestion')} className="max-h-48 rounded-lg shadow-md border-2 border-cordel-master-dark/20 object-contain bg-white/50 p-2" />
                 </div>
               )}
 
@@ -386,11 +396,10 @@ export default function AutoEvalQuiz({
             {showFeedback && (
               <div className={`mt-4 p-4 rounded-lg border-2 flex flex-col gap-2 w-full animate-fadeIn text-left ${selectedChoice?.isCorrect ? 'bg-cordel-vert/10 border-cordel-vert' : 'bg-cordel-ocre/10 border-cordel-ocre'}`}>
                 <h4 className={`text-sm font-black uppercase tracking-wider ${selectedChoice?.isCorrect ? 'text-cordel-vert' : 'text-cordel-ocre'}`}>
-                  {selectedChoice?.isCorrect ? "✅ Bien joué !" : "🌱 Presque !"}
+                  {selectedChoice?.isCorrect ? t('pedagogy.progress.bienJoue') : t('pedagogy.progress.presque')}
                 </h4>
                 {!selectedChoice?.isCorrect && (
-                  <p className="text-xs font-bold text-encre-noire/80">
-                    La bonne réponse était : <span className="font-black">{currentQuestion.choices ? currentQuestion.choices.find(c => c.isCorrect)?.text : currentQuestion.correctAnswer}</span>
+                  <p className="text-xs font-bold text-encre-noire/80">{t('pedagogy.progress.laBonneReponseEtait')}<span className="font-black">{currentQuestion.choices ? currentQuestion.choices.find(c => c.isCorrect)?.text : currentQuestion.correctAnswer}</span>
                     {currentQuestion.correctAnswerExplanation ? ` - ${currentQuestion.correctAnswerExplanation}` : ''}
                   </p>
                 )}
@@ -406,47 +415,41 @@ export default function AutoEvalQuiz({
               <CordelButton variant="default" onClick={onClose} className="text-[10px] px-3 py-1 font-black uppercase">{t('pedagogy.btnQuitTraining')}</CordelButton>
               {showFeedback && (
                 <CordelButton variant="ocre" onClick={handleNext} className="text-[10px] font-black uppercase px-4 py-1.5 animate-pulse">
-                  {currentIndex < questions.length - 1 ? "Question Suivante ➔" : "Voir le Résultat 🏆"}
+                  {currentIndex < questions.length - 1 ? t('pedagogy.progress.questionSuivante') : t('pedagogy.progress.voirLeResultat')}
                 </CordelButton>
               )}
             </div>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-4 py-6 text-center">
-            <h3 className="text-2xl font-heading text-cordel-wood uppercase tracking-widest">
-              Résultat du Quiz
-            </h3>
+            <h3 className="text-2xl font-heading text-cordel-wood uppercase tracking-widest">{t('pedagogy.progress.resultatDuQuiz')}</h3>
             
             <div className="text-4xl my-2">
               {isSuccess ? "🎉" : "💪"}
             </div>
             
             <p className="text-sm font-bold text-encre-noire">
-              Tu as obtenu {score} bonne(s) réponse(s) sur {questions.length} !
+              {t('pedagogy.progress.tuAsObtenu')} {score} {t('pedagogy.progress.bonnesReponsesSur')} {questions.length} !
             </p>
 
             {isSuccess ? (
               <div className="bg-[var(--color-cordel-vert)]/10 p-4 rounded-lg border border-[#2d6a4f]/30 flex flex-col gap-2 w-full mt-2">
-                <p className="text-xs font-bold text-[var(--color-cordel-vert)]">
-                  Superbe ! Ton niveau de confort sur ce sujet augmente !
-                </p>
+                <p className="text-xs font-bold text-[var(--color-cordel-vert)]">{t('pedagogy.progress.superbeTonNiveauDeConfort')}</p>
                 <div className="flex justify-center items-center gap-2 text-lg">
                   <span className="opacity-50 blur-[1px]">🌱</span> ➔ <span>🌿</span> ➔ <span className="opacity-50 blur-[1px]">🌳</span>
                 </div>
-                {isSaving && <span className="text-[9px] animate-pulse">Sauvegarde en cours...</span>}
-                {savedSuccess && <span className="text-[10px] font-black uppercase text-[var(--color-cordel-vert)]">Progression enregistrée ✅</span>}
+                {isSaving && <span className="text-[9px] animate-pulse">{t('pedagogy.progress.sauvegardeEnCours')}</span>}
+                {savedSuccess && <span className="text-[10px] font-black uppercase text-[var(--color-cordel-vert)]">{t('pedagogy.progress.progressionEnregistree')}</span>}
               </div>
             ) : (
               <div className="bg-[var(--color-cordel-ocre)]/10 p-4 rounded-lg border border-[#c05621]/30 flex flex-col gap-2 w-full mt-2">
-                <p className="text-xs font-bold text-[var(--color-cordel-ocre)]">
-                  Tu y es presque ! N'hésite pas à relire la fiche et à retenter ta chance.
-                </p>
+                <p className="text-xs font-bold text-[var(--color-cordel-ocre)]">{t('pedagogy.progress.tuYEsPresqueN')}</p>
               </div>
             )}
 
             <div className="flex justify-center flex-wrap gap-4 mt-6">
               <CordelButton variant="default" onClick={onClose} className="px-6 py-2 text-xs font-bold">
-                {isSuccess ? "Fermer" : (isTranslationQuiz ? "Réessayer" : (isSong ? "Relire le chant" : "Relire la fiche"))}
+                {isSuccess ? t('pedagogy.progress.fermer') : (isTranslationQuiz ? "Réessayer" : (isSong ? "Relire le chant" : "Relire la fiche"))}
               </CordelButton>
               {seqUrl && (
                 <button 
@@ -456,9 +459,7 @@ export default function AutoEvalQuiz({
                     launchCrossApp(seqUrl, { appLabel: 'le Séquenceur' });
                   }}
                   className="px-6 py-2 text-xs font-black uppercase tracking-widest bg-[var(--color-cordel-vert,#2d6a4f)] text-white rounded border border-[#1b4332] shadow-[2px_2px_0px_0px_#1b4332] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all flex items-center justify-center cursor-pointer"
-                >
-                  🎧 S'entraîner sur le Séquenceur
-                </button>
+                >{t('pedagogy.progress.sEntrainerSurLeSequenceur')}</button>
               )}
             </div>
           </div>

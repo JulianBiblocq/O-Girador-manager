@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import ConductorMeasureSlot from './ConductorMeasureSlot';
+import { useTranslation } from '../../LanguageContext';
 
 /**
  * Frise chronologique (Timeline) du jeu du Conducteur à trous.
@@ -21,6 +22,7 @@ export default function ConductorTimeline({
   currentPlayheadMeasure = null,
   onClickSlot
 }) {
+  const { t } = useTranslation();
   const containerRef = useRef(null);
 
   // Auto-scroll doux pour suivre la tête de lecture si l'audio défile
@@ -43,11 +45,9 @@ export default function ConductorTimeline({
       <div className="flex items-center justify-between px-1">
         <span className="text-[10px] font-black uppercase tracking-wider text-cordel-master-dark/70 flex items-center gap-1.5">
           <span>📜</span>
-          <span>Frise Chronologique ({totalMeasures} mesures)</span>
+          <span>{t('pedagogy.reflex.friseChronologique')}{totalMeasures} {t('pedagogy.reflex.mesuresFermante')}</span>
         </span>
-        <span className="text-[9px] font-bold text-encre-noire/50 italic">
-          ↔ Défilement horizontal
-        </span>
+        <span className="text-[9px] font-bold text-encre-noire/50 italic">{t('pedagogy.reflex.defilementHorizontal')}</span>
       </div>
 
       {/* Rail horizontal scrollable avec design Cordel */}

@@ -180,10 +180,10 @@ export default function MemberRepertoireView({ groupId, user, profileData, seque
 
       {/* Grille responsive 2 colonnes (PC) / 1 colonne (mobile) */}
       {loading ? (
-        <div className="p-8 text-center text-xs font-bold text-stone-500 animate-pulse">Chargement du répertoire...</div>
+        <div className="p-8 text-center text-xs font-bold text-stone-500 animate-pulse">{t('pedagogy.modals.chargementDuRepertoire')}</div>
       ) : resolvedPieces.length === 0 ? (
         <div className="p-8 text-center bg-white/70 border-2 border-dashed border-cordel-master-dark/30 rounded-lg text-xs font-bold text-stone-600">
-          {searchQuery ? (t('repertoire.noPiecesFound') || 'Aucun morceau ne correspond à votre recherche.') : "Aucun morceau n'est actuellement au programme de la saison."}
+          {searchQuery ? (t('repertoire.noPiecesFound') || 'Aucun morceau ne correspond à votre recherche.') : t('pedagogy.modals.aucunMorceauNEst')}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">

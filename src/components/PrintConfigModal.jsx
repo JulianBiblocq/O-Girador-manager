@@ -23,13 +23,21 @@ export default function PrintConfigModal({ onClose, onConfirm, title = "Impressi
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-2 sm:p-4 print:hidden backdrop-blur-sm">
-      <div className="bg-[#fdfaf2] dark:bg-[#1a1816] rounded-xl shadow-2xl max-w-md w-full border-2 border-encre-noire overflow-hidden flex flex-col max-h-[95vh]">
-        <div className="bg-[#f5f0e6] dark:bg-[#2a2622] p-4 border-b-2 border-encre-noire flex justify-between items-center shrink-0">
-          <h2 className="font-heading tracking-widest text-xl text-encre-noire dark:text-stone-200">
-            🖨️ {title}
-          </h2>
-          <button onClick={onClose} className="text-encre-noire hover:text-cordel-rouge font-black text-xl">
-            ×
+      <div className="bg-[#fdfaf2] dark:bg-[#1a1816] rounded-xl shadow-2xl max-w-md w-full border-2 border-encre-noire overflow-hidden flex flex-col max-h-[95vh] mt-2 sm:mt-0">
+        <div className="bg-[#f5f0e6] dark:bg-[#2a2622] p-4 border-b-2 border-encre-noire flex justify-between items-start gap-3 shrink-0">
+          <div className="flex-1 min-w-0 pr-2">
+            <h2 className="font-heading tracking-widest text-xl text-encre-noire dark:text-stone-200 break-words">
+              🖨️ {title}
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center -mr-2 -mt-2 rounded-lg text-encre-noire hover:text-cordel-rouge hover:bg-black/5 active:bg-black/10 transition-colors cursor-pointer shrink-0 select-none touch-manipulation dark:text-stone-200"
+            title="Fermer"
+            aria-label="Fermer"
+          >
+            <span className="text-xl font-black leading-none pointer-events-none">✕</span>
           </button>
         </div>
         

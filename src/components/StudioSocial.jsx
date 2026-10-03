@@ -269,7 +269,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
             return [{
               id: `video_thumb_${Date.now()}`,
               url: thumbnailUrl,
-              name: 'Miniature Vidéo',
+              name: t('studio.communication.miniatureVideo'),
               source: 'event',
               isCover: prev.length === 0,
               isUploading: false
@@ -280,7 +280,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
       }
     } catch (err) {
       console.error("StudioSocial - Erreur sauvegarde vidéo :", err);
-      alert("Erreur lors de l'enregistrement du lien vidéo.");
+      alert(t('studio.communication.erreurLorsDeLEnregistrement'));
     } finally {
       setSavingVideoUrl(false);
     }
@@ -294,11 +294,11 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
       tag = '#' + tag;
     }
     if (tag.toLowerCase() === '#ogirador') {
-      alert("Le tag #OGirador est fixe et ne peut pas être dupliqué.");
+      alert(t('studio.communication.leTagOgiradorEstFixe'));
       return;
     }
     if (availableSocialTags.includes(tag)) {
-      alert("Ce tag existe déjà.");
+      alert(t('studio.communication.ceTagExisteDeja'));
       return;
     }
     const updatedTags = [...availableSocialTags, tag];
@@ -311,7 +311,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
       setNewSocialTag('');
     } catch (err) {
       console.error("Erreur ajout tag social :", err);
-      alert("Erreur lors de l'ajout du tag.");
+      alert(t('studio.communication.erreurLorsDeLAjout'));
     }
   };
 
@@ -322,15 +322,15 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
       tag = '#' + tag;
     }
     if (tag.toLowerCase() === '#ogirador') {
-      alert("Le tag #OGirador est fixe et ne peut pas être modifié.");
+      alert(t('studio.communication.studioSocial_leTagOgiradorEstFixe'));
       return;
     }
-    const tagMatches = availableSocialTags.some((t, i) => {
-      const existing = typeof t === 'string' ? t : (t?.tag || t?.label || '');
+    const tagMatches = availableSocialTags.some((tagItem, i) => {
+      const existing = typeof tagItem === 'string' ? tagItem : (tagItem?.tag || tagItem?.label || '');
       return i !== idx && existing.toLowerCase() === tag.toLowerCase();
     });
     if (tagMatches) {
-      alert("Ce tag existe déjà.");
+      alert(t('studio.communication.ceTagExisteDeja'));
       return;
     }
     const updatedTags = [...availableSocialTags];
@@ -345,14 +345,14 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
       setEditingTagValue('');
     } catch (err) {
       console.error("Erreur modification tag social :", err);
-      alert("Erreur lors de la modification du tag.");
+      alert(t('studio.communication.erreurLorsDeLaModification'));
     }
   };
 
   const handleDeleteSocialTag = async (tagToDelete) => {
     const tagStr = typeof tagToDelete === 'string' ? tagToDelete : (tagToDelete?.tag || tagToDelete?.label || '');
     if (tagStr.toLowerCase() === '#ogirador') {
-      alert("Le tag #OGirador est fixe et ne peut pas être supprimé.");
+      alert(t('studio.communication.leTagOgiradorEstFixe2'));
       return;
     }
     const ok = await confirm({
@@ -363,8 +363,8 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
       variant: "danger"
     });
     if (!ok) return;
-    const updatedTags = availableSocialTags.filter((t) => {
-      const current = typeof t === 'string' ? t : (t?.tag || t?.label || '');
+    const updatedTags = availableSocialTags.filter((tagItem) => {
+      const current = typeof tagItem === 'string' ? tagItem : (tagItem?.tag || tagItem?.label || '');
       return current !== tagStr;
     });
     try {
@@ -375,7 +375,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
       });
     } catch (err) {
       console.error("Erreur suppression tag social :", err);
-      alert("Erreur lors de la suppression du tag.");
+      alert(t('studio.communication.erreurLorsDeLaSuppression'));
     }
   };
 
@@ -384,12 +384,12 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
     e.preventDefault();
     const term = newLexiqueTerm.trim().toLowerCase();
     if (!term || !groupId) return;
-    const alreadyExists = studioLexique.some((t) => {
-      const label = typeof t === 'string' ? t : (t?.preferred || t?.recommande || t?.term || '');
+    const alreadyExists = studioLexique.some((lexTerm) => {
+      const label = typeof lexTerm === 'string' ? lexTerm : (lexTerm?.preferred || lexTerm?.recommande || lexTerm?.term || '');
       return label.toLowerCase() === term;
     });
     if (alreadyExists) {
-      alert("Ce mot existe déjà dans le lexique.");
+      alert(t('studio.communication.ceMotExisteDejaDans'));
       return;
     }
     const updated = [...studioLexique, term];
@@ -400,7 +400,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
       setNewLexiqueTerm('');
     } catch (err) {
       console.error("Erreur ajout terme lexique :", err);
-      alert("Erreur lors de l'ajout du terme.");
+      alert(t('studio.communication.studioSocial_erreurLorsDeLAjout'));
     }
   };
 
@@ -409,8 +409,8 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
     const targetLabel = typeof termToDelete === 'string'
       ? termToDelete
       : (termToDelete?.preferred || termToDelete?.recommande || termToDelete?.term || '');
-    const updated = studioLexique.filter((t) => {
-      const label = typeof t === 'string' ? t : (t?.preferred || t?.recommande || t?.term || '');
+    const updated = studioLexique.filter((lexTerm) => {
+      const label = typeof lexTerm === 'string' ? lexTerm : (lexTerm?.preferred || lexTerm?.recommande || lexTerm?.term || '');
       return label !== targetLabel;
     });
     try {
@@ -435,7 +435,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
       return h?.toLowerCase() === mention.toLowerCase();
     });
     if (alreadyExists) {
-      alert("Cette mention existe déjà.");
+      alert(t('studio.communication.cetteMentionExisteDeja'));
       return;
     }
 
@@ -455,7 +455,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
       setNewMention('');
     } catch (err) {
       console.error("Erreur ajout mention :", err);
-      alert("Erreur lors de l'ajout de la mention.");
+      alert(t('studio.communication.erreurLorsDeLAjout2'));
     }
   };
 
@@ -732,7 +732,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
       link.click();
     } catch (err) {
       console.error("StudioSocial - Erreur téléchargement :", err);
-      alert("Erreur de téléchargement. Vous pouvez faire un clic droit ou appui long sur l'image pour l'enregistrer.");
+      alert(t('studio.communication.erreurDeTelechargementVousPouvez'));
     }
   };
 
@@ -743,7 +743,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
 
     canvas.toBlob(async (blob) => {
       if (!blob) {
-        alert("Génération de l'image impossible.");
+        alert(t('studio.communication.generationDeLImageImpossible'));
         return;
       }
       
@@ -775,18 +775,18 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
     if (!canvas) return;
 
     if (!navigator.clipboard || !window.ClipboardItem) {
-      alert("Votre navigateur ne prend pas en charge la copie directe d'images dans le presse-papier.");
+      alert(t('studio.communication.votreNavigateurNePrendPas'));
       return;
     }
 
     canvas.toBlob(async (blob) => {
       if (!blob) {
-        alert("Extraction de l'image impossible.");
+        alert(t('studio.communication.extractionDeLImageImpossible'));
         return;
       }
       try {
         if (typeof window === 'undefined' || typeof window.ClipboardItem === 'undefined') {
-          throw new Error("Votre navigateur ne supporte pas la copie directe d'images dans le presse-papier.");
+          throw new Error(t('studio.communication.votreNavigateurNeSupportePas'));
         }
         await navigator.clipboard.write([
           new window.ClipboardItem({ 'image/png': blob })
@@ -805,7 +805,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
   // 16. Envoi pour validation collaborative vers le Forum (Porte-Voix)
   const handleSendForValidation = async () => {
     if (!selectedEvent && !publicationText) {
-      alert("Veuillez sélectionner un événement ou rédiger un texte avant d'envoyer pour validation.");
+      alert(t('studio.communication.veuillezSelectionnerUnEvenementOu'));
       return;
     }
     setSendingValidation(true);
@@ -940,7 +940,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
         setSelectedEvent(prev => prev ? { ...prev, ...eventUpdate } : null);
       }
 
-      alert("🎉 Proposition soumise pour validation ! Le sujet a été ouvert dans le Forum (Porte-Voix).");
+      alert(t('studio.communication.propositionSoumisePourValidationLe'));
     } catch (err) {
       console.error("StudioSocial - Erreur lors de l'envoi pour validation:", err);
       alert("Erreur lors de l'envoi pour validation : " + (err.message || err));
@@ -961,10 +961,10 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
       {/* Header bar */}
       <div className="flex justify-between items-center border-b-2 border-dashed border-cordel-master-dark/30 pb-2 select-none">
         <CordelButton variant="default" onClick={handleBack} className="px-3 py-1 text-xs">
-          ← {t('common.back') || "Retour"}
+          ← {t('studio.communication.retour')}
         </CordelButton>
         <span className="panel-title text-base font-extrabold tracking-wider text-cordel-wood uppercase flex items-center gap-1.5">
-          <XiloMegaphone size={16} /> {t('studioSocial.title') || "Studio Social"}
+          <XiloMegaphone size={16} /> {t('studio.communication.studioSocial')}
         </span>
       </div>
 
@@ -976,7 +976,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
             <div className="flex flex-col gap-1">
               <div className="flex justify-between items-center">
                 <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  {t('studioSocial.selectEvent') || "Sélectionner un événement"}
+                  {t('studio.communication.selectionnerUnEvenement')}
                 </label>
                 {selectedEvent && (
                   <span className={`theme-stamp-badge text-[8px] rotate-0 font-bold ${
@@ -987,7 +987,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
                       : 'theme-stamp-badge-dark'
                   }`}>
                     {selectedEvent.statutPublication === 'approuve'
-                      ? '✅ Approuvé'
+                      ? t('studio.communication.approuve')
                       : selectedEvent.statutPublication === 'en_attente'
                       ? '⏳ En attente validation'
                       : '📝 Brouillon'}
@@ -1000,7 +1000,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
                 className="theme-input w-full font-bold bg-cordel-bg-light"
               >
                 <option value="" disabled>
-                  {t('studioSocial.selectEventPlaceholder') || "Choisissez un événement..."}
+                  {t('studio.communication.choisissezUnEvenement')}
                 </option>
                 {events.map((ev) => {
                   const evDate = new Date(ev.date);
@@ -1008,7 +1008,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
                   const formattedDate = evDate.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
                   return (
                     <option key={ev.id} value={ev.id}>
-                      {isPast ? "⏳ [Passé] " : "📅 "} {ev.titre} - {formattedDate}
+                      {isPast ? `${t('studio.communication.passe')} ` : "📅 "} {ev.titre} - {formattedDate}
                     </option>
                   );
                 })}
@@ -1020,10 +1020,10 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
                 {/* Champ optionnel : Lien Vidéo (YouTube...) */}
                 <div className="flex flex-col gap-1.5 p-3 bg-cordel-bg-light border border-dashed border-cordel-master-dark/20 rounded-[5px]">
                   <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-master-dark flex items-center justify-between">
-                    <span>🎬 {t('studioSocial.videoUrlLabel') || "Vidéo"}</span>
+                    <span>🎬 {t('studio.communication.video')}</span>
                     {socialVideoUrl && getSocialVideoThumbnail(socialVideoUrl) && (
                       <span className="text-[9px] text-green-700 font-extrabold px-1.5 py-0.5 bg-green-100 border border-green-400 rounded select-none">
-                        ✓ Miniature YouTube détectée
+                        {t('studio.communication.miniatureYoutubeDetectee')}
                       </span>
                     )}
                   </label>
@@ -1045,7 +1045,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
                     </button>
                   </div>
                   <p className="text-[9.5px] font-semibold text-cordel-master-dark/70 italic">
-                    La miniature vidéo sera automatiquement générée et affichée sur le billet d'événement dans l'Agenda avec l'icône Play ▶️.
+                    {t('studio.communication.laMiniatureVideoSeraAutomatiquement')}
                   </p>
                 </div>
 
@@ -1068,7 +1068,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
                     value={hashtags}
                     onChange={(e) => setHashtags(e.target.value)}
                     className="theme-input w-full disabled:opacity-50"
-                    placeholder="Ex: #maracatu #musique"
+                    placeholder={t('studio.communication.exMaracatuMusique')}
                   />
                 </div>
 
@@ -1081,7 +1081,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
                         <div className="flex items-center gap-1.5">
                           <span className="text-base">⚙️</span>
                           <span className="font-bold text-amber-950">
-                            Gestion complète du Lexique, Mentions et Hashtags
+                            {t('studio.communication.gestionCompleteDuLexiqueMentions')}
                           </span>
                         </div>
                         <CordelButton
@@ -1090,7 +1090,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
                           onClick={() => onNavigateToView('studio-lexique')}
                           className="text-[10px] font-black uppercase tracking-wider py-1 px-2.5"
                         >
-                          Ouvrir l'onglet Lexique →
+                          {t('studio.communication.ouvrirLOngletLexique')}
                         </CordelButton>
                       </div>
                     )}
@@ -1098,7 +1098,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
                     {/* 1. Gestion des hashtags */}
                     <div className="flex flex-col gap-1.5">
                       <span className="text-[10px] uppercase font-bold tracking-wider text-cordel-wood">
-                        ⚙️ Hashtags par défaut de l'association (Admin)
+                        {t('studio.communication.hashtagsParDefautDeL')}
                       </span>
                       
                       <div className="flex gap-1.5 flex-wrap items-center">
@@ -1122,7 +1122,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
                                     type="button"
                                     onClick={() => handleUpdateSocialTag(idx, tagStr)}
                                     className="text-[var(--color-cordel-vert,#2d6a4f)] hover:brightness-75 font-extrabold"
-                                    title="Enregistrer"
+                                    title={t('studio.communication.enregistrer')}
                                   >
                                     ✓
                                   </button>
@@ -1133,7 +1133,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
                                       setEditingTagValue('');
                                     }}
                                     className="text-neutral-500 hover:text-neutral-700 font-bold"
-                                    title="Annuler"
+                                    title={t('studio.communication.annuler')}
                                   >
                                     ✕
                                   </button>
@@ -1148,7 +1148,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
                                       setEditingTagValue(tagStr);
                                     }}
                                     className="text-cordel-wood hover:brightness-75 font-semibold ml-1 cursor-pointer"
-                                    title="Modifier"
+                                    title={t('studio.communication.modifier')}
                                   >
                                     ✏️
                                   </button>
@@ -1156,7 +1156,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
                                     type="button"
                                     onClick={() => handleDeleteSocialTag(tagStr)}
                                     className="text-[var(--color-cordel-rouge,#8b2a1a)] hover:brightness-75 font-bold ml-0.5 cursor-pointer"
-                                    title="Supprimer"
+                                    title={t('studio.communication.supprimer')}
                                   >
                                     ✕
                                   </button>
@@ -1170,7 +1170,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
                       <form onSubmit={handleAddSocialTag} className="flex gap-2 mt-1 items-center">
                         <input
                           type="text"
-                          placeholder="Nouveau tag (ex: #musique)"
+                          placeholder={t('studio.communication.nouveauTagExMusique')}
                           value={newSocialTag}
                           onChange={(e) => setNewSocialTag(e.target.value)}
                           className="theme-input text-xs py-1 px-2 flex-1"
@@ -1180,7 +1180,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
                           disabled={!newSocialTag.trim()}
                           className="text-[10px] font-black uppercase tracking-wider bg-cordel-secondary text-white px-3 py-1.5 rounded-[4px] border border-encre-noire cursor-pointer hover:brightness-95 disabled:opacity-50"
                         >
-                          Ajouter tag
+                          {t('studio.communication.ajouterTag')}
                         </button>
                       </form>
                     </div>
@@ -1188,7 +1188,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
                     {/* 2. Gestion des mots-clés du lexique rapide */}
                     <div className="flex flex-col gap-1.5 pt-2 border-t border-dashed border-cordel-master-dark/10">
                       <span className="text-[10px] uppercase font-bold tracking-wider text-amber-900">
-                        📖 Lexique d'insertion rapide personnalisable (Admin)
+                        {t('studio.communication.lexiqueDInsertionRapidePersonnalisable')}
                       </span>
                       <div className="flex gap-1.5 flex-wrap items-center">
                         {studioLexique.map((term, idx) => {
@@ -1215,7 +1215,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
                       <form onSubmit={handleAddLexiqueTerm} className="flex gap-2 mt-0.5 items-center">
                         <input
                           type="text"
-                          placeholder="Nouveau mot (ex: maracatu)"
+                          placeholder={t('studio.communication.nouveauMotExMaracatu')}
                           value={newLexiqueTerm}
                           onChange={(e) => setNewLexiqueTerm(e.target.value)}
                           className="theme-input text-xs py-1 px-2 flex-1"
@@ -1225,7 +1225,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
                           disabled={!newLexiqueTerm.trim()}
                           className="text-[10px] font-black uppercase tracking-wider bg-amber-800 text-white px-3 py-1.5 rounded-[4px] border border-encre-noire cursor-pointer hover:brightness-95 disabled:opacity-50"
                         >
-                          Ajouter mot
+                          {t('studio.communication.ajouterMot')}
                         </button>
                       </form>
                     </div>
@@ -1233,7 +1233,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
                     {/* 3. Gestion des mentions sociales */}
                     <div className="flex flex-col gap-1.5 pt-2 border-t border-dashed border-cordel-master-dark/10">
                       <span className="text-[10px] uppercase font-bold tracking-wider text-blue-900">
-                        @ Mentions de comptes personnalisables (Admin)
+                        {t('studio.communication.mentionsDeComptesPersonnalisablesAdmin')}
                       </span>
                       <div className="flex gap-1.5 flex-wrap items-center">
                         {studioMentions.map((mention, idx) => {
@@ -1266,7 +1266,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
                       <form onSubmit={handleAddMention} className="flex gap-2 mt-0.5 items-center">
                         <input
                           type="text"
-                          placeholder="Nouvelle mention (ex: @nom_partenaire)"
+                          placeholder={t('studio.communication.nouvelleMentionExNom_partenaire')}
                           value={newMention}
                           onChange={(e) => setNewMention(e.target.value)}
                           className="theme-input text-xs py-1 px-2 flex-1"
@@ -1276,7 +1276,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
                           disabled={!newMention.trim()}
                           className="text-[10px] font-black uppercase tracking-wider bg-blue-900 text-white px-3 py-1.5 rounded-[4px] border border-encre-noire cursor-pointer hover:brightness-95 disabled:opacity-50"
                         >
-                          Ajouter mention
+                          {t('studio.communication.ajouterMention')}
                         </button>
                       </form>
                     </div>
@@ -1290,11 +1290,11 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
             <CordelCard variant="default" useExtremeBorder={true} className="p-5 flex flex-col gap-2">
               <div className="flex justify-between items-center">
                 <span className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  📝 {t('studioSocial.textTitle') || "Texte de la publication"}
+                  📝 {t('studio.communication.texteDeLaPublication')}
                 </span>
                 {selectedEvent.statutPublication && (
                   <span className="text-[9.5px] font-bold text-cordel-master-dark/70">
-                    Statut : <strong className="text-encre-noire capitalize">{selectedEvent.statutPublication.replace('_', ' ')}</strong>
+                    {t('studio.communication.statut')} <strong className="text-encre-noire capitalize">{selectedEvent.statutPublication.replace('_', ' ')}</strong>
                   </span>
                 )}
               </div>
@@ -1315,7 +1315,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
                 value={publicationText}
                 onChange={(e) => setPublicationText(e.target.value)}
                 rows={7}
-                placeholder="Rédigez ou personnalisez votre légende ici..."
+                placeholder={t('studio.communication.redigezOuPersonnalisezVotreLegende')}
                 className="theme-input w-full font-mono text-xs p-3 leading-relaxed border border-encre-noire bg-cordel-bg-light rounded-b -mt-2"
               />
               <div className="flex justify-end">

@@ -1,0 +1,1790 @@
+{
+  "newsletter": {
+    "src/components/studio/NewsletterPage.jsx": [
+      {
+        "line": 56,
+        "text": "Chargement du module Newsletter...",
+        "context": "Paragraphe (<p>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 69,
+        "text": "Studio",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 71,
+        "text": "Export Newsletter",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 74,
+        "text": "Module Newsletter",
+        "context": "Titre (<h1>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 76,
+        "text": "Préférez et exportez vos newsletters associatives directement vers votre plateforme emailing.",
+        "context": "Paragraphe (<p>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 85,
+        "text": "⬅ Retour au Studio",
+        "context": "Nœud JSX",
+        "type": "jsxText"
+      },
+      {
+        "line": 110,
+        "text": "Service d'envoi & Expéditeur",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 118,
+        "text": "✓ Service d'envoi configuré",
+        "context": "Branche conditionnelle (ternaire)",
+        "type": "conditional"
+      },
+      {
+        "line": 118,
+        "text": "⚠️ Clé API non renseignée",
+        "context": "Branche conditionnelle (ternaire)",
+        "type": "conditional"
+      },
+      {
+        "line": 121,
+        "text": "Expéditeur officiel :",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 126,
+        "text": "La configuration technique (clé Brevo & domaine expéditeur) est centralisée dans",
+        "context": "Paragraphe (<p>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 127,
+        "text": "Configuration › Communication",
+        "context": "Nœud JSX",
+        "type": "jsxText"
+      }
+    ],
+    "src/components/studio/newsletter/NewsletterStepper.jsx": [
+      {
+        "line": 18,
+        "text": "Progression de la newsletter",
+        "context": "Attribut aria-label",
+        "type": "attribute"
+      }
+    ],
+    "src/components/studio/newsletter/Step1MessageAccueil.jsx": [
+      {
+        "line": 24,
+        "text": "Étape 1 - Message d'accueil",
+        "context": "Titre (<h2>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 26,
+        "text": "Rédigez le sujet principal de votre campagne ainsi que le mot de bienvenue adressé aux abonnés.",
+        "context": "Paragraphe (<p>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 33,
+        "text": "Titre de la campagne",
+        "context": "Label de formulaire (<label>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 40,
+        "text": "Ex : Newsletter Roda de Maracatu - Printemps 2026",
+        "context": "Attribut placeholder",
+        "type": "attribute"
+      },
+      {
+        "line": 47,
+        "text": "Mot de bienvenue / Édito",
+        "context": "Label de formulaire (<label>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 54,
+        "text": "Chers adhérents et ami(e)s de la Roda, voici nos dernières nouvelles et les prochains rendez-vous à ne pas manquer...",
+        "context": "Attribut placeholder",
+        "type": "attribute"
+      },
+      {
+        "line": 66,
+        "text": "Suivant : Prochaines dates ➔",
+        "context": "Nœud JSX",
+        "type": "jsxText"
+      }
+    ],
+    "src/components/studio/newsletter/Step2ProchainesDates.jsx": [
+      {
+        "line": 24,
+        "text": "Étape 2 - Prochaines dates",
+        "context": "Titre (<h2>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 26,
+        "text": "Cochez les événements futurs à intégrer dans la newsletter. Le titre, la date, le lieu et la description seront extraits automatiquement.",
+        "context": "Paragraphe (<p>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 32,
+        "text": "Aucun événement à venir trouvé dans le calendrier. Vous pouvez poursuivre sans événement futur.",
+        "context": "Paragraphe (<p>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 90,
+        "text": "événement(s) sélectionné(s) pour les prochaines dates.",
+        "context": "Nœud JSX",
+        "type": "jsxText"
+      },
+      {
+        "line": 98,
+        "text": "⬅ Précédent",
+        "context": "Nœud JSX",
+        "type": "jsxText"
+      },
+      {
+        "line": 105,
+        "text": "Suivant : Retour en images ➔",
+        "context": "Nœud JSX",
+        "type": "jsxText"
+      }
+    ],
+    "src/components/studio/newsletter/Step3RetourImages.jsx": [
+      {
+        "line": 38,
+        "text": "Étape 3 - Retour en images",
+        "context": "Titre (<h2>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 40,
+        "text": "Sélectionnez les événements passés récents, complétez le bilan/remerciements et choisissez entre 2 et 4 photos pour illustrer la newsletter.",
+        "context": "Paragraphe (<p>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 48,
+        "text": "Événements passés récents & Bilans",
+        "context": "Titre (<h3>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 52,
+        "text": "Aucun événement passé récent à afficher.",
+        "context": "Nœud JSX",
+        "type": "jsxText"
+      },
+      {
+        "line": 96,
+        "text": "Bilan / Remerciements pour cet événement :",
+        "context": "Label de formulaire (<label>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 103,
+        "text": "Ex : Superbe ambiance malgré la pluie ! Merci à toutes l'équipe...",
+        "context": "Attribut placeholder",
+        "type": "attribute"
+      },
+      {
+        "line": 119,
+        "text": "Grille de sélection des photos",
+        "context": "Titre (<h3>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 135,
+        "text": "Aucune photo enregistrée dans le système pour le moment.",
+        "context": "Nœud JSX",
+        "type": "jsxText"
+      },
+      {
+        "line": 182,
+        "text": "Veuillez sélectionner entre 2 et 4 photos pour finaliser la mise en page de la newsletter.",
+        "context": "Paragraphe (<p>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 192,
+        "text": "⬅ Précédent",
+        "context": "Nœud JSX",
+        "type": "jsxText"
+      },
+      {
+        "line": 199,
+        "text": "Suivant : Récapitulatif ➔",
+        "context": "Nœud JSX",
+        "type": "jsxText"
+      }
+    ],
+    "src/components/studio/newsletter/Step4Recapitulatif.jsx": [
+      {
+        "line": 34,
+        "text": "Étape 4 - Récapitulatif & Validation",
+        "context": "Titre (<h2>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 36,
+        "text": "Vérifiez la structure du contenu assemblé avant de générer le brouillon dans le service d'emailing.",
+        "context": "Paragraphe (<p>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 45,
+        "text": "Brouillon généré avec succès !",
+        "context": "Nœud JSX",
+        "type": "jsxText"
+      },
+      {
+        "line": 48,
+        "text": "Le brouillon de votre newsletter a été transmis à votre service d'emailing.",
+        "context": "Repli logique (||)",
+        "type": "fallback"
+      },
+      {
+        "line": 51,
+        "text": "ID Brouillon :",
+        "context": "Paragraphe (<p>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 62,
+        "text": "Échec de génération du brouillon",
+        "context": "Nœud JSX",
+        "type": "jsxText"
+      },
+      {
+        "line": 65,
+        "text": "Une erreur est survenue lors de l'exportation.",
+        "context": "Repli logique (||)",
+        "type": "fallback"
+      },
+      {
+        "line": 74,
+        "text": "Campagne",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 78,
+        "text": "Sans titre",
+        "context": "Repli logique (||)",
+        "type": "fallback"
+      },
+      {
+        "line": 81,
+        "text": "Aucun mot de bienvenue.",
+        "context": "Repli logique (||)",
+        "type": "fallback"
+      },
+      {
+        "line": 87,
+        "text": "Événements futurs (",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 98,
+        "text": "Aucune date sélectionnée",
+        "context": "Nœud JSX",
+        "type": "jsxText"
+      },
+      {
+        "line": 105,
+        "text": "Événements passés (",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 109,
+        "text": "Aucun passé sélectionné",
+        "context": "Repli logique (||)",
+        "type": "fallback"
+      },
+      {
+        "line": 112,
+        "text": "Photos associées :",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 118,
+        "text": "Aperçu photo",
+        "context": "Attribut alt",
+        "type": "attribute"
+      },
+      {
+        "line": 131,
+        "text": "Payload JSON standardisé",
+        "context": "Titre (<h3>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 138,
+        "text": "✓ Copié !",
+        "context": "Branche conditionnelle (ternaire)",
+        "type": "conditional"
+      },
+      {
+        "line": 138,
+        "text": "📋 Copier le JSON",
+        "context": "Branche conditionnelle (ternaire)",
+        "type": "conditional"
+      },
+      {
+        "line": 152,
+        "text": "⬅ Précédent",
+        "context": "Nœud JSX",
+        "type": "jsxText"
+      },
+      {
+        "line": 163,
+        "text": "Génération en cours...",
+        "context": "Nœud JSX",
+        "type": "jsxText"
+      },
+      {
+        "line": 167,
+        "text": "Générer le brouillon",
+        "context": "Nœud JSX",
+        "type": "jsxText"
+      }
+    ],
+    "src/components/association-settings/vitrine/NewsletterBrevoBlock.jsx": [
+      {
+        "line": 65,
+        "text": "⚠️ Aucun abonné pour le moment.",
+        "context": "Message runtime (setNewsletterStatusMsg)",
+        "type": "runtime"
+      },
+      {
+        "line": 92,
+        "text": "❌ Erreur lors de l'exportation.",
+        "context": "Message runtime (setNewsletterStatusMsg)",
+        "type": "runtime"
+      },
+      {
+        "line": 103,
+        "text": "📬 Formulaire Newsletter",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 115,
+        "text": "Afficher sur la vitrine",
+        "context": "Label de formulaire (<label>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 123,
+        "text": "Titre Newsletter",
+        "context": "Label de formulaire (<label>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 129,
+        "text": "Restez Informé !",
+        "context": "Attribut placeholder",
+        "type": "attribute"
+      },
+      {
+        "line": 134,
+        "text": "Badge / Sur-titre",
+        "context": "Label de formulaire (<label>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 140,
+        "text": "Infolettre & Actus",
+        "context": "Attribut placeholder",
+        "type": "attribute"
+      },
+      {
+        "line": 147,
+        "text": "Phrase d'accroche Newsletter",
+        "context": "Label de formulaire (<label>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 153,
+        "text": "Inscrivez-vous pour recevoir nos dates de concerts !",
+        "context": "Attribut placeholder",
+        "type": "attribute"
+      },
+      {
+        "line": 160,
+        "text": "Abonnés :",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 170,
+        "text": "📥 Exporter CSV",
+        "context": "Branche conditionnelle (ternaire)",
+        "type": "conditional"
+      },
+      {
+        "line": 182,
+        "text": "⚡ Synchronisation Brevo (API)",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 188,
+        "text": "✓ Connecté",
+        "context": "Branche conditionnelle (ternaire)",
+        "type": "conditional"
+      },
+      {
+        "line": 188,
+        "text": "⚪ Optionnel",
+        "context": "Branche conditionnelle (ternaire)",
+        "type": "conditional"
+      },
+      {
+        "line": 195,
+        "text": "Clé API Brevo v3",
+        "context": "Label de formulaire (<label>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 201,
+        "text": "Masquer",
+        "context": "Branche conditionnelle (ternaire)",
+        "type": "conditional"
+      },
+      {
+        "line": 201,
+        "text": "Afficher",
+        "context": "Branche conditionnelle (ternaire)",
+        "type": "conditional"
+      },
+      {
+        "line": 209,
+        "text": "xkeysib-...",
+        "context": "Attribut placeholder",
+        "type": "attribute"
+      },
+      {
+        "line": 215,
+        "text": "ID Liste Brevo",
+        "context": "Label de formulaire (<label>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 221,
+        "text": "Ex: 2 ou 5",
+        "context": "Attribut placeholder",
+        "type": "attribute"
+      }
+    ],
+    "src/components/association-settings/vitrine/SocialNewsletterAccordion.jsx": [
+      {
+        "line": 33,
+        "text": "Réseaux Sociaux & Newsletter",
+        "context": "Attribut title",
+        "type": "attribute"
+      },
+      {
+        "line": 43,
+        "text": "Titre Contact & Réseaux",
+        "context": "Label de formulaire (<label>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 49,
+        "text": "Contact & Réseaux Sociaux",
+        "context": "Attribut placeholder",
+        "type": "attribute"
+      },
+      {
+        "line": 55,
+        "text": "Bouton de Contact E-mail",
+        "context": "Label de formulaire (<label>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 61,
+        "text": "Contactez-nous pour programmer",
+        "context": "Attribut placeholder",
+        "type": "attribute"
+      },
+      {
+        "line": 67,
+        "text": "Phrase d'accroche Contact",
+        "context": "Label de formulaire (<label>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 73,
+        "text": "Une question, un événement ou une prestation ? Contactez-nous ou suivez nos réseaux !",
+        "context": "Attribut placeholder",
+        "type": "attribute"
+      }
+    ],
+    "src/components/public/PublicNewsletterForm.jsx": [
+      {
+        "line": 37,
+        "text": "Veuillez saisir une adresse e-mail valide.",
+        "context": "Message runtime (setErrorMessage)",
+        "type": "runtime"
+      },
+      {
+        "line": 59,
+        "text": "Une erreur s'est produite lors de votre inscription. Veuillez réessayer.",
+        "context": "Message runtime (setErrorMessage)",
+        "type": "runtime"
+      },
+      {
+        "line": 87,
+        "text": "Merci pour votre inscription ! En mode démo, aucun e-mail réel n'est envoyé.",
+        "context": "Branche conditionnelle (ternaire)",
+        "type": "conditional"
+      },
+      {
+        "line": 87,
+        "text": "Merci ! Vous êtes bien inscrit(e) à notre newsletter.",
+        "context": "Branche conditionnelle (ternaire)",
+        "type": "conditional"
+      },
+      {
+        "line": 92,
+        "text": "Inscrire une autre adresse",
+        "context": "Bouton (<button>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 118,
+        "text": "⏳ Inscription...",
+        "context": "Branche conditionnelle (ternaire)",
+        "type": "conditional"
+      },
+      {
+        "line": 118,
+        "text": "S'inscrire à l'infolettre",
+        "context": "Branche conditionnelle (ternaire)",
+        "type": "conditional"
+      },
+      {
+        "line": 131,
+        "text": "🔒 Pas de spam. Désinscription à tout moment.",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 169,
+        "text": "Merci pour votre message ! En mode démo, aucun e-mail réel n'est envoyé.",
+        "context": "Branche conditionnelle (ternaire)",
+        "type": "conditional"
+      },
+      {
+        "line": 169,
+        "text": "Merci ! Vous êtes bien inscrit(e) à notre newsletter.",
+        "context": "Branche conditionnelle (ternaire)",
+        "type": "conditional"
+      },
+      {
+        "line": 174,
+        "text": "Inscrire un autre e-mail",
+        "context": "Bouton (<button>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 200,
+        "text": "⏳ Validation...",
+        "context": "Branche conditionnelle (ternaire)",
+        "type": "conditional"
+      },
+      {
+        "line": 200,
+        "text": "S'inscrire",
+        "context": "Branche conditionnelle (ternaire)",
+        "type": "conditional"
+      },
+      {
+        "line": 212,
+        "text": "🔒 Pas de spam. Vous pourrez vous désinscrire à tout moment.",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      }
+    ],
+    "src/hooks/useNewsletterData.js": [
+      {
+        "line": 62,
+        "text": "Impossible de charger les événements depuis Firestore.",
+        "context": "Message runtime (setError)",
+        "type": "runtime"
+      }
+    ]
+  },
+  "photos": {
+    "src/components/studio/StudioPhotosView.jsx": [
+      {
+        "line": 58,
+        "text": "Récolte & Albums Prestations",
+        "context": "Repli en dur après t()",
+        "type": "fallback"
+      },
+      {
+        "line": 71,
+        "text": "Varal Photos (Livrets)",
+        "context": "Repli en dur après t()",
+        "type": "fallback"
+      },
+      {
+        "line": 78,
+        "text": "Associez les dossiers partagés et imprimez les QR-Codes de chaque date.",
+        "context": "Branche conditionnelle (ternaire)",
+        "type": "conditional"
+      },
+      {
+        "line": 79,
+        "text": "Consultez les albums officiels sous forme de livrets Cordel suspendus.",
+        "context": "Branche conditionnelle (ternaire)",
+        "type": "conditional"
+      }
+    ],
+    "src/components/studio/StudioPhotoQrPrintModal.jsx": [
+      {
+        "line": 136,
+        "text": "Fiche QR-Code : Récolte Photos & Vidéos",
+        "context": "Branche conditionnelle (ternaire)",
+        "type": "conditional"
+      },
+      {
+        "line": 136,
+        "text": "Fiche QR-Code : Album Photos Officiel",
+        "context": "Branche conditionnelle (ternaire)",
+        "type": "conditional"
+      },
+      {
+        "line": 144,
+        "text": "Fermer (Échap)",
+        "context": "Attribut title",
+        "type": "attribute"
+      },
+      {
+        "line": 157,
+        "text": "✨ Partagez vos clichés de la Roda ! ✨",
+        "context": "Branche conditionnelle (ternaire)",
+        "type": "conditional"
+      },
+      {
+        "line": 157,
+        "text": "✨ Album Photos Officiel de la Roda ✨",
+        "context": "Branche conditionnelle (ternaire)",
+        "type": "conditional"
+      },
+      {
+        "line": 160,
+        "text": "Événement O Girador",
+        "context": "Repli logique (||)",
+        "type": "fallback"
+      },
+      {
+        "line": 186,
+        "text": "Scannez ce QR-Code avec l'appareil photo de votre smartphone pour déposer vos photos et vidéos dans notre espace partagé.",
+        "context": "Branche conditionnelle (ternaire)",
+        "type": "conditional"
+      },
+      {
+        "line": 188,
+        "text": "Scannez ce QR-Code avec votre smartphone pour visionner l'album photo complet de la prestation.",
+        "context": "Branche conditionnelle (ternaire)",
+        "type": "conditional"
+      },
+      {
+        "line": 205,
+        "text": "Télécharger l'image du QR Code en haute définition (PNG)",
+        "context": "Attribut title",
+        "type": "attribute"
+      },
+      {
+        "line": 208,
+        "text": "Exporter PNG",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 216,
+        "text": "Lancer l'impression formatée A4 prête pour affichage sur place",
+        "context": "Attribut title",
+        "type": "attribute"
+      },
+      {
+        "line": 219,
+        "text": "Imprimer Fiche A4",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 229,
+        "text": "Lien copié !",
+        "context": "Branche conditionnelle (ternaire)",
+        "type": "conditional"
+      },
+      {
+        "line": 229,
+        "text": "Copier le lien",
+        "context": "Branche conditionnelle (ternaire)",
+        "type": "conditional"
+      },
+      {
+        "line": 237,
+        "text": "Tester le lien dans un nouvel onglet",
+        "context": "Attribut title",
+        "type": "attribute"
+      },
+      {
+        "line": 240,
+        "text": "Tester le lien ↗",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      }
+    ],
+    "src/components/studio/StudioMultiPhotoManager.jsx": [
+      {
+        "line": 149,
+        "text": "📸 Photos de la publication (",
+        "context": "Label de formulaire (<label>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 158,
+        "text": "+ Affiche événement",
+        "context": "Bouton (<button>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 166,
+        "text": "📂 Depuis le Varal",
+        "context": "Bouton (<button>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 194,
+        "text": "Glissez-déposez vos photos ici ou cliquez pour parcourir",
+        "context": "Paragraphe (<p>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 197,
+        "text": "Sélection multiple autorisée (JPEG, PNG, WebP) - Compression auto",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 218,
+        "text": "Upload en cours...",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 224,
+        "text": "Échec envoi",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 228,
+        "text": "★ Couverture",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 245,
+        "text": "Déplacer vers la gauche",
+        "context": "Attribut title",
+        "type": "attribute"
+      },
+      {
+        "line": 254,
+        "text": "Déplacer vers la droite",
+        "context": "Attribut title",
+        "type": "attribute"
+      },
+      {
+        "line": 263,
+        "text": "Définir en photo de couverture",
+        "context": "Attribut title",
+        "type": "attribute"
+      },
+      {
+        "line": 273,
+        "text": "Supprimer la photo",
+        "context": "Attribut title",
+        "type": "attribute"
+      }
+    ],
+    "src/components/studio/StudioVaralPickerModal.jsx": [
+      {
+        "line": 38,
+        "text": "Sélectionner des photos du Varal",
+        "context": "Titre (<h3>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 54,
+        "text": "Aucune image trouvée dans la bibliothèque du Varal.",
+        "context": "Paragraphe (<p>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 96,
+        "text": "photo(s) sélectionnée(s)",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 104,
+        "text": "Annuler",
+        "context": "Nœud JSX",
+        "type": "jsxText"
+      },
+      {
+        "line": 113,
+        "text": "Ajouter (",
+        "context": "Nœud JSX",
+        "type": "jsxText"
+      }
+    ],
+    "src/components/studio/FramaspaceGalleryViewer.jsx": [
+      {
+        "line": 52,
+        "text": "Délai de connexion dépassé (8s). Le dossier distant ne répond pas ou est restreint.",
+        "context": "Message d'erreur runtime (new Error)",
+        "type": "runtime"
+      },
+      {
+        "line": 142,
+        "text": "Chargement des clichés...",
+        "context": "Branche conditionnelle (ternaire)",
+        "type": "conditional"
+      },
+      {
+        "line": 156,
+        "text": "Ouvrir l'album complet dans un nouvel onglet sécurisé",
+        "context": "Attribut title",
+        "type": "attribute"
+      },
+      {
+        "line": 158,
+        "text": "↗ Ouvrir sur Framaspace",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 167,
+        "text": "Connexion au dossier Framaspace et récupération des clichés...",
+        "context": "Paragraphe (<p>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 191,
+        "text": "Consulter l'album en ligne",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 202,
+        "text": "Cet album est encore vide pour le moment. Les photos et vidéos y apparaîtront dès leur téléversement.",
+        "context": "Paragraphe (<p>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 270,
+        "text": "MOV",
+        "context": "Branche conditionnelle (ternaire)",
+        "type": "conditional"
+      },
+      {
+        "line": 270,
+        "text": "Vidéo",
+        "context": "Branche conditionnelle (ternaire)",
+        "type": "conditional"
+      },
+      {
+        "line": 348,
+        "text": "Télécharger ce fichier en haute qualité",
+        "context": "Attribut title",
+        "type": "attribute"
+      },
+      {
+        "line": 351,
+        "text": "Télécharger",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 359,
+        "text": "Fermer (Échap)",
+        "context": "Attribut title",
+        "type": "attribute"
+      },
+      {
+        "line": 377,
+        "text": "Précédente (Flèche gauche)",
+        "context": "Attribut title",
+        "type": "attribute"
+      },
+      {
+        "line": 401,
+        "text": "Lecture vidéo non décodable dans ce navigateur",
+        "context": "Titre (<h3>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 404,
+        "text": "Le fichier",
+        "context": "Paragraphe (<p>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 405,
+        "text": "utilise un encodage (ex: conteneur Apple QuickTime .mov / HEVC) que votre navigateur ne peut pas lire directement en streaming sur ce système.",
+        "context": "Paragraphe (<p>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 417,
+        "text": "Télécharger",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 426,
+        "text": "Ouvrir le flux",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 429,
+        "text": "💡 Conseil : Téléchargez le fichier pour le visionner directement avec VLC ou le lecteur vidéo de votre système.",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 451,
+        "text": "Votre navigateur ne supporte pas la lecture directe de ce format vidéo.",
+        "context": "Nœud JSX",
+        "type": "jsxText"
+      },
+      {
+        "line": 481,
+        "text": "Suivante (Flèche droite)",
+        "context": "Attribut title",
+        "type": "attribute"
+      },
+      {
+        "line": 496,
+        "text": "Astuce : Utilisez les touches ◀ et ▶ du clavier pour naviguer, et Échap pour quitter.",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      }
+    ],
+    "src/components/studio/StudioEventsMediaTable.jsx": [
+      {
+        "line": 163,
+        "text": "Erreur lors de l'enregistrement du lien de dépôt.",
+        "context": "Message runtime (alert)",
+        "type": "runtime"
+      },
+      {
+        "line": 259,
+        "text": "Erreur lors de la synchronisation de l'album avec le Varal.",
+        "context": "Message runtime (alert)",
+        "type": "runtime"
+      },
+      {
+        "line": 278,
+        "text": "Aucun lien de dépôt n'est disponible pour cet événement.",
+        "context": "Message runtime (alert)",
+        "type": "runtime"
+      },
+      {
+        "line": 570,
+        "text": "Rechercher un concert, répétition ou lieu...",
+        "context": "Attribut placeholder",
+        "type": "attribute"
+      },
+      {
+        "line": 594,
+        "text": "📸 Prestations & Récoltes actives",
+        "context": "Bouton (<button>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 605,
+        "text": "🪢 Sur le Varal",
+        "context": "Bouton (<button>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 616,
+        "text": "🌱 À venir",
+        "context": "Bouton (<button>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 627,
+        "text": "📋 Toutes les dates (",
+        "context": "Bouton (<button>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 637,
+        "text": "Chargement des événements de l'association...",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 642,
+        "text": "Aucun événement trouvé pour ces critères de recherche.",
+        "context": "Nœud JSX",
+        "type": "jsxText"
+      }
+    ],
+    "src/components/studio/StudioEventMediaAccordionRow.jsx": [
+      {
+        "line": 40,
+        "text": "🎭 Prestation",
+        "context": "Branche conditionnelle (ternaire)",
+        "type": "conditional"
+      },
+      {
+        "line": 43,
+        "text": "Événement sans titre",
+        "context": "Repli logique (||)",
+        "type": "fallback"
+      },
+      {
+        "line": 76,
+        "text": "📷 Dépôt ouvert",
+        "context": "Branche conditionnelle (ternaire)",
+        "type": "conditional"
+      },
+      {
+        "line": 76,
+        "text": "📷 Dépôt inactif",
+        "context": "Branche conditionnelle (ternaire)",
+        "type": "conditional"
+      },
+      {
+        "line": 81,
+        "text": "📁 Drive synchronisé",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 88,
+        "text": "🪢 Varal relié",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 116,
+        "text": "Voir sur le Varal",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 127,
+        "text": "⏳ Synchronisation...",
+        "context": "Branche conditionnelle (ternaire)",
+        "type": "conditional"
+      },
+      {
+        "line": 127,
+        "text": "⚡ Re-sync Framaspace",
+        "context": "Branche conditionnelle (ternaire)",
+        "type": "conditional"
+      },
+      {
+        "line": 137,
+        "text": "🗑️ Délier / Réinitialiser Cloud",
+        "context": "Bouton (<button>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 153,
+        "text": "📸 Boîte à photos / QR Code activé",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 164,
+        "text": "🪢 Publié sur le Varal Photos",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 173,
+        "text": "📸 Dossier de dépôt public (Framaspace, Drive...)",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 187,
+        "text": "📱 QR-Code",
+        "context": "Bouton (<button>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 217,
+        "text": "🪢 Album photos finalisé (Sync Varal)",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 226,
+        "text": "Copier l'URL du dépôt pour synchroniser immédiatement l'album Varal",
+        "context": "Attribut title",
+        "type": "attribute"
+      },
+      {
+        "line": 227,
+        "text": "🔗 Aligner avec le dépôt",
+        "context": "Bouton (<button>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 242,
+        "text": "📱 QR-Code",
+        "context": "Bouton (<button>)",
+        "type": "jsxText"
+      }
+    ],
+    "src/components/studio/StudioEventsManager.jsx": [
+      {
+        "line": 156,
+        "text": "Retour",
+        "context": "Repli en dur après t()",
+        "type": "fallback"
+      },
+      {
+        "line": 160,
+        "text": "Gestion des événements",
+        "context": "Repli en dur après t()",
+        "type": "fallback"
+      },
+      {
+        "line": 164,
+        "text": "Tableau de bord d'édition rapide et globale des événements pour l'administration.",
+        "context": "Repli en dur après t()",
+        "type": "fallback"
+      },
+      {
+        "line": 174,
+        "text": "Perc",
+        "context": "Attribut alt",
+        "type": "attribute"
+      },
+      {
+        "line": 187,
+        "text": "⚡ Planifier une série de répétitions pour la saison",
+        "context": "Attribut title",
+        "type": "attribute"
+      },
+      {
+        "line": 190,
+        "text": "Planifier une série",
+        "context": "Repli en dur après t()",
+        "type": "fallback"
+      },
+      {
+        "line": 224,
+        "text": "Afficher :",
+        "context": "Repli en dur après t()",
+        "type": "fallback"
+      },
+      {
+        "line": 235,
+        "text": "À venir (Défaut)",
+        "context": "Repli en dur après t()",
+        "type": "fallback"
+      },
+      {
+        "line": 246,
+        "text": "Passés",
+        "context": "Repli en dur après t()",
+        "type": "fallback"
+      },
+      {
+        "line": 257,
+        "text": "Tous",
+        "context": "Repli en dur après t()",
+        "type": "fallback"
+      },
+      {
+        "line": 264,
+        "text": "Type :",
+        "context": "Repli en dur après t()",
+        "type": "fallback"
+      },
+      {
+        "line": 312,
+        "text": "Chargement des événements en direct...",
+        "context": "Repli en dur après t()",
+        "type": "fallback"
+      }
+    ],
+    "src/components/studio/EventsDataGrid.jsx": [
+      {
+        "line": 144,
+        "text": "Cliquer pour trier par Titre",
+        "context": "Attribut title",
+        "type": "attribute"
+      },
+      {
+        "line": 147,
+        "text": "1. Titre",
+        "context": "Repli en dur après t()",
+        "type": "fallback"
+      },
+      {
+        "line": 155,
+        "text": "Cliquer pour trier par Type",
+        "context": "Attribut title",
+        "type": "attribute"
+      },
+      {
+        "line": 158,
+        "text": "2. Type",
+        "context": "Repli en dur après t()",
+        "type": "fallback"
+      },
+      {
+        "line": 166,
+        "text": "Cliquer pour trier par Description",
+        "context": "Attribut title",
+        "type": "attribute"
+      },
+      {
+        "line": 169,
+        "text": "3. Description",
+        "context": "Repli en dur après t()",
+        "type": "fallback"
+      },
+      {
+        "line": 177,
+        "text": "Cliquer pour trier par Date",
+        "context": "Attribut title",
+        "type": "attribute"
+      },
+      {
+        "line": 180,
+        "text": "4. Date",
+        "context": "Repli en dur après t()",
+        "type": "fallback"
+      },
+      {
+        "line": 188,
+        "text": "Cliquer pour trier par Heure début",
+        "context": "Attribut title",
+        "type": "attribute"
+      },
+      {
+        "line": 191,
+        "text": "5. Heure début",
+        "context": "Repli en dur après t()",
+        "type": "fallback"
+      },
+      {
+        "line": 199,
+        "text": "Cliquer pour trier par Heure fin",
+        "context": "Attribut title",
+        "type": "attribute"
+      },
+      {
+        "line": 202,
+        "text": "6. Heure fin",
+        "context": "Repli en dur après t()",
+        "type": "fallback"
+      },
+      {
+        "line": 210,
+        "text": "Cliquer pour trier par Lieu simple",
+        "context": "Attribut title",
+        "type": "attribute"
+      },
+      {
+        "line": 213,
+        "text": "7. Lieu simple",
+        "context": "Repli en dur après t()",
+        "type": "fallback"
+      },
+      {
+        "line": 221,
+        "text": "Cliquer pour trier par Date limite",
+        "context": "Attribut title",
+        "type": "attribute"
+      },
+      {
+        "line": 224,
+        "text": "8. Date limite",
+        "context": "Repli en dur après t()",
+        "type": "fallback"
+      },
+      {
+        "line": 232,
+        "text": "Cliquer pour trier par Niveau perc",
+        "context": "Attribut title",
+        "type": "attribute"
+      },
+      {
+        "line": 235,
+        "text": "9. Niveau perc",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 243,
+        "text": "Cliquer pour trier par Niveau danse",
+        "context": "Attribut title",
+        "type": "attribute"
+      },
+      {
+        "line": 246,
+        "text": "10. Niveau danse",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 254,
+        "text": "Cliquer pour trier par Tenue",
+        "context": "Attribut title",
+        "type": "attribute"
+      },
+      {
+        "line": 257,
+        "text": "11. Tenue",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 265,
+        "text": "Cliquer pour trier par Inclut perc",
+        "context": "Attribut title",
+        "type": "attribute"
+      },
+      {
+        "line": 268,
+        "text": "12. Perc 🥁",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 276,
+        "text": "Cliquer pour trier par Inclut danse",
+        "context": "Attribut title",
+        "type": "attribute"
+      },
+      {
+        "line": 279,
+        "text": "13. Danse 💃",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 287,
+        "text": "Cliquer pour trier par Soumis à validation",
+        "context": "Attribut title",
+        "type": "attribute"
+      },
+      {
+        "line": 290,
+        "text": "14. Validation 🔒",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 298,
+        "text": "Cliquer pour trier par Inscriptions requises",
+        "context": "Attribut title",
+        "type": "attribute"
+      },
+      {
+        "line": 301,
+        "text": "15. Inscriptions 📝",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 310,
+        "text": "Cliquer pour trier par Covoiturage actif",
+        "context": "Attribut title",
+        "type": "attribute"
+      },
+      {
+        "line": 313,
+        "text": "16. Covoit 🚗",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 322,
+        "text": "Cliquer pour trier par Visibilité Publique",
+        "context": "Attribut title",
+        "type": "attribute"
+      },
+      {
+        "line": 325,
+        "text": "17. Public 🌍",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 334,
+        "text": "Cliquer pour trier par Nombre de morceaux",
+        "context": "Attribut title",
+        "type": "attribute"
+      },
+      {
+        "line": 337,
+        "text": "18. Morceaux 🎵",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 346,
+        "text": "Cliquer pour trier par Statut Scène",
+        "context": "Attribut title",
+        "type": "attribute"
+      },
+      {
+        "line": 349,
+        "text": "19. Scène 📐",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 358,
+        "text": "Aucun événement disponible.",
+        "context": "Nœud JSX",
+        "type": "jsxText"
+      }
+    ],
+    "src/components/studio/EventsDataGridRow.jsx": [
+      {
+        "line": 114,
+        "text": "Titre...",
+        "context": "Attribut placeholder",
+        "type": "attribute"
+      },
+      {
+        "line": 126,
+        "text": "Prestation",
+        "context": "Repli en dur après t()",
+        "type": "fallback"
+      },
+      {
+        "line": 127,
+        "text": "Répétition",
+        "context": "Repli en dur après t()",
+        "type": "fallback"
+      },
+      {
+        "line": 128,
+        "text": "Stage",
+        "context": "Repli en dur après t()",
+        "type": "fallback"
+      },
+      {
+        "line": 129,
+        "text": "Atelier",
+        "context": "Repli en dur après t()",
+        "type": "fallback"
+      },
+      {
+        "line": 130,
+        "text": "Réunion",
+        "context": "Repli en dur après t()",
+        "type": "fallback"
+      },
+      {
+        "line": 131,
+        "text": "Autre",
+        "context": "Repli en dur après t()",
+        "type": "fallback"
+      },
+      {
+        "line": 192,
+        "text": "📍 Choisir un lieu...",
+        "context": "Repli logique (||)",
+        "type": "fallback"
+      },
+      {
+        "line": 193,
+        "text": "📍 Lieux habituels de l'association",
+        "context": "Attribut label",
+        "type": "attribute"
+      },
+      {
+        "line": 211,
+        "text": "Lieu...",
+        "context": "Attribut placeholder",
+        "type": "attribute"
+      },
+      {
+        "line": 235,
+        "text": "👥 Tous",
+        "context": "Option de liste (<option>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 236,
+        "text": "Aucun",
+        "context": "Option de liste (<option>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 250,
+        "text": "Aucun",
+        "context": "Option de liste (<option>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 251,
+        "text": "👥 Tous",
+        "context": "Option de liste (<option>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 266,
+        "text": "Tenue...",
+        "context": "Attribut placeholder",
+        "type": "attribute"
+      },
+      {
+        "line": 281,
+        "text": "Percussion",
+        "context": "Attribut alt",
+        "type": "attribute"
+      },
+      {
+        "line": 369,
+        "text": "📐 Oui",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      }
+    ],
+    "src/components/studio/ActivityReports.jsx": [
+      {
+        "line": 88,
+        "text": "Veuillez sélectionner une date de début et de fin.",
+        "context": "Message runtime (alert)",
+        "type": "runtime"
+      },
+      {
+        "line": 153,
+        "text": "Erreur lors de la génération de l'export d'activité.",
+        "context": "Message runtime (alert)",
+        "type": "runtime"
+      },
+      {
+        "line": 169,
+        "text": "Retour",
+        "context": "Repli en dur après t()",
+        "type": "fallback"
+      },
+      {
+        "line": 173,
+        "text": "Journal d'Activité (CSV)",
+        "context": "Titre (<h2>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 179,
+        "text": "📊 Ce module permet d'extraire le journal des événements et les registres de présence de l'association sur une période choisie. Les exports sont générés sous forme de fichiers tableurs CSV compatibles avec Microsoft Excel, LibreOffice et Google Sheets.",
+        "context": "Nœud JSX",
+        "type": "jsxText"
+      },
+      {
+        "line": 188,
+        "text": "📅 Choix de la Période",
+        "context": "Titre (<h3>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 191,
+        "text": "Sélectionnez la plage de dates à auditer. Par défaut, la saison associative en cours est présélectionnée.",
+        "context": "Paragraphe (<p>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 196,
+        "text": "Date de début",
+        "context": "Label de formulaire (<label>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 210,
+        "text": "Date de fin",
+        "context": "Label de formulaire (<label>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 227,
+        "text": "Saison associative active :",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 229,
+        "text": "En cours",
+        "context": "Branche conditionnelle (ternaire)",
+        "type": "conditional"
+      },
+      {
+        "line": 237,
+        "text": "🎭 Exporter le Bilan d'Activité",
+        "context": "Titre (<h4>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 240,
+        "text": "Génère le registre des événements avec le décompte des présences. Idéal pour votre bilan annuel ou assemblée générale.",
+        "context": "Paragraphe (<p>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 244,
+        "text": "Types d'événements à inclure :",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 264,
+        "text": "Prestations",
+        "context": "Branche conditionnelle (ternaire)",
+        "type": "conditional"
+      },
+      {
+        "line": 284,
+        "text": "Génération...",
+        "context": "Branche conditionnelle (ternaire)",
+        "type": "conditional"
+      },
+      {
+        "line": 284,
+        "text": "📄 Exporter l'Activité (CSV)",
+        "context": "Branche conditionnelle (ternaire)",
+        "type": "conditional"
+      }
+    ],
+    "src/components/studio/StudioCloudHeader.jsx": [
+      {
+        "line": 67,
+        "text": "Impossible d'enregistrer l'URL du Cloud.",
+        "context": "Message runtime (setError)",
+        "type": "runtime"
+      },
+      {
+        "line": 96,
+        "text": "Passerelle Stockage Cloud de l'Association",
+        "context": "Repli en dur après t()",
+        "type": "fallback"
+      },
+      {
+        "line": 101,
+        "text": "Hébergement actif :",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 105,
+        "text": "Aucun dossier Cloud racine configuré",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 118,
+        "text": "Ouvrir le dossier Cloud racine dans un nouvel onglet sécurisé",
+        "context": "Attribut title",
+        "type": "attribute"
+      },
+      {
+        "line": 121,
+        "text": "Ouvrir notre Cloud ↗",
+        "context": "Repli en dur après t()",
+        "type": "fallback"
+      },
+      {
+        "line": 133,
+        "text": "Configurer les identifiants API Framaspace pour l'automatisation des dossiers",
+        "context": "Attribut title",
+        "type": "attribute"
+      },
+      {
+        "line": 136,
+        "text": "Masquer API Framaspace",
+        "context": "Branche conditionnelle (ternaire)",
+        "type": "conditional"
+      },
+      {
+        "line": 136,
+        "text": "Automatisation Framaspace",
+        "context": "Branche conditionnelle (ternaire)",
+        "type": "conditional"
+      },
+      {
+        "line": 163,
+        "text": "🔗 URL d'accès racine au Cloud (Framaspace, Nextcloud, Google Drive, Dropbox)",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 171,
+        "text": "ex: https://mon-asso.framaspace.org/s/... ou https://drive.google.com/drive/folders/...",
+        "context": "Attribut placeholder",
+        "type": "attribute"
+      },
+      {
+        "line": 183,
+        "text": "⏳ Enregistrement...",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 185,
+        "text": "✓ Enregistré !",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 187,
+        "text": "Enregistrer",
+        "context": "Libellé / Badge (<span>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 198,
+        "text": "Annuler",
+        "context": "Bouton (<button>)",
+        "type": "jsxText"
+      },
+      {
+        "line": 208,
+        "text": "💡 Ce lien racine permet aux membres du pôle Studio d'accéder d'un clic à l'arborescence générale de stockage sans transiter par des serveurs tiers.",
+        "context": "Paragraphe (<p>)",
+        "type": "jsxText"
+      }
+    ]
+  }
+}

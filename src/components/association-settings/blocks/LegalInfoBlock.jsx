@@ -1,22 +1,25 @@
 import React from 'react';
 import CordelCard from '../../CordelCard';
+import { useTranslation } from '../../../hooks/useTranslation';
 
 export default function LegalInfoBlock({ formData = {}, handleChange, saving, signaturePresidentFile, setSignaturePresidentFile, signatureTresorierFile, setSignatureTresorierFile }) {
+  const { t } = useTranslation();
+
   return (
     <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
       <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">
-        📜 Informations Légales (Devis, Factures & Vitrine)
+        {t('vitrine.admin.general.legalInfoBlock.informationsLegalesDevisFacturesVitrine')}
       </h3>
       <div className="flex flex-col gap-3 text-left">
         <p className="text-[10px] text-cordel-master-dark/70 font-semibold leading-relaxed">
-          Ces coordonnées administratives s'imprimeront automatiquement sur les documents PDF officiels et pourront s'afficher sur votre vitrine publique.
+          {t('vitrine.admin.general.legalInfoBlock.cesCoordonneesAdministrativesSImprimeront')}
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {/* Structure juridique */}
           <div className="flex flex-col gap-1">
             <label htmlFor="structureJuridique" className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
-              Structure Juridique
+              {t('vitrine.admin.general.legalInfoBlock.structureJuridique')}
             </label>
             <input 
               id="structureJuridique"
@@ -24,7 +27,7 @@ export default function LegalInfoBlock({ formData = {}, handleChange, saving, si
               value={formData.structureJuridique || ''}
               onChange={(e) => handleChange('structureJuridique', e.target.value)}
               disabled={saving}
-              placeholder="ex: Association Loi 1901"
+              placeholder={t('vitrine.admin.general.legalInfoBlock.exAssociationLoi1901')}
               className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
             />
           </div>
@@ -32,7 +35,7 @@ export default function LegalInfoBlock({ formData = {}, handleChange, saving, si
           {/* N° SIRET / RNA */}
           <div className="flex flex-col gap-1">
             <label htmlFor="siret" className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
-              Numéro SIRET / N° RNA
+              {t('vitrine.admin.general.legalInfoBlock.numeroSiretNRna')}
             </label>
             <input 
               id="siret"
@@ -43,7 +46,7 @@ export default function LegalInfoBlock({ formData = {}, handleChange, saving, si
                 handleChange('rna', e.target.value);
               }}
               disabled={saving}
-              placeholder="ex: 849 123 456 00012 / W291001234"
+              placeholder={t('vitrine.admin.general.legalInfoBlock.ex84912345600012')}
               className="theme-input text-xs font-mono font-bold py-1.5 bg-cordel-bg-light w-full"
             />
           </div>
@@ -52,7 +55,7 @@ export default function LegalInfoBlock({ formData = {}, handleChange, saving, si
         {/* Adresse du Siège Social */}
         <div className="flex flex-col gap-1">
           <label htmlFor="adresseSiegeSocial" className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
-            Adresse de Domiciliation / Siège Social
+            {t('vitrine.admin.general.legalInfoBlock.adresseDeDomiciliationSiegeSocial')}
           </label>
           <input 
             id="adresseSiegeSocial"
@@ -63,7 +66,7 @@ export default function LegalInfoBlock({ formData = {}, handleChange, saving, si
               handleChange('adresse', e.target.value);
             }}
             disabled={saving}
-            placeholder="ex: 12 Rue de la Paix, 29200 Brest"
+            placeholder={t('vitrine.admin.general.legalInfoBlock.ex12RueDeLa')}
             className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
           />
         </div>
@@ -71,8 +74,10 @@ export default function LegalInfoBlock({ formData = {}, handleChange, saving, si
         {/* E-mail Officiel de l'Association */}
         <div className="flex flex-col gap-1">
           <label htmlFor="emailOfficiel" className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark flex items-center justify-between">
-            <span>E-mail Officiel de l'Association</span>
-            <span className="text-[8px] font-normal italic text-cordel-wood">Renseigné sur les Devis PDF et utilisé par Brevo</span>
+            <span>{t('vitrine.admin.general.legalInfoBlock.eMailOfficielDeL')}</span>
+            <span className="text-[8px] font-normal italic text-cordel-wood">
+              {t('vitrine.admin.general.legalInfoBlock.renseigneSurLesDevisPdf')}
+            </span>
           </label>
           <input 
             id="emailOfficiel"
@@ -83,7 +88,7 @@ export default function LegalInfoBlock({ formData = {}, handleChange, saving, si
               handleChange('email', e.target.value);
             }}
             disabled={saving}
-            placeholder="ex: contact@votre-association.fr"
+            placeholder={t('vitrine.admin.general.legalInfoBlock.exContactVotreAssociationFr')}
             className="theme-input text-xs font-mono font-bold py-1.5 bg-cordel-bg-light w-full"
           />
         </div>
@@ -91,7 +96,7 @@ export default function LegalInfoBlock({ formData = {}, handleChange, saving, si
         {/* Téléphone de Contact Officiel */}
         <div className="flex flex-col gap-1">
           <label htmlFor="telephone" className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
-            Téléphone Officiel de l'Association
+            {t('vitrine.admin.general.legalInfoBlock.telephoneOfficielDeLAssociation')}
           </label>
           <input 
             id="telephone"
@@ -102,7 +107,7 @@ export default function LegalInfoBlock({ formData = {}, handleChange, saving, si
               handleChange('phone', e.target.value);
             }}
             disabled={saving}
-            placeholder="ex: 06 12 34 56 78"
+            placeholder={t('vitrine.admin.general.legalInfoBlock.ex06123456')}
             className="theme-input text-xs font-mono font-bold py-1.5 bg-cordel-bg-light w-full"
           />
         </div>
@@ -110,8 +115,10 @@ export default function LegalInfoBlock({ formData = {}, handleChange, saving, si
         {/* Clause Spécifique / Avertissement Contrat (Textarea Optionnel) */}
         <div className="flex flex-col gap-1 border-t border-dashed border-cordel-master-dark/15 pt-3">
           <label htmlFor="clauseSpecifique" className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark flex items-center justify-between">
-            <span>📋 Clause Spécifique / Avertissement Contrat (Optionnel)</span>
-            <span className="text-[8px] font-normal italic text-cordel-wood">S'imprime en bas des contrats PDF</span>
+            <span>{t('vitrine.admin.general.legalInfoBlock.clauseSpecifiqueAvertissementContratOptionnel')}</span>
+            <span className="text-[8px] font-normal italic text-cordel-wood">
+              {t('vitrine.admin.general.legalInfoBlock.sImprimeEnBasDes')}
+            </span>
           </label>
           <textarea
             id="clauseSpecifique"
@@ -122,7 +129,7 @@ export default function LegalInfoBlock({ formData = {}, handleChange, saving, si
               handleChange('legalClause', e.target.value);
             }}
             disabled={saving}
-            placeholder="ex: Avertissement sonore : Les prestations comportent un volume sonore élevé."
+            placeholder={t('vitrine.admin.general.legalInfoBlock.exAvertissementSonoreLesPrestations')}
             className="theme-input text-xs font-bold p-2 bg-cordel-bg-light w-full resize-none"
           />
         </div>
@@ -130,28 +137,28 @@ export default function LegalInfoBlock({ formData = {}, handleChange, saving, si
         {/* Signatures Numérisées du Président et du Trésorier */}
         <div className="flex flex-col gap-2 border-t border-dashed border-cordel-master-dark/15 pt-3 text-left">
           <span className="text-[10px] font-bold uppercase tracking-wider text-cordel-wood">
-            ✍️ Signatures Numérisées des Représentants (Imprimées sur Devis & Contrats PDF)
+            {t('vitrine.admin.general.legalInfoBlock.signaturesNumeriseesDesRepresentantsImprimees')}
           </span>
           <p className="text-[9px] text-cordel-master-dark/70 font-medium">
-            Conseil : Utilisez une image au format PNG avec un fond transparent.
+            {t('vitrine.admin.general.legalInfoBlock.conseilUtilisezUneImageAu')}
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-1">
             {/* Signature du Président / Mestre */}
             <div className="flex flex-col gap-1.5 p-2.5 bg-stone-50 border border-stone-200 rounded">
               <span className="text-[9px] font-extrabold uppercase text-cordel-master-dark">
-                Signature du Président / Mestre
+                {t('vitrine.admin.general.legalInfoBlock.signatureDuPresidentMestre')}
               </span>
               <div className="flex items-center gap-2">
                 {formData.signaturePresidentUrl ? (
                   <img
                     src={formData.signaturePresidentUrl}
-                    alt="Signature Président"
+                    alt={t('vitrine.admin.general.legalInfoBlock.signaturePresident')}
                     className="w-16 h-10 object-contain border border-stone-300 rounded bg-white p-1"
                   />
                 ) : (
                   <div className="w-16 h-10 border border-dashed border-stone-300 rounded flex items-center justify-center text-[9px] text-stone-400 font-bold bg-white">
-                    Aucune
+                    {t('vitrine.admin.general.legalInfoBlock.aucune')}
                   </div>
                 )}
                 <input
@@ -163,25 +170,27 @@ export default function LegalInfoBlock({ formData = {}, handleChange, saving, si
                 />
               </div>
               {signaturePresidentFile && (
-                <span className="text-[9px] text-green-700 font-bold">✓ Sélectionné : {signaturePresidentFile.name}</span>
+                <span className="text-[9px] text-green-700 font-bold">
+                  {t('vitrine.admin.general.legalInfoBlock.selectionne')} {signaturePresidentFile.name}
+                </span>
               )}
             </div>
 
             {/* Signature du Trésorier */}
             <div className="flex flex-col gap-1.5 p-2.5 bg-stone-50 border border-stone-200 rounded">
               <span className="text-[9px] font-extrabold uppercase text-cordel-master-dark">
-                Signature du Trésorier
+                {t('vitrine.admin.general.legalInfoBlock.signatureDuTresorier')}
               </span>
               <div className="flex items-center gap-2">
                 {formData.signatureTresorierUrl ? (
                   <img
                     src={formData.signatureTresorierUrl}
-                    alt="Signature Trésorier"
+                    alt={t('vitrine.admin.general.legalInfoBlock.signatureTresorier')}
                     className="w-16 h-10 object-contain border border-stone-300 rounded bg-white p-1"
                   />
                 ) : (
                   <div className="w-16 h-10 border border-dashed border-stone-300 rounded flex items-center justify-center text-[9px] text-stone-400 font-bold bg-white">
-                    Aucune
+                    {t('vitrine.admin.general.legalInfoBlock.aucune')}
                   </div>
                 )}
                 <input
@@ -193,7 +202,9 @@ export default function LegalInfoBlock({ formData = {}, handleChange, saving, si
                 />
               </div>
               {signatureTresorierFile && (
-                <span className="text-[9px] text-green-700 font-bold">✓ Sélectionné : {signatureTresorierFile.name}</span>
+                <span className="text-[9px] text-green-700 font-bold">
+                  {t('vitrine.admin.general.legalInfoBlock.selectionne')} {signatureTresorierFile.name}
+                </span>
               )}
             </div>
           </div>
@@ -202,3 +213,4 @@ export default function LegalInfoBlock({ formData = {}, handleChange, saving, si
     </CordelCard>
   );
 }
+

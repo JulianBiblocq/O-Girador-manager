@@ -70,15 +70,18 @@ export default function RepairDiagnosticModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 select-none">
-      <CordelCard variant="default" useExtremeBorder={true} className="w-full max-w-2xl bg-cordel-bg p-5 relative">
+      <CordelCard variant="default" useExtremeBorder={true} className="w-full max-w-2xl bg-cordel-bg p-5 relative mt-2 sm:mt-0">
         <button
+          type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 border border-encre-noire bg-cordel-bg hover:bg-neutral-200 rounded-md shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none"
+          className="absolute top-2 right-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-cordel-wood hover:bg-black/5 active:bg-black/10 transition-colors cursor-pointer select-none touch-manipulation"
+          title={t('common.close', 'Fermer')}
+          aria-label={t('common.close', 'Fermer')}
         >
-          <XiloClose size={12} />
+          <XiloClose size={18} />
         </button>
 
-        <h3 className="font-extrabold text-sm text-cordel-wood uppercase tracking-wider mb-2 flex items-center gap-2 border-b-2 border-dashed border-cordel-master-dark/30 pb-3">
+        <h3 className="font-extrabold text-sm text-cordel-wood uppercase tracking-wider mb-2 flex items-center gap-2 border-b-2 border-dashed border-cordel-master-dark/30 pb-3 pr-12 break-words">
           {t('logistics.diagnosticRepairTitle')} {instrument.nom}
         </h3>
         

@@ -174,7 +174,7 @@ const startQuiz = (theme, specificToadaId = null) => {
     generated = generated.sort(() => Math.random() - 0.5).slice(0, targetCount);
     
     if (generated.length === 0) {
-      alert("Pas assez de données pour générer ce type de quiz.");
+      alert(t('pedagogy.student.notEnoughData'));
       return;
     }
     
@@ -296,12 +296,15 @@ const startQuiz = (theme, specificToadaId = null) => {
 
         // Mise à jour pour le quiz ciblé
         if (targetedToadaId) {
-          updateLevelIfBetter(targetedToadaId, finalScore / questions.length);
+          updateLevelIfBetter(targetedToadaId, questions.length > 0 ? finalScore / questions.length : 0);
         }
 
         // Mise à jour pour les toadas traitées dans le MIX
         Object.keys(toadaStats).forEach(tId => {
-          updateLevelIfBetter(tId, toadaStats[tId].score / toadaStats[tId].total);
+          const stat = toadaStats[tId];
+          if (stat && stat.total > 0) {
+            updateLevelIfBetter(tId, stat.score / stat.total);
+          }
         });
 
         if (hasUpdates) {
@@ -366,7 +369,7 @@ const startQuiz = (theme, specificToadaId = null) => {
           }} 
           className="absolute top-4 left-4 z-10 text-[10px] font-black uppercase text-encre-noire/50 hover:text-cordel-rouge cursor-pointer"
         >
-          🔙 {t('common.back') || "Retour"}
+          🔙 {t('common.back') || t('pedagogy.student.retour')}
         </button>
         <div className="pt-8">
           <StudentToadasProgress 
@@ -396,17 +399,17 @@ const startQuiz = (theme, specificToadaId = null) => {
         )}
         <div className="text-center flex flex-col gap-2">
           <h2 className="text-2xl md:text-3xl font-heading uppercase text-cordel-wood tracking-widest">
-            Auto-évaluation
+            {t('pedagogy.student.autoEvaluation')}
           </h2>
           <p className="text-sm text-cordel-master-dark opacity-80 max-w-lg mx-auto mb-2">
-            Testez vos connaissances sur le répertoire, le vocabulaire et la culture de notre Nação.
+            {t('pedagogy.student.testezVosConnaissancesSur')}
           </p>
           <div className="bg-cordel-ocre/10 border-l-4 border-cordel-ocre p-3 text-left rounded-r max-w-lg mx-auto">
             <p className="text-xs font-bold text-cordel-master-dark flex items-start gap-2">
               <span className="text-base">💡</span>
               <span>
-                <strong>Où réviser avant de se tester ?</strong><br/>
-                Tout le matériel pédagogique (chants, fiches, rythmes) se trouve dans les <strong>Varals (cordes à linge)</strong> situés tout en bas de la page d'accueil !
+                <strong>{t('pedagogy.student.ouReviserAvantDe')}</strong><br/>
+                {t('pedagogy.student.toutLeMaterielPedagogique')} <strong>{t('pedagogy.student.varalsCordesALinge')}</strong> {t('pedagogy.student.situesToutEnBas')}
               </span>
             </p>
           </div>
@@ -414,59 +417,59 @@ const startQuiz = (theme, specificToadaId = null) => {
 
         <CordelCard className="p-6 flex flex-col gap-6 items-center text-center bg-[#fdfaf2] border-2 border-dashed border-cordel-wood/30">
           <h3 className="text-xl font-black uppercase text-cordel-wood tracking-wider">
-            Défi du jour
+            {t('pedagogy.student.defiDuJour')}
           </h3>
-          <p className="text-xs">Un mélange de toutes les thématiques pour réviser efficacement !</p>
+          <p className="text-xs">{t('pedagogy.student.unMelangeDeToutes')}</p>
           <CordelButton variant="primary" onClick={() => startQuiz('MIX')} className="text-lg px-8 py-3 animate-pulse">
-            🚀 Lancer le Défi Mix ({globalConfig.questionCount} Q)
+            {t('pedagogy.student.lancerLeDefiMix')}{globalConfig.questionCount} Q)
           </CordelButton>
         </CordelCard>
 
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-end border-b-2 border-dashed border-cordel-master-dark/30 pb-2">
             <h3 className="font-black text-sm uppercase tracking-widest text-cordel-wood">
-              Entraînement par Thème
+              {t('pedagogy.student.entrainementParTheme')}
             </h3>
             <select 
               className="text-[10px] p-1 border-2 border-encre-noire/20 rounded font-bold uppercase text-cordel-master-dark"
               value={selectedDifficulty}
               onChange={(e) => setSelectedDifficulty(e.target.value)}
             >
-              <option value="easy">🌱 Débutant</option>
-              <option value="medium">🥁 Confirmé</option>
-              <option value="hard">🏆 Expert</option>
+              <option value="easy">{t('pedagogy.student.debutant')}</option>
+              <option value="medium">{t('pedagogy.student.confirme')}</option>
+              <option value="hard">{t('pedagogy.student.expert')}</option>
             </select>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {globalConfig.themes.toadas && (
               <button onClick={() => setShowToadaProgress(true)} className="p-4 bg-white border-2 border-encre-noire/20 rounded-lg text-left hover:border-cordel-wood transition-colors group">
-                <span className="block text-sm font-black text-cordel-wood group-hover:text-cordel-rouge uppercase tracking-wider mb-1">🎤 Toadas (Progression)</span>
-                <span className="text-[10px] text-encre-noire/70">Réviser le répertoire et suivre votre jauge de Nação.</span>
+                <span className="block text-sm font-black text-cordel-wood group-hover:text-cordel-rouge uppercase tracking-wider mb-1">{t('pedagogy.student.toadasProgression')}</span>
+                <span className="text-[10px] text-encre-noire/70">{t('pedagogy.student.reviserLeRepertoireEt')}</span>
               </button>
             )}
             {globalConfig.themes.traduction && (
               <button onClick={() => startQuiz('traduction')} className="p-4 bg-white border-2 border-encre-noire/20 rounded-lg text-left hover:border-cordel-wood transition-colors group">
-                <span className="block text-sm font-black text-cordel-wood group-hover:text-cordel-rouge uppercase tracking-wider mb-1">🇧🇷 Traduction</span>
-                <span className="text-[10px] text-encre-noire/70">Tester votre vocabulaire (Français / Portugais).</span>
+                <span className="block text-sm font-black text-cordel-wood group-hover:text-cordel-rouge uppercase tracking-wider mb-1">{t('pedagogy.student.traduction')}</span>
+                <span className="text-[10px] text-encre-noire/70">{t('pedagogy.student.testerVotreVocabulaireFrancais')}</span>
               </button>
             )}
             {globalConfig.themes.culture && (
               <button onClick={() => startQuiz('culture')} className="p-4 bg-white border-2 border-encre-noire/20 rounded-lg text-left hover:border-cordel-wood transition-colors group">
-                <span className="block text-sm font-black text-cordel-wood group-hover:text-cordel-rouge uppercase tracking-wider mb-1">📚 Culture</span>
-                <span className="text-[10px] text-encre-noire/70">Questions sur l'histoire et les fondamentaux.</span>
+                <span className="block text-sm font-black text-cordel-wood group-hover:text-cordel-rouge uppercase tracking-wider mb-1">{t('pedagogy.student.culture')}</span>
+                <span className="text-[10px] text-encre-noire/70">{t('pedagogy.student.questionsSurLHistoire')}</span>
               </button>
             )}
             {globalConfig.themes.atelier && (
               <button onClick={() => startQuiz('atelier')} className="p-4 bg-white border-2 border-encre-noire/20 rounded-lg text-left hover:border-cordel-wood transition-colors group">
-                <span className="block text-sm font-black text-cordel-wood group-hover:text-cordel-rouge uppercase tracking-wider mb-1">🛠️ Atelier</span>
-                <span className="text-[10px] text-encre-noire/70">Révisions techniques sur la couture et fabrication.</span>
+                <span className="block text-sm font-black text-cordel-wood group-hover:text-cordel-rouge uppercase tracking-wider mb-1">{t('pedagogy.student.atelier')}</span>
+                <span className="text-[10px] text-encre-noire/70">{t('pedagogy.student.revisionsTechniquesSurLa')}</span>
               </button>
             )}
             {globalConfig.themes.danse && (
               <button onClick={() => startQuiz('danse')} className="p-4 bg-white border-2 border-encre-noire/20 rounded-lg text-left hover:border-cordel-wood transition-colors group">
-                <span className="block text-sm font-black text-cordel-wood group-hover:text-cordel-rouge uppercase tracking-wider mb-1">💃 Danse (Dançador)</span>
-                <span className="text-[10px] text-encre-noire/70">Reconnaissance visuelle des pas et familles.</span>
+                <span className="block text-sm font-black text-cordel-wood group-hover:text-cordel-rouge uppercase tracking-wider mb-1">{t('pedagogy.student.danseDancador')}</span>
+                <span className="text-[10px] text-encre-noire/70">{t('pedagogy.student.reconnaissanceVisuelleDesPas')}</span>
               </button>
             )}
           </div>
@@ -479,7 +482,7 @@ const startQuiz = (theme, specificToadaId = null) => {
     if (!questions || questions.length === 0) {
       return (
         <div className="flex flex-col gap-6 w-full max-w-2xl mx-auto p-8 text-center animate-pulse text-cordel-wood font-bold">
-          Génération du QCM en cours...
+          {t('pedagogy.student.generationDuQcmEn')}
         </div>
       );
     }
@@ -531,7 +534,7 @@ const startQuiz = (theme, specificToadaId = null) => {
 
           {q.imageUrl && (
             <div className="flex justify-center my-4 animate-fadeIn w-full max-w-sm rounded-lg overflow-hidden border-4 border-cordel-wood/20 shadow-md">
-              <img src={q.imageUrl} alt="Illustration de la question" className="w-full h-auto object-cover max-h-64" />
+              <img src={q.imageUrl} alt={t('pedagogy.student.illustrationDeLaQuestion')} className="w-full h-auto object-cover max-h-64" />
             </div>
           )}
 
@@ -581,11 +584,11 @@ const startQuiz = (theme, specificToadaId = null) => {
           {showFeedback && (
             <div className={`mt-4 p-4 rounded-lg border-2 flex flex-col gap-2 w-full animate-fadeIn text-left ${selectedChoice?.isCorrect ? 'bg-cordel-vert/10 border-cordel-vert' : 'bg-cordel-ocre/10 border-cordel-ocre'}`}>
               <h4 className={`text-sm font-black uppercase tracking-wider ${selectedChoice?.isCorrect ? 'text-cordel-vert' : 'text-cordel-ocre'}`}>
-                {selectedChoice?.isCorrect ? "✅ Bien joué !" : "🌱 Presque !"}
+                {selectedChoice?.isCorrect ? t('pedagogy.student.bienJoue') : t('pedagogy.student.presque')}
               </h4>
               {!selectedChoice?.isCorrect && (
                 <p className="text-xs font-bold text-encre-noire/80">
-                  La bonne réponse était : <span className="font-black">{q.choices ? q.choices.find(c => c.isCorrect)?.text : q.correctAnswer}</span>
+                  {t('pedagogy.student.laBonneReponseEtait')} <span className="font-black">{q.choices ? q.choices.find(c => c.isCorrect)?.text : q.correctAnswer}</span>
                   {q.correctAnswerExplanation ? ` - ${q.correctAnswerExplanation}` : ''}
                 </p>
               )}
@@ -597,7 +600,7 @@ const startQuiz = (theme, specificToadaId = null) => {
   }
 
   if (step === 'RESULT') {
-    const percentage = score / questions.length;
+    const percentage = questions.length > 0 ? score / questions.length : 0;
     let message = "Bel effort !";
     let emoji = "💪";
     if (percentage >= 0.8) { message = "Excellent ! Quel talent !"; emoji = "🏆"; }
@@ -611,7 +614,7 @@ const startQuiz = (theme, specificToadaId = null) => {
         <CordelCard className="p-8 flex flex-col gap-6 items-center text-center">
           <div className="text-5xl">{emoji}</div>
           <h2 className="text-3xl font-heading uppercase text-cordel-wood tracking-widest">
-            Bilan du Quiz
+            {t('pedagogy.student.bilanDuQuiz')}
           </h2>
           <p className="text-xl font-bold text-encre-noire">
             {finalScoreDisplay} / {questions.length}
@@ -620,12 +623,12 @@ const startQuiz = (theme, specificToadaId = null) => {
             {message}
           </p>
 
-          {savingScore && <span className="text-[10px] animate-pulse">Enregistrement du score...</span>}
+          {savingScore && <span className="text-[10px] animate-pulse">{t('pedagogy.student.enregistrementDuScore')}</span>}
 
           {wrongAnswers.length > 0 && (
             <div className="w-full mt-4 flex flex-col gap-3 text-left bg-cordel-rouge/5 border border-cordel-rouge/20 p-4 rounded-xl">
               <span className="text-[10px] font-black uppercase tracking-widest text-cordel-rouge">
-                À réviser :
+                {t('pedagogy.student.aReviser')}
               </span>
               {wrongAnswers.map((w, i) => (
                 <div key={i} className="text-xs border-b border-cordel-rouge/10 pb-2 last:border-0 last:pb-0">
@@ -638,7 +641,7 @@ const startQuiz = (theme, specificToadaId = null) => {
 
           <div className="mt-4">
             <CordelButton variant="primary" onClick={() => onExit ? onExit() : setStep('HOME')} className="px-8 py-3 text-sm">
-              {onExit ? "Terminer" : "Retour à l'Accueil"}
+              {onExit ? t('pedagogy.student.terminer') : t('pedagogy.student.retourALAccueil')}
             </CordelButton>
           </div>
         </CordelCard>

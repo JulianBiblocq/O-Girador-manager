@@ -5,6 +5,7 @@ import CordelCard from '../CordelCard';
 import LegalInfoBlock from './blocks/LegalInfoBlock';
 import { useTenantContext } from '../../context/TenantContext';
 import { getVitrineUrl } from '../../utils/urlUtils';
+import { useTranslation } from '../../hooks/useTranslation';
 
 /**
  * Composant d'administration dédié aux paramètres globaux du site vitrine public :
@@ -19,6 +20,7 @@ import { getVitrineUrl } from '../../utils/urlUtils';
  * @param {boolean} props.saving - État de sauvegarde globale
  */
 export default function TabPublicGeneral({ formData, handleChange, groupId, saving }) {
+  const { t } = useTranslation();
   const { urls } = useTenantContext();
   const publicTheme = formData.publicTheme || {};
   const [publishing, setPublishing] = useState(false);
@@ -72,7 +74,7 @@ export default function TabPublicGeneral({ formData, handleChange, groupId, savi
           <div className="flex items-center gap-2">
             <span className="text-xl">{isVitrinePublished ? '🟢' : '🟡'}</span>
             <h4 className="text-sm font-black uppercase tracking-wider text-stone-900">
-              Statut de Publication de la Vitrine Publique
+              {t('vitrine.admin.general.tabPublicGeneral.statutDePublicationDeLa')}
             </h4>
           </div>
           <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded border shadow-2xs ${
@@ -80,19 +82,21 @@ export default function TabPublicGeneral({ formData, handleChange, groupId, savi
               ? 'bg-emerald-700 text-white border-emerald-800'
               : 'bg-amber-600 text-white border-amber-700 animate-pulse'
           }`}>
-            {isVitrinePublished ? '🌐 EN LIGNE (PUBLIÉ)' : '🚧 MODE BROUILLON (MASQUÉ)'}
+            {isVitrinePublished
+              ? t('vitrine.admin.general.tabPublicGeneral.enLignePublie')
+              : t('vitrine.admin.general.tabPublicGeneral.modeBrouillonMasque')}
           </span>
         </div>
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-1">
           <div className="flex flex-col gap-1">
             <label className="text-xs font-black uppercase tracking-wide text-stone-900 flex items-center gap-2">
-              <span>🌍 Publier le site vitrine pour le grand public</span>
+              <span>{t('vitrine.admin.general.tabPublicGeneral.publierLeSiteVitrinePour')}</span>
             </label>
             <p className="text-[11px] text-stone-700 leading-relaxed max-w-xl">
               {isVitrinePublished
-                ? "Votre site vitrine est actuellement en ligne et totalement accessible par les visiteurs externes et moteurs de recherche."
-                : "Mode Brouillon actif : les visiteurs voient une page d'attente \"En construction\". Seuls les membres connectés peuvent prévisualiser le site."}
+                ? t('vitrine.admin.general.tabPublicGeneral.votreSiteVitrineEstActuellement')
+                : t('vitrine.admin.general.tabPublicGeneral.modeBrouillonActifLesVisiteurs')}
             </p>
           </div>
 
@@ -107,16 +111,22 @@ export default function TabPublicGeneral({ formData, handleChange, groupId, savi
                   : 'bg-emerald-700 text-white border-encre-noire hover:brightness-110'
               }`}
             >
-              <span>{publishing ? 'Patientez...' : (isVitrinePublished ? '🔒 Passer en Mode Brouillon' : '🌍 Publier le Site Maintenant')}</span>
+              <span>
+                {publishing
+                  ? t('vitrine.admin.general.tabPublicGeneral.patientez')
+                  : (isVitrinePublished
+                    ? t('vitrine.admin.general.tabPublicGeneral.passerEnModeBrouillon')
+                    : t('vitrine.admin.general.tabPublicGeneral.publierLeSiteMaintenant'))}
+              </span>
             </button>
 
             <button
               type="button"
               onClick={() => window.open(getVitrineUrl(urls, formData), '_blank', 'noopener,noreferrer')}
               className="px-4 py-2 text-xs font-black uppercase tracking-wider bg-cordel-vert text-white rounded-[6px_8px_5px_7px] border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-110 cursor-pointer flex items-center gap-1.5 select-none"
-              title="Ouvrir le site public dans un nouvel onglet"
+              title={t('vitrine.admin.general.tabPublicGeneral.ouvrirLeSitePublicDans')}
             >
-              <span>🌍 Voir le site public ↗</span>
+              <span>{t('vitrine.admin.general.tabPublicGeneral.voirLeSitePublic')}</span>
             </button>
           </div>
         </div>
@@ -125,17 +135,18 @@ export default function TabPublicGeneral({ formData, handleChange, groupId, savi
       {/* SECTION 1.5 : Domaine Personnalisé */}
       <CordelCard variant="default" className="p-5 flex flex-col gap-4 bg-white border-2 border-cordel-master-dark/30">
         <h4 className="text-xs font-black uppercase tracking-widest text-cordel-wood border-b border-dashed border-cordel-master-dark/20 pb-2 flex items-center gap-2">
-          <span>🔗 Nom de domaine personnalisé</span>
+          <span>{t('vitrine.admin.general.tabPublicGeneral.nomDeDomainePersonnalise')}</span>
         </h4>
         
         <div className="flex flex-col gap-2">
           <p className="text-xs text-stone-600 leading-relaxed">
-            Si vous possédez votre propre nom de domaine (ex: <strong>www.mon-association.fr</strong>), vous pouvez le renseigner ici. 
-            Il servira d'adresse principale pour votre site vitrine au lieu de l'adresse par défaut.
+            {t('vitrine.admin.general.tabPublicGeneral.siVousPossedezVotrePropre')}{' '}
+            <strong>{t('vitrine.admin.general.tabPublicGeneral.wwwMonAssociationFr')}</strong>
+            {t('vitrine.admin.general.tabPublicGeneral.vousPouvezLeRenseignerIci')}
           </p>
             <div className="flex flex-col gap-1.5 mt-2">
             <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
-              Domaines personnalisés
+              {t('vitrine.admin.general.tabPublicGeneral.domainesPersonnalises')}
             </label>
             <div className="flex flex-wrap gap-2 mb-1">
               {(formData.customDomains || []).map((domain, idx) => (
@@ -167,10 +178,16 @@ export default function TabPublicGeneral({ formData, handleChange, groupId, savi
                 }
               }}
               disabled={saving}
-              placeholder="Tapez un domaine (ex: www.mon-asso.fr) et appuyez sur Entrée"
+              placeholder={t('vitrine.admin.general.tabPublicGeneral.tapezUnDomaineExWww')}
               className="text-xs font-medium px-3 py-2 border border-encre-noire/30 rounded bg-white w-full sm:max-w-md"
             />
-            <span className="text-[10px] text-stone-500 font-medium">Appuyez sur <kbd className="bg-stone-100 border border-stone-300 rounded px-1">Entrée</kbd> pour ajouter un domaine. Saisissez le domaine sans "http://" ou "https://". Pensez à configurer les DNS de votre nom de domaine pour pointer vers notre serveur.</span>
+            <span className="text-[10px] text-stone-500 font-medium">
+              {t('vitrine.admin.general.tabPublicGeneral.appuyezSur')}{' '}
+              <kbd className="bg-stone-100 border border-stone-300 rounded px-1">
+                {t('vitrine.admin.general.tabPublicGeneral.entree')}
+              </kbd>{' '}
+              {t('vitrine.admin.general.tabPublicGeneral.pourAjouterUnDomaineSaisissez')}
+            </span>
           </div>
         </div>
       </CordelCard>
@@ -178,14 +195,14 @@ export default function TabPublicGeneral({ formData, handleChange, groupId, savi
       {/* SECTION 2 : Coordonnées Générales de Contact */}
       <CordelCard variant="default" className="p-5 flex flex-col gap-4 bg-white border-2 border-cordel-master-dark/30">
         <h4 className="text-xs font-black uppercase tracking-widest text-cordel-wood border-b border-dashed border-cordel-master-dark/20 pb-2 flex items-center gap-2">
-          <span>📧 Coordonnées Générales de Contact</span>
+          <span>{t('vitrine.admin.general.tabPublicGeneral.coordonneesGeneralesDeContact')}</span>
         </h4>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* E-mail de contact */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
-              Adresse E-mail publique de contact
+              {t('vitrine.admin.general.tabPublicGeneral.adresseEMailPubliqueDe')}
             </label>
             <input
               type="email"
@@ -200,7 +217,7 @@ export default function TabPublicGeneral({ formData, handleChange, groupId, savi
           {/* Téléphone de contact */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
-              Numéro de téléphone de contact
+              {t('vitrine.admin.general.tabPublicGeneral.numeroDeTelephoneDeContact')}
             </label>
             <input
               type="tel"
@@ -218,29 +235,31 @@ export default function TabPublicGeneral({ formData, handleChange, groupId, savi
       <CordelCard variant="default" className="p-5 flex flex-col gap-4 bg-white border-2 border-cordel-master-dark/30">
         <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-2">
           <h4 className="text-xs font-black uppercase tracking-widest text-cordel-wood flex items-center gap-2">
-            <span>🔎 Référencement SEO & Méta-Données (Google)</span>
+            <span>{t('vitrine.admin.general.tabPublicGeneral.referencementSeoMetaDonneesGoogle')}</span>
           </h4>
           <span className="text-[10px] font-mono bg-stone-100 text-stone-700 px-2 py-0.5 rounded border border-stone-300">
-            Moteurs de recherche
+            {t('vitrine.admin.general.tabPublicGeneral.moteursDeRecherche')}
           </span>
         </div>
 
         <p className="text-xs text-stone-600 leading-relaxed">
-          Optimisez le titre, la description et les mots-clés de votre site vitrine pour apparaître en haut des résultats sur Google.
+          {t('vitrine.admin.general.tabPublicGeneral.optimisezLeTitreLaDescription')}
         </p>
 
         {/* Titre de la page SEO */}
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80 flex items-center justify-between">
-            <span>Titre de la page (Balise Meta Title)</span>
-            <span className="text-[10px] text-stone-400 font-normal">Recommandé : 50-60 caractères</span>
+            <span>{t('vitrine.admin.general.tabPublicGeneral.titreDeLaPageBalise')}</span>
+            <span className="text-[10px] text-stone-400 font-normal">
+              {t('vitrine.admin.general.tabPublicGeneral.recommande5060Caracteres')}
+            </span>
           </label>
           <input
             type="text"
             value={publicTheme.seoTitle || ''}
             onChange={(e) => handleThemeChange('seoTitle', e.target.value)}
             disabled={saving}
-            placeholder="Ex: Groupe Maracatu & Percussions Brésiliennes - Nom Association"
+            placeholder={t('vitrine.admin.general.tabPublicGeneral.exGroupeMaracatuPercussionsBresiliennes')}
             className="text-xs font-bold px-3 py-2 border border-encre-noire/30 rounded bg-white"
           />
         </div>
@@ -248,15 +267,17 @@ export default function TabPublicGeneral({ formData, handleChange, groupId, savi
         {/* Description Meta */}
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80 flex items-center justify-between">
-            <span>Description de la page (Meta Description)</span>
-            <span className="text-[10px] text-stone-400 font-normal">Recommandé : 150-160 caractères</span>
+            <span>{t('vitrine.admin.general.tabPublicGeneral.descriptionDeLaPageMeta')}</span>
+            <span className="text-[10px] text-stone-400 font-normal">
+              {t('vitrine.admin.general.tabPublicGeneral.recommande150160Caracteres')}
+            </span>
           </label>
           <textarea
             rows={3}
             value={publicTheme.seoDescription || ''}
             onChange={(e) => handleThemeChange('seoDescription', e.target.value)}
             disabled={saving}
-            placeholder="Ex: Retrouvez nos ateliers de percussion brésilienne et de danse traditionnelle maracatu, nos prochaines dates de concert et prestations scéniques."
+            placeholder={t('vitrine.admin.general.tabPublicGeneral.exRetrouvezNosAteliersDe')}
             className="text-xs font-medium px-3 py-2 border border-encre-noire/30 rounded bg-white resize-none"
           />
         </div>
@@ -264,15 +285,17 @@ export default function TabPublicGeneral({ formData, handleChange, groupId, savi
         {/* Mots-Clés SEO */}
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80 flex items-center justify-between">
-            <span>Mots-clés SEO (Séparés par des virgules)</span>
-            <span className="text-[10px] text-stone-400 font-normal">Ex: maracatu, batucada, musique brésilienne</span>
+            <span>{t('vitrine.admin.general.tabPublicGeneral.motsClesSeoSeparesPar')}</span>
+            <span className="text-[10px] text-stone-400 font-normal">
+              {t('vitrine.admin.general.tabPublicGeneral.exMaracatuBatucadaMusiqueBresilienne')}
+            </span>
           </label>
           <input
             type="text"
             value={publicTheme.seoKeywords || ''}
             onChange={(e) => handleThemeChange('seoKeywords', e.target.value)}
             disabled={saving}
-            placeholder="maracatu, percussions, danse brésilienne, batucada, spectacle de rue"
+            placeholder={t('vitrine.admin.general.tabPublicGeneral.maracatuPercussionsDanseBresilienneBatucada')}
             className="text-xs font-mono px-3 py-2 border border-encre-noire/30 rounded bg-white"
           />
         </div>
@@ -281,7 +304,7 @@ export default function TabPublicGeneral({ formData, handleChange, groupId, savi
       {/* SECTION 4 : Mentions Légales & Structure */}
       <CordelCard variant="default" className="p-4 bg-[#fdfaf2] dark:bg-[#201d1a] border-2 border-cordel-master-dark/30">
         <h4 className="text-xs font-black uppercase tracking-widest text-cordel-wood border-b border-dashed border-cordel-master-dark/20 pb-2 flex items-center gap-2 mb-4">
-          <span>⚖️ Structure Juridique (Mentions Légales)</span>
+          <span>{t('vitrine.admin.general.tabPublicGeneral.structureJuridiqueMentionsLegales')}</span>
         </h4>
         <LegalInfoBlock 
           formData={formData} 
@@ -293,3 +316,4 @@ export default function TabPublicGeneral({ formData, handleChange, groupId, savi
     </div>
   );
 }
+

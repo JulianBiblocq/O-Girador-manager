@@ -61,6 +61,9 @@ export function useDocumentUploadPipeline({
    */
   const downloadTemplate = (category) => {
     let templateObj;
+    const isFabrication = category === 'TutosFabrication' || category === 'fabrication';
+    const filename = isFabrication ? 'modele_import_fabrication.json' : `modele_import_${category}.json`;
+
     if (category === 'Culture') {
       templateObj = [
         {
@@ -100,6 +103,38 @@ export function useDocumentUploadPipeline({
           excludeFromPedagogy: false
         }
       ];
+    } else if (isFabrication) {
+      templateObj = [
+        {
+          titre: "Fabrication d'un carnet Cordel / Instrument",
+          thematiqueFabrication: "lutherie",
+          instrumentConcerne: "Alfaia 16 pouces",
+          materielRequis: ["Contreplaqué 4mm", "Colle à bois", "Corde 8mm"],
+          outilsNecessaires: ["Scie sauteuse", "Serre-joints", "Réglet"],
+          visuelAnimeUrl: "https://...",
+          contenuFabrication: "<p>Présentation générale, consignes de sécurité et mise en garde...</p>",
+          anecdote: "Astuce d'atelier pour le séchage...",
+          etapesFabrication: [
+            {
+              id: 1,
+              sousTitre: "Découpe des cartons et pré-pliage immédiat",
+              description: "Mesurer et découper les cartons selon le gabarit fourni...",
+              imageUrl: "https://...",
+              materiaux: ["Contreplaqué 4mm"],
+              outils: ["Scie sauteuse", "Réglet"]
+            },
+            {
+              id: 2,
+              sousTitre: "Gravure des tampons en linoléum",
+              description: "Dessiner les visuels et lettrages en miroir sur le linoléum...",
+              imageUrl: "https://...",
+              materiaux: ["Colle à bois"],
+              outils: ["Serre-joints"]
+            }
+          ],
+          questionsQcm: []
+        }
+      ];
     } else {
       templateObj = [
         {
@@ -117,18 +152,6 @@ export function useDocumentUploadPipeline({
           traduction: "",
           notesLexique: [],
           anecdote: "",
-          contenuFabrication: "",
-          materielRequis: [],
-          outilsNecessaires: [],
-          instrumentConcerne: "",
-          visuelAnimeUrl: "",
-          etapesFabrication: [
-            {
-              sousTitre: "",
-              description: "",
-              imageUrl: ""
-            }
-          ],
           questionsQcm: [
             {
               question: "",
@@ -147,7 +170,7 @@ export function useDocumentUploadPipeline({
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(templateObj, null, 2));
     const dlAnchorElem = document.createElement('a');
     dlAnchorElem.setAttribute("href", dataStr);
-    dlAnchorElem.setAttribute("download", `modele_import_${category}.json`);
+    dlAnchorElem.setAttribute("download", filename);
     dlAnchorElem.click();
   };
 
@@ -226,12 +249,23 @@ export function useDocumentUploadPipeline({
             traduction: item.traduction || '',
             notesLexique: Array.isArray(item.notesLexique) ? item.notesLexique : [],
             anecdote: item.anecdote || '',
+            thematiqueFabrication: item.thematiqueFabrication || 'lutherie',
             contenuFabrication: item.contenuFabrication || '',
             materielRequis: parseTagsList(item.materielRequis),
             outilsNecessaires: parseTagsList(item.outilsNecessaires),
             instrumentConcerne: item.instrumentConcerne || '',
             visuelAnimeUrl: item.visuelAnimeUrl || '',
-            etapesFabrication: Array.isArray(item.etapesFabrication) ? item.etapesFabrication : [],
+            etapesFabrication: Array.isArray(item.etapesFabrication)
+              ? item.etapesFabrication.map((step, idx) => ({
+                  ...step,
+                  id: step.id || Date.now() + idx + Math.random(),
+                  sousTitre: step.sousTitre || '',
+                  description: step.description || '',
+                  imageUrl: step.imageUrl || '',
+                  materiaux: parseTagsList(step.materiaux),
+                  outils: parseTagsList(step.outils)
+                }))
+              : [],
             questionsQcm: Array.isArray(item.questionsQcm) ? item.questionsQcm : [],
             categorieFiche: item.categorieFiche || '',
             hexPrimary: item.hexPrimary || (item.couleurs && item.couleurs[0]) || (item.couleursString && item.couleursString.split(',')[0].trim()) || '#EAB308',

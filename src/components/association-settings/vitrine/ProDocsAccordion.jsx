@@ -1,6 +1,7 @@
 import React from 'react';
 import CordelAccordion from '../../CordelAccordion';
 import TabPublicProDocs from '../TabPublicProDocs';
+import { useTranslation } from '../../../hooks/useTranslation';
 
 /**
  * Accordéon 4 : Documents Espace Pro
@@ -21,6 +22,7 @@ export default function ProDocsAccordion({
   saving,
   defaultOpen = false
 }) {
+  const { t } = useTranslation();
   const publicTheme = formData.publicTheme || {};
   
   // Comptage des documents renseignés
@@ -34,8 +36,12 @@ export default function ProDocsAccordion({
 
   return (
     <CordelAccordion
-      title="Documents Espace Pro"
-      subtitle={`Dossier artistique, fiche technique, plan de scène, kit presse (${uploadedCount}/4 configuré${uploadedCount > 1 ? 's' : ''})`}
+      title={t('vitrine.admin.proDocs.proDocsAccordion.documentsEspacePro')}
+      subtitle={t('vitrine.admin.proDocs.proDocsAccordion.dossierArtistiqueFicheTechniquePlan', {
+        param: uploadedCount,
+        count: uploadedCount,
+        s: uploadedCount > 1 ? 's' : ''
+      })}
       icon="📥"
       defaultOpen={defaultOpen}
       className="mb-3"

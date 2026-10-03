@@ -91,12 +91,24 @@ export default function TreasuryDashboard({
     }
   };
 
-  const {
-    totalRecettes,
-    totalDepenses,
-    solde,
-    categoriesBreakdown
-  } = calculateGlobalBalance(startDate, endDate);
+  const balanceResult = (typeof calculateGlobalBalance === 'function' ? calculateGlobalBalance(startDate, endDate) : null) || {};
+  const totalRecettes = Number(balanceResult.totalRecettes) || 0;
+  const totalDepenses = Number(balanceResult.totalDepenses) || 0;
+  const solde = Number(balanceResult.solde) || 0;
+  const categoriesBreakdown = {
+    recette: {
+      'Cotisations': Number(balanceResult.categoriesBreakdown?.recette?.['Cotisations']) || 0,
+      'Événements': Number(balanceResult.categoriesBreakdown?.recette?.['Événements']) || 0,
+      'Opérations Diverses': Number(balanceResult.categoriesBreakdown?.recette?.['Opérations Diverses']) || 0,
+      ...(balanceResult.categoriesBreakdown?.recette || {})
+    },
+    depense: {
+      'Événements': Number(balanceResult.categoriesBreakdown?.depense?.['Événements']) || 0,
+      'Frais Kilométriques': Number(balanceResult.categoriesBreakdown?.depense?.['Frais Kilométriques']) || 0,
+      'Opérations Diverses': Number(balanceResult.categoriesBreakdown?.depense?.['Opérations Diverses']) || 0,
+      ...(balanceResult.categoriesBreakdown?.depense || {})
+    }
+  };
 
   return (
     <div className="flex flex-col gap-6 w-full">

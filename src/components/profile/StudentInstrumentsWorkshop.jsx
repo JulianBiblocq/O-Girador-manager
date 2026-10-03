@@ -69,7 +69,7 @@ export default function StudentInstrumentsWorkshop({ user, profileData, onNaviga
 
     const cardPayload = {
       id: slot.id || slot.slotId,
-      titre: `${model?.nom || 'Instrument'} - ${slot.nom || slot.slotLabel}`,
+      titre: `${model?.nom || t('pedagogy.student.instrument')} - ${slot.nom || slot.slotLabel}`,
       instrumentConcerne: model?.type || model?.nom || '',
       materielRequis: Array.isArray(slot.materiels) ? slot.materiels : [],
       outilsNecessaires: Array.isArray(slot.outils) ? slot.outils : [],
@@ -274,7 +274,7 @@ export default function StudentInstrumentsWorkshop({ user, profileData, onNaviga
                     <div>
                       <h4 className="text-sm font-black text-encre-noire">{proj.nom}</h4>
                       <span className="text-[9px] text-cordel-wood uppercase font-bold tracking-wider">
-                        {t('lutherie.modelLabel')} {model?.nom || 'Inconnu'}
+                        {t('lutherie.modelLabel')} {model?.nom || t('pedagogy.student.inconnu')}
                       </span>
                     </div>
                     <span className="text-[9px] bg-[var(--color-cordel-vert)] text-white px-2 py-0.5 rounded font-bold uppercase">
@@ -337,7 +337,7 @@ export default function StudentInstrumentsWorkshop({ user, profileData, onNaviga
                 >
                   <div className="flex flex-col">
                     <span className="text-xs font-bold text-encre-noire">{proj.nom}</span>
-                    <span className="text-[9px] text-stone-500 font-semibold">{model?.nom || 'Instrument'}</span>
+                    <span className="text-[9px] text-stone-500 font-semibold">{model?.nom || t('pedagogy.student.instrument')}</span>
                   </div>
                   <span className="text-[10px] text-cordel-wood font-bold hover:underline">
                     {t('lutherie.btnConsultAction')}

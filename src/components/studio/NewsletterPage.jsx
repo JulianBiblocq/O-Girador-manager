@@ -54,7 +54,7 @@ export default function NewsletterPage({ groupId, onBack }) {
       <div className="flex flex-col items-center justify-center py-16 space-y-4">
         <div className="animate-spin text-4xl select-none">⏳</div>
         <p className="font-semibold text-sm text-stone-600 dark:text-stone-400">
-          Chargement du module Newsletter...
+          {t('studio.newsletter.chargementDuModuleNewsletter')}
         </p>
       </div>
     );
@@ -66,15 +66,15 @@ export default function NewsletterPage({ groupId, onBack }) {
       <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-stone-200 dark:border-stone-800">
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1">
-            <span>Studio</span>
+            <span>{t('studio.newsletter.studio')}</span>
             <span>›</span>
-            <span className="text-[var(--color-cordel-vert)] dark:text-emerald-400">Export Newsletter</span>
+            <span className="text-[var(--color-cordel-vert)] dark:text-emerald-400">{t('studio.newsletter.exportNewsletter')}</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-stone-900 dark:text-stone-100 flex items-center gap-2">
-            <span>📰</span> Module Newsletter
+            <span>📰</span> {t('studio.newsletter.moduleNewsletter')}
           </h1>
           <p className="text-sm text-stone-600 dark:text-stone-400 mt-1">
-            Préférez et exportez vos newsletters associatives directement vers votre plateforme emailing.
+            {t('studio.newsletter.preferezEtExportezVosNewsletters')}
           </p>
         </div>
 
@@ -83,7 +83,7 @@ export default function NewsletterPage({ groupId, onBack }) {
             onClick={onBack}
             className="border border-stone-300 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 px-4 py-2 text-sm font-semibold rounded-[var(--theme-border-radius,6px)] flex items-center gap-2"
           >
-            ⬅ Retour au Studio
+            {t('studio.newsletter.retourAuStudio')}
           </CordelButton>
         )}
       </div>
@@ -98,7 +98,7 @@ export default function NewsletterPage({ groupId, onBack }) {
       {/* Encart informatif : Statut du service d'envoi (Lecture seule) */}
       {(() => {
         const isBrevoConfigured = Boolean(settingsData?.brevoApiKey?.trim());
-        const expediteurEmail = settingsData?.emailOfficiel || settingsData?.emailExpediteur || settingsData?.emailContact || settingsData?.email || "Non configuré";
+        const expediteurEmail = settingsData?.emailOfficiel || settingsData?.emailExpediteur || settingsData?.emailContact || settingsData?.email || t('studio.newsletter.senderNotConfigured');
         
         return (
           <CordelCard variant="default" useExtremeBorder={true} className="p-3.5 mb-2 bg-[#fdfaf2] dark:bg-[#201d1a] border border-dashed border-cordel-master-dark/30">
@@ -108,23 +108,23 @@ export default function NewsletterPage({ groupId, onBack }) {
                 <div className="flex flex-col">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-black uppercase tracking-wider text-cordel-wood">
-                      Service d'envoi & Expéditeur
+                      {t('studio.newsletter.serviceDEnvoiExpediteur')}
                     </span>
                     <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded border ${
                       isBrevoConfigured 
                         ? 'bg-emerald-50 text-[var(--color-cordel-vert)] border-emerald-300' 
                         : 'bg-amber-50 text-[var(--color-cordel-ocre)] border-amber-300'
                     }`}>
-                      {isBrevoConfigured ? "✓ Service d'envoi configuré" : "⚠️ Clé API non renseignée"}
+                      {isBrevoConfigured ? t('studio.newsletter.serviceDEnvoiConfigure') : t('studio.newsletter.cleApiNonRenseignee')}
                     </span>
                   </div>
                   <span className="text-[10.5px] text-stone-600 dark:text-stone-400 font-semibold mt-0.5">
-                    Expéditeur officiel : <strong className="text-encre-noire dark:text-white font-bold">{expediteurEmail}</strong>
+                    {t('studio.newsletter.expediteurOfficiel')} <strong className="text-encre-noire dark:text-white font-bold">{expediteurEmail}</strong>
                   </span>
                 </div>
               </div>
               <p className="text-[10px] text-stone-500 italic max-w-xs leading-tight sm:text-right">
-                La configuration technique (clé Brevo & domaine expéditeur) est centralisée dans <strong>Configuration › Communication</strong>.
+                {t('studio.newsletter.laConfigurationTechniqueCleBrevo')} <strong>{t('studio.newsletter.configurationCommunication')}</strong>.
               </p>
             </div>
           </CordelCard>

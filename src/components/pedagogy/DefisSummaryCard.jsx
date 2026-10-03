@@ -41,9 +41,7 @@ export default function DefisSummaryCard({
             <span>🎯</span>
             <span>{t('pedagogy.challengeResultsTitle')}</span>
           </h2>
-          <span className="text-[10px] text-encre-noire/60 font-semibold">
-            Scores moyens des adhérents • Accès formateur immédiat
-          </span>
+          <span className="text-[10px] text-encre-noire/60 font-semibold">{t('pedagogy.trainerImmediateAccess')}</span>
         </div>
 
         {/* Rangée compacte des 3 indicateurs clés */}
@@ -56,7 +54,11 @@ export default function DefisSummaryCard({
               <div className="flex flex-col">
                 <span className="text-xs font-black text-encre-noire">{t('pedagogy.blindTestSuccess')}</span>
                 <span className="text-[10px] text-encre-noire/60 font-bold">
-                  {metrics.blindTest.count > 0 ? `${metrics.blindTest.count} quiz passés` : 'Historique troupe'}
+                  {metrics.blindTest.count > 0
+                    ? (metrics.blindTest.count === 1
+                        ? t('pedagogy.quizzesCompletedCount', { count: metrics.blindTest.count })
+                        : t('pedagogy.quizzesCompletedCount_plural', { count: metrics.blindTest.count }))
+                    : t('pedagogy.carnet.historiqueTroupe')}
                 </span>
               </div>
             </div>
@@ -69,7 +71,7 @@ export default function DefisSummaryCard({
                 type="button"
                 onClick={() => setActiveModal('blind_test')}
                 className="text-[9.5px] font-black uppercase tracking-wider px-2 py-1 bg-white text-cordel-wood border border-cordel-wood/40 rounded hover:bg-neutral-50 active:scale-95 transition-all cursor-pointer shadow-2xs"
-                title="Tester le Blind Test en direct"
+                title={t('pedagogy.carnet.testerLeBlindTestEn')}
               >
                 🎮 {t('pedagogy.btnTryChallenge')}
               </button>
@@ -83,7 +85,7 @@ export default function DefisSummaryCard({
               <div className="flex flex-col">
                 <span className="text-xs font-black text-encre-noire">{t('pedagogy.rhythmAccuracy')}</span>
                 <span className="text-[10px] text-encre-noire/60 font-bold">
-                  {metrics.reflex.count > 0 ? `${metrics.reflex.count} tests validés` : 'Arrêts au signal'}
+                  {metrics.reflex.count > 0 ? `${metrics.reflex.count} tests validés` : t('pedagogy.blindTestSub')}
                 </span>
               </div>
             </div>
@@ -96,7 +98,7 @@ export default function DefisSummaryCard({
                 type="button"
                 onClick={() => setActiveModal('reflex')}
                 className="text-[9.5px] font-black uppercase tracking-wider px-2 py-1 bg-white text-cordel-wood border border-cordel-wood/40 rounded hover:bg-neutral-50 active:scale-95 transition-all cursor-pointer shadow-2xs"
-                title="Tester le Défi Réflexe Temps 1"
+                title={t('pedagogy.carnet.testerLeDefiReflexeTemps')}
               >
                 🎮 {t('pedagogy.btnTryChallenge')}
               </button>
@@ -110,7 +112,7 @@ export default function DefisSummaryCard({
               <div className="flex flex-col">
                 <span className="text-xs font-black text-encre-noire">{t('pedagogy.signalsRecognition')}</span>
                 <span className="text-[10px] text-encre-noire/60 font-bold">
-                  {metrics.signals.count > 0 ? `${metrics.signals.count} évaluations` : 'Reconnaissance'}
+                  {metrics.signals.count > 0 ? `${metrics.signals.count} évaluations` : t('pedagogy.signalRecognitionSub')}
                 </span>
               </div>
             </div>
@@ -123,7 +125,7 @@ export default function DefisSummaryCard({
                 type="button"
                 onClick={() => setActiveModal('signaux')}
                 className="text-[9.5px] font-black uppercase tracking-wider px-2 py-1 bg-white text-cordel-wood border border-cordel-wood/40 rounded hover:bg-neutral-50 active:scale-95 transition-all cursor-pointer shadow-2xs"
-                title="Tester le quiz des Signaux"
+                title={t('pedagogy.carnet.testerLeQuizDesSignaux')}
               >
                 🎮 {t('pedagogy.btnTryChallenge')}
               </button>

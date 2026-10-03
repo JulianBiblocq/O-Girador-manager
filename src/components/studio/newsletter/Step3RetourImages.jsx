@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '../../LanguageContext';
 import CordelCard from '../../CordelCard';
 import CordelButton from '../../CordelButton';
 
@@ -28,6 +29,7 @@ export default function Step3RetourImages({
   onPrev,
   onNext
 }) {
+  const { t } = useTranslation();
   const photoCount = selectedPhotos.length;
   const isPhotoCountValid = photoCount >= 2 && photoCount <= 4;
 
@@ -35,22 +37,22 @@ export default function Step3RetourImages({
     <CordelCard className="p-6 space-y-8">
       <div>
         <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100 mb-2 flex items-center gap-2">
-          <span>🖼️</span> Étape 3 - Retour en images
+          <span>🖼️</span> {t('studio.newsletter.etape3RetourEnImages')}
         </h2>
         <p className="text-sm text-stone-600 dark:text-stone-400">
-          Sélectionnez les événements passés récents, complétez le bilan/remerciements et choisissez entre 2 et 4 photos pour illustrer la newsletter.
+          {t('studio.newsletter.selectionnezLesEvenementsPassesRecents')}
         </p>
       </div>
 
       {/* Section 1 : Événements passés & bilans */}
       <div>
         <h3 className="text-base font-bold text-stone-800 dark:text-stone-200 mb-3 flex items-center gap-2">
-          <span>📝</span> Événements passés récents & Bilans
+          <span>📝</span> {t('studio.newsletter.evenementsPassesRecentsBilans')}
         </h3>
 
         {pastEvents.length === 0 ? (
           <div className="p-4 text-center border border-dashed border-stone-300 dark:border-stone-700 rounded-[var(--theme-border-radius,6px)] bg-stone-50 dark:bg-stone-800/50 text-xs text-stone-500">
-            Aucun événement passé récent à afficher.
+            {t('studio.newsletter.aucunEvenementPasseRecentA')}
           </div>
         ) : (
           <div className="space-y-4 max-h-[380px] overflow-y-auto pr-1">
@@ -94,13 +96,13 @@ export default function Step3RetourImages({
                   {isSelected && (
                     <div className="mt-3 pt-3 border-t border-stone-200 dark:border-stone-700">
                       <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                        Bilan / Remerciements pour cet événement :
+                        {t('studio.newsletter.bilanRemerciementsPourCetEvenement')}
                       </label>
                       <textarea
                         rows={2}
                         value={pastEventBilans[evt.id] || ''}
                         onChange={(e) => setPastBilan(evt.id, e.target.value)}
-                        placeholder="Ex : Superbe ambiance malgré la pluie ! Merci à toutes l'équipe..."
+                        placeholder={t('studio.newsletter.exSuperbeAmbianceMalgreLa')}
                         className="w-full text-xs p-2.5 rounded-[var(--theme-border-radius,4px)] border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-[#2d6a4f]"
                       />
                     </div>
@@ -116,7 +118,7 @@ export default function Step3RetourImages({
       <div>
         <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
           <h3 className="text-base font-bold text-stone-800 dark:text-stone-200 flex items-center gap-2">
-            <span>📷</span> Grille de sélection des photos
+            <span>📷</span> {t('studio.newsletter.grilleDeSelectionDesPhotos')}
           </h3>
 
           {/* Indicateur avec couleur sémantique */}
@@ -127,13 +129,13 @@ export default function Step3RetourImages({
                 : 'bg-[var(--color-cordel-ocre)]/15 text-[var(--color-cordel-ocre)] dark:text-amber-400'
             }`}
           >
-            {photoCount} / 4 photos sélectionnées (2 à 4 requis)
+            {photoCount} / 4 {t('studio.newsletter.photosSelectionnees2A4Requis')}
           </span>
         </div>
 
         {availablePhotos.length === 0 ? (
           <div className="p-6 text-center border border-dashed border-stone-300 dark:border-stone-700 rounded-[var(--theme-border-radius,6px)] bg-stone-50 dark:bg-stone-800/50 text-xs text-stone-500">
-            Aucune photo enregistrée dans le système pour le moment.
+            {t('studio.newsletter.aucunePhotoEnregistreeDansLe')}
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-[360px] overflow-y-auto p-1">
@@ -179,7 +181,7 @@ export default function Step3RetourImages({
         {/* Message d'avertissement sémantique Ocre si nombre invalide */}
         {!isPhotoCountValid && (
           <p className="mt-2 text-xs font-semibold text-[var(--color-cordel-ocre)] dark:text-amber-400 flex items-center gap-1">
-            <span>⚠️</span> Veuillez sélectionner entre 2 et 4 photos pour finaliser la mise en page de la newsletter.
+            <span>⚠️</span> {t('studio.newsletter.veuillezSelectionnerEntre2Et')}
           </p>
         )}
       </div>
@@ -190,14 +192,14 @@ export default function Step3RetourImages({
           onClick={onPrev}
           className="border border-stone-300 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 px-5 py-2 font-semibold rounded-[var(--theme-border-radius,6px)]"
         >
-          ⬅ Précédent
+          {t('studio.newsletter.precedent')}
         </CordelButton>
 
         <CordelButton
           onClick={onNext}
           className="bg-[var(--color-cordel-vert)] hover:bg-[#23533e] text-white px-6 py-2.5 font-semibold rounded-[var(--theme-border-radius,6px)] flex items-center gap-2"
         >
-          Suivant : Récapitulatif ➔
+          {t('studio.newsletter.suivantRecapitulatif')}
         </CordelButton>
       </div>
     </CordelCard>

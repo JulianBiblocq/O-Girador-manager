@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from '../LanguageContext';
 import EmailConfigSection from './email/EmailConfigSection';
 import BrevoIntegrationBlock from './blocks/BrevoIntegrationBlock';
 import TabAutomations from './TabAutomations';
@@ -7,7 +8,9 @@ import TabAutomations from './TabAutomations';
  * Pôle Configuration - Onglet Communication, E-mails & Automatisations ('config-comms').
  * Regroupe la gestion de l'expéditeur d'e-mails, Brevo, newsletter et relances automatiques.
  */
-export default function TabConfigComms({ formData, handleChange, groupId, saving, t }) {
+export default function TabConfigComms({ formData, handleChange, groupId, saving, t: propT }) {
+  const { t: hookT } = useTranslation();
+  const t = typeof propT === 'function' ? propT : hookT;
   const [activeSection, setActiveSection] = useState('email'); // 'email' | 'automations'
 
   return (
@@ -23,7 +26,7 @@ export default function TabConfigComms({ formData, handleChange, groupId, saving
               : 'bg-white text-stone-700 border border-stone-300 hover:bg-stone-50'
           }`}
         >
-          ✉️ E-mails, Expéditeur & Brevo
+          {t('studio.communication.eMailsExpediteurBrevo')}
         </button>
 
         <button
@@ -36,7 +39,7 @@ export default function TabConfigComms({ formData, handleChange, groupId, saving
               : 'bg-white text-stone-700 border border-stone-300 hover:bg-stone-50'
           }`}
         >
-          ⚡ Relances Automatiques (J-1 / J-2)
+          {t('studio.communication.relancesAutomatiquesJ1J')}
         </button>
       </div>
 

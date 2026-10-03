@@ -5,6 +5,7 @@ import React, { useMemo } from 'react';
 import CordelCard from '../CordelCard';
 import PercussionPieceRow from './PercussionPieceRow';
 import { PERCUSSION_FAMILIES, getUsersForFamily } from '../../utils/pedagogyDashboardCalculations';
+import { useTranslation } from '../LanguageContext';
 
 export default function PercussionRepertoireAnalytics({
   repertoire = [],
@@ -16,6 +17,7 @@ export default function PercussionRepertoireAnalytics({
   onProgramDirect = null,
   onPinNote = null
 }) {
+  const { t } = useTranslation();
   // 1. Filtrage sur les morceaux officiels de la saison (ou non archivés)
   const seasonPieces = useMemo(() => {
     const saisons = (repertoire || []).filter((p) => p.statutSaison === 'saison');
@@ -37,12 +39,8 @@ export default function PercussionRepertoireAnalytics({
     return (
       <CordelCard variant="default" className="p-8 text-center text-xs font-bold text-cordel-master-dark/60 bg-[#fdfaf2] border border-dashed border-encre-noire/20 rounded-lg">
         <span className="text-3xl block mb-2">🥁</span>
-        <p className="text-sm font-black uppercase text-encre-noire mb-1">
-          Aucun morceau officiel de saison
-        </p>
-        <p className="text-xs text-encre-noire/60">
-          Ajoutez des morceaux dans le Répertoire de l'association ou assignez-leur le statut « En saison » pour visualiser la matrice de confort par famille d'instruments.
-        </p>
+        <p className="text-sm font-black uppercase text-encre-noire mb-1">{t('pedagogy.progress.aucunMorceauOfficielDeSaison')}</p>
+        <p className="text-xs text-encre-noire/60">{t('pedagogy.progress.ajoutezDesMorceauxDansLe')}</p>
       </CordelCard>
     );
   }
@@ -54,21 +52,15 @@ export default function PercussionRepertoireAnalytics({
         <div>
           <h3 className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
             <span>🥁</span>
-            <span>Matrice Percussion de Saison ({seasonPieces.length} morceaux)</span>
+            <span>{t('pedagogy.progress.matricePercussionDeSaison')}{seasonPieces.length} {t('pedagogy.progress.morceauxFermante')}</span>
           </h3>
-          <p className="text-[10.5px] font-bold text-encre-noire/70 mt-0.5">
-            1 ligne par morceau • Synthèse du niveau de confort de la troupe par famille d'instruments.
-          </p>
+          <p className="text-[10.5px] font-bold text-encre-noire/70 mt-0.5">{t('pedagogy.matrixSubtitle')}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <span className="text-[9.5px] font-black uppercase px-2 py-0.5 rounded bg-[var(--color-cordel-vert)] text-white shadow-2xs">
-            ≥ 75% À l'aise
-          </span>
-          <span className="text-[9.5px] font-black uppercase px-2 py-0.5 rounded bg-[var(--color-cordel-ocre)] text-white shadow-2xs">
-            50-74% Travail
-          </span>
+          <span className="text-[9.5px] font-black uppercase px-2 py-0.5 rounded bg-[var(--color-cordel-vert)] text-white shadow-2xs">{t('pedagogy.legendComfortable')}</span>
+          <span className="text-[9.5px] font-black uppercase px-2 py-0.5 rounded bg-[var(--color-cordel-ocre)] text-white shadow-2xs">{t('pedagogy.legendWorking')}</span>
           <span className="text-[9.5px] font-black uppercase px-2 py-0.5 rounded bg-[var(--color-cordel-rouge)] text-white shadow-2xs">
-            &lt; 50% Fragile
+            {t('pedagogy.legendFragile')}
           </span>
         </div>
       </div>
@@ -78,12 +70,8 @@ export default function PercussionRepertoireAnalytics({
         <table className="w-full text-left text-xs min-w-[650px]">
           <thead>
             <tr className="border-b-2 border-encre-noire/20">
-              <th className="p-2 font-black uppercase tracking-widest text-cordel-wood">
-                Morceau de Saison
-              </th>
-              <th className="p-2 font-black uppercase tracking-widest text-center text-encre-noire/60">
-                Global
-              </th>
+              <th className="p-2 font-black uppercase tracking-widest text-cordel-wood">{t('pedagogy.progress.morceauDeSaison')}</th>
+              <th className="p-2 font-black uppercase tracking-widest text-center text-encre-noire/60">{t('pedagogy.progress.global')}</th>
               {PERCUSSION_FAMILIES.map((f) => (
                 <th key={f.id} className="p-2 font-bold uppercase text-center text-encre-noire">
                   <span className="flex items-center justify-center gap-1">
@@ -93,7 +81,7 @@ export default function PercussionRepertoireAnalytics({
                 </th>
               ))}
               <th className="p-2 font-black uppercase tracking-widest text-right text-encre-noire/60">
-                Détail &amp; Actions
+                {t('pedagogy.progress.detailEtActions')}
               </th>
             </tr>
           </thead>

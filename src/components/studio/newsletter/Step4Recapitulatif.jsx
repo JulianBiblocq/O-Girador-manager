@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from '../../LanguageContext';
 import CordelCard from '../../CordelCard';
 import CordelButton from '../../CordelButton';
 
@@ -18,6 +19,7 @@ export default function Step4Recapitulatif({
   exportResult,
   onPrev
 }) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
 
   // Copier le JSON dans le presse-papier
@@ -31,10 +33,10 @@ export default function Step4Recapitulatif({
     <CordelCard className="p-6 space-y-6">
       <div>
         <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100 mb-2 flex items-center gap-2">
-          <span>🎯</span> Étape 4 - Récapitulatif & Validation
+          <span>🎯</span> {t('studio.newsletter.etape4RecapitulatifValidation')}
         </h2>
         <p className="text-sm text-stone-600 dark:text-stone-400">
-          Vérifiez la structure du contenu assemblé avant de générer le brouillon dans le service d'emailing.
+          {t('studio.newsletter.verifiezLaStructureDuContenu')}
         </p>
       </div>
 
@@ -42,14 +44,14 @@ export default function Step4Recapitulatif({
       {exportResult && exportResult.success && (
         <div className="p-4 rounded-[var(--theme-border-radius,6px)] bg-[var(--color-cordel-vert)]/15 border border-[#2d6a4f] text-[var(--color-cordel-vert)] dark:text-emerald-300 space-y-1">
           <div className="font-bold flex items-center gap-2">
-            <span>✅</span> Brouillon généré avec succès !
+            <span>✅</span> {t('studio.newsletter.brouillonGenereAvecSucces')}
           </div>
           <p className="text-xs text-stone-700 dark:text-stone-300">
-            {exportResult.data?.message || 'Le brouillon de votre newsletter a été transmis à votre service d\'emailing.'}
+            {exportResult.data?.message || t('studio.newsletter.leBrouillonDeVotreNewsletter')}
           </p>
           {exportResult.data?.draftId && (
             <p className="text-xs font-mono opacity-80">
-              ID Brouillon : {exportResult.data.draftId}
+              {t('studio.newsletter.idBrouillon')} {exportResult.data.draftId}
             </p>
           )}
         </div>
@@ -59,10 +61,10 @@ export default function Step4Recapitulatif({
       {exportResult && !exportResult.success && (
         <div className="p-4 rounded-[var(--theme-border-radius,6px)] bg-[var(--theme-primary)]/15 border border-[var(--theme-primary)] text-[var(--theme-primary)] dark:text-rose-400 space-y-1">
           <div className="font-bold flex items-center gap-2">
-            <span>❌</span> Échec de génération du brouillon
+            <span>❌</span> {t('studio.newsletter.echecDeGenerationDuBrouillon')}
           </div>
           <p className="text-xs">
-            {exportResult.error || 'Une erreur est survenue lors de l\'exportation.'}
+            {exportResult.error || t('studio.newsletter.uneErreurEstSurvenueLors')}
           </p>
         </div>
       )}
@@ -72,20 +74,20 @@ export default function Step4Recapitulatif({
         {/* Carte : Campagne & Message */}
         <div className="p-4 rounded-[var(--theme-border-radius,6px)] border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800">
           <span className="text-xs font-bold text-stone-500 uppercase tracking-wider block mb-1">
-            Campagne
+            {t('studio.newsletter.campagne')}
           </span>
           <h4 className="font-bold text-stone-900 dark:text-stone-100 text-sm mb-2">
-            {payloadJSON.titre_campagne || 'Sans titre'}
+            {payloadJSON.titre_campagne || t('studio.newsletter.sansTitre')}
           </h4>
           <p className="text-xs text-stone-600 dark:text-stone-400 line-clamp-3">
-            {payloadJSON.message_accueil || 'Aucun mot de bienvenue.'}
+            {payloadJSON.message_accueil || t('studio.newsletter.aucunMotDeBienvenue')}
           </p>
         </div>
 
         {/* Carte : Prochaines dates */}
         <div className="p-4 rounded-[var(--theme-border-radius,6px)] border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800">
           <span className="text-xs font-bold text-stone-500 uppercase tracking-wider block mb-1">
-            Événements futurs ({payloadJSON.prochaines_dates?.length || 0})
+            {t('studio.newsletter.evenementsFuturs')} ({payloadJSON.prochaines_dates?.length || 0})
           </span>
           <ul className="text-xs space-y-1 text-stone-700 dark:text-stone-300">
             {payloadJSON.prochaines_dates?.length > 0 ? (
@@ -95,7 +97,7 @@ export default function Step4Recapitulatif({
                 </li>
               ))
             ) : (
-              <li className="text-stone-400 italic">Aucune date sélectionnée</li>
+              <li className="text-stone-400 italic">{t('studio.newsletter.aucuneDateSelectionnee')}</li>
             )}
           </ul>
         </div>
@@ -103,19 +105,19 @@ export default function Step4Recapitulatif({
         {/* Carte : Événements passés & Photos */}
         <div className="p-4 rounded-[var(--theme-border-radius,6px)] border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800">
           <span className="text-xs font-bold text-stone-500 uppercase tracking-wider block mb-1">
-            Événements passés ({payloadJSON.evenements_passes?.length || 0})
+            {t('studio.newsletter.evenementsPasses')} ({payloadJSON.evenements_passes?.length || 0})
           </span>
           <p className="text-xs text-stone-700 dark:text-stone-300 mb-2">
-            {payloadJSON.evenements_passes?.map(e => e.titre).join(', ') || 'Aucun passé sélectionné'}
+            {payloadJSON.evenements_passes?.map(e => e.titre).join(', ') || t('studio.newsletter.aucunPasseSelectionne')}
           </p>
           <div className="flex items-center gap-1.5 pt-2 border-t border-stone-200 dark:border-stone-700">
-            <span className="text-xs text-stone-500 font-semibold">Photos associées :</span>
+            <span className="text-xs text-stone-500 font-semibold">{t('studio.newsletter.photosAssociees')}</span>
             <div className="flex -space-x-2">
               {payloadJSON.evenements_passes?.flatMap(e => e.photos || []).slice(0, 4).map((url, idx) => (
                 <img
                   key={idx}
                   src={url}
-                  alt="Aperçu photo"
+                  alt={t('studio.newsletter.apercuPhoto')}
                   className="w-6 h-6 rounded-full object-cover border-2 border-white dark:border-stone-800"
                 />
               ))}
@@ -128,14 +130,14 @@ export default function Step4Recapitulatif({
       <div>
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-sm font-bold text-stone-800 dark:text-stone-200 flex items-center gap-2">
-            <span>⚙️</span> Payload JSON standardisé
+            <span>⚙️</span> {t('studio.newsletter.payloadJsonStandardise')}
           </h3>
           <button
             type="button"
             onClick={handleCopyJSON}
             className="text-xs font-semibold text-[var(--color-cordel-vert)] dark:text-emerald-400 hover:underline flex items-center gap-1"
           >
-            {copied ? '✓ Copié !' : '📋 Copier le JSON'}
+            {copied ? t('studio.newsletter.copie') : t('studio.newsletter.copierLeJson')}
           </button>
         </div>
 
@@ -150,7 +152,7 @@ export default function Step4Recapitulatif({
           onClick={onPrev}
           className="border border-stone-300 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 px-5 py-2 font-semibold rounded-[var(--theme-border-radius,6px)]"
         >
-          ⬅ Précédent
+          {t('studio.newsletter.precedent')}
         </CordelButton>
 
         <CordelButton
@@ -160,11 +162,11 @@ export default function Step4Recapitulatif({
         >
           {exporting ? (
             <>
-              <span className="animate-spin">⏳</span> Génération en cours...
+              <span className="animate-spin">⏳</span> {t('studio.newsletter.generationEnCours')}
             </>
           ) : (
             <>
-              <span>🚀</span> Générer le brouillon
+              <span>🚀</span> {t('studio.newsletter.genererLeBrouillon')}
             </>
           )}
         </CordelButton>

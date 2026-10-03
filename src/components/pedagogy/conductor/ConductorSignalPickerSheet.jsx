@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '../../LanguageContext';
 
 /**
  * Volet contextuel (Bottom Sheet / Modal popover) pour choisir le signal
@@ -20,6 +21,7 @@ export default function ConductorSignalPickerSheet({
   onSelectSignal,
   onRemoveSignal
 }) {
+  const { t } = useTranslation();
   if (!isOpen || !slot) return null;
 
   const options = slot.options || [];
@@ -28,26 +30,27 @@ export default function ConductorSignalPickerSheet({
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-xs select-none">
       <div className="relative w-full max-w-lg bg-cordel-bg p-4 rounded-t-2xl sm:rounded-xl shadow-2xl border-2 border-encre-noire text-left flex flex-col gap-3 animate-fadeIn">
         {/* En-tête du volet */}
-        <div className="flex justify-between items-center border-b-2 border-dashed border-cordel-master-dark/20 pb-2">
-          <div className="flex items-center gap-2">
+        <div className="flex justify-between items-start gap-3 border-b-2 border-dashed border-cordel-master-dark/20 pb-2">
+          <div className="flex-1 min-w-0 pr-2 flex items-start gap-2">
             <span className="text-xl">🖐️</span>
             <div>
               <h3 className="text-xs sm:text-sm font-black uppercase text-cordel-wood tracking-wider">
-                Signal à la Mesure {slot.mesure}
+                {t('pedagogy.reflex.signalALaMesure')} {slot.mesure}
               </h3>
-              <p className="text-[10px] font-bold text-encre-noire/70">
-                Quel geste ou appel le Mestre déclenche-t-il ici ?
-              </p>
+              <p className="text-[10px] font-bold text-encre-noire/70">{t('pedagogy.reflex.quelGesteOuAppelLe')}</p>
             </div>
           </div>
 
           <button
             type="button"
             onClick={onClose}
-            className="w-7 h-7 rounded-full bg-encre-noire text-white font-black text-sm flex items-center justify-center hover:bg-red-700 cursor-pointer shadow-xs"
-            title="Fermer"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center -mr-2 -mt-2 rounded-lg text-white hover:bg-black/5 active:bg-black/10 transition-colors cursor-pointer shrink-0 select-none touch-manipulation"
+            aria-label={t('pedagogy.reflex.fermerBouton', 'Fermer')}
+            title={t('pedagogy.reflex.fermerBouton')}
           >
-            ✕
+              <span className="w-8 h-8 rounded-full bg-encre-noire text-white font-black text-sm flex items-center justify-center border-2 border-white hover:bg-red-700 transition-colors shadow-2xs pointer-events-none">
+                ✕
+              </span>
           </button>
         </div>
 
@@ -83,9 +86,7 @@ export default function ConductorSignalPickerSheet({
                 </span>
 
                 {isSelected && (
-                  <span className="text-[9px] font-black text-[var(--color-cordel-vert,#2d6a4f)]">
-                    ✓ Actuellement posé
-                  </span>
+                  <span className="text-[9px] font-black text-[var(--color-cordel-vert,#2d6a4f)]">{t('pedagogy.reflex.actuellementPose')}</span>
                 )}
               </button>
             );
@@ -104,7 +105,7 @@ export default function ConductorSignalPickerSheet({
               className="text-[10px] font-black uppercase text-[var(--color-cordel-rouge,#8b2a1a)] hover:underline cursor-pointer flex items-center gap-1"
             >
               <span>✕</span>
-              <span>Retirer le signal de la mesure {slot.mesure}</span>
+              <span>{t('pedagogy.reflex.retirerLeSignalDeLa')} {slot.mesure}</span>
             </button>
           </div>
         )}

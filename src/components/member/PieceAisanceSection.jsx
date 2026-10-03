@@ -55,7 +55,7 @@ export default function PieceAisanceSection({
           <span>{t('pedagogy.tempoTrainingTitle')}</span>
         </span>
         <span className="text-[9px] font-bold text-stone-600 bg-amber-100/70 border border-amber-300/80 px-1.5 py-0.5 rounded">
-          {pieceTrainings.length} entraînement{pieceTrainings.length > 1 ? 's' : ''}
+          {pieceTrainings.length} {t('pedagogy.modals.entrainement')}{pieceTrainings.length > 1 ? 's' : ''}
         </span>
       </div>
 
@@ -116,7 +116,7 @@ export default function PieceAisanceSection({
                           {t('pedagogy.stageLabel', { index: stage.index + 1 })}
                         </label>
                         <span className="text-[8.5px] opacity-75">
-                          ({stage.targetBpm} BPM)
+                          ({stage.targetBpm} {t('pedagogy.modals.bpm')}
                         </span>
 
                         <button

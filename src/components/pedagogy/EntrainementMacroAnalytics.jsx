@@ -4,6 +4,7 @@
 import React, { useState, useMemo } from 'react';
 import CordelCard from '../CordelCard';
 import EntrainementSegmentsBar from './EntrainementSegmentsBar';
+import { useTranslation } from '../LanguageContext';
 
 export default function EntrainementMacroAnalytics({
   usersData = [],
@@ -12,6 +13,7 @@ export default function EntrainementMacroAnalytics({
   evaluationsMap = {},
   pupitres = []
 }) {
+  const { t } = useTranslation();
   const [selectedPupitre, setSelectedPupitre] = useState('ALL');
 
   // Filtrage éventuel des membres par pupitre
@@ -104,22 +106,20 @@ export default function EntrainementMacroAnalytics({
         <div>
           <h3 className="text-sm font-black uppercase tracking-wider text-encre-noire flex items-center gap-2">
             <span>⚡</span>
-            <span>Dynamique d'Entraînement de la Troupe</span>
+            <span>{t('pedagogy.groupDynamicsTitle')}</span>
           </h3>
-          <p className="text-[10.5px] font-bold text-encre-noire/70 mt-0.5">
-            Indicateur macro de l'assiduité métronomique et de la progression collective (vue anonymisée).
-          </p>
+          <p className="text-[10.5px] font-bold text-encre-noire/70 mt-0.5">{t('pedagogy.groupDynamicsDesc')}</p>
         </div>
 
         {pupitres.length > 0 && (
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-black uppercase text-encre-noire/60">Pupitre :</span>
+            <span className="text-[10px] font-black uppercase text-encre-noire/60">{t('pedagogy.filterPupitreLabel')}</span>
             <select
               value={selectedPupitre}
               onChange={(e) => setSelectedPupitre(e.target.value)}
               className="px-2 py-1 text-xs font-black bg-white border border-encre-noire/30 rounded cursor-pointer shadow-2xs"
             >
-              <option value="ALL">Tous les pupitres ({usersData.length})</option>
+              <option value="ALL">{t('pedagogy.carnet.tousLesPupitres')}{usersData.length})</option>
               {pupitres.map((p) => (
                 <option key={p} value={p}>
                   {p}
@@ -133,38 +133,30 @@ export default function EntrainementMacroAnalytics({
       {/* Trio d'indicateurs synthétiques */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="p-3.5 bg-white border border-encre-noire/20 rounded flex flex-col gap-1 shadow-2xs">
-          <span className="text-[10px] font-black uppercase tracking-wider text-cordel-wood">
-            🎯 Assiduité Troupe
-          </span>
+          <span className="text-[10px] font-black uppercase tracking-wider text-cordel-wood">{t('pedagogy.statTroupeAttendance')}</span>
           <span className="text-2xl font-black text-encre-noire">
             {metrics.assiduitePct}%
           </span>
           <span className="text-[10px] font-bold text-encre-noire/60">
-            {metrics.activeCount} / {totalMembers} membres engagés
+            {metrics.activeCount} / {totalMembers} {t('pedagogy.carnet.membresEngages')}
           </span>
         </div>
 
         <div className="p-3.5 bg-white border border-encre-noire/20 rounded flex flex-col gap-1 shadow-2xs">
-          <span className="text-[10px] font-black uppercase tracking-wider text-[var(--color-cordel-vert)]">
-            📊 Complétion Paliers
-          </span>
+          <span className="text-[10px] font-black uppercase tracking-wider text-[var(--color-cordel-vert)]">{t('pedagogy.statLevelsCompletion')}</span>
           <span className="text-2xl font-black text-[var(--color-cordel-vert)]">
             {metrics.completionPct}%
           </span>
-          <span className="text-[10px] font-bold text-encre-noire/60">
-            Taux global de paliers métronomiques validés
-          </span>
+          <span className="text-[10px] font-bold text-encre-noire/60">{t('pedagogy.statLevelsCompletionDesc')}</span>
         </div>
 
         <div className="p-3.5 bg-white border border-encre-noire/20 rounded flex flex-col gap-1 shadow-2xs">
-          <span className="text-[10px] font-black uppercase tracking-wider text-[var(--color-cordel-ocre)]">
-            ⚡ Paliers Franchis
-          </span>
+          <span className="text-[10px] font-black uppercase tracking-wider text-[var(--color-cordel-ocre)]">{t('pedagogy.carnet.paliersFranchis')}</span>
           <span className="text-2xl font-black text-[var(--color-cordel-ocre)]">
             {metrics.totalValidatedStages}
           </span>
           <span className="text-[10px] font-bold text-encre-noire/60">
-            Sur {resolvedTrainings.length} morceau{resolvedTrainings.length > 1 ? 'x' : ''} actif{resolvedTrainings.length > 1 ? 's' : ''}
+            {t('pedagogy.carnet.sur')} {resolvedTrainings.length} {t('pedagogy.carnet.morceau')}{resolvedTrainings.length > 1 ? 'x' : ''} {t('pedagogy.carnet.actif')}{resolvedTrainings.length > 1 ? 's' : ''}
           </span>
         </div>
       </div>
@@ -175,17 +167,15 @@ export default function EntrainementMacroAnalytics({
       {/* Rappel concis des morceaux d'entraînement actifs (zéro nom d'élève) */}
       {resolvedTrainings.length > 0 && (
         <div className="pt-2 border-t border-dashed border-cordel-master-dark/15 flex flex-wrap gap-2 items-center">
-          <span className="text-[9.5px] font-black uppercase text-encre-noire/60 tracking-wider">
-            Morceaux à l'étude :
-          </span>
-          {resolvedTrainings.map((t) => {
-            const stagesCount = t.stages?.length || 0;
+          <span className="text-[9.5px] font-black uppercase text-encre-noire/60 tracking-wider">{t('pedagogy.carnet.morceauxALEtude')}</span>
+          {resolvedTrainings.map((tr) => {
+            const stagesCount = tr.stages?.length || 0;
             return (
               <span
-                key={t.id}
+                key={tr.id}
                 className="text-[10px] font-bold px-2 py-0.5 rounded bg-white border border-encre-noire/20 text-encre-noire shadow-2xs"
               >
-                🎵 {t.repertoireTitle} ({stagesCount} paliers)
+                🎵 {tr.repertoireTitle} ({stagesCount} {t('pedagogy.carnet.paliersFermante')}
               </span>
             );
           })}

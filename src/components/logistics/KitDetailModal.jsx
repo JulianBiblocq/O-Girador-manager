@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import CordelButton from '../CordelButton';
 import KitItemRow from './KitItemRow';
+import { useModalEscape } from '../../hooks/useModalEscape';
 
 /**
  * Modale de contrôle et d'inventaire détaillé d'une mallette ou trousse collective régie.
@@ -13,6 +14,9 @@ export default function KitDetailModal({ isOpen, onClose, kit, onUpdateKit, curr
   const [newItemTarget, setNewItemTarget] = useState(1);
   const [saving, setSaving] = useState(false);
   const [orderAlertMessage, setOrderAlertMessage] = useState('');
+
+  // Fermeture accessible avec la touche Échap
+  useModalEscape(isOpen, onClose, saving);
 
   if (!isOpen || !kit) return null;
 
@@ -68,9 +72,9 @@ export default function KitDetailModal({ isOpen, onClose, kit, onUpdateKit, curr
 
   return (
     <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/60 backdrop-blur-sm">
-      <div className="relative w-full max-w-2xl max-h-[90vh] flex flex-col bg-[var(--color-cordel-papier,#fdfbf7)] text-[var(--color-cordel-encre,#181716)] rounded-xl border-2 border-[var(--theme-border-color,#181716)] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-        {/* En-tête */}
-        <div className="px-4 py-3 border-b-2 border-[var(--theme-border-color,#181716)] bg-[var(--color-cordel-papier-card,#f5efe6)] flex items-center justify-between">
+      <div className="relative w-full max-w-2xl max-h-[90dvh] flex flex-col bg-[var(--color-cordel-papier,#fdfbf7)] text-[var(--color-cordel-encre,#181716)] rounded-xl border-2 border-[var(--theme-border-color,#181716)] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        {/* En-tête (Fixe) */}
+        <div className="shrink-0 px-4 py-3 border-b-2 border-[var(--theme-border-color,#181716)] bg-[var(--color-cordel-papier-card,#f5efe6)] flex items-center justify-between">
           <div>
             <h3 className="font-black text-sm m-0 leading-tight">🧰 {kit.nom}</h3>
             <span className="text-[11px] text-[var(--color-cordel-marron,#8b5e34)] block">📍 {kit.emplacement || 'Emplacement non défini'}</span>
@@ -80,13 +84,13 @@ export default function KitDetailModal({ isOpen, onClose, kit, onUpdateKit, curr
 
         {/* Notification alerte commande */}
         {orderAlertMessage && (
-          <div className="px-3 py-1.5 bg-amber-100 text-amber-900 border-b border-amber-300 text-xs font-bold text-center animate-in fade-in">
+          <div className="shrink-0 px-3 py-1.5 bg-amber-100 text-amber-900 border-b border-amber-300 text-xs font-bold text-center animate-in fade-in">
             {orderAlertMessage}
           </div>
         )}
 
-        {/* Corps de la modale */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 text-xs text-left">
+        {/* Corps de la modale (Défilable) */}
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-3 text-xs text-left">
           {/* Signature dernière vérification */}
           <div className="p-2.5 rounded bg-white/70 border border-neutral-300 flex flex-wrap items-center justify-between gap-2">
             <div>
@@ -147,12 +151,12 @@ export default function KitDetailModal({ isOpen, onClose, kit, onUpdateKit, curr
           </form>
         </div>
 
-        {/* Pied de page */}
-        <div className="px-4 py-2.5 border-t border-[var(--theme-border-color,#181716)] bg-[var(--color-cordel-papier-card,#f5efe6)] flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="px-3 py-1 rounded bg-neutral-200 text-neutral-700 font-bold text-xs">
+        {/* Pied de page (Fixe) */}
+        <div className="shrink-0 px-4 py-3 border-t border-[var(--theme-border-color,#181716)] bg-[var(--color-cordel-papier-card,#f5efe6)] flex justify-end gap-2 pb-[max(env(safe-area-inset-bottom),0.75rem)]">
+          <button type="button" onClick={onClose} className="px-3 py-1 rounded bg-neutral-200 text-neutral-700 font-bold text-xs shrink-0">
             Fermer
           </button>
-          <CordelButton variant="vert" onClick={() => handleSave(false)} disabled={saving}>
+          <CordelButton variant="vert" onClick={() => handleSave(false)} disabled={saving} className="shrink-0">
             {saving ? 'Enregistrement...' : 'Enregistrer'}
           </CordelButton>
         </div>

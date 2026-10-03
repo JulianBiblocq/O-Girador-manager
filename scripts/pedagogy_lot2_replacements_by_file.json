@@ -1,0 +1,2286 @@
+{
+  "src/components/pedagogy/MonCarnetAisance.jsx": [
+    {
+      "line": 160,
+      "type": "conditional",
+      "text": "Excellent ! Tu maîtrises le sujet.",
+      "fullKey": "pedagogy.carnet.excellentTuMaitrisesLeSujet"
+    },
+    {
+      "line": 163,
+      "type": "jsxText",
+      "text": "🔄 Rejouer",
+      "fullKey": "pedagogy.carnet.rejouer"
+    },
+    {
+      "line": 166,
+      "type": "jsxText",
+      "text": "✕ Fermer",
+      "fullKey": "pedagogy.carnet.fermer"
+    },
+    {
+      "line": 221,
+      "type": "conditional",
+      "text": "✅ Correct !",
+      "fullKey": "pedagogy.carnet.correct"
+    },
+    {
+      "line": 281,
+      "type": "config",
+      "text": "⚡ Défis Rythmiques",
+      "fullKey": "pedagogy.carnet.defisRythmiques"
+    },
+    {
+      "line": 285,
+      "type": "config",
+      "text": "🥁 Percussion",
+      "fullKey": "pedagogy.carnet.percussion"
+    },
+    {
+      "line": 286,
+      "type": "config",
+      "text": "💃 Danse",
+      "fullKey": "pedagogy.carnet.danse"
+    },
+    {
+      "line": 351,
+      "type": "config",
+      "text": "Gonguê",
+      "fullKey": "pedagogy.carnet.gongue"
+    },
+    {
+      "line": 353,
+      "type": "config",
+      "text": "Marcante",
+      "fullKey": "pedagogy.carnet.marcante"
+    },
+    {
+      "line": 354,
+      "type": "config",
+      "text": "Agbê",
+      "fullKey": "pedagogy.carnet.agbe"
+    },
+    {
+      "line": 356,
+      "type": "config",
+      "text": "Timbal",
+      "fullKey": "pedagogy.carnet.timbal"
+    },
+    {
+      "line": 511,
+      "type": "jsxText",
+      "text": "← Retour au Carnet",
+      "fullKey": "pedagogy.carnet.retourAuCarnet"
+    },
+    {
+      "line": 583,
+      "type": "jsxText",
+      "text": "maîtrisé",
+      "fullKey": "pedagogy.carnet.maitriseMinuscule"
+    },
+    {
+      "line": 591,
+      "type": "jsxText",
+      "text": "Aucun défi d'entraînement actif pour cette saison.",
+      "fullKey": "pedagogy.carnet.aucunDefiDEntrainementActif"
+    },
+    {
+      "line": 594,
+      "type": "jsxText",
+      "text": "Les programmes configurés dans sequenciador pour vos morceaux apparaîtront automatiquement ici.",
+      "fullKey": "pedagogy.carnet.lesProgrammesConfiguresDansSequenciador"
+    },
+    {
+      "line": 622,
+      "type": "jsxText",
+      "text": "Maîtrisé",
+      "fullKey": "pedagogy.carnet.maitrise"
+    },
+    {
+      "line": 627,
+      "type": "jsxText",
+      "text": "palier",
+      "fullKey": "pedagogy.carnet.palier"
+    },
+    {
+      "line": 652,
+      "type": "attribute",
+      "text": "Ouvrir sequenciador sur votre prochain palier d'entraînement",
+      "fullKey": "pedagogy.carnet.ouvrirSequenciadorSurVotreProchain"
+    },
+    {
+      "line": 655,
+      "type": "conditional",
+      "text": "Rejouer dans sequenciador",
+      "fullKey": "pedagogy.carnet.rejouerDansSequenciador"
+    },
+    {
+      "line": 655,
+      "type": "conditional",
+      "text": "S'entraîner maintenant",
+      "fullKey": "pedagogy.carnet.sEntrainerMaintenant"
+    },
+    {
+      "line": 732,
+      "type": "jsxText",
+      "text": "Réflexes & Conventions",
+      "fullKey": "pedagogy.carnet.reflexesConventions"
+    },
+    {
+      "line": 737,
+      "type": "jsxText",
+      "text": "signaux validés (Maîtrisé)",
+      "fullKey": "pedagogy.carnet.signauxValidesMaitrise"
+    },
+    {
+      "line": 742,
+      "type": "jsxText",
+      "text": "signaux validés",
+      "fullKey": "pedagogy.carnet.signauxValides"
+    },
+    {
+      "line": 746,
+      "type": "conditional",
+      "text": "À découvrir",
+      "fullKey": "pedagogy.carnet.aDecouvrir"
+    },
+    {
+      "line": 752,
+      "type": "jsxText",
+      "text": "Conducteur validé",
+      "fullKey": "pedagogy.carnet.conducteurValide"
+    },
+    {
+      "line": 759,
+      "type": "jsxText",
+      "text": "Simulateur de signaux du Mestre avec arrêt au temps 1 et mémorisation de la structure chronologique.",
+      "fullKey": "pedagogy.carnet.simulateurDeSignauxDuMestre"
+    },
+    {
+      "line": 769,
+      "type": "attribute",
+      "text": "Lancer le Défi Réflexe « Temps 1 » pour ce morceau",
+      "fullKey": "pedagogy.carnet.lancerLeDefiReflexeTemps"
+    },
+    {
+      "line": 772,
+      "type": "jsxText",
+      "text": "Défi Réflexe",
+      "fullKey": "pedagogy.carnet.defiReflexe"
+    },
+    {
+      "line": 778,
+      "type": "attribute",
+      "text": "Ouvrir la Timeline et compléter le conducteur à trous",
+      "fullKey": "pedagogy.carnet.ouvrirLaTimelineEtCompleter"
+    },
+    {
+      "line": 781,
+      "type": "jsxText",
+      "text": "Conduire le morceau (Timeline)",
+      "fullKey": "pedagogy.carnet.conduireLeMorceauTimeline"
+    },
+    {
+      "line": 813,
+      "type": "jsxText",
+      "text": "Répertoire de saison",
+      "fullKey": "pedagogy.carnet.repertoireDeSaison"
+    },
+    {
+      "line": 831,
+      "type": "jsxText",
+      "text": "Réflexes & Conventions",
+      "fullKey": "pedagogy.carnet.reflexesConventions"
+    },
+    {
+      "line": 836,
+      "type": "jsxText",
+      "text": "signaux validés (Maîtrisé)",
+      "fullKey": "pedagogy.carnet.signauxValidesMaitrise"
+    },
+    {
+      "line": 841,
+      "type": "jsxText",
+      "text": "signaux validés",
+      "fullKey": "pedagogy.carnet.signauxValides"
+    },
+    {
+      "line": 845,
+      "type": "conditional",
+      "text": "À découvrir",
+      "fullKey": "pedagogy.carnet.aDecouvrir"
+    },
+    {
+      "line": 851,
+      "type": "jsxText",
+      "text": "Conducteur validé",
+      "fullKey": "pedagogy.carnet.conducteurValide"
+    },
+    {
+      "line": 858,
+      "type": "jsxText",
+      "text": "Testez vos départs au temps 1 sur les signaux du Mestre avec 4 choix de tablatures.",
+      "fullKey": "pedagogy.carnet.testezVosDepartsAuTemps"
+    },
+    {
+      "line": 868,
+      "type": "attribute",
+      "text": "Lancer le Défi Réflexe « Temps 1 » pour ce morceau",
+      "fullKey": "pedagogy.carnet.lancerLeDefiReflexeTemps"
+    },
+    {
+      "line": 871,
+      "type": "jsxText",
+      "text": "Défi Réflexe",
+      "fullKey": "pedagogy.carnet.defiReflexe"
+    },
+    {
+      "line": 877,
+      "type": "attribute",
+      "text": "Ouvrir la Timeline et compléter le conducteur à trous",
+      "fullKey": "pedagogy.carnet.ouvrirLaTimelineEtCompleter"
+    },
+    {
+      "line": 880,
+      "type": "jsxText",
+      "text": "Conduire le morceau (Timeline)",
+      "fullKey": "pedagogy.carnet.conduireLeMorceauTimeline"
+    },
+    {
+      "line": 911,
+      "type": "jsxText",
+      "text": "💃 Évalue ton aisance chorégraphique sur chacun des rythmes (toadas, pas de base, variations).\n              Les pas du Dançador seront bientôt intégrés ici pour t'entraîner visuellement.",
+      "fullKey": "pedagogy.carnet.evalueTonAisanceChoregraphiqueSur"
+    },
+    {
+      "line": 919,
+      "type": "jsxText",
+      "text": "Aucun rythme disponible pour le moment.",
+      "fullKey": "pedagogy.carnet.aucunRythmeDisponiblePourLe"
+    },
+    {
+      "line": 957,
+      "type": "jsxText",
+      "text": "⏱️ Entraînement :",
+      "fullKey": "pedagogy.carnet.entrainement"
+    },
+    {
+      "line": 985,
+      "type": "jsxText",
+      "text": "Aucun chant disponible pour le moment.",
+      "fullKey": "pedagogy.carnet.aucunChantDisponiblePourLe"
+    },
+    {
+      "line": 1034,
+      "type": "jsxText",
+      "text": "🎯 Quiz sur cette Toada",
+      "fullKey": "pedagogy.carnet.quizSurCetteToada"
+    },
+    {
+      "line": 1052,
+      "type": "jsxText",
+      "text": "Aucune fiche de culture disponible pour le moment.",
+      "fullKey": "pedagogy.carnet.aucuneFicheDeCultureDisponible"
+    },
+    {
+      "line": 1102,
+      "type": "jsxText",
+      "text": "Aucune fiche de lutherie/atelier disponible pour le moment.",
+      "fullKey": "pedagogy.carnet.aucuneFicheDeLutherieAtelier"
+    },
+    {
+      "line": 1112,
+      "type": "fallback",
+      "text": "Atelier",
+      "fullKey": "pedagogy.carnet.atelier"
+    }
+  ],
+  "src/components/pedagogy/CarnetPercussionSection.jsx": [
+    {
+      "line": 56,
+      "type": "jsxText",
+      "text": "Aucun morceau officiel de saison disponible pour le moment.",
+      "fullKey": "pedagogy.carnet.aucunMorceauOfficielDeSaison"
+    },
+    {
+      "line": 59,
+      "type": "jsxText",
+      "text": "Les morceaux configurés dans le Répertoire de l'association s'afficheront ici automatiquement.",
+      "fullKey": "pedagogy.carnet.lesMorceauxConfiguresDansLe"
+    },
+    {
+      "line": 147,
+      "type": "jsxText",
+      "text": "Calage tempo dans le Séquenceur :",
+      "fullKey": "pedagogy.carnet.calageTempoDansLeSequenceur"
+    }
+  ],
+  "src/components/pedagogy/DefisSummaryCard.jsx": [
+    {
+      "line": 44,
+      "type": "jsxText",
+      "text": "Scores moyens des adhérents • Accès formateur immédiat",
+      "fullKey": "pedagogy.carnet.scoresMoyensDesAdherentsAcces"
+    },
+    {
+      "line": 59,
+      "type": "conditional",
+      "text": "Historique troupe",
+      "fullKey": "pedagogy.carnet.historiqueTroupe"
+    },
+    {
+      "line": 72,
+      "type": "attribute",
+      "text": "Tester le Blind Test en direct",
+      "fullKey": "pedagogy.carnet.testerLeBlindTestEn"
+    },
+    {
+      "line": 86,
+      "type": "conditional",
+      "text": "Arrêts au signal",
+      "fullKey": "pedagogy.carnet.arretsAuSignal"
+    },
+    {
+      "line": 99,
+      "type": "attribute",
+      "text": "Tester le Défi Réflexe Temps 1",
+      "fullKey": "pedagogy.carnet.testerLeDefiReflexeTemps"
+    },
+    {
+      "line": 113,
+      "type": "conditional",
+      "text": "Reconnaissance",
+      "fullKey": "pedagogy.carnet.reconnaissance"
+    },
+    {
+      "line": 126,
+      "type": "attribute",
+      "text": "Tester le quiz des Signaux",
+      "fullKey": "pedagogy.carnet.testerLeQuizDesSignaux"
+    }
+  ],
+  "src/components/pedagogy/EntrainementMacroAnalytics.jsx": [
+    {
+      "line": 107,
+      "type": "jsxText",
+      "text": "Dynamique d'Entraînement de la Troupe",
+      "fullKey": "pedagogy.carnet.dynamiqueDEntrainementDeLa"
+    },
+    {
+      "line": 109,
+      "type": "jsxText",
+      "text": "Indicateur macro de l'assiduité métronomique et de la progression collective (vue anonymisée).",
+      "fullKey": "pedagogy.carnet.indicateurMacroDeLAssiduite"
+    },
+    {
+      "line": 116,
+      "type": "jsxText",
+      "text": "Pupitre :",
+      "fullKey": "pedagogy.carnet.pupitre"
+    },
+    {
+      "line": 122,
+      "type": "jsxText",
+      "text": "Tous les pupitres (",
+      "fullKey": "pedagogy.carnet.tousLesPupitres"
+    },
+    {
+      "line": 136,
+      "type": "jsxText",
+      "text": "🎯 Assiduité Troupe",
+      "fullKey": "pedagogy.carnet.assiduiteTroupe"
+    },
+    {
+      "line": 143,
+      "type": "jsxText",
+      "text": "membres engagés",
+      "fullKey": "pedagogy.carnet.membresEngages"
+    },
+    {
+      "line": 148,
+      "type": "jsxText",
+      "text": "📊 Complétion Paliers",
+      "fullKey": "pedagogy.carnet.completionPaliers"
+    },
+    {
+      "line": 154,
+      "type": "jsxText",
+      "text": "Taux global de paliers métronomiques validés",
+      "fullKey": "pedagogy.carnet.tauxGlobalDePaliersMetronomiques"
+    },
+    {
+      "line": 160,
+      "type": "jsxText",
+      "text": "⚡ Paliers Franchis",
+      "fullKey": "pedagogy.carnet.paliersFranchis"
+    },
+    {
+      "line": 166,
+      "type": "jsxText",
+      "text": "Sur",
+      "fullKey": "pedagogy.carnet.sur"
+    },
+    {
+      "line": 167,
+      "type": "jsxText",
+      "text": "morceau",
+      "fullKey": "pedagogy.carnet.morceau"
+    },
+    {
+      "line": 167,
+      "type": "jsxText",
+      "text": "actif",
+      "fullKey": "pedagogy.carnet.actif"
+    },
+    {
+      "line": 178,
+      "type": "jsxText",
+      "text": "Morceaux à l'étude :",
+      "fullKey": "pedagogy.carnet.morceauxALEtude"
+    },
+    {
+      "line": 188,
+      "type": "jsxText",
+      "text": "paliers)",
+      "fullKey": "pedagogy.carnet.paliers"
+    }
+  ],
+  "src/components/pedagogy/EntrainementSegmentsBar.jsx": [
+    {
+      "line": 12,
+      "type": "jsxText",
+      "text": "Répartition Macro de l'Aisance",
+      "fullKey": "pedagogy.carnet.repartitionMacroDeLAisance"
+    },
+    {
+      "line": 13,
+      "type": "jsxText",
+      "text": "adhérents",
+      "fullKey": "pedagogy.carnet.adherents"
+    },
+    {
+      "line": 42,
+      "type": "jsxText",
+      "text": "🌱 Découverte",
+      "fullKey": "pedagogy.carnet.decouverte"
+    },
+    {
+      "line": 45,
+      "type": "jsxText",
+      "text": "membre",
+      "fullKey": "pedagogy.carnet.membre"
+    },
+    {
+      "line": 50,
+      "type": "jsxText",
+      "text": "🌿 En pratique",
+      "fullKey": "pedagogy.carnet.enPratique"
+    },
+    {
+      "line": 53,
+      "type": "jsxText",
+      "text": "membre",
+      "fullKey": "pedagogy.carnet.membre"
+    },
+    {
+      "line": 58,
+      "type": "jsxText",
+      "text": "🌳 À l'aise",
+      "fullKey": "pedagogy.carnet.aLAise"
+    },
+    {
+      "line": 61,
+      "type": "jsxText",
+      "text": "membre",
+      "fullKey": "pedagogy.carnet.membre"
+    },
+    {
+      "line": 66,
+      "type": "jsxText",
+      "text": "👑 Référent",
+      "fullKey": "pedagogy.carnet.referent"
+    },
+    {
+      "line": 69,
+      "type": "jsxText",
+      "text": "membre",
+      "fullKey": "pedagogy.carnet.membre"
+    }
+  ],
+  "src/components/pedagogy/TrainingCompactCard.jsx": [
+    {
+      "line": 51,
+      "type": "jsxText",
+      "text": "Entraînement recommandé pour la séance",
+      "fullKey": "pedagogy.carnet.entrainementRecommandePourLaSeance"
+    },
+    {
+      "line": 53,
+      "type": "jsxText",
+      "text": "Cible :",
+      "fullKey": "pedagogy.carnet.cible"
+    },
+    {
+      "line": 73,
+      "type": "attribute",
+      "text": "Ouvrir sequenciador sur cet entraînement",
+      "fullKey": "pedagogy.carnet.ouvrirSequenciadorSurCetEntrainement"
+    },
+    {
+      "line": 122,
+      "type": "jsxText",
+      "text": "BPM •",
+      "fullKey": "pedagogy.carnet.bpm"
+    },
+    {
+      "line": 122,
+      "type": "jsxText",
+      "text": "palier",
+      "fullKey": "pedagogy.carnet.palier"
+    }
+  ],
+  "src/components/pedagogy/ConductorGameModal.jsx": [
+    {
+      "line": 155,
+      "type": "jsxText",
+      "text": "Conducteur à trous",
+      "fullKey": "pedagogy.reflex.conducteurATrous"
+    },
+    {
+      "line": 158,
+      "type": "jsxText",
+      "text": "Placez les bons signaux sur la frise chronologique pour mémoriser l'enchaînement",
+      "fullKey": "pedagogy.reflex.placezLesBonsSignauxSur"
+    },
+    {
+      "line": 191,
+      "type": "jsxText",
+      "text": "Conducteur validé sans faute ! Structure parfaitement mémorisée.",
+      "fullKey": "pedagogy.reflex.conducteurValideSansFauteStructure"
+    },
+    {
+      "line": 228,
+      "type": "jsxText",
+      "text": "Réinitialiser",
+      "fullKey": "pedagogy.reflex.reinitialiser"
+    },
+    {
+      "line": 240,
+      "type": "jsxText",
+      "text": "Valider le conducteur",
+      "fullKey": "pedagogy.reflex.validerLeConducteur"
+    }
+  ],
+  "src/components/pedagogy/QcmSignaux.jsx": [
+    {
+      "line": 173,
+      "type": "jsxText",
+      "text": "Chargement des signaux...",
+      "fullKey": "pedagogy.reflex.chargementDesSignaux"
+    },
+    {
+      "line": 180,
+      "type": "jsxText",
+      "text": "Attention",
+      "fullKey": "pedagogy.reflex.attention"
+    },
+    {
+      "line": 181,
+      "type": "jsxText",
+      "text": "Il n'y a pas assez de signaux configurés avec une image. \n            Il en faut au minimum 4 pour générer un quiz.",
+      "fullKey": "pedagogy.reflex.ilNYAPas"
+    },
+    {
+      "line": 185,
+      "type": "jsxText",
+      "text": "Retour à l'Atelier",
+      "fullKey": "pedagogy.reflex.retourALAtelier"
+    },
+    {
+      "line": 198,
+      "type": "jsxText",
+      "text": "Entraînement Terminé !",
+      "fullKey": "pedagogy.reflex.entrainementTermine"
+    },
+    {
+      "line": 199,
+      "type": "jsxText",
+      "text": "Ton score :",
+      "fullKey": "pedagogy.reflex.tonScore"
+    },
+    {
+      "line": 203,
+      "type": "jsxText",
+      "text": "Quitter",
+      "fullKey": "pedagogy.reflex.quitter"
+    },
+    {
+      "line": 206,
+      "type": "jsxText",
+      "text": "Rejouer 🔄",
+      "fullKey": "pedagogy.reflex.rejouer"
+    },
+    {
+      "line": 224,
+      "type": "jsxText",
+      "text": "← Retour",
+      "fullKey": "pedagogy.reflex.retour"
+    },
+    {
+      "line": 227,
+      "type": "jsxText",
+      "text": "Question",
+      "fullKey": "pedagogy.reflex.question"
+    },
+    {
+      "line": 237,
+      "type": "jsxText",
+      "text": "Quel est ce signal ?",
+      "fullKey": "pedagogy.reflex.quelEstCeSignal"
+    },
+    {
+      "line": 244,
+      "type": "attribute",
+      "text": "Signal mystère",
+      "fullKey": "pedagogy.reflex.signalMystere"
+    },
+    {
+      "line": 276,
+      "type": "jsxText",
+      "text": "🎧 Quel est le signal pour ce rythme ?",
+      "fullKey": "pedagogy.reflex.quelEstLeSignalPour"
+    },
+    {
+      "line": 284,
+      "type": "jsxText",
+      "text": "Lequel correspond à :",
+      "fullKey": "pedagogy.reflex.lequelCorrespondA"
+    },
+    {
+      "line": 315,
+      "type": "attribute",
+      "text": "Choix possible",
+      "fullKey": "pedagogy.reflex.choixPossible"
+    },
+    {
+      "line": 335,
+      "type": "conditional",
+      "text": "Signal du Mestre",
+      "fullKey": "pedagogy.reflex.signalDuMestre"
+    },
+    {
+      "line": 333,
+      "type": "jsxText",
+      "text": "Le bon signal était",
+      "fullKey": "pedagogy.reflex.leBonSignalEtait"
+    },
+    {
+      "line": 333,
+      "type": "jsxText",
+      "text": ", qui correspond au rythme",
+      "fullKey": "pedagogy.reflex.quiCorrespondAuRythme"
+    },
+    {
+      "line": 338,
+      "type": "jsxText",
+      "text": "Continuer ➔",
+      "fullKey": "pedagogy.reflex.continuer"
+    }
+  ],
+  "src/components/pedagogy/ReflexGameModal.jsx": [
+    {
+      "line": 16,
+      "type": "config",
+      "text": "Gonguê",
+      "fullKey": "pedagogy.reflex.gongue"
+    },
+    {
+      "line": 18,
+      "type": "config",
+      "text": "Alfaia Marcante",
+      "fullKey": "pedagogy.reflex.alfaiaMarcante"
+    },
+    {
+      "line": 19,
+      "type": "config",
+      "text": "Agbê / Shekere",
+      "fullKey": "pedagogy.reflex.agbeShekere"
+    },
+    {
+      "line": 20,
+      "type": "config",
+      "text": "Mineiro / Ganzá",
+      "fullKey": "pedagogy.reflex.mineiroGanza"
+    },
+    {
+      "line": 21,
+      "type": "config",
+      "text": "Timbal",
+      "fullKey": "pedagogy.reflex.timbal"
+    },
+    {
+      "line": 345,
+      "type": "jsxText",
+      "text": "Défi Réflexe « Temps 1 »",
+      "fullKey": "pedagogy.reflex.defiReflexeTemps1"
+    },
+    {
+      "line": 350,
+      "type": "jsxText",
+      "text": "Arrêt automatique au Temps 1 • Clique sur la bonne phrase pour relancer l'audio",
+      "fullKey": "pedagogy.reflex.arretAutomatiqueAuTemps1"
+    },
+    {
+      "line": 360,
+      "type": "attribute",
+      "text": "Fermer",
+      "fullKey": "pedagogy.reflex.fermerBouton"
+    },
+    {
+      "line": 372,
+      "type": "jsxText",
+      "text": "Aucun enregistrement audio rattaché à ce morceau.",
+      "fullKey": "pedagogy.reflex.aucunEnregistrementAudioRattacheA"
+    },
+    {
+      "line": 373,
+      "type": "jsxText",
+      "text": "Pour lancer le simulateur de conventions, liez un Preset Séquenceur avec audio ou ajoutez une piste audio au morceau dans le Répertoire.",
+      "fullKey": "pedagogy.reflex.pourLancerLeSimulateurDe"
+    },
+    {
+      "line": 380,
+      "type": "jsxText",
+      "text": "Aucun signal du Mestre n'a été détecté pour ce morceau.",
+      "fullKey": "pedagogy.reflex.aucunSignalDuMestreN"
+    },
+    {
+      "line": 381,
+      "type": "jsxText",
+      "text": "Le Mestre peut configurer les signaux et conventions depuis le panneau « Mestria > Répertoire ».",
+      "fullKey": "pedagogy.reflex.leMestrePeutConfigurerLes"
+    },
+    {
+      "line": 389,
+      "type": "jsxText",
+      "text": "Morceau Terminé !",
+      "fullKey": "pedagogy.reflex.morceauTermine"
+    },
+    {
+      "line": 392,
+      "type": "jsxText",
+      "text": "Score sans faute au pupitre",
+      "fullKey": "pedagogy.reflex.scoreSansFauteAuPupitre"
+    },
+    {
+      "line": 400,
+      "type": "conditional",
+      "text": "👑 Score Parfait ! Toutes les conventions ont été jouées dès le premier essai.",
+      "fullKey": "pedagogy.reflex.scoreParfaitToutesLesConventions"
+    },
+    {
+      "line": 401,
+      "type": "conditional",
+      "text": "🌿 Belle session de réflexe ! Continue de pratiquer pour automatiser tes départs.",
+      "fullKey": "pedagogy.reflex.belleSessionDeReflexeContinue"
+    },
+    {
+      "line": 409,
+      "type": "jsxText",
+      "text": "🔄 Rejouer le Morceau",
+      "fullKey": "pedagogy.reflex.rejouerLeMorceau"
+    },
+    {
+      "line": 417,
+      "type": "jsxText",
+      "text": "Fermer",
+      "fullKey": "pedagogy.reflex.fermerBouton"
+    },
+    {
+      "line": 427,
+      "type": "jsxText",
+      "text": "Mon Pupitre :",
+      "fullKey": "pedagogy.reflex.monPupitre"
+    },
+    {
+      "line": 445,
+      "type": "jsxText",
+      "text": "Score :",
+      "fullKey": "pedagogy.reflex.score"
+    },
+    {
+      "line": 449,
+      "type": "jsxText",
+      "text": "défi",
+      "fullKey": "pedagogy.reflex.defi"
+    },
+    {
+      "line": 449,
+      "type": "jsxText",
+      "text": "« Temps 1 »",
+      "fullKey": "pedagogy.reflex.temps1"
+    },
+    {
+      "line": 492,
+      "type": "conditional",
+      "text": "⏸ Pause",
+      "fullKey": "pedagogy.reflex.pause"
+    },
+    {
+      "line": 492,
+      "type": "conditional",
+      "text": "▶ Lancer l'écoute",
+      "fullKey": "pedagogy.reflex.lancerLEcoute"
+    },
+    {
+      "line": 500,
+      "type": "jsxText",
+      "text": "Prochain arrêt :",
+      "fullKey": "pedagogy.reflex.prochainArret"
+    }
+  ],
+  "src/components/pedagogy/SignauxTrialModal.jsx": [
+    {
+      "line": 21,
+      "type": "jsxText",
+      "text": "Essai du Défi : Reconnaissance des Signes",
+      "fullKey": "pedagogy.reflex.essaiDuDefiReconnaissanceDes"
+    },
+    {
+      "line": 29,
+      "type": "jsxText",
+      "text": "✕ Fermer",
+      "fullKey": "pedagogy.reflex.fermer"
+    }
+  ],
+  "src/components/pedagogy/conductor/ConductorAudioPlayer.jsx": [
+    {
+      "line": 55,
+      "type": "conditional",
+      "text": "⏸ Pause",
+      "fullKey": "pedagogy.reflex.pause"
+    },
+    {
+      "line": 55,
+      "type": "conditional",
+      "text": "▶ Écouter",
+      "fullKey": "pedagogy.reflex.ecouter"
+    },
+    {
+      "line": 62,
+      "type": "conditional",
+      "text": "Prêt à l'écoute",
+      "fullKey": "pedagogy.reflex.pretALEcoute"
+    }
+  ],
+  "src/components/pedagogy/conductor/ConductorMeasureSlot.jsx": [
+    {
+      "line": 110,
+      "type": "jsxText",
+      "text": "Choisir",
+      "fullKey": "pedagogy.reflex.choisir"
+    }
+  ],
+  "src/components/pedagogy/conductor/ConductorSignalPickerSheet.jsx": [
+    {
+      "line": 35,
+      "type": "jsxText",
+      "text": "Signal à la Mesure",
+      "fullKey": "pedagogy.reflex.signalALaMesure"
+    },
+    {
+      "line": 38,
+      "type": "jsxText",
+      "text": "Quel geste ou appel le Mestre déclenche-t-il ici ?",
+      "fullKey": "pedagogy.reflex.quelGesteOuAppelLe"
+    },
+    {
+      "line": 48,
+      "type": "attribute",
+      "text": "Fermer",
+      "fullKey": "pedagogy.reflex.fermerBouton"
+    },
+    {
+      "line": 86,
+      "type": "jsxText",
+      "text": "✓ Actuellement posé",
+      "fullKey": "pedagogy.reflex.actuellementPose"
+    },
+    {
+      "line": 107,
+      "type": "jsxText",
+      "text": "Retirer le signal de la mesure",
+      "fullKey": "pedagogy.reflex.retirerLeSignalDeLa"
+    }
+  ],
+  "src/components/pedagogy/conductor/ConductorTimeline.jsx": [
+    {
+      "line": 46,
+      "type": "jsxText",
+      "text": "Frise Chronologique (",
+      "fullKey": "pedagogy.reflex.friseChronologique"
+    },
+    {
+      "line": 46,
+      "type": "jsxText",
+      "text": "mesures)",
+      "fullKey": "pedagogy.reflex.mesures"
+    },
+    {
+      "line": 48,
+      "type": "jsxText",
+      "text": "↔ Défilement horizontal",
+      "fullKey": "pedagogy.reflex.defilementHorizontal"
+    }
+  ],
+  "src/components/pedagogy/reflex/ReflexGameBoard.jsx": [
+    {
+      "line": 34,
+      "type": "jsxText",
+      "text": "Quelle est la tablature du Temps 1 de la mesure suivante ?",
+      "fullKey": "pedagogy.reflex.quelleEstLaTablatureDu"
+    },
+    {
+      "line": 37,
+      "type": "jsxText",
+      "text": "4 propositions",
+      "fullKey": "pedagogy.reflex.quatrePropositions"
+    },
+    {
+      "line": 74,
+      "type": "jsxText",
+      "text": "Option",
+      "fullKey": "pedagogy.reflex.option"
+    },
+    {
+      "line": 80,
+      "type": "jsxText",
+      "text": "Bonne réponse",
+      "fullKey": "pedagogy.reflex.bonneReponse"
+    },
+    {
+      "line": 86,
+      "type": "jsxText",
+      "text": "Erreur",
+      "fullKey": "pedagogy.reflex.erreur"
+    }
+  ],
+  "src/components/pedagogy/reflex/ReflexSignalBanner.jsx": [
+    {
+      "line": 25,
+      "type": "jsxText",
+      "text": "🎧 Écoute attentivement... Le Mestre prépare son premier signal.",
+      "fullKey": "pedagogy.reflex.ecouteAttentivementLeMestrePrepare"
+    },
+    {
+      "line": 68,
+      "type": "conditional",
+      "text": "🎯 TEMPS 1 — CONVENTION À JOUER",
+      "fullKey": "pedagogy.reflex.temps1ConventionAJouer"
+    },
+    {
+      "line": 74,
+      "type": "jsxText",
+      "text": "Simple Repère",
+      "fullKey": "pedagogy.reflex.simpleRepere"
+    },
+    {
+      "line": 89,
+      "type": "jsxText",
+      "text": "Clique sur la bonne tablature",
+      "fullKey": "pedagogy.reflex.cliqueSurLaBonneTablature"
+    },
+    {
+      "line": 93,
+      "type": "jsxText",
+      "text": "Prépare-toi pour le temps 1",
+      "fullKey": "pedagogy.reflex.prepareToiPourLeTemps"
+    }
+  ],
+  "src/components/pedagogy/AutoEvalQuiz.jsx": [
+    {
+      "line": 112,
+      "type": "jsxText",
+      "text": "Fermer",
+      "fullKey": "pedagogy.progress.fermer"
+    },
+    {
+      "line": 275,
+      "type": "jsxText",
+      "text": "🧠 Quiz :",
+      "fullKey": "pedagogy.progress.quiz"
+    },
+    {
+      "line": 285,
+      "type": "fallback",
+      "text": "Question",
+      "fullKey": "pedagogy.progress.question"
+    },
+    {
+      "line": 290,
+      "type": "attribute",
+      "text": "Illustration de la question",
+      "fullKey": "pedagogy.progress.illustrationDeLaQuestion"
+    },
+    {
+      "line": 389,
+      "type": "conditional",
+      "text": "✅ Bien joué !",
+      "fullKey": "pedagogy.progress.bienJoue"
+    },
+    {
+      "line": 389,
+      "type": "conditional",
+      "text": "🌱 Presque !",
+      "fullKey": "pedagogy.progress.presque"
+    },
+    {
+      "line": 392,
+      "type": "jsxText",
+      "text": "La bonne réponse était :",
+      "fullKey": "pedagogy.progress.laBonneReponseEtait"
+    },
+    {
+      "line": 409,
+      "type": "conditional",
+      "text": "Question Suivante ➔",
+      "fullKey": "pedagogy.progress.questionSuivante"
+    },
+    {
+      "line": 409,
+      "type": "conditional",
+      "text": "Voir le Résultat 🏆",
+      "fullKey": "pedagogy.progress.voirLeResultat"
+    },
+    {
+      "line": 416,
+      "type": "jsxText",
+      "text": "Résultat du Quiz",
+      "fullKey": "pedagogy.progress.resultatDuQuiz"
+    },
+    {
+      "line": 424,
+      "type": "jsxText",
+      "text": "Tu as obtenu",
+      "fullKey": "pedagogy.progress.tuAsObtenu"
+    },
+    {
+      "line": 425,
+      "type": "jsxText",
+      "text": "bonne(s) réponse(s) sur",
+      "fullKey": "pedagogy.progress.bonneSReponseSSur"
+    },
+    {
+      "line": 430,
+      "type": "jsxText",
+      "text": "Superbe ! Ton niveau de confort sur ce sujet augmente !",
+      "fullKey": "pedagogy.progress.superbeTonNiveauDeConfort"
+    },
+    {
+      "line": 436,
+      "type": "jsxText",
+      "text": "Sauvegarde en cours...",
+      "fullKey": "pedagogy.progress.sauvegardeEnCours"
+    },
+    {
+      "line": 437,
+      "type": "jsxText",
+      "text": "Progression enregistrée ✅",
+      "fullKey": "pedagogy.progress.progressionEnregistree"
+    },
+    {
+      "line": 441,
+      "type": "jsxText",
+      "text": "Tu y es presque ! N'hésite pas à relire la fiche et à retenter ta chance.",
+      "fullKey": "pedagogy.progress.tuYEsPresqueN"
+    },
+    {
+      "line": 449,
+      "type": "conditional",
+      "text": "Fermer",
+      "fullKey": "pedagogy.progress.fermer"
+    },
+    {
+      "line": 459,
+      "type": "jsxText",
+      "text": "🎧 S'entraîner sur le Séquenceur",
+      "fullKey": "pedagogy.progress.sEntrainerSurLeSequenceur"
+    }
+  ],
+  "src/components/pedagogy/MestreToadasAnalytics.jsx": [
+    {
+      "line": 157,
+      "type": "jsxText",
+      "text": "Calcul de la matrice Nação...",
+      "fullKey": "pedagogy.progress.calculDeLaMatriceNacao"
+    },
+    {
+      "line": 163,
+      "type": "jsxText",
+      "text": "Analyse du Répertoire (Toadas)",
+      "fullKey": "pedagogy.progress.analyseDuRepertoireToadas"
+    },
+    {
+      "line": 165,
+      "type": "jsxText",
+      "text": "Vue consolidée des scores d'auto-évaluation et des demandes de révision de vos élèves, triée par pupitre. \n          Les scores sont pondérés par la difficulté (Facile = max 33%, Moyen = max 66%, Expert = max 100%).",
+      "fullKey": "pedagogy.progress.vueConsolideeDesScoresD"
+    },
+    {
+      "line": 173,
+      "type": "jsxText",
+      "text": "⚠️ Suggéré pour la prochaine répétition",
+      "fullKey": "pedagogy.progress.suggerePourLaProchaineRepetition"
+    },
+    {
+      "line": 182,
+      "type": "jsxText",
+      "text": "Priorité #",
+      "fullKey": "pedagogy.progress.priorite"
+    },
+    {
+      "line": 184,
+      "type": "jsxText",
+      "text": "Score global :",
+      "fullKey": "pedagogy.progress.scoreGlobal"
+    },
+    {
+      "line": 188,
+      "type": "jsxText",
+      "text": "demande",
+      "fullKey": "pedagogy.progress.demande"
+    },
+    {
+      "line": 188,
+      "type": "jsxText",
+      "text": "d'élèves",
+      "fullKey": "pedagogy.progress.dEleves"
+    },
+    {
+      "line": 197,
+      "type": "attribute",
+      "text": "Épingler dans le Bloc-notes de répétition",
+      "fullKey": "pedagogy.progress.epinglerDansLeBlocNotes"
+    },
+    {
+      "line": 200,
+      "type": "jsxText",
+      "text": "Épingler",
+      "fullKey": "pedagogy.progress.epingler"
+    },
+    {
+      "line": 214,
+      "type": "jsxText",
+      "text": "Toada",
+      "fullKey": "pedagogy.progress.toada"
+    },
+    {
+      "line": 215,
+      "type": "jsxText",
+      "text": "Global",
+      "fullKey": "pedagogy.progress.global"
+    },
+    {
+      "line": 230,
+      "type": "jsxText",
+      "text": "demande",
+      "fullKey": "pedagogy.progress.demande"
+    }
+  ],
+  "src/components/pedagogy/BlindTestTrialModal.jsx": [
+    {
+      "line": 63,
+      "type": "jsxText",
+      "text": "Essai du Défi : Blind Test",
+      "fullKey": "pedagogy.progress.essaiDuDefiBlindTest"
+    },
+    {
+      "line": 77,
+      "type": "jsxText",
+      "text": "⚠️ Aucun morceau avec fichier audio n'est disponible dans le répertoire actuel.",
+      "fullKey": "pedagogy.progress.aucunMorceauAvecFichierAudio"
+    },
+    {
+      "line": 82,
+      "type": "jsxText",
+      "text": "Écoutez l'extrait audio et identifiez le morceau ou la convention joué(e) :",
+      "fullKey": "pedagogy.progress.ecoutezLExtraitAudioEt"
+    },
+    {
+      "line": 131,
+      "type": "conditional",
+      "text": "🎉 Bravo ! Bonne réponse.",
+      "fullKey": "pedagogy.progress.bravoBonneReponse"
+    },
+    {
+      "line": 133,
+      "type": "jsxText",
+      "text": "Morceau suivant ❯",
+      "fullKey": "pedagogy.progress.morceauSuivant"
+    },
+    {
+      "line": 143,
+      "type": "jsxText",
+      "text": "Fermer l'essai",
+      "fullKey": "pedagogy.progress.fermerLEssai"
+    }
+  ],
+  "src/components/pedagogy/CultureFichesTable.jsx": [
+    {
+      "line": 80,
+      "type": "jsxText",
+      "text": "Tous (",
+      "fullKey": "pedagogy.progress.tous"
+    },
+    {
+      "line": 92,
+      "type": "jsxText",
+      "text": "⚡ Orixás & Spiritualité",
+      "fullKey": "pedagogy.progress.orixasSpiritualite"
+    },
+    {
+      "line": 104,
+      "type": "jsxText",
+      "text": "🎵 Musique & Nações",
+      "fullKey": "pedagogy.progress.musiqueNacoes"
+    },
+    {
+      "line": 116,
+      "type": "jsxText",
+      "text": "📜 Histoire & Cortège",
+      "fullKey": "pedagogy.progress.histoireCortege"
+    },
+    {
+      "line": 128,
+      "type": "jsxText",
+      "text": "🍲 Cuisine & Recettes",
+      "fullKey": "pedagogy.progress.cuisineRecettes"
+    },
+    {
+      "line": 151,
+      "type": "jsxText",
+      "text": "Aucune fiche culturelle trouvée pour cette thématique (",
+      "fullKey": "pedagogy.progress.aucuneFicheCulturelleTrouveePour"
+    },
+    {
+      "line": 152,
+      "type": "conditional",
+      "text": "toutes",
+      "fullKey": "pedagogy.progress.toutes"
+    },
+    {
+      "line": 159,
+      "type": "jsxText",
+      "text": "Titre de la fiche culture",
+      "fullKey": "pedagogy.progress.titreDeLaFicheCulture"
+    },
+    {
+      "line": 160,
+      "type": "jsxText",
+      "text": "Thème & Tampon",
+      "fullKey": "pedagogy.progress.themeTampon"
+    },
+    {
+      "line": 161,
+      "type": "jsxText",
+      "text": "Actions",
+      "fullKey": "pedagogy.progress.actions"
+    },
+    {
+      "line": 177,
+      "type": "fallback",
+      "text": "Fiche sans titre",
+      "fullKey": "pedagogy.progress.ficheSansTitre"
+    },
+    {
+      "line": 190,
+      "type": "attribute",
+      "text": "Consulter la fiche culturelle",
+      "fullKey": "pedagogy.progress.consulterLaFicheCulturelle"
+    },
+    {
+      "line": 191,
+      "type": "jsxText",
+      "text": "👁️ Consulter",
+      "fullKey": "pedagogy.progress.consulter"
+    },
+    {
+      "line": 200,
+      "type": "attribute",
+      "text": "Éditer le texte explicatif et les questions du QCM",
+      "fullKey": "pedagogy.progress.editerLeTexteExplicatifEt"
+    },
+    {
+      "line": 201,
+      "type": "jsxText",
+      "text": "✏️ Éditer texte / QCM",
+      "fullKey": "pedagogy.progress.editerTexteQcm"
+    },
+    {
+      "line": 208,
+      "type": "attribute",
+      "text": "Supprimer la fiche",
+      "fullKey": "pedagogy.progress.supprimerLaFiche"
+    }
+  ],
+  "src/components/pedagogy/DanseChoregraphieAnalytics.jsx": [
+    {
+      "line": 104,
+      "type": "jsxText",
+      "text": "Aucun élément de danse renseigné pour le moment",
+      "fullKey": "pedagogy.progress.aucunElementDeDanseRenseigne"
+    },
+    {
+      "line": 107,
+      "type": "jsxText",
+      "text": "Les indicateurs apparaîtront automatiquement lorsque les morceaux de danse seront travaillés.",
+      "fullKey": "pedagogy.progress.lesIndicateursApparaitrontAutomatiquementLorsque"
+    },
+    {
+      "line": 121,
+      "type": "jsxText",
+      "text": "Chorégraphies & Éléments de Danse (",
+      "fullKey": "pedagogy.progress.choregraphiesElementsDeDanse"
+    },
+    {
+      "line": 123,
+      "type": "jsxText",
+      "text": "Suivi des pas et morceaux avec composante chorégraphique travaillés par la troupe.",
+      "fullKey": "pedagogy.progress.suiviDesPasEtMorceaux"
+    },
+    {
+      "line": 128,
+      "type": "jsxText",
+      "text": "adhérent",
+      "fullKey": "pedagogy.progress.adherent"
+    },
+    {
+      "line": 135,
+      "type": "jsxText",
+      "text": "Effectif :",
+      "fullKey": "pedagogy.progress.effectif"
+    },
+    {
+      "line": 155,
+      "type": "jsxText",
+      "text": "Élément de Danse",
+      "fullKey": "pedagogy.progress.elementDeDanse"
+    },
+    {
+      "line": 156,
+      "type": "jsxText",
+      "text": "Aisance Réelle",
+      "fullKey": "pedagogy.progress.aisanceReelle"
+    },
+    {
+      "line": 157,
+      "type": "jsxText",
+      "text": "Actions",
+      "fullKey": "pedagogy.progress.actions"
+    }
+  ],
+  "src/components/pedagogy/DanseItemRow.jsx": [
+    {
+      "line": 44,
+      "type": "conditional",
+      "text": "Non évalué",
+      "fullKey": "pedagogy.progress.nonEvalue"
+    },
+    {
+      "line": 57,
+      "type": "jsxText",
+      "text": "figures",
+      "fullKey": "pedagogy.progress.figures"
+    },
+    {
+      "line": 66,
+      "type": "attribute",
+      "text": "Programmer en répétition",
+      "fullKey": "pedagogy.progress.programmerEnRepetition"
+    },
+    {
+      "line": 77,
+      "type": "attribute",
+      "text": "Épingler au bloc-notes",
+      "fullKey": "pedagogy.progress.epinglerAuBlocNotes"
+    },
+    {
+      "line": 90,
+      "type": "jsxText",
+      "text": "Figures associées :",
+      "fullKey": "pedagogy.progress.figuresAssociees"
+    }
+  ],
+  "src/components/pedagogy/MestreQuizConfigManager.jsx": [
+    {
+      "line": 71,
+      "type": "jsxText",
+      "text": "Chargement de la configuration...",
+      "fullKey": "pedagogy.progress.chargementDeLaConfiguration"
+    },
+    {
+      "line": 77,
+      "type": "jsxText",
+      "text": "Configuration Globale des QCM",
+      "fullKey": "pedagogy.progress.configurationGlobaleDesQcm"
+    },
+    {
+      "line": 79,
+      "type": "jsxText",
+      "text": "Définissez ici quels thèmes seront disponibles pour les élèves dans l'espace \"Mon Parcours\" et paramétrez le comportement par défaut des quiz.",
+      "fullKey": "pedagogy.progress.definissezIciQuelsThemesSeront"
+    },
+    {
+      "line": 85,
+      "type": "jsxText",
+      "text": "Thèmes Activés :",
+      "fullKey": "pedagogy.progress.themesActives"
+    },
+    {
+      "line": 98,
+      "type": "jsxText",
+      "text": "🎤 Toadas / Chants",
+      "fullKey": "pedagogy.progress.toadasChants"
+    },
+    {
+      "line": 99,
+      "type": "jsxText",
+      "text": "Quiz sur le rythme, la Nação et le lexique des chants.",
+      "fullKey": "pedagogy.progress.quizSurLeRythmeLa"
+    },
+    {
+      "line": 112,
+      "type": "jsxText",
+      "text": "🇧🇷 Traduction (PT/FR)",
+      "fullKey": "pedagogy.progress.traductionPtFr"
+    },
+    {
+      "line": 113,
+      "type": "jsxText",
+      "text": "Auto-évaluation sur le vocabulaire portugais de l'application.",
+      "fullKey": "pedagogy.progress.autoEvaluationSurLeVocabulaire"
+    },
+    {
+      "line": 126,
+      "type": "jsxText",
+      "text": "📚 Culture & Histoire",
+      "fullKey": "pedagogy.progress.cultureHistoire"
+    },
+    {
+      "line": 127,
+      "type": "jsxText",
+      "text": "Questions à trous basées sur les fiches de catégorie \"Culture\".",
+      "fullKey": "pedagogy.progress.questionsATrousBaseesSur"
+    },
+    {
+      "line": 140,
+      "type": "jsxText",
+      "text": "🛠️ Atelier & Couture",
+      "fullKey": "pedagogy.progress.atelierCouture"
+    },
+    {
+      "line": 141,
+      "type": "jsxText",
+      "text": "Questions pratiques basées sur les fiches de catégorie \"Atelier\".",
+      "fullKey": "pedagogy.progress.questionsPratiquesBaseesSurLes"
+    },
+    {
+      "line": 148,
+      "type": "jsxText",
+      "text": "Difficulté par défaut :",
+      "fullKey": "pedagogy.progress.difficulteParDefaut"
+    },
+    {
+      "line": 156,
+      "type": "jsxText",
+      "text": "🌱 Débutant (Options simples)",
+      "fullKey": "pedagogy.progress.debutantOptionsSimples"
+    },
+    {
+      "line": 157,
+      "type": "jsxText",
+      "text": "🥁 Confirmé (Options mixtes)",
+      "fullKey": "pedagogy.progress.confirmeOptionsMixtes"
+    },
+    {
+      "line": 158,
+      "type": "jsxText",
+      "text": "🏆 Expert (Pièges sémantiques)",
+      "fullKey": "pedagogy.progress.expertPiegesSemantiques"
+    },
+    {
+      "line": 163,
+      "type": "jsxText",
+      "text": "Nombre de questions :",
+      "fullKey": "pedagogy.progress.nombreDeQuestions"
+    },
+    {
+      "line": 171,
+      "type": "jsxText",
+      "text": "5 questions (Session rapide)",
+      "fullKey": "pedagogy.progress.cinqQuestionsSessionRapide"
+    },
+    {
+      "line": 172,
+      "type": "jsxText",
+      "text": "10 questions (Standard)",
+      "fullKey": "pedagogy.progress.dixQuestionsStandard"
+    },
+    {
+      "line": 173,
+      "type": "jsxText",
+      "text": "15 questions (Défi long)",
+      "fullKey": "pedagogy.progress.quinzeQuestionsDefiLong"
+    },
+    {
+      "line": 183,
+      "type": "jsxText",
+      "text": "👁️ Tester une session Quiz",
+      "fullKey": "pedagogy.progress.testerUneSessionQuiz"
+    },
+    {
+      "line": 192,
+      "type": "conditional",
+      "text": "Sauvegarde...",
+      "fullKey": "pedagogy.progress.sauvegarde"
+    },
+    {
+      "line": 192,
+      "type": "conditional",
+      "text": "💾 Enregistrer",
+      "fullKey": "pedagogy.progress.enregistrer"
+    }
+  ],
+  "src/components/pedagogy/PercussionPieceRow.jsx": [
+    {
+      "line": 72,
+      "type": "jsxText",
+      "text": "Saison officielle",
+      "fullKey": "pedagogy.progress.saisonOfficielle"
+    },
+    {
+      "line": 98,
+      "type": "attribute",
+      "text": "Voir le détail des variations et breaks",
+      "fullKey": "pedagogy.progress.voirLeDetailDesVariations"
+    },
+    {
+      "line": 101,
+      "type": "jsxText",
+      "text": "var.",
+      "fullKey": "pedagogy.progress.var"
+    },
+    {
+      "line": 109,
+      "type": "attribute",
+      "text": "Programmer directement en répétition",
+      "fullKey": "pedagogy.progress.programmerDirectementEnRepetition"
+    },
+    {
+      "line": 120,
+      "type": "attribute",
+      "text": "Épingler au bloc-notes",
+      "fullKey": "pedagogy.progress.epinglerAuBlocNotes"
+    },
+    {
+      "line": 136,
+      "type": "jsxText",
+      "text": "Détail des Variations & Conventions (",
+      "fullKey": "pedagogy.progress.detailDesVariationsConventions"
+    },
+    {
+      "line": 152,
+      "type": "conditional",
+      "text": "Signal",
+      "fullKey": "pedagogy.progress.signal"
+    },
+    {
+      "line": 152,
+      "type": "conditional",
+      "text": "Motif",
+      "fullKey": "pedagogy.progress.motif"
+    }
+  ],
+  "src/components/pedagogy/PercussionRepertoireAnalytics.jsx": [
+    {
+      "line": 40,
+      "type": "jsxText",
+      "text": "Aucun morceau officiel de saison",
+      "fullKey": "pedagogy.progress.aucunMorceauOfficielDeSaison"
+    },
+    {
+      "line": 43,
+      "type": "jsxText",
+      "text": "Ajoutez des morceaux dans le Répertoire de l'association ou assignez-leur le statut « En saison » pour visualiser la matrice de confort par famille d'instruments.",
+      "fullKey": "pedagogy.progress.ajoutezDesMorceauxDansLe"
+    },
+    {
+      "line": 57,
+      "type": "jsxText",
+      "text": "Matrice Percussion de Saison (",
+      "fullKey": "pedagogy.progress.matricePercussionDeSaison"
+    },
+    {
+      "line": 57,
+      "type": "jsxText",
+      "text": "morceaux)",
+      "fullKey": "pedagogy.progress.morceaux"
+    },
+    {
+      "line": 59,
+      "type": "jsxText",
+      "text": "1 ligne par morceau • Synthèse du niveau de confort de la troupe par famille d'instruments.",
+      "fullKey": "pedagogy.progress.uneLigneParMorceauSynthese"
+    },
+    {
+      "line": 64,
+      "type": "jsxText",
+      "text": "≥ 75% À l'aise",
+      "fullKey": "pedagogy.progress.taux75ALAise"
+    },
+    {
+      "line": 67,
+      "type": "jsxText",
+      "text": "50-74% Travail",
+      "fullKey": "pedagogy.progress.taux5074Travail"
+    },
+    {
+      "line": 70,
+      "type": "jsxText",
+      "text": "< 50% Fragile",
+      "fullKey": "pedagogy.progress.taux50Fragile"
+    },
+    {
+      "line": 81,
+      "type": "jsxText",
+      "text": "Morceau de Saison",
+      "fullKey": "pedagogy.progress.morceauDeSaison"
+    },
+    {
+      "line": 84,
+      "type": "jsxText",
+      "text": "Global",
+      "fullKey": "pedagogy.progress.global"
+    },
+    {
+      "line": 95,
+      "type": "jsxText",
+      "text": "Détail & Actions",
+      "fullKey": "pedagogy.progress.detailActions"
+    }
+  ],
+  "src/components/pedagogy/QuizDistractorManager.jsx": [
+    {
+      "line": 23,
+      "type": "config",
+      "text": "Genres Musicaux hors-Maracatu",
+      "fullKey": "pedagogy.progress.genresMusicauxHorsMaracatu"
+    },
+    {
+      "line": 24,
+      "type": "config",
+      "text": "Baques et Rythmes Fictifs",
+      "fullKey": "pedagogy.progress.baquesEtRythmesFictifs"
+    },
+    {
+      "line": 25,
+      "type": "config",
+      "text": "Villes & Géographie",
+      "fullKey": "pedagogy.progress.villesGeographie"
+    },
+    {
+      "line": 26,
+      "type": "config",
+      "text": "Lutherie & Matériaux",
+      "fullKey": "pedagogy.progress.lutherieMateriaux"
+    },
+    {
+      "line": 27,
+      "type": "config",
+      "text": "Traductions et Expressions",
+      "fullKey": "pedagogy.progress.traductionsEtExpressions"
+    },
+    {
+      "line": 66,
+      "type": "runtime",
+      "text": "Banque de leurres sauvegardée avec succès !",
+      "fullKey": "pedagogy.progress.banqueDeLeurresSauvegardeeAvec"
+    },
+    {
+      "line": 69,
+      "type": "runtime",
+      "text": "Erreur lors de la sauvegarde.",
+      "fullKey": "pedagogy.progress.erreurLorsDeLaSauvegarde"
+    },
+    {
+      "line": 76,
+      "type": "runtime",
+      "text": "Voulez-vous vraiment réinitialiser toutes les catégories aux valeurs par défaut de l'application ? Toutes vos personnalisations seront perdues.",
+      "fullKey": "pedagogy.progress.voulezVousVraimentReinitialiserToutes"
+    },
+    {
+      "line": 116,
+      "type": "jsxText",
+      "text": "Chargement de la banque de leurres...",
+      "fullKey": "pedagogy.progress.chargementDeLaBanqueDe"
+    },
+    {
+      "line": 117,
+      "type": "jsxText",
+      "text": "Erreur d'initialisation.",
+      "fullKey": "pedagogy.progress.erreurDInitialisation"
+    },
+    {
+      "line": 126,
+      "type": "jsxText",
+      "text": "Gérez les fausses réponses (distracteurs) injectées dans vos quiz pédagogiques. \n            Une liste riche garantit des QCM variés !",
+      "fullKey": "pedagogy.progress.gerezLesFaussesReponsesDistracteurs"
+    },
+    {
+      "line": 135,
+      "type": "jsxText",
+      "text": "Réinitialiser",
+      "fullKey": "pedagogy.progress.reinitialiser"
+    },
+    {
+      "line": 143,
+      "type": "conditional",
+      "text": "Enregistrement...",
+      "fullKey": "pedagogy.progress.enregistrement"
+    },
+    {
+      "line": 168,
+      "type": "attribute",
+      "text": "Supprimer ce leurre",
+      "fullKey": "pedagogy.progress.supprimerCeLeurre"
+    },
+    {
+      "line": 177,
+      "type": "jsxText",
+      "text": "Aucun leurre dans cette catégorie. Le QCM utilisera le dictionnaire universel en secours.",
+      "fullKey": "pedagogy.progress.aucunLeurreDansCetteCategorie"
+    },
+    {
+      "line": 184,
+      "type": "attribute",
+      "text": "Ajouter un leurre...",
+      "fullKey": "pedagogy.progress.ajouterUnLeurre"
+    }
+  ],
+  "src/components/pedagogy/RodaQuizStatsBanner.jsx": [
+    {
+      "line": 57,
+      "type": "fallback",
+      "text": "Résultats Roda Quiz & Défis",
+      "fullKey": "pedagogy.progress.resultatsRodaQuizDefis"
+    },
+    {
+      "line": 63,
+      "type": "jsxText",
+      "text": "Chargement de tes résultats...",
+      "fullKey": "pedagogy.progress.chargementDeTesResultats"
+    },
+    {
+      "line": 68,
+      "type": "fallback",
+      "text": "Aucune partie disputée pour l'instant. Rejoins ou lance un défi depuis le bouton En ligne !",
+      "fullKey": "pedagogy.progress.aucunePartieDisputeePourL"
+    },
+    {
+      "line": 76,
+      "type": "fallback",
+      "text": "Parties jouées",
+      "fullKey": "pedagogy.progress.partiesJouees"
+    },
+    {
+      "line": 85,
+      "type": "fallback",
+      "text": "Victoires",
+      "fullKey": "pedagogy.progress.victoires"
+    },
+    {
+      "line": 94,
+      "type": "fallback",
+      "text": "Présence sur le podium",
+      "fullKey": "pedagogy.progress.presenceSurLePodium"
+    }
+  ],
+  "src/components/pedagogy/ToadasTable.jsx": [
+    {
+      "line": 18,
+      "type": "jsxText",
+      "text": "Aucune Toada enregistrée dans le répertoire pour le moment.",
+      "fullKey": "pedagogy.progress.aucuneToadaEnregistreeDansLe"
+    },
+    {
+      "line": 26,
+      "type": "jsxText",
+      "text": "Titre du chant",
+      "fullKey": "pedagogy.progress.titreDuChant"
+    },
+    {
+      "line": 27,
+      "type": "jsxText",
+      "text": "Rythme / Baque",
+      "fullKey": "pedagogy.progress.rythmeBaque"
+    },
+    {
+      "line": 28,
+      "type": "jsxText",
+      "text": "Nation / École",
+      "fullKey": "pedagogy.progress.nationEcole"
+    },
+    {
+      "line": 29,
+      "type": "jsxText",
+      "text": "Actions",
+      "fullKey": "pedagogy.progress.actions"
+    },
+    {
+      "line": 46,
+      "type": "fallback",
+      "text": "Toada sans titre",
+      "fullKey": "pedagogy.progress.toadaSansTitre"
+    },
+    {
+      "line": 62,
+      "type": "attribute",
+      "text": "Consulter le livret de la toada",
+      "fullKey": "pedagogy.progress.consulterLeLivretDeLa"
+    },
+    {
+      "line": 63,
+      "type": "jsxText",
+      "text": "👁️ Paroles",
+      "fullKey": "pedagogy.progress.paroles"
+    },
+    {
+      "line": 72,
+      "type": "attribute",
+      "text": "Éditer les paroles et les 8 points pédagogiques",
+      "fullKey": "pedagogy.progress.editerLesParolesEtLes"
+    },
+    {
+      "line": 73,
+      "type": "jsxText",
+      "text": "✏️ Éditer les 8 points",
+      "fullKey": "pedagogy.progress.editerLes8Points"
+    },
+    {
+      "line": 80,
+      "type": "attribute",
+      "text": "Supprimer la toada",
+      "fullKey": "pedagogy.progress.supprimerLaToada"
+    }
+  ],
+  "src/components/pedagogy/AtelierModelPartsProgress.jsx": [
+    {
+      "line": 46,
+      "type": "jsxText",
+      "text": "Nomenclature & Pièces usinées (",
+      "fullKey": "pedagogy.cards.nomenclaturePiecesUsinees"
+    },
+    {
+      "line": 50,
+      "type": "jsxText",
+      "text": "maîtrisée",
+      "fullKey": "pedagogy.cards.maitrisee"
+    },
+    {
+      "line": 55,
+      "type": "conditional",
+      "text": "▲ Réduire",
+      "fullKey": "pedagogy.cards.reduire"
+    },
+    {
+      "line": 55,
+      "type": "conditional",
+      "text": "▼ Détails par pièce",
+      "fullKey": "pedagogy.cards.detailsParPiece"
+    },
+    {
+      "line": 90,
+      "type": "jsxText",
+      "text": "étape",
+      "fullKey": "pedagogy.cards.etape"
+    },
+    {
+      "line": 90,
+      "type": "jsxText",
+      "text": "d'usinage",
+      "fullKey": "pedagogy.cards.dUsinage"
+    },
+    {
+      "line": 92,
+      "type": "jsxText",
+      "text": "• Mat. :",
+      "fullKey": "pedagogy.cards.mat"
+    },
+    {
+      "line": 139,
+      "type": "jsxText",
+      "text": "Quiz Pièce",
+      "fullKey": "pedagogy.cards.quizPiece"
+    }
+  ],
+  "src/components/pedagogy/DailyRevisionSession.jsx": [
+    {
+      "line": 72,
+      "type": "jsxText",
+      "text": "Préparation de ta session...",
+      "fullKey": "pedagogy.cards.preparationDeTaSession"
+    }
+  ],
+  "src/components/pedagogy/MestreSignalsManager.jsx": [
+    {
+      "line": 68,
+      "type": "runtime",
+      "text": "Voulez-vous vraiment supprimer ce signal ? Il ne sera plus disponible dans les quiz.",
+      "fullKey": "pedagogy.cards.voulezVousVraimentSupprimerCe"
+    },
+    {
+      "line": 75,
+      "type": "runtime",
+      "text": "Erreur lors de la suppression.",
+      "fullKey": "pedagogy.cards.erreurLorsDeLaSuppression"
+    },
+    {
+      "line": 107,
+      "type": "runtime",
+      "text": "Erreur lors de l'enregistrement du signal.",
+      "fullKey": "pedagogy.cards.erreurLorsDeLEnregistrement"
+    },
+    {
+      "line": 113,
+      "type": "jsxText",
+      "text": "Chargement des signaux...",
+      "fullKey": "pedagogy.cards.chargementDesSignaux"
+    },
+    {
+      "line": 147,
+      "type": "jsxText",
+      "text": "Nom du signal",
+      "fullKey": "pedagogy.cards.nomDuSignal"
+    },
+    {
+      "line": 167,
+      "type": "jsxText",
+      "text": "👁️ Visuel (Geste, Main, Regard)",
+      "fullKey": "pedagogy.cards.visuelGesteMainRegard"
+    },
+    {
+      "line": 168,
+      "type": "jsxText",
+      "text": "🔊 Sonore (Sifflet / Apito, Voix)",
+      "fullKey": "pedagogy.cards.sonoreSiffletApitoVoix"
+    },
+    {
+      "line": 169,
+      "type": "jsxText",
+      "text": "🧩 Autre",
+      "fullKey": "pedagogy.cards.autre"
+    },
+    {
+      "line": 174,
+      "type": "jsxText",
+      "text": "Description / Geste",
+      "fullKey": "pedagogy.cards.descriptionGeste"
+    },
+    {
+      "line": 186,
+      "type": "jsxText",
+      "text": "URL de l'image / GIF",
+      "fullKey": "pedagogy.cards.urlDeLImageGif"
+    },
+    {
+      "line": 203,
+      "type": "jsxText",
+      "text": "Annuler",
+      "fullKey": "pedagogy.cards.annuler"
+    },
+    {
+      "line": 223,
+      "type": "jsxText",
+      "text": "Aucun signal n'a encore été configuré.",
+      "fullKey": "pedagogy.cards.aucunSignalNAEncore"
+    },
+    {
+      "line": 250,
+      "type": "attribute",
+      "text": "Modifier",
+      "fullKey": "pedagogy.cards.modifier"
+    },
+    {
+      "line": 257,
+      "type": "attribute",
+      "text": "Supprimer",
+      "fullKey": "pedagogy.cards.supprimer"
+    }
+  ],
+  "src/components/pedagogy/MonParcoursGuideBanner.jsx": [
+    {
+      "line": 49,
+      "type": "attribute",
+      "text": "Afficher l'aide Où apprendre et réviser ?",
+      "fullKey": "pedagogy.cards.afficherLAideOuApprendre"
+    },
+    {
+      "line": 52,
+      "type": "fallback",
+      "text": "Aide : Où apprendre et réviser ?",
+      "fullKey": "pedagogy.cards.aideOuApprendreEtReviser"
+    },
+    {
+      "line": 68,
+      "type": "fallback",
+      "text": "Où apprendre et réviser ?",
+      "fullKey": "pedagogy.cards.ouApprendreEtReviser"
+    },
+    {
+      "line": 77,
+      "type": "attribute",
+      "text": "Masquer ce guide (réouvrable à tout moment via le bouton 💡)",
+      "fullKey": "pedagogy.cards.masquerCeGuideReouvrableA"
+    },
+    {
+      "line": 80,
+      "type": "fallback",
+      "text": "Compris / Masquer",
+      "fullKey": "pedagogy.cards.comprisMasquer"
+    },
+    {
+      "line": 86,
+      "type": "fallback",
+      "text": "Avant de tester tes acquis ici, retrouve tous les détails (fiches complètes, audios, explications) dans les Varals (cordes à linge) situés tout en bas de la page d'accueil !",
+      "fullKey": "pedagogy.cards.avantDeTesterTesAcquis"
+    }
+  ],
+  "src/components/pedagogy/PedagogyDocumentsView.jsx": [
+    {
+      "line": 55,
+      "type": "jsxText",
+      "text": "📋 Les 2 Tableaux",
+      "fullKey": "pedagogy.cards.les2Tableaux"
+    },
+    {
+      "line": 66,
+      "type": "jsxText",
+      "text": "🎵 Toadas (",
+      "fullKey": "pedagogy.cards.toadas"
+    },
+    {
+      "line": 77,
+      "type": "jsxText",
+      "text": "📖 Culture & Histoire (",
+      "fullKey": "pedagogy.cards.cultureHistoire"
+    },
+    {
+      "line": 88,
+      "type": "jsxText",
+      "text": "🪢 Vue Varal",
+      "fullKey": "pedagogy.cards.vueVaral"
+    },
+    {
+      "line": 100,
+      "type": "jsxText",
+      "text": "➕ Nouvelle Toada",
+      "fullKey": "pedagogy.cards.nouvelleToada"
+    },
+    {
+      "line": 108,
+      "type": "jsxText",
+      "text": "➕ Fiche Culture",
+      "fullKey": "pedagogy.cards.ajouterFicheCulture"
+    },
+    {
+      "line": 124,
+      "type": "jsxText",
+      "text": "⬅️ Annuler et revenir aux tableaux pédagogiques",
+      "fullKey": "pedagogy.cards.annulerEtRevenirAuxTableaux"
+    },
+    {
+      "line": 145,
+      "type": "jsxText",
+      "text": "Tableau A : Toadas (Chants & Paroles)",
+      "fullKey": "pedagogy.cards.tableauAToadasChantsParoles"
+    },
+    {
+      "line": 148,
+      "type": "jsxText",
+      "text": "Répertoire musical et livrets de chants",
+      "fullKey": "pedagogy.cards.repertoireMusicalEtLivretsDe"
+    },
+    {
+      "line": 166,
+      "type": "jsxText",
+      "text": "Tableau B : Fiches Culture & Histoire",
+      "fullKey": "pedagogy.cards.tableauBFichesCultureHistoire"
+    },
+    {
+      "line": 169,
+      "type": "jsxText",
+      "text": "Histoire, traditions, figures et folklore",
+      "fullKey": "pedagogy.cards.histoireTraditionsFiguresEtFolklore"
+    }
+  ],
+  "src/components/SongCard.jsx": [
+    {
+      "line": 173,
+      "type": "jsxText",
+      "text": "Cochez \"Puxador\" ou \"Coro\" au-dessus pour afficher les paroles",
+      "fullKey": "pedagogy.cards.cochezPuxadorOuCoroAu"
+    },
+    {
+      "line": 185,
+      "type": "jsxText",
+      "text": "⚠️ Ce chant est au format texte simple. Impossible de séparer automatiquement le Puxador et le Chœur.",
+      "fullKey": "pedagogy.cards.ceChantEstAuFormat"
+    },
+    {
+      "line": 320,
+      "type": "attribute",
+      "text": "Imprimer cette fiche",
+      "fullKey": "pedagogy.cards.imprimerCetteFiche"
+    },
+    {
+      "line": 353,
+      "type": "fallback",
+      "text": "Titre Inconnu",
+      "fullKey": "pedagogy.cards.titreInconnu"
+    },
+    {
+      "line": 383,
+      "type": "jsxText",
+      "text": "Audio témoin :",
+      "fullKey": "pedagogy.cards.audioTemoin"
+    },
+    {
+      "line": 407,
+      "type": "jsxText",
+      "text": "👁️ Puxador (Soliste)",
+      "fullKey": "pedagogy.cards.puxadorSoliste"
+    },
+    {
+      "line": 416,
+      "type": "jsxText",
+      "text": "👁️ Coro (Chœur)",
+      "fullKey": "pedagogy.cards.coroChUr"
+    },
+    {
+      "line": 425,
+      "type": "jsxText",
+      "text": "Version Originale",
+      "fullKey": "pedagogy.cards.versionOriginale"
+    },
+    {
+      "line": 437,
+      "type": "jsxText",
+      "text": "Version Phonétique",
+      "fullKey": "pedagogy.cards.versionPhonetique"
+    },
+    {
+      "line": 456,
+      "type": "jsxText",
+      "text": "Traduction en français",
+      "fullKey": "pedagogy.cards.traductionEnFrancais"
+    },
+    {
+      "line": 469,
+      "type": "jsxText",
+      "text": "Lexique & Notes",
+      "fullKey": "pedagogy.cards.lexiqueNotes"
+    },
+    {
+      "line": 494,
+      "type": "jsxText",
+      "text": "Anecdote",
+      "fullKey": "pedagogy.cards.anecdote"
+    }
+  ],
+  "src/components/CultureCard.jsx": [
+    {
+      "line": 86,
+      "type": "jsxText",
+      "text": "Fiche Culturelle",
+      "fullKey": "pedagogy.cards.ficheCulturelle"
+    },
+    {
+      "line": 118,
+      "type": "fallback",
+      "text": "Fiche Culture",
+      "fullKey": "pedagogy.cards.ficheCulture"
+    },
+    {
+      "line": 184,
+      "type": "jsxText",
+      "text": "🌿 Élément :",
+      "fullKey": "pedagogy.cards.element"
+    },
+    {
+      "line": 187,
+      "type": "jsxText",
+      "text": "⚔️ Symboles :",
+      "fullKey": "pedagogy.cards.symboles"
+    },
+    {
+      "line": 234,
+      "type": "fallback",
+      "text": "Gestuelle",
+      "fullKey": "pedagogy.cards.gestuelle"
+    },
+    {
+      "line": 239,
+      "type": "jsxText",
+      "text": "💪 Focus corps :",
+      "fullKey": "pedagogy.cards.focusCorps"
+    },
+    {
+      "line": 260,
+      "type": "jsxText",
+      "text": "Le saviez-vous ?",
+      "fullKey": "pedagogy.cards.leSaviezVous"
+    },
+    {
+      "line": 271,
+      "type": "jsxText",
+      "text": "🏷️ Mots-Clés",
+      "fullKey": "pedagogy.cards.motsCles"
+    },
+    {
+      "line": 291,
+      "type": "jsxText",
+      "text": "📖 Dictionnaire & Lexique",
+      "fullKey": "pedagogy.cards.dictionnaireLexique"
+    },
+    {
+      "line": 321,
+      "type": "jsxText",
+      "text": "🎬 Vidéo Associée",
+      "fullKey": "pedagogy.cards.videoAssociee"
+    },
+    {
+      "line": 333,
+      "type": "attribute",
+      "text": "YouTube video player",
+      "fullKey": "pedagogy.cards.youtubeVideoPlayer"
+    },
+    {
+      "line": 353,
+      "type": "jsxText",
+      "text": "Télécharger / Ouvrir le fichier vidéo ↗",
+      "fullKey": "pedagogy.cards.telechargerOuvrirLeFichierVideo"
+    },
+    {
+      "line": 363,
+      "type": "jsxText",
+      "text": "▶️ Regarder la vidéo externe",
+      "fullKey": "pedagogy.cards.regarderLaVideoExterne"
+    },
+    {
+      "line": 372,
+      "type": "jsxText",
+      "text": "📱 Scannez pour voir la vidéo",
+      "fullKey": "pedagogy.cards.scannezPourVoirLaVideo"
+    }
+  ]
+}

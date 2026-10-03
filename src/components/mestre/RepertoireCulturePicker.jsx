@@ -245,8 +245,8 @@ export default function RepertoireCulturePicker({
         {filteredDocs.length === 0 ? (
           <p className="text-[10px] text-stone-500 italic p-3 text-center">
             {searchTerm || activeCategory !== 'Toutes'
-              ? 'Aucune fiche culturelle ne correspond à votre filtre.'
-              : 'Aucune fiche culturelle disponible dans le Varal Culture.'}
+              ? t('pedagogy.admin.aucuneFicheCulturelleNe')
+              : t('pedagogy.admin.aucuneFicheCulturelleDisponible')}
           </p>
         ) : (
           filteredDocs.map((docItem) => {

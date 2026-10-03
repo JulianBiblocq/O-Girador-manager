@@ -1,9 +1,9 @@
 import React from 'react';
+import { useTranslation } from '../LanguageContext';
 import { useAssociationSettings } from '../../hooks/useAssociationSettings';
 import TabCommunication from '../association-settings/TabCommunication';
 import CordelButton from '../CordelButton';
 import { XiloMegaphone } from '../XiloIcons';
-import { useTranslation } from '../LanguageContext';
 
 /**
  * Composant dédié à la communication externe pour le pôle Studio :
@@ -26,7 +26,7 @@ export default function StudioCommunication({ groupId, onBack }) {
       <div className="flex flex-col items-center justify-center py-16 space-y-4">
         <div className="animate-spin text-4xl select-none">⏳</div>
         <p className="font-semibold text-xs uppercase tracking-widest text-cordel-master-dark opacity-60">
-          Chargement de la configuration communication...
+          {t('studio.communication.chargementDeLaConfigurationCommunication')}
         </p>
       </div>
     );
@@ -38,15 +38,15 @@ export default function StudioCommunication({ groupId, onBack }) {
       <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-dashed border-cordel-master-dark/30">
         <div>
           <div className="flex items-center gap-2 text-[10px] font-bold text-cordel-master-dark uppercase tracking-wider mb-1">
-            <span>Studio</span>
+            <span>{t('studio.communication.studio')}</span>
             <span>›</span>
-            <span className="text-[var(--color-cordel-vert)] dark:text-emerald-400">Communication & Brevo</span>
+            <span className="text-[var(--color-cordel-vert)] dark:text-emerald-400">{t('studio.communication.communicationBrevo')}</span>
           </div>
           <h2 className="text-xl font-black text-cordel-wood uppercase flex items-center gap-2">
-            <XiloMegaphone size={20} className="text-cordel-wood" /> Configuration de la Communication & Envois
+            <XiloMegaphone size={20} className="text-cordel-wood" /> {t('studio.communication.configurationDeLaCommunicationEnvois')}
           </h2>
           <p className="text-xs text-cordel-master-dark/75 mt-0.5">
-            Configurez votre compte emailing (clé API Brevo), les adresses d'expédition et exportez la liste des abonnés newsletter.
+            {t('studio.communication.configurezVotreCompteEmailingCle')}
           </p>
         </div>
 
@@ -56,7 +56,7 @@ export default function StudioCommunication({ groupId, onBack }) {
             onClick={onBack}
             className="text-xs font-bold"
           >
-            ⬅️ Retour au Studio
+            {t('studio.communication.retourAuStudio')}
           </CordelButton>
         )}
       </div>
@@ -81,7 +81,7 @@ export default function StudioCommunication({ groupId, onBack }) {
             disabled={saving}
             className="px-6 py-2.5 uppercase font-black tracking-wider text-xs shadow-[2px_2px_0px_0px_#181716]"
           >
-            {saving ? "Enregistrement..." : "💾 Enregistrer toutes les modifications"}
+            {saving ? t('studio.communication.enregistrement') : t('studio.communication.enregistrerToutesLesModifications')}
           </CordelButton>
         </div>
       </div>

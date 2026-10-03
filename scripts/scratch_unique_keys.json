@@ -1,0 +1,1787 @@
+[
+  {
+    "key": "vitrine.admin.general.tabPublicGeneral.statutDePublicationDeLa",
+    "cat": "general",
+    "file": "src/components/association-settings/TabPublicGeneral.jsx",
+    "text": "Statut de Publication de la Vitrine Publique",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.general.tabPublicGeneral.enLignePublie",
+    "cat": "general",
+    "file": "src/components/association-settings/TabPublicGeneral.jsx",
+    "text": "🌐 EN LIGNE (PUBLIÉ)",
+    "type": "conditional"
+  },
+  {
+    "key": "vitrine.admin.general.tabPublicGeneral.modeBrouillonMasque",
+    "cat": "general",
+    "file": "src/components/association-settings/TabPublicGeneral.jsx",
+    "text": "🚧 MODE BROUILLON (MASQUÉ)",
+    "type": "conditional"
+  },
+  {
+    "key": "vitrine.admin.general.tabPublicGeneral.publierLeSiteVitrinePour",
+    "cat": "general",
+    "file": "src/components/association-settings/TabPublicGeneral.jsx",
+    "text": "🌍 Publier le site vitrine pour le grand public",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.general.tabPublicGeneral.votreSiteVitrineEstActuellement",
+    "cat": "general",
+    "file": "src/components/association-settings/TabPublicGeneral.jsx",
+    "text": "Votre site vitrine est actuellement en ligne et totalement accessible par les visiteurs externes et moteurs de recherche.",
+    "type": "conditional"
+  },
+  {
+    "key": "vitrine.admin.general.tabPublicGeneral.modeBrouillonActifLesVisiteurs",
+    "cat": "general",
+    "file": "src/components/association-settings/TabPublicGeneral.jsx",
+    "text": "Mode Brouillon actif : les visiteurs voient une page d'attente \"En construction\". Seuls les membres connectés peuvent prévisualiser le site.",
+    "type": "conditional"
+  },
+  {
+    "key": "vitrine.admin.general.tabPublicGeneral.patientez",
+    "cat": "general",
+    "file": "src/components/association-settings/TabPublicGeneral.jsx",
+    "text": "Patientez...",
+    "type": "conditional"
+  },
+  {
+    "key": "vitrine.admin.general.tabPublicGeneral.passerEnModeBrouillon",
+    "cat": "general",
+    "file": "src/components/association-settings/TabPublicGeneral.jsx",
+    "text": "🔒 Passer en Mode Brouillon",
+    "type": "conditional"
+  },
+  {
+    "key": "vitrine.admin.general.tabPublicGeneral.publierLeSiteMaintenant",
+    "cat": "general",
+    "file": "src/components/association-settings/TabPublicGeneral.jsx",
+    "text": "🌍 Publier le Site Maintenant",
+    "type": "conditional"
+  },
+  {
+    "key": "vitrine.admin.general.tabPublicGeneral.ouvrirLeSitePublicDans",
+    "cat": "general",
+    "file": "src/components/association-settings/TabPublicGeneral.jsx",
+    "text": "Ouvrir le site public dans un nouvel onglet",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.general.tabPublicGeneral.voirLeSitePublic",
+    "cat": "general",
+    "file": "src/components/association-settings/TabPublicGeneral.jsx",
+    "text": "🌍 Voir le site public ↗",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.general.tabPublicGeneral.nomDeDomainePersonnalise",
+    "cat": "general",
+    "file": "src/components/association-settings/TabPublicGeneral.jsx",
+    "text": "🔗 Nom de domaine personnalisé",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.general.tabPublicGeneral.siVousPossedezVotrePropre",
+    "cat": "general",
+    "file": "src/components/association-settings/TabPublicGeneral.jsx",
+    "text": "Si vous possédez votre propre nom de domaine (ex:",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.general.tabPublicGeneral.wwwMonAssociationFr",
+    "cat": "general",
+    "file": "src/components/association-settings/TabPublicGeneral.jsx",
+    "text": "www.mon-association.fr",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.general.tabPublicGeneral.vousPouvezLeRenseignerIci",
+    "cat": "general",
+    "file": "src/components/association-settings/TabPublicGeneral.jsx",
+    "text": "), vous pouvez le renseigner ici. \n            Il servira d'adresse principale pour votre site vitrine au lieu de l'adresse par défaut.",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.general.tabPublicGeneral.domainesPersonnalises",
+    "cat": "general",
+    "file": "src/components/association-settings/TabPublicGeneral.jsx",
+    "text": "Domaines personnalisés",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.general.tabPublicGeneral.tapezUnDomaineExWww",
+    "cat": "general",
+    "file": "src/components/association-settings/TabPublicGeneral.jsx",
+    "text": "Tapez un domaine (ex: www.mon-asso.fr) et appuyez sur Entrée",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.general.tabPublicGeneral.appuyezSur",
+    "cat": "general",
+    "file": "src/components/association-settings/TabPublicGeneral.jsx",
+    "text": "Appuyez sur",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.general.tabPublicGeneral.entree",
+    "cat": "general",
+    "file": "src/components/association-settings/TabPublicGeneral.jsx",
+    "text": "Entrée",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.general.tabPublicGeneral.pourAjouterUnDomaineSaisissez",
+    "cat": "general",
+    "file": "src/components/association-settings/TabPublicGeneral.jsx",
+    "text": "pour ajouter un domaine. Saisissez le domaine sans \"http://\" ou \"https://\". Pensez à configurer les DNS de votre nom de domaine pour pointer vers notre serveur.",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.general.tabPublicGeneral.coordonneesGeneralesDeContact",
+    "cat": "general",
+    "file": "src/components/association-settings/TabPublicGeneral.jsx",
+    "text": "📧 Coordonnées Générales de Contact",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.general.tabPublicGeneral.adresseEMailPubliqueDe",
+    "cat": "general",
+    "file": "src/components/association-settings/TabPublicGeneral.jsx",
+    "text": "Adresse E-mail publique de contact",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.general.tabPublicGeneral.numeroDeTelephoneDeContact",
+    "cat": "general",
+    "file": "src/components/association-settings/TabPublicGeneral.jsx",
+    "text": "Numéro de téléphone de contact",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.general.tabPublicGeneral.referencementSeoMetaDonneesGoogle",
+    "cat": "general",
+    "file": "src/components/association-settings/TabPublicGeneral.jsx",
+    "text": "🔎 Référencement SEO & Méta-Données (Google)",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.general.tabPublicGeneral.moteursDeRecherche",
+    "cat": "general",
+    "file": "src/components/association-settings/TabPublicGeneral.jsx",
+    "text": "Moteurs de recherche",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.general.tabPublicGeneral.optimisezLeTitreLaDescription",
+    "cat": "general",
+    "file": "src/components/association-settings/TabPublicGeneral.jsx",
+    "text": "Optimisez le titre, la description et les mots-clés de votre site vitrine pour apparaître en haut des résultats sur Google.",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.general.tabPublicGeneral.titreDeLaPageBalise",
+    "cat": "general",
+    "file": "src/components/association-settings/TabPublicGeneral.jsx",
+    "text": "Titre de la page (Balise Meta Title)",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.general.tabPublicGeneral.recommande5060Caracteres",
+    "cat": "general",
+    "file": "src/components/association-settings/TabPublicGeneral.jsx",
+    "text": "Recommandé : 50-60 caractères",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.general.tabPublicGeneral.exGroupeMaracatuPercussionsBresiliennes",
+    "cat": "general",
+    "file": "src/components/association-settings/TabPublicGeneral.jsx",
+    "text": "Ex: Groupe Maracatu & Percussions Brésiliennes - Nom Association",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.general.tabPublicGeneral.descriptionDeLaPageMeta",
+    "cat": "general",
+    "file": "src/components/association-settings/TabPublicGeneral.jsx",
+    "text": "Description de la page (Meta Description)",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.general.tabPublicGeneral.recommande150160Caracteres",
+    "cat": "general",
+    "file": "src/components/association-settings/TabPublicGeneral.jsx",
+    "text": "Recommandé : 150-160 caractères",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.general.tabPublicGeneral.exRetrouvezNosAteliersDe",
+    "cat": "general",
+    "file": "src/components/association-settings/TabPublicGeneral.jsx",
+    "text": "Ex: Retrouvez nos ateliers de percussion brésilienne et de danse traditionnelle maracatu, nos prochaines dates de concert et prestations scéniques.",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.general.tabPublicGeneral.motsClesSeoSeparesPar",
+    "cat": "general",
+    "file": "src/components/association-settings/TabPublicGeneral.jsx",
+    "text": "Mots-clés SEO (Séparés par des virgules)",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.general.tabPublicGeneral.exMaracatuBatucadaMusiqueBresilienne",
+    "cat": "general",
+    "file": "src/components/association-settings/TabPublicGeneral.jsx",
+    "text": "Ex: maracatu, batucada, musique brésilienne",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.general.tabPublicGeneral.maracatuPercussionsDanseBresilienneBatucada",
+    "cat": "general",
+    "file": "src/components/association-settings/TabPublicGeneral.jsx",
+    "text": "maracatu, percussions, danse brésilienne, batucada, spectacle de rue",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.general.tabPublicGeneral.structureJuridiqueMentionsLegales",
+    "cat": "general",
+    "file": "src/components/association-settings/TabPublicGeneral.jsx",
+    "text": "⚖️ Structure Juridique (Mentions Légales)",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.general.legalInfoBlock.informationsLegalesDevisFacturesVitrine",
+    "cat": "general",
+    "file": "src/components/association-settings/blocks/LegalInfoBlock.jsx",
+    "text": "📜 Informations Légales (Devis, Factures & Vitrine)",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.general.legalInfoBlock.cesCoordonneesAdministrativesSImprimeront",
+    "cat": "general",
+    "file": "src/components/association-settings/blocks/LegalInfoBlock.jsx",
+    "text": "Ces coordonnées administratives s'imprimeront automatiquement sur les documents PDF officiels et pourront s'afficher sur votre vitrine publique.",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.general.legalInfoBlock.structureJuridique",
+    "cat": "general",
+    "file": "src/components/association-settings/blocks/LegalInfoBlock.jsx",
+    "text": "Structure Juridique",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.general.legalInfoBlock.exAssociationLoi1901",
+    "cat": "general",
+    "file": "src/components/association-settings/blocks/LegalInfoBlock.jsx",
+    "text": "ex: Association Loi 1901",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.general.legalInfoBlock.numeroSiretNRna",
+    "cat": "general",
+    "file": "src/components/association-settings/blocks/LegalInfoBlock.jsx",
+    "text": "Numéro SIRET / N° RNA",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.general.legalInfoBlock.ex84912345600012",
+    "cat": "general",
+    "file": "src/components/association-settings/blocks/LegalInfoBlock.jsx",
+    "text": "ex: 849 123 456 00012 / W291001234",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.general.legalInfoBlock.adresseDeDomiciliationSiegeSocial",
+    "cat": "general",
+    "file": "src/components/association-settings/blocks/LegalInfoBlock.jsx",
+    "text": "Adresse de Domiciliation / Siège Social",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.general.legalInfoBlock.ex12RueDeLa",
+    "cat": "general",
+    "file": "src/components/association-settings/blocks/LegalInfoBlock.jsx",
+    "text": "ex: 12 Rue de la Paix, 29200 Brest",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.general.legalInfoBlock.eMailOfficielDeL",
+    "cat": "general",
+    "file": "src/components/association-settings/blocks/LegalInfoBlock.jsx",
+    "text": "E-mail Officiel de l'Association",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.general.legalInfoBlock.renseigneSurLesDevisPdf",
+    "cat": "general",
+    "file": "src/components/association-settings/blocks/LegalInfoBlock.jsx",
+    "text": "Renseigné sur les Devis PDF et utilisé par Brevo",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.general.legalInfoBlock.exContactVotreAssociationFr",
+    "cat": "general",
+    "file": "src/components/association-settings/blocks/LegalInfoBlock.jsx",
+    "text": "ex: contact@votre-association.fr",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.general.legalInfoBlock.telephoneOfficielDeLAssociation",
+    "cat": "general",
+    "file": "src/components/association-settings/blocks/LegalInfoBlock.jsx",
+    "text": "Téléphone Officiel de l'Association",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.general.legalInfoBlock.ex06123456",
+    "cat": "general",
+    "file": "src/components/association-settings/blocks/LegalInfoBlock.jsx",
+    "text": "ex: 06 12 34 56 78",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.general.legalInfoBlock.clauseSpecifiqueAvertissementContratOptionnel",
+    "cat": "general",
+    "file": "src/components/association-settings/blocks/LegalInfoBlock.jsx",
+    "text": "📋 Clause Spécifique / Avertissement Contrat (Optionnel)",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.general.legalInfoBlock.sImprimeEnBasDes",
+    "cat": "general",
+    "file": "src/components/association-settings/blocks/LegalInfoBlock.jsx",
+    "text": "S'imprime en bas des contrats PDF",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.general.legalInfoBlock.exAvertissementSonoreLesPrestations",
+    "cat": "general",
+    "file": "src/components/association-settings/blocks/LegalInfoBlock.jsx",
+    "text": "ex: Avertissement sonore : Les prestations comportent un volume sonore élevé.",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.general.legalInfoBlock.signaturesNumeriseesDesRepresentantsImprimees",
+    "cat": "general",
+    "file": "src/components/association-settings/blocks/LegalInfoBlock.jsx",
+    "text": "✍️ Signatures Numérisées des Représentants (Imprimées sur Devis & Contrats PDF)",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.general.legalInfoBlock.conseilUtilisezUneImageAu",
+    "cat": "general",
+    "file": "src/components/association-settings/blocks/LegalInfoBlock.jsx",
+    "text": "Conseil : Utilisez une image au format PNG avec un fond transparent.",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.general.legalInfoBlock.signatureDuPresidentMestre",
+    "cat": "general",
+    "file": "src/components/association-settings/blocks/LegalInfoBlock.jsx",
+    "text": "Signature du Président / Mestre",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.general.legalInfoBlock.signaturePresident",
+    "cat": "general",
+    "file": "src/components/association-settings/blocks/LegalInfoBlock.jsx",
+    "text": "Signature Président",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.general.legalInfoBlock.aucune",
+    "cat": "general",
+    "file": "src/components/association-settings/blocks/LegalInfoBlock.jsx",
+    "text": "Aucune",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.general.legalInfoBlock.selectionne",
+    "cat": "general",
+    "file": "src/components/association-settings/blocks/LegalInfoBlock.jsx",
+    "text": "✓ Sélectionné :",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.general.legalInfoBlock.signatureDuTresorier",
+    "cat": "general",
+    "file": "src/components/association-settings/blocks/LegalInfoBlock.jsx",
+    "text": "Signature du Trésorier",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.general.legalInfoBlock.signatureTresorier",
+    "cat": "general",
+    "file": "src/components/association-settings/blocks/LegalInfoBlock.jsx",
+    "text": "Signature Trésorier",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.theme.tabPublicTheme.cactusTypoCordelOfficielle",
+    "cat": "theme",
+    "file": "src/components/association-settings/TabPublicTheme.jsx",
+    "text": "Cactus (Typo Cordel Officielle)",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.theme.tabPublicTheme.robotoModernePolyvalente",
+    "cat": "theme",
+    "file": "src/components/association-settings/TabPublicTheme.jsx",
+    "text": "Roboto (Moderne & Polyvalente)",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.theme.tabPublicTheme.montserratGeometriqueEpuree",
+    "cat": "theme",
+    "file": "src/components/association-settings/TabPublicTheme.jsx",
+    "text": "Montserrat (Géométrique & Épurée)",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.theme.tabPublicTheme.openSansExcellenteLisibilite",
+    "cat": "theme",
+    "file": "src/components/association-settings/TabPublicTheme.jsx",
+    "text": "Open Sans (Excellente lisibilité)",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.theme.tabPublicTheme.oswaldTitresCondensesAFort",
+    "cat": "theme",
+    "file": "src/components/association-settings/TabPublicTheme.jsx",
+    "text": "Oswald (Titres condensés à fort impact)",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.theme.tabPublicTheme.playfairDisplaySerifElegante",
+    "cat": "theme",
+    "file": "src/components/association-settings/TabPublicTheme.jsx",
+    "text": "Playfair Display (Serif Élégante)",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.theme.tabPublicTheme.latoChaleureuseEquilibree",
+    "cat": "theme",
+    "file": "src/components/association-settings/TabPublicTheme.jsx",
+    "text": "Lato (Chaleureuse & Équilibrée)",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.theme.tabPublicTheme.poppinsArrondieTendance",
+    "cat": "theme",
+    "file": "src/components/association-settings/TabPublicTheme.jsx",
+    "text": "Poppins (Arrondie & Tendance)",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.theme.tabPublicTheme.cinzelClassiquePrestigieuse",
+    "cat": "theme",
+    "file": "src/components/association-settings/TabPublicTheme.jsx",
+    "text": "Cinzel (Classique & Prestigieuse)",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.theme.tabPublicTheme.ryeCordelGravureBois",
+    "cat": "theme",
+    "file": "src/components/association-settings/TabPublicTheme.jsx",
+    "text": "Rye (Cordel / Gravure Bois)",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.theme.tabPublicTheme.sancreekCordelTypoRetro",
+    "cat": "theme",
+    "file": "src/components/association-settings/TabPublicTheme.jsx",
+    "text": "Sancreek (Cordel / Typo Rétro)",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.theme.tabPublicTheme.apparenceVisuelleCharteGraphique",
+    "cat": "theme",
+    "file": "src/components/association-settings/TabPublicTheme.jsx",
+    "text": "🎨 Apparence Visuelle & Charte Graphique",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.theme.tabPublicTheme.personnalisezFinementLaPaletteVisuelle",
+    "cat": "theme",
+    "file": "src/components/association-settings/TabPublicTheme.jsx",
+    "text": "Personnalisez finement la palette visuelle (6 couleurs sémantiques) et la typographie de votre vitrine publique.",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.theme.tabPublicTheme.paletteDes6CouleursVitrine",
+    "cat": "theme",
+    "file": "src/components/association-settings/TabPublicTheme.jsx",
+    "text": "🎨 Palette des 6 Couleurs Vitrine",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.theme.tabPublicTheme.1CouleurPrimaireTitresMarqueurs",
+    "cat": "theme",
+    "file": "src/components/association-settings/TabPublicTheme.jsx",
+    "text": "1. Couleur Primaire (Titres, marqueurs)",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.theme.tabPublicTheme.2CouleurSecondaireBadgesElements",
+    "cat": "theme",
+    "file": "src/components/association-settings/TabPublicTheme.jsx",
+    "text": "2. Couleur Secondaire (Badges, éléments d'accent)",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.theme.tabPublicTheme.3CouleurDeFondArriere",
+    "cat": "theme",
+    "file": "src/components/association-settings/TabPublicTheme.jsx",
+    "text": "3. Couleur de Fond (Arrière-plan principal)",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.theme.tabPublicTheme.4CouleurDuTexteParagraphes",
+    "cat": "theme",
+    "file": "src/components/association-settings/TabPublicTheme.jsx",
+    "text": "4. Couleur du Texte (Paragraphes & corps)",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.theme.tabPublicTheme.5CouleurDeFondDes",
+    "cat": "theme",
+    "file": "src/components/association-settings/TabPublicTheme.jsx",
+    "text": "5. Couleur de Fond des Boutons (CTA)",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.theme.tabPublicTheme.6CouleurDuTexteDes",
+    "cat": "theme",
+    "file": "src/components/association-settings/TabPublicTheme.jsx",
+    "text": "6. Couleur du Texte des Boutons",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.theme.tabPublicTheme.policesDeCaracteres",
+    "cat": "theme",
+    "file": "src/components/association-settings/TabPublicTheme.jsx",
+    "text": "🔤 Polices de Caractères",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.theme.tabPublicTheme.policeDesTitresHeadings",
+    "cat": "theme",
+    "file": "src/components/association-settings/TabPublicTheme.jsx",
+    "text": "Police des Titres (Headings)",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.theme.tabPublicTheme.policeDuTexteBody",
+    "cat": "theme",
+    "file": "src/components/association-settings/TabPublicTheme.jsx",
+    "text": "Police du Texte (Body)",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.theme.tabPublicTheme.policeCactus",
+    "cat": "theme",
+    "file": "src/components/association-settings/TabPublicTheme.jsx",
+    "text": "Police Cactus :",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.theme.tabPublicTheme.laTypographieCordelOfficielleEst",
+    "cat": "theme",
+    "file": "src/components/association-settings/TabPublicTheme.jsx",
+    "text": "La typographie Cordel officielle est préchargée localement et ne nécessite aucun téléchargement externe.",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.theme.tabPublicTheme.voileSurLImageD",
+    "cat": "theme",
+    "file": "src/components/association-settings/TabPublicTheme.jsx",
+    "text": "🖼️ Voile sur l'image d'accueil (Hero Overlay)",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.theme.tabPublicTheme.ajustezLAssombrissementDeLa",
+    "cat": "theme",
+    "file": "src/components/association-settings/TabPublicTheme.jsx",
+    "text": "Ajustez l'assombrissement de la photo de couverture pour la rendre éclatante (0% = image brute, 25% = recommandé, 50% = sombre).",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.theme.tabPublicTheme.10Eclatant",
+    "cat": "theme",
+    "file": "src/components/association-settings/TabPublicTheme.jsx",
+    "text": "10% (Éclatant)",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.theme.tabPublicTheme.25Recommande",
+    "cat": "theme",
+    "file": "src/components/association-settings/TabPublicTheme.jsx",
+    "text": "25% (Recommandé)",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.theme.tabPublicTheme.50Sombre",
+    "cat": "theme",
+    "file": "src/components/association-settings/TabPublicTheme.jsx",
+    "text": "50% (Sombre)",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.theme.tabPublicTheme.apercuEnDirectDuTheme",
+    "cat": "theme",
+    "file": "src/components/association-settings/TabPublicTheme.jsx",
+    "text": "⚡ Aperçu en direct du Thème",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.theme.tabPublicTheme.titreDeLaVitrinePublique",
+    "cat": "theme",
+    "file": "src/components/association-settings/TabPublicTheme.jsx",
+    "text": "Titre de la Vitrine Publique",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.theme.tabPublicTheme.ceciEstUnExempleDe",
+    "cat": "theme",
+    "file": "src/components/association-settings/TabPublicTheme.jsx",
+    "text": "Ceci est un exemple de paragraphe. Il utilise la couleur de texte configurée ainsi que la typographie sélectionnée pour le corps de page.",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.theme.tabPublicTheme.exempleDeBoutonCta",
+    "cat": "theme",
+    "file": "src/components/association-settings/TabPublicTheme.jsx",
+    "text": "Exemple de Bouton (CTA)",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.theme.tabPublicTheme.badgeSecondaire",
+    "cat": "theme",
+    "file": "src/components/association-settings/TabPublicTheme.jsx",
+    "text": "Badge Secondaire",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.content.heroHeaderAccordion.enTeteAccrocheHero",
+    "cat": "content",
+    "file": "src/components/association-settings/vitrine/HeroHeaderAccordion.jsx",
+    "text": "En-tête & Accroche (Hero)",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.content.heroHeaderAccordion.titrePhraseDAccrocheVisuel",
+    "cat": "content",
+    "file": "src/components/association-settings/vitrine/HeroHeaderAccordion.jsx",
+    "text": "Titre, phrase d'accroche, visuel de couverture et bouton d'action principal",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.content.heroHeaderAccordion.titrePrincipalDuSiteNom",
+    "cat": "content",
+    "file": "src/components/association-settings/vitrine/HeroHeaderAccordion.jsx",
+    "text": "🏷️ Titre Principal du Site / Nom de l'Association",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.content.heroHeaderAccordion.exSamambaia",
+    "cat": "content",
+    "file": "src/components/association-settings/vitrine/HeroHeaderAccordion.jsx",
+    "text": "Ex: Samambaia",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.content.heroHeaderAccordion.phraseDAccrocheHeroSection",
+    "cat": "content",
+    "file": "src/components/association-settings/vitrine/HeroHeaderAccordion.jsx",
+    "text": "Phrase d'Accroche (Hero Section)",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.content.heroHeaderAccordion.exLEnergiePercutanteEt",
+    "cat": "content",
+    "file": "src/components/association-settings/vitrine/HeroHeaderAccordion.jsx",
+    "text": "Ex: L'énergie percutante et solaire du Maracatú brésilien !",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.content.heroHeaderAccordion.imageDeCouvertureHeroBanniere",
+    "cat": "content",
+    "file": "src/components/association-settings/vitrine/HeroHeaderAccordion.jsx",
+    "text": "Image de Couverture Hero (Bannière / Fond)",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.content.heroHeaderAccordion.nouvelleImage",
+    "cat": "content",
+    "file": "src/components/association-settings/vitrine/HeroHeaderAccordion.jsx",
+    "text": "✓ Nouvelle image (",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.content.heroHeaderAccordion.ko",
+    "cat": "content",
+    "file": "src/components/association-settings/vitrine/HeroHeaderAccordion.jsx",
+    "text": "Ko)",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.content.heroHeaderAccordion.voileDAssombrissementSurL",
+    "cat": "content",
+    "file": "src/components/association-settings/vitrine/HeroHeaderAccordion.jsx",
+    "text": "Voile d'assombrissement sur l'image d'accueil (Hero Overlay)",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.content.heroHeaderAccordion.eclatant",
+    "cat": "content",
+    "file": "src/components/association-settings/vitrine/HeroHeaderAccordion.jsx",
+    "text": "Éclatant",
+    "type": "conditional"
+  },
+  {
+    "key": "vitrine.admin.content.heroHeaderAccordion.equilibre",
+    "cat": "content",
+    "file": "src/components/association-settings/vitrine/HeroHeaderAccordion.jsx",
+    "text": "Équilibré",
+    "type": "conditional"
+  },
+  {
+    "key": "vitrine.admin.content.heroHeaderAccordion.sombre",
+    "cat": "content",
+    "file": "src/components/association-settings/vitrine/HeroHeaderAccordion.jsx",
+    "text": "Sombre",
+    "type": "conditional"
+  },
+  {
+    "key": "vitrine.admin.content.heroHeaderAccordion.lienVideoYoutubeOuVimeo",
+    "cat": "content",
+    "file": "src/components/association-settings/vitrine/HeroHeaderAccordion.jsx",
+    "text": "Lien Vidéo YouTube ou Vimeo (Optionnel)",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.content.heroHeaderAccordion.exHttpsWwwYoutubeCom",
+    "cat": "content",
+    "file": "src/components/association-settings/vitrine/HeroHeaderAccordion.jsx",
+    "text": "Ex: https://www.youtube.com/watch?v=...",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.content.heroHeaderAccordion.boutonDActionPrincipalHero",
+    "cat": "content",
+    "file": "src/components/association-settings/vitrine/HeroHeaderAccordion.jsx",
+    "text": "🔘 Bouton d'Action Principal (Hero CTA)",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.content.heroHeaderAccordion.hautDeLaVitrine",
+    "cat": "content",
+    "file": "src/components/association-settings/vitrine/HeroHeaderAccordion.jsx",
+    "text": "Haut de la vitrine",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.content.heroHeaderAccordion.texteDuBoutonCta",
+    "cat": "content",
+    "file": "src/components/association-settings/vitrine/HeroHeaderAccordion.jsx",
+    "text": "Texte du bouton CTA",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.content.heroHeaderAccordion.exNousRejoindreProchainesDates",
+    "cat": "content",
+    "file": "src/components/association-settings/vitrine/HeroHeaderAccordion.jsx",
+    "text": "Ex: Nous rejoindre, Prochaines dates...",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.content.heroHeaderAccordion.iconeEmoji",
+    "cat": "content",
+    "file": "src/components/association-settings/vitrine/HeroHeaderAccordion.jsx",
+    "text": "Icône / Émoji",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.content.heroHeaderAccordion.lienRedirection",
+    "cat": "content",
+    "file": "src/components/association-settings/vitrine/HeroHeaderAccordion.jsx",
+    "text": "Lien / Redirection",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.content.heroHeaderAccordion.exAgendaRecrutementMailto",
+    "cat": "content",
+    "file": "src/components/association-settings/vitrine/HeroHeaderAccordion.jsx",
+    "text": "Ex: #agenda, #recrutement, mailto:...",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.content.heroHeaderAccordion.afficherLIcone",
+    "cat": "content",
+    "file": "src/components/association-settings/vitrine/HeroHeaderAccordion.jsx",
+    "text": "Afficher l'icône",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.content.presentationVieAccordion.presentationVieAssociative",
+    "cat": "content",
+    "file": "src/components/association-settings/vitrine/PresentationVieAccordion.jsx",
+    "text": "Présentation & Vie Associative",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.content.presentationVieAccordion.textesQuiSommesNousQuotidien",
+    "cat": "content",
+    "file": "src/components/association-settings/vitrine/PresentationVieAccordion.jsx",
+    "text": "Textes Qui sommes-nous, quotidien du groupe et ateliers hebdomadaires",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.content.presentationVieAccordion.titreDeLaSectionPresentation",
+    "cat": "content",
+    "file": "src/components/association-settings/vitrine/PresentationVieAccordion.jsx",
+    "text": "👋 Titre de la section Présentation",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.content.presentationVieAccordion.quiSommesNous",
+    "cat": "content",
+    "file": "src/components/association-settings/vitrine/PresentationVieAccordion.jsx",
+    "text": "Qui sommes-nous ?",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.content.presentationVieAccordion.presentationQuiSommesNous",
+    "cat": "content",
+    "file": "src/components/association-settings/vitrine/PresentationVieAccordion.jsx",
+    "text": "Présentation \"Qui sommes-nous ?\"",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.content.presentationVieAccordion.presentezLHistoireDeVotre",
+    "cat": "content",
+    "file": "src/components/association-settings/vitrine/PresentationVieAccordion.jsx",
+    "text": "Présentez l'histoire de votre association, vos racines, vos maîtres et votre énergie...",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.content.presentationVieAccordion.notreQuotidienOrganisation",
+    "cat": "content",
+    "file": "src/components/association-settings/vitrine/PresentationVieAccordion.jsx",
+    "text": "🌿 Notre Quotidien & Organisation",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.content.presentationVieAccordion.sectionActive",
+    "cat": "content",
+    "file": "src/components/association-settings/vitrine/PresentationVieAccordion.jsx",
+    "text": "Section Active",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.content.presentationVieAccordion.titreQuotidien",
+    "cat": "content",
+    "file": "src/components/association-settings/vitrine/PresentationVieAccordion.jsx",
+    "text": "Titre Quotidien",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.content.presentationVieAccordion.notreQuotidienVieAssociative",
+    "cat": "content",
+    "file": "src/components/association-settings/vitrine/PresentationVieAccordion.jsx",
+    "text": "Notre Quotidien / Vie Associative",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.content.presentationVieAccordion.badgeQuotidien",
+    "cat": "content",
+    "file": "src/components/association-settings/vitrine/PresentationVieAccordion.jsx",
+    "text": "Badge Quotidien",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.content.presentationVieAccordion.vieDeLaTroupe",
+    "cat": "content",
+    "file": "src/components/association-settings/vitrine/PresentationVieAccordion.jsx",
+    "text": "Vie de la Troupe",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.content.presentationVieAccordion.descriptionDuQuotidienAteliersRepetitions",
+    "cat": "content",
+    "file": "src/components/association-settings/vitrine/PresentationVieAccordion.jsx",
+    "text": "Description du Quotidien (Ateliers, Répétitions)",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.content.presentationVieAccordion.exRepetitionsDEnsembleLe",
+    "cat": "content",
+    "file": "src/components/association-settings/vitrine/PresentationVieAccordion.jsx",
+    "text": "Ex: Répétitions d'ensemble le jeudi soir, ateliers lutherie le lundi...",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesRecrutementAccordion.formulesRecrutement",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/vitrine/FormulesRecrutementAccordion.jsx",
+    "text": "Formules & Recrutement",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesRecrutementAccordion.formulesDansePercuParamConfiguree",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/vitrine/FormulesRecrutementAccordion.jsx",
+    "text": "Formules Danse/Percu ({param} configurée{param}), tarifs et adhésions HelloAsso",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesRecrutementAccordion.afficherLaSectionRecrutement",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/vitrine/FormulesRecrutementAccordion.jsx",
+    "text": "Afficher la section Recrutement",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesRecrutementAccordion.activerLesBoutonsHelloasso",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/vitrine/FormulesRecrutementAccordion.jsx",
+    "text": "Activer les boutons HelloAsso",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesRecrutementAccordion.titreRecrutement",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/vitrine/FormulesRecrutementAccordion.jsx",
+    "text": "Titre Recrutement",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesRecrutementAccordion.rejoignezLaTroupe",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/vitrine/FormulesRecrutementAccordion.jsx",
+    "text": "Rejoignez la troupe !",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesRecrutementAccordion.badgeSurTitre",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/vitrine/FormulesRecrutementAccordion.jsx",
+    "text": "Badge / Sur-titre",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesRecrutementAccordion.nousRejoindre",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/vitrine/FormulesRecrutementAccordion.jsx",
+    "text": "Nous Rejoindre",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesRecrutementAccordion.descriptionDeLInvitationA",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/vitrine/FormulesRecrutementAccordion.jsx",
+    "text": "Description de l'invitation à rejoindre",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesRecrutementAccordion.rejoignezNosAteliersHebdomadairesEt",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/vitrine/FormulesRecrutementAccordion.jsx",
+    "text": "Rejoignez nos ateliers hebdomadaires et participez à une aventure musicale unique.",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.formulePercussion",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "Formule Percussion",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.ateliersHebdomadairesDePercussionMaracatu",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "Ateliers hebdomadaires de percussion maracatu (Alfaia, Caixa, Gonguê, Agbê, Mineiro).",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.adhesionAnnuelle",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "Adhésion annuelle",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.pretDesInstrumentsInclus",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "Prêt des instruments inclus",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.accesAuxRepetitionsPrestations",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "Accès aux répétitions & prestations",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.apprentissageDesRythmesEtDe",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "Apprentissage des rythmes et de la technique",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.formuleDanseChant",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "Formule Danse & Chant",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.ateliersDeDanseTraditionnelleBresilienne",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "Ateliers de danse traditionnelle brésilienne, expression scénique et chant polyphonique.",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.developpementCorporelChoregraphies",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "Développement corporel & chorégraphies",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.accesAuxCostumesEtSorties",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "Accès aux costumes et sorties scéniques",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.ouvertATousNiveaux",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "Ouvert à tous niveaux",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.formuleComplete",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "Formule Complète",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.accesIllimiteALEnsemble",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "Accès illimité à l'ensemble des ateliers de percussion, de danse, de chant et aux stages.",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.tarifPreferentiel",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "Tarif préférentiel",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.accesATousLesAteliers",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "Accès à tous les ateliers de la semaine",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.participationPrioritaireAuxStages",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "Participation prioritaire aux stages",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.immersionTotaleDansLaCulture",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "Immersion totale dans la culture Maracatu",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.leFichierSelectionneDoitEtre",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "Le fichier sélectionné doit être une image (JPG, PNG, WebP...).",
+    "type": "runtime"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.uneErreurEstSurvenuePendant",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "Une erreur est survenue pendant l'envoi de l'image.",
+    "type": "runtime"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.formulesDAdhesionCartesRecrutement",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "🎫 Formules d'Adhésion & Cartes Recrutement",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.ajouterUneFormule",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "➕ Ajouter une formule",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.personnalisezLesCartesDAdhesion",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "Personnalisez les cartes d'adhésion affichées dans la section recrutement du site public (ex: Danse, Percussion, Formule Complète).",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.formule",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "Formule",
+    "type": "fallback"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.editer",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "✏️ Éditer",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.supprimer",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "🗑️ Supprimer",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.nouvelleFormuleDAdhesion",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "➕ Nouvelle Formule d'Adhésion",
+    "type": "conditional"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.modifierLaFormule",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "✏️ Modifier la Formule",
+    "type": "conditional"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.iconeEmoji",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "Icône / Émoji",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.titreDeLaFormule",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "Titre de la Formule *",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.libelleDuTarifPeriode",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "Libellé du Tarif / Période",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.adhesionAnnuelleTarifReduit",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "Adhésion annuelle / Tarif réduit",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.texteDuBoutonSurLa",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "Texte du bouton sur la carte",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.enSavoirPlus",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "En savoir plus",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.descriptionCourteAfficheeSurLa",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "Description courte (Affichée sur la carte)",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.texteRicheGrasPuces",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "Texte riche (Gras, puces...)",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.descriptionDetailleeDansLaModale",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "Description détaillée (Dans la modale \"En savoir plus\")",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.texteRicheStructureGrasPuces",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "Texte riche structuré (Gras, puces, tirets...)",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.precisezLeFonctionnementLesLieux",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "Précisez le fonctionnement, les lieux, les horaires exacts, la tenue requise, les objectifs d'apprentissage...",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.lienDInscriptionHelloassoSpecifique",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "💳 Lien d'inscription HelloAsso spécifique (Optionnel)",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.surchargeLeLienGlobalSi",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "Surcharge le lien global si rempli",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.imageDArrierePlanDe",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "🖼️ Image d'Arrière-Plan de la Carte (Formule)",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.photoDArrierePlan",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "Photo d'arrière-plan",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.televersement",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "⏳ Téléversement...",
+    "type": "conditional"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.choisirUnePhotoLocale",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "📁 Choisir une photo locale",
+    "type": "conditional"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.retirerLImage",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "🗑️ Retirer l'image",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.ouUrlDirecteDeL",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "Ou URL directe de l'image de carte :",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.photoDIllustrationPourLa",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "📸 Photo d'Illustration pour la Modale HD (\"En savoir plus\")",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.grandFormat",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "Grand format",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.uploaderPhotoHdModale",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "📁 Uploader photo HD modale",
+    "type": "conditional"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.retirerLImageHd",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "🗑️ Retirer l'image HD",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.ouUrlDeLImage",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "Ou URL de l'image modale HD :",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.apercuDuRenduFinalAvec",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "Aperçu du rendu final avec assombrissement (bg-black/60)",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.pointsFortsAvantagesInclusUn",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "Points Forts / Avantages inclus (Un par ligne)",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.chaqueLigneDeviendraUnePuce",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "Chaque ligne deviendra une puce ✓",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.pretDesInstrumentsInclusAcces",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "Prêt des instruments inclus\nAccès aux répétitions & prestations\nOuvert à tous niveaux",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.annuler",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "Annuler",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.recruitment.formulesManager.validerLaFormule",
+    "cat": "recruitment",
+    "file": "src/components/association-settings/FormulesManager.jsx",
+    "text": "Valider la formule",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.proDocs.proDocsAccordion.documentsEspacePro",
+    "cat": "proDocs",
+    "file": "src/components/association-settings/vitrine/ProDocsAccordion.jsx",
+    "text": "Documents Espace Pro",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.proDocs.proDocsAccordion.dossierArtistiqueFicheTechniquePlan",
+    "cat": "proDocs",
+    "file": "src/components/association-settings/vitrine/ProDocsAccordion.jsx",
+    "text": "Dossier artistique, fiche technique, plan de scène, kit presse ({param}/4 configuré{param})",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.proDocs.tabPublicProDocs.dossierDePresentationCompletPdf",
+    "cat": "proDocs",
+    "file": "src/components/association-settings/TabPublicProDocs.jsx",
+    "text": "📄 Dossier de présentation complet (PDF)",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.proDocs.tabPublicProDocs.presentationCompleteDeLaTroupe",
+    "cat": "proDocs",
+    "file": "src/components/association-settings/TabPublicProDocs.jsx",
+    "text": "Présentation complète de la troupe, historique et univers artistique.",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.proDocs.tabPublicProDocs.ficheTechniqueBesoinsSonLumiere",
+    "cat": "proDocs",
+    "file": "src/components/association-settings/TabPublicProDocs.jsx",
+    "text": "🛠️ Fiche technique (Besoins son/lumière/logistique) (PDF)",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.proDocs.tabPublicProDocs.ficheTechniqueOfficielleDecrivantLes",
+    "cat": "proDocs",
+    "file": "src/components/association-settings/TabPublicProDocs.jsx",
+    "text": "Fiche technique officielle décrivant les besoins logistiques et sonores.",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.proDocs.tabPublicProDocs.planDeScenePdfOu",
+    "cat": "proDocs",
+    "file": "src/components/association-settings/TabPublicProDocs.jsx",
+    "text": "📐 Plan de scène (PDF ou Image)",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.proDocs.tabPublicProDocs.planDePlacementSurScene",
+    "cat": "proDocs",
+    "file": "src/components/association-settings/TabPublicProDocs.jsx",
+    "text": "Plan de placement sur scène ou schéma d'implantation scénique.",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.proDocs.tabPublicProDocs.kitPresseTextePhotosHd",
+    "cat": "proDocs",
+    "file": "src/components/association-settings/TabPublicProDocs.jsx",
+    "text": "📦 Kit Presse (Texte & Photos HD) (ZIP ou PDF)",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.proDocs.tabPublicProDocs.kitPresseCompletIncluantVisuels",
+    "cat": "proDocs",
+    "file": "src/components/association-settings/TabPublicProDocs.jsx",
+    "text": "Kit presse complet incluant visuels HD et dossiers de presse pour les médias.",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.proDocs.tabPublicProDocs.documentsEspaceProOrganisateurs",
+    "cat": "proDocs",
+    "file": "src/components/association-settings/TabPublicProDocs.jsx",
+    "text": "📑 Documents Espace Pro & Organisateurs",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.proDocs.tabPublicProDocs.telechargementsVitrine",
+    "cat": "proDocs",
+    "file": "src/components/association-settings/TabPublicProDocs.jsx",
+    "text": "Téléchargements Vitrine",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.proDocs.tabPublicProDocs.ajoutezLesDocumentsOfficielsTelechargeables",
+    "cat": "proDocs",
+    "file": "src/components/association-settings/TabPublicProDocs.jsx",
+    "text": "Ajoutez les documents officiels téléchargeables par les organisateurs de spectacles et la presse. Seuls les documents renseignés disposeront d'un bouton de téléchargement actif sur la vitrine publique.",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.proDocs.tabPublicProDocs.afficherLeBlocEspacePro",
+    "cat": "proDocs",
+    "file": "src/components/association-settings/TabPublicProDocs.jsx",
+    "text": "Afficher le bloc \"Espace Pro\" (téléchargements) en bas de la vitrine",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.proDocs.tabPublicProDocs.consulterLeFichier",
+    "cat": "proDocs",
+    "file": "src/components/association-settings/TabPublicProDocs.jsx",
+    "text": "👁️ Consulter le fichier",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.proDocs.tabPublicProDocs.supprimerLeDocumentActuel",
+    "cat": "proDocs",
+    "file": "src/components/association-settings/TabPublicProDocs.jsx",
+    "text": "Supprimer le document actuel",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.proDocs.tabPublicProDocs.supprimer",
+    "cat": "proDocs",
+    "file": "src/components/association-settings/TabPublicProDocs.jsx",
+    "text": "🗑️ Supprimer",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.proDocs.tabPublicProDocs.annuler",
+    "cat": "proDocs",
+    "file": "src/components/association-settings/TabPublicProDocs.jsx",
+    "text": "✖ Annuler",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.proDocs.tabPublicProDocs.nouveauFichierPretAL",
+    "cat": "proDocs",
+    "file": "src/components/association-settings/TabPublicProDocs.jsx",
+    "text": "📌 Nouveau fichier prêt à l'envoi :",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.proDocs.tabPublicProDocs.ko",
+    "cat": "proDocs",
+    "file": "src/components/association-settings/TabPublicProDocs.jsx",
+    "text": "Ko)",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.gallery.gallerySouvenirsAccordion.galerieSouvenirs",
+    "cat": "gallery",
+    "file": "src/components/association-settings/vitrine/GallerySouvenirsAccordion.jsx",
+    "text": "Galerie & Souvenirs",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.gallery.gallerySouvenirsAccordion.selectionDesPhotosPubliquesParam",
+    "cat": "gallery",
+    "file": "src/components/association-settings/vitrine/GallerySouvenirsAccordion.jsx",
+    "text": "Sélection des photos publiques ({param} photo{param} en ligne)",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.gallery.tabPublicGallery.optimisationEnvoiDe0Param",
+    "cat": "gallery",
+    "file": "src/components/association-settings/TabPublicGallery.jsx",
+    "text": "Optimisation & Envoi de 0 / {param}...",
+    "type": "runtime"
+  },
+  {
+    "key": "vitrine.admin.gallery.tabPublicGallery.traitementDeLaPhotoParam",
+    "cat": "gallery",
+    "file": "src/components/association-settings/TabPublicGallery.jsx",
+    "text": "Traitement de la photo {param} / {param}...",
+    "type": "runtime"
+  },
+  {
+    "key": "vitrine.admin.gallery.tabPublicGallery.paramPhotoSAjouteeS",
+    "cat": "gallery",
+    "file": "src/components/association-settings/TabPublicGallery.jsx",
+    "text": "✓ {param} photo(s) ajoutée(s) avec succès !",
+    "type": "runtime"
+  },
+  {
+    "key": "vitrine.admin.gallery.tabPublicGallery.erreurLorsDeLEnvoi",
+    "cat": "gallery",
+    "file": "src/components/association-settings/TabPublicGallery.jsx",
+    "text": "❌ Erreur lors de l'envoi : {param}",
+    "type": "runtime"
+  },
+  {
+    "key": "vitrine.admin.gallery.tabPublicGallery.sectionGaleriePhotosEnImages",
+    "cat": "gallery",
+    "file": "src/components/association-settings/TabPublicGallery.jsx",
+    "text": "📸 Section Galerie Photos (\"En images\")",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.gallery.tabPublicGallery.sectionActive",
+    "cat": "gallery",
+    "file": "src/components/association-settings/TabPublicGallery.jsx",
+    "text": "✓ Section Active",
+    "type": "conditional"
+  },
+  {
+    "key": "vitrine.admin.gallery.tabPublicGallery.sectionMasquee",
+    "cat": "gallery",
+    "file": "src/components/association-settings/TabPublicGallery.jsx",
+    "text": "⚪ Section Masquée",
+    "type": "conditional"
+  },
+  {
+    "key": "vitrine.admin.gallery.tabPublicGallery.afficherLaSectionGaleriePhotos",
+    "cat": "gallery",
+    "file": "src/components/association-settings/TabPublicGallery.jsx",
+    "text": "Afficher la section Galerie Photos sur le site vitrine",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.gallery.tabPublicGallery.titreDeLaSectionGalerie",
+    "cat": "gallery",
+    "file": "src/components/association-settings/TabPublicGallery.jsx",
+    "text": "Titre de la section Galerie",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.gallery.tabPublicGallery.galeriePhotosEnImages",
+    "cat": "gallery",
+    "file": "src/components/association-settings/TabPublicGallery.jsx",
+    "text": "Galerie Photos / En Images",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.gallery.tabPublicGallery.surTitreBadgeGalerie",
+    "cat": "gallery",
+    "file": "src/components/association-settings/TabPublicGallery.jsx",
+    "text": "Sur-titre / Badge Galerie",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.gallery.tabPublicGallery.enImages",
+    "cat": "gallery",
+    "file": "src/components/association-settings/TabPublicGallery.jsx",
+    "text": "En Images",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.gallery.tabPublicGallery.descriptionAccrocheGalerie",
+    "cat": "gallery",
+    "file": "src/components/association-settings/TabPublicGallery.jsx",
+    "text": "Description / Accroche Galerie",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.gallery.tabPublicGallery.decouvrezNosPrestationsSceniquesRepetitions",
+    "cat": "gallery",
+    "file": "src/components/association-settings/TabPublicGallery.jsx",
+    "text": "Découvrez nos prestations scéniques, répétitions et sorties en images !",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.gallery.tabPublicGallery.televerserDeNouvellesPhotosSelection",
+    "cat": "gallery",
+    "file": "src/components/association-settings/TabPublicGallery.jsx",
+    "text": "📤 Téléverser de nouvelles photos (Sélection multiple)",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.gallery.tabPublicGallery.vousPouvezSelectionnerPlusieursImages",
+    "cat": "gallery",
+    "file": "src/components/association-settings/TabPublicGallery.jsx",
+    "text": "💡 Vous pouvez sélectionner plusieurs images d'un coup. Elles seront automatiquement optimisées pour un chargement rapide sur mobile.",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.gallery.tabPublicGallery.ouAjouterDirectementUneImage",
+    "cat": "gallery",
+    "file": "src/components/association-settings/TabPublicGallery.jsx",
+    "text": "🔗 Ou ajouter directement une image par son lien URL :",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.gallery.tabPublicGallery.ajouter",
+    "cat": "gallery",
+    "file": "src/components/association-settings/TabPublicGallery.jsx",
+    "text": "+ Ajouter",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.gallery.tabPublicGallery.photosActuellementEnregistrees",
+    "cat": "gallery",
+    "file": "src/components/association-settings/TabPublicGallery.jsx",
+    "text": "🖼️ Photos actuellement enregistrées (",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.gallery.tabPublicGallery.reorganisezLOrdreParGlisser",
+    "cat": "gallery",
+    "file": "src/components/association-settings/TabPublicGallery.jsx",
+    "text": "💡 Réorganisez l'ordre par glisser-déposer ou via les flèches ⬅️ ➡️",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.gallery.tabPublicGallery.aucunePhotoDansLaGalerie",
+    "cat": "gallery",
+    "file": "src/components/association-settings/TabPublicGallery.jsx",
+    "text": "Aucune photo dans la galerie pour le moment. Téléversez-en ci-dessus pour alimenter le carrousel !",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.gallery.tabPublicGallery.galerieParam",
+    "cat": "gallery",
+    "file": "src/components/association-settings/TabPublicGallery.jsx",
+    "text": "Galerie {param}",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.gallery.tabPublicGallery.supprimerCettePhoto",
+    "cat": "gallery",
+    "file": "src/components/association-settings/TabPublicGallery.jsx",
+    "text": "Supprimer cette photo",
+    "type": "attribute"
+  },
+  {
+    "key": "vitrine.admin.gallery.tabPublicGallery.rang",
+    "cat": "gallery",
+    "file": "src/components/association-settings/TabPublicGallery.jsx",
+    "text": "Rang",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.socialNewsletter.socialLinksBlock.facebook",
+    "cat": "socialNewsletter",
+    "file": "src/components/association-settings/vitrine/SocialLinksBlock.jsx",
+    "text": "📘 Facebook",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.socialNewsletter.socialLinksBlock.instagram",
+    "cat": "socialNewsletter",
+    "file": "src/components/association-settings/vitrine/SocialLinksBlock.jsx",
+    "text": "📸 Instagram",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.socialNewsletter.socialLinksBlock.youtube",
+    "cat": "socialNewsletter",
+    "file": "src/components/association-settings/vitrine/SocialLinksBlock.jsx",
+    "text": "🎬 YouTube",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.socialNewsletter.socialLinksBlock.tiktok",
+    "cat": "socialNewsletter",
+    "file": "src/components/association-settings/vitrine/SocialLinksBlock.jsx",
+    "text": "🎵 TikTok",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.socialNewsletter.socialLinksBlock.snapchat",
+    "cat": "socialNewsletter",
+    "file": "src/components/association-settings/vitrine/SocialLinksBlock.jsx",
+    "text": "👻 Snapchat",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.socialNewsletter.socialLinksBlock.whatsapp",
+    "cat": "socialNewsletter",
+    "file": "src/components/association-settings/vitrine/SocialLinksBlock.jsx",
+    "text": "💬 WhatsApp",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.socialNewsletter.socialLinksBlock.linkedin",
+    "cat": "socialNewsletter",
+    "file": "src/components/association-settings/vitrine/SocialLinksBlock.jsx",
+    "text": "💼 LinkedIn",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.socialNewsletter.socialLinksBlock.spotifyMusique",
+    "cat": "socialNewsletter",
+    "file": "src/components/association-settings/vitrine/SocialLinksBlock.jsx",
+    "text": "🎧 Spotify / Musique",
+    "type": "config"
+  },
+  {
+    "key": "vitrine.admin.socialNewsletter.socialLinksBlock.liensDesReseauxSociaux",
+    "cat": "socialNewsletter",
+    "file": "src/components/association-settings/vitrine/SocialLinksBlock.jsx",
+    "text": "🌐 Liens des Réseaux Sociaux",
+    "type": "jsxText"
+  },
+  {
+    "key": "vitrine.admin.socialNewsletter.socialLinksBlock.affichageSurLaVitrine",
+    "cat": "socialNewsletter",
+    "file": "src/components/association-settings/vitrine/SocialLinksBlock.jsx",
+    "text": "Affichage sur la vitrine",
+    "type": "jsxText"
+  }
+]

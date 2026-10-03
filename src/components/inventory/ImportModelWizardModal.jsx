@@ -322,17 +322,20 @@ export default function ImportModelWizardModal({ groupId, file, suppliesList = [
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
       <div className="w-full max-w-md">
-        <CordelCard variant="default" className="p-5 flex flex-col gap-4 relative">
+        <CordelCard variant="default" className="p-5 flex flex-col gap-4 relative mt-2 sm:mt-0">
           
           <button 
+            type="button"
             onClick={onClose} 
             disabled={loading && uploadProgress !== ''}
-            className="absolute top-2 right-2 text-stone-400 hover:text-stone-700 disabled:opacity-30"
+            className="absolute top-2 right-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-stone-400 hover:text-stone-700 hover:bg-black/5 active:bg-black/10 transition-colors cursor-pointer select-none touch-manipulation disabled:opacity-30 z-10"
+            title={t('common.close', 'Fermer')}
+            aria-label={t('common.close', 'Fermer')}
           >
-            <XiloClose size={16} />
+            <XiloClose size={18} />
           </button>
 
-          <h3 className="text-sm font-black text-cordel-wood uppercase border-b-2 border-dashed border-cordel-wood/20 pb-2">
+          <h3 className="text-sm font-black text-cordel-wood uppercase border-b-2 border-dashed border-cordel-wood/20 pb-2 pr-12 break-words">
             {t('lutherie.importWizardTitle')}
           </h3>
 

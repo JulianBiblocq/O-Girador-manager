@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '../LanguageContext';
 import {
   DEFAULT_STUDIO_LEXIQUE,
   DEFAULT_STUDIO_MENTIONS,
@@ -26,6 +27,7 @@ export default function StudioQuickChips({
   onNavigateToLexique,
   disabled = false
 }) {
+  const { t } = useTranslation();
   const effectiveLexique = Array.isArray(lexique) && lexique.length > 0 ? lexique : DEFAULT_STUDIO_LEXIQUE;
   const effectiveMentions = Array.isArray(mentions) && mentions.length > 0 ? mentions : DEFAULT_STUDIO_MENTIONS;
 
@@ -35,7 +37,7 @@ export default function StudioQuickChips({
         {/* Section Lexique */}
         <div className="flex items-center gap-1 flex-wrap">
           <span className="text-[9px] font-black uppercase text-cordel-wood tracking-wider shrink-0 select-none">
-            📖 Lexique :
+            {t('studio.communication.lexique')}
           </span>
           {effectiveLexique.map((item, idx) => {
             const term = typeof item === 'string' ? item : item?.preferred || item?.recommande || '';
@@ -61,7 +63,7 @@ export default function StudioQuickChips({
         {/* Section Mentions */}
         <div className="flex items-center gap-1 flex-wrap">
           <span className="text-[9px] font-black uppercase text-blue-900 tracking-wider shrink-0 select-none">
-            @ Mentions :
+            {t('studio.communication.mentions')}
           </span>
           {effectiveMentions.map((item, idx) => {
             const isObj = typeof item === 'object' && item !== null;
@@ -94,9 +96,9 @@ export default function StudioQuickChips({
           onMouseDown={(e) => e.preventDefault()}
           onClick={onNavigateToLexique}
           className="ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10.5px] font-bold bg-amber-100/80 hover:bg-amber-200 text-amber-900 border border-amber-800/30 transition-all cursor-pointer shadow-2xs select-none hover:scale-105"
-          title="Gérer le vocabulaire, les mentions et hashtags dans l'onglet Lexique"
+          title={t('studio.communication.gererLeVocabulaireLesMentions')}
         >
-          <span>⚙️</span> Lexique
+          <span>⚙️</span> {t('studio.communication.studioQuickChips_lexique')}
         </button>
       )}
     </div>

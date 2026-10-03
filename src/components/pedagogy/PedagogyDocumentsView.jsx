@@ -3,6 +3,7 @@ import CordelButton from '../CordelButton';
 import DocumentUploadForm from '../DocumentUploadForm';
 import ToadasTable from './ToadasTable';
 import CultureFichesTable from './CultureFichesTable';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Vue Pédagogie avec 2 tableaux étanches :
@@ -19,6 +20,7 @@ export default function PedagogyDocumentsView({
   onDeleteDoc,
   onToggleViewMode
 }) {
+  const { t } = useTranslation();
   const [activeFilter, setActiveFilter] = useState('both'); // 'both' | 'toadas' | 'culture'
   const [isAdding, setIsAdding] = useState(false);
   const [addCategoryTarget, setAddCategoryTarget] = useState('Toadas');
@@ -52,9 +54,7 @@ export default function PedagogyDocumentsView({
                 ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-2xs font-extrabold'
                 : 'bg-cordel-bg text-encre-noire/70 border-encre-noire/30 hover:border-encre-noire'
             }`}
-          >
-            📋 Les 2 Tableaux
-          </button>
+          >{t('documents.btnBothTables')}</button>
           <button
             type="button"
             onClick={() => setActiveFilter('toadas')}
@@ -64,7 +64,7 @@ export default function PedagogyDocumentsView({
                 : 'bg-cordel-bg text-encre-noire/70 border-encre-noire/30 hover:border-encre-noire'
             }`}
           >
-            🎵 Toadas ({toadasDocs.length})
+            {t('pedagogy.cards.toadasParenthese')}{toadasDocs.length})
           </button>
           <button
             type="button"
@@ -75,7 +75,7 @@ export default function PedagogyDocumentsView({
                 : 'bg-cordel-bg text-encre-noire/70 border-encre-noire/30 hover:border-encre-noire'
             }`}
           >
-            📖 Culture & Histoire ({cultureDocs.length})
+            {t('pedagogy.cards.cultureHistoireParenthese')}{cultureDocs.length})
           </button>
         </div>
 
@@ -85,9 +85,7 @@ export default function PedagogyDocumentsView({
               type="button"
               onClick={onToggleViewMode}
               className="px-2.5 py-1 text-[9.5px] font-black uppercase tracking-wider rounded border border-cordel-master-dark/30 bg-cordel-bg hover:bg-white text-encre-noire cursor-pointer transition-all shadow-2xs"
-            >
-              🪢 Vue Varal
-            </button>
+            >{t('pedagogy.cards.vueVaral')}</button>
           )}
 
           {canWrite && !isAdding && (
@@ -97,17 +95,13 @@ export default function PedagogyDocumentsView({
                 useExtremeBorder={true}
                 onClick={() => handleStartAdd('Toadas')}
                 className="text-[10px] px-2.5 py-1 font-black uppercase tracking-wider"
-              >
-                ➕ Nouvelle Toada
-              </CordelButton>
+              >{t('documents.btnNewToada')}</CordelButton>
               <CordelButton
                 variant="vert"
                 useExtremeBorder={true}
                 onClick={() => handleStartAdd('Culture')}
                 className="text-[10px] px-2.5 py-1 font-black uppercase tracking-wider text-white"
-              >
-                ➕ Fiche Culture
-              </CordelButton>
+              >{t('pedagogy.cards.ajouterFicheCulture')}</CordelButton>
             </div>
           )}
         </div>
@@ -121,9 +115,7 @@ export default function PedagogyDocumentsView({
               type="button"
               onClick={handleCloseForm}
               className="text-[10px] font-black uppercase text-cordel-wood hover:underline cursor-pointer"
-            >
-              ⬅️ Annuler et revenir aux tableaux pédagogiques
-            </button>
+            >{t('pedagogy.cards.annulerEtRevenirAuxTableaux')}</button>
           </div>
           <DocumentUploadForm
             groupId={groupId}
@@ -142,10 +134,10 @@ export default function PedagogyDocumentsView({
           <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-1">
             <h3 className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
               <span>🎵</span>
-              <span>Tableau A : Toadas (Chants & Paroles)</span>
+              <span>{t('pedagogy.cards.tableauAToadasChantsParoles')}</span>
               <span className="text-[10px] font-bold text-encre-noire/60">({toadasDocs.length})</span>
             </h3>
-            <span className="text-[9.5px] italic text-encre-noire/60">Répertoire musical et livrets de chants</span>
+            <span className="text-[9.5px] italic text-encre-noire/60">{t('pedagogy.cards.repertoireMusicalEtLivretsDe')}</span>
           </div>
           <ToadasTable
             toadas={toadasDocs}
@@ -163,10 +155,10 @@ export default function PedagogyDocumentsView({
           <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-1">
             <h3 className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
               <span>📖</span>
-              <span>Tableau B : Fiches Culture & Histoire</span>
-              <span className="text-[10px] font-bold text-encre-noire/60">({cultureDocs.length})</span>
+              <span>{t('documents.tableBCultureTitle', { count: cultureDocs.length })}</span>
+              {null}
             </h3>
-            <span className="text-[9.5px] italic text-encre-noire/60">Histoire, traditions, figures et folklore</span>
+            <span className="text-[9.5px] italic text-encre-noire/60">{t('documents.tableBCultureSubtitle')}</span>
           </div>
           <CultureFichesTable
             fiches={cultureDocs}

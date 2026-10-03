@@ -490,7 +490,7 @@ export default function KilometricReimbursementManager({ groupId, onBack, role, 
             data-tab-id="summary"
             data-tab-active={activeTab === 'summary' ? 'true' : 'false'}
             onClick={() => { setActiveTab('summary'); setExpandedRow(null); }}
-            className={`shrink-0 whitespace-nowrap min-h-[40px] px-3.5 py-1.5 text-sm font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] cursor-pointer transition-all flex items-center justify-center gap-1.5 select-none ${
+            className={`shrink-0 whitespace-nowrap min-h-[40px] lg:min-h-0 px-3.5 py-1.5 lg:px-2.5 lg:py-1 text-sm lg:text-xs font-black uppercase tracking-wider lg:tracking-wide rounded-[4px_6px_3px_5px] cursor-pointer transition-all flex items-center justify-center gap-1.5 select-none ${
               activeTab === 'summary' 
                 ? 'bg-cordel-wood text-cordel-bg-light border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] translate-x-[0.5px] translate-y-[0.5px]' 
                 : 'bg-cordel-bg text-encre-noire border-2 border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
@@ -504,7 +504,7 @@ export default function KilometricReimbursementManager({ groupId, onBack, role, 
             data-tab-id="members"
             data-tab-active={activeTab === 'members' ? 'true' : 'false'}
             onClick={() => { setActiveTab('members'); setExpandedRow(null); }}
-            className={`shrink-0 whitespace-nowrap min-h-[40px] px-3.5 py-1.5 text-sm font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] cursor-pointer transition-all flex items-center justify-center gap-1.5 select-none ${
+            className={`shrink-0 whitespace-nowrap min-h-[40px] lg:min-h-0 px-3.5 py-1.5 lg:px-2.5 lg:py-1 text-sm lg:text-xs font-black uppercase tracking-wider lg:tracking-wide rounded-[4px_6px_3px_5px] cursor-pointer transition-all flex items-center justify-center gap-1.5 select-none ${
               activeTab === 'members' 
                 ? 'bg-cordel-wood text-cordel-bg-light border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] translate-x-[0.5px] translate-y-[0.5px]' 
                 : 'bg-cordel-bg text-encre-noire border-2 border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
@@ -518,7 +518,7 @@ export default function KilometricReimbursementManager({ groupId, onBack, role, 
             data-tab-id="events"
             data-tab-active={activeTab === 'events' ? 'true' : 'false'}
             onClick={() => { setActiveTab('events'); setExpandedRow(null); }}
-            className={`shrink-0 whitespace-nowrap min-h-[40px] px-3.5 py-1.5 text-sm font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] cursor-pointer transition-all flex items-center justify-center gap-1.5 select-none ${
+            className={`shrink-0 whitespace-nowrap min-h-[40px] lg:min-h-0 px-3.5 py-1.5 lg:px-2.5 lg:py-1 text-sm lg:text-xs font-black uppercase tracking-wider lg:tracking-wide rounded-[4px_6px_3px_5px] cursor-pointer transition-all flex items-center justify-center gap-1.5 select-none ${
               activeTab === 'events' 
                 ? 'bg-cordel-wood text-cordel-bg-light border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] translate-x-[0.5px] translate-y-[0.5px]' 
                 : 'bg-cordel-bg text-encre-noire border-2 border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'

@@ -202,7 +202,7 @@ export default function RepertoireSinaisDoMestreEditor({
                 : 'bg-amber-100 hover:bg-amber-200 border-amber-300 text-amber-900'
             }`}
           >
-            <span>{isPickerOpen ? '▲ Fermer sélecteur' : '➕ Ajouter un signe'}</span>
+            <span>{isPickerOpen ? t('pedagogy.admin.fermerSelecteur') : t('pedagogy.admin.ajouterUnSigne')}</span>
           </button>
 
           {sortedSinais.length > 0 && (
@@ -220,16 +220,16 @@ export default function RepertoireSinaisDoMestreEditor({
 
       <p className="text-[10px] text-encre-noire/70 font-semibold italic leading-tight">
         {isSequenced
-          ? "Signaux de commandement et conventions par mesure (départ, virada, break, coupure). Suggérés depuis le Séquenceur ou positionnés à la main."
-          : "Signaux de commandement du Mestre associés à ce rythme (départ, virada, coupure...)."}
+          ? t('pedagogy.admin.signauxDeCommandementEt')
+          : t('pedagogy.admin.signauxDeCommandementDu')}
       </p>
 
       {/* Liste des puces / badges Cordel des signaux sélectionnés */}
       {sortedSinais.length === 0 ? (
         <div className="py-2.5 px-3 text-center text-[10px] text-encre-noire/50 italic border border-dashed border-encre-noire/15 rounded bg-white/60">
           {isSequenced
-            ? "Aucun signe rattaché pour l'instant. Liez un Preset pour les suggérer automatiquement ou cliquez sur [ ➕ Ajouter un signe ]."
-            : "Aucun signe rattaché pour l'instant. Cliquez sur [ ➕ Ajouter un signe ] pour associer des gestes du Mestre."}
+            ? t('pedagogy.admin.aucunSigneRattachePour')
+            : t('pedagogy.admin.aucunSigneRattacheManuel')}
         </div>
       ) : (
         <div className="flex flex-wrap gap-1.5 p-2 bg-white/80 rounded border border-encre-noire/15 max-h-52 overflow-y-auto">
@@ -379,7 +379,7 @@ export default function RepertoireSinaisDoMestreEditor({
                           ? 'bg-green-100 text-green-900 border border-green-600'
                           : 'bg-stone-100 text-stone-700 border border-stone-300'
                       }`}>
-                        {isSelected ? '✓ Associé' : '+ Associer'}
+                        {isSelected ? t('pedagogy.admin.associe') : t('pedagogy.admin.associer')}
                       </span>
                     )}
                   </button>
@@ -395,7 +395,7 @@ export default function RepertoireSinaisDoMestreEditor({
               onClick={() => setIsCustomInputOpen(!isCustomInputOpen)}
               className="text-[9px] font-bold text-cordel-wood hover:underline cursor-pointer"
             >
-              {isCustomInputOpen ? 'Masquer convention libre' : '✏️ Ajouter un appel texte sur mesure (sans geste catalogué)'}
+              {isCustomInputOpen ? t('pedagogy.admin.masquerConventionLibre') : t('pedagogy.admin.ajouterUnAppelTexte')}
             </button>
           </div>
 

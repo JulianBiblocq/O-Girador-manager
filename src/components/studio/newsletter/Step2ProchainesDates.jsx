@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '../../LanguageContext';
 import CordelCard from '../../CordelCard';
 import CordelButton from '../../CordelButton';
 
@@ -18,19 +19,20 @@ export default function Step2ProchainesDates({
   onPrev,
   onNext
 }) {
+  const { t } = useTranslation();
   return (
     <CordelCard className="p-6">
       <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100 mb-2 flex items-center gap-2">
-        <span>📅</span> Étape 2 - Prochaines dates
+        <span>📅</span> {t('studio.newsletter.etape2ProchainesDates')}
       </h2>
       <p className="text-sm text-stone-600 dark:text-stone-400 mb-6">
-        Cochez les événements futurs à intégrer dans la newsletter. Le titre, la date, le lieu et la description seront extraits automatiquement.
+        {t('studio.newsletter.cochezLesEvenementsFutursA')}
       </p>
 
       {upcomingEvents.length === 0 ? (
         <div className="p-6 text-center border border-dashed border-stone-300 dark:border-stone-700 rounded-[var(--theme-border-radius,6px)] bg-stone-50 dark:bg-stone-800/50">
           <p className="text-stone-500 dark:text-stone-400 italic">
-            Aucun événement à venir trouvé dans le calendrier. Vous pouvez poursuivre sans événement futur.
+            {t('studio.newsletter.aucunEvenementAVenirTrouve')}
           </p>
         </div>
       ) : (
@@ -87,7 +89,7 @@ export default function Step2ProchainesDates({
 
       {/* Résumé du nombre sélectionné */}
       <div className="mt-4 text-xs font-medium text-stone-500 dark:text-stone-400">
-        {selectedUpcomingIds.length} événement(s) sélectionné(s) pour les prochaines dates.
+        {selectedUpcomingIds.length} {t('studio.newsletter.evenementSSelectionneSPour')}
       </div>
 
       {/* Actions de navigation */}
@@ -96,14 +98,14 @@ export default function Step2ProchainesDates({
           onClick={onPrev}
           className="border border-stone-300 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 px-5 py-2 font-semibold rounded-[var(--theme-border-radius,6px)]"
         >
-          ⬅ Précédent
+          {t('studio.newsletter.precedent')}
         </CordelButton>
 
         <CordelButton
           onClick={onNext}
           className="bg-[var(--color-cordel-vert)] hover:bg-[#23533e] text-white px-6 py-2.5 font-semibold rounded-[var(--theme-border-radius,6px)] flex items-center gap-2"
         >
-          Suivant : Retour en images ➔
+          {t('studio.newsletter.suivantRetourEnImages')}
         </CordelButton>
       </div>
     </CordelCard>

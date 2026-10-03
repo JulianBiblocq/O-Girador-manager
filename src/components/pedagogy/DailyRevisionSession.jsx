@@ -69,7 +69,7 @@ export default function DailyRevisionSession({ profileData, allSongs = [], allSh
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <p className="text-cordel-master-dark font-heading text-xl animate-pulse">Préparation de ta session...</p>
+        <p className="text-cordel-master-dark font-heading text-xl animate-pulse">{t('pedagogy.cards.preparationDeTaSession')}</p>
       </div>
     );
   }

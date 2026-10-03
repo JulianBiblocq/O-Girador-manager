@@ -2,6 +2,7 @@
 // Fichier conforme à la règle anti-monolithe (< 200 lignes)
 
 import React, { useState } from 'react';
+import { useTranslation } from '../LanguageContext';
 
 export default function DanseItemRow({
   item,
@@ -9,6 +10,7 @@ export default function DanseItemRow({
   onProgramDirect = null,
   onPinNote = null
 }) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const hasScore = item.score !== null;
 
@@ -41,7 +43,7 @@ export default function DanseItemRow({
 
         <td className="p-2.5 text-center font-black">
           <span className={`inline-block px-2 py-0.5 rounded font-black text-[10px] ${bg} shadow-2xs`}>
-            {hasScore ? `${item.score}%` : 'Non évalué'}
+            {hasScore ? `${item.score}%` : t('pedagogy.progress.nonEvalue')}
           </span>
         </td>
 
@@ -54,7 +56,7 @@ export default function DanseItemRow({
                 className="text-[10px] font-black uppercase px-2 py-1 bg-white border border-encre-noire/30 rounded hover:bg-neutral-100 cursor-pointer shadow-2xs flex items-center gap-1"
               >
                 <span>{isOpen ? '▲' : '▼'}</span>
-                <span>{item.figures.length} figures</span>
+                <span>{item.figures.length} {t('pedagogy.progress.figures')}</span>
               </button>
             )}
 
@@ -63,7 +65,7 @@ export default function DanseItemRow({
                 type="button"
                 onClick={() => onProgramDirect({ titre: item.titre, discipline: '💃 Danse', id: item.id })}
                 className="text-[10px] font-black px-1.5 py-1 bg-[var(--color-cordel-vert)] text-white border border-[#1b4332] rounded hover:brightness-110 active:scale-95 transition-all cursor-pointer shadow-2xs"
-                title="Programmer en répétition"
+                title={t('pedagogy.progress.programmerEnRepetition')}
               >
                 ⚡
               </button>
@@ -74,7 +76,7 @@ export default function DanseItemRow({
                 type="button"
                 onClick={() => onPinNote(item.titre, 'Danse', revCount)}
                 className="text-[10px] font-black px-1.5 py-1 bg-white text-encre-noire border border-encre-noire/30 rounded hover:bg-neutral-100 active:scale-95 transition-all cursor-pointer shadow-2xs"
-                title="Épingler au bloc-notes"
+                title={t('pedagogy.progress.epinglerAuBlocNotes')}
               >
                 📌
               </button>
@@ -87,9 +89,7 @@ export default function DanseItemRow({
         <tr className="bg-pink-50/30 border-b-2 border-encre-noire/20 animate-fadeIn">
           <td colSpan={3} className="p-3 pl-6">
             <div className="flex flex-col gap-1.5">
-              <span className="text-[10px] font-black uppercase text-pink-900 tracking-wider">
-                Figures associées :
-              </span>
+              <span className="text-[10px] font-black uppercase text-pink-900 tracking-wider">{t('pedagogy.progress.figuresAssociees')}</span>
               <div className="flex flex-wrap gap-2">
                 {item.figures.map((fig, idx) => (
                   <span key={idx} className="text-xs font-bold px-2.5 py-1 rounded bg-white border border-dashed border-pink-300 text-encre-noire shadow-2xs flex items-center gap-1">

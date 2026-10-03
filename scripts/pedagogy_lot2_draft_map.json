@@ -1,0 +1,1386 @@
+{
+  "carnet": {
+    "excellentTuMaitrisesLeSujet": {
+      "fr": "Excellent ! Tu maîtrises le sujet.",
+      "pt": ""
+    },
+    "rejouer": {
+      "fr": "🔄 Rejouer",
+      "pt": ""
+    },
+    "fermer": {
+      "fr": "✕ Fermer",
+      "pt": ""
+    },
+    "correct": {
+      "fr": "✅ Correct !",
+      "pt": ""
+    },
+    "defisRythmiques": {
+      "fr": "⚡ Défis Rythmiques",
+      "pt": ""
+    },
+    "percussion": {
+      "fr": "🥁 Percussion",
+      "pt": ""
+    },
+    "danse": {
+      "fr": "💃 Danse",
+      "pt": ""
+    },
+    "gongue": {
+      "fr": "Gonguê",
+      "pt": ""
+    },
+    "marcante": {
+      "fr": "Marcante",
+      "pt": ""
+    },
+    "agbe": {
+      "fr": "Agbê",
+      "pt": ""
+    },
+    "timbal": {
+      "fr": "Timbal",
+      "pt": ""
+    },
+    "retourAuCarnet": {
+      "fr": "← Retour au Carnet",
+      "pt": ""
+    },
+    "maitrise": {
+      "fr": "Maîtrisé",
+      "pt": ""
+    },
+    "aucunDefiDEntrainementActif": {
+      "fr": "Aucun défi d'entraînement actif pour cette saison.",
+      "pt": ""
+    },
+    "lesProgrammesConfiguresDansSequenciador": {
+      "fr": "Les programmes configurés dans sequenciador pour vos morceaux apparaîtront automatiquement ici.",
+      "pt": ""
+    },
+    "palier": {
+      "fr": "palier",
+      "pt": ""
+    },
+    "ouvrirSequenciadorSurVotreProchain": {
+      "fr": "Ouvrir sequenciador sur votre prochain palier d'entraînement",
+      "pt": ""
+    },
+    "rejouerDansSequenciador": {
+      "fr": "Rejouer dans sequenciador",
+      "pt": ""
+    },
+    "sEntrainerMaintenant": {
+      "fr": "S'entraîner maintenant",
+      "pt": ""
+    },
+    "reflexesConventions": {
+      "fr": "Réflexes & Conventions",
+      "pt": ""
+    },
+    "signauxValidesMaitrise": {
+      "fr": "signaux validés (Maîtrisé)",
+      "pt": ""
+    },
+    "signauxValides": {
+      "fr": "signaux validés",
+      "pt": ""
+    },
+    "aDecouvrir": {
+      "fr": "À découvrir",
+      "pt": ""
+    },
+    "conducteurValide": {
+      "fr": "Conducteur validé",
+      "pt": ""
+    },
+    "simulateurDeSignauxDuMestre": {
+      "fr": "Simulateur de signaux du Mestre avec arrêt au temps 1 et mémorisation de la structure chronologique.",
+      "pt": ""
+    },
+    "lancerLeDefiReflexeTemps": {
+      "fr": "Lancer le Défi Réflexe « Temps 1 » pour ce morceau",
+      "pt": ""
+    },
+    "defiReflexe": {
+      "fr": "Défi Réflexe",
+      "pt": ""
+    },
+    "ouvrirLaTimelineEtCompleter": {
+      "fr": "Ouvrir la Timeline et compléter le conducteur à trous",
+      "pt": ""
+    },
+    "conduireLeMorceauTimeline": {
+      "fr": "Conduire le morceau (Timeline)",
+      "pt": ""
+    },
+    "repertoireDeSaison": {
+      "fr": "Répertoire de saison",
+      "pt": ""
+    },
+    "testezVosDepartsAuTemps": {
+      "fr": "Testez vos départs au temps 1 sur les signaux du Mestre avec 4 choix de tablatures.",
+      "pt": ""
+    },
+    "evalueTonAisanceChoregraphiqueSur": {
+      "fr": "💃 Évalue ton aisance chorégraphique sur chacun des rythmes (toadas, pas de base, variations).\n              Les pas du Dançador seront bientôt intégrés ici pour t'entraîner visuellement.",
+      "pt": ""
+    },
+    "aucunRythmeDisponiblePourLe": {
+      "fr": "Aucun rythme disponible pour le moment.",
+      "pt": ""
+    },
+    "entrainement": {
+      "fr": "⏱️ Entraînement :",
+      "pt": ""
+    },
+    "aucunChantDisponiblePourLe": {
+      "fr": "Aucun chant disponible pour le moment.",
+      "pt": ""
+    },
+    "quizSurCetteToada": {
+      "fr": "🎯 Quiz sur cette Toada",
+      "pt": ""
+    },
+    "aucuneFicheDeCultureDisponible": {
+      "fr": "Aucune fiche de culture disponible pour le moment.",
+      "pt": ""
+    },
+    "aucuneFicheDeLutherieAtelier": {
+      "fr": "Aucune fiche de lutherie/atelier disponible pour le moment.",
+      "pt": ""
+    },
+    "atelier": {
+      "fr": "Atelier",
+      "pt": ""
+    },
+    "aucunMorceauOfficielDeSaison": {
+      "fr": "Aucun morceau officiel de saison disponible pour le moment.",
+      "pt": ""
+    },
+    "lesMorceauxConfiguresDansLe": {
+      "fr": "Les morceaux configurés dans le Répertoire de l'association s'afficheront ici automatiquement.",
+      "pt": ""
+    },
+    "calageTempoDansLeSequenceur": {
+      "fr": "Calage tempo dans le Séquenceur :",
+      "pt": ""
+    },
+    "scoresMoyensDesAdherentsAcces": {
+      "fr": "Scores moyens des adhérents • Accès formateur immédiat",
+      "pt": ""
+    },
+    "historiqueTroupe": {
+      "fr": "Historique troupe",
+      "pt": ""
+    },
+    "testerLeBlindTestEn": {
+      "fr": "Tester le Blind Test en direct",
+      "pt": ""
+    },
+    "arretsAuSignal": {
+      "fr": "Arrêts au signal",
+      "pt": ""
+    },
+    "testerLeDefiReflexeTemps": {
+      "fr": "Tester le Défi Réflexe Temps 1",
+      "pt": ""
+    },
+    "reconnaissance": {
+      "fr": "Reconnaissance",
+      "pt": ""
+    },
+    "testerLeQuizDesSignaux": {
+      "fr": "Tester le quiz des Signaux",
+      "pt": ""
+    },
+    "dynamiqueDEntrainementDeLa": {
+      "fr": "Dynamique d'Entraînement de la Troupe",
+      "pt": ""
+    },
+    "indicateurMacroDeLAssiduite": {
+      "fr": "Indicateur macro de l'assiduité métronomique et de la progression collective (vue anonymisée).",
+      "pt": ""
+    },
+    "pupitre": {
+      "fr": "Pupitre :",
+      "pt": ""
+    },
+    "tousLesPupitres": {
+      "fr": "Tous les pupitres (",
+      "pt": ""
+    },
+    "assiduiteTroupe": {
+      "fr": "🎯 Assiduité Troupe",
+      "pt": ""
+    },
+    "membresEngages": {
+      "fr": "membres engagés",
+      "pt": ""
+    },
+    "completionPaliers": {
+      "fr": "📊 Complétion Paliers",
+      "pt": ""
+    },
+    "tauxGlobalDePaliersMetronomiques": {
+      "fr": "Taux global de paliers métronomiques validés",
+      "pt": ""
+    },
+    "paliersFranchis": {
+      "fr": "⚡ Paliers Franchis",
+      "pt": ""
+    },
+    "sur": {
+      "fr": "Sur",
+      "pt": ""
+    },
+    "morceau": {
+      "fr": "morceau",
+      "pt": ""
+    },
+    "actif": {
+      "fr": "actif",
+      "pt": ""
+    },
+    "morceauxALEtude": {
+      "fr": "Morceaux à l'étude :",
+      "pt": ""
+    },
+    "paliers": {
+      "fr": "paliers)",
+      "pt": ""
+    },
+    "repartitionMacroDeLAisance": {
+      "fr": "Répartition Macro de l'Aisance",
+      "pt": ""
+    },
+    "adherents": {
+      "fr": "adhérents",
+      "pt": ""
+    },
+    "decouverte": {
+      "fr": "🌱 Découverte",
+      "pt": ""
+    },
+    "membre": {
+      "fr": "membre",
+      "pt": ""
+    },
+    "enPratique": {
+      "fr": "🌿 En pratique",
+      "pt": ""
+    },
+    "aLAise": {
+      "fr": "🌳 À l'aise",
+      "pt": ""
+    },
+    "referent": {
+      "fr": "👑 Référent",
+      "pt": ""
+    },
+    "entrainementRecommandePourLaSeance": {
+      "fr": "Entraînement recommandé pour la séance",
+      "pt": ""
+    },
+    "cible": {
+      "fr": "Cible :",
+      "pt": ""
+    },
+    "ouvrirSequenciadorSurCetEntrainement": {
+      "fr": "Ouvrir sequenciador sur cet entraînement",
+      "pt": ""
+    },
+    "bpm": {
+      "fr": "BPM •",
+      "pt": ""
+    }
+  },
+  "reflex": {
+    "conducteurATrous": {
+      "fr": "Conducteur à trous",
+      "pt": ""
+    },
+    "placezLesBonsSignauxSur": {
+      "fr": "Placez les bons signaux sur la frise chronologique pour mémoriser l'enchaînement",
+      "pt": ""
+    },
+    "conducteurValideSansFauteStructure": {
+      "fr": "Conducteur validé sans faute ! Structure parfaitement mémorisée.",
+      "pt": ""
+    },
+    "reinitialiser": {
+      "fr": "Réinitialiser",
+      "pt": ""
+    },
+    "validerLeConducteur": {
+      "fr": "Valider le conducteur",
+      "pt": ""
+    },
+    "chargementDesSignaux": {
+      "fr": "Chargement des signaux...",
+      "pt": ""
+    },
+    "attention": {
+      "fr": "Attention",
+      "pt": ""
+    },
+    "ilNYAPas": {
+      "fr": "Il n'y a pas assez de signaux configurés avec une image. \n            Il en faut au minimum 4 pour générer un quiz.",
+      "pt": ""
+    },
+    "retourALAtelier": {
+      "fr": "Retour à l'Atelier",
+      "pt": ""
+    },
+    "entrainementTermine": {
+      "fr": "Entraînement Terminé !",
+      "pt": ""
+    },
+    "tonScore": {
+      "fr": "Ton score :",
+      "pt": ""
+    },
+    "quitter": {
+      "fr": "Quitter",
+      "pt": ""
+    },
+    "rejouer": {
+      "fr": "Rejouer 🔄",
+      "pt": ""
+    },
+    "retour": {
+      "fr": "← Retour",
+      "pt": ""
+    },
+    "question": {
+      "fr": "Question",
+      "pt": ""
+    },
+    "quelEstCeSignal": {
+      "fr": "Quel est ce signal ?",
+      "pt": ""
+    },
+    "signalMystere": {
+      "fr": "Signal mystère",
+      "pt": ""
+    },
+    "quelEstLeSignalPour": {
+      "fr": "🎧 Quel est le signal pour ce rythme ?",
+      "pt": ""
+    },
+    "lequelCorrespondA": {
+      "fr": "Lequel correspond à :",
+      "pt": ""
+    },
+    "choixPossible": {
+      "fr": "Choix possible",
+      "pt": ""
+    },
+    "signalDuMestre": {
+      "fr": "Signal du Mestre",
+      "pt": ""
+    },
+    "leBonSignalEtait": {
+      "fr": "Le bon signal était",
+      "pt": ""
+    },
+    "quiCorrespondAuRythme": {
+      "fr": ", qui correspond au rythme",
+      "pt": ""
+    },
+    "continuer": {
+      "fr": "Continuer ➔",
+      "pt": ""
+    },
+    "gongue": {
+      "fr": "Gonguê",
+      "pt": ""
+    },
+    "alfaiaMarcante": {
+      "fr": "Alfaia Marcante",
+      "pt": ""
+    },
+    "agbeShekere": {
+      "fr": "Agbê / Shekere",
+      "pt": ""
+    },
+    "mineiroGanza": {
+      "fr": "Mineiro / Ganzá",
+      "pt": ""
+    },
+    "timbal": {
+      "fr": "Timbal",
+      "pt": ""
+    },
+    "defiReflexeTemps1": {
+      "fr": "Défi Réflexe « Temps 1 »",
+      "pt": ""
+    },
+    "arretAutomatiqueAuTemps1": {
+      "fr": "Arrêt automatique au Temps 1 • Clique sur la bonne phrase pour relancer l'audio",
+      "pt": ""
+    },
+    "fermer": {
+      "fr": "✕ Fermer",
+      "pt": ""
+    },
+    "aucunEnregistrementAudioRattacheA": {
+      "fr": "Aucun enregistrement audio rattaché à ce morceau.",
+      "pt": ""
+    },
+    "pourLancerLeSimulateurDe": {
+      "fr": "Pour lancer le simulateur de conventions, liez un Preset Séquenceur avec audio ou ajoutez une piste audio au morceau dans le Répertoire.",
+      "pt": ""
+    },
+    "aucunSignalDuMestreN": {
+      "fr": "Aucun signal du Mestre n'a été détecté pour ce morceau.",
+      "pt": ""
+    },
+    "leMestrePeutConfigurerLes": {
+      "fr": "Le Mestre peut configurer les signaux et conventions depuis le panneau « Mestria > Répertoire ».",
+      "pt": ""
+    },
+    "morceauTermine": {
+      "fr": "Morceau Terminé !",
+      "pt": ""
+    },
+    "scoreSansFauteAuPupitre": {
+      "fr": "Score sans faute au pupitre",
+      "pt": ""
+    },
+    "scoreParfaitToutesLesConventions": {
+      "fr": "👑 Score Parfait ! Toutes les conventions ont été jouées dès le premier essai.",
+      "pt": ""
+    },
+    "belleSessionDeReflexeContinue": {
+      "fr": "🌿 Belle session de réflexe ! Continue de pratiquer pour automatiser tes départs.",
+      "pt": ""
+    },
+    "rejouerLeMorceau": {
+      "fr": "🔄 Rejouer le Morceau",
+      "pt": ""
+    },
+    "monPupitre": {
+      "fr": "Mon Pupitre :",
+      "pt": ""
+    },
+    "score": {
+      "fr": "Score :",
+      "pt": ""
+    },
+    "defi": {
+      "fr": "défi",
+      "pt": ""
+    },
+    "temps1": {
+      "fr": "« Temps 1 »",
+      "pt": ""
+    },
+    "pause": {
+      "fr": "⏸ Pause",
+      "pt": ""
+    },
+    "lancerLEcoute": {
+      "fr": "▶ Lancer l'écoute",
+      "pt": ""
+    },
+    "prochainArret": {
+      "fr": "Prochain arrêt :",
+      "pt": ""
+    },
+    "essaiDuDefiReconnaissanceDes": {
+      "fr": "Essai du Défi : Reconnaissance des Signes",
+      "pt": ""
+    },
+    "ecouter": {
+      "fr": "▶ Écouter",
+      "pt": ""
+    },
+    "pretALEcoute": {
+      "fr": "Prêt à l'écoute",
+      "pt": ""
+    },
+    "choisir": {
+      "fr": "Choisir",
+      "pt": ""
+    },
+    "signalALaMesure": {
+      "fr": "Signal à la Mesure",
+      "pt": ""
+    },
+    "quelGesteOuAppelLe": {
+      "fr": "Quel geste ou appel le Mestre déclenche-t-il ici ?",
+      "pt": ""
+    },
+    "actuellementPose": {
+      "fr": "✓ Actuellement posé",
+      "pt": ""
+    },
+    "retirerLeSignalDeLa": {
+      "fr": "Retirer le signal de la mesure",
+      "pt": ""
+    },
+    "friseChronologique": {
+      "fr": "Frise Chronologique (",
+      "pt": ""
+    },
+    "mesures": {
+      "fr": "mesures)",
+      "pt": ""
+    },
+    "defilementHorizontal": {
+      "fr": "↔ Défilement horizontal",
+      "pt": ""
+    },
+    "quelleEstLaTablatureDu": {
+      "fr": "Quelle est la tablature du Temps 1 de la mesure suivante ?",
+      "pt": ""
+    },
+    "4Propositions": {
+      "fr": "4 propositions",
+      "pt": ""
+    },
+    "option": {
+      "fr": "Option",
+      "pt": ""
+    },
+    "bonneReponse": {
+      "fr": "Bonne réponse",
+      "pt": ""
+    },
+    "erreur": {
+      "fr": "Erreur",
+      "pt": ""
+    },
+    "ecouteAttentivementLeMestrePrepare": {
+      "fr": "🎧 Écoute attentivement... Le Mestre prépare son premier signal.",
+      "pt": ""
+    },
+    "temps1ConventionAJouer": {
+      "fr": "🎯 TEMPS 1 — CONVENTION À JOUER",
+      "pt": ""
+    },
+    "simpleRepere": {
+      "fr": "Simple Repère",
+      "pt": ""
+    },
+    "cliqueSurLaBonneTablature": {
+      "fr": "Clique sur la bonne tablature",
+      "pt": ""
+    },
+    "prepareToiPourLeTemps": {
+      "fr": "Prépare-toi pour le temps 1",
+      "pt": ""
+    }
+  },
+  "progress": {
+    "fermer": {
+      "fr": "Fermer",
+      "pt": ""
+    },
+    "quiz": {
+      "fr": "🧠 Quiz :",
+      "pt": ""
+    },
+    "question": {
+      "fr": "Question",
+      "pt": ""
+    },
+    "illustrationDeLaQuestion": {
+      "fr": "Illustration de la question",
+      "pt": ""
+    },
+    "bienJoue": {
+      "fr": "✅ Bien joué !",
+      "pt": ""
+    },
+    "presque": {
+      "fr": "🌱 Presque !",
+      "pt": ""
+    },
+    "laBonneReponseEtait": {
+      "fr": "La bonne réponse était :",
+      "pt": ""
+    },
+    "questionSuivante": {
+      "fr": "Question Suivante ➔",
+      "pt": ""
+    },
+    "voirLeResultat": {
+      "fr": "Voir le Résultat 🏆",
+      "pt": ""
+    },
+    "resultatDuQuiz": {
+      "fr": "Résultat du Quiz",
+      "pt": ""
+    },
+    "tuAsObtenu": {
+      "fr": "Tu as obtenu",
+      "pt": ""
+    },
+    "bonneSReponseSSur": {
+      "fr": "bonne(s) réponse(s) sur",
+      "pt": ""
+    },
+    "superbeTonNiveauDeConfort": {
+      "fr": "Superbe ! Ton niveau de confort sur ce sujet augmente !",
+      "pt": ""
+    },
+    "sauvegardeEnCours": {
+      "fr": "Sauvegarde en cours...",
+      "pt": ""
+    },
+    "progressionEnregistree": {
+      "fr": "Progression enregistrée ✅",
+      "pt": ""
+    },
+    "tuYEsPresqueN": {
+      "fr": "Tu y es presque ! N'hésite pas à relire la fiche et à retenter ta chance.",
+      "pt": ""
+    },
+    "sEntrainerSurLeSequenceur": {
+      "fr": "🎧 S'entraîner sur le Séquenceur",
+      "pt": ""
+    },
+    "calculDeLaMatriceNacao": {
+      "fr": "Calcul de la matrice Nação...",
+      "pt": ""
+    },
+    "analyseDuRepertoireToadas": {
+      "fr": "Analyse du Répertoire (Toadas)",
+      "pt": ""
+    },
+    "vueConsolideeDesScoresD": {
+      "fr": "Vue consolidée des scores d'auto-évaluation et des demandes de révision de vos élèves, triée par pupitre. \n          Les scores sont pondérés par la difficulté (Facile = max 33%, Moyen = max 66%, Expert = max 100%).",
+      "pt": ""
+    },
+    "suggerePourLaProchaineRepetition": {
+      "fr": "⚠️ Suggéré pour la prochaine répétition",
+      "pt": ""
+    },
+    "priorite": {
+      "fr": "Priorité #",
+      "pt": ""
+    },
+    "scoreGlobal": {
+      "fr": "Score global :",
+      "pt": ""
+    },
+    "demande": {
+      "fr": "demande",
+      "pt": ""
+    },
+    "dEleves": {
+      "fr": "d'élèves",
+      "pt": ""
+    },
+    "epinglerDansLeBlocNotes": {
+      "fr": "Épingler dans le Bloc-notes de répétition",
+      "pt": ""
+    },
+    "epingler": {
+      "fr": "Épingler",
+      "pt": ""
+    },
+    "toada": {
+      "fr": "Toada",
+      "pt": ""
+    },
+    "global": {
+      "fr": "Global",
+      "pt": ""
+    },
+    "essaiDuDefiBlindTest": {
+      "fr": "Essai du Défi : Blind Test",
+      "pt": ""
+    },
+    "aucunMorceauAvecFichierAudio": {
+      "fr": "⚠️ Aucun morceau avec fichier audio n'est disponible dans le répertoire actuel.",
+      "pt": ""
+    },
+    "ecoutezLExtraitAudioEt": {
+      "fr": "Écoutez l'extrait audio et identifiez le morceau ou la convention joué(e) :",
+      "pt": ""
+    },
+    "bravoBonneReponse": {
+      "fr": "🎉 Bravo ! Bonne réponse.",
+      "pt": ""
+    },
+    "morceauSuivant": {
+      "fr": "Morceau suivant ❯",
+      "pt": ""
+    },
+    "fermerLEssai": {
+      "fr": "Fermer l'essai",
+      "pt": ""
+    },
+    "tous": {
+      "fr": "Tous (",
+      "pt": ""
+    },
+    "orixasSpiritualite": {
+      "fr": "⚡ Orixás & Spiritualité",
+      "pt": ""
+    },
+    "musiqueNacoes": {
+      "fr": "🎵 Musique & Nações",
+      "pt": ""
+    },
+    "histoireCortege": {
+      "fr": "📜 Histoire & Cortège",
+      "pt": ""
+    },
+    "cuisineRecettes": {
+      "fr": "🍲 Cuisine & Recettes",
+      "pt": ""
+    },
+    "aucuneFicheCulturelleTrouveePour": {
+      "fr": "Aucune fiche culturelle trouvée pour cette thématique (",
+      "pt": ""
+    },
+    "toutes": {
+      "fr": "toutes",
+      "pt": ""
+    },
+    "titreDeLaFicheCulture": {
+      "fr": "Titre de la fiche culture",
+      "pt": ""
+    },
+    "themeTampon": {
+      "fr": "Thème & Tampon",
+      "pt": ""
+    },
+    "actions": {
+      "fr": "Actions",
+      "pt": ""
+    },
+    "ficheSansTitre": {
+      "fr": "Fiche sans titre",
+      "pt": ""
+    },
+    "consulterLaFicheCulturelle": {
+      "fr": "Consulter la fiche culturelle",
+      "pt": ""
+    },
+    "consulter": {
+      "fr": "👁️ Consulter",
+      "pt": ""
+    },
+    "editerLeTexteExplicatifEt": {
+      "fr": "Éditer le texte explicatif et les questions du QCM",
+      "pt": ""
+    },
+    "editerTexteQcm": {
+      "fr": "✏️ Éditer texte / QCM",
+      "pt": ""
+    },
+    "supprimerLaFiche": {
+      "fr": "Supprimer la fiche",
+      "pt": ""
+    },
+    "aucunElementDeDanseRenseigne": {
+      "fr": "Aucun élément de danse renseigné pour le moment",
+      "pt": ""
+    },
+    "lesIndicateursApparaitrontAutomatiquementLorsque": {
+      "fr": "Les indicateurs apparaîtront automatiquement lorsque les morceaux de danse seront travaillés.",
+      "pt": ""
+    },
+    "choregraphiesElementsDeDanse": {
+      "fr": "Chorégraphies & Éléments de Danse (",
+      "pt": ""
+    },
+    "suiviDesPasEtMorceaux": {
+      "fr": "Suivi des pas et morceaux avec composante chorégraphique travaillés par la troupe.",
+      "pt": ""
+    },
+    "adherent": {
+      "fr": "adhérent",
+      "pt": ""
+    },
+    "effectif": {
+      "fr": "Effectif :",
+      "pt": ""
+    },
+    "elementDeDanse": {
+      "fr": "Élément de Danse",
+      "pt": ""
+    },
+    "aisanceReelle": {
+      "fr": "Aisance Réelle",
+      "pt": ""
+    },
+    "nonEvalue": {
+      "fr": "Non évalué",
+      "pt": ""
+    },
+    "figures": {
+      "fr": "figures",
+      "pt": ""
+    },
+    "programmerEnRepetition": {
+      "fr": "Programmer en répétition",
+      "pt": ""
+    },
+    "epinglerAuBlocNotes": {
+      "fr": "Épingler au bloc-notes",
+      "pt": ""
+    },
+    "figuresAssociees": {
+      "fr": "Figures associées :",
+      "pt": ""
+    },
+    "chargementDeLaConfiguration": {
+      "fr": "Chargement de la configuration...",
+      "pt": ""
+    },
+    "configurationGlobaleDesQcm": {
+      "fr": "Configuration Globale des QCM",
+      "pt": ""
+    },
+    "definissezIciQuelsThemesSeront": {
+      "fr": "Définissez ici quels thèmes seront disponibles pour les élèves dans l'espace \"Mon Parcours\" et paramétrez le comportement par défaut des quiz.",
+      "pt": ""
+    },
+    "themesActives": {
+      "fr": "Thèmes Activés :",
+      "pt": ""
+    },
+    "toadasChants": {
+      "fr": "🎤 Toadas / Chants",
+      "pt": ""
+    },
+    "quizSurLeRythmeLa": {
+      "fr": "Quiz sur le rythme, la Nação et le lexique des chants.",
+      "pt": ""
+    },
+    "traductionPtFr": {
+      "fr": "🇧🇷 Traduction (PT/FR)",
+      "pt": ""
+    },
+    "autoEvaluationSurLeVocabulaire": {
+      "fr": "Auto-évaluation sur le vocabulaire portugais de l'application.",
+      "pt": ""
+    },
+    "cultureHistoire": {
+      "fr": "📚 Culture & Histoire",
+      "pt": ""
+    },
+    "questionsATrousBaseesSur": {
+      "fr": "Questions à trous basées sur les fiches de catégorie \"Culture\".",
+      "pt": ""
+    },
+    "atelierCouture": {
+      "fr": "🛠️ Atelier & Couture",
+      "pt": ""
+    },
+    "questionsPratiquesBaseesSurLes": {
+      "fr": "Questions pratiques basées sur les fiches de catégorie \"Atelier\".",
+      "pt": ""
+    },
+    "difficulteParDefaut": {
+      "fr": "Difficulté par défaut :",
+      "pt": ""
+    },
+    "debutantOptionsSimples": {
+      "fr": "🌱 Débutant (Options simples)",
+      "pt": ""
+    },
+    "confirmeOptionsMixtes": {
+      "fr": "🥁 Confirmé (Options mixtes)",
+      "pt": ""
+    },
+    "expertPiegesSemantiques": {
+      "fr": "🏆 Expert (Pièges sémantiques)",
+      "pt": ""
+    },
+    "nombreDeQuestions": {
+      "fr": "Nombre de questions :",
+      "pt": ""
+    },
+    "5QuestionsSessionRapide": {
+      "fr": "5 questions (Session rapide)",
+      "pt": ""
+    },
+    "10QuestionsStandard": {
+      "fr": "10 questions (Standard)",
+      "pt": ""
+    },
+    "15QuestionsDefiLong": {
+      "fr": "15 questions (Défi long)",
+      "pt": ""
+    },
+    "testerUneSessionQuiz": {
+      "fr": "👁️ Tester une session Quiz",
+      "pt": ""
+    },
+    "sauvegarde": {
+      "fr": "Sauvegarde...",
+      "pt": ""
+    },
+    "enregistrer": {
+      "fr": "💾 Enregistrer",
+      "pt": ""
+    },
+    "saisonOfficielle": {
+      "fr": "Saison officielle",
+      "pt": ""
+    },
+    "voirLeDetailDesVariations": {
+      "fr": "Voir le détail des variations et breaks",
+      "pt": ""
+    },
+    "var": {
+      "fr": "var.",
+      "pt": ""
+    },
+    "programmerDirectementEnRepetition": {
+      "fr": "Programmer directement en répétition",
+      "pt": ""
+    },
+    "detailDesVariationsConventions": {
+      "fr": "Détail des Variations & Conventions (",
+      "pt": ""
+    },
+    "signal": {
+      "fr": "Signal",
+      "pt": ""
+    },
+    "motif": {
+      "fr": "Motif",
+      "pt": ""
+    },
+    "aucunMorceauOfficielDeSaison": {
+      "fr": "Aucun morceau officiel de saison",
+      "pt": ""
+    },
+    "ajoutezDesMorceauxDansLe": {
+      "fr": "Ajoutez des morceaux dans le Répertoire de l'association ou assignez-leur le statut « En saison » pour visualiser la matrice de confort par famille d'instruments.",
+      "pt": ""
+    },
+    "matricePercussionDeSaison": {
+      "fr": "Matrice Percussion de Saison (",
+      "pt": ""
+    },
+    "morceaux": {
+      "fr": "morceaux)",
+      "pt": ""
+    },
+    "1LigneParMorceauSynthese": {
+      "fr": "1 ligne par morceau • Synthèse du niveau de confort de la troupe par famille d'instruments.",
+      "pt": ""
+    },
+    "75ALAise": {
+      "fr": "≥ 75% À l'aise",
+      "pt": ""
+    },
+    "5074Travail": {
+      "fr": "50-74% Travail",
+      "pt": ""
+    },
+    "50Fragile": {
+      "fr": "< 50% Fragile",
+      "pt": ""
+    },
+    "morceauDeSaison": {
+      "fr": "Morceau de Saison",
+      "pt": ""
+    },
+    "detailActions": {
+      "fr": "Détail & Actions",
+      "pt": ""
+    },
+    "genresMusicauxHorsMaracatu": {
+      "fr": "Genres Musicaux hors-Maracatu",
+      "pt": ""
+    },
+    "baquesEtRythmesFictifs": {
+      "fr": "Baques et Rythmes Fictifs",
+      "pt": ""
+    },
+    "villesGeographie": {
+      "fr": "Villes & Géographie",
+      "pt": ""
+    },
+    "lutherieMateriaux": {
+      "fr": "Lutherie & Matériaux",
+      "pt": ""
+    },
+    "traductionsEtExpressions": {
+      "fr": "Traductions et Expressions",
+      "pt": ""
+    },
+    "banqueDeLeurresSauvegardeeAvec": {
+      "fr": "Banque de leurres sauvegardée avec succès !",
+      "pt": ""
+    },
+    "erreurLorsDeLaSauvegarde": {
+      "fr": "Erreur lors de la sauvegarde.",
+      "pt": ""
+    },
+    "voulezVousVraimentReinitialiserToutes": {
+      "fr": "Voulez-vous vraiment réinitialiser toutes les catégories aux valeurs par défaut de l'application ? Toutes vos personnalisations seront perdues.",
+      "pt": ""
+    },
+    "chargementDeLaBanqueDe": {
+      "fr": "Chargement de la banque de leurres...",
+      "pt": ""
+    },
+    "erreurDInitialisation": {
+      "fr": "Erreur d'initialisation.",
+      "pt": ""
+    },
+    "gerezLesFaussesReponsesDistracteurs": {
+      "fr": "Gérez les fausses réponses (distracteurs) injectées dans vos quiz pédagogiques. \n            Une liste riche garantit des QCM variés !",
+      "pt": ""
+    },
+    "reinitialiser": {
+      "fr": "Réinitialiser",
+      "pt": ""
+    },
+    "enregistrement": {
+      "fr": "Enregistrement...",
+      "pt": ""
+    },
+    "supprimerCeLeurre": {
+      "fr": "Supprimer ce leurre",
+      "pt": ""
+    },
+    "aucunLeurreDansCetteCategorie": {
+      "fr": "Aucun leurre dans cette catégorie. Le QCM utilisera le dictionnaire universel en secours.",
+      "pt": ""
+    },
+    "ajouterUnLeurre": {
+      "fr": "Ajouter un leurre...",
+      "pt": ""
+    },
+    "resultatsRodaQuizDefis": {
+      "fr": "Résultats Roda Quiz & Défis",
+      "pt": ""
+    },
+    "chargementDeTesResultats": {
+      "fr": "Chargement de tes résultats...",
+      "pt": ""
+    },
+    "aucunePartieDisputeePourL": {
+      "fr": "Aucune partie disputée pour l'instant. Rejoins ou lance un défi depuis le bouton En ligne !",
+      "pt": ""
+    },
+    "partiesJouees": {
+      "fr": "Parties jouées",
+      "pt": ""
+    },
+    "victoires": {
+      "fr": "Victoires",
+      "pt": ""
+    },
+    "presenceSurLePodium": {
+      "fr": "Présence sur le podium",
+      "pt": ""
+    },
+    "aucuneToadaEnregistreeDansLe": {
+      "fr": "Aucune Toada enregistrée dans le répertoire pour le moment.",
+      "pt": ""
+    },
+    "titreDuChant": {
+      "fr": "Titre du chant",
+      "pt": ""
+    },
+    "rythmeBaque": {
+      "fr": "Rythme / Baque",
+      "pt": ""
+    },
+    "nationEcole": {
+      "fr": "Nation / École",
+      "pt": ""
+    },
+    "toadaSansTitre": {
+      "fr": "Toada sans titre",
+      "pt": ""
+    },
+    "consulterLeLivretDeLa": {
+      "fr": "Consulter le livret de la toada",
+      "pt": ""
+    },
+    "paroles": {
+      "fr": "👁️ Paroles",
+      "pt": ""
+    },
+    "editerLesParolesEtLes": {
+      "fr": "Éditer les paroles et les 8 points pédagogiques",
+      "pt": ""
+    },
+    "editerLes8Points": {
+      "fr": "✏️ Éditer les 8 points",
+      "pt": ""
+    },
+    "supprimerLaToada": {
+      "fr": "Supprimer la toada",
+      "pt": ""
+    }
+  },
+  "cards": {
+    "nomenclaturePiecesUsinees": {
+      "fr": "Nomenclature & Pièces usinées (",
+      "pt": ""
+    },
+    "maitrisee": {
+      "fr": "maîtrisée",
+      "pt": ""
+    },
+    "reduire": {
+      "fr": "▲ Réduire",
+      "pt": ""
+    },
+    "detailsParPiece": {
+      "fr": "▼ Détails par pièce",
+      "pt": ""
+    },
+    "etape": {
+      "fr": "étape",
+      "pt": ""
+    },
+    "dUsinage": {
+      "fr": "d'usinage",
+      "pt": ""
+    },
+    "mat": {
+      "fr": "• Mat. :",
+      "pt": ""
+    },
+    "quizPiece": {
+      "fr": "Quiz Pièce",
+      "pt": ""
+    },
+    "preparationDeTaSession": {
+      "fr": "Préparation de ta session...",
+      "pt": ""
+    },
+    "voulezVousVraimentSupprimerCe": {
+      "fr": "Voulez-vous vraiment supprimer ce signal ? Il ne sera plus disponible dans les quiz.",
+      "pt": ""
+    },
+    "erreurLorsDeLaSuppression": {
+      "fr": "Erreur lors de la suppression.",
+      "pt": ""
+    },
+    "erreurLorsDeLEnregistrement": {
+      "fr": "Erreur lors de l'enregistrement du signal.",
+      "pt": ""
+    },
+    "chargementDesSignaux": {
+      "fr": "Chargement des signaux...",
+      "pt": ""
+    },
+    "nomDuSignal": {
+      "fr": "Nom du signal",
+      "pt": ""
+    },
+    "visuelGesteMainRegard": {
+      "fr": "👁️ Visuel (Geste, Main, Regard)",
+      "pt": ""
+    },
+    "sonoreSiffletApitoVoix": {
+      "fr": "🔊 Sonore (Sifflet / Apito, Voix)",
+      "pt": ""
+    },
+    "autre": {
+      "fr": "🧩 Autre",
+      "pt": ""
+    },
+    "descriptionGeste": {
+      "fr": "Description / Geste",
+      "pt": ""
+    },
+    "urlDeLImageGif": {
+      "fr": "URL de l'image / GIF",
+      "pt": ""
+    },
+    "annuler": {
+      "fr": "Annuler",
+      "pt": ""
+    },
+    "aucunSignalNAEncore": {
+      "fr": "Aucun signal n'a encore été configuré.",
+      "pt": ""
+    },
+    "modifier": {
+      "fr": "Modifier",
+      "pt": ""
+    },
+    "supprimer": {
+      "fr": "Supprimer",
+      "pt": ""
+    },
+    "afficherLAideOuApprendre": {
+      "fr": "Afficher l'aide Où apprendre et réviser ?",
+      "pt": ""
+    },
+    "aideOuApprendreEtReviser": {
+      "fr": "Aide : Où apprendre et réviser ?",
+      "pt": ""
+    },
+    "ouApprendreEtReviser": {
+      "fr": "Où apprendre et réviser ?",
+      "pt": ""
+    },
+    "masquerCeGuideReouvrableA": {
+      "fr": "Masquer ce guide (réouvrable à tout moment via le bouton 💡)",
+      "pt": ""
+    },
+    "comprisMasquer": {
+      "fr": "Compris / Masquer",
+      "pt": ""
+    },
+    "avantDeTesterTesAcquis": {
+      "fr": "Avant de tester tes acquis ici, retrouve tous les détails (fiches complètes, audios, explications) dans les Varals (cordes à linge) situés tout en bas de la page d'accueil !",
+      "pt": ""
+    },
+    "les2Tableaux": {
+      "fr": "📋 Les 2 Tableaux",
+      "pt": ""
+    },
+    "toadas": {
+      "fr": "🎵 Toadas (",
+      "pt": ""
+    },
+    "cultureHistoire": {
+      "fr": "📖 Culture & Histoire (",
+      "pt": ""
+    },
+    "vueVaral": {
+      "fr": "🪢 Vue Varal",
+      "pt": ""
+    },
+    "nouvelleToada": {
+      "fr": "➕ Nouvelle Toada",
+      "pt": ""
+    },
+    "ficheCulture": {
+      "fr": "Fiche Culture",
+      "pt": ""
+    },
+    "annulerEtRevenirAuxTableaux": {
+      "fr": "⬅️ Annuler et revenir aux tableaux pédagogiques",
+      "pt": ""
+    },
+    "tableauAToadasChantsParoles": {
+      "fr": "Tableau A : Toadas (Chants & Paroles)",
+      "pt": ""
+    },
+    "repertoireMusicalEtLivretsDe": {
+      "fr": "Répertoire musical et livrets de chants",
+      "pt": ""
+    },
+    "tableauBFichesCultureHistoire": {
+      "fr": "Tableau B : Fiches Culture & Histoire",
+      "pt": ""
+    },
+    "histoireTraditionsFiguresEtFolklore": {
+      "fr": "Histoire, traditions, figures et folklore",
+      "pt": ""
+    },
+    "cochezPuxadorOuCoroAu": {
+      "fr": "Cochez \"Puxador\" ou \"Coro\" au-dessus pour afficher les paroles",
+      "pt": ""
+    },
+    "ceChantEstAuFormat": {
+      "fr": "⚠️ Ce chant est au format texte simple. Impossible de séparer automatiquement le Puxador et le Chœur.",
+      "pt": ""
+    },
+    "imprimerCetteFiche": {
+      "fr": "Imprimer cette fiche",
+      "pt": ""
+    },
+    "titreInconnu": {
+      "fr": "Titre Inconnu",
+      "pt": ""
+    },
+    "audioTemoin": {
+      "fr": "Audio témoin :",
+      "pt": ""
+    },
+    "puxadorSoliste": {
+      "fr": "👁️ Puxador (Soliste)",
+      "pt": ""
+    },
+    "coroChUr": {
+      "fr": "👁️ Coro (Chœur)",
+      "pt": ""
+    },
+    "versionOriginale": {
+      "fr": "Version Originale",
+      "pt": ""
+    },
+    "versionPhonetique": {
+      "fr": "Version Phonétique",
+      "pt": ""
+    },
+    "traductionEnFrancais": {
+      "fr": "Traduction en français",
+      "pt": ""
+    },
+    "lexiqueNotes": {
+      "fr": "Lexique & Notes",
+      "pt": ""
+    },
+    "anecdote": {
+      "fr": "Anecdote",
+      "pt": ""
+    },
+    "ficheCulturelle": {
+      "fr": "Fiche Culturelle",
+      "pt": ""
+    },
+    "element": {
+      "fr": "🌿 Élément :",
+      "pt": ""
+    },
+    "symboles": {
+      "fr": "⚔️ Symboles :",
+      "pt": ""
+    },
+    "gestuelle": {
+      "fr": "Gestuelle",
+      "pt": ""
+    },
+    "focusCorps": {
+      "fr": "💪 Focus corps :",
+      "pt": ""
+    },
+    "leSaviezVous": {
+      "fr": "Le saviez-vous ?",
+      "pt": ""
+    },
+    "motsCles": {
+      "fr": "🏷️ Mots-Clés",
+      "pt": ""
+    },
+    "dictionnaireLexique": {
+      "fr": "📖 Dictionnaire & Lexique",
+      "pt": ""
+    },
+    "videoAssociee": {
+      "fr": "🎬 Vidéo Associée",
+      "pt": ""
+    },
+    "youtubeVideoPlayer": {
+      "fr": "YouTube video player",
+      "pt": ""
+    },
+    "telechargerOuvrirLeFichierVideo": {
+      "fr": "Télécharger / Ouvrir le fichier vidéo ↗",
+      "pt": ""
+    },
+    "regarderLaVideoExterne": {
+      "fr": "▶️ Regarder la vidéo externe",
+      "pt": ""
+    },
+    "scannezPourVoirLaVideo": {
+      "fr": "📱 Scannez pour voir la vidéo",
+      "pt": ""
+    }
+  }
+}

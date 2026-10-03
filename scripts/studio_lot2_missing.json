@@ -1,0 +1,1022 @@
+[
+  {
+    "text": "Erreur de téléchargement. Vous pouvez faire un clic droit ou appui long sur l'image pour l'enregistrer.",
+    "file": "src/components/StudioSocial.jsx",
+    "context": "Message runtime (alert)",
+    "line": 735
+  },
+  {
+    "text": "Génération de l'image impossible.",
+    "file": "src/components/StudioSocial.jsx",
+    "context": "Message runtime (alert)",
+    "line": 746
+  },
+  {
+    "text": "Votre navigateur ne prend pas en charge la copie directe d'images dans le presse-papier.",
+    "file": "src/components/StudioSocial.jsx",
+    "context": "Message runtime (alert)",
+    "line": 778
+  },
+  {
+    "text": "Extraction de l'image impossible.",
+    "file": "src/components/StudioSocial.jsx",
+    "context": "Message runtime (alert)",
+    "line": 784
+  },
+  {
+    "text": "Votre navigateur ne supporte pas la copie directe d'images dans le presse-papier.",
+    "file": "src/components/StudioSocial.jsx",
+    "context": "Message d'erreur runtime (new Error)",
+    "line": 789
+  },
+  {
+    "text": "Veuillez sélectionner un événement ou rédiger un texte avant d'envoyer pour validation.",
+    "file": "src/components/StudioSocial.jsx",
+    "context": "Message runtime (alert)",
+    "line": 808
+  },
+  {
+    "text": "🎉 Proposition soumise pour validation ! Le sujet a été ouvert dans le Forum (Porte-Voix).",
+    "file": "src/components/StudioSocial.jsx",
+    "context": "Message runtime (alert)",
+    "line": 943
+  },
+  {
+    "text": "Retour",
+    "file": "src/components/StudioSocial.jsx",
+    "context": "Repli en dur après t()",
+    "line": 964
+  },
+  {
+    "text": "Studio Social",
+    "file": "src/components/StudioSocial.jsx",
+    "context": "Repli en dur après t()",
+    "line": 967
+  },
+  {
+    "text": "Sélectionner un événement",
+    "file": "src/components/StudioSocial.jsx",
+    "context": "Repli en dur après t()",
+    "line": 979
+  },
+  {
+    "text": "✅ Approuvé",
+    "file": "src/components/StudioSocial.jsx",
+    "context": "Branche conditionnelle (ternaire)",
+    "line": 990
+  },
+  {
+    "text": "Choisissez un événement...",
+    "file": "src/components/StudioSocial.jsx",
+    "context": "Repli en dur après t()",
+    "line": 1003
+  },
+  {
+    "text": "⏳ [Passé]",
+    "file": "src/components/StudioSocial.jsx",
+    "context": "Branche conditionnelle (ternaire)",
+    "line": 1011
+  },
+  {
+    "text": "Vidéo",
+    "file": "src/components/StudioSocial.jsx",
+    "context": "Repli en dur après t()",
+    "line": 1023
+  },
+  {
+    "text": "✓ Miniature YouTube détectée",
+    "file": "src/components/StudioSocial.jsx",
+    "context": "Libellé / Badge (<span>)",
+    "line": 1025
+  },
+  {
+    "text": "La miniature vidéo sera automatiquement générée et affichée sur le billet d'événement dans l'Agenda avec l'icône Play ▶️.",
+    "file": "src/components/StudioSocial.jsx",
+    "context": "Paragraphe (<p>)",
+    "line": 1047
+  },
+  {
+    "text": "Ex: #maracatu #musique",
+    "file": "src/components/StudioSocial.jsx",
+    "context": "Attribut placeholder",
+    "line": 1071
+  },
+  {
+    "text": "Gestion complète du Lexique, Mentions et Hashtags",
+    "file": "src/components/StudioSocial.jsx",
+    "context": "Libellé / Badge (<span>)",
+    "line": 1083
+  },
+  {
+    "text": "Ouvrir l'onglet Lexique →",
+    "file": "src/components/StudioSocial.jsx",
+    "context": "Nœud JSX",
+    "line": 1092
+  },
+  {
+    "text": "⚙️ Hashtags par défaut de l'association (Admin)",
+    "file": "src/components/StudioSocial.jsx",
+    "context": "Libellé / Badge (<span>)",
+    "line": 1100
+  },
+  {
+    "text": "Enregistrer",
+    "file": "src/components/StudioSocial.jsx",
+    "context": "Attribut title",
+    "line": 1125
+  },
+  {
+    "text": "Modifier",
+    "file": "src/components/StudioSocial.jsx",
+    "context": "Attribut title",
+    "line": 1151
+  },
+  {
+    "text": "Supprimer",
+    "file": "src/components/StudioSocial.jsx",
+    "context": "Attribut title",
+    "line": 1159
+  },
+  {
+    "text": "Nouveau tag (ex: #musique)",
+    "file": "src/components/StudioSocial.jsx",
+    "context": "Attribut placeholder",
+    "line": 1173
+  },
+  {
+    "text": "Ajouter tag",
+    "file": "src/components/StudioSocial.jsx",
+    "context": "Bouton (<button>)",
+    "line": 1182
+  },
+  {
+    "text": "📖 Lexique d'insertion rapide personnalisable (Admin)",
+    "file": "src/components/StudioSocial.jsx",
+    "context": "Libellé / Badge (<span>)",
+    "line": 1190
+  },
+  {
+    "text": "Nouveau mot (ex: maracatu)",
+    "file": "src/components/StudioSocial.jsx",
+    "context": "Attribut placeholder",
+    "line": 1218
+  },
+  {
+    "text": "Ajouter mot",
+    "file": "src/components/StudioSocial.jsx",
+    "context": "Bouton (<button>)",
+    "line": 1227
+  },
+  {
+    "text": "@ Mentions de comptes personnalisables (Admin)",
+    "file": "src/components/StudioSocial.jsx",
+    "context": "Libellé / Badge (<span>)",
+    "line": 1235
+  },
+  {
+    "text": "Nouvelle mention (ex: @nom_partenaire)",
+    "file": "src/components/StudioSocial.jsx",
+    "context": "Attribut placeholder",
+    "line": 1269
+  },
+  {
+    "text": "Ajouter mention",
+    "file": "src/components/StudioSocial.jsx",
+    "context": "Bouton (<button>)",
+    "line": 1278
+  },
+  {
+    "text": "Texte de la publication",
+    "file": "src/components/StudioSocial.jsx",
+    "context": "Repli en dur après t()",
+    "line": 1293
+  },
+  {
+    "text": "Statut :",
+    "file": "src/components/StudioSocial.jsx",
+    "context": "Libellé / Badge (<span>)",
+    "line": 1296
+  },
+  {
+    "text": "Rédigez ou personnalisez votre légende ici...",
+    "file": "src/components/StudioSocial.jsx",
+    "context": "Attribut placeholder",
+    "line": 1318
+  },
+  {
+    "text": "✓ Service d'envoi configuré",
+    "file": "src/components/association-settings/TabCommunication.jsx",
+    "context": "Branche conditionnelle (ternaire)",
+    "line": 205
+  },
+  {
+    "text": "⚠️ Envoi désactivé / API non renseignée",
+    "file": "src/components/association-settings/TabCommunication.jsx",
+    "context": "Branche conditionnelle (ternaire)",
+    "line": 205
+  },
+  {
+    "text": "Expéditeur officiel :",
+    "file": "src/components/association-settings/TabCommunication.jsx",
+    "context": "Paragraphe (<p>)",
+    "line": 208
+  },
+  {
+    "text": "La gestion de la clé API Brevo, des signatures SPF/DKIM et de l'expéditeur officiel est centralisée dans",
+    "file": "src/components/association-settings/TabCommunication.jsx",
+    "context": "Paragraphe (<p>)",
+    "line": 213
+  },
+  {
+    "text": "Configuration › Communication, E-mails & Automatisations",
+    "file": "src/components/association-settings/TabCommunication.jsx",
+    "context": "Nœud JSX",
+    "line": 214
+  },
+  {
+    "text": "Vidéo à la une (Accueil & Dashboard)",
+    "file": "src/components/association-settings/TabCommunication.jsx",
+    "context": "Titre (<h4>)",
+    "line": 226
+  },
+  {
+    "text": "Mettez en avant une captation, un tutoriel ou un débrief vidéo directement auprès des adhérents sur l'Accueil.",
+    "file": "src/components/association-settings/TabCommunication.jsx",
+    "context": "Paragraphe (<p>)",
+    "line": 229
+  },
+  {
+    "text": "Affichée sur l'Accueil",
+    "file": "src/components/association-settings/TabCommunication.jsx",
+    "context": "Branche conditionnelle (ternaire)",
+    "line": 245
+  },
+  {
+    "text": "Masquée",
+    "file": "src/components/association-settings/TabCommunication.jsx",
+    "context": "Branche conditionnelle (ternaire)",
+    "line": 245
+  },
+  {
+    "text": "Titre descriptif ou consigne",
+    "file": "src/components/association-settings/TabCommunication.jsx",
+    "context": "Label de formulaire (<label>)",
+    "line": 253
+  },
+  {
+    "text": "ex: Débrief du concert d'Erdeven, Tutoriel Toada...",
+    "file": "src/components/association-settings/TabCommunication.jsx",
+    "context": "Attribut placeholder",
+    "line": 261
+  },
+  {
+    "text": "Lien de la vidéo YouTube *",
+    "file": "src/components/association-settings/TabCommunication.jsx",
+    "context": "Label de formulaire (<label>)",
+    "line": 269
+  },
+  {
+    "text": "Choisir parmi les playlists YouTube configurées",
+    "file": "src/components/association-settings/TabCommunication.jsx",
+    "context": "Attribut title",
+    "line": 276
+  },
+  {
+    "text": "🎬 Choisir parmi nos vidéos",
+    "file": "src/components/association-settings/TabCommunication.jsx",
+    "context": "Libellé / Badge (<span>)",
+    "line": 278
+  },
+  {
+    "text": "Formats acceptés : liens classiques (youtube.com/watch?v=...), partages courts (youtu.be/...), Shorts ou Embeds.",
+    "file": "src/components/association-settings/TabCommunication.jsx",
+    "context": "Paragraphe (<p>)",
+    "line": 297
+  },
+  {
+    "text": "ID YouTube validé :",
+    "file": "src/components/association-settings/TabCommunication.jsx",
+    "context": "Libellé / Badge (<span>)",
+    "line": 307
+  },
+  {
+    "text": "Miniature 16:9 prête",
+    "file": "src/components/association-settings/TabCommunication.jsx",
+    "context": "Libellé / Badge (<span>)",
+    "line": 308
+  },
+  {
+    "text": "Lien non reconnu. Assurez-vous d'avoir collé un lien YouTube valide.",
+    "file": "src/components/association-settings/TabCommunication.jsx",
+    "context": "Libellé / Badge (<span>)",
+    "line": 315
+  },
+  {
+    "text": "Sauvegarde immédiate sans impacter la configuration e-mail/Brevo.",
+    "file": "src/components/association-settings/TabCommunication.jsx",
+    "context": "Repli logique (||)",
+    "line": 323
+  },
+  {
+    "text": "💾 Enregistrer la vidéo",
+    "file": "src/components/association-settings/TabCommunication.jsx",
+    "context": "Branche conditionnelle (ternaire)",
+    "line": 333
+  },
+  {
+    "text": "Communication & Diffusion Newsletter",
+    "file": "src/components/association-settings/TabCommunication.jsx",
+    "context": "Titre (<h3>)",
+    "line": 349
+  },
+  {
+    "text": "Gérez l'exportation des adresses électroniques récoltées via la vitrine publique et configurez la synchronisation automatique avec votre compte Brevo (Sendinblue).",
+    "file": "src/components/association-settings/TabCommunication.jsx",
+    "context": "Paragraphe (<p>)",
+    "line": 353
+  },
+  {
+    "text": "📬 Adhérents et Visiteurs Inscrits à la Newsletter",
+    "file": "src/components/association-settings/TabCommunication.jsx",
+    "context": "Libellé / Badge (<span>)",
+    "line": 361
+  },
+  {
+    "text": "Chargement...",
+    "file": "src/components/association-settings/TabCommunication.jsx",
+    "context": "Branche conditionnelle (ternaire)",
+    "line": 364
+  },
+  {
+    "text": "dans Brevo",
+    "file": "src/components/association-settings/TabCommunication.jsx",
+    "context": "Libellé / Badge (<span>)",
+    "line": 372
+  },
+  {
+    "text": "Les adresses e-mails saisies par vos membres et visiteurs depuis la vitrine sont stockées en toute sécurité et synchronisées en temps réel vers Brevo. Vous pouvez également déclencher une synchronisation manuelle ou exporter le listing complet au format CSV.",
+    "file": "src/components/association-settings/TabCommunication.jsx",
+    "context": "Paragraphe (<p>)",
+    "line": 378
+  },
+  {
+    "text": "Génération du CSV...",
+    "file": "src/components/association-settings/TabCommunication.jsx",
+    "context": "Branche conditionnelle (ternaire)",
+    "line": 391
+  },
+  {
+    "text": "Exporter CSV",
+    "file": "src/components/association-settings/TabCommunication.jsx",
+    "context": "Branche conditionnelle (ternaire)",
+    "line": 391
+  },
+  {
+    "text": "Synchroniser immédiatement tous les contacts avec la liste Brevo configurée",
+    "file": "src/components/association-settings/TabCommunication.jsx",
+    "context": "Attribut title",
+    "line": 399
+  },
+  {
+    "text": "Synchronisation Brevo...",
+    "file": "src/components/association-settings/TabCommunication.jsx",
+    "context": "Branche conditionnelle (ternaire)",
+    "line": 402
+  },
+  {
+    "text": "Synchroniser avec Brevo",
+    "file": "src/components/association-settings/TabCommunication.jsx",
+    "context": "Branche conditionnelle (ternaire)",
+    "line": 402
+  },
+  {
+    "text": "Nom d'expéditeur dynamique *",
+    "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+    "context": "Libellé / Badge (<span>)",
+    "line": 61
+  },
+  {
+    "text": "Ex: Samambaia Maracatu",
+    "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+    "context": "Libellé / Badge (<span>)",
+    "line": 62
+  },
+  {
+    "text": "Adresse e-mail de réponse (Reply-To) *",
+    "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+    "context": "Libellé / Badge (<span>)",
+    "line": 77
+  },
+  {
+    "text": "Ex: contact@mon-asso.fr",
+    "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+    "context": "Libellé / Badge (<span>)",
+    "line": 78
+  },
+  {
+    "text": "Mode d'envoi d'e-mails & Canal d'infrastructures",
+    "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+    "context": "Label de formulaire (<label>)",
+    "line": 93
+  },
+  {
+    "text": "🛡️ Option A (Recommandée)",
+    "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+    "context": "Libellé / Badge (<span>)",
+    "line": 109
+  },
+  {
+    "text": "Service e-mail certifié O Girador :",
+    "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+    "context": "Nœud JSX",
+    "line": 120
+  },
+  {
+    "text": "Envoie vos notifications et documents via l'infrastructure centrale sécurisée avec le nom de votre association en expéditeur et votre adresse en Reply-To. Aucun paramétrage technique requis.",
+    "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+    "context": "Paragraphe (<p>)",
+    "line": 120
+  },
+  {
+    "text": "⚙️ Option B (Service externe / Domaine propre)",
+    "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+    "context": "Libellé / Badge (<span>)",
+    "line": 135
+  },
+  {
+    "text": "Service e-mailing dédié ou serveur SMTP :",
+    "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+    "context": "Nœud JSX",
+    "line": 146
+  },
+  {
+    "text": "Connectez votre propre compte (Brevo, Resend, SendGrid, Mailgun, Postmark ou SMTP OVH/Infomaniak) et votre propre nom de domaine.",
+    "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+    "context": "Paragraphe (<p>)",
+    "line": 146
+  },
+  {
+    "text": "Paramètres du canal d'envoi externe",
+    "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+    "context": "Titre (<h4>)",
+    "line": 157
+  },
+  {
+    "text": "Sélectionnez le protocole de connexion souhaité et saisissez vos accès sécurisés.",
+    "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+    "context": "Paragraphe (<p>)",
+    "line": 160
+  },
+  {
+    "text": "🔑 Clé API Service",
+    "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+    "context": "Bouton (<button>)",
+    "line": 175
+  },
+  {
+    "text": "📡 Serveur SMTP",
+    "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+    "context": "Bouton (<button>)",
+    "line": 186
+  },
+  {
+    "text": "Fournisseur API e-mailing",
+    "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+    "context": "Label de formulaire (<label>)",
+    "line": 196
+  },
+  {
+    "text": "Brevo (ex-Sendinblue)",
+    "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+    "context": "Option de liste (<option>)",
+    "line": 205
+  },
+  {
+    "text": "Resend",
+    "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+    "context": "Option de liste (<option>)",
+    "line": 206
+  },
+  {
+    "text": "SendGrid",
+    "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+    "context": "Option de liste (<option>)",
+    "line": 207
+  },
+  {
+    "text": "Mailgun",
+    "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+    "context": "Option de liste (<option>)",
+    "line": 208
+  },
+  {
+    "text": "Postmark",
+    "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+    "context": "Option de liste (<option>)",
+    "line": 209
+  },
+  {
+    "text": "Autre API REST HTTP",
+    "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+    "context": "Option de liste (<option>)",
+    "line": 210
+  },
+  {
+    "text": "Clé d'API sécurisée (",
+    "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+    "context": "Libellé / Badge (<span>)",
+    "line": 216
+  },
+  {
+    "text": "🙈 Masquer",
+    "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+    "context": "Branche conditionnelle (ternaire)",
+    "line": 222
+  },
+  {
+    "text": "👁️ Afficher",
+    "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+    "context": "Branche conditionnelle (ternaire)",
+    "line": 222
+  },
+  {
+    "text": "xkeysib-... ou re_...",
+    "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+    "context": "Attribut placeholder",
+    "line": 230
+  },
+  {
+    "text": "Hôte SMTP (Host) *",
+    "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+    "context": "Label de formulaire (<label>)",
+    "line": 241
+  },
+  {
+    "text": "Ex: ssl0.ovh.net",
+    "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+    "context": "Attribut placeholder",
+    "line": 249
+  },
+  {
+    "text": "Port SMTP *",
+    "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+    "context": "Label de formulaire (<label>)",
+    "line": 255
+  },
+  {
+    "text": "Sécurité (Protocole)",
+    "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+    "context": "Label de formulaire (<label>)",
+    "line": 269
+  },
+  {
+    "text": "TLS / STARTTLS (Port 587 - Recommandé)",
+    "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+    "context": "Option de liste (<option>)",
+    "line": 278
+  },
+  {
+    "text": "SSL (Port 465)",
+    "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+    "context": "Option de liste (<option>)",
+    "line": 279
+  },
+  {
+    "text": "Aucune (Non sécurisé)",
+    "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+    "context": "Option de liste (<option>)",
+    "line": 280
+  },
+  {
+    "text": "Utilisateur SMTP (User) *",
+    "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+    "context": "Label de formulaire (<label>)",
+    "line": 285
+  },
+  {
+    "text": "Mot de passe SMTP *",
+    "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+    "context": "Libellé / Badge (<span>)",
+    "line": 300
+  },
+  {
+    "text": "Domaine e-mail personnalisé (customEmailDomain)",
+    "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+    "context": "Libellé / Badge (<span>)",
+    "line": 324
+  },
+  {
+    "text": "Ex: mon-asso.fr",
+    "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+    "context": "Libellé / Badge (<span>)",
+    "line": 325
+  },
+  {
+    "text": "mon-asso.fr",
+    "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+    "context": "Attribut placeholder",
+    "line": 332
+  },
+  {
+    "text": "Copiez et collez ces paramètres dans la zone DNS de votre hébergeur (OVH, Gandi, Infomaniak, Ionos, Cloudflare).",
+    "file": "src/components/association-settings/email/EmailDnsHelpCard.jsx",
+    "context": "Paragraphe (<p>)",
+    "line": 63
+  },
+  {
+    "text": "Hôte / Nom",
+    "file": "src/components/association-settings/email/EmailDnsHelpCard.jsx",
+    "context": "En-tête de tableau (<th>)",
+    "line": 75
+  },
+  {
+    "text": "Valeur / Cible",
+    "file": "src/components/association-settings/email/EmailDnsHelpCard.jsx",
+    "context": "En-tête de tableau (<th>)",
+    "line": 76
+  },
+  {
+    "text": "✓ Copié !",
+    "file": "src/components/association-settings/email/EmailDnsHelpCard.jsx",
+    "context": "Branche conditionnelle (ternaire)",
+    "line": 111
+  },
+  {
+    "text": "📋 Copier",
+    "file": "src/components/association-settings/email/EmailDnsHelpCard.jsx",
+    "context": "Branche conditionnelle (ternaire)",
+    "line": 111
+  },
+  {
+    "text": "Remarque :",
+    "file": "src/components/association-settings/email/EmailDnsHelpCard.jsx",
+    "context": "Nœud JSX",
+    "line": 123
+  },
+  {
+    "text": "La propagation des modifications DNS peut prendre de quelques minutes à 24 heures selon votre hébergeur. Une fois les enregistrements validés, le taux de délivrabilité de vos e-mails sera optimal.",
+    "file": "src/components/association-settings/email/EmailDnsHelpCard.jsx",
+    "context": "Paragraphe (<p>)",
+    "line": 123
+  },
+  {
+    "text": "🔽 Masquer les options avancées",
+    "file": "src/components/association-settings/blocks/BrevoIntegrationBlock.jsx",
+    "context": "Branche conditionnelle (ternaire)",
+    "line": 27
+  },
+  {
+    "text": "▶️ Options Avancées (Marque Blanche Totale)",
+    "file": "src/components/association-settings/blocks/BrevoIntegrationBlock.jsx",
+    "context": "Branche conditionnelle (ternaire)",
+    "line": 27
+  },
+  {
+    "text": "Connectez votre propre compte Brevo (ex-Sendinblue) uniquement si vous souhaitez forcer un routage entièrement personnalisé de la newsletter via une liste externe.",
+    "file": "src/components/association-settings/blocks/BrevoIntegrationBlock.jsx",
+    "context": "Paragraphe (<p>)",
+    "line": 32
+  },
+  {
+    "text": "🔑 Clé API Brevo v3",
+    "file": "src/components/association-settings/blocks/BrevoIntegrationBlock.jsx",
+    "context": "Libellé / Badge (<span>)",
+    "line": 40
+  },
+  {
+    "text": "xkeysib-...",
+    "file": "src/components/association-settings/blocks/BrevoIntegrationBlock.jsx",
+    "context": "Attribut placeholder",
+    "line": 54
+  },
+  {
+    "text": "📋 ID de la Liste Brevo (Optionnel)",
+    "file": "src/components/association-settings/blocks/BrevoIntegrationBlock.jsx",
+    "context": "Libellé / Badge (<span>)",
+    "line": 62
+  },
+  {
+    "text": "Ex: 2 ou 5",
+    "file": "src/components/association-settings/blocks/BrevoIntegrationBlock.jsx",
+    "context": "Attribut placeholder",
+    "line": 69
+  },
+  {
+    "text": "💡 La clé API se récupère sur votre espace d'administration Brevo sous",
+    "file": "src/components/association-settings/blocks/BrevoIntegrationBlock.jsx",
+    "context": "Libellé / Badge (<span>)",
+    "line": 75
+  },
+  {
+    "text": "Paramètres > Clés API",
+    "file": "src/components/association-settings/blocks/BrevoIntegrationBlock.jsx",
+    "context": "Nœud JSX",
+    "line": 76
+  },
+  {
+    "text": "À la création d'une prestation, le système crée automatiquement le répertoire dédié dans votre instance Nextcloud et génère le lien de récolte public pour le QR-Code ainsi que le lien de consultation pour le Varal Photos.",
+    "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+    "context": "Paragraphe (<p>)",
+    "line": 226
+  },
+  {
+    "text": "Générez un mot de passe d'application dans votre Nextcloud :",
+    "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+    "context": "Paragraphe (<p>)",
+    "line": 228
+  },
+  {
+    "text": "Paramètres personnels > Sécurité > Dispositifs et sessions",
+    "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+    "context": "Nœud JSX",
+    "line": 229
+  },
+  {
+    "text": "Chargement des identifiants sécurisés...",
+    "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+    "context": "Nœud JSX",
+    "line": 235
+  },
+  {
+    "text": "🔗 URL de l'instance Nextcloud *",
+    "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+    "context": "Label de formulaire (<label>)",
+    "line": 243
+  },
+  {
+    "text": "ex: https://o-girador.framaspace.org",
+    "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+    "context": "Libellé / Badge (<span>)",
+    "line": 255
+  },
+  {
+    "text": "👤 Compte utilisateur / Bot *",
+    "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+    "context": "Label de formulaire (<label>)",
+    "line": 260
+  },
+  {
+    "text": "Identifiant ou e-mail de connexion",
+    "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+    "context": "Libellé / Badge (<span>)",
+    "line": 272
+  },
+  {
+    "text": "🔑 Mot de passe d'application *",
+    "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+    "context": "Label de formulaire (<label>)",
+    "line": 278
+  },
+  {
+    "text": "Masquer",
+    "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+    "context": "Branche conditionnelle (ternaire)",
+    "line": 286
+  },
+  {
+    "text": "Afficher",
+    "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+    "context": "Branche conditionnelle (ternaire)",
+    "line": 286
+  },
+  {
+    "text": "3kDmy-ExEAi-eDPw7-ca3Bk-ZTcPC",
+    "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+    "context": "Attribut placeholder",
+    "line": 294
+  },
+  {
+    "text": "Token généré dans Paramètres Sécurité",
+    "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+    "context": "Libellé / Badge (<span>)",
+    "line": 298
+  },
+  {
+    "text": "Statut HTTP Nextcloud :",
+    "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+    "context": "Nœud JSX",
+    "line": 315
+  },
+  {
+    "text": "Code d'erreur système :",
+    "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+    "context": "Nœud JSX",
+    "line": 320
+  },
+  {
+    "text": "Détails techniques :",
+    "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+    "context": "Nœud JSX",
+    "line": 325
+  },
+  {
+    "text": "Test en cours...",
+    "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+    "context": "Branche conditionnelle (ternaire)",
+    "line": 343
+  },
+  {
+    "text": "Tester la connexion",
+    "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+    "context": "Branche conditionnelle (ternaire)",
+    "line": 343
+  },
+  {
+    "text": "🔐 Identifiants chiffrés et cloisonnés par association",
+    "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+    "context": "Libellé / Badge (<span>)",
+    "line": 360
+  },
+  {
+    "text": "Par défaut : clé plateforme",
+    "file": "src/components/association-settings/blocks/YouTubePlaylistsBlock.jsx",
+    "context": "Libellé / Badge (<span>)",
+    "line": 82
+  },
+  {
+    "text": "ex: AIzaSy... (laisser vide pour utiliser le quota par défaut)",
+    "file": "src/components/association-settings/blocks/YouTubePlaylistsBlock.jsx",
+    "context": "Attribut placeholder",
+    "line": 88
+  },
+  {
+    "text": "Permet à chaque association de renseigner sa propre clé YouTube sans recompiler l'application.",
+    "file": "src/components/association-settings/blocks/YouTubePlaylistsBlock.jsx",
+    "context": "Paragraphe (<p>)",
+    "line": 94
+  },
+  {
+    "text": "Aucune playlist configurée. Ajoutez vos playlists YouTube (ex: Alfaias, Chœur, Prestations) pour alimenter le sélecteur vidéo.",
+    "file": "src/components/association-settings/blocks/YouTubePlaylistsBlock.jsx",
+    "context": "Nœud JSX",
+    "line": 100
+  },
+  {
+    "text": "ex: Alfaias, Chœur, Live 2024...",
+    "file": "src/components/association-settings/blocks/YouTubePlaylistsBlock.jsx",
+    "context": "Attribut placeholder",
+    "line": 114
+  },
+  {
+    "text": "Lien YouTube ou ID (ex: PL...)",
+    "file": "src/components/association-settings/blocks/YouTubePlaylistsBlock.jsx",
+    "context": "Attribut placeholder",
+    "line": 126
+  },
+  {
+    "text": "Supprimer la playlist",
+    "file": "src/components/association-settings/blocks/YouTubePlaylistsBlock.jsx",
+    "context": "Attribut aria-label",
+    "line": 142
+  },
+  {
+    "text": "Nom de l'Événement",
+    "file": "src/components/studio/SendContractModal.jsx",
+    "context": "Label de formulaire (<label>)",
+    "line": 171
+  },
+  {
+    "text": "Prestation Carnaval 2026",
+    "file": "src/components/studio/SendContractModal.jsx",
+    "context": "Attribut placeholder",
+    "line": 179
+  },
+  {
+    "text": "Date de la Prestation",
+    "file": "src/components/studio/SendContractModal.jsx",
+    "context": "Label de formulaire (<label>)",
+    "line": 185
+  },
+  {
+    "text": "Samedi 15 Août 2026",
+    "file": "src/components/studio/SendContractModal.jsx",
+    "context": "Attribut placeholder",
+    "line": 193
+  },
+  {
+    "text": "Montant du Cachet (€)",
+    "file": "src/components/studio/SendContractModal.jsx",
+    "context": "Label de formulaire (<label>)",
+    "line": 202
+  },
+  {
+    "text": "1200 € Net",
+    "file": "src/components/studio/SendContractModal.jsx",
+    "context": "Attribut placeholder",
+    "line": 210
+  },
+  {
+    "text": "Lien du Contrat PDF (Optionnel)",
+    "file": "src/components/studio/SendContractModal.jsx",
+    "context": "Label de formulaire (<label>)",
+    "line": 216
+  },
+  {
+    "text": "Template ID Brevo (Optionnel)",
+    "file": "src/components/studio/SendContractModal.jsx",
+    "context": "Libellé / Badge (<span>)",
+    "line": 233
+  },
+  {
+    "text": "Laissez vide pour utiliser le modèle Cordel par défaut",
+    "file": "src/components/studio/SendContractModal.jsx",
+    "context": "Libellé / Badge (<span>)",
+    "line": 234
+  },
+  {
+    "text": "Ex: 12 (ID du template transactionnel Brevo)",
+    "file": "src/components/studio/SendContractModal.jsx",
+    "context": "Attribut placeholder",
+    "line": 241
+  },
+  {
+    "text": "Message d'accompagnement / Notes",
+    "file": "src/components/studio/SendContractModal.jsx",
+    "context": "Label de formulaire (<label>)",
+    "line": 248
+  },
+  {
+    "text": "Merci de nous retourner un exemplaire signé avant le 1er Août...",
+    "file": "src/components/studio/SendContractModal.jsx",
+    "context": "Attribut placeholder",
+    "line": 256
+  },
+  {
+    "text": "⏳ Envoi en cours...",
+    "file": "src/components/studio/SendContractModal.jsx",
+    "context": "Branche conditionnelle (ternaire)",
+    "line": 280
+  },
+  {
+    "text": "📤 Valider & Envoyer via Brevo",
+    "file": "src/components/studio/SendContractModal.jsx",
+    "context": "Branche conditionnelle (ternaire)",
+    "line": 280
+  },
+  {
+    "text": "Veuillez sélectionner un événement pour générer l'affiche Cordel",
+    "file": "src/components/studio/StudioSocialPreview.jsx",
+    "context": "Libellé / Badge (<span>)",
+    "line": 98
+  },
+  {
+    "text": "⚠️ Restriction CORS : utilisez le clic droit sur l'image pour la sauvegarder.",
+    "file": "src/components/studio/StudioSocialPreview.jsx",
+    "context": "Nœud JSX",
+    "line": 105
+  },
+  {
+    "text": "Télécharger l'affiche Cordel au format JPEG",
+    "file": "src/components/studio/StudioSocialPreview.jsx",
+    "context": "Attribut title",
+    "line": 120
+  },
+  {
+    "text": "💾 Télécharger",
+    "file": "src/components/studio/StudioSocialPreview.jsx",
+    "context": "Nœud JSX",
+    "line": 121
+  },
+  {
+    "text": "Copier le visuel PNG dans le presse-papier",
+    "file": "src/components/studio/StudioSocialPreview.jsx",
+    "context": "Attribut title",
+    "line": 130
+  },
+  {
+    "text": "✓ Copiée !",
+    "file": "src/components/studio/StudioSocialPreview.jsx",
+    "context": "Branche conditionnelle (ternaire)",
+    "line": 132
+  },
+  {
+    "text": "🖼️ Copier",
+    "file": "src/components/studio/StudioSocialPreview.jsx",
+    "context": "Branche conditionnelle (ternaire)",
+    "line": 132
+  },
+  {
+    "text": "🔗 Partager",
+    "file": "src/components/studio/StudioSocialPreview.jsx",
+    "context": "Nœud JSX",
+    "line": 140
+  },
+  {
+    "text": "⏳ Envoi au Forum en cours...",
+    "file": "src/components/studio/StudioSocialPreview.jsx",
+    "context": "Branche conditionnelle (ternaire)",
+    "line": 153
+  },
+  {
+    "text": "À éviter / Imprécis",
+    "file": "src/components/studio/StudioWritingGuide.jsx",
+    "context": "En-tête de tableau (<th>)",
+    "line": 54
+  },
+  {
+    "text": "Contexte & Nuance",
+    "file": "src/components/studio/StudioWritingGuide.jsx",
+    "context": "En-tête de tableau (<th>)",
+    "line": 55
+  }
+]

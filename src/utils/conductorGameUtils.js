@@ -11,14 +11,14 @@ import { normalizeString } from './repertoireMatcher.js';
  * utilisés pour compléter la bibliothèque et garantir un pool suffisant de leurres.
  */
 export const DEFAULT_MESTRE_SIGNALS = [
-  { id: 'sig_depart', name: 'Appel de départ', gestureType: 'depart', imageUrl: null },
-  { id: 'sig_virada_1', name: 'Appel Virada 1', gestureType: 'virada', imageUrl: null },
-  { id: 'sig_virada_2', name: 'Appel Virada 2', gestureType: 'virada', imageUrl: null },
-  { id: 'sig_parada', name: 'Parada / Break', gestureType: 'parada', imageUrl: null },
-  { id: 'sig_reprise', name: 'Reprise de Baque', gestureType: 'reprise', imageUrl: null },
-  { id: 'sig_arret', name: 'Coupure finale', gestureType: 'arret', imageUrl: null },
-  { id: 'sig_accel', name: 'Accélération', gestureType: 'tempo', imageUrl: null },
-  { id: 'sig_coro', name: 'Appel Voix / Toada', gestureType: 'voix', imageUrl: null }
+  { id: 'sig_depart', labelKey: 'pedagogy.engine.appelDeDepart', gestureType: 'depart', imageUrl: null },
+  { id: 'sig_virada_1', labelKey: 'pedagogy.engine.appelVirada1', gestureType: 'virada', imageUrl: null },
+  { id: 'sig_virada_2', labelKey: 'pedagogy.engine.appelVirada2', gestureType: 'virada', imageUrl: null },
+  { id: 'sig_parada', labelKey: 'pedagogy.engine.paradaBreak', gestureType: 'parada', imageUrl: null },
+  { id: 'sig_reprise', labelKey: 'pedagogy.engine.repriseDeBaque', gestureType: 'reprise', imageUrl: null },
+  { id: 'sig_arret', labelKey: 'pedagogy.engine.coupureFinale', gestureType: 'arret', imageUrl: null },
+  { id: 'sig_accel', labelKey: 'pedagogy.engine.acceleration', gestureType: 'tempo', imageUrl: null },
+  { id: 'sig_coro', labelKey: 'pedagogy.engine.appelVoixToada', gestureType: 'voix', imageUrl: null }
 ];
 
 /**

@@ -5,7 +5,7 @@ import React from 'react';
  * Affiche l'avancement pas-à-pas (1 sur 4), les étapes avec icônes et le pourcentage.
  */
 export default function WizardProgressBar({ currentStep, totalSteps = 4, stepTitles = [] }) {
-  const progressPercent = Math.round((currentStep / totalSteps) * 100);
+  const progressPercent = totalSteps > 0 ? Math.round((currentStep / totalSteps) * 100) : 0;
 
   return (
     <div className="w-full flex flex-col gap-2 select-none">

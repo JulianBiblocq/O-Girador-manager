@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '../../LanguageContext';
 
 /**
  * Bannière d'affichage et d'animation du geste du Mestre.
@@ -19,12 +20,11 @@ export default function ReflexSignalBanner({
   feedback,
   feedbackType
 }) {
+  const { t } = useTranslation();
   if (!currentSignal && !feedback) {
     return (
       <div className="w-full p-3 rounded-lg border-2 border-dashed border-cordel-master-dark/20 bg-[#fdfaf2] text-center">
-        <p className="text-xs font-bold text-cordel-master-dark/60 italic">
-          🎧 Écoute attentivement... Le Mestre prépare son premier signal.
-        </p>
+        <p className="text-xs font-bold text-cordel-master-dark/60 italic">{t('pedagogy.reflex.ecouteAttentivementLeMestrePrepare')}</p>
       </div>
     );
   }
@@ -65,15 +65,13 @@ export default function ReflexSignalBanner({
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-black uppercase tracking-wider opacity-80">
                 {isPausedForQuiz
-                  ? '🎯 TEMPS 1 — CONVENTION À JOUER'
+                  ? t('pedagogy.reflex.temps1ConventionAJouer')
                   : isSignalActive
                     ? `✋ ANNONCE MESTRE (Mesure ${mesureNum})`
                     : `Repère Mesure ${mesureNum}`}
               </span>
               {isRepereOnly && (
-                <span className="text-[9px] px-1.5 py-0.2 rounded font-black uppercase bg-stone-200 text-stone-800">
-                  Simple Repère
-                </span>
+                <span className="text-[9px] px-1.5 py-0.2 rounded font-black uppercase bg-stone-200 text-stone-800">{t('pedagogy.reflex.simpleRepere')}</span>
               )}
             </div>
 
@@ -86,13 +84,9 @@ export default function ReflexSignalBanner({
         {/* Indication contextuelle */}
         <div className="shrink-0 text-right">
           {isPausedForQuiz ? (
-            <span className="inline-block px-3 py-1 rounded text-xs font-black uppercase bg-[var(--color-cordel-ocre,#c05621)] text-white shadow-xs">
-              Clique sur la bonne tablature
-            </span>
+            <span className="inline-block px-3 py-1 rounded text-xs font-black uppercase bg-[var(--color-cordel-ocre,#c05621)] text-white shadow-xs">{t('pedagogy.reflex.cliqueSurLaBonneTablature')}</span>
           ) : isSignalActive ? (
-            <span className="inline-block px-2.5 py-0.5 rounded text-[10px] font-black uppercase bg-amber-200 text-amber-900 border border-amber-300">
-              Prépare-toi pour le temps 1
-            </span>
+            <span className="inline-block px-2.5 py-0.5 rounded text-[10px] font-black uppercase bg-amber-200 text-amber-900 border border-amber-300">{t('pedagogy.reflex.prepareToiPourLeTemps')}</span>
           ) : null}
         </div>
       </div>

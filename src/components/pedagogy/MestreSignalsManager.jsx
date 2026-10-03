@@ -65,14 +65,14 @@ export default function MestreSignalsManager({ profileData }) {
   };
 
   const handleDelete = async (id) => {
-    const isOk = await confirm("Voulez-vous vraiment supprimer ce signal ? Il ne sera plus disponible dans les quiz.");
+    const isOk = await confirm(t('pedagogy.cards.voulezVousVraimentSupprimerCe'));
     if (!isOk) return;
     try {
       await deleteDoc(doc(db, 'mestre_signals', id));
       setSignals(prev => prev.filter(s => s.id !== id));
     } catch (err) {
       console.error("Erreur lors de la suppression:", err);
-      alert("Erreur lors de la suppression.");
+      alert(t('pedagogy.cards.erreurLorsDeLaSuppression'));
     }
   };
 
@@ -104,13 +104,13 @@ export default function MestreSignalsManager({ profileData }) {
       resetForm();
     } catch (err) {
       console.error("Erreur lors de l'enregistrement:", err);
-      alert("Erreur lors de l'enregistrement du signal.");
+      alert(t('pedagogy.cards.erreurLorsDeLEnregistrement'));
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading) return <div className="p-12 text-center opacity-50 animate-pulse font-black uppercase text-xs">Chargement des signaux...</div>;
+  if (loading) return <div className="p-12 text-center opacity-50 animate-pulse font-black uppercase text-xs">{t('pedagogy.cards.chargementDesSignaux')}</div>;
 
   return (
     <div className="flex flex-col gap-6">
@@ -144,7 +144,7 @@ export default function MestreSignalsManager({ profileData }) {
             </h4>
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div>
-                <label className="block text-[10px] font-black uppercase text-encre-noire/60 mb-1">Nom du signal</label>
+                <label className="block text-[10px] font-black uppercase text-encre-noire/60 mb-1">{t('pedagogy.cards.nomDuSignal')}</label>
                 <input
                   type="text"
                   name="name"
@@ -164,14 +164,14 @@ export default function MestreSignalsManager({ profileData }) {
                   onChange={handleInputChange}
                   className="w-full p-2 text-xs border-2 border-encre-noire/20 rounded focus:outline-none focus:border-cordel-wood bg-[#fdfaf2]"
                 >
-                  <option value="visuel">👁️ Visuel (Geste, Main, Regard)</option>
-                  <option value="sonore">🔊 Sonore (Sifflet / Apito, Voix)</option>
-                  <option value="autre">🧩 Autre</option>
+                  <option value="visuel">{t('pedagogy.cards.visuelGesteMainRegard')}</option>
+                  <option value="sonore">{t('pedagogy.cards.sonoreSiffletApitoVoix')}</option>
+                  <option value="autre">{t('pedagogy.cards.autre')}</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-[10px] font-black uppercase text-encre-noire/60 mb-1">Description / Geste</label>
+                <label className="block text-[10px] font-black uppercase text-encre-noire/60 mb-1">{t('pedagogy.cards.descriptionGeste')}</label>
                 <textarea
                   name="description"
                   value={formData.description}
@@ -183,7 +183,7 @@ export default function MestreSignalsManager({ profileData }) {
               </div>
 
               <div>
-                <label className="block text-[10px] font-black uppercase text-encre-noire/60 mb-1">URL de l'image / GIF</label>
+                <label className="block text-[10px] font-black uppercase text-encre-noire/60 mb-1">{t('pedagogy.cards.urlDeLImageGif')}</label>
                 <input
                   type="url"
                   name="imageUrl"
@@ -200,9 +200,7 @@ export default function MestreSignalsManager({ profileData }) {
                     type="button"
                     onClick={resetForm}
                     className="flex-1 py-2 text-[10px] font-black uppercase border-2 border-encre-noire/20 text-encre-noire/60 rounded hover:bg-neutral-100 transition-colors"
-                  >
-                    Annuler
-                  </button>
+                  >{t('pedagogy.cards.annuler')}</button>
                 )}
                 <button
                   type="submit"
@@ -220,7 +218,7 @@ export default function MestreSignalsManager({ profileData }) {
         <div className="w-full xl:w-2/3 flex flex-col gap-3">
           {signals.length === 0 ? (
             <div className="text-center p-8 bg-[#fdfaf2] border-2 border-dashed border-encre-noire/20 rounded opacity-60">
-              <p className="text-sm font-bold">Aucun signal n'a encore été configuré.</p>
+              <p className="text-sm font-bold">{t('pedagogy.cards.aucunSignalNAEncore')}</p>
             </div>
           ) : (
             signals.map(signal => (
@@ -247,14 +245,14 @@ export default function MestreSignalsManager({ profileData }) {
                   <button
                     onClick={() => handleEdit(signal)}
                     className="p-2 text-encre-noire/40 hover:text-cordel-wood transition-colors"
-                    title="Modifier"
+                    title={t('pedagogy.cards.modifier')}
                   >
                     ✏️
                   </button>
                   <button
                     onClick={() => handleDelete(signal.id)}
                     className="p-2 text-encre-noire/40 hover:text-cordel-rouge transition-colors"
-                    title="Supprimer"
+                    title={t('pedagogy.cards.supprimer')}
                   >
                     ✕
                   </button>

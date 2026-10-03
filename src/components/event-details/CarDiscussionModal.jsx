@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import useModalEscape from '../../hooks/useModalEscape';
 
 /**
  * Modale de discussion privée dédiée à l'équipage d'un véhicule de covoiturage.
@@ -23,6 +24,9 @@ export default function CarDiscussionModal({
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef(null);
+
+  // Fermeture accessible avec touche Échap
+  useModalEscape(isOpen, onClose, sending);
 
   const messages = voiture.messages || [];
   const passengers = voiture.passengers || voiture.passagers || [];
@@ -62,11 +66,11 @@ export default function CarDiscussionModal({
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm select-none"
     >
-      <div className="relative w-full max-w-lg flex flex-col h-[520px] max-h-[90vh] bg-[var(--color-cordel-papier,#fdfbf7)] text-[var(--color-cordel-encre,#181716)] rounded-xl border-2 border-[var(--theme-border-color,#181716)] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-lg flex flex-col h-[520px] max-h-[90dvh] bg-[var(--color-cordel-papier,#fdfbf7)] text-[var(--color-cordel-encre,#181716)] rounded-xl border-2 border-[var(--theme-border-color,#181716)] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         {/* En-tête */}
-        <div className="px-4 py-3 border-b-2 border-[var(--theme-border-color,#181716)] bg-[var(--color-cordel-papier-card,#f5efe6)] flex items-center justify-between">
+        <div className="shrink-0 px-4 py-3 border-b-2 border-[var(--theme-border-color,#181716)] bg-[var(--color-cordel-papier-card,#f5efe6)] flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-xl">💬</span>
             <div>
@@ -81,7 +85,7 @@ export default function CarDiscussionModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-full hover:bg-black/10 text-neutral-600 transition-colors"
+            className="p-1 rounded-full hover:bg-black/10 text-neutral-600 transition-colors shrink-0"
             aria-label="Fermer"
           >
             ✕
@@ -89,7 +93,7 @@ export default function CarDiscussionModal({
         </div>
 
         {/* Trombinoscope / Liste des membres de l'équipage */}
-        <div className="px-3 py-2 bg-white/70 border-b border-neutral-200 text-xs flex flex-wrap items-center gap-1.5 overflow-x-auto">
+        <div className="shrink-0 px-3 py-2 bg-white/70 border-b border-neutral-200 text-xs flex flex-wrap items-center gap-1.5 overflow-x-auto">
           <span className="text-[9px] font-black uppercase text-neutral-500 mr-1">Équipage :</span>
           <span className="px-2 py-0.5 rounded bg-[var(--color-cordel-papier-card,#f5efe6)] border border-neutral-300 font-bold text-[10px] flex items-center gap-1">
             👨‍✈️ {voiture.chauffeurNom} {voiture.retourDirect && <span title="Retour direct">⚡</span>}
@@ -102,7 +106,7 @@ export default function CarDiscussionModal({
         </div>
 
         {/* Fil de discussion */}
-        <div className="flex-1 overflow-y-auto p-3.5 pb-6 space-y-2.5 text-xs bg-[var(--color-cordel-papier,#fdfbf7)]">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3.5 pb-6 space-y-2.5 text-xs bg-[var(--color-cordel-papier,#fdfbf7)]">
           {messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center text-neutral-400 p-4">
               <span className="text-3xl mb-2">🚗💬</span>
@@ -139,11 +143,11 @@ export default function CarDiscussionModal({
               );
             })
           )}
-          <div ref={messagesEndRef} className="h-2 shrink-0" />
+          <div ref={messagesEndRef} className="h-6 shrink-0 pointer-events-none" />
         </div>
 
         {/* Zone de saisie */}
-        <form onSubmit={handleSend} className="shrink-0 p-2.5 border-t border-[var(--theme-border-color,#181716)] bg-white flex items-center gap-2">
+        <form onSubmit={handleSend} className="shrink-0 p-2.5 border-t border-[var(--theme-border-color,#181716)] bg-[var(--theme-bg)] flex items-center gap-2 pb-[max(env(safe-area-inset-bottom),0.75rem)]">
           <input
             type="text"
             placeholder="Écrire un message à l'équipage..."

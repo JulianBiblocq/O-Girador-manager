@@ -42,8 +42,9 @@ export default function ImageLightboxModal({ isOpen, photoURL, name, onClose }) 
           e.stopPropagation();
           onClose();
         }}
-        className="absolute top-4 right-4 sm:top-6 sm:right-6 bg-cordel-wood text-white hover:bg-red-700 rounded-full w-10 h-10 flex items-center justify-center font-black text-lg border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] cursor-pointer z-50 transition-transform hover:scale-110 active:scale-95 select-none"
+        className="absolute top-4 right-4 sm:top-6 sm:right-6 bg-cordel-wood text-white hover:bg-red-700 rounded-full min-w-[44px] min-h-[44px] w-11 h-11 flex items-center justify-center font-black text-lg border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] cursor-pointer z-50 transition-transform hover:scale-110 active:scale-95 select-none touch-manipulation"
         title="Fermer (Échap)"
+        aria-label="Fermer"
       >
         ✕
       </button>

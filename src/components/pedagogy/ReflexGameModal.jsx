@@ -9,16 +9,17 @@ import {
   buildQuizOptions
 } from '../../utils/reflexGameUtils';
 import { saveReflexProgress } from '../../services/aisanceService';
+import { useTranslation } from '../LanguageContext';
 
-const AVAILABLE_PUPITRES = [
-  { key: 'caixa', label: 'Caixa' },
-  { key: 'tarol', label: 'Tarol' },
-  { key: 'gongue', label: 'Gonguê' },
-  { key: 'alfaia', label: 'Alfaia' },
-  { key: 'marcante', label: 'Alfaia Marcante' },
-  { key: 'agbe', label: 'Agbê / Shekere' },
-  { key: 'mineiro', label: 'Mineiro / Ganzá' },
-  { key: 'timbal', label: 'Timbal' }
+const PUPITRE_DEFINITIONS = [
+  { key: 'caixa', defaultLabel: 'Caixa', labelKey: null },
+  { key: 'tarol', defaultLabel: 'Tarol', labelKey: null },
+  { key: 'gongue', defaultLabel: 'Gonguê', labelKey: 'pedagogy.reflex.gongue' },
+  { key: 'alfaia', defaultLabel: 'Alfaia', labelKey: null },
+  { key: 'marcante', defaultLabel: 'Alfaia Marcante', labelKey: 'pedagogy.reflex.alfaiaMarcante' },
+  { key: 'agbe', defaultLabel: 'Agbe / Shekere', labelKey: 'pedagogy.reflex.agbeShekere' },
+  { key: 'mineiro', defaultLabel: 'Mineiro / Ganzá', labelKey: 'pedagogy.reflex.mineiroGanza' },
+  { key: 'timbal', defaultLabel: 'Timbal', labelKey: 'pedagogy.reflex.timbal' }
 ];
 
 /**
@@ -42,6 +43,14 @@ export default function ReflexGameModal({
   profileData,
   groupId
 }) {
+  const { t } = useTranslation();
+
+  const availablePupitres = useMemo(() => {
+    return PUPITRE_DEFINITIONS.map((p) => ({
+      key: p.key,
+      label: p.labelKey ? t(p.labelKey) : p.defaultLabel
+    }));
+  }, [t]);
   const audioRef = useRef(null);
   const animFrameRef = useRef(null);
 
@@ -53,7 +62,7 @@ export default function ReflexGameModal({
       profileData?.instrumentsJoues?.[0] ||
       'caixa'
     ).toLowerCase();
-    const found = AVAILABLE_PUPITRES.find((p) => raw.includes(p.key));
+    const found = PUPITRE_DEFINITIONS.find((p) => raw.includes(p.key));
     return found ? found.key : 'caixa';
   }, [profileData]);
 
@@ -322,7 +331,7 @@ export default function ReflexGameModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/75 backdrop-blur-xs select-none">
-      <div className="relative w-full max-w-3xl max-h-[92vh] flex flex-col bg-cordel-bg rounded-lg shadow-2xl border-2 border-encre-noire overflow-hidden text-left">
+      <div className="relative w-full max-w-3xl max-h-[92vh] flex flex-col bg-cordel-bg rounded-lg shadow-2xl border-2 border-encre-noire overflow-hidden text-left mt-2 sm:mt-0">
         {/* Audio caché */}
         {audioUrl && (
           <audio
@@ -337,29 +346,29 @@ export default function ReflexGameModal({
         )}
 
         {/* En-tête Cordel */}
-        <div className="flex justify-between items-center px-4 py-3 bg-[#fdfaf2] border-b-2 border-dashed border-cordel-master-dark/20 shrink-0">
-          <div className="flex items-center gap-2">
+        <div className="flex justify-between items-start gap-3 px-4 py-3 bg-[#fdfaf2] border-b-2 border-dashed border-cordel-master-dark/20 shrink-0">
+          <div className="flex-1 min-w-0 pr-2 flex items-start gap-2">
             <span className="text-xl">🎯</span>
             <div>
               <h2 className="text-xs sm:text-sm font-black uppercase text-cordel-wood tracking-wider flex items-center gap-2">
-                <span>Défi Réflexe « Temps 1 »</span>
+                <span>{t('pedagogy.reflex.defiReflexeTemps1')}</span>
                 <span className="text-[10px] font-bold text-encre-noire/60 lowercase">
                   — {piece?.titre}
                 </span>
               </h2>
-              <p className="text-[10px] font-bold text-encre-noire/70">
-                Arrêt automatique au Temps 1 • Clique sur la bonne phrase pour relancer l'audio
-              </p>
+              <p className="text-[10px] font-bold text-encre-noire/70">{t('pedagogy.reflex.arretAutomatiqueAuTemps1')}</p>
             </div>
           </div>
 
           <button
             type="button"
             onClick={onClose}
-            className="w-7 h-7 rounded-full bg-encre-noire text-white font-black text-sm flex items-center justify-center hover:bg-red-700 cursor-pointer shadow-xs"
-            title="Fermer"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center -mr-2 -mt-2 rounded-lg text-white hover:bg-black/5 active:bg-black/10 transition-colors cursor-pointer shrink-0 select-none touch-manipulation"
+            title={t('pedagogy.reflex.fermerBouton')}
           >
-            ✕
+              <span className="w-8 h-8 rounded-full bg-encre-noire text-white font-black text-sm flex items-center justify-center border-2 border-white hover:bg-red-700 transition-colors shadow-2xs pointer-events-none">
+                ✕
+              </span>
           </button>
         </div>
 
@@ -369,36 +378,31 @@ export default function ReflexGameModal({
           {!audioUrl ? (
             <div className="p-6 bg-red-50 border-2 border-[var(--color-cordel-rouge,#8b2a1a)] text-[var(--color-cordel-rouge,#8b2a1a)] rounded-lg text-center flex flex-col gap-2">
               <span className="text-2xl">⚠️</span>
-              <p className="text-sm font-black">Aucun enregistrement audio rattaché à ce morceau.</p>
-              <p className="text-xs text-encre-noire/70">
-                Pour lancer le simulateur de conventions, liez un Preset Séquenceur avec audio ou ajoutez une piste audio au morceau dans le Répertoire.
-              </p>
+              <p className="text-sm font-black">{t('pedagogy.reflex.aucunEnregistrementAudioRattacheA')}</p>
+              <p className="text-xs text-encre-noire/70">{t('pedagogy.reflex.pourLancerLeSimulateurDe')}</p>
             </div>
           ) : pausePoints.length === 0 ? (
             <div className="p-6 bg-amber-50 border-2 border-amber-300 text-amber-950 rounded-lg text-center flex flex-col gap-2">
               <span className="text-2xl">🖐️</span>
-              <p className="text-sm font-black">Aucun signal du Mestre n'a été détecté pour ce morceau.</p>
+              <p className="text-sm font-black">{t('pedagogy.reflex.aucunSignalDuMestreN')}</p>
               <p className="text-xs text-encre-noire/70">
-                Le Mestre peut configurer les signaux et conventions depuis le panneau « Mestria &gt; Répertoire ».
+                {t('pedagogy.reflex.leMestrePeutConfigurer')}
               </p>
             </div>
           ) : gameFinished ? (
             /* Écran de Bilan de Fin de Partie */
             <div className="p-6 bg-[#fdfaf2] border-2 border-encre-noire rounded-lg text-center flex flex-col items-center gap-3">
               <span className="text-4xl">🏆</span>
-              <h3 className="text-base font-black text-cordel-wood uppercase">
-                Morceau Terminé !
-              </h3>
-              <p className="text-xs font-bold text-encre-noire">
-                Score sans faute au pupitre <strong>{AVAILABLE_PUPITRES.find(p => p.key === selectedPupitre)?.label}</strong> :
+              <h3 className="text-base font-black text-cordel-wood uppercase">{t('pedagogy.reflex.morceauTermine')}</h3>
+              <p className="text-xs font-bold text-encre-noire">{t('pedagogy.reflex.scoreSansFauteAuPupitre')}<strong>{availablePupitres.find(p => p.key === selectedPupitre)?.label}</strong> :
               </p>
               <div className="text-3xl font-black text-[var(--color-cordel-vert,#2d6a4f)]">
                 {score} / {interactiveSignals.length}
               </div>
               <p className="text-[11px] font-bold text-encre-noire/70 italic">
                 {score === interactiveSignals.length
-                  ? '👑 Score Parfait ! Toutes les conventions ont été jouées dès le premier essai.'
-                  : '🌿 Belle session de réflexe ! Continue de pratiquer pour automatiser tes départs.'}
+                  ? t('pedagogy.reflex.scoreParfaitToutesLesConventions')
+                  : t('pedagogy.reflex.belleSessionDeReflexeContinue')}
               </p>
               <div className="flex gap-2 mt-3">
                 <CordelButton
@@ -406,17 +410,13 @@ export default function ReflexGameModal({
                   variant="ocre"
                   onClick={resetGame}
                   className="py-1.5 px-4 text-xs font-black uppercase"
-                >
-                  🔄 Rejouer le Morceau
-                </CordelButton>
+                >{t('pedagogy.reflex.rejouerLeMorceau')}</CordelButton>
                 <CordelButton
                   type="button"
                   variant="default"
                   onClick={onClose}
                   className="py-1.5 px-4 text-xs font-black uppercase"
-                >
-                  Fermer
-                </CordelButton>
+                >{t('pedagogy.reflex.fermerBouton')}</CordelButton>
               </div>
             </div>
           ) : (
@@ -424,16 +424,14 @@ export default function ReflexGameModal({
               {/* Barre de configuration : Choix du Pupitre & Score */}
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-[#fdfaf2] p-3 rounded-lg border border-encre-noire/20">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs font-black uppercase tracking-wider text-cordel-wood">
-                    Mon Pupitre :
-                  </span>
+                  <span className="text-xs font-black uppercase tracking-wider text-cordel-wood">{t('pedagogy.reflex.monPupitre')}</span>
                   <select
                     value={selectedPupitre}
                     disabled={isPlaying || isPausedForQuiz}
                     onChange={(e) => setSelectedPupitre(e.target.value)}
                     className="theme-input text-xs font-bold py-1 px-2.5 bg-white border border-encre-noire/40 rounded cursor-pointer"
                   >
-                    {AVAILABLE_PUPITRES.map((p) => (
+                    {availablePupitres.map((p) => (
                       <option key={p.key} value={p.key}>
                         {p.label}
                       </option>
@@ -442,11 +440,10 @@ export default function ReflexGameModal({
                 </div>
 
                 <div className="flex items-center gap-3 shrink-0">
-                  <span className="text-xs font-black uppercase text-encre-noire">
-                    Score : <strong className="text-[var(--color-cordel-vert,#2d6a4f)]">{score}</strong> / {interactiveSignals.length}
+                  <span className="text-xs font-black uppercase text-encre-noire">{t('pedagogy.reflex.score')}<strong className="text-[var(--color-cordel-vert,#2d6a4f)]">{score}</strong> / {interactiveSignals.length}
                   </span>
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300">
-                    {interactiveSignals.length} défi{interactiveSignals.length > 1 ? 's' : ''} « Temps 1 »
+                    {interactiveSignals.length} {t('pedagogy.reflex.defi')}{interactiveSignals.length > 1 ? 's' : ''} {t('pedagogy.reflex.temps1')}
                   </span>
                 </div>
               </div>
@@ -489,7 +486,7 @@ export default function ReflexGameModal({
                             : 'bg-[var(--color-cordel-vert,#2d6a4f)] text-white hover:brightness-110 shadow-xs'
                       }`}
                     >
-                      {isPlaying ? '⏸ Pause' : '▶ Lancer l\'écoute'}
+                      {isPlaying ? t('pedagogy.reflex.pause') : t('pedagogy.reflex.lancerLEcoute')}
                     </button>
                     <span className="text-[11px] font-mono">
                       {Math.floor(currentTime / 60)}:{(Math.floor(currentTime % 60)).toString().padStart(2, '0')} / {Math.floor(duration / 60)}:{(Math.floor(duration % 60)).toString().padStart(2, '0')}
@@ -497,7 +494,7 @@ export default function ReflexGameModal({
                   </div>
 
                   <div className="flex items-center gap-1.5 text-[10px] font-bold">
-                    <span>Prochain arrêt :</span>
+                    <span>{t('pedagogy.reflex.prochainArret')}</span>
                     <strong className="text-cordel-wood">
                       {(() => {
                         const next = pausePoints.find(p => p.pauseTime > currentTime && p.isInteractive);

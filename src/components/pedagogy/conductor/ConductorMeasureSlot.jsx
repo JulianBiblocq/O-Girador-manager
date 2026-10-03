@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '../../LanguageContext';
 
 /**
  * Case individuelle représentant une mesure sur la timeline du conducteur.
@@ -21,6 +22,7 @@ export default function ConductorMeasureSlot({
   isCurrentPlayhead = false,
   onClickSlot
 }) {
+  const { t } = useTranslation();
   const hasSignalTarget = Boolean(slot);
 
   // Cas 1 : Mesure neutre sans annonce de signal
@@ -107,9 +109,7 @@ export default function ConductorMeasureSlot({
           <span className="text-xs font-black text-cordel-wood animate-pulse">
             [ ? ]
           </span>
-          <span className="text-[8px] font-bold text-encre-noire/60 uppercase">
-            Choisir
-          </span>
+          <span className="text-[8px] font-bold text-encre-noire/60 uppercase">{t('pedagogy.reflex.choisir')}</span>
         </div>
       )}
     </button>

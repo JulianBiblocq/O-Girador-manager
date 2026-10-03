@@ -1023,7 +1023,7 @@ export default function Forum({
             setActiveTab('discussions');
             setIsAdding(false);
           }}
-          className={`flex-1 min-w-0 flex items-center justify-center gap-1 px-1.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer text-center ${
+          className={`flex-1 min-w-0 flex items-center justify-center gap-1 px-1.5 sm:px-3 py-1.5 lg:py-1 lg:px-2.5 text-[11px] sm:text-xs lg:text-xs font-black uppercase tracking-wider lg:tracking-wide rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer text-center ${
             activeTab === 'discussions'
               ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
               : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
@@ -1040,7 +1040,7 @@ export default function Forum({
             setActiveTab('direct');
             setIsAdding(false);
           }}
-          className={`flex-1 min-w-0 flex items-center justify-center gap-1 px-1.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer relative text-center ${
+          className={`flex-1 min-w-0 flex items-center justify-center gap-1 px-1.5 sm:px-3 py-1.5 lg:py-1 lg:px-2.5 text-[11px] sm:text-xs lg:text-xs font-black uppercase tracking-wider lg:tracking-wide rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer relative text-center ${
             activeTab === 'direct'
               ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
               : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
@@ -1062,7 +1062,7 @@ export default function Forum({
             setActiveTab('groups');
             setIsAdding(false);
           }}
-          className={`flex-1 min-w-0 flex items-center justify-center gap-1 px-1.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer relative text-center ${
+          className={`flex-1 min-w-0 flex items-center justify-center gap-1 px-1.5 sm:px-3 py-1.5 lg:py-1 lg:px-2.5 text-[11px] sm:text-xs lg:text-xs font-black uppercase tracking-wider lg:tracking-wide rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer relative text-center ${
             activeTab === 'groups'
               ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
               : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'

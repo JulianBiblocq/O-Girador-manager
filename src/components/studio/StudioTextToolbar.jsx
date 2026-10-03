@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from '../LanguageContext';
 import { applyUnicodeTransformation, insertTextAtCursor } from '../../utils/unicodeUtils';
 import StudioEmojiPicker from './StudioEmojiPicker';
 import StudioQuickChips from './StudioQuickChips';
@@ -28,6 +29,7 @@ export default function StudioTextToolbar({
   equivalences,
   onNavigateToLexique
 }) {
+  const { t } = useTranslation();
   const [feedbackMessage, setFeedbackMessage] = useState('');
 
   const showFeedback = (msg) => {
@@ -48,7 +50,7 @@ export default function StudioTextToolbar({
     const end = textarea.selectionEnd;
 
     if (start === end) {
-      showFeedback("Sélectionnez d'abord du texte pour appliquer le style");
+      showFeedback(t('studio.communication.selectionnezTexteFormat', { defaultValue: "Sélectionnez d'abord du texte pour appliquer le style" }));
       textarea.focus();
       return;
     }
@@ -124,7 +126,7 @@ export default function StudioTextToolbar({
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => handleFormat('bold')}
               className="px-2 py-1 bg-white hover:bg-neutral-100 active:bg-neutral-200 border border-encre-noire/30 rounded font-serif font-black text-sm tracking-wide transition-all shadow-xs cursor-pointer disabled:opacity-40"
-              title="Mettre en gras (Unicode Mathematical Bold)"
+              title={t('studio.communication.mettreEnGrasUnicodeMathematical')}
             >
               𝐁
             </button>
@@ -135,7 +137,7 @@ export default function StudioTextToolbar({
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => handleFormat('italic')}
               className="px-2 py-1 bg-white hover:bg-neutral-100 active:bg-neutral-200 border border-encre-noire/30 rounded font-serif italic font-bold text-sm tracking-wide transition-all shadow-xs cursor-pointer disabled:opacity-40"
-              title="Mettre en italique (Unicode Mathematical Italic)"
+              title={t('studio.communication.mettreEnItaliqueUnicodeMathematical')}
             >
               𝐼
             </button>

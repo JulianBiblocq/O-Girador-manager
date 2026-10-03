@@ -74,9 +74,9 @@ export default function DocumentFormFabricationFields({
   };
 
   // Toggles pour associer outils et matières à une étape spécifique
-  const toggleEtapeMateriel = (etapeId, mat) => {
-    setEtapesFabrication(prev => prev.map(etape => {
-      if (etape.id !== etapeId) return etape;
+  const toggleEtapeMateriel = (indexToUpdate, mat) => {
+    setEtapesFabrication(prev => prev.map((etape, idx) => {
+      if (idx !== indexToUpdate) return etape;
       const materiaux = etape.materiaux || [];
       return {
         ...etape,
@@ -85,9 +85,9 @@ export default function DocumentFormFabricationFields({
     }));
   };
 
-  const toggleEtapeOutil = (etapeId, outil) => {
-    setEtapesFabrication(prev => prev.map(etape => {
-      if (etape.id !== etapeId) return etape;
+  const toggleEtapeOutil = (indexToUpdate, outil) => {
+    setEtapesFabrication(prev => prev.map((etape, idx) => {
+      if (idx !== indexToUpdate) return etape;
       const outils = etape.outils || [];
       return {
         ...etape,
@@ -98,7 +98,7 @@ export default function DocumentFormFabricationFields({
 
   // Gestion des étapes
   const addEtape = () => {
-    setEtapesFabrication([...etapesFabrication, {
+    setEtapesFabrication(prev => [...prev, {
       id: Date.now(),
       sousTitre: '',
       description: '',
@@ -110,14 +110,14 @@ export default function DocumentFormFabricationFields({
     }]);
   };
 
-  const updateEtape = (id, field, value) => {
-    setEtapesFabrication(etapesFabrication.map(etape => 
-      etape.id === id ? { ...etape, [field]: value } : etape
+  const updateEtape = (indexToUpdate, field, value) => {
+    setEtapesFabrication(prev => prev.map((etape, idx) => 
+      idx === indexToUpdate ? { ...etape, [field]: value } : etape
     ));
   };
 
-  const removeEtape = (id) => {
-    setEtapesFabrication(etapesFabrication.filter(etape => etape.id !== id));
+  const removeEtape = (indexToRemove) => {
+    setEtapesFabrication(prev => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
   const moveEtapeUp = (index) => {
@@ -391,7 +391,7 @@ export default function DocumentFormFabricationFields({
         ) : (
           <div className="flex flex-col gap-6">
             {etapesFabrication.map((etape, index) => (
-              <div key={etape.id} className="bg-cordel-bg border border-cordel-wood/20 p-4 rounded-md shadow-sm relative">
+              <div key={etape.id || `etape-fab-${index}`} className="bg-cordel-bg border border-cordel-wood/20 p-4 rounded-md shadow-sm relative">
                 <div className="absolute top-2 right-2 flex gap-1">
                   <button
                     type="button"
@@ -413,7 +413,7 @@ export default function DocumentFormFabricationFields({
                   </button>
                   <button
                     type="button"
-                    onClick={() => removeEtape(etape.id)}
+                    onClick={() => removeEtape(index)}
                     className="text-xs text-cordel-rouge hover:opacity-80 p-1 cursor-pointer"
                     title="Supprimer"
                   >
@@ -424,12 +424,12 @@ export default function DocumentFormFabricationFields({
                 <div className="flex flex-col gap-3 pr-16">
                   <div className="flex flex-col gap-1">
                     <label className="text-[9px] uppercase font-bold text-cordel-master-dark">
-                      Étape {index + 1} : Titre
+                      {t('workshop.stepTitleLabel', { index: index + 1 })}
                     </label>
                     <input
                       type="text"
-                      value={etape.sousTitre}
-                      onChange={(e) => updateEtape(etape.id, 'sousTitre', e.target.value)}
+                      value={etape.sousTitre || ''}
+                      onChange={(e) => updateEtape(index, 'sousTitre', e.target.value)}
                       placeholder="Ex: Découpe du cuir ou ponçage du fût"
                       className="theme-input w-full text-xs font-bold"
                     />
@@ -437,11 +437,11 @@ export default function DocumentFormFabricationFields({
 
                   <div className="flex flex-col gap-1">
                     <label className="text-[9px] uppercase font-bold text-cordel-master-dark">
-                      Description / Consignes
+                      {t('workshop.stepDescriptionLabel')}
                     </label>
                     <textarea
-                      value={etape.description}
-                      onChange={(e) => updateEtape(etape.id, 'description', e.target.value)}
+                      value={etape.description || ''}
+                      onChange={(e) => updateEtape(index, 'description', e.target.value)}
                       placeholder="Détaillez le geste, les précautions ou les astuces..."
                       className="theme-input w-full text-xs min-h-[60px]"
                     />
@@ -451,7 +451,7 @@ export default function DocumentFormFabricationFields({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
                     {materielRequisList.length > 0 && (
                       <div className="flex flex-col gap-1">
-                        <label className="text-[8px] uppercase font-bold text-cordel-master-dark">Matières utilisées pour cette étape :</label>
+                        <label className="text-[8px] uppercase font-bold text-cordel-master-dark">{t('workshop.materialsUsedLabel')}</label>
                         <div className="flex flex-wrap gap-1">
                           {materielRequisList.map(mat => {
                             const isSelected = (etape.materiaux || []).includes(mat);
@@ -459,7 +459,7 @@ export default function DocumentFormFabricationFields({
                               <button
                                 key={mat}
                                 type="button"
-                                onClick={() => toggleEtapeMateriel(etape.id, mat)}
+                                onClick={() => toggleEtapeMateriel(index, mat)}
                                 className={`text-[9px] px-2 py-0.5 rounded border transition-all cursor-pointer ${
                                   isSelected 
                                     ? 'bg-cordel-vert text-[#fdfaf2] border-cordel-vert font-bold shadow-xs' 
@@ -476,7 +476,7 @@ export default function DocumentFormFabricationFields({
 
                     {outilsNecessairesList.length > 0 && (
                       <div className="flex flex-col gap-1">
-                        <label className="text-[8px] uppercase font-bold text-cordel-master-dark">Outils nécessaires pour cette étape :</label>
+                        <label className="text-[8px] uppercase font-bold text-cordel-master-dark">{t('workshop.toolsNeededLabel')}</label>
                         <div className="flex flex-wrap gap-1">
                           {outilsNecessairesList.map(outil => {
                             const isSelected = (etape.outils || []).includes(outil);
@@ -484,7 +484,7 @@ export default function DocumentFormFabricationFields({
                               <button
                                 key={outil}
                                 type="button"
-                                onClick={() => toggleEtapeOutil(etape.id, outil)}
+                                onClick={() => toggleEtapeOutil(index, outil)}
                                 className={`text-[9px] px-2 py-0.5 rounded border transition-all cursor-pointer ${
                                   isSelected 
                                     ? 'bg-cordel-vert text-[#fdfaf2] border-cordel-vert font-bold shadow-xs' 
@@ -504,22 +504,22 @@ export default function DocumentFormFabricationFields({
                   <div className="flex flex-col gap-1 mt-1 p-2 bg-black/5 rounded border border-cordel-master-dark/10">
                     <div className="flex justify-between items-center mb-1">
                       <label className="text-[9px] uppercase font-bold text-cordel-master-dark">
-                        Illustration ou Vidéo d'étape
+                        {t('workshop.stepMediaLabel')}
                       </label>
                       <div className="flex gap-1">
                         <button
                           type="button"
-                          onClick={() => updateEtape(etape.id, 'imageUploadType', 'url')}
+                          onClick={() => updateEtape(index, 'imageUploadType', 'url')}
                           className={`text-[8px] uppercase font-bold px-1.5 py-0.5 rounded cursor-pointer ${etape.imageUploadType === 'url' ? 'bg-cordel-wood text-[#fdfaf2]' : 'text-encre-noire'}`}
                         >
-                          Lien URL
+                          {t('workshop.tabUrlLink')}
                         </button>
                         <button
                           type="button"
-                          onClick={() => updateEtape(etape.id, 'imageUploadType', 'file')}
+                          onClick={() => updateEtape(index, 'imageUploadType', 'file')}
                           className={`text-[8px] uppercase font-bold px-1.5 py-0.5 rounded cursor-pointer ${etape.imageUploadType === 'file' ? 'bg-cordel-wood text-[#fdfaf2]' : 'text-encre-noire'}`}
                         >
-                          Fichier
+                          {t('workshop.tabFile')}
                         </button>
                       </div>
                     </div>
@@ -528,7 +528,7 @@ export default function DocumentFormFabricationFields({
                       <input
                         type="file"
                         accept="image/*,video/mp4"
-                        onChange={(e) => updateEtape(etape.id, 'imageFile', e.target.files[0] || null)}
+                        onChange={(e) => updateEtape(index, 'imageFile', e.target.files[0] || null)}
                         disabled={isSubmitting}
                         className="theme-input w-full text-xs py-1 file:mr-2 file:py-0.5 file:px-2 file:rounded file:border-0 file:text-[9px] file:font-semibold file:bg-cordel-master-light file:text-encre-noire file:cursor-pointer"
                       />
@@ -536,7 +536,7 @@ export default function DocumentFormFabricationFields({
                       <input
                         type="url"
                         value={etape.imageUrl || ''}
-                        onChange={(e) => updateEtape(etape.id, 'imageUrl', e.target.value)}
+                        onChange={(e) => updateEtape(index, 'imageUrl', e.target.value)}
                         placeholder="https://..."
                         className="theme-input w-full text-xs"
                       />

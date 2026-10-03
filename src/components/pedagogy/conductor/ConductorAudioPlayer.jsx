@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '../../LanguageContext';
 
 /**
  * Lecteur audio compact pour le repérage auditif du morceau lors du jeu du Conducteur.
@@ -25,6 +26,7 @@ export default function ConductorAudioPlayer({
   setDuration,
   currentPlayheadMeasure
 }) {
+  const { t } = useTranslation();
   if (!audioUrl) return null;
 
   return (
@@ -52,14 +54,14 @@ export default function ConductorAudioPlayer({
             }}
             className="px-3 py-1 rounded text-xs font-black uppercase bg-[var(--color-cordel-vert,#2d6a4f)] text-white hover:brightness-110 cursor-pointer shadow-xs"
           >
-            {isPlaying ? '⏸ Pause' : '▶ Écouter'}
+            {isPlaying ? t('pedagogy.reflex.pause') : t('pedagogy.reflex.ecouter')}
           </button>
           <span className="text-[11px] font-mono font-bold">
             {Math.floor(currentTime / 60)}:{(Math.floor(currentTime % 60)).toString().padStart(2, '0')} / {Math.floor(duration / 60)}:{(Math.floor(duration % 60)).toString().padStart(2, '0')}
           </span>
         </div>
         <span className="text-[10px] font-bold text-cordel-wood">
-          {currentPlayheadMeasure ? `Mesure courante : M${currentPlayheadMeasure}` : 'Prêt à l\'écoute'}
+          {currentPlayheadMeasure ? `Mesure courante : M${currentPlayheadMeasure}` : t('pedagogy.reflex.pretALEcoute')}
         </span>
       </div>
     </>

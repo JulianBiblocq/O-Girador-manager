@@ -166,7 +166,7 @@ export default function RepertoireTrainingsManager({
                 {/* Badge d'origine (auto sequenciador vs manuel) */}
                 {tr.isAuto && !tr.isManual && (
                   <span className="text-[8px] font-extrabold uppercase px-1 py-0.2 rounded bg-amber-100 text-amber-900 border border-amber-300">
-                    auto
+                    {t('pedagogy.admin.auto')}
                   </span>
                 )}
                 {tr.isManual && !tr.isAuto && (
@@ -210,12 +210,12 @@ export default function RepertoireTrainingsManager({
         >
           <option value="">
             {availableToAdd.length > 0
-              ? '➕ Associer un autre entraînement existant...'
-              : 'Tous les entraînements du groupe sont déjà rattachés'}
+              ? (t('pedagogy.admin.associerUnAutreEntrainement') || '➕ Associer un autre entraînement existant...')
+              : (t('pedagogy.admin.tousLesEntrainementsDu') || 'Tous les entraînements du groupe sont déjà rattachés')}
           </option>
           {availableToAdd.map((tr) => (
             <option key={tr.id} value={tr.id}>
-              ⚡ {tr.title || tr.titre || tr.name || 'Entraînement'} ({tr.startBpm || 60} ➔ {tr.targetBpm || 100} {t('mestre.sequenceur.bpmCloseParen')}
+              ⚡ {tr.title || tr.titre || tr.name || t('pedagogy.admin.entrainement')} ({tr.startBpm || 60} ➔ {tr.targetBpm || 100} {t('mestre.sequenceur.bpmCloseParen')}
             </option>
           ))}
         </select>

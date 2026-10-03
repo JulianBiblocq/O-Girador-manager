@@ -5,6 +5,7 @@ import React, { useMemo } from 'react';
 import CordelCard from '../CordelCard';
 import XiloAvatar from '../XiloAvatar';
 import DanseItemRow from './DanseItemRow';
+import { useTranslation } from '../LanguageContext';
 
 export default function DanseChoregraphieAnalytics({
   danseUsers = [],
@@ -16,6 +17,7 @@ export default function DanseChoregraphieAnalytics({
   onProgramDirect = null,
   onPinNote = null
 }) {
+  const { t } = useTranslation();
   // Consolidation stricte des seuls éléments réels de danse (Répertoire, Dançador, Pas)
   const realDanseItems = useMemo(() => {
     const items = [];
@@ -101,12 +103,8 @@ export default function DanseChoregraphieAnalytics({
     return (
       <CordelCard variant="default" className="p-8 text-center bg-[#fdfaf2] border-2 border-dashed border-encre-noire/30 rounded-xl shadow-xs">
         <span className="text-3xl block mb-2">💃</span>
-        <p className="text-sm font-black uppercase text-encre-noire mb-1">
-          Aucun élément de danse renseigné pour le moment
-        </p>
-        <p className="text-xs font-bold text-encre-noire/70 max-w-md mx-auto">
-          Les indicateurs apparaîtront automatiquement lorsque les morceaux de danse seront travaillés.
-        </p>
+        <p className="text-sm font-black uppercase text-encre-noire mb-1">{t('pedagogy.emptyDanseTitle')}</p>
+        <p className="text-xs font-bold text-encre-noire/70 max-w-md mx-auto">{t('pedagogy.emptyDanseDesc')}</p>
       </CordelCard>
     );
   }
@@ -118,23 +116,19 @@ export default function DanseChoregraphieAnalytics({
         <div>
           <h3 className="text-sm font-black uppercase tracking-wider text-encre-noire flex items-center gap-2">
             <span>💃</span>
-            <span>Chorégraphies &amp; Éléments de Danse ({itemsWithScores.length})</span>
+            <span>{t('pedagogy.progress.choregraphiesElementsDeDanse')}{itemsWithScores.length})</span>
           </h3>
-          <p className="text-[10.5px] font-bold text-encre-noire/70 mt-0.5">
-            Suivi des pas et morceaux avec composante chorégraphique travaillés par la troupe.
-          </p>
+          <p className="text-[10.5px] font-bold text-encre-noire/70 mt-0.5">{t('pedagogy.progress.suiviDesPasEtMorceaux')}</p>
         </div>
         <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-encre-noire/10 text-encre-noire">
-          {danseUsers.length} adhérent{danseUsers.length > 1 ? 's' : ''} Danse
+          {danseUsers.length} {t('pedagogy.progress.adherent')}{danseUsers.length > 1 ? 's' : ''} Danse
         </span>
       </div>
 
       {/* Trombinoscope condensé */}
       {danseUsers.length > 0 && (
         <div className="p-2.5 bg-white/80 border border-dashed border-encre-noire/20 rounded flex flex-wrap gap-2 items-center">
-          <span className="text-[9.5px] font-black uppercase text-cordel-wood tracking-wider mr-1">
-            Effectif :
-          </span>
+          <span className="text-[9.5px] font-black uppercase text-cordel-wood tracking-wider mr-1">{t('pedagogy.progress.effectif')}</span>
           {danseUsers.map((u) => {
             const name = `${u.prenom || ''} ${u.nom || ''}`.trim() || 'Danseur';
             return (
@@ -152,9 +146,9 @@ export default function DanseChoregraphieAnalytics({
         <table className="w-full text-left text-xs min-w-[550px]">
           <thead>
             <tr className="border-b-2 border-encre-noire/20">
-              <th className="p-2 font-black uppercase tracking-widest text-cordel-wood">Élément de Danse</th>
-              <th className="p-2 font-black uppercase tracking-widest text-center text-encre-noire/60">Aisance Réelle</th>
-              <th className="p-2 font-black uppercase tracking-widest text-right text-encre-noire/60">Actions</th>
+              <th className="p-2 font-black uppercase tracking-widest text-cordel-wood">{t('pedagogy.progress.elementDeDanse')}</th>
+              <th className="p-2 font-black uppercase tracking-widest text-center text-encre-noire/60">{t('pedagogy.progress.aisanceReelle')}</th>
+              <th className="p-2 font-black uppercase tracking-widest text-right text-encre-noire/60">{t('pedagogy.progress.actions')}</th>
             </tr>
           </thead>
           <tbody>

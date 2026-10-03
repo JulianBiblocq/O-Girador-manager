@@ -54,18 +54,16 @@ export default function RodaQuizStatsBanner({ profileData }) {
       <div className="flex items-center gap-2.5 shrink-0">
         <span className="text-xl">🏆</span>
         <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-cordel-wood">
-          {t('pedagogyQuiz.rodaQuizStatsTitle') || "Résultats Roda Quiz & Défis"}
+          {t('pedagogyQuiz.rodaQuizStatsTitle') || t('pedagogy.progress.resultatsRodaQuizDefis')}
         </h3>
       </div>
 
       {/* Contenu : 3 compteurs horizontaux ou message bienveillant d'état vide */}
       {loading ? (
-        <span className="text-xs font-bold text-cordel-master-dark/60 italic animate-pulse">
-          Chargement de tes résultats...
-        </span>
+        <span className="text-xs font-bold text-cordel-master-dark/60 italic animate-pulse">{t('pedagogy.progress.chargementDeTesResultats')}</span>
       ) : played === 0 ? (
         <p className="text-xs font-bold text-cordel-master-dark/80 italic">
-          {t('pedagogyQuiz.rodaQuizNoGamesYet') || "Aucune partie disputée pour l'instant. Rejoins ou lance un défi depuis le bouton En ligne !"}
+          {t('pedagogyQuiz.rodaQuizNoGamesYet') || t('pedagogy.progress.aucunePartieDisputeePourL')}
         </p>
       ) : (
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
@@ -73,7 +71,7 @@ export default function RodaQuizStatsBanner({ profileData }) {
           <div className="flex items-center gap-1.5 px-3 py-1 bg-white border border-encre-noire/40 rounded-[5px_7px_5px_6px] shadow-2xs">
             <span className="text-xs">🎮</span>
             <span className="text-xs font-bold text-cordel-master-dark/80">
-              {t('pedagogyQuiz.rodaQuizGamesPlayed') || "Parties jouées"} :
+              {t('pedagogyQuiz.rodaQuizGamesPlayed') || t('pedagogy.progress.partiesJouees')} :
             </span>
             <span className="text-xs font-black text-encre-noire">{played}</span>
           </div>
@@ -82,7 +80,7 @@ export default function RodaQuizStatsBanner({ profileData }) {
           <div className="flex items-center gap-1.5 px-3 py-1 bg-white border border-encre-noire/40 rounded-[5px_7px_5px_6px] shadow-2xs">
             <span className="text-xs">🥇</span>
             <span className="text-xs font-bold text-cordel-master-dark/80">
-              {t('pedagogyQuiz.rodaQuizWins') || "Victoires"} :
+              {t('pedagogyQuiz.rodaQuizWins') || t('pedagogy.progress.victoires')} :
             </span>
             <span className="text-xs font-black text-[var(--color-cordel-vert)]">{wins}</span>
           </div>
@@ -91,7 +89,7 @@ export default function RodaQuizStatsBanner({ profileData }) {
           <div className="flex items-center gap-1.5 px-3 py-1 bg-white border border-encre-noire/40 rounded-[5px_7px_5px_6px] shadow-2xs">
             <span className="text-xs">⚡</span>
             <span className="text-xs font-bold text-cordel-master-dark/80">
-              {t('pedagogyQuiz.rodaQuizPodiumPresence') || "Présence sur le podium"} :
+              {t('pedagogyQuiz.rodaQuizPodiumPresence') || t('pedagogy.progress.presenceSurLePodium')} :
             </span>
             <span className="text-xs font-black text-[var(--color-cordel-ocre)]">{podiumPct} %</span>
           </div>

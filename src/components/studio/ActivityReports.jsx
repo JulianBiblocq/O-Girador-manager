@@ -85,7 +85,7 @@ export default function ActivityReports({
 
   const handleExportActivity = async () => {
     if (!startDate || !endDate) {
-      alert("Veuillez sélectionner une date de début et de fin.");
+      alert(t('studio.photos.veuillezSelectionnerUneDateDe'));
       return;
     }
     setExportingActivity(true);
@@ -150,7 +150,7 @@ export default function ActivityReports({
 
     } catch (error) {
       console.error("ActivityReports - Error exporting activity:", error);
-      alert("Erreur lors de la génération de l'export d'activité.");
+      alert(t('studio.photos.erreurLorsDeLaGeneration'));
     } finally {
       setExportingActivity(false);
     }
@@ -166,18 +166,18 @@ export default function ActivityReports({
             onClick={onBack} 
             className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex items-center justify-center select-none"
           >
-            ⬅️ {t('common.back') || "Retour"}
+            ⬅️ {t('studio.photos.retour')}
           </button>
           
           <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase flex items-center gap-2">
-            <XiloScroll size={16} /> Journal d'Activité (CSV)
+            <XiloScroll size={16} /> {t('studio.photos.journalDActiviteCsv')}
           </h2>
         </div>
       )}
 
       {/* Intro info box */}
       <div className="text-xs text-encre-noire dark:text-cordel-bg-light opacity-80 border border-dashed border-cordel-master-dark/30 p-3 rounded-[6px_4px_8px_5px] bg-[#fdfaf2] dark:bg-[#201d1a] leading-relaxed">
-        📊 Ce module permet d'extraire le journal des événements et les registres de présence de l'association sur une période choisie. Les exports sont générés sous forme de fichiers tableurs CSV compatibles avec Microsoft Excel, LibreOffice et Google Sheets.
+        {t('studio.photos.ceModulePermetDExtraire')}
       </div>
 
       {/* Grille équilibrée Desktop (Choix de la période & Exporter le bilan) */}
@@ -186,15 +186,15 @@ export default function ActivityReports({
         <CordelCard variant="default" useExtremeBorder={true} className="p-5 flex flex-col justify-between">
           <div className="flex flex-col gap-3">
             <h3 className="text-xs font-extrabold tracking-wider text-cordel-wood uppercase border-b border-dashed border-cordel-master-dark/15 pb-1 mb-1">
-              📅 Choix de la Période
+              {t('studio.photos.choixDeLaPeriode')}
             </h3>
             <p className="text-[10px] leading-relaxed opacity-85">
-              Sélectionnez la plage de dates à auditer. Par défaut, la saison associative en cours est présélectionnée.
+              {t('studio.photos.selectionnezLaPlageDeDates')}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
               <div className="flex flex-col gap-1.5 text-left">
                 <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  Date de début
+                  {t('studio.photos.dateDeDebut')}
                 </label>
                 <input 
                   type="date" 
@@ -208,7 +208,7 @@ export default function ActivityReports({
               </div>
               <div className="flex flex-col gap-1.5 text-left">
                 <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  Date de fin
+                  {t('studio.photos.dateDeFin')}
                 </label>
                 <input 
                   type="date" 
@@ -224,9 +224,9 @@ export default function ActivityReports({
           </div>
 
           <div className="pt-4 border-t border-dashed border-cordel-master-dark/15 flex items-center justify-between text-[10px] text-cordel-master-dark/70 font-semibold mt-4">
-            <span>Saison associative active :</span>
+            <span>{t('studio.photos.saisonAssociativeActive')}</span>
             <span className="font-bold text-encre-noire bg-cordel-bg px-2 py-0.5 rounded border border-cordel-master-dark/20">
-              {startDate && endDate ? `${startDate.substring(0, 4)} - ${endDate.substring(0, 4)}` : "En cours"}
+              {startDate && endDate ? `${startDate.substring(0, 4)} - ${endDate.substring(0, 4)}` : t('studio.photos.enCours')}
             </span>
           </div>
         </CordelCard>
@@ -235,14 +235,14 @@ export default function ActivityReports({
         <CordelCard variant="default" useExtremeBorder={false} className="p-5 flex flex-col justify-between">
           <div className="flex flex-col gap-3">
             <h4 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1 mb-1">
-              🎭 Exporter le Bilan d'Activité
+              {t('studio.photos.exporterLeBilanDActivite')}
             </h4>
             <p className="text-[10px] leading-relaxed opacity-85">
-              Génère le registre des événements avec le décompte des présences. Idéal pour votre bilan annuel ou assemblée générale.
+              {t('studio.photos.genereLeRegistreDesEvenements')}
             </p>
             <div className="flex flex-col gap-1.5 pt-1 text-left">
               <span className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                Types d'événements à inclure :
+                {t('studio.photos.typesDEvenementsAInclure')}
               </span>
               <div className="flex flex-wrap gap-2 pt-1">
                 {Object.keys(eventTypes).map(type => (
@@ -261,11 +261,11 @@ export default function ActivityReports({
                       className="accent-cordel-wood scale-105 cursor-pointer"
                     />
                     <span>
-                      {type === 'prestation' ? "Prestations" :
-                       type === 'repetition' ? "Répétitions" :
-                       type === 'stage' ? "Stages" :
-                       type === 'atelier' ? "Ateliers" :
-                       type === 'reunion' ? "Réunions" : type}
+                      {type === 'prestation' ? t('studio.photos.prestations') :
+                       type === 'repetition' ? t('studio.photos.repetitions') :
+                       type === 'stage' ? t('studio.photos.stages') :
+                       type === 'atelier' ? t('studio.photos.ateliers') :
+                       type === 'reunion' ? t('studio.photos.reunions') : type}
                     </span>
                   </label>
                 ))}
@@ -281,7 +281,7 @@ export default function ActivityReports({
               disabled={exportingActivity}
               className="w-full text-xs py-2.5 font-bold uppercase tracking-wider"
             >
-              {exportingActivity ? "Génération..." : "📄 Exporter l'Activité (CSV)"}
+              {exportingActivity ? t('studio.photos.generation') : t('studio.photos.exporterLActiviteCsv')}
             </CordelButton>
           </div>
         </CordelCard>

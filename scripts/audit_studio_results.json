@@ -1,0 +1,96 @@
+{
+  "timestamp": "2026-10-03T11:21:33.981Z",
+  "poleSummary": {
+    "newsletter": {
+      "name": "Gazette & Newsletter",
+      "category": "newsletter",
+      "subNamespace": "newsletter",
+      "totalFiles": 11,
+      "totalStrings": 0,
+      "cleanFiles": [
+        "src/components/studio/NewsletterPage.jsx",
+        "src/components/studio/newsletter/NewsletterStepper.jsx",
+        "src/components/studio/newsletter/Step1MessageAccueil.jsx",
+        "src/components/studio/newsletter/Step2ProchainesDates.jsx",
+        "src/components/studio/newsletter/Step3RetourImages.jsx",
+        "src/components/studio/newsletter/Step4Recapitulatif.jsx",
+        "src/components/association-settings/vitrine/NewsletterBrevoBlock.jsx",
+        "src/components/association-settings/vitrine/SocialNewsletterAccordion.jsx",
+        "src/components/public/PublicNewsletterForm.jsx",
+        "src/hooks/useNewsletterData.js",
+        "src/services/newsletterService.js"
+      ],
+      "dirtyFiles": []
+    },
+    "communication": {
+      "name": "Studio Communication & Identité",
+      "category": "communication",
+      "subNamespace": "communication",
+      "totalFiles": 18,
+      "totalStrings": 0,
+      "cleanFiles": [
+        "src/components/studio/StudioCommunication.jsx",
+        "src/components/StudioSocial.jsx",
+        "src/components/association-settings/TabCommunication.jsx",
+        "src/components/association-settings/TabConfigComms.jsx",
+        "src/components/association-settings/email/EmailConfigSection.jsx",
+        "src/components/association-settings/email/EmailDnsHelpCard.jsx",
+        "src/components/association-settings/blocks/BrevoIntegrationBlock.jsx",
+        "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+        "src/components/association-settings/blocks/YouTubePlaylistsBlock.jsx",
+        "src/components/studio/SendContractModal.jsx",
+        "src/components/studio/StudioSocialPreview.jsx",
+        "src/components/studio/StudioTextToolbar.jsx",
+        "src/components/studio/StudioWritingGuide.jsx",
+        "src/components/studio/StudioEmojiPicker.jsx",
+        "src/components/studio/StudioQuickChips.jsx",
+        "src/components/studio/preview/FacebookPreviewGrid.jsx",
+        "src/components/studio/preview/InstagramPreviewCard.jsx",
+        "src/config/studioSocialConfig.js"
+      ],
+      "dirtyFiles": []
+    },
+    "photos": {
+      "name": "Galerie Photos & Médiathèque",
+      "category": "photos",
+      "subNamespace": "photos",
+      "totalFiles": 13,
+      "totalStrings": 0,
+      "cleanFiles": [
+        "src/components/studio/StudioPhotosView.jsx",
+        "src/components/studio/StudioPhotoQrPrintModal.jsx",
+        "src/components/studio/StudioMultiPhotoManager.jsx",
+        "src/components/studio/StudioVaralPickerModal.jsx",
+        "src/components/studio/FramaspaceGalleryViewer.jsx",
+        "src/components/studio/StudioEventsMediaTable.jsx",
+        "src/components/studio/StudioEventMediaAccordionRow.jsx",
+        "src/components/studio/StudioEventsManager.jsx",
+        "src/components/studio/EventsDataGrid.jsx",
+        "src/components/studio/EventsDataGridRow.jsx",
+        "src/components/studio/EventToggleSwitch.jsx",
+        "src/components/studio/ActivityReports.jsx",
+        "src/components/studio/StudioCloudHeader.jsx"
+      ],
+      "dirtyFiles": []
+    },
+    "lexique": {
+      "name": "Lexique Franco-Brésilien",
+      "category": "lexique",
+      "subNamespace": "lexique",
+      "totalFiles": 5,
+      "totalStrings": 0,
+      "cleanFiles": [
+        "src/components/studio/StudioLexiqueManager.jsx",
+        "src/components/studio/lexique/HashtagsSection.jsx",
+        "src/components/studio/lexique/MentionsSection.jsx",
+        "src/components/studio/lexique/VocabForm.jsx",
+        "src/components/studio/lexique/VocabSection.jsx"
+      ],
+      "dirtyFiles": []
+    }
+  },
+  "grandTotal": 0,
+  "cleanFilesCount": 47,
+  "dirtyFilesCount": 0,
+  "totalFilesAudited": 47
+}

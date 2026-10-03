@@ -170,9 +170,7 @@ function SongCard({
       const messageContent = (
         <div className="flex flex-col items-center justify-center text-center p-4 h-full w-full">
           <span className="text-2xl md:text-3xl mb-2 opacity-80">👆</span>
-          <p className="text-[10px] md:text-xs font-black uppercase tracking-wider text-cordel-master-dark">
-            Cochez "Puxador" ou "Coro" au-dessus pour afficher les paroles
-          </p>
+          <p className="text-[10px] md:text-xs font-black uppercase tracking-wider text-cordel-master-dark">{t('pedagogy.cards.cochezPuxadorOuCoroAu')}</p>
         </div>
       );
       return renderFlashcard(`${sectionKey}-section`, messageContent, "w-full min-h-[150px] p-2");
@@ -182,9 +180,7 @@ function SongCard({
       const stringContent = (
         <div className="flex flex-col gap-2 w-full">
           {!isRevealedMode && (
-            <div className="bg-[#f5f0e6] dark:bg-[#201d1a] text-[9px] text-cordel-master-dark p-2 rounded border border-dashed border-cordel-master-dark/30 italic mb-2">
-              ⚠️ Ce chant est au format texte simple. Impossible de séparer automatiquement le Puxador et le Chœur.
-            </div>
+            <div className="bg-[#f5f0e6] dark:bg-[#201d1a] text-[9px] text-cordel-master-dark p-2 rounded border border-dashed border-cordel-master-dark/30 italic mb-2">{t('pedagogy.cards.ceChantEstAuFormat')}</div>
           )}
           {renderHTMLorText(lyrics, isRevealedMode ? 'leading-tight [&_p]:mb-1' : 'leading-relaxed')}
         </div>
@@ -317,7 +313,7 @@ function SongCard({
           <button
             type="button"
             onClick={() => setShowPrintModal(true)}
-            title="Imprimer cette fiche"
+            title={t('pedagogy.cards.imprimerCetteFiche')}
             className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-cordel-master-dark/30 text-cordel-master-dark/60 hover:bg-neutral-100 transition-all hover:text-cordel-wood hover:border-cordel-wood cursor-pointer"
           >
             🖨️
@@ -350,7 +346,7 @@ function SongCard({
                 <div className="flex flex-col items-center justify-center relative w-full">
                   {/* En-tête titre centralisé */}
                   <h1 className="text-2xl md:text-4xl font-heading tracking-widest text-[var(--color-cordel-ocre,#c05621)] text-center mt-1 print:mt-0 print:text-3xl relative z-20">
-                    {song?.titre || "Titre Inconnu"}
+                    {song?.titre || t('pedagogy.cards.titreInconnu')}
                   </h1>
                 </div>
                 
@@ -380,7 +376,7 @@ function SongCard({
                 {(song?.audioUrl || (song?.fileUrl && /\.(mp3|wav|ogg|m4a|aac)$/i.test(song.fileUrl))) && !isPrintVersion && (
                   <div className="my-2 p-1.5 bg-[#f5f0e6]/70 dark:bg-[#201d1a] border border-cordel-wood/20 rounded flex items-center gap-2 shadow-xs">
                     <span className="text-xs">🎵</span>
-                    <span className="text-[9px] font-black uppercase tracking-wider text-cordel-wood shrink-0">Audio témoin :</span>
+                    <span className="text-[9px] font-black uppercase tracking-wider text-cordel-wood shrink-0">{t('pedagogy.cards.audioTemoin')}</span>
                     <audio controls src={song.audioUrl || song.fileUrl} className="w-full h-7" />
                   </div>
                 )}
@@ -404,7 +400,7 @@ function SongCard({
                 onChange={(e) => setActivePuxador(e.target.checked)}
                 className="accent-cordel-wood w-4 h-4 cursor-pointer"
               />
-              <span className="text-[10px] md:text-xs font-black uppercase tracking-wider text-encre-noire">👁️ Puxador (Soliste)</span>
+              <span className="text-[10px] md:text-xs font-black uppercase tracking-wider text-encre-noire">{t('pedagogy.cards.puxadorSoliste')}</span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
               <input 
@@ -413,7 +409,7 @@ function SongCard({
                 onChange={(e) => setActiveChoeur(e.target.checked)}
                 className="accent-cordel-wood w-4 h-4 cursor-pointer"
               />
-              <span className="text-[10px] md:text-xs font-black uppercase tracking-wider text-encre-noire">👁️ Coro (Chœur)</span>
+              <span className="text-[10px] md:text-xs font-black uppercase tracking-wider text-encre-noire">{t('pedagogy.cards.coroChUr')}</span>
             </label>
           </div>
         )}
@@ -422,9 +418,7 @@ function SongCard({
           {/* Colonne Originale */}
           {getSectionVisibility('originale') && (
             <div className="flex flex-col">
-              <h3 className="bg-[#f5f0e6] dark:bg-[#2a2622] text-encre-noire dark:text-stone-200 text-center py-1 md:py-1.5 px-2 rounded font-heading tracking-widest text-sm md:text-lg border border-encre-noire/10 mb-2 lowercase capitalize print:text-sm">
-                Version Originale
-              </h3>
+              <h3 className="bg-[#f5f0e6] dark:bg-[#2a2622] text-encre-noire dark:text-stone-200 text-center py-1 md:py-1.5 px-2 rounded font-heading tracking-widest text-sm md:text-lg border border-encre-noire/10 mb-2 lowercase capitalize print:text-sm">{t('pedagogy.cards.versionOriginale')}</h3>
               <div className="font-medium text-[11px] md:text-[13px] leading-normal print:leading-snug print:text-[11px] text-encre-noire px-1 md:px-2">
                 {renderLyricsArray(song?.parolesOriginales, 'originales')}
               </div>
@@ -434,9 +428,7 @@ function SongCard({
           {/* Colonne Phonétique */}
           {getSectionVisibility('phonetique') && (
             <div className="flex flex-col">
-              <h3 className="bg-[#f5f0e6] dark:bg-[#2a2622] text-encre-noire dark:text-stone-200 text-center py-1 md:py-1.5 px-2 rounded font-heading tracking-widest text-sm md:text-lg border border-encre-noire/10 mb-2 lowercase capitalize print:text-sm">
-                Version Phonétique
-              </h3>
+              <h3 className="bg-[#f5f0e6] dark:bg-[#2a2622] text-encre-noire dark:text-stone-200 text-center py-1 md:py-1.5 px-2 rounded font-heading tracking-widest text-sm md:text-lg border border-encre-noire/10 mb-2 lowercase capitalize print:text-sm">{t('pedagogy.cards.versionPhonetique')}</h3>
               <div className="font-medium text-[11px] md:text-[13px] leading-normal print:leading-snug print:text-[11px] text-encre-noire/80 px-1 md:px-2">
                 {renderLyricsArray(song?.parolesPhonetiques, 'phonetiques')}
               </div>
@@ -453,9 +445,7 @@ function SongCard({
             {/* Section Traduction */}
             {song?.traduction && getSectionVisibility('traduction') && (
               <div className="mb-4">
-                <h3 className="text-lg md:text-2xl font-heading tracking-widest text-[var(--color-cordel-ocre,#c05621)] mb-1 lowercase capitalize print:text-lg">
-                  Traduction en français
-                </h3>
+                <h3 className="text-lg md:text-2xl font-heading tracking-widest text-[var(--color-cordel-ocre,#c05621)] mb-1 lowercase capitalize print:text-lg">{t('pedagogy.cards.traductionEnFrancais')}</h3>
                 <div className="font-medium text-[11px] md:text-[13px] leading-normal print:leading-snug print:text-[11px] text-encre-noire px-1 md:px-2 italic">
                   {renderFlashcard('traduction', renderHTMLorText(song.traduction))}
                 </div>
@@ -466,8 +456,7 @@ function SongCard({
             {((Array.isArray(song?.notesLexique) && song.notesLexique.length > 0) || (typeof song?.notesLexique === 'string' && song.notesLexique)) && getSectionVisibility('lexique') && (
               <div className="mt-4 bg-[#f5f0e6]/60 dark:bg-[#201d1a] border-l-4 border-[var(--color-cordel-ocre,#c05621)] p-3 md:p-4 rounded-r-md print:mt-2">
                 <h4 className="text-[10px] md:text-xs font-black uppercase tracking-widest text-[var(--color-cordel-ocre,#c05621)] mb-1 flex items-center gap-2 print:text-[10px]">
-                  <span>📖</span> Lexique & Notes
-                </h4>
+                  <span>📖</span>{t('pedagogy.cards.lexiqueNotes')}</h4>
                 <div className="text-[10px] md:text-[11px] print:text-[9px] font-medium text-encre-noire leading-normal print:leading-snug">
                   {Array.isArray(song.notesLexique) ? (
                     <ul className="flex flex-col gap-2">
@@ -491,8 +480,7 @@ function SongCard({
             {song?.anecdote && getSectionVisibility('anecdote') && (
               <div className="mt-4 bg-[#f5f0e6]/40 dark:bg-[#201d1a]/40 border border-dashed border-encre-noire/20 p-3 md:p-4 rounded-md print:mt-2">
                 <h4 className="text-[10px] md:text-xs font-black uppercase tracking-widest text-cordel-master-dark opacity-75 mb-1 flex items-center gap-2 print:text-[10px]">
-                  <span>💡</span> Anecdote
-                </h4>
+                  <span>💡</span>{t('pedagogy.cards.anecdote')}</h4>
                 <div className="text-[10px] md:text-[11px] print:text-[9px] font-medium text-encre-noire/90 leading-normal print:leading-snug italic">
                   {renderFlashcard('anecdote', renderHTMLorText(song.anecdote))}
                 </div>

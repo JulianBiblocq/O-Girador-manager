@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Composant accordéon d'une date / événement dans la médiathèque du Pôle Studio.
@@ -22,6 +23,7 @@ export default function StudioEventMediaAccordionRow({
   setActiveQrModal,
   onSwitchToVaral
 }) {
+  const { t } = useTranslation();
   const evDate = ev.dateDebut || ev.date || '';
   const isPresta = ev.type === 'prestation' || ev.isPrestation;
   const hasDepot = Boolean((ev.lienDepotMedias || '').trim());
@@ -37,10 +39,10 @@ export default function StudioEventMediaAccordionRow({
       >
         <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
           <span className="px-2 py-0.5 rounded text-[8.5px] font-black uppercase tracking-wider border border-encre-noire/30 bg-cordel-bg shrink-0">
-            {isPresta ? '🎭 Prestation' : ev.type === 'repetition' ? '🥁 Répétition' : '📅 Sortie'}
+            {isPresta ? t('studio.photos.prestation') : ev.type === 'repetition' ? t('studio.photos.repetitionTitre') : t('studio.photos.sortie')}
           </span>
           <h4 className="text-xs sm:text-sm font-black uppercase tracking-wide text-cordel-wood truncate">
-            {ev.titre || "Événement sans titre"}
+            {ev.titre || t('studio.photos.evenementSansTitre')}
           </h4>
           {evDate && (
             <span className="text-[11px] font-bold text-encre-noire/75 shrink-0">
@@ -73,20 +75,20 @@ export default function StudioEventMediaAccordionRow({
                 : 'bg-stone-100 text-stone-600 border-stone-300'
             }`}
           >
-            {hasDepot && isRecolteActive ? '📷 Dépôt ouvert' : '📷 Dépôt inactif'}
+            {hasDepot && isRecolteActive ? t('studio.photos.depotOuvert') : t('studio.photos.depotInactif')}
           </span>
 
           {/* Pastille Drive / Cloud synchronisé */}
           {(hasDepot || ev.framaspaceFolder) && (
             <span className="px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-blue-50 text-blue-900 border border-blue-400">
-              📁 Drive synchronisé
+              {t('studio.photos.driveSynchronise')}
             </span>
           )}
 
           {/* Pastille Varal relié */}
           {hasAlbum && (
             <span className="px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-800/40">
-              🪢 Varal relié
+              {t('studio.photos.varalRelie')}
             </span>
           )}
 
@@ -111,9 +113,10 @@ export default function StudioEventMediaAccordionRow({
                     else window.open(ev.albumPhotosUrl || ev.lienDepotMedias, '_blank', 'noopener,noreferrer');
                   }}
                   className="px-2.5 py-1 text-[9px] font-black uppercase tracking-wider rounded border border-encre-noire bg-amber-200 hover:bg-amber-300 text-encre-noire cursor-pointer flex items-center gap-1 shadow-xs"
+                  data-action="Voir sur le Varal"
                 >
                   <span>👁️</span>
-                  <span>Voir sur le Varal</span>
+                  <span>{t('studio.photos.voirSurLeVaral')}</span>
                 </button>
               )}
 
@@ -124,7 +127,7 @@ export default function StudioEventMediaAccordionRow({
                   disabled={provisioningStatus?.loading}
                   className="px-2.5 py-1 text-[9px] font-black uppercase tracking-wider rounded border border-encre-noire bg-cordel-bg hover:bg-amber-100 cursor-pointer flex items-center gap-1 shadow-xs"
                 >
-                  {provisioningStatus?.loading ? '⏳ Synchronisation...' : '⚡ Re-sync Framaspace'}
+                  {provisioningStatus?.loading ? t('studio.photos.synchronisation') : t('studio.photos.reSyncFramaspace')}
                 </button>
               )}
             </div>
@@ -135,7 +138,7 @@ export default function StudioEventMediaAccordionRow({
                 onClick={() => handleResetCloudMedia(ev)}
                 className="px-2 py-0.5 text-[8.5px] font-black uppercase tracking-wider rounded border border-[var(--color-cordel-rouge)] text-[var(--color-cordel-rouge)] bg-white hover:bg-red-50 cursor-pointer"
               >
-                🗑️ Délier / Réinitialiser Cloud
+                {t('studio.photos.delierReinitialiserCloud')}
               </button>
             )}
           </div>
@@ -150,7 +153,7 @@ export default function StudioEventMediaAccordionRow({
                 disabled={!canWrite}
                 className="w-4 h-4 accent-amber-600 rounded cursor-pointer"
               />
-              <span>📸 Boîte à photos / QR Code activé</span>
+              <span>{t('studio.photos.boiteAPhotosQrCode')}</span>
             </label>
 
             <label className="flex items-center gap-2 cursor-pointer font-bold">
@@ -161,7 +164,7 @@ export default function StudioEventMediaAccordionRow({
                 disabled={!canWrite}
                 className="w-4 h-4 accent-emerald-600 rounded cursor-pointer"
               />
-              <span>🪢 Publié sur le Varal Photos</span>
+              <span>{t('studio.photos.publieSurLeVaralPhotos')}</span>
             </label>
           </div>
 
@@ -171,7 +174,7 @@ export default function StudioEventMediaAccordionRow({
             <div className="p-2.5 bg-cordel-bg/80 border border-encre-noire/20 rounded flex flex-col gap-1.5">
               <div className="flex items-center justify-between">
                 <span className="text-[9.5px] font-black uppercase text-cordel-master-dark">
-                  📸 Dossier de dépôt public (Framaspace, Drive...)
+                  {t('studio.photos.dossierDeDepotPublicFramaspace')}
                 </span>
                 {hasDepot && (
                   <button
@@ -185,7 +188,7 @@ export default function StudioEventMediaAccordionRow({
                     })}
                     className="px-2 py-0.5 text-[8.5px] font-black uppercase rounded bg-amber-300 border border-encre-noire cursor-pointer"
                   >
-                    📱 QR-Code
+                    {t('studio.photos.qrCode')}
                   </button>
                 )}
               </div>
@@ -215,7 +218,7 @@ export default function StudioEventMediaAccordionRow({
             <div className="p-2.5 bg-cordel-bg/80 border border-encre-noire/20 rounded flex flex-col gap-1.5">
               <div className="flex items-center justify-between">
                 <span className="text-[9.5px] font-black uppercase text-cordel-master-dark">
-                  🪢 Album photos finalisé (Sync Varal)
+                  {t('studio.photos.albumPhotosFinaliseSyncVaral')}
                 </span>
                 <div className="flex items-center gap-1">
                   {hasDepot && canWrite && !hasAlbum && (
@@ -223,9 +226,10 @@ export default function StudioEventMediaAccordionRow({
                       type="button"
                       onClick={() => handleAlignDepotToAlbum(ev)}
                       className="px-2 py-0.5 text-[8px] font-black uppercase rounded bg-amber-200 hover:bg-amber-300 border border-encre-noire cursor-pointer transition-colors"
-                      title="Copier l'URL du dépôt pour synchroniser immédiatement l'album Varal"
+                      title={t('studio.photos.copierLUrlDuDepot')}
+                      data-action="Aligner avec le dépôt"
                     >
-                      🔗 Aligner avec le dépôt
+                      {t('studio.photos.alignerAvecLeDepot')}
                     </button>
                   )}
                   {hasAlbum && (
@@ -240,7 +244,7 @@ export default function StudioEventMediaAccordionRow({
                       })}
                       className="px-2 py-0.5 text-[8.5px] font-black uppercase rounded bg-amber-300 border border-encre-noire cursor-pointer"
                     >
-                      📱 QR-Code
+                      {t('studio.photos.qrCode')}
                     </button>
                   )}
                 </div>

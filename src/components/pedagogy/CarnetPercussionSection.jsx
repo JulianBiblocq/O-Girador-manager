@@ -53,12 +53,8 @@ export default function CarnetPercussionSection({
     return (
       <div className="text-center p-8 bg-[#fdfaf2] border border-dashed border-encre-noire/20 rounded-lg">
         <span className="text-3xl block mb-2">🥁</span>
-        <p className="text-sm font-bold text-encre-noire/70">
-          Aucun morceau officiel de saison disponible pour le moment.
-        </p>
-        <p className="text-xs text-encre-noire/50 mt-1">
-          Les morceaux configurés dans le Répertoire de l'association s'afficheront ici automatiquement.
-        </p>
+        <p className="text-sm font-bold text-encre-noire/70">{t('pedagogy.carnet.aucunMorceauOfficielDeSaison')}</p>
+        <p className="text-xs text-encre-noire/50 mt-1">{t('pedagogy.carnet.lesMorceauxConfiguresDansLe')}</p>
       </div>
     );
   }
@@ -144,7 +140,7 @@ export default function CarnetPercussionSection({
             <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-dashed border-cordel-master-dark/15">
               <span className="text-[9.5px] font-black uppercase tracking-wider text-cordel-master-dark mr-1 flex items-center gap-1">
                 <span>⏱️</span>
-                <span>Calage tempo dans le Séquenceur :</span>
+                <span>{t('pedagogy.carnet.calageTempoDansLeSequenceur')}</span>
               </span>
 
               {[80, 100, 120].map((bpm) => (

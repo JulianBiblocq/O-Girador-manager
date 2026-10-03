@@ -91,7 +91,7 @@ export default function RepertoireVideosPicker({
               onClick={toggleAll}
               className="text-[9px] font-black uppercase text-cordel-wood hover:underline cursor-pointer px-1 py-0.5"
             >
-              {expandedIds.size === videos.length ? 'Tout replier' : 'Tout déplier'}
+              {expandedIds.size === videos.length ? t('pedagogy.admin.toutReplier') : t('pedagogy.admin.toutDeplier')}
             </button>
           )}
           {onOpenPicker && (

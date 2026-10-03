@@ -15,7 +15,6 @@ const EXCLUDED_MEMBER_KEYS = new Set([
   'accueil',
   'mon-espace',
   'profil',
-  'agenda',
   'materiel',
   'vestiaire',
   'trombinoscope',
@@ -24,7 +23,313 @@ const EXCLUDED_MEMBER_KEYS = new Set([
   'dashboard'
 ]);
 
+/**
+ * Guide complet bilingue (FR / PT-BR) : Agenda & Événements
+ * Couvre à la fois la vue membre (RSVP, feuille de route, covoiturage, révision)
+ * et la vue gestionnaire (création, horaires, ciblage, logistique, publication).
+ */
+export const agendaGuide = {
+  id: "agenda",
+  poleName: {
+    fr: "Agenda & Événements",
+    pt: "Programação & Eventos"
+  },
+  titre: "Agenda & Événements",
+  title: "Agenda & Événements",
+  description: "Consulte le calendrier de la troupe, déclare tes présences et organise tes trajets.",
+
+  // ==========================================
+  // 1. VUE MEMBRE (Orientation, consultation, RSVP)
+  // ==========================================
+  memberGuide: {
+    title: {
+      fr: "Comment utiliser l'Agenda ?",
+      pt: "Como utilizar a Programação?"
+    },
+    summary: {
+      fr: "Consulte le calendrier de la troupe, déclare tes présences et organise tes trajets.",
+      pt: "Consulte o calendário da trupe, confirme sua presença e organize suas viagens."
+    },
+    sections: [
+      {
+        heading: {
+          fr: "1. Répondre aux convocations (RSVP)",
+          pt: "1. Confirmar presença (RSVP)"
+        },
+        text: {
+          fr: "Dès qu'une date apparaît, clique dessus pour indiquer « Présent », « Absent » ou « Incertain ». Cela permet d'équilibrer les pupitres et de calibrer la logistique.",
+          pt: "Assim que uma data for postada, clique para indicar « Presente », « Ausente » ou « A confirmar ». Isso ajuda a equilibrar os naipes e planejar a logística."
+        }
+      },
+      {
+        heading: {
+          fr: "2. Consulter la feuille de route",
+          pt: "2. Consultar o roteiro (Roadbook)"
+        },
+        text: {
+          fr: "Retrouve dans chaque événement l'heure de rendez-vous, le lieu précis (lien GPS), la tenue requise et les consignes de jeu.",
+          pt: "Encontre em cada evento o horário de encontro, local exato (link GPS), figurino exigido e instruções de apresentação."
+        }
+      },
+      {
+        heading: {
+          fr: "3. Organiser le covoiturage",
+          pt: "3. Organizar a carona solidária"
+        },
+        text: {
+          fr: "Propose des places ou rejoins un véhicule. 💡 Astuce : renseigne ton véhicule dans ton profil (« Mon profil » > « Véhicule ») pour que ton nombre de places et ton coffre à alfaias se pré-remplissent automatiquement.",
+          pt: "Ofereça vagas ou pegue carona. 💡 Dica: cadastre seu veículo no seu perfil (« Meu Perfil » > « Veículo ») para preencher automaticamente suas vagas e espaço de alfaias."
+        }
+      },
+      {
+        heading: {
+          fr: "4. Réviser le programme",
+          pt: "4. Praticar o repertório"
+        },
+        text: {
+          fr: "Si une setlist est associée, clique sur les morceaux pour ouvrir directement les paroles, les repères culturels ou lancer le Séquenceur.",
+          pt: "Se houver uma lista de músicas, clique nelas para acessar diretamente letras, contexto cultural ou abrir o Sequenciador."
+        }
+      }
+    ]
+  },
+
+  // ==========================================
+  // 2. VUE GESTIONNAIRE (Secrétariat, Mestre, Logistique)
+  // ==========================================
+  managerGuide: {
+    title: {
+      fr: "Piloter et animer un événement",
+      pt: "Gerenciar e coordenar um evento"
+    },
+    roleBadge: {
+      fr: "Secrétariat • Mestre • Logistique",
+      pt: "Secretaria • Mestre • Logística"
+    },
+    summary: {
+      fr: "Enchaînement chronologique pour planifier une sortie, mobiliser la troupe et gérer la logistique.",
+      pt: "Passo a passo cronológico para agendar uma apresentação, mobilizar a trupe e gerenciar a logística."
+    },
+    workflowSteps: [
+      {
+        step: 1,
+        title: {
+          fr: "Création et statut de la date",
+          pt: "Criação e status da data"
+        },
+        desc: {
+          fr: "Clique sur « + Nouvel événement ». Définis la typologie (Répétition, Prestation, Atelier). Laisse en « Option » tant que le contrat n'est pas signé.",
+          pt: "Clique em « + Novo evento ». Escolha a categoria (Ensaio, Apresentação, Oficina). Mantenha em « Opção » enquanto o contrato não estiver fechado."
+        }
+      },
+      {
+        step: 2,
+        title: {
+          fr: "Localisation et horaires",
+          pt: "Localização e horários"
+        },
+        desc: {
+          fr: "Associe un lieu habituel ou une adresse GPS. Fixe l'heure de rassemblement au local, l'arrivée sur place et les créneaux de jeu.",
+          pt: "Vincule um local cadastrado ou endereço GPS. Defina o horário de saída da sede, chegada no local e passagens de som."
+        }
+      },
+      {
+        step: 3,
+        title: {
+          fr: "Ciblage et programme artistique",
+          pt: "Público-alvo e repertório"
+        },
+        desc: {
+          fr: "Choisis les disciplines requises (percussion, danse) et le niveau. Rattache les toadas et convenções du Répertoire à réviser.",
+          pt: "Selecione as modalidades (percussão, dança) e o nível. Vincule as toadas e convenções do Repertório a serem ensaiadas."
+        }
+      },
+      {
+        step: 4,
+        title: {
+          fr: "Logistique, commissions et transport",
+          pt: "Logística, comissões e transporte"
+        },
+        desc: {
+          fr: "Active le covoiturage matériel/passagers, prévois les malles régie et nomme les référents de commissions (repas, accueil).",
+          pt: "Ative a carona coletiva (integrantes e alfaias), selecione os kits de instrumentos e defina os responsáveis pelas comissões."
+        }
+      },
+      {
+        step: 5,
+        title: {
+          fr: "Publication et feuille de route",
+          pt: "Publicação e roteiro final"
+        },
+        desc: {
+          fr: "Bascule la visibilité sur « Publié ». Contrôle les présences par pupitre en temps réel et génère la feuille de route PDF pour le jour J.",
+          pt: "Altere a visibilidade para « Publicado ». Monitore as presenças por naipe em tempo real e gere o roteiro PDF para o dia da apresentação."
+        }
+      }
+    ],
+    videoTutorials: [
+      { id: "tuto_creer_evenement", label: { fr: "Créer une date et sa setlist", pt: "Criar uma data e sua lista de músicas" } },
+      { id: "tuto_regie_covoiturage", label: { fr: "Régie de convoi et feuille de route", pt: "Gestão de caronas e roteiro" } }
+    ]
+  }
+};
+
+/**
+ * Guide complet bilingue (FR / PT-BR) : Pédagogie & Répertoire
+ * Couvre à la fois la vue membre (apprentissage, écoute, aisance, défis)
+ * et la vue gestionnaire (Mestria, direction artistique, bloc-notes, calibrage).
+ */
+export const pedagogyGuide = {
+  id: "pedagogy",
+  poleName: {
+    fr: "Pédagogie & Répertoire",
+    pt: "Pedagogia & Repertório"
+  },
+  titre: "Pédagogie & Répertoire",
+  title: "Pédagogie & Répertoire",
+  description: "Retrouve les toadas, écoute les arrangements, entraîne-toi au tempo et évalue ton confort de jeu.",
+
+  // ==========================================
+  // 1. VUE MEMBRE (Apprentissage, écoute, aisance)
+  // ==========================================
+  memberGuide: {
+    title: {
+      fr: "Comment travailler les morceaux et progresser ?",
+      pt: "Como praticar o repertório e evoluir?"
+    },
+    summary: {
+      fr: "Retrouve les toadas, écoute les arrangements, entraîne-toi au tempo et évalue ton confort de jeu.",
+      pt: "Acesse as toadas, escute os arranjos, treine no andamento e avalie seu conforto musical."
+    },
+    sections: [
+      {
+        heading: {
+          fr: "1. Explorer les fiches de morceaux",
+          pt: "1. Explorar as fichas das músicas"
+        },
+        text: {
+          fr: "Dans l'onglet Morceaux, clique sur une toada pour déplier ses paroles complètes, son contexte historique et ses repères culturels.",
+          pt: "Na aba Músicas, clique em uma toada para ver a letra completa, seu contexto histórico e referências culturais."
+        }
+      },
+      {
+        heading: {
+          fr: "2. Pratiquer avec le Séquenceur & Entraînements",
+          pt: "2. Praticar com o Sequenciador & Treinos"
+        },
+        text: {
+          fr: "Lance le Séquenceur pour isoler ton pupitre ou t'entraîner au métronome. Monte progressivement le tempo par paliers pour consolider ton aisance.",
+          pt: "Abra o Sequenciador para isolar seu naipe ou treinar com metrônomo. Aumente o andamento aos poucos para consolidar seu conforto rítmico."
+        }
+      },
+      {
+        heading: {
+          fr: "3. Auto-évaluation & Carnet d'aisance",
+          pt: "3. Autoavaliação & Caderno de conforto"
+        },
+        text: {
+          fr: "Indique régulièrement ton niveau ressenti sur chaque morceau (Découverte, En pratique, À l'aise, Référent). Cela permet d'adapter le programme des prochaines répétitions.",
+          pt: "Atualize regularmente seu nível em cada música (Descoberta, Em prática, Confortável, Referência). Isso ajuda a planejar os próximos ensaios."
+        }
+      },
+      {
+        heading: {
+          fr: "4. Défis interactifs & Signaux du Mestre",
+          pt: "4. Desafios interativos & Sinais do Mestre"
+        },
+        text: {
+          fr: "Teste tes réflexes sur le Défi « Temps 1 », identifie les gestes de commandement et révise le vocabulaire traditionnel dans les quiz d'entraînement.",
+          pt: "Teste seus reflexos no Desafio do « Tempo 1 », reconheça os gestos de comando e pratique os termos tradicionais nos quizzes."
+        }
+      }
+    ]
+  },
+
+  // ==========================================
+  // 2. VUE GESTIONNAIRE (Mestria, Direction Pédagogique)
+  // ==========================================
+  managerGuide: {
+    title: {
+      fr: "Piloter la progression artistique et les répétitions",
+      pt: "Coordenar a progressão artística e os ensaios"
+    },
+    roleBadge: {
+      fr: "Mestre • Direction Artistique • Formateurs",
+      pt: "Mestre • Direção Artística • Instrutores"
+    },
+    summary: {
+      fr: "Flux de travail pour enrichir le répertoire, analyser les points faibles de la troupe et calibrer les répétitions.",
+      pt: "Fluxo de trabalho para enriquecer o repertório, analisar pontos frágeis da trupe e preparar os ensaios."
+    },
+    workflowSteps: [
+      {
+        step: 1,
+        title: {
+          fr: "Administration du répertoire & visibilité",
+          pt: "Gestão do repertório e visibilidade"
+        },
+        desc: {
+          fr: "Crée ou édite les fiches morceaux dans l'onglet Répertoire. Définis si la pièce fait partie de la Saison officielle ou des Archives, et associe la tablature, l'audio et la vidéo YouTube.",
+          pt: "Crie ou edite as músicas na aba Repertório. Defina se a toada pertence à Temporada oficial ou aos Arquivos, vinculando tablatura, áudio e vídeo de referência."
+        }
+      },
+      {
+        step: 2,
+        title: {
+          fr: "Liaison culturelle & Varal",
+          pt: "Conexão cultural & Varal"
+        },
+        desc: {
+          fr: "Utilise le bouton « 📜 Fiche Culture » pour relier la toada à une notice historique ou spirituelle (Orixás, origines de la nation, traditions).",
+          pt: "Utilize o botão « 📜 Ficha Cultural » para vincular a toada a uma contextualização histórica ou espiritual (Orixás, história da nação, tradições)."
+        }
+      },
+      {
+        step: 3,
+        title: {
+          fr: "Analyse du tableau de bord & points chauds",
+          pt: "Análise do painel e pontos críticos"
+        },
+        desc: {
+          fr: "Consulte le Dashboard Pédagogique. Repère les morceaux et pupitres sous le seuil d'aisance (< 60 %) pour identifier les fragilités collectives.",
+          pt: "Consulte o Painel Pedagógico. Observe as músicas e naipes com nível de conforto abaixo de 60% para identificar as dificuldades do grupo."
+        }
+      },
+      {
+        step: 4,
+        title: {
+          fr: "Programmation de la répétition",
+          pt: "Pauta do próximo ensaio"
+        },
+        desc: {
+          fr: "Épingle les morceaux prioritaires issus de l'analyse dans le Bloc-notes de répétition. Le programme est directement consultable pour préparer la séance.",
+          pt: "Fixe as músicas prioritárias apontadas pela análise diretamente na Pauta de Ensaio para estruturar o cronograma do próximo treino."
+        }
+      },
+      {
+        step: 5,
+        title: {
+          fr: "Configuration des quiz & leurres",
+          pt: "Configuração de quizzes e pegadinhas"
+        },
+        desc: {
+          fr: "Dans l'onglet QCM & Quiz, ajuste les questions d'auto-évaluation, configure les signaux de commandement et calibre les distracteurs dynamiques pour les élèves.",
+          pt: "Na aba QCM & Quiz, ajuste as perguntas de autoavaliação, configure os sinais de condução e calibre os distratores dinâmicos para os alunos."
+        }
+      }
+    ],
+    videoTutorials: [
+      { id: "tuto_creer_toada_repertoire", label: { fr: "Créer un morceau et relier sa fiche culturelle", pt: "Criar uma música e vincular sua ficha cultural" } },
+      { id: "tuto_dashboard_pedagogique_pauta", label: { fr: "Analyser l'aisance et programmer la répétition", pt: "Analisar o conforto e estruturar a pauta de ensaio" } }
+    ]
+  }
+};
+
 export const POLE_GUIDES = {
+  agenda: agendaGuide,
+  pedagogy: pedagogyGuide,
+  pedagogie: pedagogyGuide,
+  repertoire: pedagogyGuide,
   // ==========================================
   // PÔLE GOUVERNANCE & CONSEIL D'ADMINISTRATION
   // ==========================================
@@ -856,21 +1161,7 @@ export const POLE_GUIDES = {
   // ==========================================
   // 8. PÔLE PÉDAGOGIE & TRANSMISSION
   // ==========================================
-  pedagogie: {
-    titre: "🎓 Pôle Pédagogie",
-    title: "🎓 Pôle Pédagogie",
-    description: "Pilotez le suivi pédagogique des adhérents, créez des ressources d'apprentissage et suivez leur progression.",
-    etapes: [
-      "Gérez la bibliothèque de ressources et les partitions interactives.",
-      "Créez des QCM et quiz d'évaluation pour valider les acquis.",
-      "Analysez les statistiques d'apprentissage de chaque membre."
-    ],
-    steps: [
-      "Gérez la bibliothèque de ressources et les partitions interactives.",
-      "Créez des QCM et quiz d'évaluation pour valider les acquis.",
-      "Analysez les statistiques d'apprentissage de chaque membre."
-    ]
-  },
+  // Pôle Pédagogie & Répertoire (résolu via pedagogyGuide Double Vue)
   'varal-manager': {
     titre: "📌 Varal Pédagogique & Partitions",
     title: "📌 Varal Pédagogique & Partitions",
@@ -1343,16 +1634,20 @@ export const POLE_GUIDES = {
  * @returns {Object|null} Objet guide ou null si exclu / non configuré
  */
 export function getPoleGuide(tabId, poleId) {
-  // Exclusion stricte si l'onglet ou le pôle fait partie des espaces membres simples
-  if ((tabId && EXCLUDED_MEMBER_KEYS.has(tabId)) || (poleId && EXCLUDED_MEMBER_KEYS.has(poleId) && !tabId)) {
-    return null;
-  }
-
+  // 1. Priorité absolue à l'onglet dédié s'il est configuré dans POLE_GUIDES
   if (tabId && POLE_GUIDES[tabId]) {
     return POLE_GUIDES[tabId];
   }
+
+  // 2. Exclusion des onglets simples de l'Espace Membre ne disposant pas de guide
+  if (tabId && EXCLUDED_MEMBER_KEYS.has(tabId)) {
+    return null;
+  }
+
+  // 3. Repli sur le pôle parent s'il est configuré et non exclu
   if (poleId && POLE_GUIDES[poleId] && !EXCLUDED_MEMBER_KEYS.has(poleId)) {
     return POLE_GUIDES[poleId];
   }
+
   return null;
 }

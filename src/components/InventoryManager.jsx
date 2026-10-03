@@ -306,7 +306,7 @@ export default function InventoryManager({
                 data-tab-id={tabItem.id}
                 data-tab-active={activeTab === tabItem.id ? 'true' : 'false'}
                 onClick={() => setActiveTab(tabItem.id)}
-                className={`shrink-0 whitespace-nowrap min-h-[40px] px-3.5 py-1.5 text-sm font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 select-none ${
+                className={`shrink-0 whitespace-nowrap min-h-[40px] lg:min-h-0 px-3.5 py-1.5 lg:px-2.5 lg:py-1 text-sm lg:text-xs font-black uppercase tracking-wider lg:tracking-wide rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 select-none ${
                   activeTab === tabItem.id
                     ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
                     : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'

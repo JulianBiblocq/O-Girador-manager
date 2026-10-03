@@ -734,7 +734,7 @@ export default function MestrePedagogyDashboard({ profileData }) {
             className="shrink-0 px-3.5 py-1.5 bg-[var(--color-cordel-rouge,#8b2a1a)] text-white text-[10px] font-black uppercase tracking-wider rounded border border-encre-noire shadow-xs hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
             title={t('mestre.pedagogy.deleteE2eArtifactsTitle')}
           >
-            <span>{purgingE2E ? '⏳ Purge en cours...' : '🗑️ Purger de la base'}</span>
+            <span>{purgingE2E ? t('pedagogy.admin.purgeEnCours') : t('pedagogy.admin.purgerDeLaBase')}</span>
           </button>
         </div>
       )}
@@ -866,7 +866,7 @@ export default function MestrePedagogyDashboard({ profileData }) {
             }`}
           >
             <span>💃</span>
-            <span>Danse</span>
+            <span>{t('pedagogy.tabDanse')}</span>
           </button>
 
           <button
@@ -1003,7 +1003,7 @@ export default function MestrePedagogyDashboard({ profileData }) {
                       disabled={purgingE2E}
                       className="px-6 py-3 bg-[var(--color-cordel-rouge,#8b2a1a)] text-white font-black uppercase tracking-widest rounded shadow hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center gap-2"
                     >
-                      <span>{purgingE2E ? '⏳ Purge en cours...' : '🗑️ Purger les artefacts E2E de Firestore'}</span>
+                      <span>{purgingE2E ? t('pedagogy.admin.purgeEnCours') : t('pedagogy.admin.purgerLesArtefactsE2e')}</span>
                     </button>
                     <span className="text-xs font-bold text-encre-noire/60">
                       {detectedE2EItems.length} {t('mestre.pedagogy.testElementsCountLabel')}

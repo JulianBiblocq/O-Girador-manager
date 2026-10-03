@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '../../LanguageContext';
 import CordelCard from '../../CordelCard';
 import CordelButton from '../../CordelButton';
 import { extractYouTubePlaylistId } from '../../../utils/mediaUrlUtils';
@@ -13,6 +14,7 @@ import { extractYouTubePlaylistId } from '../../../utils/mediaUrlUtils';
  * @param {boolean} [props.disabled=false] - Désactive les interactions pendant la sauvegarde
  */
 export default function YouTubePlaylistsBlock({ formData, handleChange, disabled = false }) {
+  const { t } = useTranslation();
   const playlists = Array.isArray(formData?.youtubePlaylists) ? formData.youtubePlaylists : [];
 
   const handleAddPlaylist = () => {
@@ -52,10 +54,10 @@ export default function YouTubePlaylistsBlock({ formData, handleChange, disabled
           <span className="text-lg">🎬</span>
           <div>
             <h4 className="text-xs font-black uppercase tracking-widest text-cordel-wood">
-              Playlists YouTube de l'association
+              {t('studio.communication.playlistsYoutubeDeLAssociation')}
             </h4>
             <p className="text-[10px] text-cordel-master-dark/70 font-semibold">
-              Instruments, pupitres, ateliers, lives et captations pour sélection rapide en 1 clic.
+              {t('studio.communication.instrumentsPupitresAteliersLivesEt')}
             </p>
           </div>
         </div>
@@ -68,7 +70,7 @@ export default function YouTubePlaylistsBlock({ formData, handleChange, disabled
           disabled={disabled}
           className="text-[9.5px] font-black uppercase tracking-wider py-1 px-3 self-start sm:self-auto"
         >
-          ➕ Ajouter une playlist
+          {t('studio.communication.ajouterUnePlaylist')}
         </CordelButton>
       </div>
 
@@ -77,28 +79,28 @@ export default function YouTubePlaylistsBlock({ formData, handleChange, disabled
         <div className="flex items-center justify-between">
           <label className="text-[11px] font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
             <span>🔑</span>
-            <span>Clé API YouTube Data v3 (Optionnel)</span>
+            <span>{t('studio.communication.cleApiYoutubeDataV3')}</span>
           </label>
           <span className="text-[9.5px] text-cordel-master-dark/60 font-medium">
-            Par défaut : clé plateforme
+            {t('studio.communication.parDefautClePlateforme')}
           </span>
         </div>
         <input
           type="password"
-          placeholder="ex: AIzaSy... (laisser vide pour utiliser le quota par défaut)"
+          placeholder={t('studio.communication.exAizasyLaisserVidePour')}
           value={formData?.youtubeApiKey || ''}
           onChange={(e) => handleChange('youtubeApiKey', e.target.value)}
           disabled={disabled}
           className="w-full px-2.5 py-1.5 text-xs font-mono bg-white border border-cordel-master-dark/30 rounded focus:border-cordel-wood focus:outline-hidden"
         />
         <p className="text-[9.5px] text-cordel-master-dark/70 italic">
-          Permet à chaque association de renseigner sa propre clé YouTube sans recompiler l'application.
+          {t('studio.communication.permetAChaqueAssociationDe')}
         </p>
       </div>
 
       {playlists.length === 0 ? (
         <div className="py-4 px-3 text-center text-[11px] text-cordel-master-dark/60 italic border border-dashed border-cordel-master-dark/20 rounded bg-[#faf6ee]">
-          Aucune playlist configurée. Ajoutez vos playlists YouTube (ex: Alfaias, Chœur, Prestations) pour alimenter le sélecteur vidéo.
+          {t('studio.communication.aucunePlaylistConfigureeAjoutezVos')}
         </div>
       ) : (
         <div className="flex flex-col gap-2.5">
@@ -111,7 +113,7 @@ export default function YouTubePlaylistsBlock({ formData, handleChange, disabled
               <div className="flex-1 sm:w-1/3">
                 <input
                   type="text"
-                  placeholder="ex: Alfaias, Chœur, Live 2024..."
+                  placeholder={t('studio.communication.exAlfaiasChUrLive')}
                   value={pl.label || ''}
                   onChange={(e) => handleUpdate(idx, 'label', e.target.value)}
                   disabled={disabled}
@@ -123,7 +125,7 @@ export default function YouTubePlaylistsBlock({ formData, handleChange, disabled
               <div className="flex-2 sm:w-1/2">
                 <input
                   type="text"
-                  placeholder="Lien YouTube ou ID (ex: PL...)"
+                  placeholder={t('studio.communication.lienYoutubeOuIdEx')}
                   value={pl.playlistId || ''}
                   onChange={(e) => handleUpdate(idx, 'playlistId', e.target.value)}
                   onBlur={(e) => handleUpdate(idx, 'playlistId', e.target.value)}
@@ -138,8 +140,8 @@ export default function YouTubePlaylistsBlock({ formData, handleChange, disabled
                 onClick={() => handleRemove(idx)}
                 disabled={disabled}
                 className="self-end sm:self-center p-1.5 text-cordel-wood hover:bg-red-50 rounded transition-colors cursor-pointer"
-                title="Supprimer cette playlist"
-                aria-label="Supprimer la playlist"
+                title={t('studio.communication.supprimerCettePlaylist')}
+                aria-label={t('studio.communication.supprimerLaPlaylist')}
               >
                 <span>🗑️</span>
               </button>

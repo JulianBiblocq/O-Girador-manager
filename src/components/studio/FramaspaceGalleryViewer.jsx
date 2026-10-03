@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from '../LanguageContext';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../firebase';
 
@@ -18,8 +19,9 @@ export default function FramaspaceGalleryViewer({
   albumUrl,
   eventId,
   groupId,
-  title = "Album Photos"
+  title = ""
 }) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [mediaItems, setMediaItems] = useState([]);
   const [error, setError] = useState(null);
@@ -49,7 +51,7 @@ export default function FramaspaceGalleryViewer({
         const getMediaFn = httpsCallable(functions, 'getFramaspaceAlbumMedia');
         const timeoutPromise = new Promise((_, reject) => {
           timerId = setTimeout(() => {
-            reject(new Error("Délai de connexion dépassé (8s). Le dossier distant ne répond pas ou est restreint."));
+            reject(new Error(t('studio.photos.delaiDeConnexionDepasse8s')));
           }, 8000);
         });
 
@@ -69,14 +71,14 @@ export default function FramaspaceGalleryViewer({
         if (data.success && Array.isArray(data.items)) {
           setMediaItems(data.items);
         } else {
-          setError(data.error || "Aucun cliché accessible dans cet album.");
+          setError(data.error || t('studio.photos.aucunClicheAccessibleDansCet'));
         }
       } catch (err) {
         if (!isMounted) return;
         console.error("FramaspaceGalleryViewer - Erreur récupération médias :", err);
         const errMsg = err?.message && err.message.includes("Délai de connexion")
           ? err.message
-          : "Impossible de charger la galerie en direct. Vous pouvez consulter l'album directement sur Framaspace.";
+          : t('studio.photos.impossibleDeChargerLaGalerie');
         setError(errMsg);
       } finally {
         if (timerId) clearTimeout(timerId);
@@ -139,7 +141,7 @@ export default function FramaspaceGalleryViewer({
         <div className="flex items-center gap-2">
           <span className="text-base">📸</span>
           <span className="text-xs font-black uppercase tracking-wider text-cordel-wood">
-            {loading ? "Chargement des clichés..." : `${mediaItems.length} souvenir(s) multimédia`}
+            {loading ? t('studio.photos.chargementDesCliches') : `${mediaItems.length} ${t('studio.photos.souvenirsMultimedia')}`}
           </span>
         </div>
 
@@ -153,9 +155,9 @@ export default function FramaspaceGalleryViewer({
               window.open(albumUrl, '_blank', 'noopener,noreferrer');
             }}
             className="px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded-[3px_5px_4px_4px] border border-encre-noire bg-cordel-bg hover:bg-amber-100 text-encre-noire flex items-center gap-1 transition-all cursor-pointer shadow-xs"
-            title="Ouvrir l'album complet dans un nouvel onglet sécurisé"
+            title={t('studio.photos.ouvrirLAlbumCompletDans')}
           >
-            <span>↗ Ouvrir sur Framaspace</span>
+            <span>{t('studio.photos.ouvrirSurFramaspace')}</span>
           </a>
         )}
       </div>
@@ -165,7 +167,7 @@ export default function FramaspaceGalleryViewer({
         <div className="py-12 flex flex-col items-center justify-center gap-3 bg-cordel-bg-light/60 rounded border border-encre-noire/15 animate-pulse">
           <span className="text-3xl animate-spin">⏳</span>
           <p className="text-xs font-bold text-encre-noire/70">
-            Connexion au dossier Framaspace et récupération des clichés...
+            {t('studio.photos.connexionAuDossierFramaspaceEt')}
           </p>
         </div>
       )}
@@ -188,7 +190,7 @@ export default function FramaspaceGalleryViewer({
               }}
               className="px-4 py-2 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] bg-[var(--color-cordel-vert)] text-white border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center gap-2"
             >
-              <span>Consulter l'album en ligne</span>
+              <span>{t('studio.photos.consulterLAlbumEnLigne')}</span>
               <span>➜</span>
             </a>
           )}
@@ -200,7 +202,7 @@ export default function FramaspaceGalleryViewer({
         <div className="py-10 text-center bg-cordel-bg-light/50 border border-dashed border-encre-noire/20 rounded p-6 flex flex-col items-center gap-2">
           <span className="text-3xl">🌾</span>
           <p className="text-xs font-bold text-encre-noire/70">
-            Cet album est encore vide pour le moment. Les photos et vidéos y apparaîtront dès leur téléversement.
+            {t('studio.photos.cetAlbumEstEncoreVide')}
           </p>
         </div>
       )}
@@ -267,7 +269,7 @@ export default function FramaspaceGalleryViewer({
 
                         {/* Badge de format vidéo */}
                         <span className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 rounded bg-black/75 text-[10px] text-white font-mono uppercase pointer-events-none z-10">
-                          {item.name.toLowerCase().endsWith('.mov') ? 'MOV' : 'Vidéo'}
+                          {item.name.toLowerCase().endsWith('.mov') ? t('studio.photos.mov') : t('studio.photos.video')}
                         </span>
                       </div>
                     ) : (
@@ -345,10 +347,10 @@ export default function FramaspaceGalleryViewer({
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded bg-stone-800 hover:bg-stone-700 text-white border border-stone-600 transition-all flex items-center gap-1.5"
-                title="Télécharger ce fichier en haute qualité"
+                title={t('studio.photos.telechargerCeFichierEnHaute')}
               >
                 <span>📥</span>
-                <span className="hidden sm:inline">Télécharger</span>
+                <span className="hidden sm:inline">{t('studio.photos.telecharger')}</span>
               </a>
 
               {/* Bouton Fermer */}
@@ -356,7 +358,7 @@ export default function FramaspaceGalleryViewer({
                 type="button"
                 onClick={handleCloseLightbox}
                 className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white text-base font-black flex items-center justify-center transition-all cursor-pointer"
-                title="Fermer (Échap)"
+                title={t('studio.photos.fermerEchap')}
               >
                 ✕
               </button>
@@ -374,7 +376,7 @@ export default function FramaspaceGalleryViewer({
                 type="button"
                 onClick={handlePrevMedia}
                 className="absolute left-2 sm:left-4 z-20 w-10 sm:w-12 h-10 sm:h-12 rounded-full bg-black/50 hover:bg-black/80 text-white text-xl font-black flex items-center justify-center border border-white/30 transition-all cursor-pointer active:scale-95 shadow-lg"
-                title="Précédente (Flèche gauche)"
+                title={t('studio.photos.precedenteFlecheGauche')}
               >
                 ‹
               </button>
@@ -399,10 +401,10 @@ export default function FramaspaceGalleryViewer({
                       </div>
                       <div>
                         <h3 className="text-sm font-black text-white uppercase tracking-wider mb-1">
-                          Lecture vidéo non décodable dans ce navigateur
+                          {t('studio.photos.lectureVideoNonDecodableDans')}
                         </h3>
                         <p className="text-xs text-stone-300 leading-relaxed">
-                          Le fichier <strong className="text-white font-mono">{currentMedia.name}</strong> utilise un encodage (ex: conteneur Apple QuickTime .mov / HEVC) que votre navigateur ne peut pas lire directement en streaming sur ce système.
+                          {t('studio.photos.leFichier')} <strong className="text-white font-mono">{currentMedia.name}</strong> {t('studio.photos.utiliseUnEncodageExConteneur')}
                         </p>
                       </div>
                       <div className="flex flex-wrap items-center justify-center gap-2 pt-1 w-full">
@@ -414,7 +416,7 @@ export default function FramaspaceGalleryViewer({
                           className="flex-1 min-w-[140px] px-3 py-2 text-xs font-black uppercase tracking-wider rounded bg-[var(--color-cordel-vert,#2d6a4f)] hover:brightness-110 text-white border border-[var(--color-cordel-vert,#2d6a4f)] transition-all flex items-center justify-center gap-1.5 shadow-md"
                         >
                           <span>📥</span>
-                          <span>Télécharger</span>
+                          <span>{t('studio.photos.telecharger')}</span>
                         </a>
                         <a
                           href={currentMedia.url}
@@ -423,11 +425,11 @@ export default function FramaspaceGalleryViewer({
                           className="flex-1 min-w-[140px] px-3 py-2 text-xs font-black uppercase tracking-wider rounded bg-stone-800 hover:bg-stone-700 text-stone-200 border border-stone-600 transition-all flex items-center justify-center gap-1.5"
                         >
                           <span>↗</span>
-                          <span>Ouvrir le flux</span>
+                          <span>{t('studio.photos.ouvrirLeFlux')}</span>
                         </a>
                       </div>
                       <span className="text-[10px] text-stone-400">
-                        💡 Conseil : Téléchargez le fichier pour le visionner directement avec VLC ou le lecteur vidéo de votre système.
+                        {t('studio.photos.conseilTelechargezLeFichierPour')}
                       </span>
                     </div>
                   </div>
@@ -449,7 +451,7 @@ export default function FramaspaceGalleryViewer({
                     <source src={currentMedia.url} type={currentMedia.mimeType || 'video/mp4'} onError={() => setVideoPlaybackError(true)} />
                     <source src={currentMedia.url} type="video/mp4" onError={() => setVideoPlaybackError(true)} />
                     <source src={currentMedia.url} type="video/quicktime" onError={() => setVideoPlaybackError(true)} />
-                    Votre navigateur ne supporte pas la lecture directe de ce format vidéo.
+                    {t('studio.photos.votreNavigateurNeSupportePas')}
                   </video>
                 )
               ) : (
@@ -478,7 +480,7 @@ export default function FramaspaceGalleryViewer({
                 type="button"
                 onClick={handleNextMedia}
                 className="absolute right-2 sm:right-4 z-20 w-10 sm:w-12 h-10 sm:h-12 rounded-full bg-black/50 hover:bg-black/80 text-white text-xl font-black flex items-center justify-center border border-white/30 transition-all cursor-pointer active:scale-95 shadow-lg"
-                title="Suivante (Flèche droite)"
+                title={t('studio.photos.suivanteFlecheDroite')}
               >
                 ›
               </button>
@@ -491,10 +493,10 @@ export default function FramaspaceGalleryViewer({
             onClick={(e) => e.stopPropagation()}
           >
             <span className="truncate">
-              {title}
+              {title || t('studio.photos.albumPhotos')}
             </span>
             <span className="hidden sm:inline italic">
-              Astuce : Utilisez les touches ◀ et ▶ du clavier pour naviguer, et Échap pour quitter.
+              {t('studio.photos.astuceUtilisezLesTouchesEt')}
             </span>
             <span className="font-mono">
               {selectedMediaIndex + 1} / {mediaItems.length}

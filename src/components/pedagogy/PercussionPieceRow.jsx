@@ -2,6 +2,7 @@
 // Fichier conforme à la règle anti-monolithe (< 200 lignes)
 
 import React, { useState } from 'react';
+import { useTranslation } from '../LanguageContext';
 import {
   PERCUSSION_FAMILIES,
   computeFamilyComfort,
@@ -18,6 +19,7 @@ export default function PercussionPieceRow({
   onProgramDirect = null,
   onPinNote = null
 }) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
 
   // 1. Calcul du confort par famille
@@ -69,9 +71,7 @@ export default function PercussionPieceRow({
               )}
             </div>
             {piece.statutSaison && (
-              <span className="text-[8.5px] font-extrabold uppercase tracking-wider text-encre-noire/50">
-                Saison officielle
-              </span>
+              <span className="text-[8.5px] font-extrabold uppercase tracking-wider text-encre-noire/50">{t('pedagogy.officialSeasonBadge')}</span>
             )}
           </div>
         </td>
@@ -95,10 +95,10 @@ export default function PercussionPieceRow({
               type="button"
               onClick={() => setIsOpen(!isOpen)}
               className="text-[10px] font-black uppercase px-2 py-1 bg-white border border-encre-noire/30 rounded hover:bg-neutral-100 cursor-pointer shadow-2xs flex items-center gap-1"
-              title="Voir le détail des variations et breaks"
+              title={t('pedagogy.progress.voirLeDetailDesVariations')}
             >
               <span>{isOpen ? '▲' : '▼'}</span>
-              <span>{variations.length} var.</span>
+              <span>{variations.length} {t('pedagogy.progress.varAbrev')}</span>
             </button>
 
             {onProgramDirect && (
@@ -106,7 +106,7 @@ export default function PercussionPieceRow({
                 type="button"
                 onClick={() => onProgramDirect(piece)}
                 className="text-[10px] font-black px-1.5 py-1 bg-[var(--color-cordel-vert)] text-white border border-[#1b4332] rounded hover:brightness-110 active:scale-95 transition-all cursor-pointer shadow-2xs"
-                title="Programmer directement en répétition"
+                title={t('pedagogy.progress.programmerDirectementEnRepetition')}
               >
                 ⚡
               </button>
@@ -117,7 +117,7 @@ export default function PercussionPieceRow({
                 type="button"
                 onClick={() => onPinNote(piece.titre, 'Percussion', revisionsCount)}
                 className="text-[10px] font-black px-1.5 py-1 bg-white text-encre-noire border border-encre-noire/30 rounded hover:bg-neutral-100 active:scale-95 transition-all cursor-pointer shadow-2xs"
-                title="Épingler au bloc-notes"
+                title={t('pedagogy.progress.epinglerAuBlocNotes')}
               >
                 📌
               </button>
@@ -133,7 +133,7 @@ export default function PercussionPieceRow({
             <div className="flex flex-col gap-2">
               <span className="text-[10px] font-black uppercase text-cordel-wood tracking-wider flex items-center gap-1">
                 <span>📑</span>
-                <span>Détail des Variations &amp; Conventions ({variations.length}) :</span>
+                <span>{t('pedagogy.progress.detailDesVariations')}{variations.length}) :</span>
               </span>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
@@ -149,7 +149,7 @@ export default function PercussionPieceRow({
                       <span className="font-bold text-encre-noire truncate">{v.nom}</span>
                     </div>
                     <span className="text-[9px] font-bold text-encre-noire/50 uppercase ml-2 shrink-0">
-                      {v.type === 'break' ? 'Signal' : 'Motif'}
+                      {v.type === 'break' ? t('pedagogy.progress.signal') : t('pedagogy.progress.motif')}
                     </span>
                   </div>
                 ))}

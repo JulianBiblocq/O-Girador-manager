@@ -2073,7 +2073,7 @@ export default function App() {
                   </span>
                 </div>
               }>
-                <ErrorBoundary key={currentTab || 'principale'} resetKey={currentTab} title={`Section ${currentTab || 'Principale'}`}>
+                <ErrorBoundary key={`${currentPole || 'accueil'}-${currentTab || 'principale'}`} resetKey={`${currentPole || 'accueil'}-${currentTab || 'principale'}`} title={`Pôle ${currentPole || 'Accueil'} - ${currentTab || 'Principale'}`}>
                 {activeMestreEventDetails ? (
                   <EventDetails 
                     event={activeMestreEventDetails}

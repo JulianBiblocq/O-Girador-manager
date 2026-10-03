@@ -7,6 +7,7 @@ import GigSendContractModal from './GigSendContractModal';
 import GigInvoiceGeneratorModal from './GigInvoiceGeneratorModal';
 import GigRelanceEmailModal from './GigRelanceEmailModal';
 import useConfirm from '../../hooks/useConfirm';
+import useModalEscape from '../../hooks/useModalEscape';
 
 export default function GigDetailsModal({
   isOpen,
@@ -25,6 +26,9 @@ export default function GigDetailsModal({
   const [markingPaid, setMarkingPaid] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
   const { confirm } = useConfirm();
+
+  // Fermeture accessible avec touche Échap
+  useModalEscape(isOpen, onClose);
 
   if (!isOpen || !gig) return null;
 
@@ -159,10 +163,9 @@ export default function GigDetailsModal({
   return (
     <div
       tabIndex={-1}
-      onKeyDown={(e) => e.key === 'Escape' && onClose()}
       className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 select-none outline-none animate-fade-in"
     >
-      <div className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-lg bg-white shadow-2xl border-2 border-cordel-master-dark/40 overflow-hidden text-left">
+      <div className="relative w-full max-w-2xl max-h-[90dvh] flex flex-col rounded-lg bg-[var(--theme-bg)] shadow-2xl border-2 border-cordel-master-dark/40 overflow-hidden text-left">
         {/* Notification Toast interactive */}
         {toastMessage && (
           <div className="absolute top-3 left-1/2 -translate-x-1/2 z-50 bg-cordel-wood text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg border border-amber-300 animate-bounce flex items-center gap-2">
@@ -172,7 +175,7 @@ export default function GigDetailsModal({
         )}
 
         {/* 1. Header Modale (Fixe) */}
-        <div className="flex-shrink-0 p-4 border-b border-dashed border-cordel-master-dark/20 flex items-center justify-between bg-white">
+        <div className="shrink-0 p-4 border-b border-dashed border-cordel-master-dark/20 flex items-center justify-between bg-[var(--theme-bg)]">
           <div className="flex items-center gap-2">
             <span className="text-lg">🎷</span>
             <h3 className="text-sm sm:text-base font-extrabold uppercase text-cordel-wood">
@@ -182,7 +185,7 @@ export default function GigDetailsModal({
           <button
             type="button"
             onClick={onClose}
-            className="text-stone-400 hover:text-stone-800 font-bold text-lg cursor-pointer"
+            className="text-stone-400 hover:text-stone-800 font-bold text-lg cursor-pointer shrink-0"
             title="Fermer (Échap)"
           >
             ✕
@@ -190,7 +193,7 @@ export default function GigDetailsModal({
         </div>
 
         {/* 2. Corps Défilable de la Modale */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3.5">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-3.5">
           {gig.source === 'vitrine_publique' && (
             <div className="p-2 bg-blue-50 border border-blue-300 rounded text-xs font-bold text-blue-900 flex items-center gap-2">
               <span>🌐</span>
@@ -447,18 +450,18 @@ export default function GigDetailsModal({
         </div>
 
         {/* Pied de Modale & Suppression */}
-        <div className="flex items-center justify-between pt-3 border-t border-dashed">
+        <div className="shrink-0 p-4 border-t border-dashed border-cordel-master-dark/20 bg-[var(--theme-bg)] flex items-center justify-between pb-[max(env(safe-area-inset-bottom),1rem)]">
           <CordelButton
             type="button"
             variant="rouge"
             onClick={handleDeleteConfirm}
             disabled={saving}
-            className="text-xs font-bold"
+            className="text-xs font-bold shrink-0"
           >
             🗑️ Supprimer ce dossier
           </CordelButton>
 
-          <CordelButton type="button" variant="default" onClick={onClose} className="text-xs">
+          <CordelButton type="button" variant="default" onClick={onClose} className="text-xs shrink-0">
             Fermer
           </CordelButton>
         </div>

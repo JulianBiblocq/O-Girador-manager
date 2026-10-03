@@ -1,0 +1,73 @@
+{
+  "general": {
+    "name": "Statut de Publication, SEO & Coordonnées (Général)",
+    "category": "general",
+    "totalStrings": 0,
+    "cleanFiles": [
+      "src/components/association-settings/TabPublicGeneral.jsx",
+      "src/components/association-settings/blocks/LegalInfoBlock.jsx"
+    ],
+    "dirtyFiles": []
+  },
+  "theme": {
+    "name": "Apparence Visuelle & Charte Graphique (Thème)",
+    "category": "theme",
+    "totalStrings": 0,
+    "cleanFiles": [
+      "src/components/association-settings/TabPublicTheme.jsx"
+    ],
+    "dirtyFiles": []
+  },
+  "content": {
+    "name": "Hub Éditorial, En-tête Hero & Présentation",
+    "category": "content",
+    "totalStrings": 0,
+    "cleanFiles": [
+      "src/components/association-settings/TabPublicContent.jsx",
+      "src/components/association-settings/vitrine/HeroHeaderAccordion.jsx",
+      "src/components/association-settings/vitrine/PresentationVieAccordion.jsx"
+    ],
+    "dirtyFiles": []
+  },
+  "recruitment": {
+    "name": "Formules d'Adhésion & Campagne de Recrutement",
+    "category": "recruitment",
+    "totalStrings": 0,
+    "cleanFiles": [
+      "src/components/association-settings/vitrine/FormulesRecrutementAccordion.jsx",
+      "src/components/association-settings/FormulesManager.jsx"
+    ],
+    "dirtyFiles": []
+  },
+  "proDocs": {
+    "name": "Documents Espace Pro & Fiches Techniques",
+    "category": "proDocs",
+    "totalStrings": 0,
+    "cleanFiles": [
+      "src/components/association-settings/vitrine/ProDocsAccordion.jsx",
+      "src/components/association-settings/TabPublicProDocs.jsx"
+    ],
+    "dirtyFiles": []
+  },
+  "gallery": {
+    "name": "Galerie & Souvenirs Photographiques",
+    "category": "gallery",
+    "totalStrings": 0,
+    "cleanFiles": [
+      "src/components/association-settings/vitrine/GallerySouvenirsAccordion.jsx",
+      "src/components/association-settings/TabPublicGallery.jsx"
+    ],
+    "dirtyFiles": []
+  },
+  "socialNewsletter": {
+    "name": "Réseaux Sociaux & Paramètres Newsletter Brevo",
+    "category": "socialNewsletter",
+    "totalStrings": 0,
+    "cleanFiles": [
+      "src/components/association-settings/vitrine/SocialNewsletterAccordion.jsx",
+      "src/components/association-settings/vitrine/SocialLinksBlock.jsx",
+      "src/components/association-settings/vitrine/NewsletterBrevoBlock.jsx"
+    ],
+    "dirtyFiles": []
+  }
+}

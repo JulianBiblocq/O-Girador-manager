@@ -74,7 +74,7 @@ export default function EventTabsNav({
               data-tab-active={isActive ? 'true' : 'false'}
               onClick={() => setActiveTab(tab.id)}
               className={`
-                group shrink-0 whitespace-nowrap min-h-[40px] inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-[6px_8px_5px_7px] text-sm transition-all cursor-pointer select-none border-2
+                group shrink-0 whitespace-nowrap min-h-[40px] lg:min-h-0 inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 lg:px-2.5 lg:py-1 rounded-[6px_8px_5px_7px] text-sm lg:text-xs font-black uppercase tracking-wider lg:tracking-wide transition-all cursor-pointer select-none border-2
                 ${isActive
                   ? 'bg-cordel-bg border-encre-noire font-black text-cordel-wood shadow-[2.5px_2.5px_0px_0px_#181716] -translate-y-0.5'
                   : 'bg-cordel-bg-light/70 hover:bg-cordel-bg border-dashed border-encre-noire/30 font-bold text-encre-noire/75 hover:text-encre-noire shadow-xs'

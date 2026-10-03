@@ -59,11 +59,11 @@ export default function StageLayoutFullscreenModal({
       className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex flex-col justify-between p-2 sm:p-4 animate-fadeIn select-none"
     >
       {/* Barre supérieure d'actions */}
-      <div className="w-full max-w-2xl mx-auto flex items-center justify-between bg-cordel-bg-light dark:bg-neutral-900 border-2 border-encre-noire rounded-lg px-3 py-2 shadow-[2px_2px_0px_0px_#181716] mb-2 shrink-0">
-        <div className="flex items-center gap-2 min-w-0">
+      <div className="w-full max-w-2xl mx-auto flex items-start justify-between gap-3 bg-cordel-bg-light dark:bg-neutral-900 border-2 border-encre-noire rounded-lg p-3 shadow-[2px_2px_0px_0px_#181716] mb-2 shrink-0 mt-2 sm:mt-0">
+        <div className="flex-1 min-w-0 pr-2 flex items-start gap-2">
           <span className="text-base sm:text-lg">🎭</span>
           <div className="flex flex-col min-w-0">
-            <span className="text-xs font-black text-cordel-wood uppercase tracking-wider truncate">
+            <span className="text-xs font-black text-cordel-wood uppercase tracking-wider break-words">
               {eventTitle || 'Plan de Scène'}
             </span>
             <span className="text-[9px] font-bold text-encre-noire/70">
@@ -87,11 +87,11 @@ export default function StageLayoutFullscreenModal({
           <button
             type="button"
             onClick={onClose}
-            className="text-[11px] font-black uppercase px-2.5 py-1 rounded border border-encre-noire bg-neutral-200 hover:bg-neutral-300 text-encre-noire shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer flex items-center gap-1"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center -mr-2 -mt-2 rounded-lg text-encre-noire hover:text-cordel-wood hover:bg-black/5 active:bg-black/10 transition-colors cursor-pointer shrink-0 select-none touch-manipulation dark:text-stone-200"
             title="Fermer (ou touche Échap)"
+            aria-label="Fermer"
           >
-            <span>✕</span>
-            <span className="hidden sm:inline">Fermer</span>
+            <span className="text-xl font-black leading-none pointer-events-none">✕</span>
           </button>
         </div>
       </div>
@@ -111,9 +111,9 @@ export default function StageLayoutFullscreenModal({
         <button
           type="button"
           onClick={onClose}
-          className="text-xs font-black uppercase tracking-wider px-5 py-1.5 rounded-full border border-encre-noire bg-white dark:bg-neutral-800 text-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer"
+          className="min-h-[44px] text-xs font-black uppercase tracking-wider px-6 py-2 rounded-full border border-encre-noire bg-white dark:bg-neutral-800 text-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer flex items-center justify-center gap-1.5 touch-manipulation"
         >
-          ✕ Fermer le plein écran
+          <span>✕</span> Fermer le plein écran
         </button>
       </div>
     </div>

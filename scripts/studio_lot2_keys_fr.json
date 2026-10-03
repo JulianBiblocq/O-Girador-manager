@@ -1,0 +1,2004 @@
+{
+  "communication": [
+    {
+      "file": "src/components/studio/StudioCommunication.jsx",
+      "line": 28,
+      "text": "Chargement de la configuration communication...",
+      "key": "studio.communication.studioCommunication.chargementDeLaConfiguration"
+    },
+    {
+      "file": "src/components/studio/StudioCommunication.jsx",
+      "line": 41,
+      "text": "Studio",
+      "key": "studio.communication.studioCommunication.studio"
+    },
+    {
+      "file": "src/components/studio/StudioCommunication.jsx",
+      "line": 43,
+      "text": "Communication & Brevo",
+      "key": "studio.communication.studioCommunication.communicationBrevo"
+    },
+    {
+      "file": "src/components/studio/StudioCommunication.jsx",
+      "line": 46,
+      "text": "Configuration de la Communication & Envois",
+      "key": "studio.communication.studioCommunication.configurationDeLaCommunication"
+    },
+    {
+      "file": "src/components/studio/StudioCommunication.jsx",
+      "line": 48,
+      "text": "Configurez votre compte emailing (clé API Brevo), les adresses d'expédition et exportez la liste des abonnés newsletter.",
+      "key": "studio.communication.studioCommunication.configurezVotreCompteEmailing"
+    },
+    {
+      "file": "src/components/studio/StudioCommunication.jsx",
+      "line": 58,
+      "text": "⬅️ Retour au Studio",
+      "key": "studio.communication.studioCommunication.retourAuStudio"
+    },
+    {
+      "file": "src/components/studio/StudioCommunication.jsx",
+      "line": 84,
+      "text": "Enregistrement...",
+      "key": "studio.communication.studioCommunication.enregistrement"
+    },
+    {
+      "file": "src/components/studio/StudioCommunication.jsx",
+      "line": 84,
+      "text": "💾 Enregistrer toutes les modifications",
+      "key": "studio.communication.studioCommunication.enregistrerToutesLesModifications"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 272,
+      "text": "Miniature Vidéo",
+      "key": "studio.communication.studioSocial.miniatureVideo"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 283,
+      "text": "Erreur lors de l'enregistrement du lien vidéo.",
+      "key": "studio.communication.studioSocial.erreurLorsDeL"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 297,
+      "text": "Le tag #OGirador est fixe et ne peut pas être dupliqué.",
+      "key": "studio.communication.studioSocial.leTagOgiradorEst"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 301,
+      "text": "Ce tag existe déjà.",
+      "key": "studio.communication.studioSocial.ceTagExisteDeja"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 314,
+      "text": "Erreur lors de l'ajout du tag.",
+      "key": "studio.communication.studioSocial.erreurLorsDeL"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 325,
+      "text": "Le tag #OGirador est fixe et ne peut pas être modifié.",
+      "key": "studio.communication.studioSocial.leTagOgiradorEst"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 333,
+      "text": "Ce tag existe déjà.",
+      "key": "studio.communication.studioSocial.ceTagExisteDeja"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 348,
+      "text": "Erreur lors de la modification du tag.",
+      "key": "studio.communication.studioSocial.erreurLorsDeLa"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 355,
+      "text": "Le tag #OGirador est fixe et ne peut pas être supprimé.",
+      "key": "studio.communication.studioSocial.leTagOgiradorEst"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 378,
+      "text": "Erreur lors de la suppression du tag.",
+      "key": "studio.communication.studioSocial.erreurLorsDeLa"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 392,
+      "text": "Ce mot existe déjà dans le lexique.",
+      "key": "studio.communication.studioSocial.ceMotExisteDeja"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 403,
+      "text": "Erreur lors de l'ajout du terme.",
+      "key": "studio.communication.studioSocial.erreurLorsDeL"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 438,
+      "text": "Cette mention existe déjà.",
+      "key": "studio.communication.studioSocial.cetteMentionExisteDeja"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 458,
+      "text": "Erreur lors de l'ajout de la mention.",
+      "key": "studio.communication.studioSocial.erreurLorsDeL"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 735,
+      "text": "Erreur de téléchargement. Vous pouvez faire un clic droit ou appui long sur l'image pour l'enregistrer.",
+      "key": "studio.communication.studioSocial.erreurDeTelechargementVous"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 746,
+      "text": "Génération de l'image impossible.",
+      "key": "studio.communication.studioSocial.generationDeLImage"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 778,
+      "text": "Votre navigateur ne prend pas en charge la copie directe d'images dans le presse-papier.",
+      "key": "studio.communication.studioSocial.votreNavigateurNePrend"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 784,
+      "text": "Extraction de l'image impossible.",
+      "key": "studio.communication.studioSocial.extractionDeLImage"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 789,
+      "text": "Votre navigateur ne supporte pas la copie directe d'images dans le presse-papier.",
+      "key": "studio.communication.studioSocial.votreNavigateurNeSupporte"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 808,
+      "text": "Veuillez sélectionner un événement ou rédiger un texte avant d'envoyer pour validation.",
+      "key": "studio.communication.studioSocial.veuillezSelectionnerUnEvenement"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 943,
+      "text": "🎉 Proposition soumise pour validation ! Le sujet a été ouvert dans le Forum (Porte-Voix).",
+      "key": "studio.communication.studioSocial.propositionSoumisePourValidation"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 964,
+      "text": "Retour",
+      "key": "studio.communication.studioSocial.retour"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 967,
+      "text": "Studio Social",
+      "key": "studio.communication.studioSocial.studioSocial"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 979,
+      "text": "Sélectionner un événement",
+      "key": "studio.communication.studioSocial.selectionnerUnEvenement"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 990,
+      "text": "✅ Approuvé",
+      "key": "studio.communication.studioSocial.approuve"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 1003,
+      "text": "Choisissez un événement...",
+      "key": "studio.communication.studioSocial.choisissezUnEvenement"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 1011,
+      "text": "⏳ [Passé]",
+      "key": "studio.communication.studioSocial.passe"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 1023,
+      "text": "Vidéo",
+      "key": "studio.communication.studioSocial.video"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 1025,
+      "text": "✓ Miniature YouTube détectée",
+      "key": "studio.communication.studioSocial.miniatureYoutubeDetectee"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 1047,
+      "text": "La miniature vidéo sera automatiquement générée et affichée sur le billet d'événement dans l'Agenda avec l'icône Play ▶️.",
+      "key": "studio.communication.studioSocial.laMiniatureVideoSera"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 1071,
+      "text": "Ex: #maracatu #musique",
+      "key": "studio.communication.studioSocial.exMaracatuMusique"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 1083,
+      "text": "Gestion complète du Lexique, Mentions et Hashtags",
+      "key": "studio.communication.studioSocial.gestionCompleteDuLexique"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 1092,
+      "text": "Ouvrir l'onglet Lexique →",
+      "key": "studio.communication.studioSocial.ouvrirLOngletLexique"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 1100,
+      "text": "⚙️ Hashtags par défaut de l'association (Admin)",
+      "key": "studio.communication.studioSocial.hashtagsParDefautDe"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 1125,
+      "text": "Enregistrer",
+      "key": "studio.communication.studioSocial.enregistrer"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 1136,
+      "text": "Annuler",
+      "key": "studio.communication.studioSocial.annuler"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 1151,
+      "text": "Modifier",
+      "key": "studio.communication.studioSocial.modifier"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 1159,
+      "text": "Supprimer",
+      "key": "studio.communication.studioSocial.supprimer"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 1173,
+      "text": "Nouveau tag (ex: #musique)",
+      "key": "studio.communication.studioSocial.nouveauTagExMusique"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 1182,
+      "text": "Ajouter tag",
+      "key": "studio.communication.studioSocial.ajouterTag"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 1190,
+      "text": "📖 Lexique d'insertion rapide personnalisable (Admin)",
+      "key": "studio.communication.studioSocial.lexiqueDInsertionRapide"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 1218,
+      "text": "Nouveau mot (ex: maracatu)",
+      "key": "studio.communication.studioSocial.nouveauMotExMaracatu"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 1227,
+      "text": "Ajouter mot",
+      "key": "studio.communication.studioSocial.ajouterMot"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 1235,
+      "text": "@ Mentions de comptes personnalisables (Admin)",
+      "key": "studio.communication.studioSocial.mentionsDeComptesPersonnalisables"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 1269,
+      "text": "Nouvelle mention (ex: @nom_partenaire)",
+      "key": "studio.communication.studioSocial.nouvelleMentionExNom_partenaire"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 1278,
+      "text": "Ajouter mention",
+      "key": "studio.communication.studioSocial.ajouterMention"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 1293,
+      "text": "Texte de la publication",
+      "key": "studio.communication.studioSocial.texteDeLaPublication"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 1296,
+      "text": "Statut :",
+      "key": "studio.communication.studioSocial.statut"
+    },
+    {
+      "file": "src/components/StudioSocial.jsx",
+      "line": 1318,
+      "text": "Rédigez ou personnalisez votre légende ici...",
+      "key": "studio.communication.studioSocial.redigezOuPersonnalisezVotre"
+    },
+    {
+      "file": "src/components/association-settings/TabCommunication.jsx",
+      "line": 51,
+      "text": "✓ Vidéo enregistrée et synchronisée avec l'Accueil !",
+      "key": "studio.communication.tabCommunication.videoEnregistreeEtSynchronisee"
+    },
+    {
+      "file": "src/components/association-settings/TabCommunication.jsx",
+      "line": 148,
+      "text": "⚠️ Aucun abonné à la newsletter enregistré pour le moment.",
+      "key": "studio.communication.tabCommunication.aucunAbonneALa"
+    },
+    {
+      "file": "src/components/association-settings/TabCommunication.jsx",
+      "line": 178,
+      "text": "❌ Erreur lors de la génération du fichier CSV.",
+      "key": "studio.communication.tabCommunication.erreurLorsDeLa"
+    },
+    {
+      "file": "src/components/association-settings/TabCommunication.jsx",
+      "line": 197,
+      "text": "Service d'envoi e-mails & Expéditeur",
+      "key": "studio.communication.tabCommunication.serviceDEnvoiE"
+    },
+    {
+      "file": "src/components/association-settings/TabCommunication.jsx",
+      "line": 205,
+      "text": "✓ Service d'envoi configuré",
+      "key": "studio.communication.tabCommunication.serviceDEnvoiConfigure"
+    },
+    {
+      "file": "src/components/association-settings/TabCommunication.jsx",
+      "line": 205,
+      "text": "⚠️ Envoi désactivé / API non renseignée",
+      "key": "studio.communication.tabCommunication.envoiDesactiveApiNon"
+    },
+    {
+      "file": "src/components/association-settings/TabCommunication.jsx",
+      "line": 208,
+      "text": "Expéditeur officiel :",
+      "key": "studio.communication.tabCommunication.expediteurOfficiel"
+    },
+    {
+      "file": "src/components/association-settings/TabCommunication.jsx",
+      "line": 213,
+      "text": "La gestion de la clé API Brevo, des signatures SPF/DKIM et de l'expéditeur officiel est centralisée dans",
+      "key": "studio.communication.tabCommunication.laGestionDeLa"
+    },
+    {
+      "file": "src/components/association-settings/TabCommunication.jsx",
+      "line": 214,
+      "text": "Configuration › Communication, E-mails & Automatisations",
+      "key": "studio.communication.tabCommunication.configurationCommunicationEMails"
+    },
+    {
+      "file": "src/components/association-settings/TabCommunication.jsx",
+      "line": 226,
+      "text": "Vidéo à la une (Accueil & Dashboard)",
+      "key": "studio.communication.tabCommunication.videoALaUne"
+    },
+    {
+      "file": "src/components/association-settings/TabCommunication.jsx",
+      "line": 229,
+      "text": "Mettez en avant une captation, un tutoriel ou un débrief vidéo directement auprès des adhérents sur l'Accueil.",
+      "key": "studio.communication.tabCommunication.mettezEnAvantUne"
+    },
+    {
+      "file": "src/components/association-settings/TabCommunication.jsx",
+      "line": 245,
+      "text": "Affichée sur l'Accueil",
+      "key": "studio.communication.tabCommunication.afficheeSurLAccueil"
+    },
+    {
+      "file": "src/components/association-settings/TabCommunication.jsx",
+      "line": 245,
+      "text": "Masquée",
+      "key": "studio.communication.tabCommunication.masquee"
+    },
+    {
+      "file": "src/components/association-settings/TabCommunication.jsx",
+      "line": 253,
+      "text": "Titre descriptif ou consigne",
+      "key": "studio.communication.tabCommunication.titreDescriptifOuConsigne"
+    },
+    {
+      "file": "src/components/association-settings/TabCommunication.jsx",
+      "line": 261,
+      "text": "ex: Débrief du concert d'Erdeven, Tutoriel Toada...",
+      "key": "studio.communication.tabCommunication.exDebriefDuConcert"
+    },
+    {
+      "file": "src/components/association-settings/TabCommunication.jsx",
+      "line": 269,
+      "text": "Lien de la vidéo YouTube *",
+      "key": "studio.communication.tabCommunication.lienDeLaVideo"
+    },
+    {
+      "file": "src/components/association-settings/TabCommunication.jsx",
+      "line": 276,
+      "text": "Choisir parmi les playlists YouTube configurées",
+      "key": "studio.communication.tabCommunication.choisirParmiLesPlaylists"
+    },
+    {
+      "file": "src/components/association-settings/TabCommunication.jsx",
+      "line": 278,
+      "text": "🎬 Choisir parmi nos vidéos",
+      "key": "studio.communication.tabCommunication.choisirParmiNosVideos"
+    },
+    {
+      "file": "src/components/association-settings/TabCommunication.jsx",
+      "line": 297,
+      "text": "Formats acceptés : liens classiques (youtube.com/watch?v=...), partages courts (youtu.be/...), Shorts ou Embeds.",
+      "key": "studio.communication.tabCommunication.formatsAcceptesLiensClassiques"
+    },
+    {
+      "file": "src/components/association-settings/TabCommunication.jsx",
+      "line": 307,
+      "text": "ID YouTube validé :",
+      "key": "studio.communication.tabCommunication.idYoutubeValide"
+    },
+    {
+      "file": "src/components/association-settings/TabCommunication.jsx",
+      "line": 308,
+      "text": "Miniature 16:9 prête",
+      "key": "studio.communication.tabCommunication.miniature169Prete"
+    },
+    {
+      "file": "src/components/association-settings/TabCommunication.jsx",
+      "line": 315,
+      "text": "Lien non reconnu. Assurez-vous d'avoir collé un lien YouTube valide.",
+      "key": "studio.communication.tabCommunication.lienNonReconnuAssurez"
+    },
+    {
+      "file": "src/components/association-settings/TabCommunication.jsx",
+      "line": 323,
+      "text": "Sauvegarde immédiate sans impacter la configuration e-mail/Brevo.",
+      "key": "studio.communication.tabCommunication.sauvegardeImmediateSansImpacter"
+    },
+    {
+      "file": "src/components/association-settings/TabCommunication.jsx",
+      "line": 333,
+      "text": "Enregistrement...",
+      "key": "studio.communication.tabCommunication.enregistrement"
+    },
+    {
+      "file": "src/components/association-settings/TabCommunication.jsx",
+      "line": 333,
+      "text": "💾 Enregistrer la vidéo",
+      "key": "studio.communication.tabCommunication.enregistrerLaVideo"
+    },
+    {
+      "file": "src/components/association-settings/TabCommunication.jsx",
+      "line": 349,
+      "text": "Communication & Diffusion Newsletter",
+      "key": "studio.communication.tabCommunication.communicationDiffusionNewsletter"
+    },
+    {
+      "file": "src/components/association-settings/TabCommunication.jsx",
+      "line": 353,
+      "text": "Gérez l'exportation des adresses électroniques récoltées via la vitrine publique et configurez la synchronisation automatique avec votre compte Brevo (Sendinblue).",
+      "key": "studio.communication.tabCommunication.gerezLExportationDes"
+    },
+    {
+      "file": "src/components/association-settings/TabCommunication.jsx",
+      "line": 361,
+      "text": "📬 Adhérents et Visiteurs Inscrits à la Newsletter",
+      "key": "studio.communication.tabCommunication.adherentsEtVisiteursInscrits"
+    },
+    {
+      "file": "src/components/association-settings/TabCommunication.jsx",
+      "line": 364,
+      "text": "Chargement...",
+      "key": "studio.communication.tabCommunication.chargement"
+    },
+    {
+      "file": "src/components/association-settings/TabCommunication.jsx",
+      "line": 372,
+      "text": "dans Brevo",
+      "key": "studio.communication.tabCommunication.dansBrevo"
+    },
+    {
+      "file": "src/components/association-settings/TabCommunication.jsx",
+      "line": 378,
+      "text": "Les adresses e-mails saisies par vos membres et visiteurs depuis la vitrine sont stockées en toute sécurité et synchronisées en temps réel vers Brevo. Vous pouvez également déclencher une synchronisation manuelle ou exporter le listing complet au format CSV.",
+      "key": "studio.communication.tabCommunication.lesAdressesEMails"
+    },
+    {
+      "file": "src/components/association-settings/TabCommunication.jsx",
+      "line": 391,
+      "text": "Génération du CSV...",
+      "key": "studio.communication.tabCommunication.generationDuCsv"
+    },
+    {
+      "file": "src/components/association-settings/TabCommunication.jsx",
+      "line": 391,
+      "text": "Exporter CSV",
+      "key": "studio.communication.tabCommunication.exporterCsv"
+    },
+    {
+      "file": "src/components/association-settings/TabCommunication.jsx",
+      "line": 399,
+      "text": "Synchroniser immédiatement tous les contacts avec la liste Brevo configurée",
+      "key": "studio.communication.tabCommunication.synchroniserImmediatementTousLes"
+    },
+    {
+      "file": "src/components/association-settings/TabCommunication.jsx",
+      "line": 402,
+      "text": "Synchronisation Brevo...",
+      "key": "studio.communication.tabCommunication.synchronisationBrevo"
+    },
+    {
+      "file": "src/components/association-settings/TabCommunication.jsx",
+      "line": 402,
+      "text": "Synchroniser avec Brevo",
+      "key": "studio.communication.tabCommunication.synchroniserAvecBrevo"
+    },
+    {
+      "file": "src/components/association-settings/TabConfigComms.jsx",
+      "line": 25,
+      "text": "✉️ E-mails, Expéditeur & Brevo",
+      "key": "studio.communication.tabConfigComms.eMailsExpediteurBrevo"
+    },
+    {
+      "file": "src/components/association-settings/TabConfigComms.jsx",
+      "line": 38,
+      "text": "⚡ Relances Automatiques (J-1 / J-2)",
+      "key": "studio.communication.tabConfigComms.relancesAutomatiquesJ1"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 39,
+      "text": "Configuration de l'Expéditeur et des E-mails SaaS",
+      "key": "studio.communication.emailConfig.configurationDeLExpediteur"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 42,
+      "text": "Personnalisez l'identité visuelle de vos notifications, devis, contrats et e-mails système.",
+      "key": "studio.communication.emailConfig.personnalisezLIdentiteVisuelle"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 52,
+      "text": "✓ Service Certifié O Girador",
+      "key": "studio.communication.emailConfig.serviceCertifieOGirador"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 52,
+      "text": "⚡ Service Externe Actif",
+      "key": "studio.communication.emailConfig.serviceExterneActif"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 61,
+      "text": "Nom d'expéditeur dynamique *",
+      "key": "studio.communication.emailConfig.nomDExpediteurDynamique"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 62,
+      "text": "Ex: Samambaia Maracatu",
+      "key": "studio.communication.emailConfig.exSamambaiaMaracatu"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 77,
+      "text": "Adresse e-mail de réponse (Reply-To) *",
+      "key": "studio.communication.emailConfig.adresseEMailDe"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 78,
+      "text": "Ex: contact@mon-asso.fr",
+      "key": "studio.communication.emailConfig.exContactMonAsso"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 93,
+      "text": "Mode d'envoi d'e-mails & Canal d'infrastructures",
+      "key": "studio.communication.emailConfig.modeDEnvoiD"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 109,
+      "text": "🛡️ Option A (Recommandée)",
+      "key": "studio.communication.emailConfig.optionARecommandee"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 120,
+      "text": "Service e-mail certifié O Girador :",
+      "key": "studio.communication.emailConfig.serviceEMailCertifie"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 120,
+      "text": "Envoie vos notifications et documents via l'infrastructure centrale sécurisée avec le nom de votre association en expéditeur et votre adresse en Reply-To. Aucun paramétrage technique requis.",
+      "key": "studio.communication.emailConfig.envoieVosNotificationsEt"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 135,
+      "text": "⚙️ Option B (Service externe / Domaine propre)",
+      "key": "studio.communication.emailConfig.optionBServiceExterne"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 146,
+      "text": "Service e-mailing dédié ou serveur SMTP :",
+      "key": "studio.communication.emailConfig.serviceEMailingDedie"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 146,
+      "text": "Connectez votre propre compte (Brevo, Resend, SendGrid, Mailgun, Postmark ou SMTP OVH/Infomaniak) et votre propre nom de domaine.",
+      "key": "studio.communication.emailConfig.connectezVotrePropreCompte"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 157,
+      "text": "Paramètres du canal d'envoi externe",
+      "key": "studio.communication.emailConfig.parametresDuCanalD"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 160,
+      "text": "Sélectionnez le protocole de connexion souhaité et saisissez vos accès sécurisés.",
+      "key": "studio.communication.emailConfig.selectionnezLeProtocoleDe"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 175,
+      "text": "🔑 Clé API Service",
+      "key": "studio.communication.emailConfig.cleApiService"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 186,
+      "text": "📡 Serveur SMTP",
+      "key": "studio.communication.emailConfig.serveurSmtp"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 196,
+      "text": "Fournisseur API e-mailing",
+      "key": "studio.communication.emailConfig.fournisseurApiEMailing"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 205,
+      "text": "Brevo (ex-Sendinblue)",
+      "key": "studio.communication.emailConfig.brevoExSendinblue"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 206,
+      "text": "Resend",
+      "key": "studio.communication.emailConfig.resend"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 207,
+      "text": "SendGrid",
+      "key": "studio.communication.emailConfig.sendgrid"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 208,
+      "text": "Mailgun",
+      "key": "studio.communication.emailConfig.mailgun"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 209,
+      "text": "Postmark",
+      "key": "studio.communication.emailConfig.postmark"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 210,
+      "text": "Autre API REST HTTP",
+      "key": "studio.communication.emailConfig.autreApiRestHttp"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 216,
+      "text": "Clé d'API sécurisée (",
+      "key": "studio.communication.emailConfig.cleDApiSecurisee"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 222,
+      "text": "🙈 Masquer",
+      "key": "studio.communication.emailConfig.masquer"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 222,
+      "text": "👁️ Afficher",
+      "key": "studio.communication.emailConfig.afficher"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 230,
+      "text": "xkeysib-... ou re_...",
+      "key": "studio.communication.emailConfig.xkeysibOuRe_"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 241,
+      "text": "Hôte SMTP (Host) *",
+      "key": "studio.communication.emailConfig.hoteSmtpHost"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 249,
+      "text": "Ex: ssl0.ovh.net",
+      "key": "studio.communication.emailConfig.exSsl0OvhNet"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 255,
+      "text": "Port SMTP *",
+      "key": "studio.communication.emailConfig.portSmtp"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 269,
+      "text": "Sécurité (Protocole)",
+      "key": "studio.communication.emailConfig.securiteProtocole"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 278,
+      "text": "TLS / STARTTLS (Port 587 - Recommandé)",
+      "key": "studio.communication.emailConfig.tlsStarttlsPort587"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 279,
+      "text": "SSL (Port 465)",
+      "key": "studio.communication.emailConfig.sslPort465"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 280,
+      "text": "Aucune (Non sécurisé)",
+      "key": "studio.communication.emailConfig.aucuneNonSecurise"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 285,
+      "text": "Utilisateur SMTP (User) *",
+      "key": "studio.communication.emailConfig.utilisateurSmtpUser"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 300,
+      "text": "Mot de passe SMTP *",
+      "key": "studio.communication.emailConfig.motDePasseSmtp"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 306,
+      "text": "🙈 Masquer",
+      "key": "studio.communication.emailConfig.masquer"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 306,
+      "text": "👁️ Afficher",
+      "key": "studio.communication.emailConfig.afficher"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 324,
+      "text": "Domaine e-mail personnalisé (customEmailDomain)",
+      "key": "studio.communication.emailConfig.domaineEMailPersonnalise"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 325,
+      "text": "Ex: mon-asso.fr",
+      "key": "studio.communication.emailConfig.exMonAssoFr"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailConfigSection.jsx",
+      "line": 332,
+      "text": "mon-asso.fr",
+      "key": "studio.communication.emailConfig.monAssoFr"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailDnsHelpCard.jsx",
+      "line": 22,
+      "text": "SPF (Sender Policy Framework)",
+      "key": "studio.communication.emailDnsHelp.spfSenderPolicyFramework"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailDnsHelpCard.jsx",
+      "line": 30,
+      "text": "DKIM (DomainKeys Identified Mail)",
+      "key": "studio.communication.emailDnsHelp.dkimDomainkeysIdentifiedMail"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailDnsHelpCard.jsx",
+      "line": 38,
+      "text": "DMARC (Domain-based Message Authentication)",
+      "key": "studio.communication.emailDnsHelp.dmarcDomainBasedMessage"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailDnsHelpCard.jsx",
+      "line": 60,
+      "text": "Enregistrements DNS Recommandés pour",
+      "key": "studio.communication.emailDnsHelp.enregistrementsDnsRecommandesPour"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailDnsHelpCard.jsx",
+      "line": 63,
+      "text": "Copiez et collez ces paramètres dans la zone DNS de votre hébergeur (OVH, Gandi, Infomaniak, Ionos, Cloudflare).",
+      "key": "studio.communication.emailDnsHelp.copiezEtCollezCes"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailDnsHelpCard.jsx",
+      "line": 75,
+      "text": "Hôte / Nom",
+      "key": "studio.communication.emailDnsHelp.hoteNom"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailDnsHelpCard.jsx",
+      "line": 76,
+      "text": "Valeur / Cible",
+      "key": "studio.communication.emailDnsHelp.valeurCible"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailDnsHelpCard.jsx",
+      "line": 111,
+      "text": "✓ Copié !",
+      "key": "studio.communication.emailDnsHelp.copie"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailDnsHelpCard.jsx",
+      "line": 111,
+      "text": "📋 Copier",
+      "key": "studio.communication.emailDnsHelp.copier"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailDnsHelpCard.jsx",
+      "line": 123,
+      "text": "Remarque :",
+      "key": "studio.communication.emailDnsHelp.remarque"
+    },
+    {
+      "file": "src/components/association-settings/email/EmailDnsHelpCard.jsx",
+      "line": 123,
+      "text": "La propagation des modifications DNS peut prendre de quelques minutes à 24 heures selon votre hébergeur. Une fois les enregistrements validés, le taux de délivrabilité de vos e-mails sera optimal.",
+      "key": "studio.communication.emailDnsHelp.laPropagationDesModifications"
+    },
+    {
+      "file": "src/components/association-settings/blocks/BrevoIntegrationBlock.jsx",
+      "line": 11,
+      "text": "⚡ Routage d'E-mails Sécurisé",
+      "key": "studio.communication.brevoIntegration.routageDEMails"
+    },
+    {
+      "file": "src/components/association-settings/blocks/BrevoIntegrationBlock.jsx",
+      "line": 12,
+      "text": "✓ Actif (Mode SaaS)",
+      "key": "studio.communication.brevoIntegration.actifModeSaas"
+    },
+    {
+      "file": "src/components/association-settings/blocks/BrevoIntegrationBlock.jsx",
+      "line": 18,
+      "text": "Sérénité garantie :",
+      "key": "studio.communication.brevoIntegration.sereniteGarantie"
+    },
+    {
+      "file": "src/components/association-settings/blocks/BrevoIntegrationBlock.jsx",
+      "line": 18,
+      "text": "Le routage de vos e-mails est automatiquement géré et sécurisé par les serveurs O Girador. Les réponses à vos devis arriveront directement sur votre boîte mail officielle.",
+      "key": "studio.communication.brevoIntegration.leRoutageDeVos"
+    },
+    {
+      "file": "src/components/association-settings/blocks/BrevoIntegrationBlock.jsx",
+      "line": 27,
+      "text": "🔽 Masquer les options avancées",
+      "key": "studio.communication.brevoIntegration.masquerLesOptionsAvancees"
+    },
+    {
+      "file": "src/components/association-settings/blocks/BrevoIntegrationBlock.jsx",
+      "line": 27,
+      "text": "▶️ Options Avancées (Marque Blanche Totale)",
+      "key": "studio.communication.brevoIntegration.optionsAvanceesMarqueBlanche"
+    },
+    {
+      "file": "src/components/association-settings/blocks/BrevoIntegrationBlock.jsx",
+      "line": 32,
+      "text": "Connectez votre propre compte Brevo (ex-Sendinblue) uniquement si vous souhaitez forcer un routage entièrement personnalisé de la newsletter via une liste externe.",
+      "key": "studio.communication.brevoIntegration.connectezVotrePropreCompte"
+    },
+    {
+      "file": "src/components/association-settings/blocks/BrevoIntegrationBlock.jsx",
+      "line": 40,
+      "text": "🔑 Clé API Brevo v3",
+      "key": "studio.communication.brevoIntegration.cleApiBrevoV3"
+    },
+    {
+      "file": "src/components/association-settings/blocks/BrevoIntegrationBlock.jsx",
+      "line": 46,
+      "text": "🙈 Masquer",
+      "key": "studio.communication.brevoIntegration.masquer"
+    },
+    {
+      "file": "src/components/association-settings/blocks/BrevoIntegrationBlock.jsx",
+      "line": 46,
+      "text": "👁️ Afficher",
+      "key": "studio.communication.brevoIntegration.afficher"
+    },
+    {
+      "file": "src/components/association-settings/blocks/BrevoIntegrationBlock.jsx",
+      "line": 54,
+      "text": "xkeysib-...",
+      "key": "studio.communication.brevoIntegration.xkeysib"
+    },
+    {
+      "file": "src/components/association-settings/blocks/BrevoIntegrationBlock.jsx",
+      "line": 62,
+      "text": "📋 ID de la Liste Brevo (Optionnel)",
+      "key": "studio.communication.brevoIntegration.idDeLaListe"
+    },
+    {
+      "file": "src/components/association-settings/blocks/BrevoIntegrationBlock.jsx",
+      "line": 69,
+      "text": "Ex: 2 ou 5",
+      "key": "studio.communication.brevoIntegration.ex2Ou5"
+    },
+    {
+      "file": "src/components/association-settings/blocks/BrevoIntegrationBlock.jsx",
+      "line": 75,
+      "text": "💡 La clé API se récupère sur votre espace d'administration Brevo sous",
+      "key": "studio.communication.brevoIntegration.laCleApiSe"
+    },
+    {
+      "file": "src/components/association-settings/blocks/BrevoIntegrationBlock.jsx",
+      "line": 76,
+      "text": "Paramètres > Clés API",
+      "key": "studio.communication.brevoIntegration.parametresClesApi"
+    },
+    {
+      "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+      "line": 209,
+      "text": "Automatisation Framaspace / Nextcloud",
+      "key": "studio.communication.framaspaceIntegration.automatisationFramaspaceNextcloud"
+    },
+    {
+      "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+      "line": 212,
+      "text": "Génération automatique des dossiers WebDAV et des liens de dépôt public (File drop) & d'album",
+      "key": "studio.communication.framaspaceIntegration.generationAutomatiqueDesDossiers"
+    },
+    {
+      "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+      "line": 218,
+      "text": "WebDAV & OCS API",
+      "key": "studio.communication.framaspaceIntegration.webdavOcsApi"
+    },
+    {
+      "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+      "line": 226,
+      "text": "Fonctionnement :",
+      "key": "studio.communication.framaspaceIntegration.fonctionnement"
+    },
+    {
+      "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+      "line": 226,
+      "text": "À la création d'une prestation, le système crée automatiquement le répertoire dédié dans votre instance Nextcloud et génère le lien de récolte public pour le QR-Code ainsi que le lien de consultation pour le Varal Photos.",
+      "key": "studio.communication.framaspaceIntegration.aLaCreationD"
+    },
+    {
+      "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+      "line": 228,
+      "text": "Générez un mot de passe d'application dans votre Nextcloud :",
+      "key": "studio.communication.framaspaceIntegration.generezUnMotDe"
+    },
+    {
+      "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+      "line": 229,
+      "text": "Paramètres personnels > Sécurité > Dispositifs et sessions",
+      "key": "studio.communication.framaspaceIntegration.parametresPersonnelsSecuriteDispositifs"
+    },
+    {
+      "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+      "line": 235,
+      "text": "Chargement des identifiants sécurisés...",
+      "key": "studio.communication.framaspaceIntegration.chargementDesIdentifiantsSecurises"
+    },
+    {
+      "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+      "line": 243,
+      "text": "🔗 URL de l'instance Nextcloud *",
+      "key": "studio.communication.framaspaceIntegration.urlDeLInstance"
+    },
+    {
+      "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+      "line": 255,
+      "text": "ex: https://o-girador.framaspace.org",
+      "key": "studio.communication.framaspaceIntegration.exHttpsOGirador"
+    },
+    {
+      "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+      "line": 260,
+      "text": "👤 Compte utilisateur / Bot *",
+      "key": "studio.communication.framaspaceIntegration.compteUtilisateurBot"
+    },
+    {
+      "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+      "line": 272,
+      "text": "Identifiant ou e-mail de connexion",
+      "key": "studio.communication.framaspaceIntegration.identifiantOuEMail"
+    },
+    {
+      "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+      "line": 278,
+      "text": "🔑 Mot de passe d'application *",
+      "key": "studio.communication.framaspaceIntegration.motDePasseD"
+    },
+    {
+      "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+      "line": 286,
+      "text": "Masquer",
+      "key": "studio.communication.framaspaceIntegration.masquer"
+    },
+    {
+      "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+      "line": 286,
+      "text": "Afficher",
+      "key": "studio.communication.framaspaceIntegration.afficher"
+    },
+    {
+      "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+      "line": 294,
+      "text": "3kDmy-ExEAi-eDPw7-ca3Bk-ZTcPC",
+      "key": "studio.communication.framaspaceIntegration.3kdmyExeaiEdpw7Ca3bk"
+    },
+    {
+      "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+      "line": 298,
+      "text": "Token généré dans Paramètres Sécurité",
+      "key": "studio.communication.framaspaceIntegration.tokenGenereDansParametres"
+    },
+    {
+      "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+      "line": 315,
+      "text": "Statut HTTP Nextcloud :",
+      "key": "studio.communication.framaspaceIntegration.statutHttpNextcloud"
+    },
+    {
+      "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+      "line": 320,
+      "text": "Code d'erreur système :",
+      "key": "studio.communication.framaspaceIntegration.codeDErreurSysteme"
+    },
+    {
+      "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+      "line": 325,
+      "text": "Détails techniques :",
+      "key": "studio.communication.framaspaceIntegration.detailsTechniques"
+    },
+    {
+      "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+      "line": 343,
+      "text": "Test en cours...",
+      "key": "studio.communication.framaspaceIntegration.testEnCours"
+    },
+    {
+      "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+      "line": 343,
+      "text": "Tester la connexion",
+      "key": "studio.communication.framaspaceIntegration.testerLaConnexion"
+    },
+    {
+      "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+      "line": 355,
+      "text": "Enregistrement...",
+      "key": "studio.communication.framaspaceIntegration.enregistrement"
+    },
+    {
+      "file": "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx",
+      "line": 360,
+      "text": "🔐 Identifiants chiffrés et cloisonnés par association",
+      "key": "studio.communication.framaspaceIntegration.identifiantsChiffresEtCloisonnes"
+    },
+    {
+      "file": "src/components/association-settings/blocks/YouTubePlaylistsBlock.jsx",
+      "line": 54,
+      "text": "Playlists YouTube de l'association",
+      "key": "studio.communication.youTubePlaylists.playlistsYoutubeDeL"
+    },
+    {
+      "file": "src/components/association-settings/blocks/YouTubePlaylistsBlock.jsx",
+      "line": 57,
+      "text": "Instruments, pupitres, ateliers, lives et captations pour sélection rapide en 1 clic.",
+      "key": "studio.communication.youTubePlaylists.instrumentsPupitresAteliersLives"
+    },
+    {
+      "file": "src/components/association-settings/blocks/YouTubePlaylistsBlock.jsx",
+      "line": 70,
+      "text": "➕ Ajouter une playlist",
+      "key": "studio.communication.youTubePlaylists.ajouterUnePlaylist"
+    },
+    {
+      "file": "src/components/association-settings/blocks/YouTubePlaylistsBlock.jsx",
+      "line": 80,
+      "text": "Clé API YouTube Data v3 (Optionnel)",
+      "key": "studio.communication.youTubePlaylists.cleApiYoutubeData"
+    },
+    {
+      "file": "src/components/association-settings/blocks/YouTubePlaylistsBlock.jsx",
+      "line": 82,
+      "text": "Par défaut : clé plateforme",
+      "key": "studio.communication.youTubePlaylists.parDefautClePlateforme"
+    },
+    {
+      "file": "src/components/association-settings/blocks/YouTubePlaylistsBlock.jsx",
+      "line": 88,
+      "text": "ex: AIzaSy... (laisser vide pour utiliser le quota par défaut)",
+      "key": "studio.communication.youTubePlaylists.exAizasyLaisserVide"
+    },
+    {
+      "file": "src/components/association-settings/blocks/YouTubePlaylistsBlock.jsx",
+      "line": 94,
+      "text": "Permet à chaque association de renseigner sa propre clé YouTube sans recompiler l'application.",
+      "key": "studio.communication.youTubePlaylists.permetAChaqueAssociation"
+    },
+    {
+      "file": "src/components/association-settings/blocks/YouTubePlaylistsBlock.jsx",
+      "line": 100,
+      "text": "Aucune playlist configurée. Ajoutez vos playlists YouTube (ex: Alfaias, Chœur, Prestations) pour alimenter le sélecteur vidéo.",
+      "key": "studio.communication.youTubePlaylists.aucunePlaylistConfigureeAjoutez"
+    },
+    {
+      "file": "src/components/association-settings/blocks/YouTubePlaylistsBlock.jsx",
+      "line": 114,
+      "text": "ex: Alfaias, Chœur, Live 2024...",
+      "key": "studio.communication.youTubePlaylists.exAlfaiasChUr"
+    },
+    {
+      "file": "src/components/association-settings/blocks/YouTubePlaylistsBlock.jsx",
+      "line": 126,
+      "text": "Lien YouTube ou ID (ex: PL...)",
+      "key": "studio.communication.youTubePlaylists.lienYoutubeOuId"
+    },
+    {
+      "file": "src/components/association-settings/blocks/YouTubePlaylistsBlock.jsx",
+      "line": 141,
+      "text": "Supprimer cette playlist",
+      "key": "studio.communication.youTubePlaylists.supprimerCettePlaylist"
+    },
+    {
+      "file": "src/components/association-settings/blocks/YouTubePlaylistsBlock.jsx",
+      "line": 142,
+      "text": "Supprimer la playlist",
+      "key": "studio.communication.youTubePlaylists.supprimerLaPlaylist"
+    },
+    {
+      "file": "src/components/studio/SendContractModal.jsx",
+      "line": 108,
+      "text": "📝 Envoyer un contrat (Brevo)",
+      "key": "studio.communication.sendContract.envoyerUnContratBrevo"
+    },
+    {
+      "file": "src/components/studio/SendContractModal.jsx",
+      "line": 139,
+      "text": "E-mail Destinataire",
+      "key": "studio.communication.sendContract.eMailDestinataire"
+    },
+    {
+      "file": "src/components/studio/SendContractModal.jsx",
+      "line": 154,
+      "text": "Nom Organisateur / Structure",
+      "key": "studio.communication.sendContract.nomOrganisateurStructure"
+    },
+    {
+      "file": "src/components/studio/SendContractModal.jsx",
+      "line": 162,
+      "text": "Mairie de Maracatu / Festival X",
+      "key": "studio.communication.sendContract.mairieDeMaracatuFestival"
+    },
+    {
+      "file": "src/components/studio/SendContractModal.jsx",
+      "line": 171,
+      "text": "Nom de l'Événement",
+      "key": "studio.communication.sendContract.nomDeLEvenement"
+    },
+    {
+      "file": "src/components/studio/SendContractModal.jsx",
+      "line": 179,
+      "text": "Prestation Carnaval 2026",
+      "key": "studio.communication.sendContract.prestationCarnaval2026"
+    },
+    {
+      "file": "src/components/studio/SendContractModal.jsx",
+      "line": 185,
+      "text": "Date de la Prestation",
+      "key": "studio.communication.sendContract.dateDeLaPrestation"
+    },
+    {
+      "file": "src/components/studio/SendContractModal.jsx",
+      "line": 193,
+      "text": "Samedi 15 Août 2026",
+      "key": "studio.communication.sendContract.samedi15Aout2026"
+    },
+    {
+      "file": "src/components/studio/SendContractModal.jsx",
+      "line": 202,
+      "text": "Montant du Cachet (€)",
+      "key": "studio.communication.sendContract.montantDuCachet"
+    },
+    {
+      "file": "src/components/studio/SendContractModal.jsx",
+      "line": 210,
+      "text": "1200 € Net",
+      "key": "studio.communication.sendContract.1200Net"
+    },
+    {
+      "file": "src/components/studio/SendContractModal.jsx",
+      "line": 216,
+      "text": "Lien du Contrat PDF (Optionnel)",
+      "key": "studio.communication.sendContract.lienDuContratPdf"
+    },
+    {
+      "file": "src/components/studio/SendContractModal.jsx",
+      "line": 233,
+      "text": "Template ID Brevo (Optionnel)",
+      "key": "studio.communication.sendContract.templateIdBrevoOptionnel"
+    },
+    {
+      "file": "src/components/studio/SendContractModal.jsx",
+      "line": 234,
+      "text": "Laissez vide pour utiliser le modèle Cordel par défaut",
+      "key": "studio.communication.sendContract.laissezVidePourUtiliser"
+    },
+    {
+      "file": "src/components/studio/SendContractModal.jsx",
+      "line": 241,
+      "text": "Ex: 12 (ID du template transactionnel Brevo)",
+      "key": "studio.communication.sendContract.ex12IdDu"
+    },
+    {
+      "file": "src/components/studio/SendContractModal.jsx",
+      "line": 248,
+      "text": "Message d'accompagnement / Notes",
+      "key": "studio.communication.sendContract.messageDAccompagnementNotes"
+    },
+    {
+      "file": "src/components/studio/SendContractModal.jsx",
+      "line": 256,
+      "text": "Merci de nous retourner un exemplaire signé avant le 1er Août...",
+      "key": "studio.communication.sendContract.merciDeNousRetourner"
+    },
+    {
+      "file": "src/components/studio/SendContractModal.jsx",
+      "line": 270,
+      "text": "Annuler",
+      "key": "studio.communication.sendContract.annuler"
+    },
+    {
+      "file": "src/components/studio/SendContractModal.jsx",
+      "line": 280,
+      "text": "⏳ Envoi en cours...",
+      "key": "studio.communication.sendContract.envoiEnCours"
+    },
+    {
+      "file": "src/components/studio/SendContractModal.jsx",
+      "line": 280,
+      "text": "📤 Valider & Envoyer via Brevo",
+      "key": "studio.communication.sendContract.validerEnvoyerViaBrevo"
+    },
+    {
+      "file": "src/components/studio/StudioSocialPreview.jsx",
+      "line": 34,
+      "text": "📱 Aperçu Réseaux Sociaux",
+      "key": "studio.communication.studioSocialPreview.apercuReseauxSociaux"
+    },
+    {
+      "file": "src/components/studio/StudioSocialPreview.jsx",
+      "line": 44,
+      "text": "📷 Insta",
+      "key": "studio.communication.studioSocialPreview.insta"
+    },
+    {
+      "file": "src/components/studio/StudioSocialPreview.jsx",
+      "line": 53,
+      "text": "📘 Facebook",
+      "key": "studio.communication.studioSocialPreview.facebook"
+    },
+    {
+      "file": "src/components/studio/StudioSocialPreview.jsx",
+      "line": 62,
+      "text": "🎨 Affiche Cordel",
+      "key": "studio.communication.studioSocialPreview.afficheCordel"
+    },
+    {
+      "file": "src/components/studio/StudioSocialPreview.jsx",
+      "line": 98,
+      "text": "Veuillez sélectionner un événement pour générer l'affiche Cordel",
+      "key": "studio.communication.studioSocialPreview.veuillezSelectionnerUnEvenement"
+    },
+    {
+      "file": "src/components/studio/StudioSocialPreview.jsx",
+      "line": 105,
+      "text": "⚠️ Restriction CORS : utilisez le clic droit sur l'image pour la sauvegarder.",
+      "key": "studio.communication.studioSocialPreview.restrictionCorsUtilisezLe"
+    },
+    {
+      "file": "src/components/studio/StudioSocialPreview.jsx",
+      "line": 120,
+      "text": "Télécharger l'affiche Cordel au format JPEG",
+      "key": "studio.communication.studioSocialPreview.telechargerLAfficheCordel"
+    },
+    {
+      "file": "src/components/studio/StudioSocialPreview.jsx",
+      "line": 121,
+      "text": "💾 Télécharger",
+      "key": "studio.communication.studioSocialPreview.telecharger"
+    },
+    {
+      "file": "src/components/studio/StudioSocialPreview.jsx",
+      "line": 130,
+      "text": "Copier le visuel PNG dans le presse-papier",
+      "key": "studio.communication.studioSocialPreview.copierLeVisuelPng"
+    },
+    {
+      "file": "src/components/studio/StudioSocialPreview.jsx",
+      "line": 132,
+      "text": "✓ Copiée !",
+      "key": "studio.communication.studioSocialPreview.copiee"
+    },
+    {
+      "file": "src/components/studio/StudioSocialPreview.jsx",
+      "line": 132,
+      "text": "🖼️ Copier",
+      "key": "studio.communication.studioSocialPreview.copier"
+    },
+    {
+      "file": "src/components/studio/StudioSocialPreview.jsx",
+      "line": 140,
+      "text": "🔗 Partager",
+      "key": "studio.communication.studioSocialPreview.partager"
+    },
+    {
+      "file": "src/components/studio/StudioSocialPreview.jsx",
+      "line": 153,
+      "text": "⏳ Envoi au Forum en cours...",
+      "key": "studio.communication.studioSocialPreview.envoiAuForumEn"
+    },
+    {
+      "file": "src/components/studio/StudioTextToolbar.jsx",
+      "line": 127,
+      "text": "Mettre en gras (Unicode Mathematical Bold)",
+      "key": "studio.communication.studioTextToolbar.mettreEnGrasUnicode"
+    },
+    {
+      "file": "src/components/studio/StudioTextToolbar.jsx",
+      "line": 138,
+      "text": "Mettre en italique (Unicode Mathematical Italic)",
+      "key": "studio.communication.studioTextToolbar.mettreEnItaliqueUnicode"
+    },
+    {
+      "file": "src/components/studio/StudioWritingGuide.jsx",
+      "line": 31,
+      "text": "Consulter les équivalences culturelles et bonnes pratiques",
+      "key": "studio.communication.studioWritingGuide.consulterLesEquivalencesCulturelles"
+    },
+    {
+      "file": "src/components/studio/StudioWritingGuide.jsx",
+      "line": 33,
+      "text": "💡 Lexique & Recommandations de rédaction",
+      "key": "studio.communication.studioWritingGuide.lexiqueRecommandationsDeRedaction"
+    },
+    {
+      "file": "src/components/studio/StudioWritingGuide.jsx",
+      "line": 40,
+      "text": "Cliquez sur un terme vert pour l'insérer",
+      "key": "studio.communication.studioWritingGuide.cliquezSurUnTerme"
+    },
+    {
+      "file": "src/components/studio/StudioWritingGuide.jsx",
+      "line": 53,
+      "text": "Terme recommandé",
+      "key": "studio.communication.studioWritingGuide.termeRecommande"
+    },
+    {
+      "file": "src/components/studio/StudioWritingGuide.jsx",
+      "line": 54,
+      "text": "À éviter / Imprécis",
+      "key": "studio.communication.studioWritingGuide.aEviterImprecis"
+    },
+    {
+      "file": "src/components/studio/StudioWritingGuide.jsx",
+      "line": 55,
+      "text": "Contexte & Nuance",
+      "key": "studio.communication.studioWritingGuide.contexteNuance"
+    },
+    {
+      "file": "src/components/studio/StudioQuickChips.jsx",
+      "line": 37,
+      "text": "📖 Lexique :",
+      "key": "studio.communication.studioQuickChips.lexique"
+    },
+    {
+      "file": "src/components/studio/StudioQuickChips.jsx",
+      "line": 63,
+      "text": "@ Mentions :",
+      "key": "studio.communication.studioQuickChips.mentions"
+    },
+    {
+      "file": "src/components/studio/StudioQuickChips.jsx",
+      "line": 97,
+      "text": "Gérer le vocabulaire, les mentions et hashtags dans l'onglet Lexique",
+      "key": "studio.communication.studioQuickChips.gererLeVocabulaireLes"
+    },
+    {
+      "file": "src/components/studio/StudioQuickChips.jsx",
+      "line": 99,
+      "text": "Lexique",
+      "key": "studio.communication.studioQuickChips.lexique"
+    },
+    {
+      "file": "src/components/studio/preview/FacebookPreviewGrid.jsx",
+      "line": 19,
+      "text": "Logo",
+      "key": "studio.communication.facebookPreview.logo"
+    },
+    {
+      "file": "src/components/studio/preview/FacebookPreviewGrid.jsx",
+      "line": 22,
+      "text": "À l'instant · 🌐",
+      "key": "studio.communication.facebookPreview.aLInstant"
+    },
+    {
+      "file": "src/components/studio/preview/FacebookPreviewGrid.jsx",
+      "line": 30,
+      "text": "(Texte de publication en cours de saisie...)",
+      "key": "studio.communication.facebookPreview.texteDePublicationEn"
+    },
+    {
+      "file": "src/components/studio/preview/FacebookPreviewGrid.jsx",
+      "line": 36,
+      "text": "Aucune photo sélectionnée",
+      "key": "studio.communication.facebookPreview.aucunePhotoSelectionnee"
+    },
+    {
+      "file": "src/components/studio/preview/FacebookPreviewGrid.jsx",
+      "line": 43,
+      "text": "Photo 1",
+      "key": "studio.communication.facebookPreview.photo1"
+    },
+    {
+      "file": "src/components/studio/preview/FacebookPreviewGrid.jsx",
+      "line": 49,
+      "text": "Photo 1",
+      "key": "studio.communication.facebookPreview.photo1"
+    },
+    {
+      "file": "src/components/studio/preview/FacebookPreviewGrid.jsx",
+      "line": 50,
+      "text": "Photo 2",
+      "key": "studio.communication.facebookPreview.photo2"
+    },
+    {
+      "file": "src/components/studio/preview/FacebookPreviewGrid.jsx",
+      "line": 57,
+      "text": "Photo 1",
+      "key": "studio.communication.facebookPreview.photo1"
+    },
+    {
+      "file": "src/components/studio/preview/FacebookPreviewGrid.jsx",
+      "line": 60,
+      "text": "Photo 2",
+      "key": "studio.communication.facebookPreview.photo2"
+    },
+    {
+      "file": "src/components/studio/preview/FacebookPreviewGrid.jsx",
+      "line": 61,
+      "text": "Photo 3",
+      "key": "studio.communication.facebookPreview.photo3"
+    },
+    {
+      "file": "src/components/studio/preview/FacebookPreviewGrid.jsx",
+      "line": 76,
+      "text": "Photo 1",
+      "key": "studio.communication.facebookPreview.photo1"
+    },
+    {
+      "file": "src/components/studio/preview/FacebookPreviewGrid.jsx",
+      "line": 77,
+      "text": "Photo 2",
+      "key": "studio.communication.facebookPreview.photo2"
+    },
+    {
+      "file": "src/components/studio/preview/FacebookPreviewGrid.jsx",
+      "line": 78,
+      "text": "Photo 3",
+      "key": "studio.communication.facebookPreview.photo3"
+    },
+    {
+      "file": "src/components/studio/preview/FacebookPreviewGrid.jsx",
+      "line": 80,
+      "text": "Photo 4",
+      "key": "studio.communication.facebookPreview.photo4"
+    },
+    {
+      "file": "src/components/studio/preview/FacebookPreviewGrid.jsx",
+      "line": 91,
+      "text": "👍 J'aime",
+      "key": "studio.communication.facebookPreview.jAime"
+    },
+    {
+      "file": "src/components/studio/preview/FacebookPreviewGrid.jsx",
+      "line": 94,
+      "text": "💬 Commenter",
+      "key": "studio.communication.facebookPreview.commenter"
+    },
+    {
+      "file": "src/components/studio/preview/FacebookPreviewGrid.jsx",
+      "line": 97,
+      "text": "↗️ Partager",
+      "key": "studio.communication.facebookPreview.partager"
+    },
+    {
+      "file": "src/components/studio/preview/InstagramPreviewCard.jsx",
+      "line": 16,
+      "text": "Vide",
+      "key": "studio.communication.instagramPreview.vide"
+    },
+    {
+      "file": "src/components/studio/preview/InstagramPreviewCard.jsx",
+      "line": 39,
+      "text": "Logo",
+      "key": "studio.communication.instagramPreview.logo"
+    },
+    {
+      "file": "src/components/studio/preview/InstagramPreviewCard.jsx",
+      "line": 51,
+      "text": "Photo",
+      "key": "studio.communication.instagramPreview.photo"
+    },
+    {
+      "file": "src/components/studio/preview/InstagramPreviewCard.jsx",
+      "line": 53,
+      "text": "Ajoutez au moins une photo pour prévisualiser",
+      "key": "studio.communication.instagramPreview.ajoutezAuMoinsUne"
+    },
+    {
+      "file": "src/config/studioSocialConfig.js",
+      "line": 12,
+      "text": "Éléments & Nature",
+      "key": "studio.communication.studioSocialConfig.elementsNature"
+    },
+    {
+      "file": "src/config/studioSocialConfig.js",
+      "line": 18,
+      "text": "Rythme & Danse",
+      "key": "studio.communication.studioSocialConfig.rythmeDanse"
+    },
+    {
+      "file": "src/config/studioSocialConfig.js",
+      "line": 24,
+      "text": "Fête & Cortège",
+      "key": "studio.communication.studioSocialConfig.feteCortege"
+    },
+    {
+      "file": "src/config/studioSocialConfig.js",
+      "line": 30,
+      "text": "Infos pratiques",
+      "key": "studio.communication.studioSocialConfig.infosPratiques"
+    },
+    {
+      "file": "src/config/studioSocialConfig.js",
+      "line": 59,
+      "text": "O Girador",
+      "key": "studio.communication.studioSocialConfig.oGirador"
+    },
+    {
+      "file": "src/config/studioSocialConfig.js",
+      "line": 60,
+      "text": "Maracatu",
+      "key": "studio.communication.studioSocialConfig.maracatu"
+    }
+  ],
+  "lexique": [
+    {
+      "file": "src/components/studio/StudioLexiqueManager.jsx",
+      "line": 136,
+      "text": "Modifications enregistrées avec succès !",
+      "key": "studio.lexique.studioLexique.modificationsEnregistreesAvecSucces"
+    },
+    {
+      "file": "src/components/studio/StudioLexiqueManager.jsx",
+      "line": 139,
+      "text": "Erreur lors de l'enregistrement.",
+      "key": "studio.lexique.studioLexique.erreurLorsDeL"
+    },
+    {
+      "file": "src/components/studio/StudioLexiqueManager.jsx",
+      "line": 165,
+      "text": "Chargement du lexique et des mentions...",
+      "key": "studio.lexique.studioLexique.chargementDuLexiqueEt"
+    },
+    {
+      "file": "src/components/studio/StudioLexiqueManager.jsx",
+      "line": 178,
+      "text": "Studio",
+      "key": "studio.lexique.studioLexique.studio"
+    },
+    {
+      "file": "src/components/studio/StudioLexiqueManager.jsx",
+      "line": 180,
+      "text": "Lexique & Carnet Social",
+      "key": "studio.lexique.studioLexique.lexiqueCarnetSocial"
+    },
+    {
+      "file": "src/components/studio/StudioLexiqueManager.jsx",
+      "line": 183,
+      "text": "Lexique, Mentions & Hashtags",
+      "key": "studio.lexique.studioLexique.lexiqueMentionsHashtags"
+    },
+    {
+      "file": "src/components/studio/StudioLexiqueManager.jsx",
+      "line": 185,
+      "text": "Gérez le vocabulaire recommandé, le carnet de mentions (@comptes) et les hashtags officiels du Studio Social.",
+      "key": "studio.lexique.studioLexique.gerezLeVocabulaireRecommande"
+    },
+    {
+      "file": "src/components/studio/StudioLexiqueManager.jsx",
+      "line": 193,
+      "text": "Sauvegarde...",
+      "key": "studio.lexique.studioLexique.sauvegarde"
+    },
+    {
+      "file": "src/components/studio/StudioLexiqueManager.jsx",
+      "line": 209,
+      "text": "Ouvrir le Studio Social",
+      "key": "studio.lexique.studioLexique.ouvrirLeStudioSocial"
+    },
+    {
+      "file": "src/components/studio/StudioLexiqueManager.jsx",
+      "line": 218,
+      "text": "⬅️ Retour",
+      "key": "studio.lexique.studioLexique.retour"
+    },
+    {
+      "file": "src/components/studio/lexique/HashtagsSection.jsx",
+      "line": 27,
+      "text": "Veuillez saisir un hashtag valide (ex: #maracatu).",
+      "key": "studio.lexique.hashtags.veuillezSaisirUnHashtag"
+    },
+    {
+      "file": "src/components/studio/lexique/HashtagsSection.jsx",
+      "line": 54,
+      "text": "Hashtags par défaut",
+      "key": "studio.lexique.hashtags.hashtagsParDefaut"
+    },
+    {
+      "file": "src/components/studio/lexique/HashtagsSection.jsx",
+      "line": 56,
+      "text": "Hashtags officiels automatiquement intégrés et suggérés lors de la rédaction des publications.",
+      "key": "studio.lexique.hashtags.hashtagsOfficielsAutomatiquementIntegres"
+    },
+    {
+      "file": "src/components/studio/lexique/HashtagsSection.jsx",
+      "line": 71,
+      "text": "Ajouter un hashtag (ex: #culturapopular)...",
+      "key": "studio.lexique.hashtags.ajouterUnHashtagEx"
+    },
+    {
+      "file": "src/components/studio/lexique/HashtagsSection.jsx",
+      "line": 82,
+      "text": "Ajouter",
+      "key": "studio.lexique.hashtags.ajouter"
+    },
+    {
+      "file": "src/components/studio/lexique/HashtagsSection.jsx",
+      "line": 94,
+      "text": "Hashtags actifs (",
+      "key": "studio.lexique.hashtags.hashtagsActifs"
+    },
+    {
+      "file": "src/components/studio/lexique/HashtagsSection.jsx",
+      "line": 99,
+      "text": "Aucun hashtag configuré. Utilisez le champ ci-dessus pour en ajouter.",
+      "key": "studio.lexique.hashtags.aucunHashtagConfigureUtilisez"
+    },
+    {
+      "file": "src/components/studio/lexique/MentionsSection.jsx",
+      "line": 60,
+      "text": "Veuillez saisir un nom de compte valide (ex: @ogirador)",
+      "key": "studio.lexique.mentions.veuillezSaisirUnNom"
+    },
+    {
+      "file": "src/components/studio/lexique/MentionsSection.jsx",
+      "line": 103,
+      "text": "Carnet de mentions (@)",
+      "key": "studio.lexique.mentions.carnetDeMentions"
+    },
+    {
+      "file": "src/components/studio/lexique/MentionsSection.jsx",
+      "line": 105,
+      "text": "Comptes partenaires, collectifs et tags officiels à insérer directement dans les publications.",
+      "key": "studio.lexique.mentions.comptesPartenairesCollectifsEt"
+    },
+    {
+      "file": "src/components/studio/lexique/MentionsSection.jsx",
+      "line": 117,
+      "text": "Nouvelle mention",
+      "key": "studio.lexique.mentions.nouvelleMention"
+    },
+    {
+      "file": "src/components/studio/lexique/MentionsSection.jsx",
+      "line": 126,
+      "text": "✏️ Modifier la mention",
+      "key": "studio.lexique.mentions.modifierLaMention"
+    },
+    {
+      "file": "src/components/studio/lexique/MentionsSection.jsx",
+      "line": 126,
+      "text": "➕ Ajouter une mention au carnet",
+      "key": "studio.lexique.mentions.ajouterUneMentionAu"
+    },
+    {
+      "file": "src/components/studio/lexique/MentionsSection.jsx",
+      "line": 131,
+      "text": "Libellé du bouton (ex: O Girador) :",
+      "key": "studio.lexique.mentions.libelleDuBoutonEx"
+    },
+    {
+      "file": "src/components/studio/lexique/MentionsSection.jsx",
+      "line": 138,
+      "text": "Nom du compte / Partenaire",
+      "key": "studio.lexique.mentions.nomDuComptePartenaire"
+    },
+    {
+      "file": "src/components/studio/lexique/MentionsSection.jsx",
+      "line": 144,
+      "text": "Tag exact (@handle) :",
+      "key": "studio.lexique.mentions.tagExactHandle"
+    },
+    {
+      "file": "src/components/studio/lexique/MentionsSection.jsx",
+      "line": 151,
+      "text": "@nom_du_compte",
+      "key": "studio.lexique.mentions.nom_du_compte"
+    },
+    {
+      "file": "src/components/studio/lexique/MentionsSection.jsx",
+      "line": 169,
+      "text": "Annuler",
+      "key": "studio.lexique.mentions.annuler"
+    },
+    {
+      "file": "src/components/studio/lexique/MentionsSection.jsx",
+      "line": 175,
+      "text": "💾 Enregistrer",
+      "key": "studio.lexique.mentions.enregistrer"
+    },
+    {
+      "file": "src/components/studio/lexique/MentionsSection.jsx",
+      "line": 185,
+      "text": "Aucune mention enregistrée pour le moment. Cliquez sur \"Nouvelle mention\" pour commencer.",
+      "key": "studio.lexique.mentions.aucuneMentionEnregistreePour"
+    },
+    {
+      "file": "src/components/studio/lexique/MentionsSection.jsx",
+      "line": 192,
+      "text": "Bouton",
+      "key": "studio.lexique.mentions.bouton"
+    },
+    {
+      "file": "src/components/studio/lexique/MentionsSection.jsx",
+      "line": 193,
+      "text": "Tag inséré",
+      "key": "studio.lexique.mentions.tagInsere"
+    },
+    {
+      "file": "src/components/studio/lexique/MentionsSection.jsx",
+      "line": 194,
+      "text": "Actions",
+      "key": "studio.lexique.mentions.actions"
+    },
+    {
+      "file": "src/components/studio/lexique/MentionsSection.jsx",
+      "line": 215,
+      "text": "Modifier la mention",
+      "key": "studio.lexique.mentions.modifierLaMention"
+    },
+    {
+      "file": "src/components/studio/lexique/MentionsSection.jsx",
+      "line": 224,
+      "text": "Supprimer la mention",
+      "key": "studio.lexique.mentions.supprimerLaMention"
+    },
+    {
+      "file": "src/components/studio/lexique/VocabForm.jsx",
+      "line": 29,
+      "text": "Veuillez renseigner le terme privilégié (ex: Batuque).",
+      "key": "studio.lexique.vocabForm.veuillezRenseignerLeTerme"
+    },
+    {
+      "file": "src/components/studio/lexique/VocabForm.jsx",
+      "line": 47,
+      "text": "✏️ Modifier l'équivalence culturelle",
+      "key": "studio.lexique.vocabForm.modifierLEquivalenceCulturelle"
+    },
+    {
+      "file": "src/components/studio/lexique/VocabForm.jsx",
+      "line": 47,
+      "text": "➕ Ajouter une équivalence culturelle",
+      "key": "studio.lexique.vocabForm.ajouterUneEquivalenceCulturelle"
+    },
+    {
+      "file": "src/components/studio/lexique/VocabForm.jsx",
+      "line": 52,
+      "text": "Terme privilégié (Recommandé) :",
+      "key": "studio.lexique.vocabForm.termePrivilegieRecommande"
+    },
+    {
+      "file": "src/components/studio/lexique/VocabForm.jsx",
+      "line": 59,
+      "text": "Ex: Batuque",
+      "key": "studio.lexique.vocabForm.exBatuque"
+    },
+    {
+      "file": "src/components/studio/lexique/VocabForm.jsx",
+      "line": 66,
+      "text": "Terme à éviter (Moins pertinent) :",
+      "key": "studio.lexique.vocabForm.termeAEviterMoins"
+    },
+    {
+      "file": "src/components/studio/lexique/VocabForm.jsx",
+      "line": 73,
+      "text": "Ex: Bateria",
+      "key": "studio.lexique.vocabForm.exBateria"
+    },
+    {
+      "file": "src/components/studio/lexique/VocabForm.jsx",
+      "line": 79,
+      "text": "Pourquoi / Contexte explicatif :",
+      "key": "studio.lexique.vocabForm.pourquoiContexteExplicatif"
+    },
+    {
+      "file": "src/components/studio/lexique/VocabForm.jsx",
+      "line": 86,
+      "text": "Explication historique, signification dans la tradition du Maracatu...",
+      "key": "studio.lexique.vocabForm.explicationHistoriqueSignificationDans"
+    },
+    {
+      "file": "src/components/studio/lexique/VocabForm.jsx",
+      "line": 99,
+      "text": "🏷️ Activer en pastille d'insertion rapide dans la barre du Studio Social",
+      "key": "studio.lexique.vocabForm.activerEnPastilleD"
+    },
+    {
+      "file": "src/components/studio/lexique/VocabForm.jsx",
+      "line": 116,
+      "text": "Annuler",
+      "key": "studio.lexique.vocabForm.annuler"
+    },
+    {
+      "file": "src/components/studio/lexique/VocabForm.jsx",
+      "line": 122,
+      "text": "💾 Enregistrer",
+      "key": "studio.lexique.vocabForm.enregistrer"
+    },
+    {
+      "file": "src/components/studio/lexique/VocabSection.jsx",
+      "line": 90,
+      "text": "Vocabulaire & Guide culturel",
+      "key": "studio.lexique.vocab.vocabulaireGuideCulturel"
+    },
+    {
+      "file": "src/components/studio/lexique/VocabSection.jsx",
+      "line": 92,
+      "text": "Équivalences culturelles, termes recommandés et activation des pastilles d'insertion rapide.",
+      "key": "studio.lexique.vocab.equivalencesCulturellesTermesRecommandes"
+    },
+    {
+      "file": "src/components/studio/lexique/VocabSection.jsx",
+      "line": 104,
+      "text": "Nouvelle équivalence",
+      "key": "studio.lexique.vocab.nouvelleEquivalence"
+    },
+    {
+      "file": "src/components/studio/lexique/VocabSection.jsx",
+      "line": 121,
+      "text": "Aucune équivalence culturelle enregistrée.",
+      "key": "studio.lexique.vocab.aucuneEquivalenceCulturelleEnregistree"
+    },
+    {
+      "file": "src/components/studio/lexique/VocabSection.jsx",
+      "line": 128,
+      "text": "Terme privilégié",
+      "key": "studio.lexique.vocab.termePrivilegie"
+    },
+    {
+      "file": "src/components/studio/lexique/VocabSection.jsx",
+      "line": 129,
+      "text": "À éviter",
+      "key": "studio.lexique.vocab.aEviter"
+    },
+    {
+      "file": "src/components/studio/lexique/VocabSection.jsx",
+      "line": 130,
+      "text": "Contexte",
+      "key": "studio.lexique.vocab.contexte"
+    },
+    {
+      "file": "src/components/studio/lexique/VocabSection.jsx",
+      "line": 131,
+      "text": "Pastille rapide",
+      "key": "studio.lexique.vocab.pastilleRapide"
+    },
+    {
+      "file": "src/components/studio/lexique/VocabSection.jsx",
+      "line": 132,
+      "text": "Actions",
+      "key": "studio.lexique.vocab.actions"
+    },
+    {
+      "file": "src/components/studio/lexique/VocabSection.jsx",
+      "line": 159,
+      "text": "Aucun contexte",
+      "key": "studio.lexique.vocab.aucunContexte"
+    },
+    {
+      "file": "src/components/studio/lexique/VocabSection.jsx",
+      "line": 173,
+      "text": "✅ Active",
+      "key": "studio.lexique.vocab.active"
+    },
+    {
+      "file": "src/components/studio/lexique/VocabSection.jsx",
+      "line": 173,
+      "text": "⚪ Désactivée",
+      "key": "studio.lexique.vocab.desactivee"
+    },
+    {
+      "file": "src/components/studio/lexique/VocabSection.jsx",
+      "line": 183,
+      "text": "Modifier l'équivalence",
+      "key": "studio.lexique.vocab.modifierLEquivalence"
+    },
+    {
+      "file": "src/components/studio/lexique/VocabSection.jsx",
+      "line": 192,
+      "text": "Supprimer l'équivalence",
+      "key": "studio.lexique.vocab.supprimerLEquivalence"
+    }
+  ]
+}

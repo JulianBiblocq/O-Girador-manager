@@ -148,13 +148,13 @@ export default function PostEventCostumeReturnModal({
         className="w-full max-w-lg select-none"
         onClick={(e) => e.stopPropagation()}
       >
-        <CordelCard variant="default" useExtremeBorder={true} className="flex flex-col gap-4 max-h-[92vh] overflow-y-auto">
+        <CordelCard variant="default" useExtremeBorder={true} className="flex flex-col gap-4 max-h-[92vh] overflow-y-auto mt-2 sm:mt-0">
           {/* En-tête Cordel */}
-          <div className="flex justify-between items-start border-b-2 border-dashed border-cordel-master-dark/25 pb-3">
-            <div>
+          <div className="flex justify-between items-start gap-3 border-b-2 border-dashed border-cordel-master-dark/25 pb-3">
+            <div className="flex-1 min-w-0 pr-2">
               <div className="flex items-center gap-2">
                 <span className="text-xl">🎭</span>
-                <h3 className="text-base font-heading font-black tracking-wider text-cordel-wood uppercase">
+                <h3 className="text-base font-heading font-black tracking-wider text-cordel-wood uppercase break-words">
                   {t('costumerie.retourDesCostumes')}
                 </h3>
               </div>
@@ -166,10 +166,11 @@ export default function PostEventCostumeReturnModal({
               type="button"
               onClick={handleModalClose}
               disabled={saving}
-              className="text-lg font-black text-cordel-master-dark hover:text-cordel-wood cursor-pointer p-1"
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center -mr-2 -mt-2 rounded-lg text-cordel-master-dark hover:text-cordel-wood hover:bg-black/5 active:bg-black/10 transition-colors cursor-pointer shrink-0 select-none touch-manipulation disabled:opacity-50"
               title={t('costumerie.fermer')}
+              aria-label={t('common.close', 'Fermer')}
             >
-              ✕
+              <span className="text-xl font-black leading-none pointer-events-none">✕</span>
             </button>
           </div>
 

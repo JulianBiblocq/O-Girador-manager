@@ -101,12 +101,12 @@ export default function InstrumentModelCard({ model, initialPartId = null, onClo
       }}
     >
       <div
-        className="relative bg-[var(--cordel-bg)] w-full max-w-4xl max-h-[95vh] flex flex-col rounded-[var(--theme-border-radius)] shadow-[5px_5px_0px_0px_#181716] border-[var(--theme-border-width)] border-[var(--theme-border-style)] border-black overflow-hidden select-text"
+        className="relative bg-[var(--cordel-bg)] w-full max-w-4xl max-h-[95vh] flex flex-col rounded-[var(--theme-border-radius)] shadow-[5px_5px_0px_0px_#181716] border-[var(--theme-border-width)] border-[var(--theme-border-style)] border-black overflow-hidden select-text mt-2 sm:mt-0"
         onClick={(e) => e.stopPropagation()}
       >
         {/* En-tête principal */}
-        <div className="flex-shrink-0 flex items-center justify-between p-3 sm:p-5 border-b-[var(--theme-border-width)] border-dashed border-[var(--color-cordel-wood)] bg-[#fdfaf2]">
-          <div className="flex flex-col">
+        <div className="flex-shrink-0 flex items-start justify-between gap-3 p-3 sm:p-5 border-b-[var(--theme-border-width)] border-dashed border-[var(--color-cordel-wood)] bg-[#fdfaf2]">
+          <div className="flex-1 min-w-0 pr-2 flex flex-col">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-[10px] uppercase font-black tracking-widest text-[var(--color-cordel-wood)]">
                 🛠️ Atelier Lutherie
@@ -122,7 +122,7 @@ export default function InstrumentModelCard({ model, initialPartId = null, onClo
               )}
             </div>
 
-            <h2 className="font-heading font-black text-2xl sm:text-3xl text-black leading-none mt-1">
+            <h2 className="font-heading font-black text-2xl sm:text-3xl text-black leading-none mt-1 break-words">
               {model.nom}
             </h2>
 
@@ -159,9 +159,11 @@ export default function InstrumentModelCard({ model, initialPartId = null, onClo
           </div>
 
           <button
+            type="button"
             onClick={onClose}
-            className="text-[var(--color-cordel-rouge)] hover:opacity-70 p-2 cursor-pointer transition-opacity shrink-0 ml-2"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center -mr-2 -mt-2 rounded-lg text-[var(--color-cordel-rouge)] hover:bg-black/5 active:bg-black/10 transition-colors cursor-pointer shrink-0 select-none touch-manipulation"
             title="Fermer"
+            aria-label="Fermer"
           >
             <XiloClose size={24} />
           </button>

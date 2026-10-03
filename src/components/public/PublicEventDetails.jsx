@@ -39,15 +39,16 @@ export default function PublicEventDetails({ event, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-xs animate-fade-in">
-      <div className="bg-white rounded-2xl border border-stone-200 shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto flex flex-col relative text-left">
+      <div className="bg-white rounded-2xl border border-stone-200 shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto flex flex-col relative text-left mt-2 sm:mt-0">
         {/* Bouton de Fermeture */}
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-white/80 backdrop-blur-md border border-stone-300 text-stone-700 hover:bg-stone-100 flex items-center justify-center font-bold text-sm shadow-md cursor-pointer transition-all"
+          className="absolute top-3 right-3 z-10 min-w-[44px] min-h-[44px] w-11 h-11 rounded-full bg-white/90 backdrop-blur-md border border-stone-300 text-stone-700 hover:bg-stone-100 flex items-center justify-center font-bold text-sm shadow-md cursor-pointer transition-all select-none touch-manipulation"
           title="Fermer"
+          aria-label="Fermer"
         >
-          ✕
+          <span className="text-xl font-black leading-none pointer-events-none">✕</span>
         </button>
 
         {/* Visuel d'illustration Grand Formater */}

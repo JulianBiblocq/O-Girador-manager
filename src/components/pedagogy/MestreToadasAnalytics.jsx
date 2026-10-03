@@ -4,6 +4,7 @@ import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import { calculateToadaScore, getProgressColor } from '../../utils/toadaProgressEngine';
 import { normalizePupitreName } from '../../utils/secretariatMetrics';
+import { useTranslation } from '../LanguageContext';
 
 export default function MestreToadasAnalytics({ 
   profileData, 
@@ -13,6 +14,7 @@ export default function MestreToadasAnalytics({
   revisionsCountMap = {},
   onPinNote = null 
 }) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [analyticsData, setAnalyticsData] = useState([]);
   const [pupitresList, setPupitresList] = useState([]);
@@ -154,50 +156,45 @@ export default function MestreToadasAnalytics({
     fetchAndAggregate();
   }, [profileData?.groupId, allSongs, usersData, evaluationsMap, revisionsCountMap]);
 
-  if (loading) return <div className="p-8 text-center text-xs font-bold animate-pulse">Calcul de la matrice Nação...</div>;
+  if (loading) return <div className="p-8 text-center text-xs font-bold animate-pulse">{t('pedagogy.progress.calculDeLaMatriceNacao')}</div>;
 
   return (
     <div className="flex flex-col gap-8 w-full max-w-6xl mx-auto p-4 select-none">
       <div className="flex flex-col gap-2 border-b-2 border-dashed border-cordel-master-dark/30 pb-4">
         <h2 className="text-xl md:text-2xl font-black uppercase tracking-wider text-cordel-wood flex items-center gap-2">
-          <span>📊</span> Analyse du Répertoire (Toadas)
-        </h2>
+          <span>📊</span>{t('pedagogy.progress.analyseDuRepertoireToadas')}</h2>
         <p className="text-xs text-cordel-master-dark opacity-80 leading-relaxed">
-          Vue consolidée des scores d'auto-évaluation et des demandes de révision de vos élèves, triée par pupitre. 
-          Les scores sont pondérés par la difficulté (Facile = max 33%, Moyen = max 66%, Expert = max 100%).
+          {t('pedagogy.progress.vueConsolideeDesScores')}
         </p>
       </div>
 
       {topToRevise.length > 0 && (
         <CordelCard variant="default" className="p-4 border-l-4 border-l-cordel-rouge">
-          <h3 className="text-sm font-black uppercase tracking-widest text-cordel-rouge mb-2">
-            ⚠️ Suggéré pour la prochaine répétition
-          </h3>
+          <h3 className="text-sm font-black uppercase tracking-widest text-cordel-rouge mb-2">{t('pedagogy.suggestedForNextRehearsal')}</h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {topToRevise.map((t, i) => {
-              const reqCount = revisionsCountMap[t.songId] || 0;
+            {topToRevise.map((toada, i) => {
+              const reqCount = revisionsCountMap[toada.songId] || 0;
               return (
-                <div key={t.songId} className="bg-cordel-rouge/5 p-3 rounded border border-cordel-rouge/20 flex flex-col justify-between">
+                <div key={toada.songId} className="bg-cordel-rouge/5 p-3 rounded border border-cordel-rouge/20 flex flex-col justify-between">
                   <div>
-                    <span className="block text-[10px] font-black uppercase text-cordel-rouge/70 mb-1">Priorité #{i + 1}</span>
-                    <span className="font-bold text-sm text-encre-noire">{t.titre}</span>
-                    <span className="block text-[10px] text-encre-noire/50 mt-1">Score global : {t.globalScore}%</span>
+                    <span className="block text-[10px] font-black uppercase text-cordel-rouge/70 mb-1">{t('pedagogy.progress.priorite')}{i + 1}</span>
+                    <span className="font-bold text-sm text-encre-noire">{toada.titre}</span>
+                    <span className="block text-[10px] text-encre-noire/50 mt-1">{t('pedagogy.progress.scoreGlobal')} {toada.globalScore}%</span>
                     {reqCount > 0 && (
                       <span className="inline-flex items-center gap-1 text-[10px] font-black text-[var(--color-cordel-ocre,#c05621)] mt-1 bg-[var(--color-cordel-ocre,#c05621)]/10 px-1.5 py-0.5 rounded border border-[var(--color-cordel-ocre,#c05621)]/20">
                         <span>🙋</span>
-                        <span>{reqCount} demande{reqCount > 1 ? 's' : ''} d'élèves</span>
+                        <span>{reqCount} {t('pedagogy.progress.demande')}{reqCount > 1 ? 's' : ''} {t('pedagogy.progress.dEleves')}</span>
                       </span>
                     )}
                   </div>
-                  {onPinNote && (t.globalScore < 75 || reqCount > 0) && (
+                  {onPinNote && (toada.globalScore < 75 || reqCount > 0) && (
                     <button
                       type="button"
-                      onClick={() => onPinNote(t.titre, 'Chant & Toada', reqCount)}
+                      onClick={() => onPinNote(toada.titre, 'Chant & Toada', reqCount)}
                       className="mt-2 text-[9px] font-black uppercase px-2 py-1 bg-white border border-encre-noire/20 rounded hover:bg-neutral-100 hover:scale-105 transition-transform self-start cursor-pointer shadow-xs flex items-center gap-1"
-                      title="Épingler dans le Bloc-notes de répétition"
+                      title={t('pedagogy.progress.epinglerDansLeBlocNotes')}
                     >
-                      <span>📌</span>
-                      <span>Épingler</span>
+                      <span>{t('pedagogy.btnPinToNotepad')}</span>
                     </button>
                   )}
                 </div>
@@ -211,15 +208,24 @@ export default function MestreToadasAnalytics({
         <table className="w-full text-left text-xs min-w-[600px]">
           <thead>
             <tr>
-              <th className="p-2 border-b border-encre-noire/20 font-black uppercase tracking-widest text-cordel-wood">Toada</th>
-              <th className="p-2 border-b border-encre-noire/20 font-black uppercase tracking-widest text-center text-encre-noire/50">Global</th>
+              <th className="p-2 border-b border-encre-noire/20 font-black uppercase tracking-widest text-cordel-wood">{t('pedagogy.progress.toada')}</th>
+              <th className="p-2 border-b border-encre-noire/20 font-black uppercase tracking-widest text-center text-encre-noire/50">{t('pedagogy.progress.global')}</th>
               {pupitresList.map(p => (
-                <th key={p} className="p-2 border-b border-encre-noire/20 font-bold uppercase text-center">{p}</th>
+                <th key={p} className="p-2 border-b border-encre-noire/20 font-bold uppercase text-center">
+                  {p.toLowerCase() === 'en attente' ? t('pedagogy.thWaitingList') : p}
+                </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {analyticsData.map(row => (
+            {(!analyticsData || analyticsData.length === 0) ? (
+              <tr>
+                <td colSpan={2 + pupitresList.length} className="p-8 text-center text-xs text-cordel-master-dark/60 italic">
+                  {t('pedagogy.progress.noToadasData') || "Aucune donnée d'aisance ou toada enregistrée pour le moment."}
+                </td>
+              </tr>
+            ) : (
+              analyticsData.map(row => (
               <tr key={row.songId} className="hover:bg-neutral-100/50 transition-colors">
                 <td className="p-2 border-b border-encre-noire/10 font-bold text-encre-noire">
                   <div className="flex items-center gap-1.5">
@@ -227,7 +233,7 @@ export default function MestreToadasAnalytics({
                     {revisionsCountMap[row.songId] > 0 && (
                       <span className="shrink-0 text-[9px] font-black px-1.5 py-0.5 rounded bg-[var(--color-cordel-ocre,#c05621)]/15 text-[var(--color-cordel-ocre,#c05621)] border border-[var(--color-cordel-ocre,#c05621)]/30 inline-flex items-center gap-0.5">
                         <span>🙋</span>
-                        <span>{revisionsCountMap[row.songId]} demande{revisionsCountMap[row.songId] > 1 ? 's' : ''}</span>
+                        <span>{revisionsCountMap[row.songId]} {t('pedagogy.progress.demande')}{revisionsCountMap[row.songId] > 1 ? 's' : ''}</span>
                       </span>
                     )}
                   </div>
@@ -257,7 +263,8 @@ export default function MestreToadasAnalytics({
                   );
                 })}
               </tr>
-            ))}
+            ))
+            )}
           </tbody>
         </table>
       </div>

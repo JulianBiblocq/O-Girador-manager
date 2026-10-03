@@ -361,7 +361,9 @@ export default function AssociationSettings({
                     disabled={saving}
                     className="w-full py-3 font-bold uppercase tracking-widest text-xs"
                   >
-                    {saving ? "Enregistrement..." : "Enregistrer la configuration"}
+                    {saving
+                      ? (t('vitrine.admin.savingSettings') || t('common.saving') || "Enregistrement...")
+                      : (t('vitrine.admin.saveSettings') || "Enregistrer la configuration")}
                   </CordelButton>
                 </div>
               </div>

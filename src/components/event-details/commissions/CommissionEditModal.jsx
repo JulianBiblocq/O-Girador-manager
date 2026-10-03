@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import useConfirm from '../../../hooks/useConfirm';
+import useModalEscape from '../../../hooks/useModalEscape';
 import CommissionBasicInfoFields from './CommissionBasicInfoFields';
 import CommissionJalonsSection from './CommissionJalonsSection';
 import CommissionBudgetSection from './CommissionBudgetSection';
@@ -42,6 +43,9 @@ export default function CommissionEditModal({
   const [isSaving, setIsSaving] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const confirm = useConfirm();
+
+  // Fermeture accessible avec touche Échap
+  useModalEscape(isOpen, onClose, isSaving);
 
   if (!isOpen) return null;
 
@@ -94,20 +98,22 @@ export default function CommissionEditModal({
       className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/60 backdrop-blur-xs select-none"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="w-full max-w-2xl bg-cordel-bg-light border-2 border-encre-noire rounded-[8px_12px_7px_10px] shadow-[4px_4px_0px_0px_#181716] flex flex-col max-h-[90vh] overflow-hidden">
+      <div className="w-full max-w-2xl bg-cordel-bg-light border-2 border-encre-noire rounded-[8px_12px_7px_10px] shadow-[4px_4px_0px_0px_#181716] flex flex-col max-h-[90dvh] overflow-hidden">
         {/* En-tête */}
-        <div className="px-4 py-3 border-b-2 border-encre-noire bg-cordel-bg flex items-center justify-between">
+        <div className="shrink-0 px-4 py-3 border-b-2 border-encre-noire bg-cordel-bg flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-xl">{formData.icone}</span>
             <h3 className="text-sm font-black uppercase text-encre-noire">
               {isEditing ? `Édition : ${formData.titre}` : 'Créer une nouvelle commission'}
             </h3>
           </div>
-          <button type="button" onClick={onClose} className="text-stone-500 hover:text-black font-black text-sm">✕</button>
+          <button type="button" onClick={onClose} className="text-stone-500 hover:text-black font-black text-sm shrink-0 cursor-pointer">✕</button>
         </div>
 
-        {/* Formulaire défilant */}
-        <form onSubmit={handleSave} className="p-4 flex-1 overflow-y-auto flex flex-col gap-4 text-xs">
+        {/* Form Wrapper */}
+        <form onSubmit={handleSave} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          {/* Corps défilant */}
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 flex flex-col gap-4 text-xs">
           {toastMessage && (
             <div className="p-2 rounded bg-cordel-bg border border-encre-noire font-black text-center text-xs">
               {toastMessage}
@@ -159,28 +165,24 @@ export default function CommissionEditModal({
               <CommissionVaralAction event={event} commission={commission} usersMap={usersMap} groupId={groupId} variant="full" />
             </div>
           )}
+          </div>
 
-          {/* Pied de formulaire */}
-          <div className="flex items-center justify-between gap-2 pt-3 border-t border-encre-noire/20">
+          {/* Pied de formulaire fixe */}
+          <div className="shrink-0 p-4 border-t-2 border-dashed border-encre-noire/20 bg-[var(--theme-bg)] flex items-center justify-between gap-2 pb-[max(env(safe-area-inset-bottom),1rem)]">
             <div>
               {isEditing && onDelete && (
                 <button
                   type="button" onClick={handleDelete} disabled={isSaving}
-                  className="px-2.5 py-1.5 rounded font-black text-xs text-[var(--color-cordel-rouge)] hover:bg-rose-50 border border-transparent hover:border-[var(--color-cordel-rouge)]/30 transition-colors cursor-pointer"
+                  className="px-2.5 py-1.5 rounded font-black text-xs text-[var(--color-cordel-rouge)] hover:bg-rose-50 border border-transparent hover:border-[var(--color-cordel-rouge)]/30 transition-colors cursor-pointer shrink-0"
                 >
                   🗑️ Supprimer la commission
                 </button>
               )}
             </div>
 
-            <div className="flex items-center gap-2">
-              <button type="button" onClick={onClose} className="px-3 py-1.5 rounded border border-stone-300 font-bold bg-white text-stone-700 hover:bg-stone-50 cursor-pointer">
-                Annuler
-              </button>
-              <button
-                type="submit" disabled={isSaving || !formData.titre.trim()}
-                className="px-4 py-1.5 font-black rounded border border-encre-noire bg-[var(--color-cordel-vert)] text-white hover:opacity-90 disabled:opacity-40 shadow-xs cursor-pointer"
-              >
+            <div className="flex items-center gap-2 shrink-0">
+              <button type="button" onClick={onClose} className="px-3 py-1.5 rounded border border-stone-300 font-bold bg-white text-stone-700 hover:bg-stone-50 cursor-pointer shrink-0">Annuler</button>
+              <button type="submit" disabled={isSaving || !formData.titre.trim()} className="px-4 py-1.5 font-black rounded border border-encre-noire bg-[var(--color-cordel-vert)] text-white hover:opacity-90 disabled:opacity-40 shadow-xs cursor-pointer shrink-0">
                 {isSaving ? 'Enregistrement...' : 'Enregistrer la commission'}
               </button>
             </div>

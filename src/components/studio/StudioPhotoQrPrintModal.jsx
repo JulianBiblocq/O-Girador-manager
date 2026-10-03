@@ -1,6 +1,7 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { useTranslation } from '../LanguageContext';
+import useModalEscape from '../../hooks/useModalEscape';
 
 /**
  * Composant : StudioPhotoQrPrintModal
@@ -28,16 +29,8 @@ export default function StudioPhotoQrPrintModal({
   const canvasRef = useRef(null);
   const [copied, setCopied] = useState(false);
 
-  // Gestion de la touche Échap pour fermer la modale
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
+  // Gestion de la fermeture par la touche Échap
+  useModalEscape(Boolean(qrUrl), onClose);
 
   // Formatage lisible de la date
   const formattedDate = React.useMemo(() => {
@@ -133,38 +126,39 @@ export default function StudioPhotoQrPrintModal({
       {/* Carte Modale Principale */}
       <div 
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-lg max-h-[92vh] flex flex-col rounded-[6px_14px_8px_12px] bg-[var(--theme-bg)] text-encre-noire border-2 border-encre-noire shadow-[4px_4px_0px_0px_#181716] overflow-hidden"
+        className="relative w-full max-w-lg max-h-[90dvh] flex flex-col rounded-[6px_14px_8px_12px] bg-[var(--theme-bg)] text-encre-noire border-2 border-encre-noire shadow-[4px_4px_0px_0px_#181716] overflow-hidden mt-2 sm:mt-0"
       >
         {/* En-tête de la modale */}
-        <div className="flex items-center justify-between p-3.5 sm:p-4 border-b-2 border-dashed border-cordel-master-dark/25 bg-amber-100/60 no-print">
-          <div className="flex items-center gap-2">
+        <div className="shrink-0 flex items-start justify-between gap-3 p-3.5 sm:p-4 border-b-2 border-dashed border-cordel-master-dark/25 bg-amber-100/60 no-print">
+          <div className="flex-1 min-w-0 pr-2 flex items-start gap-2">
             <span className="text-base">{isDepot ? '📸' : '🖼️'}</span>
-            <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-cordel-wood">
-              {isDepot ? "Fiche QR-Code : Récolte Photos & Vidéos" : "Fiche QR-Code : Album Photos Officiel"}
+            <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-cordel-wood break-words">
+              {isDepot ? t('studio.photos.ficheQrCodeRecoltePhotos') : t('studio.photos.ficheQrCodeAlbumPhotos')}
             </h3>
           </div>
 
           <button
             type="button"
             onClick={onClose}
-            className="w-7 h-7 rounded border border-encre-noire/40 hover:border-encre-noire bg-cordel-bg text-encre-noire font-black text-xs flex items-center justify-center cursor-pointer transition-all"
-            title="Fermer (Échap)"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center -mr-2 -mt-2 rounded-lg text-encre-noire hover:text-cordel-wood hover:bg-black/5 active:bg-black/10 transition-colors cursor-pointer shrink-0 select-none touch-manipulation"
+            title={t('studio.photos.fermerEchap')}
+            aria-label={t('studio.photos.fermerEchap')}
           >
-            ✕
+            <span className="text-xl font-black leading-none pointer-events-none">✕</span>
           </button>
         </div>
 
         {/* Corps : Aperçu de l'affiche A4 Cordel */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col items-center gap-4 text-center">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 flex flex-col items-center gap-4 text-center">
           <div className="print-a4-sheet w-full border-2 border-dashed border-cordel-master-dark/30 bg-[#fdfaf2] p-5 sm:p-6 rounded-[4px_10px_6px_8px] flex flex-col items-center gap-3.5">
             
             {/* Liseré Cordel et Titre */}
             <div className="flex flex-col items-center gap-1">
               <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-[var(--theme-primary)]">
-                {isDepot ? "✨ Partagez vos clichés de la Roda ! ✨" : "✨ Album Photos Officiel de la Roda ✨"}
+                {isDepot ? t('studio.photos.partagezVosClichesDeLa') : t('studio.photos.albumPhotosOfficielDeLa')}
               </span>
               <h2 className="text-base sm:text-lg font-black uppercase tracking-wider text-encre-noire max-w-sm leading-snug">
-                {eventTitle || "Événement O Girador"}
+                {eventTitle || t('studio.photos.evenementOGirador')}
               </h2>
               {formattedDate && (
                 <span className="text-xs font-bold text-encre-noire/80 capitalize">
@@ -190,9 +184,9 @@ export default function StudioPhotoQrPrintModal({
             <div className="flex flex-col items-center gap-1.5 max-w-sm">
               <p className="text-xs font-black text-encre-noire leading-snug">
                 {isDepot ? (
-                  "Scannez ce QR-Code avec l'appareil photo de votre smartphone pour déposer vos photos et vidéos dans notre espace partagé."
+                  t('studio.photos.scannezCeQrCodeAvecL')
                 ) : (
-                  "Scannez ce QR-Code avec votre smartphone pour visionner l'album photo complet de la prestation."
+                  t('studio.photos.scannezCeQrCodeAvecVotre')
                 )}
               </p>
               <p className="text-[10px] text-encre-noire/60 font-mono break-all line-clamp-2">
@@ -203,48 +197,48 @@ export default function StudioPhotoQrPrintModal({
         </div>
 
         {/* Pied d'actions : Télécharger PNG, Imprimer A4, Tester et Copier */}
-        <div className="p-3 sm:p-4 border-t-2 border-dashed border-cordel-master-dark/25 bg-amber-100/60 flex flex-wrap items-center justify-center gap-2 no-print">
+        <div className="shrink-0 p-3 sm:p-4 border-t-2 border-dashed border-cordel-master-dark/25 bg-[var(--theme-bg)] flex flex-wrap items-center justify-center gap-2 pb-[max(env(safe-area-inset-bottom),1rem)] no-print">
           {/* Bouton Télécharger PNG */}
           <button
             type="button"
             onClick={handleDownloadPng}
-            className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 border-encre-noire bg-cordel-bg hover:bg-amber-200 text-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1.5"
-            title="Télécharger l'image du QR Code en haute définition (PNG)"
+            className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 border-encre-noire bg-cordel-bg hover:bg-amber-200 text-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1.5 shrink-0"
+            title={t('studio.photos.telechargerLImageDuQrCode')}
           >
             <span>💾</span>
-            <span>Exporter PNG</span>
+            <span>{t('studio.photos.exporterPng')}</span>
           </button>
 
           {/* Bouton Imprimer Fiche A4 */}
           <button
             type="button"
             onClick={handlePrint}
-            className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 border-emerald-950 bg-[var(--color-cordel-vert)] text-white hover:bg-emerald-800 shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1.5"
-            title="Lancer l'impression formatée A4 prête pour affichage sur place"
+            className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 border-emerald-950 bg-[var(--color-cordel-vert)] text-white hover:bg-emerald-800 shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1.5 shrink-0"
+            title={t('studio.photos.lancerLImpressionFormateeA4')}
           >
             <span>🖨️</span>
-            <span>Imprimer Fiche A4</span>
+            <span>{t('studio.photos.imprimerFicheA4')}</span>
           </button>
 
           {/* Bouton Copier le lien */}
           <button
             type="button"
             onClick={handleCopyLink}
-            className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 border-encre-noire bg-white hover:bg-amber-100 text-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1.5"
+            className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 border-encre-noire bg-white hover:bg-amber-100 text-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1.5 shrink-0"
           >
             <span>{copied ? '✓' : '📋'}</span>
-            <span>{copied ? 'Lien copié !' : 'Copier le lien'}</span>
+            <span>{copied ? t('studio.photos.lienCopie') : t('studio.photos.copierLeLien')}</span>
           </button>
 
           {/* Bouton Ouvrir le lien */}
           <button
             type="button"
             onClick={() => window.open(qrUrl, '_blank', 'noopener,noreferrer')}
-            className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 border-encre-noire bg-cordel-bg hover:bg-amber-100 text-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1.5"
-            title="Tester le lien dans un nouvel onglet"
+            className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 border-encre-noire bg-cordel-bg hover:bg-amber-100 text-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1.5 shrink-0"
+            title={t('studio.photos.testerLeLienDansUn')}
           >
             <span>🔗</span>
-            <span>Tester le lien ↗</span>
+            <span>{t('studio.photos.testerLeLien')}</span>
           </button>
         </div>
       </div>

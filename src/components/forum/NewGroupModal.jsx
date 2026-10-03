@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import XiloAvatar from '../XiloAvatar';
 import CordelButton from '../CordelButton';
 import { useTerminologie } from '../../hooks/useTerminologie';
+import useModalEscape from '../../hooks/useModalEscape';
 
 /**
  * Composant : NewGroupModal
@@ -29,6 +30,23 @@ export default function NewGroupModal({
   const [selectedMemberIds, setSelectedMemberIds] = useState([]);
   const [initialMessage, setInitialMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Réinitialiser les champs à la fermeture ou après soumission
+  const resetForm = () => {
+    setGroupName('');
+    setSelectedMemberIds([]);
+    setInitialMessage('');
+    setSearchTerm('');
+    setIsSubmitting(false);
+  };
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
+
+  // Fermeture accessible avec touche Échap
+  useModalEscape(isOpen, handleClose, isSubmitting);
 
   // Filtrer les adhérents actifs de l'association (exclure inactifs, archivés et l'utilisateur lui-même)
   const activeMembers = useMemo(() => {
@@ -73,20 +91,6 @@ export default function NewGroupModal({
     });
   };
 
-  // Réinitialiser les champs à la fermeture ou après soumission
-  const resetForm = () => {
-    setGroupName('');
-    setSelectedMemberIds([]);
-    setInitialMessage('');
-    setSearchTerm('');
-    setIsSubmitting(false);
-  };
-
-  const handleClose = () => {
-    resetForm();
-    onClose();
-  };
-
   // Soumission de la création du groupe
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -114,12 +118,11 @@ export default function NewGroupModal({
   return (
     <div
       tabIndex={-1}
-      onKeyDown={(e) => e.key === 'Escape' && handleClose()}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-encre-noire/70 backdrop-blur-xs animate-fade-in select-none outline-hidden"
       role="dialog"
       aria-modal="true"
     >
-      <div className="relative w-full max-w-lg max-h-[85vh] flex flex-col rounded-[8px_6px_10px_7px] bg-cordel-bg border-2 border-encre-noire shadow-[3px_3px_0px_0px_#181716] overflow-hidden">
+      <div className="relative w-full max-w-lg max-h-[90dvh] flex flex-col rounded-[8px_6px_10px_7px] bg-[var(--theme-bg)] border-2 border-encre-noire shadow-[3px_3px_0px_0px_#181716] overflow-hidden">
         
         {/* En-tête de la modale */}
         <div className="shrink-0 p-4 border-b-2 border-dashed border-cordel-master-dark/25 bg-cordel-bg-light">
@@ -135,7 +138,7 @@ export default function NewGroupModal({
             <button
               type="button"
               onClick={handleClose}
-              className="text-lg font-extrabold text-cordel-wood hover:text-red-700 cursor-pointer p-1 transition-colors"
+              className="text-lg font-extrabold text-cordel-wood hover:text-red-700 cursor-pointer p-1 transition-colors shrink-0"
               title="Fermer (Échap)"
               aria-label="Fermer"
             >
@@ -217,7 +220,7 @@ export default function NewGroupModal({
           </div>
 
           {/* Liste de sélection avec cases à cocher */}
-          <div className="flex-1 overflow-y-auto p-3 space-y-1.5 text-left scrollbar-thin">
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 sm:p-4 space-y-1.5 text-left scrollbar-thin">
             {filteredMembers.length === 0 ? (
               <div className="p-6 text-center bg-cordel-bg-light/60 rounded border border-dashed border-cordel-master-dark/20">
                 <span className="text-xl block mb-1">👤</span>
@@ -264,7 +267,7 @@ export default function NewGroupModal({
           </div>
 
           {/* Pied de page avec bouton vert validation */}
-          <div className="p-3 border-t-2 border-dashed border-cordel-master-dark/20 bg-cordel-bg-light flex items-center justify-between">
+          <div className="shrink-0 p-3 sm:p-4 border-t-2 border-dashed border-cordel-master-dark/20 bg-[var(--theme-bg)] flex items-center justify-between pb-[max(env(safe-area-inset-bottom),1rem)]">
             <span className="text-[10px] font-semibold text-cordel-master-dark/70 hidden sm:inline">
               Vous serez l'administrateur de ce groupe
             </span>
@@ -273,7 +276,7 @@ export default function NewGroupModal({
                 type="button"
                 variant="default"
                 onClick={handleClose}
-                className="px-3 py-1.5 text-xs font-bold"
+                className="px-3 py-1.5 text-xs font-bold shrink-0"
               >
                 Annuler
               </CordelButton>
@@ -281,7 +284,7 @@ export default function NewGroupModal({
                 type="submit"
                 variant="vert"
                 disabled={!groupName.trim() || selectedMemberIds.length === 0 || isSubmitting}
-                className="px-4 py-1.5 text-xs font-black uppercase tracking-wider flex items-center gap-1.5"
+                className="px-4 py-1.5 text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0"
               >
                 <span>✓</span>
                 <span>{isSubmitting ? 'Création...' : 'Créer le groupe'}</span>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from '../../LanguageContext';
 
 /**
  * Sous-composant formulaire pour ajouter ou modifier une équivalence culturelle.
@@ -13,6 +14,7 @@ export default function VocabForm({
   onSubmit,
   onCancel
 }) {
+  const { t } = useTranslation();
   const [preferred, setPreferred] = useState(initialData?.preferred || initialData?.recommande || '');
   const [avoid, setAvoid] = useState(initialData?.avoid || initialData?.aEviter || '');
   const [context, setContext] = useState(initialData?.context || initialData?.contexte || '');
@@ -26,7 +28,7 @@ export default function VocabForm({
     const cleanContext = context.trim();
 
     if (!cleanPreferred) {
-      setErrorMessage("Veuillez renseigner le terme privilégié (ex: Batuque).");
+      setErrorMessage(t('studio.lexique.veuillezRenseignerLeTermePrivilegie'));
       return;
     }
 
@@ -44,19 +46,19 @@ export default function VocabForm({
   return (
     <form onSubmit={handleSubmit} className="my-3 p-3 bg-amber-50/60 dark:bg-neutral-800/60 border border-amber-300 dark:border-amber-700/50 rounded-md">
       <div className="text-xs font-black uppercase text-cordel-wood mb-2">
-        {initialData ? "✏️ Modifier l'équivalence culturelle" : "➕ Ajouter une équivalence culturelle"}
+        {initialData ? t('studio.lexique.modifierLEquivalenceCulturelle') : t('studio.lexique.ajouterUneEquivalenceCulturelle')}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="block text-[11px] font-bold text-cordel-master-dark mb-1">
-            Terme privilégié (Recommandé) :
+            {t('studio.lexique.termePrivilegieRecommande')}
           </label>
           <input
             type="text"
             value={preferred}
             onChange={(e) => setPreferred(e.target.value)}
-            placeholder="Ex: Batuque"
+            placeholder={t('studio.lexique.exBatuque')}
             className="w-full text-xs px-2.5 py-1.5 bg-white dark:bg-neutral-900 border border-encre-noire/30 rounded focus:outline-none focus:ring-1 focus:ring-[var(--color-cordel-vert)] font-semibold"
             required
           />
@@ -64,26 +66,26 @@ export default function VocabForm({
 
         <div>
           <label className="block text-[11px] font-bold text-cordel-master-dark mb-1">
-            Terme à éviter (Moins pertinent) :
+            {t('studio.lexique.termeAEviterMoinsPertinent')}
           </label>
           <input
             type="text"
             value={avoid}
             onChange={(e) => setAvoid(e.target.value)}
-            placeholder="Ex: Bateria"
+            placeholder={t('studio.lexique.exBateria')}
             className="w-full text-xs px-2.5 py-1.5 bg-white dark:bg-neutral-900 border border-encre-noire/30 rounded focus:outline-none focus:ring-1 focus:ring-[var(--color-cordel-vert)]"
           />
         </div>
 
         <div className="sm:col-span-2">
           <label className="block text-[11px] font-bold text-cordel-master-dark mb-1">
-            Pourquoi / Contexte explicatif :
+            {t('studio.lexique.pourquoiContexteExplicatif')}
           </label>
           <textarea
             rows={2}
             value={context}
             onChange={(e) => setContext(e.target.value)}
-            placeholder="Explication historique, signification dans la tradition du Maracatu..."
+            placeholder={t('studio.lexique.explicationHistoriqueSignificationDansLa')}
             className="w-full text-xs px-2.5 py-1.5 bg-white dark:bg-neutral-900 border border-encre-noire/30 rounded focus:outline-none focus:ring-1 focus:ring-[var(--color-cordel-vert)]"
           />
         </div>
@@ -97,7 +99,7 @@ export default function VocabForm({
             className="w-4 h-4 rounded text-[var(--color-cordel-vert)] accent-[var(--color-cordel-vert)] cursor-pointer"
           />
           <label htmlFor="activeChipToggle" className="text-xs font-bold text-cordel-master-dark cursor-pointer select-none">
-            🏷️ Activer en pastille d'insertion rapide dans la barre du Studio Social
+            {t('studio.lexique.activerEnPastilleDInsertion')}
           </label>
         </div>
       </div>
@@ -114,13 +116,13 @@ export default function VocabForm({
           onClick={onCancel}
           className="px-3 py-1 rounded text-xs font-semibold bg-neutral-200 hover:bg-neutral-300 text-neutral-800 transition-all cursor-pointer"
         >
-          Annuler
+          {t('studio.lexique.annuler')}
         </button>
         <button
           type="submit"
           className="px-3 py-1 rounded text-xs font-bold text-white bg-[var(--color-cordel-vert)] hover:opacity-90 active:scale-95 transition-all shadow-xs cursor-pointer"
         >
-          💾 Enregistrer
+          {t('studio.lexique.enregistrer')}
         </button>
       </div>
     </form>

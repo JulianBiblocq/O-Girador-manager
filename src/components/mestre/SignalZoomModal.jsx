@@ -24,7 +24,7 @@ export default function SignalZoomModal({ isOpen, onClose, signal }) {
             <span className="text-xl">✋</span>
             <div>
               <h3 className="text-sm md:text-base font-black uppercase tracking-wider text-encre-noire">
-                {signal.name || "Signe du Mestre"}
+                {signal.name || t('pedagogy.admin.signeDuMestre')}
               </h3>
               {signal.type && (
                 <span className="text-[9.5px] font-black uppercase text-cordel-master-dark/60">
@@ -49,7 +49,7 @@ export default function SignalZoomModal({ isOpen, onClose, signal }) {
           {signal.imageUrl ? (
             <img
               src={signal.imageUrl}
-              alt={signal.name || "Signe du Mestre"}
+              alt={signal.name || t('pedagogy.admin.signeDuMestre')}
               className="w-full h-full object-contain"
             />
           ) : (

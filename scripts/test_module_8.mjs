@@ -42,7 +42,6 @@ const TRESORERIE_TABS = [
 
 const MEMBER_SIMPLE_TABS = [
   'profil',
-  'agenda',
   'materiel',
   'vestiaire',
   'trombinoscope',
@@ -146,6 +145,14 @@ async function runTests() {
       results.guideExclusions.errors.push(`ALERTE : getPoleGuide('${tabKey}') ne devrait PAS afficher de guide membre`);
     }
   });
+
+  // Agenda : bénéficie désormais du guide enrichi bilingue "Double Vue"
+  const agendaGuideTest = getPoleGuide('agenda', 'mon-espace');
+  if (agendaGuideTest && (agendaGuideTest.memberGuide || agendaGuideTest.managerGuide)) {
+    results.guideExclusions.success.push("getPoleGuide('agenda', 'mon-espace') retourne le guide enrichi Double Vue");
+  } else {
+    results.guideExclusions.errors.push("ALERTE : getPoleGuide('agenda', 'mon-espace') devrait retourner le guide enrichi Double Vue");
+  }
 
   // Pôles d'Administration : doit retourner le guide métier enrichi
   const adminTabsToCheck = [

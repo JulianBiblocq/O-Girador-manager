@@ -8,10 +8,10 @@ import { useTranslation } from '../LanguageContext';
 
 // Échelle des 4 niveaux de confort personnel de l'adhérent
 export const COMFORT_LEVELS = [
-  { level: 1, label: 'Découverte', icon: '🌱', tip: 'En phase de découverte' },
-  { level: 2, label: 'En pratique', icon: '🌿', tip: "En cours d'apprentissage" },
-  { level: 3, label: 'À l\'aise', icon: '🌳', tip: 'Autonome sur le morceau' },
-  { level: 4, label: 'Référent', icon: '👑', tip: 'Parfaitement maîtrisé, prêt à guider' }
+  { level: 1, labelKey: 'pedagogy.modals.decouverte', icon: '🌱', tipKey: 'pedagogy.modals.enPhaseDeDecouverte' },
+  { level: 2, labelKey: 'pedagogy.modals.enPratique', icon: '🌿', tipKey: 'pedagogy.modals.enCoursDApprentissage' },
+  { level: 3, labelKey: 'pedagogy.modals.aLAise', icon: '🌳', tipKey: 'pedagogy.modals.autonomeSurLeMorceau' },
+  { level: 4, labelKey: 'pedagogy.modals.referent', icon: '👑', tipKey: 'pedagogy.modals.parfaitementMaitrise' }
 ];
 
 /**
@@ -101,7 +101,7 @@ export default function MemberPieceCard({
           <div
             className="flex items-center gap-1"
             onClick={(e) => e.stopPropagation()}
-            title="Mon niveau d'aisance personnel"
+            title={t('pedagogy.modals.monNiveauDAisance')}
           >
             {COMFORT_LEVELS.map((c) => {
               const isSelected = comfortLevel === c.level;
@@ -118,7 +118,7 @@ export default function MemberPieceCard({
                       ? 'bg-emerald-700 text-white border-emerald-950 scale-110 shadow-sm'
                       : 'bg-white border-stone-200 hover:bg-stone-100 opacity-70 hover:opacity-100'
                   }`}
-                  title={`${c.icon} ${c.label} : ${c.tip}`}
+                  title={`${c.icon} ${t(c.labelKey) || c.label} : ${c.tip}`}
                 >
                   <span>{c.icon}</span>
                 </button>

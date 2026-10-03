@@ -112,7 +112,15 @@ const testScripts = [
   'scripts/test_costumerie_i18n.mjs',
   'scripts/test_mestre_repertoire_i18n.mjs',
   'scripts/test_mestre_cockpit_i18n.mjs',
-  'scripts/test_i18n_quiz_generator.mjs'
+  'scripts/test_i18n_quiz_generator.mjs',
+  'scripts/test_pedagogy_lot1_i18n.mjs',
+  'scripts/test_pedagogy_lot2_i18n.mjs',
+  'scripts/test_studio_lot1_i18n.mjs',
+  'scripts/test_surgical_pedagogy_varal_i18n.mjs',
+  'scripts/test_studio_lot2_i18n.mjs',
+  'scripts/test_vitrine_admin_i18n.mjs',
+  'scripts/test_vitrine_tab_compartmentalization.mjs',
+  'scripts/test_pole_guides_double_view.mjs'
 ];
 
 console.log("===============================================================");

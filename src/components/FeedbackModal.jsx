@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import CordelButton from './CordelButton';
 import { XiloClose, XiloMegaphone } from './XiloIcons';
+import useModalEscape from '../hooks/useModalEscape';
 
 export default function FeedbackModal({
   isOpen,
@@ -14,6 +15,8 @@ export default function FeedbackModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
+
+  useModalEscape(onClose, isOpen && !isSubmitting);
 
   useEffect(() => {
     if (isOpen) {
@@ -102,18 +105,18 @@ export default function FeedbackModal({
         aria-hidden="true"
       />
 
-      <div className="relative z-10 bg-[#fcf8f2] dark:bg-[#1a1918] border-2 border-dashed border-cordel-master-dark/40 shadow-2xl rounded-lg p-5 max-w-md w-full text-left overflow-hidden flex flex-col gap-4">
-        
-        <div className="flex items-start justify-between gap-3 border-b border-dashed border-cordel-master-dark/20 pb-3">
-          <div className="flex items-center gap-2.5">
+      <div className="relative z-10 bg-[#fcf8f2] dark:bg-[#1a1918] border-2 border-dashed border-cordel-master-dark/40 shadow-2xl rounded-lg max-w-md w-full text-left overflow-hidden flex flex-col max-h-[90dvh] mt-2 sm:mt-0">
+        {/* Étage 1 : En-tête fixe */}
+        <div className="shrink-0 p-4 border-b border-dashed border-cordel-master-dark/20 flex items-start justify-between gap-3 bg-[#fcf8f2] dark:bg-[#1a1918]">
+          <div className="flex-1 min-w-0 pr-2 flex items-start gap-2.5">
             <span className="p-2 rounded border shadow-xs shrink-0 bg-blue-100 dark:bg-blue-950/70 text-blue-800 dark:text-blue-300 border-blue-300 dark:border-blue-800">
               <XiloMegaphone size={22} />
             </span>
-            <div className="flex flex-col">
+            <div className="flex flex-col min-w-0">
               <span className="text-[9px] font-black uppercase tracking-widest text-cordel-wood opacity-80">
                 Support / Feedback
               </span>
-              <h3 className="font-heading font-bold text-base uppercase tracking-wider text-encre-noire dark:text-cordel-bg">
+              <h3 className="font-heading font-bold text-base uppercase tracking-wider text-encre-noire dark:text-cordel-bg break-words">
                 Un problème ? Une idée ?
               </h3>
             </div>
@@ -123,99 +126,106 @@ export default function FeedbackModal({
             type="button"
             onClick={onClose}
             disabled={isSubmitting}
-            className="p-1 text-cordel-master-dark/60 hover:text-cordel-master-dark transition-colors rounded hover:bg-black/5 dark:hover:bg-white/5 disabled:opacity-50"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center -mr-2 -mt-2 rounded-lg text-cordel-master-dark/60 hover:text-cordel-master-dark hover:bg-black/5 active:bg-black/10 dark:hover:bg-white/5 transition-colors cursor-pointer shrink-0 select-none touch-manipulation disabled:opacity-50"
             title="Fermer"
+            aria-label="Fermer"
           >
-            <XiloClose size={18} />
+            <XiloClose size={20} />
           </button>
         </div>
 
         {success ? (
-          <div className="bg-[var(--color-cordel-vert)]/10 p-4 rounded border border-[#2d6a4f]/30 text-center flex flex-col items-center gap-2">
-            <span className="text-3xl">✅</span>
-            <h4 className="font-black text-[var(--color-cordel-vert)] dark:text-emerald-400 uppercase tracking-wider text-sm">Message Envoyé</h4>
-            <p className="text-xs font-semibold text-encre-noire dark:text-cordel-bg opacity-80">
-              Merci pour votre retour ! L'équipe technique va l'étudier.
-            </p>
+          <div className="flex-1 p-6 flex flex-col items-center justify-center text-center gap-2">
+            <div className="bg-[var(--color-cordel-vert)]/10 p-4 rounded border border-[#2d6a4f]/30 w-full flex flex-col items-center gap-2">
+              <span className="text-3xl">✅</span>
+              <h4 className="font-black text-[var(--color-cordel-vert)] dark:text-emerald-400 uppercase tracking-wider text-sm">Message Envoyé</h4>
+              <p className="text-xs font-semibold text-encre-noire dark:text-cordel-bg opacity-80">
+                Merci pour votre retour ! L'équipe technique va l'étudier.
+              </p>
+            </div>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            {errorMsg && (
-              <div className="bg-[var(--theme-primary)]/10 p-2 rounded border border-[var(--theme-primary)]/30 text-xs font-bold text-[var(--theme-primary)] dark:text-red-400">
-                ⚠️ {errorMsg}
+          <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+            {/* Étage 2 : Corps défilable */}
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-4">
+              {errorMsg && (
+                <div className="bg-[var(--theme-primary)]/10 p-2 rounded border border-[var(--theme-primary)]/30 text-xs font-bold text-[var(--theme-primary)] dark:text-red-400">
+                  ⚠️ {errorMsg}
+                </div>
+              )}
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-black uppercase tracking-wider opacity-70">Type de retour</label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setType('bug')}
+                    className={`py-2 px-1 text-[10px] font-black uppercase tracking-wider rounded border-2 transition-all cursor-pointer ${
+                      type === 'bug' 
+                        ? 'bg-[var(--theme-primary)] text-white border-[var(--theme-primary)]' 
+                        : 'bg-transparent border-cordel-master-dark/20 text-encre-noire dark:text-cordel-bg hover:border-cordel-master-dark/50'
+                    }`}
+                  >
+                    🐛 Bug
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setType('idea')}
+                    className={`py-2 px-1 text-[10px] font-black uppercase tracking-wider rounded border-2 transition-all cursor-pointer ${
+                      type === 'idea' 
+                        ? 'bg-[var(--color-cordel-vert)] text-white border-[#2d6a4f]' 
+                        : 'bg-transparent border-cordel-master-dark/20 text-encre-noire dark:text-cordel-bg hover:border-cordel-master-dark/50'
+                    }`}
+                  >
+                    💡 Idée
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setType('help')}
+                    className={`py-2 px-1 text-[10px] font-black uppercase tracking-wider rounded border-2 transition-all cursor-pointer ${
+                      type === 'help' 
+                        ? 'bg-[var(--color-cordel-ocre)] text-white border-[#c05621]' 
+                        : 'bg-transparent border-cordel-master-dark/20 text-encre-noire dark:text-cordel-bg hover:border-cordel-master-dark/50'
+                    }`}
+                  >
+                    ❓ Aide
+                  </button>
+                </div>
               </div>
-            )}
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-black uppercase tracking-wider opacity-70">Type de retour</label>
-              <div className="grid grid-cols-3 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setType('bug')}
-                  className={`py-2 px-1 text-[10px] font-black uppercase tracking-wider rounded border-2 transition-all ${
-                    type === 'bug' 
-                      ? 'bg-[var(--theme-primary)] text-white border-[var(--theme-primary)]' 
-                      : 'bg-transparent border-cordel-master-dark/20 text-encre-noire dark:text-cordel-bg hover:border-cordel-master-dark/50'
-                  }`}
-                >
-                  🐛 Bug
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setType('idea')}
-                  className={`py-2 px-1 text-[10px] font-black uppercase tracking-wider rounded border-2 transition-all ${
-                    type === 'idea' 
-                      ? 'bg-[var(--color-cordel-vert)] text-white border-[#2d6a4f]' 
-                      : 'bg-transparent border-cordel-master-dark/20 text-encre-noire dark:text-cordel-bg hover:border-cordel-master-dark/50'
-                  }`}
-                >
-                  💡 Idée
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setType('help')}
-                  className={`py-2 px-1 text-[10px] font-black uppercase tracking-wider rounded border-2 transition-all ${
-                    type === 'help' 
-                      ? 'bg-[var(--color-cordel-ocre)] text-white border-[#c05621]' 
-                      : 'bg-transparent border-cordel-master-dark/20 text-encre-noire dark:text-cordel-bg hover:border-cordel-master-dark/50'
-                  }`}
-                >
-                  ❓ Aide
-                </button>
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="subject" className="text-[10px] font-black uppercase tracking-wider opacity-70">Sujet court</label>
+                <input
+                  id="subject"
+                  type="text"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  placeholder="Ex: Le bouton X ne fonctionne pas"
+                  className="w-full bg-white dark:bg-black/30 border-2 border-cordel-master-dark/20 rounded p-2 text-xs font-semibold focus:border-cordel-master-dark focus:outline-none transition-colors"
+                  maxLength={100}
+                  required
+                />
               </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="description" className="text-[10px] font-black uppercase tracking-wider opacity-70">Description détaillée</label>
+                <textarea
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Décrivez votre problème ou votre idée avec un maximum de détails..."
+                  className="w-full bg-white dark:bg-black/30 border-2 border-cordel-master-dark/20 rounded p-2 text-xs font-semibold min-h-[100px] resize-y focus:border-cordel-master-dark focus:outline-none transition-colors"
+                  required
+                />
+              </div>
+              
+              <p className="text-[9px] font-bold text-encre-noire dark:text-cordel-bg opacity-50 italic">
+                Vos informations (rôle, page actuelle, version) seront envoyées automatiquement pour nous aider à diagnostiquer le problème.
+              </p>
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="subject" className="text-[10px] font-black uppercase tracking-wider opacity-70">Sujet court</label>
-              <input
-                id="subject"
-                type="text"
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                placeholder="Ex: Le bouton X ne fonctionne pas"
-                className="w-full bg-white dark:bg-black/30 border-2 border-cordel-master-dark/20 rounded p-2 text-xs font-semibold focus:border-cordel-master-dark focus:outline-none transition-colors"
-                maxLength={100}
-                required
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="description" className="text-[10px] font-black uppercase tracking-wider opacity-70">Description détaillée</label>
-              <textarea
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Décrivez votre problème ou votre idée avec un maximum de détails..."
-                className="w-full bg-white dark:bg-black/30 border-2 border-cordel-master-dark/20 rounded p-2 text-xs font-semibold min-h-[100px] resize-y focus:border-cordel-master-dark focus:outline-none transition-colors"
-                required
-              />
-            </div>
-            
-            <p className="text-[9px] font-bold text-encre-noire dark:text-cordel-bg opacity-50 italic">
-              Vos informations (rôle, page actuelle, version) seront envoyées automatiquement pour nous aider à diagnostiquer le problème.
-            </p>
-
-            <div className="flex items-center justify-end gap-2.5 pt-2 mt-2 border-t border-dashed border-cordel-master-dark/20">
+            {/* Étage 3 : Pied de page fixe */}
+            <div className="shrink-0 border-t p-4 bg-[var(--theme-bg)] flex justify-end gap-2 pb-[max(env(safe-area-inset-bottom),1rem)]">
               <CordelButton
                 variant="default"
                 onClick={onClose}

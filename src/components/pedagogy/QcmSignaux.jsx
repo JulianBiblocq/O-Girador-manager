@@ -3,8 +3,10 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
+import { useTranslation } from '../LanguageContext';
 
 export default function QcmSignaux({ onExit, rhythms = [], rhythmsMetadata = {}, groupId = null }) {
+  const { t } = useTranslation();
   const [signals, setSignals] = useState([]);
   const [loading, setLoading] = useState(true);
   
@@ -170,21 +172,16 @@ export default function QcmSignaux({ onExit, rhythms = [], rhythmsMetadata = {},
   };
 
   if (loading) {
-    return <div className="text-center p-8 text-cordel-master-dark animate-pulse font-bold uppercase text-xs">Chargement des signaux...</div>;
+    return <div className="text-center p-8 text-cordel-master-dark animate-pulse font-bold uppercase text-xs">{t('pedagogy.reflex.chargementDesSignaux')}</div>;
   }
 
   if (signals.length < 4) {
     return (
       <div className="flex flex-col items-center gap-4 mt-8">
         <CordelCard className="p-6 text-center max-w-md w-full border-[var(--theme-primary)] bg-[#fdfaf2]">
-          <h3 className="text-lg font-black text-[var(--theme-primary)] uppercase mb-2">Attention</h3>
-          <p className="text-xs font-bold text-encre-noire/70 mb-4">
-            Il n'y a pas assez de signaux configurés avec une image. 
-            Il en faut au minimum 4 pour générer un quiz.
-          </p>
-          <CordelButton variant="wood" onClick={onExit} className="text-xs px-4 py-2 uppercase font-black">
-            Retour à l'Atelier
-          </CordelButton>
+          <h3 className="text-lg font-black text-[var(--theme-primary)] uppercase mb-2">{t('pedagogy.reflex.attention')}</h3>
+          <p className="text-xs font-bold text-encre-noire/70 mb-4">{t('pedagogy.reflex.ilNYAPas')}</p>
+          <CordelButton variant="wood" onClick={onExit} className="text-xs px-4 py-2 uppercase font-black">{t('pedagogy.reflex.retourALAtelier')}</CordelButton>
         </CordelCard>
       </div>
     );
@@ -195,17 +192,12 @@ export default function QcmSignaux({ onExit, rhythms = [], rhythmsMetadata = {},
       <div className="flex flex-col items-center gap-4 mt-8 animate-[fadeIn_0.5s_ease-out]">
         <CordelCard className="p-8 text-center max-w-md w-full border-cordel-wood">
           <div className="text-6xl mb-4">🏆</div>
-          <h2 className="text-2xl font-heading text-cordel-wood uppercase mb-2">Entraînement Terminé !</h2>
-          <p className="text-sm font-bold text-encre-noire/80 mb-6">
-            Ton score : <span className="text-xl text-[var(--color-cordel-vert)]">{score}</span> / {questions.length}
+          <h2 className="text-2xl font-heading text-cordel-wood uppercase mb-2">{t('pedagogy.reflex.entrainementTermine')}</h2>
+          <p className="text-sm font-bold text-encre-noire/80 mb-6">{t('pedagogy.reflex.tonScore')}<span className="text-xl text-[var(--color-cordel-vert)]">{score}</span> / {questions.length}
           </p>
           <div className="flex justify-center gap-4">
-            <CordelButton variant="outline" onClick={onExit} className="text-xs px-4 py-2 uppercase font-black border-2 border-encre-noire">
-              Quitter
-            </CordelButton>
-            <CordelButton variant="wood" onClick={() => generateQuestions(5)} className="text-xs px-4 py-2 uppercase font-black shadow-md">
-              Rejouer 🔄
-            </CordelButton>
+            <CordelButton variant="outline" onClick={onExit} className="text-xs px-4 py-2 uppercase font-black border-2 border-encre-noire">{t('pedagogy.reflex.quitter')}</CordelButton>
+            <CordelButton variant="wood" onClick={() => generateQuestions(5)} className="text-xs px-4 py-2 uppercase font-black shadow-md">{t('pedagogy.reflex.rejouer')}</CordelButton>
           </div>
         </CordelCard>
       </div>
@@ -221,11 +213,9 @@ export default function QcmSignaux({ onExit, rhythms = [], rhythmsMetadata = {},
         <button 
           onClick={onExit} 
           className="text-sm font-bold text-cordel-master-dark hover:text-cordel-wood underline underline-offset-4"
-        >
-          ← Retour
-        </button>
+        >{t('pedagogy.reflex.retour')}</button>
         <div className="text-xs font-black uppercase text-encre-noire/60 tracking-wider">
-          Question {currentIndex + 1} / {questions.length}
+          {t('pedagogy.reflex.question')} {currentIndex + 1} / {questions.length}
         </div>
       </div>
 
@@ -234,14 +224,12 @@ export default function QcmSignaux({ onExit, rhythms = [], rhythmsMetadata = {},
         {currentQ.type === 'GUESS_NAME' ? (
           <>
             <div className="flex flex-col items-center gap-2 border-b-2 border-dashed border-[var(--cordel-border)]/20 pb-4">
-              <h3 className="text-lg font-extrabold text-[var(--cordel-wood)] uppercase tracking-wider text-center">
-                Quel est ce signal ?
-              </h3>
+              <h3 className="text-lg font-extrabold text-[var(--cordel-wood)] uppercase tracking-wider text-center">{t('pedagogy.reflex.quelEstCeSignal')}</h3>
             </div>
             <div className="flex justify-center w-full">
               <img 
                 src={currentQ.correctSignal.imageUrl} 
-                alt="Signal mystère" 
+                alt={t('pedagogy.reflex.signalMystere')} 
                 className="w-full max-w-sm h-64 object-contain rounded shadow-md border-2 border-encre-noire/10 bg-white p-2"
               />
             </div>
@@ -273,16 +261,13 @@ export default function QcmSignaux({ onExit, rhythms = [], rhythmsMetadata = {},
             <div className="flex flex-col items-center gap-2 border-b-2 border-dashed border-[var(--cordel-border)]/20 pb-4">
               {currentQ.type === 'GUESS_SIGNAL_FROM_AUDIO' ? (
                 <>
-                  <h3 className="text-lg font-extrabold text-[var(--cordel-wood)] uppercase tracking-wider text-center flex items-center gap-2">
-                    🎧 Quel est le signal pour ce rythme ?
-                  </h3>
+                  <h3 className="text-lg font-extrabold text-[var(--cordel-wood)] uppercase tracking-wider text-center flex items-center gap-2">{t('pedagogy.reflex.quelEstLeSignalPour')}</h3>
                   <div className="flex justify-center w-full my-4">
                     <audio key={currentQ.associatedRhythm.audioUrl} controls src={currentQ.associatedRhythm.audioUrl} className="w-full max-w-sm rounded outline-none shadow-md" />
                   </div>
                 </>
               ) : (
-                <h3 className="text-lg font-extrabold text-[var(--cordel-wood)] uppercase tracking-wider text-center">
-                  Lequel correspond à : <span className="text-[var(--theme-primary)]">"{currentQ.correctSignal.name}"</span> ?
+                <h3 className="text-lg font-extrabold text-[var(--cordel-wood)] uppercase tracking-wider text-center">{t('pedagogy.reflex.lequelCorrespondA')}<span className="text-[var(--theme-primary)]">"{currentQ.correctSignal.name}"</span> ?
                 </h3>
               )}
             </div>
@@ -312,7 +297,7 @@ export default function QcmSignaux({ onExit, rhythms = [], rhythmsMetadata = {},
                   >
                     <img 
                       src={choice.imageUrl} 
-                      alt="Choix possible" 
+                      alt={t('pedagogy.reflex.choixPossible')} 
                       className="w-full h-32 md:h-48 object-contain rounded"
                     />
                     {currentQ.type === 'GUESS_SIGNAL_FROM_AUDIO' && showFeedback && (
@@ -330,14 +315,12 @@ export default function QcmSignaux({ onExit, rhythms = [], rhythmsMetadata = {},
           <div className="flex flex-col items-center gap-2 mt-2 animate-[fadeIn_0.3s_ease-out]">
             <p className="text-xs font-bold text-encre-noire/70 italic text-center max-w-sm">
               {currentQ.type === 'GUESS_SIGNAL_FROM_AUDIO' ? (
-                <>Le bon signal était <strong>{currentQ.correctSignal.name}</strong>, qui correspond au rythme <strong>{currentQ.associatedRhythm.info?.name || currentQ.associatedRhythm.name}</strong>.</>
+                <>{t('pedagogy.reflex.leBonSignalEtait')}<strong>{currentQ.correctSignal.name}</strong>{t('pedagogy.reflex.quiCorrespondAuRythme')}<strong>{currentQ.associatedRhythm.info?.name || currentQ.associatedRhythm.name}</strong>.</>
               ) : (
-                "Signal du Mestre"
+                t('pedagogy.reflex.signalDuMestre')
               )}
             </p>
-            <CordelButton variant="ocre" onClick={handleNext} className="text-xs font-black uppercase px-8 py-2 shadow-md mt-2">
-              Continuer ➔
-            </CordelButton>
+            <CordelButton variant="ocre" onClick={handleNext} className="text-xs font-black uppercase px-8 py-2 shadow-md mt-2">{t('pedagogy.reflex.continuer')}</CordelButton>
           </div>
         )}
       </CordelCard>

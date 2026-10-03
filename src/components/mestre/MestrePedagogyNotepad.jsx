@@ -211,7 +211,7 @@ export default function MestrePedagogyNotepad({ groupId }) {
             </h3>
             
             <p className="text-xs font-medium text-encre-noire/80 leading-relaxed">
-              {t('mestre.pedagogy.thePluralWord')} {selectedNotes.size} {t('mestre.pedagogy.noteWord')}{selectedNotes.size > 1 ? 's' : ''} {t('mestre.pedagogy.selectedWord')}{selectedNotes.size > 1 ? 's' : ''} {t('mestre.pedagogy.willBePrefix')}{selectedNotes.size > 1 ? 'ont' : 'a'} {t('mestre.pedagogy.addedWord')}{selectedNotes.size > 1 ? 's' : ''} {t('mestre.pedagogy.toRehearsalRoadbookNotice')}
+              {t('mestre.pedagogy.thePluralWord')} {selectedNotes.size} {t('mestre.pedagogy.noteWord')}{selectedNotes.size > 1 ? 's' : ''} {t('mestre.pedagogy.selectedWord')}{selectedNotes.size > 1 ? 's' : ''} {t('mestre.pedagogy.willBePrefix')}{selectedNotes.size > 1 ? t('pedagogy.admin.ont') : 'a'} {t('mestre.pedagogy.addedWord')}{selectedNotes.size > 1 ? 's' : ''} {t('mestre.pedagogy.toRehearsalRoadbookNotice')}
             </p>
 
             <select
@@ -229,7 +229,7 @@ export default function MestrePedagogyNotepad({ groupId }) {
                     const formattedDate = evDate ? new Date(evDate).toLocaleDateString('fr-FR') : 'Date indéfinie';
                     return (
                       <option key={ev.id} value={ev.id}>
-                        {formattedDate} - {ev.titre || ev.title || 'Répétition'}
+                        {formattedDate} - {ev.titre || ev.title || t('pedagogy.admin.repetition')}
                       </option>
                     );
                   })}
@@ -246,7 +246,7 @@ export default function MestrePedagogyNotepad({ groupId }) {
                 onClick={handlePushToEvent}
                 disabled={pushing || !selectedEventId}
               >
-                {pushing ? 'Ajout...' : 'Valider'}
+                {pushing ? t('pedagogy.admin.ajout') : t('pedagogy.admin.valider')}
               </CordelButton>
             </div>
           </CordelCard>

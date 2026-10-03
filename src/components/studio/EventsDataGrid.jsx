@@ -141,10 +141,10 @@ export default function EventsDataGrid({
             <th 
               onClick={() => handleHeaderClick('titre')}
               className="p-3 border-r border-[var(--encre-noire)]/15 whitespace-nowrap min-w-[200px] sticky left-0 top-0 z-30 bg-[var(--cordel-bg-light)] shadow-[2px_0px_0px_0px_rgba(24,23,22,0.1)] cursor-pointer hover:bg-black/5 transition-colors"
-              title="Cliquer pour trier par Titre"
+              title={t('studio.photos.cliquerPourTrierParTitre')}
             >
               <div className="flex items-center gap-1">
-                <span>{t('secretariat.thColTitle') || "1. Titre"}</span>
+                <span>{t('secretariat.thColTitle')}</span>
                 {renderSortChevron('titre')}
               </div>
             </th>
@@ -152,10 +152,10 @@ export default function EventsDataGrid({
             <th 
               onClick={() => handleHeaderClick('type')}
               className="p-3 border-r border-[var(--encre-noire)]/15 whitespace-nowrap min-w-[130px] sticky top-0 z-20 bg-[var(--cordel-master-light-color)] cursor-pointer hover:bg-black/5 transition-colors"
-              title="Cliquer pour trier par Type"
+              title={t('studio.photos.cliquerPourTrierParType')}
             >
               <div className="flex items-center gap-1">
-                <span>{t('secretariat.thColType') || "2. Type"}</span>
+                <span>{t('secretariat.thColType')}</span>
                 {renderSortChevron('type')}
               </div>
             </th>
@@ -163,10 +163,10 @@ export default function EventsDataGrid({
             <th 
               onClick={() => handleHeaderClick('description')}
               className="p-3 border-r border-[var(--encre-noire)]/15 whitespace-nowrap min-w-[180px] sticky top-0 z-20 bg-[var(--cordel-master-light-color)] cursor-pointer hover:bg-black/5 transition-colors"
-              title="Cliquer pour trier par Description"
+              title={t('studio.photos.cliquerPourTrierParDescription')}
             >
               <div className="flex items-center gap-1">
-                <span>{t('secretariat.thColDescription') || "3. Description"}</span>
+                <span>{t('secretariat.thColDescription')}</span>
                 {renderSortChevron('description')}
               </div>
             </th>
@@ -174,10 +174,10 @@ export default function EventsDataGrid({
             <th 
               onClick={() => handleHeaderClick('date')}
               className="p-3 border-r border-[var(--encre-noire)]/15 whitespace-nowrap min-w-[130px] sticky top-0 z-20 bg-[var(--cordel-master-light-color)] cursor-pointer hover:bg-black/5 transition-colors"
-              title="Cliquer pour trier par Date"
+              title={t('studio.photos.cliquerPourTrierParDate')}
             >
               <div className="flex items-center gap-1">
-                <span>{t('secretariat.thColDate') || "4. Date"}</span>
+                <span>{t('secretariat.thColDate')}</span>
                 {renderSortChevron('date')}
               </div>
             </th>
@@ -185,10 +185,10 @@ export default function EventsDataGrid({
             <th 
               onClick={() => handleHeaderClick('heureDebut')}
               className="p-3 border-r border-[var(--encre-noire)]/15 whitespace-nowrap min-w-[95px] sticky top-0 z-20 bg-[var(--cordel-master-light-color)] cursor-pointer hover:bg-black/5 transition-colors"
-              title="Cliquer pour trier par Heure début"
+              title={t('studio.photos.cliquerPourTrierParHeure')}
             >
               <div className="flex items-center gap-1">
-                <span>{t('secretariat.thColStartTime') || "5. Heure début"}</span>
+                <span>{t('secretariat.thColStartTime')}</span>
                 {renderSortChevron('heureDebut')}
               </div>
             </th>
@@ -196,10 +196,10 @@ export default function EventsDataGrid({
             <th 
               onClick={() => handleHeaderClick('heureFin')}
               className="p-3 border-r border-[var(--encre-noire)]/15 whitespace-nowrap min-w-[95px] sticky top-0 z-20 bg-[var(--cordel-master-light-color)] cursor-pointer hover:bg-black/5 transition-colors"
-              title="Cliquer pour trier par Heure fin"
+              title={t('studio.photos.cliquerPourTrierParHeureAlt')}
             >
               <div className="flex items-center gap-1">
-                <span>{t('secretariat.thColEndTime') || "6. Heure fin"}</span>
+                <span>{t('secretariat.thColEndTime')}</span>
                 {renderSortChevron('heureFin')}
               </div>
             </th>
@@ -207,10 +207,10 @@ export default function EventsDataGrid({
             <th 
               onClick={() => handleHeaderClick('lieuSimple')}
               className="p-3 border-r border-[var(--encre-noire)]/15 whitespace-nowrap min-w-[150px] sticky top-0 z-20 bg-[var(--cordel-master-light-color)] cursor-pointer hover:bg-black/5 transition-colors"
-              title="Cliquer pour trier par Lieu simple"
+              title={t('studio.photos.cliquerPourTrierParLieu')}
             >
               <div className="flex items-center gap-1">
-                <span>{t('secretariat.thColSimpleLocation') || "7. Lieu simple"}</span>
+                <span>{t('secretariat.thColSimpleLocation')}</span>
                 {renderSortChevron('lieuSimple')}
               </div>
             </th>
@@ -218,10 +218,10 @@ export default function EventsDataGrid({
             <th 
               onClick={() => handleHeaderClick('dateLimiteInscription')}
               className="p-3 border-r border-[var(--encre-noire)]/15 whitespace-nowrap min-w-[130px] sticky top-0 z-20 bg-[var(--cordel-master-light-color)] cursor-pointer hover:bg-black/5 transition-colors"
-              title="Cliquer pour trier par Date limite"
+              title={t('studio.photos.cliquerPourTrierParDateAlt')}
             >
               <div className="flex items-center gap-1">
-                <span>{t('secretariat.thColDeadline') || "8. Date limite"}</span>
+                <span>{t('secretariat.thColDeadline')}</span>
                 {renderSortChevron('dateLimiteInscription')}
               </div>
             </th>
@@ -229,10 +229,10 @@ export default function EventsDataGrid({
             <th 
               onClick={() => handleHeaderClick('niveauRequis')}
               className="p-3 border-r border-[var(--encre-noire)]/15 whitespace-nowrap min-w-[120px] sticky top-0 z-20 bg-[var(--cordel-master-light-color)] cursor-pointer hover:bg-black/5 transition-colors"
-              title="Cliquer pour trier par Niveau perc"
+              title={t('studio.photos.cliquerPourTrierParNiveau')}
             >
               <div className="flex items-center gap-1">
-                <span>9. Niveau perc</span>
+                <span>{t('studio.photos.niveauPerc')}</span>
                 {renderSortChevron('niveauRequis')}
               </div>
             </th>
@@ -240,10 +240,10 @@ export default function EventsDataGrid({
             <th 
               onClick={() => handleHeaderClick('niveauDanseRequis')}
               className="p-3 border-r border-[var(--encre-noire)]/15 whitespace-nowrap min-w-[120px] sticky top-0 z-20 bg-[var(--cordel-master-light-color)] cursor-pointer hover:bg-black/5 transition-colors"
-              title="Cliquer pour trier par Niveau danse"
+              title={t('studio.photos.cliquerPourTrierParNiveauAlt')}
             >
               <div className="flex items-center gap-1">
-                <span>10. Niveau danse</span>
+                <span>{t('studio.photos.niveauDanse')}</span>
                 {renderSortChevron('niveauDanseRequis')}
               </div>
             </th>
@@ -251,10 +251,10 @@ export default function EventsDataGrid({
             <th 
               onClick={() => handleHeaderClick('tenueRequise')}
               className="p-3 border-r border-[var(--encre-noire)]/15 whitespace-nowrap min-w-[120px] sticky top-0 z-20 bg-[var(--cordel-master-light-color)] cursor-pointer hover:bg-black/5 transition-colors"
-              title="Cliquer pour trier par Tenue"
+              title={t('studio.photos.cliquerPourTrierParTenue')}
             >
               <div className="flex items-center gap-1">
-                <span>11. Tenue</span>
+                <span>{t('studio.photos.tenue')}</span>
                 {renderSortChevron('tenueRequise')}
               </div>
             </th>
@@ -262,10 +262,10 @@ export default function EventsDataGrid({
             <th 
               onClick={() => handleHeaderClick('includesPercussion')}
               className="p-3 border-r border-[var(--encre-noire)]/15 text-center whitespace-nowrap min-w-[95px] sticky top-0 z-20 bg-[var(--cordel-master-light-color)] cursor-pointer hover:bg-black/5 transition-colors"
-              title="Cliquer pour trier par Inclut perc"
+              title={t('studio.photos.cliquerPourTrierParInclut')}
             >
               <div className="flex items-center justify-center gap-1">
-                <span>12. Perc 🥁</span>
+                <span>{t('studio.photos.percAlt')}</span>
                 {renderSortChevron('includesPercussion')}
               </div>
             </th>
@@ -273,10 +273,10 @@ export default function EventsDataGrid({
             <th 
               onClick={() => handleHeaderClick('includesDance')}
               className="p-3 border-r border-[var(--encre-noire)]/15 text-center whitespace-nowrap min-w-[95px] sticky top-0 z-20 bg-[var(--cordel-master-light-color)] cursor-pointer hover:bg-black/5 transition-colors"
-              title="Cliquer pour trier par Inclut danse"
+              title={t('studio.photos.cliquerPourTrierParInclutAlt')}
             >
               <div className="flex items-center justify-center gap-1">
-                <span>13. Danse 💃</span>
+                <span>{t('studio.photos.danse')}</span>
                 {renderSortChevron('includesDance')}
               </div>
             </th>
@@ -284,10 +284,10 @@ export default function EventsDataGrid({
             <th 
               onClick={() => handleHeaderClick('requiresValidation')}
               className="p-3 border-r border-[var(--encre-noire)]/15 text-center whitespace-nowrap min-w-[125px] sticky top-0 z-20 bg-[var(--cordel-master-light-color)] cursor-pointer hover:bg-black/5 transition-colors"
-              title="Cliquer pour trier par Soumis à validation"
+              title={t('studio.photos.cliquerPourTrierParSoumis')}
             >
               <div className="flex items-center justify-center gap-1">
-                <span>14. Validation 🔒</span>
+                <span>{t('studio.photos.validation')}</span>
                 {renderSortChevron('requiresValidation')}
               </div>
             </th>
@@ -295,10 +295,10 @@ export default function EventsDataGrid({
             <th 
               onClick={() => handleHeaderClick('enableInscriptions')}
               className="p-3 border-r border-[var(--encre-noire)]/15 text-center whitespace-nowrap min-w-[125px] sticky top-0 z-20 bg-[var(--cordel-master-light-color)] cursor-pointer hover:bg-black/5 transition-colors"
-              title="Cliquer pour trier par Inscriptions requises"
+              title={t('studio.photos.cliquerPourTrierParInscriptions')}
             >
               <div className="flex items-center justify-center gap-1">
-                <span>15. Inscriptions 📝</span>
+                <span>{t('studio.photos.inscriptions')}</span>
                 {renderSortChevron('enableInscriptions')}
               </div>
             </th>
@@ -307,10 +307,10 @@ export default function EventsDataGrid({
             <th 
               onClick={() => handleHeaderClick('enableCarpool')}
               className="p-3 border-r border-[var(--encre-noire)]/15 text-center whitespace-nowrap min-w-[105px] sticky top-0 z-20 bg-[var(--cordel-master-light-color)] cursor-pointer hover:bg-black/5 transition-colors"
-              title="Cliquer pour trier par Covoiturage actif"
+              title={t('studio.photos.cliquerPourTrierParCovoiturage')}
             >
               <div className="flex items-center justify-center gap-1">
-                <span>16. Covoit 🚗</span>
+                <span>{t('studio.photos.covoit')}</span>
                 {renderSortChevron('enableCarpool')}
               </div>
             </th>
@@ -319,10 +319,10 @@ export default function EventsDataGrid({
             <th 
               onClick={() => handleHeaderClick('isPublic')}
               className="p-3 border-r border-[var(--encre-noire)]/15 text-center whitespace-nowrap min-w-[100px] sticky top-0 z-20 bg-[var(--cordel-master-light-color)] cursor-pointer hover:bg-black/5 transition-colors"
-              title="Cliquer pour trier par Visibilité Publique"
+              title={t('studio.photos.cliquerPourTrierParVisibilite')}
             >
               <div className="flex items-center justify-center gap-1">
-                <span>17. Public 🌍</span>
+                <span>{t('studio.photos.public')}</span>
                 {renderSortChevron('isPublic')}
               </div>
             </th>
@@ -331,10 +331,10 @@ export default function EventsDataGrid({
             <th 
               onClick={() => handleHeaderClick('morceaux')}
               className="p-3 border-r border-[var(--encre-noire)]/15 text-center whitespace-nowrap min-w-[110px] sticky top-0 z-20 bg-[var(--cordel-master-light-color)] cursor-pointer hover:bg-black/5 transition-colors"
-              title="Cliquer pour trier par Nombre de morceaux"
+              title={t('studio.photos.cliquerPourTrierParNombre')}
             >
               <div className="flex items-center justify-center gap-1">
-                <span>18. Morceaux 🎵</span>
+                <span>{t('studio.photos.morceaux')}</span>
                 {renderSortChevron('morceaux')}
               </div>
             </th>
@@ -343,10 +343,10 @@ export default function EventsDataGrid({
             <th 
               onClick={() => handleHeaderClick('scene')}
               className="p-3 text-center whitespace-nowrap min-w-[110px] sticky top-0 z-20 bg-[var(--cordel-master-light-color)] cursor-pointer hover:bg-black/5 transition-colors"
-              title="Cliquer pour trier par Statut Scène"
+              title={t('studio.photos.cliquerPourTrierParStatut')}
             >
               <div className="flex items-center justify-center gap-1">
-                <span>19. Scène 📐</span>
+                <span>{t('studio.photos.scene')}</span>
                 {renderSortChevron('scene')}
               </div>
             </th>
@@ -356,7 +356,7 @@ export default function EventsDataGrid({
           {sortedEvents.length === 0 ? (
             <tr>
               <td colSpan="19" className="p-8 text-center text-[var(--cordel-text)]/60 font-bold italic">
-                Aucun événement disponible.
+                {t('studio.photos.aucunEvenementDisponible')}
               </td>
             </tr>
           ) : (

@@ -69,7 +69,7 @@ export default function ThreadMessageList({
       <div
         ref={messagesContainerRef}
         onScroll={onScroll}
-        className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y px-4 py-2 bg-cordel-bg-light select-text flex flex-col gap-3"
+        className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y px-4 py-2 pb-6 bg-cordel-bg-light select-text flex flex-col gap-3"
       >
         {headerContent}
         {reponses.length === 0 ? (
@@ -126,8 +126,8 @@ export default function ThreadMessageList({
           );
         })
       )}
-        {/* Coussin d'espacement (pb-4) et ancre invisible de fin de liste pour le scroll automatique */}
-        <div ref={messagesEndRef} className="h-6 shrink-0 pb-4 pointer-events-none" aria-hidden="true" />
+        {/* Coussin d'espacement (pb-6) et ancre invisible de fin de liste pour le scroll automatique */}
+        <div ref={messagesEndRef} className="h-8 shrink-0 pb-6 pointer-events-none" aria-hidden="true" />
       </div>
 
       {/* Pastille flottante de défilement rapide vers le bas (↓) */}

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from '../LanguageContext';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import InstagramPreviewCard from './preview/InstagramPreviewCard';
@@ -25,6 +26,7 @@ export default function StudioSocialPreview({
   onShare,
   onSendForValidation
 }) {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('instagram'); // 'instagram' | 'facebook' | 'canvas'
 
   return (
@@ -32,7 +34,7 @@ export default function StudioSocialPreview({
       {/* Onglets de commutation du type d'aperçu */}
       <div className="flex items-center justify-between w-full border-b-2 border-dashed border-cordel-master-dark/25 pb-2">
         <span className="text-[10px] uppercase font-black tracking-wider text-cordel-master-dark">
-          📱 Aperçu Réseaux Sociaux
+          {t('studio.communication.apercuReseauxSociaux')}
         </span>
         <div className="flex gap-1 bg-cordel-bg p-0.5 rounded border border-encre-noire/30 text-[10px] font-bold">
           <button
@@ -42,7 +44,7 @@ export default function StudioSocialPreview({
               activeTab === 'instagram' ? 'bg-cordel-wood text-white shadow-xs' : 'text-stone-600 hover:bg-stone-200'
             }`}
           >
-            📷 Insta
+            {t('studio.communication.insta')}
           </button>
           <button
             type="button"
@@ -51,7 +53,7 @@ export default function StudioSocialPreview({
               activeTab === 'facebook' ? 'bg-cordel-wood text-white shadow-xs' : 'text-stone-600 hover:bg-stone-200'
             }`}
           >
-            📘 Facebook
+            {t('studio.communication.facebook')}
           </button>
           <button
             type="button"
@@ -60,7 +62,7 @@ export default function StudioSocialPreview({
               activeTab === 'canvas' ? 'bg-cordel-wood text-white shadow-xs' : 'text-stone-600 hover:bg-stone-200'
             }`}
           >
-            🎨 Affiche Cordel
+            {t('studio.communication.afficheCordel')}
           </button>
         </div>
       </div>
@@ -96,14 +98,14 @@ export default function StudioSocialPreview({
             {!selectedEvent && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/15 backdrop-blur-xs select-none">
                 <span className="text-xs font-black uppercase tracking-wider text-center p-4 bg-white/90 rounded border border-encre-noire shadow-md">
-                  Veuillez sélectionner un événement pour générer l'affiche Cordel
+                  {t('studio.communication.veuillezSelectionnerUnEvenementPour')}
                 </span>
               </div>
             )}
           </div>
           {canvasError && (
             <div className="p-2 bg-red-100 border border-red-400 text-red-800 text-[10px] rounded leading-tight font-semibold">
-              ⚠️ Restriction CORS : utilisez le clic droit sur l'image pour la sauvegarder.
+              {t('studio.communication.restrictionCorsUtilisezLeClic')}
             </div>
           )}
         </div>
@@ -117,9 +119,9 @@ export default function StudioSocialPreview({
             variant="default"
             useExtremeBorder={true}
             className="text-[11px] py-2 font-bold uppercase tracking-wider px-1 text-center"
-            title="Télécharger l'affiche Cordel au format JPEG"
+            title={t('studio.communication.telechargerLAfficheCordelAu')}
           >
-            💾 Télécharger
+            {t('studio.communication.telecharger')}
           </CordelButton>
 
           <CordelButton
@@ -127,9 +129,9 @@ export default function StudioSocialPreview({
             variant={imageCopied ? "vert" : "default"}
             useExtremeBorder={true}
             className="text-[11px] py-2 font-bold uppercase tracking-wider px-1 text-center"
-            title="Copier le visuel PNG dans le presse-papier"
+            title={t('studio.communication.copierLeVisuelPngDans')}
           >
-            {imageCopied ? "✓ Copiée !" : "🖼️ Copier"}
+            {imageCopied ? t('studio.communication.copiee') : t('studio.communication.studioSocialPreview_copier')}
           </CordelButton>
           
           <CordelButton
@@ -138,7 +140,7 @@ export default function StudioSocialPreview({
             useExtremeBorder={true}
             className="text-[11px] py-2 font-bold uppercase tracking-wider px-1 text-center"
           >
-            🔗 Partager
+            {t('studio.communication.partager')}
           </CordelButton>
         </div>
 
@@ -150,15 +152,15 @@ export default function StudioSocialPreview({
           className="w-full text-xs py-2.5 font-black uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-[2px_2px_0px_0px_#181716]"
         >
           {sendingValidation ? (
-            "⏳ Envoi au Forum en cours..."
+            t('studio.communication.envoiAuForumEnCours')
           ) : isUploading ? (
-            "⏳ Téléversement des photos..."
+            t('studio.communication.televersementDesPhotos', { defaultValue: "⏳ Téléversement des photos..." })
           ) : selectedEvent?.statutPublication === 'approuve' ? (
-            "✅ Déjà approuvé (Renvoyer révision)"
+            t('studio.communication.dejaApprouveRevision', { defaultValue: "✅ Déjà approuvé (Renvoyer révision)" })
           ) : selectedEvent?.statutPublication === 'en_attente' ? (
-            "⏳ En attente (Renvoyer au Forum)"
+            t('studio.communication.enAttenteForum', { defaultValue: "⏳ En attente (Renvoyer au Forum)" })
           ) : (
-            "💬 Soumettre pour validation (Forum)"
+            t('studio.communication.soumettreValidationForum', { defaultValue: "💬 Soumettre pour validation (Forum)" })
           )}
         </CordelButton>
       </div>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from '../../LanguageContext';
 import { normalizeMentionHandle } from '../../../config/studioSocialConfig';
 import useConfirm from '../../../hooks/useConfirm';
 
@@ -16,6 +17,7 @@ export default function MentionsSection({
   onSaveMentions,
   disabled = false
 }) {
+  const { t } = useTranslation();
   const confirm = useConfirm();
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -57,7 +59,7 @@ export default function MentionsSection({
     const cleanLabel = formLabel.trim() || cleanHandle;
 
     if (!cleanHandle || cleanHandle === '@') {
-      setErrorMessage("Veuillez saisir un nom de compte valide (ex: @ogirador)");
+      setErrorMessage(t('studio.lexique.veuillezSaisirUnNomDe'));
       return;
     }
 
@@ -82,10 +84,10 @@ export default function MentionsSection({
   // Supprime une mention
   const handleDelete = async (id, label) => {
     const ok = await confirm({
-      title: "Retirer la mention ?",
-      message: `Voulez-vous vraiment retirer la mention "${label}" du carnet ?`,
-      confirmLabel: "Retirer",
-      cancelLabel: "Annuler",
+      title: t('studio.lexique.retirerLaMentionTitre', { defaultValue: "Retirer la mention ?" }),
+      message: t('studio.lexique.retirerLaMentionMessage', { label, defaultValue: `Voulez-vous vraiment retirer la mention "${label}" du carnet ?` }),
+      confirmLabel: t('common.remove', { defaultValue: "Retirer" }),
+      cancelLabel: t('common.cancel', { defaultValue: "Annuler" }),
       variant: "danger"
     });
     if (ok) {
@@ -100,10 +102,10 @@ export default function MentionsSection({
       <div className="flex items-center justify-between gap-2 pb-3 border-b border-dashed border-cordel-master-dark/25">
         <div>
           <h3 className="text-base font-black text-cordel-wood uppercase flex items-center gap-2">
-            <span>👤</span> Carnet de mentions (@)
+            <span>👤</span> {t('studio.lexique.carnetDeMentions')}
           </h3>
           <p className="text-xs text-cordel-master-dark/75 mt-0.5">
-            Comptes partenaires, collectifs et tags officiels à insérer directement dans les publications.
+            {t('studio.lexique.comptesPartenairesCollectifsEtTags')}
           </p>
         </div>
 
@@ -114,7 +116,7 @@ export default function MentionsSection({
             onClick={handleStartAdd}
             className="px-3 py-1.5 rounded text-xs font-bold text-white bg-[var(--color-cordel-vert)] hover:opacity-90 active:scale-95 transition-all shadow-xs cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
           >
-            <span>➕</span> Nouvelle mention
+            <span>➕</span> {t('studio.lexique.nouvelleMention')}
           </button>
         )}
       </div>
@@ -123,32 +125,32 @@ export default function MentionsSection({
       {isAdding && (
         <form onSubmit={handleSubmit} className="my-3 p-3 bg-amber-50/60 dark:bg-neutral-800/60 border border-amber-300 dark:border-amber-700/50 rounded-md">
           <div className="text-xs font-black uppercase text-cordel-wood mb-2">
-            {editingId ? "✏️ Modifier la mention" : "➕ Ajouter une mention au carnet"}
+            {editingId ? t('studio.lexique.modifierLaMention') : t('studio.lexique.ajouterUneMentionAuCarnet')}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-[11px] font-bold text-cordel-master-dark mb-1">
-                Libellé du bouton (ex: O Girador) :
+                {t('studio.lexique.libelleDuBoutonExO')}
               </label>
               <input
                 type="text"
                 value={formLabel}
                 onChange={(e) => setFormLabel(e.target.value)}
-                placeholder="Nom du compte / Partenaire"
+                placeholder={t('studio.lexique.nomDuComptePartenaire')}
                 className="w-full text-xs px-2.5 py-1.5 bg-white dark:bg-neutral-900 border border-encre-noire/30 rounded focus:outline-none focus:ring-1 focus:ring-[var(--color-cordel-vert)]"
               />
             </div>
 
             <div>
               <label className="block text-[11px] font-bold text-cordel-master-dark mb-1">
-                Tag exact (@handle) :
+                {t('studio.lexique.tagExactHandle')}
               </label>
               <input
                 type="text"
                 value={formHandle}
                 onChange={(e) => setFormHandle(e.target.value)}
-                placeholder="@nom_du_compte"
+                placeholder={t('studio.lexique.nom_du_compte')}
                 className="w-full text-xs px-2.5 py-1.5 bg-white dark:bg-neutral-900 border border-encre-noire/30 rounded focus:outline-none focus:ring-1 focus:ring-[var(--color-cordel-vert)]"
                 required
               />
@@ -167,13 +169,13 @@ export default function MentionsSection({
               onClick={handleCancel}
               className="px-3 py-1 rounded text-xs font-semibold bg-neutral-200 hover:bg-neutral-300 text-neutral-800 transition-all cursor-pointer"
             >
-              Annuler
+              {t('studio.lexique.annuler')}
             </button>
             <button
               type="submit"
               className="px-3 py-1 rounded text-xs font-bold text-white bg-[var(--color-cordel-vert)] hover:opacity-90 active:scale-95 transition-all shadow-xs cursor-pointer"
             >
-              💾 Enregistrer
+              {t('studio.lexique.enregistrer')}
             </button>
           </div>
         </form>
@@ -183,15 +185,15 @@ export default function MentionsSection({
       <div className="mt-3 overflow-x-auto">
         {mentions.length === 0 ? (
           <div className="py-6 text-center text-xs italic text-cordel-master-dark/60">
-            Aucune mention enregistrée pour le moment. Cliquez sur "Nouvelle mention" pour commencer.
+            {t('studio.lexique.aucuneMentionEnregistreePourLe')}
           </div>
         ) : (
           <table className="w-full text-xs border-collapse">
             <thead>
               <tr className="border-b border-cordel-master-dark/20 text-left text-[11px] uppercase tracking-wider text-cordel-wood font-black">
-                <th className="py-2 px-3">Bouton</th>
-                <th className="py-2 px-3">Tag inséré</th>
-                <th className="py-2 px-3 text-right">Actions</th>
+                <th className="py-2 px-3">{t('studio.lexique.bouton')}</th>
+                <th className="py-2 px-3">{t('studio.lexique.tagInsere')}</th>
+                <th className="py-2 px-3 text-right">{t('studio.lexique.actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-cordel-master-dark/10">
@@ -212,7 +214,7 @@ export default function MentionsSection({
                         disabled={disabled}
                         onClick={() => handleStartEdit(item)}
                         className="p-1 rounded text-neutral-600 hover:text-amber-800 hover:bg-amber-100 dark:hover:bg-neutral-700 transition-colors cursor-pointer"
-                        title="Modifier la mention"
+                        title={t('studio.lexique.mentionsSection_modifierLaMention')}
                       >
                         ✏️
                       </button>
@@ -221,7 +223,7 @@ export default function MentionsSection({
                         disabled={disabled}
                         onClick={() => handleDelete(item.id, item.label || item.handle)}
                         className="p-1 rounded text-neutral-600 hover:text-[var(--color-cordel-rouge)] hover:bg-red-100 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
-                        title="Supprimer la mention"
+                        title={t('studio.lexique.supprimerLaMention')}
                       >
                         🗑️
                       </button>

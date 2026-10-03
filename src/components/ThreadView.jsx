@@ -37,7 +37,7 @@ export default function ThreadView({
   };
 
   return (
-    <div className="fixed inset-0 z-40 md:relative md:inset-auto md:z-auto flex flex-col h-[100dvh] max-h-[100dvh] md:h-[calc(100vh-130px)] md:max-h-[calc(100vh-130px)] overflow-hidden w-full overscroll-contain text-left bg-[var(--theme-bg)]">
+    <div className="fixed inset-0 z-40 md:relative md:inset-auto md:z-auto flex flex-col h-[100dvh] max-h-[100dvh] md:h-[calc(100dvh-200px)] md:max-h-[calc(100dvh-200px)] overflow-hidden w-full overscroll-contain text-left bg-[var(--theme-bg)] md:border-2 md:border-encre-noire md:rounded-[8px_12px_10px_9px] md:shadow-[4px_4px_0px_0px_#181716]">
       {/* Étage 1 — En-tête (Retour + Titre du sujet) : shrink-0 (hauteur fixe, ne s'écrase jamais) */}
       <div className="shrink-0 z-20 bg-cordel-bg/95 backdrop-blur-sm flex justify-between items-center border-b-2 border-dashed border-cordel-master-dark/30 px-3 py-2 select-none min-h-[48px] gap-2">
         <div className="flex items-center gap-2 min-w-0 flex-1">

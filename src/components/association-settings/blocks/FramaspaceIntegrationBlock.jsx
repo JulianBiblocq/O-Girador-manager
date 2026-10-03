@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from '../../LanguageContext';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { db, functions } from '../../../firebase';
@@ -27,6 +28,7 @@ export default function FramaspaceIntegrationBlock({
   saving = false,
   isStandalone = false
 }) {
+  const { t } = useTranslation();
   // États locaux pour le mode autonome (ex: intégré dans StudioCloudHeader)
   const [localUrl, setLocalUrl] = useState(formData.framaspaceUrl || '');
   const [localUsername, setLocalUsername] = useState(formData.framaspaceUsername || '');
@@ -207,33 +209,33 @@ export default function FramaspaceIntegrationBlock({
           <span className="text-xl">☁️</span>
           <div>
             <h4 className="text-xs font-black uppercase tracking-widest text-cordel-wood">
-              Automatisation Framaspace / Nextcloud
+              {t('studio.communication.automatisationFramaspaceNextcloud')}
             </h4>
             <p className="text-[10px] text-encre-noire/70 font-semibold">
-              Génération automatique des dossiers WebDAV et des liens de dépôt public (File drop) & d'album
+              {t('studio.communication.generationAutomatiqueDesDossiersWebdav')}
             </p>
           </div>
         </div>
 
         <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded border bg-emerald-50 text-emerald-900 border-emerald-300">
-          WebDAV & OCS API
+          {t('studio.communication.webdavOcsApi')}
         </span>
       </div>
 
       {/* Note d'information et guide de configuration */}
       <div className="p-3 bg-amber-50/70 border border-amber-900/20 rounded-[4px_6px_3px_5px] text-xs text-encre-noire leading-relaxed flex flex-col gap-1.5">
         <p className="text-[11px] font-medium">
-          💡 <strong>Fonctionnement :</strong> À la création d'une prestation, le système crée automatiquement le répertoire dédié dans votre instance Nextcloud et génère le lien de récolte public pour le QR-Code ainsi que le lien de consultation pour le Varal Photos.
+          💡 <strong>{t('studio.communication.fonctionnement')}</strong> {t('studio.communication.aLaCreationDUne')}
         </p>
         <p className="text-[10px] text-cordel-master-dark/70 font-semibold italic">
-          Générez un mot de passe d'application dans votre Nextcloud : <em>Paramètres personnels &gt; Sécurité &gt; Dispositifs et sessions</em>.
+          {t('studio.communication.generezUnMotDePasse')} <em>{t('studio.communication.parametresPersonnelsSecuriteDispositifsEt')}</em>.
         </p>
       </div>
 
       {/* Formulaire des 3 champs d'identifiants */}
       {loadingCreds ? (
         <div className="py-6 text-center text-xs font-bold text-cordel-master-dark">
-          Chargement des identifiants sécurisés...
+          {t('studio.communication.chargementDesIdentifiantsSecurises')}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 pt-1">
@@ -241,7 +243,7 @@ export default function FramaspaceIntegrationBlock({
           {/* Champ 1 : URL Framaspace */}
           <div className="flex flex-col gap-1">
             <label className="text-[10.5px] font-black uppercase tracking-wider text-cordel-master-dark">
-              🔗 URL de l'instance Nextcloud *
+              {t('studio.communication.urlDeLInstanceNextcloud')}
             </label>
             <input
               type="url"
@@ -252,13 +254,13 @@ export default function FramaspaceIntegrationBlock({
               className="text-xs px-3 py-2 border border-cordel-master-dark/30 rounded bg-cordel-bg-light font-bold text-encre-noire focus:outline-none focus:border-cordel-wood"
               required
             />
-            <span className="text-[9px] text-encre-noire/60">ex: https://o-girador.framaspace.org</span>
+            <span className="text-[9px] text-encre-noire/60">{t('studio.communication.exHttpsOGiradorFramaspace')}</span>
           </div>
 
           {/* Champ 2 : Nom d'utilisateur */}
           <div className="flex flex-col gap-1">
             <label className="text-[10.5px] font-black uppercase tracking-wider text-cordel-master-dark">
-              👤 Compte utilisateur / Bot *
+              {t('studio.communication.compteUtilisateurBot')}
             </label>
             <input
               type="text"
@@ -269,21 +271,21 @@ export default function FramaspaceIntegrationBlock({
               className="text-xs px-3 py-2 border border-cordel-master-dark/30 rounded bg-cordel-bg-light font-bold text-encre-noire focus:outline-none focus:border-cordel-wood"
               required
             />
-            <span className="text-[9px] text-encre-noire/60">Identifiant ou e-mail de connexion</span>
+            <span className="text-[9px] text-encre-noire/60">{t('studio.communication.identifiantOuEMailDe')}</span>
           </div>
 
           {/* Champ 3 : Mot de passe d'application */}
           <div className="flex flex-col gap-1">
             <div className="flex items-center justify-between">
               <label className="text-[10.5px] font-black uppercase tracking-wider text-cordel-master-dark">
-                🔑 Mot de passe d'application *
+                {t('studio.communication.motDePasseDApplication')}
               </label>
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="text-[9.5px] text-cordel-wood hover:underline font-bold cursor-pointer"
               >
-                {showPassword ? 'Masquer' : 'Afficher'}
+                {showPassword ? t('studio.communication.framaspaceIntegrationBlock_masquer') : t('studio.communication.framaspaceIntegrationBlock_afficher')}
               </button>
             </div>
             <input
@@ -291,11 +293,11 @@ export default function FramaspaceIntegrationBlock({
               value={effectivePassword}
               onChange={(e) => updateField('framaspaceAppPassword', e.target.value)}
               disabled={saving || localSaving}
-              placeholder="3kDmy-ExEAi-eDPw7-ca3Bk-ZTcPC"
+              placeholder={t('studio.communication.3kdmyExeaiEdpw7Ca3bkZtcpc')}
               className="text-xs px-3 py-2 border border-cordel-master-dark/30 rounded bg-cordel-bg-light font-mono font-bold text-encre-noire focus:outline-none focus:border-cordel-wood"
               required
             />
-            <span className="text-[9px] text-encre-noire/60">Token généré dans Paramètres Sécurité</span>
+            <span className="text-[9px] text-encre-noire/60">{t('studio.communication.tokenGenereDansParametresSecurite')}</span>
           </div>
         </div>
       )}
@@ -313,17 +315,17 @@ export default function FramaspaceIntegrationBlock({
           </div>
           {testResult.httpStatus && (
             <div className="text-[10px] font-mono text-stone-600 pl-6">
-              Statut HTTP Nextcloud : <strong className="text-encre-noire">{testResult.httpStatus}</strong>
+              {t('studio.communication.statutHttpNextcloud')} <strong className="text-encre-noire">{testResult.httpStatus}</strong>
             </div>
           )}
           {testResult.code && (
             <div className="text-[10px] font-mono text-red-700 pl-6">
-              Code d'erreur système : <strong>{testResult.code}</strong>
+              {t('studio.communication.codeDErreurSysteme')} <strong>{testResult.code}</strong>
             </div>
           )}
           {testResult.details && (
             <div className="text-[10px] font-mono text-red-700 pl-6 break-all">
-              Détails techniques : {typeof testResult.details === 'object' ? JSON.stringify(testResult.details) : String(testResult.details)}
+              {t('studio.communication.detailsTechniques')} {typeof testResult.details === 'object' ? JSON.stringify(testResult.details) : String(testResult.details)}
             </div>
           )}
         </div>
@@ -340,7 +342,7 @@ export default function FramaspaceIntegrationBlock({
             className="text-xs px-3.5 py-1.5 font-black uppercase tracking-wider flex items-center gap-1.5"
           >
             <span>⚡</span>
-            <span>{testing ? 'Test en cours...' : 'Tester la connexion'}</span>
+            <span>{testing ? t('studio.communication.testEnCours') : t('studio.communication.testerLaConnexion')}</span>
           </CordelButton>
 
           {isStandalone && (
@@ -352,13 +354,13 @@ export default function FramaspaceIntegrationBlock({
               className="text-xs px-4 py-1.5 font-black uppercase tracking-wider flex items-center gap-1.5"
             >
               <span>💾</span>
-              <span>{localSaving ? 'Enregistrement...' : saveSuccess ? '✓ Enregistré !' : 'Enregistrer'}</span>
+              <span>{localSaving ? t('studio.communication.enregistrement') : saveSuccess ? t('common.saved', { defaultValue: '✓ Enregistré !' }) : t('studio.communication.enregistrer')}</span>
             </CordelButton>
           )}
         </div>
 
         <span className="text-[10px] text-cordel-master-dark/70 font-medium italic">
-          🔐 Identifiants chiffrés et cloisonnés par association
+          {t('studio.communication.identifiantsChiffresEtCloisonnesPar')}
         </span>
       </div>
 

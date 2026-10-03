@@ -1,3 +1,4 @@
+import { useTranslation } from '../LanguageContext';
 import React, { useState, useEffect } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../../firebase';
@@ -6,6 +7,7 @@ import CordelButton from '../CordelButton';
 import { calculateToadaScore, calculateGlobalNacaoScore, getProgressColor } from '../../utils/toadaProgressEngine';
 
 export default function StudentToadasProgress({ profileData, allSongs = [], allSheets = [], onSelectToada = null }) {
+  const { t } = useTranslation();
   const [quizHistory, setQuizHistory] = useState([]);
 
   useEffect(() => {
@@ -32,24 +34,24 @@ export default function StudentToadasProgress({ profileData, allSongs = [], allS
       {/* HEADER & JAUGE GLOBALE */}
       <CordelCard className="p-6 md:p-8 flex flex-col gap-6 text-center border-2 border-dashed border-cordel-wood/30">
         <h2 className="text-2xl md:text-3xl font-heading uppercase text-cordel-wood tracking-widest">
-          Maîtrise de la Nação
+          {t('pedagogy.student.maitriseDeLaNacao')}
         </h2>
         <p className="text-xs text-cordel-master-dark opacity-80 mb-2">
-          Progression globale basée sur vos auto-évaluations ciblées par Toada.
+          {t('pedagogy.student.progressionGlobaleBaseeSur')}
         </p>
         <div className="bg-cordel-ocre/10 border-l-4 border-cordel-ocre p-3 text-left rounded-r max-w-2xl mx-auto">
           <p className="text-xs font-bold text-cordel-master-dark flex items-start gap-2">
             <span className="text-base">💡</span>
             <span>
-              <strong>Où écouter et lire les toadas ?</strong><br/>
-              Avant de tester tes connaissances, retrouve tous les chants (audios, paroles, traductions) dans le <strong>Varal des Toadas</strong>, situé tout en bas de la page d'accueil !
+              <strong>{t('pedagogy.student.ouEcouterEtLire')}</strong><br/>
+              {t('pedagogy.student.avantDeTesterTes')} <strong>{t('pedagogy.student.varalDesToadas')}</strong>{t('pedagogy.student.situeToutEnBas')}
             </span>
           </p>
         </div>
         
         <div className="w-full max-w-2xl mx-auto flex flex-col gap-2">
           <div className="flex justify-between items-end mb-1">
-            <span className="text-[10px] font-black uppercase text-encre-noire/50">Novice</span>
+            <span className="text-[10px] font-black uppercase text-encre-noire/50">{t('pedagogy.student.novice')}</span>
             <span className="text-xl font-black" style={{ color: globalColor }}>{globalScore}%</span>
             <span className="text-[10px] font-black uppercase text-encre-noire/50">Mestre</span>
           </div>
@@ -65,7 +67,7 @@ export default function StudentToadasProgress({ profileData, allSongs = [], allS
       {/* GRILLE DES TOADAS */}
       <div className="flex flex-col gap-4">
         <h3 className="font-black text-sm uppercase tracking-widest text-cordel-wood border-b-2 border-dashed border-cordel-master-dark/30 pb-2">
-          Détail du Répertoire ({activeSongs.length} Chants)
+          {t('pedagogy.student.detailDuRepertoire')}{activeSongs.length} {t('pedagogy.student.chants')}
         </h3>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -97,7 +99,7 @@ export default function StudentToadasProgress({ profileData, allSongs = [], allS
                   onClick={() => onSelectToada && onSelectToada(song.id)}
                   className="w-full text-[10px] py-1.5 mt-2 font-black uppercase"
                 >
-                  🎯 Réviser ce chant
+                  {t('pedagogy.student.reviserCeChant')}
                 </CordelButton>
               </div>
             );
@@ -106,7 +108,7 @@ export default function StudentToadasProgress({ profileData, allSongs = [], allS
         
         {activeSongs.length === 0 && (
           <div className="text-center p-8 bg-[#fdfaf2] border-2 border-dashed border-encre-noire/20 rounded opacity-60">
-            <p className="text-sm font-bold">Aucune Toada trouvée dans le répertoire actif.</p>
+            <p className="text-sm font-bold">{t('pedagogy.student.aucuneToadaTrouveeDans')}</p>
           </div>
         )}
       </div>

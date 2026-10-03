@@ -4,6 +4,7 @@ import { db } from '../../firebase';
 import CordelButton from '../CordelButton';
 import { downloadInvoicePDF, generateInvoicePDF } from '../../utils/invoicePdfGenerator';
 import GigSendEmailModal from './GigSendEmailModal';
+import { useModalEscape } from '../../hooks/useModalEscape';
 
 /**
  * Modale de génération de Devis commercial pour le Pôle Diffusion.
@@ -96,6 +97,9 @@ export default function GigQuoteGeneratorModal({
     };
     fetchLinkedEvent();
   }, [gig, isOpen]);
+
+  // Fermeture accessible avec la touche Échap
+  useModalEscape(isOpen, onClose, saving);
 
   if (!isOpen || !gig) return null;
 
@@ -217,12 +221,11 @@ export default function GigQuoteGeneratorModal({
   return (
     <div
       tabIndex={-1}
-      onKeyDown={(e) => e.key === 'Escape' && !saving && onClose()}
       className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 select-none outline-none animate-fade-in"
     >
-      <div className="relative w-full max-w-3xl max-h-[90vh] flex flex-col rounded-lg bg-white shadow-2xl border-2 border-cordel-master-dark/40 overflow-hidden text-left">
+      <div className="relative w-full max-w-3xl max-h-[90dvh] flex flex-col rounded-lg bg-white shadow-2xl border-2 border-cordel-master-dark/40 overflow-hidden text-left">
         {/* 1. Header (Fixe) */}
-        <div className="flex-shrink-0 p-4 border-b border-dashed border-cordel-master-dark/20 flex items-center justify-between bg-white">
+        <div className="shrink-0 p-4 border-b border-dashed border-cordel-master-dark/20 flex items-center justify-between bg-white">
           <div className="flex items-center gap-2">
             <span className="text-2xl">📋</span>
             <div>
@@ -245,7 +248,7 @@ export default function GigQuoteGeneratorModal({
         </div>
 
         {/* 2. Body (Défilable verticalement) */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-4">
           {/* Bloc Informations Client & Métadonnées Devis */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-stone-50 p-3 rounded border border-stone-200">
             {/* Informations Destinataire / Organisateur */}
@@ -408,18 +411,18 @@ export default function GigQuoteGeneratorModal({
         </div>
 
         {/* 3. Footer (Fixe en bas) */}
-        <div className="flex-shrink-0 p-4 border-t border-dashed border-cordel-master-dark/20 flex flex-wrap items-center justify-between gap-2 bg-stone-50">
+        <div className="shrink-0 p-4 border-t border-dashed border-cordel-master-dark/20 flex flex-wrap items-center justify-between gap-2 bg-[var(--theme-bg)] pb-[max(env(safe-area-inset-bottom),1rem)]">
           <button
             type="button"
             onClick={handleDownloadPDF}
-            className="text-[11px] font-bold text-stone-600 hover:text-stone-900 underline cursor-pointer flex items-center gap-1"
+            className="text-[11px] font-bold text-stone-600 hover:text-stone-900 underline cursor-pointer flex items-center gap-1 shrink-0"
             title="Télécharger directement le PDF sans envoyer d'e-mail"
           >
             <span>📥 Télécharger PDF</span>
           </button>
 
-          <div className="flex items-center gap-2">
-            <CordelButton type="button" variant="default" onClick={onClose} className="text-xs">
+          <div className="flex items-center gap-2 shrink-0">
+            <CordelButton type="button" variant="default" onClick={onClose} className="text-xs shrink-0">
               Annuler
             </CordelButton>
             <CordelButton
@@ -427,7 +430,7 @@ export default function GigQuoteGeneratorModal({
               variant="vert"
               onClick={handleSaveAndRegister}
               disabled={saving}
-              className="text-xs font-extrabold flex items-center gap-1.5"
+              className="text-xs font-extrabold flex items-center gap-1.5 shrink-0"
             >
               <span>{saving ? 'Préparation...' : '✉️ Valider & Émettre par E-mail (Brevo)'}</span>
             </CordelButton>

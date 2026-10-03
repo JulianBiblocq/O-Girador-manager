@@ -1,0 +1,2224 @@
+{
+  "carnet": [
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 160,
+      "type": "conditional",
+      "text": "Excellent ! Tu maîtrises le sujet."
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 163,
+      "type": "jsxText",
+      "text": "🔄 Rejouer"
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 166,
+      "type": "jsxText",
+      "text": "✕ Fermer"
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 221,
+      "type": "conditional",
+      "text": "✅ Correct !"
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 281,
+      "type": "config",
+      "text": "⚡ Défis Rythmiques"
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 285,
+      "type": "config",
+      "text": "🥁 Percussion"
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 286,
+      "type": "config",
+      "text": "💃 Danse"
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 351,
+      "type": "config",
+      "text": "Gonguê"
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 353,
+      "type": "config",
+      "text": "Marcante"
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 354,
+      "type": "config",
+      "text": "Agbê"
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 356,
+      "type": "config",
+      "text": "Timbal"
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 511,
+      "type": "jsxText",
+      "text": "← Retour au Carnet"
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 583,
+      "type": "jsxText",
+      "text": "maîtrisé"
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 591,
+      "type": "jsxText",
+      "text": "Aucun défi d'entraînement actif pour cette saison."
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 594,
+      "type": "jsxText",
+      "text": "Les programmes configurés dans sequenciador pour vos morceaux apparaîtront automatiquement ici."
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 622,
+      "type": "jsxText",
+      "text": "Maîtrisé"
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 627,
+      "type": "jsxText",
+      "text": "palier"
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 652,
+      "type": "attribute",
+      "text": "Ouvrir sequenciador sur votre prochain palier d'entraînement"
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 655,
+      "type": "conditional",
+      "text": "Rejouer dans sequenciador"
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 655,
+      "type": "conditional",
+      "text": "S'entraîner maintenant"
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 732,
+      "type": "jsxText",
+      "text": "Réflexes & Conventions"
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 737,
+      "type": "jsxText",
+      "text": "signaux validés (Maîtrisé)"
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 742,
+      "type": "jsxText",
+      "text": "signaux validés"
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 746,
+      "type": "conditional",
+      "text": "À découvrir"
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 752,
+      "type": "jsxText",
+      "text": "Conducteur validé"
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 759,
+      "type": "jsxText",
+      "text": "Simulateur de signaux du Mestre avec arrêt au temps 1 et mémorisation de la structure chronologique."
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 769,
+      "type": "attribute",
+      "text": "Lancer le Défi Réflexe « Temps 1 » pour ce morceau"
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 772,
+      "type": "jsxText",
+      "text": "Défi Réflexe"
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 778,
+      "type": "attribute",
+      "text": "Ouvrir la Timeline et compléter le conducteur à trous"
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 781,
+      "type": "jsxText",
+      "text": "Conduire le morceau (Timeline)"
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 813,
+      "type": "jsxText",
+      "text": "Répertoire de saison"
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 831,
+      "type": "jsxText",
+      "text": "Réflexes & Conventions"
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 836,
+      "type": "jsxText",
+      "text": "signaux validés (Maîtrisé)"
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 841,
+      "type": "jsxText",
+      "text": "signaux validés"
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 845,
+      "type": "conditional",
+      "text": "À découvrir"
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 851,
+      "type": "jsxText",
+      "text": "Conducteur validé"
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 858,
+      "type": "jsxText",
+      "text": "Testez vos départs au temps 1 sur les signaux du Mestre avec 4 choix de tablatures."
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 868,
+      "type": "attribute",
+      "text": "Lancer le Défi Réflexe « Temps 1 » pour ce morceau"
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 871,
+      "type": "jsxText",
+      "text": "Défi Réflexe"
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 877,
+      "type": "attribute",
+      "text": "Ouvrir la Timeline et compléter le conducteur à trous"
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 880,
+      "type": "jsxText",
+      "text": "Conduire le morceau (Timeline)"
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 911,
+      "type": "jsxText",
+      "text": "💃 Évalue ton aisance chorégraphique sur chacun des rythmes (toadas, pas de base, variations).\n              Les pas du Dançador seront bientôt intégrés ici pour t'entraîner visuellement."
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 919,
+      "type": "jsxText",
+      "text": "Aucun rythme disponible pour le moment."
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 957,
+      "type": "jsxText",
+      "text": "⏱️ Entraînement :"
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 985,
+      "type": "jsxText",
+      "text": "Aucun chant disponible pour le moment."
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 1034,
+      "type": "jsxText",
+      "text": "🎯 Quiz sur cette Toada"
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 1052,
+      "type": "jsxText",
+      "text": "Aucune fiche de culture disponible pour le moment."
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 1102,
+      "type": "jsxText",
+      "text": "Aucune fiche de lutherie/atelier disponible pour le moment."
+    },
+    {
+      "file": "src/components/pedagogy/MonCarnetAisance.jsx",
+      "line": 1112,
+      "type": "fallback",
+      "text": "Atelier"
+    },
+    {
+      "file": "src/components/pedagogy/CarnetPercussionSection.jsx",
+      "line": 56,
+      "type": "jsxText",
+      "text": "Aucun morceau officiel de saison disponible pour le moment."
+    },
+    {
+      "file": "src/components/pedagogy/CarnetPercussionSection.jsx",
+      "line": 59,
+      "type": "jsxText",
+      "text": "Les morceaux configurés dans le Répertoire de l'association s'afficheront ici automatiquement."
+    },
+    {
+      "file": "src/components/pedagogy/CarnetPercussionSection.jsx",
+      "line": 147,
+      "type": "jsxText",
+      "text": "Calage tempo dans le Séquenceur :"
+    },
+    {
+      "file": "src/components/pedagogy/DefisSummaryCard.jsx",
+      "line": 44,
+      "type": "jsxText",
+      "text": "Scores moyens des adhérents • Accès formateur immédiat"
+    },
+    {
+      "file": "src/components/pedagogy/DefisSummaryCard.jsx",
+      "line": 59,
+      "type": "conditional",
+      "text": "Historique troupe"
+    },
+    {
+      "file": "src/components/pedagogy/DefisSummaryCard.jsx",
+      "line": 72,
+      "type": "attribute",
+      "text": "Tester le Blind Test en direct"
+    },
+    {
+      "file": "src/components/pedagogy/DefisSummaryCard.jsx",
+      "line": 86,
+      "type": "conditional",
+      "text": "Arrêts au signal"
+    },
+    {
+      "file": "src/components/pedagogy/DefisSummaryCard.jsx",
+      "line": 99,
+      "type": "attribute",
+      "text": "Tester le Défi Réflexe Temps 1"
+    },
+    {
+      "file": "src/components/pedagogy/DefisSummaryCard.jsx",
+      "line": 113,
+      "type": "conditional",
+      "text": "Reconnaissance"
+    },
+    {
+      "file": "src/components/pedagogy/DefisSummaryCard.jsx",
+      "line": 126,
+      "type": "attribute",
+      "text": "Tester le quiz des Signaux"
+    },
+    {
+      "file": "src/components/pedagogy/EntrainementMacroAnalytics.jsx",
+      "line": 107,
+      "type": "jsxText",
+      "text": "Dynamique d'Entraînement de la Troupe"
+    },
+    {
+      "file": "src/components/pedagogy/EntrainementMacroAnalytics.jsx",
+      "line": 109,
+      "type": "jsxText",
+      "text": "Indicateur macro de l'assiduité métronomique et de la progression collective (vue anonymisée)."
+    },
+    {
+      "file": "src/components/pedagogy/EntrainementMacroAnalytics.jsx",
+      "line": 116,
+      "type": "jsxText",
+      "text": "Pupitre :"
+    },
+    {
+      "file": "src/components/pedagogy/EntrainementMacroAnalytics.jsx",
+      "line": 122,
+      "type": "jsxText",
+      "text": "Tous les pupitres ("
+    },
+    {
+      "file": "src/components/pedagogy/EntrainementMacroAnalytics.jsx",
+      "line": 136,
+      "type": "jsxText",
+      "text": "🎯 Assiduité Troupe"
+    },
+    {
+      "file": "src/components/pedagogy/EntrainementMacroAnalytics.jsx",
+      "line": 143,
+      "type": "jsxText",
+      "text": "membres engagés"
+    },
+    {
+      "file": "src/components/pedagogy/EntrainementMacroAnalytics.jsx",
+      "line": 148,
+      "type": "jsxText",
+      "text": "📊 Complétion Paliers"
+    },
+    {
+      "file": "src/components/pedagogy/EntrainementMacroAnalytics.jsx",
+      "line": 154,
+      "type": "jsxText",
+      "text": "Taux global de paliers métronomiques validés"
+    },
+    {
+      "file": "src/components/pedagogy/EntrainementMacroAnalytics.jsx",
+      "line": 160,
+      "type": "jsxText",
+      "text": "⚡ Paliers Franchis"
+    },
+    {
+      "file": "src/components/pedagogy/EntrainementMacroAnalytics.jsx",
+      "line": 166,
+      "type": "jsxText",
+      "text": "Sur"
+    },
+    {
+      "file": "src/components/pedagogy/EntrainementMacroAnalytics.jsx",
+      "line": 167,
+      "type": "jsxText",
+      "text": "morceau"
+    },
+    {
+      "file": "src/components/pedagogy/EntrainementMacroAnalytics.jsx",
+      "line": 167,
+      "type": "jsxText",
+      "text": "actif"
+    },
+    {
+      "file": "src/components/pedagogy/EntrainementMacroAnalytics.jsx",
+      "line": 178,
+      "type": "jsxText",
+      "text": "Morceaux à l'étude :"
+    },
+    {
+      "file": "src/components/pedagogy/EntrainementMacroAnalytics.jsx",
+      "line": 188,
+      "type": "jsxText",
+      "text": "paliers)"
+    },
+    {
+      "file": "src/components/pedagogy/EntrainementSegmentsBar.jsx",
+      "line": 12,
+      "type": "jsxText",
+      "text": "Répartition Macro de l'Aisance"
+    },
+    {
+      "file": "src/components/pedagogy/EntrainementSegmentsBar.jsx",
+      "line": 13,
+      "type": "jsxText",
+      "text": "adhérents"
+    },
+    {
+      "file": "src/components/pedagogy/EntrainementSegmentsBar.jsx",
+      "line": 42,
+      "type": "jsxText",
+      "text": "🌱 Découverte"
+    },
+    {
+      "file": "src/components/pedagogy/EntrainementSegmentsBar.jsx",
+      "line": 45,
+      "type": "jsxText",
+      "text": "membre"
+    },
+    {
+      "file": "src/components/pedagogy/EntrainementSegmentsBar.jsx",
+      "line": 50,
+      "type": "jsxText",
+      "text": "🌿 En pratique"
+    },
+    {
+      "file": "src/components/pedagogy/EntrainementSegmentsBar.jsx",
+      "line": 53,
+      "type": "jsxText",
+      "text": "membre"
+    },
+    {
+      "file": "src/components/pedagogy/EntrainementSegmentsBar.jsx",
+      "line": 58,
+      "type": "jsxText",
+      "text": "🌳 À l'aise"
+    },
+    {
+      "file": "src/components/pedagogy/EntrainementSegmentsBar.jsx",
+      "line": 61,
+      "type": "jsxText",
+      "text": "membre"
+    },
+    {
+      "file": "src/components/pedagogy/EntrainementSegmentsBar.jsx",
+      "line": 66,
+      "type": "jsxText",
+      "text": "👑 Référent"
+    },
+    {
+      "file": "src/components/pedagogy/EntrainementSegmentsBar.jsx",
+      "line": 69,
+      "type": "jsxText",
+      "text": "membre"
+    },
+    {
+      "file": "src/components/pedagogy/TrainingCompactCard.jsx",
+      "line": 51,
+      "type": "jsxText",
+      "text": "Entraînement recommandé pour la séance"
+    },
+    {
+      "file": "src/components/pedagogy/TrainingCompactCard.jsx",
+      "line": 53,
+      "type": "jsxText",
+      "text": "Cible :"
+    },
+    {
+      "file": "src/components/pedagogy/TrainingCompactCard.jsx",
+      "line": 73,
+      "type": "attribute",
+      "text": "Ouvrir sequenciador sur cet entraînement"
+    },
+    {
+      "file": "src/components/pedagogy/TrainingCompactCard.jsx",
+      "line": 122,
+      "type": "jsxText",
+      "text": "BPM •"
+    },
+    {
+      "file": "src/components/pedagogy/TrainingCompactCard.jsx",
+      "line": 122,
+      "type": "jsxText",
+      "text": "palier"
+    }
+  ],
+  "reflex": [
+    {
+      "file": "src/components/pedagogy/ConductorGameModal.jsx",
+      "line": 155,
+      "type": "jsxText",
+      "text": "Conducteur à trous"
+    },
+    {
+      "file": "src/components/pedagogy/ConductorGameModal.jsx",
+      "line": 158,
+      "type": "jsxText",
+      "text": "Placez les bons signaux sur la frise chronologique pour mémoriser l'enchaînement"
+    },
+    {
+      "file": "src/components/pedagogy/ConductorGameModal.jsx",
+      "line": 191,
+      "type": "jsxText",
+      "text": "Conducteur validé sans faute ! Structure parfaitement mémorisée."
+    },
+    {
+      "file": "src/components/pedagogy/ConductorGameModal.jsx",
+      "line": 228,
+      "type": "jsxText",
+      "text": "Réinitialiser"
+    },
+    {
+      "file": "src/components/pedagogy/ConductorGameModal.jsx",
+      "line": 240,
+      "type": "jsxText",
+      "text": "Valider le conducteur"
+    },
+    {
+      "file": "src/components/pedagogy/QcmSignaux.jsx",
+      "line": 173,
+      "type": "jsxText",
+      "text": "Chargement des signaux..."
+    },
+    {
+      "file": "src/components/pedagogy/QcmSignaux.jsx",
+      "line": 180,
+      "type": "jsxText",
+      "text": "Attention"
+    },
+    {
+      "file": "src/components/pedagogy/QcmSignaux.jsx",
+      "line": 181,
+      "type": "jsxText",
+      "text": "Il n'y a pas assez de signaux configurés avec une image. \n            Il en faut au minimum 4 pour générer un quiz."
+    },
+    {
+      "file": "src/components/pedagogy/QcmSignaux.jsx",
+      "line": 185,
+      "type": "jsxText",
+      "text": "Retour à l'Atelier"
+    },
+    {
+      "file": "src/components/pedagogy/QcmSignaux.jsx",
+      "line": 198,
+      "type": "jsxText",
+      "text": "Entraînement Terminé !"
+    },
+    {
+      "file": "src/components/pedagogy/QcmSignaux.jsx",
+      "line": 199,
+      "type": "jsxText",
+      "text": "Ton score :"
+    },
+    {
+      "file": "src/components/pedagogy/QcmSignaux.jsx",
+      "line": 203,
+      "type": "jsxText",
+      "text": "Quitter"
+    },
+    {
+      "file": "src/components/pedagogy/QcmSignaux.jsx",
+      "line": 206,
+      "type": "jsxText",
+      "text": "Rejouer 🔄"
+    },
+    {
+      "file": "src/components/pedagogy/QcmSignaux.jsx",
+      "line": 224,
+      "type": "jsxText",
+      "text": "← Retour"
+    },
+    {
+      "file": "src/components/pedagogy/QcmSignaux.jsx",
+      "line": 227,
+      "type": "jsxText",
+      "text": "Question"
+    },
+    {
+      "file": "src/components/pedagogy/QcmSignaux.jsx",
+      "line": 237,
+      "type": "jsxText",
+      "text": "Quel est ce signal ?"
+    },
+    {
+      "file": "src/components/pedagogy/QcmSignaux.jsx",
+      "line": 244,
+      "type": "attribute",
+      "text": "Signal mystère"
+    },
+    {
+      "file": "src/components/pedagogy/QcmSignaux.jsx",
+      "line": 276,
+      "type": "jsxText",
+      "text": "🎧 Quel est le signal pour ce rythme ?"
+    },
+    {
+      "file": "src/components/pedagogy/QcmSignaux.jsx",
+      "line": 284,
+      "type": "jsxText",
+      "text": "Lequel correspond à :"
+    },
+    {
+      "file": "src/components/pedagogy/QcmSignaux.jsx",
+      "line": 315,
+      "type": "attribute",
+      "text": "Choix possible"
+    },
+    {
+      "file": "src/components/pedagogy/QcmSignaux.jsx",
+      "line": 335,
+      "type": "conditional",
+      "text": "Signal du Mestre"
+    },
+    {
+      "file": "src/components/pedagogy/QcmSignaux.jsx",
+      "line": 333,
+      "type": "jsxText",
+      "text": "Le bon signal était"
+    },
+    {
+      "file": "src/components/pedagogy/QcmSignaux.jsx",
+      "line": 333,
+      "type": "jsxText",
+      "text": ", qui correspond au rythme"
+    },
+    {
+      "file": "src/components/pedagogy/QcmSignaux.jsx",
+      "line": 338,
+      "type": "jsxText",
+      "text": "Continuer ➔"
+    },
+    {
+      "file": "src/components/pedagogy/ReflexGameModal.jsx",
+      "line": 16,
+      "type": "config",
+      "text": "Gonguê"
+    },
+    {
+      "file": "src/components/pedagogy/ReflexGameModal.jsx",
+      "line": 18,
+      "type": "config",
+      "text": "Alfaia Marcante"
+    },
+    {
+      "file": "src/components/pedagogy/ReflexGameModal.jsx",
+      "line": 19,
+      "type": "config",
+      "text": "Agbê / Shekere"
+    },
+    {
+      "file": "src/components/pedagogy/ReflexGameModal.jsx",
+      "line": 20,
+      "type": "config",
+      "text": "Mineiro / Ganzá"
+    },
+    {
+      "file": "src/components/pedagogy/ReflexGameModal.jsx",
+      "line": 21,
+      "type": "config",
+      "text": "Timbal"
+    },
+    {
+      "file": "src/components/pedagogy/ReflexGameModal.jsx",
+      "line": 345,
+      "type": "jsxText",
+      "text": "Défi Réflexe « Temps 1 »"
+    },
+    {
+      "file": "src/components/pedagogy/ReflexGameModal.jsx",
+      "line": 350,
+      "type": "jsxText",
+      "text": "Arrêt automatique au Temps 1 • Clique sur la bonne phrase pour relancer l'audio"
+    },
+    {
+      "file": "src/components/pedagogy/ReflexGameModal.jsx",
+      "line": 360,
+      "type": "attribute",
+      "text": "Fermer"
+    },
+    {
+      "file": "src/components/pedagogy/ReflexGameModal.jsx",
+      "line": 372,
+      "type": "jsxText",
+      "text": "Aucun enregistrement audio rattaché à ce morceau."
+    },
+    {
+      "file": "src/components/pedagogy/ReflexGameModal.jsx",
+      "line": 373,
+      "type": "jsxText",
+      "text": "Pour lancer le simulateur de conventions, liez un Preset Séquenceur avec audio ou ajoutez une piste audio au morceau dans le Répertoire."
+    },
+    {
+      "file": "src/components/pedagogy/ReflexGameModal.jsx",
+      "line": 380,
+      "type": "jsxText",
+      "text": "Aucun signal du Mestre n'a été détecté pour ce morceau."
+    },
+    {
+      "file": "src/components/pedagogy/ReflexGameModal.jsx",
+      "line": 381,
+      "type": "jsxText",
+      "text": "Le Mestre peut configurer les signaux et conventions depuis le panneau « Mestria > Répertoire »."
+    },
+    {
+      "file": "src/components/pedagogy/ReflexGameModal.jsx",
+      "line": 389,
+      "type": "jsxText",
+      "text": "Morceau Terminé !"
+    },
+    {
+      "file": "src/components/pedagogy/ReflexGameModal.jsx",
+      "line": 392,
+      "type": "jsxText",
+      "text": "Score sans faute au pupitre"
+    },
+    {
+      "file": "src/components/pedagogy/ReflexGameModal.jsx",
+      "line": 400,
+      "type": "conditional",
+      "text": "👑 Score Parfait ! Toutes les conventions ont été jouées dès le premier essai."
+    },
+    {
+      "file": "src/components/pedagogy/ReflexGameModal.jsx",
+      "line": 401,
+      "type": "conditional",
+      "text": "🌿 Belle session de réflexe ! Continue de pratiquer pour automatiser tes départs."
+    },
+    {
+      "file": "src/components/pedagogy/ReflexGameModal.jsx",
+      "line": 409,
+      "type": "jsxText",
+      "text": "🔄 Rejouer le Morceau"
+    },
+    {
+      "file": "src/components/pedagogy/ReflexGameModal.jsx",
+      "line": 417,
+      "type": "jsxText",
+      "text": "Fermer"
+    },
+    {
+      "file": "src/components/pedagogy/ReflexGameModal.jsx",
+      "line": 427,
+      "type": "jsxText",
+      "text": "Mon Pupitre :"
+    },
+    {
+      "file": "src/components/pedagogy/ReflexGameModal.jsx",
+      "line": 445,
+      "type": "jsxText",
+      "text": "Score :"
+    },
+    {
+      "file": "src/components/pedagogy/ReflexGameModal.jsx",
+      "line": 449,
+      "type": "jsxText",
+      "text": "défi"
+    },
+    {
+      "file": "src/components/pedagogy/ReflexGameModal.jsx",
+      "line": 449,
+      "type": "jsxText",
+      "text": "« Temps 1 »"
+    },
+    {
+      "file": "src/components/pedagogy/ReflexGameModal.jsx",
+      "line": 492,
+      "type": "conditional",
+      "text": "⏸ Pause"
+    },
+    {
+      "file": "src/components/pedagogy/ReflexGameModal.jsx",
+      "line": 492,
+      "type": "conditional",
+      "text": "▶ Lancer l'écoute"
+    },
+    {
+      "file": "src/components/pedagogy/ReflexGameModal.jsx",
+      "line": 500,
+      "type": "jsxText",
+      "text": "Prochain arrêt :"
+    },
+    {
+      "file": "src/components/pedagogy/SignauxTrialModal.jsx",
+      "line": 21,
+      "type": "jsxText",
+      "text": "Essai du Défi : Reconnaissance des Signes"
+    },
+    {
+      "file": "src/components/pedagogy/SignauxTrialModal.jsx",
+      "line": 29,
+      "type": "jsxText",
+      "text": "✕ Fermer"
+    },
+    {
+      "file": "src/components/pedagogy/conductor/ConductorAudioPlayer.jsx",
+      "line": 55,
+      "type": "conditional",
+      "text": "⏸ Pause"
+    },
+    {
+      "file": "src/components/pedagogy/conductor/ConductorAudioPlayer.jsx",
+      "line": 55,
+      "type": "conditional",
+      "text": "▶ Écouter"
+    },
+    {
+      "file": "src/components/pedagogy/conductor/ConductorAudioPlayer.jsx",
+      "line": 62,
+      "type": "conditional",
+      "text": "Prêt à l'écoute"
+    },
+    {
+      "file": "src/components/pedagogy/conductor/ConductorMeasureSlot.jsx",
+      "line": 110,
+      "type": "jsxText",
+      "text": "Choisir"
+    },
+    {
+      "file": "src/components/pedagogy/conductor/ConductorSignalPickerSheet.jsx",
+      "line": 35,
+      "type": "jsxText",
+      "text": "Signal à la Mesure"
+    },
+    {
+      "file": "src/components/pedagogy/conductor/ConductorSignalPickerSheet.jsx",
+      "line": 38,
+      "type": "jsxText",
+      "text": "Quel geste ou appel le Mestre déclenche-t-il ici ?"
+    },
+    {
+      "file": "src/components/pedagogy/conductor/ConductorSignalPickerSheet.jsx",
+      "line": 48,
+      "type": "attribute",
+      "text": "Fermer"
+    },
+    {
+      "file": "src/components/pedagogy/conductor/ConductorSignalPickerSheet.jsx",
+      "line": 86,
+      "type": "jsxText",
+      "text": "✓ Actuellement posé"
+    },
+    {
+      "file": "src/components/pedagogy/conductor/ConductorSignalPickerSheet.jsx",
+      "line": 107,
+      "type": "jsxText",
+      "text": "Retirer le signal de la mesure"
+    },
+    {
+      "file": "src/components/pedagogy/conductor/ConductorTimeline.jsx",
+      "line": 46,
+      "type": "jsxText",
+      "text": "Frise Chronologique ("
+    },
+    {
+      "file": "src/components/pedagogy/conductor/ConductorTimeline.jsx",
+      "line": 46,
+      "type": "jsxText",
+      "text": "mesures)"
+    },
+    {
+      "file": "src/components/pedagogy/conductor/ConductorTimeline.jsx",
+      "line": 48,
+      "type": "jsxText",
+      "text": "↔ Défilement horizontal"
+    },
+    {
+      "file": "src/components/pedagogy/reflex/ReflexGameBoard.jsx",
+      "line": 34,
+      "type": "jsxText",
+      "text": "Quelle est la tablature du Temps 1 de la mesure suivante ?"
+    },
+    {
+      "file": "src/components/pedagogy/reflex/ReflexGameBoard.jsx",
+      "line": 37,
+      "type": "jsxText",
+      "text": "4 propositions"
+    },
+    {
+      "file": "src/components/pedagogy/reflex/ReflexGameBoard.jsx",
+      "line": 74,
+      "type": "jsxText",
+      "text": "Option"
+    },
+    {
+      "file": "src/components/pedagogy/reflex/ReflexGameBoard.jsx",
+      "line": 80,
+      "type": "jsxText",
+      "text": "Bonne réponse"
+    },
+    {
+      "file": "src/components/pedagogy/reflex/ReflexGameBoard.jsx",
+      "line": 86,
+      "type": "jsxText",
+      "text": "Erreur"
+    },
+    {
+      "file": "src/components/pedagogy/reflex/ReflexSignalBanner.jsx",
+      "line": 25,
+      "type": "jsxText",
+      "text": "🎧 Écoute attentivement... Le Mestre prépare son premier signal."
+    },
+    {
+      "file": "src/components/pedagogy/reflex/ReflexSignalBanner.jsx",
+      "line": 68,
+      "type": "conditional",
+      "text": "🎯 TEMPS 1 — CONVENTION À JOUER"
+    },
+    {
+      "file": "src/components/pedagogy/reflex/ReflexSignalBanner.jsx",
+      "line": 74,
+      "type": "jsxText",
+      "text": "Simple Repère"
+    },
+    {
+      "file": "src/components/pedagogy/reflex/ReflexSignalBanner.jsx",
+      "line": 89,
+      "type": "jsxText",
+      "text": "Clique sur la bonne tablature"
+    },
+    {
+      "file": "src/components/pedagogy/reflex/ReflexSignalBanner.jsx",
+      "line": 93,
+      "type": "jsxText",
+      "text": "Prépare-toi pour le temps 1"
+    }
+  ],
+  "progress": [
+    {
+      "file": "src/components/pedagogy/AutoEvalQuiz.jsx",
+      "line": 112,
+      "type": "jsxText",
+      "text": "Fermer"
+    },
+    {
+      "file": "src/components/pedagogy/AutoEvalQuiz.jsx",
+      "line": 275,
+      "type": "jsxText",
+      "text": "🧠 Quiz :"
+    },
+    {
+      "file": "src/components/pedagogy/AutoEvalQuiz.jsx",
+      "line": 285,
+      "type": "fallback",
+      "text": "Question"
+    },
+    {
+      "file": "src/components/pedagogy/AutoEvalQuiz.jsx",
+      "line": 290,
+      "type": "attribute",
+      "text": "Illustration de la question"
+    },
+    {
+      "file": "src/components/pedagogy/AutoEvalQuiz.jsx",
+      "line": 389,
+      "type": "conditional",
+      "text": "✅ Bien joué !"
+    },
+    {
+      "file": "src/components/pedagogy/AutoEvalQuiz.jsx",
+      "line": 389,
+      "type": "conditional",
+      "text": "🌱 Presque !"
+    },
+    {
+      "file": "src/components/pedagogy/AutoEvalQuiz.jsx",
+      "line": 392,
+      "type": "jsxText",
+      "text": "La bonne réponse était :"
+    },
+    {
+      "file": "src/components/pedagogy/AutoEvalQuiz.jsx",
+      "line": 409,
+      "type": "conditional",
+      "text": "Question Suivante ➔"
+    },
+    {
+      "file": "src/components/pedagogy/AutoEvalQuiz.jsx",
+      "line": 409,
+      "type": "conditional",
+      "text": "Voir le Résultat 🏆"
+    },
+    {
+      "file": "src/components/pedagogy/AutoEvalQuiz.jsx",
+      "line": 416,
+      "type": "jsxText",
+      "text": "Résultat du Quiz"
+    },
+    {
+      "file": "src/components/pedagogy/AutoEvalQuiz.jsx",
+      "line": 424,
+      "type": "jsxText",
+      "text": "Tu as obtenu"
+    },
+    {
+      "file": "src/components/pedagogy/AutoEvalQuiz.jsx",
+      "line": 425,
+      "type": "jsxText",
+      "text": "bonne(s) réponse(s) sur"
+    },
+    {
+      "file": "src/components/pedagogy/AutoEvalQuiz.jsx",
+      "line": 430,
+      "type": "jsxText",
+      "text": "Superbe ! Ton niveau de confort sur ce sujet augmente !"
+    },
+    {
+      "file": "src/components/pedagogy/AutoEvalQuiz.jsx",
+      "line": 436,
+      "type": "jsxText",
+      "text": "Sauvegarde en cours..."
+    },
+    {
+      "file": "src/components/pedagogy/AutoEvalQuiz.jsx",
+      "line": 437,
+      "type": "jsxText",
+      "text": "Progression enregistrée ✅"
+    },
+    {
+      "file": "src/components/pedagogy/AutoEvalQuiz.jsx",
+      "line": 441,
+      "type": "jsxText",
+      "text": "Tu y es presque ! N'hésite pas à relire la fiche et à retenter ta chance."
+    },
+    {
+      "file": "src/components/pedagogy/AutoEvalQuiz.jsx",
+      "line": 449,
+      "type": "conditional",
+      "text": "Fermer"
+    },
+    {
+      "file": "src/components/pedagogy/AutoEvalQuiz.jsx",
+      "line": 459,
+      "type": "jsxText",
+      "text": "🎧 S'entraîner sur le Séquenceur"
+    },
+    {
+      "file": "src/components/pedagogy/MestreToadasAnalytics.jsx",
+      "line": 157,
+      "type": "jsxText",
+      "text": "Calcul de la matrice Nação..."
+    },
+    {
+      "file": "src/components/pedagogy/MestreToadasAnalytics.jsx",
+      "line": 163,
+      "type": "jsxText",
+      "text": "Analyse du Répertoire (Toadas)"
+    },
+    {
+      "file": "src/components/pedagogy/MestreToadasAnalytics.jsx",
+      "line": 165,
+      "type": "jsxText",
+      "text": "Vue consolidée des scores d'auto-évaluation et des demandes de révision de vos élèves, triée par pupitre. \n          Les scores sont pondérés par la difficulté (Facile = max 33%, Moyen = max 66%, Expert = max 100%)."
+    },
+    {
+      "file": "src/components/pedagogy/MestreToadasAnalytics.jsx",
+      "line": 173,
+      "type": "jsxText",
+      "text": "⚠️ Suggéré pour la prochaine répétition"
+    },
+    {
+      "file": "src/components/pedagogy/MestreToadasAnalytics.jsx",
+      "line": 182,
+      "type": "jsxText",
+      "text": "Priorité #"
+    },
+    {
+      "file": "src/components/pedagogy/MestreToadasAnalytics.jsx",
+      "line": 184,
+      "type": "jsxText",
+      "text": "Score global :"
+    },
+    {
+      "file": "src/components/pedagogy/MestreToadasAnalytics.jsx",
+      "line": 188,
+      "type": "jsxText",
+      "text": "demande"
+    },
+    {
+      "file": "src/components/pedagogy/MestreToadasAnalytics.jsx",
+      "line": 188,
+      "type": "jsxText",
+      "text": "d'élèves"
+    },
+    {
+      "file": "src/components/pedagogy/MestreToadasAnalytics.jsx",
+      "line": 197,
+      "type": "attribute",
+      "text": "Épingler dans le Bloc-notes de répétition"
+    },
+    {
+      "file": "src/components/pedagogy/MestreToadasAnalytics.jsx",
+      "line": 200,
+      "type": "jsxText",
+      "text": "Épingler"
+    },
+    {
+      "file": "src/components/pedagogy/MestreToadasAnalytics.jsx",
+      "line": 214,
+      "type": "jsxText",
+      "text": "Toada"
+    },
+    {
+      "file": "src/components/pedagogy/MestreToadasAnalytics.jsx",
+      "line": 215,
+      "type": "jsxText",
+      "text": "Global"
+    },
+    {
+      "file": "src/components/pedagogy/MestreToadasAnalytics.jsx",
+      "line": 230,
+      "type": "jsxText",
+      "text": "demande"
+    },
+    {
+      "file": "src/components/pedagogy/BlindTestTrialModal.jsx",
+      "line": 63,
+      "type": "jsxText",
+      "text": "Essai du Défi : Blind Test"
+    },
+    {
+      "file": "src/components/pedagogy/BlindTestTrialModal.jsx",
+      "line": 77,
+      "type": "jsxText",
+      "text": "⚠️ Aucun morceau avec fichier audio n'est disponible dans le répertoire actuel."
+    },
+    {
+      "file": "src/components/pedagogy/BlindTestTrialModal.jsx",
+      "line": 82,
+      "type": "jsxText",
+      "text": "Écoutez l'extrait audio et identifiez le morceau ou la convention joué(e) :"
+    },
+    {
+      "file": "src/components/pedagogy/BlindTestTrialModal.jsx",
+      "line": 131,
+      "type": "conditional",
+      "text": "🎉 Bravo ! Bonne réponse."
+    },
+    {
+      "file": "src/components/pedagogy/BlindTestTrialModal.jsx",
+      "line": 133,
+      "type": "jsxText",
+      "text": "Morceau suivant ❯"
+    },
+    {
+      "file": "src/components/pedagogy/BlindTestTrialModal.jsx",
+      "line": 143,
+      "type": "jsxText",
+      "text": "Fermer l'essai"
+    },
+    {
+      "file": "src/components/pedagogy/CultureFichesTable.jsx",
+      "line": 80,
+      "type": "jsxText",
+      "text": "Tous ("
+    },
+    {
+      "file": "src/components/pedagogy/CultureFichesTable.jsx",
+      "line": 92,
+      "type": "jsxText",
+      "text": "⚡ Orixás & Spiritualité"
+    },
+    {
+      "file": "src/components/pedagogy/CultureFichesTable.jsx",
+      "line": 104,
+      "type": "jsxText",
+      "text": "🎵 Musique & Nações"
+    },
+    {
+      "file": "src/components/pedagogy/CultureFichesTable.jsx",
+      "line": 116,
+      "type": "jsxText",
+      "text": "📜 Histoire & Cortège"
+    },
+    {
+      "file": "src/components/pedagogy/CultureFichesTable.jsx",
+      "line": 128,
+      "type": "jsxText",
+      "text": "🍲 Cuisine & Recettes"
+    },
+    {
+      "file": "src/components/pedagogy/CultureFichesTable.jsx",
+      "line": 151,
+      "type": "jsxText",
+      "text": "Aucune fiche culturelle trouvée pour cette thématique ("
+    },
+    {
+      "file": "src/components/pedagogy/CultureFichesTable.jsx",
+      "line": 152,
+      "type": "conditional",
+      "text": "toutes"
+    },
+    {
+      "file": "src/components/pedagogy/CultureFichesTable.jsx",
+      "line": 159,
+      "type": "jsxText",
+      "text": "Titre de la fiche culture"
+    },
+    {
+      "file": "src/components/pedagogy/CultureFichesTable.jsx",
+      "line": 160,
+      "type": "jsxText",
+      "text": "Thème & Tampon"
+    },
+    {
+      "file": "src/components/pedagogy/CultureFichesTable.jsx",
+      "line": 161,
+      "type": "jsxText",
+      "text": "Actions"
+    },
+    {
+      "file": "src/components/pedagogy/CultureFichesTable.jsx",
+      "line": 177,
+      "type": "fallback",
+      "text": "Fiche sans titre"
+    },
+    {
+      "file": "src/components/pedagogy/CultureFichesTable.jsx",
+      "line": 190,
+      "type": "attribute",
+      "text": "Consulter la fiche culturelle"
+    },
+    {
+      "file": "src/components/pedagogy/CultureFichesTable.jsx",
+      "line": 191,
+      "type": "jsxText",
+      "text": "👁️ Consulter"
+    },
+    {
+      "file": "src/components/pedagogy/CultureFichesTable.jsx",
+      "line": 200,
+      "type": "attribute",
+      "text": "Éditer le texte explicatif et les questions du QCM"
+    },
+    {
+      "file": "src/components/pedagogy/CultureFichesTable.jsx",
+      "line": 201,
+      "type": "jsxText",
+      "text": "✏️ Éditer texte / QCM"
+    },
+    {
+      "file": "src/components/pedagogy/CultureFichesTable.jsx",
+      "line": 208,
+      "type": "attribute",
+      "text": "Supprimer la fiche"
+    },
+    {
+      "file": "src/components/pedagogy/DanseChoregraphieAnalytics.jsx",
+      "line": 104,
+      "type": "jsxText",
+      "text": "Aucun élément de danse renseigné pour le moment"
+    },
+    {
+      "file": "src/components/pedagogy/DanseChoregraphieAnalytics.jsx",
+      "line": 107,
+      "type": "jsxText",
+      "text": "Les indicateurs apparaîtront automatiquement lorsque les morceaux de danse seront travaillés."
+    },
+    {
+      "file": "src/components/pedagogy/DanseChoregraphieAnalytics.jsx",
+      "line": 121,
+      "type": "jsxText",
+      "text": "Chorégraphies & Éléments de Danse ("
+    },
+    {
+      "file": "src/components/pedagogy/DanseChoregraphieAnalytics.jsx",
+      "line": 123,
+      "type": "jsxText",
+      "text": "Suivi des pas et morceaux avec composante chorégraphique travaillés par la troupe."
+    },
+    {
+      "file": "src/components/pedagogy/DanseChoregraphieAnalytics.jsx",
+      "line": 128,
+      "type": "jsxText",
+      "text": "adhérent"
+    },
+    {
+      "file": "src/components/pedagogy/DanseChoregraphieAnalytics.jsx",
+      "line": 135,
+      "type": "jsxText",
+      "text": "Effectif :"
+    },
+    {
+      "file": "src/components/pedagogy/DanseChoregraphieAnalytics.jsx",
+      "line": 155,
+      "type": "jsxText",
+      "text": "Élément de Danse"
+    },
+    {
+      "file": "src/components/pedagogy/DanseChoregraphieAnalytics.jsx",
+      "line": 156,
+      "type": "jsxText",
+      "text": "Aisance Réelle"
+    },
+    {
+      "file": "src/components/pedagogy/DanseChoregraphieAnalytics.jsx",
+      "line": 157,
+      "type": "jsxText",
+      "text": "Actions"
+    },
+    {
+      "file": "src/components/pedagogy/DanseItemRow.jsx",
+      "line": 44,
+      "type": "conditional",
+      "text": "Non évalué"
+    },
+    {
+      "file": "src/components/pedagogy/DanseItemRow.jsx",
+      "line": 57,
+      "type": "jsxText",
+      "text": "figures"
+    },
+    {
+      "file": "src/components/pedagogy/DanseItemRow.jsx",
+      "line": 66,
+      "type": "attribute",
+      "text": "Programmer en répétition"
+    },
+    {
+      "file": "src/components/pedagogy/DanseItemRow.jsx",
+      "line": 77,
+      "type": "attribute",
+      "text": "Épingler au bloc-notes"
+    },
+    {
+      "file": "src/components/pedagogy/DanseItemRow.jsx",
+      "line": 90,
+      "type": "jsxText",
+      "text": "Figures associées :"
+    },
+    {
+      "file": "src/components/pedagogy/MestreQuizConfigManager.jsx",
+      "line": 71,
+      "type": "jsxText",
+      "text": "Chargement de la configuration..."
+    },
+    {
+      "file": "src/components/pedagogy/MestreQuizConfigManager.jsx",
+      "line": 77,
+      "type": "jsxText",
+      "text": "Configuration Globale des QCM"
+    },
+    {
+      "file": "src/components/pedagogy/MestreQuizConfigManager.jsx",
+      "line": 79,
+      "type": "jsxText",
+      "text": "Définissez ici quels thèmes seront disponibles pour les élèves dans l'espace \"Mon Parcours\" et paramétrez le comportement par défaut des quiz."
+    },
+    {
+      "file": "src/components/pedagogy/MestreQuizConfigManager.jsx",
+      "line": 85,
+      "type": "jsxText",
+      "text": "Thèmes Activés :"
+    },
+    {
+      "file": "src/components/pedagogy/MestreQuizConfigManager.jsx",
+      "line": 98,
+      "type": "jsxText",
+      "text": "🎤 Toadas / Chants"
+    },
+    {
+      "file": "src/components/pedagogy/MestreQuizConfigManager.jsx",
+      "line": 99,
+      "type": "jsxText",
+      "text": "Quiz sur le rythme, la Nação et le lexique des chants."
+    },
+    {
+      "file": "src/components/pedagogy/MestreQuizConfigManager.jsx",
+      "line": 112,
+      "type": "jsxText",
+      "text": "🇧🇷 Traduction (PT/FR)"
+    },
+    {
+      "file": "src/components/pedagogy/MestreQuizConfigManager.jsx",
+      "line": 113,
+      "type": "jsxText",
+      "text": "Auto-évaluation sur le vocabulaire portugais de l'application."
+    },
+    {
+      "file": "src/components/pedagogy/MestreQuizConfigManager.jsx",
+      "line": 126,
+      "type": "jsxText",
+      "text": "📚 Culture & Histoire"
+    },
+    {
+      "file": "src/components/pedagogy/MestreQuizConfigManager.jsx",
+      "line": 127,
+      "type": "jsxText",
+      "text": "Questions à trous basées sur les fiches de catégorie \"Culture\"."
+    },
+    {
+      "file": "src/components/pedagogy/MestreQuizConfigManager.jsx",
+      "line": 140,
+      "type": "jsxText",
+      "text": "🛠️ Atelier & Couture"
+    },
+    {
+      "file": "src/components/pedagogy/MestreQuizConfigManager.jsx",
+      "line": 141,
+      "type": "jsxText",
+      "text": "Questions pratiques basées sur les fiches de catégorie \"Atelier\"."
+    },
+    {
+      "file": "src/components/pedagogy/MestreQuizConfigManager.jsx",
+      "line": 148,
+      "type": "jsxText",
+      "text": "Difficulté par défaut :"
+    },
+    {
+      "file": "src/components/pedagogy/MestreQuizConfigManager.jsx",
+      "line": 156,
+      "type": "jsxText",
+      "text": "🌱 Débutant (Options simples)"
+    },
+    {
+      "file": "src/components/pedagogy/MestreQuizConfigManager.jsx",
+      "line": 157,
+      "type": "jsxText",
+      "text": "🥁 Confirmé (Options mixtes)"
+    },
+    {
+      "file": "src/components/pedagogy/MestreQuizConfigManager.jsx",
+      "line": 158,
+      "type": "jsxText",
+      "text": "🏆 Expert (Pièges sémantiques)"
+    },
+    {
+      "file": "src/components/pedagogy/MestreQuizConfigManager.jsx",
+      "line": 163,
+      "type": "jsxText",
+      "text": "Nombre de questions :"
+    },
+    {
+      "file": "src/components/pedagogy/MestreQuizConfigManager.jsx",
+      "line": 171,
+      "type": "jsxText",
+      "text": "5 questions (Session rapide)"
+    },
+    {
+      "file": "src/components/pedagogy/MestreQuizConfigManager.jsx",
+      "line": 172,
+      "type": "jsxText",
+      "text": "10 questions (Standard)"
+    },
+    {
+      "file": "src/components/pedagogy/MestreQuizConfigManager.jsx",
+      "line": 173,
+      "type": "jsxText",
+      "text": "15 questions (Défi long)"
+    },
+    {
+      "file": "src/components/pedagogy/MestreQuizConfigManager.jsx",
+      "line": 183,
+      "type": "jsxText",
+      "text": "👁️ Tester une session Quiz"
+    },
+    {
+      "file": "src/components/pedagogy/MestreQuizConfigManager.jsx",
+      "line": 192,
+      "type": "conditional",
+      "text": "Sauvegarde..."
+    },
+    {
+      "file": "src/components/pedagogy/MestreQuizConfigManager.jsx",
+      "line": 192,
+      "type": "conditional",
+      "text": "💾 Enregistrer"
+    },
+    {
+      "file": "src/components/pedagogy/PercussionPieceRow.jsx",
+      "line": 72,
+      "type": "jsxText",
+      "text": "Saison officielle"
+    },
+    {
+      "file": "src/components/pedagogy/PercussionPieceRow.jsx",
+      "line": 98,
+      "type": "attribute",
+      "text": "Voir le détail des variations et breaks"
+    },
+    {
+      "file": "src/components/pedagogy/PercussionPieceRow.jsx",
+      "line": 101,
+      "type": "jsxText",
+      "text": "var."
+    },
+    {
+      "file": "src/components/pedagogy/PercussionPieceRow.jsx",
+      "line": 109,
+      "type": "attribute",
+      "text": "Programmer directement en répétition"
+    },
+    {
+      "file": "src/components/pedagogy/PercussionPieceRow.jsx",
+      "line": 120,
+      "type": "attribute",
+      "text": "Épingler au bloc-notes"
+    },
+    {
+      "file": "src/components/pedagogy/PercussionPieceRow.jsx",
+      "line": 136,
+      "type": "jsxText",
+      "text": "Détail des Variations & Conventions ("
+    },
+    {
+      "file": "src/components/pedagogy/PercussionPieceRow.jsx",
+      "line": 152,
+      "type": "conditional",
+      "text": "Signal"
+    },
+    {
+      "file": "src/components/pedagogy/PercussionPieceRow.jsx",
+      "line": 152,
+      "type": "conditional",
+      "text": "Motif"
+    },
+    {
+      "file": "src/components/pedagogy/PercussionRepertoireAnalytics.jsx",
+      "line": 40,
+      "type": "jsxText",
+      "text": "Aucun morceau officiel de saison"
+    },
+    {
+      "file": "src/components/pedagogy/PercussionRepertoireAnalytics.jsx",
+      "line": 43,
+      "type": "jsxText",
+      "text": "Ajoutez des morceaux dans le Répertoire de l'association ou assignez-leur le statut « En saison » pour visualiser la matrice de confort par famille d'instruments."
+    },
+    {
+      "file": "src/components/pedagogy/PercussionRepertoireAnalytics.jsx",
+      "line": 57,
+      "type": "jsxText",
+      "text": "Matrice Percussion de Saison ("
+    },
+    {
+      "file": "src/components/pedagogy/PercussionRepertoireAnalytics.jsx",
+      "line": 57,
+      "type": "jsxText",
+      "text": "morceaux)"
+    },
+    {
+      "file": "src/components/pedagogy/PercussionRepertoireAnalytics.jsx",
+      "line": 59,
+      "type": "jsxText",
+      "text": "1 ligne par morceau • Synthèse du niveau de confort de la troupe par famille d'instruments."
+    },
+    {
+      "file": "src/components/pedagogy/PercussionRepertoireAnalytics.jsx",
+      "line": 64,
+      "type": "jsxText",
+      "text": "≥ 75% À l'aise"
+    },
+    {
+      "file": "src/components/pedagogy/PercussionRepertoireAnalytics.jsx",
+      "line": 67,
+      "type": "jsxText",
+      "text": "50-74% Travail"
+    },
+    {
+      "file": "src/components/pedagogy/PercussionRepertoireAnalytics.jsx",
+      "line": 70,
+      "type": "jsxText",
+      "text": "< 50% Fragile"
+    },
+    {
+      "file": "src/components/pedagogy/PercussionRepertoireAnalytics.jsx",
+      "line": 81,
+      "type": "jsxText",
+      "text": "Morceau de Saison"
+    },
+    {
+      "file": "src/components/pedagogy/PercussionRepertoireAnalytics.jsx",
+      "line": 84,
+      "type": "jsxText",
+      "text": "Global"
+    },
+    {
+      "file": "src/components/pedagogy/PercussionRepertoireAnalytics.jsx",
+      "line": 95,
+      "type": "jsxText",
+      "text": "Détail & Actions"
+    },
+    {
+      "file": "src/components/pedagogy/QuizDistractorManager.jsx",
+      "line": 23,
+      "type": "config",
+      "text": "Genres Musicaux hors-Maracatu"
+    },
+    {
+      "file": "src/components/pedagogy/QuizDistractorManager.jsx",
+      "line": 24,
+      "type": "config",
+      "text": "Baques et Rythmes Fictifs"
+    },
+    {
+      "file": "src/components/pedagogy/QuizDistractorManager.jsx",
+      "line": 25,
+      "type": "config",
+      "text": "Villes & Géographie"
+    },
+    {
+      "file": "src/components/pedagogy/QuizDistractorManager.jsx",
+      "line": 26,
+      "type": "config",
+      "text": "Lutherie & Matériaux"
+    },
+    {
+      "file": "src/components/pedagogy/QuizDistractorManager.jsx",
+      "line": 27,
+      "type": "config",
+      "text": "Traductions et Expressions"
+    },
+    {
+      "file": "src/components/pedagogy/QuizDistractorManager.jsx",
+      "line": 66,
+      "type": "runtime",
+      "text": "Banque de leurres sauvegardée avec succès !"
+    },
+    {
+      "file": "src/components/pedagogy/QuizDistractorManager.jsx",
+      "line": 69,
+      "type": "runtime",
+      "text": "Erreur lors de la sauvegarde."
+    },
+    {
+      "file": "src/components/pedagogy/QuizDistractorManager.jsx",
+      "line": 76,
+      "type": "runtime",
+      "text": "Voulez-vous vraiment réinitialiser toutes les catégories aux valeurs par défaut de l'application ? Toutes vos personnalisations seront perdues."
+    },
+    {
+      "file": "src/components/pedagogy/QuizDistractorManager.jsx",
+      "line": 116,
+      "type": "jsxText",
+      "text": "Chargement de la banque de leurres..."
+    },
+    {
+      "file": "src/components/pedagogy/QuizDistractorManager.jsx",
+      "line": 117,
+      "type": "jsxText",
+      "text": "Erreur d'initialisation."
+    },
+    {
+      "file": "src/components/pedagogy/QuizDistractorManager.jsx",
+      "line": 126,
+      "type": "jsxText",
+      "text": "Gérez les fausses réponses (distracteurs) injectées dans vos quiz pédagogiques. \n            Une liste riche garantit des QCM variés !"
+    },
+    {
+      "file": "src/components/pedagogy/QuizDistractorManager.jsx",
+      "line": 135,
+      "type": "jsxText",
+      "text": "Réinitialiser"
+    },
+    {
+      "file": "src/components/pedagogy/QuizDistractorManager.jsx",
+      "line": 143,
+      "type": "conditional",
+      "text": "Enregistrement..."
+    },
+    {
+      "file": "src/components/pedagogy/QuizDistractorManager.jsx",
+      "line": 168,
+      "type": "attribute",
+      "text": "Supprimer ce leurre"
+    },
+    {
+      "file": "src/components/pedagogy/QuizDistractorManager.jsx",
+      "line": 177,
+      "type": "jsxText",
+      "text": "Aucun leurre dans cette catégorie. Le QCM utilisera le dictionnaire universel en secours."
+    },
+    {
+      "file": "src/components/pedagogy/QuizDistractorManager.jsx",
+      "line": 184,
+      "type": "attribute",
+      "text": "Ajouter un leurre..."
+    },
+    {
+      "file": "src/components/pedagogy/RodaQuizStatsBanner.jsx",
+      "line": 57,
+      "type": "fallback",
+      "text": "Résultats Roda Quiz & Défis"
+    },
+    {
+      "file": "src/components/pedagogy/RodaQuizStatsBanner.jsx",
+      "line": 63,
+      "type": "jsxText",
+      "text": "Chargement de tes résultats..."
+    },
+    {
+      "file": "src/components/pedagogy/RodaQuizStatsBanner.jsx",
+      "line": 68,
+      "type": "fallback",
+      "text": "Aucune partie disputée pour l'instant. Rejoins ou lance un défi depuis le bouton En ligne !"
+    },
+    {
+      "file": "src/components/pedagogy/RodaQuizStatsBanner.jsx",
+      "line": 76,
+      "type": "fallback",
+      "text": "Parties jouées"
+    },
+    {
+      "file": "src/components/pedagogy/RodaQuizStatsBanner.jsx",
+      "line": 85,
+      "type": "fallback",
+      "text": "Victoires"
+    },
+    {
+      "file": "src/components/pedagogy/RodaQuizStatsBanner.jsx",
+      "line": 94,
+      "type": "fallback",
+      "text": "Présence sur le podium"
+    },
+    {
+      "file": "src/components/pedagogy/ToadasTable.jsx",
+      "line": 18,
+      "type": "jsxText",
+      "text": "Aucune Toada enregistrée dans le répertoire pour le moment."
+    },
+    {
+      "file": "src/components/pedagogy/ToadasTable.jsx",
+      "line": 26,
+      "type": "jsxText",
+      "text": "Titre du chant"
+    },
+    {
+      "file": "src/components/pedagogy/ToadasTable.jsx",
+      "line": 27,
+      "type": "jsxText",
+      "text": "Rythme / Baque"
+    },
+    {
+      "file": "src/components/pedagogy/ToadasTable.jsx",
+      "line": 28,
+      "type": "jsxText",
+      "text": "Nation / École"
+    },
+    {
+      "file": "src/components/pedagogy/ToadasTable.jsx",
+      "line": 29,
+      "type": "jsxText",
+      "text": "Actions"
+    },
+    {
+      "file": "src/components/pedagogy/ToadasTable.jsx",
+      "line": 46,
+      "type": "fallback",
+      "text": "Toada sans titre"
+    },
+    {
+      "file": "src/components/pedagogy/ToadasTable.jsx",
+      "line": 62,
+      "type": "attribute",
+      "text": "Consulter le livret de la toada"
+    },
+    {
+      "file": "src/components/pedagogy/ToadasTable.jsx",
+      "line": 63,
+      "type": "jsxText",
+      "text": "👁️ Paroles"
+    },
+    {
+      "file": "src/components/pedagogy/ToadasTable.jsx",
+      "line": 72,
+      "type": "attribute",
+      "text": "Éditer les paroles et les 8 points pédagogiques"
+    },
+    {
+      "file": "src/components/pedagogy/ToadasTable.jsx",
+      "line": 73,
+      "type": "jsxText",
+      "text": "✏️ Éditer les 8 points"
+    },
+    {
+      "file": "src/components/pedagogy/ToadasTable.jsx",
+      "line": 80,
+      "type": "attribute",
+      "text": "Supprimer la toada"
+    }
+  ],
+  "cards": [
+    {
+      "file": "src/components/pedagogy/AtelierModelPartsProgress.jsx",
+      "line": 46,
+      "type": "jsxText",
+      "text": "Nomenclature & Pièces usinées ("
+    },
+    {
+      "file": "src/components/pedagogy/AtelierModelPartsProgress.jsx",
+      "line": 50,
+      "type": "jsxText",
+      "text": "maîtrisée"
+    },
+    {
+      "file": "src/components/pedagogy/AtelierModelPartsProgress.jsx",
+      "line": 55,
+      "type": "conditional",
+      "text": "▲ Réduire"
+    },
+    {
+      "file": "src/components/pedagogy/AtelierModelPartsProgress.jsx",
+      "line": 55,
+      "type": "conditional",
+      "text": "▼ Détails par pièce"
+    },
+    {
+      "file": "src/components/pedagogy/AtelierModelPartsProgress.jsx",
+      "line": 90,
+      "type": "jsxText",
+      "text": "étape"
+    },
+    {
+      "file": "src/components/pedagogy/AtelierModelPartsProgress.jsx",
+      "line": 90,
+      "type": "jsxText",
+      "text": "d'usinage"
+    },
+    {
+      "file": "src/components/pedagogy/AtelierModelPartsProgress.jsx",
+      "line": 92,
+      "type": "jsxText",
+      "text": "• Mat. :"
+    },
+    {
+      "file": "src/components/pedagogy/AtelierModelPartsProgress.jsx",
+      "line": 139,
+      "type": "jsxText",
+      "text": "Quiz Pièce"
+    },
+    {
+      "file": "src/components/pedagogy/DailyRevisionSession.jsx",
+      "line": 72,
+      "type": "jsxText",
+      "text": "Préparation de ta session..."
+    },
+    {
+      "file": "src/components/pedagogy/MestreSignalsManager.jsx",
+      "line": 68,
+      "type": "runtime",
+      "text": "Voulez-vous vraiment supprimer ce signal ? Il ne sera plus disponible dans les quiz."
+    },
+    {
+      "file": "src/components/pedagogy/MestreSignalsManager.jsx",
+      "line": 75,
+      "type": "runtime",
+      "text": "Erreur lors de la suppression."
+    },
+    {
+      "file": "src/components/pedagogy/MestreSignalsManager.jsx",
+      "line": 107,
+      "type": "runtime",
+      "text": "Erreur lors de l'enregistrement du signal."
+    },
+    {
+      "file": "src/components/pedagogy/MestreSignalsManager.jsx",
+      "line": 113,
+      "type": "jsxText",
+      "text": "Chargement des signaux..."
+    },
+    {
+      "file": "src/components/pedagogy/MestreSignalsManager.jsx",
+      "line": 147,
+      "type": "jsxText",
+      "text": "Nom du signal"
+    },
+    {
+      "file": "src/components/pedagogy/MestreSignalsManager.jsx",
+      "line": 167,
+      "type": "jsxText",
+      "text": "👁️ Visuel (Geste, Main, Regard)"
+    },
+    {
+      "file": "src/components/pedagogy/MestreSignalsManager.jsx",
+      "line": 168,
+      "type": "jsxText",
+      "text": "🔊 Sonore (Sifflet / Apito, Voix)"
+    },
+    {
+      "file": "src/components/pedagogy/MestreSignalsManager.jsx",
+      "line": 169,
+      "type": "jsxText",
+      "text": "🧩 Autre"
+    },
+    {
+      "file": "src/components/pedagogy/MestreSignalsManager.jsx",
+      "line": 174,
+      "type": "jsxText",
+      "text": "Description / Geste"
+    },
+    {
+      "file": "src/components/pedagogy/MestreSignalsManager.jsx",
+      "line": 186,
+      "type": "jsxText",
+      "text": "URL de l'image / GIF"
+    },
+    {
+      "file": "src/components/pedagogy/MestreSignalsManager.jsx",
+      "line": 203,
+      "type": "jsxText",
+      "text": "Annuler"
+    },
+    {
+      "file": "src/components/pedagogy/MestreSignalsManager.jsx",
+      "line": 223,
+      "type": "jsxText",
+      "text": "Aucun signal n'a encore été configuré."
+    },
+    {
+      "file": "src/components/pedagogy/MestreSignalsManager.jsx",
+      "line": 250,
+      "type": "attribute",
+      "text": "Modifier"
+    },
+    {
+      "file": "src/components/pedagogy/MestreSignalsManager.jsx",
+      "line": 257,
+      "type": "attribute",
+      "text": "Supprimer"
+    },
+    {
+      "file": "src/components/pedagogy/MonParcoursGuideBanner.jsx",
+      "line": 49,
+      "type": "attribute",
+      "text": "Afficher l'aide Où apprendre et réviser ?"
+    },
+    {
+      "file": "src/components/pedagogy/MonParcoursGuideBanner.jsx",
+      "line": 52,
+      "type": "fallback",
+      "text": "Aide : Où apprendre et réviser ?"
+    },
+    {
+      "file": "src/components/pedagogy/MonParcoursGuideBanner.jsx",
+      "line": 68,
+      "type": "fallback",
+      "text": "Où apprendre et réviser ?"
+    },
+    {
+      "file": "src/components/pedagogy/MonParcoursGuideBanner.jsx",
+      "line": 77,
+      "type": "attribute",
+      "text": "Masquer ce guide (réouvrable à tout moment via le bouton 💡)"
+    },
+    {
+      "file": "src/components/pedagogy/MonParcoursGuideBanner.jsx",
+      "line": 80,
+      "type": "fallback",
+      "text": "Compris / Masquer"
+    },
+    {
+      "file": "src/components/pedagogy/MonParcoursGuideBanner.jsx",
+      "line": 86,
+      "type": "fallback",
+      "text": "Avant de tester tes acquis ici, retrouve tous les détails (fiches complètes, audios, explications) dans les Varals (cordes à linge) situés tout en bas de la page d'accueil !"
+    },
+    {
+      "file": "src/components/pedagogy/PedagogyDocumentsView.jsx",
+      "line": 55,
+      "type": "jsxText",
+      "text": "📋 Les 2 Tableaux"
+    },
+    {
+      "file": "src/components/pedagogy/PedagogyDocumentsView.jsx",
+      "line": 66,
+      "type": "jsxText",
+      "text": "🎵 Toadas ("
+    },
+    {
+      "file": "src/components/pedagogy/PedagogyDocumentsView.jsx",
+      "line": 77,
+      "type": "jsxText",
+      "text": "📖 Culture & Histoire ("
+    },
+    {
+      "file": "src/components/pedagogy/PedagogyDocumentsView.jsx",
+      "line": 88,
+      "type": "jsxText",
+      "text": "🪢 Vue Varal"
+    },
+    {
+      "file": "src/components/pedagogy/PedagogyDocumentsView.jsx",
+      "line": 100,
+      "type": "jsxText",
+      "text": "➕ Nouvelle Toada"
+    },
+    {
+      "file": "src/components/pedagogy/PedagogyDocumentsView.jsx",
+      "line": 108,
+      "type": "jsxText",
+      "text": "➕ Fiche Culture"
+    },
+    {
+      "file": "src/components/pedagogy/PedagogyDocumentsView.jsx",
+      "line": 124,
+      "type": "jsxText",
+      "text": "⬅️ Annuler et revenir aux tableaux pédagogiques"
+    },
+    {
+      "file": "src/components/pedagogy/PedagogyDocumentsView.jsx",
+      "line": 145,
+      "type": "jsxText",
+      "text": "Tableau A : Toadas (Chants & Paroles)"
+    },
+    {
+      "file": "src/components/pedagogy/PedagogyDocumentsView.jsx",
+      "line": 148,
+      "type": "jsxText",
+      "text": "Répertoire musical et livrets de chants"
+    },
+    {
+      "file": "src/components/pedagogy/PedagogyDocumentsView.jsx",
+      "line": 166,
+      "type": "jsxText",
+      "text": "Tableau B : Fiches Culture & Histoire"
+    },
+    {
+      "file": "src/components/pedagogy/PedagogyDocumentsView.jsx",
+      "line": 169,
+      "type": "jsxText",
+      "text": "Histoire, traditions, figures et folklore"
+    },
+    {
+      "file": "src/components/SongCard.jsx",
+      "line": 173,
+      "type": "jsxText",
+      "text": "Cochez \"Puxador\" ou \"Coro\" au-dessus pour afficher les paroles"
+    },
+    {
+      "file": "src/components/SongCard.jsx",
+      "line": 185,
+      "type": "jsxText",
+      "text": "⚠️ Ce chant est au format texte simple. Impossible de séparer automatiquement le Puxador et le Chœur."
+    },
+    {
+      "file": "src/components/SongCard.jsx",
+      "line": 320,
+      "type": "attribute",
+      "text": "Imprimer cette fiche"
+    },
+    {
+      "file": "src/components/SongCard.jsx",
+      "line": 353,
+      "type": "fallback",
+      "text": "Titre Inconnu"
+    },
+    {
+      "file": "src/components/SongCard.jsx",
+      "line": 383,
+      "type": "jsxText",
+      "text": "Audio témoin :"
+    },
+    {
+      "file": "src/components/SongCard.jsx",
+      "line": 407,
+      "type": "jsxText",
+      "text": "👁️ Puxador (Soliste)"
+    },
+    {
+      "file": "src/components/SongCard.jsx",
+      "line": 416,
+      "type": "jsxText",
+      "text": "👁️ Coro (Chœur)"
+    },
+    {
+      "file": "src/components/SongCard.jsx",
+      "line": 425,
+      "type": "jsxText",
+      "text": "Version Originale"
+    },
+    {
+      "file": "src/components/SongCard.jsx",
+      "line": 437,
+      "type": "jsxText",
+      "text": "Version Phonétique"
+    },
+    {
+      "file": "src/components/SongCard.jsx",
+      "line": 456,
+      "type": "jsxText",
+      "text": "Traduction en français"
+    },
+    {
+      "file": "src/components/SongCard.jsx",
+      "line": 469,
+      "type": "jsxText",
+      "text": "Lexique & Notes"
+    },
+    {
+      "file": "src/components/SongCard.jsx",
+      "line": 494,
+      "type": "jsxText",
+      "text": "Anecdote"
+    },
+    {
+      "file": "src/components/CultureCard.jsx",
+      "line": 86,
+      "type": "jsxText",
+      "text": "Fiche Culturelle"
+    },
+    {
+      "file": "src/components/CultureCard.jsx",
+      "line": 118,
+      "type": "fallback",
+      "text": "Fiche Culture"
+    },
+    {
+      "file": "src/components/CultureCard.jsx",
+      "line": 184,
+      "type": "jsxText",
+      "text": "🌿 Élément :"
+    },
+    {
+      "file": "src/components/CultureCard.jsx",
+      "line": 187,
+      "type": "jsxText",
+      "text": "⚔️ Symboles :"
+    },
+    {
+      "file": "src/components/CultureCard.jsx",
+      "line": 234,
+      "type": "fallback",
+      "text": "Gestuelle"
+    },
+    {
+      "file": "src/components/CultureCard.jsx",
+      "line": 239,
+      "type": "jsxText",
+      "text": "💪 Focus corps :"
+    },
+    {
+      "file": "src/components/CultureCard.jsx",
+      "line": 260,
+      "type": "jsxText",
+      "text": "Le saviez-vous ?"
+    },
+    {
+      "file": "src/components/CultureCard.jsx",
+      "line": 271,
+      "type": "jsxText",
+      "text": "🏷️ Mots-Clés"
+    },
+    {
+      "file": "src/components/CultureCard.jsx",
+      "line": 291,
+      "type": "jsxText",
+      "text": "📖 Dictionnaire & Lexique"
+    },
+    {
+      "file": "src/components/CultureCard.jsx",
+      "line": 321,
+      "type": "jsxText",
+      "text": "🎬 Vidéo Associée"
+    },
+    {
+      "file": "src/components/CultureCard.jsx",
+      "line": 333,
+      "type": "attribute",
+      "text": "YouTube video player"
+    },
+    {
+      "file": "src/components/CultureCard.jsx",
+      "line": 353,
+      "type": "jsxText",
+      "text": "Télécharger / Ouvrir le fichier vidéo ↗"
+    },
+    {
+      "file": "src/components/CultureCard.jsx",
+      "line": 363,
+      "type": "jsxText",
+      "text": "▶️ Regarder la vidéo externe"
+    },
+    {
+      "file": "src/components/CultureCard.jsx",
+      "line": 372,
+      "type": "jsxText",
+      "text": "📱 Scannez pour voir la vidéo"
+    }
+  ]
+}

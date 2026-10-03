@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from '../../LanguageContext';
 import CordelCard from '../../CordelCard';
 
 /**
@@ -6,6 +7,7 @@ import CordelCard from '../../CordelCard';
  * Affiche les enregistrements SPF, DKIM et DMARC recommandés à ajouter chez l'hébergeur (OVH, Gandi, Infomaniak, etc.).
  */
 export default function EmailDnsHelpCard({ customDomain, replyToEmail }) {
+  const { t } = useTranslation();
   const [copiedKey, setCopiedKey] = useState(null);
 
   // Extraction propre du nom de domaine depuis le champ dédié ou à partir de l'adresse de réponse
@@ -19,24 +21,24 @@ export default function EmailDnsHelpCard({ customDomain, replyToEmail }) {
       id: 'spf',
       type: 'TXT',
       name: '@',
-      label: 'SPF (Sender Policy Framework)',
-      description: 'Autorise nos serveurs à émettre des e-mails au nom de votre domaine sans rejet spam.',
+      label: t('studio.communication.spfSenderPolicyFramework'),
+      description: t('studio.communication.spfDescription', { defaultValue: 'Autorise nos serveurs à émettre des e-mails au nom de votre domaine sans rejet spam.' }),
       value: `v=spf1 include:mail.ogirador.fr include:${extractedDomain} ~all`
     },
     {
       id: 'dkim',
       type: 'TXT',
       name: `ogirador._domainkey.${extractedDomain}`,
-      label: 'DKIM (DomainKeys Identified Mail)',
-      description: 'Clef de signature cryptographique certifiant l\'authenticité de vos envois.',
+      label: t('studio.communication.dkimDomainkeysIdentifiedMail'),
+      description: t('studio.communication.dkimDescription', { defaultValue: 'Clef de signature cryptographique certifiant l\'authenticité de vos envois.' }),
       value: `v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC3O... (Généré par O Girador)`
     },
     {
       id: 'dmarc',
       type: 'TXT',
       name: `_dmarc.${extractedDomain}`,
-      label: 'DMARC (Domain-based Message Authentication)',
-      description: 'Politique de sécurité recommandant le traitement des messages non authentifiés.',
+      label: t('studio.communication.dmarcDomainBasedMessageAuthentication'),
+      description: t('studio.communication.dmarcDescription', { defaultValue: 'Politique de sécurité recommandant le traitement des messages non authentifiés.' }),
       value: `v=DMARC1; p=none; rua=mailto:dmarc-reports@${extractedDomain}`
     }
   ];
@@ -58,10 +60,10 @@ export default function EmailDnsHelpCard({ customDomain, replyToEmail }) {
           <span className="text-lg">🌐</span>
           <div>
             <h4 className="text-xs font-black uppercase tracking-wider text-stone-800">
-              Enregistrements DNS Recommandés pour <span className="font-mono text-[var(--color-cordel-vert,#2d6a4f)]">{extractedDomain}</span>
+              {t('studio.communication.enregistrementsDnsRecommandesPour')} <span className="font-mono text-[var(--color-cordel-vert,#2d6a4f)]">{extractedDomain}</span>
             </h4>
             <p className="text-[10px] text-stone-500 font-bold">
-              Copiez et collez ces paramètres dans la zone DNS de votre hébergeur (OVH, Gandi, Infomaniak, Ionos, Cloudflare).
+              {t('studio.communication.copiezEtCollezCesParametres')}
             </p>
           </div>
         </div>
@@ -72,8 +74,8 @@ export default function EmailDnsHelpCard({ customDomain, replyToEmail }) {
           <thead>
             <tr className="bg-stone-200/70 text-stone-700 font-extrabold uppercase text-[9px] tracking-wider border-b border-stone-300">
               <th className="p-2">Type</th>
-              <th className="p-2">Hôte / Nom</th>
-              <th className="p-2">Valeur / Cible</th>
+              <th className="p-2">{t('studio.communication.hoteNom')}</th>
+              <th className="p-2">{t('studio.communication.valeurCible')}</th>
               <th className="p-2 text-right">Action</th>
             </tr>
           </thead>
@@ -108,7 +110,7 @@ export default function EmailDnsHelpCard({ customDomain, replyToEmail }) {
                         : 'bg-stone-200 hover:bg-stone-300 text-stone-800 border border-stone-300'
                     }`}
                   >
-                    <span>{copiedKey === record.id ? '✓ Copié !' : '📋 Copier'}</span>
+                    <span>{copiedKey === record.id ? t('studio.communication.copie') : t('studio.communication.copier')}</span>
                   </button>
                 </td>
               </tr>
@@ -120,7 +122,7 @@ export default function EmailDnsHelpCard({ customDomain, replyToEmail }) {
       <div className="p-2.5 bg-amber-50 border border-amber-300 rounded text-[10px] text-stone-700 flex items-start gap-2">
         <span className="text-sm">💡</span>
         <p className="leading-relaxed">
-          <strong>Remarque :</strong> La propagation des modifications DNS peut prendre de quelques minutes à 24 heures selon votre hébergeur. Une fois les enregistrements validés, le taux de délivrabilité de vos e-mails sera optimal.
+          <strong>{t('studio.communication.remarque')}</strong> {t('studio.communication.laPropagationDesModificationsDns')}
         </p>
       </div>
     </CordelCard>

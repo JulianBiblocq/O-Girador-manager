@@ -1,5 +1,6 @@
 import React from 'react';
 import CordelCard from '../CordelCard';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Tableau A du Pôle Pédagogie : Toadas (Chants & Paroles)
@@ -12,21 +13,20 @@ export default function ToadasTable({
   onEditDoc,
   onDeleteDoc
 }) {
+  const { t } = useTranslation();
   return (
     <CordelCard variant="default" useExtremeBorder={false} className="p-4 flex flex-col gap-3">
       {toadas.length === 0 ? (
-        <div className="text-center py-8 text-xs font-bold text-cordel-master-dark/60">
-          Aucune Toada enregistrée dans le répertoire pour le moment.
-        </div>
+        <div className="text-center py-8 text-xs font-bold text-cordel-master-dark/60">{t('pedagogy.progress.aucuneToadaEnregistreeDansLe')}</div>
       ) : (
         <div className="w-full overflow-x-auto">
           <table className="min-w-full divide-y divide-cordel-master-dark/15 text-xs text-left">
             <thead>
               <tr className="bg-cordel-master-dark/5 text-[9px] font-black uppercase tracking-wider text-cordel-master-dark">
-                <th className="px-3 py-2">Titre du chant</th>
-                <th className="px-3 py-2">Rythme / Baque</th>
-                <th className="px-3 py-2">Nation / École</th>
-                <th className="px-3 py-2 text-right">Actions</th>
+                <th className="px-3 py-2">{t('pedagogy.progress.titreDuChant')}</th>
+                <th className="px-3 py-2">{t('pedagogy.progress.rythmeBaque')}</th>
+                <th className="px-3 py-2">{t('pedagogy.progress.nationEcole')}</th>
+                <th className="px-3 py-2 text-right">{t('pedagogy.progress.actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-cordel-master-dark/10 font-semibold">
@@ -43,7 +43,7 @@ export default function ToadasTable({
                         onClick={() => onSelectDoc && onSelectDoc(song)}
                         className="text-left font-bold hover:underline hover:text-cordel-wood truncate max-w-xs cursor-pointer"
                       >
-                        {song.titre || "Toada sans titre"}
+                        {song.titre || t('pedagogy.progress.toadaSansTitre')}
                       </button>
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap">
@@ -59,25 +59,21 @@ export default function ToadasTable({
                         type="button"
                         onClick={() => onSelectDoc && onSelectDoc(song)}
                         className="px-2 py-0.5 text-[9px] font-black uppercase rounded bg-cordel-bg border border-encre-noire shadow-2xs hover:bg-white cursor-pointer"
-                        title="Consulter le livret de la toada"
-                      >
-                        👁️ Paroles
-                      </button>
+                        title={t('pedagogy.progress.consulterLeLivretDeLa')}
+                      >{t('pedagogy.progress.paroles')}</button>
                       {canWrite && (
                         <>
                           <button
                             type="button"
                             onClick={() => onEditDoc && onEditDoc(song)}
                             className="px-2 py-0.5 text-[9px] font-black uppercase rounded bg-amber-100 border border-amber-900 shadow-2xs hover:bg-amber-200 cursor-pointer"
-                            title="Éditer les paroles et les 8 points pédagogiques"
-                          >
-                            ✏️ Éditer les 8 points
-                          </button>
+                            title={t('pedagogy.progress.editerLesParolesEtLes')}
+                          >{t('pedagogy.progress.editerLes8Points')}</button>
                           <button
                             type="button"
                             onClick={() => onDeleteDoc && onDeleteDoc(song)}
                             className="px-2 py-0.5 text-[9px] font-black uppercase rounded bg-red-100 text-red-900 border border-red-900 shadow-2xs hover:bg-red-200 cursor-pointer"
-                            title="Supprimer la toada"
+                            title={t('pedagogy.progress.supprimerLaToada')}
                           >
                             🗑️
                           </button>

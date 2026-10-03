@@ -1,5 +1,6 @@
 import React from 'react';
 import CordelCard from '../CordelCard';
+import { useTranslation } from '../../hooks/useTranslation';
 
 /**
  * Sub-composant d'administration dédié à la gestion des 4 documents Espace Pro
@@ -18,6 +19,7 @@ export default function TabPublicProDocs({
   setKitPresseFile,
   saving
 }) {
+  const { t } = useTranslation();
   const publicTheme = formData.publicTheme || {};
 
   // Mise à jour de l'URL d'un document dans le thème public
@@ -38,8 +40,8 @@ export default function TabPublicProDocs({
   const docsConfig = [
     {
       key: 'dossierPresentationUrl',
-      label: '📄 Dossier de présentation complet (PDF)',
-      description: 'Présentation complète de la troupe, historique et univers artistique.',
+      label: t('vitrine.admin.proDocs.tabPublicProDocs.dossierDePresentationCompletPdf'),
+      description: t('vitrine.admin.proDocs.tabPublicProDocs.presentationCompleteDeLaTroupe'),
       accept: 'application/pdf',
       fileState: dossierPresentationFile,
       setFileFn: setDossierPresentationFile,
@@ -47,8 +49,8 @@ export default function TabPublicProDocs({
     },
     {
       key: 'ficheTechniqueUrl',
-      label: '🛠️ Fiche technique (Besoins son/lumière/logistique) (PDF)',
-      description: 'Fiche technique officielle décrivant les besoins logistiques et sonores.',
+      label: t('vitrine.admin.proDocs.tabPublicProDocs.ficheTechniqueBesoinsSonLumiere'),
+      description: t('vitrine.admin.proDocs.tabPublicProDocs.ficheTechniqueOfficielleDecrivantLes'),
       accept: 'application/pdf',
       fileState: ficheTechniqueFile,
       setFileFn: setFicheTechniqueFile,
@@ -56,8 +58,8 @@ export default function TabPublicProDocs({
     },
     {
       key: 'planSceneUrl',
-      label: '📐 Plan de scène (PDF ou Image)',
-      description: 'Plan de placement sur scène ou schéma d\'implantation scénique.',
+      label: t('vitrine.admin.proDocs.tabPublicProDocs.planDeScenePdfOu'),
+      description: t('vitrine.admin.proDocs.tabPublicProDocs.planDePlacementSurScene'),
       accept: 'application/pdf,image/*',
       fileState: planSceneFile,
       setFileFn: setPlanSceneFile,
@@ -65,8 +67,8 @@ export default function TabPublicProDocs({
     },
     {
       key: 'kitPresseUrl',
-      label: '📦 Kit Presse (Texte & Photos HD) (ZIP ou PDF)',
-      description: 'Kit presse complet incluant visuels HD et dossiers de presse pour les médias.',
+      label: t('vitrine.admin.proDocs.tabPublicProDocs.kitPresseTextePhotosHd'),
+      description: t('vitrine.admin.proDocs.tabPublicProDocs.kitPresseCompletIncluantVisuels'),
       accept: 'application/pdf,application/zip,application/x-zip-compressed',
       fileState: kitPresseFile,
       setFileFn: setKitPresseFile,
@@ -77,14 +79,14 @@ export default function TabPublicProDocs({
   return (
     <CordelCard variant="default" className="p-5 flex flex-col gap-5 bg-white border-2 border-cordel-master-dark/30">
       <h4 className="text-xs font-black uppercase tracking-widest text-cordel-wood border-b border-dashed border-cordel-master-dark/20 pb-2 flex items-center justify-between">
-        <span>📑 Documents Espace Pro & Organisateurs</span>
+        <span>{t('vitrine.admin.proDocs.tabPublicProDocs.documentsEspaceProOrganisateurs')}</span>
         <span className="text-[10px] font-mono bg-blue-50 text-blue-800 px-2 py-0.5 rounded border border-blue-300">
-          Téléchargements Vitrine
+          {t('vitrine.admin.proDocs.tabPublicProDocs.telechargementsVitrine')}
         </span>
       </h4>
 
       <p className="text-xs text-stone-600 leading-relaxed">
-        Ajoutez les documents officiels téléchargeables par les organisateurs de spectacles et la presse. Seuls les documents renseignés disposeront d'un bouton de téléchargement actif sur la vitrine publique.
+        {t('vitrine.admin.proDocs.tabPublicProDocs.ajoutezLesDocumentsOfficielsTelechargeables')}
       </p>
 
       {/* Basculer Activer / Désactiver Espace Pro */}
@@ -98,7 +100,7 @@ export default function TabPublicProDocs({
           className="w-4 h-4 cursor-pointer accent-[var(--color-cordel-vert,#2d6a4f)]"
         />
         <label htmlFor="afficherEspacePro" className="text-xs font-bold uppercase tracking-wider text-encre-noire cursor-pointer flex flex-wrap items-center gap-1.5">
-          <span>Afficher le bloc "Espace Pro" (téléchargements) en bas de la vitrine</span>
+          <span>{t('vitrine.admin.proDocs.tabPublicProDocs.afficherLeBlocEspacePro')}</span>
         </label>
       </div>
 
@@ -126,7 +128,7 @@ export default function TabPublicProDocs({
                       rel="noopener noreferrer"
                       className="text-[11px] font-bold text-emerald-800 hover:underline bg-emerald-50 px-2.5 py-0.5 rounded border border-emerald-300 flex items-center gap-1 cursor-pointer"
                     >
-                      <span>👁️ Consulter le fichier</span> ↗
+                      <span>{t('vitrine.admin.proDocs.tabPublicProDocs.consulterLeFichier')}</span> ↗
                     </a>
                   )}
                   {hasUrl && (
@@ -135,9 +137,9 @@ export default function TabPublicProDocs({
                       onClick={() => handleDeleteDoc(doc.key, doc.setFileFn)}
                       disabled={saving}
                       className="text-[11px] font-bold text-red-700 hover:bg-red-50 px-2 py-0.5 rounded border border-red-300 transition-colors cursor-pointer"
-                      title="Supprimer le document actuel"
+                      title={t('vitrine.admin.proDocs.tabPublicProDocs.supprimerLeDocumentActuel')}
                     >
-                      🗑️ Supprimer
+                      {t('vitrine.admin.proDocs.tabPublicProDocs.supprimer')}
                     </button>
                   )}
                 </div>
@@ -166,7 +168,7 @@ export default function TabPublicProDocs({
                     onClick={() => doc.setFileFn(null)}
                     className="text-[10px] font-bold text-red-700 hover:underline cursor-pointer"
                   >
-                    ✖ Annuler
+                    {t('vitrine.admin.proDocs.tabPublicProDocs.annuler')}
                   </button>
                 )}
               </div>
@@ -174,7 +176,7 @@ export default function TabPublicProDocs({
               {/* Indication du nouveau fichier prêt à l'envoi */}
               {doc.fileState && (
                 <div className="p-2 bg-emerald-50 border border-emerald-300 rounded text-xs text-emerald-900 font-semibold flex items-center gap-2">
-                  <span>📌 Nouveau fichier prêt à l'envoi : <strong>{doc.fileState.name}</strong> ({(doc.fileState.size / 1024).toFixed(0)} Ko)</span>
+                  <span>{t('vitrine.admin.proDocs.tabPublicProDocs.nouveauFichierPretAL')} <strong>{doc.fileState.name}</strong> ({(doc.fileState.size / 1024).toFixed(0)} {t('vitrine.admin.proDocs.tabPublicProDocs.ko')}</span>
                 </div>
               )}
 
@@ -194,3 +196,4 @@ export default function TabPublicProDocs({
     </CordelCard>
   );
 }
+

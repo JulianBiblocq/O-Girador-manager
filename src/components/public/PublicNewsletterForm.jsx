@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from '../LanguageContext';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { isDemoMode } from '../../demo/demoManager';
@@ -14,6 +15,7 @@ import { isDemoMode } from '../../demo/demoManager';
  * @param {Object} [props.publicTheme] - Thème et textes dynamiques de la vitrine.
  */
 export default function PublicNewsletterForm({ groupId, variant = 'card', publicTheme = {} }) {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submittedSuccess, setSubmittedSuccess] = useState(false);
@@ -25,16 +27,16 @@ export default function PublicNewsletterForm({ groupId, variant = 'card', public
   }
 
   const vitrineTexts = publicTheme?.vitrineTexts || {};
-  const badgeNewsletter = vitrineTexts.badgeNewsletter || (variant === 'card' ? "Infolettre & Actualités" : "Infolettre & Prestations");
-  const titreNewsletter = vitrineTexts.titreNewsletter || (variant === 'card' ? "Infolettre & Actualités" : "Abonnez-vous à notre Newsletter");
-  const accrocheNewsletter = vitrineTexts.accrocheNewsletter || "Recevez nos prochaines dates de prestations, défilés et actualités du groupe directement dans votre boîte mail.";
+  const badgeNewsletter = vitrineTexts.badgeNewsletter || (variant === 'card' ? t('studio.newsletter.infolettreActualites') : t('studio.newsletter.infolettrePrestations'));
+  const titreNewsletter = vitrineTexts.titreNewsletter || (variant === 'card' ? t('studio.newsletter.infolettreActualites') : t('studio.newsletter.abonnezVousANotreNewsletter'));
+  const accrocheNewsletter = vitrineTexts.accrocheNewsletter || t('studio.newsletter.recevezNosProchainesDatesDe');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const cleanEmail = email.trim().toLowerCase();
 
     if (!cleanEmail || !cleanEmail.includes('@')) {
-      setErrorMessage("Veuillez saisir une adresse e-mail valide.");
+      setErrorMessage(t('studio.newsletter.veuillezSaisirUneAdresseE'));
       return;
     }
 
@@ -56,7 +58,7 @@ export default function PublicNewsletterForm({ groupId, variant = 'card', public
       setEmail('');
     } catch (err) {
       console.error("Erreur lors de l'inscription à la newsletter:", err);
-      setErrorMessage("Une erreur s'est produite lors de votre inscription. Veuillez réessayer.");
+      setErrorMessage(t('studio.newsletter.uneErreurSEstProduite'));
     } finally {
       setSubmitting(false);
     }
@@ -84,13 +86,13 @@ export default function PublicNewsletterForm({ groupId, variant = 'card', public
           {submittedSuccess ? (
             <div className="p-4 rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-semibold flex flex-col items-center gap-2 text-center animate-fade-in">
               <span className="text-xl">🎉</span>
-              <p>{isDemoMode() ? "Merci pour votre inscription ! En mode démo, aucun e-mail réel n'est envoyé." : "Merci ! Vous êtes bien inscrit(e) à notre newsletter."}</p>
+              <p>{isDemoMode() ? t('studio.newsletter.merciPourVotreInscriptionEn') : t('studio.newsletter.merciVousEtesBienInscrit')}</p>
               <button
                 type="button"
                 onClick={() => setSubmittedSuccess(false)}
                 className="text-[11px] underline text-emerald-700 hover:text-emerald-900 cursor-pointer"
               >
-                Inscrire une autre adresse
+                {t('studio.newsletter.inscrireUneAutreAdresse')}
               </button>
             </div>
           ) : (
@@ -115,7 +117,7 @@ export default function PublicNewsletterForm({ groupId, variant = 'card', public
                   fontFamily: 'var(--public-font-heading, sans-serif)'
                 }}
               >
-                {submitting ? '⏳ Inscription...' : "S'inscrire à l'infolettre"}
+                {submitting ? t('studio.newsletter.inscription') : t('studio.newsletter.sInscrireALInfolettre')}
               </button>
             </form>
           )}
@@ -129,7 +131,7 @@ export default function PublicNewsletterForm({ groupId, variant = 'card', public
 
         <div className="border-t border-stone-100 pt-3">
           <span className="text-[11px] text-stone-500 font-medium block text-center">
-            🔒 Pas de spam. Désinscription à tout moment.
+            {t('studio.newsletter.pasDeSpamDesinscriptionA')}
           </span>
         </div>
       </div>
@@ -166,13 +168,13 @@ export default function PublicNewsletterForm({ groupId, variant = 'card', public
         {submittedSuccess ? (
           <div className="p-4 rounded-xl bg-emerald-900/80 border border-emerald-500 text-emerald-100 text-sm font-semibold max-w-md w-full flex flex-col items-center gap-2 animate-fade-in shadow-lg">
             <span className="text-xl">🎉</span>
-            <p>{isDemoMode() ? "Merci pour votre message ! En mode démo, aucun e-mail réel n'est envoyé." : "Merci ! Vous êtes bien inscrit(e) à notre newsletter."}</p>
+            <p>{isDemoMode() ? t('studio.newsletter.merciPourVotreMessageEn') : t('studio.newsletter.merciVousEtesBienInscrit')}</p>
             <button
               type="button"
               onClick={() => setSubmittedSuccess(false)}
               className="text-xs underline text-emerald-300 hover:text-white mt-1 cursor-pointer"
             >
-              Inscrire un autre e-mail
+              {t('studio.newsletter.inscrireUnAutreEMail')}
             </button>
           </div>
         ) : (
@@ -197,7 +199,7 @@ export default function PublicNewsletterForm({ groupId, variant = 'card', public
                 fontFamily: 'var(--public-font-heading, sans-serif)'
               }}
             >
-              {submitting ? '⏳ Validation...' : "S'inscrire"}
+              {submitting ? t('studio.newsletter.validation') : t('studio.newsletter.sInscrire')}
             </button>
           </form>
         )}
@@ -210,7 +212,7 @@ export default function PublicNewsletterForm({ groupId, variant = 'card', public
         )}
 
         <span className="text-[11px] text-stone-500 font-medium">
-          🔒 Pas de spam. Vous pourrez vous désinscrire à tout moment.
+          {t('studio.newsletter.pasDeSpamVousPourrez')}
         </span>
       </div>
     </section>

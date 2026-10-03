@@ -3,6 +3,7 @@ import { extractYouTubeId } from '../utils/videoUtils';
 import { QRCodeSVG } from 'qrcode.react';
 import SeloAxeStamp from './SeloAxeStamp';
 import RepertoirePasserelleButton from './repertoire/RepertoirePasserelleButton';
+import { useTranslation } from './LanguageContext';
 
 const renderHTMLorText = (content, extraClass = "") => {
   if (!content) return null;
@@ -43,6 +44,7 @@ function CultureCard({
   onNavigateToView = null,
   groupId = null
 }) {
+  const { t } = useTranslation();
   if (!culture) return null;
 
   const primaryColor = culture.hexPrimary || extractThemeColor(culture.couleurs, 0) || extractThemeColor(culture.couleursTheme, 0) || 'var(--encre-noire)';
@@ -83,9 +85,7 @@ function CultureCard({
               <div className="flex flex-col gap-2 items-center relative">
                 
                 {/* Print only: Association Name */}
-                <div className="hidden print:block absolute top-0 right-0 text-[8px] uppercase font-bold text-gray-500">
-                  Fiche Culturelle
-                </div>
+                <div className="hidden print:block absolute top-0 right-0 text-[8px] uppercase font-bold text-gray-500">{t('pedagogy.cards.ficheCulturelle')}</div>
 
                 {/* Theme & Badges */}
                 <div className="flex flex-wrap gap-2 justify-center mb-1 items-center">
@@ -115,7 +115,7 @@ function CultureCard({
                 {/* Main Title */}
                 <div className="flex flex-col items-center justify-center relative w-full">
                   <h1 className="text-2xl md:text-4xl font-heading tracking-widest text-[var(--color-cordel-ocre,#c05621)] text-center mt-1 print:mt-0 print:text-3xl relative z-20">
-                    {culture.titre || culture.name || culture.title || "Fiche Culture"}
+                    {culture.titre || culture.name || culture.title || t('pedagogy.cards.ficheCulture')}
                   </h1>
                 </div>
                 
@@ -181,10 +181,10 @@ function CultureCard({
                 {culture.themeCulture === 'orixas' && (culture.elementNaturel || culture.symbolesSacres) && (
                   <div className="flex justify-center gap-6 mt-2 print:break-inside-avoid text-[10px] uppercase font-bold text-cordel-master-dark">
                     {culture.elementNaturel && (
-                      <span>🌿 Élément : {culture.elementNaturel}</span>
+                      <span>{t('pedagogy.cards.element')} {culture.elementNaturel}</span>
                     )}
                     {culture.symbolesSacres && (
-                      <span>⚔️ Symboles : {culture.symbolesSacres}</span>
+                      <span>{t('pedagogy.cards.symboles')} {culture.symbolesSacres}</span>
                     )}
                   </div>
                 )}
@@ -231,12 +231,12 @@ function CultureCard({
                 {gestureData && (gestureData.nomDuGeste || gestureData.descriptionGeste || gestureData.description) && (
                   <div className="mt-4 flex flex-col gap-3 print:break-inside-avoid bg-cordel-wood/5 p-4 rounded-md border border-cordel-wood/20">
                     <h3 className="bg-[var(--color-cordel-vert,#2d6a4f)] text-[#fdfaf2] py-1.5 px-3 rounded font-heading tracking-widest text-lg md:text-xl lowercase capitalize inline-block w-fit">
-                      {gestureData.nomDuGeste || "Gestuelle"}
+                      {gestureData.nomDuGeste || t('pedagogy.cards.gestuelle')}
                     </h3>
                     
                     {gestureData.motsClesCorps && (
                       <div className="flex gap-2 font-bold text-[10px] uppercase tracking-wider text-cordel-master-dark">
-                        <span>💪 Focus corps :</span>
+                        <span>{t('pedagogy.cards.focusCorps')}</span>
                         <span className="text-cordel-wood">{gestureData.motsClesCorps}</span>
                       </div>
                     )}
@@ -257,8 +257,7 @@ function CultureCard({
                 {culture.anecdote && (
                   <div className="mt-4 bg-[#f5f0e6]/60 dark:bg-[#201d1a] border-l-4 border-[var(--color-cordel-vert,#2d6a4f)] p-4 md:p-5 rounded-r-md shadow-sm print:break-inside-avoid">
                     <h4 className="text-[11px] md:text-sm font-black uppercase tracking-widest text-[var(--color-cordel-vert,#2d6a4f)] mb-2 flex items-center gap-2 print:text-[10px]">
-                      <span>💡</span> Le saviez-vous ?
-                    </h4>
+                      <span>💡</span>{t('pedagogy.cards.leSaviezVous')}</h4>
                     <p className="text-[11px] md:text-[13px] print:text-[10px] font-bold text-encre-noire leading-relaxed italic">
                       "{culture.anecdote}"
                     </p>
@@ -268,9 +267,7 @@ function CultureCard({
                 {/* Lexique Mots-Clés (Ancien / Simple) */}
                 {culture.lexiqueMotsCles && (
                   <div className="mt-4 flex flex-col gap-2 print:break-inside-avoid">
-                    <h4 className="text-[10px] font-black uppercase tracking-widest text-cordel-master-dark">
-                      🏷️ Mots-Clés
-                    </h4>
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-cordel-master-dark">{t('pedagogy.cards.motsCles')}</h4>
                     <div className="flex flex-wrap gap-2">
                       {(Array.isArray(culture.lexiqueMotsCles) ? culture.lexiqueMotsCles : (typeof culture.lexiqueMotsCles === 'string' ? culture.lexiqueMotsCles.split(',') : [])).map((mot, idx) => {
                         const trimmed = typeof mot === 'string' ? mot.trim() : '';
@@ -288,9 +285,7 @@ function CultureCard({
                 {/* Dictionnaire / Lexique Détaillé */}
                 {culture.lexique && Array.isArray(culture.lexique) && culture.lexique.length > 0 && (
                   <div className="mt-4 flex flex-col gap-3 print:break-inside-avoid">
-                    <h4 className="text-[10px] font-black uppercase tracking-widest text-cordel-master-dark border-b border-cordel-master-dark/10 pb-1">
-                      📖 Dictionnaire & Lexique
-                    </h4>
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-cordel-master-dark border-b border-cordel-master-dark/10 pb-1">{t('pedagogy.cards.dictionnaireLexique')}</h4>
                     <div className="grid grid-cols-1 gap-2">
                       {culture.lexique.map((item, idx) => {
                         const ptTerm = item?.pt || item?.terme || item?.mot || item?.portugais || (typeof item === 'string' ? item.split(':')[0]?.trim() : '');
@@ -318,9 +313,7 @@ function CultureCard({
                 {/* Vidéo Associée */}
                 {targetVideoUrl && (
                   <div className="mt-6 flex flex-col items-center gap-2 pb-4 print:break-inside-avoid">
-                    <h4 className="text-[10px] md:text-xs font-black uppercase tracking-widest text-cordel-master-dark mb-2 border-b-2 border-cordel-master-dark/10 pb-1 text-center w-full">
-                      🎬 Vidéo Associée
-                    </h4>
+                    <h4 className="text-[10px] md:text-xs font-black uppercase tracking-widest text-cordel-master-dark mb-2 border-b-2 border-cordel-master-dark/10 pb-1 text-center w-full">{t('pedagogy.cards.videoAssociee')}</h4>
                     
                     {/* Screen View */}
                     <div className="w-full flex flex-col items-center print:hidden">
@@ -330,7 +323,7 @@ function CultureCard({
                             width="100%"
                             height="100%"
                             src={`https://www.youtube.com/embed/${extractYouTubeId(targetVideoUrl)}`}
-                            title="YouTube video player"
+                            title={t('pedagogy.cards.youtubeVideoPlayer')}
                             frameBorder="0"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                             allowFullScreen
@@ -350,9 +343,7 @@ function CultureCard({
                             target="_blank"
                             rel="noreferrer"
                             className="text-[10px] font-bold text-stone-600 underline hover:text-stone-900"
-                          >
-                            Télécharger / Ouvrir le fichier vidéo ↗
-                          </a>
+                          >{t('pedagogy.cards.telechargerOuvrirLeFichierVideo')}</a>
                         </div>
                       ) : (
                         <a 
@@ -360,18 +351,14 @@ function CultureCard({
                           target="_blank" 
                           rel="noreferrer"
                           className="bg-cordel-wood text-[#fdfaf2] px-6 py-2 rounded-full text-[11px] font-black uppercase tracking-widest shadow-md hover:bg-red-800 transition-colors flex items-center gap-2"
-                        >
-                          ▶️ Regarder la vidéo externe
-                        </a>
+                        >{t('pedagogy.cards.regarderLaVideoExterne')}</a>
                       )}
                     </div>
 
                     {/* Print View: QR Code */}
                     <div className="hidden print:flex flex-col items-center justify-center p-4 border-2 border-dashed border-cordel-wood/50 rounded-lg max-w-[200px] mx-auto">
                       <QRCodeSVG value={targetVideoUrl} size={100} level="M" />
-                      <p className="mt-2 text-[9px] font-bold uppercase text-center text-encre-noire">
-                        📱 Scannez pour voir la vidéo
-                      </p>
+                      <p className="mt-2 text-[9px] font-bold uppercase text-center text-encre-noire">{t('pedagogy.cards.scannezPourVoirLaVideo')}</p>
                     </div>
                   </div>
                 )}

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from '../LanguageContext';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import LZString from 'lz-string';
 import PatternVisualizer from '../pedagogy/PatternVisualizer';
 
 export default function FirestoreMediaRenderer({ url }) {
+  const { t } = useTranslation();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -63,11 +65,11 @@ export default function FirestoreMediaRenderer({ url }) {
   }, [url]);
 
   if (loading) {
-    return <div className="text-center p-4 text-xs font-bold text-cordel-master-dark opacity-60 animate-pulse">Chargement du média...</div>;
+    return <div className="text-center p-4 text-xs font-bold text-cordel-master-dark opacity-60 animate-pulse">{t('pedagogy.student.chargementDuMedia')}</div>;
   }
 
   if (error) {
-    return <div className="text-center p-4 text-xs font-bold text-cordel-rouge">Erreur : {error}</div>;
+    return <div className="text-center p-4 text-xs font-bold text-cordel-rouge">{t('pedagogy.student.erreur')} {error}</div>;
   }
 
   if (!data) return null;
@@ -97,7 +99,7 @@ export default function FirestoreMediaRenderer({ url }) {
       {stepsToVisualize && (
         <div className="flex flex-col items-center w-full mt-2">
           <span className="text-[10px] font-black uppercase text-encre-noire/50 mb-2">
-            Visuel : {trackName}
+            {t('pedagogy.student.visuel')} {trackName}
           </span>
           <div className="w-full overflow-x-auto max-w-full pb-2 scrollbar-thin flex justify-center">
              <PatternVisualizer patternArray={stepsToVisualize} beatResolution={4} />
@@ -106,7 +108,7 @@ export default function FirestoreMediaRenderer({ url }) {
       )}
       
       {!data.audioUrl && !stepsToVisualize && (
-        <div className="text-[10px] text-encre-noire/40 italic">Aucun aperçu disponible pour ce média.</div>
+        <div className="text-[10px] text-encre-noire/40 italic">{t('pedagogy.student.aucunApercuDisponiblePour')}</div>
       )}
     </div>
   );

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from '../components/LanguageContext';
 import { collection, query, where, onSnapshot, doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { exportNewsletterDraft } from '../services/newsletterService';
@@ -11,11 +12,12 @@ import { exportNewsletterDraft } from '../services/newsletterService';
  * @param {string} groupId - ID du groupe / de l'association
  */
 export function useNewsletterData(groupId) {
+  const { t } = useTranslation();
   // Étape actuelle du Stepper (1 à 4)
   const [currentStep, setCurrentStep] = useState(1);
 
   // Étape 1 : Message d'accueil
-  const [titreCampagne, setTitreCampagne] = useState('Newsletter Roda de Maracatu');
+  const [titreCampagne, setTitreCampagne] = useState(() => t('studio.newsletter.newsletterRodaDeMaracatu'));
   const [messageAccueil, setMessageAccueil] = useState('');
 
   // Étape 2 : Événements futurs sélectionnés (IDs)
@@ -59,7 +61,7 @@ export function useNewsletterData(groupId) {
       },
       (err) => {
         console.error('useNewsletterData - Erreur lecture événements :', err);
-        setError('Impossible de charger les événements depuis Firestore.');
+        setError(t('studio.newsletter.impossibleDeChargerLesEvenements'));
         setLoading(false);
       }
     );

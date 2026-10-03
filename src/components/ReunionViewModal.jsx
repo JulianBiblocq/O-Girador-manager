@@ -10,20 +10,22 @@ export default function ReunionViewModal({ event, user, profileData, onClose }) 
         className="absolute inset-0 cursor-pointer" 
         onClick={onClose}
       />
-      <div className="relative flex flex-col w-full max-w-4xl max-h-[90dvh] bg-[var(--cordel-bg)] text-[var(--cordel-text)] rounded-xl shadow-2xl animate-scale-up border-2 border-cordel-master-dark overflow-hidden">
+      <div className="relative flex flex-col w-full max-w-4xl max-h-[90dvh] bg-[var(--cordel-bg)] text-[var(--cordel-text)] rounded-xl shadow-2xl animate-scale-up border-2 border-cordel-master-dark overflow-hidden mt-2 sm:mt-0">
         {/* Étage 1 : En-tête fixe */}
-        <div className="shrink-0 flex items-center justify-between p-4 border-b-2 border-cordel-master-dark bg-[var(--cordel-bg)]">
-          <h2 className="text-xl md:text-2xl font-bold font-heading tracking-wider text-cordel-master-dark truncate mr-2">
-            {event.title || event.titre || 'Réunion'} - {new Date(event.date).toLocaleDateString('fr-FR')}
-          </h2>
+        <div className="shrink-0 flex items-start justify-between gap-3 p-4 border-b-2 border-cordel-master-dark bg-[var(--cordel-bg)]">
+          <div className="flex-1 min-w-0 pr-2">
+            <h2 className="text-xl md:text-2xl font-bold font-heading tracking-wider text-cordel-master-dark break-words">
+              {event.title || event.titre || 'Réunion'} - {new Date(event.date).toLocaleDateString('fr-FR')}
+            </h2>
+          </div>
           <button
+            type="button"
             onClick={onClose}
-            className="shrink-0 p-2 transition-colors hover:bg-black/10 rounded-full text-cordel-rouge"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center -mr-2 -mt-2 rounded-lg text-cordel-rouge hover:bg-black/5 active:bg-black/10 transition-colors cursor-pointer shrink-0 select-none touch-manipulation"
+            title="Fermer"
             aria-label="Fermer"
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
+            <span className="text-xl font-black leading-none pointer-events-none">✕</span>
           </button>
         </div>
 

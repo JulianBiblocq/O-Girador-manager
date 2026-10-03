@@ -58,7 +58,7 @@ export default function VideoInstrumentCheckboxes({
           >
             <span>🎪</span>
             <span>{t('repertoire.videoIsLive')}</span>
-            <span className="text-[8px] font-bold">({isLiveOrGlobal ? '✓ Actif' : '○ Non'})</span>
+            <span className="text-[8px] font-bold">({isLiveOrGlobal ? t('pedagogy.admin.actif') : t('pedagogy.admin.non')})</span>
           </button>
           {isLiveOrGlobal && (
             <span className="text-[8.5px] text-amber-900 font-bold italic">

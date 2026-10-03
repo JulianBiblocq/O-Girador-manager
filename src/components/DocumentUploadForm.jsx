@@ -188,7 +188,15 @@ export default function DocumentUploadForm({
   const [instrumentConcerne, setInstrumentConcerne] = useState(documentToEdit ? documentToEdit.instrumentConcerne || '' : '');
   const [materielRequisList, setMaterielRequisList] = useState(() => parseTagsList(documentToEdit?.materielRequis));
   const [outilsNecessairesList, setOutilsNecessairesList] = useState(() => parseTagsList(documentToEdit?.outilsNecessaires));
-  const [etapesFabrication, setEtapesFabrication] = useState(documentToEdit ? documentToEdit.etapesFabrication || [] : []);
+  const [etapesFabrication, setEtapesFabrication] = useState(() => {
+    const raw = documentToEdit?.etapesFabrication || [];
+    return raw.map((step, idx) => ({
+      ...step,
+      id: step.id || Date.now() + idx,
+      materiaux: Array.isArray(step.materiaux) ? step.materiaux : [],
+      outils: Array.isArray(step.outils) ? step.outils : []
+    }));
+  });
   const [contenuFabrication, setContenuFabrication] = useState(documentToEdit ? documentToEdit.contenuFabrication || '' : '');
   const [anecdoteFabrication, setAnecdoteFabrication] = useState(documentToEdit ? documentToEdit.anecdote || '' : '');
 

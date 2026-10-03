@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from '../../LanguageContext';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../../firebase';
 
@@ -11,6 +12,7 @@ export default function NewsletterBrevoBlock({
   groupId,
   saving
 }) {
+  const { t } = useTranslation();
   const vitrineTexts = publicTheme.vitrineTexts || {};
   const [subscriberCount, setSubscriberCount] = useState(null);
   const [exportingNewsletter, setExportingNewsletter] = useState(false);
@@ -62,7 +64,7 @@ export default function NewsletterBrevoBlock({
       const subscribers = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
 
       if (subscribers.length === 0) {
-        setNewsletterStatusMsg("⚠️ Aucun abonné pour le moment.");
+        setNewsletterStatusMsg(t('studio.newsletter.aucunAbonnePourLeMoment'));
         return;
       }
 
@@ -86,10 +88,10 @@ export default function NewsletterBrevoBlock({
       link.click();
       document.body.removeChild(link);
 
-      setNewsletterStatusMsg(`✓ ${subscribers.length} abonné(s) exporté(s) !`);
+      setNewsletterStatusMsg(t('studio.newsletter.abonnesExportes', { count: subscribers.length }));
     } catch (err) {
       console.error("Erreur lors de l'exportation CSV des abonnés:", err);
-      setNewsletterStatusMsg("❌ Erreur lors de l'exportation.");
+      setNewsletterStatusMsg(t('studio.newsletter.erreurLorsDeLExportation'));
     } finally {
       setExportingNewsletter(false);
     }
@@ -101,7 +103,7 @@ export default function NewsletterBrevoBlock({
       <div className="flex flex-col gap-3 p-3 bg-cordel-bg-light border border-encre-noire/20 rounded-[4px_6px_3px_5px]">
         <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-1.5">
           <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-cordel-vert,#2d6a4f)]">
-            📬 Formulaire Newsletter
+            📬 {t('studio.newsletter.formulaireNewsletter')}
           </span>
           <div className="flex items-center gap-2">
             <input
@@ -113,44 +115,44 @@ export default function NewsletterBrevoBlock({
               className="w-4 h-4 cursor-pointer accent-[var(--color-cordel-vert,#2d6a4f)]"
             />
             <label htmlFor="afficherNewsletter" className="text-[11px] font-bold text-encre-noire cursor-pointer select-none">
-              Afficher sur la vitrine
+              {t('studio.newsletter.afficherSurLaVitrine')}
             </label>
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold uppercase text-stone-700">Titre Newsletter</label>
+            <label className="text-[10px] font-bold uppercase text-stone-700">{t('studio.newsletter.titreNewsletter')}</label>
             <input
               type="text"
               value={vitrineTexts.titreNewsletter || ''}
               onChange={(e) => handleTextChange('titreNewsletter', e.target.value)}
               disabled={saving}
-              placeholder="Restez Informé !"
+              placeholder={t('studio.newsletter.restezInforme')}
               className="text-xs font-bold px-2.5 py-1.5 border border-stone-300 rounded bg-white"
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold uppercase text-stone-700">Badge / Sur-titre</label>
+            <label className="text-[10px] font-bold uppercase text-stone-700">{t('studio.newsletter.badgeSurTitre')}</label>
             <input
               type="text"
               value={vitrineTexts.badgeNewsletter || ''}
               onChange={(e) => handleTextChange('badgeNewsletter', e.target.value)}
               disabled={saving}
-              placeholder="Infolettre & Actus"
+              placeholder={t('studio.newsletter.infolettreActus')}
               className="text-xs font-bold px-2.5 py-1.5 border border-stone-300 rounded bg-white"
             />
           </div>
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-[10px] font-bold uppercase text-stone-700">Phrase d'accroche Newsletter</label>
+          <label className="text-[10px] font-bold uppercase text-stone-700">{t('studio.newsletter.phraseDAccrocheNewsletter')}</label>
           <textarea
             rows={2}
             value={vitrineTexts.accrocheNewsletter || ''}
             onChange={(e) => handleTextChange('accrocheNewsletter', e.target.value)}
             disabled={saving}
-            placeholder="Inscrivez-vous pour recevoir nos dates de concerts !"
+            placeholder={t('studio.newsletter.inscrivezVousPourRecevoirNos')}
             className="text-xs font-medium px-2.5 py-1.5 border border-stone-300 rounded bg-white resize-none"
           />
         </div>
@@ -158,7 +160,7 @@ export default function NewsletterBrevoBlock({
         {/* Abonnés & Export */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pt-2 border-t border-dashed border-stone-300">
           <span className="text-[11px] text-stone-600 font-medium">
-            Abonnés : <strong>{subscriberCount !== null ? `${subscriberCount} inscrit(s)` : '...'}</strong>
+            {t('studio.newsletter.abonnes')} <strong>{subscriberCount !== null ? t('studio.newsletter.badgeSubscribersCountShort', { count: subscriberCount }) : '...'}</strong>
           </span>
           <div className="flex items-center gap-2">
             <button
@@ -167,7 +169,7 @@ export default function NewsletterBrevoBlock({
               disabled={exportingNewsletter}
               className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white bg-[var(--color-cordel-vert,#2d6a4f)] rounded hover:brightness-110 active:scale-95 cursor-pointer disabled:opacity-50"
             >
-              {exportingNewsletter ? "..." : "📥 Exporter CSV"}
+              {exportingNewsletter ? "..." : t('studio.newsletter.exporterCsv')}
             </button>
             {newsletterStatusMsg && (
               <span className="text-[10px] font-bold text-emerald-800">{newsletterStatusMsg}</span>
@@ -180,25 +182,25 @@ export default function NewsletterBrevoBlock({
       <div className="p-3 bg-cordel-bg-light border border-encre-noire/20 rounded-[4px_6px_3px_5px] flex flex-col gap-2.5">
         <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-1.5">
           <span className="text-xs font-bold uppercase tracking-wider text-stone-800">
-            ⚡ Synchronisation Brevo (API)
+            ⚡ {t('studio.newsletter.synchronisationBrevoApi')}
           </span>
           <span className={`text-[9px] font-bold font-mono px-2 py-0.5 rounded border ${
             publicTheme.brevoApiKey ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : 'bg-amber-50 text-amber-800 border-amber-300'
           }`}>
-            {publicTheme.brevoApiKey ? '✓ Connecté' : '⚪ Optionnel'}
+            {publicTheme.brevoApiKey ? t('studio.newsletter.connecte') : t('studio.newsletter.optionnel')}
           </span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="flex flex-col gap-1">
             <div className="flex items-center justify-between">
-              <label className="text-[10px] font-bold uppercase text-stone-700">Clé API Brevo v3</label>
+              <label className="text-[10px] font-bold uppercase text-stone-700">{t('studio.newsletter.cleApiBrevoV3')}</label>
               <button
                 type="button"
                 onClick={() => setShowBrevoKey(!showBrevoKey)}
                 className="text-[9px] text-stone-500 hover:text-stone-800 cursor-pointer"
               >
-                {showBrevoKey ? 'Masquer' : 'Afficher'}
+                {showBrevoKey ? t('studio.newsletter.masquer') : t('studio.newsletter.afficher')}
               </button>
             </div>
             <input
@@ -206,19 +208,19 @@ export default function NewsletterBrevoBlock({
               value={publicTheme.brevoApiKey || ''}
               onChange={(e) => handleThemeChange('brevoApiKey', e.target.value)}
               disabled={saving}
-              placeholder="xkeysib-..."
+              placeholder={t('studio.newsletter.xkeysib')}
               className="text-xs px-2.5 py-1.5 border border-stone-300 rounded bg-white font-mono"
             />
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold uppercase text-stone-700">ID Liste Brevo</label>
+            <label className="text-[10px] font-bold uppercase text-stone-700">{t('studio.newsletter.idListeBrevo')}</label>
             <input
               type="text"
               value={publicTheme.brevoListId || ''}
               onChange={(e) => handleThemeChange('brevoListId', e.target.value)}
               disabled={saving}
-              placeholder="Ex: 2 ou 5"
+              placeholder={t('studio.newsletter.ex2Ou5')}
               className="text-xs px-2.5 py-1.5 border border-stone-300 rounded bg-white font-mono"
             />
           </div>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from '../../LanguageContext';
 import { normalizeHashtag } from '../../../config/studioSocialConfig';
 
 /**
@@ -15,6 +16,7 @@ export default function HashtagsSection({
   onSaveHashtags,
   disabled = false
 }) {
+  const { t } = useTranslation();
   const [newTagInput, setNewTagInput] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -24,13 +26,13 @@ export default function HashtagsSection({
     const cleanTag = normalizeHashtag(newTagInput);
 
     if (!cleanTag || cleanTag === '#') {
-      setErrorMessage("Veuillez saisir un hashtag valide (ex: #maracatu).");
+      setErrorMessage(t('studio.lexique.veuillezSaisirUnHashtagValide'));
       return;
     }
 
     // Éviter les doublons insensibles à la casse
-    if (hashtags.some((t) => t.toLowerCase() === cleanTag.toLowerCase())) {
-      setErrorMessage(`Le hashtag "${cleanTag}" existe déjà dans la liste.`);
+    if (hashtags.some((tagItem) => tagItem.toLowerCase() === cleanTag.toLowerCase())) {
+      setErrorMessage(t('studio.lexique.hashtagExisteDeja', { tag: cleanTag, defaultValue: `Le hashtag "${cleanTag}" existe déjà dans la liste.` }));
       return;
     }
 
@@ -42,7 +44,7 @@ export default function HashtagsSection({
 
   // Supprime un hashtag
   const handleRemoveHashtag = (tagToRemove) => {
-    const updated = hashtags.filter((t) => t !== tagToRemove);
+    const updated = hashtags.filter((tagItem) => tagItem !== tagToRemove);
     onSaveHashtags(updated);
   };
 
@@ -51,10 +53,10 @@ export default function HashtagsSection({
       {/* En-tête de section */}
       <div className="pb-3 border-b border-dashed border-cordel-master-dark/25">
         <h3 className="text-base font-black text-cordel-wood uppercase flex items-center gap-2">
-          <span>🏷️</span> Hashtags par défaut
+          <span>🏷️</span> {t('studio.lexique.hashtagsParDefaut')}
         </h3>
         <p className="text-xs text-cordel-master-dark/75 mt-0.5">
-          Hashtags officiels automatiquement intégrés et suggérés lors de la rédaction des publications.
+          {t('studio.lexique.hashtagsOfficielsAutomatiquementIntegresEt')}
         </p>
       </div>
 
@@ -68,7 +70,7 @@ export default function HashtagsSection({
               setNewTagInput(e.target.value);
               if (errorMessage) setErrorMessage('');
             }}
-            placeholder="Ajouter un hashtag (ex: #culturapopular)..."
+            placeholder={t('studio.lexique.ajouterUnHashtagExCulturapopular')}
             disabled={disabled}
             className="w-full text-xs px-3 py-1.5 bg-white dark:bg-neutral-900 border border-encre-noire/30 rounded focus:outline-none focus:ring-1 focus:ring-[var(--color-cordel-vert)] font-mono"
           />
@@ -79,7 +81,7 @@ export default function HashtagsSection({
           disabled={disabled || !newTagInput.trim()}
           className="px-3 py-1.5 rounded text-xs font-bold text-white bg-[var(--color-cordel-vert)] hover:opacity-90 active:scale-95 transition-all shadow-xs cursor-pointer disabled:opacity-40 flex items-center gap-1"
         >
-          <span>➕</span> Ajouter
+          <span>➕</span> {t('studio.lexique.ajouter')}
         </button>
       </form>
 
@@ -92,12 +94,12 @@ export default function HashtagsSection({
       {/* Liste des pastilles de hashtags */}
       <div className="mt-4 pt-3 border-t border-dashed border-cordel-master-dark/15">
         <div className="text-[11px] font-bold uppercase text-cordel-wood mb-2">
-          Hashtags actifs ({hashtags.length}) :
+          {t('studio.lexique.hashtagsActifs')}{hashtags.length}) :
         </div>
 
         {hashtags.length === 0 ? (
           <div className="py-4 text-xs italic text-cordel-master-dark/60">
-            Aucun hashtag configuré. Utilisez le champ ci-dessus pour en ajouter.
+            {t('studio.lexique.aucunHashtagConfigureUtilisezLe')}
           </div>
         ) : (
           <div className="flex flex-wrap items-center gap-2">

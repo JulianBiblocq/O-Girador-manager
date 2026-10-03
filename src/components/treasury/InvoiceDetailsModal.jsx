@@ -77,22 +77,23 @@ export default function InvoiceDetailsModal({
       onKeyDown={(e) => e.key === 'Escape' && onClose()}
       className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 select-none outline-none animate-fade-in"
     >
-      <div className="relative w-full max-w-2xl max-h-[90dvh] flex flex-col rounded-lg bg-white shadow-2xl border-2 border-cordel-master-dark/40 overflow-hidden text-left">
+      <div className="relative w-full max-w-2xl max-h-[90dvh] flex flex-col rounded-lg bg-white shadow-2xl border-2 border-cordel-master-dark/40 overflow-hidden text-left mt-2 sm:mt-0">
         {/* 1. Header Modale (Fixe) */}
-        <div className="shrink-0 p-4 border-b border-dashed border-cordel-master-dark/20 flex items-center justify-between bg-white">
-          <div className="flex items-center gap-2">
+        <div className="shrink-0 p-4 border-b border-dashed border-cordel-master-dark/20 flex items-start justify-between gap-3 bg-white">
+          <div className="flex-1 min-w-0 pr-2 flex items-start gap-2">
             <span className="text-lg">{isDevis ? '📋' : '📄'}</span>
-            <h3 className="text-sm sm:text-base font-extrabold uppercase text-cordel-wood truncate">
+            <h3 className="text-sm sm:text-base font-extrabold uppercase text-cordel-wood break-words">
               {isDevis ? 'Détails du Devis' : 'Détails de la Facture'} : {invoice.numero}
             </h3>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="text-stone-400 hover:text-stone-800 font-bold text-lg cursor-pointer shrink-0 ml-2"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center -mr-2 -mt-2 rounded-lg text-stone-400 hover:text-stone-800 hover:bg-black/5 active:bg-black/10 transition-colors cursor-pointer shrink-0 select-none touch-manipulation"
             title="Fermer (Échap)"
+            aria-label="Fermer"
           >
-            ✕
+            <span className="text-xl font-black leading-none pointer-events-none">✕</span>
           </button>
         </div>
 

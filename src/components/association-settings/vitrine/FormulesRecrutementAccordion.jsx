@@ -1,6 +1,7 @@
 import React from 'react';
 import CordelAccordion from '../../CordelAccordion';
 import FormulesManager from '../FormulesManager';
+import { useTranslation } from '../../../hooks/useTranslation';
 
 /**
  * Accordéon 3 : Formules & Recrutement
@@ -12,6 +13,7 @@ export default function FormulesRecrutementAccordion({
   saving,
   defaultOpen = false
 }) {
+  const { t } = useTranslation();
   const publicTheme = formData.publicTheme || {};
   const vitrineTexts = publicTheme.vitrineTexts || {};
 
@@ -37,8 +39,12 @@ export default function FormulesRecrutementAccordion({
 
   return (
     <CordelAccordion
-      title="Formules & Recrutement"
-      subtitle={`Formules Danse/Percu (${formulesList.length} configurée${formulesList.length > 1 ? 's' : ''}), tarifs et adhésions HelloAsso`}
+      title={t('vitrine.admin.recruitment.formulesRecrutementAccordion.formulesRecrutement')}
+      subtitle={t('vitrine.admin.recruitment.formulesRecrutementAccordion.formulesDansePercuParamConfiguree', {
+        param: formulesList.length,
+        count: formulesList.length,
+        s: formulesList.length > 1 ? 's' : ''
+      })}
       icon="🤝"
       defaultOpen={defaultOpen}
       className="mb-3"
@@ -56,7 +62,7 @@ export default function FormulesRecrutementAccordion({
               className="w-4 h-4 cursor-pointer accent-[var(--color-cordel-vert,#2d6a4f)]"
             />
             <label htmlFor="afficherRecrutement" className="text-xs font-bold uppercase tracking-wider text-encre-noire cursor-pointer select-none">
-              Afficher la section Recrutement
+              {t('vitrine.admin.recruitment.formulesRecrutementAccordion.afficherLaSectionRecrutement')}
             </label>
           </div>
 
@@ -70,7 +76,7 @@ export default function FormulesRecrutementAccordion({
               className="w-4 h-4 cursor-pointer accent-[var(--color-cordel-vert,#2d6a4f)]"
             />
             <label htmlFor="activerHelloAssoRecrutement" className="text-xs font-bold uppercase tracking-wider text-emerald-950 cursor-pointer select-none">
-              Activer les boutons HelloAsso
+              {t('vitrine.admin.recruitment.formulesRecrutementAccordion.activerLesBoutonsHelloasso')}
             </label>
           </div>
         </div>
@@ -78,7 +84,9 @@ export default function FormulesRecrutementAccordion({
         {/* Titres & Badges */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold uppercase text-stone-700">Titre Recrutement</label>
+            <label className="text-[10px] font-bold uppercase text-stone-700">
+              {t('vitrine.admin.recruitment.formulesRecrutementAccordion.titreRecrutement')}
+            </label>
             <input
               type="text"
               value={vitrineTexts.titreRecrutement || publicTheme.titreRecrutement || ''}
@@ -87,19 +95,21 @@ export default function FormulesRecrutementAccordion({
                 handleTextChange('titreRecrutement', e.target.value);
               }}
               disabled={saving}
-              placeholder="Rejoignez la troupe !"
+              placeholder={t('vitrine.admin.recruitment.formulesRecrutementAccordion.rejoignezLaTroupe')}
               className="text-xs font-bold px-2.5 py-1.5 border border-stone-300 rounded bg-white"
             />
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold uppercase text-stone-700">Badge / Sur-titre</label>
+            <label className="text-[10px] font-bold uppercase text-stone-700">
+              {t('vitrine.admin.recruitment.formulesRecrutementAccordion.badgeSurTitre')}
+            </label>
             <input
               type="text"
               value={vitrineTexts.badgeRecrutement || ''}
               onChange={(e) => handleTextChange('badgeRecrutement', e.target.value)}
               disabled={saving}
-              placeholder="Nous Rejoindre"
+              placeholder={t('vitrine.admin.recruitment.formulesRecrutementAccordion.nousRejoindre')}
               className="text-xs font-bold px-2.5 py-1.5 border border-stone-300 rounded bg-white"
             />
           </div>
@@ -108,7 +118,7 @@ export default function FormulesRecrutementAccordion({
         {/* Phrase d'accroche / Explication */}
         <div className="flex flex-col gap-1">
           <label className="text-[10px] font-bold uppercase text-stone-700">
-            Description de l'invitation à rejoindre
+            {t('vitrine.admin.recruitment.formulesRecrutementAccordion.descriptionDeLInvitationA')}
           </label>
           <textarea
             rows={2}
@@ -119,7 +129,7 @@ export default function FormulesRecrutementAccordion({
               handleThemeChange('texteRecrutement', val);
             }}
             disabled={saving}
-            placeholder="Rejoignez nos ateliers hebdomadaires et participez à une aventure musicale unique."
+            placeholder={t('vitrine.admin.recruitment.formulesRecrutementAccordion.rejoignezNosAteliersHebdomadairesEt')}
             className="text-xs font-medium px-2.5 py-1.5 border border-stone-300 rounded bg-white resize-none"
           />
         </div>
@@ -136,3 +146,4 @@ export default function FormulesRecrutementAccordion({
     </CordelAccordion>
   );
 }
+

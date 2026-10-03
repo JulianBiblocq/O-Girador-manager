@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import CordelCard from '../CordelCard';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Prédicat tolérant de détection du thème d'une fiche culturelle.
@@ -19,9 +20,28 @@ function matchesCultureTheme(fiche, filterId) {
       return corpus.includes('histoire') || corpus.includes('história') || corpus.includes('cortège') || corpus.includes('cortejo') || corpus.includes('origine') || corpus.includes('roi') || corpus.includes('reine') || corpus.includes('dame');
     case 'cuisine':
       return corpus.includes('cuisin') || corpus.includes('recette') || corpus.includes('gastronom') || corpus.includes('plat') || corpus.includes('aliment');
+    case 'territoire':
+      return corpus.includes('territoire') || corpus.includes('territór') || corpus.includes('nordeste') || corpus.includes('recife') || corpus.includes('olinda') || corpus.includes('pernambuco') || corpus.includes('géograph');
+    case 'cour_royale':
+      return corpus.includes('cour royale') || corpus.includes('corte real') || corpus.includes('roi') || corpus.includes('reine') || corpus.includes('rainha') || corpus.includes('rei') || corpus.includes('dama');
     default:
       return corpus.includes(filterId.toLowerCase());
   }
+}
+
+/**
+ * Traduit ou normalise le libellé d'un thème culturel affiché dans le badge tampon.
+ */
+function getThemeBadgeLabel(rawTheme, t) {
+  if (!rawTheme) return t ? t('documents.catHistoireCortege') : 'Histoire & Cortège';
+  const lower = rawTheme.toLowerCase();
+  if (lower.includes('orix') || lower.includes('spirit') || lower.includes('candombl')) return t('documents.catOrixasSpiritualite');
+  if (lower.includes('musique') || lower.includes('música') || lower.includes('naç') || lower.includes('nacao') || lower.includes('baque') || lower.includes('toada')) return t('documents.catMusiqueNacoes');
+  if (lower.includes('cour royale') || lower.includes('corte real') || lower.includes('roi') || lower.includes('reine') || lower.includes('rainha')) return t('documents.catCourRoyale');
+  if (lower.includes('histoire') || lower.includes('história') || lower.includes('cortège') || lower.includes('cortejo')) return t('documents.catHistoireCortege');
+  if (lower.includes('cuisin') || lower.includes('recette') || lower.includes('gastronom')) return t('documents.catCuisineRecettes');
+  if (lower.includes('territoire') || lower.includes('territór') || lower.includes('geograph')) return t('documents.catTerritoire');
+  return rawTheme;
 }
 
 /**
@@ -29,18 +49,18 @@ function matchesCultureTheme(fiche, filterId) {
  * Options par défaut : Tous, Orixás & Spiritualité, Musique & Nações, Histoire & Cortège, Cuisine & Recettes
  * + Détection dynamique de tout nouveau thème personnalisé.
  */
-export default function CultureFichesTable({
-  fiches = [],
+export default function CultureFichesTable({  fiches = [],
   canWrite = false,
   onSelectDoc,
   onEditDoc,
   onDeleteDoc
 }) {
+  const { t } = useTranslation();
   const [selectedTheme, setSelectedTheme] = useState('all');
 
   // Extraction dynamique des thèmes personnalisés présents dans les fiches
   const customThemes = useMemo(() => {
-    const defaultKeywords = ['orix', 'spirit', 'musique', 'naç', 'nacao', 'baque', 'histoir', 'cortège', 'cortejo', 'cuisin', 'recette'];
+    const defaultKeywords = ['orix', 'spirit', 'musique', 'naç', 'nacao', 'baque', 'histoir', 'cortège', 'cortejo', 'cuisin', 'recette', 'territoire', 'territór', 'cour royale', 'corte real'];
     const customSet = new Set();
 
     fiches.forEach((f) => {
@@ -78,7 +98,7 @@ export default function CultureFichesTable({
               : 'bg-cordel-bg text-encre-noire/75 border-encre-noire/30 hover:border-encre-noire'
           }`}
         >
-          Tous ({fiches.length})
+          {t('pedagogy.progress.tous')}{fiches.length})
         </button>
 
         <button
@@ -89,9 +109,7 @@ export default function CultureFichesTable({
               ? 'bg-[var(--color-cordel-ocre,#c05621)] text-white border-amber-950 shadow-2xs font-extrabold'
               : 'bg-cordel-bg text-encre-noire/75 border-encre-noire/30 hover:border-encre-noire'
           }`}
-        >
-          ⚡ Orixás & Spiritualité
-        </button>
+        >{t('documents.catOrixasSpiritualite')}</button>
 
         <button
           type="button"
@@ -101,9 +119,7 @@ export default function CultureFichesTable({
               ? 'bg-[var(--color-cordel-vert,#2d6a4f)] text-white border-emerald-950 shadow-2xs font-extrabold'
               : 'bg-cordel-bg text-encre-noire/75 border-encre-noire/30 hover:border-encre-noire'
           }`}
-        >
-          🎵 Musique & Nações
-        </button>
+        >{t('documents.catMusiqueNacoes')}</button>
 
         <button
           type="button"
@@ -113,9 +129,7 @@ export default function CultureFichesTable({
               ? 'bg-amber-400 text-encre-noire border-amber-900 shadow-2xs font-extrabold'
               : 'bg-cordel-bg text-encre-noire/75 border-encre-noire/30 hover:border-encre-noire'
           }`}
-        >
-          📜 Histoire & Cortège
-        </button>
+        >{t('documents.catHistoireCortege')}</button>
 
         <button
           type="button"
@@ -125,9 +139,27 @@ export default function CultureFichesTable({
               ? 'bg-[#8b2a1a] text-white border-[#591b10] shadow-2xs font-extrabold'
               : 'bg-cordel-bg text-encre-noire/75 border-encre-noire/30 hover:border-encre-noire'
           }`}
-        >
-          🍲 Cuisine & Recettes
-        </button>
+        >{t('documents.catCuisineRecettes')}</button>
+
+        <button
+          type="button"
+          onClick={() => setSelectedTheme('territoire')}
+          className={`px-2.5 py-1 text-[9.5px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border transition-all cursor-pointer ${
+            selectedTheme === 'territoire'
+              ? 'bg-stone-700 text-white border-stone-900 shadow-2xs font-extrabold'
+              : 'bg-cordel-bg text-encre-noire/75 border-encre-noire/30 hover:border-encre-noire'
+          }`}
+        >{t('documents.catTerritoire')}</button>
+
+        <button
+          type="button"
+          onClick={() => setSelectedTheme('cour_royale')}
+          className={`px-2.5 py-1 text-[9.5px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border transition-all cursor-pointer ${
+            selectedTheme === 'cour_royale'
+              ? 'bg-amber-800 text-white border-amber-950 shadow-2xs font-extrabold'
+              : 'bg-cordel-bg text-encre-noire/75 border-encre-noire/30 hover:border-encre-noire'
+          }`}
+        >{t('documents.catCourRoyale')}</button>
 
         {/* Thèmes dynamiques découverts dans les fiches */}
         {customThemes.map((th) => (
@@ -149,16 +181,16 @@ export default function CultureFichesTable({
       {/* 2. Tableau des fiches culturelles */}
       {filteredFiches.length === 0 ? (
         <div className="text-center py-8 text-xs font-bold text-cordel-master-dark/60">
-          Aucune fiche culturelle trouvée pour cette thématique ({selectedTheme !== 'all' ? selectedTheme : 'toutes'}).
+          {t('pedagogy.progress.aucuneFicheCulturelleTrouvee')}{selectedTheme !== 'all' ? selectedTheme : t('pedagogy.progress.toutes')}).
         </div>
       ) : (
         <div className="w-full overflow-x-auto">
           <table className="min-w-full divide-y divide-cordel-master-dark/15 text-xs text-left">
             <thead>
               <tr className="bg-cordel-master-dark/5 text-[9px] font-black uppercase tracking-wider text-cordel-master-dark">
-                <th className="px-3 py-2">Titre de la fiche culture</th>
-                <th className="px-3 py-2">Thème & Tampon</th>
-                <th className="px-3 py-2 text-right">Actions</th>
+                <th className="px-3 py-2">{t('documents.thCultureTitle')}</th>
+                <th className="px-3 py-2">{t('documents.thThemeStamp')}</th>
+                <th className="px-3 py-2 text-right">{t('pedagogy.progress.actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-cordel-master-dark/10 font-semibold">
@@ -174,12 +206,12 @@ export default function CultureFichesTable({
                         onClick={() => onSelectDoc && onSelectDoc(fiche)}
                         className="text-left font-bold hover:underline hover:text-cordel-wood truncate max-w-sm cursor-pointer"
                       >
-                        {fiche.titre || "Fiche sans titre"}
+                        {fiche.titre || t('pedagogy.progress.ficheSansTitre')}
                       </button>
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap">
                       <span className="theme-stamp-badge theme-stamp-badge-wood text-[8.5px] tracking-wider border-dashed">
-                        {theme}
+                        {getThemeBadgeLabel(theme, t)}
                       </span>
                     </td>
                     <td className="px-3 py-2 text-right whitespace-nowrap space-x-1.5">
@@ -187,25 +219,21 @@ export default function CultureFichesTable({
                         type="button"
                         onClick={() => onSelectDoc && onSelectDoc(fiche)}
                         className="px-2 py-0.5 text-[9px] font-black uppercase rounded bg-cordel-bg border border-encre-noire shadow-2xs hover:bg-white cursor-pointer"
-                        title="Consulter la fiche culturelle"
-                      >
-                        👁️ Consulter
-                      </button>
+                        title={t('pedagogy.progress.consulterLaFicheCulturelle')}
+                      >{t('documents.btnConsult')}</button>
                       {canWrite && (
                         <>
                           <button
                             type="button"
                             onClick={() => onEditDoc && onEditDoc(fiche)}
                             className="px-2 py-0.5 text-[9px] font-black uppercase rounded bg-amber-100 border border-amber-900 shadow-2xs hover:bg-amber-200 cursor-pointer"
-                            title="Éditer le texte explicatif et les questions du QCM"
-                          >
-                            ✏️ Éditer texte / QCM
-                          </button>
+                            title={t('pedagogy.progress.editerLeTexteExplicatifEt')}
+                          >{t('documents.btnEditTextQcm')}</button>
                           <button
                             type="button"
                             onClick={() => onDeleteDoc && onDeleteDoc(fiche)}
                             className="px-2 py-0.5 text-[9px] font-black uppercase rounded bg-red-100 text-red-900 border border-red-900 shadow-2xs hover:bg-red-200 cursor-pointer"
-                            title="Supprimer la fiche"
+                            title={t('pedagogy.progress.supprimerLaFiche')}
                           >
                             🗑️
                           </button>

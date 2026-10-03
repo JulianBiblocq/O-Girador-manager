@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
+import useModalEscape from '../../hooks/useModalEscape';
 
 /**
  * Modale permettant au trésorier de justifier le refus d'une note de frais.
@@ -17,6 +17,9 @@ export default function ExpenseRefusalModal({
 }) {
   const [motifRefus, setMotifRefus] = useState('');
   const [error, setError] = useState('');
+
+  // Fermeture accessible avec touche Échap
+  useModalEscape(isOpen, onClose, submitting);
 
   if (!isOpen || !claim) return null;
 
@@ -38,23 +41,28 @@ export default function ExpenseRefusalModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-3 animate-fadeIn">
-      <div className="max-w-md w-full">
-        <CordelCard variant="default" useExtremeBorder={true} className="p-5 flex flex-col gap-4 text-left">
-          {/* Titre */}
-          <div className="flex justify-between items-center border-b border-dashed border-cordel-master-dark/20 pb-2">
-            <h3 className="text-xs font-black uppercase tracking-wider text-[var(--color-cordel-rouge)] flex items-center gap-1.5">
-              🛑 Refuser la note de frais
-            </h3>
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={submitting}
-              className="text-sm font-black text-cordel-master-dark hover:text-cordel-wood p-1 cursor-pointer transition-colors"
-            >
-              ✕
-            </button>
-          </div>
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 select-none animate-fadeIn">
+      <div className="relative w-full max-w-md max-h-[90dvh] flex flex-col rounded-lg bg-[var(--theme-bg)] border-2 border-encre-noire shadow-2xl overflow-hidden text-left">
+        {/* 1. Header (Fixe) */}
+        <div className="shrink-0 p-4 border-b border-dashed border-cordel-master-dark/20 flex justify-between items-center bg-cordel-bg-light">
+          <h3 className="text-xs font-black uppercase tracking-wider text-[var(--color-cordel-rouge)] flex items-center gap-1.5">
+            🛑 Refuser la note de frais
+          </h3>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={submitting}
+            className="text-sm font-black text-cordel-master-dark hover:text-cordel-wood p-1 cursor-pointer transition-colors shrink-0"
+            title="Fermer (Échap)"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Form Wrapper */}
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          {/* 2. Body (Défilable verticalement) */}
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 flex flex-col gap-3.5 text-xs">
 
           {/* Rappel de la note */}
           <div className="bg-red-50 dark:bg-red-950/20 border border-dashed border-red-700/30 p-2.5 rounded text-xs flex flex-col gap-1">
@@ -73,7 +81,7 @@ export default function ExpenseRefusalModal({
           )}
 
           {/* Formulaire */}
-          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3">
             <div className="flex flex-col gap-1">
               <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
                 Motif du refus (transmis à l'adhérent) *
@@ -92,28 +100,29 @@ export default function ExpenseRefusalModal({
             <p className="text-[9px] text-cordel-master-dark/70 italic">
               ℹ️ Une notification push sera immédiatement envoyée à l'adhérent avec cette explication.
             </p>
+          </div>
+        </div>
 
-            {/* Actions */}
-            <div className="flex gap-2.5 pt-2 border-t border-dashed border-cordel-master-dark/20">
-              <CordelButton
-                type="button"
-                variant="default"
-                onClick={onClose}
-                disabled={submitting}
-                className="flex-1 py-2 text-[10px] font-black uppercase tracking-wider"
-              >
-                Annuler
-              </CordelButton>
-              <button
-                type="submit"
-                disabled={submitting}
-                className="flex-1 py-2 text-[10px] font-black uppercase tracking-wider bg-[var(--color-cordel-rouge)] text-white rounded border border-red-900 shadow-[2px_2px_0px_0px_#181716] hover:brightness-110 active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all cursor-pointer select-none"
-              >
-                {submitting ? "Envoi..." : "Confirmer le refus"}
-              </button>
-            </div>
-          </form>
-        </CordelCard>
+        {/* 3. Footer Actions (Fixe) */}
+        <div className="shrink-0 p-4 border-t border-dashed border-cordel-master-dark/20 bg-[var(--theme-bg)] flex gap-2.5 pb-[max(env(safe-area-inset-bottom),1rem)]">
+            <CordelButton
+              type="button"
+              variant="default"
+              onClick={onClose}
+              disabled={submitting}
+              className="flex-1 py-2 text-[10px] font-black uppercase tracking-wider shrink-0"
+            >
+              Annuler
+            </CordelButton>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="flex-1 py-2 text-[10px] font-black uppercase tracking-wider bg-[var(--color-cordel-rouge)] text-white rounded border border-red-900 shadow-[2px_2px_0px_0px_#181716] hover:brightness-110 active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all cursor-pointer select-none shrink-0"
+            >
+              {submitting ? "Envoi..." : "Confirmer le refus"}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

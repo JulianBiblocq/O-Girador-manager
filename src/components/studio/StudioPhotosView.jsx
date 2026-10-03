@@ -55,7 +55,7 @@ export default function StudioPhotosView({
             }`}
           >
             <span>📸</span>
-            <span>{t('studioPhotos.tabRecolte') || "Récolte & Albums Prestations"}</span>
+            <span>{t('studio.photos.recolteAlbumsPrestations')}</span>
           </button>
 
           <button
@@ -68,15 +68,15 @@ export default function StudioPhotosView({
             }`}
           >
             <span>🪢</span>
-            <span>{t('studioPhotos.tabVaral') || "Varal Photos (Livrets)"}</span>
+            <span>{t('studio.photos.varalPhotosLivrets')}</span>
           </button>
         </div>
 
         {/* Note contextuelle */}
         <span className="text-[10.5px] text-encre-noire/60 font-medium italic">
           {activeSubTab === 'recolte'
-            ? "Associez les dossiers partagés et imprimez les QR-Codes de chaque date."
-            : "Consultez les albums officiels sous forme de livrets Cordel suspendus."}
+            ? t('studio.photos.associezLesDossiersPartagesEt')
+            : t('studio.photos.consultezLesAlbumsOfficielsSous')}
         </span>
       </div>
 

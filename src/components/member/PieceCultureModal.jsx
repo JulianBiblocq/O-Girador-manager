@@ -51,9 +51,9 @@ export default function PieceCultureModal({
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/60 backdrop-blur-xs">
         <div className="relative w-full max-w-md p-6 bg-[#fdfaf2] rounded-lg shadow-2xl border-2 border-encre-noire text-center">
-          <p className="text-xs font-bold text-stone-600 mb-4">{t('repertoire.emptyCulture') || "Aucune notice culturelle rédigée pour l'instant."}</p>
+          <p className="text-xs font-bold text-stone-600 mb-4">{t('repertoire.emptyCulture') || t('pedagogy.modals.aucuneNoticeCulturelleRedigee')}</p>
           <button type="button" onClick={onClose} className="px-3 py-1 bg-stone-200 border border-encre-noire rounded font-bold text-xs cursor-pointer">
-            {t('repertoire.closeModal') || "Fermer"}
+            {t('repertoire.closeModal') || t('pedagogy.modals.fermer')}
           </button>
         </div>
       </div>
@@ -64,20 +64,24 @@ export default function PieceCultureModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/60 backdrop-blur-xs">
-      <div className="relative w-full max-w-2xl max-h-[92vh] flex flex-col bg-[#fdfaf2] rounded-lg shadow-2xl overflow-hidden border-2 border-encre-noire text-left">
+      <div className="relative w-full max-w-2xl max-h-[92vh] flex flex-col bg-[#fdfaf2] rounded-lg shadow-2xl overflow-hidden border-2 border-encre-noire text-left mt-2 sm:mt-0">
         {/* En-tête Cordel épuré */}
         <div className="w-full flex flex-col border-b-2 border-dashed border-cordel-master-dark/20 bg-stone-100/90 shrink-0">
-          <div className="flex justify-between items-center px-4 py-2.5">
-            <span className="text-xs sm:text-sm font-black uppercase text-blue-900 tracking-wider truncate pr-2">
-              📖 {t('repertoire.cultureTitle') || 'Origine & Contexte culturel'} — {docTitle}
-            </span>
+          <div className="flex justify-between items-start gap-3 p-4">
+            <div className="flex-1 min-w-0 pr-2">
+              <span className="text-xs sm:text-sm font-black uppercase text-blue-900 tracking-wider break-words block">
+              📖 {t('repertoire.cultureTitle') || t('pedagogy.modals.origineContexteCulturel')} — {docTitle}
+              </span>
+            </div>
             <button
               type="button"
               onClick={onClose}
-              className="w-7 h-7 rounded-full bg-encre-noire text-white font-black text-sm flex items-center justify-center border-2 border-white cursor-pointer hover:bg-stone-800 transition-colors shadow-2xs"
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center -mr-2 -mt-2 rounded-lg text-white hover:bg-black/5 active:bg-black/10 transition-colors cursor-pointer shrink-0 select-none touch-manipulation"
               title={t('repertoire.closeModal') || "Fermer"}
             >
-              ✕
+                <span className="w-8 h-8 rounded-full bg-encre-noire text-white font-black text-sm flex items-center justify-center border-2 border-white hover:bg-red-700 transition-colors shadow-2xs pointer-events-none">
+                  ✕
+                </span>
             </button>
           </div>
 
@@ -85,7 +89,7 @@ export default function PieceCultureModal({
           {docsList.length > 1 && (
             <div className="flex items-center gap-1.5 px-4 py-1.5 overflow-x-auto bg-stone-200/60 border-t border-encre-noire/10">
               <span className="text-[10px] font-black uppercase text-stone-600 shrink-0">
-                Fiches ({docsList.length}) :
+                {t('pedagogy.modals.fiches')}{docsList.length}) :
               </span>
               {docsList.map((doc, idx) => {
                 const docKey = doc?.id != null ? doc.id : idx;

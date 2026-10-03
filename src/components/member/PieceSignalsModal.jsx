@@ -101,19 +101,23 @@ export default function PieceSignalsModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/60 backdrop-blur-xs">
-      <div className="relative w-full max-w-2xl max-h-[90vh] flex flex-col bg-[#fdfaf2] rounded-lg shadow-2xl overflow-hidden border-2 border-encre-noire text-left">
+      <div className="relative w-full max-w-2xl max-h-[90vh] flex flex-col bg-[#fdfaf2] rounded-lg shadow-2xl overflow-hidden border-2 border-encre-noire text-left mt-2 sm:mt-0">
         {/* En-tête Cordel épuré */}
-        <div className="w-full flex justify-between items-center px-4 py-2.5 bg-stone-100/90 border-b-2 border-dashed border-cordel-master-dark/20 shrink-0">
-          <span className="text-xs sm:text-sm font-black uppercase text-cordel-wood tracking-wider truncate pr-2">
-            🖐️ {t('repertoire.signalsTitle') || 'Signes & Conventions du Mestre'} — {piece.titre}
-          </span>
+        <div className="w-full flex justify-between items-start gap-3 p-4 bg-stone-100/90 border-b-2 border-dashed border-cordel-master-dark/20 shrink-0">
+          <div className="flex-1 min-w-0 pr-2">
+            <span className="text-xs sm:text-sm font-black uppercase text-cordel-wood tracking-wider break-words block">
+            🖐️ {t('repertoire.signalsTitle') || t('pedagogy.modals.signesConventionsDuMestre')} — {piece.titre}
+            </span>
+          </div>
           <button
             type="button"
             onClick={onClose}
-            className="w-7 h-7 rounded-full bg-encre-noire text-white font-black text-sm flex items-center justify-center border-2 border-white cursor-pointer hover:bg-stone-800 transition-colors shadow-2xs"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center -mr-2 -mt-2 rounded-lg text-white hover:bg-black/5 active:bg-black/10 transition-colors cursor-pointer shrink-0 select-none touch-manipulation"
             title={t('repertoire.closeModal') || "Fermer"}
           >
-            ✕
+              <span className="w-8 h-8 rounded-full bg-encre-noire text-white font-black text-sm flex items-center justify-center border-2 border-white hover:bg-red-700 transition-colors shadow-2xs pointer-events-none">
+                ✕
+              </span>
           </button>
         </div>
 
@@ -121,15 +125,15 @@ export default function PieceSignalsModal({
         <div className="flex-1 min-h-0 overflow-y-auto p-4 bg-cordel-bg-light">
           {resolvedSignals.length === 0 ? (
             <div className="p-8 text-center text-xs font-bold text-stone-500 bg-white/60 border border-dashed border-encre-noire/20 rounded">
-              {t('repertoire.emptySignals') || "Aucun appel ou signal particulier configuré pour ce morceau."}
+              {t('repertoire.emptySignals') || t('pedagogy.modals.aucunAppelOuSignal')}
             </div>
           ) : (
             <div className="flex flex-col gap-3">
               <div className="flex items-center justify-between p-2 rounded bg-white/80 border border-encre-noire/15">
                 <span className="text-xs font-bold text-stone-700">
-                  {resolvedSignals.length} convention{resolvedSignals.length > 1 ? 's' : ''} et geste{resolvedSignals.length > 1 ? 's' : ''} du Mestre
+                  {resolvedSignals.length} {t('pedagogy.modals.convention')}{resolvedSignals.length > 1 ? 's' : ''} {t('pedagogy.modals.etGeste')}{resolvedSignals.length > 1 ? 's' : ''} {t('pedagogy.modals.duMestre')}
                 </span>
-                <span className="text-[10px] text-stone-500 italic">Aide-mémoire de jeu</span>
+                <span className="text-[10px] text-stone-500 italic">{t('pedagogy.modals.aideMemoireDeJeu')}</span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -150,7 +154,7 @@ export default function PieceSignalsModal({
                       ) : (
                         <div className="flex flex-col items-center justify-center text-center p-1 text-cordel-wood select-none">
                           <span className="text-2xl">✋</span>
-                          <span className="text-[8px] font-bold uppercase text-stone-500 mt-0.5">Geste</span>
+                          <span className="text-[8px] font-bold uppercase text-stone-500 mt-0.5">{t('pedagogy.modals.geste')}</span>
                         </div>
                       )}
                     </div>
@@ -159,7 +163,7 @@ export default function PieceSignalsModal({
                     <div className="flex-1 min-w-0 flex flex-col gap-0.5 text-left">
                       {isSequenced && sig.mesure && (
                         <span className="inline-block px-1.5 py-0.5 rounded text-[9.5px] font-extrabold uppercase bg-amber-100 text-amber-950 w-fit border border-amber-300">
-                          Mesure {sig.mesure}
+                          {t('pedagogy.modals.mesure')} {sig.mesure}
                         </span>
                       )}
                       <h4 className="text-xs sm:text-sm font-black text-encre-noire truncate uppercase mt-0.5">

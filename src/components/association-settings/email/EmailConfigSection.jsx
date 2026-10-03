@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from '../../LanguageContext';
 import CordelCard from '../../CordelCard';
 import EmailDnsHelpCard from './EmailDnsHelpCard';
 
@@ -6,7 +7,9 @@ import EmailDnsHelpCard from './EmailDnsHelpCard';
  * Composant de configuration de l'expéditeur et des e-mails SaaS (Marque Blanche & Multi-Fournisseurs).
  * Permet de basculer entre le service d'envoi certifié centralisé O Girador et un service externe (API/SMTP) avec domaine personnalisé.
  */
-export default function EmailConfigSection({ formData, handleChange, saving }) {
+export default function EmailConfigSection({ formData, handleChange, saving, t: propT }) {
+  const { t: hookT } = useTranslation();
+  const t = typeof propT === 'function' ? propT : hookT;
   const [showApiKey, setShowApiKey] = useState(false);
   const [showSmtpPassword, setShowSmtpPassword] = useState(false);
 
@@ -37,10 +40,10 @@ export default function EmailConfigSection({ formData, handleChange, saving }) {
           <span className="text-xl">✉️</span>
           <div>
             <h3 className="text-sm font-extrabold uppercase tracking-wider text-cordel-wood">
-              Configuration de l'Expéditeur et des E-mails SaaS
+              {t('studio.communication.configurationDeLExpediteurEt')}
             </h3>
             <p className="text-xs text-stone-500 font-bold mt-0.5">
-              Personnalisez l'identité visuelle de vos notifications, devis, contrats et e-mails système.
+              {t('studio.communication.personnalisezLIdentiteVisuelleDe')}
             </p>
           </div>
         </div>
@@ -49,7 +52,7 @@ export default function EmailConfigSection({ formData, handleChange, saving }) {
             ? 'bg-emerald-50 text-[var(--color-cordel-vert,#2d6a4f)] border-emerald-300'
             : 'bg-amber-50 text-[var(--color-cordel-ocre,#c05621)] border-amber-300'
         }`}>
-          {emailDeliveryMode === 'ogirador' ? '✓ Service Certifié O Girador' : '⚡ Service Externe Actif'}
+          {emailDeliveryMode === 'ogirador' ? t('studio.communication.serviceCertifieOGirador') : t('studio.communication.serviceExterneActif')}
         </span>
       </div>
 
@@ -58,8 +61,8 @@ export default function EmailConfigSection({ formData, handleChange, saving }) {
         {/* Nom d'expéditeur dynamique */}
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-extrabold uppercase tracking-wider text-stone-700 flex items-center justify-between">
-            <span>Nom d'expéditeur dynamique *</span>
-            <span className="text-[10px] text-stone-400 font-normal">Ex: Samambaia Maracatu</span>
+            <span>{t('studio.communication.nomDExpediteurDynamique')}</span>
+            <span className="text-[10px] text-stone-400 font-normal">{t('studio.communication.exSamambaiaMaracatu')}</span>
           </label>
           <input
             type="text"
@@ -74,8 +77,8 @@ export default function EmailConfigSection({ formData, handleChange, saving }) {
         {/* Adresse de réponse (Reply-To) */}
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-extrabold uppercase tracking-wider text-stone-700 flex items-center justify-between">
-            <span>Adresse e-mail de réponse (Reply-To) *</span>
-            <span className="text-[10px] text-stone-400 font-normal">Ex: contact@mon-asso.fr</span>
+            <span>{t('studio.communication.adresseEMailDeReponse')}</span>
+            <span className="text-[10px] text-stone-400 font-normal">{t('studio.communication.exContactMonAssoFr')}</span>
           </label>
           <input
             type="email"
@@ -91,7 +94,7 @@ export default function EmailConfigSection({ formData, handleChange, saving }) {
       {/* 2. Mode d'envoi (Bascule Option A / Option B) */}
       <div className="flex flex-col gap-3 pt-2">
         <label className="text-xs font-black uppercase tracking-wider text-stone-800 border-b border-dashed border-stone-200 pb-1">
-          Mode d'envoi d'e-mails & Canal d'infrastructures
+          {t('studio.communication.modeDEnvoiDE')}
         </label>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -106,7 +109,7 @@ export default function EmailConfigSection({ formData, handleChange, saving }) {
           >
             <div className="flex items-center justify-between">
               <span className="text-xs font-extrabold uppercase text-[var(--color-cordel-vert,#2d6a4f)] flex items-center gap-1.5">
-                <span>🛡️ Option A (Recommandée)</span>
+                <span>{t('studio.communication.optionARecommandee')}</span>
               </span>
               <input
                 type="radio"
@@ -117,7 +120,7 @@ export default function EmailConfigSection({ formData, handleChange, saving }) {
               />
             </div>
             <p className="text-[11px] text-stone-700 leading-relaxed">
-              <strong>Service e-mail certifié O Girador :</strong> Envoie vos notifications et documents via l'infrastructure centrale sécurisée avec le nom de votre association en expéditeur et votre adresse en Reply-To. Aucun paramétrage technique requis.
+              <strong>{t('studio.communication.serviceEMailCertifieO')}</strong> {t('studio.communication.envoieVosNotificationsEtDocuments')}
             </p>
           </div>
 
@@ -132,7 +135,7 @@ export default function EmailConfigSection({ formData, handleChange, saving }) {
           >
             <div className="flex items-center justify-between">
               <span className="text-xs font-extrabold uppercase text-[var(--color-cordel-ocre,#c05621)] flex items-center gap-1.5">
-                <span>⚙️ Option B (Service externe / Domaine propre)</span>
+                <span>{t('studio.communication.optionBServiceExterneDomaine')}</span>
               </span>
               <input
                 type="radio"
@@ -143,7 +146,7 @@ export default function EmailConfigSection({ formData, handleChange, saving }) {
               />
             </div>
             <p className="text-[11px] text-stone-700 leading-relaxed">
-              <strong>Service e-mailing dédié ou serveur SMTP :</strong> Connectez votre propre compte (Brevo, Resend, SendGrid, Mailgun, Postmark ou SMTP OVH/Infomaniak) et votre propre nom de domaine.
+              <strong>{t('studio.communication.serviceEMailingDedieOu')}</strong> {t('studio.communication.connectezVotrePropreCompteBrevo')}
             </p>
           </div>
         </div>
@@ -155,10 +158,10 @@ export default function EmailConfigSection({ formData, handleChange, saving }) {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-stone-200 pb-3">
             <div>
               <h4 className="text-xs font-black uppercase tracking-wider text-stone-800">
-                Paramètres du canal d'envoi externe
+                {t('studio.communication.parametresDuCanalDEnvoi')}
               </h4>
               <p className="text-[10px] text-stone-500 font-bold">
-                Sélectionnez le protocole de connexion souhaité et saisissez vos accès sécurisés.
+                {t('studio.communication.selectionnezLeProtocoleDeConnexion')}
               </p>
             </div>
 
@@ -173,7 +176,7 @@ export default function EmailConfigSection({ formData, handleChange, saving }) {
                     : 'text-stone-600 hover:text-stone-900'
                 }`}
               >
-                🔑 Clé API Service
+                {t('studio.communication.cleApiService')}
               </button>
               <button
                 type="button"
@@ -184,7 +187,7 @@ export default function EmailConfigSection({ formData, handleChange, saving }) {
                     : 'text-stone-600 hover:text-stone-900'
                 }`}
               >
-                📡 Serveur SMTP
+                {t('studio.communication.serveurSmtp')}
               </button>
             </div>
           </div>
@@ -194,7 +197,7 @@ export default function EmailConfigSection({ formData, handleChange, saving }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-bold uppercase text-stone-700">
-                  Fournisseur API e-mailing
+                  {t('studio.communication.fournisseurApiEMailing')}
                 </label>
                 <select
                   value={emailApiProvider}
@@ -202,24 +205,24 @@ export default function EmailConfigSection({ formData, handleChange, saving }) {
                   disabled={saving}
                   className="text-xs px-3 py-2 border border-stone-300 rounded bg-white font-bold text-stone-800"
                 >
-                  <option value="brevo">Brevo (ex-Sendinblue)</option>
-                  <option value="resend">Resend</option>
-                  <option value="sendgrid">SendGrid</option>
-                  <option value="mailgun">Mailgun</option>
-                  <option value="postmark">Postmark</option>
-                  <option value="custom_api">Autre API REST HTTP</option>
+                  <option value="brevo">{t('studio.communication.brevoExSendinblue')}</option>
+                  <option value="resend">{t('studio.communication.resend')}</option>
+                  <option value="sendgrid">{t('studio.communication.sendgrid')}</option>
+                  <option value="mailgun">{t('studio.communication.mailgun')}</option>
+                  <option value="postmark">{t('studio.communication.postmark')}</option>
+                  <option value="custom_api">{t('studio.communication.autreApiRestHttp')}</option>
                 </select>
               </div>
 
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-bold uppercase text-stone-700 flex items-center justify-between">
-                  <span>Clé d'API sécurisée ({emailApiProvider.toUpperCase()}) *</span>
+                  <span>{t('studio.communication.cleDApiSecurisee')}{emailApiProvider.toUpperCase()}) *</span>
                   <button
                     type="button"
                     onClick={() => setShowApiKey(!showApiKey)}
                     className="text-[10px] text-stone-500 hover:text-stone-800 font-normal cursor-pointer"
                   >
-                    {showApiKey ? '🙈 Masquer' : '👁️ Afficher'}
+                    {showApiKey ? t('studio.communication.masquer') : t('studio.communication.afficher')}
                   </button>
                 </label>
                 <input
@@ -227,7 +230,7 @@ export default function EmailConfigSection({ formData, handleChange, saving }) {
                   value={emailProviderApiKey}
                   onChange={(e) => updateField('emailProviderApiKey', e.target.value)}
                   disabled={saving}
-                  placeholder="xkeysib-... ou re_..."
+                  placeholder={t('studio.communication.xkeysibOuRe_')}
                   className="text-xs px-3 py-2 border border-stone-300 rounded bg-white font-mono text-stone-800"
                 />
               </div>
@@ -239,21 +242,21 @@ export default function EmailConfigSection({ formData, handleChange, saving }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-bold uppercase text-stone-700">
-                  Hôte SMTP (Host) *
+                  {t('studio.communication.hoteSmtpHost')}
                 </label>
                 <input
                   type="text"
                   value={smtpHost}
                   onChange={(e) => updateField('smtpHost', e.target.value)}
                   disabled={saving}
-                  placeholder="Ex: ssl0.ovh.net"
+                  placeholder={t('studio.communication.exSsl0OvhNet')}
                   className="text-xs px-3 py-2 border border-stone-300 rounded bg-white font-mono text-stone-800"
                 />
               </div>
 
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-bold uppercase text-stone-700">
-                  Port SMTP *
+                  {t('studio.communication.portSmtp')}
                 </label>
                 <input
                   type="number"
@@ -267,7 +270,7 @@ export default function EmailConfigSection({ formData, handleChange, saving }) {
 
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-bold uppercase text-stone-700">
-                  Sécurité (Protocole)
+                  {t('studio.communication.securiteProtocole')}
                 </label>
                 <select
                   value={smtpSecure}
@@ -275,15 +278,15 @@ export default function EmailConfigSection({ formData, handleChange, saving }) {
                   disabled={saving}
                   className="text-xs px-3 py-2 border border-stone-300 rounded bg-white font-bold text-stone-800"
                 >
-                  <option value="tls">TLS / STARTTLS (Port 587 - Recommandé)</option>
-                  <option value="ssl">SSL (Port 465)</option>
-                  <option value="none">Aucune (Non sécurisé)</option>
+                  <option value="tls">{t('studio.communication.tlsStarttlsPort587Recommande')}</option>
+                  <option value="ssl">{t('studio.communication.sslPort465')}</option>
+                  <option value="none">{t('studio.communication.aucuneNonSecurise')}</option>
                 </select>
               </div>
 
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-bold uppercase text-stone-700">
-                  Utilisateur SMTP (User) *
+                  {t('studio.communication.utilisateurSmtpUser')}
                 </label>
                 <input
                   type="text"
@@ -297,13 +300,13 @@ export default function EmailConfigSection({ formData, handleChange, saving }) {
 
               <div className="flex flex-col gap-1.5 sm:col-span-2">
                 <label className="text-xs font-bold uppercase text-stone-700 flex items-center justify-between">
-                  <span>Mot de passe SMTP *</span>
+                  <span>{t('studio.communication.motDePasseSmtp')}</span>
                   <button
                     type="button"
                     onClick={() => setShowSmtpPassword(!showSmtpPassword)}
                     className="text-[10px] text-stone-500 hover:text-stone-800 font-normal cursor-pointer"
                   >
-                    {showSmtpPassword ? '🙈 Masquer' : '👁️ Afficher'}
+                    {showSmtpPassword ? t('studio.communication.masquer') : t('studio.communication.afficher')}
                   </button>
                 </label>
                 <input
@@ -321,15 +324,15 @@ export default function EmailConfigSection({ formData, handleChange, saving }) {
           {/* Champ Domaine Personnalisé */}
           <div className="flex flex-col gap-1.5 border-t border-stone-200 pt-3">
             <label className="text-xs font-extrabold uppercase text-stone-800 flex items-center justify-between">
-              <span>Domaine e-mail personnalisé (customEmailDomain)</span>
-              <span className="text-[10px] text-stone-400 font-normal">Ex: mon-asso.fr</span>
+              <span>{t('studio.communication.domaineEMailPersonnaliseCustomemaildomain')}</span>
+              <span className="text-[10px] text-stone-400 font-normal">{t('studio.communication.exMonAssoFr')}</span>
             </label>
             <input
               type="text"
               value={customEmailDomain}
               onChange={(e) => updateField('customEmailDomain', e.target.value)}
               disabled={saving}
-              placeholder="mon-asso.fr"
+              placeholder={t('studio.communication.monAssoFr')}
               className="text-xs px-3 py-2 border border-stone-300 rounded bg-white font-mono text-stone-900 focus:border-[var(--color-cordel-vert,#2d6a4f)] outline-none"
             />
           </div>

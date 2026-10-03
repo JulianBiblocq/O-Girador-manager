@@ -805,7 +805,7 @@ export default function WidgetAgenda({
       {/* Title & Action Bar */}
       <div className="flex flex-wrap justify-between items-center pl-1 pr-1 w-full gap-2">
         <h3 className="text-xs font-extrabold tracking-wider text-cordel-master-dark opacity-75 uppercase text-left flex items-center gap-1.5">
-          <XiloCalendar size={16} /> {t('widgetAgenda.title')}
+          <XiloCalendar size={16} /> {t('agenda.title').toUpperCase()}
         </h3>
         
         <div className="flex items-center gap-2 flex-wrap">

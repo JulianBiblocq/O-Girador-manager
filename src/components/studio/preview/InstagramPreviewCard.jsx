@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from '../../LanguageContext';
 
 /**
  * Aperçu réaliste d'une publication au format Carrousel Instagram
@@ -9,11 +10,12 @@ export default function InstagramPreviewCard({
   selectedEvent = null,
   publicationText = ''
 }) {
+  const { t } = useTranslation();
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const photos = mediaList.length > 0 
     ? mediaList 
-    : [{ id: 'empty', url: null, name: 'Vide' }];
+    : [{ id: 'empty', url: null, name: t('studio.communication.vide') }];
   const currentPhoto = photos[currentIndex] || photos[0];
 
   const assocName = branding?.nom || 'Samambaia Maracatu';
@@ -21,7 +23,7 @@ export default function InstagramPreviewCard({
   const locationName = selectedEvent?.lieu || '';
 
   const formatTextWithHashtags = (text) => {
-    if (!text) return '(Légende en attente de rédaction...)';
+    if (!text) return t('studio.communication.legendeEnAttente', { defaultValue: '(Légende en attente de rédaction...)' });
     const parts = text.split(/(#[a-zA-Z0-9_\u00C0-\u00FF]+)/g);
     return parts.map((part, idx) => {
       if (part.startsWith('#')) {
@@ -36,7 +38,7 @@ export default function InstagramPreviewCard({
       {/* En-tête profil Instagram */}
       <div className="flex items-center justify-between p-2.5 border-b border-stone-200">
         <div className="flex items-center gap-2">
-          <img src={logoUrl} alt="Logo" className="w-8 h-8 rounded-full border border-stone-300 object-cover" />
+          <img src={logoUrl} alt={t('studio.communication.logo')} className="w-8 h-8 rounded-full border border-stone-300 object-cover" />
           <div className="flex flex-col leading-tight">
             <span className="text-xs font-black tracking-tight">{assocName}</span>
             {locationName && <span className="text-[9.5px] text-stone-500 font-medium">{locationName}</span>}
@@ -48,10 +50,10 @@ export default function InstagramPreviewCard({
       {/* Cadre de photo ou carrousel */}
       <div className="relative aspect-square w-full bg-stone-100 flex items-center justify-center overflow-hidden">
         {currentPhoto?.url ? (
-          <img src={currentPhoto.url} alt="Photo" className="w-full h-full object-cover" />
+          <img src={currentPhoto.url} alt={t('studio.communication.photo')} className="w-full h-full object-cover" />
         ) : (
           <div className="p-4 text-center text-xs text-stone-400 font-bold">
-            Ajoutez au moins une photo pour prévisualiser
+            {t('studio.communication.ajoutezAuMoinsUnePhoto')}
           </div>
         )}
 

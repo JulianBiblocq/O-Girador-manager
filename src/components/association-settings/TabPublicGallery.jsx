@@ -3,6 +3,7 @@ import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage
 import imageCompression from 'browser-image-compression';
 import { storage } from '../../firebase';
 import CordelCard from '../CordelCard';
+import { useTranslation } from '../../hooks/useTranslation';
 
 /**
  * Sous-composant dédié à l'administration de la Galerie Photos de la vitrine publique.
@@ -10,6 +11,7 @@ import CordelCard from '../CordelCard';
  * la suppression de photos et l'ajout direct par URL.
  */
 export default function TabPublicGallery({ formData, handleChange, groupId, saving }) {
+  const { t } = useTranslation();
   const publicTheme = formData.publicTheme || {};
   const galleryPhotos = Array.isArray(publicTheme.galleryPhotos) ? publicTheme.galleryPhotos : [];
 
@@ -32,7 +34,10 @@ export default function TabPublicGallery({ formData, handleChange, groupId, savi
     if (files.length === 0 || !groupId) return;
 
     setUploading(true);
-    setUploadProgress(`Optimisation & Envoi de 0 / ${files.length}...`);
+    setUploadProgress(t('vitrine.admin.gallery.tabPublicGallery.optimisationEnvoiDe0Param', {
+      param: files.length,
+      total: files.length
+    }));
 
     const uploadedUrls = [];
     const compressionOptions = { maxSizeMB: 1.0, maxWidthOrHeight: 1920, useWebWorker: true };
@@ -40,7 +45,11 @@ export default function TabPublicGallery({ formData, handleChange, groupId, savi
     try {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        setUploadProgress(`Traitement de la photo ${i + 1} / ${files.length}...`);
+        setUploadProgress(t('vitrine.admin.gallery.tabPublicGallery.traitementDeLaPhotoParam', {
+          param: i + 1,
+          current: i + 1,
+          total: files.length
+        }));
 
         let fileToUpload = file;
         try {
@@ -59,10 +68,16 @@ export default function TabPublicGallery({ formData, handleChange, groupId, savi
 
       // Fusion des nouvelles photos téléversées avec la liste existante
       updateGalleryPhotos([...galleryPhotos, ...uploadedUrls]);
-      setUploadProgress(`✓ ${uploadedUrls.length} photo(s) ajoutée(s) avec succès !`);
+      setUploadProgress(t('vitrine.admin.gallery.tabPublicGallery.paramPhotoSAjouteeS', {
+        param: uploadedUrls.length,
+        count: uploadedUrls.length
+      }));
     } catch (err) {
       console.error("Erreur lors de l'upload des photos de la galerie:", err);
-      setUploadProgress(`❌ Erreur lors de l'envoi : ${err.message}`);
+      setUploadProgress(t('vitrine.admin.gallery.tabPublicGallery.erreurLorsDeLEnvoi', {
+        param: err.message,
+        error: err.message
+      }));
     } finally {
       setUploading(false);
       e.target.value = '';
@@ -111,13 +126,15 @@ export default function TabPublicGallery({ formData, handleChange, groupId, savi
   return (
     <CordelCard variant="default" className="p-5 flex flex-col gap-5 bg-white border-2 border-cordel-master-dark/30">
       <h4 className="text-xs font-black uppercase tracking-widest text-cordel-wood border-b border-dashed border-cordel-master-dark/20 pb-2 flex items-center justify-between">
-        <span>📸 Section Galerie Photos ("En images")</span>
+        <span>{t('vitrine.admin.gallery.tabPublicGallery.sectionGaleriePhotosEnImages')}</span>
         <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
           publicTheme.afficherGalerie !== false 
             ? 'bg-emerald-50 text-emerald-800 border-emerald-300 font-bold' 
             : 'bg-stone-100 text-stone-600 border-stone-300'
         }`}>
-          {publicTheme.afficherGalerie !== false ? '✓ Section Active' : '⚪ Section Masquée'}
+          {publicTheme.afficherGalerie !== false
+            ? t('vitrine.admin.gallery.tabPublicGallery.sectionActive')
+            : t('vitrine.admin.gallery.tabPublicGallery.sectionMasquee')}
         </span>
       </h4>
 
@@ -132,7 +149,7 @@ export default function TabPublicGallery({ formData, handleChange, groupId, savi
           className="w-4 h-4 cursor-pointer accent-[var(--color-cordel-vert,#2d6a4f)]"
         />
         <label htmlFor="afficherGalerie" className="text-xs font-bold uppercase tracking-wider text-encre-noire cursor-pointer flex flex-wrap items-center gap-1.5">
-          <span>Afficher la section Galerie Photos sur le site vitrine</span>
+          <span>{t('vitrine.admin.gallery.tabPublicGallery.afficherLaSectionGaleriePhotos')}</span>
         </label>
       </div>
 
@@ -141,14 +158,14 @@ export default function TabPublicGallery({ formData, handleChange, groupId, savi
         {/* Titre Galerie */}
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
-            Titre de la section Galerie
+            {t('vitrine.admin.gallery.tabPublicGallery.titreDeLaSectionGalerie')}
           </label>
           <input
             type="text"
             value={vitrineTexts.titreGalerie || ''}
             onChange={(e) => handleTextChange('titreGalerie', e.target.value)}
             disabled={saving}
-            placeholder="Galerie Photos / En Images"
+            placeholder={t('vitrine.admin.gallery.tabPublicGallery.galeriePhotosEnImages')}
             className="text-xs font-bold px-3 py-2 border border-encre-noire/30 rounded bg-white"
           />
         </div>
@@ -156,14 +173,14 @@ export default function TabPublicGallery({ formData, handleChange, groupId, savi
         {/* Badge Galerie */}
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
-            Sur-titre / Badge Galerie
+            {t('vitrine.admin.gallery.tabPublicGallery.surTitreBadgeGalerie')}
           </label>
           <input
             type="text"
             value={vitrineTexts.badgeGalerie || ''}
             onChange={(e) => handleTextChange('badgeGalerie', e.target.value)}
             disabled={saving}
-            placeholder="En Images"
+            placeholder={t('vitrine.admin.gallery.tabPublicGallery.enImages')}
             className="text-xs font-bold px-3 py-2 border border-encre-noire/30 rounded bg-white"
           />
         </div>
@@ -172,14 +189,14 @@ export default function TabPublicGallery({ formData, handleChange, groupId, savi
       {/* Accroche Galerie */}
       <div className="flex flex-col gap-1.5">
         <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
-          Description / Accroche Galerie
+          {t('vitrine.admin.gallery.tabPublicGallery.descriptionAccrocheGalerie')}
         </label>
         <textarea
           rows={2}
           value={vitrineTexts.accrocheGalerie || ''}
           onChange={(e) => handleTextChange('accrocheGalerie', e.target.value)}
           disabled={saving}
-          placeholder="Découvrez nos prestations scéniques, répétitions et sorties en images !"
+          placeholder={t('vitrine.admin.gallery.tabPublicGallery.decouvrezNosPrestationsSceniquesRepetitions')}
           className="text-xs font-medium px-3 py-2 border border-encre-noire/30 rounded bg-white resize-none"
         />
       </div>
@@ -187,7 +204,7 @@ export default function TabPublicGallery({ formData, handleChange, groupId, savi
       {/* Zone de téléversement multiple */}
       <div className="flex flex-col gap-3 p-4 bg-[#fdfaf2] border border-dashed border-encre-noire/25 rounded-[4px_6px_3px_5px]">
         <label className="text-xs font-bold uppercase tracking-wider text-cordel-wood flex items-center gap-2">
-          <span>📤 Téléverser de nouvelles photos (Sélection multiple)</span>
+          <span>{t('vitrine.admin.gallery.tabPublicGallery.televerserDeNouvellesPhotosSelection')}</span>
         </label>
         
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
@@ -208,14 +225,14 @@ export default function TabPublicGallery({ formData, handleChange, groupId, savi
         )}
 
         <span className="text-[10px] text-stone-500 font-medium italic">
-          💡 Vous pouvez sélectionner plusieurs images d'un coup. Elles seront automatiquement optimisées pour un chargement rapide sur mobile.
+          {t('vitrine.admin.gallery.tabPublicGallery.vousPouvezSelectionnerPlusieursImages')}
         </span>
       </div>
 
       {/* Alternative : Ajout par URL */}
       <div className="flex flex-col gap-1.5 pt-1">
         <label className="text-[11px] font-bold uppercase tracking-wider text-encre-noire/80">
-          🔗 Ou ajouter directement une image par son lien URL :
+          {t('vitrine.admin.gallery.tabPublicGallery.ouAjouterDirectementUneImage')}
         </label>
         <div className="flex gap-2">
           <input
@@ -232,7 +249,7 @@ export default function TabPublicGallery({ formData, handleChange, groupId, savi
             disabled={!newUrlInput.trim() || saving || uploading}
             className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-white bg-[var(--color-cordel-vert,#2d6a4f)] rounded hover:brightness-110 disabled:opacity-50 cursor-pointer"
           >
-            + Ajouter
+            {t('vitrine.admin.gallery.tabPublicGallery.ajouter')}
           </button>
         </div>
       </div>
@@ -241,18 +258,18 @@ export default function TabPublicGallery({ formData, handleChange, groupId, savi
       <div className="flex flex-col gap-2 pt-3 border-t border-dashed border-cordel-master-dark/20 mt-2">
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
-            🖼️ Photos actuellement enregistrées ({galleryPhotos.length})
+            {t('vitrine.admin.gallery.tabPublicGallery.photosActuellementEnregistrees')}{galleryPhotos.length})
           </span>
           {galleryPhotos.length > 1 && (
             <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-              💡 Réorganisez l'ordre par glisser-déposer ou via les flèches ⬅️ ➡️
+              {t('vitrine.admin.gallery.tabPublicGallery.reorganisezLOrdreParGlisser')}
             </span>
           )}
         </div>
 
         {galleryPhotos.length === 0 ? (
           <div className="p-6 border border-dashed border-stone-300 rounded bg-stone-50 text-center text-xs text-stone-500">
-            Aucune photo dans la galerie pour le moment. Téléversez-en ci-dessus pour alimenter le carrousel !
+            {t('vitrine.admin.gallery.tabPublicGallery.aucunePhotoDansLaGalerie')}
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mt-2">
@@ -285,7 +302,10 @@ export default function TabPublicGallery({ formData, handleChange, groupId, savi
                 >
                   <img
                     src={photoUrl}
-                    alt={`Galerie ${index + 1}`}
+                    alt={t('vitrine.admin.gallery.tabPublicGallery.galerieParam', {
+                      param: index + 1,
+                      index: index + 1
+                    })}
                     className="w-full h-full object-cover pointer-events-none"
                   />
                   
@@ -299,7 +319,7 @@ export default function TabPublicGallery({ formData, handleChange, groupId, savi
                     type="button"
                     onClick={() => handleDeletePhoto(index)}
                     disabled={saving || uploading}
-                    title="Supprimer cette photo"
+                    title={t('vitrine.admin.gallery.tabPublicGallery.supprimerCettePhoto')}
                     className="absolute top-1.5 right-1.5 p-1 bg-[var(--color-cordel-rouge,#8b2a1a)] text-white text-[10px] font-bold rounded-full shadow-md hover:scale-110 active:scale-95 transition-all cursor-pointer flex items-center justify-center w-6 h-6 z-10"
                   >
                     ✕
@@ -323,7 +343,7 @@ export default function TabPublicGallery({ formData, handleChange, groupId, savi
                     </button>
 
                     <span className="text-[9px] font-mono font-bold text-stone-300 truncate">
-                      Rang {index + 1}
+                      {t('vitrine.admin.gallery.tabPublicGallery.rang')} {index + 1}
                     </span>
 
                     {/* Flèche Déplacer vers la Droite / Plus Bas (Rang +1) */}
@@ -350,3 +370,4 @@ export default function TabPublicGallery({ formData, handleChange, groupId, savi
     </CordelCard>
   );
 }
+

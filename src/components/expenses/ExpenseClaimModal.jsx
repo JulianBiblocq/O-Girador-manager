@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { getSeasonFromDate } from '../../utils/seasonUtils';
+import useModalEscape from '../../hooks/useModalEscape';
 
 /**
  * Modale de déclaration d'une note de frais par l'adhérent.
@@ -31,6 +31,9 @@ export default function ExpenseClaimModal({
   const [receiptFile, setReceiptFile] = useState(null);
   const [userIban, setUserIban] = useState(profileData?.iban || profileData?.ribIban || '');
   const [formError, setFormError] = useState('');
+
+  // Fermeture accessible avec touche Échap
+  useModalEscape(isOpen, onClose, submitting);
 
   // Calcul dynamique de la saison en fonction de la date saisie et du mois de rentrée configuré
   const computedSeason = useMemo(() => {
@@ -109,43 +112,44 @@ export default function ExpenseClaimModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-3 animate-fadeIn">
-      <div className="max-w-lg w-full max-h-[92vh] overflow-y-auto">
-        <CordelCard variant="default" useExtremeBorder={true} className="p-5 flex flex-col gap-4 text-left">
-          {/* En-tête de la modale */}
-          <div className="flex justify-between items-center border-b border-dashed border-cordel-master-dark/20 pb-2">
-            <h3 className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
-              🧾 Déclarer une note de frais
-            </h3>
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={submitting}
-              className="text-sm font-black text-cordel-master-dark hover:text-cordel-wood p-1 cursor-pointer transition-colors"
-              title="Fermer"
-            >
-              ✕
-            </button>
-          </div>
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 select-none animate-fadeIn">
+      <div className="relative w-full max-w-lg max-h-[90dvh] flex flex-col rounded-lg bg-[var(--theme-bg)] border-2 border-encre-noire shadow-2xl overflow-hidden text-left">
+        {/* 1. Header (Fixe) */}
+        <div className="shrink-0 p-4 border-b border-dashed border-cordel-master-dark/20 flex justify-between items-center bg-cordel-bg-light">
+          <h3 className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
+            🧾 Déclarer une note de frais
+          </h3>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={submitting}
+            className="text-sm font-black text-cordel-master-dark hover:text-cordel-wood p-1 cursor-pointer transition-colors shrink-0"
+            title="Fermer (Échap)"
+          >
+            ✕
+          </button>
+        </div>
 
-          {/* Bannière d'information saison */}
-          <div className="bg-[#fdfaf2] dark:bg-[#201d1a] border border-dashed border-cordel-master-dark/25 p-2.5 rounded-[4px_6px_3px_5px] flex items-center justify-between text-xs">
-            <span className="font-bold text-cordel-master-dark">
-              Associé à la saison :
-            </span>
-            <span className="theme-stamp-badge font-black uppercase text-[10px] px-2 py-0.5 bg-amber-100 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 border border-amber-600/30">
-              📅 {computedSeason}
-            </span>
-          </div>
-
-          {formError && (
-            <div className="bg-red-100 border-l-4 border-red-600 text-red-900 dark:bg-red-950/40 dark:text-red-300 p-3 rounded text-xs font-bold animate-fadeIn break-words break-all max-w-full overflow-hidden">
-              ⚠️ {formError}
+        {/* Form Wrapper */}
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          {/* 2. Body (Défilable verticalement) */}
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 flex flex-col gap-3.5 text-xs">
+            {/* Bannière d'information saison */}
+            <div className="bg-[#fdfaf2] dark:bg-[#201d1a] border border-dashed border-cordel-master-dark/25 p-2.5 rounded-[4px_6px_3px_5px] flex items-center justify-between text-xs">
+              <span className="font-bold text-cordel-master-dark">
+                Associé à la saison :
+              </span>
+              <span className="theme-stamp-badge font-black uppercase text-[10px] px-2 py-0.5 bg-amber-100 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 border border-amber-600/30">
+                📅 {computedSeason}
+              </span>
             </div>
-          )}
 
-          {/* Formulaire */}
-          <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
+            {formError && (
+              <div className="bg-red-100 border-l-4 border-red-600 text-red-900 dark:bg-red-950/40 dark:text-red-300 p-3 rounded text-xs font-bold animate-fadeIn break-words break-all max-w-full overflow-hidden">
+                ⚠️ {formError}
+              </div>
+            )}
+
             {/* Date de la dépense */}
             <div className="flex flex-col gap-1">
               <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
@@ -240,30 +244,30 @@ export default function ExpenseClaimModal({
                 💡 Cet IBAN sera mis à jour sur votre profil pour accélérer vos futurs remboursements.
               </span>
             </div>
+          </div>
 
-            {/* Boutons d'action */}
-            <div className="flex gap-2.5 pt-2 border-t border-dashed border-cordel-master-dark/20">
-              <CordelButton
-                type="button"
-                variant="default"
-                onClick={onClose}
-                disabled={submitting}
-                className="flex-1 py-2 text-[10px] font-black uppercase tracking-wider"
-              >
-                Annuler
-              </CordelButton>
-              <CordelButton
-                type="submit"
-                variant="ocre"
-                useExtremeBorder={true}
-                disabled={submitting}
-                className="flex-1 py-2 text-[10px] font-black uppercase tracking-wider"
-              >
-                {submitting ? "Téléversement..." : "Envoyer la demande"}
-              </CordelButton>
-            </div>
-          </form>
-        </CordelCard>
+          {/* 3. Footer buttons (Fixe en bas) */}
+          <div className="shrink-0 p-4 border-t border-dashed border-cordel-master-dark/20 bg-[var(--theme-bg)] flex gap-2.5 pb-[max(env(safe-area-inset-bottom),1rem)]">
+            <CordelButton
+              type="button"
+              variant="default"
+              onClick={onClose}
+              disabled={submitting}
+              className="flex-1 py-2 text-[10px] font-black uppercase tracking-wider shrink-0"
+            >
+              Annuler
+            </CordelButton>
+            <CordelButton
+              type="submit"
+              variant="vert"
+              useExtremeBorder={true}
+              disabled={submitting}
+              className="flex-1 py-2 text-[10px] font-black uppercase tracking-wider shrink-0"
+            >
+              {submitting ? "Téléversement..." : "Envoyer la demande"}
+            </CordelButton>
+          </div>
+        </form>
       </div>
     </div>
   );

@@ -64,7 +64,7 @@ export default function StudioCloudHeader({ groupId, canWrite = false }) {
       }, 1200);
     } catch (err) {
       console.error("StudioCloudHeader - Erreur mise à jour cloudRootUrl :", err);
-      setError("Impossible d'enregistrer l'URL du Cloud.");
+      setError(t('studio.photos.impossibleDEnregistrerLUrl'));
     } finally {
       setSaving(false);
     }
@@ -93,16 +93,16 @@ export default function StudioCloudHeader({ groupId, canWrite = false }) {
           </span>
           <div>
             <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-cordel-wood">
-              {t('studioPhotos.cloudTitle') || "Passerelle Stockage Cloud de l'Association"}
+              {t('studio.photos.passerelleStockageCloudDeL')}
             </h3>
             <p className="text-[11px] text-encre-noire/70 font-medium">
               {cloudUrl ? (
                 <>
-                  <span>Hébergement actif : </span>
+                  <span>{t('studio.photos.hebergementActif')} </span>
                   <strong className="text-emerald-900 font-mono">{displayHost}</strong>
                 </>
               ) : (
-                <span className="italic text-[var(--color-cordel-ocre)]">Aucun dossier Cloud racine configuré</span>
+                <span className="italic text-[var(--color-cordel-ocre)]">{t('studio.photos.aucunDossierCloudRacineConfigure')}</span>
               )}
             </p>
           </div>
@@ -115,10 +115,10 @@ export default function StudioCloudHeader({ groupId, canWrite = false }) {
               type="button"
               onClick={() => window.open(cloudUrl, '_blank', 'noopener,noreferrer')}
               className="px-3.5 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 border-emerald-950 bg-[var(--color-cordel-vert)] text-white hover:bg-emerald-800 transition-all cursor-pointer shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none flex items-center gap-1.5"
-              title="Ouvrir le dossier Cloud racine dans un nouvel onglet sécurisé"
+              title={t('studio.photos.ouvrirLeDossierCloudRacine')}
             >
               <span>☁️</span>
-              <span>{t('studioPhotos.openCloud') || "Ouvrir notre Cloud ↗"}</span>
+              <span>{t('studio.photos.ouvrirNotreCloud')}</span>
             </button>
           )}
 
@@ -130,10 +130,10 @@ export default function StudioCloudHeader({ groupId, canWrite = false }) {
                 className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 border-encre-noire transition-all cursor-pointer shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none flex items-center gap-1.5 ${
                   showFramaspaceSettings ? 'bg-[var(--color-cordel-vert)] text-white border-emerald-950' : 'bg-cordel-bg text-encre-noire hover:bg-amber-100'
                 }`}
-                title="Configurer les identifiants API Framaspace pour l'automatisation des dossiers"
+                title={t('studio.photos.configurerLesIdentifiantsApiFramaspace')}
               >
                 <span>⚡</span>
-                <span>{showFramaspaceSettings ? "Masquer API Framaspace" : "Automatisation Framaspace"}</span>
+                <span>{showFramaspaceSettings ? t('studio.photos.masquerApiFramaspace') : t('studio.photos.automatisationFramaspace')}</span>
               </button>
 
               <button
@@ -160,7 +160,7 @@ export default function StudioCloudHeader({ groupId, canWrite = false }) {
       {isEditing && canWrite && (
         <form onSubmit={handleSave} className="flex flex-col gap-2 pt-1 animate-fade-in">
           <label className="text-[10px] font-black uppercase tracking-widest text-cordel-master-dark flex items-center gap-1">
-            <span>🔗 URL d'accès racine au Cloud (Framaspace, Nextcloud, Google Drive, Dropbox)</span>
+            <span>{t('studio.photos.urlDAccesRacineAu')}</span>
           </label>
 
           <div className="flex flex-col sm:flex-row gap-2">
@@ -168,7 +168,7 @@ export default function StudioCloudHeader({ groupId, canWrite = false }) {
               type="url"
               value={editingUrl}
               onChange={(e) => setEditingUrl(e.target.value)}
-              placeholder="ex: https://mon-asso.framaspace.org/s/... ou https://drive.google.com/drive/folders/..."
+              placeholder={t('studio.photos.exHttpsMonAssoFramaspace')}
               className="theme-input flex-1 px-3 py-1.5 text-xs font-bold rounded border border-encre-noire bg-white text-encre-noire"
               required
             />
@@ -180,11 +180,11 @@ export default function StudioCloudHeader({ groupId, canWrite = false }) {
                 className="px-4 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 border-emerald-950 bg-[var(--color-cordel-vert)] text-white hover:bg-emerald-800 transition-all cursor-pointer shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none flex items-center gap-1"
               >
                 {saving ? (
-                  <span>⏳ Enregistrement...</span>
+                  <span>{t('studio.photos.enregistrement')}</span>
                 ) : saveSuccess ? (
-                  <span>✓ Enregistré !</span>
+                  <span>{t('studio.photos.enregistre')}</span>
                 ) : (
-                  <span>Enregistrer</span>
+                  <span>{t('studio.photos.enregistrer')}</span>
                 )}
               </button>
 
@@ -196,7 +196,7 @@ export default function StudioCloudHeader({ groupId, canWrite = false }) {
                 }}
                 className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded border border-encre-noire/40 hover:bg-cordel-bg text-encre-noire/70 cursor-pointer"
               >
-                Annuler
+                {t('studio.photos.annuler')}
               </button>
             </div>
           </div>
@@ -206,7 +206,7 @@ export default function StudioCloudHeader({ groupId, canWrite = false }) {
           )}
 
           <p className="text-[10px] text-encre-noire/60 font-medium italic">
-            💡 Ce lien racine permet aux membres du pôle Studio d'accéder d'un clic à l'arborescence générale de stockage sans transiter par des serveurs tiers.
+            {t('studio.photos.ceLienRacinePermetAux')}
           </p>
         </form>
       )}

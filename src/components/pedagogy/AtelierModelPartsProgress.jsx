@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { normalizePartSteps } from '../../utils/workshopProjectionUtils.js';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Sous-composant de suivi granulaire de la nomenclature et des pièces d'un modèle d'atelier.
@@ -20,6 +21,7 @@ export default function AtelierModelPartsProgress({
   comfortLevels = [],
   onLaunchPartQuiz
 }) {
+  const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
 
   const parts = model?.parts || [];
@@ -44,15 +46,15 @@ export default function AtelierModelPartsProgress({
         <div className="flex items-center gap-2">
           <span className="text-xs">🪵</span>
           <span className="text-[11px] font-black uppercase tracking-wider text-cordel-wood">
-            Nomenclature &amp; Pièces usinées ({parts.length})
+            {t('pedagogy.cards.nomenclaturePiecesUsinees')}{parts.length})
           </span>
           <span className="text-[9.5px] font-bold text-encre-noire/60 bg-white px-1.5 py-0.5 rounded border border-stone-300">
-            {evaluatedPartsCount} / {parts.length} maîtrisée{evaluatedPartsCount > 1 ? 's' : ''}
+            {evaluatedPartsCount} / {parts.length} {t('pedagogy.cards.maitrisee')}{evaluatedPartsCount > 1 ? 's' : ''}
           </span>
         </div>
 
         <span className="text-xs text-cordel-wood font-bold">
-          {isExpanded ? '▲ Réduire' : '▼ Détails par pièce'}
+          {isExpanded ? t('pedagogy.cards.reduire') : t('pedagogy.cards.detailsParPiece')}
         </span>
       </button>
 
@@ -87,10 +89,10 @@ export default function AtelierModelPartsProgress({
                   </div>
 
                   <div className="flex items-center gap-2 mt-0.5 text-[9.5px] text-stone-600">
-                    <span>⚙️ {steps.length} étape{steps.length > 1 ? 's' : ''} d'usinage</span>
+                    <span>⚙️ {steps.length} {t('pedagogy.cards.etape')}{steps.length > 1 ? 's' : ''} {t('pedagogy.cards.dUsinage')}</span>
                     {part.materiels?.length > 0 && (
                       <span className="truncate max-w-[200px]" title={part.materiels.join(', ')}>
-                        • Mat. : {part.materiels.join(', ')}
+                        {t('pedagogy.cards.mat')} {part.materiels.join(', ')}
                       </span>
                     )}
                   </div>
@@ -136,7 +138,7 @@ export default function AtelierModelPartsProgress({
                     title={`Lancer un QCM d'évaluation centré sur la pièce : ${part.nom}`}
                   >
                     <span>📝</span>
-                    <span>Quiz Pièce</span>
+                    <span>{t('pedagogy.cards.quizPiece')}</span>
                   </button>
                 </div>
               </div>

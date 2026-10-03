@@ -1,27 +1,31 @@
 import React from 'react';
 import CordelCard from '../CordelCard';
 import { XiloSparkles, XiloPalette } from '../XiloIcons';
+import { useTranslation } from '../../hooks/useTranslation';
 
 // Liste des polices sélectionnées pour le site vitrine (incluant Cactus, la typo locale Cordel)
 export const GOOGLE_FONTS_OPTIONS = [
-  { name: 'Cactus', category: 'display', label: 'Cactus (Typo Cordel Officielle)' },
-  { name: 'Roboto', category: 'sans-serif', label: 'Roboto (Moderne & Polyvalente)' },
-  { name: 'Montserrat', category: 'sans-serif', label: 'Montserrat (Géométrique & Épurée)' },
-  { name: 'Open Sans', category: 'sans-serif', label: 'Open Sans (Excellente lisibilité)' },
-  { name: 'Oswald', category: 'sans-serif', label: 'Oswald (Titres condensés à fort impact)' },
-  { name: 'Playfair Display', category: 'serif', label: 'Playfair Display (Serif Élégante)' },
-  { name: 'Lato', category: 'sans-serif', label: 'Lato (Chaleureuse & Équilibrée)' },
-  { name: 'Poppins', category: 'sans-serif', label: 'Poppins (Arrondie & Tendance)' },
-  { name: 'Cinzel', category: 'serif', label: 'Cinzel (Classique & Prestigieuse)' },
-  { name: 'Rye', category: 'display', label: 'Rye (Cordel / Gravure Bois)' },
-  { name: 'Sancreek', category: 'display', label: 'Sancreek (Cordel / Typo Rétro)' }
+  { name: 'Cactus', category: 'display', labelKey: 'cactusTypoCordelOfficielle' },
+  { name: 'Roboto', category: 'sans-serif', labelKey: 'robotoModernePolyvalente' },
+  { name: 'Montserrat', category: 'sans-serif', labelKey: 'montserratGeometriqueEpuree' },
+  { name: 'Open Sans', category: 'sans-serif', labelKey: 'openSansExcellenteLisibilite' },
+  { name: 'Oswald', category: 'sans-serif', labelKey: 'oswaldTitresCondensesAFort' },
+  { name: 'Playfair Display', category: 'serif', labelKey: 'playfairDisplaySerifElegante' },
+  { name: 'Lato', category: 'sans-serif', labelKey: 'latoChaleureuseEquilibree' },
+  { name: 'Poppins', category: 'sans-serif', labelKey: 'poppinsArrondieTendance' },
+  { name: 'Cinzel', category: 'serif', labelKey: 'cinzelClassiquePrestigieuse' },
+  { name: 'Rye', category: 'display', labelKey: 'ryeCordelGravureBois' },
+  { name: 'Sancreek', category: 'display', labelKey: 'sancreekCordelTypoRetro' }
 ];
 
 /**
  * Composant d'administration dédié à la personnalisation visuelle (Apparence, 6 couleurs et typographies)
  * du site vitrine public.
  */
-export default function TabPublicTheme({ formData, handleChange, saving, t }) {
+export default function TabPublicTheme({ formData, handleChange, saving, t: propT }) {
+  const { t: i18nT } = useTranslation();
+  const t = propT || i18nT;
+
   const publicTheme = formData.publicTheme || {
     primaryColor: '#D32F2F',
     secondaryColor: '#1976D2',
@@ -48,11 +52,11 @@ export default function TabPublicTheme({ formData, handleChange, saving, t }) {
         <div className="flex items-center gap-2 mb-2">
           <XiloPalette size={20} className="text-cordel-wood" />
           <h3 className="text-sm font-extrabold uppercase tracking-wider text-cordel-wood">
-            🎨 Apparence Visuelle & Charte Graphique
+            {t('vitrine.admin.theme.tabPublicTheme.apparenceVisuelleCharteGraphique')}
           </h3>
         </div>
         <p className="text-xs opacity-80 leading-relaxed">
-          Personnalisez finement la palette visuelle (6 couleurs sémantiques) et la typographie de votre vitrine publique.
+          {t('vitrine.admin.theme.tabPublicTheme.personnalisezFinementLaPaletteVisuelle')}
         </p>
       </CordelCard>
 
@@ -61,13 +65,13 @@ export default function TabPublicTheme({ formData, handleChange, saving, t }) {
         {/* Section 1: Palette des 6 Couleurs Sémantiques */}
         <CordelCard variant="default" className="p-5 flex flex-col gap-4 bg-white">
           <h4 className="text-xs font-black uppercase tracking-widest text-encre-noire border-b border-dashed border-cordel-master-dark/20 pb-2">
-            🎨 Palette des 6 Couleurs Vitrine
+            {t('vitrine.admin.theme.tabPublicTheme.paletteDes6CouleursVitrine')}
           </h4>
 
           {/* 1. Couleur Primaire */}
           <div className="flex flex-col gap-1">
             <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
-              1. Couleur Primaire (Titres, marqueurs)
+              {t('vitrine.admin.theme.tabPublicTheme.1CouleurPrimaireTitresMarqueurs')}
             </label>
             <div className="flex items-center gap-3">
               <input
@@ -91,7 +95,7 @@ export default function TabPublicTheme({ formData, handleChange, saving, t }) {
           {/* 2. Couleur Secondaire */}
           <div className="flex flex-col gap-1">
             <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
-              2. Couleur Secondaire (Badges, éléments d'accent)
+              {t('vitrine.admin.theme.tabPublicTheme.2CouleurSecondaireBadgesElements')}
             </label>
             <div className="flex items-center gap-3">
               <input
@@ -115,7 +119,7 @@ export default function TabPublicTheme({ formData, handleChange, saving, t }) {
           {/* 3. Couleur de Fond */}
           <div className="flex flex-col gap-1">
             <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
-              3. Couleur de Fond (Arrière-plan principal)
+              {t('vitrine.admin.theme.tabPublicTheme.3CouleurDeFondArriere')}
             </label>
             <div className="flex items-center gap-3">
               <input
@@ -139,7 +143,7 @@ export default function TabPublicTheme({ formData, handleChange, saving, t }) {
           {/* 4. Couleur du Texte */}
           <div className="flex flex-col gap-1">
             <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
-              4. Couleur du Texte (Paragraphes & corps)
+              {t('vitrine.admin.theme.tabPublicTheme.4CouleurDuTexteParagraphes')}
             </label>
             <div className="flex items-center gap-3">
               <input
@@ -163,7 +167,7 @@ export default function TabPublicTheme({ formData, handleChange, saving, t }) {
           {/* 5. Couleur de Fond des Boutons */}
           <div className="flex flex-col gap-1">
             <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
-              5. Couleur de Fond des Boutons (CTA)
+              {t('vitrine.admin.theme.tabPublicTheme.5CouleurDeFondDes')}
             </label>
             <div className="flex items-center gap-3">
               <input
@@ -187,7 +191,7 @@ export default function TabPublicTheme({ formData, handleChange, saving, t }) {
           {/* 6. Couleur du Texte des Boutons */}
           <div className="flex flex-col gap-1">
             <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
-              6. Couleur du Texte des Boutons
+              {t('vitrine.admin.theme.tabPublicTheme.6CouleurDuTexteDes')}
             </label>
             <div className="flex items-center gap-3">
               <input
@@ -212,13 +216,13 @@ export default function TabPublicTheme({ formData, handleChange, saving, t }) {
         {/* Section 2: Typographie */}
         <CordelCard variant="default" className="p-5 flex flex-col gap-4 bg-white">
           <h4 className="text-xs font-black uppercase tracking-widest text-encre-noire border-b border-dashed border-cordel-master-dark/20 pb-2">
-            🔤 Polices de Caractères
+            {t('vitrine.admin.theme.tabPublicTheme.policesDeCaracteres')}
           </h4>
 
           {/* Police des Titres */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
-              Police des Titres (Headings)
+              {t('vitrine.admin.theme.tabPublicTheme.policeDesTitresHeadings')}
             </label>
             <select
               value={publicTheme.headingFont || 'Oswald'}
@@ -228,7 +232,7 @@ export default function TabPublicTheme({ formData, handleChange, saving, t }) {
             >
               {GOOGLE_FONTS_OPTIONS.map((font) => (
                 <option key={`heading-${font.name}`} value={font.name}>
-                  {font.label}
+                  {t(`vitrine.admin.theme.tabPublicTheme.${font.labelKey}`)}
                 </option>
               ))}
             </select>
@@ -237,7 +241,7 @@ export default function TabPublicTheme({ formData, handleChange, saving, t }) {
           {/* Police du Texte */}
           <div className="flex flex-col gap-1.5 mt-2">
             <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
-              Police du Texte (Body)
+              {t('vitrine.admin.theme.tabPublicTheme.policeDuTexteBody')}
             </label>
             <select
               value={publicTheme.bodyFont || 'Roboto'}
@@ -247,7 +251,7 @@ export default function TabPublicTheme({ formData, handleChange, saving, t }) {
             >
               {GOOGLE_FONTS_OPTIONS.map((font) => (
                 <option key={`body-${font.name}`} value={font.name}>
-                  {font.label}
+                  {t(`vitrine.admin.theme.tabPublicTheme.${font.labelKey}`)}
                 </option>
               ))}
             </select>
@@ -255,21 +259,22 @@ export default function TabPublicTheme({ formData, handleChange, saving, t }) {
 
           {/* Note explicative Cactus */}
           <div className="p-3 bg-amber-50 border border-amber-200 rounded text-[11px] text-amber-900 leading-relaxed mt-2">
-            💡 <strong>Police Cactus :</strong> La typographie Cordel officielle est préchargée localement et ne nécessite aucun téléchargement externe.
+            💡 <strong>{t('vitrine.admin.theme.tabPublicTheme.policeCactus')}</strong>{' '}
+            {t('vitrine.admin.theme.tabPublicTheme.laTypographieCordelOfficielleEst')}
           </div>
 
           {/* Réglage d'opacité de l'image de couverture (Hero Overlay) */}
           <div className="flex flex-col gap-2 pt-3 border-t border-dashed border-cordel-master-dark/20 mt-2">
             <div className="flex justify-between items-center">
               <label className="text-xs font-bold uppercase tracking-wider text-encre-noire/80">
-                🖼️ Voile sur l'image d'accueil (Hero Overlay)
+                {t('vitrine.admin.theme.tabPublicTheme.voileSurLImageD')}
               </label>
               <span className="text-xs font-extrabold text-cordel-wood bg-cordel-bg px-2 py-0.5 rounded border border-encre-noire/20">
                 {publicTheme.heroOverlayOpacity !== undefined ? publicTheme.heroOverlayOpacity : 25}%
               </span>
             </div>
             <p className="text-[10px] text-stone-500 font-medium leading-tight">
-              Ajustez l'assombrissement de la photo de couverture pour la rendre éclatante (0% = image brute, 25% = recommandé, 50% = sombre).
+              {t('vitrine.admin.theme.tabPublicTheme.ajustezLAssombrissementDeLa')}
             </p>
             <div className="flex items-center gap-3">
               <input
@@ -289,21 +294,21 @@ export default function TabPublicTheme({ formData, handleChange, saving, t }) {
                 onClick={() => handleThemeChange('heroOverlayOpacity', 10)}
                 className="text-[9px] font-bold uppercase px-2 py-1 rounded bg-stone-100 hover:bg-stone-200 border border-stone-300 text-stone-700 cursor-pointer"
               >
-                10% (Éclatant)
+                {t('vitrine.admin.theme.tabPublicTheme.10Eclatant')}
               </button>
               <button
                 type="button"
                 onClick={() => handleThemeChange('heroOverlayOpacity', 25)}
                 className="text-[9px] font-bold uppercase px-2 py-1 rounded bg-amber-100 hover:bg-amber-200 border border-amber-400 text-amber-900 cursor-pointer"
               >
-                25% (Recommandé)
+                {t('vitrine.admin.theme.tabPublicTheme.25Recommande')}
               </button>
               <button
                 type="button"
                 onClick={() => handleThemeChange('heroOverlayOpacity', 50)}
                 className="text-[9px] font-bold uppercase px-2 py-1 rounded bg-stone-100 hover:bg-stone-200 border border-stone-300 text-stone-700 cursor-pointer"
               >
-                50% (Sombre)
+                {t('vitrine.admin.theme.tabPublicTheme.50Sombre')}
               </button>
             </div>
           </div>
@@ -314,7 +319,7 @@ export default function TabPublicTheme({ formData, handleChange, saving, t }) {
       <CordelCard variant="default" useExtremeBorder={true} className="p-5 bg-white">
         <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-3 mb-4">
           <h4 className="text-xs font-black uppercase tracking-widest text-cordel-wood flex items-center gap-1.5">
-            <XiloSparkles size={16} /> ⚡ Aperçu en direct du Thème
+            <XiloSparkles size={16} /> {t('vitrine.admin.theme.tabPublicTheme.apercuEnDirectDuTheme')}
           </h4>
         </div>
 
@@ -329,7 +334,7 @@ export default function TabPublicTheme({ formData, handleChange, saving, t }) {
               color: publicTheme.primaryColor || '#D32F2F'
             }}
           >
-            Titre de la Vitrine Publique
+            {t('vitrine.admin.theme.tabPublicTheme.titreDeLaVitrinePublique')}
           </h3>
 
           <p 
@@ -339,7 +344,7 @@ export default function TabPublicTheme({ formData, handleChange, saving, t }) {
               color: publicTheme.textColor || '#1C1917'
             }}
           >
-            Ceci est un exemple de paragraphe. Il utilise la couleur de texte configurée ainsi que la typographie sélectionnée pour le corps de page.
+            {t('vitrine.admin.theme.tabPublicTheme.ceciEstUnExempleDe')}
           </p>
 
           <div className="flex items-center gap-3 flex-wrap pt-2">
@@ -352,14 +357,14 @@ export default function TabPublicTheme({ formData, handleChange, saving, t }) {
                 fontFamily: `'${publicTheme.headingFont || 'Oswald'}', sans-serif`
               }}
             >
-              Exemple de Bouton (CTA)
+              {t('vitrine.admin.theme.tabPublicTheme.exempleDeBoutonCta')}
             </button>
 
             <span 
               className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded text-white"
               style={{ backgroundColor: publicTheme.secondaryColor || '#1976D2' }}
             >
-              Badge Secondaire
+              {t('vitrine.admin.theme.tabPublicTheme.badgeSecondaire')}
             </span>
           </div>
         </div>

@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import XiloAvatar from '../XiloAvatar';
 import { useTerminologie } from '../../hooks/useTerminologie';
+import useModalEscape from '../../hooks/useModalEscape';
 
 /**
  * Composant : NewDirectMessageModal
@@ -26,6 +27,9 @@ export default function NewDirectMessageModal({
 }) {
   const { tRole } = useTerminologie();
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Fermeture accessible avec touche Échap
+  useModalEscape(isOpen, onClose);
 
   // Filtrer les adhérents actifs de l'association (exclut inactifs, archivés et l'utilisateur lui-même)
   const activeMembers = useMemo(() => {
@@ -64,12 +68,11 @@ export default function NewDirectMessageModal({
   return (
     <div
       tabIndex={-1}
-      onKeyDown={(e) => e.key === 'Escape' && onClose()}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-encre-noire/70 backdrop-blur-xs animate-fade-in select-none outline-hidden"
       role="dialog"
       aria-modal="true"
     >
-      <div className="relative w-full max-w-lg max-h-[85vh] flex flex-col rounded-[8px_6px_10px_7px] bg-cordel-bg border-2 border-encre-noire shadow-[3px_3px_0px_0px_#181716] overflow-hidden">
+      <div className="relative w-full max-w-lg max-h-[90dvh] flex flex-col rounded-[8px_6px_10px_7px] bg-[var(--theme-bg)] border-2 border-encre-noire shadow-[3px_3px_0px_0px_#181716] overflow-hidden">
         
         {/* En-tête de la modale */}
         <div className="shrink-0 p-4 border-b-2 border-dashed border-cordel-master-dark/25 bg-cordel-bg-light">
@@ -85,7 +88,7 @@ export default function NewDirectMessageModal({
             <button
               type="button"
               onClick={onClose}
-              className="text-lg font-extrabold text-cordel-wood hover:text-red-700 cursor-pointer p-1 transition-colors"
+              className="text-lg font-extrabold text-cordel-wood hover:text-red-700 cursor-pointer p-1 transition-colors shrink-0"
               title="Fermer (Échap)"
               aria-label="Fermer"
             >
@@ -95,7 +98,7 @@ export default function NewDirectMessageModal({
         </div>
 
         {/* Barre de recherche instantanée */}
-        <div className="p-3 border-b border-dashed border-cordel-master-dark/20 bg-cordel-bg">
+        <div className="shrink-0 p-3 border-b border-dashed border-cordel-master-dark/20 bg-cordel-bg">
           <div className="relative flex items-center">
             <span className="absolute left-3 text-xs opacity-60">🔍</span>
             <input
@@ -110,7 +113,7 @@ export default function NewDirectMessageModal({
               <button
                 type="button"
                 onClick={() => setSearchTerm('')}
-                className="absolute right-2.5 text-xs text-cordel-master-dark/60 hover:text-cordel-wood font-bold cursor-pointer"
+                className="absolute right-2.5 text-xs text-cordel-master-dark/60 hover:text-cordel-wood font-bold cursor-pointer shrink-0"
                 title="Effacer la recherche"
               >
                 ✕
@@ -120,7 +123,7 @@ export default function NewDirectMessageModal({
         </div>
 
         {/* Liste défilante des membres actifs */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-2 text-left scrollbar-thin">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 sm:p-4 space-y-2 text-left scrollbar-thin">
           {filteredMembers.length === 0 ? (
             <div className="p-8 text-center bg-cordel-bg-light/60 rounded border border-dashed border-cordel-master-dark/20">
               <span className="text-2xl block mb-2">👤</span>
@@ -173,14 +176,14 @@ export default function NewDirectMessageModal({
         </div>
 
         {/* Pied de page informatif */}
-        <div className="p-3 border-t-2 border-dashed border-cordel-master-dark/20 bg-cordel-bg-light flex items-center justify-between">
+        <div className="shrink-0 p-3 sm:p-4 border-t-2 border-dashed border-cordel-master-dark/20 bg-[var(--theme-bg)] flex items-center justify-between pb-[max(env(safe-area-inset-bottom),1rem)]">
           <span className="text-[10px] font-semibold text-cordel-master-dark/70">
             {activeMembers.length} adhérent{activeMembers.length > 1 ? 's' : ''} disponible{activeMembers.length > 1 ? 's' : ''}
           </span>
           <button
             type="button"
             onClick={onClose}
-            className="px-3 py-1 text-xs font-bold rounded border border-cordel-master-dark/30 hover:bg-stone-200 transition-colors cursor-pointer"
+            className="px-3 py-1.5 text-xs font-bold rounded border border-cordel-master-dark/30 hover:bg-stone-200 transition-colors cursor-pointer shrink-0"
           >
             Annuler
           </button>

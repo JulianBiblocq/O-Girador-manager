@@ -6,6 +6,7 @@ import XiloAvatar from '../XiloAvatar';
 import { INSTRUMENT_TYPES, ETAT_OPTIONS } from './inventoryConstants';
 import InstrumentAttributionSection from './InstrumentAttributionSection';
 import { useTranslation } from '../LanguageContext';
+import useModalEscape from '../../hooks/useModalEscape';
 
 /**
  * Modale / Formulaire complet d'ajout et d'édition d'un instrument,
@@ -49,6 +50,10 @@ export default function InstrumentEditModal({
 }) {
   const { t: hookT } = useTranslation();
   const t = propT || hookT;
+
+  // Fermeture accessible avec touche Échap
+  useModalEscape(isOpen, onClose, saving);
+
   if (!isOpen) return null;
 
   const handleFormSubmit = (e) => {
@@ -61,28 +66,35 @@ export default function InstrumentEditModal({
   const checkedKitItems = formData.kitChecklist || [];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/60 backdrop-blur-xs overflow-y-auto animate-fadeIn">
-      <div className="w-full max-w-2xl my-auto select-none">
-        <CordelCard variant="default" useExtremeBorder={true} className="py-5 px-6 relative max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs select-none animate-fadeIn">
+      <div className="relative w-full max-w-2xl max-h-[90dvh] flex flex-col rounded-lg bg-[var(--theme-bg)] border-2 border-encre-noire shadow-2xl overflow-hidden text-left mt-2 sm:mt-0">
+        {/* 1. Header (Fixe) */}
+        <div className="shrink-0 p-4 border-b-2 border-dashed border-cordel-master-dark/30 flex items-start justify-between gap-3 bg-cordel-bg-light">
+          <div className="flex-1 min-w-0 pr-2">
+            <h3 className="text-sm font-bold text-cordel-wood uppercase tracking-wider break-words">
+              {editingId 
+                ? (t && t('inventory.editTitle')) || "Modifier l'instrument" 
+                : (t && t('inventory.addTitle')) || "Ajouter un nouvel instrument"}
+            </h3>
+          </div>
+
           {/* Bouton Fermeture Rapide */}
           <button
             type="button"
             onClick={onClose}
             disabled={saving}
-            className="absolute top-3 right-3 p-1.5 border border-encre-noire bg-cordel-bg hover:bg-neutral-200 text-encre-noire rounded-md shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center justify-center disabled:opacity-50"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center -mr-2 -mt-2 rounded-lg text-cordel-wood hover:bg-black/5 active:bg-black/10 transition-colors cursor-pointer shrink-0 select-none touch-manipulation disabled:opacity-50"
             title={t('logistics.closeFormTitle')}
+            aria-label={t('common.close', 'Fermer')}
           >
-            <XiloClose size={10} />
+            <XiloClose size={18} />
           </button>
+        </div>
 
-          {/* Titre Cordel */}
-          <h3 className="panel-title text-sm font-bold text-cordel-wood mb-4">
-            {editingId 
-              ? (t && t('inventory.editTitle')) || "Modifier l'instrument" 
-              : (t && t('inventory.addTitle')) || "Ajouter un nouvel instrument"}
-          </h3>
-
-          <form onSubmit={handleFormSubmit} className="flex flex-col gap-3.5 text-left">
+        {/* Form Wrapper */}
+        <form onSubmit={handleFormSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          {/* 2. Body (Défilable verticalement) */}
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 flex flex-col gap-3.5 text-left">
             {/* Nom / Numéro d'inventaire */}
             <div className="flex flex-col gap-1">
               <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
@@ -424,42 +436,43 @@ export default function InstrumentEditModal({
               </div>
             )}
 
-            {/* Pied du formulaire : Boutons d'action */}
-            <div className="flex justify-between items-center mt-2 border-t border-dashed border-cordel-master-dark/10 pt-3">
-              {editingId ? (
-                <button
-                  type="button"
-                  onClick={() => onDelete && onDelete(editingId)}
-                  disabled={saving}
-                  className="text-[9px] font-black uppercase tracking-wider bg-cordel-wood text-cordel-bg-light px-3 py-1.5 border border-encre-noire rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-110 cursor-pointer disabled:opacity-50"
-                >
-                  {t('logistics.btnRemove')}
-                </button>
-              ) : <div />}
+          </div>
 
-              <div className="flex gap-2">
-                <CordelButton
-                  type="button"
-                  variant="default"
-                  disabled={saving}
-                  onClick={onClose}
-                  className="text-xs px-3 py-1.5"
-                >
-                  {t('logistics.btnCancel')}
-                </CordelButton>
-                <CordelButton
-                  type="submit"
-                  variant="ocre"
-                  useExtremeBorder={true}
-                  disabled={saving || !formData.nom?.trim()}
-                  className="text-xs px-4 py-1.5 font-bold"
-                >
-                  {saving ? "..." : (t('common.save') || "Enregistrer")}
-                </CordelButton>
-              </div>
+          {/* 3. Pied du formulaire : Boutons d'action (Fixe) */}
+          <div className="shrink-0 p-4 border-t-2 border-dashed border-cordel-master-dark/20 bg-[var(--theme-bg)] flex justify-between items-center gap-2 pb-[max(env(safe-area-inset-bottom),1rem)]">
+            {editingId ? (
+              <button
+                type="button"
+                onClick={() => onDelete && onDelete(editingId)}
+                disabled={saving}
+                className="text-[9px] font-black uppercase tracking-wider bg-cordel-wood text-cordel-bg-light px-3 py-1.5 border border-encre-noire rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-110 cursor-pointer disabled:opacity-50 shrink-0"
+              >
+                {t('logistics.btnRemove')}
+              </button>
+            ) : <div />}
+
+            <div className="flex gap-2 shrink-0">
+              <CordelButton
+                type="button"
+                variant="default"
+                disabled={saving}
+                onClick={onClose}
+                className="text-xs px-3 py-1.5 shrink-0"
+              >
+                {t('logistics.btnCancel')}
+              </CordelButton>
+              <CordelButton
+                type="submit"
+                variant="vert"
+                useExtremeBorder={true}
+                disabled={saving || !formData.nom?.trim()}
+                className="text-xs px-4 py-1.5 font-bold shrink-0"
+              >
+                {saving ? "..." : (t('common.save') || "Enregistrer")}
+              </CordelButton>
             </div>
-          </form>
-        </CordelCard>
+          </div>
+        </form>
       </div>
     </div>
   );

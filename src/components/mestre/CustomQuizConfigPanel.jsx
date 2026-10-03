@@ -153,7 +153,7 @@ export default function CustomQuizConfigPanel({
               className="accent-cordel-wood w-4 h-4"
             />
             <span className={`text-xs font-bold ${isQuizPublished ? 'text-[var(--color-cordel-vert)]' : 'text-encre-noire'}`}>
-              {isQuizPublished ? '✅ Publié' : 'Brouillon'}
+              {isQuizPublished ? t('pedagogy.admin.publie') : t('pedagogy.admin.brouillon')}
             </span>
           </label>
         </div>

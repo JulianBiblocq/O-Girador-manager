@@ -20,11 +20,11 @@ export default function QuizDistractorManager({ profileData }) {
   });
 
   const categories = [
-    { key: 'genresMusicaux', label: 'Genres Musicaux hors-Maracatu', desc: 'Utilisés pour les leurres faciles sur les Toadas.' },
-    { key: 'baquesPlausibles', label: 'Baques et Rythmes Fictifs', desc: 'Utilisés comme faux choix de Rythmes en mode extrême.' },
-    { key: 'geographieEtVilles', label: 'Villes & Géographie', desc: 'Faux choix pour les questions géographiques ou lieux de la Culture.' },
-    { key: 'lutherieEtMateriaux', label: 'Lutherie & Matériaux', desc: 'Leurres pour les QCM des Ateliers (parties d\'instruments, matières).' },
-    { key: 'expressionsTraduction', label: 'Traductions et Expressions', desc: 'Faux choix portugais ou français pour le QCM de lexique/traduction.' }
+    { key: 'genresMusicaux', label: t('pedagogy.progress.genresMusicauxHorsMaracatu'), desc: 'Utilisés pour les leurres faciles sur les Toadas.' },
+    { key: 'baquesPlausibles', label: t('pedagogy.progress.baquesEtRythmesFictifs'), desc: 'Utilisés comme faux choix de Rythmes en mode extrême.' },
+    { key: 'geographieEtVilles', label: t('pedagogy.progress.villesGeographie'), desc: 'Faux choix pour les questions géographiques ou lieux de la Culture.' },
+    { key: 'lutherieEtMateriaux', label: t('pedagogy.progress.lutherieMateriaux'), desc: 'Leurres pour les QCM des Ateliers (parties d\'instruments, matières).' },
+    { key: 'expressionsTraduction', label: t('pedagogy.progress.traductionsEtExpressions'), desc: 'Faux choix portugais ou français pour le QCM de lexique/traduction.' }
   ];
 
   useEffect(() => {
@@ -63,17 +63,17 @@ export default function QuizDistractorManager({ profileData }) {
       await updateDoc(doc(db, 'associations', profileData.groupId), {
         quizDistractors: distractors
       });
-      alert('Banque de leurres sauvegardée avec succès !');
+      alert(t('pedagogy.progress.banqueDeLeurresSauvegardeeAvec'));
     } catch (err) {
       console.error('Erreur lors de la sauvegarde:', err);
-      alert('Erreur lors de la sauvegarde.');
+      alert(t('pedagogy.progress.erreurLorsDeLaSauvegarde'));
     } finally {
       setSaving(false);
     }
   };
 
   const handleResetToDefault = async () => {
-    const isOk = await confirm("Voulez-vous vraiment réinitialiser toutes les catégories aux valeurs par défaut de l'application ? Toutes vos personnalisations seront perdues.");
+    const isOk = await confirm(t('pedagogy.progress.voulezVousVraimentReinitialiserToutes'));
     if (isOk) {
       setDistractors({
         genresMusicaux: distractorPool.genresMusicauxHorsMaracatu || [],
@@ -113,8 +113,8 @@ export default function QuizDistractorManager({ profileData }) {
     }
   };
 
-  if (loading) return <div className="p-4">Chargement de la banque de leurres...</div>;
-  if (!distractors) return <div className="p-4 text-cordel-rouge">Erreur d'initialisation.</div>;
+  if (loading) return <div className="p-4">{t('pedagogy.progress.chargementDeLaBanqueDe')}</div>;
+  if (!distractors) return <div className="p-4 text-cordel-rouge">{t('pedagogy.progress.erreurDInitialisation')}</div>;
 
   return (
     <div className="bg-[#fdfaf2] min-h-full">
@@ -124,23 +124,20 @@ export default function QuizDistractorManager({ profileData }) {
             {t('pedagogy.distractorBankTitle')}
           </h2>
           <p className="text-sm text-encre-noire/70 mt-1">
-            Gérez les fausses réponses (distracteurs) injectées dans vos quiz pédagogiques. 
-            Une liste riche garantit des QCM variés !
+            {t('pedagogy.progress.gerezLesFaussesReponses')}
           </p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={handleResetToDefault}
             className="px-4 py-2 border-2 border-cordel-rouge/50 text-cordel-rouge rounded font-bold hover:bg-cordel-rouge hover:text-white transition-colors"
-          >
-            Réinitialiser
-          </button>
+          >{t('pedagogy.progress.reinitialiser')}</button>
           <button
             onClick={handleSave}
             disabled={saving}
             className="px-4 py-2 bg-cordel-vert text-white rounded font-bold hover:bg-[#20513b] transition-colors disabled:opacity-50"
           >
-            {saving ? 'Enregistrement...' : t('pedagogy.btnSaveSignal')}
+            {saving ? t('pedagogy.progress.enregistrement') : t('pedagogy.btnSaveSignal')}
           </button>
         </div>
       </div>
@@ -165,7 +162,7 @@ export default function QuizDistractorManager({ profileData }) {
                     <button
                       onClick={() => removeTag(cat.key, idx)}
                       className="ml-1 text-encre-noire/40 hover:text-cordel-rouge focus:outline-none"
-                      title="Supprimer ce leurre"
+                      title={t('pedagogy.progress.supprimerCeLeurre')}
                     >
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -174,14 +171,14 @@ export default function QuizDistractorManager({ profileData }) {
                   </div>
                 ))}
                 {list.length === 0 && (
-                  <span className="text-sm text-encre-noire/40 italic">Aucun leurre dans cette catégorie. Le QCM utilisera le dictionnaire universel en secours.</span>
+                  <span className="text-sm text-encre-noire/40 italic">{t('pedagogy.progress.aucunLeurreDansCetteCategorie')}</span>
                 )}
               </div>
 
               <div className="flex gap-2 max-w-sm">
                 <input
                   type="text"
-                  placeholder="Ajouter un leurre..."
+                  placeholder={t('pedagogy.progress.ajouterUnLeurre')}
                   className="flex-1 px-3 py-1.5 border border-encre-noire/20 rounded focus:outline-none focus:border-cordel-wood text-sm bg-transparent"
                   value={newInputs[cat.key] || ''}
                   onChange={(e) => setNewInputs(prev => ({ ...prev, [cat.key]: e.target.value }))}

@@ -18,7 +18,7 @@ export default function MemberRepertoireHeader({
     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-3 border-b-2 border-dashed border-cordel-master-dark/30">
       <div>
         <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase">
-          {t('repertoire.catalogTitle') || 'Répertoire de la Saison'}
+          {t('repertoire.catalogTitle') || t('pedagogy.modals.repertoireDeLaSaison')}
         </h2>
         <p className="text-[11px] font-bold text-encre-noire/70 mt-0.5">
           {t('repertoire.memberSubtitle')}

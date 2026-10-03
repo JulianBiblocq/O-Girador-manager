@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { useTranslation } from '../LanguageContext';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import imageCompression from 'browser-image-compression';
 import { storage } from '../../firebase';
@@ -15,6 +16,7 @@ export default function StudioMultiPhotoManager({
   selectedEvent = null,
   varalImages = []
 }) {
+  const { t } = useTranslation();
   const [isDragging, setIsDragging] = useState(false);
   const [isVaralModalOpen, setIsVaralModalOpen] = useState(false);
   const fileInputRef = useRef(null);
@@ -147,7 +149,7 @@ export default function StudioMultiPhotoManager({
       {/* Barre d'outils d'ajout */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <label className="text-[10px] uppercase font-bold tracking-wider text-cordel-master-dark">
-          📸 Photos de la publication ({mediaList.length})
+          📸 {t('studio.photos.photosDeLaPublication')} ({mediaList.length})
         </label>
         <div className="flex items-center gap-1.5 flex-wrap">
           {selectedEvent?.imageUrl && (
@@ -156,7 +158,7 @@ export default function StudioMultiPhotoManager({
               onClick={handleAddEventPoster}
               className="px-2.5 py-1 text-[10px] font-bold bg-white border border-encre-noire rounded hover:bg-neutral-100 cursor-pointer text-cordel-wood"
             >
-              + Affiche événement
+              + {t('studio.photos.afficheEvenement')}
             </button>
           )}
           <button
@@ -164,7 +166,7 @@ export default function StudioMultiPhotoManager({
             onClick={() => setIsVaralModalOpen(true)}
             className="px-2.5 py-1 text-[10px] font-bold bg-white border border-encre-noire rounded hover:bg-neutral-100 cursor-pointer"
           >
-            📂 Depuis le Varal
+            📂 {t('studio.photos.depuisLeVaral')}
           </button>
         </div>
       </div>
@@ -192,10 +194,10 @@ export default function StudioMultiPhotoManager({
         <div className="flex flex-col items-center gap-1">
           <span className="text-xl select-none">📤</span>
           <p className="text-xs font-black uppercase tracking-wider text-encre-noire">
-            Glissez-déposez vos photos ici ou cliquez pour parcourir
+            {t('studio.photos.glissezDeposezVosPhotosIci')}
           </p>
           <span className="text-[9.5px] text-stone-500 font-semibold">
-            Sélection multiple autorisée (JPEG, PNG, WebP) - Compression auto
+            {t('studio.photos.selectionMultipleAutoriseeJpegPng')}
           </span>
         </div>
       </div>
@@ -215,18 +217,18 @@ export default function StudioMultiPhotoManager({
                 {item.isUploading && (
                   <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white text-[10px] font-bold">
                     <span className="animate-spin text-sm">⏳</span>
-                    <span>Upload en cours...</span>
+                    <span>{t('studio.photos.uploadEnCours')}</span>
                   </div>
                 )}
                 {item.error && (
                   <div className="absolute inset-0 bg-red-900/80 flex flex-col items-center justify-center text-white text-[9px] font-bold p-1 text-center">
                     <span className="text-sm">⚠️</span>
-                    <span>Échec envoi</span>
+                    <span>{t('studio.photos.echecEnvoi')}</span>
                   </div>
                 )}
                 {item.isCover && (
                   <span className="absolute top-1 left-1 bg-amber-600 text-white text-[8px] font-black uppercase px-1.5 py-0.5 rounded shadow-xs">
-                    ★ Couverture
+                    ★ {t('studio.photos.couverture')}
                   </span>
                 )}
                 <span className="absolute bottom-1 right-1 bg-black/70 text-white text-[8px] font-bold px-1 rounded">
@@ -242,7 +244,7 @@ export default function StudioMultiPhotoManager({
                     disabled={index === 0}
                     onClick={() => moveItem(index, -1)}
                     className="p-0.5 hover:bg-stone-200 rounded disabled:opacity-30 cursor-pointer"
-                    title="Déplacer vers la gauche"
+                    title={t('studio.photos.deplacerVersLaGauche')}
                   >
                     ◀
                   </button>
@@ -251,7 +253,7 @@ export default function StudioMultiPhotoManager({
                     disabled={index === mediaList.length - 1}
                     onClick={() => moveItem(index, 1)}
                     className="p-0.5 hover:bg-stone-200 rounded disabled:opacity-30 cursor-pointer"
-                    title="Déplacer vers la droite"
+                    title={t('studio.photos.deplacerVersLaDroite')}
                   >
                     ▶
                   </button>
@@ -260,7 +262,7 @@ export default function StudioMultiPhotoManager({
                       type="button"
                       onClick={() => setAsCover(index)}
                       className="p-0.5 text-amber-700 hover:bg-amber-100 rounded cursor-pointer font-black"
-                      title="Définir en photo de couverture"
+                      title={t('studio.photos.definirEnPhotoDeCouverture')}
                     >
                       ★
                     </button>
@@ -270,7 +272,7 @@ export default function StudioMultiPhotoManager({
                   type="button"
                   onClick={() => removeItem(item.id)}
                   className="p-0.5 text-[var(--color-cordel-rouge)] hover:bg-red-100 rounded cursor-pointer font-black"
-                  title="Supprimer la photo"
+                  title={t('studio.photos.supprimerLaPhoto')}
                 >
                   ✕
                 </button>

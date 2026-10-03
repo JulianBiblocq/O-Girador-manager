@@ -18,14 +18,10 @@ export default function BatchAssignVideoModal({
   isOpen, onClose, initialVideo = null, piecesList = [], groupId, onSuccess
 }) {
   const { t } = useTranslation();
-  const [videoUrl, setVideoUrl] = useState('');
-  const [videoTitle, setVideoTitle] = useState('');
-  const [selectedInstruments, setSelectedInstruments] = useState([]);
-  const [isLive, setIsLive] = useState(false);
-  const [selectedPieceIds, setSelectedPieceIds] = useState(new Set());
-  const [submitting, setSubmitting] = useState(false);
-  const [errorMsg, setErrorMsg] = useState(null);
-  const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [videoUrl, setVideoUrl] = useState(''), [videoTitle, setVideoTitle] = useState('');
+  const [selectedInstruments, setSelectedInstruments] = useState([]), [isLive, setIsLive] = useState(false);
+  const [selectedPieceIds, setSelectedPieceIds] = useState(new Set()), [submitting, setSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState(null), [isPickerOpen, setIsPickerOpen] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -38,7 +34,7 @@ export default function BatchAssignVideoModal({
   }, [isOpen, initialVideo]);
 
   const ytMedia = useMemo(() => parseYouTubeMedia(videoUrl), [videoUrl]);
-  const sortedPieces = useMemo(() => [...piecesList].sort((a, b) => (a.titre || '').localeCompare(b.titre || '')), [piecesList]);
+  const sortedPieces = useMemo(() => [...(piecesList || [])].sort((a, b) => (a.titre || '').localeCompare(b.titre || '')), [piecesList]);
 
   // Remplissage automatique lors du choix d'une vidéo dans la vidéothèque YouTube
   const handleSelectFromPicker = ({ url, title, playlistLabel }) => {
@@ -105,14 +101,20 @@ export default function BatchAssignVideoModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
-      <CordelCard variant="default" useExtremeBorder={true} className="w-full max-w-2xl max-h-[90vh] flex flex-col bg-cordel-bg p-0 overflow-hidden shadow-2xl">
-        <div className="flex items-center justify-between p-3.5 border-b-2 border-dashed border-cordel-master-dark/20 bg-cordel-bg-light shrink-0">
-          <div className="flex items-center gap-2">
+      <CordelCard variant="default" useExtremeBorder={true} className="w-full max-w-2xl max-h-[90vh] flex flex-col bg-cordel-bg p-0 overflow-hidden shadow-2xl mt-2 sm:mt-0">
+        <div className="flex items-start justify-between gap-3 p-4 border-b-2 border-dashed border-cordel-master-dark/20 bg-cordel-bg-light shrink-0">
+          <div className="flex-1 min-w-0 pr-2 flex items-start gap-2">
             <span className="text-xl">🎬</span>
             <h3 className="text-sm font-black uppercase tracking-wider text-cordel-wood">{t('repertoire.batchVideoModalTitle')}</h3>
           </div>
-          <button type="button" onClick={onClose} className="p-1 text-cordel-master-dark hover:text-cordel-wood cursor-pointer">
-            <XiloClose size={18} />
+          <button
+            type="button"
+            onClick={onClose}
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center -mr-2 -mt-2 rounded-lg text-cordel-master-dark hover:text-cordel-wood hover:bg-black/5 active:bg-black/10 transition-colors cursor-pointer shrink-0 select-none touch-manipulation"
+            title={t('common.close', 'Fermer')}
+            aria-label={t('common.close', 'Fermer')}
+          >
+            <XiloClose size={20} />
           </button>
         </div>
 
@@ -168,11 +170,8 @@ export default function BatchAssignVideoModal({
 
       {/* Sélecteur de vidéos depuis les playlists de l'association */}
       <YouTubeVideoPickerModal
-        isOpen={isPickerOpen}
-        onClose={() => setIsPickerOpen(false)}
-        onSelectVideo={handleSelectFromPicker}
-        groupId={groupId}
-        initialPupitre={selectedInstruments[0] || ''}
+        isOpen={isPickerOpen} onClose={() => setIsPickerOpen(false)}
+        onSelectVideo={handleSelectFromPicker} groupId={groupId} initialPupitre={selectedInstruments[0] || ''}
       />
     </div>
   );

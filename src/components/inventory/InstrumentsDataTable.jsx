@@ -157,9 +157,16 @@ export default function InstrumentsDataTable({
         </thead>
 
         <tbody className="divide-y divide-encre-noire/10 font-medium">
-          {instruments.map((inst) => {
-            const iconPath = INSTRUMENT_ICONS[inst.type] || INSTRUMENT_ICONS.Autre;
-            const attr = normalizeInstrumentAttribution(inst);
+          {(!instruments || instruments.length === 0) ? (
+            <tr>
+              <td colSpan={7} className="p-8 text-center text-xs text-cordel-master-dark/60 italic bg-white/30">
+                {t('inventory.noInstrumentsFilter')}
+              </td>
+            </tr>
+          ) : (
+            instruments.map((inst) => {
+              const iconPath = INSTRUMENT_ICONS[inst.type] || INSTRUMENT_ICONS.Autre;
+              const attr = normalizeInstrumentAttribution(inst);
 
             return (
               <tr key={inst.id} className="hover:bg-cordel-hover/50 transition-colors">
@@ -474,7 +481,8 @@ export default function InstrumentsDataTable({
                 </td>
               </tr>
             );
-          })}
+          })
+        )}
         </tbody>
       </table>
     </div>

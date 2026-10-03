@@ -1,6 +1,7 @@
 import React from 'react';
 import CordelAccordion from '../../CordelAccordion';
 import TabPublicGallery from '../TabPublicGallery';
+import { useTranslation } from '../../../hooks/useTranslation';
 
 /**
  * Accordéon 5 : Galerie & Souvenirs
@@ -13,13 +14,18 @@ export default function GallerySouvenirsAccordion({
   saving,
   defaultOpen = false
 }) {
+  const { t } = useTranslation();
   const publicTheme = formData.publicTheme || {};
   const galleryPhotos = Array.isArray(publicTheme.galleryPhotos) ? publicTheme.galleryPhotos : [];
 
   return (
     <CordelAccordion
-      title="Galerie & Souvenirs"
-      subtitle={`Sélection des photos publiques (${galleryPhotos.length} photo${galleryPhotos.length > 1 ? 's' : ''} en ligne)`}
+      title={t('vitrine.admin.gallery.gallerySouvenirsAccordion.galerieSouvenirs')}
+      subtitle={t('vitrine.admin.gallery.gallerySouvenirsAccordion.selectionDesPhotosPubliquesParam', {
+        param: galleryPhotos.length,
+        count: galleryPhotos.length,
+        s: galleryPhotos.length > 1 ? 's' : ''
+      })}
       icon="📸"
       defaultOpen={defaultOpen}
       className="mb-3"

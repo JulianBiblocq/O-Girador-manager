@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from '../LanguageContext';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../firebase';
 import CordelButton from '../CordelButton';
+import useModalEscape from '../../hooks/useModalEscape';
 
 /**
  * Composant Modale pour l'envoi d'un contrat ou devis transactionnel via Brevo.
@@ -15,6 +17,7 @@ import CordelButton from '../CordelButton';
  * @param {string} props.groupId - Identifiant de l'association
  */
 export default function SendContractModal({ isOpen, onClose, event, groupId }) {
+  const { t } = useTranslation();
   // Initialisation des champs du formulaire avec les valeurs de l'événement s'il existe
   const [recipientEmail, setRecipientEmail] = useState(event?.contactEmail || event?.organisateurEmail || '');
   const [recipientName, setRecipientName] = useState(event?.organisateurNom || event?.organisateur || '');
@@ -41,6 +44,9 @@ export default function SendContractModal({ isOpen, onClose, event, groupId }) {
     }
   }, [event]);
 
+  // Écoute de la touche Échap pour la fermeture accessible
+  useModalEscape(isOpen, onClose, sending);
+
   // Clause de garde placée impérativement après tous les hooks (Rules of Hooks)
   if (!isOpen) return null;
 
@@ -49,7 +55,7 @@ export default function SendContractModal({ isOpen, onClose, event, groupId }) {
     e.preventDefault();
 
     if (!recipientEmail || !recipientEmail.trim()) {
-      setStatusMessage({ type: 'error', text: "Veuillez renseigner une adresse e-mail valide pour le destinataire." });
+      setStatusMessage({ type: 'error', text: t('studio.communication.veuillezRenseignerEmailDestinataire', { defaultValue: "Veuillez renseigner une adresse e-mail valide pour le destinataire." }) });
       return;
     }
 
@@ -95,29 +101,32 @@ export default function SendContractModal({ isOpen, onClose, event, groupId }) {
   return (
     <div
       tabIndex={-1}
-      onKeyDown={(e) => e.key === 'Escape' && !sending && onClose()}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs select-none outline-none animate-fade-in"
     >
-      <div className="relative w-full max-w-xl max-h-[90vh] flex flex-col rounded-lg bg-[#fdfaf2] border-2 border-cordel-master-dark/40 shadow-2xl overflow-hidden text-left">
+      <div className="relative w-full max-w-xl max-h-[90dvh] flex flex-col rounded-lg bg-[var(--theme-bg)] border-2 border-cordel-master-dark/40 shadow-2xl overflow-hidden text-left mt-2 sm:mt-0">
         {/* 1. Header (Fixe) */}
-        <div className="flex-shrink-0 p-4 border-b-2 border-dashed border-cordel-master-dark/30 flex items-center justify-between bg-[#fdfaf2]">
-          <h3 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase flex items-center gap-2">
-            <span>📝 Envoyer un contrat (Brevo)</span>
-          </h3>
+        <div className="shrink-0 p-4 border-b-2 border-dashed border-cordel-master-dark/30 flex items-start justify-between gap-3 bg-[var(--theme-bg)]">
+          <div className="flex-1 min-w-0 pr-2">
+            <h3 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase flex items-center gap-2">
+            <span>{t('studio.communication.envoyerUnContratBrevo')}</span>
+            </h3>
+          </div>
           <button
             type="button"
             onClick={onClose}
             disabled={sending}
-            className="text-xs font-black p-1 text-stone-500 hover:text-stone-800 cursor-pointer"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center -mr-2 -mt-2 rounded-lg text-stone-500 hover:text-stone-800 hover:bg-black/5 active:bg-black/10 transition-colors cursor-pointer shrink-0 select-none touch-manipulation disabled:opacity-50"
+            title={t('common.close', 'Fermer')}
+            aria-label={t('common.close', 'Fermer')}
           >
-            ✕
+            <span className="text-xl font-black leading-none pointer-events-none">✕</span>
           </button>
         </div>
 
         {/* Form Wrapper */}
-        <form onSubmit={handleSubmitSend} className="flex flex-col flex-1 overflow-hidden">
+        <form onSubmit={handleSubmitSend} className="flex flex-col flex-1 min-h-0 overflow-hidden">
           {/* 2. Body (Défilable verticalement) */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-4">
             {/* Message de notification d'état */}
             {statusMessage && (
               <div className={`p-3 rounded border-2 text-xs font-bold flex items-center gap-2 ${
@@ -134,7 +143,7 @@ export default function SendContractModal({ isOpen, onClose, event, groupId }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="flex flex-col gap-1.5">
                 <label className="text-[10px] font-black uppercase tracking-wider text-encre-noire/80">
-                  E-mail Destinataire <span className="text-red-700">*</span>
+                  {t('studio.communication.eMailDestinataire')} <span className="text-red-700">*</span>
                 </label>
                 <input
                   type="email"
@@ -149,14 +158,14 @@ export default function SendContractModal({ isOpen, onClose, event, groupId }) {
 
               <div className="flex flex-col gap-1.5">
                 <label className="text-[10px] font-black uppercase tracking-wider text-encre-noire/80">
-                  Nom Organisateur / Structure
+                  {t('studio.communication.nomOrganisateurStructure')}
                 </label>
                 <input
                   type="text"
                   value={recipientName}
                   onChange={(e) => setRecipientName(e.target.value)}
                   disabled={sending}
-                  placeholder="Mairie de Maracatu / Festival X"
+                  placeholder={t('studio.communication.mairieDeMaracatuFestivalX')}
                   className="text-xs px-3 py-2 border border-encre-noire/30 rounded bg-white"
                 />
               </div>
@@ -166,28 +175,28 @@ export default function SendContractModal({ isOpen, onClose, event, groupId }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="flex flex-col gap-1.5">
                 <label className="text-[10px] font-black uppercase tracking-wider text-encre-noire/80">
-                  Nom de l'Événement
+                  {t('studio.communication.nomDeLEvenement')}
                 </label>
                 <input
                   type="text"
                   value={eventName}
                   onChange={(e) => setEventName(e.target.value)}
                   disabled={sending}
-                  placeholder="Prestation Carnaval 2026"
+                  placeholder={t('studio.communication.prestationCarnaval2026')}
                   className="text-xs px-3 py-2 border border-encre-noire/30 rounded bg-white"
                 />
               </div>
 
               <div className="flex flex-col gap-1.5">
                 <label className="text-[10px] font-black uppercase tracking-wider text-encre-noire/80">
-                  Date de la Prestation
+                  {t('studio.communication.dateDeLaPrestation')}
                 </label>
                 <input
                   type="text"
                   value={eventDate}
                   onChange={(e) => setEventDate(e.target.value)}
                   disabled={sending}
-                  placeholder="Samedi 15 Août 2026"
+                  placeholder={t('studio.communication.samedi15Aout2026')}
                   className="text-xs px-3 py-2 border border-encre-noire/30 rounded bg-white"
                 />
               </div>
@@ -197,21 +206,21 @@ export default function SendContractModal({ isOpen, onClose, event, groupId }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="flex flex-col gap-1.5">
                 <label className="text-[10px] font-black uppercase tracking-wider text-encre-noire/80">
-                  Montant du Cachet (€)
+                  {t('studio.communication.montantDuCachet')}
                 </label>
                 <input
                   type="text"
                   value={cachet}
                   onChange={(e) => setCachet(e.target.value)}
                   disabled={sending}
-                  placeholder="1200 € Net"
+                  placeholder={t('studio.communication.1200Net')}
                   className="text-xs px-3 py-2 border border-encre-noire/30 rounded bg-white"
                 />
               </div>
 
               <div className="flex flex-col gap-1.5">
                 <label className="text-[10px] font-black uppercase tracking-wider text-encre-noire/80">
-                  Lien du Contrat PDF (Optionnel)
+                  {t('studio.communication.lienDuContratPdfOptionnel')}
                 </label>
                 <input
                   type="url"
@@ -227,15 +236,15 @@ export default function SendContractModal({ isOpen, onClose, event, groupId }) {
             {/* Template ID Brevo (Optionnel) */}
             <div className="flex flex-col gap-1.5">
               <label className="text-[10px] font-black uppercase tracking-wider text-encre-noire/80 flex items-center justify-between">
-                <span>Template ID Brevo (Optionnel)</span>
-                <span className="text-[9px] text-stone-500 font-normal">Laissez vide pour utiliser le modèle Cordel par défaut</span>
+                <span>{t('studio.communication.templateIdBrevoOptionnel')}</span>
+                <span className="text-[9px] text-stone-500 font-normal">{t('studio.communication.laissezVidePourUtiliserLe')}</span>
               </label>
               <input
                 type="text"
                 value={templateId}
                 onChange={(e) => setTemplateId(e.target.value)}
                 disabled={sending}
-                placeholder="Ex: 12 (ID du template transactionnel Brevo)"
+                placeholder={t('studio.communication.ex12IdDuTemplate')}
                 className="text-xs px-3 py-2 border border-encre-noire/30 rounded bg-white font-mono"
               />
             </div>
@@ -243,38 +252,38 @@ export default function SendContractModal({ isOpen, onClose, event, groupId }) {
             {/* Note Particulière / Message d'accompagnement */}
             <div className="flex flex-col gap-1.5">
               <label className="text-[10px] font-black uppercase tracking-wider text-encre-noire/80">
-                Message d'accompagnement / Notes
+                {t('studio.communication.messageDAccompagnementNotes')}
               </label>
               <textarea
                 rows={3}
                 value={customNotes}
                 onChange={(e) => setCustomNotes(e.target.value)}
                 disabled={sending}
-                placeholder="Merci de nous retourner un exemplaire signé avant le 1er Août..."
+                placeholder={t('studio.communication.merciDeNousRetournerUn')}
                 className="text-xs px-3 py-2 border border-encre-noire/30 rounded bg-white leading-relaxed resize-none"
               />
             </div>
           </div>
 
           {/* 3. Footer (Fixe en bas) */}
-          <div className="flex-shrink-0 p-4 border-t-2 border-dashed border-cordel-master-dark/20 flex items-center justify-end gap-3 bg-[#fdfaf2]">
+          <div className="shrink-0 p-4 border-t-2 border-dashed border-cordel-master-dark/20 flex items-center justify-end gap-3 bg-[var(--theme-bg)] pb-[max(env(safe-area-inset-bottom),1rem)]">
             <CordelButton
               type="button"
               variant="default"
               onClick={onClose}
               disabled={sending}
-              className="text-xs px-4 py-2"
+              className="text-xs px-4 py-2 shrink-0"
             >
-              Annuler
+              {t('studio.communication.annuler')}
             </CordelButton>
 
             <CordelButton
               type="submit"
               variant="vert"
               disabled={sending}
-              className="text-xs px-5 py-2 font-bold uppercase tracking-wider flex items-center gap-2"
+              className="text-xs px-5 py-2 font-bold uppercase tracking-wider flex items-center gap-2 shrink-0"
             >
-              <span>{sending ? "⏳ Envoi en cours..." : "📤 Valider & Envoyer via Brevo"}</span>
+              <span>{sending ? t('studio.communication.envoiEnCours') : t('studio.communication.validerEnvoyerViaBrevo')}</span>
             </CordelButton>
           </div>
         </form>

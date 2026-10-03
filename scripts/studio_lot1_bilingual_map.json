@@ -1,0 +1,1406 @@
+{
+  "newsletter": {
+    "chargementDuModuleNewsletter": {
+      "fr": "Chargement du module Newsletter...",
+      "pt": "Carregando o módulo de Boletim...",
+      "fullKey": "studio.newsletter.chargementDuModuleNewsletter"
+    },
+    "studio": {
+      "fr": "Studio",
+      "pt": "Studio",
+      "fullKey": "studio.newsletter.studio"
+    },
+    "exportNewsletter": {
+      "fr": "Export Newsletter",
+      "pt": "Exportar Boletim",
+      "fullKey": "studio.newsletter.exportNewsletter"
+    },
+    "moduleNewsletter": {
+      "fr": "Module Newsletter",
+      "pt": "Módulo de Boletim",
+      "fullKey": "studio.newsletter.moduleNewsletter"
+    },
+    "preferezEtExportezVosNewsletters": {
+      "fr": "Préférez et exportez vos newsletters associatives directement vers votre plateforme emailing.",
+      "pt": "Prepare e exporte seus boletins associativos diretamente para a sua plataforma de e-mail.",
+      "fullKey": "studio.newsletter.preferezEtExportezVosNewsletters"
+    },
+    "retourAuStudio": {
+      "fr": "⬅ Retour au Studio",
+      "pt": "⬅ Voltar ao Studio",
+      "fullKey": "studio.newsletter.retourAuStudio"
+    },
+    "serviceDEnvoiExpediteur": {
+      "fr": "Service d'envoi & Expéditeur",
+      "pt": "Serviço de Envio & Remetente",
+      "fullKey": "studio.newsletter.serviceDEnvoiExpediteur"
+    },
+    "serviceDEnvoiConfigure": {
+      "fr": "✓ Service d'envoi configuré",
+      "pt": "✓ Serviço de envio configurado",
+      "fullKey": "studio.newsletter.serviceDEnvoiConfigure"
+    },
+    "cleApiNonRenseignee": {
+      "fr": "⚠️ Clé API non renseignée",
+      "pt": "⚠️ Chave de API não informada",
+      "fullKey": "studio.newsletter.cleApiNonRenseignee"
+    },
+    "expediteurOfficiel": {
+      "fr": "Expéditeur officiel :",
+      "pt": "Remetente oficial:",
+      "fullKey": "studio.newsletter.expediteurOfficiel"
+    },
+    "laConfigurationTechniqueCleBrevo": {
+      "fr": "La configuration technique (clé Brevo & domaine expéditeur) est centralisée dans",
+      "pt": "A configuração técnica (chave Brevo & domínio remetente) está centralizada em",
+      "fullKey": "studio.newsletter.laConfigurationTechniqueCleBrevo"
+    },
+    "configurationCommunication": {
+      "fr": "Configuration › Communication",
+      "pt": "Configuração › Comunicação",
+      "fullKey": "studio.newsletter.configurationCommunication"
+    },
+    "progressionDeLaNewsletter": {
+      "fr": "Progression de la newsletter",
+      "pt": "Progresso do boletim informativo",
+      "fullKey": "studio.newsletter.progressionDeLaNewsletter"
+    },
+    "etape1MessageDAccueil": {
+      "fr": "Étape 1 - Message d'accueil",
+      "pt": "Etapa 1 - Mensagem de Boas-Vindas",
+      "fullKey": "studio.newsletter.etape1MessageDAccueil"
+    },
+    "redigezLeSujetPrincipalDe": {
+      "fr": "Rédigez le sujet principal de votre campagne ainsi que le mot de bienvenue adressé aux abonnés.",
+      "pt": "Escreva o assunto principal da sua campanha e a mensagem de boas-vindas aos assinantes.",
+      "fullKey": "studio.newsletter.redigezLeSujetPrincipalDe"
+    },
+    "titreDeLaCampagne": {
+      "fr": "Titre de la campagne",
+      "pt": "Título da campanha",
+      "fullKey": "studio.newsletter.titreDeLaCampagne"
+    },
+    "exNewsletterRodaDeMaracatu": {
+      "fr": "Ex : Newsletter Roda de Maracatu - Printemps 2026",
+      "pt": "Ex: Boletim Roda de Maracatu - Primavera 2026",
+      "fullKey": "studio.newsletter.exNewsletterRodaDeMaracatu"
+    },
+    "motDeBienvenueEdito": {
+      "fr": "Mot de bienvenue / Édito",
+      "pt": "Mensagem de boas-vindas / Editorial",
+      "fullKey": "studio.newsletter.motDeBienvenueEdito"
+    },
+    "chersAdherentsEtAmiE": {
+      "fr": "Chers adhérents et ami(e)s de la Roda, voici nos dernières nouvelles et les prochains rendez-vous à ne pas manquer...",
+      "pt": "Queridos integrantes e amigos da Roda, aqui estão nossas últimas novidades e os próximos encontros imperdíveis...",
+      "fullKey": "studio.newsletter.chersAdherentsEtAmiE"
+    },
+    "suivantProchainesDates": {
+      "fr": "Suivant : Prochaines dates ➔",
+      "pt": "Próximo: Próximas datas ➔",
+      "fullKey": "studio.newsletter.suivantProchainesDates"
+    },
+    "etape2ProchainesDates": {
+      "fr": "Étape 2 - Prochaines dates",
+      "pt": "Etapa 2 - Próximas Datas",
+      "fullKey": "studio.newsletter.etape2ProchainesDates"
+    },
+    "cochezLesEvenementsFutursA": {
+      "fr": "Cochez les événements futurs à intégrer dans la newsletter. Le titre, la date, le lieu et la description seront extraits automatiquement.",
+      "pt": "Marque os eventos futuros a incluir no boletim. O título, a data, o local e a descrição serão extraídos automaticamente.",
+      "fullKey": "studio.newsletter.cochezLesEvenementsFutursA"
+    },
+    "aucunEvenementAVenirTrouve": {
+      "fr": "Aucun événement à venir trouvé dans le calendrier. Vous pouvez poursuivre sans événement futur.",
+      "pt": "Nenhum evento futuro encontrado no calendário. Você pode continuar sem eventos futuros.",
+      "fullKey": "studio.newsletter.aucunEvenementAVenirTrouve"
+    },
+    "evenementSSelectionneSPour": {
+      "fr": "événement(s) sélectionné(s) pour les prochaines dates.",
+      "pt": "evento(s) selecionado(s) para as próximas datas.",
+      "fullKey": "studio.newsletter.evenementSSelectionneSPour"
+    },
+    "precedent": {
+      "fr": "⬅ Précédent",
+      "pt": "⬅ Anterior",
+      "fullKey": "studio.newsletter.precedent"
+    },
+    "suivantRetourEnImages": {
+      "fr": "Suivant : Retour en images ➔",
+      "pt": "Próximo: Registro em Imagens ➔",
+      "fullKey": "studio.newsletter.suivantRetourEnImages"
+    },
+    "etape3RetourEnImages": {
+      "fr": "Étape 3 - Retour en images",
+      "pt": "Etapa 3 - Registro em Imagens",
+      "fullKey": "studio.newsletter.etape3RetourEnImages"
+    },
+    "selectionnezLesEvenementsPassesRecents": {
+      "fr": "Sélectionnez les événements passés récents, complétez le bilan/remerciements et choisissez entre 2 et 4 photos pour illustrer la newsletter.",
+      "pt": "Selecione os eventos passados recentes, preencha o balanço/agradecimentos e escolha entre 2 e 4 fotos para ilustrar o boletim.",
+      "fullKey": "studio.newsletter.selectionnezLesEvenementsPassesRecents"
+    },
+    "evenementsPassesRecentsBilans": {
+      "fr": "Événements passés récents & Bilans",
+      "pt": "Eventos Passados Recentes & Balanços",
+      "fullKey": "studio.newsletter.evenementsPassesRecentsBilans"
+    },
+    "aucunEvenementPasseRecentA": {
+      "fr": "Aucun événement passé récent à afficher.",
+      "pt": "Nenhum evento recente para exibir.",
+      "fullKey": "studio.newsletter.aucunEvenementPasseRecentA"
+    },
+    "bilanRemerciementsPourCetEvenement": {
+      "fr": "Bilan / Remerciements pour cet événement :",
+      "pt": "Balanço / Agradecimentos para este evento:",
+      "fullKey": "studio.newsletter.bilanRemerciementsPourCetEvenement"
+    },
+    "exSuperbeAmbianceMalgreLa": {
+      "fr": "Ex : Superbe ambiance malgré la pluie ! Merci à toutes l'équipe...",
+      "pt": "Ex: Clima maravilhoso apesar da chuva! Obrigado a toda a equipe...",
+      "fullKey": "studio.newsletter.exSuperbeAmbianceMalgreLa"
+    },
+    "grilleDeSelectionDesPhotos": {
+      "fr": "Grille de sélection des photos",
+      "pt": "Grade de seleção de fotos",
+      "fullKey": "studio.newsletter.grilleDeSelectionDesPhotos"
+    },
+    "aucunePhotoEnregistreeDansLe": {
+      "fr": "Aucune photo enregistrée dans le système pour le moment.",
+      "pt": "Nenhuma foto registrada no sistema no momento.",
+      "fullKey": "studio.newsletter.aucunePhotoEnregistreeDansLe"
+    },
+    "veuillezSelectionnerEntre2Et": {
+      "fr": "Veuillez sélectionner entre 2 et 4 photos pour finaliser la mise en page de la newsletter.",
+      "pt": "Selecione entre 2 e 4 fotos para finalizar o layout do boletim.",
+      "fullKey": "studio.newsletter.veuillezSelectionnerEntre2Et"
+    },
+    "suivantRecapitulatif": {
+      "fr": "Suivant : Récapitulatif ➔",
+      "pt": "Próximo: Resumo ➔",
+      "fullKey": "studio.newsletter.suivantRecapitulatif"
+    },
+    "etape4RecapitulatifValidation": {
+      "fr": "Étape 4 - Récapitulatif & Validation",
+      "pt": "Etapa 4 - Resumo & Validação",
+      "fullKey": "studio.newsletter.etape4RecapitulatifValidation"
+    },
+    "verifiezLaStructureDuContenu": {
+      "fr": "Vérifiez la structure du contenu assemblé avant de générer le brouillon dans le service d'emailing.",
+      "pt": "Verifique a estrutura do conteúdo montado antes de gerar o rascunho no serviço de e-mail.",
+      "fullKey": "studio.newsletter.verifiezLaStructureDuContenu"
+    },
+    "brouillonGenereAvecSucces": {
+      "fr": "Brouillon généré avec succès !",
+      "pt": "Rascunho gerado com sucesso!",
+      "fullKey": "studio.newsletter.brouillonGenereAvecSucces"
+    },
+    "leBrouillonDeVotreNewsletter": {
+      "fr": "Le brouillon de votre newsletter a été transmis à votre service d'emailing.",
+      "pt": "O rascunho do seu boletim foi enviado para o seu serviço de e-mail.",
+      "fullKey": "studio.newsletter.leBrouillonDeVotreNewsletter"
+    },
+    "idBrouillon": {
+      "fr": "ID Brouillon :",
+      "pt": "ID do Rascunho:",
+      "fullKey": "studio.newsletter.idBrouillon"
+    },
+    "echecDeGenerationDuBrouillon": {
+      "fr": "Échec de génération du brouillon",
+      "pt": "Falha ao gerar o rascunho",
+      "fullKey": "studio.newsletter.echecDeGenerationDuBrouillon"
+    },
+    "uneErreurEstSurvenueLors": {
+      "fr": "Une erreur est survenue lors de l'exportation.",
+      "pt": "Ocorreu um erro durante a exportação.",
+      "fullKey": "studio.newsletter.uneErreurEstSurvenueLors"
+    },
+    "campagne": {
+      "fr": "Campagne",
+      "pt": "Campanha",
+      "fullKey": "studio.newsletter.campagne"
+    },
+    "sansTitre": {
+      "fr": "Sans titre",
+      "pt": "Sem título",
+      "fullKey": "studio.newsletter.sansTitre"
+    },
+    "aucunMotDeBienvenue": {
+      "fr": "Aucun mot de bienvenue.",
+      "pt": "Nenhuma mensagem de boas-vindas.",
+      "fullKey": "studio.newsletter.aucunMotDeBienvenue"
+    },
+    "evenementsFuturs": {
+      "fr": "Événements futurs (",
+      "pt": "Eventos futuros (",
+      "fullKey": "studio.newsletter.evenementsFuturs"
+    },
+    "aucuneDateSelectionnee": {
+      "fr": "Aucune date sélectionnée",
+      "pt": "Nenhuma data selecionada",
+      "fullKey": "studio.newsletter.aucuneDateSelectionnee"
+    },
+    "evenementsPasses": {
+      "fr": "Événements passés (",
+      "pt": "Eventos passados (",
+      "fullKey": "studio.newsletter.evenementsPasses"
+    },
+    "aucunPasseSelectionne": {
+      "fr": "Aucun passé sélectionné",
+      "pt": "Nenhum evento passado selecionado",
+      "fullKey": "studio.newsletter.aucunPasseSelectionne"
+    },
+    "photosAssociees": {
+      "fr": "Photos associées :",
+      "pt": "Fotos vinculadas:",
+      "fullKey": "studio.newsletter.photosAssociees"
+    },
+    "apercuPhoto": {
+      "fr": "Aperçu photo",
+      "pt": "Prévia da foto",
+      "fullKey": "studio.newsletter.apercuPhoto"
+    },
+    "payloadJsonStandardise": {
+      "fr": "Payload JSON standardisé",
+      "pt": "Payload JSON padronizado",
+      "fullKey": "studio.newsletter.payloadJsonStandardise"
+    },
+    "copie": {
+      "fr": "✓ Copié !",
+      "pt": "✓ Copiado!",
+      "fullKey": "studio.newsletter.copie"
+    },
+    "copierLeJson": {
+      "fr": "📋 Copier le JSON",
+      "pt": "📋 Copiar o JSON",
+      "fullKey": "studio.newsletter.copierLeJson"
+    },
+    "generationEnCours": {
+      "fr": "Génération en cours...",
+      "pt": "Gerando...",
+      "fullKey": "studio.newsletter.generationEnCours"
+    },
+    "genererLeBrouillon": {
+      "fr": "Générer le brouillon",
+      "pt": "Gerar o rascunho",
+      "fullKey": "studio.newsletter.genererLeBrouillon"
+    },
+    "aucunAbonnePourLeMoment": {
+      "fr": "⚠️ Aucun abonné pour le moment.",
+      "pt": "⚠️ Nenhum assinante no momento.",
+      "fullKey": "studio.newsletter.aucunAbonnePourLeMoment"
+    },
+    "erreurLorsDeLExportation": {
+      "fr": "❌ Erreur lors de l'exportation.",
+      "pt": "❌ Erro ao exportar.",
+      "fullKey": "studio.newsletter.erreurLorsDeLExportation"
+    },
+    "formulaireNewsletter": {
+      "fr": "📬 Formulaire Newsletter",
+      "pt": "📬 Formulário de Boletim",
+      "fullKey": "studio.newsletter.formulaireNewsletter"
+    },
+    "afficherSurLaVitrine": {
+      "fr": "Afficher sur la vitrine",
+      "pt": "Exibir na vitrine",
+      "fullKey": "studio.newsletter.afficherSurLaVitrine"
+    },
+    "titreNewsletter": {
+      "fr": "Titre Newsletter",
+      "pt": "Título do Boletim",
+      "fullKey": "studio.newsletter.titreNewsletter"
+    },
+    "restezInforme": {
+      "fr": "Restez Informé !",
+      "pt": "Fique por dentro!",
+      "fullKey": "studio.newsletter.restezInforme"
+    },
+    "badgeSurTitre": {
+      "fr": "Badge / Sur-titre",
+      "pt": "Selo / Sobretítulo",
+      "fullKey": "studio.newsletter.badgeSurTitre"
+    },
+    "infolettreActus": {
+      "fr": "Infolettre & Actus",
+      "pt": "Boletim & Notícias",
+      "fullKey": "studio.newsletter.infolettreActus"
+    },
+    "phraseDAccrocheNewsletter": {
+      "fr": "Phrase d'accroche Newsletter",
+      "pt": "Frase de chamada do Boletim",
+      "fullKey": "studio.newsletter.phraseDAccrocheNewsletter"
+    },
+    "inscrivezVousPourRecevoirNos": {
+      "fr": "Inscrivez-vous pour recevoir nos dates de concerts !",
+      "pt": "Inscreva-se para receber as datas das nossas apresentações!",
+      "fullKey": "studio.newsletter.inscrivezVousPourRecevoirNos"
+    },
+    "abonnes": {
+      "fr": "Abonnés :",
+      "pt": "Assinantes:",
+      "fullKey": "studio.newsletter.abonnes"
+    },
+    "exporterCsv": {
+      "fr": "📥 Exporter CSV",
+      "pt": "📥 Exportar CSV",
+      "fullKey": "studio.newsletter.exporterCsv"
+    },
+    "synchronisationBrevoApi": {
+      "fr": "⚡ Synchronisation Brevo (API)",
+      "pt": "⚡ Sincronização Brevo (API)",
+      "fullKey": "studio.newsletter.synchronisationBrevoApi"
+    },
+    "connecte": {
+      "fr": "✓ Connecté",
+      "pt": "✓ Conectado",
+      "fullKey": "studio.newsletter.connecte"
+    },
+    "optionnel": {
+      "fr": "⚪ Optionnel",
+      "pt": "⚪ Opcional",
+      "fullKey": "studio.newsletter.optionnel"
+    },
+    "cleApiBrevoV3": {
+      "fr": "Clé API Brevo v3",
+      "pt": "Chave de API Brevo v3",
+      "fullKey": "studio.newsletter.cleApiBrevoV3"
+    },
+    "masquer": {
+      "fr": "Masquer",
+      "pt": "Ocultar",
+      "fullKey": "studio.newsletter.masquer"
+    },
+    "afficher": {
+      "fr": "Afficher",
+      "pt": "Mostrar",
+      "fullKey": "studio.newsletter.afficher"
+    },
+    "xkeysib": {
+      "fr": "xkeysib-...",
+      "pt": "xkeysib-...",
+      "fullKey": "studio.newsletter.xkeysib"
+    },
+    "idListeBrevo": {
+      "fr": "ID Liste Brevo",
+      "pt": "ID da Lista Brevo",
+      "fullKey": "studio.newsletter.idListeBrevo"
+    },
+    "ex2Ou5": {
+      "fr": "Ex: 2 ou 5",
+      "pt": "Ex: 2 ou 5",
+      "fullKey": "studio.newsletter.ex2Ou5"
+    },
+    "reseauxSociauxNewsletter": {
+      "fr": "Réseaux Sociaux & Newsletter",
+      "pt": "Redes Sociais & Boletim",
+      "fullKey": "studio.newsletter.reseauxSociauxNewsletter"
+    },
+    "titreContactReseaux": {
+      "fr": "Titre Contact & Réseaux",
+      "pt": "Título de Contato & Redes",
+      "fullKey": "studio.newsletter.titreContactReseaux"
+    },
+    "contactReseauxSociaux": {
+      "fr": "Contact & Réseaux Sociaux",
+      "pt": "Contato & Redes Sociais",
+      "fullKey": "studio.newsletter.contactReseauxSociaux"
+    },
+    "boutonDeContactEMail": {
+      "fr": "Bouton de Contact E-mail",
+      "pt": "Botão de Contato por E-mail",
+      "fullKey": "studio.newsletter.boutonDeContactEMail"
+    },
+    "contactezNousPourProgrammer": {
+      "fr": "Contactez-nous pour programmer",
+      "pt": "Entre em contato para agendar",
+      "fullKey": "studio.newsletter.contactezNousPourProgrammer"
+    },
+    "phraseDAccrocheContact": {
+      "fr": "Phrase d'accroche Contact",
+      "pt": "Frase de chamada de Contato",
+      "fullKey": "studio.newsletter.phraseDAccrocheContact"
+    },
+    "uneQuestionUnEvenementOu": {
+      "fr": "Une question, un événement ou une prestation ? Contactez-nous ou suivez nos réseaux !",
+      "pt": "Uma dúvida, evento ou apresentação? Fale conosco ou siga nossas redes!",
+      "fullKey": "studio.newsletter.uneQuestionUnEvenementOu"
+    },
+    "veuillezSaisirUneAdresseE": {
+      "fr": "Veuillez saisir une adresse e-mail valide.",
+      "pt": "Por favor, insira um endereço de e-mail válido.",
+      "fullKey": "studio.newsletter.veuillezSaisirUneAdresseE"
+    },
+    "uneErreurSEstProduite": {
+      "fr": "Une erreur s'est produite lors de votre inscription. Veuillez réessayer.",
+      "pt": "Ocorreu um erro ao realizar sua inscrição. Por favor, tente novamente.",
+      "fullKey": "studio.newsletter.uneErreurSEstProduite"
+    },
+    "merciPourVotreInscriptionEn": {
+      "fr": "Merci pour votre inscription ! En mode démo, aucun e-mail réel n'est envoyé.",
+      "pt": "Obrigado pela sua inscrição! Em modo de demonstração, nenhum e-mail real é enviado.",
+      "fullKey": "studio.newsletter.merciPourVotreInscriptionEn"
+    },
+    "merciVousEtesBienInscrit": {
+      "fr": "Merci ! Vous êtes bien inscrit(e) à notre newsletter.",
+      "pt": "Obrigado! Você foi inscrito(a) com sucesso em nosso boletim.",
+      "fullKey": "studio.newsletter.merciVousEtesBienInscrit"
+    },
+    "inscrireUneAutreAdresse": {
+      "fr": "Inscrire une autre adresse",
+      "pt": "Inscrever outro endereço",
+      "fullKey": "studio.newsletter.inscrireUneAutreAdresse"
+    },
+    "inscription": {
+      "fr": "⏳ Inscription...",
+      "pt": "⏳ Inscrevendo...",
+      "fullKey": "studio.newsletter.inscription"
+    },
+    "sInscrireALInfolettre": {
+      "fr": "S'inscrire à l'infolettre",
+      "pt": "Inscrever-se no boletim",
+      "fullKey": "studio.newsletter.sInscrireALInfolettre"
+    },
+    "pasDeSpamDesinscriptionA": {
+      "fr": "🔒 Pas de spam. Désinscription à tout moment.",
+      "pt": "🔒 Sem spam. Cancele sua inscrição quando quiser.",
+      "fullKey": "studio.newsletter.pasDeSpamDesinscriptionA"
+    },
+    "merciPourVotreMessageEn": {
+      "fr": "Merci pour votre message ! En mode démo, aucun e-mail réel n'est envoyé.",
+      "pt": "Obrigado pela sua mensagem! Em modo de demonstração, nenhum e-mail real é enviado.",
+      "fullKey": "studio.newsletter.merciPourVotreMessageEn"
+    },
+    "inscrireUnAutreEMail": {
+      "fr": "Inscrire un autre e-mail",
+      "pt": "Inscrever outro e-mail",
+      "fullKey": "studio.newsletter.inscrireUnAutreEMail"
+    },
+    "validation": {
+      "fr": "⏳ Validation...",
+      "pt": "⏳ Validando...",
+      "fullKey": "studio.newsletter.validation"
+    },
+    "sInscrire": {
+      "fr": "S'inscrire",
+      "pt": "Inscrever-se",
+      "fullKey": "studio.newsletter.sInscrire"
+    },
+    "pasDeSpamVousPourrez": {
+      "fr": "🔒 Pas de spam. Vous pourrez vous désinscrire à tout moment.",
+      "pt": "🔒 Sem spam. Você poderá cancelar a inscrição a qualquer momento.",
+      "fullKey": "studio.newsletter.pasDeSpamVousPourrez"
+    },
+    "impossibleDeChargerLesEvenements": {
+      "fr": "Impossible de charger les événements depuis Firestore.",
+      "pt": "Não foi possível carregar os eventos do Firestore.",
+      "fullKey": "studio.newsletter.impossibleDeChargerLesEvenements"
+    }
+  },
+  "photos": {
+    "recolteAlbumsPrestations": {
+      "fr": "Récolte & Albums Prestations",
+      "pt": "Arrecadação & Álbuns de Apresentações",
+      "fullKey": "studio.photos.recolteAlbumsPrestations"
+    },
+    "varalPhotosLivrets": {
+      "fr": "Varal Photos (Livrets)",
+      "pt": "Varal de Fotos (Livretes)",
+      "fullKey": "studio.photos.varalPhotosLivrets"
+    },
+    "associezLesDossiersPartagesEt": {
+      "fr": "Associez les dossiers partagés et imprimez les QR-Codes de chaque date.",
+      "pt": "Vincule as pastas compartilhadas e imprima os QR Codes de cada data.",
+      "fullKey": "studio.photos.associezLesDossiersPartagesEt"
+    },
+    "consultezLesAlbumsOfficielsSous": {
+      "fr": "Consultez les albums officiels sous forme de livrets Cordel suspendus.",
+      "pt": "Consulte os álbuns oficiais em forma de folhetos de Cordel suspensos.",
+      "fullKey": "studio.photos.consultezLesAlbumsOfficielsSous"
+    },
+    "ficheQrCodeRecoltePhotos": {
+      "fr": "Fiche QR-Code : Récolte Photos & Vidéos",
+      "pt": "Ficha QR Code: Arrecadação de Fotos & Vídeos",
+      "fullKey": "studio.photos.ficheQrCodeRecoltePhotos"
+    },
+    "ficheQrCodeAlbumPhotos": {
+      "fr": "Fiche QR-Code : Album Photos Officiel",
+      "pt": "Ficha QR Code: Álbum de Fotos Oficial",
+      "fullKey": "studio.photos.ficheQrCodeAlbumPhotos"
+    },
+    "fermerEchap": {
+      "fr": "Fermer (Échap)",
+      "pt": "Fechar (Esc)",
+      "fullKey": "studio.photos.fermerEchap"
+    },
+    "partagezVosClichesDeLa": {
+      "fr": "✨ Partagez vos clichés de la Roda ! ✨",
+      "pt": "✨ Compartilhe seus registros da Roda! ✨",
+      "fullKey": "studio.photos.partagezVosClichesDeLa"
+    },
+    "albumPhotosOfficielDeLa": {
+      "fr": "✨ Album Photos Officiel de la Roda ✨",
+      "pt": "✨ Álbum de Fotos Oficial da Roda ✨",
+      "fullKey": "studio.photos.albumPhotosOfficielDeLa"
+    },
+    "evenementOGirador": {
+      "fr": "Événement O Girador",
+      "pt": "Evento O Girador",
+      "fullKey": "studio.photos.evenementOGirador"
+    },
+    "scannezCeQrCodeAvec": {
+      "fr": "Scannez ce QR-Code avec l'appareil photo de votre smartphone pour déposer vos photos et vidéos dans notre espace partagé.",
+      "pt": "Escaneie este QR Code com a câmera do seu celular para enviar suas fotos e vídeos para o nosso espaço compartilhado.",
+      "fullKey": "studio.photos.scannezCeQrCodeAvec"
+    },
+    "scannezCeQrCodeAvecAlt": {
+      "fr": "Scannez ce QR-Code avec votre smartphone pour visionner l'album photo complet de la prestation.",
+      "pt": "Escaneie este QR Code com o seu celular para ver o álbum de fotos completo da apresentação.",
+      "fullKey": "studio.photos.scannezCeQrCodeAvecAlt"
+    },
+    "telechargerLImageDuQr": {
+      "fr": "Télécharger l'image du QR Code en haute définition (PNG)",
+      "pt": "Baixar a imagem do QR Code em alta definição (PNG)",
+      "fullKey": "studio.photos.telechargerLImageDuQr"
+    },
+    "exporterPng": {
+      "fr": "Exporter PNG",
+      "pt": "Exportar PNG",
+      "fullKey": "studio.photos.exporterPng"
+    },
+    "lancerLImpressionFormateeA4": {
+      "fr": "Lancer l'impression formatée A4 prête pour affichage sur place",
+      "pt": "Iniciar impressão formatada A4 pronta para fixação no local",
+      "fullKey": "studio.photos.lancerLImpressionFormateeA4"
+    },
+    "imprimerFicheA4": {
+      "fr": "Imprimer Fiche A4",
+      "pt": "Imprimir Ficha A4",
+      "fullKey": "studio.photos.imprimerFicheA4"
+    },
+    "lienCopie": {
+      "fr": "Lien copié !",
+      "pt": "Link copiado!",
+      "fullKey": "studio.photos.lienCopie"
+    },
+    "copierLeLien": {
+      "fr": "Copier le lien",
+      "pt": "Copiar link",
+      "fullKey": "studio.photos.copierLeLien"
+    },
+    "testerLeLienDansUn": {
+      "fr": "Tester le lien dans un nouvel onglet",
+      "pt": "Testar o link em nova aba",
+      "fullKey": "studio.photos.testerLeLienDansUn"
+    },
+    "testerLeLien": {
+      "fr": "Tester le lien ↗",
+      "pt": "Testar link ↗",
+      "fullKey": "studio.photos.testerLeLien"
+    },
+    "photosDeLaPublication": {
+      "fr": "📸 Photos de la publication (",
+      "pt": "📸 Fotos da publicação (",
+      "fullKey": "studio.photos.photosDeLaPublication"
+    },
+    "afficheEvenement": {
+      "fr": "+ Affiche événement",
+      "pt": "+ Cartaz do evento",
+      "fullKey": "studio.photos.afficheEvenement"
+    },
+    "depuisLeVaral": {
+      "fr": "📂 Depuis le Varal",
+      "pt": "📂 Do Varal",
+      "fullKey": "studio.photos.depuisLeVaral"
+    },
+    "glissezDeposezVosPhotosIci": {
+      "fr": "Glissez-déposez vos photos ici ou cliquez pour parcourir",
+      "pt": "Arraste e solte suas fotos aqui ou clique para navegar",
+      "fullKey": "studio.photos.glissezDeposezVosPhotosIci"
+    },
+    "selectionMultipleAutoriseeJpegPng": {
+      "fr": "Sélection multiple autorisée (JPEG, PNG, WebP) - Compression auto",
+      "pt": "Seleção múltipla permitida (JPEG, PNG, WebP) - Compressão automática",
+      "fullKey": "studio.photos.selectionMultipleAutoriseeJpegPng"
+    },
+    "uploadEnCours": {
+      "fr": "Upload en cours...",
+      "pt": "Enviando fotos...",
+      "fullKey": "studio.photos.uploadEnCours"
+    },
+    "echecEnvoi": {
+      "fr": "Échec envoi",
+      "pt": "Falha no envio",
+      "fullKey": "studio.photos.echecEnvoi"
+    },
+    "couverture": {
+      "fr": "★ Couverture",
+      "pt": "★ Capa",
+      "fullKey": "studio.photos.couverture"
+    },
+    "deplacerVersLaGauche": {
+      "fr": "Déplacer vers la gauche",
+      "pt": "Mover para a esquerda",
+      "fullKey": "studio.photos.deplacerVersLaGauche"
+    },
+    "deplacerVersLaDroite": {
+      "fr": "Déplacer vers la droite",
+      "pt": "Mover para a direita",
+      "fullKey": "studio.photos.deplacerVersLaDroite"
+    },
+    "definirEnPhotoDeCouverture": {
+      "fr": "Définir en photo de couverture",
+      "pt": "Definir como foto de capa",
+      "fullKey": "studio.photos.definirEnPhotoDeCouverture"
+    },
+    "supprimerLaPhoto": {
+      "fr": "Supprimer la photo",
+      "pt": "Excluir foto",
+      "fullKey": "studio.photos.supprimerLaPhoto"
+    },
+    "selectionnerDesPhotosDuVaral": {
+      "fr": "Sélectionner des photos du Varal",
+      "pt": "Selecionar fotos do Varal",
+      "fullKey": "studio.photos.selectionnerDesPhotosDuVaral"
+    },
+    "aucuneImageTrouveeDansLa": {
+      "fr": "Aucune image trouvée dans la bibliothèque du Varal.",
+      "pt": "Nenhuma imagem encontrada na biblioteca do Varal.",
+      "fullKey": "studio.photos.aucuneImageTrouveeDansLa"
+    },
+    "photoSSelectionneeS": {
+      "fr": "photo(s) sélectionnée(s)",
+      "pt": "foto(s) selecionada(s)",
+      "fullKey": "studio.photos.photoSSelectionneeS"
+    },
+    "annuler": {
+      "fr": "Annuler",
+      "pt": "Cancelar",
+      "fullKey": "studio.photos.annuler"
+    },
+    "ajouter": {
+      "fr": "Ajouter (",
+      "pt": "Adicionar (",
+      "fullKey": "studio.photos.ajouter"
+    },
+    "delaiDeConnexionDepasse8s": {
+      "fr": "Délai de connexion dépassé (8s). Le dossier distant ne répond pas ou est restreint.",
+      "pt": "Tempo de conexão esgotado (8s). A pasta remota não responde ou tem acesso restrito.",
+      "fullKey": "studio.photos.delaiDeConnexionDepasse8s"
+    },
+    "chargementDesCliches": {
+      "fr": "Chargement des clichés...",
+      "pt": "Carregando registros fotográficos...",
+      "fullKey": "studio.photos.chargementDesCliches"
+    },
+    "ouvrirLAlbumCompletDans": {
+      "fr": "Ouvrir l'album complet dans un nouvel onglet sécurisé",
+      "pt": "Abrir o álbum completo em uma nova aba segura",
+      "fullKey": "studio.photos.ouvrirLAlbumCompletDans"
+    },
+    "ouvrirSurFramaspace": {
+      "fr": "↗ Ouvrir sur Framaspace",
+      "pt": "↗ Abrir no Framaspace",
+      "fullKey": "studio.photos.ouvrirSurFramaspace"
+    },
+    "connexionAuDossierFramaspaceEt": {
+      "fr": "Connexion au dossier Framaspace et récupération des clichés...",
+      "pt": "Conectando à pasta Framaspace e recuperando registros fotográficos...",
+      "fullKey": "studio.photos.connexionAuDossierFramaspaceEt"
+    },
+    "consulterLAlbumEnLigne": {
+      "fr": "Consulter l'album en ligne",
+      "pt": "Consultar o álbum online",
+      "fullKey": "studio.photos.consulterLAlbumEnLigne"
+    },
+    "cetAlbumEstEncoreVide": {
+      "fr": "Cet album est encore vide pour le moment. Les photos et vidéos y apparaîtront dès leur téléversement.",
+      "pt": "Este álbum ainda está vazio no momento. As fotos e vídeos aparecerão assim que forem enviados.",
+      "fullKey": "studio.photos.cetAlbumEstEncoreVide"
+    },
+    "mov": {
+      "fr": "MOV",
+      "pt": "MOV",
+      "fullKey": "studio.photos.mov"
+    },
+    "video": {
+      "fr": "Vidéo",
+      "pt": "Vídeo",
+      "fullKey": "studio.photos.video"
+    },
+    "telechargerCeFichierEnHaute": {
+      "fr": "Télécharger ce fichier en haute qualité",
+      "pt": "Baixar este arquivo em alta qualidade",
+      "fullKey": "studio.photos.telechargerCeFichierEnHaute"
+    },
+    "telecharger": {
+      "fr": "Télécharger",
+      "pt": "Baixar",
+      "fullKey": "studio.photos.telecharger"
+    },
+    "precedenteFlecheGauche": {
+      "fr": "Précédente (Flèche gauche)",
+      "pt": "Anterior (Seta para a esquerda)",
+      "fullKey": "studio.photos.precedenteFlecheGauche"
+    },
+    "lectureVideoNonDecodableDans": {
+      "fr": "Lecture vidéo non décodable dans ce navigateur",
+      "pt": "Reprodução de vídeo não suportada neste navegador",
+      "fullKey": "studio.photos.lectureVideoNonDecodableDans"
+    },
+    "leFichier": {
+      "fr": "Le fichier",
+      "pt": "O arquivo",
+      "fullKey": "studio.photos.leFichier"
+    },
+    "utiliseUnEncodageExConteneur": {
+      "fr": "utilise un encodage (ex: conteneur Apple QuickTime .mov / HEVC) que votre navigateur ne peut pas lire directement en streaming sur ce système.",
+      "pt": "utiliza uma codificação (ex: contêiner Apple QuickTime .mov / HEVC) que seu navegador não consegue reproduzir diretamente em streaming neste sistema.",
+      "fullKey": "studio.photos.utiliseUnEncodageExConteneur"
+    },
+    "ouvrirLeFlux": {
+      "fr": "Ouvrir le flux",
+      "pt": "Abrir fluxo",
+      "fullKey": "studio.photos.ouvrirLeFlux"
+    },
+    "conseilTelechargezLeFichierPour": {
+      "fr": "💡 Conseil : Téléchargez le fichier pour le visionner directement avec VLC ou le lecteur vidéo de votre système.",
+      "pt": "💡 Dica: Baixe o arquivo para assisti-lo diretamente no VLC ou no reprodutor de vídeo do seu sistema.",
+      "fullKey": "studio.photos.conseilTelechargezLeFichierPour"
+    },
+    "votreNavigateurNeSupportePas": {
+      "fr": "Votre navigateur ne supporte pas la lecture directe de ce format vidéo.",
+      "pt": "Seu navegador não suporta a reprodução direta deste formato de vídeo.",
+      "fullKey": "studio.photos.votreNavigateurNeSupportePas"
+    },
+    "suivanteFlecheDroite": {
+      "fr": "Suivante (Flèche droite)",
+      "pt": "Próxima (Seta para a direita)",
+      "fullKey": "studio.photos.suivanteFlecheDroite"
+    },
+    "astuceUtilisezLesTouchesEt": {
+      "fr": "Astuce : Utilisez les touches ◀ et ▶ du clavier pour naviguer, et Échap pour quitter.",
+      "pt": "Dica: Use as setas ◀ e ▶ do teclado para navegar, e Esc para sair.",
+      "fullKey": "studio.photos.astuceUtilisezLesTouchesEt"
+    },
+    "erreurLorsDeLEnregistrement": {
+      "fr": "Erreur lors de l'enregistrement du lien de dépôt.",
+      "pt": "Erro ao salvar o link de arrecadação.",
+      "fullKey": "studio.photos.erreurLorsDeLEnregistrement"
+    },
+    "erreurLorsDeLaSynchronisation": {
+      "fr": "Erreur lors de la synchronisation de l'album avec le Varal.",
+      "pt": "Erro ao sincronizar o álbum com o Varal.",
+      "fullKey": "studio.photos.erreurLorsDeLaSynchronisation"
+    },
+    "aucunLienDeDepotN": {
+      "fr": "Aucun lien de dépôt n'est disponible pour cet événement.",
+      "pt": "Nenhum link de depósito está disponível para este evento.",
+      "fullKey": "studio.photos.aucunLienDeDepotN"
+    },
+    "rechercherUnConcertRepetitionOu": {
+      "fr": "Rechercher un concert, répétition ou lieu...",
+      "pt": "Buscar apresentação, ensaio ou local...",
+      "fullKey": "studio.photos.rechercherUnConcertRepetitionOu"
+    },
+    "prestationsRecoltesActives": {
+      "fr": "📸 Prestations & Récoltes actives",
+      "pt": "📸 Apresentações & Arrecadações ativas",
+      "fullKey": "studio.photos.prestationsRecoltesActives"
+    },
+    "surLeVaral": {
+      "fr": "🪢 Sur le Varal",
+      "pt": "🪢 No Varal",
+      "fullKey": "studio.photos.surLeVaral"
+    },
+    "aVenir": {
+      "fr": "🌱 À venir",
+      "pt": "🌱 Próximas",
+      "fullKey": "studio.photos.aVenir"
+    },
+    "toutesLesDates": {
+      "fr": "📋 Toutes les dates (",
+      "pt": "📋 Todas as datas (",
+      "fullKey": "studio.photos.toutesLesDates"
+    },
+    "chargementDesEvenementsDeL": {
+      "fr": "Chargement des événements de l'association...",
+      "pt": "Carregando eventos da associação...",
+      "fullKey": "studio.photos.chargementDesEvenementsDeL"
+    },
+    "aucunEvenementTrouvePourCes": {
+      "fr": "Aucun événement trouvé pour ces critères de recherche.",
+      "pt": "Nenhum evento encontrado para estes critérios de busca.",
+      "fullKey": "studio.photos.aucunEvenementTrouvePourCes"
+    },
+    "prestation": {
+      "fr": "🎭 Prestation",
+      "pt": "🎭 Apresentação",
+      "fullKey": "studio.photos.prestation"
+    },
+    "evenementSansTitre": {
+      "fr": "Événement sans titre",
+      "pt": "Evento sem título",
+      "fullKey": "studio.photos.evenementSansTitre"
+    },
+    "depotOuvert": {
+      "fr": "📷 Dépôt ouvert",
+      "pt": "📷 Arrecadação aberta",
+      "fullKey": "studio.photos.depotOuvert"
+    },
+    "depotInactif": {
+      "fr": "📷 Dépôt inactif",
+      "pt": "📷 Arrecadação inativa",
+      "fullKey": "studio.photos.depotInactif"
+    },
+    "driveSynchronise": {
+      "fr": "📁 Drive synchronisé",
+      "pt": "📁 Nuvem sincronizada",
+      "fullKey": "studio.photos.driveSynchronise"
+    },
+    "varalRelie": {
+      "fr": "🪢 Varal relié",
+      "pt": "🪢 Varal vinculado",
+      "fullKey": "studio.photos.varalRelie"
+    },
+    "voirSurLeVaral": {
+      "fr": "Voir sur le Varal",
+      "pt": "Ver no Varal",
+      "fullKey": "studio.photos.voirSurLeVaral"
+    },
+    "synchronisation": {
+      "fr": "⏳ Synchronisation...",
+      "pt": "⏳ Sincronizando...",
+      "fullKey": "studio.photos.synchronisation"
+    },
+    "reSyncFramaspace": {
+      "fr": "⚡ Re-sync Framaspace",
+      "pt": "⚡ Re-sincronizar Framaspace",
+      "fullKey": "studio.photos.reSyncFramaspace"
+    },
+    "delierReinitialiserCloud": {
+      "fr": "🗑️ Délier / Réinitialiser Cloud",
+      "pt": "🗑️ Desvincular / Redefinir Nuvem",
+      "fullKey": "studio.photos.delierReinitialiserCloud"
+    },
+    "boiteAPhotosQrCode": {
+      "fr": "📸 Boîte à photos / QR Code activé",
+      "pt": "📸 Caixa de fotos / QR Code ativado",
+      "fullKey": "studio.photos.boiteAPhotosQrCode"
+    },
+    "publieSurLeVaralPhotos": {
+      "fr": "🪢 Publié sur le Varal Photos",
+      "pt": "🪢 Publicado no Varal de Fotos",
+      "fullKey": "studio.photos.publieSurLeVaralPhotos"
+    },
+    "dossierDeDepotPublicFramaspace": {
+      "fr": "📸 Dossier de dépôt public (Framaspace, Drive...)",
+      "pt": "📸 Pasta de arrecadação pública (Framaspace, Drive...)",
+      "fullKey": "studio.photos.dossierDeDepotPublicFramaspace"
+    },
+    "qrCode": {
+      "fr": "📱 QR-Code",
+      "pt": "📱 QR Code",
+      "fullKey": "studio.photos.qrCode"
+    },
+    "albumPhotosFinaliseSyncVaral": {
+      "fr": "🪢 Album photos finalisé (Sync Varal)",
+      "pt": "🪢 Álbum de fotos finalizado (Sync Varal)",
+      "fullKey": "studio.photos.albumPhotosFinaliseSyncVaral"
+    },
+    "copierLUrlDuDepot": {
+      "fr": "Copier l'URL du dépôt pour synchroniser immédiatement l'album Varal",
+      "pt": "Copiar URL do depósito para sincronizar imediatamente o álbum no Varal",
+      "fullKey": "studio.photos.copierLUrlDuDepot"
+    },
+    "alignerAvecLeDepot": {
+      "fr": "🔗 Aligner avec le dépôt",
+      "pt": "🔗 Alinhar com a arrecadação",
+      "fullKey": "studio.photos.alignerAvecLeDepot"
+    },
+    "retour": {
+      "fr": "Retour",
+      "pt": "Voltar",
+      "fullKey": "studio.photos.retour"
+    },
+    "gestionDesEvenements": {
+      "fr": "Gestion des événements",
+      "pt": "Gestão de eventos",
+      "fullKey": "studio.photos.gestionDesEvenements"
+    },
+    "tableauDeBordDEdition": {
+      "fr": "Tableau de bord d'édition rapide et globale des événements pour l'administration.",
+      "pt": "Painel de edição rápida e geral dos eventos para a administração.",
+      "fullKey": "studio.photos.tableauDeBordDEdition"
+    },
+    "perc": {
+      "fr": "Perc",
+      "pt": "Perc",
+      "fullKey": "studio.photos.perc"
+    },
+    "planifierUneSerieDeRepetitions": {
+      "fr": "⚡ Planifier une série de répétitions pour la saison",
+      "pt": "⚡ Planejar uma série de ensaios para a temporada",
+      "fullKey": "studio.photos.planifierUneSerieDeRepetitions"
+    },
+    "planifierUneSerie": {
+      "fr": "Planifier une série",
+      "pt": "Planejar uma série",
+      "fullKey": "studio.photos.planifierUneSerie"
+    },
+    "afficher": {
+      "fr": "Afficher :",
+      "pt": "Exibir:",
+      "fullKey": "studio.photos.afficher"
+    },
+    "aVenirDefaut": {
+      "fr": "À venir (Défaut)",
+      "pt": "Próximos (Padrão)",
+      "fullKey": "studio.photos.aVenirDefaut"
+    },
+    "passes": {
+      "fr": "Passés",
+      "pt": "Passados",
+      "fullKey": "studio.photos.passes"
+    },
+    "tous": {
+      "fr": "Tous",
+      "pt": "Todos",
+      "fullKey": "studio.photos.tous"
+    },
+    "type": {
+      "fr": "Type :",
+      "pt": "Tipo:",
+      "fullKey": "studio.photos.type"
+    },
+    "chargementDesEvenementsEnDirect": {
+      "fr": "Chargement des événements en direct...",
+      "pt": "Carregando eventos em tempo real...",
+      "fullKey": "studio.photos.chargementDesEvenementsEnDirect"
+    },
+    "cliquerPourTrierParTitre": {
+      "fr": "Cliquer pour trier par Titre",
+      "pt": "Clique para ordenar por Título",
+      "fullKey": "studio.photos.cliquerPourTrierParTitre"
+    },
+    "titre": {
+      "fr": "1. Titre",
+      "pt": "1. Título",
+      "fullKey": "studio.photos.titre"
+    },
+    "cliquerPourTrierParType": {
+      "fr": "Cliquer pour trier par Type",
+      "pt": "Clique para ordenar por Tipo",
+      "fullKey": "studio.photos.cliquerPourTrierParType"
+    },
+    "typeAlt": {
+      "fr": "2. Type",
+      "pt": "2. Tipo",
+      "fullKey": "studio.photos.typeAlt"
+    },
+    "cliquerPourTrierParDescription": {
+      "fr": "Cliquer pour trier par Description",
+      "pt": "Clique para ordenar por Descrição",
+      "fullKey": "studio.photos.cliquerPourTrierParDescription"
+    },
+    "description": {
+      "fr": "3. Description",
+      "pt": "3. Descrição",
+      "fullKey": "studio.photos.description"
+    },
+    "cliquerPourTrierParDate": {
+      "fr": "Cliquer pour trier par Date",
+      "pt": "Clique para ordenar por Data",
+      "fullKey": "studio.photos.cliquerPourTrierParDate"
+    },
+    "date": {
+      "fr": "4. Date",
+      "pt": "4. Data",
+      "fullKey": "studio.photos.date"
+    },
+    "cliquerPourTrierParHeure": {
+      "fr": "Cliquer pour trier par Heure début",
+      "pt": "Clique para ordenar por Horário de início",
+      "fullKey": "studio.photos.cliquerPourTrierParHeure"
+    },
+    "heureDebut": {
+      "fr": "5. Heure début",
+      "pt": "5. Horário início",
+      "fullKey": "studio.photos.heureDebut"
+    },
+    "cliquerPourTrierParHeureAlt": {
+      "fr": "Cliquer pour trier par Heure fin",
+      "pt": "Clique para ordenar por Horário de término",
+      "fullKey": "studio.photos.cliquerPourTrierParHeureAlt"
+    },
+    "heureFin": {
+      "fr": "6. Heure fin",
+      "pt": "6. Horário término",
+      "fullKey": "studio.photos.heureFin"
+    },
+    "cliquerPourTrierParLieu": {
+      "fr": "Cliquer pour trier par Lieu simple",
+      "pt": "Clique para ordenar por Local simples",
+      "fullKey": "studio.photos.cliquerPourTrierParLieu"
+    },
+    "lieuSimple": {
+      "fr": "7. Lieu simple",
+      "pt": "7. Local simples",
+      "fullKey": "studio.photos.lieuSimple"
+    },
+    "cliquerPourTrierParDateAlt": {
+      "fr": "Cliquer pour trier par Date limite",
+      "pt": "Clique para ordenar por Data limite",
+      "fullKey": "studio.photos.cliquerPourTrierParDateAlt"
+    },
+    "dateLimite": {
+      "fr": "8. Date limite",
+      "pt": "8. Data limite",
+      "fullKey": "studio.photos.dateLimite"
+    },
+    "cliquerPourTrierParNiveau": {
+      "fr": "Cliquer pour trier par Niveau perc",
+      "pt": "Clique para ordenar por Nível percussão",
+      "fullKey": "studio.photos.cliquerPourTrierParNiveau"
+    },
+    "niveauPerc": {
+      "fr": "9. Niveau perc",
+      "pt": "9. Nível perc",
+      "fullKey": "studio.photos.niveauPerc"
+    },
+    "cliquerPourTrierParNiveauAlt": {
+      "fr": "Cliquer pour trier par Niveau danse",
+      "pt": "Clique para ordenar por Nível dança",
+      "fullKey": "studio.photos.cliquerPourTrierParNiveauAlt"
+    },
+    "niveauDanse": {
+      "fr": "10. Niveau danse",
+      "pt": "10. Nível dança",
+      "fullKey": "studio.photos.niveauDanse"
+    },
+    "cliquerPourTrierParTenue": {
+      "fr": "Cliquer pour trier par Tenue",
+      "pt": "Clique para ordenar por Figurino",
+      "fullKey": "studio.photos.cliquerPourTrierParTenue"
+    },
+    "tenue": {
+      "fr": "11. Tenue",
+      "pt": "11. Figurino",
+      "fullKey": "studio.photos.tenue"
+    },
+    "cliquerPourTrierParInclut": {
+      "fr": "Cliquer pour trier par Inclut perc",
+      "pt": "Clique para ordenar por Inclui percussão",
+      "fullKey": "studio.photos.cliquerPourTrierParInclut"
+    },
+    "percAlt": {
+      "fr": "12. Perc 🥁",
+      "pt": "12. Perc 🥁",
+      "fullKey": "studio.photos.percAlt"
+    },
+    "cliquerPourTrierParInclutAlt": {
+      "fr": "Cliquer pour trier par Inclut danse",
+      "pt": "Clique para ordenar por Inclui dança",
+      "fullKey": "studio.photos.cliquerPourTrierParInclutAlt"
+    },
+    "danse": {
+      "fr": "13. Danse 💃",
+      "pt": "13. Dança 💃",
+      "fullKey": "studio.photos.danse"
+    },
+    "cliquerPourTrierParSoumis": {
+      "fr": "Cliquer pour trier par Soumis à validation",
+      "pt": "Clique para ordenar por Sujeito a aprovação",
+      "fullKey": "studio.photos.cliquerPourTrierParSoumis"
+    },
+    "validation": {
+      "fr": "14. Validation 🔒",
+      "pt": "14. Validação 🔒",
+      "fullKey": "studio.photos.validation"
+    },
+    "cliquerPourTrierParInscriptions": {
+      "fr": "Cliquer pour trier par Inscriptions requises",
+      "pt": "Clique para ordenar por Inscrições obrigatórias",
+      "fullKey": "studio.photos.cliquerPourTrierParInscriptions"
+    },
+    "inscriptions": {
+      "fr": "15. Inscriptions 📝",
+      "pt": "15. Inscrições 📝",
+      "fullKey": "studio.photos.inscriptions"
+    },
+    "cliquerPourTrierParCovoiturage": {
+      "fr": "Cliquer pour trier par Covoiturage actif",
+      "pt": "Clique para ordenar por Carona ativa",
+      "fullKey": "studio.photos.cliquerPourTrierParCovoiturage"
+    },
+    "covoit": {
+      "fr": "16. Covoit 🚗",
+      "pt": "16. Carona 🚗",
+      "fullKey": "studio.photos.covoit"
+    },
+    "cliquerPourTrierParVisibilite": {
+      "fr": "Cliquer pour trier par Visibilité Publique",
+      "pt": "Clique para ordenar por Visibilidade Pública",
+      "fullKey": "studio.photos.cliquerPourTrierParVisibilite"
+    },
+    "public": {
+      "fr": "17. Public 🌍",
+      "pt": "17. Público 🌍",
+      "fullKey": "studio.photos.public"
+    },
+    "cliquerPourTrierParNombre": {
+      "fr": "Cliquer pour trier par Nombre de morceaux",
+      "pt": "Clique para ordenar por Quantidade de toadas",
+      "fullKey": "studio.photos.cliquerPourTrierParNombre"
+    },
+    "morceaux": {
+      "fr": "18. Morceaux 🎵",
+      "pt": "18. Toadas 🎵",
+      "fullKey": "studio.photos.morceaux"
+    },
+    "cliquerPourTrierParStatut": {
+      "fr": "Cliquer pour trier par Statut Scène",
+      "pt": "Clique para ordenar por Disposição de Palco",
+      "fullKey": "studio.photos.cliquerPourTrierParStatut"
+    },
+    "scene": {
+      "fr": "19. Scène 📐",
+      "pt": "19. Palco 📐",
+      "fullKey": "studio.photos.scene"
+    },
+    "aucunEvenementDisponible": {
+      "fr": "Aucun événement disponible.",
+      "pt": "Nenhum evento disponível.",
+      "fullKey": "studio.photos.aucunEvenementDisponible"
+    },
+    "titreAlt": {
+      "fr": "Titre...",
+      "pt": "Título...",
+      "fullKey": "studio.photos.titreAlt"
+    },
+    "prestationAlt": {
+      "fr": "Prestation",
+      "pt": "Apresentação",
+      "fullKey": "studio.photos.prestationAlt"
+    },
+    "repetition": {
+      "fr": "Répétition",
+      "pt": "Ensaio",
+      "fullKey": "studio.photos.repetition"
+    },
+    "stage": {
+      "fr": "Stage",
+      "pt": "Oficina / Vivência",
+      "fullKey": "studio.photos.stage"
+    },
+    "atelier": {
+      "fr": "Atelier",
+      "pt": "Oficina",
+      "fullKey": "studio.photos.atelier"
+    },
+    "reunion": {
+      "fr": "Réunion",
+      "pt": "Reunião",
+      "fullKey": "studio.photos.reunion"
+    },
+    "autre": {
+      "fr": "Autre",
+      "pt": "Outro",
+      "fullKey": "studio.photos.autre"
+    },
+    "choisirUnLieu": {
+      "fr": "📍 Choisir un lieu...",
+      "pt": "📍 Escolher um local...",
+      "fullKey": "studio.photos.choisirUnLieu"
+    },
+    "lieuxHabituelsDeLAssociation": {
+      "fr": "📍 Lieux habituels de l'association",
+      "pt": "📍 Locais habituais da associação",
+      "fullKey": "studio.photos.lieuxHabituelsDeLAssociation"
+    },
+    "lieu": {
+      "fr": "Lieu...",
+      "pt": "Local...",
+      "fullKey": "studio.photos.lieu"
+    },
+    "tousAlt": {
+      "fr": "👥 Tous",
+      "pt": "👥 Todos",
+      "fullKey": "studio.photos.tousAlt"
+    },
+    "aucun": {
+      "fr": "Aucun",
+      "pt": "Nenhum",
+      "fullKey": "studio.photos.aucun"
+    },
+    "tenueAlt": {
+      "fr": "Tenue...",
+      "pt": "Figurino...",
+      "fullKey": "studio.photos.tenueAlt"
+    },
+    "percussion": {
+      "fr": "Percussion",
+      "pt": "Percussão",
+      "fullKey": "studio.photos.percussion"
+    },
+    "oui": {
+      "fr": "📐 Oui",
+      "pt": "📐 Sim",
+      "fullKey": "studio.photos.oui"
+    },
+    "veuillezSelectionnerUneDateDe": {
+      "fr": "Veuillez sélectionner une date de début et de fin.",
+      "pt": "Por favor, selecione uma data de início e de fim.",
+      "fullKey": "studio.photos.veuillezSelectionnerUneDateDe"
+    },
+    "erreurLorsDeLaGeneration": {
+      "fr": "Erreur lors de la génération de l'export d'activité.",
+      "pt": "Erro ao gerar o relatório de atividade.",
+      "fullKey": "studio.photos.erreurLorsDeLaGeneration"
+    },
+    "journalDActiviteCsv": {
+      "fr": "Journal d'Activité (CSV)",
+      "pt": "Registro de Atividades (CSV)",
+      "fullKey": "studio.photos.journalDActiviteCsv"
+    },
+    "ceModulePermetDExtraire": {
+      "fr": "📊 Ce module permet d'extraire le journal des événements et les registres de présence de l'association sur une période choisie. Les exports sont générés sous forme de fichiers tableurs CSV compatibles avec Microsoft Excel, LibreOffice et Google Sheets.",
+      "pt": "📊 Este módulo permite exportar o histórico de eventos e os registros de presença da associação em um período selecionado. Os relatórios são gerados em arquivos CSV compatíveis com Excel, LibreOffice e Google Sheets.",
+      "fullKey": "studio.photos.ceModulePermetDExtraire"
+    },
+    "choixDeLaPeriode": {
+      "fr": "📅 Choix de la Période",
+      "pt": "📅 Escolha do Período",
+      "fullKey": "studio.photos.choixDeLaPeriode"
+    },
+    "selectionnezLaPlageDeDates": {
+      "fr": "Sélectionnez la plage de dates à auditer. Par défaut, la saison associative en cours est présélectionnée.",
+      "pt": "Selecione o intervalo de datas para auditar. Por padrão, a temporada atual da associação já vem pré-selecionada.",
+      "fullKey": "studio.photos.selectionnezLaPlageDeDates"
+    },
+    "dateDeDebut": {
+      "fr": "Date de début",
+      "pt": "Data de início",
+      "fullKey": "studio.photos.dateDeDebut"
+    },
+    "dateDeFin": {
+      "fr": "Date de fin",
+      "pt": "Data de término",
+      "fullKey": "studio.photos.dateDeFin"
+    },
+    "saisonAssociativeActive": {
+      "fr": "Saison associative active :",
+      "pt": "Temporada associativa ativa:",
+      "fullKey": "studio.photos.saisonAssociativeActive"
+    },
+    "enCours": {
+      "fr": "En cours",
+      "pt": "Em andamento",
+      "fullKey": "studio.photos.enCours"
+    },
+    "exporterLeBilanDActivite": {
+      "fr": "🎭 Exporter le Bilan d'Activité",
+      "pt": "🎭 Exportar o Balanço de Atividades",
+      "fullKey": "studio.photos.exporterLeBilanDActivite"
+    },
+    "genereLeRegistreDesEvenements": {
+      "fr": "Génère le registre des événements avec le décompte des présences. Idéal pour votre bilan annuel ou assemblée générale.",
+      "pt": "Gera o registro de eventos com a contagem de presenças. Ideal para o seu relatório anual ou assembleia geral.",
+      "fullKey": "studio.photos.genereLeRegistreDesEvenements"
+    },
+    "typesDEvenementsAInclure": {
+      "fr": "Types d'événements à inclure :",
+      "pt": "Tipos de eventos a incluir:",
+      "fullKey": "studio.photos.typesDEvenementsAInclure"
+    },
+    "prestations": {
+      "fr": "Prestations",
+      "pt": "Apresentações",
+      "fullKey": "studio.photos.prestations"
+    },
+    "generation": {
+      "fr": "Génération...",
+      "pt": "Gerando...",
+      "fullKey": "studio.photos.generation"
+    },
+    "exporterLActiviteCsv": {
+      "fr": "📄 Exporter l'Activité (CSV)",
+      "pt": "📄 Exportar Atividade (CSV)",
+      "fullKey": "studio.photos.exporterLActiviteCsv"
+    },
+    "impossibleDEnregistrerLUrl": {
+      "fr": "Impossible d'enregistrer l'URL du Cloud.",
+      "pt": "Não foi possível salvar a URL da Nuvem.",
+      "fullKey": "studio.photos.impossibleDEnregistrerLUrl"
+    },
+    "passerelleStockageCloudDeL": {
+      "fr": "Passerelle Stockage Cloud de l'Association",
+      "pt": "Central de Armazenamento na Nuvem da Associação",
+      "fullKey": "studio.photos.passerelleStockageCloudDeL"
+    },
+    "hebergementActif": {
+      "fr": "Hébergement actif :",
+      "pt": "Hospedagem ativa:",
+      "fullKey": "studio.photos.hebergementActif"
+    },
+    "aucunDossierCloudRacineConfigure": {
+      "fr": "Aucun dossier Cloud racine configuré",
+      "pt": "Nenhuma pasta raiz na Nuvem configurada",
+      "fullKey": "studio.photos.aucunDossierCloudRacineConfigure"
+    },
+    "ouvrirLeDossierCloudRacine": {
+      "fr": "Ouvrir le dossier Cloud racine dans un nouvel onglet sécurisé",
+      "pt": "Abrir a pasta raiz na Nuvem em nova aba segura",
+      "fullKey": "studio.photos.ouvrirLeDossierCloudRacine"
+    },
+    "ouvrirNotreCloud": {
+      "fr": "Ouvrir notre Cloud ↗",
+      "pt": "Acessar nossa Nuvem ↗",
+      "fullKey": "studio.photos.ouvrirNotreCloud"
+    },
+    "configurerLesIdentifiantsApiFramaspace": {
+      "fr": "Configurer les identifiants API Framaspace pour l'automatisation des dossiers",
+      "pt": "Configurar credenciais da API Framaspace para automação das pastas",
+      "fullKey": "studio.photos.configurerLesIdentifiantsApiFramaspace"
+    },
+    "masquerApiFramaspace": {
+      "fr": "Masquer API Framaspace",
+      "pt": "Ocultar API Framaspace",
+      "fullKey": "studio.photos.masquerApiFramaspace"
+    },
+    "automatisationFramaspace": {
+      "fr": "Automatisation Framaspace",
+      "pt": "Automação Framaspace",
+      "fullKey": "studio.photos.automatisationFramaspace"
+    },
+    "urlDAccesRacineAu": {
+      "fr": "🔗 URL d'accès racine au Cloud (Framaspace, Nextcloud, Google Drive, Dropbox)",
+      "pt": "🔗 URL raiz de acesso à Nuvem (Framaspace, Nextcloud, Google Drive, Dropbox)",
+      "fullKey": "studio.photos.urlDAccesRacineAu"
+    },
+    "exHttpsMonAssoFramaspace": {
+      "fr": "ex: https://mon-asso.framaspace.org/s/... ou https://drive.google.com/drive/folders/...",
+      "pt": "ex: https://minha-asso.framaspace.org/s/... ou https://drive.google.com/drive/folders/...",
+      "fullKey": "studio.photos.exHttpsMonAssoFramaspace"
+    },
+    "enregistrement": {
+      "fr": "⏳ Enregistrement...",
+      "pt": "⏳ Salvando...",
+      "fullKey": "studio.photos.enregistrement"
+    },
+    "enregistre": {
+      "fr": "✓ Enregistré !",
+      "pt": "✓ Salvo!",
+      "fullKey": "studio.photos.enregistre"
+    },
+    "enregistrer": {
+      "fr": "Enregistrer",
+      "pt": "Salvar",
+      "fullKey": "studio.photos.enregistrer"
+    },
+    "ceLienRacinePermetAux": {
+      "fr": "💡 Ce lien racine permet aux membres du pôle Studio d'accéder d'un clic à l'arborescence générale de stockage sans transiter par des serveurs tiers.",
+      "pt": "💡 Este link raiz permite aos integrantes do Studio acessar com um clique a estrutura geral de armazenamento sem passar por servidores de terceiros.",
+      "fullKey": "studio.photos.ceLienRacinePermetAux"
+    }
+  }
+}

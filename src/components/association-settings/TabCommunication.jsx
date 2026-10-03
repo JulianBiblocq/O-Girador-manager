@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from '../LanguageContext';
 import { collection, query, where, getDocs, doc, setDoc } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { db, functions } from '../../firebase';
@@ -15,7 +16,9 @@ import { extractYouTubeVideoId } from '../common/LiteYouTubeEmbed';
  * Composant d'administration dédié au pôle Studio pour la gestion de la Communication
  * (Configuration de l'expéditeur & des e-mails SaaS, Export CSV des abonnés newsletter, Synchronisation Brevo & Vidéo à la une).
  */
-export default function TabCommunication({ formData, handleChange, groupId, saving, t }) {
+export default function TabCommunication({ formData, handleChange, groupId, saving, t: propT }) {
+  const { t: hookT } = useTranslation();
+  const t = typeof propT === 'function' ? propT : hookT;
   // État local pour le comptage, l'exportation et la synchronisation des abonnés newsletter
   const [subscriberCount, setSubscriberCount] = useState(null);
   const [syncedBrevoCount, setSyncedBrevoCount] = useState(null);
@@ -48,7 +51,7 @@ export default function TabCommunication({ formData, handleChange, groupId, savi
           active: Boolean(formData?.videoALaUne?.active)
         }
       }, { merge: true });
-      setSavingVideoMsg('✓ Vidéo enregistrée et synchronisée avec l\'Accueil !');
+      setSavingVideoMsg(t('studio.communication.videoEnregistreeEtSynchroniseeAvec'));
       setTimeout(() => setSavingVideoMsg(''), 4000);
     } catch (err) {
       console.error("Erreur sauvegarde vidéo :", err);
@@ -145,7 +148,7 @@ export default function TabCommunication({ formData, handleChange, groupId, savi
       const subscribers = snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
 
       if (subscribers.length === 0) {
-        setNewsletterStatusMsg("⚠️ Aucun abonné à la newsletter enregistré pour le moment.");
+        setNewsletterStatusMsg(t('studio.communication.aucunAbonneALaNewsletter'));
         return;
       }
 
@@ -175,7 +178,7 @@ export default function TabCommunication({ formData, handleChange, groupId, savi
       setNewsletterStatusMsg(`✓ ${subscribers.length} abonné(s) exporté(s) avec succès !`);
     } catch (err) {
       console.error("Erreur lors de l'exportation CSV des abonnés newsletter :", err);
-      setNewsletterStatusMsg("❌ Erreur lors de la génération du fichier CSV.");
+      setNewsletterStatusMsg(t('studio.communication.erreurLorsDeLaGeneration'));
     } finally {
       setExportingNewsletter(false);
     }
@@ -195,23 +198,23 @@ export default function TabCommunication({ formData, handleChange, groupId, savi
               <div className="flex flex-col">
                 <div className="flex items-center gap-2">
                   <h4 className="text-xs font-black uppercase tracking-widest text-cordel-wood">
-                    Service d'envoi e-mails & Expéditeur
+                    {t('studio.communication.serviceDEnvoiEMails')}
                   </h4>
                   <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded border ${
                     isBrevoConfigured 
                       ? 'bg-emerald-50 text-[var(--color-cordel-vert)] border-emerald-300' 
                       : 'bg-amber-50 text-[var(--color-cordel-ocre)] border-amber-300'
                   }`}>
-                    {isBrevoConfigured ? "✓ Service d'envoi configuré" : "⚠️ Envoi désactivé / API non renseignée"}
+                    {isBrevoConfigured ? t('studio.communication.serviceDEnvoiConfigure') : t('studio.communication.envoiDesactiveApiNonRenseignee')}
                   </span>
                 </div>
                 <p className="text-[11px] text-stone-600 dark:text-stone-400 font-semibold mt-0.5">
-                  Expéditeur officiel : <strong className="text-encre-noire dark:text-white font-bold">{expediteurEmail}</strong>
+                  {t('studio.communication.expediteurOfficiel')} <strong className="text-encre-noire dark:text-white font-bold">{expediteurEmail}</strong>
                 </p>
               </div>
             </div>
             <p className="text-[10px] text-stone-500 italic max-w-xs leading-tight sm:text-right">
-              La gestion de la clé API Brevo, des signatures SPF/DKIM et de l'expéditeur officiel est centralisée dans <strong>Configuration › Communication, E-mails & Automatisations</strong>.
+              {t('studio.communication.laGestionDeLaCle')} <strong>{t('studio.communication.configurationCommunicationEMailsAutomatisations')}</strong>.
             </p>
           </CordelCard>
         );
@@ -224,10 +227,10 @@ export default function TabCommunication({ formData, handleChange, groupId, savi
             <span className="text-xl">🎬</span>
             <div>
               <h4 className="text-xs font-black uppercase tracking-widest text-cordel-wood">
-                Vidéo à la une (Accueil & Dashboard)
+                {t('studio.communication.videoALaUneAccueil')}
               </h4>
               <p className="text-[10px] text-cordel-master-dark/70 font-semibold mt-0.5">
-                Mettez en avant une captation, un tutoriel ou un débrief vidéo directement auprès des adhérents sur l'Accueil.
+                {t('studio.communication.mettezEnAvantUneCaptation')}
               </p>
             </div>
           </div>
@@ -242,7 +245,7 @@ export default function TabCommunication({ formData, handleChange, groupId, savi
             />
             <div className="w-9 h-5 bg-stone-300 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[var(--color-cordel-vert,#2d6a4f)] relative"></div>
             <span className="text-xs font-bold text-encre-noire select-none">
-              {formData?.videoALaUne?.active ? 'Affichée sur l\'Accueil' : 'Masquée'}
+              {formData?.videoALaUne?.active ? t('studio.communication.afficheeSurLAccueil') : t('studio.communication.masquee')}
             </span>
           </label>
         </div>
@@ -251,14 +254,14 @@ export default function TabCommunication({ formData, handleChange, groupId, savi
           {/* Champ Titre descriptif */}
           <div>
             <label className="block text-[10px] font-black uppercase tracking-wider text-cordel-master-dark mb-1">
-              Titre descriptif ou consigne
+              {t('studio.communication.titreDescriptifOuConsigne')}
             </label>
             <input
               type="text"
               name="videoALaUne.titre"
               value={formData?.videoALaUne?.titre || ''}
               onChange={(e) => handleChange('videoALaUne.titre', e.target.value)}
-              placeholder="ex: Débrief du concert d'Erdeven, Tutoriel Toada..."
+              placeholder={t('studio.communication.exDebriefDuConcertD')}
               className="w-full px-3 py-2 text-xs font-semibold bg-white border border-cordel-master-dark/30 rounded focus:outline-hidden focus:border-cordel-wood shadow-inner"
             />
           </div>
@@ -267,15 +270,15 @@ export default function TabCommunication({ formData, handleChange, groupId, savi
           <div>
             <div className="flex items-center justify-between mb-1">
               <label className="block text-[10px] font-black uppercase tracking-wider text-cordel-master-dark">
-                Lien de la vidéo YouTube *
+                {t('studio.communication.lienDeLaVideoYoutube')}
               </label>
               <button
                 type="button"
                 onClick={() => setIsPickerOpen(true)}
                 className="text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 bg-[var(--color-cordel-ocre,#c05621)] text-white rounded hover:brightness-110 cursor-pointer flex items-center gap-1 shadow-2xs"
-                title="Choisir parmi les playlists YouTube configurées"
+                title={t('studio.communication.choisirParmiLesPlaylistsYoutube')}
               >
-                <span>🎬 Choisir parmi nos vidéos</span>
+                <span>{t('studio.communication.choisirParmiNosVideos')}</span>
               </button>
             </div>
             <input
@@ -295,7 +298,7 @@ export default function TabCommunication({ formData, handleChange, groupId, savi
           if (!currentUrl) {
             return (
               <p className="text-[10px] text-stone-500 italic">
-                Formats acceptés : liens classiques (youtube.com/watch?v=...), partages courts (youtu.be/...), Shorts ou Embeds.
+                {t('studio.communication.formatsAcceptesLiensClassiquesYoutube')}
               </p>
             );
           }
@@ -304,15 +307,15 @@ export default function TabCommunication({ formData, handleChange, groupId, savi
             return (
               <div className="flex items-center gap-2 p-2 bg-emerald-50 border border-emerald-300 rounded text-emerald-800 text-xs font-bold">
                 <span>✓</span>
-                <span>ID YouTube validé : <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-emerald-200">{videoId}</code></span>
-                <span className="text-[10px] opacity-75 ml-auto">Miniature 16:9 prête</span>
+                <span>{t('studio.communication.idYoutubeValide')} <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-emerald-200">{videoId}</code></span>
+                <span className="text-[10px] opacity-75 ml-auto">{t('studio.communication.miniature169Prete')}</span>
               </div>
             );
           }
           return (
             <div className="flex items-center gap-2 p-2 bg-amber-50 border border-amber-300 rounded text-[var(--color-cordel-ocre,#c05621)] text-xs font-bold">
               <span>⚠️</span>
-              <span>Lien non reconnu. Assurez-vous d'avoir collé un lien YouTube valide.</span>
+              <span>{t('studio.communication.lienNonReconnuAssurezVous')}</span>
             </div>
           );
         })()}
@@ -320,7 +323,7 @@ export default function TabCommunication({ formData, handleChange, groupId, savi
         {/* Bouton de sauvegarde dédié à la vidéo */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-dashed border-cordel-master-dark/20">
           <span className="text-[10px] text-cordel-master-dark/75 font-semibold">
-            {savingVideoMsg || "Sauvegarde immédiate sans impacter la configuration e-mail/Brevo."}
+            {savingVideoMsg || t('studio.communication.sauvegardeImmediateSansImpacterLa')}
           </span>
           <CordelButton
             type="button"
@@ -330,7 +333,7 @@ export default function TabCommunication({ formData, handleChange, groupId, savi
             disabled={savingVideo || saving}
             className="text-[10px] font-black uppercase tracking-wider px-3.5 py-1.5 shadow-[1.5px_1.5px_0px_0px_#181716] self-start sm:self-auto"
           >
-            {savingVideo ? "Enregistrement..." : "💾 Enregistrer la vidéo"}
+            {savingVideo ? t('studio.communication.enregistrement') : t('studio.communication.enregistrerLaVideo')}
           </CordelButton>
         </div>
       </CordelCard>
@@ -347,21 +350,21 @@ export default function TabCommunication({ formData, handleChange, groupId, savi
         <div className="flex items-center gap-2.5 mb-2">
           <XiloMegaphone size={20} className="text-cordel-wood" />
           <h3 className="text-sm font-extrabold uppercase tracking-wider text-cordel-wood">
-            Communication & Diffusion Newsletter
+            {t('studio.communication.communicationDiffusionNewsletter')}
           </h3>
         </div>
         <p className="text-xs text-encre-noire dark:text-cordel-bg-light opacity-80 leading-relaxed">
-          Gérez l'exportation des adresses électroniques récoltées via la vitrine publique et configurez la synchronisation automatique avec votre compte Brevo (Sendinblue).
+          {t('studio.communication.gerezLExportationDesAdresses')}
         </p>
       </CordelCard>
 
       {/* Carte 1 : Abonnés Newsletter & Synchronisation Brevo */}
       <CordelCard variant="default" className="p-5 flex flex-col gap-4 bg-white border-2 border-[var(--color-cordel-vert,#2d6a4f)]/30 shadow-xs">
         <h4 className="text-xs font-black uppercase tracking-widest text-[var(--color-cordel-vert,#2d6a4f)] border-b border-dashed border-cordel-master-dark/20 pb-2 flex flex-wrap items-center justify-between gap-2">
-          <span>📬 Adhérents et Visiteurs Inscrits à la Newsletter</span>
+          <span>{t('studio.communication.adherentsEtVisiteursInscritsA')}</span>
           <div className="flex items-center gap-2">
             <span className="text-[10px] text-stone-700 font-bold font-mono bg-emerald-50 px-2 py-0.5 rounded border border-emerald-300">
-              {subscriberCount !== null ? `${subscriberCount} abonné(s)` : 'Chargement...'}
+              {subscriberCount !== null ? t('studio.newsletter.badgeSubscribersCountShort', { count: subscriberCount }) : t('studio.communication.chargement')}
             </span>
             {syncedBrevoCount !== null && (
               <span className={`text-[10px] font-bold font-mono px-2 py-0.5 rounded border ${
@@ -369,14 +372,14 @@ export default function TabCommunication({ formData, handleChange, groupId, savi
                   ? 'bg-emerald-50 text-[var(--color-cordel-vert,#2d6a4f)] border-emerald-300'
                   : 'bg-amber-50 text-[var(--color-cordel-ocre,#c05621)] border-amber-300'
               }`}>
-                ⚡ {syncedBrevoCount}/{subscriberCount || 0} dans Brevo
+                ⚡ {syncedBrevoCount}/{subscriberCount || 0} {t('studio.communication.dansBrevo')}
               </span>
             )}
           </div>
         </h4>
 
         <p className="text-xs text-stone-600 leading-relaxed">
-          Les adresses e-mails saisies par vos membres et visiteurs depuis la vitrine sont stockées en toute sécurité et synchronisées en temps réel vers Brevo. Vous pouvez également déclencher une synchronisation manuelle ou exporter le listing complet au format CSV.
+          {t('studio.communication.lesAdressesEMailsSaisies')}
         </p>
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-2">
@@ -388,7 +391,7 @@ export default function TabCommunication({ formData, handleChange, groupId, savi
               className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white bg-[var(--color-cordel-vert,#2d6a4f)] rounded-lg hover:brightness-110 active:scale-95 transition-all shadow-sm cursor-pointer disabled:opacity-50 flex items-center gap-2"
             >
               <span>📥</span>
-              <span>{exportingNewsletter ? "Génération du CSV..." : "Exporter CSV"}</span>
+              <span>{exportingNewsletter ? t('studio.communication.generationDuCsv') : t('studio.communication.exporterCsv')}</span>
             </button>
 
             <button
@@ -396,10 +399,10 @@ export default function TabCommunication({ formData, handleChange, groupId, savi
               onClick={handleSyncBrevo}
               disabled={syncingBrevo || subscriberCount === 0}
               className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-stone-800 bg-stone-100 hover:bg-stone-200 border border-stone-300 rounded-lg active:scale-95 transition-all shadow-sm cursor-pointer disabled:opacity-50 flex items-center gap-2"
-              title="Synchroniser immédiatement tous les contacts avec la liste Brevo configurée"
+              title={t('studio.communication.synchroniserImmediatementTousLesContacts')}
             >
               <span className={syncingBrevo ? "animate-spin" : ""}>🔄</span>
-              <span>{syncingBrevo ? "Synchronisation Brevo..." : "Synchroniser avec Brevo"}</span>
+              <span>{syncingBrevo ? t('studio.communication.synchronisationBrevo') : t('studio.communication.synchroniserAvecBrevo')}</span>
             </button>
           </div>
 

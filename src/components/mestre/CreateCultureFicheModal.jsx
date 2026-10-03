@@ -151,7 +151,7 @@ export default function CreateCultureFicheModal({
                 {t('mestre.repertoire.createVaralCultureHeading')}
               </h3>
               <span className="text-[10px] text-encre-noire/60 font-semibold">
-                {t('mestre.repertoire.autoGatewayFromPrefix')} « {piece.titre || 'le morceau'} »
+                {t('mestre.repertoire.autoGatewayFromPrefix')} « {piece.titre || t('pedagogy.admin.leMorceau')} »
               </span>
             </div>
           </div>
@@ -300,7 +300,7 @@ export default function CreateCultureFicheModal({
                 disabled={isSubmitting || !titre.trim()}
                 className="px-5 py-2 text-xs font-black uppercase tracking-wider flex items-center gap-1.5"
               >
-                <span>{isSubmitting ? "Création..." : "✨ Créer & Lier la Fiche"}</span>
+                <span>{isSubmitting ? t('pedagogy.admin.creation') : t('pedagogy.admin.creerLierLaFiche')}</span>
               </CordelButton>
             </div>
           </div>

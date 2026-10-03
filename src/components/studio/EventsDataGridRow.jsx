@@ -111,7 +111,7 @@ function EventsDataGridRow({
           onChange={(e) => handleChange('titre', e.target.value)}
           onBlur={() => handleBlur('titre', event.titre || '')}
           onKeyDown={(e) => handleKeyDown(e, 'titre', event.titre || '')}
-          placeholder="Titre..."
+          placeholder={t('studio.photos.titreAlt')}
           className="theme-input w-full min-w-[150px] py-1 px-2 text-xs font-extrabold"
         />
       </td>
@@ -123,12 +123,12 @@ function EventsDataGridRow({
           onChange={(e) => handleSelectChange('type', e.target.value, event.type || 'prestation')}
           className="theme-input w-full text-[11px] py-1 px-2 font-bold capitalize cursor-pointer"
         >
-          <option value="prestation">{t('secretariat.eventTypePrestation') || "Prestation"}</option>
-          <option value="repetition">{t('secretariat.eventTypeRepetition') || "Répétition"}</option>
-          <option value="stage">{t('secretariat.eventTypeStage') || "Stage"}</option>
-          <option value="atelier">{t('secretariat.eventTypeAtelier') || "Atelier"}</option>
-          <option value="reunion">{t('secretariat.eventTypeReunion') || "Réunion"}</option>
-          <option value="autre">{t('secretariat.eventTypeAutre') || "Autre"}</option>
+          <option value="prestation">{t('studio.photos.prestationAlt')}</option>
+          <option value="repetition">{t('studio.photos.repetition')}</option>
+          <option value="stage">{t('studio.photos.stage')}</option>
+          <option value="atelier">{t('studio.photos.atelier')}</option>
+          <option value="reunion">{t('studio.photos.reunion')}</option>
+          <option value="autre">{t('studio.photos.autre')}</option>
         </select>
       </td>
 
@@ -189,8 +189,8 @@ function EventsDataGridRow({
             }}
             className="theme-input w-full py-1 px-1 text-xs font-semibold bg-amber-50/60 border border-amber-300"
           >
-            <option value={localData.lieuSimple}>{localData.lieuSimple || "📍 Choisir un lieu..."}</option>
-            <optgroup label="📍 Lieux habituels de l'association">
+            <option value={localData.lieuSimple}>{localData.lieuSimple || t('studio.photos.choisirUnLieu')}</option>
+            <optgroup label={t('studio.photos.lieuxHabituelsDeLAssociation')}>
               {lieuxImportants.map((lieu) => {
                 const label = lieu.nom && lieu.adresse ? `${lieu.nom} - ${lieu.adresse}` : (lieu.adresse || lieu.nom);
                 return (
@@ -208,7 +208,7 @@ function EventsDataGridRow({
             onChange={(e) => handleChange('lieuSimple', e.target.value)}
             onBlur={() => handleBlur('lieuSimple', event.lieuSimple || event.lieu || '')}
             onKeyDown={(e) => handleKeyDown(e, 'lieuSimple', event.lieuSimple || event.lieu || '')}
-            placeholder="Lieu..."
+            placeholder={t('studio.photos.lieu')}
             className="theme-input w-full py-1 px-2 text-xs"
           />
         )}
@@ -232,8 +232,8 @@ function EventsDataGridRow({
           onChange={(e) => handleSelectChange('niveauRequis', e.target.value, event.niveauRequis || event.niveauPercussion || 'tous')}
           className="theme-input w-full text-[11px] py-1 px-2 font-bold cursor-pointer"
         >
-          <option value="tous">👥 Tous</option>
-          <option value="aucun">Aucun</option>
+          <option value="tous">{t('studio.photos.tousAlt')}</option>
+          <option value="aucun">{t('studio.photos.aucun')}</option>
           {customCategories.map(cat => (
             <option key={cat} value={cat}>{cat}</option>
           ))}
@@ -247,8 +247,8 @@ function EventsDataGridRow({
           onChange={(e) => handleSelectChange('niveauDanseRequis', e.target.value, event.niveauDanseRequis || event.niveauDanse || 'aucun')}
           className="theme-input w-full text-[11px] py-1 px-2 font-bold cursor-pointer"
         >
-          <option value="aucun">Aucun</option>
-          <option value="tous">👥 Tous</option>
+          <option value="aucun">{t('studio.photos.aucun')}</option>
+          <option value="tous">{t('studio.photos.tousAlt')}</option>
           {customCategories.map(cat => (
             <option key={cat} value={cat}>{cat}</option>
           ))}
@@ -263,7 +263,7 @@ function EventsDataGridRow({
           onChange={(e) => handleChange('tenueRequise', e.target.value)}
           onBlur={() => handleBlur('tenueRequise', event.tenueRequise || event.tenue || '')}
           onKeyDown={(e) => handleKeyDown(e, 'tenueRequise', event.tenueRequise || event.tenue || '')}
-          placeholder="Tenue..."
+          placeholder={t('studio.photos.tenueAlt')}
           className="theme-input w-full py-1 px-2 text-xs"
         />
       </td>
@@ -278,7 +278,7 @@ function EventsDataGridRow({
             activeColor="bg-amber-600 dark:bg-amber-500"
             label={`Toggle Percussion pour ${event.titre}`}
           />
-          <img src="/icones/alfaia.svg" alt="Percussion" className="w-3.5 h-3.5 object-contain dark:invert shrink-0 opacity-80" />
+          <img src="/icones/alfaia.svg" alt={t('studio.photos.percussion')} className="w-3.5 h-3.5 object-contain dark:invert shrink-0 opacity-80" />
         </div>
       </td>
 
@@ -367,7 +367,7 @@ function EventsDataGridRow({
       <td className="p-2 text-center min-w-[90px]">
         {(event.isStageLayoutPublished || event.stageLayout || event.planScene) ? (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
-            📐 Oui
+            📐 {t('studio.photos.oui')}
           </span>
         ) : (
           <span className="text-stone-400 text-xs font-mono">-</span>

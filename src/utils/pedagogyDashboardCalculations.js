@@ -7,10 +7,10 @@ import { normalizeString } from './repertoireMatcher';
  * Familles d'instruments de percussion du Maracatu
  */
 export const PERCUSSION_FAMILIES = [
-  { id: 'alfaias', label: 'Alfaias', icon: '🥁', keywords: ['alfaia', 'marcador', 'mele', 'tambor', 'surdo'] },
-  { id: 'caixas', label: 'Caixas', icon: '🥁', keywords: ['caixa', 'tarol', 'caixas'] },
-  { id: 'metaux', label: 'Métaux / Gonguê', icon: '🔔', keywords: ['gongue', 'gonguê', 'mineiro', 'ferro', 'metal', 'métaux'] },
-  { id: 'agbes', label: 'Agbês', icon: '🪇', keywords: ['agbe', 'agbê', 'abe', 'abê', 'xequere', 'xequerê', 'shekere'] }
+  { id: 'alfaias', labelKey: 'pedagogy.engine.alfaias', icon: '🥁', keywords: ['alfaia', 'marcador', 'mele', 'tambor', 'surdo'] },
+  { id: 'caixas', labelKey: 'pedagogy.engine.caixas', icon: '🥁', keywords: ['caixa', 'tarol', 'caixas'] },
+  { id: 'metaux', labelKey: 'pedagogy.engine.metauxGongue', icon: '🔔', keywords: ['gongue', 'gonguê', 'mineiro', 'ferro', 'metal', 'métaux'] },
+  { id: 'agbes', labelKey: 'pedagogy.engine.agbes', icon: '🪇', keywords: ['agbe', 'agbê', 'abe', 'abê', 'xequere', 'xequerê', 'shekere'] }
 ];
 
 /**

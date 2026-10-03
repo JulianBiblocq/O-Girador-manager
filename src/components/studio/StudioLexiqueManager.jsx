@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from '../LanguageContext';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import {
@@ -26,6 +27,7 @@ export default function StudioLexiqueManager({
   onBack,
   onNavigateToView
 }) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
@@ -133,10 +135,10 @@ export default function StudioLexiqueManager({
         { merge: true }
       );
 
-      showToast("Modifications enregistrées avec succès !");
+      showToast(t('studio.lexique.modificationsEnregistreesAvecSucces'));
     } catch (error) {
       console.error("StudioLexiqueManager - Erreur enregistrement :", error);
-      showToast("Erreur lors de l'enregistrement.");
+      showToast(t('studio.lexique.erreurLorsDeLEnregistrement'));
     } finally {
       setSaving(false);
     }
@@ -163,7 +165,7 @@ export default function StudioLexiqueManager({
       <div className="flex flex-col items-center justify-center py-16 space-y-3">
         <div className="animate-spin text-3xl select-none">⏳</div>
         <p className="font-semibold text-xs uppercase tracking-widest text-cordel-master-dark opacity-60">
-          Chargement du lexique et des mentions...
+          {t('studio.lexique.chargementDuLexiqueEtDes')}
         </p>
       </div>
     );
@@ -175,22 +177,22 @@ export default function StudioLexiqueManager({
       <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-dashed border-cordel-master-dark/30">
         <div>
           <div className="flex items-center gap-2 text-[10px] font-bold text-cordel-master-dark uppercase tracking-wider mb-1">
-            <span>Studio</span>
+            <span>{t('studio.lexique.studio')}</span>
             <span>›</span>
-            <span className="text-[var(--color-cordel-vert)] dark:text-emerald-400">Lexique & Carnet Social</span>
+            <span className="text-[var(--color-cordel-vert)] dark:text-emerald-400">{t('studio.lexique.lexiqueCarnetSocial')}</span>
           </div>
           <h2 className="text-xl font-black text-cordel-wood uppercase flex items-center gap-2">
-            <span>📖</span> Lexique, Mentions & Hashtags
+            <span>📖</span> {t('studio.lexique.lexiqueMentionsHashtags')}
           </h2>
           <p className="text-xs text-cordel-master-dark/75 mt-0.5">
-            Gérez le vocabulaire recommandé, le carnet de mentions (@comptes) et les hashtags officiels du Studio Social.
+            {t('studio.lexique.gerezLeVocabulaireRecommandeLe')}
           </p>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
           {saving && (
             <span className="text-xs font-bold text-amber-800 animate-pulse flex items-center gap-1">
-              <span>⏳</span> Sauvegarde...
+              <span>⏳</span> {t('studio.lexique.sauvegarde')}
             </span>
           )}
 
@@ -206,7 +208,7 @@ export default function StudioLexiqueManager({
               onClick={() => onNavigateToView('studio-social')}
               className="px-3 py-1.5 rounded text-xs font-bold bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-800/30 transition-all cursor-pointer flex items-center gap-1"
             >
-              <span>📱</span> Ouvrir le Studio Social
+              <span>📱</span> {t('studio.lexique.ouvrirLeStudioSocial')}
             </button>
           )}
 
@@ -216,7 +218,7 @@ export default function StudioLexiqueManager({
               onClick={onBack}
               className="text-xs font-bold"
             >
-              ⬅️ Retour
+              {t('studio.lexique.retour')}
             </CordelButton>
           )}
         </div>

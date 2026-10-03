@@ -547,9 +547,9 @@ export default function LayoutShell({
                     window.location.href = '/demo?app=mostrador';
                   }}
                   className="w-full mt-1.5 py-1 px-2 text-[9px] font-black uppercase tracking-wider bg-[var(--color-cordel-vert)] text-white rounded-[5px_8px_6px_9px] border-2 border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-110 cursor-pointer flex items-center justify-center gap-1 transition-all"
-                  title="Ouvrir la Vitrine Publique en mode démo"
+                  title={t('menu.vitrine')}
                 >
-                  <span>🌍 Voir le site public ↗</span>
+                  <span>🌍 {t('menu.vitrine')} ↗</span>
                 </button>
               )}
               {associationName && (
@@ -763,7 +763,7 @@ export default function LayoutShell({
                 className="hover:opacity-100 hover:text-cordel-wood cursor-pointer underline flex items-center gap-0.5"
                 title="Vider les caches et actualiser l'application"
               >
-                🔄 Actualiser
+                🔄 {t('menu.refreshApp')}
               </button>
             </div>
           </div>
@@ -928,7 +928,7 @@ export default function LayoutShell({
 
                 {/* ÉTAGE 2 : Barre de navigation métier (Sous-onglets horizontaux sur toute la largeur disponible) */}
                 {visibleTabs.length > 0 && (
-                  <div className="flex items-center justify-between gap-2 border-b border-dashed border-cordel-master-dark/20 pb-2 mb-1 w-full max-w-full">
+                  <div className="flex items-center justify-between gap-2 border-b border-dashed border-cordel-master-dark/20 pb-2 mb-1 w-full max-w-full min-w-0 lg:flex-wrap">
                     {/* Menu d'onglets horizontaux principaux du pôle courant sous forme de ruban défilant */}
                     <div className="flex items-center min-w-0 flex-1 max-w-full overflow-hidden lg:overflow-visible">
                       <HorizontalRibbonContainer activeTabId={currentTab} className="flex-1">
@@ -999,6 +999,10 @@ export default function LayoutShell({
                   key={`help_banner_${activePoleObj?.id || currentPole}_${currentTab || 'default'}`}
                   currentPole={activePoleObj?.id || currentPole} 
                   currentTab={currentTab} 
+                  currentProfile={currentProfile}
+                  userTags={userTags}
+                  permissionsMatrice={permissionsMatrice}
+                  isSystemOrSuperAdminOrMestre={isSystemOrSuperAdminOrMestre}
                 />
                 <PageAccessBadgeIndicator 
                   currentTab={currentTab}
@@ -1056,6 +1060,19 @@ export default function LayoutShell({
                   <span className="font-black text-xs uppercase tracking-wider text-cordel-wood leading-tight text-center break-words max-w-[200px]">
                     {associationName}
                   </span>
+                )}
+
+                {isDemoMode() && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.location.href = '/demo?app=mostrador';
+                    }}
+                    className="w-full mt-1.5 py-1 px-2 text-[9px] font-black uppercase tracking-wider bg-[var(--color-cordel-vert)] text-white rounded-[5px_8px_6px_9px] border-2 border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-110 cursor-pointer flex items-center justify-center gap-1 transition-all"
+                    title={t('menu.vitrine')}
+                  >
+                    <span>🌍 {t('menu.vitrine')} ↗</span>
+                  </button>
                 )}
 
                 {/* Encart réservé Administration Technique (Super-Admin / Mestres réels ou simulation active) */}
@@ -1303,7 +1320,7 @@ export default function LayoutShell({
                     className="hover:opacity-100 text-cordel-wood underline cursor-pointer flex items-center gap-1 font-black uppercase text-[8px]"
                     title="Vider les caches et actualiser l'application"
                   >
-                    🔄 Actualiser
+                    🔄 {t('menu.refreshApp')}
                   </button>
                 </div>
               </div>

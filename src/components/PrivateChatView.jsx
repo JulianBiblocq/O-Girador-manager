@@ -557,10 +557,10 @@ export default function PrivateChatView({
   };
 
   return (
-    <div className="fixed inset-0 z-40 md:relative md:inset-auto md:z-auto flex flex-col h-[100dvh] max-h-[100dvh] md:h-[calc(100vh-130px)] md:max-h-[calc(100vh-130px)] overflow-hidden w-full overscroll-contain bg-cordel-bg text-left select-none md:border-2 md:border-encre-noire md:rounded-[8px_12px_10px_9px] md:shadow-[4px_4px_0px_0px_#181716]">
+    <div className="fixed inset-0 z-40 md:relative md:inset-auto md:z-auto flex flex-col h-[100dvh] max-h-[100dvh] md:h-[calc(100dvh-200px)] md:max-h-[calc(100dvh-200px)] overflow-hidden w-full overscroll-contain bg-cordel-bg text-left select-none md:border-2 md:border-encre-noire md:rounded-[8px_12px_10px_9px] md:shadow-[4px_4px_0px_0px_#181716]">
       
-      {/* 1. En-tête de la discussion */}
-      <div className="flex items-center justify-between border-b-2 border-dashed border-encre-noire/20 p-3 bg-white/40 dark:bg-black/10">
+      {/* 1. En-tête de la discussion (shrink-0) */}
+      <div className="shrink-0 flex items-center justify-between border-b-2 border-dashed border-encre-noire/20 p-3 bg-white/40 dark:bg-black/10">
         <div className="flex items-center gap-3 min-w-0">
           <button 
             type="button" 
@@ -612,7 +612,7 @@ export default function PrivateChatView({
       </div>
 
       {/* 2. Zone des messages : unique zone autorisée à défiler verticalement */}
-      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 py-2 flex flex-col gap-3.5 bg-cordel-bg-light/40 scrollbar-thin">
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 py-2 pb-6 flex flex-col gap-3.5 bg-cordel-bg-light/40 scrollbar-thin">
         {activeMessages.length === 0 ? (
           <div className="flex-1 flex flex-col justify-center items-center opacity-50 select-none">
             <span className="text-xl mb-2">{isGroup ? '👥' : '✉️'}</span>
@@ -840,12 +840,12 @@ export default function PrivateChatView({
             );
           })
         )}
-        {/* Coussin d'espacement (pb-4) et ancre invisible de fin de liste pour le scroll automatique */}
-        <div ref={messagesEndRef} className="h-6 shrink-0 pb-4 pointer-events-none" aria-hidden="true" />
+        {/* Coussin d'espacement (pb-6) et ancre invisible de fin de liste pour le scroll automatique */}
+        <div ref={messagesEndRef} className="h-8 shrink-0 pb-6 pointer-events-none" aria-hidden="true" />
       </div>
 
       {/* 3. Zone de saisie et d'envoi dockée en bas d'écran */}
-      <div className="shrink-0 flex flex-col border-t-2 border-dashed border-encre-noire/20 p-2.5 pb-[max(env(safe-area-inset-bottom),0.75rem)] bg-white/40 dark:bg-black/10 select-none">
+      <div className="shrink-0 flex flex-col border-t-2 border-dashed border-cordel-master-dark/25 p-2.5 pb-[max(env(safe-area-inset-bottom),0.75rem)] bg-[var(--theme-bg)] select-none">
         
         {/* Bandeau de réponse / citation active */}
         {replyingTo && (

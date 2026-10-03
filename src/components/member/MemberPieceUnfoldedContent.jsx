@@ -43,12 +43,12 @@ export default function MemberPieceUnfoldedContent({
 
   return (
     <div className="p-3.5 flex flex-col gap-3 text-left">
-      {/* 1. Notes du Mestre */}
+      {/* 1. {t('pedagogy.modals.notesDuMestre')} */}
       {piece.notes && piece.notes.trim() !== '' && (
         <div className="p-2.5 rounded bg-amber-50/80 border border-dashed border-amber-300 text-left">
           <span className="text-[9.5px] uppercase font-black text-amber-950 flex items-center gap-1 mb-1">
             <span>📝</span>
-            <span>Notes du Mestre</span>
+            <span>{t('pedagogy.modals.notesDuMestre')}</span>
           </span>
           <p className="text-xs text-amber-900 whitespace-pre-wrap leading-relaxed">{piece.notes}</p>
         </div>
@@ -58,7 +58,7 @@ export default function MemberPieceUnfoldedContent({
       {audioUrl && (
         <div className="flex items-center gap-2 p-2 rounded bg-cordel-bg-light border border-encre-noire/15">
           <span className="text-xs select-none">🎧</span>
-          <span className="text-[10px] font-bold text-stone-600 hidden sm:inline">{t('repertoire.audioRecord') || "Écouter l'audio"} :</span>
+          <span className="text-[10px] font-bold text-stone-600 hidden sm:inline">{t('repertoire.audioRecord') || t('pedagogy.modals.ecouterLAudio')} :</span>
           <audio controls src={audioUrl} className="w-full h-8" preload="none" />
         </div>
       )}
@@ -71,10 +71,10 @@ export default function MemberPieceUnfoldedContent({
             type="button"
             onClick={() => onOpenToada && onOpenToada(piece.activeToada, piece)}
             className="px-2.5 py-1 text-xs font-bold rounded bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-950 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all select-none"
-            title="Consulter les paroles complètes du chant"
+            title={t('pedagogy.modals.consulterLesParolesCompletes')}
           >
             <span>🗣️</span>
-            <span>{t('repertoire.lyricsTab') || 'Paroles'}{piece.activeToada?.titre ? ` (${piece.activeToada.titre})` : ''}</span>
+            <span>{t('repertoire.lyricsTab') || t('pedagogy.modals.paroles')}{piece.activeToada?.titre ? ` (${piece.activeToada.titre})` : ''}</span>
           </button>
         )}
 
@@ -101,11 +101,11 @@ export default function MemberPieceUnfoldedContent({
               type="button"
               onClick={() => onOpenCulture && onOpenCulture(cultureDocs[0] || null, piece, cultureDocs)}
               className="px-2.5 py-1 text-xs font-bold rounded bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-900 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all select-none"
-              title="Consulter la fiche culturelle"
+              title={t('pedagogy.modals.consulterLaFicheCulturelle')}
             >
               <span>📖</span>
               <span>
-                {t('repertoire.cultureTab') || 'Culture & Histoire'}
+                {t('repertoire.cultureTab') || t('pedagogy.modals.cultureHistoire')}
                 {(cultureDocs[0]?.titre || cultureDocs[0]?.name)
                   ? ` : ${cultureDocs[0].titre || cultureDocs[0].name}`
                   : ''}
@@ -120,10 +120,10 @@ export default function MemberPieceUnfoldedContent({
             type="button"
             onClick={() => onOpenTablature && onOpenTablature(piece)}
             className="px-2.5 py-1 text-xs font-bold rounded bg-stone-50 hover:bg-stone-100 border border-stone-300 text-stone-900 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all select-none"
-            title="Consulter la tablature complète"
+            title={t('pedagogy.modals.consulterLaTablatureComplete')}
           >
             <span>📄</span>
-            <span>Tablature</span>
+            <span>{t('pedagogy.modals.tablature')}</span>
           </button>
         )}
 
@@ -133,10 +133,10 @@ export default function MemberPieceUnfoldedContent({
             type="button"
             onClick={() => onOpenSignals && onOpenSignals(piece)}
             className="px-2.5 py-1 text-xs font-bold rounded bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-950 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all select-none"
-            title="Consulter l'aide-mémoire des signes du Mestre"
+            title={t('pedagogy.modals.consulterLAideMemoire')}
           >
             <span>🖐️</span>
-            <span>{t('repertoire.signalsTab') || 'Signes du Mestre'}</span>
+            <span>{t('repertoire.signalsTab') || t('pedagogy.modals.signesDuMestre')}</span>
           </button>
         )}
 
@@ -144,15 +144,15 @@ export default function MemberPieceUnfoldedContent({
         {piece.activeChoreography && (
           <div className="px-2.5 py-1 text-xs font-bold rounded bg-purple-50 border border-purple-200 text-purple-900 flex items-center gap-1.5 shadow-2xs select-none">
             <span>💃</span>
-            <span>Danse : {piece.activeChoreography.nom || piece.activeChoreography.titre || 'Chorégraphie'}</span>
+            <span>{t('pedagogy.modals.danse')} {piece.activeChoreography.nom || piece.activeChoreography.titre || t('pedagogy.modals.choregraphie')}</span>
           </div>
         )}
 
         {/* Passerelle Séquenceur si disponible */}
         {(piece.sequenceurFileUrl || piece.sequenceurId || piece.hasSequencer) && sequenceurUrl && (
-          <a href={sequenceurUrl} target="_blank" rel="noopener noreferrer" className="px-2.5 py-1 text-xs font-bold rounded bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-950 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all select-none" title="Ouvrir le morceau dans le Séquenceur">
+          <a href={sequenceurUrl} target="_blank" rel="noopener noreferrer" className="px-2.5 py-1 text-xs font-bold rounded bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-950 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all select-none" title={t('pedagogy.modals.ouvrirLeMorceauDans')}>
             <span>🥁</span>
-            <span>{t('repertoire.sequencerTab') || 'Séquenceur'}</span>
+            <span>{t('repertoire.sequencerTab') || t('pedagogy.modals.sequenceur')}</span>
             <span className="text-[9px] opacity-70">↗</span>
           </a>
         )}
@@ -162,10 +162,10 @@ export default function MemberPieceUnfoldedContent({
           type="button"
           onClick={() => (onOpenQuiz ? onOpenQuiz(piece) : setIsQuizModalOpen(true))}
           className="px-2.5 py-1 text-xs font-bold rounded bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-950 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all select-none"
-          title="Lancer le QCM Focus Répertoire pour réviser ce morceau"
+          title={t('pedagogy.modals.lancerLeQcmFocus')}
         >
           <span>🎯</span>
-          <span>{t('repertoire.revisePiece') || 'Réviser ce morceau'}</span>
+          <span>{t('repertoire.revisePiece') || t('pedagogy.modals.reviserCeMorceau')}</span>
         </button>
       </div>
 

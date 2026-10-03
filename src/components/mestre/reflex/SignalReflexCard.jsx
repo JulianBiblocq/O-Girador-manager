@@ -35,7 +35,7 @@ export default function SignalReflexCard({
     { key: 'marcante', label: t('mestre.sequenceur.voiceMarcante') },
     { key: 'agbe', label: t('mestre.sequenceur.instrumentAgbe') },
     { key: 'mineiro', label: 'Mineiro' },
-    { key: 'timbal', label: 'Timbal' }
+    { key: 'timbal', label: t('pedagogy.admin.timbal') }
   ];
 
   const isInteractive = override.isInteractive !== undefined
@@ -192,7 +192,7 @@ export default function SignalReflexCard({
                 }`}
                 title={isLocked ? "Leurres figés pour ce morceau" : "Verrouiller ces 3 leurres pour tous les élèves"}
               >
-                <span>{isLocked ? '🔒 Figé' : '🔓 Dynamique'}</span>
+                <span>{isLocked ? t('pedagogy.admin.fige') : t('pedagogy.admin.dynamique')}</span>
               </button>
             </div>
           </div>
@@ -217,7 +217,7 @@ export default function SignalReflexCard({
                   <span>⚠️</span>
                   <span>
                     {t('mestre.sequenceur.distractorPrefix')}{dIdx + 1}
-                    {dIdx === 0 ? ' (Inattention)' : dIdx === 1 ? ' (Catalogue)' : ' (Variation)'}
+                    {dIdx === 0 ? t('pedagogy.admin.inattention') : dIdx === 1 ? t('pedagogy.admin.catalogue') : t('pedagogy.admin.variation')}
                   </span>
                 </span>
                 <div className="pointer-events-none scale-90 -my-1">

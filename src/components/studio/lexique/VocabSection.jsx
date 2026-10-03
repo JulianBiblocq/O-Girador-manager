@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from '../../LanguageContext';
 import VocabForm from './VocabForm';
 import useConfirm from '../../../hooks/useConfirm';
 
@@ -17,6 +18,7 @@ export default function VocabSection({
   onSaveEquivalences,
   disabled = false
 }) {
+  const { t } = useTranslation();
   const confirm = useConfirm();
   const [isAdding, setIsAdding] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -87,10 +89,10 @@ export default function VocabSection({
       <div className="flex items-center justify-between gap-2 pb-3 border-b border-dashed border-cordel-master-dark/25">
         <div>
           <h3 className="text-base font-black text-cordel-wood uppercase flex items-center gap-2">
-            <span>📖</span> Vocabulaire & Guide culturel
+            <span>📖</span> {t('studio.lexique.vocabulaireGuideCulturel')}
           </h3>
           <p className="text-xs text-cordel-master-dark/75 mt-0.5">
-            Équivalences culturelles, termes recommandés et activation des pastilles d'insertion rapide.
+            {t('studio.lexique.equivalencesCulturellesTermesRecommandesEt')}
           </p>
         </div>
 
@@ -101,7 +103,7 @@ export default function VocabSection({
             onClick={handleStartAdd}
             className="px-3 py-1.5 rounded text-xs font-bold text-white bg-[var(--color-cordel-vert)] hover:opacity-90 active:scale-95 transition-all shadow-xs cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
           >
-            <span>➕</span> Nouvelle équivalence
+            <span>➕</span> {t('studio.lexique.nouvelleEquivalence')}
           </button>
         )}
       </div>
@@ -119,17 +121,17 @@ export default function VocabSection({
       <div className="mt-3 overflow-x-auto">
         {equivalences.length === 0 ? (
           <div className="py-6 text-center text-xs italic text-cordel-master-dark/60">
-            Aucune équivalence culturelle enregistrée.
+            {t('studio.lexique.aucuneEquivalenceCulturelleEnregistree')}
           </div>
         ) : (
           <table className="w-full text-xs border-collapse">
             <thead>
               <tr className="border-b border-cordel-master-dark/20 text-left text-[11px] uppercase tracking-wider text-cordel-wood font-black">
-                <th className="py-2 px-3">Terme privilégié</th>
-                <th className="py-2 px-3">À éviter</th>
-                <th className="py-2 px-3">Contexte</th>
-                <th className="py-2 px-3 text-center">Pastille rapide</th>
-                <th className="py-2 px-3 text-right">Actions</th>
+                <th className="py-2 px-3">{t('studio.lexique.termePrivilegie')}</th>
+                <th className="py-2 px-3">{t('studio.lexique.aEviter')}</th>
+                <th className="py-2 px-3">{t('studio.lexique.contexte')}</th>
+                <th className="py-2 px-3 text-center">{t('studio.lexique.pastilleRapide')}</th>
+                <th className="py-2 px-3 text-right">{t('studio.lexique.actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-cordel-master-dark/10">
@@ -156,7 +158,7 @@ export default function VocabSection({
                       )}
                     </td>
                     <td className="py-2.5 px-3 text-[11px] text-cordel-master-dark/80 max-w-xs leading-relaxed">
-                      {context || <span className="text-neutral-400 italic">Aucun contexte</span>}
+                      {context || <span className="text-neutral-400 italic">{t('studio.lexique.aucunContexte')}</span>}
                     </td>
                     <td className="py-2.5 px-3 text-center">
                       <button
@@ -170,7 +172,7 @@ export default function VocabSection({
                         }`}
                         title={isChipActive ? "Désactiver la pastille rapide" : "Activer la pastille rapide"}
                       >
-                        {isChipActive ? "✅ Active" : "⚪ Désactivée"}
+                        {isChipActive ? t('studio.lexique.active') : t('studio.lexique.desactivee')}
                       </button>
                     </td>
                     <td className="py-2.5 px-3 text-right">
@@ -180,7 +182,7 @@ export default function VocabSection({
                           disabled={disabled}
                           onClick={() => handleStartEdit(item)}
                           className="p-1 rounded text-neutral-600 hover:text-amber-800 hover:bg-amber-100 dark:hover:bg-neutral-700 transition-colors cursor-pointer"
-                          title="Modifier l'équivalence"
+                          title={t('studio.lexique.modifierLEquivalence')}
                         >
                           ✏️
                         </button>
@@ -189,7 +191,7 @@ export default function VocabSection({
                           disabled={disabled}
                           onClick={() => handleDelete(item.id, preferred)}
                           className="p-1 rounded text-neutral-600 hover:text-[var(--color-cordel-rouge)] hover:bg-red-100 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
-                          title="Supprimer l'équivalence"
+                          title={t('studio.lexique.supprimerLEquivalence')}
                         >
                           🗑️
                         </button>

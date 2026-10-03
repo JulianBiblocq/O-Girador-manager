@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '../../LanguageContext';
 
 /**
  * Composant d'affichage visuel de la barre de progression (Stepper UI) en 4 étapes.
@@ -7,15 +8,16 @@ import React from 'react';
  * @param {Function} onSelectStep - Callback de changement d'étape au clic
  */
 export default function NewsletterStepper({ currentStep, onSelectStep }) {
+  const { t } = useTranslation();
   const steps = [
-    { number: 1, title: "1. Message d'accueil", desc: "Édito & Bienvenue" },
-    { number: 2, title: "2. Prochaines dates", desc: "Événements à venir" },
-    { number: 3, title: "3. Retour en images", desc: "Bilan & Galerie photos" },
-    { number: 4, title: "4. Récapitulatif", desc: "Validation & Export" }
+    { number: 1, title: `1. ${t('studio.newsletter.step1Title')}`, desc: t('studio.newsletter.step1Sub') },
+    { number: 2, title: `2. ${t('studio.newsletter.step2Title')}`, desc: t('studio.newsletter.step2Sub') },
+    { number: 3, title: `3. ${t('studio.newsletter.step3Title')}`, desc: t('studio.newsletter.step3Sub') },
+    { number: 4, title: `4. ${t('studio.newsletter.step4Title')}`, desc: t('studio.newsletter.step4Sub') }
   ];
 
   return (
-    <nav aria-label="Progression de la newsletter" className="w-full mb-8">
+    <nav aria-label={t('studio.newsletter.progressionDeLaNewsletter')} className="w-full mb-8">
       <ol className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {steps.map((step) => {
           const isActive = currentStep === step.number;

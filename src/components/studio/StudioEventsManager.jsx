@@ -153,15 +153,15 @@ export default function StudioEventsManager({ groupId, onBack }) {
                   onClick={onBack}
                   className="text-xs font-bold uppercase tracking-wider text-cordel-master-dark hover:underline select-none mr-2"
                 >
-                  ← {t('common.back') || 'Retour'}
+                  ← {t('studio.photos.retour')}
                 </button>
               )}
               <h2 className="panel-title text-xl font-black text-cordel-wood flex items-center gap-2">
-                📅 {t('secretariat.eventsManagementTitle') || "Gestion des événements"}
+                📅 {t('secretariat.eventsManagementTitle')}
               </h2>
             </div>
             <p className="text-xs text-cordel-master-dark/70 font-medium mt-1">
-              {t('secretariat.eventsManagementSubtitle') || "Tableau de bord d'édition rapide et globale des événements pour l'administration."}
+              {t('secretariat.eventsManagementSubtitle')}
             </p>
           </div>
 
@@ -171,7 +171,7 @@ export default function StudioEventsManager({ groupId, onBack }) {
               {t('secretariat.kpiTotal', { count: countTotal })}
             </span>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700/60 font-bold">
-              <img src="/icones/alfaia.svg" alt="Perc" className="w-3 h-3 object-contain dark:invert" />
+              <img src="/icones/alfaia.svg" alt={t('studio.photos.perc')} className="w-3 h-3 object-contain dark:invert" />
               {t('secretariat.kpiPerc', { count: countPercussion })}
             </span>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-pink-100 dark:bg-pink-950/60 text-pink-900 dark:text-pink-200 border border-pink-300 dark:border-pink-700/60 font-bold">
@@ -184,10 +184,10 @@ export default function StudioEventsManager({ groupId, onBack }) {
               type="button"
               onClick={() => setIsBatchModalOpen(true)}
               className="px-2.5 py-1 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 border-encre-noire bg-amber-200 hover:bg-amber-300 text-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none flex items-center gap-1.5 cursor-pointer transition-all ml-1"
-              title="⚡ Planifier une série de répétitions pour la saison"
+              title={t('studio.photos.planifierUneSerieDeRepetitions')}
             >
               <span>⚡</span>
-              <span>{t('secretariat.btnScheduleSeries') || "Planifier une série"}</span>
+              <span>{t('secretariat.btnScheduleSeries')}</span>
             </button>
           </div>
         </div>
@@ -221,7 +221,7 @@ export default function StudioEventsManager({ groupId, onBack }) {
             {/* Selector: Afficher : [ À venir (Défaut) | Passés | Tous ] */}
             <div className="flex items-center gap-1 shrink-0 w-full sm:w-auto overflow-x-auto select-none">
               <span className="text-[10px] font-black uppercase tracking-wider text-cordel-master-dark/60 shrink-0 mr-1">
-                {t('agendaTemporal.filterLabel') || "Afficher :"}
+                {t('studio.photos.afficher')}
               </span>
               <button
                 type="button"
@@ -232,7 +232,7 @@ export default function StudioEventsManager({ groupId, onBack }) {
                     : 'bg-black/5 dark:bg-white/10 text-cordel-master-dark/70 hover:bg-black/10'
                 }`}
               >
-                {t('agendaTemporal.upcoming') || "À venir (Défaut)"}
+                {t('studio.photos.aVenirDefaut')}
               </button>
               <button
                 type="button"
@@ -243,7 +243,7 @@ export default function StudioEventsManager({ groupId, onBack }) {
                     : 'bg-black/5 dark:bg-white/10 text-cordel-master-dark/70 hover:bg-black/10'
                 }`}
               >
-                {t('agendaTemporal.past') || "Passés"}
+                {t('studio.photos.passes')}
               </button>
               <button
                 type="button"
@@ -254,14 +254,14 @@ export default function StudioEventsManager({ groupId, onBack }) {
                     : 'bg-black/5 dark:bg-white/10 text-cordel-master-dark/70 hover:bg-black/10'
                 }`}
               >
-                {t('agendaTemporal.all') || "Tous"}
+                {t('studio.photos.tous')}
               </button>
             </div>
           </div>
 
           <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
             <span className="text-[10px] font-black uppercase tracking-wider text-cordel-master-dark/60 shrink-0">
-              {t('secretariat.filterTypeLabel') || "Type :"}
+              {t('secretariat.filterTypeLabel')}
             </span>
             <button
               type="button"
@@ -309,7 +309,7 @@ export default function StudioEventsManager({ groupId, onBack }) {
       {loading ? (
         <CordelCard variant="default" className="py-12 text-center">
           <div className="text-sm font-bold text-cordel-wood animate-pulse flex items-center justify-center gap-2">
-            ⏳ {t('common.loading') || "Chargement des événements en direct..."}
+            ⏳ {t('studio.photos.chargementDesEvenementsEnDirect')}
           </div>
         </CordelCard>
       ) : (

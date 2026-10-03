@@ -3,6 +3,7 @@ import CordelButton from '../CordelButton';
 import { generateContractPDF, downloadContractPDF } from '../../utils/contractPdfGenerator';
 import { updateContactLastDate } from '../../utils/updateContactLastDate';
 import { sendAssociationEmail } from '../../utils/emailService';
+import useModalEscape from '../../hooks/useModalEscape';
 
 /**
  * Modale d'envoi du Contrat de Prestation PDF par E-mail.
@@ -58,6 +59,9 @@ export default function GigSendContractModal({
       setShowErrorDetails(false);
     }
   }, [gig, isOpen, configuredApiKey, configuredSenderEmail, assocName]);
+
+  // Fermeture accessible avec la touche Échap
+  useModalEscape(isOpen, onClose, sending);
 
   if (!isOpen || !gig) return null;
 
@@ -143,12 +147,11 @@ export default function GigSendContractModal({
   return (
     <div
       tabIndex={-1}
-      onKeyDown={(e) => e.key === 'Escape' && !sending && onClose()}
       className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 select-none outline-none animate-fade-in"
     >
-      <div className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-lg bg-white shadow-2xl border-2 border-cordel-master-dark/40 overflow-hidden text-left">
+      <div className="relative w-full max-w-2xl max-h-[90dvh] flex flex-col rounded-lg bg-white shadow-2xl border-2 border-cordel-master-dark/40 overflow-hidden text-left">
         {/* 1. Header (Fixe) */}
-        <div className="flex-shrink-0 p-4 border-b border-dashed border-cordel-master-dark/20 flex items-center justify-between bg-white">
+        <div className="shrink-0 p-4 border-b border-dashed border-cordel-master-dark/20 flex items-center justify-between bg-white">
           <div className="flex items-center gap-2">
             <span className="text-xl">✍️</span>
             <div>
@@ -172,9 +175,9 @@ export default function GigSendContractModal({
         </div>
 
         {/* Form Wrapper */}
-        <form onSubmit={handleSendContract} className="flex flex-col flex-1 overflow-hidden">
+        <form onSubmit={handleSendContract} className="flex flex-col flex-1 min-h-0 overflow-hidden">
           {/* 2. Body (Défilable verticalement) */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-4">
             {/* Message d'état et erreurs explicites */}
             {statusMessage && (
               <div className={`p-3 rounded border text-xs font-bold flex flex-col gap-1 ${
@@ -322,24 +325,24 @@ export default function GigSendContractModal({
           </div>
 
           {/* 3. Footer (Fixe en bas) */}
-          <div className="flex-shrink-0 p-4 border-t border-dashed border-cordel-master-dark/20 flex flex-wrap items-center justify-between gap-2 bg-stone-50">
+          <div className="shrink-0 p-4 border-t border-dashed border-cordel-master-dark/20 flex flex-wrap items-center justify-between gap-2 bg-[var(--theme-bg)] pb-[max(env(safe-area-inset-bottom),1rem)]">
             <button
               type="button"
               onClick={handleDownloadBackup}
-              className="text-[11px] font-bold text-stone-600 hover:text-stone-900 underline cursor-pointer"
+              className="text-[11px] font-bold text-stone-600 hover:text-stone-900 underline cursor-pointer shrink-0"
             >
               📥 Télécharger le Contrat PDF (Secours)
             </button>
 
-            <div className="flex items-center gap-2">
-              <CordelButton type="button" variant="default" onClick={onClose} disabled={sending} className="text-xs">
+            <div className="flex items-center gap-2 shrink-0">
+              <CordelButton type="button" variant="default" onClick={onClose} disabled={sending} className="text-xs shrink-0">
                 Annuler
               </CordelButton>
               <CordelButton
                 type="submit"
                 variant="vert"
                 disabled={sending}
-                className="text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5"
+                className="text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5 shrink-0"
               >
                 <span>{sending ? '⏳ Envoi du contrat...' : '📧 Valider & Envoyer le Contrat par E-mail'}</span>
               </CordelButton>

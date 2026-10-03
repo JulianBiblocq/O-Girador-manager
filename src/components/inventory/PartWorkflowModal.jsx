@@ -170,17 +170,20 @@ export default function PartWorkflowModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="relative bg-[#faf8f5] w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-lg shadow-2xl border-[3px] border-encre-noire/80">
+      <div className="relative bg-[#faf8f5] w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-lg shadow-2xl border-[3px] border-encre-noire/80 mt-2 sm:mt-0">
         <button 
+          type="button"
           onClick={handleClose} 
-          className="absolute top-3 right-3 text-encre-noire hover:text-cordel-rouge transition-colors cursor-pointer"
+          className="absolute top-2 right-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-encre-noire hover:text-cordel-rouge hover:bg-black/5 active:bg-black/10 transition-colors cursor-pointer select-none touch-manipulation z-10"
+          title={t('common.close', 'Fermer')}
+          aria-label={t('common.close', 'Fermer')}
         >
-          <XiloClose size={24} />
+          <XiloClose size={22} />
         </button>
 
         <div className="p-6">
           <div className="mb-4 pb-4 border-b-2 border-dashed border-encre-noire/20">
-            <h2 className="text-xl font-black text-cordel-wood uppercase tracking-wider">{slot.slotLabel}</h2>
+            <h2 className="text-xl font-black text-cordel-wood uppercase tracking-wider pr-12 break-words">{slot.slotLabel}</h2>
             <div className="flex items-center gap-3 mt-2 flex-wrap">
               <span className="text-xs font-bold text-stone-500 bg-stone-200 px-2 py-1 rounded">
                 {t('lutherie.assignedPartPrefix', { nom: invPart.nom })}

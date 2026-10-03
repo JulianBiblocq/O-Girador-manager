@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import CordelButton from '../CordelButton';
 import { DEFAULT_CUSTOM_CATEGORIES } from '../../utils/categoryUtils';
+import useModalEscape from '../../hooks/useModalEscape';
 
 export default function DependentFormModal({
   isOpen,
@@ -24,6 +25,9 @@ export default function DependentFormModal({
   const [formError, setFormError] = useState('');
 
   const niveauxOptions = customCategories && customCategories.length > 0 ? customCategories : ['debutant', 'confirme'];
+
+  // Écoute de la touche Échap pour fermeture sécurisée
+  useModalEscape(isOpen, onClose, saving);
 
   useEffect(() => {
     if (initialData) {
@@ -95,29 +99,31 @@ export default function DependentFormModal({
   return (
     <div
       tabIndex={-1}
-      onKeyDown={(e) => e.key === 'Escape' && !saving && onClose()}
       className="fixed inset-0 bg-black/70 backdrop-blur-xs z-50 flex items-center justify-center p-4 select-none outline-none animate-fade-in"
     >
-      <div className="relative bg-cordel-bg max-w-md w-full rounded-lg shadow-xl border-4 border-encre-noire max-h-[90vh] flex flex-col overflow-hidden text-left">
+      <div className="relative bg-[var(--theme-bg)] max-w-md w-full rounded-lg shadow-xl border-4 border-encre-noire max-h-[90dvh] flex flex-col overflow-hidden text-left mt-2 sm:mt-0">
         {/* 1. Header (Fixe) */}
-        <div className="flex-shrink-0 p-4 border-b-2 border-dashed border-cordel-master-dark/30 flex items-center justify-between bg-cordel-bg-light select-none">
-          <h3 className="font-black text-sm uppercase tracking-wider text-cordel-wood flex items-center gap-2">
-            <span>👶</span> {isEditing ? "Modifier le compte enfant" : "Ajouter un membre rattaché (enfant)"}
-          </h3>
+        <div className="shrink-0 p-4 border-b-2 border-dashed border-cordel-master-dark/30 flex items-start justify-between gap-3 bg-cordel-bg-light select-none">
+          <div className="flex-1 min-w-0 pr-2">
+            <h3 className="font-black text-sm uppercase tracking-wider text-cordel-wood flex items-center gap-2 break-words">
+              <span>👶</span> {isEditing ? "Modifier le compte enfant" : "Ajouter un membre rattaché (enfant)"}
+            </h3>
+          </div>
           <button 
             type="button" 
             onClick={onClose}
-            className="text-encre-noire hover:text-cordel-wood text-lg font-bold px-2 py-0.5 cursor-pointer"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center -mr-2 -mt-2 rounded-lg text-encre-noire hover:text-cordel-wood hover:bg-black/5 active:bg-black/10 transition-colors cursor-pointer shrink-0 select-none touch-manipulation"
             title="Fermer (Échap)"
+            aria-label="Fermer"
           >
-            ✕
+            <span className="text-xl font-black leading-none pointer-events-none">✕</span>
           </button>
         </div>
 
         {/* Form Wrapper */}
-        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
           {/* 2. Body (Défilable verticalement) */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-4 text-xs">
             {formError && (
               <div className="text-xs font-bold text-red-600 bg-red-50 p-2.5 rounded border border-dashed border-red-400">
                 ⚠️ {formError}
@@ -246,21 +252,21 @@ export default function DependentFormModal({
           </div>
 
           {/* 3. Footer buttons (Fixe en bas) */}
-          <div className="flex-shrink-0 p-4 border-t border-dashed border-cordel-master-dark/20 flex gap-2 justify-end bg-cordel-bg">
+          <div className="shrink-0 p-4 border-t border-dashed border-cordel-master-dark/20 flex gap-2 justify-end bg-[var(--theme-bg)] pb-[max(env(safe-area-inset-bottom),1rem)]">
             <CordelButton
               type="button"
               variant="default"
               onClick={onClose}
               disabled={saving}
-              className="text-xs px-4 py-2"
+              className="text-xs px-4 py-2 shrink-0"
             >
               Annuler
             </CordelButton>
             <CordelButton
               type="submit"
-              variant="ocre"
+              variant="vert"
               disabled={saving}
-              className="text-xs px-5 py-2 font-bold uppercase tracking-wider"
+              className="text-xs px-5 py-2 font-bold uppercase tracking-wider shrink-0"
             >
               {saving ? "Enregistrement..." : isEditing ? "Mettre à jour" : "Créer le profil"}
             </CordelButton>

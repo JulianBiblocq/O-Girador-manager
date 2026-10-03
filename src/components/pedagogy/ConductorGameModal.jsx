@@ -7,6 +7,7 @@ import useMestreSignals from '../../hooks/useMestreSignals';
 import { extractConductorChallenge } from '../../utils/conductorGameUtils';
 import { saveConductorProgress } from '../../services/aisanceService';
 import { normalizeString } from '../../utils/repertoireMatcher';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Modale immersive du jeu du « Conducteur à trous ».
@@ -26,6 +27,7 @@ export default function ConductorGameModal({
   presetData,
   profileData
 }) {
+  const { t } = useTranslation();
   const audioRef = useRef(null);
   const { signals: catalogSignals } = useMestreSignals(profileData?.groupId);
 
@@ -145,27 +147,29 @@ export default function ConductorGameModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/75 backdrop-blur-xs select-none">
-      <div className="relative w-full max-w-4xl max-h-[92vh] flex flex-col bg-cordel-bg rounded-lg shadow-2xl border-2 border-encre-noire overflow-hidden text-left">
+      <div className="relative w-full max-w-4xl max-h-[92vh] flex flex-col bg-cordel-bg rounded-lg shadow-2xl border-2 border-encre-noire overflow-hidden text-left mt-2 sm:mt-0">
         {/* En-tête Cordel */}
-        <div className="flex justify-between items-center px-4 py-3 bg-[#fdfaf2] border-b-2 border-dashed border-cordel-master-dark/20 shrink-0">
-          <div className="flex items-center gap-2">
+        <div className="flex justify-between items-start gap-3 px-4 py-3 bg-[#fdfaf2] border-b-2 border-dashed border-cordel-master-dark/20 shrink-0">
+          <div className="flex-1 min-w-0 pr-2 flex items-start gap-2">
             <span className="text-xl">🗺️</span>
             <div>
               <h2 className="text-xs sm:text-sm font-black uppercase text-cordel-wood tracking-wider flex items-center gap-2">
-                <span>Conducteur à trous</span>
+                <span>{t('pedagogy.reflex.conducteurATrous')}</span>
                 <span className="text-[10px] font-bold text-encre-noire/60 lowercase">— {piece.titre}</span>
               </h2>
-              <p className="text-[10px] font-bold text-encre-noire/70">
-                Placez les bons signaux sur la frise chronologique pour mémoriser l'enchaînement
-              </p>
+              <p className="text-[10px] font-bold text-encre-noire/70">{t('pedagogy.reflex.placezLesBonsSignauxSur')}</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="w-7 h-7 rounded-full bg-encre-noire text-white font-black text-sm flex items-center justify-center hover:bg-red-700 cursor-pointer shadow-xs"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center -mr-2 -mt-2 rounded-lg text-white hover:bg-black/5 active:bg-black/10 transition-colors cursor-pointer shrink-0 select-none touch-manipulation"
+            title={t('pedagogy.reflex.fermerBouton', 'Fermer')}
+            aria-label={t('pedagogy.reflex.fermerBouton', 'Fermer')}
           >
-            ✕
+              <span className="w-8 h-8 rounded-full bg-encre-noire text-white font-black text-sm flex items-center justify-center border-2 border-white hover:bg-red-700 transition-colors shadow-2xs pointer-events-none">
+                ✕
+              </span>
           </button>
         </div>
 
@@ -188,9 +192,7 @@ export default function ConductorGameModal({
           {isAllCorrect && (
             <div className="p-3 bg-emerald-100 border-2 border-[var(--color-cordel-vert,#2d6a4f)] text-[var(--color-cordel-vert,#2d6a4f)] rounded-lg text-center flex items-center justify-center gap-2 animate-bounce">
               <span className="text-xl">🏆</span>
-              <span className="text-xs font-black uppercase tracking-wider">
-                Conducteur validé sans faute ! Structure parfaitement mémorisée.
-              </span>
+              <span className="text-xs font-black uppercase tracking-wider">{t('pedagogy.reflex.conducteurValideSansFauteStructure')}</span>
             </div>
           )}
 
@@ -225,9 +227,7 @@ export default function ConductorGameModal({
               setIsAllCorrect(false);
             }}
             className="text-xs font-black uppercase text-stone-500 hover:text-stone-800 underline cursor-pointer"
-          >
-            Réinitialiser
-          </button>
+          >{t('pedagogy.reflex.reinitialiser')}</button>
 
           <CordelButton
             type="button"
@@ -237,7 +237,7 @@ export default function ConductorGameModal({
             className="py-1.5 px-4 text-xs font-black uppercase tracking-wider flex items-center gap-1.5"
           >
             <span>📜</span>
-            <span>Valider le conducteur</span>
+            <span>{t('pedagogy.reflex.validerLeConducteur')}</span>
           </CordelButton>
         </div>
       </div>

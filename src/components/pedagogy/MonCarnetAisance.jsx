@@ -150,22 +150,18 @@ const InlineQuiz = ({ fiche, allSheets, allSongs, allModels }) => {
 
   // Quiz terminé : bilan
   if (isFinished) {
-    const pct = score / questions.length;
+    const pct = questions.length > 0 ? score / questions.length : 0;
     const emoji = pct >= 0.8 ? '🏆' : pct >= 0.5 ? '🥁' : '🌱';
     return (
       <div className="mt-3 p-3 bg-[#fdfaf2] border border-dashed border-cordel-wood/30 rounded-lg flex flex-col gap-2 items-center text-center">
         <span className="text-2xl">{emoji}</span>
         <p className="text-sm font-black text-cordel-wood">{score} / {questions.length}</p>
         <p className="text-[10px] font-bold text-encre-noire/70">
-          {pct >= 0.8 ? 'Excellent ! Tu maîtrises le sujet.' : pct >= 0.5 ? 'Pas mal ! Continue de réviser.' : 'Continue à réviser avec les fiches du Varal !'}
+          {pct >= 0.8 ? t('pedagogy.carnet.excellentTuMaitrisesLeSujet') : pct >= 0.5 ? 'Pas mal ! Continue de réviser.' : 'Continue à réviser avec les fiches du Varal !'}
         </p>
         <div className="flex gap-2 mt-1">
-          <button type="button" onClick={startQuiz} className="text-[9px] font-bold uppercase px-2 py-1 rounded bg-cordel-wood text-white hover:bg-cordel-wood/80 transition-all">
-            🔄 Rejouer
-          </button>
-          <button type="button" onClick={() => setIsStarted(false)} className="text-[9px] font-bold uppercase px-2 py-1 rounded border border-encre-noire/30 text-encre-noire hover:bg-neutral-100 transition-all">
-            ✕ Fermer
-          </button>
+          <button type="button" onClick={startQuiz} className="text-[9px] font-bold uppercase px-2 py-1 rounded bg-cordel-wood text-white hover:bg-cordel-wood/80 transition-all">{t('pedagogy.carnet.rejouer')}</button>
+          <button type="button" onClick={() => setIsStarted(false)} className="text-[9px] font-bold uppercase px-2 py-1 rounded border border-encre-noire/30 text-encre-noire hover:bg-neutral-100 transition-all">{t('pedagogy.carnet.fermer')}</button>
         </div>
       </div>
     );
@@ -218,7 +214,7 @@ const InlineQuiz = ({ fiche, allSheets, allSongs, allModels }) => {
       {/* Feedback après réponse */}
       {showFeedback && (
         <p className={`text-[10px] font-bold italic ${selectedChoice?.isCorrect ? 'text-[var(--color-cordel-vert)]' : 'text-[var(--color-cordel-ocre)]'}`}>
-          {selectedChoice?.isCorrect ? '✅ Correct !' : `🌱 ${q.feedback || 'La bonne réponse : ' + (choices.find(c => c.isCorrect)?.text || '')}`}
+          {selectedChoice?.isCorrect ? t('pedagogy.carnet.correct') : `🌱 ${q.feedback || 'La bonne réponse : ' + (choices.find(c => c.isCorrect)?.text || '')}`}
         </p>
       )}
     </div>
@@ -278,12 +274,12 @@ export default function MonCarnetAisance({
     );
 
     if (isDefisRythmiquesEnabled) {
-      tabs.push({ id: 'defis', label: '⚡ Défis Rythmiques' });
+      tabs.push({ id: 'defis', label: t('pedagogy.carnet.defisRythmiques') });
     }
     tabs.push({ id: 'revision', label: `🧠 ${t('pedagogy.tabRevisions')}` });
     
-    if (enabledModules?.monParcoursPercussion !== false) tabs.push({ id: 'rythmes', label: '🥁 Percussion' });
-    if (enabledModules?.monParcoursDanse !== false) tabs.push({ id: 'danse', label: '💃 Danse' });
+    if (enabledModules?.monParcoursPercussion !== false) tabs.push({ id: 'rythmes', label: t('pedagogy.carnet.percussion') });
+    if (enabledModules?.monParcoursDanse !== false) tabs.push({ id: 'danse', label: t('pedagogy.carnet.danse') });
     if (enabledModules?.monParcoursChant !== false) tabs.push({ id: 'chants', label: `🎤 ${t('pedagogy.tabSongs')}` });
     if (enabledModules?.monParcoursAtelier !== false) tabs.push({ id: 'atelier', label: `🛠️ ${t('pedagogy.tabWorkshop')}` });
     if (enabledModules?.monParcoursCulture !== false) tabs.push({ id: 'culture', label: `📚 ${t('pedagogy.tabCulture')}` });
@@ -348,12 +344,12 @@ export default function MonCarnetAisance({
     const list = [
       { key: 'caixa', label: 'Caixa' },
       { key: 'tarol', label: 'Tarol' },
-      { key: 'gongue', label: 'Gonguê' },
+      { key: 'gongue', label: t('pedagogy.carnet.gongue') },
       { key: 'alfaia', label: 'Alfaia' },
-      { key: 'marcante', label: 'Marcante' },
-      { key: 'agbe', label: 'Agbê' },
+      { key: 'marcante', label: t('pedagogy.carnet.marcante') },
+      { key: 'agbe', label: t('pedagogy.carnet.agbe') },
       { key: 'mineiro', label: 'Mineiro' },
-      { key: 'timbal', label: 'Timbal' }
+      { key: 'timbal', label: t('pedagogy.carnet.timbal') }
     ];
     const found = list.find((p) => raw.includes(p.key));
     return found || { key: 'caixa', label: 'Caixa' };
@@ -508,9 +504,7 @@ export default function MonCarnetAisance({
           type="button"
           onClick={() => setQuizToadaId(null)}
           className="self-start text-sm font-bold text-cordel-master-dark hover:text-cordel-wood underline underline-offset-4"
-        >
-          ← Retour au Carnet
-        </button>
+        >{t('pedagogy.carnet.retourAuCarnet')}</button>
         <AutoEvalQuizContainer
           profileData={profileData}
           allSongs={songs}
@@ -580,7 +574,7 @@ export default function MonCarnetAisance({
             </div>
             {activeSeasonTrainings.length > 0 && (
               <span className="shrink-0 text-[10px] font-black uppercase px-2.5 py-1 rounded bg-white text-cordel-wood border border-cordel-wood/30 shadow-2xs">
-                {activeSeasonTrainings.filter(t => t.isMastered).length} / {activeSeasonTrainings.length} maîtrisé{activeSeasonTrainings.length > 1 ? 's' : ''}
+                {activeSeasonTrainings.filter(t => t.isMastered).length} / {activeSeasonTrainings.length} {t('pedagogy.carnet.maitriseMinuscule')}{activeSeasonTrainings.length > 1 ? 's' : ''}
               </span>
             )}
           </div>
@@ -588,12 +582,8 @@ export default function MonCarnetAisance({
           {activeSeasonTrainings.length === 0 ? (
             <div className="text-center p-8 bg-[#fdfaf2] border border-dashed border-encre-noire/20 rounded-lg">
               <span className="text-3xl block mb-2">⚡</span>
-              <p className="text-sm font-bold text-encre-noire/70">
-                Aucun défi d'entraînement actif pour cette saison.
-              </p>
-              <p className="text-xs text-encre-noire/50 mt-1">
-                Les programmes configurés dans sequenciador pour vos morceaux apparaîtront automatiquement ici.
-              </p>
+              <p className="text-sm font-bold text-encre-noire/70">{t('pedagogy.carnet.aucunDefiDEntrainementActif')}</p>
+              <p className="text-xs text-encre-noire/50 mt-1">{t('pedagogy.carnet.lesProgrammesConfiguresDansSequenciador')}</p>
             </div>
           ) : (
             activeSeasonTrainings.map((training) => {
@@ -619,12 +609,12 @@ export default function MonCarnetAisance({
                         {isMastered ? (
                           <span className="animate-fadeIn inline-flex items-center gap-1 px-2.5 py-0.5 text-[9.5px] font-black uppercase rounded bg-[var(--color-cordel-vert)] text-white shadow-xs">
                             <span>👑</span>
-                            <span>Maîtrisé</span>
+                            <span>{t('pedagogy.carnet.maitrise')}</span>
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-amber-100 text-amber-950 border border-amber-300">
                             <span>⚡</span>
-                            <span>{completedStages.length} / {stages.length} palier{stages.length > 1 ? 's' : ''}</span>
+                            <span>{completedStages.length} / {stages.length} {t('pedagogy.carnet.palier')}{stages.length > 1 ? 's' : ''}</span>
                           </span>
                         )}
                       </div>
@@ -649,10 +639,10 @@ export default function MonCarnetAisance({
                           );
                         }}
                         className="px-3 py-1 text-[9.5px] font-black uppercase rounded bg-cordel-wood text-white border border-encre-noire shadow-xs hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center gap-1 shrink-0"
-                        title="Ouvrir sequenciador sur votre prochain palier d'entraînement"
+                        title={t('pedagogy.carnet.ouvrirSequenciadorSurVotreProchain')}
                       >
                         <span>⚡</span>
-                        <span>{isMastered ? 'Rejouer dans sequenciador' : 'S\'entraîner maintenant'}</span>
+                        <span>{isMastered ? t('pedagogy.carnet.rejouerDansSequenciador') : t('pedagogy.carnet.sEntrainerMaintenant')}</span>
                       </button>
                     )}
                   </div>
@@ -729,36 +719,34 @@ export default function MonCarnetAisance({
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
                               <span>🎯</span>
-                              <span>Réflexes &amp; Conventions</span>
+                              <span>{t('pedagogy.carnet.reflexesConventions')}</span>
                             </span>
                             {isReflexMastered ? (
                               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-[9.5px] font-black uppercase rounded bg-[var(--color-cordel-vert)] text-white shadow-xs">
                                 <span>👑</span>
-                                <span>{reflexScore} / {reflexTotal} signaux validés (Maîtrisé)</span>
+                                <span>{reflexScore} / {reflexTotal} {t('pedagogy.carnet.signauxValidesMaitrise')}</span>
                               </span>
                             ) : reflexRecord ? (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-amber-100 text-amber-950 border border-amber-300">
                                 <span>🎯</span>
-                                <span>{reflexScore} / {reflexTotal} signaux validés</span>
+                                <span>{reflexScore} / {reflexTotal} {t('pedagogy.carnet.signauxValides')}</span>
                               </span>
                             ) : (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-bold rounded bg-stone-100 text-stone-700 border border-stone-300">
-                                <span>{interactiveSignalsCount > 0 ? `0 / ${interactiveSignalsCount} signaux validés` : 'À découvrir'}</span>
+                                <span>{interactiveSignalsCount > 0 ? `0 / ${interactiveSignalsCount} {t('pedagogy.carnet.signauxValides')}` : t('pedagogy.carnet.aDecouvrir')}</span>
                               </span>
                             )}
                             {isConductorMastered && (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-purple-100 text-purple-900 border border-purple-300 shadow-2xs">
                                 <span>🗺️</span>
-                                <span>Conducteur validé</span>
+                                <span>{t('pedagogy.carnet.conducteurValide')}</span>
                               </span>
                             )}
                             <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-white text-cordel-master-dark border border-encre-noire/25">
                               {userPupitre.label}
                             </span>
                           </div>
-                          <p className="text-[10px] font-bold text-encre-noire/70 mt-0.5">
-                            Simulateur de signaux du Mestre avec arrêt au temps 1 et mémorisation de la structure chronologique.
-                          </p>
+                          <p className="text-[10px] font-bold text-encre-noire/70 mt-0.5">{t('pedagogy.carnet.simulateurDeSignauxDuMestre')}</p>
                         </div>
 
                         <div className="flex items-center gap-2 flex-wrap shrink-0">
@@ -766,19 +754,19 @@ export default function MonCarnetAisance({
                             type="button"
                             onClick={() => handleLaunchReflexGame(pieceForReflex, piecePreset)}
                             className="px-3 py-1.5 text-[9.5px] font-black uppercase rounded bg-cordel-wood hover:brightness-110 active:scale-95 text-white border border-encre-noire shadow-xs transition-all cursor-pointer flex items-center gap-1"
-                            title="Lancer le Défi Réflexe « Temps 1 » pour ce morceau"
+                            title={t('pedagogy.carnet.lancerLeDefiReflexeTemps')}
                           >
                             <span>▶</span>
-                            <span>Défi Réflexe</span>
+                            <span>{t('pedagogy.carnet.defiReflexe')}</span>
                           </button>
                           <button
                             type="button"
                             onClick={() => handleLaunchConductorGame(pieceForReflex, piecePreset)}
                             className="px-3 py-1.5 text-[9.5px] font-black uppercase rounded bg-purple-900 hover:brightness-110 active:scale-95 text-white border border-encre-noire shadow-xs transition-all cursor-pointer flex items-center gap-1"
-                            title="Ouvrir la Timeline et compléter le conducteur à trous"
+                            title={t('pedagogy.carnet.ouvrirLaTimelineEtCompleter')}
                           >
                             <span>🗺️</span>
-                            <span>Conduire le morceau (Timeline)</span>
+                            <span>{t('pedagogy.carnet.conduireLeMorceauTimeline')}</span>
                           </button>
                         </div>
                       </div>
@@ -810,9 +798,7 @@ export default function MonCarnetAisance({
                         <span>🎵</span>
                         <span>{piece.titre}</span>
                       </h3>
-                      <span className="text-[9.5px] font-extrabold uppercase px-2 py-0.5 rounded bg-stone-100 text-stone-700 border border-stone-300">
-                        Répertoire de saison
-                      </span>
+                      <span className="text-[9.5px] font-extrabold uppercase px-2 py-0.5 rounded bg-stone-100 text-stone-700 border border-stone-300">{t('pedagogy.carnet.repertoireDeSaison')}</span>
                     </div>
                     {piece.notes && (
                       <p className="text-[10px] text-encre-noire/70 italic mt-0.5">
@@ -828,36 +814,34 @@ export default function MonCarnetAisance({
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
                         <span>🎯</span>
-                        <span>Réflexes &amp; Conventions</span>
+                        <span>{t('pedagogy.carnet.reflexesConventions')}</span>
                       </span>
                       {isReflexMastered ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-[9.5px] font-black uppercase rounded bg-[var(--color-cordel-vert)] text-white shadow-xs">
                           <span>👑</span>
-                          <span>{reflexScore} / {reflexTotal} signaux validés (Maîtrisé)</span>
+                          <span>{reflexScore} / {reflexTotal} {t('pedagogy.carnet.signauxValidesMaitrise')}</span>
                         </span>
                       ) : reflexRecord ? (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-amber-100 text-amber-950 border border-amber-300">
                           <span>🎯</span>
-                          <span>{reflexScore} / {reflexTotal} signaux validés</span>
+                          <span>{reflexScore} / {reflexTotal} {t('pedagogy.carnet.signauxValides')}</span>
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-bold rounded bg-stone-100 text-stone-700 border border-stone-300">
-                          <span>{interactiveSignalsCount > 0 ? `0 / ${interactiveSignalsCount} signaux validés` : 'À découvrir'}</span>
+                          <span>{interactiveSignalsCount > 0 ? `0 / ${interactiveSignalsCount} {t('pedagogy.carnet.signauxValides')}` : t('pedagogy.carnet.aDecouvrir')}</span>
                         </span>
                       )}
                       {isConductorMastered && (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-purple-100 text-purple-900 border border-purple-300 shadow-2xs">
                           <span>🗺️</span>
-                          <span>Conducteur validé</span>
+                          <span>{t('pedagogy.carnet.conducteurValide')}</span>
                         </span>
                       )}
                       <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-white text-cordel-master-dark border border-encre-noire/25">
                         {userPupitre.label}
                       </span>
                     </div>
-                    <p className="text-[10px] font-bold text-encre-noire/70 mt-0.5">
-                      Testez vos départs au temps 1 sur les signaux du Mestre avec 4 choix de tablatures.
-                    </p>
+                    <p className="text-[10px] font-bold text-encre-noire/70 mt-0.5">{t('pedagogy.carnet.testezVosDepartsAuTemps')}</p>
                   </div>
 
                   <div className="flex items-center gap-2 flex-wrap shrink-0">
@@ -865,19 +849,19 @@ export default function MonCarnetAisance({
                       type="button"
                       onClick={() => handleLaunchReflexGame(piece, piecePreset)}
                       className="px-3 py-1.5 text-[9.5px] font-black uppercase rounded bg-cordel-wood hover:brightness-110 active:scale-95 text-white border border-encre-noire shadow-xs transition-all cursor-pointer flex items-center gap-1"
-                      title="Lancer le Défi Réflexe « Temps 1 » pour ce morceau"
+                      title={t('pedagogy.carnet.lancerLeDefiReflexeTemps')}
                     >
                       <span>▶</span>
-                      <span>Défi Réflexe</span>
+                      <span>{t('pedagogy.carnet.defiReflexe')}</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => handleLaunchConductorGame(piece, piecePreset)}
                       className="px-3 py-1.5 text-[9.5px] font-black uppercase rounded bg-purple-900 hover:brightness-110 active:scale-95 text-white border border-encre-noire shadow-xs transition-all cursor-pointer flex items-center gap-1"
-                      title="Ouvrir la Timeline et compléter le conducteur à trous"
+                      title={t('pedagogy.carnet.ouvrirLaTimelineEtCompleter')}
                     >
                       <span>🗺️</span>
-                      <span>Conduire le morceau (Timeline)</span>
+                      <span>{t('pedagogy.carnet.conduireLeMorceauTimeline')}</span>
                     </button>
                   </div>
                 </div>
@@ -909,14 +893,13 @@ export default function MonCarnetAisance({
         <div className="flex flex-col gap-4">
           <div className="bg-[var(--color-cordel-ocre)]/10 border-l-4 border-[#c05621] p-3 mb-2 rounded-r">
             <p className="text-xs font-bold text-cordel-master-dark">
-              💃 Évalue ton aisance chorégraphique sur chacun des rythmes (toadas, pas de base, variations).
-              Les pas du Dançador seront bientôt intégrés ici pour t'entraîner visuellement.
+              {t('pedagogy.carnet.evalueTonAisanceChoregraphique')}
             </p>
           </div>
           {rhythms.length === 0 ? (
             <div className="text-center p-8 bg-[#fdfaf2] border border-dashed border-encre-noire/20 rounded-lg">
               <span className="text-3xl block mb-2">💃</span>
-              <p className="text-sm font-bold text-encre-noire/70">Aucun rythme disponible pour le moment.</p>
+              <p className="text-sm font-bold text-encre-noire/70">{t('pedagogy.carnet.aucunRythmeDisponiblePourLe')}</p>
             </div>
           ) : (
             rhythms.map(rhythm => (
@@ -954,9 +937,7 @@ export default function MonCarnetAisance({
 
                 {/* Entraînement / Calage */}
                 <div className="flex items-center gap-2 mt-2 pt-3 border-t border-dashed border-cordel-master-dark/15">
-                  <span className="text-[9px] font-black uppercase tracking-wider text-cordel-master-dark mr-2">
-                    ⏱️ Entraînement :
-                  </span>
+                  <span className="text-[9px] font-black uppercase tracking-wider text-cordel-master-dark mr-2">{t('pedagogy.carnet.entrainement')}</span>
                   {[80, 100, 120].map(bpm => (
                     <button
                       key={bpm}
@@ -982,7 +963,7 @@ export default function MonCarnetAisance({
           {songs.length === 0 ? (
             <div className="text-center p-8 bg-[#fdfaf2] border border-dashed border-encre-noire/20 rounded-lg">
               <span className="text-3xl block mb-2">🎤</span>
-              <p className="text-sm font-bold text-encre-noire/70">Aucun chant disponible pour le moment.</p>
+              <p className="text-sm font-bold text-encre-noire/70">{t('pedagogy.carnet.aucunChantDisponiblePourLe')}</p>
             </div>
           ) : (
             songs.map(songDoc => (
@@ -1031,9 +1012,7 @@ export default function MonCarnetAisance({
                     type="button"
                     onClick={() => setQuizToadaId(songDoc.id)}
                     className="ml-auto text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded border-2 border-dashed border-cordel-wood/40 text-cordel-wood bg-cordel-wood/5 hover:bg-cordel-wood/15 hover:border-cordel-wood/70 transition-all flex items-center gap-1.5 cursor-pointer"
-                  >
-                    🎯 Quiz sur cette Toada
-                  </button>
+                  >{t('pedagogy.carnet.quizSurCetteToada')}</button>
                 </div>
               </CordelCard>
             ))
@@ -1049,7 +1028,7 @@ export default function MonCarnetAisance({
           {Object.keys(cultureGrouped).length === 0 ? (
             <div className="text-center p-8 bg-[#fdfaf2] border border-dashed border-encre-noire/20 rounded-lg">
               <span className="text-3xl block mb-2">📚</span>
-              <p className="text-sm font-bold text-encre-noire/70">Aucune fiche de culture disponible pour le moment.</p>
+              <p className="text-sm font-bold text-encre-noire/70">{t('pedagogy.carnet.aucuneFicheDeCultureDisponible')}</p>
             </div>
           ) : (
             Object.entries(cultureGrouped).map(([catName, fiches]) => (
@@ -1099,7 +1078,7 @@ export default function MonCarnetAisance({
           {atelierItems.length === 0 ? (
             <div className="text-center p-8 bg-[#fdfaf2] border border-dashed border-encre-noire/20 rounded-lg">
               <span className="text-3xl block mb-2">🛠️</span>
-              <p className="text-sm font-bold text-encre-noire/70">Aucune fiche de lutherie/atelier disponible pour le moment.</p>
+              <p className="text-sm font-bold text-encre-noire/70">{t('pedagogy.carnet.aucuneFicheDeLutherieAtelier')}</p>
             </div>
           ) : (
             atelierItems.map(fiche => (
@@ -1109,7 +1088,7 @@ export default function MonCarnetAisance({
                     <div className="flex items-center gap-2">
                       <span className="text-[14px]">🛠️</span>
                       <span className="text-[9px] font-black uppercase tracking-wider text-cordel-master-dark opacity-70">
-                        {fiche.categorie || 'Atelier'}
+                        {fiche.categorie || t('pedagogy.carnet.atelier')}
                       </span>
                     </div>
                     <h4 className="text-base font-black text-cordel-wood uppercase">
