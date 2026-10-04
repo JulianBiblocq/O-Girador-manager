@@ -19,8 +19,12 @@ assert.ok(
   "L'identifiant 'repertoire' doit être présent dans LayoutShell.jsx"
 );
 assert.ok(
-  layoutShellSource.includes("labelKey: 'tabRepertoire'"),
-  "La clé i18n 'tabRepertoire' doit être associée à l'élément Répertoire"
+  layoutShellSource.includes("labelKey: 'poles.tabRepertoire'"),
+  "La clé i18n 'poles.tabRepertoire' doit être associée à l'élément Répertoire"
+);
+assert.ok(
+  !layoutShellSource.includes("label: '📜 Répertoire'"),
+  "L'émoji couleur '📜' ne doit plus être présent dans le label de l'élément Répertoire"
 );
 console.log("✅ Test 1 validé !");
 

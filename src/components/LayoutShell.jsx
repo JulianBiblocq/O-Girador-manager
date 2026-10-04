@@ -327,7 +327,7 @@ export default function LayoutShell({
     { id: 'profil', label: 'Profil', labelKey: 'poles.tabProfil', icon: <XiloUser size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'profil'); onNavigateToTab && onNavigateToTab('profil'); } },
     { id: 'mon-parcours', label: 'Mon Parcours', labelKey: 'poles.tabParcours', icon: <XiloCompass size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'mon-parcours'); onNavigateToTab && onNavigateToTab('mon-parcours'); } },
     { id: 'agenda', label: 'Agenda', labelKey: 'poles.tabAgenda', icon: <XiloCalendar size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'agenda'); onNavigateToTab && onNavigateToTab('agenda'); } },
-    { id: 'repertoire', label: '📜 Répertoire', labelKey: 'tabRepertoire', icon: <XiloScroll size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'repertoire'); onNavigateToTab && onNavigateToTab('repertoire'); } },
+    { id: 'repertoire', label: 'Répertoire', labelKey: 'poles.tabRepertoire', icon: <XiloScroll size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'repertoire'); onNavigateToTab && onNavigateToTab('repertoire'); } },
     { id: 'atelier', label: 'Atelier', labelKey: 'poles.tabAtelier', icon: <XiloChisel size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'atelier'); onNavigateToTab && onNavigateToTab('atelier'); } },
     { id: 'materiel', label: 'Instruments', labelKey: 'poles.tabMateriel', icon: <XiloCaixa size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'materiel'); onNavigateToTab && onNavigateToTab('materiel'); } },
     { 
