@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import useConfirm from '../../hooks/useConfirm';
+import { useTranslation } from '../LanguageContext';
 import EventTypeConfigCard from './EventTypeConfigCard';
 import TabLieux from './TabLieux';
 
@@ -10,8 +11,10 @@ export default function TabAgenda({
   handleChange,
   saving,
   groupId,
-  t
+  t: propT
 }) {
+  const { t: contextT } = useTranslation();
+  const t = propT || contextT;
   const { confirm } = useConfirm();
   const [activeSection, setActiveSection] = useState('all'); // 'all' | 'lieux' | 'types'
   const [isGlobalOptionsOpen, setIsGlobalOptionsOpen] = useState(false);
@@ -35,7 +38,7 @@ export default function TabAgenda({
     if (!newType.trim()) return;
     const cleanType = newType.trim().toLowerCase();
     if (eventTypes.includes(cleanType)) {
-      alert("Ce type d'événement existe déjà.");
+      alert(t('settings.agenda.tabAgenda.ceTypeDEvenementExiste'));
       return;
     }
 
@@ -88,15 +91,15 @@ export default function TabAgenda({
   const handleRemoveType = async (typeToRemove) => {
     const minTypes = 1;
     if (eventTypes.length <= minTypes) {
-      alert("Vous devez conserver au moins un type d'événement.");
+      alert(t('settings.agenda.tabAgenda.vousDevezConserverAuMoins'));
       return;
     }
     const confirmMsg = t('widgetAgenda.confirmRemoveType') || `Voulez-vous vraiment supprimer le type "${typeToRemove}" ? Les événements existants de ce type ne seront pas supprimés mais ne seront plus typés dans les filtres.`;
     const isOk = await confirm({
-      title: "Supprimer le type d'événement",
+      title: t('settings.agenda.tabAgenda.supprimerLeTypeDEvenement'),
       message: confirmMsg,
-      confirmText: "Oui, supprimer",
-      cancelText: "Annuler",
+      confirmText: t('common.yesDelete') || "Oui, supprimer",
+      cancelText: t('common.cancel') || "Annuler",
       variant: "danger"
     });
     if (isOk) {
@@ -123,7 +126,7 @@ export default function TabAgenda({
               : 'bg-white text-stone-700 border border-stone-300 hover:bg-stone-50'
           }`}
         >
-          📜 Vue d'ensemble (Tout)
+          {t('settings.agenda.tabAgenda.vueDEnsembleTout')}
         </button>
         <button
           type="button"
@@ -134,7 +137,7 @@ export default function TabAgenda({
               : 'bg-white text-stone-700 border border-stone-300 hover:bg-stone-50'
           }`}
         >
-          📍 Salles & Lieux Habituels
+          {t('settings.agenda.tabAgenda.sallesLieuxHabituels')}
         </button>
         <button
           type="button"
@@ -145,7 +148,7 @@ export default function TabAgenda({
               : 'bg-white text-stone-700 border border-stone-300 hover:bg-stone-50'
           }`}
         >
-          📅 Types d'Événements & Presets
+          {t('settings.agenda.tabAgenda.typesDEvenementsPresets')}
         </button>
       </div>
 
@@ -155,7 +158,7 @@ export default function TabAgenda({
           <div className="flex items-center gap-2 border-b border-dashed border-cordel-master-dark/20 pb-2">
             <span className="text-base">📍</span>
             <h2 className="text-xs font-black uppercase tracking-wider text-cordel-wood">
-              1. Répertoire des Salles, Repères GPS & Lieux Habituels
+              {t('settings.agenda.tabAgenda.1RepertoireDesSallesReperes')}
             </h2>
           </div>
           <TabLieux
@@ -173,25 +176,25 @@ export default function TabAgenda({
           <div className="flex items-center gap-2 border-b border-dashed border-cordel-master-dark/20 pb-2 pt-2">
             <span className="text-base">📅</span>
             <h2 className="text-xs font-black uppercase tracking-wider text-cordel-wood">
-              2. Types d'Événements, Presets & Options d'Agenda
+              {t('settings.agenda.tabAgenda.2TypesDEvenementsPresets')}
             </h2>
           </div>
       
           {/* Types d'événements dynamiques et configuration modulaire */}
           <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
             <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">
-              📋 Catégories et Types d'Événements
+              {t('settings.agenda.tabAgenda.categoriesEtTypesDEvenements')}
             </h3>
             
             {/* Ajouter un type */}
             <div className="flex flex-col gap-2 pb-3 border-b border-dashed border-cordel-master-dark/15 text-left">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-cordel-master-dark">Ajouter un type d'événement</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-cordel-master-dark">{t('settings.agenda.tabAgenda.ajouterUnTypeDEvenement')}</span>
               <div className="flex gap-2">
                 <input 
                   type="text"
                   value={newType}
                   onChange={(e) => setNewType(e.target.value)}
-                  placeholder="Ex: ca, forum des assos, festival..."
+                  placeholder={t('settings.agenda.tabAgenda.exCaForumDesAssos')}
                   disabled={saving}
                   className="theme-input text-xs font-bold py-1.5 flex-1 bg-cordel-bg-light"
                 />
@@ -203,7 +206,7 @@ export default function TabAgenda({
                   disabled={saving || !newType.trim()}
                   className="text-[10px] px-3 uppercase tracking-widest font-black shrink-0"
                 >
-                  + Ajouter
+                  {t('settings.agenda.tabAgenda.ajouter')}
                 </CordelButton>
               </div>
             </div>
@@ -212,10 +215,10 @@ export default function TabAgenda({
             <div className="flex flex-col gap-3 mt-3 text-left">
               <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/15 pb-1">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-cordel-master-dark">
-                  Types actifs & Presets par format
+                  {t('settings.agenda.tabAgenda.typesActifsPresetsParFormat')}
                 </span>
                 <span className="text-[9px] text-stone-500 font-semibold">
-                  Dépliez un type pour configurer ses modules par défaut
+                  {t('settings.agenda.tabAgenda.depliezUnTypePourConfigurer')}
                 </span>
               </div>
 
@@ -266,10 +269,10 @@ export default function TabAgenda({
               <div className="flex items-center gap-2 text-left">
                 <span className="text-sm">⚙️</span>
                 <span className="text-xs font-black uppercase tracking-wider text-cordel-wood">
-                  Options générales de l'agenda (RSVP, plan de scène, covoiturage...) {isGlobalOptionsOpen ? '▲' : '▾'}
+                  {t('settings.agenda.tabAgenda.optionsGeneralesDeLAgenda')} {isGlobalOptionsOpen ? '▲' : '▾'}
                 </span>
                 <span className="text-[9px] text-cordel-master-dark/60 font-semibold hidden md:inline">
-                  (Modules transversaux activés pour l'ensemble des événements)
+                  {t('settings.agenda.tabAgenda.modulesTransversauxActivesPourL')}
                 </span>
               </div>
 
@@ -277,7 +280,7 @@ export default function TabAgenda({
                 type="button"
                 className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded border border-encre-noire/30 bg-white hover:bg-stone-50 text-encre-noire transition-all cursor-pointer shadow-2xs"
               >
-                {isGlobalOptionsOpen ? 'Fermer' : 'Déplier les options'}
+                {isGlobalOptionsOpen ? t('settings.agenda.tabAgenda.fermer') : t('settings.agenda.tabAgenda.deplierLesOptions')}
               </button>
             </div>
 
@@ -296,10 +299,10 @@ export default function TabAgenda({
                     />
                     <div className="flex flex-col text-left">
                       <label htmlFor="agendaEnableInscriptions" className="font-bold text-encre-noire cursor-pointer">
-                        Activer les inscriptions (RSVP)
+                        {t('settings.agenda.tabAgenda.activerLesInscriptionsRsvp')}
                       </label>
                       <span className="text-[10px] text-neutral-500 font-medium">
-                        Permet aux adhérents de se déclarer présents, absents ou à confirmer aux événements.
+                        {t('settings.agenda.tabAgenda.permetAuxAdherentsDeSe')}
                       </span>
                     </div>
                   </div>
@@ -317,10 +320,10 @@ export default function TabAgenda({
                       />
                       <div className="flex flex-col text-left">
                         <label htmlFor="agendaRequireInstrument" className="font-bold text-encre-noire cursor-pointer">
-                          Imposer le choix de l'instrument lors de l'inscription
+                          {t('settings.agenda.tabAgenda.imposerLeChoixDeL')}
                         </label>
                         <span className="text-[10px] text-neutral-500 font-medium">
-                          Force les adhérents à spécifier l'instrument qu'ils joueront, même s'ils n'en ont qu'un seul dans leur profil.
+                          {t('settings.agenda.tabAgenda.forceLesAdherentsASpecifier')}
                         </span>
                       </div>
                     </div>
@@ -339,10 +342,10 @@ export default function TabAgenda({
                       />
                       <div className="flex flex-col text-left">
                         <label htmlFor="agendaEnableMaybeStatus" className="font-bold text-encre-noire cursor-pointer">
-                          Activer l'option "À confirmer" pour les réponses
+                          {t('settings.agenda.tabAgenda.activerLOptionAConfirmer')}
                         </label>
                         <span className="text-[10px] text-neutral-500 font-medium">
-                          Permet aux membres de répondre "À confirmer" aux événements plutôt que de choisir uniquement entre "Présent" ou "Absent".
+                          {t('settings.agenda.tabAgenda.permetAuxMembresDeRepondre')}
                         </span>
                       </div>
                     </div>
@@ -360,10 +363,10 @@ export default function TabAgenda({
                     />
                     <div className="flex flex-col text-left">
                       <label htmlFor="agendaEnableStageLayout" className="font-bold text-encre-noire cursor-pointer">
-                        Activer le module de Plan de Scène
+                        {t('settings.agenda.tabAgenda.activerLeModuleDePlan')}
                       </label>
                       <span className="text-[10px] text-neutral-500 font-medium">
-                        Affiche la grille de placement scénique interactif sur la fiche détaillée des événements.
+                        {t('settings.agenda.tabAgenda.afficheLaGrilleDePlacement')}
                       </span>
                     </div>
                   </div>
@@ -380,10 +383,10 @@ export default function TabAgenda({
                     />
                     <div className="flex flex-col text-left">
                       <label htmlFor="agendaEnableRevisionProgram" className="font-bold text-encre-noire cursor-pointer">
-                        Activer le module Programme de Révision (Séquenceur JSON)
+                        {t('settings.agenda.tabAgenda.activerLeModuleProgrammeDe')}
                       </label>
                       <span className="text-[10px] text-neutral-500 font-medium">
-                        Permet d'ajouter des morceaux de musique et des séquences rythmiques JSON à travailler sur les événements.
+                        {t('settings.agenda.tabAgenda.permetDAjouterDesMorceaux')}
                       </span>
                     </div>
                   </div>
@@ -400,10 +403,10 @@ export default function TabAgenda({
                     />
                     <div className="flex flex-col text-left">
                       <label htmlFor="agendaEnableCarpool" className="font-bold text-encre-noire cursor-pointer">
-                        Activer le module Covoiturage & Convoi
+                        {t('settings.agenda.tabAgenda.activerLeModuleCovoiturageConvoi')}
                       </label>
                       <span className="text-[10px] text-neutral-500 font-medium">
-                        Permet aux conducteurs de proposer des trajets et d'organiser les départs collectifs aux événements.
+                        {t('settings.agenda.tabAgenda.permetAuxConducteursDeProposer')}
                       </span>
                     </div>
                   </div>
@@ -420,10 +423,10 @@ export default function TabAgenda({
                     />
                     <div className="flex flex-col text-left">
                       <label htmlFor="agendaEnableFinance" className="font-bold text-encre-noire cursor-pointer">
-                        Activer le Bilan Financier des événements
+                        {t('settings.agenda.tabAgenda.activerLeBilanFinancierDes')}
                       </label>
                       <span className="text-[10px] text-neutral-500 font-medium">
-                        Permet aux administrateurs de renseigner les recettes et dépenses générées par chaque événement.
+                        {t('settings.agenda.tabAgenda.permetAuxAdministrateursDeRenseigner')}
                       </span>
                     </div>
                   </div>
@@ -440,10 +443,10 @@ export default function TabAgenda({
                     />
                     <div className="flex flex-col text-left">
                       <label htmlFor="agendaEnableVolunteerShifts" className="font-bold text-encre-noire cursor-pointer">
-                        Activer les Créneaux de Bénévolat / Logistique
+                        {t('settings.agenda.tabAgenda.activerLesCreneauxDeBenevolat')}
                       </label>
                       <span className="text-[10px] text-neutral-500 font-medium">
-                        Permet d'ajouter des tâches et horaires (ex: montage, buvette) à réaliser par les adhérents sur les événements.
+                        {t('settings.agenda.tabAgenda.permetDAjouterDesTaches')}
                       </span>
                     </div>
                   </div>
@@ -455,15 +458,15 @@ export default function TabAgenda({
       {/* Notifications des Commentaires Événements */}
       <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
         <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-2 flex items-center gap-1.5">
-          🔔 Notifications des Commentaires & Questions Logistiques
+          {t('settings.agenda.tabAgenda.notificationsDesCommentairesQuestionsLogistiques')}
         </h3>
         <p className="text-[10px] text-cordel-master-dark opacity-80 leading-relaxed mb-3">
-          Lorsqu'un membre pose une question ou publie un commentaire sur un événement, le créateur de l'événement est notifié. Choisissez quelle étiquette (tag) reçoit également ces notifications pour pouvoir y répondre rapidement.
+          {t('settings.agenda.tabAgenda.lorsquUnMembrePoseUne')}
         </p>
 
         <div className="flex flex-col gap-1.5 text-left max-w-md">
           <label htmlFor="tagNotificationCommentairesEvenement" className="text-[9px] uppercase font-bold text-cordel-master-dark">
-            Étiquette (Tag) destinataire des notifications de commentaires
+            {t('settings.agenda.tabAgenda.etiquetteTagDestinataireDesNotifications')}
           </label>
           <select
             id="tagNotificationCommentairesEvenement"
@@ -473,7 +476,7 @@ export default function TabAgenda({
             disabled={saving}
             className="theme-input text-xs font-bold py-1.5 px-2 bg-cordel-bg-light"
           >
-            <option value="">-- Aucune étiquette spécifique (Créateur et Mestre uniquement) --</option>
+            <option value="">{t('settings.agenda.tabAgenda.aucuneEtiquetteSpecifiqueCreateurEt')}</option>
             {(formData.tagsDisponibles || []).map((tag) => {
               const tagId = typeof tag === 'string' ? tag : (tag.id || tag.nom);
               const tagLabel = typeof tag === 'string' ? tag : (tag.nom || tag.id);

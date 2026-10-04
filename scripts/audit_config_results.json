@@ -1,0 +1,1790 @@
+{
+  "identity": {
+    "id": "identity",
+    "pillar": "Pilier 1 : Identité Légale",
+    "name": "Identité Légale, Signatures & Coordonnées (TabIdentity)",
+    "category": "identity",
+    "totalStrings": 0,
+    "cleanFiles": [
+      "src/components/association-settings/TabIdentity.jsx",
+      "src/components/association-settings/identity/SubscriptionInvitationHeader.jsx",
+      "src/components/association-settings/identity/LegalInfoAccordion.jsx",
+      "src/components/association-settings/identity/OfficialSignaturesAccordion.jsx",
+      "src/components/association-settings/identity/BankDetailsAccordion.jsx",
+      "src/components/association-settings/identity/BureauMestriaAccordion.jsx",
+      "src/components/association-settings/identity/BureauAccordion.jsx",
+      "src/components/association-settings/identity/MestriaAccordion.jsx",
+      "src/components/association-settings/blocks/LegalInfoBlock.jsx",
+      "src/components/association-settings/blocks/BankDetailsBlock.jsx"
+    ],
+    "dirtyFiles": []
+  },
+  "organization": {
+    "id": "organization",
+    "pillar": "Pilier 2 : Inscription & Organisation",
+    "name": "Inscription, Profils, Cycles & Pupitres (TabOrganization)",
+    "category": "organization",
+    "totalStrings": 1,
+    "cleanFiles": [
+      "src/components/association-settings/TabOrganization.jsx",
+      "src/components/association-settings/organization/RegistrationFieldsTable.jsx",
+      "src/components/association-settings/organization/CustomFieldsAccordion.jsx",
+      "src/components/association-settings/organization/CustomFieldAddForm.jsx",
+      "src/components/association-settings/organization/AnnualCyclesAccordion.jsx",
+      "src/components/association-settings/organization/PupitresNomenclatureAccordion.jsx",
+      "src/components/association-settings/organization/DefaultLocationsByEventTypeGrid.jsx",
+      "src/components/association-settings/organization/LieuEditModal.jsx"
+    ],
+    "dirtyFiles": [
+      {
+        "file": "src/components/association-settings/blocks/InstrumentsCatalogBlock.jsx",
+        "count": 1,
+        "items": [
+          {
+            "line": 334,
+            "text": "{param} ({param})",
+            "context": "Attribut title",
+            "type": "attribute",
+            "suggestedKey": "settings.organization.instrumentsCatalogBlock.paramParam"
+          }
+        ]
+      }
+    ]
+  },
+  "security": {
+    "id": "security",
+    "pillar": "Pilier 3 : Badges & Sécurité",
+    "name": "Gestion des Accès, Rôles & Matrice des Permissions (TabSecurity)",
+    "category": "security",
+    "totalStrings": 153,
+    "cleanFiles": [
+      "src/components/PermissionsGuideBox.jsx"
+    ],
+    "dirtyFiles": [
+      {
+        "file": "src/components/association-settings/TabSecurity.jsx",
+        "count": 153,
+        "items": [
+          {
+            "line": 10,
+            "text": "🏛️ Gouvernance",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.gouvernance"
+          },
+          {
+            "line": 12,
+            "text": "Pilotage stratégique, réunions et délibérations du Conseil d'Administration",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.pilotageStrategiqueReunionsEtDeliberations"
+          },
+          {
+            "line": 17,
+            "text": "Réunions & PV",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.reunionsPv"
+          },
+          {
+            "line": 19,
+            "text": "Ordres du jour, délibérations et procès-verbaux de réunions",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.ordresDuJourDeliberationsEt"
+          },
+          {
+            "line": 24,
+            "text": "Bilans & Rapports AG",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.bilansRapportsAg"
+          },
+          {
+            "line": 26,
+            "text": "Consolidation multi-pôles et bilans pour l'Assemblée Générale",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.consolidationMultiPolesEtBilans"
+          },
+          {
+            "line": 31,
+            "text": "Registre & Statuts",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.registreStatuts"
+          },
+          {
+            "line": 33,
+            "text": "Documents officiels, statuts, règlement intérieur et PV officiels",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.documentsOfficielsStatutsReglementInterieur"
+          },
+          {
+            "line": 38,
+            "text": "Synthèse Financière",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.syntheseFinanciere"
+          },
+          {
+            "line": 40,
+            "text": "Aperçu global des comptes, trésorerie et synthèses financières",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.apercuGlobalDesComptesTresorerie"
+          },
+          {
+            "line": 45,
+            "text": "Dates & Engagements",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.datesEngagements"
+          },
+          {
+            "line": 47,
+            "text": "Suivi stratégique des prestations, devis et engagements",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.suiviStrategiqueDesPrestationsDevis"
+          },
+          {
+            "line": 54,
+            "text": "📋 Secrétariat",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.secretariat"
+          },
+          {
+            "line": 56,
+            "text": "Gestion statutaire, annuaire, bilans d'activité, registre des dates et documents officiels",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.gestionStatutaireAnnuaireBilansD"
+          },
+          {
+            "line": 61,
+            "text": "Annuaire & Exports",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.annuaireExports"
+          },
+          {
+            "line": 63,
+            "text": "Accès à la liste des adhérents et export CSV/Excel",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.accesALaListeDes"
+          },
+          {
+            "line": 68,
+            "text": "Rapports & Bilan AG",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.rapportsBilanAg"
+          },
+          {
+            "line": 70,
+            "text": "Bilan d'activité AG et extraction CSV des présences",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.bilanDActiviteAgEt"
+          },
+          {
+            "line": 75,
+            "text": "Registre des dates",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.registreDesDates"
+          },
+          {
+            "line": 77,
+            "text": "Tableau d'édition rapide et globale des événements",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.tableauDEditionRapideEt"
+          },
+          {
+            "line": 82,
+            "text": "Documents officiels",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.documentsOfficiels"
+          },
+          {
+            "line": 84,
+            "text": "Documents administratifs et comptes-rendus officiels",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.documentsAdministratifsEtComptesRendus"
+          },
+          {
+            "line": 89,
+            "text": "Chartes, Santé & Liens",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.chartesSanteLiens"
+          },
+          {
+            "line": 91,
+            "text": "Gestion des chartes, droits à l'image RGPD, attestations médicales et liens cloud",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.gestionDesChartesDroitsA"
+          },
+          {
+            "line": 98,
+            "text": "🎷 Diffusion",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.diffusion"
+          },
+          {
+            "line": 100,
+            "text": "Suivi des prestations, opportunités de concerts et pipeline CRM",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.suiviDesPrestationsOpportunitesDe"
+          },
+          {
+            "line": 105,
+            "text": "Suivi des Prestations",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.suiviDesPrestations"
+          },
+          {
+            "line": 107,
+            "text": "Gestion de l'entonnoir des prestations (demandes, devis, options, factures)",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.gestionDeLEntonnoirDes"
+          },
+          {
+            "line": 114,
+            "text": "🪙 Trésorerie",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.tresorerie"
+          },
+          {
+            "line": 116,
+            "text": "Gestion financière, cotisations et frais kilométriques",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.gestionFinanciereCotisationsEtFrais"
+          },
+          {
+            "line": 121,
+            "text": "Synthèse",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.synthese"
+          },
+          {
+            "line": 123,
+            "text": "Aperçu global de la trésorerie et synthèses",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.apercuGlobalDeLaTresorerie"
+          },
+          {
+            "line": 128,
+            "text": "Cotisations",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.cotisations"
+          },
+          {
+            "line": 130,
+            "text": "Suivi et enregistrement des adhésions et cotisations",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.suiviEtEnregistrementDesAdhesions"
+          },
+          {
+            "line": 135,
+            "text": "Événements",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.evenements"
+          },
+          {
+            "line": 137,
+            "text": "Suivi financier dédié aux prestations et événements",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.suiviFinancierDedieAuxPrestations"
+          },
+          {
+            "line": 142,
+            "text": "Opérations",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.operations"
+          },
+          {
+            "line": 144,
+            "text": "Saisie des recettes et dépenses courantes hors événements",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.saisieDesRecettesEtDepenses"
+          },
+          {
+            "line": 149,
+            "text": "Frais",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.frais"
+          },
+          {
+            "line": 151,
+            "text": "Validation et remboursement des indemnités kilométriques",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.validationEtRemboursementDesIndemnites"
+          },
+          {
+            "line": 156,
+            "text": "Exports",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.exports"
+          },
+          {
+            "line": 158,
+            "text": "Génération du grand livre et exports comptables",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.generationDuGrandLivreEt"
+          },
+          {
+            "line": 165,
+            "text": "📦 Logistique",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.logistique"
+          },
+          {
+            "line": 167,
+            "text": "Inventaire du parc d'instruments, commandes groupées, convois et malles régie",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.inventaireDuParcDInstruments"
+          },
+          {
+            "line": 172,
+            "text": "Parc Instruments & Cautions",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.parcInstrumentsCautions"
+          },
+          {
+            "line": 174,
+            "text": "Gestion du parc d'instruments, cautions et état du matériel",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.gestionDuParcDInstruments"
+          },
+          {
+            "line": 179,
+            "text": "Commandes Groupées",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.commandesGroupees"
+          },
+          {
+            "line": 181,
+            "text": "Suivi des achats et commandes de matériel",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.suiviDesAchatsEtCommandes"
+          },
+          {
+            "line": 186,
+            "text": "Convois & Flotte Véhicules",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.convoisFlotteVehicules"
+          },
+          {
+            "line": 188,
+            "text": "Point de départ convoi, barème km et règles de transport",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.pointDeDepartConvoiBareme"
+          },
+          {
+            "line": 193,
+            "text": "Malles Régie & Trousses Secours",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.mallesRegieTroussesSecours"
+          },
+          {
+            "line": 195,
+            "text": "Gestion des malles régie, trousses de secours, maquillage et outillage",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.gestionDesMallesRegieTrousses"
+          },
+          {
+            "line": 202,
+            "text": "🪚 Lutherie & Atelier",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.lutherieAtelier"
+          },
+          {
+            "line": 204,
+            "text": "Artisanat, modèles d'instruments, établi, pièces détachées et outillage",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.artisanatModelesDInstrumentsEtabli"
+          },
+          {
+            "line": 209,
+            "text": "Établi & chantiers",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.etabliChantiers"
+          },
+          {
+            "line": 211,
+            "text": "Suivi des chantiers de fabrication et réparations lourdes",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.suiviDesChantiersDeFabrication"
+          },
+          {
+            "line": 216,
+            "text": "Modèles d'instruments",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.modelesDInstruments"
+          },
+          {
+            "line": 218,
+            "text": "Fiches techniques, nomenclatures et gabarits de fabrication",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.fichesTechniquesNomenclaturesEtGabarits"
+          },
+          {
+            "line": 223,
+            "text": "Pièces détachées",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.piecesDetachees"
+          },
+          {
+            "line": 225,
+            "text": "Gestion des stocks de fûts, cercles, peaux et accastillage",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.gestionDesStocksDeFuts"
+          },
+          {
+            "line": 230,
+            "text": "Matières premières",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.matieresPremieres"
+          },
+          {
+            "line": 232,
+            "text": "Suivi des cordes, tirants, vernis et consommables",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.suiviDesCordesTirantsVernis"
+          },
+          {
+            "line": 237,
+            "text": "Outillage",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.outillage"
+          },
+          {
+            "line": 239,
+            "text": "Inventaire des outils et machines de l'atelier",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.inventaireDesOutilsEtMachines"
+          },
+          {
+            "line": 244,
+            "text": "Varal Lutherie",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.varalLutherie"
+          },
+          {
+            "line": 246,
+            "text": "Tutoriels et plans de fabrication artisanale",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.tutorielsEtPlansDeFabrication"
+          },
+          {
+            "line": 251,
+            "text": "Validation d'atelier & Fiche suiveuse",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.validationDAtelierFicheSuiveuse"
+          },
+          {
+            "line": 253,
+            "text": "Autorise à valider les étapes d'usinage et à demander des retouches sur l'établi",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.autoriseAValiderLesEtapes"
+          },
+          {
+            "line": 260,
+            "text": "🧵 Costumerie",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.costumerie"
+          },
+          {
+            "line": 262,
+            "text": "Artisanat textile, confection des tenues, patrons, tissus et mensurations",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.artisanatTextileConfectionDesTenues"
+          },
+          {
+            "line": 267,
+            "text": "Établi de confection",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.etabliDeConfection"
+          },
+          {
+            "line": 269,
+            "text": "Suivi des projets et chantiers couture en cours",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.suiviDesProjetsEtChantiers"
+          },
+          {
+            "line": 274,
+            "text": "Modèles & Patrons",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.modelesPatrons"
+          },
+          {
+            "line": 276,
+            "text": "Gestion des modèles de costumes et pièces requises",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.gestionDesModelesDeCostumes"
+          },
+          {
+            "line": 281,
+            "text": "Vestiaire physique",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.vestiairePhysique"
+          },
+          {
+            "line": 283,
+            "text": "Stock unitaire des tenues, état et prêts aux membres",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.stockUnitaireDesTenuesEtat"
+          },
+          {
+            "line": 288,
+            "text": "Tissus & Mercerie",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.tissusMercerie"
+          },
+          {
+            "line": 290,
+            "text": "Gestion des rouleaux de tissus, fils, boutons et consommables",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.gestionDesRouleauxDeTissus"
+          },
+          {
+            "line": 295,
+            "text": "Machines & Outils",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.machinesOutils"
+          },
+          {
+            "line": 297,
+            "text": "Inventaire des machines à coudre, surjeteuses et outils",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.inventaireDesMachinesACoudre"
+          },
+          {
+            "line": 302,
+            "text": "Tailles & Mensurations",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.taillesMensurations"
+          },
+          {
+            "line": 304,
+            "text": "Tableau des tailles et mensurations des danseurs et musiciens",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.tableauDesTaillesEtMensurations"
+          },
+          {
+            "line": 309,
+            "text": "Varal Costumerie",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.varalCostumerie"
+          },
+          {
+            "line": 311,
+            "text": "Patrons de coupe et fiches techniques de couture",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.patronsDeCoupeEtFiches"
+          },
+          {
+            "line": 318,
+            "text": "Studio",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.studio"
+          },
+          {
+            "line": 320,
+            "text": "Communication externe, réseaux sociaux, lettres d'info et photothèque",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.communicationExterneReseauxSociauxLettres"
+          },
+          {
+            "line": 325,
+            "text": "Le Mégaphone (Annonces)",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.leMegaphoneAnnonces"
+          },
+          {
+            "line": 327,
+            "text": "Autorise à rédiger, publier et gérer les annonces officielles sur le tableau de bord (ex: CA, Modérateur, Communication)",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.autoriseARedigerPublierEt"
+          },
+          {
+            "line": 332,
+            "text": "Réseaux & Médias",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.reseauxMedias"
+          },
+          {
+            "line": 334,
+            "text": "Gestion et publication sur les réseaux sociaux",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.gestionEtPublicationSurLes"
+          },
+          {
+            "line": 339,
+            "text": "Lettres d'info",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.lettresDInfo"
+          },
+          {
+            "line": 341,
+            "text": "Création et envoi de lettres d'information",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.creationEtEnvoiDeLettres"
+          },
+          {
+            "line": 346,
+            "text": "Médiathèque Photos",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.mediathequePhotos"
+          },
+          {
+            "line": 348,
+            "text": "Dépôts et albums photos partagés des prestations",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.depotsEtAlbumsPhotosPartages"
+          },
+          {
+            "line": 353,
+            "text": "Communication & Brevo",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.communicationBrevo"
+          },
+          {
+            "line": 355,
+            "text": "Vidéo à la une, synchronisation Brevo, Cloud Functions et exports",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.videoALaUneSynchronisation"
+          },
+          {
+            "line": 360,
+            "text": "Lexique & Mentions",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.lexiqueMentions"
+          },
+          {
+            "line": 362,
+            "text": "Dictionnaire des termes musicaux, mentions légales et lexique",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.dictionnaireDesTermesMusicauxMentions"
+          },
+          {
+            "line": 369,
+            "text": "📚 Pédagogie",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.pedagogie"
+          },
+          {
+            "line": 371,
+            "text": "Transmission musicale, parcours et Varal pédagogique",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.transmissionMusicaleParcoursEtVaral"
+          },
+          {
+            "line": 376,
+            "text": "Varal Pédagogique",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.varalPedagogique"
+          },
+          {
+            "line": 378,
+            "text": "Toadas, fiches de culture et tutoriels vidéo",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.toadasFichesDeCultureEt"
+          },
+          {
+            "line": 383,
+            "text": "QCM & Quiz",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.qcmQuiz"
+          },
+          {
+            "line": 385,
+            "text": "Gestion des questionnaires et seuils de validation",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.gestionDesQuestionnairesEtSeuils"
+          },
+          {
+            "line": 390,
+            "text": "Suivi & Analyse",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.suiviAnalyse"
+          },
+          {
+            "line": 392,
+            "text": "Visualisation de la progression et aisance des adhérents",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.visualisationDeLaProgressionEt"
+          },
+          {
+            "line": 399,
+            "text": "🥁 Mestria",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.mestria"
+          },
+          {
+            "line": 401,
+            "text": "Direction artistique et plan de scène",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.directionArtistiqueEtPlanDe"
+          },
+          {
+            "line": 406,
+            "text": "Répertoire",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.repertoire"
+          },
+          {
+            "line": 408,
+            "text": "Gestion de la setlist de saison et statut des morceaux",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.gestionDeLaSetlistDe"
+          },
+          {
+            "line": 413,
+            "text": "Catégories de pratique",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.categoriesDePratique"
+          },
+          {
+            "line": 415,
+            "text": "Gestion des sections et niveaux de pratique de la troupe",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.gestionDesSectionsEtNiveaux"
+          },
+          {
+            "line": 420,
+            "text": "Casting",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.casting"
+          },
+          {
+            "line": 422,
+            "text": "Gestion des affectations d'instruments et vœux d'évolution",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.gestionDesAffectationsDInstruments"
+          },
+          {
+            "line": 427,
+            "text": "Événements",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.evenements"
+          },
+          {
+            "line": 429,
+            "text": "Vue mestre détaillée des événements et présences",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.vueMestreDetailleeDesEvenements"
+          },
+          {
+            "line": 434,
+            "text": "Plan de Scène",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.planDeScene"
+          },
+          {
+            "line": 436,
+            "text": "Création et disposition visuelle du placement scénique",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.creationEtDispositionVisuelleDu"
+          },
+          {
+            "line": 441,
+            "text": "Annonces",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.annonces"
+          },
+          {
+            "line": 443,
+            "text": "Publication des communications officielles du Mestre",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.publicationDesCommunicationsOfficiellesDu"
+          },
+          {
+            "line": 450,
+            "text": "🌐 Vitrine Publique",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.vitrinePublique"
+          },
+          {
+            "line": 452,
+            "text": "Autorisations de prévisualisation en mode brouillon et d'administration de la vitrine",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.autorisationsDePrevisualisationEnMode"
+          },
+          {
+            "line": 457,
+            "text": "Vitrine — Prévisualisation (Mode Brouillon)",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.vitrinePrevisualisationModeBrouillon"
+          },
+          {
+            "line": 459,
+            "text": "Permet d'accéder à la vitrine lorsque isPublished est à false (mode en construction)",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.permetDAccederALa"
+          },
+          {
+            "line": 464,
+            "text": "Vitrine — Édition & Configuration",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.vitrineEditionConfiguration"
+          },
+          {
+            "line": 466,
+            "text": "Permet d'accéder au pôle d'administration de la Vitrine (textes, formules, images, SEO, etc.)",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.permetDAccederAuPole"
+          },
+          {
+            "line": 473,
+            "text": "⚙️ Configuration",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.configuration"
+          },
+          {
+            "line": 475,
+            "text": "Paramètres institutionnels de l'association, identité, sécurité, modules et profils",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.parametresInstitutionnelsDeLAssociation"
+          },
+          {
+            "line": 480,
+            "text": "Identité légale & Juridique",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.identiteLegaleJuridique"
+          },
+          {
+            "line": 482,
+            "text": "SIRET, RNA, siège social, signatures et coordonnées bancaires",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.siretRnaSiegeSocialSignatures"
+          },
+          {
+            "line": 487,
+            "text": "Inscription, Profils & Lieux/Agenda",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.inscriptionProfilsLieuxAgenda"
+          },
+          {
+            "line": 489,
+            "text": "Formulaire d'inscription, cycles annuels, salles clés et catégories d'agenda",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.formulaireDInscriptionCyclesAnnuels"
+          },
+          {
+            "line": 494,
+            "text": "Badges, Rôles & Sécurité",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.badgesRolesSecurite"
+          },
+          {
+            "line": 496,
+            "text": "Matrice RBAC des rôles et permissions par pôle",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.matriceRbacDesRolesEt"
+          },
+          {
+            "line": 501,
+            "text": "Communication, E-mails & Automatisations",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.communicationEMailsAutomatisations"
+          },
+          {
+            "line": 503,
+            "text": "Configuration expéditeur, API Brevo, DNS et règles de relance automatique",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.configurationExpediteurApiBrevoDns"
+          },
+          {
+            "line": 508,
+            "text": "Modules SaaS, Apparence & Médias",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.modulesSaasApparenceMedias"
+          },
+          {
+            "line": 510,
+            "text": "Activation des pôles, nomenclature des tambours, logo et playlists",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.security.tabSecurity.activationDesPolesNomenclatureDes"
+          },
+          {
+            "line": 685,
+            "text": "Gestionnaire d'Étiquettes & Vue Inversée",
+            "context": "Repli logique (||)",
+            "type": "fallback",
+            "suggestedKey": "settings.security.tabSecurity.gestionnaireDEtiquettesVueInversee"
+          },
+          {
+            "line": 688,
+            "text": "Créer ou modifier les rôles (ex. Trésorier, CA), auditer les membres porteurs et dissocier les étiquettes.",
+            "context": "Repli logique (||)",
+            "type": "fallback",
+            "suggestedKey": "settings.security.tabSecurity.creerOuModifierLesRoles"
+          },
+          {
+            "line": 697,
+            "text": "Ouvrir les Badges & Vue Inversée →",
+            "context": "Repli logique (||)",
+            "type": "fallback",
+            "suggestedKey": "settings.security.tabSecurity.ouvrirLesBadgesVueInversee"
+          },
+          {
+            "line": 711,
+            "text": "Matrice des Permissions (Par Pôle & Par Onglet)",
+            "context": "Repli logique (||)",
+            "type": "fallback",
+            "suggestedKey": "settings.security.tabSecurity.matriceDesPermissionsParPole"
+          },
+          {
+            "line": 721,
+            "text": "Tout ouvrir",
+            "context": "Repli logique (||)",
+            "type": "fallback",
+            "suggestedKey": "settings.security.tabSecurity.toutOuvrir"
+          },
+          {
+            "line": 729,
+            "text": "Tout fermer",
+            "context": "Repli logique (||)",
+            "type": "fallback",
+            "suggestedKey": "settings.security.tabSecurity.toutFermer"
+          },
+          {
+            "line": 735,
+            "text": "Attribuez l'accès global à un pôle entier (recommandé pour une gestion rapide) ou affinez les autorisations onglet par onglet pour chaque étiquette/rôle.",
+            "context": "Repli logique (||)",
+            "type": "fallback",
+            "suggestedKey": "settings.security.tabSecurity.attribuezLAccesGlobalA"
+          },
+          {
+            "line": 740,
+            "text": "Aucune étiquette/badge n'est configuré pour cette association. Veuillez d'abord créer des badges dans le Gestionnaire de Badges.",
+            "context": "Repli logique (||)",
+            "type": "fallback",
+            "suggestedKey": "settings.security.tabSecurity.aucuneEtiquetteBadgeNEst"
+          },
+          {
+            "line": 801,
+            "text": "Cochez une étiquette ici pour lui accorder l'accès d'office à l'ensemble du pôle et à tous ses onglets en une seule fois.",
+            "context": "Repli logique (||)",
+            "type": "fallback",
+            "suggestedKey": "settings.security.tabSecurity.cochezUneEtiquetteIciPour"
+          },
+          {
+            "line": 815,
+            "text": "Tout le Pôle",
+            "context": "Repli logique (||)",
+            "type": "fallback",
+            "suggestedKey": "settings.security.tabSecurity.toutLePole"
+          },
+          {
+            "line": 824,
+            "text": "Aucun",
+            "context": "Repli logique (||)",
+            "type": "fallback",
+            "suggestedKey": "settings.security.tabSecurity.aucun"
+          },
+          {
+            "line": 838,
+            "text": "Restrictions par Onglet Spécifique",
+            "context": "Repli logique (||)",
+            "type": "fallback",
+            "suggestedKey": "settings.security.tabSecurity.restrictionsParOngletSpecifique"
+          },
+          {
+            "line": 841,
+            "text": "(Pour attribuer un accès partiel aux membres n'ayant pas l'accès global au pôle)",
+            "context": "Repli logique (||)",
+            "type": "fallback",
+            "suggestedKey": "settings.security.tabSecurity.pourAttribuerUnAccesPartiel"
+          },
+          {
+            "line": 872,
+            "text": "Tous",
+            "context": "Repli logique (||)",
+            "type": "fallback",
+            "suggestedKey": "settings.security.tabSecurity.tous"
+          },
+          {
+            "line": 880,
+            "text": "Aucun",
+            "context": "Repli logique (||)",
+            "type": "fallback",
+            "suggestedKey": "settings.security.tabSecurity.aucun"
+          }
+        ]
+      }
+    ]
+  },
+  "modules": {
+    "id": "modules",
+    "pillar": "Pilier 4 : Modules SaaS & Apparence",
+    "name": "Activation des Pôles, Vestiaire, Nomenclature & Médias (TabModules)",
+    "category": "modules",
+    "totalStrings": 79,
+    "cleanFiles": [
+      "src/components/association-settings/TabModules.jsx",
+      "src/components/association-settings/blocks/YouTubePlaylistsBlock.jsx",
+      "src/components/association-settings/blocks/FramaspaceIntegrationBlock.jsx"
+    ],
+    "dirtyFiles": [
+      {
+        "file": "src/components/association-settings/modules/ModulesSwitchesTable.jsx",
+        "count": 32,
+        "items": [
+          {
+            "line": 7,
+            "text": "Gouvernance & Conseil d'Administration",
+            "context": "Config statique (title)",
+            "type": "config",
+            "suggestedKey": "settings.modules.modulesSwitchesTable.gouvernanceConseilDAdministration"
+          },
+          {
+            "line": 7,
+            "text": "Réunions de CA, bilans AG et registre des statuts",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.modules.modulesSwitchesTable.reunionsDeCaBilansAg"
+          },
+          {
+            "line": 8,
+            "text": "Diffusion & Pipeline Prestations",
+            "context": "Config statique (title)",
+            "type": "config",
+            "suggestedKey": "settings.modules.modulesSwitchesTable.diffusionPipelinePrestations"
+          },
+          {
+            "line": 8,
+            "text": "Prestations, démarchage et opportunités de concerts",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.modules.modulesSwitchesTable.prestationsDemarchageEtOpportunitesDe"
+          },
+          {
+            "line": 9,
+            "text": "Trésorerie & Finances",
+            "context": "Config statique (title)",
+            "type": "config",
+            "suggestedKey": "settings.modules.modulesSwitchesTable.tresorerieFinances"
+          },
+          {
+            "line": 9,
+            "text": "Cotisations, dépenses, notes de frais kilométriques",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.modules.modulesSwitchesTable.cotisationsDepensesNotesDeFrais"
+          },
+          {
+            "line": 10,
+            "text": "Logistique & Instruments",
+            "context": "Config statique (title)",
+            "type": "config",
+            "suggestedKey": "settings.modules.modulesSwitchesTable.logistiqueInstruments"
+          },
+          {
+            "line": 10,
+            "text": "Inventaire matériel, état du parc, convois",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.modules.modulesSwitchesTable.inventaireMaterielEtatDuParc"
+          },
+          {
+            "line": 11,
+            "text": "Boutique & Commandes",
+            "context": "Config statique (title)",
+            "type": "config",
+            "suggestedKey": "settings.modules.modulesSwitchesTable.boutiqueCommandes"
+          },
+          {
+            "line": 11,
+            "text": "Commandes groupées de consommables pour la troupe",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.modules.modulesSwitchesTable.commandesGroupeesDeConsommablesPour"
+          },
+          {
+            "line": 12,
+            "text": "Vestiaire & Costumerie",
+            "context": "Config statique (title)",
+            "type": "config",
+            "suggestedKey": "settings.modules.modulesSwitchesTable.vestiaireCostumerie"
+          },
+          {
+            "line": 12,
+            "text": "Suivi des costumes, mensurations et pièces textiles",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.modules.modulesSwitchesTable.suiviDesCostumesMensurationsEt"
+          },
+          {
+            "line": 13,
+            "text": "Covoiturage Événements",
+            "context": "Config statique (title)",
+            "type": "config",
+            "suggestedKey": "settings.modules.modulesSwitchesTable.covoiturageEvenements"
+          },
+          {
+            "line": 13,
+            "text": "Organisation des trajets partagés sur l'agenda",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.modules.modulesSwitchesTable.organisationDesTrajetsPartagesSur"
+          },
+          {
+            "line": 14,
+            "text": "Studio Social & Médias",
+            "context": "Config statique (title)",
+            "type": "config",
+            "suggestedKey": "settings.modules.modulesSwitchesTable.studioSocialMedias"
+          },
+          {
+            "line": 14,
+            "text": "Photothèque, diffusion externe et Varal",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.modules.modulesSwitchesTable.photothequeDiffusionExterneEtVaral"
+          },
+          {
+            "line": 15,
+            "text": "Gestion des Réunions",
+            "context": "Config statique (title)",
+            "type": "config",
+            "suggestedKey": "settings.modules.modulesSwitchesTable.gestionDesReunions"
+          },
+          {
+            "line": 15,
+            "text": "Ordres du jour, PV et comptes-rendus",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.modules.modulesSwitchesTable.ordresDuJourPvEt"
+          },
+          {
+            "line": 16,
+            "text": "Porte-voix (Discussions)",
+            "context": "Config statique (title)",
+            "type": "config",
+            "suggestedKey": "settings.modules.modulesSwitchesTable.porteVoixDiscussions"
+          },
+          {
+            "line": 16,
+            "text": "Messagerie communautaire et canaux de discussion",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.modules.modulesSwitchesTable.messagerieCommunautaireEtCanauxDe"
+          },
+          {
+            "line": 17,
+            "text": "Espace Mestre & Direction Artistique",
+            "context": "Config statique (title)",
+            "type": "config",
+            "suggestedKey": "settings.modules.modulesSwitchesTable.espaceMestreDirectionArtistique"
+          },
+          {
+            "line": 17,
+            "text": "Plan de scène, orientation et casting",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.modules.modulesSwitchesTable.planDeSceneOrientationEt"
+          },
+          {
+            "line": 18,
+            "text": "Roda Quiz & Défis",
+            "context": "Config statique (title)",
+            "type": "config",
+            "suggestedKey": "settings.modules.modulesSwitchesTable.rodaQuizDefis"
+          },
+          {
+            "line": 18,
+            "text": "Défis Rythme et Culture en direct",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.modules.modulesSwitchesTable.defisRythmeEtCultureEn"
+          },
+          {
+            "line": 54,
+            "text": "🧩 Pôles Métiers & Modules SaaS",
+            "context": "Repli en dur après t()",
+            "type": "fallback",
+            "suggestedKey": "settings.modules.modulesSwitchesTable.polesMetiersModulesSaas"
+          },
+          {
+            "line": 57,
+            "text": "Activez uniquement les pôles pertinents pour adapter l'application à la taille de votre structure.",
+            "context": "Repli en dur après t()",
+            "type": "fallback",
+            "suggestedKey": "settings.modules.modulesSwitchesTable.activezUniquementLesPolesPertinents"
+          },
+          {
+            "line": 68,
+            "text": "✓ Tout activer",
+            "context": "Repli en dur après t()",
+            "type": "fallback",
+            "suggestedKey": "settings.modules.modulesSwitchesTable.toutActiver"
+          },
+          {
+            "line": 77,
+            "text": "✕ Tout désactiver",
+            "context": "Repli en dur après t()",
+            "type": "fallback",
+            "suggestedKey": "settings.modules.modulesSwitchesTable.toutDesactiver"
+          },
+          {
+            "line": 115,
+            "text": "⚡ Fonctionnalités Transversales & Visibilité",
+            "context": "Repli en dur après t()",
+            "type": "fallback",
+            "suggestedKey": "settings.modules.modulesSwitchesTable.fonctionnalitesTransversalesVisibilite"
+          },
+          {
+            "line": 120,
+            "text": "🟢 Pastilles de statut en ligne",
+            "context": "Repli en dur après t()",
+            "type": "fallback",
+            "suggestedKey": "settings.modules.modulesSwitchesTable.pastillesDeStatutEnLigne"
+          },
+          {
+            "line": 131,
+            "text": "📜 Répertoire ouvert aux membres",
+            "context": "Repli en dur après t()",
+            "type": "fallback",
+            "suggestedKey": "settings.modules.modulesSwitchesTable.repertoireOuvertAuxMembres"
+          },
+          {
+            "line": 145,
+            "text": "📈 Auto-évaluation individuelle",
+            "context": "Repli en dur après t()",
+            "type": "fallback",
+            "suggestedKey": "settings.modules.modulesSwitchesTable.autoEvaluationIndividuelle"
+          }
+        ]
+      },
+      {
+        "file": "src/components/association-settings/modules/WardrobeMemberModeCard.jsx",
+        "count": 12,
+        "items": [
+          {
+            "line": 13,
+            "text": "Garde-robe personnelle",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.modules.wardrobeMemberModeCard.gardeRobePersonnelle"
+          },
+          {
+            "line": 14,
+            "text": "Individuel",
+            "context": "Config statique (badge)",
+            "type": "config",
+            "suggestedKey": "settings.modules.wardrobeMemberModeCard.individuel"
+          },
+          {
+            "line": 19,
+            "text": "Chaque adhérent possède et entretient sa tenue individuelle.",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.modules.wardrobeMemberModeCard.chaqueAdherentPossedeEtEntretient"
+          },
+          {
+            "line": 21,
+            "text": "Mannequin interactif d'habillage SVG, checklist des pièces possédées et validation autonome des tenues.",
+            "context": "Config statique (details)",
+            "type": "config",
+            "suggestedKey": "settings.modules.wardrobeMemberModeCard.mannequinInteractifDHabillageSvg"
+          },
+          {
+            "line": 27,
+            "text": "Confection collective & Atelier",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.modules.wardrobeMemberModeCard.confectionCollectiveAtelier"
+          },
+          {
+            "line": 28,
+            "text": "Mutualisé",
+            "context": "Config statique (badge)",
+            "type": "config",
+            "suggestedKey": "settings.modules.wardrobeMemberModeCard.mutualise"
+          },
+          {
+            "line": 33,
+            "text": "Parc de costumes associatif mutualisé et prêté le jour des prestations.",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.modules.wardrobeMemberModeCard.parcDeCostumesAssociatifMutualise"
+          },
+          {
+            "line": 35,
+            "text": "Compteur déclaratif des pièces confectionnées pour le stock, rappel du chantier textile en cours et accès direct aux tutoriels & patrons.",
+            "context": "Config statique (details)",
+            "type": "config",
+            "suggestedKey": "settings.modules.wardrobeMemberModeCard.compteurDeclaratifDesPiecesConfectionnees"
+          },
+          {
+            "line": 41,
+            "text": "Désactivé (Masqué pour les membres)",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.modules.wardrobeMemberModeCard.desactiveMasquePourLesMembres"
+          },
+          {
+            "line": 42,
+            "text": "Masqué Adhérents",
+            "context": "Config statique (badge)",
+            "type": "config",
+            "suggestedKey": "settings.modules.wardrobeMemberModeCard.masqueAdherents"
+          },
+          {
+            "line": 47,
+            "text": "L'onglet Vestiaire disparaît de l'espace membre pour les adhérents simples.",
+            "context": "Config statique (desc)",
+            "type": "config",
+            "suggestedKey": "settings.modules.wardrobeMemberModeCard.lOngletVestiaireDisparaitDe"
+          },
+          {
+            "line": 49,
+            "text": "Le Pôle Costumerie & WardrobeManager reste pleinement accessible aux responsables ayant le badge requis.",
+            "context": "Config statique (details)",
+            "type": "config",
+            "suggestedKey": "settings.modules.wardrobeMemberModeCard.lePoleCostumerieWardrobemanagerReste"
+          }
+        ]
+      },
+      {
+        "file": "src/components/association-settings/modules/TamboursNamingAccordion.jsx",
+        "count": 3,
+        "items": [
+          {
+            "line": 44,
+            "text": "Nomenclature des Tambours & Pupitres (",
+            "context": "Repli en dur après t()",
+            "type": "fallback",
+            "suggestedKey": "settings.modules.tamboursNamingAccordion.nomenclatureDesTamboursPupitres"
+          },
+          {
+            "line": 47,
+            "text": "(Alfaias, caisses, cloches, voix...)",
+            "context": "Repli en dur après t()",
+            "type": "fallback",
+            "suggestedKey": "settings.modules.tamboursNamingAccordion.alfaiasCaissesClochesVoix"
+          },
+          {
+            "line": 64,
+            "text": "Tradition & Présélection Rapide",
+            "context": "Repli en dur après t()",
+            "type": "fallback",
+            "suggestedKey": "settings.modules.tamboursNamingAccordion.traditionPreselectionRapide"
+          }
+        ]
+      },
+      {
+        "file": "src/components/association-settings/modules/BrandingLogoAccordion.jsx",
+        "count": 10,
+        "items": [
+          {
+            "line": 41,
+            "text": "Identité Visuelle & Logo Officiel",
+            "context": "Repli en dur après t()",
+            "type": "fallback",
+            "suggestedKey": "settings.modules.brandingLogoAccordion.identiteVisuelleLogoOfficiel"
+          },
+          {
+            "line": 68,
+            "text": "Aucun",
+            "context": "Repli en dur après t()",
+            "type": "fallback",
+            "suggestedKey": "settings.modules.brandingLogoAccordion.aucun"
+          },
+          {
+            "line": 73,
+            "text": "Remplacer le Logo (SVG ou PNG transparent)",
+            "context": "Repli en dur après t()",
+            "type": "fallback",
+            "suggestedKey": "settings.modules.brandingLogoAccordion.remplacerLeLogoSvgOu"
+          },
+          {
+            "line": 83,
+            "text": "✓ Fichier prêt :",
+            "context": "Repli en dur après t()",
+            "type": "fallback",
+            "suggestedKey": "settings.modules.brandingLogoAccordion.fichierPret"
+          },
+          {
+            "line": 86,
+            "text": "Envoi du logo en cours...",
+            "context": "Repli en dur après t()",
+            "type": "fallback",
+            "suggestedKey": "settings.modules.brandingLogoAccordion.envoiDuLogoEnCours"
+          },
+          {
+            "line": 94,
+            "text": "Charte Graphique de l'Association",
+            "context": "Repli en dur après t()",
+            "type": "fallback",
+            "suggestedKey": "settings.modules.brandingLogoAccordion.charteGraphiqueDeLAssociation"
+          },
+          {
+            "line": 105,
+            "text": "Primaire",
+            "context": "Repli en dur après t()",
+            "type": "fallback",
+            "suggestedKey": "settings.modules.brandingLogoAccordion.primaire"
+          },
+          {
+            "line": 116,
+            "text": "Secondaire",
+            "context": "Repli en dur après t()",
+            "type": "fallback",
+            "suggestedKey": "settings.modules.brandingLogoAccordion.secondaire"
+          },
+          {
+            "line": 127,
+            "text": "Arrière-plan",
+            "context": "Repli en dur après t()",
+            "type": "fallback",
+            "suggestedKey": "settings.modules.brandingLogoAccordion.arrierePlan"
+          },
+          {
+            "line": 138,
+            "text": "Texte",
+            "context": "Repli en dur après t()",
+            "type": "fallback",
+            "suggestedKey": "settings.modules.brandingLogoAccordion.texte"
+          }
+        ]
+      },
+      {
+        "file": "src/components/association-settings/modules/MediaStorageAccordion.jsx",
+        "count": 6,
+        "items": [
+          {
+            "line": 52,
+            "text": "Playlists YouTube (",
+            "context": "Repli en dur après t()",
+            "type": "fallback",
+            "suggestedKey": "settings.modules.mediaStorageAccordion.playlistsYoutube"
+          },
+          {
+            "line": 52,
+            "text": "configurées)",
+            "context": "Repli en dur après t()",
+            "type": "fallback",
+            "suggestedKey": "settings.modules.mediaStorageAccordion.configurees"
+          },
+          {
+            "line": 55,
+            "text": "(Sélection de vidéos pour les ateliers et l'accueil)",
+            "context": "Repli en dur après t()",
+            "type": "fallback",
+            "suggestedKey": "settings.modules.mediaStorageAccordion.selectionDeVideosPourLes"
+          },
+          {
+            "line": 87,
+            "text": "Stockage Cloud des Captations (Framaspace / Drive)",
+            "context": "Repli en dur après t()",
+            "type": "fallback",
+            "suggestedKey": "settings.modules.mediaStorageAccordion.stockageCloudDesCaptationsFramaspace"
+          },
+          {
+            "line": 105,
+            "text": "Lien du dossier de dépôt par défaut où les adhérents déposent leurs captations brutes lors des répétitions et ateliers.",
+            "context": "Repli en dur après t()",
+            "type": "fallback",
+            "suggestedKey": "settings.modules.mediaStorageAccordion.lienDuDossierDeDepot"
+          },
+          {
+            "line": 111,
+            "text": "🔗 Lien du dossier de dépôt (Framaspace File Drop / Nextcloud / Drive)",
+            "context": "Repli en dur après t()",
+            "type": "fallback",
+            "suggestedKey": "settings.modules.mediaStorageAccordion.lienDuDossierDeDepot"
+          }
+        ]
+      },
+      {
+        "file": "src/components/association-settings/modules/MemberDashboardLayoutAccordion.jsx",
+        "count": 16,
+        "items": [
+          {
+            "line": 6,
+            "text": "📢 Le Mégaphone (Annonces officielles)",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.modules.memberDashboardLayoutAccordion.leMegaphoneAnnoncesOfficielles"
+          },
+          {
+            "line": 7,
+            "text": "🎬 Vidéo à la une (YouTube)",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.modules.memberDashboardLayoutAccordion.videoALaUneYoutube"
+          },
+          {
+            "line": 8,
+            "text": "📝 Le Mot du Mestre",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.modules.memberDashboardLayoutAccordion.leMotDuMestre"
+          },
+          {
+            "line": 9,
+            "text": "📅 Dates à Venir (Agenda)",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.modules.memberDashboardLayoutAccordion.datesAVenirAgenda"
+          },
+          {
+            "line": 10,
+            "text": "📦 Achats de Matériel (Commandes)",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.modules.memberDashboardLayoutAccordion.achatsDeMaterielCommandes"
+          },
+          {
+            "line": 11,
+            "text": "💬 Le Porte-Voix (Discussions)",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.modules.memberDashboardLayoutAccordion.lePorteVoixDiscussions"
+          },
+          {
+            "line": 12,
+            "text": "📂 Varal de Documents",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.modules.memberDashboardLayoutAccordion.varalDeDocuments"
+          },
+          {
+            "line": 13,
+            "text": "🪙 Adhésion & Cotisation",
+            "context": "Config statique (label)",
+            "type": "config",
+            "suggestedKey": "settings.modules.memberDashboardLayoutAccordion.adhesionCotisation"
+          },
+          {
+            "line": 59,
+            "text": "Disposition des Blocs de l'Accueil Adhérent",
+            "context": "Repli en dur après t()",
+            "type": "fallback",
+            "suggestedKey": "settings.modules.memberDashboardLayoutAccordion.dispositionDesBlocsDeL"
+          },
+          {
+            "line": 62,
+            "text": "(Ordre d'affichage du tableau de bord & anniversaires)",
+            "context": "Repli en dur après t()",
+            "type": "fallback",
+            "suggestedKey": "settings.modules.memberDashboardLayoutAccordion.ordreDAffichageDuTableau"
+          },
+          {
+            "line": 81,
+            "text": "Emplacement du Bloc Anniversaires",
+            "context": "Repli en dur après t()",
+            "type": "fallback",
+            "suggestedKey": "settings.modules.memberDashboardLayoutAccordion.emplacementDuBlocAnniversaires"
+          },
+          {
+            "line": 82,
+            "text": "Affichage des anniversaires de la semaine des adhérents",
+            "context": "Repli en dur après t()",
+            "type": "fallback",
+            "suggestedKey": "settings.modules.memberDashboardLayoutAccordion.affichageDesAnniversairesDeLa"
+          },
+          {
+            "line": 91,
+            "text": "En bas du tableau de bord",
+            "context": "Repli en dur après t()",
+            "type": "fallback",
+            "suggestedKey": "settings.modules.memberDashboardLayoutAccordion.enBasDuTableauDe"
+          },
+          {
+            "line": 92,
+            "text": "En haut (sous le mégaphone)",
+            "context": "Repli en dur après t()",
+            "type": "fallback",
+            "suggestedKey": "settings.modules.memberDashboardLayoutAccordion.enHautSousLeMegaphone"
+          },
+          {
+            "line": 93,
+            "text": "Désactivé (Masqué)",
+            "context": "Repli en dur après t()",
+            "type": "fallback",
+            "suggestedKey": "settings.modules.memberDashboardLayoutAccordion.desactiveMasque"
+          },
+          {
+            "line": 100,
+            "text": "Ordre d'apparition des cartes sur l'Accueil",
+            "context": "Repli en dur après t()",
+            "type": "fallback",
+            "suggestedKey": "settings.modules.memberDashboardLayoutAccordion.ordreDApparitionDesCartes"
+          }
+        ]
+      }
+    ]
+  },
+  "general": {
+    "id": "general",
+    "pillar": "Cadre Général des Paramètres",
+    "name": "Ruban des Piliers & Actions Globales (AssociationSettings)",
+    "category": "general",
+    "totalStrings": 0,
+    "cleanFiles": [
+      "src/components/AssociationSettings.jsx"
+    ],
+    "dirtyFiles": []
+  },
+  "agenda": {
+    "id": "agenda",
+    "pillar": "Configuration Métier : Agenda & Lieux",
+    "name": "Options de l'Agenda, Types d'Événements, Convois & Lieux (TabAgenda)",
+    "category": "agenda",
+    "totalStrings": 0,
+    "cleanFiles": [
+      "src/components/association-settings/TabAgenda.jsx",
+      "src/components/association-settings/TabLieux.jsx",
+      "src/components/association-settings/EventTypeConfigCard.jsx",
+      "src/components/association-settings/blocks/DepartureLocationAccordion.jsx",
+      "src/components/association-settings/blocks/VehicleFleetSection.jsx",
+      "src/components/association-settings/blocks/CarpoolBlock.jsx"
+    ],
+    "dirtyFiles": []
+  },
+  "communication": {
+    "id": "communication",
+    "pillar": "Configuration Métier : Communication & Automatisations",
+    "name": "E-mails, Relances, Automatisations & Documents (TabConfigComms)",
+    "category": "communication",
+    "totalStrings": 0,
+    "cleanFiles": [
+      "src/components/association-settings/TabConfigComms.jsx",
+      "src/components/association-settings/TabAutomations.jsx",
+      "src/components/association-settings/TabDocuments.jsx",
+      "src/components/association-settings/email/EmailConfigSection.jsx",
+      "src/components/association-settings/email/EmailDnsHelpCard.jsx",
+      "src/components/association-settings/blocks/BrevoIntegrationBlock.jsx",
+      "src/components/association-settings/blocks/SequenceurLinkBlock.jsx"
+    ],
+    "dirtyFiles": []
+  }
+}

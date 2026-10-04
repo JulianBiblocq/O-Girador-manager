@@ -17,13 +17,14 @@ export default function Tooltip({
   children,
   position = 'top',
   className = '',
-  iconVariant = 'default'
+  iconVariant = 'default',
+  enableHover = false
 }) {
   const [isVisible, setIsVisible] = useState(false);
   const triggerRef = useRef(null);
   const popoverRef = useRef(null);
 
-  // Close when clicking outside or pressing Escape
+  // Fermer la bulle d'aide lors d'un clic extérieur ou appui sur Échap
   useEffect(() => {
     if (!isVisible) return;
 
@@ -55,7 +56,7 @@ export default function Tooltip({
 
   if (!text) return children || null;
 
-  // Position classes for tooltip popover
+  // Classes de positionnement de la bulle d'aide
   const positionClasses = {
     top: 'bottom-full mb-2 left-1/2 -translate-x-1/2',
     bottom: 'top-full mt-2 left-1/2 -translate-x-1/2',
@@ -63,7 +64,7 @@ export default function Tooltip({
     right: 'left-full ml-2 top-1/2 -translate-y-1/2'
   }[position] || 'bottom-full mb-2 left-1/2 -translate-x-1/2';
 
-  // Arrow classes
+  // Classes des flèches directionnelles
   const arrowClasses = {
     top: 'top-full left-1/2 -translate-x-1/2 border-t-[var(--cordel-border)] border-l-transparent border-r-transparent border-b-transparent',
     bottom: 'bottom-full left-1/2 -translate-x-1/2 border-b-[var(--cordel-border)] border-l-transparent border-r-transparent border-t-transparent',
@@ -73,13 +74,11 @@ export default function Tooltip({
 
   return (
     <div className={`relative inline-flex items-center align-middle ${className}`}>
-      {/* Trigger element */}
+      {/* Élément déclencheur : ouverture au clic */}
       <div
         ref={triggerRef}
-        onMouseEnter={() => setIsVisible(true)}
-        onMouseLeave={() => setIsVisible(false)}
-        onFocus={() => setIsVisible(true)}
-        onBlur={() => setIsVisible(false)}
+        onMouseEnter={() => enableHover && setIsVisible(true)}
+        onMouseLeave={() => enableHover && setIsVisible(false)}
         onClick={(e) => {
           e.stopPropagation();
           setIsVisible((prev) => !prev);

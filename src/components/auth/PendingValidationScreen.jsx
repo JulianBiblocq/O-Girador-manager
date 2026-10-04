@@ -1,6 +1,7 @@
 import React from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
+import PostTrialWishesCard from './PostTrialWishesCard';
 
 /**
  * Écran d'attente affiché aux membres nouvellement inscrits dont le compte (isNew === true)
@@ -15,7 +16,7 @@ export default function PendingValidationScreen({ profileData, branding, onSignO
 
   return (
     <div className="min-h-screen w-full flex flex-col justify-center items-center p-4 bg-cordel-bg text-encre-noire force-light-theme">
-      <div className="max-w-md w-full flex flex-col gap-5 text-center items-center">
+      <div className="max-w-xl w-full flex flex-col gap-5 text-center items-center">
         {/* Logo de l'association */}
         {logoSrc && (
           <img
@@ -25,7 +26,7 @@ export default function PendingValidationScreen({ profileData, branding, onSignO
           />
         )}
 
-        <CordelCard variant="default" useExtremeBorder={true} className="p-6 flex flex-col gap-4 items-center">
+        <CordelCard variant="default" useExtremeBorder={true} className="p-6 flex flex-col gap-4 items-center w-full">
           {/* Badge d'attente Ocre ambré */}
           <div className="w-16 h-16 rounded-full bg-amber-100 dark:bg-amber-950/40 border-2 border-dashed border-amber-600/40 flex items-center justify-center text-3xl mb-1 shadow-xs">
             ⏳
@@ -39,13 +40,13 @@ export default function PendingValidationScreen({ profileData, branding, onSignO
             Bonjour <strong className="text-encre-noire">{profileData?.prenom} {profileData?.nom}</strong>, votre profil a été enregistré avec succès !
           </p>
 
-          <div className="p-3.5 bg-amber-50/90 dark:bg-amber-950/20 border-2 border-dashed border-amber-600/30 rounded text-xs text-amber-900 dark:text-amber-300 font-bold leading-relaxed text-left">
+          <div className="p-3.5 bg-amber-50/90 dark:bg-amber-950/20 border-2 border-dashed border-amber-600/30 rounded text-xs text-amber-900 dark:text-amber-300 font-bold leading-relaxed text-left w-full">
             <span>ℹ️</span> Votre demande d'inscription est en cours d'examen par l'équipe d'administration de l'association. 
             Vous aurez accès à l'ensemble de l'Espace Membre dès que votre compte aura été validé.
           </div>
 
           {/* Boutons d'action : Vérifier / Se Déconnecter */}
-          <div className="flex flex-col sm:flex-row gap-2.5 w-full mt-3">
+          <div className="flex flex-col sm:flex-row gap-2.5 w-full mt-2">
             <CordelButton
               variant="vert"
               useExtremeBorder={true}
@@ -65,6 +66,11 @@ export default function PendingValidationScreen({ profileData, branding, onSignO
             </CordelButton>
           </div>
         </CordelCard>
+
+        {/* 🥁 Encart d'action Cordel : Choix des instruments post-séances d'essai */}
+        <div className="w-full">
+          <PostTrialWishesCard profileData={profileData} />
+        </div>
 
         <p className="text-[10px] text-cordel-master-dark/60 font-semibold uppercase tracking-widest">
           O Girador Manager • Secrétariat & Administration

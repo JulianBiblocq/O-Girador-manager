@@ -44,8 +44,7 @@ const MEMBER_SIMPLE_TABS = [
   'profil',
   'materiel',
   'vestiaire',
-  'trombinoscope',
-  'forum'
+  'trombinoscope'
 ];
 
 async function runTests() {
@@ -152,6 +151,14 @@ async function runTests() {
     results.guideExclusions.success.push("getPoleGuide('agenda', 'mon-espace') retourne le guide enrichi Double Vue");
   } else {
     results.guideExclusions.errors.push("ALERTE : getPoleGuide('agenda', 'mon-espace') devrait retourner le guide enrichi Double Vue");
+  }
+
+  // Porte-Voix : bénéficie désormais du guide enrichi bilingue "Double Vue"
+  const forumGuideTest = getPoleGuide('forum', 'mon-espace');
+  if (forumGuideTest && (forumGuideTest.memberGuide || forumGuideTest.managerGuide)) {
+    results.guideExclusions.success.push("getPoleGuide('forum', 'mon-espace') retourne le guide enrichi Double Vue");
+  } else {
+    results.guideExclusions.errors.push("ALERTE : getPoleGuide('forum', 'mon-espace') devrait retourner le guide enrichi Double Vue");
   }
 
   // Pôles d'Administration : doit retourner le guide métier enrichi

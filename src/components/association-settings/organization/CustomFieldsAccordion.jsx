@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import CordelCard from '../../CordelCard';
 import useConfirm from '../../../hooks/useConfirm';
 import CustomFieldAddForm from './CustomFieldAddForm';
+import { useTranslation } from '../../LanguageContext';
 
 /**
  * Accordéon replié par défaut pour les champs de profil personnalisés (« Champs personnalisés (X actifs) ▾ »).
  */
 export default function CustomFieldsAccordion({ formData = {}, handleChange, saving }) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const { confirm } = useConfirm();
   const dynamicProfileFields = Array.isArray(formData.dynamicProfileFields) ? formData.dynamicProfileFields : [];
@@ -17,10 +19,10 @@ export default function CustomFieldsAccordion({ formData = {}, handleChange, sav
 
   const handleRemoveField = async (id) => {
     const isOk = await confirm({
-      title: "Supprimer le champ personnalisé",
-      message: "Êtes-vous sûr de vouloir supprimer ce champ personnalisé ?",
-      confirmText: "Oui, supprimer",
-      cancelText: "Annuler",
+      title: t('settings.organization.customFieldsAccordion.supprimerLeChampPersonnalise'),
+      message: t('settings.organization.customFieldsAccordion.etesVousSurDeVouloir'),
+      confirmText: t('common.yesDelete') || "Oui, supprimer",
+      cancelText: t('common.cancel') || "Annuler",
       variant: "danger"
     });
     if (isOk) {
@@ -38,10 +40,10 @@ export default function CustomFieldsAccordion({ formData = {}, handleChange, sav
         <div className="flex items-center gap-2 text-left">
           <span className="text-sm">📝</span>
           <span className="text-xs font-black uppercase tracking-wider text-cordel-wood">
-            Champs personnalisés ({dynamicProfileFields.length} actifs) {isOpen ? '▲' : '▾'}
+            {t('settings.organization.customFieldsAccordion.champsPersonnalises')}{dynamicProfileFields.length} {t('settings.organization.customFieldsAccordion.actifs')} {isOpen ? '▲' : '▾'}
           </span>
           <span className="text-[9px] text-cordel-master-dark/60 font-semibold hidden sm:inline">
-            (Questions sur-mesure pour l'inscription & le profil)
+            {t('settings.organization.customFieldsAccordion.questionsSurMesurePourL')}
           </span>
         </div>
 
@@ -49,14 +51,14 @@ export default function CustomFieldsAccordion({ formData = {}, handleChange, sav
           type="button"
           className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded border border-encre-noire/30 bg-white hover:bg-stone-50 text-encre-noire transition-all cursor-pointer shadow-2xs"
         >
-          {isOpen ? 'Fermer' : 'Gérer'}
+          {isOpen ? t('settings.organization.customFieldsAccordion.fermer') : t('settings.organization.customFieldsAccordion.gerer')}
         </button>
       </div>
 
       {isOpen && (
         <div className="p-4 border-t border-dashed border-cordel-master-dark/20 flex flex-col gap-3 text-left animate-fade-in bg-white/40">
           <p className="text-[10px] text-cordel-master-dark/70 font-semibold leading-relaxed">
-            Ajoutez des questions spécifiques selon les besoins de votre troupe (ex: Régime alimentaire, Besoin covoiturage, Pratique musicale antérieure...).
+            {t('settings.organization.customFieldsAccordion.ajoutezDesQuestionsSpecifiquesSelon')}
           </p>
 
           {/* Formulaire d'ajout modulaire */}
@@ -65,7 +67,7 @@ export default function CustomFieldsAccordion({ formData = {}, handleChange, sav
           {/* Liste des champs configurés */}
           {dynamicProfileFields.length === 0 ? (
             <div className="p-3 border border-dashed border-stone-300 rounded text-center text-[10px] italic text-stone-500 bg-white/60">
-              Aucune question personnalisée configurée.
+              {t('settings.organization.customFieldsAccordion.aucuneQuestionPersonnaliseeConfiguree')}
             </div>
           ) : (
             <div className="flex flex-col gap-2">
@@ -78,11 +80,13 @@ export default function CustomFieldsAccordion({ formData = {}, handleChange, sav
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-extrabold text-encre-noire">{field.name}</span>
                       {field.required && (
-                        <span className="text-[8px] uppercase font-black text-red-600 bg-red-100 px-1 rounded">Obligatoire</span>
+                        <span className="text-[8px] uppercase font-black text-red-600 bg-red-100 px-1 rounded">
+                          {t('settings.organization.customFieldsAccordion.obligatoire')}
+                        </span>
                       )}
                     </div>
                     <span className="text-[9px] text-stone-500 font-semibold">
-                      Type : {field.type} {field.options?.length > 0 && `(${field.options.join(', ')})`}
+                      {t('settings.organization.customFieldsAccordion.type')} {field.type} {field.options?.length > 0 && `(${field.options.join(', ')})`}
                     </span>
                   </div>
                   
@@ -90,7 +94,7 @@ export default function CustomFieldsAccordion({ formData = {}, handleChange, sav
                     type="button"
                     onClick={() => handleRemoveField(field.id)}
                     className="text-xs hover:text-red-500 font-bold px-2 py-1 cursor-pointer"
-                    title="Supprimer cette question"
+                    title={t('settings.organization.customFieldsAccordion.supprimerCetteQuestion')}
                   >
                     ✕
                   </button>

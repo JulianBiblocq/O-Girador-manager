@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import CordelCard from '../../CordelCard';
 import CordelButton from '../../CordelButton';
+import { useTranslation } from '../../LanguageContext';
 
 /**
  * Tiroir replié par défaut pour la gestion des membres du Bureau officiel.
  */
 export default function BureauAccordion({ bureauMembres = [], handleChange, saving }) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
 
   const handleAdd = () => {
@@ -41,10 +43,10 @@ export default function BureauAccordion({ bureauMembres = [], handleChange, savi
         <div className="flex items-center gap-2 text-left">
           <span className="text-sm">🏛️</span>
           <span className="text-xs font-black uppercase tracking-wider text-cordel-wood">
-            Membres du Bureau ({bureauMembres.length}) {isOpen ? '▲' : '▾'}
+            {t('settings.identity.bureauAccordion.membresDuBureau')}{bureauMembres.length}) {isOpen ? '▲' : '▾'}
           </span>
           <span className="text-[9px] text-cordel-master-dark/60 font-semibold hidden sm:inline">
-            (Présidence, Secrétariat, Trésorerie...)
+            {t('settings.identity.bureauAccordion.presidenceSecretariatTresorerie')}
           </span>
         </div>
 
@@ -52,7 +54,7 @@ export default function BureauAccordion({ bureauMembres = [], handleChange, savi
           type="button"
           className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded border border-encre-noire/30 bg-white hover:bg-stone-50 text-encre-noire transition-all cursor-pointer shadow-2xs"
         >
-          {isOpen ? 'Fermer' : 'Gérer'}
+          {isOpen ? t('settings.identity.bureauAccordion.fermer') : t('settings.identity.bureauAccordion.gerer')}
         </button>
       </div>
 
@@ -60,7 +62,7 @@ export default function BureauAccordion({ bureauMembres = [], handleChange, savi
         <div className="p-4 border-t border-dashed border-cordel-master-dark/20 flex flex-col gap-2.5 text-left animate-fade-in bg-white/40">
           {bureauMembres.length === 0 ? (
             <div className="p-3 border border-dashed border-cordel-master-dark/20 rounded bg-white/60 text-[10px] text-cordel-master-dark/60 font-semibold italic text-center">
-              Aucun membre du bureau renseigné pour le moment.
+              {t('settings.identity.bureauAccordion.aucunMembreDuBureauRenseigne')}
             </div>
           ) : (
             bureauMembres.map((membre, idx) => (
@@ -70,7 +72,7 @@ export default function BureauAccordion({ bureauMembres = [], handleChange, savi
                     type="text"
                     value={membre.role || ''}
                     onChange={(e) => handleUpdate(membre.id, 'role', e.target.value)}
-                    placeholder="Fonction (ex: Trésorier(ère))"
+                    placeholder={t('settings.identity.bureauAccordion.fonctionExTresorierEre')}
                     disabled={saving}
                     className="theme-input text-xs font-bold py-1 px-2 bg-white flex-1"
                   />
@@ -78,7 +80,7 @@ export default function BureauAccordion({ bureauMembres = [], handleChange, savi
                     type="text"
                     value={membre.nom || ''}
                     onChange={(e) => handleUpdate(membre.id, 'nom', e.target.value)}
-                    placeholder="Prénom & Nom du membre"
+                    placeholder={t('settings.identity.bureauAccordion.prenomNomDuMembre')}
                     disabled={saving}
                     className="theme-input text-xs font-bold py-1 px-2 bg-white flex-1"
                   />
@@ -123,7 +125,7 @@ export default function BureauAccordion({ bureauMembres = [], handleChange, savi
               disabled={saving}
               className="py-1 px-3 text-[10px] font-black uppercase tracking-wider cursor-pointer"
             >
-              ➕ Ajouter une fonction du bureau
+              {t('settings.identity.bureauAccordion.ajouterUneFonctionDuBureau')}
             </CordelButton>
           </div>
         </div>

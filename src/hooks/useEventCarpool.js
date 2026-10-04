@@ -1,6 +1,11 @@
 import { useState } from 'react';
 import { doc, runTransaction } from 'firebase/firestore';
 import { db } from '../firebase';
+import useConfirm from './useConfirm';
+import {
+  inspectDriverCarpoolSituation,
+  buildDriverDepartureWarningMessage
+} from '../utils/carpoolCascadeUtils';
 
 export const calculateCarStatus = (car, associationSettings) => {
   const passengers = (car?.passengers || car?.passagers || []);
@@ -103,6 +108,7 @@ export function useEventCarpool({
   enableCarpoolReimbursement,
   reimbursementRule
 }) {
+  const { confirm } = useConfirm();
   const [showProposerForm, setShowProposerForm] = useState(false);
   
   // Pré-remplissage depuis le profil membre
@@ -343,6 +349,30 @@ export function useEventCarpool({
   const handleRetirerVoiture = async (voitureId) => {
     if (!user?.uid) return;
 
+    // Détection préalable de tiers dans le véhicule pour boîte de confirmation préventive
+    const currentCars = event?.covoiturage?.voitures || [];
+    const targetCar = currentCars.find(v => v.id === voitureId);
+    if (targetCar) {
+      const thirdPartyItems = (targetCar.passengers || targetCar.passagers || []).filter(p => p && p.uid !== user.uid);
+      if (thirdPartyItems.length > 0) {
+        const passCount = thirdPartyItems.filter(p => p.isPassenger !== false).length;
+        const instCount = thirdPartyItems.reduce((sum, p) => sum + (Number(p.alfayasCount) || (p.isPassenger === false ? 1 : 0)), 0);
+        const warningMsg = buildDriverDepartureWarningMessage({
+          passengersCount: passCount,
+          instrumentsCount: instCount,
+          hasThirdParty: true
+        });
+        const isConfirmed = await confirm({
+          title: "Retrait du véhicule",
+          message: warningMsg,
+          confirmText: "Confirmer le retrait",
+          cancelText: "Annuler",
+          variant: "warning"
+        });
+        if (!isConfirmed) return;
+      }
+    }
+
     setSubmittingCovoit(true);
     try {
       const eventRef = doc(db, 'events', event.id);
@@ -358,18 +388,49 @@ export function useEventCarpool({
         const voitureToDelete = voitures.find(v => v.id === voitureId);
         if (!voitureToDelete) return;
 
-        const passengersToQueue = voitureToDelete.passengers || voitureToDelete.passagers || [];
+        const passengersToQueue = (voitureToDelete.passengers || voitureToDelete.passagers || []).filter(p => p && p.uid !== user.uid);
         
-        let recherchePlace = currentCovoit.recherchePlace || [];
+        let recherchePlace = [...(currentCovoit.recherchePlace || [])];
+        let currentInscriptions = [...(eventData.inscriptions || [])];
+
         passengersToQueue.forEach(p => {
-          if (!recherchePlace.some(r => r.uid === p.uid)) {
-            recherchePlace.push(p);
+          const isPhysical = p.isPassenger !== false;
+          const hasInst = Boolean(p.isPassenger === false || Number(p.alfayasCount) > 0);
+          const existingIdx = recherchePlace.findIndex(r => r.uid === p.uid);
+
+          if (existingIdx >= 0) {
+            recherchePlace[existingIdx] = {
+              ...recherchePlace[existingIdx],
+              cherchePassager: recherchePlace[existingIdx].cherchePassager || isPhysical,
+              chercheInstrument: recherchePlace[existingIdx].chercheInstrument || hasInst,
+              doitRentrerDirect: recherchePlace[existingIdx].doitRentrerDirect || Boolean(p.doitRentrerDirect)
+            };
+          } else {
+            recherchePlace.push({
+              uid: p.uid,
+              nom: p.nom || p.name || 'Membre',
+              cherchePassager: isPhysical,
+              chercheInstrument: hasInst,
+              doitRentrerDirect: Boolean(p.doitRentrerDirect),
+              ...(p.isInvite ? { isInvite: true } : {})
+            });
+          }
+
+          if (!p.isInvite) {
+            currentInscriptions = currentInscriptions.map(ins => {
+              if (ins.userId === p.uid && ins.transport !== 'cherche_place' && ins.transport !== 'cherche') {
+                return {
+                  ...ins,
+                  transport: 'cherche_place'
+                };
+              }
+              return ins;
+            });
           }
         });
 
         const updatedVoitures = voitures.filter(v => v.id !== voitureId);
 
-        const currentInscriptions = eventData.inscriptions || [];
         const updatedInscriptions = currentInscriptions.map(ins => {
           if (ins.userId === user.uid) {
             return {

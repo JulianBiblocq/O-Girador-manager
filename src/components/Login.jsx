@@ -7,9 +7,13 @@ import CordelButton from './CordelButton';
 import { useTranslation } from './LanguageContext';
 import { XiloCaixa } from './XiloIcons';
 import QrCodeLogin from './auth/QrCodeLogin';
+import useGroupContext from '../hooks/useGroupContext';
+import GroupSelectorStep from './auth/GroupSelectorStep';
+import RegisterForm from './auth/RegisterForm';
 
 export default function Login({ branding, onSuccess }) {
   const { t, locale } = useTranslation();
+  const { groupId, needsGroupSelection, setManualGroupId } = useGroupContext();
 
   // Détection du mode initial : si l'utilisateur arrive via un lien d'invitation (groupe ou mode=signup),
   // on active directement le mode Création de compte pour éviter la confusion avec la connexion.
@@ -327,141 +331,143 @@ export default function Login({ branding, onSuccess }) {
                     : (t('login.welcomeDesc') || "Connectez-vous pour accéder à votre espace membre.")}
                 </p>
 
-                {/* Connexion Google */}
-                <CordelButton 
-                  variant="ocre" 
-                  useExtremeBorder={true} 
-                  onClick={handleLogin} 
-                  disabled={authLoading}
-                  className="w-full py-2.5 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2"
-                >
-                  <span>🌐</span>
-                  <span>{isSignUpMode ? "S'inscrire avec Google" : (t('login.loginGoogle') || "Se connecter avec Google")}</span>
-                </CordelButton>
-
-                {/* Information douce en cas de fenêtre Google fermée ou bloquée */}
-                {googleNotice && (
-                  <div className={`p-3 my-2.5 rounded-[6px_8px_5px_7px] text-left text-xs border-2 shadow-2xs animate-fadeIn ${
-                    googleNotice.type === 'warning'
-                      ? 'bg-red-50/95 border-red-400 text-red-900'
-                      : 'bg-amber-50/95 border-amber-400 text-amber-900'
-                  }`}>
-                    <div className="flex items-start gap-2">
-                      <span className="text-base select-none">{googleNotice.type === 'warning' ? '🚫' : '💡'}</span>
-                      <div className="space-y-0.5">
-                        <p className="font-extrabold text-[11px] uppercase tracking-wide">
-                          {googleNotice.title}
-                        </p>
-                        <p className="text-[10px] leading-relaxed opacity-90">
-                          {googleNotice.message}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Divider */}
-                <div className="flex items-center gap-2 my-4 opacity-40">
-                  <div className="flex-1 border-t border-dashed border-encre-noire"></div>
-                  <span className="text-[9px] font-bold uppercase tracking-widest text-cordel-master-dark">
-                    {t('login.orEmail') || "Ou avec votre e-mail"}
-                  </span>
-                  <div className="flex-1 border-t border-dashed border-encre-noire"></div>
-                </div>
-
-                {/* Formulaire Email + Mot de passe */}
-                <form onSubmit={handleEmailAuth} className="flex flex-col gap-3 text-left">
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
-                      {t('login.email')} <span className="text-red-600">*</span>
-                    </label>
-                    <input 
-                      type="email"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                {/* Si aucun groupe n'est détecté en mode inscription, afficher l'étape bienveillante */}
+                {isSignUpMode && needsGroupSelection ? (
+                  <GroupSelectorStep onSelectGroup={(g) => setManualGroupId(g)} />
+                ) : (
+                  <>
+                    {/* Connexion / Inscription Google */}
+                    <CordelButton 
+                      variant="ocre" 
+                      useExtremeBorder={true} 
+                      onClick={handleLogin} 
                       disabled={authLoading}
-                      className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
-                      placeholder="nom@exemple.com"
-                      autoComplete="email"
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-1">
-                    <div className="flex justify-between items-center">
-                      <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
-                        {t('login.password')} <span className="text-red-600">*</span>
-                      </label>
-                      {!isSignUpMode ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsResetPasswordMode(true);
-                            setResetSent(false);
-                          }}
-                          className="text-[9px] font-bold text-cordel-master-dark/70 hover:text-cordel-wood hover:underline cursor-pointer"
-                        >
-                          {t('login.forgotPassword') || "Mot de passe oublié ?"}
-                        </button>
-                      ) : (
-                        <span className="text-[8px] font-bold text-stone-500">
-                          (min. 6 caractères)
-                        </span>
-                      )}
-                    </div>
-                    <div className="relative flex items-center">
-                      <input 
-                        type={showPassword ? "text" : "password"}
-                        required
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        disabled={authLoading}
-                        minLength={isSignUpMode ? 6 : undefined}
-                        className="theme-input text-xs font-bold py-1.5 pr-10 bg-cordel-bg-light w-full"
-                        placeholder={isSignUpMode ? "Au moins 6 caractères" : "******"}
-                        autoComplete={isSignUpMode ? "new-password" : "current-password"}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-2 text-stone-600 hover:text-black p-1 cursor-pointer select-none text-sm transition-transform active:scale-90"
-                        title={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
-                        aria-label="Afficher ou masquer le mot de passe"
-                      >
-                        {showPassword ? "🙈" : "👁️"}
-                      </button>
-                    </div>
-                  </div>
-
-                  <CordelButton 
-                    variant={isSignUpMode ? "vert" : "default"} 
-                    useExtremeBorder={true} 
-                    disabled={authLoading || !email.trim() || !password.trim()}
-                    className="w-full py-3 mt-2 font-black uppercase text-xs tracking-wider shadow-sm"
-                  >
-                    {authLoading 
-                      ? (t('common.loading') || "Chargement...") 
-                      : (isSignUpMode ? "✍️ CRÉER MON COMPTE & CONTINUER" : (t('login.loginBtn') || "🔑 SE CONNECTER"))}
-                  </CordelButton>
-
-                  {isSignUpMode && (
-                    <p className="text-[10px] text-center text-stone-600 font-medium mt-1">
-                      📋 Dès la création de votre compte, vous pourrez choisir votre discipline (Danse ou Percussion) et compléter votre fiche.
-                    </p>
-                  )}
-
-                  {/* Switch Login Method Tab - QR Code */}
-                  <div className="flex justify-center mt-3 pt-3 border-t border-dashed border-cordel-master-dark/20">
-                    <button
-                      type="button"
-                      onClick={() => setIsQrLoginMode(true)}
-                      className="text-[10px] font-bold text-cordel-master-dark/70 hover:text-cordel-wood hover:underline cursor-pointer flex items-center gap-1.5"
+                      className="w-full py-2.5 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2"
                     >
-                      <span>📱</span>
-                      <span>Se connecter avec un QR Code</span>
-                    </button>
-                  </div>
-                </form>
+                      <span>🌐</span>
+                      <span>{isSignUpMode ? "S'inscrire avec Google" : (t('login.loginGoogle') || "Se connecter avec Google")}</span>
+                    </CordelButton>
+
+                    {/* Information douce en cas de fenêtre Google fermée ou bloquée */}
+                    {googleNotice && (
+                      <div className={`p-3 my-2.5 rounded-[6px_8px_5px_7px] text-left text-xs border-2 shadow-2xs animate-fadeIn ${
+                        googleNotice.type === 'warning'
+                          ? 'bg-red-50/95 border-red-400 text-red-900'
+                          : 'bg-amber-50/95 border-amber-400 text-amber-900'
+                      }`}>
+                        <div className="flex items-start gap-2">
+                          <span className="text-base select-none">{googleNotice.type === 'warning' ? '🚫' : '💡'}</span>
+                          <div className="space-y-0.5">
+                            <p className="font-extrabold text-[11px] uppercase tracking-wide">
+                              {googleNotice.title}
+                            </p>
+                            <p className="text-[10px] leading-relaxed opacity-90">
+                              {googleNotice.message}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Divider */}
+                    <div className="flex items-center gap-2 my-4 opacity-40">
+                      <div className="flex-1 border-t border-dashed border-encre-noire"></div>
+                      <span className="text-[9px] font-bold uppercase tracking-widest text-cordel-master-dark">
+                        {t('login.orEmail') || "Ou avec votre e-mail"}
+                      </span>
+                      <div className="flex-1 border-t border-dashed border-encre-noire"></div>
+                    </div>
+
+                    {isSignUpMode ? (
+                      /* Formulaire d'inscription garanti : Email + Mot de passe + Confirmation */
+                      <RegisterForm
+                        onSuccess={onSuccess}
+                        onSwitchToLogin={() => setIsSignUpMode(false)}
+                      />
+                    ) : (
+                      /* Formulaire de connexion classique */
+                      <form onSubmit={handleEmailAuth} className="flex flex-col gap-3 text-left">
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
+                            {t('login.email')} <span className="text-red-600">*</span>
+                          </label>
+                          <input 
+                            type="email"
+                            required
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            disabled={authLoading}
+                            className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
+                            placeholder="nom@exemple.com"
+                            autoComplete="email"
+                          />
+                        </div>
+
+                        <div className="flex flex-col gap-1">
+                          <div className="flex justify-between items-center">
+                            <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
+                              {t('login.password')} <span className="text-red-600">*</span>
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsResetPasswordMode(true);
+                                setResetSent(false);
+                              }}
+                              className="text-[9px] font-bold text-cordel-master-dark/70 hover:text-cordel-wood hover:underline cursor-pointer"
+                            >
+                              {t('login.forgotPassword') || "Mot de passe oublié ?"}
+                            </button>
+                          </div>
+                          <div className="relative flex items-center">
+                            <input 
+                              type={showPassword ? "text" : "password"}
+                              required
+                              value={password}
+                              onChange={(e) => setPassword(e.target.value)}
+                              disabled={authLoading}
+                              className="theme-input text-xs font-bold py-1.5 pr-10 bg-cordel-bg-light w-full"
+                              placeholder="******"
+                              autoComplete="current-password"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowPassword(!showPassword)}
+                              className="absolute right-2 text-stone-600 hover:text-black p-1 cursor-pointer select-none text-sm transition-transform active:scale-90"
+                              title={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                              aria-label="Afficher ou masquer le mot de passe"
+                            >
+                              {showPassword ? "🙈" : "👁️"}
+                            </button>
+                          </div>
+                        </div>
+
+                        <CordelButton 
+                          variant="default" 
+                          useExtremeBorder={true} 
+                          disabled={authLoading || !email.trim() || !password.trim()}
+                          className="w-full py-3 mt-2 font-black uppercase text-xs tracking-wider shadow-sm"
+                        >
+                          {authLoading 
+                            ? (t('common.loading') || "Chargement...") 
+                            : (t('login.loginBtn') || "🔑 SE CONNECTER")}
+                        </CordelButton>
+
+                        {/* Switch Login Method Tab - QR Code */}
+                        <div className="flex justify-center mt-3 pt-3 border-t border-dashed border-cordel-master-dark/20">
+                          <button
+                            type="button"
+                            onClick={() => setIsQrLoginMode(true)}
+                            className="text-[10px] font-bold text-cordel-master-dark/70 hover:text-cordel-wood hover:underline cursor-pointer flex items-center gap-1.5"
+                          >
+                            <span>📱</span>
+                            <span>Se connecter avec un QR Code</span>
+                          </button>
+                        </div>
+                      </form>
+                    )}
+                  </>
+                )}
               </>
             )}
           </CordelCard>

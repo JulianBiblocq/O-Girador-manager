@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import CordelCard from '../../CordelCard';
 import CordelButton from '../../CordelButton';
+import { useTranslation } from '../../LanguageContext';
 
 /**
  * Tiroir replié par défaut pour la Direction Artistique et Mestria.
  */
 export default function MestriaAccordion({ directionArtistique = [], afficherMestriaPV = false, handleChange, saving }) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
 
   const handleAdd = () => {
@@ -41,10 +43,10 @@ export default function MestriaAccordion({ directionArtistique = [], afficherMes
         <div className="flex items-center gap-2 text-left">
           <span className="text-sm">🥁</span>
           <span className="text-xs font-black uppercase tracking-wider text-cordel-wood">
-            Direction Artistique ({directionArtistique.length}) {isOpen ? '▲' : '▾'}
+            {t('settings.identity.mestriaAccordion.directionArtistique')}{directionArtistique.length}) {isOpen ? '▲' : '▾'}
           </span>
           <span className="text-[9px] text-cordel-master-dark/60 font-semibold hidden sm:inline">
-            (Mestres, Directeurs musicaux...)
+            {t('settings.identity.mestriaAccordion.mestresDirecteursMusicaux')}
           </span>
         </div>
 
@@ -52,7 +54,7 @@ export default function MestriaAccordion({ directionArtistique = [], afficherMes
           type="button"
           className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded border border-encre-noire/30 bg-white hover:bg-stone-50 text-encre-noire transition-all cursor-pointer shadow-2xs"
         >
-          {isOpen ? 'Fermer' : 'Gérer'}
+          {isOpen ? t('settings.identity.mestriaAccordion.fermer') : t('settings.identity.mestriaAccordion.gerer')}
         </button>
       </div>
 
@@ -60,7 +62,7 @@ export default function MestriaAccordion({ directionArtistique = [], afficherMes
         <div className="p-4 border-t border-dashed border-cordel-master-dark/20 flex flex-col gap-2.5 text-left animate-fade-in bg-white/40">
           {directionArtistique.length === 0 ? (
             <div className="p-3 border border-dashed border-cordel-master-dark/20 rounded bg-white/60 text-[10px] text-cordel-master-dark/60 font-semibold italic text-center">
-              Aucun Mestre ou Directeur Artistique renseigné.
+              {t('settings.identity.mestriaAccordion.aucunMestreOuDirecteurArtistique')}
             </div>
           ) : (
             directionArtistique.map((mestre, idx) => (
@@ -70,7 +72,7 @@ export default function MestriaAccordion({ directionArtistique = [], afficherMes
                     type="text"
                     value={mestre.role || ''}
                     onChange={(e) => handleUpdate(mestre.id, 'role', e.target.value)}
-                    placeholder="Fonction (ex: Mestre)"
+                    placeholder={t('settings.identity.mestriaAccordion.fonctionExMestre')}
                     disabled={saving}
                     className="theme-input text-xs font-bold py-1 px-2 bg-white flex-1"
                   />
@@ -78,7 +80,7 @@ export default function MestriaAccordion({ directionArtistique = [], afficherMes
                     type="text"
                     value={mestre.nom || ''}
                     onChange={(e) => handleUpdate(mestre.id, 'nom', e.target.value)}
-                    placeholder="Prénom & Nom du Mestre"
+                    placeholder={t('settings.identity.mestriaAccordion.prenomNomDuMestre')}
                     disabled={saving}
                     className="theme-input text-xs font-bold py-1 px-2 bg-white flex-1"
                   />
@@ -123,7 +125,7 @@ export default function MestriaAccordion({ directionArtistique = [], afficherMes
               disabled={saving}
               className="py-1 px-3 text-[10px] font-black uppercase tracking-wider cursor-pointer"
             >
-              ➕ Ajouter un membre de la Direction Artistique
+              {t('settings.identity.mestriaAccordion.ajouterUnMembreDeLa')}
             </CordelButton>
           </div>
 
@@ -137,7 +139,7 @@ export default function MestriaAccordion({ directionArtistique = [], afficherMes
                 className="w-3.5 h-3.5 cursor-pointer"
               />
               <span className="text-[10px] font-bold text-stone-800">
-                Afficher la Direction Artistique sur les Procès-Verbaux (PV)
+                {t('settings.identity.mestriaAccordion.afficherLaDirectionArtistiqueSur')}
               </span>
             </label>
           </div>

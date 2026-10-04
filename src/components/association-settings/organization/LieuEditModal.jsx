@@ -3,11 +3,13 @@ import AddressAutocomplete from '../../AddressAutocomplete';
 import ManualMapMarkerModal from '../../agenda/ManualMapMarkerModal';
 import CordelButton from '../../CordelButton';
 import useModalEscape from '../../../hooks/useModalEscape';
+import { useTranslation } from '../../LanguageContext';
 
 /**
  * Modale / Formulaire d'édition ou création d'un lieu important avec coordonnées GPS.
  */
 export default function LieuEditModal({ initialLieu, isOpen, onClose, onSave, saving }) {
+  const { t } = useTranslation();
   const [nom, setNom] = useState(initialLieu?.nom || '');
   const [adresse, setAdresse] = useState(initialLieu?.adresse || '');
   const [notes, setNotes] = useState(initialLieu?.notes || '');
@@ -37,7 +39,7 @@ export default function LieuEditModal({ initialLieu, isOpen, onClose, onSave, sa
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!nom.trim() || !adresse.trim()) {
-      alert("Veuillez renseigner le nom et l'adresse complète.");
+      alert(t('settings.organization.lieuEditModal.veuillezRenseignerLeNomEt'));
       return;
     }
     const finalUrl = googleMapsUrl.trim() || (latitude && longitude 
@@ -61,13 +63,13 @@ export default function LieuEditModal({ initialLieu, isOpen, onClose, onSave, sa
         {/* Étage 1 : Header fixe */}
         <div className="shrink-0 p-5 pb-3 border-b border-dashed border-cordel-master-dark/20 flex items-center justify-between">
           <h4 className="text-xs font-black uppercase text-cordel-wood">
-            {initialLieu?.id ? "✏️ Modifier le lieu" : "➕ Nouveau lieu habituel"}
+            {initialLieu?.id ? t('settings.organization.lieuEditModal.modifierLeLieu') : t('settings.organization.lieuEditModal.nouveauLieuHabituel')}
           </h4>
           <button
             type="button"
             onClick={onClose}
             className="text-stone-400 hover:text-stone-800 font-bold text-base cursor-pointer shrink-0"
-            title="Fermer"
+            title={t('settings.organization.lieuEditModal.fermer')}
           >
             ✕
           </button>
@@ -77,19 +79,19 @@ export default function LieuEditModal({ initialLieu, isOpen, onClose, onSave, sa
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
           <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-5 pt-3 space-y-3">
             <div className="flex flex-col gap-1">
-              <label className="text-[9px] uppercase font-bold text-cordel-master-dark">Nom usuel du lieu *</label>
+              <label className="text-[9px] uppercase font-bold text-cordel-master-dark">{t('settings.organization.lieuEditModal.nomUsuelDuLieu')}</label>
               <input
                 type="text"
                 value={nom}
                 onChange={(e) => setNom(e.target.value)}
-                placeholder="Ex: Salle de répétition principale"
+                placeholder={t('settings.organization.lieuEditModal.exSalleDeRepetitionPrincipale')}
                 required
                 className="theme-input text-xs bg-white py-1.5 font-bold"
               />
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-[9px] uppercase font-bold text-cordel-master-dark">Adresse physique complète *</label>
+              <label className="text-[9px] uppercase font-bold text-cordel-master-dark">{t('settings.organization.lieuEditModal.adressePhysiqueComplete')}</label>
               <AddressAutocomplete
                 value={adresse}
                 onChange={(val) => setAdresse(typeof val === 'string' ? val : val?.target?.value || '')}
@@ -102,7 +104,7 @@ export default function LieuEditModal({ initialLieu, isOpen, onClose, onSave, sa
                     }
                   }
                 }}
-                placeholder="Rechercher une adresse sur Google Maps..."
+                placeholder={t('settings.organization.lieuEditModal.rechercherUneAdresseSurGoogle')}
                 className="theme-input text-xs bg-white py-1.5"
               />
             </div>
@@ -113,22 +115,22 @@ export default function LieuEditModal({ initialLieu, isOpen, onClose, onSave, sa
                 onClick={() => setIsMapModalOpen(true)}
                 className="text-[10px] font-black uppercase tracking-wider text-cordel-wood hover:underline flex items-center gap-1 cursor-pointer"
               >
-                📌 {latitude && longitude ? "Ajuster le repère sur la carte" : "Placer le repère sur la carte"}
+                📌 {latitude && longitude ? t('settings.organization.lieuEditModal.ajusterLeRepereSurLa') : t('settings.organization.lieuEditModal.placerLeRepereSurLa')}
               </button>
               {latitude && longitude && (
                 <span className="text-[9px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-300 px-1.5 py-0.5 rounded">
-                  ✓ Repère GPS : {Number(latitude).toFixed(4)}, {Number(longitude).toFixed(4)}
+                  {t('settings.organization.lieuEditModal.repereGps')} {Number(latitude).toFixed(4)}, {Number(longitude).toFixed(4)}
                 </span>
               )}
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-[9px] uppercase font-bold text-cordel-master-dark">Instructions d'accès / Notes (Optionnel)</label>
+              <label className="text-[9px] uppercase font-bold text-cordel-master-dark">{t('settings.organization.lieuEditModal.instructionsDAccesNotesOptionnel')}</label>
               <input
                 type="text"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Ex: Digicode 45B, entrée côté cour"
+                placeholder={t('settings.organization.lieuEditModal.exDigicode45bEntreeCote')}
                 className="theme-input text-xs bg-white py-1.5"
               />
             </div>
@@ -141,7 +143,7 @@ export default function LieuEditModal({ initialLieu, isOpen, onClose, onSave, sa
               onClick={onClose}
               className="text-xs font-bold px-3 py-1.5 bg-neutral-200 hover:bg-neutral-300 rounded text-encre-noire cursor-pointer shrink-0"
             >
-              Annuler
+              {t('settings.organization.lieuEditModal.annuler')}
             </button>
             <CordelButton
               type="submit"
@@ -150,7 +152,7 @@ export default function LieuEditModal({ initialLieu, isOpen, onClose, onSave, sa
               disabled={saving}
               className="text-xs font-black uppercase px-4 py-1.5 cursor-pointer shrink-0"
             >
-              Enregistrer
+              {t('settings.organization.lieuEditModal.enregistrer')}
             </CordelButton>
           </div>
         </form>

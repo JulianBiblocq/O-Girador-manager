@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getPoleGuide, POLE_GUIDES } from '../config/poleGuides';
+import { getPoleGuide, POLE_GUIDES } from '../config/poleGuides.js';
 
 /**
  * Résolution déterministe de la clé de guide correspondant au contenu affiché.
@@ -25,22 +25,22 @@ export function getGuideKey(tabId, poleId) {
  * @returns {boolean} true si l'aide doit être masquée, false sinon
  */
 export function readHiddenState(tabId, poleId) {
-  if (typeof window === 'undefined') return false;
+  if (typeof window === 'undefined') return true;
   const guideKey = getGuideKey(tabId, poleId);
-  if (!guideKey) return false;
+  if (!guideKey) return true;
   try {
-    if (localStorage.getItem(`pole_guide_hidden_${guideKey}`) === 'true') {
-      return true;
+    // Si l'utilisateur a explicitement demandé d'afficher ce guide ('false'), alors isHidden = false
+    if (
+      localStorage.getItem(`pole_guide_hidden_${guideKey}`) === 'false' ||
+      (tabId && localStorage.getItem(`pole_guide_hidden_${tabId}`) === 'false') ||
+      (poleId && localStorage.getItem(`pole_guide_hidden_${poleId}`) === 'false')
+    ) {
+      return false;
     }
-    if (tabId && localStorage.getItem(`pole_guide_hidden_${tabId}`) === 'true') {
-      return true;
-    }
-    if (poleId && localStorage.getItem(`pole_guide_hidden_${poleId}`) === 'true') {
-      return true;
-    }
-    return false;
+    // Par défaut, l'aide reste masquée : elle ne s'ouvre que lorsque l'utilisateur clique sur le bouton 💡
+    return true;
   } catch (e) {
-    return false;
+    return true;
   }
 }
 

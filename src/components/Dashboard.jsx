@@ -276,7 +276,7 @@ export default function Dashboard({
       </div>
 
       {/* Conditional Instrument Reminder Banner after trial sessions */}
-      {!(Boolean(profileData?.instrument || (profileData?.instrumentsJoues && profileData.instrumentsJoues.length > 0) || profileData?.voeuPrincipal)) && (
+      {!(Boolean(profileData?.instrument || (profileData?.instrumentsJoues && profileData.instrumentsJoues.length > 0) || profileData?.voeuPrincipal || (Array.isArray(profileData?.voeuxInstruments) && profileData.voeuxInstruments.length > 0))) && (
         <InstrumentReminderBanner onNavigateToView={onNavigateToView} />
       )}
 

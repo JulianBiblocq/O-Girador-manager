@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import CordelCard from '../../CordelCard';
 import CordelButton from '../../CordelButton';
+import { useTranslation } from '../../LanguageContext';
 
 export default function InstrumentsCatalogBlock({ formData = {}, handleChange, saving, t }) {
+  const { t: tHook } = useTranslation();
+  const tFunc = t || tHook;
   const safeFormData = formData || {};
   const { instrumentsDisponibles = [], linkedInstruments = [], pupitresColors = {} } = safeFormData;
-  const translationFn = t || ((key) => key);
 
   const rawPupitres = [
     'Mestre',
@@ -31,13 +33,13 @@ export default function InstrumentsCatalogBlock({ formData = {}, handleChange, s
   });
 
   const cordelPalette = [
-    { hex: '#8b2a1a', label: 'Terracotta' },
-    { hex: '#d99f4d', label: 'Ocre' },
-    { hex: '#2d4a36', label: 'Feuillage' },
-    { hex: '#6e473b', label: 'Écorce' },
-    { hex: '#3b5d6e', label: 'Patine' },
-    { hex: '#21201f', label: 'Encre' },
-    { hex: '#8c857b', label: 'Ficelle' }
+    { hex: '#8b2a1a', label: tFunc('settings.organization.instrumentsCatalogBlock.terracotta') },
+    { hex: '#d99f4d', label: tFunc('settings.organization.instrumentsCatalogBlock.ocre') },
+    { hex: '#2d4a36', label: tFunc('settings.organization.instrumentsCatalogBlock.feuillage') },
+    { hex: '#6e473b', label: tFunc('settings.organization.instrumentsCatalogBlock.ecorce') },
+    { hex: '#3b5d6e', label: tFunc('settings.organization.instrumentsCatalogBlock.patine') },
+    { hex: '#21201f', label: tFunc('settings.organization.instrumentsCatalogBlock.encre') },
+    { hex: '#8c857b', label: tFunc('settings.organization.instrumentsCatalogBlock.ficelle') }
   ];
 
   const handleColorChange = (pupitreName, hexColor) => {
@@ -57,11 +59,11 @@ export default function InstrumentsCatalogBlock({ formData = {}, handleChange, s
     if (!trimmed) return;
     const lower = trimmed.toLowerCase();
     if (lower === 'danse' || lower === 'mestre' || lower === 'direction') {
-      alert("La Danse est gérée nativement comme discipline autonome et Mestre comme rôle de direction. Ils n'ont pas besoin d'être ajoutés comme instruments physiques du parc.");
+      alert(tFunc('settings.organization.instrumentsCatalogBlock.laDanseEstGereeNativement'));
       return;
     }
     if (instrumentsDisponibles.includes(trimmed)) {
-      alert("Cet instrument existe déjà !");
+      alert(tFunc('settings.organization.instrumentsCatalogBlock.cetInstrumentExisteDeja'));
       return;
     }
     handleChange('instrumentsDisponibles', [...instrumentsDisponibles, trimmed]);
@@ -92,7 +94,7 @@ export default function InstrumentsCatalogBlock({ formData = {}, handleChange, s
     });
     
     if (exists) {
-      alert("Cette liaison existe déjà !");
+      alert(tFunc('settings.organization.instrumentsCatalogBlock.cetteLiaisonExisteDeja'));
       return;
     }
     
@@ -116,17 +118,19 @@ export default function InstrumentsCatalogBlock({ formData = {}, handleChange, s
     <>
       <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
         <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">
-          🥁 Pupitres & Instruments
+          {tFunc('settings.organization.instrumentsCatalogBlock.pupitresInstruments')}
         </h3>
         
         <div className="flex flex-col gap-2 pb-3 border-b border-dashed border-cordel-master-dark/15 text-left">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-cordel-master-dark">Ajouter un instrument</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-cordel-master-dark">
+            {tFunc('settings.organization.instrumentsCatalogBlock.ajouterUnInstrument')}
+          </span>
           <div className="flex gap-2">
             <input 
               type="text"
               value={newInstrument}
               onChange={(e) => setNewInstrument(e.target.value)}
-              placeholder="Ex: Agbê, Chant..."
+              placeholder={tFunc('settings.organization.instrumentsCatalogBlock.exAgbeChant')}
               className="theme-input text-xs font-bold py-1.5 flex-1 bg-cordel-bg-light"
             />
             <CordelButton 
@@ -137,19 +141,23 @@ export default function InstrumentsCatalogBlock({ formData = {}, handleChange, s
               disabled={saving}
               className="text-[10px] px-3 uppercase tracking-widest font-black shrink-0"
             >
-              + Ajouter
+              {tFunc('settings.organization.instrumentsCatalogBlock.ajouter')}
             </CordelButton>
           </div>
           <p className="text-[10px] text-cordel-master-dark/70 italic mt-0.5">
-            💡 <strong>Précision</strong> : Configurez uniquement les instruments physiques de votre parc musical (Alfaia, Caixa, Agbê...). La <strong>Danse</strong> (discipline autonome) et le <strong>Mestre</strong> (rôle de direction) sont gérés nativement par le système et ne doivent pas être ajoutés ici.
+            💡 <strong>{tFunc('settings.organization.instrumentsCatalogBlock.precision')}</strong>{tFunc('settings.organization.instrumentsCatalogBlock.configurezUniquementLesInstrumentsPhysiques')} <strong>{tFunc('settings.organization.instrumentsCatalogBlock.danse')}</strong> {tFunc('settings.organization.instrumentsCatalogBlock.disciplineAutonomeEtLe')} <strong>{tFunc('settings.organization.instrumentsCatalogBlock.mestre')}</strong> {tFunc('settings.organization.instrumentsCatalogBlock.roleDeDirectionSontGeres')}
           </p>
         </div>
 
         {/* Instruments list */}
         <div className="flex flex-col gap-2 mt-3 text-left">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-cordel-master-dark mb-1">Instruments configurés</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-cordel-master-dark mb-1">
+            {tFunc('settings.organization.instrumentsCatalogBlock.instrumentsConfigures')}
+          </span>
           {instrumentsDisponibles.length === 0 ? (
-            <span className="text-[10px] italic opacity-60">Aucun instrument configuré.</span>
+            <span className="text-[10px] italic opacity-60">
+              {tFunc('settings.organization.instrumentsCatalogBlock.aucunInstrumentConfigure')}
+            </span>
           ) : (
             <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto pr-1">
               {instrumentsDisponibles.map((inst, index) => (
@@ -162,7 +170,7 @@ export default function InstrumentsCatalogBlock({ formData = {}, handleChange, s
                     type="button"
                     onClick={() => handleRemoveInstrument(inst)}
                     className="text-[9px] hover:text-red-500 font-bold ml-1 cursor-pointer select-none"
-                    title="Supprimer"
+                    title={tFunc('settings.organization.instrumentsCatalogBlock.supprimer')}
                   >
                     ✕
                   </button>
@@ -175,7 +183,7 @@ export default function InstrumentsCatalogBlock({ formData = {}, handleChange, s
 
       <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5 mt-4">
         <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">
-          🔗 {translationFn('associationSettings.linkedInstrumentsHeading') || "Instruments Liés / Pupitres"}
+          🔗 {tFunc('settings.organization.instrumentsCatalogBlock.instrumentsLiesPupitres')}
         </h3>
         
         {/* Form to link instruments */}
@@ -183,20 +191,20 @@ export default function InstrumentsCatalogBlock({ formData = {}, handleChange, s
           <div className="flex flex-col gap-2 text-left">
             <div className="flex flex-col gap-1">
               <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                {translationFn('associationSettings.pupitreNameLabel') || "Nom du pupitre (optionnel)"}
+                {tFunc('settings.organization.instrumentsCatalogBlock.nomDuPupitreOptionnel')}
               </label>
               <input 
                 type="text"
                 value={newPupitreName}
                 onChange={(e) => setNewPupitreName(e.target.value)}
-                placeholder={translationFn('associationSettings.pupitreNamePlaceholder') || "Saisissez un nom de pupitre personnalisé..."}
+                placeholder={tFunc('settings.organization.instrumentsCatalogBlock.nomDuPupitreOptionnel')}
                 className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
               />
             </div>
 
             <div className="flex flex-col gap-1 mt-1">
               <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark mb-1">
-                {translationFn('associationSettings.selectInstrumentsForGroup') || "Sélectionner les instruments du pupitre (minimum 2)"}
+                {tFunc('settings.organization.instrumentsCatalogBlock.selectionnerLesInstrumentsDuPupitre')}
               </label>
               <div className="flex flex-wrap gap-2 p-3 border-2 border-dashed border-[var(--cordel-border)] rounded-[4px_8px_3px_6px] bg-[var(--cordel-master-bg)] max-h-40 overflow-y-auto">
                 {instrumentsDisponibles.map(inst => {
@@ -239,7 +247,7 @@ export default function InstrumentsCatalogBlock({ formData = {}, handleChange, s
               disabled={saving || selectedInstrumentsForLink.length < 2}
               className="py-1.5 text-[10px] px-3 uppercase tracking-widest font-black shrink-0"
             >
-              Créer le Pupitre
+              {tFunc('settings.organization.instrumentsCatalogBlock.creerLePupitre')}
             </CordelButton>
           </div>
         </div>
@@ -247,11 +255,11 @@ export default function InstrumentsCatalogBlock({ formData = {}, handleChange, s
         {/* Display configured groups */}
         <div className="flex flex-col gap-2 mt-3 text-left">
           <span className="text-[10px] font-bold uppercase tracking-wider text-cordel-master-dark mb-1">
-            Pupitres configurés
+            {tFunc('settings.organization.instrumentsCatalogBlock.pupitresConfigures')}
           </span>
           {linkedInstruments.length === 0 ? (
             <span className="text-[10px] italic opacity-60">
-              Aucun pupitre configuré pour le moment.
+              {tFunc('settings.organization.instrumentsCatalogBlock.aucunPupitreConfigurePourLe')}
             </span>
           ) : (
             <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto pr-1">
@@ -270,7 +278,7 @@ export default function InstrumentsCatalogBlock({ formData = {}, handleChange, s
                       type="button"
                       onClick={() => handleRemoveLink(index)}
                       className="text-[9px] hover:text-red-500 font-bold ml-1 cursor-pointer select-none"
-                      title="Supprimer"
+                      title={tFunc('settings.organization.instrumentsCatalogBlock.supprimer')}
                     >
                       ✕
                     </button>
@@ -284,10 +292,10 @@ export default function InstrumentsCatalogBlock({ formData = {}, handleChange, s
 
       <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5 mt-4">
         <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3 flex items-center gap-1.5">
-          🎨 Couleurs des Pupitres & Instruments
+          {tFunc('settings.organization.instrumentsCatalogBlock.couleursDesPupitresInstruments')}
         </h3>
         <p className="text-[10px] text-cordel-master-dark/75 mb-4 text-left leading-relaxed">
-          Configurez les couleurs des pupitres et instruments pour personnaliser l'identité visuelle de la troupe (utilisées sur l'agenda, le trombinoscope et le plan de scène).
+          {tFunc('settings.organization.instrumentsCatalogBlock.configurezLesCouleursDesPupitres')}
         </p>
 
         <div className="flex flex-col gap-4 text-left">
@@ -340,7 +348,7 @@ export default function InstrumentsCatalogBlock({ formData = {}, handleChange, s
                       disabled={saving}
                       className="w-5 h-5 p-0.5 rounded border border-encre-noire/30 bg-transparent cursor-pointer"
                     />
-                    <span>Perso</span>
+                    <span>{tFunc('settings.organization.instrumentsCatalogBlock.perso')}</span>
                   </label>
                 </div>
               </div>

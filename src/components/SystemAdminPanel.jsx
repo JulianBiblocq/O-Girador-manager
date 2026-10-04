@@ -348,14 +348,38 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
     }
   };
 
-  // Validation d'une nouvelle inscription : passe isNew à false dans Firestore
+  // Validation d'une nouvelle inscription : passe isNew à false et pré-remplit le pupitre avec le Vœu 1 si non attribué
   const handleValidateNewMember = async (targetUserId) => {
     if (!targetUserId) return;
     setSavingId(targetUserId);
     try {
       const userRef = doc(db, 'users', targetUserId);
-      await updateDoc(userRef, { isNew: false });
-      alert("Inscription validée avec succès ! Le membre n'est plus marqué comme nouveau.");
+      const targetUser = users.find(u => u.id === targetUserId);
+      const updateData = { isNew: false };
+
+      // Pré-remplissage avec le Vœu 1 formulé par l'adhérent s'il n'a pas encore de pupitre assigné
+      const wish1 = targetUser?.voeuPrincipal || (
+        Array.isArray(targetUser?.voeuxInstruments) && targetUser.voeuxInstruments.length > 0
+          ? (typeof targetUser.voeuxInstruments[0] === 'string' ? targetUser.voeuxInstruments[0] : targetUser.voeuxInstruments[0]?.instrument)
+          : null
+      );
+
+      const hasNoInstrument = !targetUser?.instrument && !targetUser?.instrumentPrincipal;
+      if (wish1 && hasNoInstrument) {
+        updateData.instrument = wish1;
+        updateData.instrumentPrincipal = wish1;
+        const currentJoues = Array.isArray(targetUser?.instrumentsJoues) ? targetUser.instrumentsJoues : [];
+        if (!currentJoues.includes(wish1)) {
+          updateData.instrumentsJoues = [...currentJoues, wish1];
+        }
+      }
+
+      await updateDoc(userRef, updateData);
+      if (wish1 && hasNoInstrument) {
+        alert(`Inscription validée ! Le membre n'est plus en attente et son pupitre a été pré-rempli avec son Vœu 1 (${wish1}).`);
+      } else {
+        alert("Inscription validée avec succès ! Le membre n'est plus marqué comme nouveau.");
+      }
     } catch (error) {
       console.error("SystemAdminPanel - Erreur lors de la validation du nouveau membre :", error);
       telemetryService.logError(error, 'SystemAdminPanel_ValidateNewMember', profileData?.groupId);

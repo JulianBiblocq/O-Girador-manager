@@ -134,7 +134,7 @@ export default function VehicleFleetSection({ groupId }) {
         <div className="bg-cordel-bg-light p-2.5 rounded border border-encre-noire/15 flex flex-col items-center text-center shadow-xs">
           <span className="text-base">🔗</span>
           <span className="text-xs sm:text-sm font-black text-amber-900 mt-0.5">
-            {loading ? "..." : `${totalAttelages} / ${totalBarresToit}`}
+            {loading ? "..." : t('settings.agenda.vehicleFleetSection.paramParam', { param: totalAttelages, param2: totalBarresToit })}
           </span>
           <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 tracking-wider">
             {loading ? "..." : t('logistics.kpiEquipments', { hitch: totalAttelages, rack: totalBarresToit })}
@@ -145,15 +145,15 @@ export default function VehicleFleetSection({ groupId }) {
       {/* Liste détaillée des véhicules de la flotte */}
       {loading ? (
         <div className="p-4 text-center text-xs text-cordel-wood font-bold italic animate-pulse">
-          ⏳ Chargement de la flotte de véhicules...
+          {t('settings.agenda.vehicleFleetSection.chargementDeLaFlotteDe')}
         </div>
       ) : vehiclesList.length === 0 ? (
         <div className="p-4 bg-cordel-bg-light/60 border border-dashed border-cordel-master-dark/20 rounded text-center text-xs text-cordel-master-dark/75 italic">
-          Aucun adhérent n'a encore déclaré de véhicule utilisable pour l'association. Les membres peuvent renseigner leur véhicule dans leur espace « Profil ».
+          {t('settings.agenda.vehicleFleetSection.aucunAdherentNAEncore')}
         </div>
       ) : filteredVehicles.length === 0 ? (
         <div className="p-4 bg-cordel-bg-light/60 border border-dashed border-cordel-master-dark/20 rounded text-center text-xs text-cordel-master-dark/75 italic">
-          Aucun véhicule ne correspond à votre recherche "{filterQuery}".
+          {t('settings.agenda.vehicleFleetSection.aucunVehiculeNeCorrespondA')}{filterQuery}".
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -190,7 +190,7 @@ export default function VehicleFleetSection({ groupId }) {
                     <div className="flex flex-wrap gap-1.5 mt-2">
                       {member.hasRoofBars && (
                         <span className="text-[8.5px] font-bold bg-white/80 border border-encre-noire/20 px-1.5 py-0.5 rounded text-encre-noire">
-                          📦 Galerie / Toit
+                          {t('settings.agenda.vehicleFleetSection.galerieToit')}
                         </span>
                       )}
                       {member.hasTowHitch && (

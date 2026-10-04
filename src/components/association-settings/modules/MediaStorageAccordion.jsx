@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from '../../LanguageContext';
 import CordelCard from '../../CordelCard';
 import YouTubePlaylistsBlock from '../blocks/YouTubePlaylistsBlock';
 import { httpsCallable } from 'firebase/functions';
@@ -9,6 +10,7 @@ import { functions } from '../../../firebase';
  * Rapatrie les playlists YouTube (fermées par défaut) et le dépôt cloud vidéo Framaspace/Drive.
  */
 export default function MediaStorageAccordion({ formData = {}, handleChange, groupId, saving }) {
+  const { t } = useTranslation();
   const [isOpenPlaylists, setIsOpenPlaylists] = useState(false);
   const [isOpenCloud, setIsOpenCloud] = useState(false);
   const [cloudLoading, setCloudLoading] = useState(false);
@@ -26,7 +28,7 @@ export default function MediaStorageAccordion({ formData = {}, handleChange, gro
         handleChange('defaultDropUrl', res.data.defaultDropUrl);
         setCloudMsg({ type: 'success', text: "Dossier Framaspace configuré avec succès !" });
       } else {
-        throw new Error("Lien non généré.");
+        throw new Error(t('settings.modules.mediaStorageAccordion.lienNonGenere') || "Lien non généré.");
       }
     } catch (err) {
       console.error("Erreur provision Framaspace :", err);
@@ -47,10 +49,10 @@ export default function MediaStorageAccordion({ formData = {}, handleChange, gro
           <div className="flex items-center gap-2 text-left">
             <span className="text-sm">🎬</span>
             <span className="text-xs font-black uppercase tracking-wider text-cordel-wood">
-              Playlists YouTube ({playlists.length} configurées) {isOpenPlaylists ? '▲' : '▾'}
+              {t('settings.modules.mediaStorageAccordion.playlistsYoutube') || 'Playlists YouTube ('}{playlists.length} {t('settings.modules.mediaStorageAccordion.configurees') || 'configurées)'} {isOpenPlaylists ? '▲' : '▾'}
             </span>
             <span className="text-[9px] text-cordel-master-dark/60 font-semibold hidden sm:inline">
-              (Sélection de vidéos pour les ateliers et l'accueil)
+              {t('settings.modules.mediaStorageAccordion.selectionDeVideosPourLes') || "(Sélection de vidéos pour les ateliers et l'accueil)"}
             </span>
           </div>
 
@@ -58,7 +60,7 @@ export default function MediaStorageAccordion({ formData = {}, handleChange, gro
             type="button"
             className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded border border-encre-noire/30 bg-white hover:bg-stone-50 text-encre-noire transition-all cursor-pointer shadow-2xs"
           >
-            {isOpenPlaylists ? 'Fermer' : 'Gérer'}
+            {isOpenPlaylists ? (t('settings.modules.mediaStorageAccordion.fermer') || 'Fermer') : (t('settings.modules.mediaStorageAccordion.gerer') || 'Gérer')}
           </button>
         </div>
 
@@ -82,10 +84,10 @@ export default function MediaStorageAccordion({ formData = {}, handleChange, gro
           <div className="flex items-center gap-2 text-left">
             <span className="text-sm">📹</span>
             <span className="text-xs font-black uppercase tracking-wider text-cordel-wood">
-              Stockage Cloud des Captations (Framaspace / Drive) {isOpenCloud ? '▲' : '▾'}
+              {t('settings.modules.mediaStorageAccordion.stockageCloudDesCaptationsFramaspace') || 'Stockage Cloud des Captations (Framaspace / Drive)'} {isOpenCloud ? '▲' : '▾'}
             </span>
             <span className="text-[9px] text-cordel-master-dark/60 font-semibold hidden sm:inline">
-              {formData.defaultDropUrl ? '(Dossier configuré ✓)' : '(Non renseigné)'}
+              {formData.defaultDropUrl ? (t('settings.modules.mediaStorageAccordion.dossierConfigure') || '(Dossier configuré ✓)') : (t('settings.modules.mediaStorageAccordion.nonRenseigne') || '(Non renseigné)')}
             </span>
           </div>
 
@@ -93,20 +95,20 @@ export default function MediaStorageAccordion({ formData = {}, handleChange, gro
             type="button"
             className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded border border-encre-noire/30 bg-white hover:bg-stone-50 text-encre-noire transition-all cursor-pointer shadow-2xs"
           >
-            {isOpenCloud ? 'Fermer' : 'Configurer'}
+            {isOpenCloud ? (t('settings.modules.mediaStorageAccordion.fermer') || 'Fermer') : (t('settings.modules.mediaStorageAccordion.configurer') || 'Configurer')}
           </button>
         </div>
 
         {isOpenCloud && (
           <div className="p-4 border-t border-dashed border-cordel-master-dark/20 flex flex-col gap-3 text-left animate-fade-in bg-white/40">
             <p className="text-[10px] text-cordel-master-dark/70 font-semibold leading-relaxed">
-              Lien du dossier de dépôt par défaut où les adhérents déposent leurs captations brutes lors des répétitions et ateliers.
+              {t('settings.modules.mediaStorageAccordion.lienDuDossierDeDepotDesc') || 'Lien du dossier de dépôt par défaut où les adhérents déposent leurs captations brutes lors des répétitions et ateliers.'}
             </p>
 
             <div className="flex flex-col gap-2">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <label className="text-[9px] uppercase font-black text-cordel-master-dark">
-                  🔗 Lien du dossier de dépôt (Framaspace File Drop / Nextcloud / Drive)
+                  {t('settings.modules.mediaStorageAccordion.lienDuDossierDeDepotLabel') || '🔗 Lien du dossier de dépôt (Framaspace File Drop / Nextcloud / Drive)'}
                 </label>
                 <button
                   type="button"
@@ -114,7 +116,7 @@ export default function MediaStorageAccordion({ formData = {}, handleChange, gro
                   disabled={cloudLoading || saving}
                   className="px-2.5 py-1 bg-[var(--color-cordel-vert,#2d6a4f)] text-white text-[9px] font-black uppercase rounded hover:brightness-110 cursor-pointer shadow-2xs self-start sm:self-auto disabled:opacity-50"
                 >
-                  {cloudLoading ? "⏳ Création..." : "⚡ Créer automatiquement sur Framaspace"}
+                  {cloudLoading ? (t('settings.modules.mediaStorageAccordion.creation') || "⏳ Création...") : (t('settings.modules.mediaStorageAccordion.creerAutomatiquementSurFramaspace') || "⚡ Créer automatiquement sur Framaspace")}
                 </button>
               </div>
 

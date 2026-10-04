@@ -3,12 +3,15 @@ import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { useTranslation } from './LanguageContext';
 import { useThreadData } from '../hooks/useThreadData';
+import usePoll from '../hooks/usePoll';
 import ThreadHeader from './forum/thread/ThreadHeader';
 import ThreadValidationCard from './forum/thread/ThreadValidationCard';
 import ThreadPollSection from './forum/thread/ThreadPollSection';
 import ThreadMessageList from './forum/thread/ThreadMessageList';
 import ThreadReplyBar from './forum/thread/ThreadReplyBar';
 import ThreadModerationModals from './forum/thread/ThreadModerationModals';
+import CreatePollModal from './forum/CreatePollModal';
+import EditPollModal from './forum/EditPollModal';
 
 /**
  * Vue principale d'un sujet de discussion (ThreadView).
@@ -28,6 +31,9 @@ export default function ThreadView({
   const [isMoveThreadOpen, setIsMoveThreadOpen] = useState(false);
   const [movingReplyData, setMovingReplyData] = useState(null);
   const [editingReplyData, setEditingReplyData] = useState(null);
+  const [editingPoll, setEditingPoll] = useState(null);
+
+  const pollManager = usePoll(threadId, user?.uid);
 
   const handleSaveEditReply = async (e) => {
     e.preventDefault();
@@ -155,18 +161,16 @@ export default function ThreadView({
                   />
                 )}
 
-                {/* Section sondage interactif & modale d'ajout */}
+                {/* Section sondage interactif racine historique */}
                 <ThreadPollSection
                   thread={threadData.thread}
                   userId={user?.uid}
                   user={user}
                   allUsers={allUsers}
                   isAuthorOrAdmin={threadData.isModeratorOrAdmin || user?.uid === threadData.thread?.auteurId}
-                  isAddPollOpen={threadData.isAddPollOpen}
-                  setIsAddPollOpen={threadData.setIsAddPollOpen}
-                  onCloseAddPoll={() => threadData.setIsAddPollOpen(false)}
-                  onCreatePoll={threadData.handleCreatePoll}
-                  savingPoll={threadData.savingNewPoll}
+                  onVote={pollManager.handleVote}
+                  onOpenEdit={(poll) => setEditingPoll(poll)}
+                  votingPollId={pollManager.votingPollId}
                   t={t}
                 />
               </div>
@@ -189,6 +193,9 @@ export default function ThreadView({
             onEditReply={(index, reply) => setEditingReplyData({ index, text: reply.message })}
             onReplyToMessage={threadData.handleReplyToMessage}
             onToggleReaction={threadData.handleToggleReaction}
+            onVotePoll={pollManager.handleVote}
+            onOpenEditPoll={(poll) => setEditingPoll(poll)}
+            votingPollId={pollManager.votingPollId}
             t={t}
           />
 
@@ -216,7 +223,7 @@ export default function ThreadView({
             t={t}
           />
 
-          {/* Modales de modération (déplacement et édition) */}
+          {/* Modales de modération (déplacement et édition de message) */}
           <ThreadModerationModals
             isMoveThreadOpen={isMoveThreadOpen}
             onCloseMoveThread={() => setIsMoveThreadOpen(false)}
@@ -234,6 +241,41 @@ export default function ThreadView({
             availableThreads={allThreads}
             profileData={profileData}
             actionLoading={threadData.actionLoading}
+          />
+
+          {/* Modale de création d'un nouveau sondage dans le fil de discussion */}
+          <CreatePollModal
+            isOpen={threadData.isAddPollOpen}
+            onClose={() => threadData.setIsAddPollOpen(false)}
+            onSubmit={async ({ question, options, allowMultipleChoices }) => {
+              const ok = await pollManager.handleCreatePoll({
+                question,
+                options,
+                allowMultipleChoices,
+                user,
+                profileData
+              });
+              return ok;
+            }}
+            loading={pollManager.creatingPoll}
+          />
+
+          {/* Modale d'édition d'un sondage existant (protège les votes) */}
+          <EditPollModal
+            isOpen={Boolean(editingPoll)}
+            poll={editingPoll}
+            onClose={() => setEditingPoll(null)}
+            onSave={async ({ pollId, question, options, isClosed, allowMultipleChoices }) => {
+              const ok = await pollManager.handleEditPoll({
+                pollId,
+                question,
+                options,
+                isClosed,
+                allowMultipleChoices
+              });
+              return ok;
+            }}
+            loading={pollManager.savingEdit}
           />
         </div>
       )}

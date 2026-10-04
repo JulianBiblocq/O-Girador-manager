@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import CordelCard from '../../CordelCard';
+import { useTranslation } from '../../LanguageContext';
 
 /**
  * Accordéon compact pour les coordonnées bancaires et facturation.
  * Affiche en bandeau compact « IBAN : FR76 •••• [4 derniers chiffres] » + bouton [Modifier].
  */
 export default function BankDetailsAccordion({ formData = {}, handleChange, saving }) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
 
   // Masquage sécurisé de l'IBAN pour aperçu compact
@@ -32,7 +34,7 @@ export default function BankDetailsAccordion({ formData = {}, handleChange, savi
           <div className="flex items-center gap-1.5">
             <span className="text-sm">🏦</span>
             <span className="text-xs font-black uppercase tracking-wider text-cordel-wood">
-              Coordonnées Bancaires & RIB
+              {t('settings.identity.bankDetailsAccordion.coordonneesBancairesRib')}
             </span>
           </div>
 
@@ -41,7 +43,7 @@ export default function BankDetailsAccordion({ formData = {}, handleChange, savi
           </span>
 
           <span className="text-[10px] font-mono font-bold text-stone-700 bg-white/70 px-2 py-0.5 rounded border border-stone-300">
-            IBAN : {maskedIban}
+            {t('settings.identity.bankDetailsAccordion.iban')} {maskedIban}
           </span>
         </div>
 
@@ -49,7 +51,7 @@ export default function BankDetailsAccordion({ formData = {}, handleChange, savi
           type="button"
           className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded border border-encre-noire/30 bg-white hover:bg-stone-50 text-encre-noire transition-all cursor-pointer shadow-2xs shrink-0"
         >
-          {isOpen ? '▲ Fermer' : '✏️ Modifier'}
+          {isOpen ? t('settings.identity.bankDetailsAccordion.fermer') : t('settings.identity.bankDetailsAccordion.modifier')}
         </button>
       </div>
 
@@ -57,14 +59,14 @@ export default function BankDetailsAccordion({ formData = {}, handleChange, savi
       {isOpen && (
         <div className="p-4 border-t border-dashed border-cordel-master-dark/20 flex flex-col gap-3 text-left animate-fade-in bg-white/40">
           <p className="text-[10px] text-cordel-master-dark/70 font-semibold leading-relaxed">
-            Ces informations apparaîtront sur vos factures et devis officiels pour permettre les règlements par virement bancaire.
+            {t('settings.identity.bankDetailsAccordion.cesInformationsApparaitrontSurVos')}
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* Mention Exonération TVA */}
             <div className="flex flex-col gap-1">
               <label htmlFor="mentionTVA" className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
-                Mention d'Exonération TVA
+                {t('settings.identity.bankDetailsAccordion.mentionDExonerationTva')}
               </label>
               <input 
                 id="mentionTVA"
@@ -72,7 +74,7 @@ export default function BankDetailsAccordion({ formData = {}, handleChange, savi
                 value={formData.mentionTVA || ''}
                 onChange={(e) => handleChange('mentionTVA', e.target.value)}
                 disabled={saving}
-                placeholder="ex: TVA non applicable, art. 293 B du CGI"
+                placeholder={t('settings.identity.bankDetailsAccordion.exTvaNonApplicableArt')}
                 className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
               />
             </div>
@@ -80,7 +82,7 @@ export default function BankDetailsAccordion({ formData = {}, handleChange, savi
             {/* RIB / IBAN */}
             <div className="flex flex-col gap-1">
               <label htmlFor="ribIban" className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
-                Coordonnées Bancaires (IBAN / BIC)
+                {t('settings.identity.bankDetailsAccordion.coordonneesBancairesIbanBic')}
               </label>
               <input 
                 id="ribIban"
@@ -91,7 +93,7 @@ export default function BankDetailsAccordion({ formData = {}, handleChange, savi
                   handleChange('iban', e.target.value);
                 }}
                 disabled={saving}
-                placeholder="ex: FR76 3000 4000 1234 5678 9012 345"
+                placeholder={t('settings.identity.bankDetailsAccordion.exFr76300040001234')}
                 className="theme-input text-xs font-mono font-bold py-1.5 bg-cordel-bg-light w-full"
               />
             </div>
@@ -100,7 +102,7 @@ export default function BankDetailsAccordion({ formData = {}, handleChange, savi
           {/* Titulaire du compte bancaire */}
           <div className="flex flex-col gap-1">
             <label htmlFor="titulaireCompte" className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
-              Titulaire du compte bancaire
+              {t('settings.identity.bankDetailsAccordion.titulaireDuCompteBancaire')}
             </label>
             <input 
               id="titulaireCompte"
@@ -108,7 +110,7 @@ export default function BankDetailsAccordion({ formData = {}, handleChange, savi
               value={formData.titulaireCompte || ''}
               onChange={(e) => handleChange('titulaireCompte', e.target.value)}
               disabled={saving}
-              placeholder="ex: Association O Girador"
+              placeholder={t('settings.identity.bankDetailsAccordion.exAssociationOGirador')}
               className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
             />
           </div>

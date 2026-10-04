@@ -5,9 +5,9 @@
  * Guide les membres du bureau (Trésorier, Secrétaire, Mestre, Logistique, Lutherie, Costumerie, Studio)
  * dans leurs tâches quotidiennes et alimente la bannière InfoPoleBanner ainsi que le futur parcours guidé.
  * 
- * ⚠️ VUES MEMBRES SIMPLES EXCLUES :
- * Les espaces réservés aux adhérents simples (Accueil, Profil, Agenda membre, Matériel membre,
- * Vestiaire membre, Trombinoscope, Forum public, Varal membre) ne comportent PAS de bannière.
+ * ⚠️ VUES MEMBRES SIMPLES SANS GUIDE EXCLUES :
+ * Les espaces réservés aux adhérents simples (Accueil, Profil, Matériel membre,
+ * Vestiaire membre, Trombinoscope, Varal membre) ne comportent PAS de bannière.
  */
 
 // Liste explicite des onglets et pôles membres à exclure de toute bannière d'aide
@@ -18,7 +18,6 @@ const EXCLUDED_MEMBER_KEYS = new Set([
   'materiel',
   'vestiaire',
   'trombinoscope',
-  'forum',
   'varal',
   'dashboard'
 ]);
@@ -325,11 +324,769 @@ export const pedagogyGuide = {
   }
 };
 
+/**
+ * Guide complet bilingue (FR / PT-BR) : Logistique, Matériel & Vestiaire
+ * Couvre à la fois la vue membre (Matériel prêté, mensurations, tutoriels)
+ * et la vue gestionnaire (Régie Matériel, Lutherie, Costumerie).
+ */
+export const logisticsGuide = {
+  id: "logistics",
+  poleName: {
+    fr: "Logistique, Matériel & Vestiaire",
+    pt: "Logística, Instrumentos & Figurino"
+  },
+  titre: "Logistique, Matériel & Vestiaire",
+  title: "Logistique, Matériel & Vestiaire",
+  description: "Consulte tes instruments attribués, renseigne tes mensurations pour les costumes et accède aux tutoriels d'atelier.",
+
+  // ==========================================
+  // 1. VUE MEMBRE (Matériel prêté, mensurations, tutoriels)
+  // ==========================================
+  memberGuide: {
+    title: {
+      fr: "Gérer son équipement, ses tenues et ses réparations",
+      pt: "Gerenciar seu equipamento, figurino e manutenção"
+    },
+    summary: {
+      fr: "Consulte tes instruments attribués, renseigne tes mensurations pour les costumes et accède aux tutoriels d'atelier.",
+      pt: "Consulte seus instrumentos vinculados, informe suas medidas de figurino e acerte a manutenção com as oficinas."
+    },
+    sections: [
+      {
+        heading: {
+          fr: "1. Mon instrument assigné",
+          pt: "1. Meu instrumento vinculado"
+        },
+        text: {
+          fr: "Vérifie l'instrument qui t'est confié pour la saison, son numéro d'inventaire et son état. Signale immédiatement à la régie si une peau ou un cordage nécessite une intervention.",
+          pt: "Confira o instrumento atribuído a você na temporada, seu número de tombamento e estado. Avise a equipe técnica se houver necessidade de troca de pele ou corda."
+        }
+      },
+      {
+        heading: {
+          fr: "2. Mesures & Tenues de scène",
+          pt: "2. Medidas & Figurinos"
+        },
+        text: {
+          fr: "Renseigne tes mensurations (tour de taille, stature) dans l'onglet Costumes pour que la commission couture ajuste tes tenues aux couleurs de la troupe.",
+          pt: "Preencha suas medidas corporais na aba Figurino para que a comissão de costura possa confeccionar ou ajustar suas roupas oficiais."
+        }
+      },
+      {
+        heading: {
+          fr: "3. Tutoriels d'atelier (Lutherie & Couture)",
+          pt: "3. Tutoriais de oficina (Luthieria & Costura)"
+        },
+        text: {
+          fr: "Consulte les fiches pratiques pour apprendre à monter une peau de chèvre, tresser un filet d'agbê ou confectionner ta jupe ou ton pantalon de cortège.",
+          pt: "Acesse os passos a passo práticos para aprender a afinar uma alfaia, tecer o xequerê ou montar suas peças de cortejo."
+        }
+      }
+    ]
+  },
+
+  // ==========================================
+  // 2. VUE GESTIONNAIRE (Régie Matériel, Lutherie, Costumerie)
+  // ==========================================
+  managerGuide: {
+    title: {
+      fr: "Administrer le parc d'instruments et le vestiaire",
+      pt: "Administrar o acervo de instrumentos e o figurino"
+    },
+    roleBadge: {
+      fr: "Logistique • Lutherie • Costumerie",
+      pt: "Logística • Luthieria • Figurino"
+    },
+    summary: {
+      fr: "Cycle de gestion du matériel : inventaire, suivi des prêts, fiches de mensurations et conception de tutoriels.",
+      pt: "Ciclo de gestão de materiais: inventário, controle de empréstimos, tabela de medidas e criação de oficinas."
+    },
+    workflowSteps: [
+      {
+        step: 1,
+        title: {
+          fr: "Inventaire et identification du parc",
+          pt: "Inventário e tombamento do acervo"
+        },
+        desc: {
+          fr: "Enregistre chaque pièce (alfaias, caixas, gonguês, agbês) avec son numéro d'inventaire, son diamètre/taille et son état d'usure.",
+          pt: "Cadastre cada peça (alfaias, caixas, gonguês, agbês) com seu código identificador, diâmetro/tamanho e nível de conservação."
+        }
+      },
+      {
+        step: 2,
+        title: {
+          fr: "Affectations, prêts et malles régie",
+          pt: "Alocações, empréstimos e malas de transporte"
+        },
+        desc: {
+          fr: "Assigne les instruments aux musiciens pour la saison ou prépare les malles de transport collectives pour les déplacements de concerts.",
+          pt: "Vincule os tambores aos integrantes para a temporada ou organize as malas coletivas de transporte para as viagens de shows."
+        }
+      },
+      {
+        step: 3,
+        title: {
+          fr: "Gestion des costumes et tableau des tailles",
+          pt: "Controle de figurinos e tabela de tamanhos"
+        },
+        desc: {
+          fr: "Suis l'état des tenues de parade, contrôle la grille des mensurations des adhérents et gère les attributions par pupitre (danse vs percussion).",
+          pt: "Acompanhe o estoque de trajes, monitore a tabela de medidas dos membros e organize as entregas por ala (dança e percussão)."
+        }
+      },
+      {
+        step: 4,
+        title: {
+          fr: "Création de fiches atelier et tutoriels",
+          pt: "Criação de tutoriais e fichas técnicas"
+        },
+        desc: {
+          fr: "Rédige les tutoriels de fabrication avec étapes détaillées, fournitures requises, outils et patrons téléchargeables en PDF.",
+          pt: "Elabore os tutoriais de confecção detalhando etapas, lista de insumos, ferramentas necessárias e moldes em PDF."
+        }
+      }
+    ],
+    videoTutorials: [
+      { id: "tuto_inventaire_instruments", label: { fr: "Gérer l'inventaire et les prêts", pt: "Gerenciar o inventário e empréstimos" } },
+      { id: "tuto_gestion_costumes", label: { fr: "Suivre les mensurations et costumes", pt: "Controlar medidas e figurinos" } }
+    ]
+  }
+};
+
+/**
+ * Guide complet bilingue (FR / PT-BR) : Porte-Voix & Vie du groupe
+ * Couvre à la fois la vue membre (Échanges, MP, entraide)
+ * et la vue gestionnaire (Modération, Salons, Bureau).
+ */
+export const forumGuide = {
+  id: "forum",
+  poleName: {
+    fr: "Porte-Voix & Vie du groupe",
+    pt: "Porta-Voz & Vida da Trupe"
+  },
+  titre: "Porte-Voix & Vie du groupe",
+  title: "Porte-Voix & Vie du groupe",
+  description: "Participe aux discussions collectives, envoie des messages privés ou rejoins des boucles de travail.",
+
+  // ==========================================
+  // 1. VUE MEMBRE (Échanges, MP, entraide)
+  // ==========================================
+  memberGuide: {
+    title: {
+      fr: "Comment échanger sur le Porte-Voix ?",
+      pt: "Como participar das conversas no Porta-Voz?"
+    },
+    summary: {
+      fr: "Participe aux discussions collectives, envoie des messages privés ou rejoins des boucles de travail.",
+      pt: "Participe das conversas coletivas, envie mensagens diretas ou crie grupos temáticos."
+    },
+    sections: [
+      {
+        heading: {
+          fr: "1. Les Salons thématiques (Discussions)",
+          pt: "1. Salas temáticas (Discussões)"
+        },
+        text: {
+          fr: "Retrouve les canaux ouverts à tous ou réservés à ton pupitre. L'atterrissage se fait directement sur les nouveaux messages non lus pour ne rien manquer.",
+          pt: "Acesse os canais abertos a todos ou exclusivos do seu naipe. O aplicativo foca direto nas mensagens não lidas para você não perder nada."
+        }
+      },
+      {
+        heading: {
+          fr: "2. Messages privés (1-à-1)",
+          pt: "2. Mensagens diretas (1 a 1)"
+        },
+        text: {
+          fr: "Échange en tête-à-tête avec n'importe quel adhérent via l'onglet « Messages privés ». Une coche confirme l'envoi, deux coches illuminées confirment la lecture.",
+          pt: "Converse em particular com qualquer integrante pela aba « Mensagens privadas ». Uma marca confirma o envio, duas marcas destacadas confirmam a leitura."
+        }
+      },
+      {
+        heading: {
+          fr: "3. Groupes de travail & projets",
+          pt: "3. Grupos de trabalho & projetos"
+        },
+        text: {
+          fr: "Crée ou rejoins des boucles multi-membres pour monter un atelier, organiser un trajet ou préparer une commande sans polluer le canal général.",
+          pt: "Crie ou participe de grupos fechados para oficinas, projetos pontuais ou caronas sem sobrecarregar o canal geral."
+        }
+      },
+      {
+        heading: {
+          fr: "4. Médias, mentions et sondages",
+          pt: "4. Mídias, menções e enquetes"
+        },
+        text: {
+          fr: "Partage des photos ou des liens vidéo, mentionne un pupitre avec « @ » et vote d'un clic aux sondages lancés par le groupe.",
+          pt: "Compartilhe fotos ou links de vídeos, mencione um naipe com « @ » e vote com um clique nas enquetes abertas."
+        }
+      }
+    ]
+  },
+
+  // ==========================================
+  // 2. VUE GESTIONNAIRE (Modération, Salons, Bureau)
+  // ==========================================
+  managerGuide: {
+    title: {
+      fr: "Animer et modérer les espaces de discussion",
+      pt: "Moderar e estruturar os canais de conversa"
+    },
+    roleBadge: {
+      fr: "Modération • Bureau • Conseil d'Administration",
+      pt: "Moderação • Diretoria • Conselho"
+    },
+    summary: {
+      fr: "Administration des canaux, gestion fine des droits d'accès par badge, épinglage et consultations démocratiques.",
+      pt: "Gestão dos canais, controle de acesso por crachá, fixação de avisos e enquetes participativas."
+    },
+    workflowSteps: [
+      {
+        step: 1,
+        title: {
+          fr: "Création et hiérarchie des salons",
+          pt: "Criação e hierarquia de salas"
+        },
+        desc: {
+          fr: "Clique sur « ⚙️ Gérer les salons » dans l'en-tête du Porte-Voix pour ouvrir la modale d'administration sans quitter la discussion.",
+          pt: "Clique em « ⚙️ Gerenciar salas » no topo do Porta-Voz para abrir a modale de administração sem sair da conversa."
+        }
+      },
+      {
+        step: 2,
+        title: {
+          fr: "Matrice de permissions (Lecture & Écriture)",
+          pt: "Matriz de permissões (Leitura & Escrita)"
+        },
+        desc: {
+          fr: "Définis qui peut lire et qui peut poster dans chaque canal selon les étiquettes (ex. salon réservé au Bureau, canal en lecture seule pour les annonces).",
+          pt: "Defina quem pode ler e quem pode postar em cada canal usando os crachás (ex: canal fechado da Diretoria ou canal em somente leitura para avisos)."
+        }
+      },
+      {
+        step: 3,
+        title: {
+          fr: "Épinglage et priorisation des sujets",
+          pt: "Fixação e destaque de tópicos"
+        },
+        desc: {
+          fr: "Épingle les discussions majeures en haut de liste pour qu'elles restent immédiatement visibles lors des consultations ou répétitions.",
+          pt: "Fixe tópicos essenciais no topo da lista para manter avisos ou debates importantes sempre em evidência."
+        }
+      },
+      {
+        step: 4,
+        title: {
+          fr: "Lancement de sondages et consultations",
+          pt: "Criação de enquetes e decisões coletivas"
+        },
+        desc: {
+          fr: "Intègre un module de vote sécurisé (sans votes multiples) lors de la création d'un sujet pour trancher un choix logistique ou artistique.",
+          pt: "Insira uma enquete com opções de voto único para decisões rápidas de logística, figurino ou repertório."
+        }
+      },
+      {
+        step: 5,
+        title: {
+          fr: "Modération et courtoisie",
+          pt: "Moderação e convivência"
+        },
+        desc: {
+          fr: "Veille au respect de la charte de vie associative, archive les discussions obsolètes et oriente les détails logistiques vers les fiches événements.",
+          pt: "Acompanhe o respeito às regras da trupe, arquive discussões antigas e direcione dúvidas pontuais para as fiches dos eventos."
+        }
+      }
+    ],
+    videoTutorials: [
+      { id: "tuto_gestion_salons_droits", label: { fr: "Créer un salon et régler les accès", pt: "Criar canal e ajustar permissões" } },
+      { id: "tuto_sondages_et_epingles", label: { fr: "Lancer un sondage et épingler un sujet", pt: "Criar enquetes e fixar mensagens" } }
+    ]
+  }
+};
+
+/**
+ * Guide complet bilingue (FR / PT-BR) : Trésorerie & Finances
+ * Couvre à la fois la vue membre (Cotisations, cautions, notes de frais)
+ * et la vue gestionnaire (Trésorerie, Comptabilité, Bureau).
+ */
+export const treasuryGuide = {
+  id: "treasury",
+  poleName: {
+    fr: "Trésorerie & Finances",
+    pt: "Tesouraria & Finanças"
+  },
+  titre: "💰 Pôle Trésorerie & Finances",
+  title: "💰 Pôle Trésorerie & Finances",
+  description: "Pilotez la santé financière de l'association, contrôlez la rentabilité des événements et enregistrez les opérations comptables.",
+  etapes: [
+    "Vérifiez l'état des cotisations et relancez les adhérents en retard.",
+    "Saisissez les recettes et dépenses courantes dans le journal des opérations.",
+    "Examinez et remboursez les notes de frais kilométriques soumises.",
+    "Générez les bilans et exports comptables pour l'assemblée générale."
+  ],
+  steps: [
+    "Vérifiez l'état des cotisations et relancez les adhérents en retard.",
+    "Saisissez les recettes et dépenses courantes dans le journal des opérations.",
+    "Examinez et remboursez les notes de frais kilométriques soumises.",
+    "Générez les bilans et exports comptables pour l'assemblée générale."
+  ],
+
+  // ==========================================
+  // 1. VUE MEMBRE (Cotisations, cautions, notes de frais)
+  // ==========================================
+  memberGuide: {
+    title: {
+      fr: "Suivre mes cotisations et mes remboursements",
+      pt: "Acompanhar mensalidades e reembolsos"
+    },
+    summary: {
+      fr: "Consulte le statut de ton adhésion, vérifie tes cautions d'instruments et dépose tes demandes de remboursement.",
+      pt: "Consulte a situação da sua anuidade, verifique seus cheques de caução e envie comprovantes de despesas."
+    },
+    sections: [
+      {
+        heading: {
+          fr: "1. Mon adhésion & mes formules",
+          pt: "1. Minha anuidade e opções"
+        },
+        text: {
+          fr: "Vérifie le récapitulatif de tes options (adhésion de base, ateliers percussion ou danse). Si ton règlement est en attente, clique sur le lien pour régulariser via la passerelle en ligne.",
+          pt: "Confira o resumo das suas opções (adesão básica, oficinas de percussão ou dança). Se o pagamento estiver pendente, utilize o link de pagamento para regularizar sua situação."
+        }
+      },
+      {
+        heading: {
+          fr: "2. Suivi de ma caution d'instrument",
+          pt: "2. Caução de instrumentos"
+        },
+        text: {
+          fr: "Si un instrument du parc te t'est confié pour la saison, contrôle si ton chèque de caution a bien été réceptionné par le trésorier (statut « Reçue »).",
+          pt: "Caso utilize um instrumento da associação nesta temporada, verifique se o seu cheque ou comprovante de caução já foi validado pela tesouraria (status « Recebida »)."
+        }
+      },
+      {
+        heading: {
+          fr: "3. Déclarer un achat ou une note de frais",
+          pt: "3. Solicitar reembolso de despesas"
+        },
+        text: {
+          fr: "Tu as avancé un achat pour la troupe (peaux, quincaillerie, tissu, courses régie) ? Renseigne le montant, sélectionne ta facture ou ton ticket en photo/PDF et choisis entre virement direct ou report en avoir sur ta future cotisation.",
+          pt: "Fez compras para a trupe (peles, ferragens, tecidos, lanches de ensaio)? Informe o valor, anexe a foto ou PDF do comprovante e escolha entre transferência bancária direta ou crédito para sua próxima anuidade."
+        }
+      },
+      {
+        heading: {
+          fr: "4. Défraiements kilométriques de covoiturage",
+          pt: "4. Ajuda de custo e quilometragem"
+        },
+        text: {
+          fr: "Retrouve le calcul automatique de tes trajets lors des concerts où tu as conduit, et consulte l'état de validation de tes dédommagements.",
+          pt: "Acompanhe o cálculo automático de quilometragem dos shows em que você dirigiu e consulte a liberação do seu reembolso."
+        }
+      }
+    ]
+  },
+
+  // ==========================================
+  // 2. VUE GESTIONNAIRE (Trésorerie, Comptabilité, Bureau)
+  // ==========================================
+  managerGuide: {
+    title: {
+      fr: "Piloter la comptabilité et la santé financière",
+      pt: "Gerenciar a contabilidade e o fluxo financeiro"
+    },
+    roleBadge: {
+      fr: "Trésorerie • Comptabilité • Bureau",
+      pt: "Tesouraria • Contabilidade • Diretoria"
+    },
+    summary: {
+      fr: "Supervision des comptes bancaires, pointage des encaissements, liquidation des notes de frais et clôture du Grand Livre.",
+      pt: "Controle das contas bancárias, conciliação de pagamentos, liquidação de despesas e fechamento do livro-caixa."
+    },
+    workflowSteps: [
+      {
+        step: 1,
+        title: {
+          fr: "Position de trésorerie & soldes bancaires",
+          pt: "Posição de caixa e saldos bancários"
+        },
+        desc: {
+          fr: "Consulte le tableau de bord financier. Ajuste périodiquement les soldes réels des comptes (Compte courant, Livret, Caisse liquide) et surveille la projection d'impact du bilan d'exploitation.",
+          pt: "Acesse o painel financeiro. Atualize periodicamente os saldos reais das contas (Conta corrente, Poupança, Caixa físico) e acompanhe a projeção do resultado operacional."
+        }
+      },
+      {
+        step: 2,
+        title: {
+          fr: "Pointage des cotisations et des cautions",
+          pt: "Controle de mensalidades e cauções"
+        },
+        desc: {
+          fr: "Dans l'onglet Cotisations, vérifie qui est à jour, gère les exonérations (Mestre, intervenants) et pointe la réception des chèques de caution rattachés aux instruments du parc.",
+          pt: "Na aba Mensalidades, acompanhe os pagamentos, registre as isenções (Mestre, oficineiros) e confirme o recebimento dos cheques de caução vinculados aos instrumentos emprestados."
+        }
+      },
+      {
+        step: 3,
+        title: {
+          fr: "Budgets des prestations et sorties",
+          pt: "Finanças de apresentações e eventos"
+        },
+        desc: {
+          fr: "Dans l'onglet Événements, saisis les cachets nets perçus, les frais de déplacement et la restauration engagée pour mesurer la rentabilité réelle de chaque date.",
+          pt: "Na aba Eventos, lance os cachês recebidos, custos de transporte e alimentação para calcular o resultado líquido de cada apresentação."
+        }
+      },
+      {
+        step: 4,
+        title: {
+          fr: "Opérations diverses & écritures courantes",
+          pt: "Operações diversas e despesas correntes"
+        },
+        desc: {
+          fr: "Enregistre au fil de l'eau les recettes et dépenses de fonctionnement (loyer, assurances, fournitures) avec leurs pièces justificatives et catégories personnalisées.",
+          pt: "Registre as receitas e despesas cotidianas da associação (aluguel, seguros, materiais) com anexos comprobatórios e categorias personalizadas."
+        }
+      },
+      {
+        step: 5,
+        title: {
+          fr: "Liquidation des notes de frais & remboursements",
+          pt: "Validação de reembolsos e notas de despesas"
+        },
+        desc: {
+          fr: "Dans l'onglet Frais, audite les tickets soumis par les adhérents. Valide la dépense, copie l'IBAN d'un clic pour émettre le virement, puis marque comme « Remboursé » pour générer automatiquement l'écriture comptable.",
+          pt: "Na aba Despesas, analise os comprovantes enviados pelos integrantes. Aprove a despesa, copie o código bancário/PIX para realizar a transferência e marque como « Reembolsado » para lançar o débito automaticamente."
+        }
+      },
+      {
+        step: 6,
+        title: {
+          fr: "Clôture d'exercice & exports comptables",
+          pt: "Fechamento de exercício e relatórios"
+        },
+        desc: {
+          fr: "Dans l'onglet Exports, filtre par saison associative et génère en un clic le Grand Livre et le Bilan au format CSV/Excel pour l'Assemblée Générale ou l'expert-comptable.",
+          pt: "Na aba Relatórios, selecione a temporada e gere com um clique o balanço consolidado em CSV/Excel para a Assembleia Geral e prestação de contas."
+        }
+      }
+    ],
+    videoTutorials: [
+      { id: "tuto_pointage_cotisations_cautions", label: { fr: "Pointer cotisations et cautions", pt: "Controlar mensalidades e cauções" } },
+      { id: "tuto_gestion_notes_de_frais", label: { fr: "Valider et rembourser une note de frais", pt: "Aprovar e liquidar notas de despesas" } },
+      { id: "tuto_cloture_export_comptable", label: { fr: "Générer les exports pour l'AG", pt: "Gerar relatórios contábeis para a AG" } }
+    ]
+  }
+};
+
+/**
+ * Guide complet bilingue (FR / PT-BR) : Secrétariat & Vie Statutaire
+ * Couvre à la fois la vue membre (Documents légaux, coordonnées, attestations)
+ * et la vue gestionnaire (Secrétariat, Bureau, CA).
+ */
+export const secretariatGuide = {
+  id: "secretariat",
+  poleName: {
+    fr: "Secrétariat & Vie Statutaire",
+    pt: "Secretaria & Vida Institucional"
+  },
+  titre: "🏛️ Pôle Secrétariat & Administration",
+  title: "🏛️ Pôle Secrétariat & Administration",
+  description: "Centre névralgique de la vie associative, de la gestion des membres, du registre des dates et des obligations légales.",
+  etapes: [
+    "Gérer l'annuaire des membres et les pièces justificatives.",
+    "Tenir le registre des dates et convoquer la troupe.",
+    "Organiser les assemblées générales et éditer les bilans d'activité."
+  ],
+  steps: [
+    "Gérer l'annuaire des membres et les pièces justificatives.",
+    "Tenir le registre des dates et convoquer la troupe.",
+    "Organiser les assemblées générales et éditer les bilans d'activité."
+  ],
+
+  // ==========================================
+  // 1. VUE MEMBRE (Documents légaux, coordonnées, attestations)
+  // ==========================================
+  memberGuide: {
+    title: {
+      fr: "Consulter ses documents administratifs et son statut",
+      pt: "Consultar documentos administrativos e cadastro"
+    },
+    summary: {
+      fr: "Accède aux statuts officiels du groupe, télécharge tes attestations et contrôle tes paramètres de confidentialité.",
+      pt: "Acesse o estatuto da associação, baixe declarações de filiação e configure sua privacidade."
+    },
+    sections: [
+      {
+        heading: {
+          fr: "1. Documents officiels & Statuts",
+          pt: "1. Documentos oficiais & Estatuto"
+        },
+        text: {
+          fr: "Retrouve sur le Varal Administratif les statuts à jour de l'association, le règlement intérieur et les chartes d'engagement votées en Assemblée Générale.",
+          pt: "Acesse no Varal Administrativo o estatuto social atualizado, o regimento interno e os termos de compromisso aprovados em assembleia."
+        }
+      },
+      {
+        heading: {
+          fr: "2. Attestation d'adhésion & Justificatifs",
+          pt: "2. Declaração de filiação & Comprovantes"
+        },
+        text: {
+          fr: "Télécharge directement ton attestation annuelle d'adhésion pour ton comité d'entreprise (CSE), ta mutuelle ou tes dossiers d'aides aux activités culturelles.",
+          pt: "Baixe diretamente sua declaração oficial de membro para comprovação em empresas, convênios ou benefícios culturais."
+        }
+      },
+      {
+        heading: {
+          fr: "3. Confidentialité & Droit à l'image",
+          pt: "3. Privacidade & Direito de imagem"
+        },
+        text: {
+          fr: "Vérifie tes choix de visibilité dans l'annuaire de la troupe (masquage du téléphone ou de la date de naissance) et tes consentements légaux (droit à l'image, santé).",
+          pt: "Verifique suas preferências de visibilidade na lista da trupe (ocultar telefone ou data de nascimento) e suas autorizações legais (direito de imagem e atestado)."
+        }
+      }
+    ]
+  },
+
+  // ==========================================
+  // 2. VUE GESTIONNAIRE (Secrétariat, Bureau, CA)
+  // ==========================================
+  managerGuide: {
+    title: {
+      fr: "Tenir le registre, les actes officiels et les bilans d'AG",
+      pt: "Administrar o livro de registros, atas e relatórios da AG"
+    },
+    roleBadge: {
+      fr: "Secrétariat • Bureau • Conseil d'Administration",
+      pt: "Secretaria • Diretoria • Conselho"
+    },
+    summary: {
+      fr: "Gestion des inscriptions, tenue du registre légal des adhérents, archivage des actes officiels et consolidation des bilans annuels.",
+      pt: "Gestão de adesões, controle do livro de membros, arquivamento de documentos legais e consolidação de relatórios anuais."
+    },
+    workflowSteps: [
+      {
+        step: 1,
+        title: {
+          fr: "Validation des inscriptions & attribution des rôles",
+          pt: "Validação de cadastros e atribuição de funções"
+        },
+        desc: {
+          fr: "Dans l'Annuaire, audite les nouveaux profils inscrits. Valide leur dossier, affecte leur pupitre d'instrument ou section danse, et attribue les badges statutaires.",
+          pt: "Na lista de integrantes, confira os novos inscritos. Valide o cadastro, defina o naipe de instrumento ou ala de dança e atribua os crachás oficiais."
+        }
+      },
+      {
+        step: 2,
+        title: {
+          fr: "Tenue du registre légal & exports préfectoraux",
+          pt: "Livro de registro legal e exportação de dados"
+        },
+        desc: {
+          fr: "Consulte le listing des adhérents en accordéon pliable. Exporte à tout moment l'annuaire au format CSV/Excel pour les déclarations en préfecture, assurances ou mairies.",
+          pt: "Acompanhe a lista oficial em acordeão retrátil. Exporte os dados em CSV/Excel para declarações em órgãos públicos, seguros ou prefeituras."
+        }
+      },
+      {
+        step: 3,
+        title: {
+          fr: "Classeur juridique & Varal administratif",
+          pt: "Arquivo jurídico e Varal administrativo"
+        },
+        desc: {
+          fr: "Dépose et classe les statuts constitutifs, récépissés de préfecture, polices d'assurance et procès-verbaux de réunions avec filtrage des accès par badge.",
+          pt: "Publique e organize estatutos, certidões públicas, apólices de seguro e atas de reuniões, controlando a visibilidade de cada documento por crachá."
+        }
+      },
+      {
+        step: 4,
+        title: {
+          fr: "Registre des dates & programmation",
+          pt: "Registro de datas e programação rápida"
+        },
+        desc: {
+          fr: "Supervise la grille globale des dates (répétitions, prestations, réunions). Ajuste rapidement les formats et active les modules requis (covoiturage, validation).",
+          pt: "Monitore o cronograma geral de datas (ensaios, apresentações, reuniões). Ajuste os formatos e ative os módulos necessários (caronas, confirmações)."
+        }
+      },
+      {
+        step: 5,
+        title: {
+          fr: "Rapports d'activité, Bilan Cerfa & Diaporama AG",
+          pt: "Relatórios de atividade, Balanço oficial & Projeção da AG"
+        },
+        desc: {
+          fr: "Dans « Rapports & Bilan AG », consulte l'ancrage communal, le cumul des heures de bénévolat (norme Cerfa) et lance la présentation plein écran prête pour l'AG.",
+          pt: "Em « Relatórios & Balanço », monitore o impacto territorial, o total de horas de voluntariado e inicie os slides em tela cheia para a Assembleia Geral."
+        }
+      }
+    ],
+    videoTutorials: [
+      { id: "tuto_gestion_annuaire_exports", label: { fr: "Valider les membres et exporter l'annuaire", pt: "Validar membros e exportar listagens" } },
+      { id: "tuto_bilans_cerfa_presentation_ag", label: { fr: "Générer le Cerfa et projeter l'AG", pt: "Gerar balanço oficial e apresentar a AG" } }
+    ]
+  }
+};
+
+/**
+ * Guide complet bilingue (FR / PT-BR) : Studio & Communication
+ * Couvre à la fois la vue membre (Photos, souvenirs, gazette)
+ * et la vue gestionnaire (Com', Presse, Webmaster).
+ */
+export const studioGuide = {
+  id: "studio",
+  poleName: {
+    fr: "Studio & Communication",
+    pt: "Studio & Comunicação"
+  },
+  titre: "📱 Pôle Studio & Communication",
+  title: "📱 Pôle Studio & Communication",
+  description: "Animation de la vitrine médiatique, sélection des albums publics, diffusion sur les réseaux et campagnes d'information.",
+  etapes: [
+    "Sélectionne les meilleurs clichés déposés par la troupe ou le photographe officiel, ordonne la grille et active la publication vers la Vitrine publique.",
+    "Configure les liens vers les pages officielles (Instagram, Facebook, YouTube) et prépare les textes d'annonces de concerts ou d'ateliers.",
+    "Gère les listes de diffusion des abonnés à la newsletter, rédige les communications officielles et synchronise les contacts avec l'outil d'envoi.",
+    "Maintiens à jour les visuels haute définition, le communiqué de presse standard et les logos vectoriels téléchargeables pour les journalistes."
+  ],
+  steps: [
+    "Sélectionne les meilleurs clichés déposés par la troupe ou le photographe officiel, ordonne la grille et active la publication vers la Vitrine publique.",
+    "Configure les liens vers les pages officielles (Instagram, Facebook, YouTube) et prépare les textes d'annonces de concerts ou d'ateliers.",
+    "Gère les listes de diffusion des abonnés à la newsletter, rédige les communications officielles et synchronise les contacts avec l'outil d'envoi.",
+    "Maintiens à jour les visuels haute définition, le communiqué de presse standard et les logos vectoriels téléchargeables pour les journalistes."
+  ],
+
+  // ==========================================
+  // 1. VUE MEMBRE (Photos, souvenirs, gazette)
+  // ==========================================
+  memberGuide: {
+    title: {
+      fr: "Retrouver les souvenirs et suivre les actus de la troupe",
+      pt: "Acessar as lembranças e acompanhar as novidades da trupe"
+    },
+    summary: {
+      fr: "Consulte les albums photo des concerts, télécharge les gazettes associatives et partage tes propres clichés.",
+      pt: "Acesse as fotos das apresentações, baixe os boletins da associação e envie suas próprias fotos."
+    },
+    sections: [
+      {
+        heading: {
+          fr: "1. La Galerie photo & les souvenirs",
+          pt: "1. Galeria de fotos & lembranças"
+        },
+        text: {
+          fr: "Parcours les albums des dernières prestations sur le Varal Photo. Tu peux visualiser et télécharger les clichés officiels en haute résolution.",
+          pt: "Navegue pelos álbuns das últimas apresentações no Varal de Fotos. Você pode visualizar e baixar as fotos oficiais em alta resolução."
+        }
+      },
+      {
+        heading: {
+          fr: "2. La Gazette et les infolettres",
+          pt: "2. O Boletim e as notícias"
+        },
+        text: {
+          fr: "Retrouve les archives des lettres d'information envoyées au public et aux adhérents pour rester informé des grands projets du groupe.",
+          pt: "Acesse os boletins e informativos enviados ao público e aos integrantes para acompanhar os projetos da trupe."
+        }
+      },
+      {
+        heading: {
+          fr: "3. Dépôt express de photos et vidéos",
+          pt: "3. Envio rápido de fotos e vídeos"
+        },
+        text: {
+          fr: "Après une sortie, utilise le module ou le QR code dédié de l'événement pour déposer facilement tes vidéos et clichés de scène à destination de la commission communication.",
+          pt: "Após uma apresentação, utilize o leitor ou QR code do evento para enviar facilmente suas fotos e vídeos direto para a equipe de comunicação."
+        }
+      }
+    ]
+  },
+
+  // ==========================================
+  // 2. VUE GESTIONNAIRE (Com', Presse, Webmaster)
+  // ==========================================
+  managerGuide: {
+    title: {
+      fr: "Piloter la communication externe, les médias et les newsletters",
+      pt: "Gerenciar a comunicação externa, mídias e boletins"
+    },
+    roleBadge: {
+      fr: "Communication • Relations Presse • Webmaster",
+      pt: "Comunicação • Assessoria de Imprensa • Webmaster"
+    },
+    summary: {
+      fr: "Animation de la vitrine médiatique, sélection des albums publics, diffusion sur les réseaux et campagnes d'information.",
+      pt: "Gestão dos canais públicos, curadoria de fotos, publicações em redes sociais e campanhas de e-mail."
+    },
+    workflowSteps: [
+      {
+        step: 1,
+        title: {
+          fr: "Curatelle et publication des albums photo",
+          pt: "Curadoria e publicação de álbuns de fotos"
+        },
+        desc: {
+          fr: "Sélectionne les meilleurs clichés déposés par la troupe ou le photographe officiel, ordonne la grille et active la publication vers la Vitrine publique.",
+          pt: "Selecione as melhores fotos enviadas pelo grupo ou fotógrafo oficial, organize a ordem de exibição e publique no site público."
+        }
+      },
+      {
+        step: 2,
+        title: {
+          fr: "Animation des réseaux sociaux & passerelles",
+          pt: "Gestão de redes sociais e canais oficiais"
+        },
+        desc: {
+          fr: "Configure les liens vers les pages officielles (Instagram, Facebook, YouTube) et prépare les textes d'annonces de concerts ou d'ateliers.",
+          pt: "Atualize os links oficiais (Instagram, Facebook, YouTube) e estruture as chamadas de divulgação para shows e oficinas."
+        }
+      },
+      {
+        step: 3,
+        title: {
+          fr: "Campagnes emailing & synchronisation Brevo",
+          pt: "Campanhas de e-mail e integração Brevo"
+        },
+        desc: {
+          fr: "Gère les listes de diffusion des abonnés à la newsletter, rédige les communications officielles et synchronise les contacts avec l'outil d'envoi.",
+          pt: "Gerencie a lista de contatos da newsletter, elabore os communicados oficiais e sincronize as inscrições com a ferramenta de disparo."
+        }
+      },
+      {
+        step: 4,
+        title: {
+          fr: "Espace Presse & kit média",
+          pt: "Espaço de Imprensa e kit de mídia"
+        },
+        desc: {
+          fr: "Maintiens à jour les visuels haute définition, le communiqué de presse standard et les logos vectoriels téléchargeables pour les journalistes.",
+          pt: "Mantenha atualizadas as imagens em alta resolução, o release oficial e os logotipos para os veículos de imprensa."
+        }
+      }
+    ],
+    videoTutorials: [
+      { id: "tuto_gestion_galerie_vitrine", label: { fr: "Gérer la galerie et les photos publiques", pt: "Gerenciar a galeria e fotos públicas" } },
+      { id: "tuto_campagne_newsletter_brevo", label: { fr: "Préparer une newsletter et synchroniser Brevo", pt: "Preparar boletim e sincronizar com o Brevo" } }
+    ]
+  }
+};
+
 export const POLE_GUIDES = {
   agenda: agendaGuide,
   pedagogy: pedagogyGuide,
   pedagogie: pedagogyGuide,
   repertoire: pedagogyGuide,
+  logistics: logisticsGuide,
+  logistique: logisticsGuide,
+  forum: forumGuide,
+  'porte-voix': forumGuide,
+  treasury: treasuryGuide,
+  tresorerie: treasuryGuide,
+  secretariat: secretariatGuide,
+  studio: studioGuide,
+  communication: studioGuide,
   // ==========================================
   // PÔLE GOUVERNANCE & CONSEIL D'ADMINISTRATION
   // ==========================================
@@ -435,23 +1192,7 @@ export const POLE_GUIDES = {
   // ==========================================
   // 1. PÔLE TRÉSORERIE & FINANCES
   // ==========================================
-  tresorerie: {
-    titre: "💰 Pôle Trésorerie & Finances",
-    title: "💰 Pôle Trésorerie & Finances",
-    description: "Pilotez la santé financière de l'association, contrôlez la rentabilité des événements et enregistrez les opérations comptables.",
-    etapes: [
-      "Vérifiez l'état des cotisations et relancez les adhérents en retard.",
-      "Saisissez les recettes et dépenses courantes dans le journal des opérations.",
-      "Examinez et remboursez les notes de frais kilométriques soumises.",
-      "Générez les bilans et exports comptables pour l'assemblée générale."
-    ],
-    steps: [
-      "Vérifiez l'état des cotisations et relancez les adhérents en retard.",
-      "Saisissez les recettes et dépenses courantes dans le journal des opérations.",
-      "Examinez et remboursez les notes de frais kilométriques soumises.",
-      "Générez les bilans et exports comptables pour l'assemblée générale."
-    ]
-  },
+  // Pôle Trésorerie & Finances (résolu via treasuryGuide Double Vue)
   'dashboard-finance': {
     titre: "📊 Synthèse & Bilan Financier",
     title: "📊 Synthèse & Bilan Financier",
@@ -546,21 +1287,7 @@ export const POLE_GUIDES = {
   // ==========================================
   // 2. PÔLE SECRÉTARIAT & ADMINISTRATION
   // ==========================================
-  secretariat: {
-    titre: "🏛️ Pôle Secrétariat & Administration",
-    title: "🏛️ Pôle Secrétariat & Administration",
-    description: "Centre névralgique de la vie associative, de la gestion des membres, du registre des dates et des obligations légales.",
-    etapes: [
-      "Gérer l'annuaire des membres et les pièces justificatives.",
-      "Tenir le registre des dates et convoquer la troupe.",
-      "Organiser les assemblées générales et éditer les bilans d'activité."
-    ],
-    steps: [
-      "Gérer l'annuaire des membres et les pièces justificatives.",
-      "Tenir le registre des dates et convoquer la troupe.",
-      "Organiser les assemblées générales et éditer les bilans d'activité."
-    ]
-  },
+  // Pôle Secrétariat & Administration (résolu via secretariatGuide Double Vue)
   'export-annu': {
     titre: "📄 Annuaire Adhérents & Exports Administratifs",
     title: "📄 Annuaire Adhérents & Exports Administratifs",
@@ -664,21 +1391,7 @@ export const POLE_GUIDES = {
   // ==========================================
   // 3. PÔLE LOGISTIQUE & MATÉRIEL
   // ==========================================
-  logistique: {
-    titre: "📦 Pôle Logistique & Matériel",
-    title: "📦 Pôle Logistique & Matériel",
-    description: "Gestion du parc d'instruments, contrôle des prêts, composition des kits de pupitre et covoiturage.",
-    etapes: [
-      "Cataloguez et suivez l'état du matériel dans l'inventaire général.",
-      "Configurez les pupitres, les kits d'accessoires et les convois de covoiturage.",
-      "Centralisez les commandes d'achat et le suivi des approvisionnements."
-    ],
-    steps: [
-      "Cataloguez et suivez l'état du matériel dans l'inventaire général.",
-      "Configurez les pupitres, les kits d'accessoires et les convois de covoiturage.",
-      "Centralisez les commandes d'achat et le suivi des approvisionnements."
-    ]
-  },
+  // Pôle Logistique & Matériel (résolu via logisticsGuide Double Vue)
   inventory: {
     titre: "🛠️ Inventaire Général du Parc Matériel",
     title: "🛠️ Inventaire Général du Parc Matériel",
@@ -1075,21 +1788,7 @@ export const POLE_GUIDES = {
   // ==========================================
   // 7. PÔLE STUDIO & COMMUNICATION
   // ==========================================
-  studio: {
-    titre: "📱 Pôle Studio & Communication",
-    title: "📱 Pôle Studio & Communication",
-    description: "Création graphique, gestion des réseaux sociaux, diffusion des infolettres et archives photographiques.",
-    etapes: [
-      "Concevez les visuels promotionnels pour les réseaux sociaux.",
-      "Rédigez et diffusez les campagnes de newsletter de la troupe.",
-      "Administrez la photothèque officielle des concerts et représentations."
-    ],
-    steps: [
-      "Concevez les visuels promotionnels pour les réseaux sociaux.",
-      "Rédigez et diffusez les campagnes de newsletter de la troupe.",
-      "Administrez la photothèque officielle des concerts et représentations."
-    ]
-  },
+  // Pôle Studio & Communication (résolu via studioGuide Double Vue)
   'studio-social': {
     titre: "📱 Réseaux Sociaux & Publications",
     title: "📱 Réseaux Sociaux & Publications",

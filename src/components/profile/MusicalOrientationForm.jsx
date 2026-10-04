@@ -206,6 +206,117 @@ export default function MusicalOrientationForm({
           </div>
         </div>
       )}
+
+      {/* Section Souhaits d'instruments & Réorientation (Accessible à tous, notamment post-essai) */}
+      <div className="flex flex-col gap-3 p-3.5 rounded bg-amber-50/80 dark:bg-amber-950/20 border-2 border-dashed border-cordel-wood/30 text-left">
+        <div className="flex items-center justify-between flex-wrap gap-1">
+          <label className="text-[11px] font-black uppercase text-cordel-wood tracking-wider flex items-center gap-1.5">
+            <span>🎯</span> Mes Souhaits d'Instruments (Orientation & Casting)
+          </label>
+          <span className="text-[9px] font-semibold text-cordel-master-dark opacity-75">
+            3 vœux par ordre de préférence
+          </span>
+        </div>
+
+        <p className="text-[10px] text-cordel-master-dark leading-relaxed font-medium">
+          Indiquez ici les pupitres que vous souhaitez apprendre ou jouer en priorité. Ces vœux aident le Mestre à équilibrer les pupitres lors du casting.
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          {/* Vœu 1 (Principal) */}
+          <div className="flex flex-col gap-1">
+            <span className="text-[9px] font-black uppercase text-cordel-wood flex items-center gap-1">
+              🥇 Vœu 1 (Principal)
+            </span>
+            <select
+              value={(formData.voeuxInstruments || [])[0] || formData.voeuPrincipal || ''}
+              onChange={(e) => {
+                const val = e.target.value;
+                setFormData(prev => {
+                  const updated = [...(prev.voeuxInstruments || [])];
+                  updated[0] = val;
+                  return {
+                    ...prev,
+                    voeuxInstruments: updated,
+                    voeuPrincipal: val
+                  };
+                });
+              }}
+              disabled={saving}
+              className="theme-input w-full text-xs font-bold bg-white"
+            >
+              <option value="">-- Choix principal --</option>
+              {pupitresList
+                .filter(pup => pup !== (formData.voeuxInstruments || [])[1] && pup !== (formData.voeuxInstruments || [])[2])
+                .map(pup => (
+                  <option key={`v1-${pup}`} value={pup}>{pup}</option>
+                ))}
+            </select>
+          </div>
+
+          {/* Vœu 2 (Secondaire) */}
+          <div className="flex flex-col gap-1">
+            <span className="text-[9px] font-black uppercase text-cordel-master-dark opacity-80 flex items-center gap-1">
+              🥈 Vœu 2 (Secondaire)
+            </span>
+            <select
+              value={(formData.voeuxInstruments || [])[1] || formData.voeuSecondaire || ''}
+              onChange={(e) => {
+                const val = e.target.value;
+                setFormData(prev => {
+                  const updated = [...(prev.voeuxInstruments || [])];
+                  updated[1] = val;
+                  return {
+                    ...prev,
+                    voeuxInstruments: updated,
+                    voeuSecondaire: val
+                  };
+                });
+              }}
+              disabled={saving}
+              className="theme-input w-full text-xs font-semibold bg-white"
+            >
+              <option value="">-- Optionnel --</option>
+              {pupitresList
+                .filter(pup => pup !== (formData.voeuxInstruments || [])[0] && pup !== (formData.voeuxInstruments || [])[2])
+                .map(pup => (
+                  <option key={`v2-${pup}`} value={pup}>{pup}</option>
+                ))}
+            </select>
+          </div>
+
+          {/* Vœu 3 (Tertiaire) */}
+          <div className="flex flex-col gap-1">
+            <span className="text-[9px] font-black uppercase text-cordel-master-dark opacity-80 flex items-center gap-1">
+              🥉 Vœu 3 (Tertiaire)
+            </span>
+            <select
+              value={(formData.voeuxInstruments || [])[2] || formData.voeuTertiaire || ''}
+              onChange={(e) => {
+                const val = e.target.value;
+                setFormData(prev => {
+                  const updated = [...(prev.voeuxInstruments || [])];
+                  updated[2] = val;
+                  return {
+                    ...prev,
+                    voeuxInstruments: updated,
+                    voeuTertiaire: val
+                  };
+                });
+              }}
+              disabled={saving}
+              className="theme-input w-full text-xs font-semibold bg-white"
+            >
+              <option value="">-- Optionnel --</option>
+              {pupitresList
+                .filter(pup => pup !== (formData.voeuxInstruments || [])[0] && pup !== (formData.voeuxInstruments || [])[1])
+                .map(pup => (
+                  <option key={`v3-${pup}`} value={pup}>{pup}</option>
+                ))}
+            </select>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -135,7 +135,7 @@ export default function FramaspaceIntegrationBlock({
     if (!effectiveUrl || !effectiveUsername || !effectivePassword) {
       setTestResult({
         success: false,
-        message: "Veuillez renseigner l'URL de l'instance, l'identifiant et le mot de passe d'application avant de tester."
+        message: t('settings.modules.framaspaceIntegrationBlock.veuillezRenseignerLUrlDe') || "Veuillez renseigner l'URL de l'instance, l'identifiant et le mot de passe d'application avant de tester."
       });
       return;
     }

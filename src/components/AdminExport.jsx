@@ -7,6 +7,7 @@ import { useTranslation } from './LanguageContext';
 import { useTerminologie } from '../hooks/useTerminologie';
 import { XiloScroll, XiloPeople } from './XiloIcons';
 import AdminExportModal from './admin/AdminExportModal';
+import ManualMemberModal from './directory/ManualMemberModal';
 import { formatPratiques, getPratiquesList } from '../utils/instrumentUtils';
 
 export default function AdminExport({ user, profileData, onBack }) {
@@ -18,6 +19,17 @@ export default function AdminExport({ user, profileData, onBack }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isManualModalOpen, setIsManualModalOpen] = useState(false);
+
+  // Droits pour inscrire manuellement un membre : Admin, Mestre, Bureau ou Secrétariat
+  const canCreateMember = Boolean(
+    profileData?.isSystemAdmin ||
+    ['mestre', 'admin', 'super-admin'].includes((profileData?.role || '').toLowerCase()) ||
+    (profileData?.tags || []).some(t => {
+      const tagStr = (typeof t === 'string' ? t : (t.id || t.nomM || '')).toLowerCase();
+      return tagStr.includes('bureau') || tagStr.includes('secrétariat') || tagStr.includes('secretariat') || tagStr.includes('ca');
+    })
+  );
 
   const columnsConfig = {
     identity: {
@@ -318,6 +330,19 @@ export default function AdminExport({ user, profileData, onBack }) {
             >
               📥 {t('secretariat.btnExportData') || "Exporter les données"}
             </CordelButton>
+
+            {canCreateMember && (
+              <CordelButton
+                type="button"
+                variant="vert"
+                useExtremeBorder={true}
+                onClick={() => setIsManualModalOpen(true)}
+                className="px-3 py-1 text-xs font-black uppercase tracking-wider shadow-xs flex items-center gap-1.5 ml-1 cursor-pointer"
+                title="Inscrire manuellement un membre dans l'application sans qu'il ait besoin de créer son compte"
+              >
+                ➕ Inscrire un membre
+              </CordelButton>
+            )}
           </div>
 
           <div className="flex items-center gap-2 w-full md:w-auto flex-wrap">
@@ -434,6 +459,19 @@ export default function AdminExport({ user, profileData, onBack }) {
         handleToggleCategory={handleToggleCategory}
         onExport={exportToCSV}
         membersCount={filteredMembers.length}
+      />
+
+      {/* Modale d'inscription manuelle par le Bureau */}
+      <ManualMemberModal
+        isOpen={isManualModalOpen}
+        onClose={() => setIsManualModalOpen(false)}
+        groupId={profileData?.groupId}
+        profileData={profileData}
+        onMemberCreated={(newMember) => {
+          if (newMember) {
+            setMembers(prev => [newMember, ...prev]);
+          }
+        }}
       />
     </div>
   );

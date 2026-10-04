@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import CordelCard from '../../CordelCard';
+import { useTranslation } from '../../LanguageContext';
 
 /**
  * Accordéon compact pour les informations légales et coordonnées officielles de l'association.
  * Présente un bandeau synthétique fermé par défaut : Forme juridique • SIRET • Ville du siège.
  */
 export default function LegalInfoAccordion({ formData = {}, handleChange, saving }) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
 
   // Extraction synthétique de la ville depuis l'adresse du siège social
@@ -35,7 +37,7 @@ export default function LegalInfoAccordion({ formData = {}, handleChange, saving
           <div className="flex items-center gap-1.5">
             <span className="text-sm">📜</span>
             <span className="text-xs font-black uppercase tracking-wider text-cordel-wood">
-              Informations Légales & Coordonnées
+              {t('settings.identity.legalInfoAccordion.informationsLegalesCoordonnees')}
             </span>
           </div>
 
@@ -54,7 +56,7 @@ export default function LegalInfoAccordion({ formData = {}, handleChange, saving
             type="button"
             className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded border border-encre-noire/30 bg-white hover:bg-stone-50 text-encre-noire transition-all cursor-pointer shadow-2xs"
           >
-            {isOpen ? '▲ Fermer' : '✏️ Éditer'}
+            {isOpen ? t('settings.identity.legalInfoAccordion.fermer') : t('settings.identity.legalInfoAccordion.editer')}
           </button>
         </div>
       </div>
@@ -63,14 +65,14 @@ export default function LegalInfoAccordion({ formData = {}, handleChange, saving
       {isOpen && (
         <div className="p-4 border-t border-dashed border-cordel-master-dark/20 flex flex-col gap-3 text-left animate-fade-in bg-white/40">
           <p className="text-[10px] text-cordel-master-dark/70 font-semibold leading-relaxed">
-            Ces coordonnées administratives s'imprimeront automatiquement sur les devis, factures, reçus et contrats officiels.
+            {t('settings.identity.legalInfoAccordion.cesCoordonneesAdministrativesSImprimeront')}
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* Structure juridique */}
             <div className="flex flex-col gap-1">
               <label htmlFor="structureJuridique" className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
-                Structure Juridique
+                {t('settings.identity.legalInfoAccordion.structureJuridique')}
               </label>
               <input 
                 id="structureJuridique"
@@ -78,7 +80,7 @@ export default function LegalInfoAccordion({ formData = {}, handleChange, saving
                 value={formData.structureJuridique || ''}
                 onChange={(e) => handleChange('structureJuridique', e.target.value)}
                 disabled={saving}
-                placeholder="ex: Association Loi 1901"
+                placeholder={t('settings.identity.legalInfoAccordion.exAssociationLoi1901')}
                 className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
               />
             </div>
@@ -86,7 +88,7 @@ export default function LegalInfoAccordion({ formData = {}, handleChange, saving
             {/* N° SIRET / RNA */}
             <div className="flex flex-col gap-1">
               <label htmlFor="siret" className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
-                Numéro SIRET / N° RNA
+                {t('settings.identity.legalInfoAccordion.numeroSiretNRna')}
               </label>
               <input 
                 id="siret"
@@ -97,7 +99,7 @@ export default function LegalInfoAccordion({ formData = {}, handleChange, saving
                   handleChange('rna', e.target.value);
                 }}
                 disabled={saving}
-                placeholder="ex: 849 123 456 00012 / W291001234"
+                placeholder={t('settings.identity.legalInfoAccordion.ex84912345600012')}
                 className="theme-input text-xs font-mono font-bold py-1.5 bg-cordel-bg-light w-full"
               />
             </div>
@@ -106,7 +108,7 @@ export default function LegalInfoAccordion({ formData = {}, handleChange, saving
           {/* Adresse du Siège Social */}
           <div className="flex flex-col gap-1">
             <label htmlFor="adresseSiegeSocial" className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
-              Adresse de Domiciliation / Siège Social
+              {t('settings.identity.legalInfoAccordion.adresseDeDomiciliationSiegeSocial')}
             </label>
             <input 
               id="adresseSiegeSocial"
@@ -117,7 +119,7 @@ export default function LegalInfoAccordion({ formData = {}, handleChange, saving
                 handleChange('adresse', e.target.value);
               }}
               disabled={saving}
-              placeholder="ex: 12 Rue de la Paix, 29200 Brest"
+              placeholder={t('settings.identity.legalInfoAccordion.ex12RueDeLa')}
               className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
             />
           </div>
@@ -126,7 +128,7 @@ export default function LegalInfoAccordion({ formData = {}, handleChange, saving
             {/* E-mail Officiel */}
             <div className="flex flex-col gap-1">
               <label htmlFor="emailOfficiel" className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark flex items-center justify-between">
-                <span>E-mail Officiel</span>
+                <span>{t('settings.identity.legalInfoAccordion.eMailOfficiel')}</span>
               </label>
               <input 
                 id="emailOfficiel"
@@ -137,7 +139,7 @@ export default function LegalInfoAccordion({ formData = {}, handleChange, saving
                   handleChange('email', e.target.value);
                 }}
                 disabled={saving}
-                placeholder="ex: contact@votre-association.fr"
+                placeholder={t('settings.identity.legalInfoAccordion.exContactVotreAssociationFr')}
                 className="theme-input text-xs font-mono font-bold py-1.5 bg-cordel-bg-light w-full"
               />
             </div>
@@ -145,7 +147,7 @@ export default function LegalInfoAccordion({ formData = {}, handleChange, saving
             {/* Téléphone Officiel */}
             <div className="flex flex-col gap-1">
               <label htmlFor="telephone" className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
-                Téléphone Officiel
+                {t('settings.identity.legalInfoAccordion.telephoneOfficiel')}
               </label>
               <input 
                 id="telephone"
@@ -156,7 +158,7 @@ export default function LegalInfoAccordion({ formData = {}, handleChange, saving
                   handleChange('phone', e.target.value);
                 }}
                 disabled={saving}
-                placeholder="ex: 06 12 34 56 78"
+                placeholder={t('settings.identity.legalInfoAccordion.ex06123456')}
                 className="theme-input text-xs font-mono font-bold py-1.5 bg-cordel-bg-light w-full"
               />
             </div>

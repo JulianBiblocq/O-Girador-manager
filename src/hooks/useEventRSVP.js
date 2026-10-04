@@ -1,18 +1,60 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, runTransaction } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useFamilyMembers } from './useFamilyMembers';
 import useConfirm from './useConfirm';
 import { cleanFirestorePayload } from '../utils/firestoreUtils';
 import { notifyMembersByTag } from '../utils/inAppNotificationService';
+import {
+  inspectDriverCarpoolSituation,
+  buildDriverDepartureWarningMessage,
+  applyCarpoolAbsenceCascade
+} from '../utils/carpoolCascadeUtils';
 
-// Vérification sécurisée du dépassement de la date limite d'inscription (jusqu'à 23h59:59 si format YYYY-MM-DD)
-export const checkRegistrationDeadlinePassed = (deadline) => {
-  if (!deadline) return false;
-  const deadlineDate = (typeof deadline === 'string' && deadline.length === 10)
-    ? new Date(`${deadline}T23:59:59`)
-    : new Date(deadline);
-  return deadlineDate < new Date();
+/**
+ * Vérifie si les inscriptions sont closes pour un événement.
+ * 
+ * Règles :
+ * 1. Si dateLimiteInscription est renseignée : les inscriptions se ferment au passage de cette date.
+ *    (Supporte le format YYYY-MM-DD jusqu'à 23h59:59 ou un format datetime ISO).
+ * 2. Si dateLimiteInscription n'est pas renseignée : les inscriptions restent modifiables librement
+ *    jusqu'à l'heure de début de l'événement (event.date ou event.dateDebut).
+ * 
+ * @param {Object|string} eventOrDeadline Objet event ou chaîne dateLimiteInscription
+ * @param {string} [fallbackEventStart] Date de début de l'événement si le premier argument est une chaîne
+ * @returns {boolean} true si la date limite / heure de début est dépassée, false sinon
+ */
+export const checkRegistrationDeadlinePassed = (eventOrDeadline, fallbackEventStart = null) => {
+  let deadline = null;
+  let eventStart = null;
+
+  if (eventOrDeadline && typeof eventOrDeadline === 'object') {
+    deadline = eventOrDeadline.dateLimiteInscription;
+    eventStart = eventOrDeadline.date || eventOrDeadline.dateDebut;
+  } else {
+    deadline = eventOrDeadline;
+    eventStart = fallbackEventStart;
+  }
+
+  // 1. Date limite d'inscription explicite
+  if (deadline) {
+    const deadlineDate = (typeof deadline === 'string' && deadline.length === 10)
+      ? new Date(`${deadline}T23:59:59`)
+      : new Date(deadline);
+    if (!isNaN(deadlineDate.getTime())) {
+      return new Date() > deadlineDate;
+    }
+  }
+
+  // 2. Absence de date limite : libre jusqu'à l'heure de début de l'événement
+  if (eventStart) {
+    const startDate = new Date(eventStart);
+    if (!isNaN(startDate.getTime())) {
+      return new Date() > startDate;
+    }
+  }
+
+  return false;
 };
 
 export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRestricted, setToastMessage) {
@@ -148,7 +190,7 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
     if (!event?.id) return;
     setSaving(true);
 
-    const isRegistrationDeadlinePassed = checkRegistrationDeadlinePassed(event.dateLimiteInscription);
+    const isRegistrationDeadlinePassed = checkRegistrationDeadlinePassed(event);
     const isAuthorized = profileData?.role === 'mestre' ||
       profileData?.role === 'super-admin' ||
       profileData?.role === 'admin' ||
@@ -188,66 +230,132 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
     const targetDemandeRemb = overrideOptions.demandeRemboursementKm !== undefined ? overrideOptions.demandeRemboursementKm : demandeRemboursementKm;
     const targetBesoinTransp = overrideOptions.besoinTransportInstrument !== undefined ? overrideOptions.besoinTransportInstrument : besoinTransportInstrument;
 
-    try {
-      const currentInscriptions = event.inscriptions || [];
-      const updatedInscriptions = currentInscriptions.filter(ins => ins.userId !== user.uid);
-
-      const finalStatus = (targetStatus === 'present' && event.requiresValidation) ? 'pending' : targetStatus;
-      const newResponse = {
-        userId: user.uid,
-        userName: `${profileData?.prenom || ''} ${profileData?.nom || ''}`.trim() || user?.displayName || 'Membre',
-        status: finalStatus,
-        transport: targetStatus === 'present' ? targetTransport : null,
-        places: 0,
-        instruments: "",
-        instrumentChoisi: targetStatus === 'present' ? targetInstrument : null,
-        instrumentImposeParMestre: targetStatus === 'present' ? isInstrumentLocked : false,
-        demandeRemboursementKm: (targetStatus === 'present' && targetTransport === 'propose_voiture') ? targetDemandeRemb : false,
-        besoinTransportInstrument: targetStatus === 'present' ? targetBesoinTransp : false
-      };
-
-      updatedInscriptions.push(newResponse);
-
-      const eventUpdates = {
-        inscriptions: updatedInscriptions
-      };
-
-      // Si l'utilisateur passe présent et n'avait pas d'instrument localement, on synchronise le state local
-      if (targetStatus === 'present' && !instrumentChoisi) {
-        setInstrumentChoisi(targetInstrument);
-      }
-
-      // Si l'utilisateur est autonome ou absent, le retirer de la file d'attente recherchePlace s'il y était
-      if (event.covoiturage?.recherchePlace && (targetStatus !== 'present' || targetTransport === 'autonome')) {
-        const freshRecherche = (event.covoiturage.recherchePlace || []).filter(p => p.uid !== user.uid);
-        if (freshRecherche.length !== event.covoiturage.recherchePlace.length) {
-          eventUpdates.covoiturage = {
-            ...event.covoiturage,
-            recherchePlace: freshRecherche
-          };
+    // Vérification préventive pour les conducteurs avec passagers ou instruments tiers lors du passage à Absent
+    if (targetStatus === 'absent' && user?.uid) {
+      const situation = inspectDriverCarpoolSituation(event, user.uid);
+      if (situation.isDriver && situation.hasThirdParty) {
+        const warningMsg = buildDriverDepartureWarningMessage(situation);
+        const isConfirmed = await confirm({
+          title: "Passagers dans votre véhicule",
+          message: warningMsg,
+          confirmText: "Confirmer l'absence",
+          cancelText: "Annuler",
+          variant: "warning"
+        });
+        if (!isConfirmed) {
+          // Annulation : rétablir le statut d'origine et stopper l'opération
+          if (existingResponse?.status) {
+            setStatus(existingResponse.status === 'pending' || existingResponse.status === 'refused' ? 'present' : existingResponse.status);
+          }
+          setSaving(false);
+          return;
         }
       }
+    }
 
-      // Si l'utilisateur choisit explicitement 'cherche_place', l'ajouter à la file d'attente recherchePlace
-      if (targetStatus === 'present' && targetTransport === 'cherche_place') {
-        const currentCovoit = eventUpdates.covoiturage || event.covoiturage || { voitures: [], recherchePlace: [] };
-        let recherchePlace = [...(currentCovoit.recherchePlace || [])];
-        if (!recherchePlace.some(p => p.uid === user.uid)) {
-          recherchePlace.push({
-            uid: user.uid,
-            nom: `${profileData?.prenom || ''} ${profileData?.nom || ''}`.trim() || user?.displayName || 'Membre',
-            cherchePassager: true,
-            chercheInstrument: !!targetBesoinTransp
-          });
-          eventUpdates.covoiturage = {
+    try {
+      const eventRef = doc(db, 'events', event.id);
+      const memberName = `${profileData?.prenom || ''} ${profileData?.nom || ''}`.trim() || user?.displayName || 'Membre';
+      const finalStatus = (targetStatus === 'present' && event.requiresValidation) ? 'pending' : targetStatus;
+
+      await runTransaction(db, async (transaction) => {
+        const eventDocSnap = await transaction.get(eventRef);
+        if (!eventDocSnap.exists()) {
+          throw new Error("L'événement n'existe plus !");
+        }
+
+        const freshEvent = eventDocSnap.data();
+        const currentInscriptions = freshEvent.inscriptions || [];
+        const currentCovoit = freshEvent.covoiturage || { voitures: [], recherchePlace: [] };
+
+        let finalInscriptions = [];
+        let finalCovoit = currentCovoit;
+
+        if (targetStatus === 'absent') {
+          // Cascade automatique de nettoyage covoiturage (libération passager, retrait voiture, bascule passagers/instruments orphelins)
+          const cascade = applyCarpoolAbsenceCascade(currentCovoit, currentInscriptions, user.uid);
+          finalCovoit = cascade.updatedCovoiturage;
+          finalInscriptions = cascade.updatedInscriptions;
+
+          const existingIdx = finalInscriptions.findIndex(ins => ins.userId === user.uid);
+          const absentEntry = {
+            userId: user.uid,
+            userName: memberName,
+            status: finalStatus,
+            transport: null,
+            places: 0,
+            instruments: "",
+            instrumentChoisi: null,
+            instrumentImposeParMestre: false,
+            demandeRemboursementKm: false,
+            besoinTransportInstrument: false
+          };
+          if (existingIdx >= 0) {
+            finalInscriptions[existingIdx] = {
+              ...finalInscriptions[existingIdx],
+              ...absentEntry
+            };
+          } else {
+            finalInscriptions.push(absentEntry);
+          }
+        } else {
+          // Statut Présent ou À confirmer
+          finalInscriptions = currentInscriptions.filter(ins => ins.userId !== user.uid);
+          const newResponse = {
+            userId: user.uid,
+            userName: memberName,
+            status: finalStatus,
+            transport: targetStatus === 'present' ? targetTransport : null,
+            places: 0,
+            instruments: "",
+            instrumentChoisi: targetStatus === 'present' ? targetInstrument : null,
+            instrumentImposeParMestre: targetStatus === 'present' ? isInstrumentLocked : false,
+            demandeRemboursementKm: (targetStatus === 'present' && targetTransport === 'propose_voiture') ? targetDemandeRemb : false,
+            besoinTransportInstrument: targetStatus === 'present' ? targetBesoinTransp : false
+          };
+          finalInscriptions.push(newResponse);
+
+          // Gestion de la file d'attente recherchePlace
+          let recherchePlace = [...(currentCovoit.recherchePlace || [])];
+          if (targetStatus === 'present' && targetTransport === 'cherche_place') {
+            const existingIdx = recherchePlace.findIndex(p => p.uid === user.uid);
+            if (existingIdx >= 0) {
+              recherchePlace[existingIdx] = {
+                ...recherchePlace[existingIdx],
+                cherchePassager: true,
+                chercheInstrument: !!targetBesoinTransp
+              };
+            } else {
+              recherchePlace.push({
+                uid: user.uid,
+                nom: memberName,
+                cherchePassager: true,
+                chercheInstrument: !!targetBesoinTransp
+              });
+            }
+          } else if (targetTransport === 'autonome' || targetStatus !== 'present') {
+            recherchePlace = recherchePlace.filter(p => p.uid !== user.uid);
+          }
+
+          finalCovoit = {
             ...currentCovoit,
             recherchePlace
           };
         }
-      }
 
-      const eventRef = doc(db, 'events', event.id);
-      await updateDoc(eventRef, cleanFirestorePayload(eventUpdates));
+        const eventUpdates = {
+          inscriptions: finalInscriptions,
+          covoiturage: finalCovoit
+        };
+
+        transaction.update(eventRef, cleanFirestorePayload(eventUpdates));
+      });
+
+      // Synchronisation du state local après succès de la transaction
+      if (targetStatus === 'present' && !instrumentChoisi) {
+        setInstrumentChoisi(targetInstrument);
+      }
+      setStatus(targetStatus);
 
       let msg = "Inscription validée (Présent)";
       if (finalStatus === 'pending') msg = "Inscription en attente de validation";
@@ -321,7 +429,7 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
     if (!event?.id) return;
     setSaving(true);
 
-    const isRegistrationDeadlinePassed = checkRegistrationDeadlinePassed(event?.dateLimiteInscription);
+    const isRegistrationDeadlinePassed = checkRegistrationDeadlinePassed(event);
     const isAuthorized = profileData?.role === 'mestre' ||
       profileData?.role === 'super-admin' ||
       profileData?.role === 'admin' ||
@@ -487,57 +595,79 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
   const handleUpdateStatus = async (targetUserId, newStatus) => {
     if (!event.id || !targetUserId) return;
     try {
-      let memberFound = false;
-      const currentInscriptions = event.inscriptions || [];
-      const updatedInscriptions = currentInscriptions.map(ins => {
-        if (ins.userId === targetUserId) {
-          memberFound = true;
-          const userObj = allUsers.find(u => u.id === targetUserId || u.uid === targetUserId);
-          const safeInst = ins.instrumentChoisi || userObj?.instrument || userObj?.instrumentsJoues?.[0] || 'Autre';
-          return {
-            ...ins,
-            status: newStatus,
-            instrumentChoisi: newStatus === 'present' ? safeInst : null
-          };
-        }
-        return ins;
-      });
-
-      // Si le membre n'avait aucune inscription préalable (sans réponse), créer son inscription
-      if (!memberFound) {
-        const userObj = (allUsers || []).find(u => u.id === targetUserId || u.uid === targetUserId);
-        const name = userObj ? (`${userObj.prenom || ''} ${userObj.nom || ''}`.trim() || userObj.displayName || 'Membre') : 'Membre';
-        const safeInst = userObj?.instrument || userObj?.instrumentsJoues?.[0] || 'Autre';
-        updatedInscriptions.push({
-          userId: targetUserId,
-          userName: name,
-          status: newStatus,
-          transport: null,
-          places: 0,
-          instruments: "",
-          instrumentChoisi: newStatus === 'present' ? safeInst : null,
-          instrumentImposeParMestre: false,
-          demandeRemboursementKm: false
-        });
-      }
-
-      const eventUpdates = {
-        inscriptions: updatedInscriptions
-      };
-
-      // Si le membre passe absent, le retirer de la recherche de covoiturage s'il y était
-      if (newStatus !== 'present' && event.covoiturage?.recherchePlace) {
-        const freshRecherche = (event.covoiturage.recherchePlace || []).filter(p => p.uid !== targetUserId);
-        if (freshRecherche.length !== event.covoiturage.recherchePlace.length) {
-          eventUpdates.covoiturage = {
-            ...event.covoiturage,
-            recherchePlace: freshRecherche
-          };
-        }
-      }
-
       const eventRef = doc(db, 'events', event.id);
-      await updateDoc(eventRef, cleanFirestorePayload(eventUpdates));
+
+      await runTransaction(db, async (transaction) => {
+        const eventDocSnap = await transaction.get(eventRef);
+        if (!eventDocSnap.exists()) return;
+
+        const freshEvent = eventDocSnap.data();
+        const currentInscriptions = freshEvent.inscriptions || [];
+        const currentCovoit = freshEvent.covoiturage || { voitures: [], recherchePlace: [] };
+
+        let updatedInscriptions = [];
+        let updatedCovoit = currentCovoit;
+
+        if (newStatus === 'absent') {
+          const cascade = applyCarpoolAbsenceCascade(currentCovoit, currentInscriptions, targetUserId);
+          updatedCovoit = cascade.updatedCovoiturage;
+          updatedInscriptions = cascade.updatedInscriptions;
+
+          const memberFound = updatedInscriptions.some(ins => ins.userId === targetUserId);
+          if (!memberFound) {
+            const userObj = (allUsers || []).find(u => u.id === targetUserId || u.uid === targetUserId);
+            const name = userObj ? (`${userObj.prenom || ''} ${userObj.nom || ''}`.trim() || userObj.displayName || 'Membre') : 'Membre';
+            updatedInscriptions.push({
+              userId: targetUserId,
+              userName: name,
+              status: 'absent',
+              transport: null,
+              places: 0,
+              instruments: "",
+              instrumentChoisi: null,
+              instrumentImposeParMestre: false,
+              demandeRemboursementKm: false
+            });
+          }
+        } else {
+          let memberFound = false;
+          updatedInscriptions = currentInscriptions.map(ins => {
+            if (ins.userId === targetUserId) {
+              memberFound = true;
+              const userObj = allUsers.find(u => u.id === targetUserId || u.uid === targetUserId);
+              const safeInst = ins.instrumentChoisi || userObj?.instrument || userObj?.instrumentsJoues?.[0] || 'Autre';
+              return {
+                ...ins,
+                status: newStatus,
+                instrumentChoisi: newStatus === 'present' ? safeInst : null
+              };
+            }
+            return ins;
+          });
+
+          if (!memberFound) {
+            const userObj = (allUsers || []).find(u => u.id === targetUserId || u.uid === targetUserId);
+            const name = userObj ? (`${userObj.prenom || ''} ${userObj.nom || ''}`.trim() || userObj.displayName || 'Membre') : 'Membre';
+            const safeInst = userObj?.instrument || userObj?.instrumentsJoues?.[0] || 'Autre';
+            updatedInscriptions.push({
+              userId: targetUserId,
+              userName: name,
+              status: newStatus,
+              transport: null,
+              places: 0,
+              instruments: "",
+              instrumentChoisi: newStatus === 'present' ? safeInst : null,
+              instrumentImposeParMestre: false,
+              demandeRemboursementKm: false
+            });
+          }
+        }
+
+        transaction.update(eventRef, cleanFirestorePayload({
+          inscriptions: updatedInscriptions,
+          covoiturage: updatedCovoit
+        }));
+      });
 
       triggerToast("Statut mis à jour");
     } catch (error) {
@@ -545,6 +675,7 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
       alert("Erreur lors de la mise à jour du statut.");
     }
   };
+
 
   const handleUpdateMemberInstrument = async (targetUserId, newInstrument) => {
     if (!event.id || !targetUserId) return;
@@ -751,45 +882,72 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
     if (!event?.id || !user?.uid) return;
     setSaving(true);
 
-    try {
-      const currentInscriptions = event.inscriptions || [];
-      const updatedInscriptions = currentInscriptions.filter(ins => ins.userId !== user.uid);
-      const memberName = `${profileData?.prenom || ''} ${profileData?.nom || ''}`.trim() || user?.displayName || 'Membre';
-
-      const cancelledResponse = {
-        userId: user.uid,
-        userName: memberName,
-        status: 'absent',
-        transport: null,
-        places: 0,
-        instruments: "",
-        instrumentChoisi: null,
-        instrumentImposeParMestre: false,
-        demandeRemboursementKm: false,
-        besoinTransportInstrument: false,
-        motifAnnulationTardive: (messageText || '').trim(),
-        dateAnnulationTardive: new Date().toISOString()
-      };
-
-      updatedInscriptions.push(cancelledResponse);
-
-      const eventUpdates = {
-        inscriptions: updatedInscriptions
-      };
-
-      // Retrait de la recherche de covoiturage si la personne cherchait une place
-      if (event.covoiturage?.recherchePlace) {
-        const freshRecherche = (event.covoiturage.recherchePlace || []).filter(p => p.uid !== user.uid);
-        if (freshRecherche.length !== event.covoiturage.recherchePlace.length) {
-          eventUpdates.covoiturage = {
-            ...event.covoiturage,
-            recherchePlace: freshRecherche
-          };
-        }
+    // Vérification préventive pour les conducteurs avec passagers ou instruments tiers
+    const situation = inspectDriverCarpoolSituation(event, user.uid);
+    if (situation.isDriver && situation.hasThirdParty) {
+      const warningMsg = buildDriverDepartureWarningMessage(situation);
+      const isConfirmed = await confirm({
+        title: "Passagers dans votre véhicule",
+        message: warningMsg,
+        confirmText: "Confirmer l'absence",
+        cancelText: "Annuler",
+        variant: "warning"
+      });
+      if (!isConfirmed) {
+        setSaving(false);
+        return;
       }
+    }
 
+    try {
+      const memberName = `${profileData?.prenom || ''} ${profileData?.nom || ''}`.trim() || user?.displayName || 'Membre';
       const eventRef = doc(db, 'events', event.id);
-      await updateDoc(eventRef, cleanFirestorePayload(eventUpdates));
+
+      await runTransaction(db, async (transaction) => {
+        const eventDocSnap = await transaction.get(eventRef);
+        if (!eventDocSnap.exists()) {
+          throw new Error("L'événement n'existe plus !");
+        }
+
+        const freshEvent = eventDocSnap.data();
+        const currentInscriptions = freshEvent.inscriptions || [];
+        const currentCovoit = freshEvent.covoiturage || { voitures: [], recherchePlace: [] };
+
+        const cascade = applyCarpoolAbsenceCascade(currentCovoit, currentInscriptions, user.uid);
+        let updatedInscriptions = cascade.updatedInscriptions;
+
+        const cancelledResponse = {
+          userId: user.uid,
+          userName: memberName,
+          status: 'absent',
+          transport: null,
+          places: 0,
+          instruments: "",
+          instrumentChoisi: null,
+          instrumentImposeParMestre: false,
+          demandeRemboursementKm: false,
+          besoinTransportInstrument: false,
+          motifAnnulationTardive: (messageText || '').trim(),
+          dateAnnulationTardive: new Date().toISOString()
+        };
+
+        const existingIdx = updatedInscriptions.findIndex(ins => ins.userId === user.uid);
+        if (existingIdx >= 0) {
+          updatedInscriptions[existingIdx] = {
+            ...updatedInscriptions[existingIdx],
+            ...cancelledResponse
+          };
+        } else {
+          updatedInscriptions.push(cancelledResponse);
+        }
+
+        const eventUpdates = {
+          inscriptions: updatedInscriptions,
+          covoiturage: cascade.updatedCovoiturage
+        };
+
+        transaction.update(eventRef, cleanFirestorePayload(eventUpdates));
+      });
 
       setStatus('absent');
 

@@ -4,11 +4,13 @@ import CordelButton from '../../CordelButton';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../../firebase';
 import { canonicalizeGroupId } from '../../../utils/tenantUtils';
+import { useTranslation } from '../../LanguageContext';
 
 /**
  * En-tête compact présentant l'abonnement SaaS et le bouton d'invitation au groupe.
  */
 export default function SubscriptionInvitationHeader({ formData = {}, groupId, onReopenOnboarding }) {
+  const { t } = useTranslation();
   const [portalLoading, setPortalLoading] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
 
@@ -20,7 +22,7 @@ export default function SubscriptionInvitationHeader({ formData = {}, groupId, o
       if (result.data?.url) window.location.href = result.data.url;
     } catch (err) {
       console.error("Erreur portail Stripe :", err);
-      alert("Impossible d'accéder au portail de paiement.");
+      alert(t('settings.identity.subscriptionInvitationHeader.impossibleDAccederAuPortail'));
     } finally {
       setPortalLoading(false);
     }
@@ -53,10 +55,10 @@ export default function SubscriptionInvitationHeader({ formData = {}, groupId, o
             <span className="text-lg">🚀</span>
             <div>
               <h4 className="text-xs font-black uppercase tracking-wider text-[var(--color-cordel-vert,#2d6a4f)]">
-                Assistant de Premier Démarrage (Wizard)
+                {t('settings.identity.subscriptionInvitationHeader.assistantDePremierDemarrageWizard')}
               </h4>
               <p className="text-[10px] text-stone-600 font-medium">
-                Refaire la visite guidée et réinitialiser les réglages de base en 4 étapes.
+                {t('settings.identity.subscriptionInvitationHeader.refaireLaVisiteGuideeEt')}
               </p>
             </div>
           </div>
@@ -65,7 +67,7 @@ export default function SubscriptionInvitationHeader({ formData = {}, groupId, o
             onClick={onReopenOnboarding}
             className="px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider text-white bg-[var(--color-cordel-vert,#2d6a4f)] rounded-lg hover:brightness-110 cursor-pointer shadow-2xs whitespace-nowrap"
           >
-            🚀 Relancer l'assistant
+            {t('settings.identity.subscriptionInvitationHeader.relancerLAssistant')}
           </button>
         </CordelCard>
       )}
@@ -74,12 +76,12 @@ export default function SubscriptionInvitationHeader({ formData = {}, groupId, o
         <CordelCard variant="default" useExtremeBorder={true} className="p-3.5 flex flex-col justify-between gap-2">
           <div>
             <div className="flex items-center justify-between mb-1">
-              <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood">💳 Abonnement SaaS</h3>
+              <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood">{t('settings.identity.subscriptionInvitationHeader.abonnementSaas')}</h3>
               <span className={`text-[8.5px] font-black uppercase px-2 py-0.5 rounded ${
                 subStatus === 'active' || subStatus === 'exempt' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
               }`}>{subStatus}</span>
             </div>
-            <p className="text-[10px] text-stone-600">Plan : <strong className="text-cordel-wood uppercase font-black">{subPlan}</strong></p>
+            <p className="text-[10px] text-stone-600">{t('settings.identity.subscriptionInvitationHeader.plan')} <strong className="text-cordel-wood uppercase font-black">{subPlan}</strong></p>
           </div>
           <CordelButton
             type="button"
@@ -89,14 +91,14 @@ export default function SubscriptionInvitationHeader({ formData = {}, groupId, o
             disabled={portalLoading}
             className="py-1 px-3 text-[9.5px] font-black uppercase tracking-wider w-full cursor-pointer"
           >
-            {portalLoading ? 'Chargement...' : '⚙️ Factures & Carte Bancaire'}
+            {portalLoading ? t('settings.identity.subscriptionInvitationHeader.chargement') : t('settings.identity.subscriptionInvitationHeader.facturesCarteBancaire')}
           </CordelButton>
         </CordelCard>
 
         <CordelCard variant="default" useExtremeBorder={true} className="p-3.5 flex flex-col justify-between gap-2">
           <div>
-            <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-1">📨 Invitation au Groupe</h3>
-            <p className="text-[10px] text-stone-600 leading-snug">Partagez ce lien d'inscription direct pour inviter de nouveaux membres.</p>
+            <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-1">{t('settings.identity.subscriptionInvitationHeader.invitationAuGroupe')}</h3>
+            <p className="text-[10px] text-stone-600 leading-snug">{t('settings.identity.subscriptionInvitationHeader.partagezCeLienDInscription')}</p>
           </div>
           <CordelButton
             type="button"
@@ -105,7 +107,7 @@ export default function SubscriptionInvitationHeader({ formData = {}, groupId, o
             onClick={handleCopyInvitationLink}
             className="py-1 px-3 text-[9.5px] font-black uppercase tracking-wider w-full cursor-pointer"
           >
-            {copySuccess ? '✓ Lien copié !' : '📋 Copier le lien d\'invitation'}
+            {copySuccess ? t('settings.identity.subscriptionInvitationHeader.lienCopie') : t('settings.identity.subscriptionInvitationHeader.copierLeLienDInvitation')}
           </CordelButton>
         </CordelCard>
       </div>

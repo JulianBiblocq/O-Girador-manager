@@ -1,29 +1,10 @@
 import React from 'react';
 import ThreadMessageItem from './ThreadMessageItem';
+import PollCard from '../PollCard';
 
 /**
  * Conteneur scrollable des messages d'une discussion avec gestion du séparateur
- * de nouveaux messages et de la pastille flottante de défilement rapide vers le bas.
- *
- * @param {Object} props
- * @param {Array} props.reponses Liste des réponses du sujet
- * @param {number} props.firstUnreadIdx Index du premier message non lu (-1 si aucun)
- * @param {string} props.userId Identifiant de l'utilisateur connecté
- * @param {Object} props.profileData Profil de l'utilisateur connecté
- * @param {boolean} props.isModeratorOrAdmin Statut modérateur/administrateur
- * @param {Array} props.allUsers Liste des membres
- * @param {Object} props.messagesContainerRef Référence du conteneur scrollable
- * @param {Object} props.messagesEndRef Référence de l'ancre finale
- * @param {Object} props.unreadSeparatorRef Référence de la ligne de séparation de non-lus
- * @param {Function} props.onScroll Gestionnaire d'événement de défilement
- * @param {boolean} props.showScrollBottom Indique si la pastille de descente doit être affichée
- * @param {Function} props.onScrollToBottom Callback pour scroller tout en bas
- * @param {Function} props.onDeleteReply Callback de suppression d'une réponse
- * @param {Function} props.onMoveReply Callback de déplacement d'une réponse
- * @param {Function} props.onEditReply Callback d'édition d'une réponse
- * @param {Function} props.onReplyToMessage Callback de citation d'une réponse
- * @param {Function} props.onToggleReaction Callback de bascule de réaction emoji
- * @param {Function} props.t Fonction de traduction
+ * de nouveaux messages, affichage des sondages interactifs et pastille de défilement.
  */
 export default function ThreadMessageList({
   headerContent = null,
@@ -45,6 +26,9 @@ export default function ThreadMessageList({
   onEditReply,
   onReplyToMessage,
   onToggleReaction,
+  onVotePoll,
+  onOpenEditPoll,
+  votingPollId = null,
   t
 }) {
   // Prise en charge ultra-résiliente : prop direct reponses, champ thread.reponses ou repli thread.message
@@ -102,26 +86,40 @@ export default function ThreadMessageList({
                 </div>
               )}
 
-              <ThreadMessageItem
-                reply={{
-                  ...reply,
-                  lectures: reply.lectures || (index === 0 ? thread?.lectures : {})
-                }}
-                index={index}
-                threadId={thread?.id}
-                collectionName="forum"
-                userId={userId}
-                profileData={profileData}
-                isModeratorOrAdmin={isModeratorOrAdmin}
-                onDeleteReply={onDeleteReply}
-                onMoveReply={onMoveReply}
-                onEditReply={onEditReply}
-                onReplyToMessage={onReplyToMessage}
-                onToggleReaction={onToggleReaction}
-                allUsers={allUsers}
-                t={t}
-                formattedTime={formattedTime}
-              />
+              {(reply.type === 'poll' || (reply.options && reply.question)) ? (
+                <PollCard
+                  poll={reply}
+                  userId={userId}
+                  allUsers={allUsers}
+                  isAuthorOrAdmin={isModeratorOrAdmin || userId === reply.auteurId}
+                  onVote={onVotePoll}
+                  onOpenEdit={onOpenEditPoll}
+                  onDelete={onDeleteReply ? () => onDeleteReply(index) : null}
+                  voting={votingPollId === reply.id}
+                  t={t}
+                />
+              ) : (
+                <ThreadMessageItem
+                  reply={{
+                    ...reply,
+                    lectures: reply.lectures || (index === 0 ? thread?.lectures : {})
+                  }}
+                  index={index}
+                  threadId={thread?.id}
+                  collectionName="forum"
+                  userId={userId}
+                  profileData={profileData}
+                  isModeratorOrAdmin={isModeratorOrAdmin}
+                  onDeleteReply={onDeleteReply}
+                  onMoveReply={onMoveReply}
+                  onEditReply={onEditReply}
+                  onReplyToMessage={onReplyToMessage}
+                  onToggleReaction={onToggleReaction}
+                  allUsers={allUsers}
+                  t={t}
+                  formattedTime={formattedTime}
+                />
+              )}
             </React.Fragment>
           );
         })

@@ -95,13 +95,13 @@ export default function AssociationSettings({
     return (
       <div className="text-center py-12 select-none">
         <CordelCard variant="default" useExtremeBorder={true} className="p-8">
-          <h2 className="text-xl font-bold text-cordel-wood">🚨 ACCÈS REFUSÉ</h2>
+          <h2 className="text-xl font-bold text-cordel-wood">{t('settings.general.associationSettings.accesRefuse')}</h2>
           <p className="text-xs opacity-75 mt-3 leading-relaxed">
-            Vous devez être administrateur pour configurer les paramètres de l'association.
+            {t('settings.general.associationSettings.vousDevezEtreAdministrateurPour')}
           </p>
           <div className="mt-6 flex justify-center">
             <CordelButton variant="default" onClick={onBack} className="text-xs">
-              ⬅️ Retour
+              {t('settings.general.associationSettings.retour')}
             </CordelButton>
           </div>
         </CordelCard>
@@ -228,11 +228,11 @@ export default function AssociationSettings({
             disabled={saving}
             className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer disabled:opacity-50 flex items-center justify-center select-none shrink-0"
           >
-            ⬅️ Retour
+            {t('settings.general.associationSettings.retour')}
           </button>
           
           <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase flex items-center truncate">
-            <XiloSettings size={14} className="inline mr-1.5 shrink-0" /> {t('associationSettings.title') || "Paramètres Association"}
+            <XiloSettings size={14} className="inline mr-1.5 shrink-0" /> {t('settings.general.associationSettings.parametresAssociation')}
           </h2>
         </div>
       )}
@@ -240,7 +240,7 @@ export default function AssociationSettings({
       {/* Info card */}
       {!mode && (
         <div className="text-xs text-encre-noire dark:text-cordel-bg-light opacity-80 border border-dashed border-cordel-master-dark/30 p-3 rounded-[6px_4px_8px_5px] bg-[#fdfaf2] dark:bg-[#201d1a] leading-relaxed">
-          🔧 Personnalisez l'identité visuelle de votre association et configurez les champs requis pour le profil de vos adhérents.
+          {t('settings.general.associationSettings.personnalisezLIdentiteVisuelleDe')}
         </div>
       )}
 
@@ -269,7 +269,7 @@ export default function AssociationSettings({
                   }`}
                 >
                   <span>🏢</span>
-                  <span>Identité Légale</span>
+                  <span>{t('settings.general.associationSettings.identiteLegale')}</span>
                 </button>
                 <button
                   type="button"
@@ -283,7 +283,7 @@ export default function AssociationSettings({
                   }`}
                 >
                   <span>👥</span>
-                  <span>Inscription, Profils & Pupitres</span>
+                  <span>{t('settings.general.associationSettings.inscriptionProfilsPupitres')}</span>
                 </button>
                 <button
                   type="button"
@@ -297,7 +297,7 @@ export default function AssociationSettings({
                   }`}
                 >
                   <span>📅</span>
-                  <span>Agenda & Lieux</span>
+                  <span>{t('settings.general.associationSettings.agendaLieux')}</span>
                 </button>
                 <button
                   type="button"
@@ -311,7 +311,7 @@ export default function AssociationSettings({
                   }`}
                 >
                   <span>🛡️</span>
-                  <span>Badges & Sécurité</span>
+                  <span>{t('settings.general.associationSettings.badgesSecurite')}</span>
                 </button>
                 <button
                   type="button"
@@ -325,7 +325,7 @@ export default function AssociationSettings({
                   }`}
                 >
                   <span>📬</span>
-                  <span>Communication & Automatisations</span>
+                  <span>{t('settings.general.associationSettings.communicationAutomatisations')}</span>
                 </button>
                 <button
                   type="button"
@@ -339,7 +339,7 @@ export default function AssociationSettings({
                   }`}
                 >
                   <span>🧩</span>
-                  <span>Modules, Apparence & Médias</span>
+                  <span>{t('settings.general.associationSettings.modulesApparenceMedias')}</span>
                 </button>
               </HorizontalRibbonContainer>
             </div>

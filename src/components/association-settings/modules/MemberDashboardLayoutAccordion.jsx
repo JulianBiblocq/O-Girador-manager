@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
+import { useTranslation } from '../../LanguageContext';
 import CordelCard from '../../CordelCard';
 
 const WIDGET_LABELS = {
-  annonces: { label: "📢 Le Mégaphone (Annonces officielles)", icon: "📢" },
-  videoALaUne: { label: "🎬 Vidéo à la une (YouTube)", icon: "🎬" },
-  motMestre: { label: "📝 Le Mot du Mestre", icon: "📝" },
-  agenda: { label: "📅 Dates à Venir (Agenda)", icon: "📅" },
-  commandes: { label: "📦 Achats de Matériel (Commandes)", icon: "📦" },
-  forum: { label: "💬 Le Porte-Voix (Discussions)", icon: "💬" },
-  documents: { label: "📂 Varal de Documents", icon: "📂" },
-  tresorerie: { label: "🪙 Adhésion & Cotisation", icon: "🪙" }
+  annonces: { labelKey: "settings.modules.memberDashboardLayoutAccordion.leMegaphoneAnnoncesOfficielles", label: "📢 Le Mégaphone (Annonces officielles)", icon: "📢" },
+  videoALaUne: { labelKey: "settings.modules.memberDashboardLayoutAccordion.videoALaUneYoutube", label: "🎬 Vidéo à la une (YouTube)", icon: "🎬" },
+  motMestre: { labelKey: "settings.modules.memberDashboardLayoutAccordion.leMotDuMestre", label: "📝 Le Mot du Mestre", icon: "📝" },
+  agenda: { labelKey: "settings.modules.memberDashboardLayoutAccordion.datesAVenirAgenda", label: "📅 Dates à Venir (Agenda)", icon: "📅" },
+  commandes: { labelKey: "settings.modules.memberDashboardLayoutAccordion.achatsDeMaterielCommandes", label: "📦 Achats de Matériel (Commandes)", icon: "📦" },
+  forum: { labelKey: "settings.modules.memberDashboardLayoutAccordion.lePorteVoixDiscussions", label: "💬 Le Porte-Voix (Discussions)", icon: "💬" },
+  documents: { labelKey: "settings.modules.memberDashboardLayoutAccordion.varalDeDocuments", label: "📂 Varal de Documents", icon: "📂" },
+  tresorerie: { labelKey: "settings.modules.memberDashboardLayoutAccordion.adhesionCotisation", label: "🪙 Adhésion & Cotisation", icon: "🪙" }
 };
 
 const DEFAULT_ORDER = [
@@ -27,6 +28,7 @@ const DEFAULT_ORDER = [
  * Accordéon compact pour l'ordonnancement des blocs de la vue accueil membre et des anniversaires.
  */
 export default function MemberDashboardLayoutAccordion({ formData = {}, handleChange, saving }) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
 
   const currentOrder = Array.isArray(formData.layoutEleves) && formData.layoutEleves.length > 0
@@ -54,10 +56,10 @@ export default function MemberDashboardLayoutAccordion({ formData = {}, handleCh
         <div className="flex items-center gap-2 text-left">
           <span className="text-sm">🪢</span>
           <span className="text-xs font-black uppercase tracking-wider text-cordel-wood">
-            Disposition des Blocs de l'Accueil Adhérent {isOpen ? '▲' : '▾'}
+            {t('settings.modules.memberDashboardLayoutAccordion.dispositionDesBlocsDeL') || "Disposition des Blocs de l'Accueil Adhérent"} {isOpen ? '▲' : '▾'}
           </span>
           <span className="text-[9px] text-cordel-master-dark/60 font-semibold hidden sm:inline">
-            (Ordre d'affichage du tableau de bord & anniversaires)
+            {t('settings.modules.memberDashboardLayoutAccordion.ordreDAffichageDuTableau') || "(Ordre d'affichage du tableau de bord & anniversaires)"}
           </span>
         </div>
 
@@ -65,7 +67,7 @@ export default function MemberDashboardLayoutAccordion({ formData = {}, handleCh
           type="button"
           className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded border border-encre-noire/30 bg-white hover:bg-stone-50 text-encre-noire transition-all cursor-pointer shadow-2xs"
         >
-          {isOpen ? 'Fermer' : 'Réorganiser'}
+          {isOpen ? (t('settings.modules.memberDashboardLayoutAccordion.fermer') || 'Fermer') : (t('settings.modules.memberDashboardLayoutAccordion.reorganiser') || 'Réorganiser')}
         </button>
       </div>
 
@@ -76,8 +78,8 @@ export default function MemberDashboardLayoutAccordion({ formData = {}, handleCh
             <div className="flex items-center gap-2">
               <span className="text-base">🎂</span>
               <div>
-                <span className="text-xs font-bold text-encre-noire block">Emplacement du Bloc Anniversaires</span>
-                <span className="text-[9px] text-stone-500 font-medium">Affichage des anniversaires de la semaine des adhérents</span>
+                <span className="text-xs font-bold text-encre-noire block">{t('settings.modules.memberDashboardLayoutAccordion.emplacementDuBlocAnniversaires') || 'Emplacement du Bloc Anniversaires'}</span>
+                <span className="text-[9px] text-stone-500 font-medium">{t('settings.modules.memberDashboardLayoutAccordion.affichageDesAnniversairesDeLa') || 'Affichage des anniversaires de la semaine des adhérents'}</span>
               </div>
             </div>
             <select
@@ -86,16 +88,16 @@ export default function MemberDashboardLayoutAccordion({ formData = {}, handleCh
               disabled={saving}
               className="theme-input text-xs font-bold py-1 bg-stone-50 cursor-pointer"
             >
-              <option value="bottom">En bas du tableau de bord</option>
-              <option value="top">En haut (sous le mégaphone)</option>
-              <option value="hidden">Désactivé (Masqué)</option>
+              <option value="bottom">{t('settings.modules.memberDashboardLayoutAccordion.enBasDuTableauDe') || 'En bas du tableau de bord'}</option>
+              <option value="top">{t('settings.modules.memberDashboardLayoutAccordion.enHautSousLeMegaphone') || 'En haut (sous le mégaphone)'}</option>
+              <option value="hidden">{t('settings.modules.memberDashboardLayoutAccordion.desactiveMasque') || 'Désactivé (Masqué)'}</option>
             </select>
           </div>
 
           {/* Ordre des blocs principaux */}
           <div className="flex flex-col gap-1.5">
             <span className="text-[10px] font-black uppercase tracking-wider text-cordel-wood">
-              Ordre d'apparition des cartes sur l'Accueil
+              {t('settings.modules.memberDashboardLayoutAccordion.ordreDApparitionDesCartes') || "Ordre d'apparition des cartes sur l'Accueil"}
             </span>
             <div className="flex flex-col gap-1.5">
               {currentOrder.map((widgetKey, idx) => {
@@ -104,7 +106,7 @@ export default function MemberDashboardLayoutAccordion({ formData = {}, handleCh
                   <div key={widgetKey} className="flex items-center justify-between p-2 bg-white rounded border border-stone-200 text-xs font-bold shadow-2xs">
                     <span className="text-stone-800 flex items-center gap-2">
                       <span className="text-[9px] font-black text-stone-400 font-mono w-4">{idx + 1}.</span>
-                      {meta.label}
+                      {meta.labelKey ? (t(meta.labelKey) || meta.label) : meta.label}
                     </span>
 
                     <div className="flex items-center gap-1">
@@ -113,7 +115,7 @@ export default function MemberDashboardLayoutAccordion({ formData = {}, handleCh
                         onClick={() => handleMove(idx, -1)}
                         disabled={saving || idx === 0}
                         className="w-6 h-6 rounded bg-stone-100 hover:bg-stone-200 border border-stone-300 text-stone-700 text-xs font-black disabled:opacity-30 cursor-pointer"
-                        title="Monter"
+                        title={t('settings.modules.memberDashboardLayoutAccordion.monter') || "Monter"}
                       >
                         ↑
                       </button>
@@ -122,7 +124,7 @@ export default function MemberDashboardLayoutAccordion({ formData = {}, handleCh
                         onClick={() => handleMove(idx, 1)}
                         disabled={saving || idx === currentOrder.length - 1}
                         className="w-6 h-6 rounded bg-stone-100 hover:bg-stone-200 border border-stone-300 text-stone-700 text-xs font-black disabled:opacity-30 cursor-pointer"
-                        title="Descendre"
+                        title={t('settings.modules.memberDashboardLayoutAccordion.descendre') || "Descendre"}
                       >
                         ↓
                       </button>

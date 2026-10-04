@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { usePoleGuide, getGuideKey } from '../hooks/usePoleGuide';
+import { POLE_GUIDES } from '../config/poleGuides';
 import PoleTourOverlay from './guided-tour/PoleTourOverlay';
 import { useTranslation } from './LanguageContext';
 import { matchesAllowedKeyword, canAccessPole } from '../utils/permissionUtils';
@@ -108,6 +109,58 @@ export default function InfoPoleBanner({
       }
     }
 
+    // Règle spécifique Porte-Voix & Vie du groupe (Modération, Bureau, Conseil d'Administration)
+    if (['forum', 'porte-voix'].includes(effectiveKey) ||
+        ['forum', 'porte-voix'].includes(currentTab) ||
+        ['forum', 'porte-voix'].includes(currentPole)) {
+      const FORUM_KEYWORDS = ['modérateur', 'modératrice', 'moderateur', 'moderatrice', 'modération', 'moderation', 'bureau', 'direction', 'admin', 'ca', 'conseil'];
+      if (tagsList.some(t => FORUM_KEYWORDS.some(kw => matchesAllowedKeyword(t, kw)))) return true;
+      if (permissionsMatrice && typeof permissionsMatrice === 'object') {
+        const allowed = [...(permissionsMatrice['forum'] || []), ...(permissionsMatrice['moderation'] || [])]
+          .map(t => (typeof t === 'string' ? t.toLowerCase() : (t.id || t.nomF || t.nomM || '').toLowerCase()));
+        if (tagsList.some(t => allowed.includes(t))) return true;
+      }
+    }
+
+    // Règle spécifique Trésorerie & Finances (Trésorier, Comptabilité, Bureau)
+    if (['treasury', 'tresorerie'].includes(effectiveKey) ||
+        ['treasury', 'tresorerie'].includes(currentTab) ||
+        ['treasury', 'tresorerie'].includes(currentPole)) {
+      const TREASURY_KEYWORDS = ['trésorier', 'trésorière', 'tresorier', 'tresoriere', 'trésorerie', 'tresorerie', 'comptable', 'comptabilité', 'finance', 'finances', 'bureau', 'direction', 'admin', 'président', 'présidente'];
+      if (tagsList.some(t => TREASURY_KEYWORDS.some(kw => matchesAllowedKeyword(t, kw)))) return true;
+      if (permissionsMatrice && typeof permissionsMatrice === 'object') {
+        const allowed = [...(permissionsMatrice['tresorerie'] || []), ...(permissionsMatrice['treasury'] || [])]
+          .map(t => (typeof t === 'string' ? t.toLowerCase() : (t.id || t.nomF || t.nomM || '').toLowerCase()));
+        if (tagsList.some(t => allowed.includes(t))) return true;
+      }
+    }
+
+    // Règle spécifique Secrétariat & Administration (Secrétaire, Bureau, CA)
+    if (['secretariat'].includes(effectiveKey) ||
+        ['secretariat'].includes(currentTab) ||
+        ['secretariat'].includes(currentPole)) {
+      const SECRETARIAT_KEYWORDS = ['secrétaire', 'secretaire', 'secretariat', 'secrétariat', 'bureau', 'direction', 'admin', 'ca', 'conseil'];
+      if (tagsList.some(t => SECRETARIAT_KEYWORDS.some(kw => matchesAllowedKeyword(t, kw)))) return true;
+      if (permissionsMatrice && typeof permissionsMatrice === 'object') {
+        const allowed = [...(permissionsMatrice['secretariat'] || [])]
+          .map(t => (typeof t === 'string' ? t.toLowerCase() : (t.id || t.nomF || t.nomM || '').toLowerCase()));
+        if (tagsList.some(t => allowed.includes(t))) return true;
+      }
+    }
+
+    // Règle spécifique Studio & Communication (Communication, Presse, Webmaster, Bureau)
+    if (['studio', 'communication', 'studio-photos', 'studio-newsletter', 'studio-social', 'studio-lexique'].includes(effectiveKey) ||
+        ['studio', 'communication', 'studio-photos', 'studio-newsletter', 'studio-social', 'studio-lexique'].includes(currentTab) ||
+        ['studio', 'communication'].includes(currentPole)) {
+      const STUDIO_KEYWORDS = ['communication', 'com', 'presse', 'webmaster', 'médias', 'medias', 'photo', 'bureau', 'direction', 'admin'];
+      if (tagsList.some(t => STUDIO_KEYWORDS.some(kw => matchesAllowedKeyword(t, kw)))) return true;
+      if (permissionsMatrice && typeof permissionsMatrice === 'object') {
+        const allowed = [...(permissionsMatrice['studio'] || []), ...(permissionsMatrice['communication'] || [])]
+          .map(t => (typeof t === 'string' ? t.toLowerCase() : (t.id || t.nomF || t.nomM || '').toLowerCase()));
+        if (tagsList.some(t => allowed.includes(t))) return true;
+      }
+    }
+
     // Repli générique pour les autres pôles d'administration
     if (currentPole && currentPole !== 'mon-espace' && currentPole !== 'accueil') {
       return canAccessPole(currentPole, activeProfile, permissionsMatrice, tagsList);
@@ -126,11 +179,11 @@ export default function InfoPoleBanner({
     ? (activeViewMode === 'manager' ? (guide?.managerGuide || guide?.memberGuide) : (guide?.memberGuide || guide?.managerGuide))
     : null;
 
-  // Vérification synchrone immédiate du localStorage au montage
-  const isDirectlyHidden = typeof window !== 'undefined' && (
-    localStorage.getItem(`pole_guide_hidden_${effectiveKey}`) === 'true' ||
-    (currentTab && localStorage.getItem(`pole_guide_hidden_${currentTab}`) === 'true') ||
-    (currentPole && localStorage.getItem(`pole_guide_hidden_${currentPole}`) === 'true')
+  // Vérification synchrone immédiate du localStorage au montage (masqué par défaut)
+  const isDirectlyHidden = typeof window !== 'undefined' && !(
+    localStorage.getItem(`pole_guide_hidden_${effectiveKey}`) === 'false' ||
+    (currentTab && localStorage.getItem(`pole_guide_hidden_${currentTab}`) === 'false') ||
+    (currentPole && localStorage.getItem(`pole_guide_hidden_${currentPole}`) === 'false')
   );
 
   const handleHide = () => {

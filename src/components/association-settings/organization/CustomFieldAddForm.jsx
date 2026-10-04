@@ -1,25 +1,27 @@
 import React, { useState } from 'react';
 import CordelButton from '../../CordelButton';
-
-const FIELD_TYPES = [
-  { value: 'text', label: 'Texte court' },
-  { value: 'textarea', label: 'Texte long' },
-  { value: 'number', label: 'Nombre' },
-  { value: 'date', label: 'Date' },
-  { value: 'select', label: 'Liste déroulante' },
-  { value: 'multiselect', label: 'Choix multiples' },
-  { value: 'checkbox', label: 'Case à cocher' }
-];
+import { useTranslation } from '../../LanguageContext';
 
 /**
  * Formulaire compact d'ajout d'une question personnalisée pour l'adhésion.
  */
 export default function CustomFieldAddForm({ onAdd, saving }) {
+  const { t } = useTranslation();
   const [name, setName] = useState('');
   const [type, setType] = useState('text');
   const [required, setRequired] = useState(false);
   const [target, setTarget] = useState('both');
   const [options, setOptions] = useState('');
+
+  const FIELD_TYPES = [
+    { value: 'text', label: t('settings.organization.customFieldAddForm.texteCourt') },
+    { value: 'textarea', label: t('settings.organization.customFieldAddForm.texteLong') },
+    { value: 'number', label: t('settings.organization.customFieldAddForm.nombre') },
+    { value: 'date', label: t('common.date') || 'Date' },
+    { value: 'select', label: t('settings.organization.customFieldAddForm.listeDeroulante') },
+    { value: 'multiselect', label: t('settings.organization.customFieldAddForm.choixMultiples') },
+    { value: 'checkbox', label: t('settings.organization.customFieldAddForm.caseACocher') }
+  ];
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -46,28 +48,28 @@ export default function CustomFieldAddForm({ onAdd, saving }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         <div>
           <label className="text-[9px] uppercase font-bold text-cordel-master-dark block mb-0.5">
-            Nom de la question *
+            {t('settings.organization.customFieldAddForm.nomDeLaQuestion')}
           </label>
           <input 
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Ex: Régime alimentaire"
+            placeholder={t('settings.organization.customFieldAddForm.exRegimeAlimentaire')}
             className="theme-input text-xs font-bold py-1 bg-white w-full"
           />
         </div>
         
         <div>
           <label className="text-[9px] uppercase font-bold text-cordel-master-dark block mb-0.5">
-            Type de réponse
+            {t('settings.organization.customFieldAddForm.typeDeReponse')}
           </label>
           <select
             value={type}
             onChange={(e) => setType(e.target.value)}
             className="theme-input text-xs font-bold py-1 bg-white w-full cursor-pointer"
           >
-            {FIELD_TYPES.map(t => (
-              <option key={t.value} value={t.value}>{t.label}</option>
+            {FIELD_TYPES.map(tOption => (
+              <option key={tOption.value} value={tOption.value}>{tOption.label}</option>
             ))}
           </select>
         </div>
@@ -76,13 +78,13 @@ export default function CustomFieldAddForm({ onAdd, saving }) {
       {['select', 'multiselect'].includes(type) && (
         <div>
           <label className="text-[9px] uppercase font-bold text-cordel-master-dark block mb-0.5">
-            Options (séparées par une virgule)
+            {t('settings.organization.customFieldAddForm.optionsSepareesParUneVirgule')}
           </label>
           <input 
             type="text"
             value={options}
             onChange={(e) => setOptions(e.target.value)}
-            placeholder="Ex: Végétarien, Végan, Sans gluten"
+            placeholder={t('settings.organization.customFieldAddForm.exVegetarienVeganSansGluten')}
             className="theme-input text-xs font-bold py-1 bg-white w-full"
           />
         </div>
@@ -96,7 +98,9 @@ export default function CustomFieldAddForm({ onAdd, saving }) {
             onChange={(e) => setRequired(e.target.checked)}
             className="cursor-pointer"
           />
-          <span className="text-[10px] font-bold text-stone-700">Réponse obligatoire</span>
+          <span className="text-[10px] font-bold text-stone-700">
+            {t('settings.organization.customFieldAddForm.reponseObligatoire')}
+          </span>
         </label>
 
         <CordelButton 
@@ -106,7 +110,7 @@ export default function CustomFieldAddForm({ onAdd, saving }) {
           disabled={saving || !name.trim()}
           className="py-1 px-3 text-[10px] font-black uppercase tracking-wider self-end sm:self-auto cursor-pointer"
         >
-          + Ajouter la question
+          {t('settings.organization.customFieldAddForm.ajouterLaQuestion')}
         </CordelButton>
       </div>
     </form>

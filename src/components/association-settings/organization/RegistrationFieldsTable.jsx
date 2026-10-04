@@ -1,12 +1,14 @@
 import React from 'react';
 import CordelAccordion from '../../CordelAccordion';
 import { DEFAULT_FIELDS_CONFIG } from '../../../hooks/useAssociationSettings';
+import { useTranslation } from '../../LanguageContext';
 
 /**
  * Accordéon repliable du formulaire d'inscription et des champs de profil des adhérents.
  * Fermé par défaut avec comptage dynamique des champs actifs et obligatoires.
  */
 export default function RegistrationFieldsTable({ formData = {}, handleChange, saving }) {
+  const { t } = useTranslation();
   const fieldsConfig = formData.fieldsConfig || DEFAULT_FIELDS_CONFIG;
 
   const handleToggleActive = (key) => {
@@ -34,16 +36,16 @@ export default function RegistrationFieldsTable({ formData = {}, handleChange, s
   };
 
   const FIELDS_METADATA = [
-    { key: 'telephone', label: '📞 Téléphone', desc: 'Contact mobile du membre' },
-    { key: 'adresse', label: '🏠 Adresse physique', desc: 'Domicile / Ville' },
-    { key: 'surnom', label: '🎭 Surnom / Nom de scène', desc: 'Apelido au sein de la Roda' },
-    { key: 'tailleTshirt', label: '👕 Taille T-shirt', desc: 'Mensurations textile haut' },
-    { key: 'taillePantalon', label: '👖 Taille Pantalon/Bas', desc: 'Mensurations costume bas' },
-    { key: 'droitImage', label: '📷 Droit à l\'image', desc: 'Autorisation captations & diffusions' },
-    { key: 'aptitudeMedicale', label: '🩺 Aptitude médicale', desc: 'Questionnaire QS-Sport / Décharge' },
-    { key: 'lateralite', label: '✋ Latéralité', desc: 'Gaucher ou Droitier' },
-    { key: 'dateNaissance', label: '🎂 Date de naissance', desc: 'Anniversaires & Catégories d\'âge' },
-    { key: 'niveaux', label: '🎖️ Niveaux trombinoscope', desc: 'Affichage des badges sur l\'annuaire' }
+    { key: 'telephone', label: t('settings.organization.registrationFieldsTable.telephone'), desc: t('settings.organization.registrationFieldsTable.contactMobileDuMembre') },
+    { key: 'adresse', label: t('settings.organization.registrationFieldsTable.adressePhysique'), desc: t('settings.organization.registrationFieldsTable.domicileVille') },
+    { key: 'surnom', label: t('settings.organization.registrationFieldsTable.surnomNomDeScene'), desc: t('settings.organization.registrationFieldsTable.apelidoAuSeinDeLa') },
+    { key: 'tailleTshirt', label: t('settings.organization.registrationFieldsTable.tailleTShirt'), desc: t('settings.organization.registrationFieldsTable.mensurationsTextileHaut') },
+    { key: 'taillePantalon', label: t('settings.organization.registrationFieldsTable.taillePantalonBas'), desc: t('settings.organization.registrationFieldsTable.mensurationsCostumeBas') },
+    { key: 'droitImage', label: t('settings.organization.registrationFieldsTable.droitALImage'), desc: t('settings.organization.registrationFieldsTable.autorisationCaptationsDiffusions') },
+    { key: 'aptitudeMedicale', label: t('settings.organization.registrationFieldsTable.aptitudeMedicale'), desc: t('settings.organization.registrationFieldsTable.questionnaireQsSportDecharge') },
+    { key: 'lateralite', label: t('settings.organization.registrationFieldsTable.lateralite'), desc: t('settings.organization.registrationFieldsTable.gaucherOuDroitier') },
+    { key: 'dateNaissance', label: t('settings.organization.registrationFieldsTable.dateDeNaissance'), desc: t('settings.organization.registrationFieldsTable.anniversairesCategoriesDAge') },
+    { key: 'niveaux', label: t('settings.organization.registrationFieldsTable.niveauxTrombinoscope'), desc: t('settings.organization.registrationFieldsTable.affichageDesBadgesSurL') }
   ];
 
   // Calcul dynamique des champs configurés (actifs) et obligatoires
@@ -59,24 +61,24 @@ export default function RegistrationFieldsTable({ formData = {}, handleChange, s
 
   return (
     <CordelAccordion
-      title="Formulaire d'inscription & Profil membre"
-      subtitle={`${activeCount} champs configurés (${requiredCount} obligatoire${requiredCount > 1 ? 's' : ''})`}
+      title={t('settings.organization.registrationFieldsTable.formulaireDInscriptionProfilMembre')}
+      subtitle={t('settings.organization.registrationFieldsTable.paramChampsConfiguresParamObligatoire').replace('{param}', activeCount).replace('{param}', requiredCount).replace('{param}', requiredCount > 1 ? 's' : '')}
       icon="👥"
       defaultOpen={false}
       className="mb-4"
     >
       <div className="flex flex-col gap-2 pt-1 text-left">
         <p className="text-[10px] text-cordel-master-dark/70 font-semibold mb-2">
-          Définissez les informations collectées lors de l'adhésion et leur niveau d'exigence.
+          {t('settings.organization.registrationFieldsTable.definissezLesInformationsCollecteesLors')}
         </p>
 
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
             <tr className="border-b border-cordel-master-dark/20 text-[9px] uppercase font-black text-cordel-master-dark/70">
-              <th className="py-2 px-2">Champ standard</th>
-              <th className="py-2 px-2 text-center w-28">Activation</th>
-              <th className="py-2 px-2 text-center w-28">Exigence</th>
+              <th className="py-2 px-2">{t('settings.organization.registrationFieldsTable.champStandard')}</th>
+              <th className="py-2 px-2 text-center w-28">{t('settings.organization.registrationFieldsTable.activation')}</th>
+              <th className="py-2 px-2 text-center w-28">{t('settings.organization.registrationFieldsTable.exigence')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-cordel-master-dark/10">
@@ -104,7 +106,7 @@ export default function RegistrationFieldsTable({ formData = {}, handleChange, s
                           : 'bg-stone-200 text-stone-600 hover:bg-stone-300'
                       }`}
                     >
-                      {isEnabled ? '✓ Actif' : '✕ Inactif'}
+                      {isEnabled ? t('settings.organization.registrationFieldsTable.actif') : t('settings.organization.registrationFieldsTable.inactif')}
                     </button>
                   </td>
 
@@ -122,7 +124,7 @@ export default function RegistrationFieldsTable({ formData = {}, handleChange, s
                             : 'bg-stone-100 text-stone-700 border border-stone-300 hover:bg-stone-200'
                       }`}
                     >
-                      {isRequired ? '★ Obligatoire' : 'Facultatif'}
+                      {isRequired ? t('settings.organization.registrationFieldsTable.obligatoire') : t('settings.organization.registrationFieldsTable.facultatif')}
                     </button>
                   </td>
                 </tr>

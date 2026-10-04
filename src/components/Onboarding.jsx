@@ -13,6 +13,8 @@ import WelcomeTourModal from './guided-tour/WelcomeTourModal';
 import { notifyMembersByTag } from '../utils/inAppNotificationService';
 import { sanitizeUserDocPayload } from '../utils/firestoreUtils';
 import { canonicalizeGroupId } from '../utils/tenantUtils';
+import { resolveResilientGroupId } from '../hooks/useGroupContext';
+import { reconcilePreExistingMember } from '../services/memberService';
 
 // Configuration par défaut des champs du formulaire d'inscription.
 // Les champs non essentiels sont isRequired: false pour éviter qu'un champ masqué
@@ -89,10 +91,24 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
     }
   };
 
-  // Extraction et normalisation stricte du groupe (préservation de casse "Samambaia")
-  const searchParams = new URLSearchParams(window.location.search);
-  const rawGroupId = searchParams.get('groupe') || searchParams.get('assoc') || profileData?.groupId || 'Samambaia';
+  // Extraction résiliente et normalisation stricte du groupe (URL, localStorage, déduction d'hôte)
+  const resilient = resolveResilientGroupId();
+  const rawGroupId = resilient.groupId || profileData?.groupId || 'Samambaia';
   const groupId = canonicalizeGroupId(rawGroupId);
+
+  // Vérification de réconciliation automatique : si une fiche pré-existante a été créée par le Bureau
+  useEffect(() => {
+    if (user?.email) {
+      reconcilePreExistingMember(user, groupId).then((reconciled) => {
+        if (reconciled && onComplete) {
+          console.info("Onboarding - Profil réconcilié automatiquement avec la fiche Bureau !");
+          onComplete();
+        }
+      }).catch((err) => {
+        console.warn("Onboarding - Avertissement réconciliation automatique :", err);
+      });
+    }
+  }, [user?.email, groupId, onComplete]);
 
   // Charger custom fields configuration and association details for Onboarding
   useEffect(() => {

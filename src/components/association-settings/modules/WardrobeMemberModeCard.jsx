@@ -8,35 +8,44 @@ import { useTranslation } from '../../LanguageContext';
 export const WARDROBE_MEMBER_MODES = [
   {
     id: 'personal',
-    labelKey: 'costumerie.gardeRobePersonnelle',
+    labelKey: 'settings.modules.wardrobeMemberModeCard.gardeRobePersonnelle',
+    badgeKey: 'settings.modules.wardrobeMemberModeCard.individuel',
     label: 'Garde-robe personnelle',
     badge: 'Individuel',
     icon: '👗',
     colorClass: 'border-amber-600 bg-amber-50/40 text-amber-900',
     tagClass: 'theme-stamp-badge-wood',
+    descKey: 'settings.modules.wardrobeMemberModeCard.chaqueAdherentPossedeEtEntretient',
     desc: 'Chaque adhérent possède et entretient sa tenue individuelle.',
+    detailsKey: 'settings.modules.wardrobeMemberModeCard.mannequinInteractifDHabillageSvg',
     details: 'Mannequin interactif d\'habillage SVG, checklist des pièces possédées et validation autonome des tenues.'
   },
   {
     id: 'collective_workshop',
-    labelKey: 'costumerie.confectionCollectiveAtelier',
+    labelKey: 'settings.modules.wardrobeMemberModeCard.confectionCollectiveAtelier',
+    badgeKey: 'settings.modules.wardrobeMemberModeCard.mutualise',
     label: 'Confection collective & Atelier',
     badge: 'Mutualisé',
     icon: '🧵',
     colorClass: 'border-emerald-700 bg-emerald-50/40 text-emerald-950',
     tagClass: 'bg-emerald-800 text-white',
+    descKey: 'settings.modules.wardrobeMemberModeCard.parcDeCostumesAssociatifMutualise',
     desc: 'Parc de costumes associatif mutualisé et prêté le jour des prestations.',
+    detailsKey: 'settings.modules.wardrobeMemberModeCard.compteurDeclaratifDesPiecesConfectionnees',
     details: 'Compteur déclaratif des pièces confectionnées pour le stock, rappel du chantier textile en cours et accès direct aux tutoriels & patrons.'
   },
   {
     id: 'disabled',
-    labelKey: 'costumerie.desactiveMasquePourLesMembres',
+    labelKey: 'settings.modules.wardrobeMemberModeCard.desactiveMasquePourLesMembres',
+    badgeKey: 'settings.modules.wardrobeMemberModeCard.masqueAdherents',
     label: 'Désactivé (Masqué pour les membres)',
     badge: 'Masqué Adhérents',
     icon: '🚫',
     colorClass: 'border-stone-400 bg-stone-100/60 text-stone-800',
     tagClass: 'bg-stone-700 text-white',
+    descKey: 'settings.modules.wardrobeMemberModeCard.lOngletVestiaireDisparaitDe',
     desc: 'L\'onglet Vestiaire disparaît de l\'espace membre pour les adhérents simples.',
+    detailsKey: 'settings.modules.wardrobeMemberModeCard.lePoleCostumerieWardrobemanagerReste',
     details: 'Le Pôle Costumerie & WardrobeManager reste pleinement accessible aux responsables ayant le badge requis.'
   }
 ];
@@ -63,7 +72,7 @@ export default function WardrobeMemberModeCard({ formData = {}, handleChange, sa
           </p>
         </div>
         <span className="text-[9px] uppercase font-black px-2 py-0.5 rounded bg-[var(--theme-card-bg)] border border-cordel-master-dark/30 text-cordel-master-dark self-start sm:self-center">
-          {t('costumerie.actuel')} {currentModeObj ? t(currentModeObj.labelKey) : 'Personnel'}
+          {t('costumerie.actuel')} {currentModeObj ? (t(currentModeObj.labelKey) || currentModeObj.label) : (t('settings.modules.wardrobeMemberModeCard.personnel') || 'Personnel')}
         </span>
       </div>
 
@@ -88,7 +97,7 @@ export default function WardrobeMemberModeCard({ formData = {}, handleChange, sa
                   <span className="text-xl">{mode.icon}</span>
                   <div className="flex items-center gap-1.5">
                     <span className={`theme-stamp-badge text-[8px] uppercase tracking-wider ${mode.tagClass}`}>
-                      {mode.badge}
+                      {mode.badgeKey ? (t(mode.badgeKey) || mode.badge) : mode.badge}
                     </span>
                     <input
                       type="radio"
@@ -104,17 +113,17 @@ export default function WardrobeMemberModeCard({ formData = {}, handleChange, sa
                 </div>
 
                 <h4 className="text-[11px] font-black uppercase text-encre-noire tracking-wide">
-                  {mode.labelKey ? t(mode.labelKey) : mode.label}
+                  {mode.labelKey ? (t(mode.labelKey) || mode.label) : mode.label}
                 </h4>
 
                 <p className="text-[9.5px] font-semibold text-cordel-master-dark/85 mt-1 leading-snug">
-                  {mode.desc}
+                  {mode.descKey ? (t(mode.descKey) || mode.desc) : mode.desc}
                 </p>
               </div>
 
               {/* Détails complémentaires */}
               <div className="mt-3 pt-2 border-t border-dashed border-cordel-master-dark/15 text-[8.5px] text-cordel-master-dark/70 font-medium leading-relaxed">
-                {mode.details}
+                {mode.detailsKey ? (t(mode.detailsKey) || mode.details) : mode.details}
               </div>
 
               {/* Pastille sélectionné */}

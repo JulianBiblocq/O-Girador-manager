@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from '../../LanguageContext';
 import CordelCard from '../../CordelCard';
 import {
   DEFAULT_MARACATU_NOMENCLATURE,
@@ -10,11 +11,12 @@ import {
  * Accordéon compact pour la nomenclature des tambours et pupitres de la troupe.
  */
 export default function TamboursNamingAccordion({ formData = {}, handleChange, saving }) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
 
   const maracatuNom = formData.nomenclature?.maracatu || formData.nomenclature || DEFAULT_MARACATU_NOMENCLATURE;
   const currentPresetId = formData.nomenclaturePreset || 'traditional_baque_virado';
-  const currentPreset = PRESET_NOMENCLATURES.find(p => p.id === currentPresetId) || { label: 'Personnalisé' };
+  const currentPreset = PRESET_NOMENCLATURES.find(p => p.id === currentPresetId) || { label: t('settings.modules.tamboursNamingAccordion.personnalise') || 'Personnalisé' };
 
   const handleSelectPreset = (presetId) => {
     const preset = PRESET_NOMENCLATURES.find(p => p.id === presetId);
@@ -39,10 +41,10 @@ export default function TamboursNamingAccordion({ formData = {}, handleChange, s
         <div className="flex items-center gap-2 text-left">
           <span className="text-sm">🥁</span>
           <span className="text-xs font-black uppercase tracking-wider text-cordel-wood">
-            Nomenclature des Tambours & Pupitres ({currentPreset.label}) {isOpen ? '▲' : '▾'}
+            {t('settings.modules.tamboursNamingAccordion.nomenclatureDesTamboursPupitres') || 'Nomenclature des Tambours & Pupitres ('}{currentPreset.label}) {isOpen ? '▲' : '▾'}
           </span>
           <span className="text-[9px] text-cordel-master-dark/60 font-semibold hidden sm:inline">
-            (Alfaias, caisses, cloches, voix...)
+            {t('settings.modules.tamboursNamingAccordion.alfaiasCaissesClochesVoix') || '(Alfaias, caisses, cloches, voix...)'}
           </span>
         </div>
 
@@ -50,7 +52,7 @@ export default function TamboursNamingAccordion({ formData = {}, handleChange, s
           type="button"
           className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded border border-encre-noire/30 bg-white hover:bg-stone-50 text-encre-noire transition-all cursor-pointer shadow-2xs"
         >
-          {isOpen ? 'Fermer' : 'Ajuster'}
+          {isOpen ? (t('settings.modules.tamboursNamingAccordion.fermer') || 'Fermer') : (t('settings.modules.tamboursNamingAccordion.ajuster') || 'Ajuster')}
         </button>
       </div>
 
@@ -59,7 +61,7 @@ export default function TamboursNamingAccordion({ formData = {}, handleChange, s
           {/* Sélection rapide du preset */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-dashed border-stone-200">
             <span className="text-[10px] font-black uppercase tracking-wider text-cordel-wood">
-              Tradition & Présélection Rapide
+              {t('settings.modules.tamboursNamingAccordion.traditionPreselectionRapide') || 'Tradition & Présélection Rapide'}
             </span>
             <div className="flex flex-wrap gap-1.5">
               {PRESET_NOMENCLATURES.map(p => (

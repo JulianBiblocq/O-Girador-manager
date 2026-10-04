@@ -811,6 +811,10 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
         voeuxInstruments: []
       };
 
+      if (member.isNew) {
+        updatePayload.isNew = false;
+      }
+
       const secInst = member.instrumentSecondaire || '';
       updatePayload.instrumentsJoues = Array.from(new Set([targetPupitre, secInst].filter(Boolean)));
 
@@ -1240,9 +1244,10 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                   const isLegacySecours = m.disponibleSecours && !m.dispoSecoursInstruments;
                   const isDispoMain = (m.dispoSecoursInstruments || []).includes(mainInst) || isLegacySecours;
                   const isAssigned = isPercussionist && !isUnassigned;
-                  const wishesList = Array.isArray(m.voeuxInstruments) && m.voeuxInstruments.length > 0
-                    ? m.voeuxInstruments.filter(w => w && !w.toLowerCase().includes('danse'))
-                    : [m.voeuPrincipal, m.voeuSecondaire, m.voeuTertiaire].filter(w => w && !w.toLowerCase().includes('danse'));
+                  const rawWishes = (Array.isArray(m.voeuxInstruments) && m.voeuxInstruments.length > 0)
+                    ? m.voeuxInstruments.map(w => typeof w === 'string' ? w : w?.instrument)
+                    : [m.voeuPrincipal, m.voeuSecondaire, m.voeuTertiaire];
+                  const wishesList = rawWishes.filter(w => w && typeof w === 'string' && !w.toLowerCase().includes('danse'));
                   const hasWishes = isPercussionist && wishesList.length > 0;
 
                   return (
@@ -1261,6 +1266,14 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                           <div className="flex flex-col">
                             <span className="font-extrabold text-xs text-cordel-master-dark flex items-center gap-1 flex-wrap">
                               {name}
+                              {m.isNew && (
+                                <span
+                                  className="text-[8px] font-black uppercase px-1.5 py-0.2 rounded bg-amber-500 text-white border border-encre-noire animate-pulse shadow-xs"
+                                  title="Nouveau membre post-essai en attente de validation"
+                                >
+                                  🆕 Post-essai
+                                </span>
+                              )}
                               <button
                                 type="button"
                                 onClick={() => handleSendPM(m)}

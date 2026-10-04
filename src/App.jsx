@@ -26,6 +26,7 @@ import { useTenantContext } from './context/TenantContext';
 import TenantNotFound from './components/TenantNotFound';
 import { DEFAULT_VARAL_CATEGORIES } from './hooks/useAssociationSettings';
 import { canonicalizeGroupId, isSameGroupCaseInsensitive } from './utils/tenantUtils';
+import { reconcilePreExistingMember } from './services/memberService';
 import { isDemoMode, initDemoSession, getDemoAuthUser, getDemoProfileData } from './demo/demoManager';
 import { DEMO_GROUP_ID } from './data/demoData';
 import DemoTopBanner from './components/demo/DemoTopBanner';
@@ -1175,8 +1176,25 @@ export default function App() {
                 });
               }
             } else {
-              setProfileData(null);
-              setProfileExists(false);
+              // Réconciliation automatique : vérifier si une fiche membre pré-existante créée par le Bureau correspond à cet e-mail
+              if (currentUser?.email) {
+                reconcilePreExistingMember(currentUser).then((reconciled) => {
+                  if (reconciled) {
+                    console.info("App - Fiche pré-existante Bureau réconciliée pour l'UID :", currentUser.uid);
+                    // L'écouteur onSnapshot va automatiquement recevoir le nouveau document créé
+                  } else {
+                    setProfileData(null);
+                    setProfileExists(false);
+                  }
+                }).catch((err) => {
+                  console.warn("App - Erreur réconciliation automatique :", err);
+                  setProfileData(null);
+                  setProfileExists(false);
+                });
+              } else {
+                setProfileData(null);
+                setProfileExists(false);
+              }
             }
             setCheckingProfile(false);
             setLoading(false);
@@ -2064,6 +2082,7 @@ export default function App() {
               tagsDisponibles={tagsDisponibles}
               isBirthdayMonth={isUserBirthdayMonth}
               enableIndividualProgression={associationData?.enableIndividualProgression || false}
+              features={features}
             >
               <React.Suspense fallback={
                 <div className="flex-1 flex flex-col justify-center items-center py-12">

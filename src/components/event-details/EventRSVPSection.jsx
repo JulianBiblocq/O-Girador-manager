@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import XiloAvatar from '../XiloAvatar';
@@ -11,6 +11,7 @@ import { getInstrumentIconPath } from '../../utils/instrumentUtils';
 import LateCancellationModal from '../agenda/LateCancellationModal';
 import LateRegistrationModal from '../agenda/LateRegistrationModal';
 import { useTranslation } from '../LanguageContext';
+import { checkRegistrationDeadlinePassed } from '../../hooks/useEventRSVP';
 
 export default function EventRSVPSection({
   event,
@@ -85,6 +86,11 @@ export default function EventRSVPSection({
   const [inviteInstrument, setInviteInstrument] = useState('');
   const [addingInvite, setAddingInvite] = useState(false);
   const [isCalendarMenuOpen, setIsCalendarMenuOpen] = useState(false);
+
+  // Calcul dynamique et réactif du dépassement de la date limite ou heure de début
+  const isDeadlinePassed = useMemo(() => {
+    return checkRegistrationDeadlinePassed(event);
+  }, [event?.dateLimiteInscription, event?.date, event?.dateDebut]);
 
   // État des accordéons de présence réservés aux administrateurs (repliés par défaut)
   const [expandedSections, setExpandedSections] = useState({
@@ -256,7 +262,7 @@ export default function EventRSVPSection({
             )}
           </div>
         </div>
-      ) : isRegistrationDeadlinePassed && !isAuthorized ? (
+      ) : isDeadlinePassed && !isAuthorized ? (
         <div className="flex flex-col gap-4">
           <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col gap-4 text-center">
             <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood text-left">
@@ -431,9 +437,36 @@ export default function EventRSVPSection({
       ) : (
         <form onSubmit={handleSave} className="flex flex-col gap-4">
           <CordelCard variant="default" useExtremeBorder={false} className="flex flex-col gap-4">
-            <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood">
-              {tr('agenda.myRsvp') || "Votre présence"}
-            </h4>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood">
+                {tr('agenda.myRsvp') || "Votre présence"}
+              </h4>
+              {existingResponse && (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] font-bold text-cordel-master-dark/70">
+                    {tr('agenda.currentStatus') || "Statut enregistré :"}
+                  </span>
+                  <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-black ${
+                    existingResponse.status === 'present'
+                      ? 'theme-bg-vert text-white shadow-xs'
+                      : existingResponse.status === 'absent'
+                      ? 'bg-cordel-wood text-white shadow-xs'
+                      : 'theme-bg-ocre text-white shadow-xs'
+                  }`}>
+                    {existingResponse.status === 'present'
+                      ? `✓ ${tr('agenda.present') || 'Présent'}`
+                      : existingResponse.status === 'absent'
+                      ? `✕ ${tr('agenda.absent') || 'Absent'}`
+                      : `⏳ ${tr('agenda.confirm') || 'À confirmer'}`}
+                  </span>
+                  {existingResponse.instrumentChoisi && (
+                    <span className="text-[10px] font-semibold text-cordel-master-dark/80">
+                      ({existingResponse.instrumentChoisi})
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
             
             {/* Multi-Member Family RSVP Section */}
             {familyMembers.length > 1 && (

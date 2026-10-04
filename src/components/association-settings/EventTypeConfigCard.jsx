@@ -5,6 +5,7 @@
  */
 
 import React from 'react';
+import { useTranslation } from '../LanguageContext';
 import {
   getEventTypeEmoji,
   resolveTypeEffectiveConfig,
@@ -26,6 +27,7 @@ export default function EventTypeConfigCard({
   isExpanded = false,
   onToggleExpand
 }) {
+  const { t } = useTranslation();
   const config = resolveTypeEffectiveConfig(type, rawConfig);
   const emoji = getEventTypeEmoji(type);
   const summaryText = buildConfigSummary(config);
@@ -106,7 +108,8 @@ export default function EventTypeConfigCard({
             onClick={onToggleExpand}
             className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded border border-encre-noire/40 bg-white hover:bg-neutral-100 text-encre-noire shadow-xs cursor-pointer transition-colors select-none flex items-center gap-1"
           >
-            <span>⚙️ {isExpanded ? 'Fermer ▲' : 'Configurer ▾'}</span>
+            {/* Configurer ▾ */}
+            <span>⚙️ {isExpanded ? t('settings.agenda.eventTypeConfigCard.fermer') : t('settings.agenda.eventTypeConfigCard.configurer')}</span>
           </button>
 
           <button
@@ -114,8 +117,8 @@ export default function EventTypeConfigCard({
             onClick={() => onRemoveType(type)}
             disabled={saving}
             className="p-1 px-2 text-[10px] font-black rounded border border-red-300 bg-red-50 text-[var(--color-cordel-rouge,#8b2a1a)] hover:bg-red-100 hover:border-red-500 cursor-pointer transition-colors select-none"
-            title={`Supprimer le type "${type}"`}
-            aria-label={`Supprimer ${type}`}
+            title={t('settings.agenda.eventTypeConfigCard.supprimerLeTypeParam', { param: type })}
+            aria-label={t('settings.agenda.eventTypeConfigCard.supprimerParam', { param: type })}
           >
             ✕
           </button>
@@ -129,7 +132,7 @@ export default function EventTypeConfigCard({
           <div>
             <h4 className="text-[10px] font-black uppercase tracking-wider text-cordel-wood mb-2 border-b border-dashed border-cordel-master-dark/15 pb-1 flex items-center gap-1.5">
               <span>📦</span>
-              <span>Modules & Outils activés par défaut</span>
+              <span>{t('settings.agenda.eventTypeConfigCard.modulesOutilsActivesParDefaut')}</span>
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 text-xs font-semibold select-none">
               <label className="flex items-center gap-2 p-1.5 rounded hover:bg-black/5 cursor-pointer">
@@ -140,9 +143,10 @@ export default function EventTypeConfigCard({
                   disabled={saving}
                   className="w-4 h-4 accent-amber-600 rounded cursor-pointer shrink-0"
                 />
-                <span className="text-[11px] leading-snug">📄 Feuille de route (Roadbook)</span>
+                <span className="text-[11px] leading-snug">{t('settings.agenda.eventTypeConfigCard.feuilleDeRouteRoadbook')}</span>
               </label>
 
+              {/* Boîte Photos (QR Code) */}
               <label className="flex items-center gap-2 p-1.5 rounded hover:bg-black/5 cursor-pointer">
                 <input
                   type="checkbox"
@@ -151,7 +155,7 @@ export default function EventTypeConfigCard({
                   disabled={saving}
                   className="w-4 h-4 accent-amber-600 rounded cursor-pointer shrink-0"
                 />
-                <span className="text-[11px] leading-snug">📸 Boîte Photos (QR Code)</span>
+                <span className="text-[11px] leading-snug">{t('settings.agenda.eventTypeConfigCard.boitePhotosQrCode')}</span>
               </label>
 
               <label className="flex items-center gap-2 p-1.5 rounded hover:bg-black/5 cursor-pointer">
@@ -162,7 +166,7 @@ export default function EventTypeConfigCard({
                   disabled={saving}
                   className="w-4 h-4 accent-amber-600 rounded cursor-pointer shrink-0"
                 />
-                <span className="text-[11px] leading-snug">📹 Dépôt de vidéos</span>
+                <span className="text-[11px] leading-snug">{t('settings.agenda.eventTypeConfigCard.depotDeVideos')}</span>
               </label>
 
               <label className="flex items-center gap-2 p-1.5 rounded hover:bg-black/5 cursor-pointer">
@@ -173,7 +177,7 @@ export default function EventTypeConfigCard({
                   disabled={saving}
                   className="w-4 h-4 accent-amber-600 rounded cursor-pointer shrink-0"
                 />
-                <span className="text-[11px] leading-snug">📐 Plan de scène</span>
+                <span className="text-[11px] leading-snug">{t('settings.agenda.eventTypeConfigCard.planDeScene')}</span>
               </label>
 
               <label className="flex items-center gap-2 p-1.5 rounded hover:bg-black/5 cursor-pointer">
@@ -184,7 +188,7 @@ export default function EventTypeConfigCard({
                   disabled={saving}
                   className="w-4 h-4 accent-amber-600 rounded cursor-pointer shrink-0"
                 />
-                <span className="text-[11px] leading-snug">🎵 Programme / Séquenceur</span>
+                <span className="text-[11px] leading-snug">{t('settings.agenda.eventTypeConfigCard.programmeSequenceur')}</span>
               </label>
 
               <label className="flex items-center gap-2 p-1.5 rounded hover:bg-black/5 cursor-pointer">
@@ -195,7 +199,7 @@ export default function EventTypeConfigCard({
                   disabled={saving}
                   className="w-4 h-4 accent-amber-600 rounded cursor-pointer shrink-0"
                 />
-                <span className="text-[11px] leading-snug">🚗 Covoiturage actif</span>
+                <span className="text-[11px] leading-snug">{t('settings.agenda.eventTypeConfigCard.covoiturageActif')}</span>
               </label>
 
               <label className="flex items-center gap-2 p-1.5 rounded hover:bg-black/5 cursor-pointer">
@@ -206,7 +210,7 @@ export default function EventTypeConfigCard({
                   disabled={saving}
                   className="w-4 h-4 accent-amber-600 rounded cursor-pointer shrink-0"
                 />
-                <span className="text-[11px] leading-snug">🥁 Section Percussion</span>
+                <span className="text-[11px] leading-snug">{t('settings.agenda.eventTypeConfigCard.sectionPercussion')}</span>
               </label>
 
               <label className="flex items-center gap-2 p-1.5 rounded hover:bg-black/5 cursor-pointer">
@@ -217,7 +221,7 @@ export default function EventTypeConfigCard({
                   disabled={saving}
                   className="w-4 h-4 accent-amber-600 rounded cursor-pointer shrink-0"
                 />
-                <span className="text-[11px] leading-snug">💃 Section Danse</span>
+                <span className="text-[11px] leading-snug">{t('settings.agenda.eventTypeConfigCard.sectionDanse')}</span>
               </label>
 
               <label className="flex items-center gap-2 p-1.5 rounded hover:bg-black/5 cursor-pointer">
@@ -228,7 +232,7 @@ export default function EventTypeConfigCard({
                   disabled={saving}
                   className="w-4 h-4 accent-amber-600 rounded cursor-pointer shrink-0"
                 />
-                <span className="text-[11px] leading-snug">🎪 Activer les commissions par défaut</span>
+                <span className="text-[11px] leading-snug">{t('settings.agenda.eventTypeConfigCard.activerLesCommissionsParDefaut')}</span>
               </label>
             </div>
           </div>
@@ -237,7 +241,7 @@ export default function EventTypeConfigCard({
           <div className="pb-3">
             <h4 className="text-[10px] font-black uppercase tracking-wider text-cordel-wood mb-2 border-b border-dashed border-cordel-master-dark/15 pb-1 flex items-center gap-1.5">
               <span>👥</span>
-              <span>Inscriptions & Délais</span>
+              <span>{t('settings.agenda.eventTypeConfigCard.inscriptionsDelais')}</span>
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-stretch select-none">
               <label className="flex items-start gap-2.5 p-3 rounded bg-cordel-bg-light/50 border border-cordel-master-dark/20 cursor-pointer min-h-[90px]">
@@ -250,10 +254,10 @@ export default function EventTypeConfigCard({
                 />
                 <div className="flex flex-col text-left">
                   <span className="text-[11px] font-bold text-encre-noire">
-                    🔒 Validation obligatoire par un administrateur
+                    {t('settings.agenda.eventTypeConfigCard.validationObligatoireParUnAdministrateur')}
                   </span>
                   <span className="text-[9.5px] text-neutral-500 font-medium leading-relaxed mt-0.5">
-                    Les inscriptions des membres sont placées « En attente » tant qu'un admin ne les a pas confirmées.
+                    {t('settings.agenda.eventTypeConfigCard.lesInscriptionsDesMembresSont')}
                   </span>
                 </div>
               </label>
@@ -262,24 +266,24 @@ export default function EventTypeConfigCard({
                 <div>
                   <label className="text-[10px] font-bold uppercase tracking-wider text-encre-noire flex items-center gap-1">
                     <span>⏳</span>
-                    <span>Délai limite d'inscription (avant l'événement)</span>
+                    <span>{t('settings.agenda.eventTypeConfigCard.delaiLimiteDInscriptionAvant')}</span>
                   </label>
                   <div className="flex items-center gap-2 mt-1.5">
                     <input
                       type="number"
                       min="0"
                       step="1"
-                      placeholder="Ex: 48 (clôture 48h avant)"
+                      placeholder={t('settings.agenda.eventTypeConfigCard.ex48Cloture48hAvant')}
                       value={config.defaultDeadlineHours ?? ''}
                       onChange={(e) => handleDeadlineChange(e.target.value)}
                       disabled={saving}
                       className="theme-input text-xs font-bold py-1.5 px-2 bg-white w-36 border border-cordel-master-dark/30 rounded"
                     />
-                    <span className="text-[10px] text-stone-600 font-bold">heures avant</span>
+                    <span className="text-[10px] text-stone-600 font-bold">{t('settings.agenda.eventTypeConfigCard.heuresAvant')}</span>
                   </div>
                 </div>
                 <span className="text-[9px] text-neutral-500 leading-tight">
-                  Laissez vide ou 0 pour ne pas imposer de date limite automatique lors de la création.
+                  {t('settings.agenda.eventTypeConfigCard.laissezVideOu0Pour')}
                 </span>
               </div>
             </div>
@@ -289,7 +293,7 @@ export default function EventTypeConfigCard({
           <div>
             <h4 className="text-[10px] font-black uppercase tracking-wider text-cordel-wood mb-2 border-b border-dashed border-cordel-master-dark/15 pb-1 flex items-center gap-1.5">
               <span>☁️</span>
-              <span>Lien Cloud & Dépôt par défaut (Optionnel)</span>
+              <span>{t('settings.agenda.eventTypeConfigCard.lienCloudDepotParDefaut')}</span>
             </h4>
             <div className="flex flex-col gap-1">
               <input
@@ -301,7 +305,7 @@ export default function EventTypeConfigCard({
                 className="theme-input text-xs font-semibold py-1.5 px-2 bg-white w-full"
               />
               <span className="text-[9px] text-neutral-500">
-                Pré-remplit automatiquement le lien de téléversement (photos/vidéos) lors de la création d'un événement de type « {type} ».
+                {t('settings.agenda.eventTypeConfigCard.preRemplitAutomatiquementLeLien')} « {type} ».
               </span>
             </div>
           </div>

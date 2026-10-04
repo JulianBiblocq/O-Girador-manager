@@ -37,7 +37,7 @@ export default function CarpoolBlock({ formData = {}, handleChange, saving = fal
           </div>
         ) : (
           <div className="p-4 text-center text-xs font-bold text-cordel-master-dark/60 bg-cordel-bg-light border border-dashed border-cordel-master-dark/20 rounded">
-            Groupe non spécifié pour afficher la flotte de véhicules.
+            {t('settings.agenda.carpoolBlock.groupeNonSpecifiePourAfficher')}
           </div>
         )}
 

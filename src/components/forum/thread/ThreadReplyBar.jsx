@@ -222,7 +222,7 @@ export default function ThreadReplyBar({
                     <span className="truncate">Pièce jointe / Photo</span>
                   </button>
 
-                  {/* 3. Options avancées / Sondage */}
+                  {/* 3. Options avancées / Formatage */}
                   <button
                     type="button"
                     onClick={() => {
@@ -235,7 +235,22 @@ export default function ThreadReplyBar({
                     <span className="truncate">Formatage enrichi</span>
                   </button>
 
-                  {/* 4. Micro / Dictée vocale */}
+                  {/* 4. Sondage */}
+                  {onOpenAddPoll && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMobileToolsOpen(false);
+                        onOpenAddPoll();
+                      }}
+                      className="flex items-center gap-2.5 p-1.5 rounded hover:bg-neutral-200/60 dark:hover:bg-neutral-800/60 transition-colors text-left w-full cursor-pointer text-xs font-bold text-encre-noire"
+                    >
+                      <span className="text-sm shrink-0">📊</span>
+                      <span className="truncate">Sondage</span>
+                    </button>
+                  )}
+
+                  {/* 5. Micro / Dictée vocale */}
                   <div className="flex items-center justify-between p-1.5 rounded hover:bg-neutral-200/60 dark:hover:bg-neutral-800/60 transition-colors">
                     <span className="text-xs font-bold text-encre-noire flex items-center gap-2.5">
                       <span className="text-sm shrink-0">🎙️</span>
@@ -290,6 +305,19 @@ export default function ThreadReplyBar({
               >
                 😀
               </button>
+
+              {/* Bouton Sondage */}
+              {onOpenAddPoll && (
+                <button
+                  type="button"
+                  onClick={onOpenAddPoll}
+                  className="h-7 px-1.5 flex items-center gap-1 font-black text-xs text-cordel-wood hover:text-encre-noire bg-cordel-bg hover:bg-white rounded border border-cordel-master-dark/30 cursor-pointer shrink-0 transition-all mb-0.5 shadow-xs"
+                  title="Créer un sondage"
+                >
+                  <span>📊</span>
+                  <span className="text-[9.5px] uppercase tracking-wider hidden lg:inline">Sondage</span>
+                </button>
+              )}
 
               {/* Dictée vocale au microphone */}
               <div className="mb-0.5">
@@ -430,17 +458,29 @@ export default function ThreadReplyBar({
             lienDepotForum={lienDepotForum}
             allUsers={allUsers}
             minHeight="85px"
-            onAddPoll={(!thread?.poll && (user?.uid === thread?.auteurId || isModeratorOrAdmin)) ? onOpenAddPoll : null}
+            onAddPoll={onOpenAddPoll}
           />
 
           <div className="flex justify-between items-center pt-1 border-t border-dashed border-cordel-master-dark/15">
-            <button
-              type="button"
-              onClick={() => setIsReplyExpanded(false)}
-              className="text-[10px] font-bold text-cordel-master-dark hover:underline cursor-pointer"
-            >
-              Mode compact
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsReplyExpanded(false)}
+                className="text-[10px] font-bold text-cordel-master-dark hover:underline cursor-pointer"
+              >
+                Mode compact
+              </button>
+              {onOpenAddPoll && (
+                <button
+                  type="button"
+                  onClick={onOpenAddPoll}
+                  className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-cordel-wood hover:text-encre-noire bg-cordel-bg hover:bg-white rounded border border-cordel-master-dark/30 cursor-pointer transition-all flex items-center gap-1 shadow-xs"
+                >
+                  <span>📊</span>
+                  <span>Sondage</span>
+                </button>
+              )}
+            </div>
             <CordelButton
               variant="ocre"
               useExtremeBorder={true}

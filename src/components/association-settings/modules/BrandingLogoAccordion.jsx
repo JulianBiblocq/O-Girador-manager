@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from '../../LanguageContext';
 import CordelCard from '../../CordelCard';
 
 /**
@@ -12,6 +13,7 @@ export default function BrandingLogoAccordion({
   uploadingLogo,
   saving
 }) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const { branding = {} } = formData;
   const colors = branding.colors || {
@@ -36,14 +38,14 @@ export default function BrandingLogoAccordion({
         <div className="flex items-center gap-2 text-left">
           <span className="text-sm">🎨</span>
           <span className="text-xs font-black uppercase tracking-wider text-cordel-wood">
-            Identité Visuelle & Logo Officiel {isOpen ? '▲' : '▾'}
+            {t('settings.modules.brandingLogoAccordion.identiteVisuelleLogoOfficiel') || 'Identité Visuelle & Logo Officiel'} {isOpen ? '▲' : '▾'}
           </span>
           <div className="flex items-center gap-1.5 ml-2">
             {branding.logoUrl && (
-              <img src={branding.logoUrl} alt="Logo" className="w-5 h-5 object-contain rounded bg-white border border-stone-300" />
+              <img src={branding.logoUrl} alt={t('settings.modules.brandingLogoAccordion.logo') || "Logo"} className="w-5 h-5 object-contain rounded bg-white border border-stone-300" />
             )}
-            <span className="w-3.5 h-3.5 rounded-full border border-stone-400" style={{ backgroundColor: colors.primary }} title="Couleur primaire" />
-            <span className="w-3.5 h-3.5 rounded-full border border-stone-400" style={{ backgroundColor: colors.secondary }} title="Couleur secondaire" />
+            <span className="w-3.5 h-3.5 rounded-full border border-stone-400" style={{ backgroundColor: colors.primary }} title={t('settings.modules.brandingLogoAccordion.couleurPrimaire') || "Couleur primaire"} />
+            <span className="w-3.5 h-3.5 rounded-full border border-stone-400" style={{ backgroundColor: colors.secondary }} title={t('settings.modules.brandingLogoAccordion.couleurSecondaire') || "Couleur secondaire"} />
           </div>
         </div>
 
@@ -51,7 +53,7 @@ export default function BrandingLogoAccordion({
           type="button"
           className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded border border-encre-noire/30 bg-white hover:bg-stone-50 text-encre-noire transition-all cursor-pointer shadow-2xs"
         >
-          {isOpen ? 'Fermer' : 'Personnaliser'}
+          {isOpen ? (t('settings.modules.brandingLogoAccordion.fermer') || 'Fermer') : (t('settings.modules.brandingLogoAccordion.personnaliser') || 'Personnaliser')}
         </button>
       </div>
 
@@ -60,15 +62,15 @@ export default function BrandingLogoAccordion({
           {/* Logo officiel */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 pb-3 border-b border-dashed border-stone-200">
             {branding.logoUrl ? (
-              <img src={branding.logoUrl} alt="Logo" className="w-14 h-14 object-contain border border-stone-300 rounded bg-white p-1 shrink-0" />
+              <img src={branding.logoUrl} alt={t('settings.modules.brandingLogoAccordion.logo') || "Logo"} className="w-14 h-14 object-contain border border-stone-300 rounded bg-white p-1 shrink-0" />
             ) : (
               <div className="w-14 h-14 border border-dashed border-stone-300 rounded flex items-center justify-center text-[10px] text-stone-400 font-bold bg-white shrink-0">
-                Aucun
+                {t('settings.modules.brandingLogoAccordion.aucun') || 'Aucun'}
               </div>
             )}
             <div className="flex-1 flex flex-col gap-1">
               <span className="text-[10px] font-extrabold uppercase text-cordel-master-dark">
-                Remplacer le Logo (SVG ou PNG transparent)
+                {t('settings.modules.brandingLogoAccordion.remplacerLeLogoSvgOu') || 'Remplacer le Logo (SVG ou PNG transparent)'}
               </span>
               <input 
                 type="file" 
@@ -78,10 +80,10 @@ export default function BrandingLogoAccordion({
                 className="text-[9px] font-bold cursor-pointer"
               />
               {logoFile && (
-                <span className="text-[9px] text-emerald-700 font-bold">✓ Fichier prêt : {logoFile.name}</span>
+                <span className="text-[9px] text-emerald-700 font-bold">{t('settings.modules.brandingLogoAccordion.fichierPret') || '✓ Fichier prêt :'} {logoFile.name}</span>
               )}
               {uploadingLogo && (
-                <span className="text-[9px] text-cordel-wood animate-pulse font-bold">Envoi du logo en cours...</span>
+                <span className="text-[9px] text-cordel-wood animate-pulse font-bold">{t('settings.modules.brandingLogoAccordion.envoiDuLogoEnCours') || 'Envoi du logo en cours...'}</span>
               )}
             </div>
           </div>
@@ -89,7 +91,7 @@ export default function BrandingLogoAccordion({
           {/* Palette de couleurs */}
           <div className="flex flex-col gap-2">
             <span className="text-[10px] font-black uppercase tracking-wider text-cordel-wood">
-              Charte Graphique de l'Association
+              {t('settings.modules.brandingLogoAccordion.charteGraphiqueDeLAssociation') || "Charte Graphique de l'Association"}
             </span>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs font-bold text-stone-700">
               <div className="flex items-center gap-2 p-1.5 rounded bg-white border border-stone-200">
@@ -100,7 +102,7 @@ export default function BrandingLogoAccordion({
                   disabled={saving}
                   className="w-7 h-7 cursor-pointer rounded border"
                 />
-                <span className="text-[10px]">Primaire</span>
+                <span className="text-[10px]">{t('settings.modules.brandingLogoAccordion.primaire') || 'Primaire'}</span>
               </div>
 
               <div className="flex items-center gap-2 p-1.5 rounded bg-white border border-stone-200">
@@ -111,7 +113,7 @@ export default function BrandingLogoAccordion({
                   disabled={saving}
                   className="w-7 h-7 cursor-pointer rounded border"
                 />
-                <span className="text-[10px]">Secondaire</span>
+                <span className="text-[10px]">{t('settings.modules.brandingLogoAccordion.secondaire') || 'Secondaire'}</span>
               </div>
 
               <div className="flex items-center gap-2 p-1.5 rounded bg-white border border-stone-200">
@@ -122,7 +124,7 @@ export default function BrandingLogoAccordion({
                   disabled={saving}
                   className="w-7 h-7 cursor-pointer rounded border"
                 />
-                <span className="text-[10px]">Arrière-plan</span>
+                <span className="text-[10px]">{t('settings.modules.brandingLogoAccordion.arrierePlan') || 'Arrière-plan'}</span>
               </div>
 
               <div className="flex items-center gap-2 p-1.5 rounded bg-white border border-stone-200">
@@ -133,7 +135,7 @@ export default function BrandingLogoAccordion({
                   disabled={saving}
                   className="w-7 h-7 cursor-pointer rounded border"
                 />
-                <span className="text-[10px]">Texte</span>
+                <span className="text-[10px]">{t('settings.modules.brandingLogoAccordion.texte') || 'Texte'}</span>
               </div>
             </div>
           </div>

@@ -1219,8 +1219,8 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
     });
   }
 
-  // Date parsing for visual header
-  const isRegistrationDeadlinePassed = checkRegistrationDeadlinePassed(targetEvent.dateLimiteInscription);
+  // Calcul du dépassement de la date limite ou heure de début d'événement
+  const isRegistrationDeadlinePassed = checkRegistrationDeadlinePassed(targetEvent);
 
   const eventType = targetEvent.type || 'repetition';
   const rawCurrentConfig = eventTypeConfigs[eventType] || {};

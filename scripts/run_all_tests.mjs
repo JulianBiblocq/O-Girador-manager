@@ -120,7 +120,14 @@ const testScripts = [
   'scripts/test_studio_lot2_i18n.mjs',
   'scripts/test_vitrine_admin_i18n.mjs',
   'scripts/test_vitrine_tab_compartmentalization.mjs',
-  'scripts/test_pole_guides_double_view.mjs'
+  'scripts/test_pole_guides_double_view.mjs',
+  'scripts/test_config_lot1_i18n.mjs',
+  'scripts/test_config_lot2_i18n.mjs',
+  'scripts/test_rsvp_deadline_interactivity.mjs',
+  'scripts/test_forum_multi_polls.mjs',
+  'scripts/test_repertoire_member_sidebar.mjs',
+  'scripts/test_view_simulator_overflow_layout.mjs',
+  'scripts/test_help_bubbles_click_only.mjs'
 ];
 
 console.log("===============================================================");

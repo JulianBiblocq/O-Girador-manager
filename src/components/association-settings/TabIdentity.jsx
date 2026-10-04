@@ -5,6 +5,7 @@ import LegalInfoAccordion from './identity/LegalInfoAccordion';
 import OfficialSignaturesAccordion from './identity/OfficialSignaturesAccordion';
 import BankDetailsAccordion from './identity/BankDetailsAccordion';
 import BureauMestriaAccordion from './identity/BureauMestriaAccordion';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Pôle Configuration - Onglet Identité Légale & Juridique.
@@ -22,6 +23,8 @@ export default function TabIdentity({
   t,
   onReopenOnboarding
 }) {
+  const { t: tHook } = useTranslation();
+  const tFunc = t || tHook;
   return (
     <div className="flex flex-col gap-4 text-left select-none">
       {/* 1. Encart d'en-tête : Abonnement SaaS & Invitation Groupe */}
@@ -34,12 +37,12 @@ export default function TabIdentity({
       {/* 2. Dénomination officielle & Nom court / Sigle de l'Association */}
       <CordelCard variant="default" useExtremeBorder={true} className="p-4">
         <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3 flex items-center gap-2">
-          <span>🏛️</span> Dénomination & Sigle de l'Association
+          <span>🏛️</span> {tFunc('settings.identity.tabIdentity.denominationSigleDeLAssociation')}
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="sm:col-span-2 flex flex-col gap-1">
             <label htmlFor="nom" className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
-              Nom Officiel Complet de l'Association *
+              {tFunc('settings.identity.tabIdentity.nomOfficielCompletDeL')}
             </label>
             <input
               id="nom"
@@ -48,14 +51,14 @@ export default function TabIdentity({
               value={formData.nom || ''}
               onChange={(e) => handleChange('nom', e.target.value)}
               disabled={saving}
-              placeholder="ex: Associação Cultural Samambaia"
+              placeholder={tFunc('settings.identity.tabIdentity.exAssociacaoCulturalSamambaia')}
               className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
             />
           </div>
 
           <div className="flex flex-col gap-1">
             <label htmlFor="shortName" className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
-              Nom court / Sigle *
+              {tFunc('settings.identity.tabIdentity.nomCourtSigle')}
             </label>
             <input
               id="shortName"
@@ -64,7 +67,7 @@ export default function TabIdentity({
               value={formData.shortName || ''}
               onChange={(e) => handleChange('shortName', e.target.value)}
               disabled={saving}
-              placeholder="ex: Samambaia"
+              placeholder={tFunc('settings.identity.tabIdentity.exSamambaia')}
               className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
             />
           </div>

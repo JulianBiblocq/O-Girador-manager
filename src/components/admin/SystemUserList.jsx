@@ -220,15 +220,33 @@ export default function SystemUserList({
                   {userItem.email}
                 </span>
                 <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
-                  {(userItem.instrument || userItem.instrumentPrincipal) ? (
+                  {(userItem.instrument || userItem.instrumentPrincipal) && (
                     <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] px-1.5 py-0.2 normal-case tracking-normal">
                       🥁 {userItem.instrument || userItem.instrumentPrincipal}
                     </span>
-                  ) : (userItem.voeuPrincipal || userItem.voeuxInstruments?.[0]) ? (
-                    <span className="text-[8px] font-bold text-amber-800 bg-amber-100 dark:bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-400/40">
-                      ⏳ Vœu : {userItem.voeuPrincipal || userItem.voeuxInstruments?.[0]}
-                    </span>
-                  ) : null}
+                  )}
+                  {/* Badges discrets pour chaque vœu formulé par l'adhérent */}
+                  {(() => {
+                    const wishes = [
+                      userItem.voeuPrincipal || (Array.isArray(userItem.voeuxInstruments) ? (typeof userItem.voeuxInstruments[0] === 'string' ? userItem.voeuxInstruments[0] : userItem.voeuxInstruments[0]?.instrument) : null),
+                      userItem.voeuSecondaire || (Array.isArray(userItem.voeuxInstruments) ? (typeof userItem.voeuxInstruments[1] === 'string' ? userItem.voeuxInstruments[1] : userItem.voeuxInstruments[1]?.instrument) : null),
+                      userItem.voeuTertiaire || (Array.isArray(userItem.voeuxInstruments) ? (typeof userItem.voeuxInstruments[2] === 'string' ? userItem.voeuxInstruments[2] : userItem.voeuxInstruments[2]?.instrument) : null)
+                    ].filter(Boolean);
+
+                    // Afficher les vœux si le membre n'a pas encore d'instrument attribué ou s'il s'agit d'un nouveau membre
+                    if (wishes.length > 0 && (!userItem.instrument && !userItem.instrumentPrincipal || isNewMember)) {
+                      return wishes.map((wish, idx) => (
+                        <span
+                          key={idx}
+                          className="text-[8px] font-bold text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-400/40"
+                          title={`Vœu ${idx + 1} de l'adhérent`}
+                        >
+                          Vœu {idx + 1} : {wish}
+                        </span>
+                      ));
+                    }
+                    return null;
+                  })()}
                   {(userItem.pratiqueDanse === true || (userItem.niveauDanse && userItem.niveauDanse !== 'aucun')) && (
                     <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] px-1.5 py-0.2 normal-case tracking-normal">
                       💃 Danse {userItem.niveauDanse && userItem.niveauDanse !== 'aucun' ? `(${userItem.niveauDanse})` : ''}

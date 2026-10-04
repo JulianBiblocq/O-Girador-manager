@@ -11,8 +11,8 @@ const STORAGE_KEY = 'pole_guide_hidden_mon_parcours';
 export default function MonParcoursGuideBanner() {
   const { t } = useTranslation();
   const [isHidden, setIsHidden] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return localStorage.getItem(STORAGE_KEY) === 'true';
+    if (typeof window === 'undefined') return true;
+    return localStorage.getItem(STORAGE_KEY) !== 'false';
   });
 
   const handleHide = () => {
@@ -29,10 +29,10 @@ export default function MonParcoursGuideBanner() {
   const handleShow = () => {
     try {
       if (typeof window !== 'undefined') {
-        localStorage.removeItem(STORAGE_KEY);
+        localStorage.setItem(STORAGE_KEY, 'false');
       }
     } catch (e) {
-      console.warn("Impossible de réinitialiser la préférence dans localStorage :", e);
+      console.warn("Impossible d'enregistrer la préférence dans localStorage :", e);
     }
     setIsHidden(false);
   };

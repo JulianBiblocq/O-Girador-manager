@@ -79,7 +79,7 @@ export default function PermissionsGuideBox({
         <div className="flex items-center gap-2 p-2 bg-amber-100/50 dark:bg-amber-900/20 border border-dashed border-amber-600/30 rounded text-[11px] font-medium opacity-90">
           <span>ℹ️</span>
           <span>
-            <strong>Note :</strong> {t('guidePermissions.note')}
+            <strong>{t('settings.security.permissionsGuideBox.note')}</strong> {t('guidePermissions.note')}
           </span>
         </div>
       </div>

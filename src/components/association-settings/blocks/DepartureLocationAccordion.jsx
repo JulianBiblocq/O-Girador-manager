@@ -26,6 +26,7 @@ const geocodeByAddress = async (address) => {
 };
 
 function GoogleMapsPreview({ address }) {
+  const { t } = useTranslation();
   const mapRef = useRef(null);
   const [mapError, setMapError] = useState(null);
 
@@ -90,7 +91,7 @@ function GoogleMapsPreview({ address }) {
   if (!address || address.trim() === '') {
     return (
       <div className="w-full h-32 bg-cordel-bg-light border border-dashed border-encre-noire/15 rounded flex items-center justify-center text-[10px] text-encre-noire/60 font-bold select-none">
-        📍 Saisissez une adresse pour afficher la carte
+        {t('settings.agenda.departureLocationAccordion.saisissezUneAdressePourAfficher')}
       </div>
     );
   }
@@ -151,18 +152,18 @@ export default function DepartureLocationAccordion({
           onClick={() => setIsOpen(prev => !prev)}
           className="text-[10px] font-black uppercase tracking-wider text-cordel-wood hover:text-encre-noire px-2.5 py-1 rounded border border-cordel-master-dark/30 bg-cordel-bg hover:bg-white cursor-pointer transition-all shadow-2xs flex items-center gap-1"
         >
-          <span>🗺️ {isOpen ? "Masquer la carte ▴" : `${t('logistics.btnViewLocalDeparturePoint')} ▾`}</span>
+          <span>🗺️ {isOpen ? t('settings.agenda.departureLocationAccordion.masquerLaCarte') : t('settings.agenda.departureLocationAccordion.param', { param: t('logistics.btnViewLocalDeparturePoint') })}</span>
         </button>
       </div>
 
       {isOpen && (
         <div className="flex flex-col gap-2.5 pt-2 border-t border-dashed border-cordel-master-dark/15 text-left animate-fadeIn">
           <label className="text-[9px] uppercase font-extrabold tracking-wider text-cordel-master-dark">
-            Adresse du local / Point de rassemblement des départs en convoi
+            {t('settings.agenda.departureLocationAccordion.adresseDuLocalPointDe')}
           </label>
           <React.Suspense fallback={
             <div className="text-[10px] font-bold py-2 text-cordel-wood animate-pulse">
-              ⏳ Chargement du champ adresse...
+              {t('settings.agenda.departureLocationAccordion.chargementDuChampAdresse')}
             </div>
           }>
             <AddressAutocomplete 
@@ -170,7 +171,7 @@ export default function DepartureLocationAccordion({
               value={currentAddress}
               onChange={handleChange}
               onSelect={handleAddressSelect}
-              placeholder="ex: 12 Rue du Maracatu, 75000 Paris"
+              placeholder={t('settings.agenda.departureLocationAccordion.ex12RueDuMaracatu')}
               className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
             />
           </React.Suspense>

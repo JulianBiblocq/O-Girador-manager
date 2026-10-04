@@ -75,6 +75,7 @@ export default function LayoutShell({
   tagsDisponibles = [],
   isBirthdayMonth = false,
   onStartDirectChat = null,
+  features = null,
   children 
 }) {
   const { urls } = useTenantContext();
@@ -263,8 +264,11 @@ export default function LayoutShell({
     }
 
     if (tabId === 'repertoire') {
-      const hasAccessMestreLocal = isMasterKeyActive || currentProfile?.role === 'mestre' || currentProfile?.role === 'super-admin' || currentProfile?.role === 'admin' || currentProfile?.isSystemAdmin === true;
-      if (associationData?.features?.repertoireEleves !== true && !hasAccessMestreLocal) return false;
+      const effectiveFeatures = features || associationData?.features;
+      const role = (currentProfile?.role || '').toLowerCase();
+      const isMestreOrAdmin = role === 'mestre' || role === 'super-admin' || role === 'admin' || currentProfile?.isSystemAdmin === true;
+      const hasAccessMestreLocal = isMasterKeyActive || isMestreOrAdmin;
+      if (effectiveFeatures?.repertoireEleves !== true && !hasAccessMestreLocal) return false;
     }
 
     return true;
@@ -323,6 +327,7 @@ export default function LayoutShell({
     { id: 'profil', label: 'Profil', labelKey: 'poles.tabProfil', icon: <XiloUser size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'profil'); onNavigateToTab && onNavigateToTab('profil'); } },
     { id: 'mon-parcours', label: 'Mon Parcours', labelKey: 'poles.tabParcours', icon: <XiloCompass size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'mon-parcours'); onNavigateToTab && onNavigateToTab('mon-parcours'); } },
     { id: 'agenda', label: 'Agenda', labelKey: 'poles.tabAgenda', icon: <XiloCalendar size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'agenda'); onNavigateToTab && onNavigateToTab('agenda'); } },
+    { id: 'repertoire', label: '📜 Répertoire', labelKey: 'tabRepertoire', icon: <XiloScroll size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'repertoire'); onNavigateToTab && onNavigateToTab('repertoire'); } },
     { id: 'atelier', label: 'Atelier', labelKey: 'poles.tabAtelier', icon: <XiloChisel size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'atelier'); onNavigateToTab && onNavigateToTab('atelier'); } },
     { id: 'materiel', label: 'Instruments', labelKey: 'poles.tabMateriel', icon: <XiloCaixa size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'materiel'); onNavigateToTab && onNavigateToTab('materiel'); } },
     { 

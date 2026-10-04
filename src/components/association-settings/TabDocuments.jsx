@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import useConfirm from '../../hooks/useConfirm';
+import { useTranslation } from '../LanguageContext';
 
 export default function TabDocuments({
   formData,
@@ -11,8 +12,10 @@ export default function TabDocuments({
   aptitudeMedicaleFile,
   setAptitudeMedicaleFile,
   saving,
-  t
+  t: propT
 }) {
+  const { t: contextT } = useTranslation();
+  const t = propT || contextT;
   const { confirm } = useConfirm();
   const {
     demanderDroitImage = false,
@@ -54,10 +57,10 @@ export default function TabDocuments({
   const handleRemoveCategory = async (id) => {
     const msg = t?.('documents.varalSettingsRemoveConfirm') || "Êtes-vous sûr de vouloir supprimer cette corde ? Les documents liés ne seront pas supprimés mais n'auront plus de catégorie associée.";
     const isOk = await confirm({
-      title: "Supprimer la corde",
+      title: t('settings.communication.tabDocuments.supprimerLaCorde'),
       message: msg,
-      confirmText: "Oui, supprimer",
-      cancelText: "Annuler",
+      confirmText: t('common.yesDelete') || "Oui, supprimer",
+      cancelText: t('common.cancel') || "Annuler",
       variant: "danger"
     });
     if (isOk) {
@@ -69,7 +72,7 @@ export default function TabDocuments({
     <>
       <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
         <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">
-          📋 Documents de l'Association (RGPD & Médical)
+          {t('settings.communication.tabDocuments.documentsDeLAssociationRgpd')}
         </h3>
 
         {/* Image Rights Basculer */}
@@ -84,10 +87,10 @@ export default function TabDocuments({
             />
             <div className="flex flex-col">
               <span className="text-xs font-bold text-encre-noire">
-                Activer la demande de Droit à l'Image
+                {t('settings.communication.tabDocuments.activerLaDemandeDeDroit')}
               </span>
               <span className="text-[9px] text-cordel-master-dark/70 font-semibold mt-0.5 leading-relaxed">
-                Si activé, les adhérents verront un consentement pour l'exploitation de leur image dans leur profil.
+                {t('settings.communication.tabDocuments.siActiveLesAdherentsVerront')}
               </span>
             </div>
           </label>
@@ -95,7 +98,9 @@ export default function TabDocuments({
 
         {/* Droit à l'image Doc */}
         <div className="flex flex-col gap-2 pb-3 border-b border-dashed border-cordel-master-dark/15 text-left">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-cordel-master-dark">Charte de Droit à l'image (PDF)</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-cordel-master-dark">
+            {t('settings.communication.tabDocuments.charteDeDroitAL')}
+          </span>
           <div className="flex flex-col gap-1.5">
             <input 
               type="file" 
@@ -106,7 +111,7 @@ export default function TabDocuments({
             />
             {droitImageFile && (
               <span className="text-[9px] text-green-600 font-bold">
-                ✓ Sélectionné : {droitImageFile.name}
+                {t('settings.communication.tabDocuments.selectionne')} {droitImageFile.name}
               </span>
             )}
             {droitImageDocUrl && (
@@ -116,7 +121,7 @@ export default function TabDocuments({
                 rel="noopener noreferrer" 
                 className="text-[9px] text-cordel-wood hover:underline font-bold"
               >
-                Voir le document en ligne
+                {t('settings.communication.tabDocuments.voirLeDocumentEnLigne')}
               </a>
             )}
           </div>
@@ -134,10 +139,10 @@ export default function TabDocuments({
             />
             <div className="flex flex-col">
               <span className="text-xs font-bold text-encre-noire">
-                Activer la demande d'Aptitude Médicale
+                {t('settings.communication.tabDocuments.activerLaDemandeDAptitude')}
               </span>
               <span className="text-[9px] text-cordel-master-dark/70 font-semibold mt-0.5 leading-relaxed">
-                Si activé, les adhérents devront attester ne présenter aucune contre-indication médicale pour participer aux activités.
+                {t('settings.communication.tabDocuments.siActiveLesAdherentsDevront')}
               </span>
             </div>
           </label>
@@ -145,7 +150,9 @@ export default function TabDocuments({
 
         {/* Aptitude médicale Doc */}
         <div className="flex flex-col gap-2 mt-3 text-left">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-cordel-master-dark mb-1">Modèle de certificat médical / Règlement santé (PDF)</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-cordel-master-dark mb-1">
+            {t('settings.communication.tabDocuments.modeleDeCertificatMedicalReglement')}
+          </span>
           <div className="flex flex-col gap-1.5">
             <input 
               type="file" 
@@ -156,7 +163,7 @@ export default function TabDocuments({
             />
             {aptitudeMedicaleFile && (
               <span className="text-[9px] text-green-600 font-bold">
-                ✓ Sélectionné : {aptitudeMedicaleFile.name}
+                {t('settings.communication.tabDocuments.selectionne')} {aptitudeMedicaleFile.name}
               </span>
             )}
             {aptitudeMedicaleDocUrl && (
@@ -166,7 +173,7 @@ export default function TabDocuments({
                 rel="noopener noreferrer" 
                 className="text-[9px] text-cordel-wood hover:underline font-bold"
               >
-                Voir le document en ligne
+                {t('settings.communication.tabDocuments.voirLeDocumentEnLigne')}
               </a>
             )}
           </div>
@@ -175,7 +182,7 @@ export default function TabDocuments({
 
       <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5 mt-4">
         <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">
-          🔗 {t?.('documents.varalSettingsTitle') || "Catégories du Varal (Fils)"}
+          🔗 {t('settings.communication.tabDocuments.categoriesDuVaralFils')}
         </h3>
       
         {/* Form to ajouter a new category */}
@@ -183,13 +190,13 @@ export default function TabDocuments({
           <div className="flex flex-col gap-2">
             <div className="flex flex-col gap-1">
               <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                {t?.('documents.varalSettingsNameLabel') || "Nom de la catégorie (ex: Prestations, Danses)"}
+                {t('settings.communication.tabDocuments.nomDeLaCategorieEx')}
               </label>
               <input 
                 type="text"
                 value={newCatName}
                 onChange={(e) => setNewCatName(e.target.value)}
-                placeholder={t?.('documents.varalSettingsNamePlaceholder') || "Nom..."}
+                placeholder={t('documents.varalSettingsNamePlaceholder')}
                 className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
               />
             </div>
@@ -202,14 +209,14 @@ export default function TabDocuments({
                   onChange={(e) => setNewCatUpload(e.target.checked)}
                   className="scale-95 cursor-pointer"
                 />
-                <span>{t?.('documents.varalSettingsUploadLabel') || "Activer l'upload public (Lien externe)"}</span>
+                <span>{t('settings.communication.tabDocuments.activerLUploadPublicLien')}</span>
               </label>
               {newCatUpload && (
                 <input 
                   type="url"
                   value={newCatUploadUrl}
                   onChange={(e) => setNewCatUploadUrl(e.target.value)}
-                  placeholder={t?.('documents.varalSettingsUploadUrlLabel') || "Lien d'upload (Drive, Dropbox...)"}
+                  placeholder={t('documents.varalSettingsUploadUrlLabel')}
                   className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full mt-1.5"
                 />
               )}
@@ -223,7 +230,7 @@ export default function TabDocuments({
                   onChange={(e) => setNewCatArchive(e.target.checked)}
                   className="scale-95 cursor-pointer"
                 />
-                <span>{t?.('documents.varalSettingsArchiveLabel') || "Archiver visuellement (opacité réduite si année antérieure)"}</span>
+                <span>{t('settings.communication.tabDocuments.archiverVisuellementOpaciteReduiteSi')}</span>
               </label>
             </div>
           </div>
@@ -237,7 +244,7 @@ export default function TabDocuments({
               disabled={saving || !newCatName.trim() || (newCatUpload && !newCatUploadUrl.trim())}
               className="py-1.5 text-[10px] px-3 uppercase tracking-widest font-black shrink-0"
             >
-              {t?.('documents.varalSettingsAddBtn') || "+ Ajouter"}
+              {t('settings.communication.tabDocuments.ajouter')}
             </CordelButton>
           </div>
         </div>
@@ -245,11 +252,11 @@ export default function TabDocuments({
         {/* Display list of configured categories */}
         <div className="flex flex-col gap-2 mt-3 text-left">
           <span className="text-[10px] font-bold uppercase tracking-wider text-cordel-master-dark mb-1">
-            {t?.('documents.varalSettingsConfigured') || "Cordes configurées"}
+            {t('settings.communication.tabDocuments.cordesConfigurees')}
           </span>
           {varalCategories.length === 0 ? (
             <span className="text-[10px] italic opacity-60">
-              {t?.('documents.varalSettingsEmpty') || "Aucune catégorie configurée."}
+              {t('settings.communication.tabDocuments.aucuneCategorieConfiguree')}
             </span>
           ) : (
             <div className="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1">
@@ -263,12 +270,12 @@ export default function TabDocuments({
                     <div className="flex flex-wrap gap-1.5 mt-1 text-[8px] font-black uppercase text-cordel-wood">
                       {cat.activerUploadPublic && (
                         <span className="px-1 bg-blue-100 dark:bg-blue-950/20 text-blue-700 dark:text-blue-400 rounded-sm">
-                          📤 Public
+                          {t('settings.communication.tabDocuments.public')}
                         </span>
                       )}
                       {cat.activerOpaciteArchive && (
                         <span className="px-1 bg-purple-100 dark:bg-purple-950/20 text-purple-700 dark:text-purple-400 rounded-sm">
-                          ⏳ Opacité Archive
+                          {t('settings.communication.tabDocuments.opaciteArchive')}
                         </span>
                       )}
                     </div>
@@ -283,14 +290,15 @@ export default function TabDocuments({
                         className="w-4 h-4 rounded cursor-pointer accent-[var(--color-cordel-vert,#2d6a4f)]"
                       />
                       <span className={`text-[10px] font-bold ${cat.actif !== false ? 'text-[var(--color-cordel-vert,#2d6a4f)] font-black' : 'text-cordel-master-dark/60 italic'}`}>
-                        {cat.actif !== false ? "Afficher cette corde" : "Corde masquée"}
+                        {/* Afficher cette corde */}
+                        {cat.actif !== false ? t('settings.communication.tabDocuments.afficherCetteCorde') : t('settings.communication.tabDocuments.cordeMasquee')}
                       </span>
                     </label>
                     <button 
                       type="button"
                       onClick={() => handleRemoveCategory(cat.id)}
                       className="text-xs hover:text-red-500 font-bold px-2 py-1 cursor-pointer select-none"
-                      title="Supprimer"
+                      title={t('settings.communication.tabDocuments.supprimer')}
                     >
                       ✕
                     </button>

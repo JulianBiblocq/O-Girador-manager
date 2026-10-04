@@ -265,7 +265,7 @@ export default function ViewSimulatorSelector() {
           <div 
             ref={popoverRef}
             style={popoverStyle}
-            className="fixed p-3 sm:p-4 bg-cordel-bg border-2 border-encre-noire rounded-[8px_12px_9px_11px] shadow-[4px_4px_0px_0px_#181716] z-[9999] text-encre-noire animate-scale-up select-none flex flex-col overflow-hidden"
+            className="fixed p-3 sm:p-4 bg-cordel-bg border-2 border-encre-noire rounded-[8px_12px_9px_11px] shadow-[4px_4px_0px_0px_#181716] z-[9999] text-encre-noire animate-scale-up select-none flex flex-col overflow-hidden overflow-x-hidden w-full max-w-full"
             role="dialog"
             aria-label="Simulateur de vue"
           >
@@ -290,9 +290,9 @@ export default function ViewSimulatorSelector() {
               </button>
             </div>
 
-            <div className="flex flex-col gap-3 text-xs overflow-y-auto pr-0.5 custom-scrollbar">
+            <div className="flex flex-col gap-3 text-xs overflow-y-auto overflow-x-hidden w-full max-w-full pr-0.5 custom-scrollbar">
               {/* 1. Option Adhérent standard */}
-              <div className="flex flex-col gap-1 p-2 bg-cordel-bg-light border border-encre-noire/30 rounded-[5px_7px_4px_6px]">
+              <div className="flex flex-col gap-1 p-2 bg-cordel-bg-light border border-encre-noire/30 rounded-[5px_7px_4px_6px] w-full max-w-full overflow-x-hidden">
                 <div className="font-extrabold text-[11px] flex items-center gap-1">
                   <span>🌱</span>
                   <span>Adhérent standard</span>
@@ -310,7 +310,7 @@ export default function ViewSimulatorSelector() {
               </div>
 
               {/* 2. Option Par Badge / Étiquette */}
-              <form onSubmit={handleSimulateTag} className="flex flex-col gap-1.5 p-2 bg-cordel-bg-light border border-encre-noire/30 rounded-[5px_7px_4px_6px]">
+              <form onSubmit={handleSimulateTag} className="flex flex-col gap-1.5 p-2 bg-cordel-bg-light border border-encre-noire/30 rounded-[5px_7px_4px_6px] w-full max-w-full overflow-x-hidden">
                 <div className="font-extrabold text-[11px] flex items-center gap-1">
                   <span>🏷️</span>
                   <span>Par Badge / Étiquette</span>
@@ -318,11 +318,11 @@ export default function ViewSimulatorSelector() {
                 <p className="text-[9.5px] text-cordel-master-dark/70">
                   Simule un membre portant uniquement cette étiquette.
                 </p>
-                <div className="flex gap-1.5 mt-0.5">
+                <div className="flex flex-col gap-2.5 w-full max-w-full min-w-0 mt-0.5">
                   <select
                     value={selectedTagId}
                     onChange={(e) => setSelectedTagId(e.target.value)}
-                    className="flex-1 text-[10px] font-bold p-1 bg-white border border-encre-noire rounded cursor-pointer truncate"
+                    className="w-full min-w-0 text-[10px] font-bold p-1.5 bg-white border border-encre-noire rounded cursor-pointer truncate"
                     required
                   >
                     <option value="">-- Choisir un badge --</option>
@@ -341,7 +341,7 @@ export default function ViewSimulatorSelector() {
                   <button
                     type="submit"
                     disabled={!selectedTagId}
-                    className="py-1 px-2.5 bg-cordel-bg hover:bg-white border border-encre-noire rounded font-black text-[10px] uppercase cursor-pointer disabled:opacity-40 shadow-[1px_1px_0px_0px_#181716] shrink-0"
+                    className="w-full sm:w-auto self-end shrink-0 py-1.5 px-3 bg-cordel-bg hover:bg-white border border-encre-noire rounded font-black text-[10px] uppercase tracking-wider cursor-pointer disabled:opacity-40 shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px]"
                   >
                     Appliquer
                   </button>
@@ -349,7 +349,7 @@ export default function ViewSimulatorSelector() {
               </form>
 
               {/* 3. Option Par Adhérent précis */}
-              <form onSubmit={handleSimulateUser} className="flex flex-col gap-1.5 p-2 bg-cordel-bg-light border border-encre-noire/30 rounded-[5px_7px_4px_6px]">
+              <form onSubmit={handleSimulateUser} className="flex flex-col gap-1.5 p-2 bg-cordel-bg-light border border-encre-noire/30 rounded-[5px_7px_4px_6px] w-full max-w-full overflow-x-hidden">
                 <div className="font-extrabold text-[11px] flex items-center gap-1">
                   <span>👤</span>
                   <span>Par Adhérent précis</span>
@@ -357,12 +357,12 @@ export default function ViewSimulatorSelector() {
                 <p className="text-[9.5px] text-cordel-master-dark/70">
                   Adopte l'identité, le pupitre et l'ensemble des badges réels du membre.
                 </p>
-                <div className="flex gap-1.5 mt-0.5">
+                <div className="flex flex-col gap-2.5 w-full max-w-full min-w-0 mt-0.5">
                   <select
                     value={selectedUserId}
                     onChange={(e) => setSelectedUserId(e.target.value)}
                     disabled={loadingMembers}
-                    className="flex-1 text-[10px] font-bold p-1 bg-white border border-encre-noire rounded cursor-pointer truncate"
+                    className="w-full min-w-0 text-[10px] font-bold p-1.5 bg-white border border-encre-noire rounded cursor-pointer truncate"
                     required
                   >
                     <option value="">
@@ -381,7 +381,7 @@ export default function ViewSimulatorSelector() {
                   <button
                     type="submit"
                     disabled={!selectedUserId || loadingMembers}
-                    className="py-1 px-2.5 bg-cordel-bg hover:bg-white border border-encre-noire rounded font-black text-[10px] uppercase cursor-pointer disabled:opacity-40 shadow-[1px_1px_0px_0px_#181716] shrink-0"
+                    className="w-full sm:w-auto self-end shrink-0 py-1.5 px-3 bg-cordel-bg hover:bg-white border border-encre-noire rounded font-black text-[10px] uppercase tracking-wider cursor-pointer disabled:opacity-40 shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px]"
                   >
                     Adopter
                   </button>
