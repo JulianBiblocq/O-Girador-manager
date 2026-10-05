@@ -2951,6 +2951,9 @@ export const fr = {
     sequencerTab: "Séquenceur",
     audioRecord: "Écouter l'audio",
     videoTutorial: "Tutoriel vidéo",
+    // Accès Sequenciador — Écoute globale
+    btnListenSequencer: "Écouter dans le Séquenceur",
+    tooltipListenSequencer: "Écoute intégrale de référence (toutes pistes actives)",
     revisePiece: "Réviser ce morceau",
 
     // Modales de contenu & États vides
@@ -3041,6 +3044,15 @@ export const fr = {
     stageLabel: "Palier {{index}}",
     requestRevisionBtn: "Demander une révision en répétition",
     revisionRequestedNotice: "Révision demandée au Mestre",
+
+    // Paliers d'entraînement & Pistes de tempo
+    btnPracticeTocarJunto: "Pratiquer",
+    tooltipPracticeTocarJunto: "Jouer avec le Séquenceur (votre pupitre est en sourdine)",
+
+    // Micro-sélection rapide de pupitre (Secours si non renseigné dans le profil)
+    modalSelectRoleTitle: "Choisis ton pupitre pour l'entraînement",
+    modalSelectRoleSubtitle: "La piste de cet instrument sera coupée pour te laisser jouer par-dessus.",
+    btnCancel: "Annuler",
 
     // Cockpit Pédagogique Mestre (Suivi de la troupe)
     dashboardTitle: "Suivi & Analyse Pédagogique de la Troupe",

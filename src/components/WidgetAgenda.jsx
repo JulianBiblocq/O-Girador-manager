@@ -63,7 +63,9 @@ export default function WidgetAgenda({
   onNavigateToView,
   selectedEvent: propSelectedEvent,
   setSelectedEvent: propSetSelectedEvent,
-  isFullPage = false
+  isFullPage = false,
+  isDashboard = false,
+  compact = false
 }) {
   const { t, locale } = useTranslation();
   const [events, setEvents] = useState([]);
@@ -79,6 +81,21 @@ export default function WidgetAgenda({
   const [temporalTab, setTemporalTab] = useState('upcoming'); // 'upcoming' | 'past'
   const [selectedPastSeason, setSelectedPastSeason] = useState(null);
   const [saisonDebutMois, setSaisonDebutMois] = useState(DEFAULT_SEASON_START_MONTH);
+
+  // Détermination du contexte d'affichage :
+  // Le mode "accueil / tableau de bord" s'applique si isDashboard ou compact est activé,
+  // ou si le composant n'est pas en affichage page dédiée (!isFullPage).
+  const isDashboardMode = Boolean(isDashboard || compact || !isFullPage);
+
+  // En mode tableau de bord / accueil, l'onglet temporel est strictement verrouillé sur 'upcoming'
+  const effectiveTemporalTab = isDashboardMode ? 'upcoming' : temporalTab;
+
+  // Sécurité d'état : force 'upcoming' dès que le mode dashboard est actif
+  useEffect(() => {
+    if (isDashboardMode && temporalTab !== 'upcoming') {
+      setTemporalTab('upcoming');
+    }
+  }, [isDashboardMode, temporalTab]);
 
   useHardwareBack(isAdding, () => setIsAdding(false));
   const [viewMode, setViewMode] = useState('cards'); // 'cards' ou 'list' ou 'grid'
@@ -249,10 +266,10 @@ export default function WidgetAgenda({
   }, [filteredPastAll, activePastSeason, saisonDebutMois]);
 
   // Événements actifs exclusifs selon l'onglet temporel sélectionné (séparation 100% étanche)
-  const activeTabEvents = temporalTab === 'upcoming' ? filteredUpcoming : filteredPastBySeason;
+  const activeTabEvents = effectiveTemporalTab === 'upcoming' ? filteredUpcoming : filteredPastBySeason;
 
   // Détermination des événements visibles selon le mode d'affichage et la pagination
-  const visibleEvents = (isFullPage || showAll || temporalTab === 'past')
+  const visibleEvents = (isFullPage || showAll || effectiveTemporalTab === 'past')
     ? activeTabEvents
     : activeTabEvents.slice(0, limit);
 
@@ -865,10 +882,10 @@ export default function WidgetAgenda({
         </div>
       </div>
 
-      {/* Sélecteur temporel exclusif [ 📅 À venir ] / [ 🏛️ Passés ] & Navigation contextuelle par saison */}
-      {!loading && !isAdding && (
+      {/* Sélecteur temporel exclusif [ 📅 À venir ] / [ 🏛️ Passés ] & Navigation contextuelle par saison (Page dédiée uniquement) */}
+      {!loading && !isAdding && !isDashboardMode && (
         <AgendaTemporalTabs
-          temporalTab={temporalTab}
+          temporalTab={effectiveTemporalTab}
           setTemporalTab={setTemporalTab}
           upcomingCount={filteredUpcoming.length}
           pastCount={filteredPastAll.length}
@@ -944,19 +961,19 @@ export default function WidgetAgenda({
       {!loading && !isAdding && (
         visibleEvents.length === 0 ? (
           <EmptyState
-            icon={temporalTab === 'upcoming' ? "📅" : "🏛️"}
+            icon={effectiveTemporalTab === 'upcoming' ? "📅" : "🏛️"}
             title={
-              temporalTab === 'upcoming'
+              effectiveTemporalTab === 'upcoming'
                 ? (t('agenda.noUpcomingEvents') || t('widgetAgenda.noEvents') || "Aucun événement prévu pour le moment")
                 : (t('agenda.noPastEvents') || t('agendaTemporal.noPast') || "Aucun événement passé dans cette sélection")
             }
             description={
-              temporalTab === 'upcoming'
+              effectiveTemporalTab === 'upcoming'
                 ? "L'agenda est vide pour cette période. Organisez une répétition, une prestation, un stage ou une réunion en un clic !"
                 : "Aucun événement archivé trouvé pour cette saison associative."
             }
-            actionLabel={temporalTab === 'upcoming' && isAuthorized ? "+ Créer mon premier événement" : null}
-            onAction={temporalTab === 'upcoming' && isAuthorized ? () => setIsAdding(true) : null}
+            actionLabel={effectiveTemporalTab === 'upcoming' && isAuthorized ? "+ Créer mon premier événement" : null}
+            onAction={effectiveTemporalTab === 'upcoming' && isAuthorized ? () => setIsAdding(true) : null}
           />
         ) : activeViewMode === 'grid' ? (
           <CalendarGrid 
@@ -1005,7 +1022,7 @@ export default function WidgetAgenda({
                         <div className="flex items-center gap-2 flex-wrap">
                           <span>{event.titre}</span>
                           <EventDisciplineBadges event={event} compact={true} />
-                          {temporalTab === 'past' && (
+                          {effectiveTemporalTab === 'past' && (
                             <span 
                               className="text-[8px] font-black uppercase tracking-wider bg-cordel-master-dark/10 text-encre-noire px-1.5 py-0.5 rounded-[4px_6px_3px_5px] border border-encre-noire/20 select-none inline-flex items-center gap-0.5" 
                               title={`${t('agendaTemporal.seasonLabel') || 'Saison'} ${getSeasonFromDate(event.dateDebut || event.date, saisonDebutMois)}`}
@@ -1089,7 +1106,7 @@ export default function WidgetAgenda({
                       flex items-stretch
                       min-h-[90px]
                       cursor-pointer hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[5.5px_5.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-[2px_2px_0px_0px_#181716] transition-all
-                      ${temporalTab === 'past' ? 'border-dashed border-cordel-master-dark/40 opacity-95' : ''}
+                      ${effectiveTemporalTab === 'past' ? 'border-dashed border-cordel-master-dark/40 opacity-95' : ''}
                     `}
                   >
                     {/* Effet tampon gros statut en biais */}
@@ -1167,7 +1184,7 @@ export default function WidgetAgenda({
                                 {event.type}
                               </span>
                               <EventDisciplineBadges event={event} />
-                              {temporalTab === 'past' && (
+                              {effectiveTemporalTab === 'past' && (
                                 <span 
                                   className="text-[8px] font-black uppercase tracking-wider bg-cordel-master-dark/10 text-encre-noire px-1.5 py-0.5 rounded-[4px_6px_3px_5px] border border-encre-noire/20 select-none inline-flex items-center gap-0.5"
                                   title={`${t('agendaTemporal.seasonLabel') || 'Saison'} ${getSeasonFromDate(event.dateDebut || event.date, saisonDebutMois)}`}
@@ -1222,7 +1239,7 @@ export default function WidgetAgenda({
             </div>
             
             {/* Bouton Voir plus pour le mode À venir si le nombre d'événements dépasse la limite initiale */}
-            {temporalTab === 'upcoming' && filteredUpcoming.length > limit && (
+            {effectiveTemporalTab === 'upcoming' && filteredUpcoming.length > limit && (
               <div className="flex justify-center mt-3">
                 <CordelButton 
                   variant="default"

@@ -1,6 +1,7 @@
 import React from 'react';
-import { launchTrainingStage } from '../../utils/trainingLauncher';
 import { useTranslation } from '../LanguageContext';
+import { usePracticeLauncher } from '../../hooks/usePracticeLauncher';
+import RoleSelectorModal from './RoleSelectorModal';
 
 /**
  * Carte compacte d'entraînement réutilisable.
@@ -14,6 +15,7 @@ import { useTranslation } from '../LanguageContext';
  * @param {Object} [props.training] - Objet défi unique résolu
  * @param {Array<Object>} [props.trainings] - Liste de défis résolus
  * @param {string} [props.sequenceurUrl] - URL de base du Séquenceur
+ * @param {Object} [props.profileData] - Données de profil pour résolution du rôle de pratique
  * @param {'repertoire'|'rehearsal'} [props.mode='repertoire'] - Contexte d'affichage
  * @param {string} [props.className] - Classes CSS personnalisées
  */
@@ -21,13 +23,19 @@ export default function TrainingCompactCard({
   training,
   trainings,
   sequenceurUrl,
+  profileData = null,
   mode = 'repertoire',
   className = ''
 }) {
   const { t } = useTranslation();
-  const items = Array.isArray(trainings) ?
-  trainings :
-  training ? [training] : [];
+  const { startPractice, isRoleModalOpen, handleSelectRole, handleCloseModal } =
+    usePracticeLauncher(profileData, sequenceurUrl);
+
+  const items = Array.isArray(trainings)
+    ? trainings
+    : training
+    ? [training]
+    : [];
 
   if (items.length === 0) return null;
 
@@ -42,16 +50,16 @@ export default function TrainingCompactCard({
           return (
             <div
               key={item.id}
-              className="p-2.5 rounded bg-amber-50/85 border border-dashed border-amber-300 flex flex-col gap-2 shadow-2xs text-left">
-              
+              className="p-2.5 rounded bg-amber-50/85 border border-dashed border-amber-300 flex flex-col gap-2 shadow-2xs text-left"
+            >
               {/* En-tête de recommandation de séance */}
               <div className="flex items-center justify-between gap-2 border-b border-dashed border-amber-300/60 pb-1 flex-wrap">
                 <span className="text-[10px] font-black uppercase tracking-wider text-amber-950 flex items-center gap-1.5">
                   <span>⚡</span>
-                  <span>{/* Entraînement recommandé pour la séance */item('pedagogy.carnet.entrainementRecommandePourLaSeance')}</span>
+                  <span>{t('pedagogy.carnet.entrainementRecommandePourLaSeance')}</span>
                 </span>
                 <span className="text-[9px] font-black text-amber-900 uppercase px-1.5 py-0.2 rounded bg-amber-200/60 border border-amber-300">
-                  {item('pedagogy.carnet.cible')} {item.targetBpm} BPM
+                  {t('pedagogy.carnet.cible')} {item.targetBpm} BPM
                 </span>
               </div>
 
@@ -62,43 +70,51 @@ export default function TrainingCompactCard({
                     {item.title}
                   </span>
                   <span className="text-[10px] text-encre-noire/70 font-bold">
-                    ({item('pedagogy.targetBpmRange', { start: item.startBpm, end: item.targetBpm })})
+                    ({t('pedagogy.targetBpmRange', { start: item.startBpm, end: item.targetBpm })})
                   </span>
                 </div>
 
                 <button
                   type="button"
-                  onClick={() => launchTrainingStage(item.presetId, item.id, 0, { baseUrl: sequenceurUrl })}
+                  onClick={() => startPractice(item.presetId, item.id, 0)}
                   className="px-2.5 py-1 text-[9px] font-black uppercase rounded bg-[var(--color-cordel-vert,#2d6a4f)] text-white hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center gap-1 self-start sm:self-auto shrink-0 shadow-xs select-none"
-                  title={item('pedagogy.carnet.ouvrirSequenciadorSurCetEntrainement')}>
-                  
+                  title={t('pedagogy.tooltipPracticeTocarJunto')}
+                >
                   <span>⚡</span>
-                  <span>{item('pedagogy.btnPractice')}</span>
+                  <span>{t('pedagogy.btnPracticeTocarJunto')}</span>
                 </button>
               </div>
 
               {/* Découpage des paliers cliquables */}
-              {stages.length > 0 &&
-              <div className="flex flex-wrap gap-1.5 pt-0.5">
-                  {stages.map((stage) =>
-                <button
-                  key={stage.index}
-                  type="button"
-                  onClick={() => launchTrainingStage(item.presetId, item.id, stage.index, { baseUrl: sequenceurUrl })}
-                  className="px-2 py-0.5 text-[8.5px] font-bold rounded bg-white hover:bg-amber-100 border border-amber-200 text-encre-noire hover:border-amber-400 transition-all cursor-pointer shadow-2xs flex items-center gap-1 select-none"
-                  title={`Lancer le palier ${stage.index + 1} (${stage.startBpm} ➔ ${stage.targetBpm} BPM)`}>
-                  
+              {stages.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 pt-0.5">
+                  {stages.map((stage) => (
+                    <button
+                      key={stage.index}
+                      type="button"
+                      onClick={() => startPractice(item.presetId, item.id, stage.index)}
+                      className="px-2 py-0.5 text-[8.5px] font-bold rounded bg-white hover:bg-amber-100 border border-amber-200 text-encre-noire hover:border-amber-400 transition-all cursor-pointer shadow-2xs flex items-center gap-1 select-none"
+                      title={t('pedagogy.tooltipPracticeTocarJunto')}
+                    >
                       <span className="text-amber-800 font-black">P{stage.index + 1}</span>
-                      <span>{stage.startBpm} ➔ {stage.targetBpm} BPM</span>
+                      <span>
+                        {stage.startBpm} ➔ {stage.targetBpm} BPM
+                      </span>
                     </button>
-                )}
+                  ))}
                 </div>
-              }
-            </div>);
-
+              )}
+            </div>
+          );
         })}
-      </div>);
 
+        <RoleSelectorModal
+          isOpen={isRoleModalOpen}
+          onClose={handleCloseModal}
+          onSelectRole={handleSelectRole}
+        />
+      </div>
+    );
   }
 
   // ---------------------------------------------------------------------------
@@ -111,50 +127,58 @@ export default function TrainingCompactCard({
         return (
           <div
             key={item.id}
-            className="p-2.5 bg-white/95 border border-amber-200 rounded flex flex-col gap-2 shadow-2xs text-left">
-            
+            className="p-2.5 bg-white/95 border border-amber-200 rounded flex flex-col gap-2 shadow-2xs text-left"
+          >
             {/* Titre et badges BPM / Paliers */}
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <span className="text-[10px] font-black text-encre-noire uppercase">
                 {item.title}
               </span>
               <span className="text-[8.5px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300">
-                {item.startBpm} ➔ {item.targetBpm} {item('pedagogy.carnet.bpmSeparateur')} {item.stagesCount || stages.length} {item('pedagogy.carnet.palier')}{(item.stagesCount || stages.length) > 1 ? 's' : ''}
+                {item.startBpm} ➔ {item.targetBpm} {t('pedagogy.carnet.bpmSeparateur')}{' '}
+                {item.stagesCount || stages.length} {t('pedagogy.carnet.palier')}
+                {(item.stagesCount || stages.length) > 1 ? 's' : ''}
               </span>
             </div>
 
             {/* Description facultative */}
-            {item.description &&
-            <p className="text-[9px] text-encre-noire/70 italic">
+            {item.description && (
+              <p className="text-[9px] text-encre-noire/70 italic">
                 {item.description}
               </p>
-            }
+            )}
 
-            {/* Grille des paliers avec bouton [ ⚡ Pratiquer ] */}
-            {stages.length > 0 &&
-            <div className="flex flex-wrap gap-1.5 pt-1">
-                {stages.map((stage) =>
-              <div
-                key={stage.index}
-                className="flex items-center gap-1.5 px-2 py-1 rounded bg-[#fdfaf2] border border-encre-noire/20 text-[9px]">
-                
+            {/* Grille des paliers avec bouton de pratique Tocar Junto */}
+            {stages.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {stages.map((stage) => (
+                  <div
+                    key={stage.index}
+                    className="flex items-center gap-1.5 px-2 py-1 rounded bg-[#fdfaf2] border border-encre-noire/20 text-[9px]"
+                  >
                     <span className="font-extrabold text-encre-noire">{stage.label}</span>
                     <button
-                  type="button"
-                  onClick={() => launchTrainingStage(item.presetId, item.id, stage.index, { baseUrl: sequenceurUrl })}
-                  className="ml-1 px-1.5 py-0.5 text-[8.5px] font-black uppercase rounded bg-[var(--color-cordel-vert,#2d6a4f)] text-white hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center gap-0.5 select-none"
-                  title={`Lancer sequenciador sur le palier ${stage.index + 1}`}>
-                  
+                      type="button"
+                      onClick={() => startPractice(item.presetId, item.id, stage.index)}
+                      className="ml-1 px-1.5 py-0.5 text-[8.5px] font-black uppercase rounded bg-[var(--color-cordel-vert,#2d6a4f)] text-white hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center gap-0.5 select-none"
+                      title={t('pedagogy.tooltipPracticeTocarJunto')}
+                    >
                       <span>⚡</span>
-                      <span>{item('pedagogy.btnPractice')}</span>
+                      <span>{t('pedagogy.btnPracticeTocarJunto')}</span>
                     </button>
                   </div>
-              )}
+                ))}
               </div>
-            }
-          </div>);
-
+            )}
+          </div>
+        );
       })}
-    </div>);
 
+      <RoleSelectorModal
+        isOpen={isRoleModalOpen}
+        onClose={handleCloseModal}
+        onSelectRole={handleSelectRole}
+      />
+    </div>
+  );
 }

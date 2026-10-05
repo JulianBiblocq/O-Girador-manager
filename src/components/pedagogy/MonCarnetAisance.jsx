@@ -21,7 +21,8 @@ import {
   computeTrainingStages
 } from '../../services/aisanceService';
 import { calculatePauseTimes } from '../../utils/reflexGameUtils';
-import { launchTrainingStage } from '../../utils/trainingLauncher';
+import { usePracticeLauncher } from '../../hooks/usePracticeLauncher';
+import RoleSelectorModal from './RoleSelectorModal';
 import { normalizeString } from '../../utils/repertoireMatcher';
 import GameStatsCard from '../games/GameStatsCard';
 import { isDefisEnLigneEnabled } from '../../utils/gameUtils';
@@ -253,6 +254,8 @@ export default function MonCarnetAisance({
   profileData
 }) {
   const { t } = useTranslation();
+  const { startPractice, isRoleModalOpen, handleSelectRole, handleCloseModal } =
+    usePracticeLauncher(profileData, sequenceurUrl);
   const { nomenclature: groupNomenclature } = useGroupNomenclature(profileData?.groupId);
   const isDefisAuthorized = isDefisEnLigneEnabled(enabledModules, profileData);
 
@@ -631,18 +634,17 @@ export default function MonCarnetAisance({
                         type="button"
                         onClick={() => {
                           const nextStageIdx = stages.find(s => !completedStages.includes(s.index))?.index ?? 0;
-                          launchTrainingStage(
+                          startPractice(
                             training.presetId || training.matchedPiece?.sequenceurId,
                             training.id,
-                            nextStageIdx,
-                            { baseUrl: sequenceurUrl }
+                            nextStageIdx
                           );
                         }}
                         className="px-3 py-1 text-[9.5px] font-black uppercase rounded bg-cordel-wood text-white border border-encre-noire shadow-xs hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center gap-1 shrink-0"
-                        title={t('pedagogy.carnet.ouvrirSequenciadorSurVotreProchain')}
+                        title={t('pedagogy.tooltipPracticeTocarJunto')}
                       >
                         <span>⚡</span>
-                        <span>{isMastered ? t('pedagogy.carnet.rejouerDansSequenciador') : t('pedagogy.carnet.sEntrainerMaintenant')}</span>
+                        <span>{isMastered ? t('pedagogy.carnet.rejouerDansSequenciador') : t('pedagogy.btnPracticeTocarJunto')}</span>
                       </button>
                     )}
                   </div>
@@ -677,18 +679,17 @@ export default function MonCarnetAisance({
                           <button
                             type="button"
                             onClick={() =>
-                              launchTrainingStage(
+                              startPractice(
                                 training.presetId || training.matchedPiece?.sequenceurId,
                                 training.id,
-                                stage.index,
-                                { baseUrl: sequenceurUrl }
+                                stage.index
                               )
                             }
                             className="shrink-0 px-2 py-1 text-[8.5px] font-black uppercase rounded bg-[var(--theme-bg,#fdfaf2)] border border-encre-noire/30 hover:bg-[#ebdcc0] text-encre-noire shadow-2xs hover:scale-105 active:scale-95 transition-all flex items-center gap-1 cursor-pointer"
-                            title={`Lancer sequenciador au tempo de ce palier (${stage.startBpm} ➔ ${stage.targetBpm} BPM)`}
+                            title={t('pedagogy.tooltipPracticeTocarJunto')}
                           >
                             <span>⚡</span>
-                            <span>{t('pedagogy.btnPractice')}</span>
+                            <span>{t('pedagogy.btnPracticeTocarJunto')}</span>
                           </button>
                         </div>
                       );
@@ -1157,6 +1158,13 @@ export default function MonCarnetAisance({
           profileData={profileData}
         />
       )}
+
+      {/* Micro-modale de sélection de secours du pupitre adhérent */}
+      <RoleSelectorModal
+        isOpen={isRoleModalOpen}
+        onClose={handleCloseModal}
+        onSelectRole={handleSelectRole}
+      />
     </div>
   );
 }

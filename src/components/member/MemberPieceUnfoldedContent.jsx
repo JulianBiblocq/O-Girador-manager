@@ -3,6 +3,7 @@ import PieceAisanceSection from './PieceAisanceSection';
 import PieceVideoSection from '../repertoire/PieceVideoSection';
 import PieceQuizModal from './PieceQuizModal';
 import { useTranslation } from '../LanguageContext';
+import { launchGlobalSequencer } from '../../utils/trainingLauncher';
 
 /**
  * Contenu déplié de la carte morceau pour adhérents (lecture seule stricte).
@@ -148,13 +149,17 @@ export default function MemberPieceUnfoldedContent({
           </div>
         )}
 
-        {/* Passerelle Séquenceur si disponible */}
-        {(piece.sequenceurFileUrl || piece.sequenceurId || piece.hasSequencer) && sequenceurUrl && (
-          <a href={sequenceurUrl} target="_blank" rel="noopener noreferrer" className="px-2.5 py-1 text-xs font-bold rounded bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-950 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all select-none" title={t('pedagogy.modals.ouvrirLeMorceauDans')}>
+        {/* Passerelle Séquenceur — Écoute globale */}
+        {piece.sequenceurId && (
+          <button
+            type="button"
+            onClick={() => launchGlobalSequencer(piece.sequenceurId, { baseUrl: sequenceurUrl })}
+            className="px-2.5 py-1 text-xs font-bold rounded bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-950 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all select-none"
+            title={t('repertoire.tooltipListenSequencer')}
+          >
             <span>🥁</span>
-            <span>{t('repertoire.sequencerTab') || t('pedagogy.modals.sequenceur')}</span>
-            <span className="text-[9px] opacity-70">↗</span>
-          </a>
+            <span>{t('repertoire.btnListenSequencer')}</span>
+          </button>
         )}
 
         {/* Passerelle Quiz Focus Répertoire */}
@@ -177,7 +182,15 @@ export default function MemberPieceUnfoldedContent({
       />
 
       {/* 5. Bloc Entraînements et Paliers d'Aisance */}
-      <PieceAisanceSection piece={piece} trainings={trainings} aisanceMap={aisanceMap} userId={userId} groupId={groupId} sequenceurUrl={sequenceurUrl} />
+      <PieceAisanceSection
+        piece={piece}
+        trainings={trainings}
+        aisanceMap={aisanceMap}
+        userId={userId}
+        groupId={groupId}
+        sequenceurUrl={sequenceurUrl}
+        profileData={profileData}
+      />
 
       {/* 6. Modale QCM Focus Répertoire */}
       {isQuizModalOpen && (

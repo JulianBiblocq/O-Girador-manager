@@ -5,6 +5,7 @@ import PieceSignalsModal from './PieceSignalsModal';
 import PieceLyricsModal from './PieceLyricsModal';
 import PieceCultureModal from './PieceCultureModal';
 import { useTranslation } from '../LanguageContext';
+import { launchGlobalSequencer } from '../../utils/trainingLauncher';
 
 // Échelle des 4 niveaux de confort personnel de l'adhérent
 export const COMFORT_LEVELS = [
@@ -96,6 +97,22 @@ export default function MemberPieceCard({
               <span>🙋</span>
               <span>{isRevisionRequested ? (t('pedagogy.revisionRequestedNotice') || 'Révision demandée ✓') : (t('pedagogy.requestRevisionBtn') || 'Demander à réviser')}</span>
             </button>
+
+            {/* Écoute globale Séquenceur (toutes pistes actives) */}
+            {piece.sequenceurId && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  launchGlobalSequencer(piece.sequenceurId, { baseUrl: sequenceurUrl });
+                }}
+                className="px-2.5 py-1 text-xs font-black rounded border border-encre-noire/25 bg-white text-stone-700 hover:bg-stone-50 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs select-none"
+                title={t('repertoire.tooltipListenSequencer')}
+              >
+                <span>🥁</span>
+                <span>{t('repertoire.btnListenSequencer')}</span>
+              </button>
+            )}
           </div>
 
           <div

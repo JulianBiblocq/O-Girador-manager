@@ -2937,6 +2937,9 @@ export const pt = {
     sequencerTab: "Sequenciador",
     audioRecord: "Ouvir gravação",
     videoTutorial: "Vídeo tutorial",
+    // Accès Sequenciador — Écoute globale
+    btnListenSequencer: "Ouvir no Sequenciador",
+    tooltipListenSequencer: "Audição integral de referência (todas as faixas ativas)",
     revisePiece: "Revisar esta música",
 
     // Modales de contenu & États vides
@@ -3027,6 +3030,15 @@ export const pt = {
     stageLabel: "Etapa {{index}}",
     requestRevisionBtn: "Pedir revisão no ensaio",
     revisionRequestedNotice: "Revisão solicitada ao Mestre",
+
+    // Paliers d'entraînement & Pistes de tempo
+    btnPracticeTocarJunto: "Praticar",
+    tooltipPracticeTocarJunto: "Tocar junto no Sequenciador (seu naipe fica silenciado)",
+
+    // Micro-sélection rapide de pupitre (Secours si non renseigné dans le profil)
+    modalSelectRoleTitle: "Escolha seu naipe para o treino",
+    modalSelectRoleSubtitle: "A faixa deste instrumento será silenciada para você tocar junto.",
+    btnCancel: "Cancelar",
 
     // Cockpit Pédagogique Mestre (Suivi de la troupe)
     dashboardTitle: "Acompanhamento & Análise Pedagógica do Grupo",

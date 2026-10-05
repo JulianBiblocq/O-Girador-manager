@@ -20,6 +20,7 @@ import { useSequencerRhythms } from '../../hooks/useSequencerRhythms';
 import { useDancadorChoreographies } from '../../hooks/useDancadorData';
 import { useRepertoireVaralDocs } from '../../hooks/useRepertoireVaralDocs';
 import { openSequencerWithCrossApp } from '../../utils/sequencerUrlUtils';
+import { launchGlobalSequencer } from '../../utils/trainingLauncher';
 import PieceVideoSection from '../repertoire/PieceVideoSection';
 import BatchAssignVideoModal from '../repertoire/BatchAssignVideoModal';
 import MestreRepertoireHeader from './MestreRepertoireHeader';
@@ -843,6 +844,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                         <TrainingCompactCard
                           trainings={pieceTrainings}
                           sequenceurUrl={sequenceurUrl}
+                          profileData={_profileData}
                           mode="repertoire"
                         />
                       </div>
@@ -857,18 +859,15 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                     {hasSequencer ? (
                       <button
                         type="button"
-                        onClick={() => openSequencerWithCrossApp(sequenceurUrl, piece)}
+                        onClick={() => {
+                          const targetSeqId = piece.sequenceurId || piece.preset?.id || piece.id;
+                          launchGlobalSequencer(targetSeqId, { baseUrl: sequenceurUrl });
+                        }}
                         className="text-[10px] font-black uppercase tracking-wider text-cordel-wood hover:underline inline-flex items-center gap-1.5 bg-transparent border-none p-0 cursor-pointer font-extrabold w-fit shrink-0"
-                        title={t('mestre.repertoire.openInSequencerTitle')}
+                        title={t('repertoire.tooltipListenSequencer')}
                       >
                         <span>🥁</span>
-                        <span>
-                          {piece.preset?._collection === 'presets' || piece.sequenceurType === 'presets'
-                            ? t('mestre.btnOpenPreset')
-                            : piece.sequenceurType === 'sections'
-                              ? (t('mestre.btnOpenSequence') || 'Ouvrir la Séquence ➔')
-                              : (t('mestre.btnOpenSequencer') || 'Ouvrir Séquenceur ➔')}
-                        </span>
+                        <span>{t('repertoire.btnListenSequencer')}</span>
                       </button>
                     ) : null}
 

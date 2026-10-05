@@ -1,8 +1,9 @@
 import React from 'react';
 import { resolvePieceTrainings } from '../../utils/repertoireMatcher';
 import { toggleStageCompletion } from '../../services/aisanceService';
-import { launchTrainingStage } from '../../utils/trainingLauncher';
 import { useTranslation } from '../LanguageContext';
+import { usePracticeLauncher } from '../../hooks/usePracticeLauncher';
+import RoleSelectorModal from '../pedagogy/RoleSelectorModal';
 
 /**
  * Bloc d'Aisance et Entraînements pour la fiche morceau d'un élève.
@@ -15,6 +16,7 @@ import { useTranslation } from '../LanguageContext';
  * @param {string} props.userId - Identifiant de l'élève connecté
  * @param {string} props.groupId - Identifiant du groupe/association
  * @param {string} [props.sequenceurUrl] - URL personnalisée du Séquenceur
+ * @param {Object} [props.profileData] - Données de profil adhérent (pour résolution du rôle)
  */
 export default function PieceAisanceSection({
   piece,
@@ -22,14 +24,15 @@ export default function PieceAisanceSection({
   aisanceMap = {},
   userId,
   groupId,
-  sequenceurUrl
+  sequenceurUrl,
+  profileData = null
 }) {
   const { t } = useTranslation();
+  const { startPractice, isRoleModalOpen, handleSelectRole, handleCloseModal } =
+    usePracticeLauncher(profileData, sequenceurUrl);
+
   // Résolution dynamique des entraînements associés (par presetId ou raccordement manuel, exclusions incluses)
-  const pieceTrainings = resolvePieceTrainings(
-    piece,
-    trainings
-  );
+  const pieceTrainings = resolvePieceTrainings(piece, trainings);
 
   // Règle Zéro bloc vide : aucun rendu s'il n'y a pas d'entraînement configuré
   if (!pieceTrainings || pieceTrainings.length === 0) {
@@ -55,7 +58,8 @@ export default function PieceAisanceSection({
           <span>{t('pedagogy.tempoTrainingTitle')}</span>
         </span>
         <span className="text-[9px] font-bold text-stone-600 bg-amber-100/70 border border-amber-300/80 px-1.5 py-0.5 rounded">
-          {pieceTrainings.length} {t('pedagogy.modals.entrainement')}{pieceTrainings.length > 1 ? 's' : ''}
+          {pieceTrainings.length} {t('pedagogy.modals.entrainement')}
+          {pieceTrainings.length > 1 ? 's' : ''}
         </span>
       </div>
 
@@ -119,18 +123,15 @@ export default function PieceAisanceSection({
                           ({stage.targetBpm} {t('pedagogy.modals.bpm')}
                         </span>
 
+                        {/* Bouton de pratique armé Tocar Junto */}
                         <button
                           type="button"
-                          onClick={() =>
-                            launchTrainingStage(tItem.presetId, tItem.id, stage.index, {
-                              baseUrl: sequenceurUrl
-                            })
-                          }
+                          onClick={() => startPractice(tItem.presetId, tItem.id, stage.index)}
                           className="ml-1 px-1.5 py-0.5 text-[8px] font-black uppercase rounded bg-[var(--color-cordel-vert,#2d6a4f)] text-white hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center gap-0.5 shadow-2xs select-none"
-                          title={`${t('pedagogy.btnPractice')} : ${t('pedagogy.stageLabel', { index: stage.index + 1 })}`}
+                          title={t('pedagogy.tooltipPracticeTocarJunto')}
                         >
                           <span>⚡</span>
-                          <span>{t('pedagogy.btnPractice')}</span>
+                          <span>{t('pedagogy.btnPracticeTocarJunto')}</span>
                         </button>
                       </div>
                     );
@@ -141,6 +142,13 @@ export default function PieceAisanceSection({
           );
         })}
       </div>
+
+      {/* Micro-modale de secours pour le choix du pupitre */}
+      <RoleSelectorModal
+        isOpen={isRoleModalOpen}
+        onClose={handleCloseModal}
+        onSelectRole={handleSelectRole}
+      />
     </div>
   );
 }

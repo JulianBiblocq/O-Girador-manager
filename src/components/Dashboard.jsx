@@ -220,6 +220,7 @@ export default function Dashboard({
             groupId={profileData?.groupId} 
             user={user} 
             profileData={profileData} 
+            isDashboard={true}
             onFocusModeChange={(isFocused) => {
               setAgendaFocusMode(isFocused);
               if (!isFocused) setSelectedEventForAgenda(null);
@@ -395,6 +396,7 @@ export default function Dashboard({
                     groupId={currentProfile?.groupId} 
                     user={user} 
                     profileData={currentProfile} 
+                    isDashboard={true}
                     onFocusModeChange={(isFocused) => setAgendaFocusMode(isFocused)}
                     onNavigateToView={onNavigateToView}
                     selectedEvent={selectedEventForAgenda}
