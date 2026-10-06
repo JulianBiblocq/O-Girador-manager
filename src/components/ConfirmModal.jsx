@@ -3,6 +3,8 @@
  */
 
 import CordelConfirmModal from './common/CordelConfirmModal';
+import CordelPromptModal from './common/CordelPromptModal';
 
 export default CordelConfirmModal;
-export { CordelConfirmModal };
+export { CordelConfirmModal, CordelPromptModal };
+

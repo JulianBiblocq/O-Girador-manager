@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { STATUS_ARBITRAGE_LABELS } from './commissionUtils';
+import { useConfirm } from '../../../context/ConfirmContext';
 
 /**
  * Sous-composant du tiroir "Budget & Dépenses"
@@ -10,6 +11,7 @@ export default function CommissionBudgetSection({
   onChangeBudget,
   canArbitrate = false
 }) {
+  const { prompt } = useConfirm();
   const [newDevisIntitule, setNewDevisIntitule] = useState('');
   const [newDevisMontant, setNewDevisMontant] = useState('');
   const [newDevisPrestataire, setNewDevisPrestataire] = useState('');
@@ -99,28 +101,32 @@ export default function CommissionBudgetSection({
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={() => onChangeBudget({
-                ...budget,
-                alloue: alloue > 0 ? alloue : (demande > 0 ? demande : totalDevis),
-                statusArbitrage: 'valide',
-                motifRefus: ''
-              })}
+              onClick={() => onChangeBudget({ ...budget, alloue: alloue > 0 ? alloue : (demande > 0 ? demande : totalDevis), statusArbitrage: 'valide', motifRefus: '' })}
               className="px-3 py-1 font-black rounded border border-encre-noire bg-[var(--color-cordel-vert)] text-white hover:opacity-90 shadow-xs"
             >
               ✅ Valider le budget ({alloue > 0 ? alloue : (demande > 0 ? demande : totalDevis)} €)
             </button>
+
             <button
               type="button"
-              onClick={() => {
-                const motif = window.prompt('Motif du rejet ou de la révision demandée :', motifRefus || '');
-                if (motif !== null) {
-                  onChangeBudget({ ...budget, statusArbitrage: 'rejete', motifRefus: motif.trim() });
-                }
+              onClick={async () => {
+                const motif = await prompt({
+                  title: 'Arbitrage budgétaire',
+                  message: 'Motif du rejet ou de la révision demandée :',
+                  defaultValue: motifRefus || '',
+                  placeholder: 'Indiquez les raisons du refus ou ajustements...',
+                  multiline: true,
+                  confirmLabel: 'Confirmer la révision',
+                  variant: 'danger',
+                  badge: '⚠️ Révision demandée'
+                });
+                if (motif !== null) onChangeBudget({ ...budget, statusArbitrage: 'rejete', motifRefus: motif.trim() });
               }}
-              className="px-2.5 py-1 font-bold rounded border border-encre-noire bg-rose-100 text-rose-900 hover:bg-rose-200"
+              className="px-2.5 py-1 font-bold rounded border border-encre-noire bg-rose-100 text-rose-900 hover:bg-rose-200 cursor-pointer"
             >
               ⚠️ Refuser / Demander révision
             </button>
+
           </div>
         </div>
       ) : statusArbitrage !== 'valide' && (

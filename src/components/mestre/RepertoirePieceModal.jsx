@@ -27,6 +27,7 @@ import {
   findMatchingChoreography
 } from '../../utils/repertoireMatcher';
 import { useTranslation } from '../LanguageContext';
+import { useConfirm } from '../../context/ConfirmContext';
 
 /**
  * Modale de création et d'édition d'un morceau du répertoire musical.
@@ -51,6 +52,7 @@ export default function RepertoirePieceModal({
   onNavigatePiece = null
 }) {
   const { t } = useTranslation();
+  const { prompt } = useConfirm();
   // Champs administratifs & de direction artistique
   const [titre, setTitre] = useState('');
   const [statutSaison, setStatutSaison] = useState('saison'); // 'saison' | 'chantier' | 'archive'
@@ -1184,8 +1186,18 @@ export default function RepertoirePieceModal({
 
                   <button
                     type="button"
-                    onClick={() => {
-                      const custom = window.prompt("Entrez l'URL directe du fichier audio (MP3, WAV, etc.) :", customAudioUrl || '');
+                    onClick={async () => {
+                      const custom = await prompt({
+                        title: "URL audio direct",
+                        message: "Entrez l'URL directe du fichier audio (MP3, WAV, etc.) :",
+                        defaultValue: customAudioUrl || '',
+                        placeholder: "https://...",
+                        inputType: "url",
+                        confirmLabel: "Valider",
+                        cancelLabel: "Annuler",
+                        variant: "vert",
+                        badge: "🎵 Fichier audio"
+                      });
                       if (custom !== null) {
                         setCustomAudioUrl(custom.trim());
                       }

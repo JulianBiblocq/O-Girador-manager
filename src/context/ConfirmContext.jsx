@@ -8,5 +8,7 @@ export {
   ConfirmModalContext,
   ConfirmContext,
   useConfirm,
+  usePrompt,
   default
 } from './ConfirmModalContext';
+

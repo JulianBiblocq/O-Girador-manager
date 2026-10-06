@@ -9,6 +9,7 @@ import EmojiPickerPopover, { EmojiQuickRow } from './forum/EmojiPickerPopover';
 import { MentionDropdown, filterUsersByMentionQuery } from './forum/MentionAutocomplete';
 import { uploadForumAttachment } from '../utils/attachmentUploadUtils';
 import VoiceDictationButton from './common/VoiceDictationButton';
+import { useConfirm } from '../context/ConfirmContext';
 
 export default function RichTextEditor({ 
   value = '', 
@@ -27,6 +28,7 @@ export default function RichTextEditor({
   allUsers = [],
   onAddPoll = null
 }) {
+  const { prompt } = useConfirm();
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [isMentionListOpen, setIsMentionListOpen] = useState(false);
@@ -219,9 +221,19 @@ export default function RichTextEditor({
   }
 
   // Gérer Link Button
-  const handleSetLink = () => {
+  const handleSetLink = async () => {
     const previousUrl = editor.getAttributes('link').href;
-    const url = window.prompt('URL du lien :', previousUrl || 'https://');
+    const url = await prompt({
+      title: 'Insérer un lien',
+      message: 'URL du lien :',
+      defaultValue: previousUrl || 'https://',
+      inputType: 'url',
+      placeholder: 'https://...',
+      confirmLabel: 'Appliquer',
+      cancelLabel: 'Annuler',
+      variant: 'vert',
+      badge: '🔗 Lien web'
+    });
     if (url === null) return;
     if (url === '') {
       editor.chain().focus().extendMarkRange('link').unsetLink().run();

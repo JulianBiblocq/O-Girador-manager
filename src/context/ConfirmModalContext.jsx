@@ -1,17 +1,18 @@
 /**
- * Contexte global pour les modales de confirmation et d'alerte Cordel.
- * Remplace de manière asynchrone window.confirm et window.alert.
+ * Contexte global pour les modales de confirmation, d'alerte et de saisie Cordel.
+ * Remplace de manière asynchrone window.confirm, window.alert et window.prompt.
  */
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import CordelConfirmModal from '../components/common/CordelConfirmModal';
+import CordelPromptModal from '../components/common/CordelPromptModal';
 
 export const ConfirmModalContext = createContext(null);
 export const ConfirmContext = ConfirmModalContext;
 
 /**
  * ConfirmModalProvider
- * Fournisseur de contexte global encapsulant la modale Cordel.
+ * Fournisseur de contexte global encapsulant les modales Cordel.
  */
 export function ConfirmModalProvider({ children }) {
   const [modalState, setModalState] = useState({
@@ -22,6 +23,21 @@ export function ConfirmModalProvider({ children }) {
     cancelLabel: 'Annuler',
     variant: 'danger',
     isAlert: false,
+    resolve: null
+  });
+
+  const [promptState, setPromptState] = useState({
+    isOpen: false,
+    title: 'Saisie requise',
+    message: '',
+    defaultValue: '',
+    placeholder: '',
+    confirmLabel: 'Valider',
+    cancelLabel: 'Annuler',
+    variant: 'vert',
+    multiline: false,
+    inputType: 'text',
+    badge: '',
     resolve: null
   });
 
@@ -116,14 +132,60 @@ export function ConfirmModalProvider({ children }) {
     });
   }, []);
 
-  // Surcharge globale sécurisée de window.alert
+  const promptModal = useCallback((options, defaultVal = '') => {
+    return new Promise((resolve) => {
+      if (typeof options === 'string') {
+        const lower = options.toLowerCase();
+        const isMsg = lower.includes('message');
+        const isLink = lower.includes('lien') || lower.includes('url');
+        const isRefus = lower.includes('rejet') || lower.includes('motif') || lower.includes('refus');
+
+        setPromptState({
+          isOpen: true,
+          title: isMsg ? 'Message privé' : isLink ? 'Insérer un lien' : isRefus ? 'Motif de révision' : 'Saisie Cordel',
+          message: options,
+          defaultValue: defaultVal || '',
+          placeholder: isMsg ? 'Écrivez votre message ici...' : isLink ? 'https://...' : '',
+          confirmLabel: isMsg ? 'Envoyer' : isRefus ? 'Confirmer' : 'Valider',
+          cancelLabel: 'Annuler',
+          variant: isRefus ? 'danger' : 'vert',
+          multiline: isMsg || isRefus,
+          inputType: isLink ? 'url' : 'text',
+          badge: isMsg ? '💬 Message privé' : isLink ? '🔗 Lien web' : isRefus ? '⚠️ Motif requis' : '✏️ Saisie',
+          resolve
+        });
+      } else {
+        const opts = options || {};
+        setPromptState({
+          isOpen: true,
+          title: opts.title || 'Saisie requise',
+          message: opts.message || opts.prompt || '',
+          defaultValue: opts.defaultValue || defaultVal || '',
+          placeholder: opts.placeholder || '',
+          confirmLabel: opts.confirmLabel || opts.confirmText || 'Valider',
+          cancelLabel: opts.cancelLabel || opts.cancelText || 'Annuler',
+          variant: opts.variant || 'vert',
+          multiline: Boolean(opts.multiline),
+          inputType: opts.inputType || 'text',
+          badge: opts.badge || '',
+          resolve
+        });
+      }
+    });
+  }, []);
+
+  // Surcharges globales sécurisées de window.alert et window.prompt
   useEffect(() => {
     if (typeof window !== 'undefined') {
       window.alert = (msg) => {
         alertModal(msg);
       };
+      // Permet aux fonctions asynchrones d'appeler window.prompt tout en bénéficiant de la modale Cordel
+      window.prompt = (msg, def) => {
+        return promptModal(msg, def);
+      };
     }
-  }, [alertModal]);
+  }, [alertModal, promptModal]);
 
   const handleConfirm = useCallback(() => {
     if (modalState.resolve) {
@@ -139,8 +201,22 @@ export function ConfirmModalProvider({ children }) {
     setModalState((prev) => ({ ...prev, isOpen: false, resolve: null }));
   }, [modalState]);
 
+  const handleConfirmPrompt = useCallback((value) => {
+    if (promptState.resolve) {
+      promptState.resolve(value);
+    }
+    setPromptState((prev) => ({ ...prev, isOpen: false, resolve: null }));
+  }, [promptState]);
+
+  const handleCancelPrompt = useCallback(() => {
+    if (promptState.resolve) {
+      promptState.resolve(null);
+    }
+    setPromptState((prev) => ({ ...prev, isOpen: false, resolve: null }));
+  }, [promptState]);
+
   return (
-    <ConfirmModalContext.Provider value={{ confirm, alert: alertModal }}>
+    <ConfirmModalContext.Provider value={{ confirm, alert: alertModal, prompt: promptModal }}>
       {children}
       <CordelConfirmModal
         isOpen={modalState.isOpen}
@@ -153,6 +229,21 @@ export function ConfirmModalProvider({ children }) {
         onConfirm={handleConfirm}
         onCancel={handleCancel}
       />
+      <CordelPromptModal
+        isOpen={promptState.isOpen}
+        title={promptState.title}
+        message={promptState.message}
+        defaultValue={promptState.defaultValue}
+        placeholder={promptState.placeholder}
+        confirmLabel={promptState.confirmLabel}
+        cancelLabel={promptState.cancelLabel}
+        variant={promptState.variant}
+        multiline={promptState.multiline}
+        inputType={promptState.inputType}
+        badge={promptState.badge}
+        onConfirm={handleConfirmPrompt}
+        onCancel={handleCancelPrompt}
+      />
     </ConfirmModalContext.Provider>
   );
 }
@@ -163,7 +254,7 @@ export const ConfirmProvider = ConfirmModalProvider;
 /**
  * Hook useConfirm
  * Supporte à la fois l'appel direct `const confirm = useConfirm(); await confirm(...)`
- * et la déstructuration `const { confirm, alert } = useConfirm();`.
+ * et la déstructuration `const { confirm, alert, prompt } = useConfirm();`.
  * Intègre un repli sécurisé non-bloquant en cas d'appel temporaire hors Provider (HMR).
  */
 export function useConfirm() {
@@ -182,6 +273,7 @@ export function useConfirm() {
   confirmFn.confirm = confirmFn;
   if (context) {
     confirmFn.alert = context.alert;
+    confirmFn.prompt = context.prompt;
   } else {
     confirmFn.alert = (options) => {
       const msg = typeof options === 'string' ? options : (options?.message || '');
@@ -189,9 +281,30 @@ export function useConfirm() {
       if (nativeAlert) nativeAlert(msg);
       return Promise.resolve(true);
     };
+    confirmFn.prompt = (options, defaultVal) => {
+      const msg = typeof options === 'string' ? options : (options?.message || options?.title || '');
+      const def = typeof options === 'object' ? (options?.defaultValue || defaultVal) : defaultVal;
+      const nativePrompt = typeof window !== 'undefined' ? window['prompt'] : null;
+      return Promise.resolve(nativePrompt ? nativePrompt(msg, def) : null);
+    };
   }
 
   return confirmFn;
 }
 
+/**
+ * Hook usePrompt
+ * Permet d'ouvrir directement une invite de saisie Cordel.
+ */
+export function usePrompt() {
+  const context = useContext(ConfirmModalContext);
+  return context?.prompt || ((options, defaultVal) => {
+    const msg = typeof options === 'string' ? options : (options?.message || options?.title || '');
+    const def = typeof options === 'object' ? (options?.defaultValue || defaultVal) : defaultVal;
+    const nativePrompt = typeof window !== 'undefined' ? window['prompt'] : null;
+    return Promise.resolve(nativePrompt ? nativePrompt(msg, def) : null);
+  });
+}
+
 export default ConfirmModalContext;
+

@@ -5,10 +5,12 @@ import { useTranslation } from '../LanguageContext';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import XiloAvatar from '../XiloAvatar';
+import { useConfirm } from '../../context/ConfirmContext';
 import { filterPublicPercussionInstruments, computePupitresList, resolvePupitreForInstrument as resolvePupitreCanonical } from '../../utils/tagUtils';
 import { DEFAULT_CUSTOM_CATEGORIES, resolveCategory, getCustomCategories, getCategoryName } from '../../utils/categoryUtils';
 import { getVoiceLabel, normalizeGroupNomenclature } from '../../constants/nomenclature';
 import { getInstrumentIconPath } from '../../utils/instrumentUtils';
+import CastingAssignmentModal from './CastingAssignmentModal';
 
 const DEFAULT_INSTRUMENTS = [
   "Alfaia",
@@ -96,6 +98,7 @@ const sanitizeMemberDanseWishes = (memberData, memberId) => {
  */
 export default function MestreOrientationCasting({ user, profileData, _onNavigateToMember }) {
   const { t } = useTranslation();
+  const { alert, prompt } = useConfirm();
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [instrumentsDisponibles, setInstrumentsDisponibles] = useState(DEFAULT_INSTRUMENTS);
@@ -106,6 +109,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
   const [saving, setSaving] = useState(false);
   const [groupNomenclature, setGroupNomenclature] = useState({});
   const [selectedPupitreFilter, setSelectedPupitreFilter] = useState(null);
+  const [selectedMemberForAssignment, setSelectedMemberForAssignment] = useState(null);
 
   const groupId = profileData?.groupId || null;
 
@@ -255,6 +259,31 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
   const resolvePupitreForInstrument = useCallback((instName) => {
     return resolvePupitreCanonical(instName, pupitresList, linkedInstruments);
   }, [pupitresList, linkedInstruments]);
+
+  // Liste consolidée de tous les pupitres configurés dans l'association pour l'attribution universelle
+  const allAssociationPupitres = useMemo(() => {
+    const list = [...pupitresList];
+    (instrumentsDisponibles || []).forEach(inst => {
+      if (inst && typeof inst === 'string') {
+        const clean = inst.trim();
+        const resolved = resolvePupitreForInstrument(clean);
+        if (!list.includes(clean) && !list.includes(resolved)) {
+          list.push(clean);
+        }
+      }
+    });
+    return list;
+  }, [pupitresList, instrumentsDisponibles, resolvePupitreForInstrument]);
+
+  // Résout l'instrument de la saison précédente pour un membre (aide à la reconduction)
+  const resolvePreviousSeasonInstrument = useCallback((m) => {
+    if (!m) return null;
+    const inst = m.instrumentPrincipal || m.instrument;
+    if (inst && inst !== 'En attente' && inst.trim() !== '') return inst;
+    if (m.instrumentSecondaire && m.instrumentSecondaire !== 'En attente' && m.instrumentSecondaire.trim() !== '') return m.instrumentSecondaire;
+    if (m.instrumentSaison && m.instrumentSaison !== 'En attente' && m.instrumentSaison.trim() !== '') return m.instrumentSaison;
+    return null;
+  }, []);
 
   // Pupitres combinés (groupes liés + instruments configurés seuls + Danse tout au bout)
   const displayPupitres = useMemo(() => {
@@ -774,7 +803,16 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
   };
 
   const handleSendPM = async (member) => {
-    const msg = window.prompt(`Envoyer un message privé à ${member.prenom} :`);
+    const msg = await prompt({
+      title: 'Message privé',
+      message: `Envoyer un message privé à ${member.prenom} :`,
+      placeholder: `Bonjour ${member.prenom}, ...`,
+      confirmLabel: 'Envoyer',
+      cancelLabel: 'Annuler',
+      multiline: true,
+      variant: 'vert',
+      badge: `💬 Destinataire : ${member.prenom}`
+    });
     if (msg && msg.trim() && user?.uid) {
       try {
         await addDoc(collection(db, 'private_messages'), {
@@ -824,6 +862,76 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
     } catch (err) {
       console.error("MestreOrientationCasting - Erreur de validation rapide du vœu :", err);
       alert(t('mestre.casting.errValidatingOrientation'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Sauvegarde complète de l'affectation depuis CastingAssignmentModal
+  const handleSaveModalAssignment = async (memberId, assignmentData) => {
+    setSaving(true);
+    try {
+      const userRef = doc(db, 'users', memberId);
+      const targetPupitre = resolvePupitreForInstrument(assignmentData.instrumentPrincipal) || assignmentData.instrumentPrincipal;
+      
+      const updatePayload = {
+        instrument: targetPupitre,
+        instrumentPrincipal: targetPupitre,
+        souhaiteChangerInstrument: false,
+        voeuPrincipal: '',
+        voeuSecondaire: '',
+        voeuTertiaire: '',
+        voeuxInstruments: []
+      };
+
+      if (assignmentData.niveauMusique && assignmentData.niveauMusique !== 'aucun') {
+        updatePayload.niveauMusique = assignmentData.niveauMusique;
+        updatePayload.niveau = assignmentData.niveauMusique;
+      }
+
+      const member = members.find(m => m.id === memberId);
+      if (member?.isNew) {
+        updatePayload.isNew = false;
+        updatePayload.statutActuel = 'active';
+      }
+
+      const secInst = assignmentData.instrumentSecondaire || '';
+      updatePayload.instrumentSecondaire = secInst;
+      updatePayload.instrumentsJoues = Array.from(new Set([targetPupitre, secInst].filter(Boolean)));
+
+      if (Array.isArray(assignmentData.competencesAlfaia)) {
+        updatePayload.competencesAlfaia = assignmentData.competencesAlfaia;
+      }
+      if (assignmentData.attributionCaixas) {
+        updatePayload.attributionCaixas = assignmentData.attributionCaixas;
+      }
+
+      // Disponibilité en secours
+      const currentSecours = member?.dispoSecoursInstruments || [];
+      let updatedSecours = [...currentSecours];
+      if (targetPupitre) {
+        if (assignmentData.dispoSecours) {
+          if (!updatedSecours.includes(targetPupitre)) updatedSecours.push(targetPupitre);
+        } else {
+          updatedSecours = updatedSecours.filter(i => i !== targetPupitre);
+        }
+      }
+      if (secInst) {
+        if (assignmentData.dispoSecoursSec) {
+          if (!updatedSecours.includes(secInst)) updatedSecours.push(secInst);
+        } else {
+          updatedSecours = updatedSecours.filter(i => i !== secInst);
+        }
+      }
+      updatePayload.dispoSecoursInstruments = updatedSecours;
+      updatePayload.disponibleSecours = false;
+
+      await updateDoc(userRef, updatePayload);
+      setMembers(prev => prev.map(m => m.id === memberId ? { ...m, ...updatePayload } : m));
+      setSelectedMemberForAssignment(null);
+    } catch (err) {
+      console.error("MestreOrientationCasting - Erreur de sauvegarde affectation :", err);
+      alert(t('mestre.casting.errSave'));
     } finally {
       setSaving(false);
     }
@@ -1309,10 +1417,10 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                                     className="theme-input text-[10px] py-1 bg-white min-w-[130px] font-bold"
                                   >
                                     <option value="">{t('mestre.casting.optionNone')}</option>
-                                    {resolvedMain && !pupitresList.includes(resolvedMain) && (
+                                    {resolvedMain && !allAssociationPupitres.includes(resolvedMain) && (
                                       <option value={resolvedMain}>{resolvedMain}</option>
                                     )}
-                                    {pupitresList.map(pup => (
+                                    {allAssociationPupitres.map(pup => (
                                       <option key={`main-${pup}`} value={pup}>{pup}</option>
                                     ))}
                                   </select>
@@ -1428,15 +1536,15 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                       {/* 3. Vœux & Deuxième Instrument */}
                       <td className="py-2.5 px-2">
                         <div className="flex flex-col gap-2 items-start">
-                          {hasWishes ? (
-                            <div className="flex flex-col gap-1">
-                              <span className="text-[9px] font-black uppercase text-cordel-master-dark opacity-60">
-                                {t('mestre.casting.currentWishesColon')}
-                              </span>
-                              <div className="flex flex-wrap gap-1.5">
+                          {/* Suggestions de Vœux ou Badge neutre "Sans vœux" & Bouton Reconduire */}
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {hasWishes ? (
+                              <div className="flex items-center gap-1 flex-wrap">
+                                <span className="text-[9px] font-black uppercase text-cordel-master-dark opacity-60">
+                                  {t('mestre.casting.currentWishesColon')}
+                                </span>
                                 {wishesList.map((wish, idx) => (
                                   <button
-                                    data-tour="mestre-orientation-assignment"
                                     key={`${wish}-${idx}`}
                                     type="button"
                                     onClick={() => handleQuickValidate(m, wish)}
@@ -1449,37 +1557,67 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                                   </button>
                                 ))}
                               </div>
-                            </div>
-                          ) : (isUnassigned || mainInst === 'En attente' || !mainInst) ? (
-                            <span className="text-[9.5px] font-bold text-amber-900 dark:text-amber-200 bg-amber-100/80 dark:bg-amber-950/40 px-2 py-0.5 rounded border border-amber-300/60 select-none">
-                              ⏳ En attente de vœux (cours d'essai)
-                            </span>
-                          ) : m.souhaiteChangerInstrument ? (
-                            <span className="text-[10px] italic text-cordel-master-dark/60 font-semibold">
-                              {t('mestre.casting.wishesToChangeBadge')}
-                            </span>
-                          ) : (
-                            mainInst && mainInst !== 'En attente' && mainInst.toLowerCase() !== 'danse' ? (
-                              <div className="flex flex-col gap-0.5 mb-1">
-                                <label className="flex items-center gap-1.5 cursor-pointer opacity-90 hover:opacity-100 transition-opacity w-max bg-black/5 dark:bg-white/5 px-2 py-1 rounded border border-cordel-master-dark/10">
-                                  <input
-                                    type="checkbox"
-                                    checked={m.poursuiteInstrumentPrincipal !== false}
-                                    onChange={() => handleTogglePoursuite(m, m.poursuiteInstrumentPrincipal !== false)}
+                            ) : (
+                              <span
+                                className="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded bg-stone-200/80 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-300 dark:border-stone-700 select-none"
+                                title="Sans vœux — En attente de vœux (cours d'essai)"
+                              >
+                                Sans vœux
+                              </span>
+                            )}
+
+
+                            {/* Raccourci 1-clic : Reconduire l'instrument de la saison précédente */}
+                            {(() => {
+                              const prevInst = resolvePreviousSeasonInstrument(m);
+                              if (prevInst && (m.estAncienMembre || !m.isNew || m.souhaiteChangerInstrument || isUnassigned)) {
+                                return (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleQuickValidate(m, prevInst)}
                                     disabled={saving}
-                                    className="w-3 h-3 accent-cordel-wood cursor-pointer"
-                                  />
-                                  <span className="text-[10px] font-bold text-cordel-master-dark/80">
-                                    {t('mestre.casting.continuationPrefix')}{mainInst})
-                                  </span>
-                                </label>
-                                {/* Voix Alfaia si la poursuite concerne l'Alfaia */}
-                                {m.poursuiteInstrumentPrincipal !== false && (mainInst || '').toLowerCase().includes('alfaia') && renderAlfaiaVoices(m, 'poursuite')}
-                                {/* Attribution Caixas si la poursuite concerne les Caixas */}
-                                {m.poursuiteInstrumentPrincipal !== false && ((mainInst || '').toLowerCase().includes('caixa') || (mainInst || '').toLowerCase().includes('tarol')) && renderCaixasAttribution(m, 'poursuite')}
-                              </div>
-                            ) : null
-                          )}
+                                    className="text-[9.5px] font-black text-emerald-800 dark:text-emerald-200 bg-emerald-100 dark:bg-emerald-950/50 hover:bg-emerald-200 border border-emerald-500/40 px-2 py-0.5 rounded flex items-center gap-1 shadow-2xs cursor-pointer transition-all"
+                                    title={`Reconduire en 1 clic l'instrument de la saison précédente (${prevInst})`}
+                                  >
+                                    <span>🔄</span>
+                                    <span>Reconduire ({prevInst})</span>
+                                  </button>
+                                );
+                              }
+                              return null;
+                            })()}
+                          </div>
+
+                          {/* Sélecteur direct universel pour TOUS les membres + Bouton Gérer */}
+                          <div data-tour="mestre-orientation-assignment" className="flex items-center gap-1.5 flex-wrap w-full max-w-[260px]">
+                            <select
+                              value=""
+                              onChange={(e) => {
+                                if (e.target.value) handleQuickValidate(m, e.target.value);
+                              }}
+                              disabled={saving}
+                              className="theme-input text-[10px] py-1 px-1.5 bg-white dark:bg-black/30 font-bold border-cordel-master-dark/30 hover:border-encre-noire transition-all cursor-pointer flex-1 min-w-[130px]"
+                              title="Affecter directement n'importe quel pupitre de l'association"
+                            >
+                              <option value="">🎯 Affecter un pupitre...</option>
+                              {allAssociationPupitres.map(pup => (
+                                <option key={`quick-${m.id}-${pup}`} value={pup}>
+                                  {pup}
+                                </option>
+                              ))}
+                            </select>
+
+                            <button
+                              type="button"
+                              onClick={() => setSelectedMemberForAssignment(m)}
+                              disabled={saving}
+                              className="text-[10px] font-black uppercase text-encre-noire dark:text-cordel-bg bg-cordel-bg-light hover:bg-amber-100 dark:hover:bg-neutral-800 border border-encre-noire/40 px-2 py-1 rounded shadow-2xs cursor-pointer flex items-center gap-1 transition-all shrink-0"
+                              title="Ouvrir la modale complète d'affectation"
+                            >
+                              <span>⚙️</span>
+                              <span>Gérer</span>
+                            </button>
+                          </div>
 
                           {!(m.poursuiteInstrumentPrincipal !== false && mainInst && mainInst !== 'En attente' && mainInst.toLowerCase() !== 'danse' && !hasWishes && !m.souhaiteChangerInstrument) && (
                             <div className="flex flex-col gap-1 pt-1 border-t border-dashed border-cordel-master-dark/20 w-full max-w-[180px]">
@@ -1580,6 +1718,19 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
           </table>
         </div>
       </CordelCard>
+
+      {/* Modale d'affectation universelle du Mestre */}
+      <CastingAssignmentModal
+        isOpen={Boolean(selectedMemberForAssignment)}
+        onClose={() => setSelectedMemberForAssignment(null)}
+        member={selectedMemberForAssignment}
+        pupitresList={allAssociationPupitres}
+        customCategories={customCategories}
+        onSave={handleSaveModalAssignment}
+        saving={saving}
+        resolvePupitreForInstrument={resolvePupitreForInstrument}
+      />
     </div>
   );
 }
+
