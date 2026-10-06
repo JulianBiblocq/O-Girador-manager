@@ -31,13 +31,20 @@ export default function TreasuryCotisations({
   // État de l'accordéon de configuration
   const [showConfig, setShowConfig] = useState(false);
 
+  // État du message temporaire (toast) de sauvegarde des paramètres
+  const [toastMessage, setToastMessage] = useState(null);
+
   // État du formulaire de configuration locale
   const [formConfig, setFormConfig] = useState({
     montantAdhesion: 0,
+    adhesionAmount: 0,
     montantCautionDefaut: 150,
+    cautionInstrumentDefault: 150,
     optionsCotisation: [],
+    cotisationOptions: [],
     formulesAdhesion: [],
     lienPaiementExterne: '',
+    helloAssoLink: '',
     instructionsPaiement: '',
     helloAssoSignatureKey: ''
   });
@@ -54,18 +61,30 @@ export default function TreasuryCotisations({
         ? associationSettings.formulesAdhesion
         : (Array.isArray(associationSettings.publicTheme?.formulesRecrutement) ? associationSettings.publicTheme.formulesRecrutement : []);
 
+      const rawCaution = associationSettings.montantCautionDefaut ?? associationSettings.cautionInstrumentDefault ?? associationSettings.cautionParDefaut;
+      const parsedCaution = (rawCaution !== undefined && rawCaution !== null && rawCaution !== '' && !isNaN(Number(rawCaution)))
+        ? Number(rawCaution)
+        : 150;
+
+      const rawAdhesion = associationSettings.montantAdhesion ?? associationSettings.adhesionAmount ?? associationSettings.montantCotisation;
+      const parsedAdhesion = (rawAdhesion !== undefined && rawAdhesion !== null && rawAdhesion !== '' && !isNaN(Number(rawAdhesion)))
+        ? Number(rawAdhesion)
+        : 0;
+
+      const opts = Array.isArray(associationSettings.optionsCotisation) && associationSettings.optionsCotisation.length > 0
+        ? associationSettings.optionsCotisation
+        : (Array.isArray(associationSettings.cotisationOptions) ? associationSettings.cotisationOptions : []);
+
       setFormConfig({
-        montantAdhesion: associationSettings.montantAdhesion !== undefined 
-          ? associationSettings.montantAdhesion 
-          : (associationSettings.montantCotisation || 0),
-        montantCautionDefaut: associationSettings.montantCautionDefaut !== undefined
-          ? associationSettings.montantCautionDefaut
-          : 150,
-        optionsCotisation: Array.isArray(associationSettings.optionsCotisation) 
-          ? [...associationSettings.optionsCotisation] 
-          : [],
+        montantAdhesion: parsedAdhesion,
+        adhesionAmount: parsedAdhesion,
+        montantCautionDefaut: parsedCaution,
+        cautionInstrumentDefault: parsedCaution,
+        optionsCotisation: [...opts],
+        cotisationOptions: [...opts],
         formulesAdhesion: existingFormules,
-        lienPaiementExterne: associationSettings.lienPaiementExterne || '',
+        lienPaiementExterne: associationSettings.lienPaiementExterne || associationSettings.helloAssoLink || '',
+        helloAssoLink: associationSettings.lienPaiementExterne || associationSettings.helloAssoLink || '',
         instructionsPaiement: associationSettings.instructionsPaiement || '',
         helloAssoSignatureKey: helloAssoSignatureKey || ''
       });
@@ -81,11 +100,11 @@ export default function TreasuryCotisations({
 
   const baseAdhesionAmount = associationSettings?.montantAdhesion !== undefined 
     ? associationSettings.montantAdhesion 
-    : (associationSettings?.montantCotisation || 0);
+    : (associationSettings?.adhesionAmount !== undefined ? associationSettings.adhesionAmount : (associationSettings?.montantCotisation || 0));
 
-  const optionsCotisation = Array.isArray(associationSettings?.optionsCotisation) 
+  const optionsCotisation = Array.isArray(associationSettings?.optionsCotisation) && associationSettings.optionsCotisation.length > 0
     ? associationSettings.optionsCotisation 
-    : [];
+    : (Array.isArray(associationSettings?.cotisationOptions) ? associationSettings.cotisationOptions : []);
 
   // Filtrage combiné des adhérents (Recherche, Statut Cotisation, Statut Caution)
   const filteredMembers = members.filter((member) => {
@@ -187,23 +206,63 @@ export default function TreasuryCotisations({
   };
 
   const handleSaveConfig = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     try {
+      const rawCaution = formConfig.montantCautionDefaut ?? formConfig.cautionInstrumentDefault;
+      const parsedCaution = (rawCaution !== undefined && rawCaution !== null && rawCaution !== '' && !isNaN(Number(rawCaution)))
+        ? Number(rawCaution)
+        : 150;
+
+      const rawAdhesion = formConfig.montantAdhesion ?? formConfig.adhesionAmount;
+      const parsedAdhesion = (rawAdhesion !== undefined && rawAdhesion !== null && rawAdhesion !== '' && !isNaN(Number(rawAdhesion)))
+        ? Number(rawAdhesion)
+        : 0;
+
+      const rawOpts = Array.isArray(formConfig.optionsCotisation) && formConfig.optionsCotisation.length > 0
+        ? formConfig.optionsCotisation
+        : (Array.isArray(formConfig.cotisationOptions) ? formConfig.cotisationOptions : []);
+
+      const normalizedOptions = rawOpts.map(opt => {
+        const id = opt.id || `cot_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+        const label = opt.label || opt.nom || '';
+        const nom = opt.nom || opt.label || '';
+        const amount = opt.amount !== undefined && opt.amount !== '' 
+          ? Number(opt.amount) 
+          : (opt.montant !== undefined && opt.montant !== '' ? Number(opt.montant) : 0);
+        const montant = opt.montant !== undefined && opt.montant !== '' 
+          ? Number(opt.montant) 
+          : (opt.amount !== undefined && opt.amount !== '' ? Number(opt.amount) : 0);
+        return {
+          id,
+          nom,
+          label,
+          montant,
+          amount
+        };
+      });
+
       const updates = {
-        montantAdhesion: parseFloat(formConfig.montantAdhesion) || 0,
-        montantCautionDefaut: parseFloat(formConfig.montantCautionDefaut) || 150,
-        optionsCotisation: formConfig.optionsCotisation,
-        formulesAdhesion: formConfig.formulesAdhesion,
-        "publicTheme.formulesRecrutement": formConfig.formulesAdhesion,
-        lienPaiementExterne: formConfig.lienPaiementExterne,
-        instructionsPaiement: formConfig.instructionsPaiement,
-        helloAssoSignatureKey: formConfig.helloAssoSignatureKey
+        montantAdhesion: parsedAdhesion,
+        adhesionAmount: parsedAdhesion,
+        montantCautionDefaut: parsedCaution,
+        cautionInstrumentDefault: parsedCaution,
+        optionsCotisation: normalizedOptions,
+        cotisationOptions: normalizedOptions,
+        formulesAdhesion: formConfig.formulesAdhesion || [],
+        "publicTheme.formulesRecrutement": formConfig.formulesAdhesion || [],
+        lienPaiementExterne: formConfig.lienPaiementExterne || formConfig.helloAssoLink || '',
+        helloAssoLink: formConfig.lienPaiementExterne || formConfig.helloAssoLink || '',
+        instructionsPaiement: formConfig.instructionsPaiement || '',
+        helloAssoSignatureKey: formConfig.helloAssoSignatureKey || ''
       };
 
       await handleSaveAssociationSettings(updates, {});
-      alert("Configuration sauvegardée avec succès !");
-      setShowConfig(false);
+      setToastMessage("Paramètres des cotisations enregistrés avec succès !");
+      setTimeout(() => {
+        setToastMessage(null);
+      }, 5000);
     } catch (err) {
+      console.error("handleSaveConfig - Erreur enregistrement :", err);
       alert(err.message || "Erreur lors de la sauvegarde.");
     }
   };
@@ -331,6 +390,23 @@ export default function TreasuryCotisations({
           </span>
         </div>
 
+        {/* Notification Toast de sauvegarde réussie */}
+        {toastMessage && (
+          <div className="mt-3 p-3 rounded-[4px_6px_3px_5px] border-2 bg-emerald-50 dark:bg-emerald-950/40 text-[var(--color-cordel-vert)] border-[var(--color-cordel-vert)] text-xs font-black flex items-center justify-between shadow-[2px_2px_0px_0px_#181716] animate-fadeIn">
+            <div className="flex items-center gap-2">
+              <span>✅</span>
+              <span>{toastMessage}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setToastMessage(null)}
+              className="text-xs font-black opacity-70 hover:opacity-100 px-1 cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
         {showConfig && (
           <form onSubmit={handleSaveConfig} className="flex flex-col gap-4 mt-4 pt-4 border-t border-dashed border-cordel-master-dark/20 text-left">
             <CotisationsBlock 
@@ -339,6 +415,7 @@ export default function TreasuryCotisations({
               saving={savingSettings} 
               groupId={groupId} 
               handleSaveHelloAssoKey={() => handleSaveConfig({ preventDefault: () => {} })}
+              onSaveAll={handleSaveConfig}
             />
 
             {/* Gestionnaire des Cartes de Formules d'Adhésion (Percu, Danse, etc.) */}
@@ -359,12 +436,12 @@ export default function TreasuryCotisations({
             <div className="flex justify-end mt-2 pt-3 border-t border-dashed border-cordel-master-dark/15">
               <CordelButton
                 type="submit"
-                variant="ocre"
+                variant="vert"
                 useExtremeBorder={true}
                 disabled={savingSettings}
-                className="px-6 py-2 uppercase font-black tracking-wider text-xs"
+                className="px-6 py-2.5 uppercase font-black tracking-wider text-xs shadow-[2px_2px_0px_0px_#181716] flex items-center gap-1.5 cursor-pointer"
               >
-                {savingSettings ? "Enregistrement..." : "💾 Enregistrer les Paramètres"}
+                {savingSettings ? "⏳ Enregistrement..." : "💾 Enregistrer les paramètres des cotisations"}
               </CordelButton>
             </div>
           </form>
@@ -443,13 +520,13 @@ export default function TreasuryCotisations({
           </select>
         </div>
 
-        {/* Bouton de resynchronisation manuelle HelloAsso */}
+        {/* Bouton rouge de resynchronisation manuelle HelloAsso */}
         <button
           type="button"
           onClick={handleSyncHelloAsso}
           disabled={isSyncingHelloAsso}
           title="Forcer la vérification et resynchronisation des paiements HelloAsso"
-          className="text-[10px] font-black uppercase tracking-wider bg-[var(--color-cordel-vert)] hover:brightness-110 text-white border-2 border-encre-noire px-3 py-1.5 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all cursor-pointer flex items-center justify-center gap-1.5 w-full md:w-auto h-[34px] disabled:opacity-50 disabled:cursor-not-allowed select-none"
+          className="text-[10px] font-black uppercase tracking-wider bg-[var(--color-cordel-rouge,#8b2a1a)] hover:brightness-110 text-white border-2 border-encre-noire px-3 py-1.5 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all cursor-pointer flex items-center justify-center gap-1.5 w-full md:w-auto h-[34px] disabled:opacity-50 disabled:cursor-not-allowed select-none"
         >
           {isSyncingHelloAsso ? (
             <>

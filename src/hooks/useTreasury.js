@@ -579,7 +579,10 @@ export function useTreasury(groupId) {
 
   // Agrégation réactive des cautions d'instruments par adhérent (uniquement les instruments avec caution exigée)
   const cautionsByMember = useMemo(() => {
-    const defaultMontant = Number(associationSettings?.montantCautionDefaut) || 150;
+    const rawVal = associationSettings?.montantCautionDefaut ?? associationSettings?.cautionInstrumentDefault ?? associationSettings?.cautionParDefaut;
+    const defaultMontant = (rawVal !== undefined && rawVal !== null && rawVal !== '' && !isNaN(Number(rawVal)))
+      ? Number(rawVal)
+      : 150;
     const map = {};
 
     members.forEach(member => {
@@ -656,7 +659,7 @@ export function useTreasury(groupId) {
     });
 
     return map;
-  }, [members, instruments, associationSettings?.montantCautionDefaut]);
+  }, [members, instruments, associationSettings?.montantCautionDefaut, associationSettings?.cautionInstrumentDefault]);
 
   // Enregistrement ou mise à jour de la caution sur un instrument physique
   const handleUpdateCaution = useCallback(async (instrumentId, cautionData) => {

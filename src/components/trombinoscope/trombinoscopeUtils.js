@@ -191,7 +191,7 @@ export const isChantReferent = (member) => {
  * Résout le pupitre principal unique d'un membre parmi les 5 pupitres SaaS
  */
 export const resolveMemberPrimaryPupitre = (member) => {
-  if (!member) return 'alfaias';
+  if (!member) return 'en-orientation';
 
   const primary = String(member.instrumentPrincipal || member.instrument || '').toLowerCase().trim();
   const rawInstruments = (Array.isArray(member.instrumentsJoues) && member.instrumentsJoues.length > 0)
@@ -199,6 +199,15 @@ export const resolveMemberPrimaryPupitre = (member) => {
     : [];
 
   const isDancer = isDanseMember(member);
+
+  // Si le statut ou l'instrument est explicitement en attente
+  if (primary === 'en attente' || primary === 'en_attente') {
+    // Si l'adhérent pratique exclusivement la danse sans percussion
+    if (isDancer && !rawInstruments.some(inst => !String(inst).toLowerCase().includes('danse'))) {
+      return 'danse';
+    }
+    return 'en-orientation';
+  }
 
   // 1. Priorité à l'instrument principal explicite
   if (primary) {
@@ -298,8 +307,8 @@ export const resolveMemberPrimaryPupitre = (member) => {
     return 'danse';
   }
 
-  // 4. Par défaut : Alfaias (pupitre fondamental de la bateria)
-  return 'alfaias';
+  // 4. Par défaut : En cours d'orientation (ne plus forcer 'alfaias' pour les membres non validés)
+  return 'en-orientation';
 };
 
 /**
@@ -398,7 +407,8 @@ export const resolveMemberInstrumentSubtitle = (member) => {
   const pupitreId = member.primaryPupitreId || resolveMemberPrimaryPupitre(member);
   let pupitreLabel = '';
 
-  if (pupitreId === 'sementes') pupitreLabel = 'Sementes';
+  if (pupitreId === 'en-orientation') pupitreLabel = "En cours d'orientation";
+  else if (pupitreId === 'sementes') pupitreLabel = 'Sementes';
   else if (pupitreId === 'caixas') pupitreLabel = 'Caixas';
   else if (pupitreId === 'alfaias') pupitreLabel = 'Alfaias';
   else if (pupitreId === 'gongue') pupitreLabel = 'Gonguê';
@@ -406,7 +416,9 @@ export const resolveMemberInstrumentSubtitle = (member) => {
   else {
     const raw = String(member.instrumentPrincipal || member.instrument || '').trim();
     const lower = raw.toLowerCase();
-    if (lower.includes('agbe') || lower.includes('agbê') || lower.includes('mineiro') || lower.includes('semente')) {
+    if (lower === 'en attente' || lower === 'en_attente') {
+      pupitreLabel = "En cours d'orientation";
+    } else if (lower.includes('agbe') || lower.includes('agbê') || lower.includes('mineiro') || lower.includes('semente')) {
       pupitreLabel = 'Sementes';
     } else if (lower.includes('caixa') || lower.includes('tarol')) {
       pupitreLabel = 'Caixas';

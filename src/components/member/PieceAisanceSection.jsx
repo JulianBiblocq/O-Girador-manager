@@ -3,10 +3,10 @@ import { resolvePieceTrainings } from '../../utils/repertoireMatcher';
 import { toggleStageCompletion } from '../../services/aisanceService';
 import { useTranslation } from '../LanguageContext';
 import { usePracticeLauncher } from '../../hooks/usePracticeLauncher';
-import RoleSelectorModal from '../pedagogy/RoleSelectorModal';
 
 /**
  * Bloc d'Aisance et Entraînements pour la fiche morceau d'un élève.
+ * Déclenche directement launchTrainingStage via le hook usePracticeLauncher sans modale.
  * Respecte strictement la règle « Zéro bloc vide » (retourne null si aucun entraînement).
  *
  * @param {Object} props
@@ -28,8 +28,7 @@ export default function PieceAisanceSection({
   profileData = null
 }) {
   const { t } = useTranslation();
-  const { startPractice, isRoleModalOpen, handleSelectRole, handleCloseModal } =
-    usePracticeLauncher(profileData, sequenceurUrl);
+  const { startPractice } = usePracticeLauncher(profileData, sequenceurUrl);
 
   // Résolution dynamique des entraînements associés (par presetId ou raccordement manuel, exclusions incluses)
   const pieceTrainings = resolvePieceTrainings(piece, trainings);
@@ -143,12 +142,6 @@ export default function PieceAisanceSection({
         })}
       </div>
 
-      {/* Micro-modale de secours pour le choix du pupitre */}
-      <RoleSelectorModal
-        isOpen={isRoleModalOpen}
-        onClose={handleCloseModal}
-        onSelectRole={handleSelectRole}
-      />
     </div>
   );
 }

@@ -162,39 +162,32 @@ export default function MemberPieceCard({
         />
       )}
 
-      {/* 3. Modale dédiée des Signes du Mestre (Option A Aide-mémoire & Option B Défi) */}
+      {/* 3. Modale dédiée des Signes du Mestre */}
       {isSignalsModalOpen && (
         <PieceSignalsModal
           isOpen={isSignalsModalOpen}
           onClose={() => setIsSignalsModalOpen(false)}
-          piece={piece}
-          groupId={groupId}
-          profileData={profileData}
+          piece={piece} groupId={groupId} profileData={profileData}
         />
       )}
 
-      {/* 4. Modale dédiée des Paroles (Option A Parolier, Option B Récitation, Option C Quiz) */}
+      {/* 4. Modale dédiée des Paroles */}
       {isLyricsModalOpen && (
         <PieceLyricsModal
           isOpen={isLyricsModalOpen}
           onClose={() => setIsLyricsModalOpen(false)}
-          song={piece.activeToada}
-          piece={piece}
-          groupId={groupId}
-          profileData={profileData}
+          song={piece.activeToada} piece={piece} groupId={groupId} profileData={profileData}
         />
       )}
 
-      {/* 5. Modale dédiée Culture (lecture seule) */}
+      {/* 5. Modale dédiée Culture */}
       {isCultureModalOpen && (
         <PieceCultureModal
           isOpen={isCultureModalOpen}
           onClose={() => setIsCultureModalOpen(false)}
           cultureDocs={Array.isArray(piece.activeCultureDocs) && piece.activeCultureDocs.length > 0 ? piece.activeCultureDocs : (piece.activeCultureDoc ? [piece.activeCultureDoc] : [])}
           initialDocId={piece.activeCultureDocs?.[0]?.id || piece.activeCultureDoc?.id}
-          piece={piece}
-          groupId={groupId}
-          profileData={profileData}
+          piece={piece} groupId={groupId} profileData={profileData}
         />
       )}
     </CordelCard>

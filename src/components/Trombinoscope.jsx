@@ -284,7 +284,8 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
       caixas: [],
       gongue: [],
       sementes: [],
-      danse: []
+      danse: [],
+      'en-orientation': []
     };
     const renforts = [];
     let count = 0;
@@ -355,6 +356,11 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
   const hasRenforts = useMemo(() => {
     return (members || []).some((m) => m.statutActuel !== 'archived' && isRenfortMember(m));
   }, [members]);
+
+  // Détection des membres en cours d'orientation
+  const hasEnOrientation = useMemo(() => {
+    return (regularByPupitre['en-orientation'] || []).length > 0;
+  }, [regularByPupitre]);
 
   // Indique si au moins un filtre est actif
   const hasActiveFilter = Boolean(searchQuery.trim() || filterInstrument !== 'all' || filterTag !== 'all');
@@ -467,6 +473,9 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
               {FIVE_PUPITRES.map((pupitre) => (
                 <option key={pupitre.id} value={pupitre.id}>{pupitre.label}</option>
               ))}
+              {hasEnOrientation && (
+                <option value="en-orientation">🌱 En cours d'orientation</option>
+              )}
               {hasRenforts && (
                 <option value="renforts">🎪 Renforts &amp; Extérieurs</option>
               )}
@@ -608,6 +617,35 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
                         isOnline={member.isOnline === true}
                         isCurrentUser={Boolean(user?.uid && member.id === user.uid)}
                         pupitreColor={getColorForInstrument(member.instrumentPrincipal || member.instrument || 'Renfort', 'solid') || '#181716'}
+                        onClick={(m) => setSelectedMember(m)}
+                        onEditPhoto={handleEditPhoto}
+                        t={t}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Section dédiée pour les membres en cours d'orientation (adhérents post-essai sans pupitre définitif) */}
+              {(regularByPupitre['en-orientation'] || []).length > 0 && (filterInstrument === 'all' || filterInstrument === 'en-orientation') && (
+                <div className="flex flex-col gap-4 mt-2 pt-6 border-t-2 border-dashed border-cordel-master-dark/30">
+                  <div className="border-b border-dashed border-cordel-master-dark/20 pb-2 text-left flex items-center justify-between">
+                    <h3 className="text-xs font-black uppercase tracking-wider text-[var(--color-cordel-marron,#8b2a1a)] flex items-center gap-1.5 select-none">
+                      <span>🌱 En cours d'orientation</span>
+                      <span className="text-[11px] font-bold text-stone-500 font-sans tracking-normal ml-0.5">
+                        ({regularByPupitre['en-orientation'].length})
+                      </span>
+                    </h3>
+                  </div>
+
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-2 sm:gap-3 items-stretch">
+                    {regularByPupitre['en-orientation'].map((member) => (
+                      <MemberStampCard
+                        key={member.id}
+                        member={member}
+                        isOnline={member.isOnline === true}
+                        isCurrentUser={Boolean(user?.uid && member.id === user.uid)}
+                        pupitreColor="var(--color-cordel-ocre, #c05621)"
                         onClick={(m) => setSelectedMember(m)}
                         onEditPhoto={handleEditPhoto}
                         t={t}

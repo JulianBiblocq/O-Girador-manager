@@ -423,12 +423,17 @@ export function useUserProfile(user, profileData, t) {
 
     setSaving(true);
     try {
-      // Résolution rétrocompatible : si aucun instrument n'est encore attribué, initialiser avec le premier choix
-      const defaultInitialInst = (!profileData?.instrument && !profileData?.instrumentPrincipal && Array.isArray(formData.instrumentsJoues) && formData.instrumentsJoues.length > 0)
-        ? formData.instrumentsJoues[0]
-        : '';
-      const resolvedInstrument = profileData?.instrument || profileData?.instrumentPrincipal || formData.instrument || defaultInitialInst;
-      const resolvedInstrumentPrincipal = profileData?.instrumentPrincipal || profileData?.instrument || formData.instrument || defaultInitialInst;
+      // Sécurisation stricte : le pupitre officiel relève exclusivement de l'arbitrage de la Mestria / du Bureau.
+      // Un membre standard ne peut modifier que ses vœux et ses déclarations de pupitres pratiqués.
+      const isPrivileged = Boolean(
+        profileData?.role === 'mestre' ||
+        profileData?.role === 'admin' ||
+        profileData?.role === 'super-admin' ||
+        profileData?.isSystemAdmin === true
+      );
+
+      const resolvedInstrument = profileData?.instrument || (isPrivileged ? (formData.instrument || 'En attente') : 'En attente');
+      const resolvedInstrumentPrincipal = profileData?.instrumentPrincipal || resolvedInstrument;
 
       const updatePayload = {
         prenom: formData.prenom,
@@ -449,12 +454,12 @@ export function useUserProfile(user, profileData, t) {
         voeuTertiaire: cleanVoeux[2] || '',
         instrumentsJoues: Array.from(new Set(
           [
-            profileData?.instrument || formData.instrument,
+            resolvedInstrument !== 'En attente' ? resolvedInstrument : null,
             profileData?.instrumentSecondaire || formData.instrumentSecondaire,
             ...(formData.instrumentsJoues || [])
           ]
           .map(i => i ? i.trim() : '')
-          .filter(i => i && i.toLowerCase() !== 'autre' && i.toLowerCase() !== 'mestre' && i.toLowerCase() !== 'danse')
+          .filter(i => i && i.toLowerCase() !== 'autre' && i.toLowerCase() !== 'mestre' && i.toLowerCase() !== 'danse' && i.toLowerCase() !== 'en attente' && i.toLowerCase() !== 'en_attente')
         )),
         telephone: isFieldVisible('telephone') ? (formData.telephone || formData.phone || '').trim() : (profileData?.telephone || profileData?.phone || ''),
         phone: isFieldVisible('telephone') ? (formData.telephone || formData.phone || '').trim() : (profileData?.phone || profileData?.telephone || ''),

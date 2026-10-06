@@ -37,17 +37,84 @@ function MemberTreasuryRow({
 
   const fullName = `${member.prenom || ''} ${member.nom || ''}`;
   const currentStatus = member.paymentStatus || 'unpaid';
-  const hasBaseAdhesion = member.adhesionBase !== false; // Par défaut vrai
+  const hasBaseAdhesion = member.adhesionBase !== false; // Cochée si true ou non défini
+  const numericBaseAdhesion = (typeof baseAdhesionAmount === 'number' && !isNaN(baseAdhesionAmount) && baseAdhesionAmount > 0)
+    ? baseAdhesionAmount
+    : (parseFloat(baseAdhesionAmount) || 10);
   const selectedOptionIds = Array.isArray(member.selectedOptions) ? member.selectedOptions : [];
 
-  // Résolution tolérante des options (par ID ou nom insensible à la casse, avec fallback sur member.cotisation.options)
+  // Vérification si le règlement est échelonné (3x)
+  const isEchelonne = Boolean(
+    member.echelonne === true ||
+    member.cotisation?.echelonne === true ||
+    member.helloAssoLastPayment?.isInstallment === true
+  );
+
+  // Vérification de la source HelloAsso
+  const isHelloAssoPaid = Boolean(
+    member.modePaiement === 'helloasso' ||
+    member.modeReglement === 'helloasso' ||
+    member.cotisation?.modeReglement === 'helloasso' ||
+    member.helloAssoLastPayment
+  );
+
+  // Résolution tolérante et chirurgicale des options HelloAsso (Percussions 135 €, Danse 90 €)
   const resolveOption = (optKey) => {
     if (!optKey) return null;
     const strKey = String(optKey).trim().toLowerCase();
-    return optionsCotisation.find(o => 
+
+    // 1. Recherche exacte dans optionsCotisation
+    let found = optionsCotisation?.find(o => 
       o.id === optKey || 
-      (o.nom && String(o.nom).trim().toLowerCase() === strKey)
+      (o.nom && String(o.nom).trim().toLowerCase() === strKey) ||
+      (o.label && String(o.label).trim().toLowerCase() === strKey)
     );
+    if (found) {
+      return {
+        ...found,
+        id: found.id || found.nom || found.label,
+        nom: found.nom || found.label,
+        montant: found.montant !== undefined ? found.montant : (found.amount ?? 0)
+      };
+    }
+
+    // 2. Règle chirurgicale Percussions (135 € comptant / 45 € 3x)
+    if (strKey.includes('percussion') || strKey.includes('alfaia') || strKey.includes('caixa')) {
+      found = optionsCotisation?.find(o => 
+        (o.id && String(o.id).toLowerCase().includes('percussion')) ||
+        (o.nom && String(o.nom).toLowerCase().includes('percussion')) ||
+        (o.label && String(o.label).toLowerCase().includes('percussion'))
+      );
+      if (found) {
+        return {
+          ...found,
+          id: found.id || 'percussions',
+          nom: found.nom || found.label || 'Percussions',
+          montant: found.montant !== undefined ? found.montant : (found.amount ?? 135)
+        };
+      }
+      return { id: 'percussions', nom: 'Percussions', montant: 135 };
+    }
+
+    // 3. Règle chirurgicale Danse (90 € comptant / 30 € 3x)
+    if (strKey.includes('danse')) {
+      found = optionsCotisation?.find(o => 
+        (o.id && String(o.id).toLowerCase().includes('danse')) ||
+        (o.nom && String(o.nom).toLowerCase().includes('danse')) ||
+        (o.label && String(o.label).toLowerCase().includes('danse'))
+      );
+      if (found) {
+        return {
+          ...found,
+          id: found.id || 'danse',
+          nom: found.nom || found.label || 'Danse',
+          montant: found.montant !== undefined ? found.montant : (found.amount ?? 90)
+        };
+      }
+      return { id: 'danse', nom: 'Danse', montant: 90 };
+    }
+
+    return null;
   };
 
   const rawCotisationOptions = Array.isArray(member.cotisation?.options) 
@@ -56,13 +123,31 @@ function MemberTreasuryRow({
 
   const effectiveOptionKeys = selectedOptionIds.length > 0 ? selectedOptionIds : rawCotisationOptions;
 
-  // Options choisies résolues
-  const activeOptions = effectiveOptionKeys
-    .map(optKey => resolveOption(optKey) || (typeof optKey === 'string' && optKey ? { id: optKey, nom: optKey, montant: 0 } : null))
-    .filter(Boolean);
+  // Déduplication canonique stricte : maximum 1 option Percussions et 1 option Danse
+  const seenCategories = new Set();
+  const activeOptions = [];
+  for (const optKey of effectiveOptionKeys) {
+    const resolved = resolveOption(optKey) || (typeof optKey === 'string' && optKey ? { id: optKey, nom: optKey, montant: 0 } : null);
+    if (!resolved) continue;
 
-  // Calcul du montant total des cotisations
-  const baseAmount = hasBaseAdhesion ? baseAdhesionAmount : 0;
+    const lowerId = String(resolved.id || '').toLowerCase();
+    const lowerNom = String(resolved.nom || '').toLowerCase();
+
+    let category = lowerId;
+    if (lowerId.includes('percussion') || lowerNom.includes('percussion') || lowerId.includes('alfaia') || lowerId.includes('caixa')) {
+      category = 'percussions';
+    } else if (lowerId.includes('danse') || lowerNom.includes('danse')) {
+      category = 'danse';
+    }
+
+    if (!seenCategories.has(category)) {
+      seenCategories.add(category);
+      activeOptions.push(resolved);
+    }
+  }
+
+  // Calcul dynamique de la somme due (Adhésion 10 € + Percussions 135 € = 145 € ; + Danse 90 € = 235 €)
+  const baseAmount = hasBaseAdhesion ? numericBaseAdhesion : 0;
   const optionsAmount = activeOptions.reduce((sum, opt) => {
     return sum + (parseFloat(opt.montant) || 0);
   }, 0);
@@ -85,11 +170,17 @@ function MemberTreasuryRow({
       let updatedOptions;
       const targetOpt = optionsCotisation.find(o => o.id === optionId);
       const targetNom = targetOpt?.nom ? String(targetOpt.nom).trim().toLowerCase() : null;
+      const isPercuTarget = optionId.toLowerCase().includes('percussion') || (targetNom && targetNom.includes('percussion'));
+      const isDanseTarget = optionId.toLowerCase().includes('danse') || (targetNom && targetNom.includes('danse'));
+
       if (isChecked) {
         updatedOptions = Array.from(new Set([
           ...selectedOptionIds.filter(id => {
             if (id === optionId) return false;
             if (targetNom && String(id).trim().toLowerCase() === targetNom) return false;
+            const strId = String(id).toLowerCase();
+            if (isPercuTarget && (strId.includes('percussion') || strId.includes('alfaia') || strId.includes('caixa'))) return false;
+            if (isDanseTarget && strId.includes('danse')) return false;
             return true;
           }),
           optionId
@@ -98,6 +189,9 @@ function MemberTreasuryRow({
         updatedOptions = selectedOptionIds.filter(id => {
           if (id === optionId) return false;
           if (targetNom && String(id).trim().toLowerCase() === targetNom) return false;
+          const strId = String(id).toLowerCase();
+          if (isPercuTarget && (strId.includes('percussion') || strId.includes('alfaia') || strId.includes('caixa'))) return false;
+          if (isDanseTarget && strId.includes('danse')) return false;
           return true;
         });
       }
@@ -193,7 +287,7 @@ function MemberTreasuryRow({
             className="theme-checkbox h-3.5 w-3.5 text-cordel-wood focus:ring-cordel-wood border-encre-noire rounded cursor-pointer"
           />
           <span className={`text-[9px] font-bold ${hasBaseAdhesion ? 'text-[var(--color-cordel-vert)] font-extrabold' : 'text-neutral-400'}`}>
-            {hasBaseAdhesion ? `${baseAdhesionAmount}€` : (t('widgetTreasury.disabledStatus') || 'Non')}
+            {hasBaseAdhesion ? `${numericBaseAdhesion}€` : (t('widgetTreasury.disabledStatus') || 'Non')}
           </span>
         </label>
       </div>
@@ -211,20 +305,45 @@ function MemberTreasuryRow({
           </button>
         </div>
 
-        {/* Tags des options actives */}
-        <div className="flex flex-wrap gap-1 mt-0.5">
+        {/* Badges des options actives avec code couleur sémantique Cordel */}
+        <div className="flex flex-wrap items-center gap-1 mt-0.5">
           {activeOptions.length === 0 ? (
             <span className="text-[7.5px] italic text-neutral-400">{t('widgetTreasury.noOption')}</span>
           ) : (
-            activeOptions.map(opt => (
-              <span 
-                key={opt.id} 
-                className="inline-block text-[7px] font-black uppercase tracking-wider bg-cordel-wood text-cordel-bg-light px-1 py-0.5 rounded-[3px] border border-encre-noire/15 shadow-[0.5px_0.5px_0px_0px_rgba(0,0,0,0.1)] truncate max-w-[75px]"
-                title={opt.nom}
-              >
-                {opt.nom}
-              </span>
-            ))
+            activeOptions.map(opt => {
+              const optLower = (opt.nom || opt.id || '').toLowerCase();
+              const isPercu = opt.id === 'percussions' || optLower.includes('percussion') || optLower.includes('alfaia') || optLower.includes('caixa');
+              const isDanse = opt.id === 'danse' || optLower.includes('danse');
+
+              let badgeClasses = "bg-cordel-wood text-cordel-bg-light border-encre-noire/15";
+              if (isPercu) {
+                // Badge ambré Percussions (Code Couleur Sémantique Cordel)
+                badgeClasses = "bg-[var(--color-cordel-ocre,#c05621)] text-white border-amber-900/30";
+              } else if (isDanse) {
+                // Badge vert Danse (Code Couleur Sémantique Cordel)
+                badgeClasses = "bg-[var(--color-cordel-vert,#2d6a4f)] text-white border-emerald-900/30";
+              }
+
+              return (
+                <span 
+                  key={opt.id} 
+                  className={`inline-block text-[7px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-[3px] border shadow-[0.5px_0.5px_0px_0px_rgba(0,0,0,0.1)] truncate max-w-[85px] ${badgeClasses}`}
+                  title={`${opt.nom} (${opt.montant} €)`}
+                >
+                  {isPercu ? 'Percussions' : (isDanse ? 'Danse' : opt.nom)}
+                </span>
+              );
+            })
+          )}
+
+          {/* Mention 3x si paiement échelonné */}
+          {isEchelonne && (
+            <span 
+              className="inline-block text-[7px] font-black uppercase tracking-wider bg-[#8b2a1a] text-white px-1.5 py-0.5 rounded-[3px] border border-encre-noire/20 shadow-[0.5px_0.5px_0px_0px_rgba(0,0,0,0.1)]"
+              title="Cotisation avec paiement échelonné en 3 fois"
+            >
+              3x
+            </span>
           )}
         </div>
 
@@ -237,22 +356,25 @@ function MemberTreasuryRow({
             {optionsCotisation.length === 0 ? (
               <span className="text-[9px] italic text-neutral-400 p-1">{t('widgetTreasury.noOptionAvailable')}</span>
             ) : (
-              optionsCotisation.map(opt => {
-                const isSelected = selectedOptionIds.includes(opt.id) ||
-                  selectedOptionIds.some(id => resolveOption(id)?.id === opt.id) ||
-                  activeOptions.some(ao => ao.id === opt.id);
+              optionsCotisation.map((opt, optIdx) => {
+                const optId = opt.id || opt.label || opt.nom || `opt_${optIdx}`;
+                const optNom = opt.nom || opt.label || optId;
+                const optMontant = opt.montant !== undefined ? opt.montant : (opt.amount ?? 0);
+                const isSelected = selectedOptionIds.includes(optId) ||
+                  selectedOptionIds.some(id => resolveOption(id)?.id === optId) ||
+                  activeOptions.some(ao => ao.id === optId || ao.nom === optNom);
                 return (
                   <label 
-                    key={opt.id} 
+                    key={optId} 
                     className="flex items-center gap-2 cursor-pointer hover:bg-neutral-200/50 dark:hover:bg-neutral-800/50 p-1 rounded select-none text-[9px] font-bold text-encre-noire"
                   >
                     <input
                       type="checkbox"
                       checked={isSelected}
-                      onChange={(e) => handleToggleOption(opt.id, e.target.checked)}
+                      onChange={(e) => handleToggleOption(optId, e.target.checked)}
                       className="rounded border-encre-noire text-cordel-wood focus:ring-cordel-wood w-3 h-3 cursor-pointer"
                     />
-                    <span className="truncate">{opt.nom} ({opt.montant} €)</span>
+                    <span className="truncate">{optNom} ({optMontant} €)</span>
                   </label>
                 );
               })
@@ -385,7 +507,7 @@ function MemberTreasuryRow({
             onChange={(e) => handleUpdateStatus(e.target.value)}
             className={`theme-input text-[8.5px] font-black py-1 px-2 bg-cordel-bg-light cursor-pointer rounded-[4px_6px_3px_5px] border-2 ${
               currentStatus === 'paid' 
-                ? 'border-green-600/40 text-[var(--color-cordel-vert)]' 
+                ? 'border-[var(--color-cordel-vert)] text-[var(--color-cordel-vert)]' 
                 : (currentStatus === 'partial' || currentStatus === 'en_cours') 
                   ? 'border-amber-600/40 text-[var(--color-cordel-ocre)]' 
                   : currentStatus === 'exempted'
@@ -396,22 +518,27 @@ function MemberTreasuryRow({
             <option value="unpaid">{t('treasury.statusPending')}</option>
             <option value="partial">{t('treasury.remainderToPay')}</option>
             <option value="en_cours">⏳ {t('treasury.statusPending')} (3x)</option>
-            <option value="paid">{t('treasury.statusPaidCashCheck')}</option>
+            <option value="paid">
+              {isHelloAssoPaid ? `✓ ${t('treasury.statusPaidOnline') || 'Réglé (HelloAsso)'}` : t('treasury.statusPaidCashCheck')}
+            </option>
             <option value="exempted">{t('treasury.statusExempted')}</option>
           </select>
         </div>
 
         {/* Badge informatif HelloAsso avec montant direct, détail option et date */}
-        {member.helloAssoLastPayment && (
+        {(isHelloAssoPaid || member.helloAssoLastPayment) && (
           <div 
             className="flex items-center gap-1 text-[7.5px] font-bold text-[var(--color-cordel-vert)] dark:text-emerald-400 bg-[var(--color-cordel-vert)]/10 dark:bg-emerald-950/30 px-1.5 py-0.5 rounded border border-[#2d6a4f]/30 dark:border-emerald-800/50 select-none"
-            title={`Paiement HelloAsso ${member.helloAssoLastPayment.orderId ? `(Réf: ${member.helloAssoLastPayment.orderId})` : ''} ${member.helloAssoLastPayment.formule ? `[${member.helloAssoLastPayment.formule}]` : ''} enregistré ${member.helloAssoLastPayment.date ? `le ${new Date(member.helloAssoLastPayment.date).toLocaleDateString(locale === 'pt' ? 'pt-BR' : 'fr-FR')}` : ''}`}
+            title={`Paiement HelloAsso ${member.helloAssoLastPayment?.orderId ? `(Réf: ${member.helloAssoLastPayment.orderId})` : ''} ${member.helloAssoLastPayment?.formule ? `[${member.helloAssoLastPayment.formule}]` : ''} ${member.helloAssoLastPayment?.date ? `enregistré le ${new Date(member.helloAssoLastPayment.date).toLocaleDateString(locale === 'pt' ? 'pt-BR' : 'fr-FR')}` : ''}`}
           >
             <span>💳</span>
             <span>
-              {!isNaN(Number(member.helloAssoLastPayment.amount)) && Number(member.helloAssoLastPayment.amount) > 0
-                ? `${Number(member.helloAssoLastPayment.amount)} € (${t('treasury.statusPaidOnline')}${member.helloAssoLastPayment.isInstallment ? ' - 3x' : ''})`
-                : `${t('treasury.statusPaidOnline')}${member.helloAssoLastPayment.isInstallment ? ' (3x)' : ''}`}
+              {(() => {
+                const paidAmount = Number(member.derniereCotisationMontant || member.helloAssoLastPayment?.amount);
+                const displayAmount = !isNaN(paidAmount) && paidAmount > 0 ? `${paidAmount} €` : `${totalDue} €`;
+                const labelOnline = t('treasury.statusPaidOnline') || 'Réglé (HelloAsso)';
+                return `${displayAmount} (${labelOnline}${isEchelonne ? ' - 3x' : ''})`;
+              })()}
             </span>
           </div>
         )}

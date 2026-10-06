@@ -1,7 +1,6 @@
 import React from 'react';
 import { useTranslation } from '../LanguageContext';
 import { usePracticeLauncher } from '../../hooks/usePracticeLauncher';
-import RoleSelectorModal from './RoleSelectorModal';
 
 /**
  * Carte compacte d'entraînement réutilisable.
@@ -28,8 +27,7 @@ export default function TrainingCompactCard({
   className = ''
 }) {
   const { t } = useTranslation();
-  const { startPractice, isRoleModalOpen, handleSelectRole, handleCloseModal } =
-    usePracticeLauncher(profileData, sequenceurUrl);
+  const { startPractice } = usePracticeLauncher(profileData, sequenceurUrl);
 
   const items = Array.isArray(trainings)
     ? trainings
@@ -108,11 +106,6 @@ export default function TrainingCompactCard({
           );
         })}
 
-        <RoleSelectorModal
-          isOpen={isRoleModalOpen}
-          onClose={handleCloseModal}
-          onSelectRole={handleSelectRole}
-        />
       </div>
     );
   }
@@ -174,11 +167,6 @@ export default function TrainingCompactCard({
         );
       })}
 
-      <RoleSelectorModal
-        isOpen={isRoleModalOpen}
-        onClose={handleCloseModal}
-        onSelectRole={handleSelectRole}
-      />
     </div>
   );
 }

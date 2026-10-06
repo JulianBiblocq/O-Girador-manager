@@ -7,15 +7,31 @@ import { XiloClose } from '../XiloIcons';
  * Bloc de configuration des cotisations, options et webhook HelloAsso.
  * Composant de trésorerie dédié à la gestion financière des adhésions.
  */
-export default function CotisationsBlock({ formData = {}, handleChange, saving, groupId, handleSaveHelloAssoKey }) {
+export default function CotisationsBlock({ 
+  formData = {}, 
+  handleChange, 
+  saving, 
+  groupId, 
+  handleSaveHelloAssoKey,
+  onSaveAll 
+}) {
   const {
-    montantAdhesion = 0,
-    montantCautionDefaut = 150,
-    optionsCotisation = [],
     lienPaiementExterne = '',
     instructionsPaiement = '',
     helloAssoSignatureKey = ''
   } = formData;
+
+  const montantCautionDefaut = formData.montantCautionDefaut !== undefined && formData.montantCautionDefaut !== null && formData.montantCautionDefaut !== ''
+    ? formData.montantCautionDefaut
+    : (formData.cautionInstrumentDefault ?? formData.cautionParDefaut ?? 150);
+
+  const montantAdhesion = formData.montantAdhesion !== undefined && formData.montantAdhesion !== null && formData.montantAdhesion !== ''
+    ? formData.montantAdhesion
+    : (formData.adhesionAmount ?? 0);
+
+  const optionsCotisation = Array.isArray(formData.optionsCotisation) && formData.optionsCotisation.length > 0
+    ? formData.optionsCotisation
+    : (Array.isArray(formData.cotisationOptions) ? formData.cotisationOptions : []);
 
   const [copySuccess, setCopySuccess] = useState(false);
   
@@ -92,8 +108,12 @@ export default function CotisationsBlock({ formData = {}, handleChange, saving, 
               type="number"
               min="0"
               value={montantAdhesion}
-              onChange={(e) => handleChange('montantAdhesion', parseFloat(e.target.value) || 0)}
-              placeholder="ex: 30"
+              onChange={(e) => {
+                const val = e.target.value === '' ? '' : (parseFloat(e.target.value) || 0);
+                handleChange('montantAdhesion', val);
+                handleChange('adhesionAmount', val);
+              }}
+              placeholder="ex: 10"
               className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
             />
           </div>
@@ -106,8 +126,12 @@ export default function CotisationsBlock({ formData = {}, handleChange, saving, 
               type="number"
               min="0"
               value={montantCautionDefaut}
-              onChange={(e) => handleChange('montantCautionDefaut', parseFloat(e.target.value) || 0)}
-              placeholder="ex: 150"
+              onChange={(e) => {
+                const val = e.target.value === '' ? '' : (parseFloat(e.target.value) || 0);
+                handleChange('montantCautionDefaut', val);
+                handleChange('cautionInstrumentDefault', val);
+              }}
+              placeholder="ex: 0"
               className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
             />
           </div>
@@ -122,11 +146,16 @@ export default function CotisationsBlock({ formData = {}, handleChange, saving, 
             <div key={opt.id || idx} className="flex gap-2 items-center bg-white/40 dark:bg-black/10 p-2 rounded border border-dashed border-cordel-master-dark/15">
               <input 
                 type="text"
-                value={opt.nom}
+                value={opt.nom ?? opt.label ?? ''}
                 onChange={(e) => {
                   const updated = [...optionsCotisation];
-                  updated[idx].nom = e.target.value;
+                  updated[idx] = {
+                    ...updated[idx],
+                    nom: e.target.value,
+                    label: e.target.value
+                  };
                   handleChange('optionsCotisation', updated);
+                  handleChange('cotisationOptions', updated);
                 }}
                 placeholder="Ex: Percussions"
                 className="theme-input text-xs font-bold py-1 bg-cordel-bg-light flex-1"
@@ -134,11 +163,17 @@ export default function CotisationsBlock({ formData = {}, handleChange, saving, 
               <input 
                 type="number"
                 min="0"
-                value={opt.montant}
+                value={opt.montant ?? opt.amount ?? ''}
                 onChange={(e) => {
                   const updated = [...optionsCotisation];
-                  updated[idx].montant = parseFloat(e.target.value) || 0;
+                  const val = e.target.value === '' ? '' : (parseFloat(e.target.value) || 0);
+                  updated[idx] = {
+                    ...updated[idx],
+                    montant: val,
+                    amount: val
+                  };
                   handleChange('optionsCotisation', updated);
+                  handleChange('cotisationOptions', updated);
                 }}
                 placeholder="Montant"
                 className="theme-input text-xs font-bold py-1 bg-cordel-bg-light w-20"
@@ -146,7 +181,9 @@ export default function CotisationsBlock({ formData = {}, handleChange, saving, 
               <button
                 type="button"
                 onClick={() => {
-                  handleChange('optionsCotisation', optionsCotisation.filter((_, i) => i !== idx));
+                  const filtered = optionsCotisation.filter((_, i) => i !== idx);
+                  handleChange('optionsCotisation', filtered);
+                  handleChange('cotisationOptions', filtered);
                 }}
                 className="text-red-500 hover:text-red-700 font-bold px-2 text-xs cursor-pointer select-none"
                 title="Supprimer"
@@ -161,7 +198,15 @@ export default function CotisationsBlock({ formData = {}, handleChange, saving, 
               type="button"
               variant="ocre"
               onClick={() => {
-                handleChange('optionsCotisation', [...optionsCotisation, { id: `cot_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`, nom: '', montant: 0 }]);
+                const newOpt = {
+                  id: `cot_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+                  nom: '',
+                  label: '',
+                  montant: 0,
+                  amount: 0
+                };
+                handleChange('optionsCotisation', [...optionsCotisation, newOpt]);
+                handleChange('cotisationOptions', [...optionsCotisation, newOpt]);
               }}
               className="text-[9px] py-1 px-2.5 uppercase font-bold tracking-wider"
             >
@@ -176,8 +221,11 @@ export default function CotisationsBlock({ formData = {}, handleChange, saving, 
           </label>
           <input 
             type="url"
-            value={lienPaiementExterne}
-            onChange={(e) => handleChange('lienPaiementExterne', e.target.value || '')}
+            value={lienPaiementExterne || formData.helloAssoLink || ''}
+            onChange={(e) => {
+              handleChange('lienPaiementExterne', e.target.value || '');
+              handleChange('helloAssoLink', e.target.value || '');
+            }}
             placeholder="https://helloasso.com/associations/..."
             className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
           />
@@ -194,6 +242,22 @@ export default function CotisationsBlock({ formData = {}, handleChange, saving, 
             className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full resize-y min-h-[80px]"
           />
         </div>
+
+        {/* Bouton bien visible d'enregistrement des paramètres des cotisations */}
+        {onSaveAll && (
+          <div className="flex justify-end pt-2 pb-1 border-b border-dashed border-cordel-master-dark/15">
+            <CordelButton
+              type="button"
+              variant="vert"
+              useExtremeBorder={true}
+              disabled={saving}
+              onClick={onSaveAll}
+              className="px-5 py-2 uppercase font-black tracking-wider text-[11px] shadow-[2px_2px_0px_0px_#181716] flex items-center gap-1.5 cursor-pointer"
+            >
+              {saving ? "⏳ Enregistrement..." : "💾 Enregistrer les paramètres des cotisations"}
+            </CordelButton>
+          </div>
+        )}
 
         <div className="flex flex-col gap-3 text-left border-t border-dashed border-cordel-master-dark/15 pt-3 mt-1">
           <label className="text-[10px] uppercase font-black tracking-widest text-cordel-wood">

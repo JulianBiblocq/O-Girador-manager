@@ -813,6 +813,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
 
       if (member.isNew) {
         updatePayload.isNew = false;
+        updatePayload.statutActuel = 'active';
       }
 
       const secInst = member.instrumentSecondaire || '';
@@ -1427,7 +1428,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                       {/* 3. Vœux & Deuxième Instrument */}
                       <td className="py-2.5 px-2">
                         <div className="flex flex-col gap-2 items-start">
-                          {hasWishes || m.souhaiteChangerInstrument ? (
+                          {hasWishes ? (
                             <div className="flex flex-col gap-1">
                               <span className="text-[9px] font-black uppercase text-cordel-master-dark opacity-60">
                                 {t('mestre.casting.currentWishesColon')}
@@ -1440,20 +1441,23 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                                     type="button"
                                     onClick={() => handleQuickValidate(m, wish)}
                                     disabled={saving}
-                                    className="text-[10px] font-bold bg-white/70 dark:bg-black/20 border border-cordel-wood/40 hover:bg-cordel-wood hover:text-white transition-all px-1.5 py-0.5 rounded cursor-pointer flex items-center gap-1 shadow-xs"
+                                    className="text-[10px] font-bold bg-white/80 dark:bg-black/20 border border-cordel-wood/40 hover:bg-cordel-wood hover:text-white transition-all px-2 py-0.5 rounded cursor-pointer flex items-center gap-1 shadow-xs"
                                     title={`Valider et affecter à ${wish}`}
                                   >
-                                    <span className="text-[8px] font-black opacity-60">V{idx + 1}</span>
-                                    {wish}
+                                    <span className="text-[8.5px] font-black opacity-75">{idx + 1}.</span>
+                                    <span>{wish}</span>
                                   </button>
                                 ))}
-                                {wishesList.length === 0 && m.souhaiteChangerInstrument && (
-                                  <span className="text-[10px] italic text-cordel-master-dark/60 font-semibold">
-                                    {t('mestre.casting.wishesToChangeBadge')}
-                                  </span>
-                                )}
                               </div>
                             </div>
+                          ) : (isUnassigned || mainInst === 'En attente' || !mainInst) ? (
+                            <span className="text-[9.5px] font-bold text-amber-900 dark:text-amber-200 bg-amber-100/80 dark:bg-amber-950/40 px-2 py-0.5 rounded border border-amber-300/60 select-none">
+                              ⏳ En attente de vœux (cours d'essai)
+                            </span>
+                          ) : m.souhaiteChangerInstrument ? (
+                            <span className="text-[10px] italic text-cordel-master-dark/60 font-semibold">
+                              {t('mestre.casting.wishesToChangeBadge')}
+                            </span>
                           ) : (
                             mainInst && mainInst !== 'En attente' && mainInst.toLowerCase() !== 'danse' ? (
                               <div className="flex flex-col gap-0.5 mb-1">

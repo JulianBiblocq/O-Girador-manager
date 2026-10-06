@@ -39,11 +39,13 @@ function detectHelloAssoOptions(items = [], rawData = {}, configuredOptions = []
   let hasAdhesionBase = false;
   let hasDanse = false;
   let hasPercussion = false;
+  let isEchelonne = false;
+  let echeanceCount = 1;
   const matchedOptionIds = new Set();
 
   for (const item of safeItems) {
     const rawName = (item.name || item.customName || '').trim();
-    const cleanNameLower = rawName.toLowerCase();
+    const cleanLower = rawName.toLowerCase();
     const cleanNormalized = normalizeStr(rawName);
     const itemType = (item.type || '').toLowerCase();
     const rawAmount = typeof item.amount === 'number' ? item.amount : (item.amount?.total || 0);
@@ -55,123 +57,241 @@ function detectHelloAssoOptions(items = [], rawData = {}, configuredOptions = []
       amount: amountEuros
     });
 
-    // 1. Détection des dons et pourboires
-    if (itemType === 'donation' || cleanNormalized.includes('don ') || cleanNormalized === 'don' || cleanNormalized.includes('pourboire')) {
+    // 1. Dons complémentaires (5 €, 10 €, 20 € ou montant libre)
+    if (
+      itemType === 'donation' || 
+      cleanLower.includes('don ') || 
+      cleanLower === 'don' || 
+      cleanNormalized.includes('don ') || 
+      cleanNormalized === 'don' || 
+      cleanNormalized.includes('pourboire')
+    ) {
       montantDons += amountEuros;
       continue;
     }
 
-    // 2. Détection de l'adhésion de base (mots-clés : adhésion, adhesion, cotisation, membership)
+    // 2. Adhésion de base (10 €) : "Adhésion seule OBLIGATOIRE pour tous·tes"
     if (
-      cleanNormalized.includes('adhesion') ||
-      cleanNormalized.includes('cotisation') ||
-      itemType === 'membership' ||
-      cleanNormalized.includes('adherent') ||
-      cleanNormalized.includes('membre')
+      cleanLower.includes('adhésion') || 
+      cleanNormalized.includes('adhesion') || 
+      itemType === 'membership'
     ) {
       hasAdhesionBase = true;
-    }
-
-    // 3. Détection de la pratique Danse (mots-clés : danse, danseur, danseuse, dansador...)
-    if (
-      cleanNormalized.includes('danse') ||
-      cleanNormalized.includes('danseur') ||
-      cleanNormalized.includes('danseuse') ||
-      cleanNormalized.includes('dansador')
-    ) {
-      hasDanse = true;
-    }
-
-    // 4. Détection de la pratique Percussion (mots-clés : percussion, batucada, alfaia, caixa, tarol...)
-    const isPercussionInstrument = (
-      cleanNormalized.includes('percussion') ||
-      cleanNormalized.includes('batucada') ||
-      cleanNormalized.includes('alfaia') ||
-      cleanNormalized.includes('caixa') ||
-      cleanNormalized.includes('tarol') ||
-      cleanNormalized.includes('gongue') ||
-      cleanNormalized.includes('agbe') ||
-      cleanNormalized.includes('mineiro') ||
-      cleanNormalized.includes('timbal')
-    );
-    if (isPercussionInstrument) {
-      hasPercussion = true;
-    }
-
-    // 5. Rapprochement avec les options de cotisation configurées de l'association
-    for (const opt of safeConfiguredOptions) {
-      const optId = opt?.id || opt?.code;
-      if (!optId) continue;
-      const optNomNormalized = normalizeStr(opt.nom || opt.name || opt.label || '');
-      const optIdNormalized = normalizeStr(optId);
-
-      // Correspondance par nom complet, sous-chaîne significative ou identifiant
-      const isNameMatch = optNomNormalized.length >= 3 && (
-        cleanNormalized.includes(optNomNormalized) ||
-        optNomNormalized.includes(cleanNormalized)
-      );
-      const isIdMatch = optIdNormalized.length >= 3 && cleanNormalized.includes(optIdNormalized);
-
-      // Correspondance sémantique par famille (ex: option danse <-> item danse, option alfaia <-> item alfaia)
-      const isDanseOptionMatch = optNomNormalized.includes('danse') && cleanNormalized.includes('danse');
-      const isAlfaiaMatch = optNomNormalized.includes('alfaia') && cleanNormalized.includes('alfaia');
-      const isCaixaMatch = optNomNormalized.includes('caixa') && cleanNormalized.includes('caixa');
-      const isTarolMatch = optNomNormalized.includes('tarol') && cleanNormalized.includes('tarol');
-      const isGongueMatch = optNomNormalized.includes('gongue') && cleanNormalized.includes('gongue');
-      const isAgbeMatch = optNomNormalized.includes('agbe') && cleanNormalized.includes('agbe');
-      const isCostumeMatch = (optNomNormalized.includes('costume') || optNomNormalized.includes('tenue')) &&
-                             (cleanNormalized.includes('costume') || cleanNormalized.includes('tenue') || cleanNormalized.includes('jupe'));
-
-      if (isNameMatch || isIdMatch || isDanseOptionMatch || isAlfaiaMatch || isCaixaMatch || isTarolMatch || isGongueMatch || isAgbeMatch || isCostumeMatch) {
-        matchedOptionIds.add(optId);
+      if (!formulePrincipale) {
+        formulePrincipale = rawName;
       }
     }
 
-    // 6. Typage des options additionnelles matérielles / costumes
-    const isCostume = cleanNormalized.includes('costume') || cleanNormalized.includes('tenue') || cleanNormalized.includes('t-shirt') || cleanNormalized.includes('jupe') || cleanNormalized.includes('veste');
-    const isInstrument = cleanNormalized.includes('instrument') || isPercussionInstrument;
+    // 3. Option Percussions (135 € comptant ou 3x 45 €) :
+    // "Cotisation annuelle PERCUSSIONS" ou "Cotisation annuelle paiement 3x PERCUSSIONS"
+    if (
+      cleanLower.includes('percussion') || 
+      cleanNormalized.includes('percussion')
+    ) {
+      hasPercussion = true;
+      matchedOptionIds.add('percussions');
+      if (cleanLower.includes('3x') || cleanNormalized.includes('3x') || cleanNormalized.includes('3 fois')) {
+        isEchelonne = true;
+        echeanceCount = 3;
+      }
+      if (!formulePrincipale || formulePrincipale.toLowerCase().includes('adhésion seule') || formulePrincipale.toLowerCase().includes('adhesion seule')) {
+        formulePrincipale = rawName;
+      }
+    }
 
-    if (isCostume || isInstrument || cleanNormalized.includes('option') || cleanNormalized.includes('location')) {
+    // 4. Option Danse (90 € comptant ou 3x 30 €) :
+    // "Cotisation annuelle DANSE" ou "Cotisation annuelle paiement 3x DANSE"
+    if (
+      cleanLower.includes('danse') || 
+      cleanNormalized.includes('danse')
+    ) {
+      hasDanse = true;
+      matchedOptionIds.add('danse');
+      if (cleanLower.includes('3x') || cleanNormalized.includes('3x') || cleanNormalized.includes('3 fois')) {
+        isEchelonne = true;
+        echeanceCount = 3;
+      }
+      if (!formulePrincipale || formulePrincipale.toLowerCase().includes('adhésion seule') || formulePrincipale.toLowerCase().includes('adhesion seule')) {
+        formulePrincipale = rawName;
+      }
+    }
+
+    // 5. Typage des options additionnelles matérielles / costumes (hors cotisation de cours)
+    const isCostume = cleanNormalized.includes('costume') || cleanNormalized.includes('tenue') || cleanNormalized.includes('t-shirt') || cleanNormalized.includes('jupe') || cleanNormalized.includes('veste');
+    const isInstrument = (cleanNormalized.includes('instrument') || cleanNormalized.includes('location')) && !cleanNormalized.includes('percussion') && !cleanNormalized.includes('cotisation');
+
+    if (isCostume || isInstrument) {
       optionsAdditionnelles.push({
         nom: rawName,
         montant: amountEuros,
-        categorie: isCostume ? 'costume' : (isInstrument ? 'instrument' : 'autre')
+        categorie: isCostume ? 'costume' : 'instrument'
       });
-      continue;
-    }
-
-    // 7. Détection de la formule d'adhésion principale
-    if (!formulePrincipale) {
-      if (cleanNormalized.includes('solidaire') || cleanNormalized.includes('reduit') || cleanNormalized.includes('etudiant') || cleanNormalized.includes('chomeur') || cleanNormalized.includes('rsa')) {
-        formulePrincipale = rawName || 'Tarif Solidaire / Réduit';
-      } else if (cleanNormalized.includes('bienfaiteur') || cleanNormalized.includes('soutien')) {
-        formulePrincipale = rawName || 'Adhésion Soutien';
-      } else if (cleanNormalized.includes('adhesion') || cleanNormalized.includes('cotisation') || itemType === 'membership') {
-        formulePrincipale = rawName || 'Formule Standard';
-      }
     }
   }
 
-  // Repli sur le premier item si aucune formule explicite n'a été isolée
-  if (!formulePrincipale && safeItems.length > 0) {
+  // Détection globale 3x depuis l'ensemble du payload de la commande
+  const rawText = JSON.stringify(rawData || {}).toLowerCase();
+  if (rawText.includes('3x') || rawText.includes('3 fois') || rawText.includes('echelonne') || rawText.includes('échelonné')) {
+    isEchelonne = true;
+    echeanceCount = 3;
+  }
+
+  // Construction unitaire et strictement dédupliquée des options de l'adhérent
+  const finalSelectedOptions = new Set();
+  if (hasPercussion) {
+    finalSelectedOptions.add('percussions');
+  }
+  if (hasDanse) {
+    finalSelectedOptions.add('danse');
+  }
+  for (const opt of optionsAdditionnelles) {
+    if (opt.id) {
+      finalSelectedOptions.add(opt.id);
+    }
+  }
+
+  // Construction de la formule principale synthétique
+  if (hasPercussion && hasDanse) {
+    formulePrincipale = 'Adhésion + Percussions + Danse';
+  } else if (hasPercussion) {
+    formulePrincipale = 'Adhésion + Percussions';
+  } else if (hasDanse) {
+    formulePrincipale = 'Adhésion + Danse';
+  } else if (hasAdhesionBase) {
+    if (!formulePrincipale || formulePrincipale.toLowerCase().includes('adhésion seule') || formulePrincipale.toLowerCase().includes('adhesion seule')) {
+      formulePrincipale = formulePrincipale || 'Adhésion seule';
+    }
+  } else if (!formulePrincipale && safeItems.length > 0) {
     formulePrincipale = safeItems[0].name || 'Adhésion HelloAsso';
+  } else if (!formulePrincipale) {
+    formulePrincipale = 'Cotisation HelloAsso';
   }
 
-  // Si une formule d'adhésion principale est trouvée, considérer l'adhésion de base comme acquise
-  if (formulePrincipale) {
+  // Si au moins une cotisation / option est présente, l'adhésion de base est obligatoirement acquise
+  if (hasPercussion || hasDanse || formulePrincipale) {
     hasAdhesionBase = true;
   }
 
   return {
-    formulePrincipale: formulePrincipale || 'Adhésion Standard',
+    formulePrincipale,
     optionsAdditionnelles,
+    // Ne classer en Dons QUE les lignes où l'article HelloAsso contient explicitement la mention "don" ou "pourboire"
     montantDons,
     detailsOptions,
     adhesionBase: hasAdhesionBase,
     pratiqueDanse: hasDanse,
     pratiquePercussion: hasPercussion,
-    selectedOptions: Array.from(matchedOptionIds)
+    selectedOptions: Array.from(finalSelectedOptions),
+    echelonne: isEchelonne,
+    echeance: echeanceCount
   };
+}
+
+/**
+ * Capitalise un prénom (gère les prénoms composés avec tiret ou espace).
+ * Exemples : "jean-pierre" -> "Jean-Pierre", "jean pierre" -> "Jean-Pierre", "marie" -> "Marie".
+ *
+ * @param {string} str Prénom brut
+ * @returns {string} Prénom capitalisé normalisé
+ */
+function formatCapitalizedFirstName(str) {
+  if (!str || typeof str !== 'string') return '';
+  const parts = str.trim().split(/[\s-]+/).filter(Boolean);
+  return parts.map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join('-');
+}
+
+/**
+ * Passe un nom de famille entièrement en MAJUSCULES.
+ * Exemples : "le devehat" -> "LE DEVEHAT", "touchefeu" -> "TOUCHEFEU", "de fontaine" -> "DE FONTAINE".
+ *
+ * @param {string} str Nom de famille brut
+ * @returns {string} Nom en majuscules
+ */
+function formatUppercaseLastName(str) {
+  if (!str || typeof str !== 'string') return '';
+  return str.trim().toUpperCase();
+}
+
+/**
+ * Normalise un nom de payeur au format canonique : [Prénom Capitalisé] [NOM MAJUSCULE].
+ * Exemples :
+ * - "Jean-pierre LE DEVEHAT" -> "Jean-Pierre LE DEVEHAT"
+ * - "Jean pierre LE DEVEHAT" -> "Jean-Pierre LE DEVEHAT"
+ * - "Isabelle Touchefeu" -> "Isabelle TOUCHEFEU"
+ * - "Marie de Fontaine" -> "Marie DE FONTAINE"
+ *
+ * @param {Object|string} input Objet { firstName, lastName, fullName } ou chaîne complète
+ * @returns {string} Nom normalisé
+ */
+function formatNormalizedPayerName(input) {
+  if (!input) return 'Adhérent';
+
+  let fName = '';
+  let lName = '';
+
+  if (typeof input === 'string') {
+    const raw = input.trim();
+    if (!raw) return 'Adhérent';
+    const tokens = raw.split(/\s+/).filter(Boolean);
+    if (tokens.length === 1) {
+      return formatCapitalizedFirstName(tokens[0]);
+    } else if (tokens.length === 2) {
+      fName = tokens[0];
+      lName = tokens[1];
+    } else {
+      // 3 mots ou plus : ex: "Jean-pierre LE DEVEHAT" ou "Marie de Fontaine"
+      const upperIdx = tokens.findIndex((t, idx) => idx > 0 && t === t.toUpperCase() && t.length > 1 && !/^[0-9]+$/.test(t));
+      if (upperIdx > 0) {
+        fName = tokens.slice(0, upperIdx).join(' ');
+        lName = tokens.slice(upperIdx).join(' ');
+      } else {
+        fName = tokens[0];
+        lName = tokens.slice(1).join(' ');
+      }
+    }
+  } else if (typeof input === 'object') {
+    fName = (input.firstName || input.prenom || '').trim();
+    lName = (input.lastName || input.nom || '').trim();
+    if (!fName && !lName && (input.fullName || input.displayName)) {
+      return formatNormalizedPayerName(input.fullName || input.displayName);
+    }
+  }
+
+  const cleanFirst = formatCapitalizedFirstName(fName);
+  const cleanLast = formatUppercaseLastName(lName);
+
+  if (cleanFirst && cleanLast) {
+    return `${cleanFirst} ${cleanLast}`;
+  }
+  return cleanFirst || cleanLast || 'Adhérent';
+}
+
+/**
+ * Génère le libellé synthétique standardisé pour une écriture HelloAsso.
+ * Format attendu : Paiement HelloAsso - [Prénom Capitalisé] [NOM MAJUSCULE] ([Options])
+ */
+function formatHelloAssoSyntheticLabel(payerName, { adhesionBase = true, hasPercussion = false, hasDanse = false, options = [] } = {}) {
+  const activities = [];
+  if (adhesionBase) {
+    activities.push('Adhésion');
+  }
+  if (hasPercussion) {
+    activities.push('Percussions');
+  }
+  if (hasDanse) {
+    activities.push('Danse');
+  }
+  if (activities.length === 0 && Array.isArray(options) && options.length > 0) {
+    options.forEach(opt => {
+      const oStr = String(opt).toLowerCase();
+      if (oStr.includes('percu')) activities.push('Percussions');
+      else if (oStr.includes('danse')) activities.push('Danse');
+      else activities.push(opt);
+    });
+  }
+  const actStr = activities.length > 0 ? Array.from(new Set(activities)).join(' + ') : 'Cotisation';
+  const cleanName = formatNormalizedPayerName(payerName);
+  return `Paiement HelloAsso - ${cleanName} (${actStr})`;
 }
 
 /**
@@ -265,5 +385,9 @@ function findUserIdentifierFromCustomFields(customFields = [], metadata = {}, da
 module.exports = {
   detectHelloAssoOptions,
   detectInstallmentPayment,
-  findUserIdentifierFromCustomFields
+  findUserIdentifierFromCustomFields,
+  formatCapitalizedFirstName,
+  formatUppercaseLastName,
+  formatNormalizedPayerName,
+  formatHelloAssoSyntheticLabel
 };

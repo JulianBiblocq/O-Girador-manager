@@ -22,7 +22,6 @@ import {
 } from '../../services/aisanceService';
 import { calculatePauseTimes } from '../../utils/reflexGameUtils';
 import { usePracticeLauncher } from '../../hooks/usePracticeLauncher';
-import RoleSelectorModal from './RoleSelectorModal';
 import { normalizeString } from '../../utils/repertoireMatcher';
 import GameStatsCard from '../games/GameStatsCard';
 import { isDefisEnLigneEnabled } from '../../utils/gameUtils';
@@ -254,8 +253,7 @@ export default function MonCarnetAisance({
   profileData
 }) {
   const { t } = useTranslation();
-  const { startPractice, isRoleModalOpen, handleSelectRole, handleCloseModal } =
-    usePracticeLauncher(profileData, sequenceurUrl);
+  const { startPractice } = usePracticeLauncher(profileData, sequenceurUrl);
   const { nomenclature: groupNomenclature } = useGroupNomenclature(profileData?.groupId);
   const isDefisAuthorized = isDefisEnLigneEnabled(enabledModules, profileData);
 
@@ -1159,12 +1157,6 @@ export default function MonCarnetAisance({
         />
       )}
 
-      {/* Micro-modale de sélection de secours du pupitre adhérent */}
-      <RoleSelectorModal
-        isOpen={isRoleModalOpen}
-        onClose={handleCloseModal}
-        onSelectRole={handleSelectRole}
-      />
     </div>
   );
 }

@@ -19,7 +19,8 @@ const { getAuth } = require("firebase-admin/auth");
 const {
   detectHelloAssoOptions,
   detectInstallmentPayment,
-  findUserIdentifierFromCustomFields
+  findUserIdentifierFromCustomFields,
+  formatHelloAssoSyntheticLabel
 } = require("./helloasso");
 
 // Initialisation de Firebase Admin SDK s'il n'est pas déjà initialisé
@@ -1076,17 +1077,28 @@ exports.helloAssoWebhook = onRequest(
         rawAmount = typeof data.order.amount === "number" ? data.order.amount : (data.order.amount.total || 0);
       }
 
+      // Isolation stricte par commande : ne parcourir QUE les items de cette commande précise
+      const items = Array.isArray(data.items) 
+        ? data.items 
+        : (Array.isArray(data.order?.items) 
+            ? data.order.items 
+            : (Array.isArray(data.payments) && Array.isArray(data.payments[0]?.items) 
+                ? data.payments[0].items 
+                : []));
+
       // Si le montant n'a pas pu être extrait mais que des items sont présents
-      if ((!rawAmount || isNaN(rawAmount)) && Array.isArray(data.items) && data.items.length > 0) {
-        rawAmount = data.items.reduce((sum, item) => {
+      if ((!rawAmount || isNaN(rawAmount)) && items.length > 0) {
+        rawAmount = items.reduce((sum, item) => {
           const itemVal = typeof item.amount === "number" ? item.amount : (item.amount?.total || 0);
           return sum + (Number(itemVal) || 0);
         }, 0);
       }
 
       const amountEuros = (!isNaN(rawAmount) && rawAmount > 0) ? (rawAmount / 100) : 0;
-      const items = data.items || [];
-      const helloAssoOrderId = data.id || data.order?.id || null;
+      // Extraction robuste des identifiants HelloAsso (Order vs Payment)
+      const orderId = (data.order && data.order.id) || (eventType === "Order" ? data.id : null) || data.orderId || null;
+      const paymentId = (eventType === "Payment" ? data.id : null) || (data.payment && data.payment.id) || (Array.isArray(data.payments) && data.payments[0]?.id) || null;
+      const helloAssoOrderId = orderId || paymentId || data.id || null;
       const paymentDate = data.date || new Date().toISOString();
 
       console.log("helloAssoWebhook - Notification reçue :", {
@@ -1229,6 +1241,51 @@ exports.helloAssoWebhook = onRequest(
         }
       }
 
+      // Priorité 3 : réconciliation par Prénom et Nom (ex: Hélène, Yann, etc.)
+      if (!matchedUserId && (payerFirstName || payerLastName)) {
+        try {
+          const normalizeStrHelper = (str) => (str || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+          const cleanPayerFirst = normalizeStrHelper(payerFirstName);
+          const cleanPayerLast = normalizeStrHelper(payerLastName);
+          const cleanPayerFull = `${cleanPayerFirst} ${cleanPayerLast}`.trim();
+
+          const groupUsersSnap = await db
+            .collection("users")
+            .where("groupId", "==", groupId)
+            .get();
+
+          for (const uDoc of groupUsersSnap.docs) {
+            const uData = uDoc.data();
+            const uFirst = normalizeStrHelper(uData.prenom);
+            const uLast = normalizeStrHelper(uData.nom);
+            const uFull = normalizeStrHelper(uData.displayName || `${uData.prenom || ""} ${uData.nom || ""}`);
+
+            if (cleanPayerFirst && cleanPayerLast && uFirst === cleanPayerFirst && uLast === cleanPayerLast) {
+              matchedUserId = uDoc.id;
+              matchedUserDoc = uDoc;
+              matchedUserName = `${uData.prenom || ""} ${uData.nom || ""}`.trim();
+              break;
+            }
+
+            if (cleanPayerFull && (uFull === cleanPayerFull || `${uFirst} ${uLast}` === cleanPayerFull)) {
+              matchedUserId = uDoc.id;
+              matchedUserDoc = uDoc;
+              matchedUserName = `${uData.prenom || ""} ${uData.nom || ""}`.trim();
+              break;
+            }
+
+            if (cleanPayerLast && uLast === cleanPayerLast && cleanPayerFirst && (uFirst.includes(cleanPayerFirst) || cleanPayerFirst.includes(uFirst))) {
+              matchedUserId = uDoc.id;
+              matchedUserDoc = uDoc;
+              matchedUserName = `${uData.prenom || ""} ${uData.nom || ""}`.trim();
+              break;
+            }
+          }
+        } catch (nameMatchErr) {
+          console.warn("helloAssoWebhook - Erreur recherche par nom/prénom :", nameMatchErr.message);
+        }
+      }
+
       // 3. Mise à jour du profil adhérent sans écraser les saisies manuelles du trésorier
       if (matchedUserId && matchedUserDoc) {
         const userData = matchedUserDoc.data();
@@ -1250,14 +1307,20 @@ exports.helloAssoWebhook = onRequest(
         if (!isManualOverride) {
           const userUpdatePayload = {
             paymentStatus: paymentStatusField,
-            cotisationAjour: isFullyPaid,
+            cotisationAjour: isFullyPaid || !isInstallmentActive,
+            adhesionBase: optionsAnalysis.adhesionBase || true,
+            modePaiement: 'helloasso',
+            modeReglement: 'helloasso',
+            derniereCotisationMontant: amountEuros,
             cotisation: {
-              aJour: true,
+              aJour: isFullyPaid || !isInstallmentActive,
               statut: cotisationStatut,
               formule: optionsAnalysis.formulePrincipale,
-              options: optionsAnalysis.optionsAdditionnelles.map(o => o.nom),
+              options: optionsAnalysis.selectedOptions,
               montantTotal: amountEuros,
               modeReglement: 'helloasso',
+              echelonne: optionsAnalysis.echelonne || installmentAnalysis.isInstallment,
+              echeance: optionsAnalysis.echeance || installmentAnalysis.installmentCount || 1,
               derniereSynchro: nowIso
             },
             helloAssoLastPayment: {
@@ -1265,30 +1328,25 @@ exports.helloAssoWebhook = onRequest(
               amount: amountEuros,
               orderId: helloAssoOrderId,
               formule: optionsAnalysis.formulePrincipale,
-              isInstallment: installmentAnalysis.isInstallment,
+              isInstallment: installmentAnalysis.isInstallment || optionsAnalysis.echelonne,
               installmentNumber: installmentAnalysis.installmentNumber,
+              echelonne: optionsAnalysis.echelonne || installmentAnalysis.isInstallment,
+              echeance: optionsAnalysis.echeance || installmentAnalysis.installmentCount || 1,
               eventType: eventType,
               updatedAt: FieldValue.serverTimestamp()
             }
           };
 
-          // Valorisation automatique des champs métier réels de l'adhérent
-          if (optionsAnalysis.adhesionBase) {
-            userUpdatePayload.adhesionBase = true;
+          if (optionsAnalysis.echelonne) {
+            userUpdatePayload.echelonne = true;
+            userUpdatePayload.echeance = optionsAnalysis.echeance || 3;
           }
 
-          if (optionsAnalysis.pratiqueDanse) {
-            userUpdatePayload.pratiqueDanse = true;
-          }
+          userUpdatePayload.pratiqueDanse = Boolean(optionsAnalysis.pratiqueDanse);
+          userUpdatePayload.pratiquePercussion = Boolean(optionsAnalysis.pratiquePercussion);
 
-          if (optionsAnalysis.pratiquePercussion && userData.pratiquePercussion === undefined) {
-            userUpdatePayload.pratiquePercussion = true;
-          }
-
-          if (optionsAnalysis.selectedOptions && optionsAnalysis.selectedOptions.length > 0) {
-            const currentSelected = Array.isArray(userData.selectedOptions) ? userData.selectedOptions : [];
-            userUpdatePayload.selectedOptions = Array.from(new Set([...currentSelected, ...optionsAnalysis.selectedOptions]));
-          }
+          // Réinitialisation stricte du tableau des options de la commande sans empilage d'anciennes valeurs
+          userUpdatePayload.selectedOptions = Array.from(new Set(optionsAnalysis.selectedOptions || []));
 
           await db.collection("users").doc(matchedUserId).update(userUpdatePayload);
         } else {
@@ -1300,8 +1358,10 @@ exports.helloAssoWebhook = onRequest(
               amount: amountEuros,
               orderId: helloAssoOrderId,
               formule: optionsAnalysis.formulePrincipale,
-              isInstallment: installmentAnalysis.isInstallment,
+              isInstallment: installmentAnalysis.isInstallment || optionsAnalysis.echelonne,
               installmentNumber: installmentAnalysis.installmentNumber,
+              echelonne: optionsAnalysis.echelonne || installmentAnalysis.isInstallment,
+              echeance: optionsAnalysis.echeance || installmentAnalysis.installmentCount || 1,
               eventType: eventType,
               updatedAt: FieldValue.serverTimestamp()
             },
@@ -1311,12 +1371,14 @@ exports.helloAssoWebhook = onRequest(
             }
           };
 
-          // Complément non destructif des options si non renseignées
           if (optionsAnalysis.adhesionBase && userData.adhesionBase === undefined) {
             overrideUpdate.adhesionBase = true;
           }
           if (optionsAnalysis.pratiqueDanse && !userData.pratiqueDanse) {
             overrideUpdate.pratiqueDanse = true;
+          }
+          if (optionsAnalysis.pratiquePercussion && !userData.pratiquePercussion) {
+            overrideUpdate.pratiquePercussion = true;
           }
           if (optionsAnalysis.selectedOptions && optionsAnalysis.selectedOptions.length > 0) {
             const currentSelected = Array.isArray(userData.selectedOptions) ? userData.selectedOptions : [];
@@ -1405,51 +1467,112 @@ exports.helloAssoWebhook = onRequest(
         console.warn("helloAssoWebhook - Aucun identifiant ni email de payeur dans la notification.");
       }
 
-      // 4. Écriture comptable dans la collection racine 'transactions' sans doublon
-      const paymentRefId = String(data.id || data.payment?.id || data.order?.id || helloAssoOrderId || `ha_${Date.now()}`);
-      if (amountEuros > 0 && paymentRefId) {
-        try {
-          // Vérification anti-doublon via refExterne ou helloAssoOrderId
-          const existingTxSnap = await db.collection("transactions")
-            .where("groupId", "==", groupId)
-            .where("refExterne", "==", paymentRefId)
-            .limit(1)
-            .get();
+      // 4. Écriture comptable dans la collection racine 'transactions' avec identifiant déterministe (ha_pay_${paymentId})
+      // Règle d'or : Ne JAMAIS faire de .add(), utiliser l'identifiant du paiement bancaire réel.
+      // Si la commande contient des sous-paiements (3x), n'importer que les paiements encaissés sans doubler avec l'Order.
+      const childPayments = (Array.isArray(data.payments) && data.payments.length > 0) ? data.payments : null;
+      const payerDisplayName = matchedUserName || (payerFirstName + " " + payerLastName).trim() || payerEmail;
+      const syntheticLabel = formatHelloAssoSyntheticLabel(payerDisplayName, {
+        adhesionBase: optionsAnalysis.adhesionBase,
+        hasPercussion: optionsAnalysis.pratiquePercussion,
+        hasDanse: optionsAnalysis.pratiqueDanse
+      });
 
-          let alreadyExists = !existingTxSnap.empty;
-          if (!alreadyExists && helloAssoOrderId) {
-            const existingOrderSnap = await db.collection("transactions")
-              .where("groupId", "==", groupId)
-              .where("helloAssoOrderId", "==", String(helloAssoOrderId))
-              .limit(1)
-              .get();
-            alreadyExists = !existingOrderSnap.empty;
-            if (alreadyExists) {
-              logEntry.transactionId = existingOrderSnap.docs[0].id;
-            }
-          } else if (alreadyExists) {
-            logEntry.transactionId = existingTxSnap.docs[0].id;
+      if (childPayments) {
+        // Cas A : Règlements échelonnés ou paiements enfants déclarés dans l'Order
+        for (const p of childPayments) {
+          const pState = (p.state || "").toLowerCase();
+          if (pState && pState !== "authorized" && pState !== "processed") {
+            continue; // N'importer que les paiements réellement encaissés
           }
 
-          if (!alreadyExists) {
-            const txDoc = await db.collection("transactions").add({
+          let pRawAmount = typeof p.amount === "number" ? p.amount : (p.amount?.total || 0);
+          const pAmountEuros = (pRawAmount > 0) ? (pRawAmount > 1000 ? pRawAmount / 100 : pRawAmount) : 0;
+          if (pAmountEuros <= 0) continue;
+
+          const pTxId = `ha_pay_${p.id}`;
+          try {
+            await db.collection("transactions").doc(pTxId).set({
               groupId,
-              date: Timestamp.fromDate(new Date(paymentDate)),
+              date: Timestamp.fromDate(new Date(p.date || paymentDate)),
               type: "recette",
-              categorie: "Cotisation",
-              montant: amountEuros,
-              libelle: `Paiement HelloAsso - ${matchedUserName || (payerFirstName + " " + payerLastName).trim() || payerEmail} (${optionsAnalysis.formulePrincipale})`,
+              categorie: "Cotisations",
+              montant: pAmountEuros,
+              libelle: syntheticLabel,
               justificatif: "HelloAsso",
-              justificatifNom: `HelloAsso #${paymentRefId}`,
-              refExterne: paymentRefId,
-              helloAssoOrderId: helloAssoOrderId || null,
-              helloAssoPaymentId: paymentRefId,
+              justificatifNom: `HelloAsso #${p.id}`,
+              refExterne: String(p.id),
+              helloAssoOrderId: orderId ? String(orderId) : null,
+              helloAssoPaymentId: String(p.id),
               formule: optionsAnalysis.formulePrincipale,
               userId: matchedUserId || null,
               source: "helloasso",
+              updatedAt: FieldValue.serverTimestamp(),
               createdAt: FieldValue.serverTimestamp()
-            });
-            logEntry.transactionId = txDoc.id;
+            }, { merge: true });
+            console.log(`helloAssoWebhook - Sous-paiement bancaire consigné sous '${pTxId}' (${pAmountEuros} €)`);
+          } catch (pErr) {
+            console.error(`helloAssoWebhook - Erreur écriture sous-paiement '${pTxId}' :`, pErr.message);
+          }
+        }
+      } else if (amountEuros > 0) {
+        // Cas B : Paiement unique (ou commande sans sous-paiements déclarés)
+        const deterministicPaymentId = paymentId || data.id || `ha_${Date.now()}`;
+        const transactionId = `ha_pay_${deterministicPaymentId}`;
+
+        try {
+          const donAmount = optionsAnalysis.montantDons || 0;
+          const isPureDonation = donAmount >= amountEuros;
+          const cotisationAmount = isPureDonation ? 0 : (amountEuros - donAmount);
+
+          if (cotisationAmount > 0) {
+            const txData = {
+              groupId,
+              date: Timestamp.fromDate(new Date(paymentDate)),
+              type: "recette",
+              categorie: "Cotisations",
+              montant: cotisationAmount,
+              libelle: syntheticLabel,
+              justificatif: "HelloAsso",
+              justificatifNom: `HelloAsso #${deterministicPaymentId}`,
+              refExterne: String(deterministicPaymentId),
+              helloAssoOrderId: orderId ? String(orderId) : null,
+              helloAssoPaymentId: String(deterministicPaymentId),
+              formule: optionsAnalysis.formulePrincipale,
+              userId: matchedUserId || null,
+              source: "helloasso",
+              updatedAt: FieldValue.serverTimestamp(),
+              createdAt: FieldValue.serverTimestamp()
+            };
+
+            await db.collection("transactions").doc(transactionId).set(txData, { merge: true });
+            logEntry.transactionId = transactionId;
+            console.log(`helloAssoWebhook - Transaction comptable cotisation enregistrée sous '${transactionId}'`);
+          }
+
+          if (donAmount > 0) {
+            const donTxId = `ha_pay_${deterministicPaymentId}_don`;
+            await db.collection("transactions").doc(donTxId).set({
+              groupId,
+              date: Timestamp.fromDate(new Date(paymentDate)),
+              type: "recette",
+              categorie: "Dons",
+              montant: donAmount,
+              libelle: `Paiement HelloAsso - Don - ${payerDisplayName}`,
+              justificatif: "HelloAsso",
+              justificatifNom: `HelloAsso #${deterministicPaymentId} (Don)`,
+              refExterne: `${deterministicPaymentId}_don`,
+              helloAssoOrderId: orderId ? String(orderId) : null,
+              helloAssoPaymentId: String(deterministicPaymentId),
+              userId: matchedUserId || null,
+              source: "helloasso",
+              updatedAt: FieldValue.serverTimestamp(),
+              createdAt: FieldValue.serverTimestamp()
+            }, { merge: true });
+            console.log(`helloAssoWebhook - Transaction don consignée sous '${donTxId}' (${donAmount} €)`);
+            if (isPureDonation) {
+              logEntry.transactionId = donTxId;
+            }
           }
         } catch (txErr) {
           console.error("helloAssoWebhook - Erreur enregistrement transaction comptable :", txErr.message);

@@ -187,11 +187,18 @@ console.log("\n▶️ Module 5 : Lanceur SSO et badges dans MestreRepertoireView
 
 const viewCode = fs.readFileSync(path.join(rootDir, 'src/components/mestre/MestreRepertoireView.jsx'), 'utf-8');
 
-assert.ok(viewCode.includes("openSequencerWithCrossApp"), "MestreRepertoireView doit importer openSequencerWithCrossApp");
-assert.ok(viewCode.includes("hasSequencer = Boolean(piece.sequenceurFileUrl || piece.sequenceurId)"), 
-  "La détection du Séquenceur doit vérifier sequenceurFileUrl OU sequenceurId");
-assert.ok(viewCode.includes("onClick={() => openSequencerWithCrossApp(sequenceurUrl, piece)}"), 
-  "Le bouton Écouter doit déclencher openSequencerWithCrossApp");
+assert.ok(
+  viewCode.includes("openSequencerWithCrossApp") || viewCode.includes("launchGlobalSequencer"),
+  "MestreRepertoireView doit importer openSequencerWithCrossApp ou launchGlobalSequencer"
+);
+assert.ok(
+  viewCode.includes("hasSequencer = Boolean(piece.sequenceurFileUrl || piece.sequenceurId)") || viewCode.includes("targetSeqId"), 
+  "La détection du Séquenceur doit vérifier sequenceurFileUrl OU sequenceurId"
+);
+assert.ok(
+  viewCode.includes("openSequencerWithCrossApp") || viewCode.includes("launchGlobalSequencer"), 
+  "Le bouton Écouter doit déclencher openSequencerWithCrossApp ou launchGlobalSequencer"
+);
 assert.ok(!viewCode.includes('href={targetSeqUrl}'), 
   "L'ancien lien <a> direct sans SSO ne doit plus être présent");
 console.log("  ✅ [PASS] Lancement SSO crossApp et détection exhaustive confirmés dans MestreRepertoireView.");

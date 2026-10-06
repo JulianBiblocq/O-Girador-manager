@@ -36,11 +36,7 @@ export default function MemberPieceUnfoldedContent({
   const cultureDocs = Array.isArray(piece.activeCultureDocs) && piece.activeCultureDocs.length > 0
     ? piece.activeCultureDocs : (piece.activeCultureDoc ? [piece.activeCultureDoc] : []);
   const hasCulture = Boolean(cultureDocs.length > 0 || (Array.isArray(piece.cultureDocIds) && piece.cultureDocIds.length > 0) || piece.cultureDocId);
-  const hasSignals = Boolean(
-    (Array.isArray(piece.sinaisDoMestre) && piece.sinaisDoMestre.length > 0) ||
-    (Array.isArray(piece.activeSinaisDoMestre) && piece.activeSinaisDoMestre.length > 0) ||
-    (Array.isArray(piece.signalIds) && piece.signalIds.length > 0)
-  );
+  const hasSignals = Boolean((Array.isArray(piece.sinaisDoMestre) && piece.sinaisDoMestre.length > 0) || (Array.isArray(piece.activeSinaisDoMestre) && piece.activeSinaisDoMestre.length > 0) || (Array.isArray(piece.signalIds) && piece.signalIds.length > 0));
 
   return (
     <div className="p-3.5 flex flex-col gap-3 text-left">
@@ -183,23 +179,15 @@ export default function MemberPieceUnfoldedContent({
 
       {/* 5. Bloc Entraînements et Paliers d'Aisance */}
       <PieceAisanceSection
-        piece={piece}
-        trainings={trainings}
-        aisanceMap={aisanceMap}
-        userId={userId}
-        groupId={groupId}
-        sequenceurUrl={sequenceurUrl}
-        profileData={profileData}
+        piece={piece} trainings={trainings} aisanceMap={aisanceMap}
+        userId={userId} groupId={groupId} sequenceurUrl={sequenceurUrl} profileData={profileData}
       />
 
       {/* 6. Modale QCM Focus Répertoire */}
       {isQuizModalOpen && (
         <PieceQuizModal
-          isOpen={isQuizModalOpen}
-          onClose={() => setIsQuizModalOpen(false)}
-          piece={piece}
-          groupId={groupId}
-          profileData={profileData}
+          isOpen={isQuizModalOpen} onClose={() => setIsQuizModalOpen(false)}
+          piece={piece} groupId={groupId} profileData={profileData}
         />
       )}
     </div>

@@ -48,6 +48,7 @@ const testScripts = [
   'scripts/test_repertoire_multi_culture.mjs',
   'scripts/test_forum_chat_attachments.mjs',
   'scripts/test_speed_trainer_aisance.mjs',
+  'scripts/test_direct_practice_launcher.mjs',
   'scripts/test_reflex_game_engine.mjs',
   'scripts/test_conductor_game_engine.mjs',
   'scripts/test_repertoire_adherents_mission.mjs',
@@ -91,6 +92,7 @@ const testScripts = [
   'scripts/test_fiche5_cordel_confirm_modal.mjs',
   'scripts/test_fiche6_trombinoscope.mjs',
   'scripts/test_helloasso_sync.mjs',
+  'scripts/test_helloasso_cotisation_mapping.mjs',
   'scripts/test_levels_and_sementes.mjs',
   'scripts/test_mestre_pedagogical_roles.mjs',
   'scripts/test_read_receipt.mjs',
@@ -127,7 +129,10 @@ const testScripts = [
   'scripts/test_forum_multi_polls.mjs',
   'scripts/test_repertoire_member_sidebar.mjs',
   'scripts/test_view_simulator_overflow_layout.mjs',
-  'scripts/test_help_bubbles_click_only.mjs'
+  'scripts/test_help_bubbles_click_only.mjs',
+  'scripts/test_inscription_casting_trombinoscope.mjs',
+  'scripts/deduplicate_helloasso_transactions.mjs',
+  'scripts/test_helloasso_idempotence_and_treasury_ui.mjs'
 ];
 
 console.log("===============================================================");

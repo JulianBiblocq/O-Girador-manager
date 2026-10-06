@@ -276,8 +276,13 @@ export default function Dashboard({
         </div>
       </div>
 
-      {/* Conditional Instrument Reminder Banner after trial sessions */}
-      {!(Boolean(profileData?.instrument || (profileData?.instrumentsJoues && profileData.instrumentsJoues.length > 0) || profileData?.voeuPrincipal || (Array.isArray(profileData?.voeuxInstruments) && profileData.voeuxInstruments.length > 0))) && (
+      {/* Bannière Cordel d'invitation aux vœux post-cours d'essai */}
+      {Boolean(
+        profileData?.isNew === false &&
+        (profileData?.pratiquePercussion !== false) &&
+        (!profileData?.instrument || profileData.instrument === 'En attente' || profileData.instrumentPrincipal === 'En attente') &&
+        (!profileData?.voeuPrincipal && (!Array.isArray(profileData?.voeuxInstruments) || profileData.voeuxInstruments.filter(Boolean).length === 0))
+      ) && (
         <InstrumentReminderBanner onNavigateToView={onNavigateToView} />
       )}
 

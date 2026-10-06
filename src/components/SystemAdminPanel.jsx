@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, onSnapshot, doc, updateDoc, where, deleteField, deleteDoc } from 'firebase/firestore';
+import { collection, query, onSnapshot, doc, updateDoc, where, deleteField, deleteDoc, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
@@ -11,6 +11,8 @@ import SystemUserList from './admin/SystemUserList';
 import useConfirm from '../hooks/useConfirm';
 import { getMigratedRoleAndTags, VALID_SYSTEM_ROLES } from '../utils/roleMigration';
 import { telemetryService } from '../services/telemetryService';
+import { findDuplicateHelloAssoTransactions } from '../utils/treasuryDeduplication';
+import { purgeAndRebuildHelloAssoTransactions } from '../services/helloAssoService';
 
 const DEFAULT_FIELDS_CONFIG = {
   telephone: { key: "telephone", label: "Téléphone", enabled: true, filledBy: "member", isRequired: false },
@@ -49,6 +51,7 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState(null);
   const [associationName, setAssociationName] = useState(propAssociationName || '');
+  const [cleaningDuplicates, setCleaningDuplicates] = useState(false);
 
   useEffect(() => {
     if (propAssociationName) {
@@ -354,8 +357,8 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
     setSavingId(targetUserId);
     try {
       const userRef = doc(db, 'users', targetUserId);
-      const targetUser = users.find(u => u.id === targetUserId);
-      const updateData = { isNew: false };
+      const targetUser = usersList.find(u => u.id === targetUserId);
+      const updateData = { isNew: false, statutActuel: 'active' };
 
       // Pré-remplissage avec le Vœu 1 formulé par l'adhérent s'il n'a pas encore de pupitre assigné
       const wish1 = targetUser?.voeuPrincipal || (
@@ -364,7 +367,7 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
           : null
       );
 
-      const hasNoInstrument = !targetUser?.instrument && !targetUser?.instrumentPrincipal;
+      const hasNoInstrument = !targetUser?.instrument || targetUser?.instrument === 'En attente' || !targetUser?.instrumentPrincipal || targetUser?.instrumentPrincipal === 'En attente';
       if (wish1 && hasNoInstrument) {
         updateData.instrument = wish1;
         updateData.instrumentPrincipal = wish1;
@@ -406,6 +409,37 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
     }
   };
 
+  // Assainissement immédiat et purge complète des doublons HelloAsso dans le Journal des Opérations
+  const handleCleanHelloAssoDuplicates = async () => {
+    if (!profileData?.groupId) {
+      alert("Identifiant de groupe manquant.");
+      return;
+    }
+
+    const isOk = await confirm({
+      title: "Purge chirurgicale & Ré-importation déterministe HelloAsso",
+      message: "Voulez-vous purger et ré-importer l'ensemble des écritures HelloAsso ? Cette action supprime définitivement toutes les écritures HelloAsso corrompues ou éclatées (les dépenses et saisies manuelles sont strictement préservées), puis ré-importe proprement une écriture unitaire par paiement bancaire réel (ha_pay_...) sans doublon ni cumul 3x.",
+      confirmText: "Oui, purger et assainir",
+      cancelText: "Annuler",
+      variant: "danger"
+    });
+    if (!isOk) return;
+
+    setCleaningDuplicates(true);
+    try {
+      const res = await purgeAndRebuildHelloAssoTransactions(db, profileData.groupId);
+      if (res.success) {
+        alert(`Journal des Opérations assaini avec succès !\n- ${res.deletedCount} écriture(s) corrompue(s) ou en double supprimée(s)\n- ${res.rebuiltCount} écriture(s) unitaire(s) reconstruite(s) sans aucun doublon.`);
+      } else {
+        alert("Erreur lors de l'assainissement : " + (res.error || "Erreur inconnue"));
+      }
+    } catch (error) {
+      console.error("SystemAdminPanel - Erreur lors de l'assainissement HelloAsso :", error);
+      alert("Erreur lors de l'assainissement : " + (error.message || error));
+    } finally {
+      setCleaningDuplicates(false);
+    }
+  };
 
   const handleToggleArchive = async (targetUserId, shouldReactivate) => {
     const actionText = shouldReactivate ? "réactiver" : "archiver";
@@ -526,6 +560,29 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
               className="py-2.5 px-4 text-xs font-black uppercase tracking-wider shrink-0 !bg-cordel-wood !text-cordel-bg-light"
             >
               ⚡ {t('pwa.forceUpdateBtn')}
+            </CordelButton>
+          </CordelCard>
+
+          {/* HelloAsso Deduplication & Purge Maintenance Card */}
+          <CordelCard variant="ocre" useExtremeBorder={false} className="p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-left">
+            <div className="flex flex-col gap-1">
+              <h4 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood flex items-center gap-1.5">
+                <span>🧹 {translate('systemAdmin.helloAssoDeduplicateTitle', 'Dédoublonnage HelloAsso & Purge du Journal')}</span>
+                <Tooltip text="Purge l'intégralité des écritures corrompues et reconstruit un Journal des Opérations unitaire et dédupliqué." />
+              </h4>
+              <p className="text-[10px] opacity-75 font-semibold leading-relaxed">
+                {translate('systemAdmin.helloAssoDeduplicateDesc', "Supprime les écritures HelloAsso éclatées ou dupliquées et reconstruit une écriture unique par paiement réel (Catégorie Cotisations, Marie 100 €, Yann 145 €, Hélène 145 € + Don 5 €).")}
+              </p>
+            </div>
+            <CordelButton 
+              type="button" 
+              variant="default" 
+              onClick={handleCleanHelloAssoDuplicates}
+              disabled={cleaningDuplicates}
+              useExtremeBorder={true}
+              className="py-2.5 px-4 text-xs font-black uppercase tracking-wider shrink-0 !bg-cordel-wood !text-cordel-bg-light"
+            >
+              {cleaningDuplicates ? "Assainissement..." : "🧹 Purger & Assainir le Journal"}
             </CordelButton>
           </CordelCard>
 

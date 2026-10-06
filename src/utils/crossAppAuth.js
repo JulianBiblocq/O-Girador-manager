@@ -1,5 +1,5 @@
 import { httpsCallable } from 'firebase/functions';
-import { functions, auth } from '../firebase';
+import { functions, auth } from '../firebase.js';
 
 /**
  * Lance une application de la suite O Girador avec authentification SSO transparente.
