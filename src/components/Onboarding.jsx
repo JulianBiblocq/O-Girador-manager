@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { doc, setDoc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import LayoutShell from './LayoutShell';
 import CordelCard from './CordelCard';
@@ -82,6 +82,49 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
   const [demanderDroitImage, setDemanderDroitImage] = useState(false);
   const [demanderAttestationSante, setDemanderAttestationSante] = useState(false);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+  // Informations visuelles de paiement détecté depuis le sas HelloAsso (affichage uniquement)
+  const [pendingPaymentInfo, setPendingPaymentInfo] = useState(null);
+
+  // Détection visuelle préalable du statut de paiement dans le sas HelloAsso (pending_payments).
+  // Conformément aux règles de sécurité, cela reste un affichage purement informatif pour l'adhérent.
+  // Aucune écriture cliente de paymentStatus ou de drapeau de trésorerie n'est effectuée ici :
+  // c'est le trigger backend onUserCreate qui réconcilie officiellement la fiche avec les privilèges admin.
+  useEffect(() => {
+    let isMounted = true;
+    const checkPendingPayment = async () => {
+      const cleanEmail = (user?.email || '').trim().toLowerCase();
+      if (!cleanEmail) return;
+
+      try {
+        const pendingRef = doc(db, 'pending_payments', cleanEmail);
+        const pendingSnap = await getDoc(pendingRef);
+        if (pendingSnap.exists() && isMounted) {
+          const data = pendingSnap.data();
+          setPendingPaymentInfo({
+            detected: true,
+            amountEuros: data.amountEuros || 0,
+            formule: data.formule || "Adhésion HelloAsso",
+            paymentDate: data.paymentDate,
+            pratiqueDanse: Boolean(data.pratiqueDanse),
+            pratiquePercussion: Boolean(data.pratiquePercussion)
+          });
+          // Pré-cochage ergonomique des disciplines selon le paiement HelloAsso si non encore sélectionnées
+          setFormData((prev) => ({
+            ...prev,
+            pratiqueDanse: prev.pratiqueDanse || Boolean(data.pratiqueDanse),
+            pratiquePercussion: prev.pratiquePercussion || Boolean(data.pratiquePercussion)
+          }));
+        }
+      } catch (err) {
+        console.info("Onboarding - Information sas pending_payments non accessible ou absente :", err?.message);
+      }
+    };
+
+    checkPendingPayment();
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.email]);
 
   // Callback de clôture de la visite guidée et passage au flux applicatif suivant
   const handleFinishTour = () => {
@@ -291,34 +334,11 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
       const isNewDoc = !userSnap.exists();
 
       // Réconciliation préalable avec le sas de paiement HelloAsso (pending_payments)
-      let pendingPaymentData = null;
-      let pendingTxId = null;
-      let pendingRefToClean = null;
+      // La détection visuelle a déjà été réalisée au montage du composant via pendingPaymentInfo.
+      // Règle absolue de sécurité : AUCUNE clé de paiement (paymentStatus, cotisationAjour, etc.)
+      // ni clé d'administration (isSystemAdmin, role, etc.) ne doit être injectée depuis le client.
+      // Le rattachement du paiement HelloAsso est délégué au trigger Cloud Function onUserCreate.
       const cleanEmail = (user.email || '').trim().toLowerCase();
-
-      if (cleanEmail) {
-        try {
-          const pendingRef = doc(db, 'pending_payments', cleanEmail);
-          const pendingSnap = await getDoc(pendingRef);
-          if (pendingSnap.exists()) {
-            const pendingData = pendingSnap.data();
-            pendingPaymentData = {
-              date: pendingData.paymentDate || new Date().toISOString(),
-              amount: pendingData.amountEuros || 0,
-              orderId: pendingData.orderId || null,
-              eventType: pendingData.eventType || 'Order',
-              adhesionBase: pendingData.adhesionBase || false,
-              pratiqueDanse: pendingData.pratiqueDanse || false,
-              pratiquePercussion: pendingData.pratiquePercussion || false,
-              selectedOptions: Array.isArray(pendingData.selectedOptions) ? pendingData.selectedOptions : []
-            };
-            pendingTxId = pendingData.transactionId || null;
-            pendingRefToClean = pendingRef;
-          }
-        } catch (pendingErr) {
-          console.warn("Onboarding - Erreur vérification sas pending_payments :", pendingErr);
-        }
-      }
 
       const currentInstVal = isAncien ? (formData.instrumentPrincipal || "") : (isPercussion ? "En attente" : "");
 
@@ -332,13 +352,13 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
         (profileData?.role && profileData.role !== 'nouveau')
       );
 
-      const effectivePercussion = isPercussion || Boolean(pendingPaymentData?.pratiquePercussion);
-      const effectiveDanse = isDanse || Boolean(pendingPaymentData?.pratiqueDanse);
+      const effectivePercussion = isPercussion || Boolean(pendingPaymentInfo?.pratiquePercussion);
+      const effectiveDanse = isDanse || Boolean(pendingPaymentInfo?.pratiqueDanse);
 
       const userDoc = {
         nom: formData.lastName,
         prenom: formData.firstName,
-        email: user?.email || "",
+        email: cleanEmail || user?.email || "",
         telephone: isFieldVisible('telephone') ? formData.phone : "",
         adresseRue: isFieldVisible('adresse') ? formData.adresseRue : "",
         adresseCP: isFieldVisible('adresse') ? formData.adresseCP : "",
@@ -351,8 +371,8 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
         dateNaissance: isFieldVisible('dateNaissance') ? formData.dateNaissance : "",
         pratiquePercussion: effectivePercussion,
         pratiqueDanse: effectiveDanse,
-        adhesionBase: pendingPaymentData ? (pendingPaymentData.adhesionBase !== false) : true,
-        selectedOptions: pendingPaymentData?.selectedOptions || [],
+        adhesionBase: true,
+        selectedOptions: [],
         estAncienMembre: isAncien,
         souhaiteChangerInstrument: Boolean(formData.souhaiteChangerInstrument),
         volontaireAncienInstrument: Boolean(formData.volontaireAncienInstrument),
@@ -394,23 +414,28 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
         // Conformité stricte avec les règles Firestore allow create :
         // - role doit être 'membre'
         // - tags doit être []
-        // - statutActuel doit être 'active'
-        // - paymentStatus initialisé directement ('paid' si reconnu dans pending_payments, sinon 'unpaid')
+        // - Règle absolue de sécurité : Ne JAMAIS inclure paymentStatus ni isSystemAdmin
+        //   dans les écritures clientes. Le rattachement du paiement HelloAsso est délégué
+        //   exclusivement au trigger Cloud Function onUserCreate (Cloud Function administrative).
         sanitizedUserDoc.role = "membre";
         sanitizedUserDoc.tags = [];
-        sanitizedUserDoc.paymentStatus = pendingPaymentData ? "paid" : "unpaid";
 
-        if (pendingPaymentData) {
-          sanitizedUserDoc.cotisationAjour = true;
-          sanitizedUserDoc.helloAssoLastPayment = sanitizeUserDocPayload(pendingPaymentData);
-        }
+        delete sanitizedUserDoc.paymentStatus;
+        delete sanitizedUserDoc.isSystemAdmin;
+        delete sanitizedUserDoc.hasAccessLogistique;
+        delete sanitizedUserDoc.canWriteSequenciador;
+        delete sanitizedUserDoc.canWriteDansador;
+        delete sanitizedUserDoc.canWriteOrchestrador;
+        delete sanitizedUserDoc.cotisationAjour;
+        delete sanitizedUserDoc.cotisation;
+        delete sanitizedUserDoc.helloAssoLastPayment;
 
         // Création initiale autorisée par les règles de sécurité en un seul setDoc
         await setDoc(userRef, sanitizedUserDoc);
       } else {
         // --- 2. MISE À JOUR D'UN DOCUMENT EXISTANT ---
-        // Les règles Firestore allow update interdisent aux membres non-admin
-        // de modifier les clés système (role, privilèges, paymentStatus, etc.)
+        // Les règles Firestore allow update interdisent formellement aux membres non-admin
+        // de modifier les clés système et de trésorerie protégées par affectedKeys()
         delete sanitizedUserDoc.role;
         delete sanitizedUserDoc.isSystemAdmin;
         delete sanitizedUserDoc.hasAccessLogistique;
@@ -418,10 +443,15 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
         delete sanitizedUserDoc.canWriteDansador;
         delete sanitizedUserDoc.canWriteOrchestrador;
         delete sanitizedUserDoc.paymentStatus;
-
-        if (pendingPaymentData) {
-          sanitizedUserDoc.helloAssoLastPayment = sanitizeUserDocPayload(pendingPaymentData);
-        }
+        delete sanitizedUserDoc.cotisationAjour;
+        delete sanitizedUserDoc.cotisation;
+        delete sanitizedUserDoc.helloAssoLastPayment;
+        delete sanitizedUserDoc.groupId;
+        delete sanitizedUserDoc.adhesionBase;
+        delete sanitizedUserDoc.selectedOptions;
+        delete sanitizedUserDoc.tags;
+        delete sanitizedUserDoc.statutActuel;
+        delete sanitizedUserDoc.isNew;
 
         await setDoc(userRef, sanitizedUserDoc, { merge: true });
       }
@@ -440,23 +470,6 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
           }).catch((err) => console.warn("Onboarding - Notification vœux mestre ignorée :", err));
         } catch (notifErr) {
           console.warn("Onboarding - Erreur notification mestre :", notifErr);
-        }
-      }
-
-      // Nettoyages annexes non-bloquants (transactions comptables et sas pending_payments)
-      if (pendingTxId) {
-        try {
-          await updateDoc(doc(db, 'transactions', pendingTxId), { userId: user.uid });
-        } catch (txUpdateErr) {
-          console.info("Onboarding - Liaison transaction comptable différée :", txUpdateErr?.message);
-        }
-      }
-
-      if (pendingRefToClean) {
-        try {
-          await deleteDoc(pendingRefToClean);
-        } catch (pendingDelErr) {
-          console.info("Onboarding - Sas pending_payments conservé pour archivage serveur :", pendingDelErr?.message);
         }
       }
 
@@ -492,6 +505,32 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
             </p>
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-6 text-left">
+              {/* Encart informatif Cordel : Détection d'un paiement HelloAsso préalable (affichage visuel uniquement) */}
+              {pendingPaymentInfo?.detected && (
+                <div 
+                  className="p-3.5 rounded-[var(--theme-border-radius,6px)] border-[var(--theme-border-width,2px)] border-[var(--color-cordel-vert,#2d6a4f)] bg-emerald-50/90 text-stone-900 flex items-start gap-3 shadow-sm"
+                  role="status"
+                  aria-live="polite"
+                >
+                  <div className="text-2xl select-none" aria-hidden="true">
+                    💳
+                  </div>
+                  <div className="flex-1 text-xs">
+                    <div className="font-extrabold uppercase tracking-wider text-[var(--color-cordel-vert,#2d6a4f)] flex items-center gap-1.5 flex-wrap">
+                      <span>{t('onboarding.paymentDetectedTitle') || "Paiement HelloAsso reconnu"}</span>
+                      <span className="text-[10px] bg-[var(--color-cordel-vert,#2d6a4f)] text-white px-2 py-0.5 rounded-full font-bold">
+                        {t('onboarding.paidBadge') || "Règlement validé"}
+                      </span>
+                    </div>
+                    <p className="mt-1 leading-relaxed opacity-90">
+                      {t('onboarding.paymentDetectedDesc') || "Votre adhésion a déjà été réglée sur HelloAsso"}
+                      {pendingPaymentInfo.formule ? ` (${pendingPaymentInfo.formule}${pendingPaymentInfo.amountEuros ? ` • ${pendingPaymentInfo.amountEuros} €` : ''})` : ''}.
+                      {" "}{t('onboarding.paymentDetectedReconciliation') || "Votre profil sera automatiquement synchronisé avec votre statut de cotisation dès la finalisation."}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Alerte Cordel interactive listant les champs requis manquants avec raccourcis de navigation */}
               <OnboardingMissingFieldsAlert missingFieldsList={missingFieldsList} />
 

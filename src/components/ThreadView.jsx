@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { useTranslation } from './LanguageContext';
 import { useThreadData } from '../hooks/useThreadData';
 import usePoll from '../hooks/usePoll';
+import useHardwareBack from '../hooks/useHardwareBack';
 import ThreadHeader from './forum/thread/ThreadHeader';
 import ThreadValidationCard from './forum/thread/ThreadValidationCard';
 import ThreadPollSection from './forum/thread/ThreadPollSection';
@@ -22,6 +23,26 @@ export default function ThreadView({
   onClose, breakGlassActive = false, tagsDisponibles = [], effectiveUserTags = [] 
 }) {
   const { t } = useTranslation();
+
+  // Interception du bouton retour matériel (Android / navigateur) pour fermeture fluide
+  useHardwareBack(Boolean(threadId), onClose);
+
+  // Verrouillage étanche du débordement sur la fenêtre globale (élimination définitive du double scroll)
+  useEffect(() => {
+    const originalBodyOverflow = document.body.style.overflow;
+    const originalHtmlOverflow = document.documentElement.style.overflow;
+    const originalBodyOverscroll = document.body.style.overscrollBehavior;
+
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overscrollBehavior = 'none';
+
+    return () => {
+      document.body.style.overflow = originalBodyOverflow;
+      document.documentElement.style.overflow = originalHtmlOverflow;
+      document.body.style.overscrollBehavior = originalBodyOverscroll;
+    };
+  }, []);
 
   const threadData = useThreadData({
     threadId, user, profileData, channels, allUsers,
@@ -43,13 +64,22 @@ export default function ThreadView({
   };
 
   return (
-    <div className="fixed inset-0 z-40 md:relative md:inset-auto md:z-auto flex flex-col h-[100dvh] max-h-[100dvh] md:h-[calc(100dvh-200px)] md:max-h-[calc(100dvh-200px)] overflow-hidden w-full overscroll-contain text-left bg-[var(--theme-bg)] md:border-2 md:border-encre-noire md:rounded-[8px_12px_10px_9px] md:shadow-[4px_4px_0px_0px_#181716]">
+    <div className="fixed inset-0 z-50 flex flex-col h-[100dvh] max-h-[100dvh] overflow-hidden overscroll-contain w-full text-left bg-[var(--theme-bg)]">
       {/* Étage 1 — En-tête (Retour + Titre du sujet) : shrink-0 (hauteur fixe, ne s'écrase jamais) */}
       <div className="shrink-0 z-20 bg-cordel-bg/95 backdrop-blur-sm flex justify-between items-center border-b-2 border-dashed border-cordel-master-dark/30 px-3 py-2 select-none min-h-[48px] gap-2">
         <div className="flex items-center gap-2 min-w-0 flex-1">
-          <CordelButton variant="default" onClick={onClose} className="px-2.5 py-1 text-xs shrink-0 flex items-center gap-1 font-bold">
-            <span>←</span>
-            <span className="hidden sm:inline">{t('common.back')}</span>
+          {/* Bouton de retour fluide vers les salons (Mobile-First) */}
+          <CordelButton 
+            variant="default" 
+            onClick={onClose} 
+            className="px-2.5 py-1 sm:px-3 sm:py-1.5 text-xs shrink-0 flex items-center gap-1.5 font-black cursor-pointer border-2 border-encre-noire bg-cordel-bg shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px]"
+            title={t('forum.backToChannels') || "Retour aux salons"}
+            aria-label={t('forum.backToChannels') || "Retour aux salons"}
+          >
+            <span className="text-sm select-none" aria-hidden="true">⬅️</span>
+            <span className="inline font-black uppercase text-[11px] tracking-wide">
+              {t('forum.channelsHeader') || "Salons"}
+            </span>
           </CordelButton>
           <div className="flex flex-col min-w-0">
             <div className="flex items-center gap-1.5 min-w-0">

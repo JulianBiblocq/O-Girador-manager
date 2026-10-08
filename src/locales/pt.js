@@ -176,8 +176,11 @@ export const pt = {
     genderFemale: "Feminino (ex: Membro, Mestra)",
     genderOther: "Outro / Não especificado",
     handRight: "Destro",
-    handLeft: "Canhoto",
-    errorSave: "Erro ao salvar seu perfil. Por favor, tente novamente."
+    errorSave: "Erro ao salvar seu perfil. Por favor, tente novamente.",
+    paymentDetectedTitle: "Pagamento HelloAsso identificado",
+    paidBadge: "Pagamento confirmado",
+    paymentDetectedDesc: "A sua inscrição já foi paga no HelloAsso",
+    paymentDetectedReconciliation: "O seu perfil será sincronizado automaticamente com a sua situação de pagamento após a conclusão."
   },
   welcomeTour: {
     welcomeBadge: "Bem-vindo(a) ao grupo",

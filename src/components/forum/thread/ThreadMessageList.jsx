@@ -53,7 +53,7 @@ export default function ThreadMessageList({
       <div
         ref={messagesContainerRef}
         onScroll={onScroll}
-        className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y px-4 py-2 pb-6 bg-cordel-bg-light select-text flex flex-col gap-3"
+        className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 py-2 pb-6 bg-cordel-bg-light select-text flex flex-col gap-3 touch-pan-y"
       >
         {headerContent}
         {reponses.length === 0 ? (

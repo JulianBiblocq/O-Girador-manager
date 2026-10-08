@@ -247,18 +247,28 @@ export default function Forum({
     }
   }, [initialConversationId]);
 
-  // Synchronisation avec les paramètres de navigation URL pour conversationId
+  // Synchronisation avec les paramètres de navigation URL pour conversationId et threadId (retour matériel / popstate)
   useEffect(() => {
-    const handleUrlConversation = () => {
+    const handleUrlPopState = () => {
       const searchParams = new URLSearchParams(window.location.search);
       const convId = searchParams.get('conversationId');
       if (convId) {
         setActiveConversationId(convId);
       }
+      const targetThreadId = searchParams.get('threadId');
+      if (!targetThreadId) {
+        setSelectedThread((prev) => {
+          if (prev) {
+            setMobileView('channels');
+            return null;
+          }
+          return prev;
+        });
+      }
     };
-    window.addEventListener('popstate', handleUrlConversation);
-    handleUrlConversation();
-    return () => window.removeEventListener('popstate', handleUrlConversation);
+    window.addEventListener('popstate', handleUrlPopState);
+    handleUrlPopState();
+    return () => window.removeEventListener('popstate', handleUrlPopState);
   }, []);
 
   useHardwareBack(isAdding, () => setIsAdding(false));
@@ -893,14 +903,17 @@ export default function Forum({
   const handleCloseThread = useCallback(() => {
     // 1. Nettoyer l'URL de manière idempotente sans double popstate
     const newUrl = new URL(window.location);
-    newUrl.searchParams.delete('threadId');
-    window.history.replaceState({ ...window.history.state, threadId: null }, '', newUrl.toString());
+    if (newUrl.searchParams.has('threadId')) {
+      newUrl.searchParams.delete('threadId');
+      window.history.replaceState({ ...window.history.state, threadId: null }, '', newUrl.toString());
+    }
 
     // 2. Restaurer le salon d'origine sans éjecter l'utilisateur vers l'accueil de l'application
     if (previousChannelRef.current !== null && previousChannelRef.current !== undefined) {
       setActiveChannelId(previousChannelRef.current);
     }
-    setMobileView('discussion');
+    // Basculer directement sur la liste des salons principaux sur mobile
+    setMobileView('channels');
     setSelectedThread(null);
   }, []);
 

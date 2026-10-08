@@ -131,6 +131,11 @@ export default defineConfig({
       }
     })
   ],
+  server: {
+    port: 5175,
+    strictPort: true, // Interdit à Vite de basculer silencieusement sur un autre port
+    host: '0.0.0.0',  // Permet l'accès réseau local (tablette / mobile)
+  },
   build: {
     modulePreload: false,
     rollupOptions: {

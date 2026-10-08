@@ -176,8 +176,11 @@ export const fr = {
     genderFemale: "Féminin (ex: Membre, Mestra)",
     genderOther: "Autre / Non spécifié",
     handRight: "Droitier",
-    handLeft: "Gaucher",
-    errorSave: "Erreur lors de l'enregistrement de votre profil. Veuillez réessayer."
+    errorSave: "Erreur lors de l'enregistrement de votre profil. Veuillez réessayer.",
+    paymentDetectedTitle: "Paiement HelloAsso reconnu",
+    paidBadge: "Règlement validé",
+    paymentDetectedDesc: "Votre adhésion a déjà été réglée sur HelloAsso",
+    paymentDetectedReconciliation: "Votre profil sera automatiquement synchronisé avec votre statut de cotisation dès la finalisation."
   },
   welcomeTour: {
     welcomeBadge: "Bienvenue dans la troupe",

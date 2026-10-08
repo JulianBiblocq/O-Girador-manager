@@ -13,12 +13,19 @@ export const ECOSYSTEM_DOMAINS = Object.freeze({
 });
 
 export const LOCAL_DEV_PORTS = Object.freeze({
-  hub: 5173,
-  orquestrador: 5173,
+  hub: 5170,
+  orquestrador: 5170,
   sequenciador: 5174,
   organizador: 5175,
   dancador: 5176,
-  mostrador: 5173,
+  mostrador: 5170,
+});
+
+export const ECOSYSTEM_LOCAL_URLS = Object.freeze({
+  ORQUESTRADOR: 'http://localhost:5170',
+  SEQUENCIADOR: 'http://localhost:5174',
+  ORGANIZADOR: 'http://localhost:5175',
+  DANCADOR: 'http://localhost:5176',
 });
 
 export function isLocalEnvironment() {

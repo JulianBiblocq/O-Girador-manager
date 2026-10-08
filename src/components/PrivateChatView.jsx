@@ -6,6 +6,7 @@ import CordelCard from './CordelCard';
 import XiloAvatar from './XiloAvatar';
 import { useTerminologie } from '../hooks/useTerminologie';
 import useConfirm from '../hooks/useConfirm';
+import useHardwareBack from '../hooks/useHardwareBack';
 import EmojiPickerPopover, { EmojiQuickRow } from './forum/EmojiPickerPopover';
 import GroupMembersModal from './forum/GroupMembersModal';
 import ChatFramaspaceImageModal from './forum/ChatFramaspaceImageModal';
@@ -56,6 +57,29 @@ export default function PrivateChatView({
   const attachmentInputRef = useRef(null);
   const privateChatInputRef = useRef(null);
   const mobileToolsRef = useRef(null);
+
+  // Interception du bouton retour matériel (Android / navigateur)
+  useHardwareBack(Boolean(conversationId || recipientId), () => {
+    if (onBack) onBack();
+    else if (onClose) onClose();
+  });
+
+  // Verrouillage étanche du défilement global de la fenêtre (anti-double scroll)
+  useEffect(() => {
+    const originalBodyOverflow = document.body.style.overflow;
+    const originalHtmlOverflow = document.documentElement.style.overflow;
+    const originalBodyOverscroll = document.body.style.overscrollBehavior;
+
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overscrollBehavior = 'none';
+
+    return () => {
+      document.body.style.overflow = originalBodyOverflow;
+      document.documentElement.style.overflow = originalHtmlOverflow;
+      document.body.style.overscrollBehavior = originalBodyOverscroll;
+    };
+  }, []);
 
   // Fermeture du tiroir popover mobile des outils lors d'un clic en dehors
   useEffect(() => {
@@ -557,7 +581,7 @@ export default function PrivateChatView({
   };
 
   return (
-    <div className="fixed inset-0 z-40 md:relative md:inset-auto md:z-auto flex flex-col h-[100dvh] max-h-[100dvh] md:h-[calc(100dvh-200px)] md:max-h-[calc(100dvh-200px)] overflow-hidden w-full overscroll-contain bg-cordel-bg text-left select-none md:border-2 md:border-encre-noire md:rounded-[8px_12px_10px_9px] md:shadow-[4px_4px_0px_0px_#181716]">
+    <div className="fixed inset-0 z-50 flex flex-col h-[100dvh] max-h-[100dvh] overflow-hidden overscroll-contain w-full bg-cordel-bg text-left select-none">
       
       {/* 1. En-tête de la discussion (shrink-0) */}
       <div className="shrink-0 flex items-center justify-between border-b-2 border-dashed border-encre-noire/20 p-3 bg-white/40 dark:bg-black/10">
@@ -565,10 +589,14 @@ export default function PrivateChatView({
           <button 
             type="button" 
             onClick={handleBackClick} 
-            className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-2.5 py-1 rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex items-center justify-center shrink-0"
-            title="Retour à la liste"
+            className="text-xs font-black uppercase tracking-wider bg-cordel-bg border-2 border-encre-noire px-2.5 py-1 rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex items-center justify-center shrink-0 gap-1.5"
+            title="Retour aux salons"
+            aria-label="Retour aux salons"
           >
-            ⬅️
+            <span className="text-sm select-none" aria-hidden="true">⬅️</span>
+            <span className="inline font-black uppercase text-[11px] tracking-wide">
+              Salons
+            </span>
           </button>
           
           <div className="flex items-center gap-2.5 min-w-0">

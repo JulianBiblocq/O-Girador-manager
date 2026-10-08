@@ -49,3 +49,15 @@ These are the core architectural and design system rules for the O-Girador-manag
   * Ne jamais créer, modifier ou valider de fichier local `firestore.rules` ou `storage.rules`.
   * Ne jamais exécuter de commande de déploiement de règles (`firebase deploy --only firestore:rules` ou `storage` formellement proscrits).
 - **Développement client :** Les requêtes Firestore et Storage doivent impérativement s'adapter aux modèles de permissions et collections existants sans exiger d'altération des règles de sécurité depuis ce dépôt.
+
+---
+
+## RÈGLE STRICTE DES PORTS LOCAUX (ÉCOSYSTÈME O GIRADOR)
+- Cet agent doit respecter la cartographie des ports :
+  * Orquestrad'Or : 5170
+  * Séquenciad'Or : 5174
+  * Organizad'Or : 5175
+  * Dançad'Or : 5176
+- Interdiction de modifier le port local sans instruction explicite.
+- `strictPort: true` est obligatoire : si le port est occupé, tuer les processus résiduels au lieu de changer de port.
+- Les tests E2E et les liens de navigation locale doivent pointer rigoureusement vers ces ports dédiés.
