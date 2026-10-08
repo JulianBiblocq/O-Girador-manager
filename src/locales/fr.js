@@ -176,6 +176,7 @@ export const fr = {
     genderFemale: "Féminin (ex: Membre, Mestra)",
     genderOther: "Autre / Non spécifié",
     handRight: "Droitier",
+    handLeft: "Gaucher",
     errorSave: "Erreur lors de l'enregistrement de votre profil. Veuillez réessayer.",
     paymentDetectedTitle: "Paiement HelloAsso reconnu",
     paidBadge: "Règlement validé",

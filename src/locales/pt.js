@@ -176,6 +176,7 @@ export const pt = {
     genderFemale: "Feminino (ex: Membro, Mestra)",
     genderOther: "Outro / Não especificado",
     handRight: "Destro",
+    handLeft: "Canhoto",
     errorSave: "Erro ao salvar seu perfil. Por favor, tente novamente.",
     paymentDetectedTitle: "Pagamento HelloAsso identificado",
     paidBadge: "Pagamento confirmado",

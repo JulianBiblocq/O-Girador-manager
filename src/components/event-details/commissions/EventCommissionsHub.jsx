@@ -9,24 +9,14 @@ import { useEventCommissions } from '../../../hooks/useEventCommissions';
  * Hub centralisé : baromètre de santé, grille des commissions et modale d'édition.
  */
 export default function EventCommissionsHub({
-  event,
-  allUsers = [],
-  usersMap = {},
-  currentUserId = null,
-  isAdmin = false,
-  isMestre = false,
-  onClose
+  event, allUsers = [], usersMap = {}, currentUserId = null,
+  userProfile = null, onNavigateToView = null, isAdmin = false, isMestre = false, onClose
 }) {
   const eventId = event?.id;
   const {
-    commissions,
-    loading,
-    stats,
-    getCommissionProgress,
-    addCommission,
-    updateCommission,
-    deleteCommission
-  } = useEventCommissions(eventId);
+    commissions, loading, stats, getCommissionProgress,
+    addCommission, updateCommission, deleteCommission, getOrCreateCommissionThread
+  } = useEventCommissions(eventId, event);
 
   const [editingCommission, setEditingCommission] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -161,6 +151,10 @@ export default function EventCommissionsHub({
                       canManage={canManage}
                       onManage={() => handleOpenEdit(comm)}
                       onView={() => handleOpenEdit(comm)}
+                      onNavigateToView={onNavigateToView}
+                      getOrCreateCommissionThread={getOrCreateCommissionThread}
+                      userProfile={userProfile}
+                      onCloseHub={onClose}
                     />
                   );
                 })}

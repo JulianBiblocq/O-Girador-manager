@@ -2138,6 +2138,8 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
           allUsers={effectiveAllUsers || allUsers}
           usersMap={usersMap}
           currentUserId={user?.uid}
+          userProfile={profileData || user}
+          onNavigateToView={onNavigateToView}
           isAdmin={Boolean(profileData?.role === 'admin' || isAuthorized)}
           isMestre={Boolean(profileData?.role === 'mestre' || profileData?.isMestre || isAuthorized)}
           onClose={() => setShowCommissionsHub(false)}

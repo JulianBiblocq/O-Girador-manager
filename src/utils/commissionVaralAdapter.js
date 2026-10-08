@@ -76,6 +76,9 @@ export function convertCommissionToVaralDoc(event, commission, referentsNames = 
   };
 }
 
+/** Alias normalisé pour le livret Cordel d'une commission */
+export const formatCommissionToCordelDoc = convertCommissionToVaralDoc;
+
 /**
  * Détermine si une corde de projet est active selon les règles du cycle de vie Cordel :
  * 1. Zéro bloc vide : si 0 document publié, la corde est masquée.

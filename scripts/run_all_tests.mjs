@@ -134,7 +134,8 @@ const testScripts = [
   'scripts/deduplicate_helloasso_transactions.mjs',
   'scripts/test_helloasso_idempotence_and_treasury_ui.mjs',
   'scripts/test_helloasso_onboarding_payment_security.mjs',
-  'scripts/test_forum_mobile_navigation_scroll.mjs'
+  'scripts/test_forum_mobile_navigation_scroll.mjs',
+  'scripts/test_commission_transversal_gateways.mjs'
 ];
 
 console.log("===============================================================");

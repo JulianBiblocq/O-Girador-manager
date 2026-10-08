@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import CommissionVaralAction from './CommissionVaralAction';
 
 /**
@@ -6,24 +6,33 @@ import CommissionVaralAction from './CommissionVaralAction';
  * Présente le binôme référent, la jauge locale dynamique et les dates butoirs.
  */
 export default function CommissionCard({
-  commission,
-  event = null,
-  groupId = null,
-  usersMap = {},
-  progress = 0,
-  canManage = false,
-  onManage,
-  onView
+  commission, event = null, groupId = null, usersMap = {}, progress = 0,
+  canManage = false, onManage, onView, onNavigateToView,
+  getOrCreateCommissionThread, userProfile = null, onCloseHub = null
 }) {
-  const {
-    id,
-    titre = 'Commission sans titre',
-    icone = '📋',
-    description = '',
-    referentsIds = [],
-    jalons = [],
-    budget = {}
-  } = commission;
+  const { id, titre = 'Commission sans titre', icone = '📋', description = '', referentsIds = [], jalons = [], budget = {} } = commission;
+  const [isOpeningForum, setIsOpeningForum] = useState(false);
+
+  const handleOpenForum = async (e) => {
+    if (e) e.stopPropagation();
+    if (!onNavigateToView) return;
+    try {
+      setIsOpeningForum(true);
+      let targetThreadId = commission.threadId;
+      if (!targetThreadId && typeof getOrCreateCommissionThread === 'function') {
+        const evTitle = event?.titre || event?.title || 'Événement';
+        targetThreadId = await getOrCreateCommissionThread(event?.id, commission, evTitle, userProfile);
+      }
+      if (targetThreadId) {
+        if (onCloseHub) onCloseHub();
+        onNavigateToView('forum', { threadId: targetThreadId });
+      }
+    } catch (err) {
+      console.error("Erreur ouverture salon de débat commission :", err);
+    } finally {
+      setIsOpeningForum(false);
+    }
+  };
 
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
@@ -141,10 +150,23 @@ export default function CommissionCard({
         )}
 
         <div className="flex items-center gap-1.5 ml-auto">
+          {onNavigateToView && (
+            <button
+              type="button"
+              disabled={isOpeningForum}
+              onClick={handleOpenForum}
+              className="px-2 py-1 text-[10px] font-black rounded border border-encre-noire bg-cordel-bg hover:bg-stone-200 cursor-pointer shadow-xs active:translate-y-0.5 flex items-center gap-1 text-encre-noire disabled:opacity-50"
+              title="Ouvrir le salon de débat de cette commission sur le Porte-Voix"
+            >
+              <span>{isOpeningForum ? '⏳' : '💬'}</span>
+              <span>Salon Débat</span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={() => onView && onView(commission)}
-            className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded border border-encre-noire bg-cordel-bg hover:bg-stone-200 cursor-pointer shadow-xs active:translate-y-0.5"
+            className="px-2 py-1 text-[10px] font-black uppercase tracking-wider rounded border border-encre-noire bg-cordel-bg hover:bg-stone-200 cursor-pointer shadow-xs active:translate-y-0.5"
           >
             👁️ Consulter
           </button>

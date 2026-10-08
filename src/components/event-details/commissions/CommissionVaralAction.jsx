@@ -68,33 +68,39 @@ export default function CommissionVaralAction({
 
   // 1. Variante Compacte (pour CommissionCard)
   if (variant === 'compact') {
+    let buttonLabel = '📜 Publier au Varal';
+    let buttonStyle = 'bg-cordel-bg hover:bg-stone-200 text-encre-noire border-encre-noire';
+
+    if (isPublished) {
+      if (isUpToDate) {
+        buttonLabel = '✅ À jour au Varal';
+        buttonStyle = 'bg-emerald-50 hover:bg-emerald-100 text-[var(--color-cordel-vert)] border-[var(--color-cordel-vert)]/60';
+      } else {
+        buttonLabel = '🔄 Synchroniser au Varal';
+        buttonStyle = 'bg-amber-50 hover:bg-amber-100 text-[var(--color-cordel-ocre)] border-[var(--color-cordel-ocre)]/60';
+      }
+    }
+
     return (
       <div className="flex items-center gap-1.5 text-[9.5px]">
-        {/* Indicateur d'état selon les spécifications */}
-        {isPublished && (
+        {/* Pastille d'alerte si modifié après la synchronisation */}
+        {isPublished && !isUpToDate && (
           <span
-            className={`px-1.5 py-0.5 rounded font-bold border truncate max-w-[160px] flex items-center gap-1 ${
-              isUpToDate
-                ? 'bg-emerald-50 text-[var(--color-cordel-vert)] border-[var(--color-cordel-vert)]/40'
-                : 'bg-amber-50 text-[var(--color-cordel-ocre)] border-[var(--color-cordel-ocre)]/40'
-            }`}
-            title={isUpToDate ? 'Livret Varal à jour' : 'Modifications non synchronisées'}
-          >
-            <span>{isUpToDate ? '✅' : '⚠️'}</span>
-            <span>{isUpToDate ? 'À jour au Varal' : 'Modifié (non synchronisé)'}</span>
-          </span>
+            className="w-2 h-2 rounded-full bg-[var(--color-cordel-rouge)] animate-pulse shrink-0"
+            title="Modifications intervenues depuis la dernière synchronisation"
+          />
         )}
 
-        {/* Bouton d'action compact Cordel */}
+        {/* Bouton d'action compact Cordel 3 états */}
         <button
           type="button"
           disabled={isSyncing}
           onClick={handleSync}
-          className="px-2 py-1 rounded border border-encre-noire bg-cordel-bg hover:bg-stone-200 text-encre-noire font-black cursor-pointer disabled:opacity-50 flex items-center gap-1 shadow-2xs active:translate-y-0.5 transition-all"
-          title={isPublished ? '🔄 Synchroniser au Varal' : '📜 Publier au Varal'}
+          className={`px-2 py-1 rounded border font-black cursor-pointer disabled:opacity-50 flex items-center gap-1 shadow-2xs active:translate-y-0.5 transition-all ${buttonStyle}`}
+          title={isPublished ? (isUpToDate ? 'Livret synchronisé avec le Varal' : 'Changements à synchroniser') : 'Publier ce livret sur la corde du projet'}
         >
-          <span>{isSyncing ? '⏳' : isPublished ? '🔄' : '📜'}</span>
-          <span>{isPublished ? 'Synchroniser au Varal' : 'Publier au Varal'}</span>
+          <span>{isSyncing ? '⏳' : buttonLabel.slice(0, 2)}</span>
+          <span>{isSyncing ? 'Synchronisation...' : buttonLabel.slice(2).trim()}</span>
         </button>
 
         {feedback && (

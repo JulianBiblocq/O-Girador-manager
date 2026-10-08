@@ -9,6 +9,7 @@ import {
 } from '../components/event-details/commissions/commissionUtils';
 import { notifyBudgetApprovalRequest, notifyBudgetVerdict } from '../utils/commissionNotificationService';
 import { syncCommissionToVaral } from '../utils/commissionVaralAdapter';
+import { getOrCreateCommissionForumThread } from '../utils/commissionForumAdapter';
 
 /**
  * Hook personnalisé gérant la sous-collection des Commissions d'un Événement (Bloc 1 & 2)
@@ -169,11 +170,25 @@ export function useEventCommissions(eventId, eventData = null) {
     });
   }, [eventId, eventData, commissions]);
 
+  // 5. Câblage Porte-Voix (Passerelle Commissions ➔ Forum)
+  const getOrCreateCommissionThread = useCallback(async (targetEventId, commission, eventTitle, userProfile) => {
+    const eid = targetEventId || eventId;
+    const effTitle = eventTitle || eventData?.titre || eventData?.title || 'Événement';
+    const effGroupId = eventData?.groupId || commission?.groupId;
+    return await getOrCreateCommissionForumThread({
+      eventId: eid,
+      commission,
+      eventTitle: effTitle,
+      userProfile,
+      groupId: effGroupId
+    });
+  }, [eventId, eventData]);
+
   return {
     commissions, loading, error, stats,
     getCommissionProgress, addCommission, updateCommission, deleteCommission,
     toggleJalonStatus, submitBudgetForApproval, arbitrateBudget,
-    publishCommissionToVaral
+    publishCommissionToVaral, getOrCreateCommissionThread
   };
 }
 
