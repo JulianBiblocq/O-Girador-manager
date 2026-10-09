@@ -41,6 +41,9 @@ export default function PrivateChatView({
 }) {
   const { tRole } = useTerminologie();
   const { confirm } = useConfirm();
+  const conversationId = conversation?.id;
+  const groupId = profileData?.groupId || conversation?.groupId || '';
+
   const [inputText, setInputText] = useState(initialText || '');
   const [sending, setSending] = useState(false);
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
@@ -110,9 +113,6 @@ export default function PrivateChatView({
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [inputText]);
-
-  const conversationId = conversation?.id;
-  const groupId = profileData?.groupId || conversation?.groupId || '';
 
   // Synchronisation et écoute temps réel du document de conversation pour actualisation immédiate de readStatus
   const [liveConversation, setLiveConversation] = useState(conversation || null);

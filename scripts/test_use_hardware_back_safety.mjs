@@ -66,6 +66,17 @@ const proxyContent = fs.readFileSync(proxyPath, 'utf8');
 assert.ok(proxyContent.includes('getCategoryLabel'), 'Le proxy doit ré-exporter getCategoryLabel');
 console.log('  ✅ [PASS] getCategoryLabel est protégé contre toute ReferenceError.\n');
 
+// 5. Contrôle TDZ (Temporal Dead Zone) sur PrivateChatView.jsx
+console.log('▶️ Test 5 : Contrôle TDZ (Temporal Dead Zone) dans PrivateChatView.jsx...');
+const privateChatPath = path.join(rootDir, 'src/components/PrivateChatView.jsx');
+const privateChatContent = fs.readFileSync(privateChatPath, 'utf8');
+const conversationIdIndex = privateChatContent.indexOf('const conversationId =');
+const useHardwareBackIndex = privateChatContent.indexOf('useHardwareBack(Boolean(conversationId');
+assert.ok(conversationIdIndex !== -1, 'conversationId doit être déclaré');
+assert.ok(useHardwareBackIndex !== -1, 'useHardwareBack doit utiliser conversationId');
+assert.ok(conversationIdIndex < useHardwareBackIndex, 'conversationId doit être initialisé avant l\'appel useHardwareBack pour éviter ReferenceError TDZ');
+console.log('  ✅ [PASS] conversationId est initialisé avant useHardwareBack (zéro ReferenceError TDZ).\n');
+
 console.log('===============================================================');
 console.log('🏆 TOUTES LES VALIDATIONS DU HOOK useHardwareBack ONT RÉUSSI !');
 console.log('===============================================================');
