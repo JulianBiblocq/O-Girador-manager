@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import CommissionBarometer from './CommissionBarometer';
 import CommissionCard from './CommissionCard';
 import CommissionEditModal from './CommissionEditModal';
+import EventForumChannelLink from './EventForumChannelLink';
 import { useEventCommissions } from '../../../hooks/useEventCommissions';
 
 /**
@@ -15,11 +16,15 @@ export default function EventCommissionsHub({
   const eventId = event?.id;
   const {
     commissions, loading, stats, getCommissionProgress,
-    addCommission, updateCommission, deleteCommission, getOrCreateCommissionThread
+    addCommission, updateCommission, deleteCommission,
+    getOrCreateCommissionThread, openOrCreateCommissionThread
   } = useEventCommissions(eventId, event);
 
-  const [editingCommission, setEditingCommission] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // Identification stable de la commission en cours d'édition (anti-démontage lors des snapshots Firestore)
+  const [editingCommissionId, setEditingCommissionId] = useState(null);
+  const [editingCommissionData, setEditingCommissionData] = useState(null);
+  const [isCreatingCommission, setIsCreatingCommission] = useState(false);
+  const backdropMouseDownRef = useRef(false);
 
   // Droits globaux (création & arbitrage budgétaire)
   const canCreate = isAdmin || isMestre;
@@ -37,27 +42,36 @@ export default function EventCommissionsHub({
     return `J+${Math.abs(diffDays)}`;
   }, [event]);
 
-  const handleOpenCreate = () => {
-    setEditingCommission(null);
-    setIsModalOpen(true);
+  const handleOpenCreate = () => { setEditingCommissionId(null); setEditingCommissionData(null); setIsCreatingCommission(true); };
+  const handleOpenEdit = (comm) => { setEditingCommissionId(comm?.id || null); setEditingCommissionData(comm || null); setIsCreatingCommission(false); };
+  const handleCloseModal = () => {
+    console.trace("⚠️ FERMETURE MODALE DÉCLENCHÉE PAR : handleCloseModal (Tour de Contrôle)");
+    setEditingCommissionId(null); setEditingCommissionData(null); setIsCreatingCommission(false);
   };
-
-  const handleOpenEdit = (comm) => {
-    setEditingCommission(comm);
-    setIsModalOpen(true);
-  };
-
+  const isModalOpen = isCreatingCommission || Boolean(editingCommissionId);
   const handleSaveCommission = async (formData) => {
-    if (editingCommission?.id) {
-      await updateCommission(eventId, editingCommission.id, formData);
-    } else {
-      await addCommission(eventId, formData);
-    }
+    if (editingCommissionId) await updateCommission(eventId, editingCommissionId, formData);
+    else await addCommission(eventId, formData);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs select-none">
-      <div className="w-full max-w-5xl bg-cordel-bg-light border-3 border-encre-noire rounded-[10px_14px_9px_12px] shadow-[6px_6px_0px_0px_#181716] flex flex-col max-h-[95vh] overflow-hidden">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs select-none"
+      onMouseDown={(e) => { backdropMouseDownRef.current = (e.target === e.currentTarget); }}
+      onClick={(e) => {
+        if (!e.target || !e.target.isConnected) return;
+        if (backdropMouseDownRef.current && e.target === e.currentTarget) {
+          console.trace("⚠️ FERMETURE MODALE DÉCLENCHÉE PAR : Clic backdrop EventCommissionsHub");
+          onClose();
+        }
+        backdropMouseDownRef.current = false;
+      }}
+    >
+      <div
+        className="w-full max-w-5xl bg-cordel-bg-light border-3 border-encre-noire rounded-[10px_14px_9px_12px] shadow-[6px_6px_0px_0px_#181716] flex flex-col max-h-[95vh] overflow-hidden"
+        onMouseDown={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* En-tête Cordel de la Tour de Contrôle */}
         <div className="px-4 py-3 border-b-2 border-encre-noire bg-cordel-bg flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 min-w-0">
@@ -92,7 +106,10 @@ export default function EventCommissionsHub({
             )}
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => {
+                console.trace("⚠️ FERMETURE MODALE DÉCLENCHÉE PAR : Bouton ✕ EventCommissionsHub");
+                onClose();
+              }}
               className="w-8 h-8 rounded border border-encre-noire bg-white flex items-center justify-center font-black text-sm hover:bg-stone-100"
               title="Fermer la Tour de Contrôle"
             >
@@ -105,6 +122,14 @@ export default function EventCommissionsHub({
         <div className="p-4 flex-1 overflow-y-auto flex flex-col gap-4">
           {/* Baromètre de santé global */}
           <CommissionBarometer stats={stats} />
+
+          {/* Liaison Salon Porte-Voix */}
+          <EventForumChannelLink
+            event={event}
+            groupId={event?.groupId}
+            canManage={canCreate}
+            onNavigateToView={onNavigateToView}
+          />
 
           {/* Grille des commissions */}
           <div className="flex flex-col gap-2">
@@ -142,18 +167,11 @@ export default function EventCommissionsHub({
 
                   return (
                     <CommissionCard
-                      key={comm.id}
-                      commission={comm}
-                      event={event}
-                      groupId={event?.groupId}
-                      usersMap={usersMap}
-                      progress={getCommissionProgress(comm)}
-                      canManage={canManage}
-                      onManage={() => handleOpenEdit(comm)}
-                      onView={() => handleOpenEdit(comm)}
-                      onNavigateToView={onNavigateToView}
-                      getOrCreateCommissionThread={getOrCreateCommissionThread}
-                      userProfile={userProfile}
+                      key={comm.id} commission={comm} event={event} groupId={event?.groupId}
+                      usersMap={usersMap} progress={getCommissionProgress(comm)} canManage={canManage}
+                      onManage={() => handleOpenEdit(comm)} onView={() => handleOpenEdit(comm)}
+                      onNavigateToView={onNavigateToView} openOrCreateCommissionThread={openOrCreateCommissionThread}
+                      getOrCreateCommissionThread={getOrCreateCommissionThread} userProfile={userProfile}
                       onCloseHub={onClose}
                     />
                   );
@@ -167,16 +185,10 @@ export default function EventCommissionsHub({
       {/* Modale d'édition / création */}
       {isModalOpen && (
         <CommissionEditModal
-          commission={editingCommission}
-          event={event}
-          groupId={event?.groupId}
-          allUsers={allUsers}
-          usersMap={usersMap}
-          canArbitrate={isAdmin}
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          onSave={handleSaveCommission}
-          onDelete={(commId) => deleteCommission(eventId, commId)}
+          commission={editingCommissionData} event={event} groupId={event?.groupId}
+          allUsers={allUsers} usersMap={usersMap} canArbitrate={isAdmin} isOpen={isModalOpen}
+          onClose={handleCloseModal} onSave={handleSaveCommission}
+          onDelete={async (commId) => { await deleteCommission(eventId, commId); handleCloseModal(); }}
         />
       )}
     </div>

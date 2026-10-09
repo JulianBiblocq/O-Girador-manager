@@ -167,6 +167,7 @@ export default function EcosystemAppLauncher({ urls, associationData, className 
     if (!isOpen) return;
 
     function handleClickOutside(event) {
+      if (!event || !event.target || !event.target.isConnected) return;
       if (buttonRef.current && buttonRef.current.contains(event.target)) {
         return;
       }

@@ -3,7 +3,26 @@ import CordelCard from '../../CordelCard';
 import VaralRopeSVG from './VaralRopeSVG';
 import VaralBookletCover from './VaralBookletCover';
 import VaralEmptyRopeAdmin from './VaralEmptyRopeAdmin';
+import { resolveVaralCategoryLabel, getCategoryLabel as getCategoryLabelUtil } from '../../../utils/documentCategories';
 import { useTranslation } from '../../LanguageContext';
+
+/**
+ * Résolution sécurisée du libellé de catégorie avec repli local anti-crash.
+ * @param {string|Object} categoryKey - Identifiant ou objet de la catégorie
+ * @param {string} [eventTitle] - Titre de l'événement associé
+ * @returns {string} Libellé prêt à l'affichage
+ */
+export const getCategoryLabel = (categoryKey, eventTitle) => {
+  if (typeof getCategoryLabelUtil === 'function') {
+    return getCategoryLabelUtil(categoryKey, eventTitle);
+  }
+  if (!categoryKey) return 'DOCUMENTS';
+  const catStr = typeof categoryKey === 'object' ? (categoryKey.id || categoryKey.nom || '') : String(categoryKey);
+  if (catStr.startsWith('projet_')) {
+    return `🎪 PROJET : ${(eventTitle || catStr.replace('projet_', '')).toUpperCase()}`;
+  }
+  return catStr.replace(/_/g, ' ').toUpperCase();
+};
 
 /**
  * Thèmes culturels avec icônes vectorielles personnalisées pour le filtre du Varal Culture.
@@ -164,24 +183,6 @@ const categoryVariants = {
   'DocumentsFixes': 'bleu'
 };
 
-const getCategoryLabel = (cat, t) => {
-  if (!cat) return '';
-  const id = typeof cat === 'object' ? (cat.id || '') : '';
-  const nom = typeof cat === 'object' ? (cat.nom || cat.id || '') : cat;
-
-  if (id === 'ComptesRendus' || nom === 'ComptesRendus' || nom === 'Comptes-rendus' || nom === 'Comptes Rendus' || nom === 'Documents administratifs') {
-    return t ? (t('documents.Documents administratifs') || 'Documents administratifs') : 'Documents administratifs';
-  }
-
-  if (t && id && t(`documents.${id}`) !== `documents.${id}`) {
-    return t(`documents.${id}`);
-  }
-  if (t && nom && t(`documents.${nom}`) !== `documents.${nom}`) {
-    return t(`documents.${nom}`);
-  }
-  return nom;
-};
-
 /**
  * Sous-composant matérialisant une corde complète du Varal avec son intitulé,
  * ses boutons contextuels (déposer, modèles atelier, édition), sa ligne en chanvre et ses livrets.
@@ -193,6 +194,7 @@ export default function VaralCategoryRope({
   isAuthorized = false,
   canWrite = false,
   canDeposit = false,
+  allEventsMap = {},
   getDocType,
   onOpenAdd,
   onNavigateToView,
@@ -282,6 +284,7 @@ export default function VaralCategoryRope({
         canDeposit={canDeposit}
         canWrite={canWrite}
         isAuthorized={isAuthorized}
+        allEventsMap={allEventsMap}
         onOpenAdd={onOpenAdd}
         onNavigateToView={onNavigateToView}
         onEditCategory={onEditCategory}
@@ -299,8 +302,8 @@ export default function VaralCategoryRope({
       {/* En-tête de la corde : titre, filtres et actions contextuelles */}
       <div className="flex flex-col md:flex-row md:justify-between items-start md:items-center gap-2 mb-2 pl-3 pr-3 select-none relative z-20">
         <div className="flex items-center gap-1.5 flex-wrap">
-          <span className={`theme-stamp-badge theme-stamp-badge-${variant === 'ocre' || variant === 'vert' ? 'wood' : 'dark'} text-[8.5px] tracking-wider font-extrabold`}>
-            {getCategoryLabel(category, t)}
+          <span className={`theme-stamp-badge theme-stamp-badge-${variant === 'ocre' || variant === 'vert' ? 'wood' : 'dark'} text-[8.5px] tracking-wider font-extrabold uppercase`}>
+            {resolveVaralCategoryLabel(category, t, documents, [], allEventsMap) || getCategoryLabel(category, allEventsMap?.[category?.id?.replace('projet_', '')]?.titre)}
           </span>
 
           {/* Filtres de visibilité (Tous, Visibles, Masqués, Archivés) */}

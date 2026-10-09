@@ -24,6 +24,7 @@ function MemberTreasuryRow({
   // Fermeture des popups en cas de clic à l'extérieur
   useEffect(() => {
     function handleClickOutside(event) {
+      if (!event || !event.target || !event.target.isConnected) return;
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setShowOptionsDropdown(false);
       }

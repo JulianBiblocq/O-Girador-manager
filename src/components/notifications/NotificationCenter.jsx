@@ -122,6 +122,7 @@ export default function NotificationCenter({
     if (!isOpen) return;
 
     const handleClickOutside = (event) => {
+      if (!event || !event.target || !event.target.isConnected) return;
       if (buttonRef.current && buttonRef.current.contains(event.target)) {
         return;
       }

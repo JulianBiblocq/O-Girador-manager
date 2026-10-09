@@ -13,6 +13,7 @@ import ThreadReplyBar from './forum/thread/ThreadReplyBar';
 import ThreadModerationModals from './forum/thread/ThreadModerationModals';
 import CreatePollModal from './forum/CreatePollModal';
 import EditPollModal from './forum/EditPollModal';
+import ThreadProjectContextBar from './forum/thread/ThreadProjectContextBar';
 
 /**
  * Vue principale d'un sujet de discussion (ThreadView).
@@ -20,7 +21,8 @@ import EditPollModal from './forum/EditPollModal';
  */
 export default function ThreadView({ 
   threadId, user, profileData, channels = [], allThreads = [], allUsers = [], 
-  onClose, breakGlassActive = false, tagsDisponibles = [], effectiveUserTags = [] 
+  onClose, breakGlassActive = false, tagsDisponibles = [], effectiveUserTags = [],
+  onNavigateToView = null 
 }) {
   const { t } = useTranslation();
 
@@ -140,6 +142,13 @@ export default function ThreadView({
           </div>
         )}
       </div>
+
+      {/* Barre d'accès rapide contextuelle (Tour de Contrôle & Livret Varal) */}
+      <ThreadProjectContextBar 
+        thread={threadData.thread} 
+        onNavigateToView={onNavigateToView} 
+        onClose={onClose} 
+      />
 
       {threadData.loading ? (
         <div className="flex-1 flex justify-center items-center py-12 select-none">

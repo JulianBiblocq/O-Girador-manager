@@ -17,6 +17,7 @@ export function MentionDropdown({
 
   useEffect(() => {
     const handleClickOutside = (e) => {
+      if (!e || !e.target || !e.target.isConnected) return;
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         onClose();
       }

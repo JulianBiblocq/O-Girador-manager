@@ -1,6 +1,7 @@
 import React from 'react';
 import CordelCard from '../../CordelCard';
 import { useTranslation } from '../../LanguageContext';
+import { resolveVaralCategoryLabel, getCategoryLabel } from '../../../utils/documentCategories';
 
 /**
  * Rendu compact pour les cordes vides ou inactives visible uniquement par les administrateurs (Règle 3).
@@ -13,14 +14,13 @@ export default function VaralEmptyRopeAdmin({
   canDeposit = false,
   canWrite = false,
   isAuthorized = false,
+  allEventsMap = {},
   onOpenAdd,
   onNavigateToView,
   onEditCategory
 }) {
   const { t } = useTranslation();
-  const categoryLabel = (category?.id === 'ComptesRendus' || category?.nom === 'Comptes-rendus' || category?.nom === 'Comptes Rendus' || category?.nom === 'Documents administratifs')
-    ? (t('documents.Documents administratifs') || 'Documents administratifs')
-    : (t(`documents.${category?.nom || category?.id}`) || category?.nom || category?.id || '');
+  const categoryLabel = resolveVaralCategoryLabel(category, t, [], [], allEventsMap) || getCategoryLabel(category, allEventsMap?.[category?.id?.replace('projet_', '')]?.titre);
 
   return (
     <CordelCard
@@ -38,7 +38,7 @@ export default function VaralEmptyRopeAdmin({
           <span
             className={`theme-stamp-badge theme-stamp-badge-${
               variant === 'ocre' || variant === 'vert' ? 'wood' : 'dark'
-            } text-[8px] tracking-wider font-extrabold`}
+            } text-[8px] tracking-wider font-extrabold uppercase`}
           >
             {categoryLabel}
           </span>

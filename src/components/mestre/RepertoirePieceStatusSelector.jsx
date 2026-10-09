@@ -29,6 +29,7 @@ export default function RepertoirePieceStatusSelector({
   useEffect(() => {
     if (!openSeasonMenu) return;
     const handleClickOutside = (e) => {
+      if (!e || !e.target || !e.target.isConnected) return;
       if (menuRef.current && !menuRef.current.contains(e.target)) {
         setOpenSeasonMenu(false);
       }

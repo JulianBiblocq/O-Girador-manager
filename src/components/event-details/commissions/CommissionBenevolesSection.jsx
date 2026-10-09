@@ -94,12 +94,19 @@ export default function CommissionBenevolesSection({
       </div>
 
       {/* Ajout d'un créneau */}
-      <form onSubmit={handleAddCreneau} className="flex flex-wrap items-center gap-2 pt-2 border-t border-encre-noire/10">
+      <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-encre-noire/10">
         <input
           type="text"
           placeholder="Rôle (ex: Buvette, Accueil, Montage)..."
           value={role}
           onChange={(e) => setRole(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              e.stopPropagation();
+              handleAddCreneau(e);
+            }
+          }}
           className="flex-1 min-w-[140px] px-2 py-1.5 rounded border border-encre-noire/30 bg-white text-xs"
         />
         <div className="flex items-center gap-1">
@@ -107,6 +114,13 @@ export default function CommissionBenevolesSection({
             type="time"
             value={horaireDebut}
             onChange={(e) => setHoraireDebut(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                handleAddCreneau(e);
+              }
+            }}
             className="px-1 py-1 rounded border border-encre-noire/30 bg-white text-xs"
           />
           <span className="text-stone-400">à</span>
@@ -114,6 +128,13 @@ export default function CommissionBenevolesSection({
             type="time"
             value={horaireFin}
             onChange={(e) => setHoraireFin(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                handleAddCreneau(e);
+              }
+            }}
             className="px-1 py-1 rounded border border-encre-noire/30 bg-white text-xs"
           />
         </div>
@@ -125,17 +146,25 @@ export default function CommissionBenevolesSection({
             max="30"
             value={nbPlaces}
             onChange={(e) => setNbPlaces(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                handleAddCreneau(e);
+              }
+            }}
             className="w-14 px-1 py-1 rounded border border-encre-noire/30 bg-white text-xs"
           />
         </div>
         <button
-          type="submit"
+          type="button"
+          onClick={handleAddCreneau}
           disabled={!role.trim()}
-          className="px-3 py-1.5 font-black rounded border border-encre-noire bg-[var(--color-cordel-vert)] text-white hover:opacity-90 disabled:opacity-40"
+          className="px-3 py-1.5 font-black rounded border border-encre-noire bg-[var(--color-cordel-vert)] text-white hover:opacity-90 disabled:opacity-40 cursor-pointer"
         >
           + Créneau
         </button>
-      </form>
+      </div>
     </div>
   );
 }

@@ -135,7 +135,14 @@ const testScripts = [
   'scripts/test_helloasso_idempotence_and_treasury_ui.mjs',
   'scripts/test_helloasso_onboarding_payment_security.mjs',
   'scripts/test_forum_mobile_navigation_scroll.mjs',
-  'scripts/test_commission_transversal_gateways.mjs'
+  'scripts/test_commission_transversal_gateways.mjs',
+  'scripts/test_commission_forum_open_thread.mjs',
+  'scripts/test_event_forum_channel_wiring.mjs',
+  'scripts/test_commission_jalons_notes_and_edit.mjs',
+  'scripts/test_varal_rope_labels_and_project_ropes.mjs',
+  'scripts/test_commission_modal_backdrop_and_enter_key.mjs',
+  'scripts/test_use_hardware_back_safety.mjs',
+  'scripts/test_forum_thread_context_bar.mjs'
 ];
 
 console.log("===============================================================");

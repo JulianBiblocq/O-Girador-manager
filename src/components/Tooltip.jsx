@@ -29,6 +29,7 @@ export default function Tooltip({
     if (!isVisible) return;
 
     const handleClickOutside = (e) => {
+      if (!e || !e.target || !e.target.isConnected) return;
       if (
         triggerRef.current && !triggerRef.current.contains(e.target) &&
         popoverRef.current && !popoverRef.current.contains(e.target)

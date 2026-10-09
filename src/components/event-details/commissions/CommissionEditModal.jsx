@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import useConfirm from '../../../hooks/useConfirm';
 import useModalEscape from '../../../hooks/useModalEscape';
 import CommissionBasicInfoFields from './CommissionBasicInfoFields';
@@ -14,30 +14,18 @@ import { MODULES_COMMISSION_DISPONIBLES } from './commissionUtils';
  * Configuration générale, tiroirs de modules et action de synchro Varal.
  */
 export default function CommissionEditModal({
-  commission = null,
-  event = null,
-  groupId = null,
-  allUsers = [],
-  usersMap = {},
-  canArbitrate = false,
-  isOpen,
-  onClose,
-  onSave,
-  onDelete
+  commission = null, event = null, groupId = null, allUsers = [],
+  usersMap = {}, canArbitrate = false, isOpen, onClose, onSave, onDelete
 }) {
   const isEditing = Boolean(commission?.id);
+  const backdropMouseDownRef = useRef(false);
 
   const [formData, setFormData] = useState(() => ({
-    titre: commission?.titre || '',
-    icone: commission?.icone || '📋',
-    description: commission?.description || '',
-    referentsIds: commission?.referentsIds || [],
-    membresIds: commission?.membresIds || [],
-    modulesActifs: commission?.modulesActifs || ['jalons'],
-    jalons: commission?.jalons || [],
-    budget: commission?.budget || { demande: 0, alloue: 0, statusArbitrage: 'en_etude', motifRefus: '', devis: [] },
-    creneauxBenevoles: commission?.creneauxBenevoles || [],
-    besoinsMateriel: commission?.besoinsMateriel || []
+    titre: commission?.titre || '', icone: commission?.icone || '📋',
+    description: commission?.description || '', referentsIds: commission?.referentsIds || [],
+    membresIds: commission?.membresIds || [], modulesActifs: commission?.modulesActifs || ['jalons'],
+    jalons: commission?.jalons || [], budget: commission?.budget || { demande: 0, alloue: 0, statusArbitrage: 'en_etude', motifRefus: '', devis: [] },
+    creneauxBenevoles: commission?.creneauxBenevoles || [], besoinsMateriel: commission?.besoinsMateriel || []
   }));
 
   const [isSaving, setIsSaving] = useState(false);
@@ -52,8 +40,7 @@ export default function CommissionEditModal({
   const toggleModule = (modId) => {
     const active = formData.modulesActifs.includes(modId);
     setFormData((prev) => ({
-      ...prev,
-      modulesActifs: active ? prev.modulesActifs.filter((m) => m !== modId) : [...prev.modulesActifs, modId]
+      ...prev, modulesActifs: active ? prev.modulesActifs.filter((m) => m !== modId) : [...prev.modulesActifs, modId]
     }));
   };
 
@@ -68,6 +55,7 @@ export default function CommissionEditModal({
     try {
       setIsSaving(true);
       if (onDelete) await onDelete(commission.id);
+      console.trace("⚠️ FERMETURE MODALE DÉCLENCHÉE PAR : Suppression validée de la commission");
       onClose();
     } catch (err) {
       console.error('Erreur suppression commission:', err);
@@ -84,7 +72,11 @@ export default function CommissionEditModal({
       setIsSaving(true);
       await onSave(formData);
       setToastMessage('✅ Commission enregistrée avec succès !');
-      setTimeout(() => { setToastMessage(''); onClose(); }, 700);
+      setTimeout(() => {
+        setToastMessage('');
+        console.trace("⚠️ FERMETURE MODALE DÉCLENCHÉE PAR : Sauvegarde réussie CommissionEditModal");
+        onClose();
+      }, 700);
     } catch (err) {
       console.error('Erreur enregistrement commission:', err);
       setToastMessage('❌ Erreur lors de l’enregistrement');
@@ -96,9 +88,21 @@ export default function CommissionEditModal({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/60 backdrop-blur-xs select-none"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onMouseDown={(e) => { backdropMouseDownRef.current = (e.target === e.currentTarget); }}
+      onClick={(e) => {
+        if (!e.target || !e.target.isConnected) return;
+        if (backdropMouseDownRef.current && e.target === e.currentTarget) {
+          console.trace("⚠️ FERMETURE MODALE DÉCLENCHÉE PAR : Clic backdrop CommissionEditModal");
+          onClose();
+        }
+        backdropMouseDownRef.current = false;
+      }}
     >
-      <div className="w-full max-w-2xl bg-cordel-bg-light border-2 border-encre-noire rounded-[8px_12px_7px_10px] shadow-[4px_4px_0px_0px_#181716] flex flex-col max-h-[90dvh] overflow-hidden">
+      <div
+        className="w-full max-w-2xl bg-cordel-bg-light border-2 border-encre-noire rounded-[8px_12px_7px_10px] shadow-[4px_4px_0px_0px_#181716] flex flex-col max-h-[90dvh] overflow-hidden"
+        onMouseDown={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* En-tête */}
         <div className="shrink-0 px-4 py-3 border-b-2 border-encre-noire bg-cordel-bg flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -107,11 +111,20 @@ export default function CommissionEditModal({
               {isEditing ? `Édition : ${formData.titre}` : 'Créer une nouvelle commission'}
             </h3>
           </div>
-          <button type="button" onClick={onClose} className="text-stone-500 hover:text-black font-black text-sm shrink-0 cursor-pointer">✕</button>
+          <button
+            type="button"
+            onClick={() => {
+              console.trace("⚠️ FERMETURE MODALE DÉCLENCHÉE PAR : Bouton ✕ CommissionEditModal");
+              onClose();
+            }}
+            className="text-stone-500 hover:text-black font-black text-sm shrink-0 cursor-pointer"
+          >
+            ✕
+          </button>
         </div>
 
-        {/* Form Wrapper */}
-        <form onSubmit={handleSave} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+        {/* Conteneur principal (div et non form pour éviter toute fermeture intempestive sur Entrée) */}
+        <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
           {/* Corps défilant */}
           <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 flex flex-col gap-4 text-xs">
           {toastMessage && (
@@ -143,21 +156,10 @@ export default function CommissionEditModal({
           </div>
 
           {/* Sous-sections actives */}
-          {formData.modulesActifs.includes('jalons') && (
-            <CommissionJalonsSection jalons={formData.jalons} onChangeJalons={(next) => setFormData({ ...formData, jalons: next })} usersMap={usersMap} />
-          )}
-
-          {formData.modulesActifs.includes('budget') && (
-            <CommissionBudgetSection budget={formData.budget} onChangeBudget={(next) => setFormData({ ...formData, budget: next })} canArbitrate={canArbitrate} />
-          )}
-
-          {formData.modulesActifs.includes('benevoles') && (
-            <CommissionBenevolesSection creneaux={formData.creneauxBenevoles} onChangeCreneaux={(next) => setFormData({ ...formData, creneauxBenevoles: next })} usersMap={usersMap} />
-          )}
-
-          {formData.modulesActifs.includes('materiel') && (
-            <CommissionMaterielSection besoins={formData.besoinsMateriel} onChangeBesoins={(next) => setFormData({ ...formData, besoinsMateriel: next })} />
-          )}
+          {formData.modulesActifs.includes('jalons') && <CommissionJalonsSection jalons={formData.jalons} onChangeJalons={(next) => setFormData({ ...formData, jalons: next })} usersMap={usersMap} />}
+          {formData.modulesActifs.includes('budget') && <CommissionBudgetSection budget={formData.budget} onChangeBudget={(next) => setFormData({ ...formData, budget: next })} canArbitrate={canArbitrate} />}
+          {formData.modulesActifs.includes('benevoles') && <CommissionBenevolesSection creneaux={formData.creneauxBenevoles} onChangeCreneaux={(next) => setFormData({ ...formData, creneauxBenevoles: next })} usersMap={usersMap} />}
+          {formData.modulesActifs.includes('materiel') && <CommissionMaterielSection besoins={formData.besoinsMateriel} onChangeBesoins={(next) => setFormData({ ...formData, besoinsMateriel: next })} />}
 
           {/* Bloc de publication et synchronisation au Varal */}
           {isEditing && event && (
@@ -167,7 +169,7 @@ export default function CommissionEditModal({
           )}
           </div>
 
-          {/* Pied de formulaire fixe */}
+          {/* Pied de dialogue fixe */}
           <div className="shrink-0 p-4 border-t-2 border-dashed border-encre-noire/20 bg-[var(--theme-bg)] flex items-center justify-between gap-2 pb-[max(env(safe-area-inset-bottom),1rem)]">
             <div>
               {isEditing && onDelete && (
@@ -181,13 +183,11 @@ export default function CommissionEditModal({
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
-              <button type="button" onClick={onClose} className="px-3 py-1.5 rounded border border-stone-300 font-bold bg-white text-stone-700 hover:bg-stone-50 cursor-pointer shrink-0">Annuler</button>
-              <button type="submit" disabled={isSaving || !formData.titre.trim()} className="px-4 py-1.5 font-black rounded border border-encre-noire bg-[var(--color-cordel-vert)] text-white hover:opacity-90 disabled:opacity-40 shadow-xs cursor-pointer shrink-0">
-                {isSaving ? 'Enregistrement...' : 'Enregistrer la commission'}
-              </button>
+              <button type="button" onClick={() => { console.trace("⚠️ FERMETURE MODALE DÉCLENCHÉE PAR : Bouton Annuler CommissionEditModal"); onClose(); }} className="px-3 py-1.5 rounded border border-stone-300 font-bold bg-white text-stone-700 hover:bg-stone-50 cursor-pointer shrink-0">Annuler</button>
+              <button type="button" onClick={handleSave} disabled={isSaving || !formData.titre.trim()} className="px-4 py-1.5 font-black rounded border border-encre-noire bg-[var(--color-cordel-vert)] text-white hover:opacity-90 disabled:opacity-40 shadow-xs cursor-pointer shrink-0">{isSaving ? 'Enregistrement...' : 'Enregistrer la commission'}</button>
             </div>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

@@ -108,12 +108,19 @@ export default function CommissionMaterielSection({
       </div>
 
       {/* Formulaire ajout matériel */}
-      <form onSubmit={handleAddBesoin} className="flex flex-wrap items-center gap-2 pt-2 border-t border-encre-noire/10">
+      <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-encre-noire/10">
         <input
           type="text"
           placeholder="Article (ex: Câble XLR 10m, Tonnelle)..."
           value={article}
           onChange={(e) => setArticle(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              e.stopPropagation();
+              handleAddBesoin(e);
+            }
+          }}
           className="flex-1 min-w-[140px] px-2 py-1.5 rounded border border-encre-noire/30 bg-white text-xs"
         />
         <input
@@ -122,6 +129,13 @@ export default function CommissionMaterielSection({
           max="100"
           value={quantite}
           onChange={(e) => setQuantite(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              e.stopPropagation();
+              handleAddBesoin(e);
+            }
+          }}
           className="w-14 px-1.5 py-1.5 rounded border border-encre-noire/30 bg-white text-xs"
           title="Quantité"
         />
@@ -130,16 +144,24 @@ export default function CommissionMaterielSection({
           placeholder="Apporté par..."
           value={apportePar}
           onChange={(e) => setApportePar(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              e.stopPropagation();
+              handleAddBesoin(e);
+            }
+          }}
           className="w-28 px-2 py-1.5 rounded border border-encre-noire/30 bg-white text-xs"
         />
         <button
-          type="submit"
+          type="button"
+          onClick={handleAddBesoin}
           disabled={!article.trim()}
-          className="px-3 py-1.5 font-black rounded border border-encre-noire bg-[var(--color-cordel-vert)] text-white hover:opacity-90 disabled:opacity-40"
+          className="px-3 py-1.5 font-black rounded border border-encre-noire bg-[var(--color-cordel-vert)] text-white hover:opacity-90 disabled:opacity-40 cursor-pointer"
         >
           + Article
         </button>
-      </form>
+      </div>
     </div>
   );
 }

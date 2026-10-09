@@ -1,71 +1,92 @@
 import { collection, doc, getDoc, addDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase.js';
+import { getOrCreateEventForumChannel, linkEventToForumChannel } from './eventForumService.js';
+
+export { getOrCreateEventForumChannel, linkEventToForumChannel };
 
 /**
  * Adaptateur transversal pour la passerelle Commissions ➔ Porte-Voix (Forum).
- * Permet de récupérer ou créer à la volée le sujet de discussion officiel
- * dédié à une commission d'événement.
- *
- * @param {Object} params Paramètres de synchronisation
- * @param {string} params.eventId Identifiant de l'événement parent
- * @param {Object} params.commission Données de la commission
- * @param {string} [params.eventTitle] Titre de l'événement pour nommer le fil
- * @param {Object} [params.userProfile] Profil de l'utilisateur déclenchant l'action
- * @param {string} [params.groupId] Identifiant du groupe/tenant associatif
- * @returns {Promise<string>} Identifiant du sujet dans la collection 'forum'
+ * Crée ou retrouve le fil de la commission rattaché au salon dédié de l'événement.
  */
 export async function getOrCreateCommissionForumThread({
   eventId,
   commission,
   eventTitle = 'Événement',
   userProfile = null,
-  groupId = null
+  groupId = null,
+  channelId = null
 }) {
-  if (!eventId || !commission?.id) {
+  // Sécurisation stricte anti-PointerEvent / SyntheticEvent
+  if (!commission || commission.nativeEvent || commission.target || typeof commission.preventDefault === 'function') {
+    throw new Error('Objet commission invalide ou événement DOM intercepté');
+  }
+
+  const cleanCommissionId = String(commission.id || '').trim();
+  const cleanEventId = String(eventId || commission.eventId || '').trim();
+  if (!cleanEventId || !cleanCommissionId) {
     throw new Error('Identifiants eventId et commission requis pour le fil de discussion');
   }
 
-  const effGroupId = groupId || commission.groupId || null;
+  // 1. Résolution du salon dédié dans forum_channels
+  const cleanGroupId = String(groupId || commission.groupId || '').trim();
+  const cleanEventTitle = String(eventTitle || '').trim();
+  const targetChannel = await getOrCreateEventForumChannel({
+    eventId: cleanEventId,
+    eventTitle: cleanEventTitle,
+    groupId: cleanGroupId,
+    channelId
+  });
 
-  // 1. Vérification si un threadId est déjà associé à la commission
-  if (commission.threadId) {
+  const nowIso = new Date().toISOString();
+
+  // 2. Vérification si un threadId est déjà associé à la commission
+  if (commission.threadId && typeof commission.threadId === 'string') {
     try {
-      const threadSnap = await getDoc(doc(db, 'forum', commission.threadId));
+      const threadRef = doc(db, 'forum', commission.threadId.trim());
+      const threadSnap = await getDoc(threadRef);
       if (threadSnap.exists()) {
-        return commission.threadId;
+        const threadData = threadSnap.data();
+        if (targetChannel.id && threadData?.channelId !== targetChannel.id) {
+          await updateDoc(threadRef, {
+            channelId: targetChannel.id,
+            categorie: targetChannel.name,
+            channelName: targetChannel.name,
+            derniereModification: nowIso
+          });
+        }
+        return commission.threadId.trim();
       }
     } catch (err) {
       console.warn("Vérification threadId existant impossible, création d'un nouveau fil :", err);
     }
   }
 
-  // 2. Préparation des métadonnées de l'auteur
-  const auteurId = userProfile?.uid || userProfile?.id || 'system';
-  const auteurNom = (
+  // 3. Préparation assainie des métadonnées (chaînes et primitives pures)
+  const auteurId = String(userProfile?.uid || userProfile?.id || 'system').trim();
+  const auteurNom = String(
     userProfile?.displayName ||
     `${userProfile?.prenom || ''} ${userProfile?.nom || ''}`.trim() ||
     'Membre de la commission'
-  );
-  const nowIso = new Date().toISOString();
-  const commIcone = commission.icone || '📌';
-  const commTitre = commission.titre || 'Commission';
-  const threadTitre = `${commIcone} ${commTitre} — ${eventTitle}`;
+  ).trim();
+  const commIcone = String(commission.icone || '📌').trim();
+  const commTitre = String(commission.titre || 'Commission').trim();
 
-  // 3. Création du sujet dans la collection 'forum'
+  // 4. Création du sujet dans la collection 'forum' (rattaché au salon dédié)
   const newThreadPayload = {
-    titre: threadTitre,
-    categorie: 'Projets',
-    channelName: 'Projets',
-    channelId: 'projets',
-    groupId: effGroupId,
+    titre: `${commIcone} ${commTitre}`.trim(),
+    channelId: targetChannel.id,
+    categorie: targetChannel.name,
+    channelName: targetChannel.name,
+    commissionId: cleanCommissionId,
+    commissionSourceId: cleanCommissionId,
+    eventId: cleanEventId,
+    groupId: cleanGroupId || null,
     auteurId,
     authorId: auteurId,
     auteurNom,
     authorName: auteurNom,
     dateCreation: nowIso,
     derniereModification: nowIso,
-    commissionSourceId: commission.id,
-    eventId,
     reponses: [
       {
         auteurId,
@@ -73,7 +94,7 @@ export async function getOrCreateCommissionForumThread({
         auteurNom,
         authorName: auteurNom,
         dateCreation: nowIso,
-        message: `Espace de discussion et de préparation pour la commission ${commTitre}.`
+        message: `Espace d'échange pour la commission ${commTitre}.`
       }
     ]
   };
@@ -82,11 +103,11 @@ export async function getOrCreateCommissionForumThread({
   const threadDocRef = await addDoc(forumCol, newThreadPayload);
   const newThreadId = threadDocRef.id;
 
-  // 4. Mémorisation de la référence du fil dans le document de la commission
+  // 5. Mémorisation de la référence du fil dans le document de la commission
   try {
-    const commissionRef = doc(db, 'events', eventId, 'commissions', commission.id);
+    const commissionRef = doc(db, 'events', cleanEventId, 'commissions', cleanCommissionId);
     await updateDoc(commissionRef, {
-      threadId: newThreadId,
+      threadId: String(newThreadId),
       derniereModif: nowIso
     });
   } catch (updateErr) {
@@ -95,3 +116,6 @@ export async function getOrCreateCommissionForumThread({
 
   return newThreadId;
 }
+
+/** Alias pour la création et ouverture du fil de discussion */
+export const openOrCreateCommissionForumThread = getOrCreateCommissionForumThread;

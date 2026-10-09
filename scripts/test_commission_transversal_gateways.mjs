@@ -75,7 +75,8 @@ assert.ok(fs.existsSync(forumAdapterPath), 'commissionForumAdapter.js doit exist
 
 const forumAdapterCode = fs.readFileSync(forumAdapterPath, 'utf8');
 assert.ok(forumAdapterCode.includes('getOrCreateCommissionForumThread'), 'getOrCreateCommissionForumThread exportée');
-assert.ok(forumAdapterCode.includes("categorie: 'Projets'"), "Catégorie 'Projets' requise");
+assert.ok(forumAdapterCode.includes('targetChannel.name') || forumAdapterCode.includes('targetChannelName'), "Nom du salon dédié associé à la catégorie");
+assert.ok(forumAdapterCode.includes('targetChannel.id') || forumAdapterCode.includes('targetChannelId'), "ID du salon forum_channels requis");
 assert.ok(forumAdapterCode.includes('threadId'), 'Gestion du threadId requise');
 assert.ok(forumAdapterCode.includes('commissionSourceId'), 'Traçabilité commissionSourceId requise');
 assert.ok(forumAdapterCode.includes('reponses:'), 'Message inaugural dans reponses requis');
@@ -92,6 +93,7 @@ const hookCode = fs.readFileSync(hookPath, 'utf8');
 
 assert.ok(hookCode.includes('publishCommissionToVaral'), 'publishCommissionToVaral présent');
 assert.ok(hookCode.includes('getOrCreateCommissionThread'), 'getOrCreateCommissionThread présent');
+assert.ok(hookCode.includes('openOrCreateCommissionThread'), 'openOrCreateCommissionThread présent');
 
 console.log('  ✅ [PASS] useEventCommissions.js intègre les 2 passerelles.\n');
 
@@ -153,10 +155,12 @@ console.log('▶️ Module 7 : Contrôle de la règle anti-monolithe (< 200 lign
 const filesToCheck = [
   'src/utils/commissionVaralAdapter.js',
   'src/utils/commissionForumAdapter.js',
+  'src/utils/eventForumService.js',
   'src/hooks/useEventCommissions.js',
   'src/components/event-details/commissions/CommissionVaralAction.jsx',
   'src/components/event-details/commissions/CommissionCard.jsx',
   'src/components/event-details/commissions/EventCommissionsHub.jsx',
+  'src/components/event-details/commissions/EventForumChannelLink.jsx',
   'src/components/event-details/RoadbookModal.jsx',
   'src/components/event-details/RoadbookInteractiveContent.jsx',
   'src/components/event-details/RoadbookPrintView.jsx',

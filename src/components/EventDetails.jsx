@@ -213,19 +213,39 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
   const [showQrCodeModal, setShowQrCodeModal] = useState(false);
   const [showMediaQrCodeModal, setShowMediaQrCodeModal] = useState(false);
   const [showRoadbookModal, setShowRoadbookModal] = useState(false);
-  const [showCommissionsHub, setShowCommissionsHub] = useState(false);
+  const [showCommissionsHub, setShowCommissionsHub] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      return searchParams.get('openHub') === 'true' || searchParams.get('openCommissions') === 'true';
+    }
+    return false;
+  });
   const [isSendContractModalOpen, setIsSendContractModalOpen] = useState(false);
   const [isHeaderCalendarMenuOpen, setIsHeaderCalendarMenuOpen] = useState(false);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
 
-  useHardwareBack(isEditingEvent, () => { if (typeof toggleEditing === 'function') toggleEditing(); else setIsEditingEvent(false); });
-  useHardwareBack(showQrCodeModal, () => setShowQrCodeModal(false));
-  useHardwareBack(showMediaQrCodeModal, () => setShowMediaQrCodeModal(false));
-  useHardwareBack(showRoadbookModal, () => setShowRoadbookModal(false));
-  useHardwareBack(showCommissionsHub, () => setShowCommissionsHub(false));
-  useHardwareBack(isSendContractModalOpen, () => setIsSendContractModalOpen(false));
-  useHardwareBack(isHeaderCalendarMenuOpen, () => setIsHeaderCalendarMenuOpen(false));
-  useHardwareBack(isMoreMenuOpen, () => setIsMoreMenuOpen(false));
+  // Synchronisation dynamique de l'ouverture de la Tour de Contrôle via URL (ex: depuis un fil Porte-Voix)
+  useEffect(() => {
+    const handleUrlHubChange = () => {
+      if (typeof window === 'undefined') return;
+      const searchParams = new URLSearchParams(window.location.search);
+      if (searchParams.get('openHub') === 'true' || searchParams.get('openCommissions') === 'true') {
+        setShowCommissionsHub(true);
+      }
+    };
+
+    window.addEventListener('popstate', handleUrlHubChange);
+    return () => window.removeEventListener('popstate', handleUrlHubChange);
+  }, []);
+
+  useHardwareBack(() => { if (typeof toggleEditing === 'function') toggleEditing(); else setIsEditingEvent(false); }, Boolean(isEditingEvent));
+  useHardwareBack(() => setShowQrCodeModal(false), Boolean(showQrCodeModal));
+  useHardwareBack(() => setShowMediaQrCodeModal(false), Boolean(showMediaQrCodeModal));
+  useHardwareBack(() => setShowRoadbookModal(false), Boolean(showRoadbookModal));
+  useHardwareBack(() => setShowCommissionsHub(false), Boolean(showCommissionsHub));
+  useHardwareBack(() => setIsSendContractModalOpen(false), Boolean(isSendContractModalOpen));
+  useHardwareBack(() => setIsHeaderCalendarMenuOpen(false), Boolean(isHeaderCalendarMenuOpen));
+  useHardwareBack(() => setIsMoreMenuOpen(false), Boolean(isMoreMenuOpen));
 
   const {
     setlist,
@@ -2142,7 +2162,18 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
           onNavigateToView={onNavigateToView}
           isAdmin={Boolean(profileData?.role === 'admin' || isAuthorized)}
           isMestre={Boolean(profileData?.role === 'mestre' || profileData?.isMestre || isAuthorized)}
-          onClose={() => setShowCommissionsHub(false)}
+          onClose={() => {
+            console.trace("⚠️ FERMETURE MODALE DÉCLENCHÉE PAR : EventCommissionsHub onClose prop");
+            if (typeof window !== 'undefined') {
+              const url = new URL(window.location);
+              if (url.searchParams.has('openHub') || url.searchParams.has('openCommissions')) {
+                url.searchParams.delete('openHub');
+                url.searchParams.delete('openCommissions');
+                window.history.replaceState({ ...window.history.state, openHub: null, openCommissions: null }, '', url.toString());
+              }
+            }
+            setShowCommissionsHub(false);
+          }}
         />
       )}
     </div>

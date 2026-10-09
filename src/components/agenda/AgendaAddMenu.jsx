@@ -21,6 +21,7 @@ export default function AgendaAddMenu({ onAddSingle, onAddBatch, t }) {
     if (!isOpen) return;
 
     const handleClickOutside = (e) => {
+      if (!e || !e.target || !e.target.isConnected) return;
       if (containerRef.current && !containerRef.current.contains(e.target)) {
         setIsOpen(false);
       }

@@ -18,6 +18,7 @@ export default function EventQuickActionsBar({ event, isAdmin, onToggleEdit, onD
 
   useEffect(() => {
     const handleClickOutside = (e) => {
+      if (!e || !e.target || !e.target.isConnected) return;
       if (menuRef.current && !menuRef.current.contains(e.target)) {
         setIsMenuOpen(false);
       }

@@ -1,72 +1,39 @@
 import { useEffect, useRef } from 'react';
 
-const modalStack = [];
-let ignorePopCount = 0;
-
-const globalPopStateHandler = (e) => {
-  if (ignorePopCount > 0) {
-    ignorePopCount--;
-    return;
-  }
-  if (modalStack.length > 0) {
-    const topModal = modalStack.pop();
-    topModal.popped = true;
-    topModal.onClose();
-  }
-};
-
 /**
- * Hook to intercept the hardware back button (or browser back button)
- * When isOpen is true, a fake state is pushed to the browser history.
- * If the user presses the back button, the state is popped and onClose is called.
- * If the component is closed manually (e.g. by a close button), the hook
- * cleans up the history state by calling window.history.back().
- * 
- * @param {boolean} isOpen - whether the modal/sub-view is currently open
- * @param {function} onClose - function to call when the back button is pressed
+ * Hook d'interception du bouton retour matériel / navigateur.
+ * Sécurisé pour éviter toute fermeture intempestive au montage ou lors des re-renders.
+ * Supporte de manière transparente les deux signatures :
+ * 1) useHardwareBack(callback, isEnabled)
+ * 2) useHardwareBack(isOpen, onClose)
+ *
+ * @param {Function|boolean} param1 - Fonction de callback ou booléen d'ouverture
+ * @param {boolean|Function} [param2] - Booléen d'activation ou fonction de callback
  */
-export default function useHardwareBack(isOpen, onClose) {
-  const modalObj = useRef({ onClose, popped: false });
+export function useHardwareBack(param1, param2) {
+  // Détection polymorphe pour compatibilité ascendante et descendante
+  const isEnabled = typeof param1 === 'function' ? (param2 ?? true) : Boolean(param1);
+  const callback = typeof param1 === 'function' ? param1 : param2;
 
-  // Always keep the latest onClose reference
+  const callbackRef = useRef(callback);
+  callbackRef.current = callback;
+
   useEffect(() => {
-    modalObj.current.onClose = onClose;
-  }, [onClose]);
+    if (!isEnabled) return;
 
-  useEffect(() => {
-    if (isOpen) {
-      modalObj.current.popped = false;
-      const lockId = Date.now() + Math.random();
-      
-      // Push a fake state to absorb the back button press
-      // We copy the existing state so App.jsx doesn't break if it reads event.state
-      window.history.pushState({ ...window.history.state, modalLockId: lockId }, '');
-      
-      modalStack.push(modalObj.current);
-
-      if (modalStack.length === 1) { // First modal
-        window.addEventListener('popstate', globalPopStateHandler);
+    const handlePopState = (event) => {
+      if (callbackRef.current && typeof callbackRef.current === 'function') {
+        callbackRef.current(event);
       }
+    };
 
-      return () => {
-        const idx = modalStack.indexOf(modalObj.current);
-        if (idx !== -1) {
-          modalStack.splice(idx, 1);
-        }
-        
-        // If modal was closed via UI (unmounted or isOpen became false)
-        // We MUST call history.back() to remove the fake state we pushed.
-        // It doesn't matter if we're not the topmost state; the history stack 
-        // length needs to be decreased to stay in sync with our modals.
-        if (!modalObj.current.popped) {
-          ignorePopCount++;
-          window.history.back();
-        }
+    // Empêcher l'exécution immédiate : passer la référence sans parenthèses
+    window.addEventListener('popstate', handlePopState);
 
-        if (modalStack.length === 0) {
-          window.removeEventListener('popstate', globalPopStateHandler);
-        }
-      };
-    }
-  }, [isOpen]);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [isEnabled]); // Dépendance UNIQUE : isEnabled
 }
+
+export default useHardwareBack;

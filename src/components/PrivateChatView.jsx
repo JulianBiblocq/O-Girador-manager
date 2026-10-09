@@ -84,6 +84,7 @@ export default function PrivateChatView({
   // Fermeture du tiroir popover mobile des outils lors d'un clic en dehors
   useEffect(() => {
     function handleClickOutside(event) {
+      if (!event || !event.target || !event.target.isConnected) return;
       if (mobileToolsRef.current && !mobileToolsRef.current.contains(event.target)) {
         setIsMobileToolsOpen(false);
       }

@@ -30,6 +30,7 @@ export default function CommissionBasicInfoFields({
             maxLength={2}
             value={formData.icone}
             onChange={(e) => setFormData({ ...formData, icone: e.target.value })}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); } }}
             className="w-10 h-8 text-center text-base rounded border border-encre-noire/30 bg-white"
           />
         </div>
@@ -41,6 +42,7 @@ export default function CommissionBasicInfoFields({
             placeholder="Ex : Costumes & Tenues, Restauration..."
             value={formData.titre}
             onChange={(e) => setFormData({ ...formData, titre: e.target.value })}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); } }}
             className="h-8 px-2.5 rounded border border-encre-noire/30 bg-white font-bold"
           />
         </div>
@@ -96,6 +98,7 @@ export default function CommissionBasicInfoFields({
           rows={2}
           value={formData.description}
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          onKeyDown={(e) => e.stopPropagation()}
           placeholder="Objectifs et responsabilités..."
           className="p-2 rounded border border-encre-noire/30 bg-white text-xs"
         />

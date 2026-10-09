@@ -8,24 +8,27 @@ import CommissionVaralAction from './CommissionVaralAction';
 export default function CommissionCard({
   commission, event = null, groupId = null, usersMap = {}, progress = 0,
   canManage = false, onManage, onView, onNavigateToView,
-  getOrCreateCommissionThread, userProfile = null, onCloseHub = null
+  getOrCreateCommissionThread, openOrCreateCommissionThread, userProfile = null, onCloseHub = null
 }) {
   const { id, titre = 'Commission sans titre', icone = '📋', description = '', referentsIds = [], jalons = [], budget = {} } = commission;
   const [isOpeningForum, setIsOpeningForum] = useState(false);
 
-  const handleOpenForum = async (e) => {
-    if (e) e.stopPropagation();
-    if (!onNavigateToView) return;
+  // Gestionnaire d'ouverture sécurisé du fil de discussion Porte-Voix
+  const handleOpenThread = async (targetCommission) => {
+    if (isOpeningForum || !onNavigateToView) return;
+    const isDom = Boolean(targetCommission && (targetCommission.nativeEvent || targetCommission.target || typeof targetCommission.preventDefault === 'function'));
+    const safeComm = (!targetCommission || isDom) ? commission : targetCommission;
     try {
       setIsOpeningForum(true);
-      let targetThreadId = commission.threadId;
-      if (!targetThreadId && typeof getOrCreateCommissionThread === 'function') {
-        const evTitle = event?.titre || event?.title || 'Événement';
-        targetThreadId = await getOrCreateCommissionThread(event?.id, commission, evTitle, userProfile);
+      const fn = openOrCreateCommissionThread || getOrCreateCommissionThread;
+      const evTitle = event?.titre || event?.title || 'Événement';
+      let targetThreadId = safeComm?.threadId;
+      if (typeof fn === 'function') {
+        targetThreadId = await fn(event?.id, safeComm, evTitle, { userProfile, groupId: groupId || event?.groupId });
       }
       if (targetThreadId) {
         if (onCloseHub) onCloseHub();
-        onNavigateToView('forum', { threadId: targetThreadId });
+        onNavigateToView('forum', { threadId: String(targetThreadId) });
       }
     } catch (err) {
       console.error("Erreur ouverture salon de débat commission :", err);
@@ -154,7 +157,11 @@ export default function CommissionCard({
             <button
               type="button"
               disabled={isOpeningForum}
-              onClick={handleOpenForum}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleOpenThread(commission);
+              }}
               className="px-2 py-1 text-[10px] font-black rounded border border-encre-noire bg-cordel-bg hover:bg-stone-200 cursor-pointer shadow-xs active:translate-y-0.5 flex items-center gap-1 text-encre-noire disabled:opacity-50"
               title="Ouvrir le salon de débat de cette commission sur le Porte-Voix"
             >

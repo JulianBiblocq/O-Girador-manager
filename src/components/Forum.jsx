@@ -206,7 +206,8 @@ export default function Forum({
   breakGlassActive = false,
   initialTab = 'discussions',
   initialThreadId = null,
-  initialConversationId = null
+  initialConversationId = null,
+  onNavigateToView = null
 }) {
   const { t } = useTranslation();
   const { confirm } = useConfirm();
@@ -512,7 +513,11 @@ export default function Forum({
         setChannels(sorted);
 
         if (sorted.length > 0) {
+          const searchParams = new URLSearchParams(window.location.search);
+          const urlChannelId = searchParams.get('channelId');
+
           setActiveChannelId(prev => {
+            if (urlChannelId && sorted.some(c => c.id === urlChannelId)) return urlChannelId;
             if (prev && sorted.some(c => c.id === prev)) return prev;
             return sorted[0].id;
           });
@@ -854,6 +859,10 @@ export default function Forum({
       const found = accessibleThreads.find((t) => t.id === targetThreadId);
       if (found) {
         setSelectedThread(found);
+        if (found.channelId) {
+          setActiveChannelId(found.channelId);
+          previousChannelRef.current = found.channelId;
+        }
         setMobileView('discussion');
         return;
       }
@@ -865,7 +874,12 @@ export default function Forum({
       getDoc(doc(db, 'forum', targetThreadId))
         .then((docSnap) => {
           if (docSnap.exists() && isMounted) {
-            setSelectedThread({ id: docSnap.id, ...docSnap.data() });
+            const data = { id: docSnap.id, ...docSnap.data() };
+            setSelectedThread(data);
+            if (data.channelId) {
+              setActiveChannelId(data.channelId);
+              previousChannelRef.current = data.channelId;
+            }
             setMobileView('discussion');
           }
         })
@@ -989,7 +1003,8 @@ export default function Forum({
         breakGlassActive={breakGlassActive}
         tagsDisponibles={tagsDisponibles}
         effectiveUserTags={effectiveUserTags}
-        onClose={handleCloseThread} 
+        onClose={handleCloseThread}
+        onNavigateToView={onNavigateToView}
       />
     );
   }

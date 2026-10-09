@@ -1585,6 +1585,10 @@ export default function App() {
   };
 
   const handleNavigateToView = (viewName, extraOptions = null) => {
+    if (activeMestreEventDetails) {
+      setActiveMestreEventDetails(null);
+    }
+
     if (viewName === 'forum' && extraOptions?.userId) {
       setActivePrivateChatUserId(extraOptions.userId);
       setInitialPrivateMessage(extraOptions.message || '');
@@ -1604,6 +1608,14 @@ export default function App() {
       window.history.pushState({}, '', window.location.pathname + '?' + searchParams.toString());
     } else if (viewName !== 'forum') {
       cleanUrlParams(['threadId']);
+    }
+
+    if (viewName === 'forum' && extraOptions?.channelId) {
+      const searchParams = new URLSearchParams(window.location.search);
+      searchParams.set('channelId', extraOptions.channelId);
+      window.history.pushState({}, '', window.location.pathname + '?' + searchParams.toString());
+    } else if (viewName !== 'forum') {
+      cleanUrlParams(['channelId']);
     }
 
     if (viewName !== 'agenda' && viewName !== 'studio-events' && !extraOptions?.eventId) {
@@ -1636,6 +1648,13 @@ export default function App() {
         setCurrentTab('forum');
         break;
       case 'varal':
+        if (extraOptions?.categoryKey || extraOptions?.category) {
+          const cat = extraOptions.categoryKey || extraOptions.category;
+          const searchParams = new URLSearchParams(window.location.search);
+          searchParams.set('varalCat', cat);
+          window.history.pushState({ ...window.history.state, varalCat: cat }, '', window.location.pathname + '?' + searchParams.toString());
+          window.dispatchEvent(new PopStateEvent('popstate'));
+        }
         setCurrentPole('mon-espace');
         setCurrentTab('varal');
         break;
@@ -1794,6 +1813,19 @@ export default function App() {
         setCurrentTab('varal-manager');
         break;
       case 'agenda':
+        if (extraOptions?.eventId) {
+          const searchParams = new URLSearchParams(window.location.search);
+          searchParams.set('eventId', extraOptions.eventId);
+          if (extraOptions?.openHub) {
+            searchParams.set('openHub', 'true');
+          }
+          window.history.pushState(
+            { ...window.history.state, eventId: extraOptions.eventId, openHub: Boolean(extraOptions.openHub) },
+            '',
+            window.location.pathname + '?' + searchParams.toString()
+          );
+          window.dispatchEvent(new PopStateEvent('popstate'));
+        }
         setCurrentPole('accueil');
         setCurrentTab('agenda');
         break;
@@ -2200,6 +2232,7 @@ export default function App() {
                         cleanUrlParams(['conversationId', 'chatUserId']);
                       }}
                       breakGlassActive={breakGlassActive}
+                      onNavigateToView={handleNavigateToView}
                     />
                   </ErrorBoundary>
                 ) : (currentTab === 'export-annu' && (hasAccessSecretariat || hasAccessStudio)) ? (

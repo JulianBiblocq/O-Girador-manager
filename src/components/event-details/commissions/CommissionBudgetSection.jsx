@@ -24,7 +24,8 @@ export default function CommissionBudgetSection({
   };
 
   const handleAddDevis = (e) => {
-    e.preventDefault();
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
     if (!newDevisIntitule.trim() || !newDevisMontant) return;
     const newDevisItem = {
       id: `devis_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
@@ -48,13 +49,10 @@ export default function CommissionBudgetSection({
           <span>💰</span> Budget & Arbitrages
         </h4>
         <span className={`px-2 py-0.5 rounded font-black text-[10px] border ${
-          statusArbitrage === 'valide'
-            ? 'bg-emerald-100 text-emerald-900 border-[var(--color-cordel-vert)]'
-            : statusArbitrage === 'rejete'
-            ? 'bg-rose-100 text-rose-900 border-[var(--color-cordel-rouge)]'
-            : statusArbitrage === 'en_attente'
-            ? 'bg-amber-100 text-amber-900 border-[var(--color-cordel-ocre)]'
-            : 'bg-stone-100 text-stone-700 border-stone-300'
+          statusArbitrage === 'valide' ? 'bg-emerald-100 text-emerald-900 border-[var(--color-cordel-vert)]' :
+          statusArbitrage === 'rejete' ? 'bg-rose-100 text-rose-900 border-[var(--color-cordel-rouge)]' :
+          statusArbitrage === 'en_attente' ? 'bg-amber-100 text-amber-900 border-[var(--color-cordel-ocre)]' :
+          'bg-stone-100 text-stone-700 border-stone-300'
         }`}>
           {STATUS_ARBITRAGE_LABELS[statusArbitrage] || statusArbitrage}
         </span>
@@ -75,6 +73,7 @@ export default function CommissionBudgetSection({
               step="10"
               value={demande}
               onChange={(e) => onChangeBudget({ ...budget, demande: Number(e.target.value) || 0 })}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); } }}
               className="w-full font-black text-xs px-1.5 py-0.5 rounded border border-encre-noire/20"
             />
             <span className="text-[11px] font-bold">€</span>
@@ -104,9 +103,8 @@ export default function CommissionBudgetSection({
               onClick={() => onChangeBudget({ ...budget, alloue: alloue > 0 ? alloue : (demande > 0 ? demande : totalDevis), statusArbitrage: 'valide', motifRefus: '' })}
               className="px-3 py-1 font-black rounded border border-encre-noire bg-[var(--color-cordel-vert)] text-white hover:opacity-90 shadow-xs"
             >
-              ✅ Valider le budget ({alloue > 0 ? alloue : (demande > 0 ? demande : totalDevis)} €)
+              ✅ Valider ({alloue > 0 ? alloue : (demande > 0 ? demande : totalDevis)} €)
             </button>
-
             <button
               type="button"
               onClick={async () => {
@@ -124,9 +122,8 @@ export default function CommissionBudgetSection({
               }}
               className="px-2.5 py-1 font-bold rounded border border-encre-noire bg-rose-100 text-rose-900 hover:bg-rose-200 cursor-pointer"
             >
-              ⚠️ Refuser / Demander révision
+              ⚠️ Refuser / Révision
             </button>
-
           </div>
         </div>
       ) : statusArbitrage !== 'valide' && (
@@ -161,12 +158,13 @@ export default function CommissionBudgetSection({
           </div>
         ))}
 
-        <form onSubmit={handleAddDevis} className="flex flex-wrap items-center gap-1.5 pt-1">
+        <div className="flex flex-wrap items-center gap-1.5 pt-1">
           <input
             type="text"
             placeholder="Intitulé devis..."
             value={newDevisIntitule}
             onChange={(e) => setNewDevisIntitule(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); handleAddDevis(); } }}
             className="flex-1 min-w-[120px] px-2 py-1 rounded border border-encre-noire/20 text-xs bg-white"
           />
           <input
@@ -174,6 +172,7 @@ export default function CommissionBudgetSection({
             placeholder="Prestataire..."
             value={newDevisPrestataire}
             onChange={(e) => setNewDevisPrestataire(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); handleAddDevis(); } }}
             className="w-28 px-2 py-1 rounded border border-encre-noire/20 text-xs bg-white"
           />
           <input
@@ -181,16 +180,18 @@ export default function CommissionBudgetSection({
             placeholder="Montant €"
             value={newDevisMontant}
             onChange={(e) => setNewDevisMontant(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); handleAddDevis(); } }}
             className="w-20 px-2 py-1 rounded border border-encre-noire/20 text-xs bg-white"
           />
           <button
-            type="submit"
+            type="button"
+            onClick={handleAddDevis}
             disabled={!newDevisIntitule.trim() || !newDevisMontant}
-            className="px-2.5 py-1 font-bold rounded border border-encre-noire bg-stone-100 hover:bg-stone-200 disabled:opacity-40"
+            className="px-2.5 py-1 font-bold rounded border border-encre-noire bg-stone-100 hover:bg-stone-200 disabled:opacity-40 cursor-pointer"
           >
             + Devis
           </button>
-        </form>
+        </div>
       </div>
     </div>
   );

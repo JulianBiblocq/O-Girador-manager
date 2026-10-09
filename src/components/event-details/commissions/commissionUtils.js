@@ -144,6 +144,10 @@ export function generateCommissionMarkdown(commission = {}, { usersMap = {}, eve
     jalons.forEach((j) => {
       const deadline = j.deadline ? ` (Date butoir : ${j.deadline})` : '';
       lines.push(`- [${j.status === 'fait' ? 'x' : ' '}] **${j.titre}**${deadline}`);
+      if (j.notes && j.notes.trim()) {
+        const indented = j.notes.trim().split('\n').map((l) => `  > ${l}`).join('\n');
+        lines.push(indented);
+      }
     });
     lines.push('');
   }

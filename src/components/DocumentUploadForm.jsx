@@ -3,6 +3,7 @@ import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { useTranslation } from './LanguageContext';
 import { useDocumentUploadPipeline } from '../hooks/useDocumentUploadPipeline';
+import { resolveVaralCategoryLabel } from '../utils/documentCategories';
 import DocumentFormBatchSection from './documents/form/DocumentFormBatchSection';
 import DocumentFormToadaFields from './documents/form/DocumentFormToadaFields';
 import DocumentFormCultureFields from './documents/form/DocumentFormCultureFields';
@@ -306,7 +307,7 @@ export default function DocumentUploadForm({
   };
 
   const currentCategoryObj = varalCategories.find(c => c.id === category);
-  const currentCategoryName = currentCategoryObj ? currentCategoryObj.nom : category;
+  const currentCategoryName = resolveVaralCategoryLabel(currentCategoryObj || category, t) || (currentCategoryObj ? currentCategoryObj.nom : category);
   const showModeSelector = !isEditMode && (category === 'Toadas' || category === 'Culture' || category === 'TutosFabrication');
 
   return (

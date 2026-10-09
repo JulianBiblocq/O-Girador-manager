@@ -135,7 +135,7 @@ function VaralWidgetContent({
   const displayedCategories = useMemo(() => {
     const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
     const urlEventId = searchParams?.get('eventId');
-    const effectiveTargetEventId = targetEventId || (searchParams?.get('ropeId')?.replace(/^projet_/, '') || urlEventId);
+    const effectiveTargetEventId = targetEventId || (searchParams?.get('ropeId')?.replace(/^projet_/, '') || searchParams?.get('varalCat')?.replace(/^projet_/, '') || urlEventId);
 
     return visibleCategories.filter((category) => {
       // Règle spécifique aux cordes de projet (Passerelle Commissions ➔ Varal) :
@@ -425,6 +425,7 @@ function VaralWidgetContent({
                 canSeeHidden={canSeeHidden}
                 canWrite={canWrite}
                 canDeposit={canDepositOnCategory(category)}
+                allEventsMap={allEventsMap}
                 getDocType={getDocType}
                 onOpenAdd={handleOpenAddForCategory}
                 onNavigateToView={onNavigateToView}

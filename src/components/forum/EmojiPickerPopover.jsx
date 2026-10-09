@@ -93,6 +93,7 @@ export default function EmojiPickerPopover({ onSelectEmoji, onClose, title = "É
   // Fermeture au clic extérieur et touche Échap
   useEffect(() => {
     const handleClickOutside = (e) => {
+      if (!e || !e.target || !e.target.isConnected) return;
       if (popoverRef.current && !popoverRef.current.contains(e.target)) {
         onClose();
       }

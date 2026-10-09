@@ -4,6 +4,7 @@ import { ref, deleteObject } from 'firebase/storage';
 import { db, storage } from '../firebase';
 import { projectWorkshopBooklets, isWorkshopVirtualDoc } from '../utils/workshopProjectionUtils';
 import { isProjectRopeActive } from '../utils/commissionVaralAdapter';
+import { normalizeVaralCategoryId, resolveProjectRopeLabel } from '../utils/documentCategories';
 import { useTranslation } from '../components/LanguageContext';
 import useConfirm from './useConfirm';
 import { useViewSimulator } from '../context/ViewSimulatorContext';
@@ -286,10 +287,13 @@ export default function useVaralData({
       const rawCat = d.categoryId || d.categorie;
       if (rawCat && typeof rawCat === 'string' && rawCat.startsWith('projet_')) {
         if (!projectMap.has(rawCat)) {
-          // Extraire le titre de l'événement depuis les métadonnées du premier document
-          const eventTitle = d.eventTitle || d.projetTitre || d.evenementTitre || d.sousCategorie || '';
-          const cleanTitle = eventTitle.replace(/^Chantier\s*:\s*/i, '').trim();
-          const ropeNom = cleanTitle ? `🎪 Projet : ${cleanTitle}` : `🎪 Projet : Événement`;
+          const eventId = rawCat.replace(/^projet_/, '');
+          const docsForRope = documents.filter(doc => (doc.categoryId || doc.categorie) === rawCat);
+          const ropeNom = resolveProjectRopeLabel({
+            category: rawCat,
+            documents: docsForRope,
+            allEventsMap
+          });
 
           projectMap.set(rawCat, {
             id: rawCat,
@@ -297,6 +301,7 @@ export default function useVaralData({
             icone: '🎪',
             actif: true,
             isProjectRope: true,
+            eventId,
             order: 95
           });
         }
@@ -304,7 +309,7 @@ export default function useVaralData({
     });
 
     return Array.from(projectMap.values());
-  }, [documents]);
+  }, [documents, allEventsMap]);
 
   // Fusion des catégories configurées avec les cordes de projets dynamiques
   const allVaralCategories = useMemo(() => {
@@ -314,17 +319,29 @@ export default function useVaralData({
       if (existingIdx === -1) {
         base.push(projCat);
       } else {
-        if (!base[existingIdx].nom?.startsWith('🎪 Projet :')) {
-          base[existingIdx] = {
-            ...base[existingIdx],
-            nom: projCat.nom,
-            isProjectRope: true
-          };
-        }
+        base[existingIdx] = {
+          ...base[existingIdx],
+          nom: projCat.nom,
+          isProjectRope: true
+        };
       }
     });
+
+    // Si des documents de tutoriels / instruments sont présents, garantir que TutorielsVideo est active
+    const hasTutosDocs = documents.some(d => normalizeVaralCategoryId(d.categoryId || d.categorie) === 'TutorielsVideo');
+    if (hasTutosDocs) {
+      const tutosIdx = base.findIndex(c => c.id === 'TutorielsVideo');
+      if (tutosIdx !== -1) {
+        base[tutosIdx] = {
+          ...base[tutosIdx],
+          nom: base[tutosIdx].nom || 'Tutoriels Vidéo',
+          actif: true
+        };
+      }
+    }
+
     return base;
-  }, [varalCategories, dynamicProjectCategories]);
+  }, [varalCategories, dynamicProjectCategories, documents]);
 
   // 6. Groupement des documents par catégorie et projections dynamiques en mémoire
   const groupedDocs = useMemo(() => {
@@ -338,11 +355,16 @@ export default function useVaralData({
       if (rawCat.startsWith('projet_')) {
         catId = rawCat;
       } else {
-        // Recherche de la catégorie correspondante par priorité : categoryId d'abord, puis nom, puis id
-        const catObj = (docItem.categoryId && allVaralCategories.find(c => c.id === docItem.categoryId))
-          || (docItem.categorie && allVaralCategories.find(c => c.nom === docItem.categorie))
-          || (docItem.categorie && allVaralCategories.find(c => c.id === docItem.categorie));
-        catId = catObj ? catObj.id : 'Autre';
+        const normCat = normalizeVaralCategoryId(rawCat);
+        if (normCat === 'TutorielsVideo') {
+          catId = 'TutorielsVideo';
+        } else {
+          // Recherche de la catégorie correspondante par priorité : categoryId d'abord, puis nom, puis id
+          const catObj = (docItem.categoryId && allVaralCategories.find(c => c.id === docItem.categoryId))
+            || (docItem.categorie && allVaralCategories.find(c => c.nom === docItem.categorie))
+            || (docItem.categorie && allVaralCategories.find(c => c.id === docItem.categorie));
+          catId = catObj ? catObj.id : 'Autre';
+        }
       }
 
       // Fusion des cordes cibles : Administratif rejoint ComptesRendus, Costumerie rejoint TutosFabrication
