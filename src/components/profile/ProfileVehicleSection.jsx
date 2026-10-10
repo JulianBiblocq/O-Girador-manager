@@ -1,6 +1,7 @@
 import React from 'react';
 import CordelCard from '../CordelCard';
 import { useTranslation } from '../LanguageContext';
+import { getCarpoolBulkyTerminology } from '../../utils/carpoolCascadeUtils';
 
 /**
  * Liste des types de véhicules disponibles pour la sélection
@@ -23,10 +24,12 @@ export const VEHICLE_TYPES = [
  * @param {Object} props.formData État du formulaire profil
  * @param {Function} props.handleChange Gestionnaire de changement de champ
  * @param {boolean} props.disabled Indique si le formulaire est en cours de sauvegarde
+ * @param {string} [props.universeId='maracatu'] Identifiant de l'univers culturel actif
  */
-export default function ProfileVehicleSection({ formData, handleChange, disabled = false }) {
+export default function ProfileVehicleSection({ formData, handleChange, disabled = false, universeId = 'maracatu' }) {
   const { t } = useTranslation();
   const hasVehicle = Boolean(formData.hasVehicle);
+  const term = getCarpoolBulkyTerminology(universeId || formData.universeId);
 
   const handleSeatsStep = (delta) => {
     const current = parseInt(formData.defaultPassengerSeats, 10) || 0;
@@ -35,9 +38,10 @@ export default function ProfileVehicleSection({ formData, handleChange, disabled
   };
 
   const handleTrunkStep = (delta) => {
-    const current = parseInt(formData.defaultTrunkCapacity, 10) || 0;
+    const current = parseInt(formData.defaultTrunkBulkyCapacity ?? formData.defaultTrunkCapacity, 10) || 0;
     const next = Math.max(0, Math.min(10, current + delta));
     handleChange({ target: { name: 'defaultTrunkCapacity', value: next } });
+    handleChange({ target: { name: 'defaultTrunkBulkyCapacity', value: next } });
   };
 
   return (
@@ -142,44 +146,48 @@ export default function ProfileVehicleSection({ formData, handleChange, disabled
               </span>
             </div>
 
-            {/* Capacité coffre pour Alfaias */}
+            {/* Capacité coffre pour Alfaias / Surdos / Fûts */}
             <div className="flex flex-col gap-1 p-2.5 rounded border border-encre-noire/15 bg-cordel-bg/40">
               <label className="text-[9.5px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center justify-between">
-                <span>{t('userProfile.vehicleTrunkAlfaias')}</span>
+                <span>{term.trunkLabel || term.trunkVolumeLabel || t('userProfile.vehicleTrunkAlfaias')}</span>
                 <span className="text-[8.5px] font-normal italic opacity-75">
-                  ({t('userProfile.vehicleTrunkAlfaiasCount', { count: formData.defaultTrunkCapacity !== undefined ? formData.defaultTrunkCapacity : 1 })})
+                  ({t('userProfile.vehicleTrunkAlfaiasCount', { count: formData.defaultTrunkBulkyCapacity !== undefined ? formData.defaultTrunkBulkyCapacity : (formData.defaultTrunkCapacity !== undefined ? formData.defaultTrunkCapacity : 1) })})
                 </span>
               </label>
               <div className="flex items-center gap-2 mt-1">
                 <button
                   type="button"
                   onClick={() => handleTrunkStep(-1)}
-                  disabled={disabled || (parseInt(formData.defaultTrunkCapacity, 10) || 0) <= 0}
+                  disabled={disabled || (parseInt(formData.defaultTrunkBulkyCapacity ?? formData.defaultTrunkCapacity, 10) || 0) <= 0}
                   className="w-7 h-7 rounded border border-encre-noire bg-cordel-bg font-black text-xs hover:bg-cordel-hover cursor-pointer disabled:opacity-40 select-none"
                 >
                   -
                 </button>
                 <input
                   type="number"
-                  name="defaultTrunkCapacity"
+                  name="defaultTrunkBulkyCapacity"
                   min="0"
                   max="10"
-                  value={formData.defaultTrunkCapacity !== undefined ? formData.defaultTrunkCapacity : 1}
-                  onChange={handleChange}
+                  value={formData.defaultTrunkBulkyCapacity !== undefined ? formData.defaultTrunkBulkyCapacity : (formData.defaultTrunkCapacity !== undefined ? formData.defaultTrunkCapacity : 1)}
+                  onChange={(e) => {
+                    const val = Math.max(0, Math.min(10, parseInt(e.target.value, 10) || 0));
+                    handleChange({ target: { name: 'defaultTrunkCapacity', value: val } });
+                    handleChange({ target: { name: 'defaultTrunkBulkyCapacity', value: val } });
+                  }}
                   disabled={disabled}
                   className="theme-input text-xs font-black text-center py-1 flex-1 bg-white"
                 />
                 <button
                   type="button"
                   onClick={() => handleTrunkStep(1)}
-                  disabled={disabled || (parseInt(formData.defaultTrunkCapacity, 10) || 0) >= 10}
+                  disabled={disabled || (parseInt(formData.defaultTrunkBulkyCapacity ?? formData.defaultTrunkCapacity, 10) || 0) >= 10}
                   className="w-7 h-7 rounded border border-encre-noire bg-cordel-bg font-black text-xs hover:bg-cordel-hover cursor-pointer disabled:opacity-40 select-none"
                 >
                   +
                 </button>
               </div>
               <span className="text-[8.5px] text-cordel-master-dark/65 mt-0.5">
-                Nombre de fûts logeables dans le coffre sans encombrer les sièges.
+                {term.seatsExplanation || "Nombre de fûts logeables dans le coffre sans encombrer les sièges."}
               </span>
             </div>
           </div>

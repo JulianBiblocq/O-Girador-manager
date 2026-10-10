@@ -13,9 +13,10 @@ import { HorizontalRibbonContainer } from './navigation/HorizontalTabRibbon';
 const calculateCarStatus = (car, associationSettings) => {
   const passengers = car.passengers || [];
   
-  // Calcul du volume des Alfaias
-  const totalAlfayas = passengers.reduce((sum, p) => sum + (Number(p.alfayasCount) || 0), 0);
-  const alfayasInTrunk = Math.min(totalAlfayas, Number(car.trunkAlfayaCapacity) || 0);
+  // Calcul du volume des encombrants / fûts
+  const totalAlfayas = passengers.reduce((sum, p) => sum + (Number(p.bulkyCount ?? p.alfayasCount) || 0), 0);
+  const trunkCap = Number(car.trunkBulkyCapacity ?? car.trunkAlfayaCapacity) || 0;
+  const alfayasInTrunk = Math.min(totalAlfayas, trunkCap);
   const alfayasOnSeats = totalAlfayas - alfayasInTrunk;
 
   // Calcul des passagers physiques

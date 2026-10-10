@@ -456,11 +456,18 @@ export default function VaralBookletCover({
                 <span>📦 Archive</span>
               </span>
             ) : (
-              docItem.annee && (
-                <span className={`text-[8.5px] font-black px-1.5 py-0.5 rounded-sm ${yearBadgeClass}`}>
-                  {docItem.annee}
-                </span>
-              )
+              <div className="flex items-center gap-1">
+                {(docItem.audience === 'ca' || docItem.portee === 'ca' || (docItem.sousCategorie || '').includes('CA')) && (
+                  <span className="text-[7.5px] font-black uppercase px-1 py-0.2 rounded bg-amber-400/30 text-amber-950 border border-amber-800/40" title="Réunion de CA / Bureau (Restreinte)">
+                    🔒 CA
+                  </span>
+                )}
+                {docItem.annee && (
+                  <span className={`text-[8.5px] font-black px-1.5 py-0.5 rounded-sm ${yearBadgeClass}`}>
+                    {docItem.annee}
+                  </span>
+                )}
+              </div>
             )}
           </div>
           <h4 className={`font-black text-xs ${textClass} leading-snug mt-2 break-words line-clamp-3`}>

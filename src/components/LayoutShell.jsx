@@ -18,7 +18,8 @@ import {
   XiloCaixa,
   XiloQuill,
   XiloScissors,
-  XiloScale
+  XiloScale,
+  XiloGlobe
 } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
 import { usePresence } from '../hooks/usePresence';
@@ -230,6 +231,20 @@ export default function LayoutShell({
   const isModuleEnabled = (tabId, poleId) => {
     if (!enabledModules) return true;
 
+    // Vitrine : vérifier l'accès appAccess (vitrine ou mostrador) et le toggle module
+    if (poleId === 'vitrine' || (tabId && tabId.startsWith('vitrine-'))) {
+      const hasVitrineAccess = associationData?.appAccess?.vitrine ?? associationData?.appAccess?.mostrador;
+      if (hasVitrineAccess === false) return false;
+      if (enabledModules?.vitrine === false) return false;
+      return true;
+    }
+
+    // Config : toujours actif au niveau module si pas explicitement désactivé
+    if (poleId === 'config' || (tabId && tabId.startsWith('config-'))) {
+      if (enabledModules?.config === false) return false;
+      return true;
+    }
+
     // Vérifier Pole-level module basculer
     if (poleId === 'gouvernance' && enabledModules?.gouvernance === false) return false;
     if (poleId === 'diffusion' && enabledModules.diffusion === false) return false;
@@ -289,6 +304,18 @@ export default function LayoutShell({
   const isPoleEnabled = (poleId) => {
     if (poleId === 'accueil' || poleId === 'mon-espace') return true;
 
+    if (poleId === 'vitrine') {
+      const hasVitrineAccess = associationData?.appAccess?.vitrine ?? associationData?.appAccess?.mostrador;
+      if (hasVitrineAccess === false) return false;
+      if (enabledModules?.vitrine === false) return false;
+      return true;
+    }
+
+    if (poleId === 'config') {
+      if (enabledModules?.config === false) return false;
+      return true;
+    }
+
     if (poleId === 'gouvernance' && enabledModules?.gouvernance === false) return false;
     if (poleId === 'tresorerie' && enabledModules?.tresorerie === false) return false;
     if (poleId === 'logistique' && enabledModules?.logistique === false && enabledModules?.commandes === false) return false;
@@ -318,6 +345,10 @@ export default function LayoutShell({
   const isAdministrativeUser = isMasterKeyActive || 
                                currentProfile?.role === 'bureau' || 
                                currentProfile?.role === 'ca' || 
+                               currentProfile?.role === 'mestre' ||
+                               currentProfile?.role === 'admin' ||
+                               currentProfile?.role === 'super-admin' ||
+                               currentProfile?.isSystemAdmin === true ||
                                polesList.some(pole => pole.id !== 'accueil' && pole.id !== 'mon-espace' && isPoleUnlocked(pole.id));
 
   const canSendFeedback = currentProfile?.role === 'admin' || currentProfile?.role === 'mestre' || currentProfile?.role === 'super-admin' || currentProfile?.role === 'bureau' || currentProfile?.isSystemAdmin;
@@ -390,6 +421,8 @@ export default function LayoutShell({
         return <XiloScroll size={size} />;
       case 'mestre':
         return <XiloDrum size={size} />;
+      case 'vitrine':
+        return <XiloGlobe size={size} />;
       case 'config':
         return <XiloSettings size={size} />;
       default:

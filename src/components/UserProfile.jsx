@@ -34,6 +34,7 @@ import { getInstrumentIconPath } from '../utils/instrumentUtils';
 
 import { generateImageCharterPDF, generateMedicalAttestationPDF } from '../utils/pdfGenerator';
 import { useViewSimulator } from '../context/ViewSimulatorContext';
+import { getCarpoolBulkyTerminology } from '../utils/carpoolCascadeUtils';
 
 export default function UserProfile({ user, profileData, associationName, onBack }) {
   const { t, locale } = useTranslation();
@@ -51,6 +52,7 @@ export default function UserProfile({ user, profileData, associationName, onBack
     setFormData,
     saving,
     uploadingPhoto,
+    universe,
     instrumentsDisponibles,
     linkedInstruments,
     tagsDisponibles,
@@ -629,9 +631,11 @@ export default function UserProfile({ user, profileData, associationName, onBack
                 </div>
 
                 <div className="bg-cordel-bg-light/60 p-2 rounded border border-encre-noire/10 flex flex-col">
-                  <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70">{t('userProfile.vehicleTrunkAlfaias')}</span>
+                  <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70">
+                    {getCarpoolBulkyTerminology(universe).trunkLabel || t('userProfile.vehicleTrunkAlfaias')}
+                  </span>
                   <span className="font-extrabold text-cordel-wood mt-0.5">
-                    {t('userProfile.vehicleTrunkAlfaiasCount', { count: profileData.defaultTrunkCapacity !== undefined ? profileData.defaultTrunkCapacity : 1 })}
+                    {t('userProfile.vehicleTrunkAlfaiasCount', { count: profileData.defaultTrunkBulkyCapacity !== undefined ? profileData.defaultTrunkBulkyCapacity : (profileData.defaultTrunkCapacity !== undefined ? profileData.defaultTrunkCapacity : 1) })}
                   </span>
                 </div>
               </div>
@@ -680,6 +684,7 @@ export default function UserProfile({ user, profileData, associationName, onBack
           demanderAttestationSante={demanderAttestationSante}
           instrumentsDisponibles={instrumentsDisponibles}
           linkedInstruments={linkedInstruments}
+          universeId={universe}
           t={t}
         />
       )}

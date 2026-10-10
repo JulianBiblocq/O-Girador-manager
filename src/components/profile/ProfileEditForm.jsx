@@ -50,6 +50,7 @@ export default function ProfileEditForm({
   demanderAttestationSante = true,
   instrumentsDisponibles,
   linkedInstruments = [],
+  universeId = 'maracatu',
   t
 }) {
   const translate = (key, fallback) => {
@@ -512,6 +513,7 @@ export default function ProfileEditForm({
         formData={formData}
         handleChange={handleChange}
         disabled={saving}
+        universeId={universeId}
       />
 
       {/* SECTION : COORDONNÉES BANCAIRES / REMBOURSEMENTS */}

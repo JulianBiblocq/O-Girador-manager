@@ -8,7 +8,7 @@ import PupitresNomenclatureAccordion from './organization/PupitresNomenclatureAc
  * Pôle Configuration - Onglet Inscription, Profils & Pupitres.
  * Restructuré en tableau clair et accordéons compacts pour éliminer le défilement vertical excessif.
  */
-export default function TabOrganization({ formData, handleChange, saving, t }) {
+export default function TabOrganization({ formData, associationData, handleChange, saving, t }) {
   return (
     <div className="flex flex-col gap-2 text-left select-none">
       {/* 1. Tableau récapitulatif des champs d'inscription standards (Actif / Obligatoire) */}
@@ -40,6 +40,7 @@ export default function TabOrganization({ formData, handleChange, saving, t }) {
       <div data-tour="config-profile-pupitres">
         <PupitresNomenclatureAccordion
           formData={formData}
+          associationData={associationData || formData}
           handleChange={handleChange}
           saving={saving}
           t={t}

@@ -1,18 +1,7 @@
 import React from 'react';
 import CordelCard from '../CordelCard';
-import { normalizeInstrumentAttribution } from './inventoryConstants';
+import { normalizeInstrumentAttribution, getInstrumentIcon } from './inventoryConstants';
 import { useTranslation } from '../LanguageContext';
-
-const INSTRUMENT_ICONS = {
-  Alfaia: 'icones/alfaia.svg',
-  Caixa: 'icones/caixa.svg',
-  Agbê: 'icones/agbe.svg',
-  Gonguê: 'icones/gongue.svg',
-  Mineiro: 'icones/mineiro.svg',
-  Apito: 'icones/apito.svg',
-  Timbal: 'icones/timbal.svg',
-  Autre: 'favicon.svg'
-};
 
 /**
  * Composant de présentation sous forme de carte individuelle pour un élément d'inventaire.
@@ -31,7 +20,7 @@ const INSTRUMENT_ICONS = {
 export default function InventoryItemCard({ item, usersMap, onEdit, onDelete, _onToggleBorrow, onDiagnose, inventoryParts, kitCompletionText, t: propT }) {
   const { t: hookT } = useTranslation();
   const t = propT || hookT;
-  const iconPath = INSTRUMENT_ICONS[item.type] || 'favicon.svg';
+  const iconPath = getInstrumentIcon(item.type);
   const attr = normalizeInstrumentAttribution(item);
 
   const getEtatBadgeClass = (etat) => {

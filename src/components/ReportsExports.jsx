@@ -34,8 +34,9 @@ const ARTICLE_PRICES = {
 
 const calculateCarStatus = (car, associationSettings) => {
   const passengers = car.passengers || [];
-  const totalAlfayas = passengers.reduce((sum, p) => sum + (Number(p.alfayasCount) || 0), 0);
-  const alfayasInTrunk = Math.min(totalAlfayas, Number(car.trunkAlfayaCapacity) || 0);
+  const totalAlfayas = passengers.reduce((sum, p) => sum + (Number(p.bulkyCount ?? p.alfayasCount) || 0), 0);
+  const trunkCap = Number(car.trunkBulkyCapacity ?? car.trunkAlfayaCapacity) || 0;
+  const alfayasInTrunk = Math.min(totalAlfayas, trunkCap);
   const alfayasOnSeats = totalAlfayas - alfayasInTrunk;
   const physicalPassengers = passengers.reduce((sum, p) => sum + (p.isPassenger ? 1 : 0), 0);
   const occupiedSeats = physicalPassengers + alfayasOnSeats;

@@ -7,6 +7,7 @@ import CarpoolSearchersQueue from './CarpoolSearchersQueue';
 import CarpoolProposerForm from './CarpoolProposerForm';
 import CarDiscussionModal from './CarDiscussionModal';
 import { useTranslation } from '../LanguageContext';
+import { getCarpoolBulkyTerminology } from '../../utils/carpoolCascadeUtils';
 
 /**
  * Section principale de covoiturage pour un événement.
@@ -16,6 +17,7 @@ import { useTranslation } from '../LanguageContext';
  */
 export default function EventCarpoolSection({
   event, user, profileData: _profileData, isAuthorized,
+  universeId,
   enableCarpoolReimbursement, indemniteKilometrique, convoiDrivers, individualDrivers: _individualDrivers,
   submittingCovoit, joiningVoitureId, setJoiningVoitureId, joinForm, setJoinForm,
   demandeRemboursementKm, handleToggleRemboursement, handleRetirerVoiture, handleQuitterVoiture,
@@ -26,6 +28,9 @@ export default function EventCarpoolSection({
   const { t } = useTranslation();
   const [discussionVoitureId, setDiscussionVoitureId] = useState(null);
   const [doitRentrerDirectSearch, setDoitRentrerDirectSearch] = useState(false);
+
+  const currentUniverse = (universeId || event?.universeId || event?.universe || _profileData?.universe || 'maracatu').toLowerCase().trim();
+  const terminology = getCarpoolBulkyTerminology(currentUniverse);
 
   const voituresList = event.covoiturage?.voitures || [];
   const gauge = calculateCarpoolGauge(event, voituresList);
@@ -112,6 +117,8 @@ export default function EventCarpoolSection({
                     handleAssignPassenger={handleAssignPassenger}
                     handleRemovePassenger={handleRemovePassenger}
                     onOpenDiscussion={(v) => setDiscussionVoitureId(v.id)}
+                    universeId={currentUniverse}
+                    terminology={terminology}
                   />
                 ))}
               </div>
@@ -159,6 +166,8 @@ export default function EventCarpoolSection({
                 submittingCovoit={submittingCovoit}
                 handleProposerVoiture={handleProposerVoiture}
                 onCancel={() => setShowProposerForm(false)}
+                universeId={currentUniverse}
+                terminology={terminology}
               />
             )}
           </div>

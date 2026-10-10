@@ -408,7 +408,27 @@ export const TAB_TO_POLE_MAP = {
   'mestre-orientation': 'mestre',
   'mestre-events': 'mestre',
   'mestre-stage-layout': 'mestre',
-  'mestre-mot-mestre': 'mestre'
+  'mestre-mot-mestre': 'mestre',
+
+  // Vitrine
+  'vitrine-editor': 'vitrine',
+  'vitrine-general': 'vitrine',
+  'vitrine-presentation': 'vitrine',
+  'vitrine-organisateur': 'vitrine',
+  'vitrine-galerie': 'vitrine',
+  'vitrine-recrutement': 'vitrine',
+  'vitrine-reseaux': 'vitrine',
+  'vitrine-apparence': 'vitrine',
+
+  // Configuration
+  'config-identity': 'config',
+  'config-profile': 'config',
+  'config-agenda': 'config',
+  'config-security': 'config',
+  'config-comms': 'config',
+  'config-modules': 'config',
+  'system-admin': 'config',
+  'tag-manager': 'config'
 };
 
 /**
@@ -424,9 +444,9 @@ export const POLE_ALLOWED_KEYWORDS = {
   costumerie: ['costume', 'costumes', 'costumière', 'couture', 'couturier', 'tailleur', 'habillage', 'vestiaire', 'admin', 'bureau', 'direction'],
   studio: ['studio', 'communication', 'porte-voix', 'newsletter', 'admin', 'bureau', 'direction'],
   mestre: ['mestre', 'mestria', 'direction', 'artistique', 'scène', 'scene', 'chef de pupitre'],
-  vitrine: ['vitrine', 'communication', 'webmaster', 'admin', 'bureau'],
+  vitrine: ['vitrine', 'communication', 'webmaster', 'admin', 'bureau', 'direction', 'mestre'],
   pedagogie: ['mestre', 'pédagogie', 'direction'],
-  config: ['config', 'sécurité', 'secrétaire', 'admin', 'bureau', 'direction']
+  config: ['config', 'sécurité', 'secrétaire', 'admin', 'bureau', 'direction', 'mestre']
 };
 
 /**
@@ -464,9 +484,21 @@ export function canAccessPole(poleId, profileData, permissionsMatrice = null, ef
     return true;
   }
 
+  // Rôle Mestre : accès direct garanti aux pôles Mestria, Vitrine et Configuration
+  if (systemRole === 'mestre') {
+    if (poleId === 'mestre' || poleId === 'vitrine' || poleId === 'config') {
+      return true;
+    }
+  }
+
   // Traitement spécifique Mestria
   if (poleId === 'mestre') {
     return canAccessMestre(profileData, permissionsMatrice, effectiveUserTags, breakGlassActive);
+  }
+
+  // Traitement spécifique Vitrine (accessible à Mestre, Bureau, CA, Admin ou tags Direction/Bureau/Vitrine)
+  if (poleId === 'vitrine') {
+    return canEditVitrine(profileData, permissionsMatrice, effectiveUserTags, breakGlassActive);
   }
 
   // En Mode Normal, les étiquettes effectives sont filtrées pour exclure tout tag 'super-admin'
@@ -554,6 +586,20 @@ export function canAccessTabPermission(tabId, poleIdOrProfile, profileDataArg = 
   // Si c'est le pôle mestre ou un onglet de direction artistique, vérifier canAccessMestre
   if (poleId === 'mestre' || tabId.startsWith('mestre-')) {
     if (canAccessMestre(profileData, permissionsMatrice, effectiveUserTags, breakGlassActive)) {
+      return true;
+    }
+  }
+
+  // Si c'est le pôle vitrine ou un sous-onglet vitrine
+  if (poleId === 'vitrine' || tabId.startsWith('vitrine-') || tabId === 'vitrine-editor') {
+    if (systemRole === 'mestre' || canEditVitrine(profileData, permissionsMatrice, effectiveUserTags, breakGlassActive)) {
+      return true;
+    }
+  }
+
+  // Si c'est le pôle configuration ou un sous-onglet de configuration
+  if (poleId === 'config' || tabId.startsWith('config-') || tabId === 'system-admin' || tabId === 'tag-manager') {
+    if (systemRole === 'mestre' || canAccessPole('config', profileData, permissionsMatrice, effectiveUserTags, breakGlassActive)) {
       return true;
     }
   }

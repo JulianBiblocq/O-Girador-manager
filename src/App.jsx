@@ -1245,9 +1245,9 @@ export default function App() {
   // Interception ProtectedRoutes : si le membre standard tente d'accéder à un pôle ou onglet réservé
   useEffect(() => {
     if (!profileData || profileData.isNew) return;
-    // Si l'utilisateur est Mestre (ou direction/admin) et navigue vers le pôle mestre ou config, l'accès est garanti d'office
+    // Si l'utilisateur est Mestre (ou direction/admin) et navigue vers le pôle mestre, vitrine ou config, l'accès est garanti d'office
     const isPrivilegedUser = profileData.role === 'mestre' || profileData.role === 'super-admin' || profileData.role === 'admin' || profileData.isSystemAdmin === true || profileData.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1';
-    if ((currentPole === 'mestre' || currentPole === 'config' || currentPole === null) && isPrivilegedUser) {
+    if ((currentPole === 'mestre' || currentPole === 'vitrine' || currentPole === 'config' || currentPole === null) && isPrivilegedUser) {
       return;
     }
     if (currentPole && currentPole !== 'accueil' && currentPole !== 'mon-espace') {
@@ -1467,6 +1467,20 @@ export default function App() {
   const isModuleEnabled = (tabId, poleId) => {
     if (!enabledModules) return true;
 
+    // Vitrine : vérifier l'accès appAccess (vitrine ou mostrador) et le toggle module
+    if (poleId === 'vitrine' || (tabId && tabId.startsWith('vitrine-'))) {
+      const hasVitrineAccess = associationData?.appAccess?.vitrine ?? associationData?.appAccess?.mostrador;
+      if (hasVitrineAccess === false) return false;
+      if (enabledModules.vitrine === false) return false;
+      return true;
+    }
+
+    // Config : toujours actif au niveau module si pas explicitement désactivé
+    if (poleId === 'config' || (tabId && tabId.startsWith('config-'))) {
+      if (enabledModules.config === false) return false;
+      return true;
+    }
+
     // Vérifier Pôles activation
     if (poleId === 'gouvernance' && enabledModules.gouvernance === false) return false;
     if (poleId === 'diffusion' && enabledModules.diffusion === false) return false;
@@ -1519,7 +1533,8 @@ export default function App() {
   const hasAccessCostumerie = isMasterKeyActive || canAccessPole('costumerie', profileData, permissionsMatrice, userTags) || checkTabAccess('wardrobe-projects', 'costumerie') || checkTabAccess('wardrobe-models', 'costumerie') || checkTabAccess('wardrobe-pieces', 'costumerie') || checkTabAccess('wardrobe-supplies', 'costumerie') || checkTabAccess('wardrobe-tools', 'costumerie') || checkTabAccess('wardrobe-sizes', 'costumerie') || checkTabAccess('varal-costumerie', 'costumerie');
   const hasAccessStudio = isMasterKeyActive || canAccessPole('studio', profileData, permissionsMatrice, userTags) || checkTabAccess('studio-social', 'studio') || checkTabAccess('newsletter', 'studio') || checkTabAccess('varal-photos', 'studio') || checkTabAccess('studio-communication', 'studio') || checkTabAccess('studio-lexique', 'studio');
   const hasAccessPedagogie = isMasterKeyActive || canAccessPole('pedagogie', profileData, permissionsMatrice, userTags) || checkTabAccess('mestre-pedagogy-dashboard', 'pedagogie') || checkTabAccess('varal-manager', 'pedagogie') || checkTabAccess('mestre-pedagogy-qcm', 'pedagogie');
-  const hasAccessConfig = isSystemOrSuperAdminOrMestre || isMasterKeyActive || checkTabAccess('config-identity', 'config') || checkTabAccess('config-profile', 'config') || checkTabAccess('config-agenda', 'config') || checkTabAccess('config-security', 'config') || checkTabAccess('config-comms', 'config') || checkTabAccess('config-modules', 'config');
+  const hasAccessVitrine = isSystemOrSuperAdminOrMestre || isMasterKeyActive || canAccessPole('vitrine', profileData, permissionsMatrice, userTags) || checkTabAccess('vitrine-general', 'vitrine') || checkTabAccess('vitrine-editor', 'vitrine');
+  const hasAccessConfig = isSystemOrSuperAdminOrMestre || isMasterKeyActive || canAccessPole('config', profileData, permissionsMatrice, userTags) || checkTabAccess('config-identity', 'config') || checkTabAccess('config-profile', 'config') || checkTabAccess('config-agenda', 'config') || checkTabAccess('config-security', 'config') || checkTabAccess('config-comms', 'config') || checkTabAccess('config-modules', 'config');
 
   // Fonction utilitaire pour nettoyer les paramètres d'URL (ex: threadId, eventId) lors des navigations
   const cleanUrlParams = (keys = ['threadId', 'eventId']) => {
@@ -2711,65 +2726,90 @@ export default function App() {
                     groupId={profileData?.groupId}
                     profileData={profileData}
                   />
-                ) : (currentTab === 'config-identity' && checkTabAccess('config-identity', 'config')) ? (
+                ) : (currentTab === 'config-identity' && (hasAccessConfig || checkTabAccess('config-identity', 'config'))) ? (
                   <AssociationSettings 
                     groupId={profileData?.groupId}
+                    associationData={associationData}
                     role={profileData?.role}
                     isSystemAdmin={profileData?.isSystemAdmin}
+                    profileData={profileData}
+                    permissionsMatrice={permissionsMatrice}
+                    effectiveUserTags={userTags}
                     activeTabProp="identity"
                     mode="identity-only"
                     onBack={() => handleNavigateToPole('accueil')} 
                     onReopenOnboarding={() => setShowOnboardingWizard(true)}
                   />
-                ) : (currentTab === 'config-profile' && checkTabAccess('config-profile', 'config')) ? (
+                ) : (currentTab === 'config-profile' && (hasAccessConfig || checkTabAccess('config-profile', 'config'))) ? (
                   <AssociationSettings 
                     groupId={profileData?.groupId}
+                    associationData={associationData}
                     role={profileData?.role}
                     isSystemAdmin={profileData?.isSystemAdmin}
+                    profileData={profileData}
+                    permissionsMatrice={permissionsMatrice}
+                    effectiveUserTags={userTags}
                     mode="profile-only"
                     activeTabProp="organisation"
                     onBack={() => handleNavigateToPole('accueil')} 
                   />
-                ) : (currentTab === 'config-agenda' && checkTabAccess('config-agenda', 'config')) ? (
+                ) : (currentTab === 'config-agenda' && (hasAccessConfig || checkTabAccess('config-agenda', 'config'))) ? (
                   <AssociationSettings 
                     groupId={profileData?.groupId}
+                    associationData={associationData}
                     role={profileData?.role}
                     isSystemAdmin={profileData?.isSystemAdmin}
+                    profileData={profileData}
+                    permissionsMatrice={permissionsMatrice}
+                    effectiveUserTags={userTags}
                     mode="agenda-only"
                     activeTabProp="agenda"
                     onBack={() => handleNavigateToPole('accueil')} 
                   />
-                ) : (currentTab === 'config-security' && checkTabAccess('config-security', 'config')) ? (
+                ) : (currentTab === 'config-security' && (hasAccessConfig || checkTabAccess('config-security', 'config'))) ? (
                   <AssociationSettings 
                     groupId={profileData?.groupId}
+                    associationData={associationData}
                     role={profileData?.role}
                     isSystemAdmin={profileData?.isSystemAdmin}
+                    profileData={profileData}
+                    permissionsMatrice={permissionsMatrice}
+                    effectiveUserTags={userTags}
                     activeTabProp="security"
                     mode="security-only"
                     onNavigateToView={(view) => setCurrentTab(view)}
                     onBack={() => handleNavigateToPole('accueil')} 
                   />
-                ) : (currentTab === 'config-comms' && checkTabAccess('config-comms', 'config')) ? (
+                ) : (currentTab === 'config-comms' && (hasAccessConfig || checkTabAccess('config-comms', 'config'))) ? (
                   <AssociationSettings 
                     groupId={profileData?.groupId}
+                    associationData={associationData}
                     role={profileData?.role}
                     isSystemAdmin={profileData?.isSystemAdmin}
+                    profileData={profileData}
+                    permissionsMatrice={permissionsMatrice}
+                    effectiveUserTags={userTags}
                     mode="comms-only"
                     activeTabProp="comms"
                     onBack={() => handleNavigateToPole('accueil')} 
                   />
-                ) : (currentTab === 'config-modules' && checkTabAccess('config-modules', 'config')) ? (
+                ) : (currentTab === 'config-modules' && (hasAccessConfig || checkTabAccess('config-modules', 'config'))) ? (
                   <AssociationSettings 
                     groupId={profileData?.groupId}
+                    associationData={associationData}
                     role={profileData?.role}
                     isSystemAdmin={profileData?.isSystemAdmin}
+                    profileData={profileData}
+                    permissionsMatrice={permissionsMatrice}
+                    effectiveUserTags={userTags}
                     activeTabProp="modules"
                     mode="modules-only"
                     onBack={() => handleNavigateToPole('accueil')} 
                   />
-                ) : (['vitrine-editor', 'vitrine-general', 'vitrine-presentation', 'vitrine-organisateur', 'vitrine-galerie', 'vitrine-recrutement', 'vitrine-reseaux', 'vitrine-apparence'].includes(currentTab) && checkTabAccess('vitrine-editor', 'vitrine')) ? (
+                ) : (['vitrine-editor', 'vitrine-general', 'vitrine-presentation', 'vitrine-organisateur', 'vitrine-galerie', 'vitrine-recrutement', 'vitrine-reseaux', 'vitrine-apparence'].includes(currentTab) && (hasAccessVitrine || checkTabAccess(currentTab, 'vitrine') || checkTabAccess('vitrine-editor', 'vitrine'))) ? (
                   <AssociationSettings 
                     groupId={profileData?.groupId}
+                    associationData={associationData}
                     role={profileData?.role}
                     isSystemAdmin={profileData?.isSystemAdmin}
                     profileData={profileData}

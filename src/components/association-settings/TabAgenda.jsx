@@ -42,7 +42,7 @@ export default function TabAgenda({
       return;
     }
 
-    const isPresta = ['prestation', 'concert', 'spectacle', 'festival', 'parade'].some(k => cleanType.includes(k));
+    const isPresta = ['prestation', 'concert', 'spectacle', 'festival', 'parade', 'deambulation', 'déambulation', 'cortège', 'cortejo', 'carnaval', 'rue'].some(k => cleanType.includes(k));
     const isRepet = cleanType.includes('repetition') || cleanType.includes('répétition');
     const isStage = cleanType.includes('stage');
     const isAtelier = cleanType.includes('atelier');

@@ -52,11 +52,11 @@ export const inspectDriverCarpoolSituation = (event, userId) => {
   const thirdPartyPassengers = thirdPartyItems.filter(p => p.isPassenger !== false);
   const passengersCount = thirdPartyPassengers.length;
 
-  // Instruments tiers (alfaias transportées pour tiers ou transport d'instrument seul)
+  // Instruments tiers (fûts/instruments volumineux transportés pour tiers ou transport d'instrument seul)
   const instrumentsCount = thirdPartyItems.reduce((sum, p) => {
-    const alfayas = Number(p.alfayasCount) || 0;
+    const bulky = Number(p.bulkyCount ?? p.alfayasCount) || 0;
     const isInstrumentOnly = p.isPassenger === false;
-    return sum + (alfayas > 0 ? alfayas : (isInstrumentOnly ? 1 : 0));
+    return sum + (bulky > 0 ? bulky : (isInstrumentOnly ? 1 : 0));
   }, 0);
 
   const hasThirdParty = thirdPartyItems.length > 0 || passengersCount > 0 || instrumentsCount > 0;
@@ -132,7 +132,7 @@ export const applyCarpoolAbsenceCascade = (covoiturage = {}, inscriptions = [], 
 
     thirdPartyItems.forEach(p => {
       const isPhysicalPassenger = p.isPassenger !== false;
-      const hasInstruments = Boolean(p.isPassenger === false || Number(p.alfayasCount) > 0);
+      const hasInstruments = Boolean(p.isPassenger === false || Number(p.bulkyCount ?? p.alfayasCount) > 0);
       const existingIndex = updatedRecherche.findIndex(r => r.uid === p.uid);
 
       if (existingIndex >= 0) {
@@ -212,3 +212,53 @@ export const applyCarpoolAbsenceCascade = (covoiturage = {}, inscriptions = [], 
     updatedInscriptions
   };
 };
+
+/**
+ * Retourne la terminologie d'encombrement / coffre pour le covoiturage selon l'univers culturel.
+ * - Maracatu : 'Alfaias', 'Coffre (Alfaias)', etc.
+ * - Batucada / Samba-Reggae : 'Surdos', 'Coffre (Surdos)', etc.
+ * - Repli générique : 'Fûts / Gros instruments'.
+ *
+ * @param {string} [universeId='maracatu'] Identifiant de l'univers culturel
+ * @returns {Object} Dictionnaire des intitulés et placeholders
+ */
+export function getCarpoolBulkyTerminology(universeId) {
+  const norm = (universeId || 'maracatu').toLowerCase().trim();
+  if (norm === 'maracatu') {
+    return {
+      universe: 'maracatu',
+      instrumentName: 'Alfaias',
+      instrumentSingular: 'Alfaia',
+      trunkLabel: 'Coffre (Alfaias)',
+      trunkVolumeLabel: 'Coffre (Alfaias)',
+      transportedLabel: 'Alfaias transportées :',
+      carCardBadge: 'Alfaias :',
+      placeholder: 'Ex : Je prends 2 Alfaias, mon coffre est plein...',
+      seatsExplanation: 'Nombre d\'Alfaias logeables dans le coffre sans encombrer les sièges.'
+    };
+  }
+  if (norm === 'batucada' || norm === 'sambareggae' || norm === 'samba') {
+    return {
+      universe: norm,
+      instrumentName: 'Surdos',
+      instrumentSingular: 'Surdo',
+      trunkLabel: 'Coffre (Surdos)',
+      trunkVolumeLabel: 'Coffre (Surdos)',
+      transportedLabel: 'Surdos transportés :',
+      carCardBadge: 'Surdos :',
+      placeholder: 'Ex : Je prends 2 Surdos, mon coffre est plein...',
+      seatsExplanation: 'Nombre de Surdos logeables dans le coffre sans encombrer les sièges.'
+    };
+  }
+  return {
+    universe: norm,
+    instrumentName: 'Fûts / Gros instruments',
+    instrumentSingular: 'Fût / Gros instrument',
+    trunkLabel: 'Coffre (Fûts / Gros instruments)',
+    trunkVolumeLabel: 'Coffre (Fûts / Gros instruments)',
+    transportedLabel: 'Fûts / Gros instruments transportés :',
+    carCardBadge: 'Fûts :',
+    placeholder: 'Ex : Je prends 2 fûts, mon coffre est plein...',
+    seatsExplanation: 'Nombre d\'instruments volumineux logeables dans le coffre sans encombrer les sièges.'
+  };
+}

@@ -6,6 +6,8 @@ import {
   INSTRUMENT_TYPES,
   ETAT_OPTIONS,
   INSTRUMENT_ICONS,
+  getInstrumentIcon,
+  getAvailableInstrumentTypes,
   getEtatLabel,
   getKitCompletionText,
   normalizeInstrumentAttribution
@@ -28,6 +30,9 @@ import {
  * @param {Function} props.onDelete Callback de suppression d'un instrument
  * @param {Function} props.onDiagnose Callback d'ouverture du diagnostic atelier
  * @param {Array} props.logisticsKits Kits configurés pour le calcul d'avancement
+ * @param {Array} [props.availableInstrumentTypes] Types d'instruments dynamiques
+ * @param {Object} [props.associationData] Données de configuration de l'association
+ * @param {string} [props.universeId] Identifiant de l'univers culturel actif
  * @param {Function} props.t Fonction de traduction
  */
 export default function InstrumentsDataTable({
@@ -44,10 +49,20 @@ export default function InstrumentsDataTable({
   onDelete,
   onDiagnose,
   logisticsKits = [],
+  availableInstrumentTypes,
+  associationData,
+  universeId,
   t: propT
 }) {
   const { t: hookT } = useTranslation();
   const t = propT || hookT;
+
+  const availableTypes = React.useMemo(() => {
+    return Array.isArray(availableInstrumentTypes) && availableInstrumentTypes.length > 0
+      ? availableInstrumentTypes
+      : getAvailableInstrumentTypes(associationData, universeId);
+  }, [availableInstrumentTypes, associationData, universeId]);
+
   const renderSortChevron = (key) => {
     if (sortConfig.key !== key) {
       return <span className="opacity-30 text-[9px] ml-1 font-bold select-none">↕️</span>;
@@ -165,7 +180,7 @@ export default function InstrumentsDataTable({
             </tr>
           ) : (
             instruments.map((inst) => {
-              const iconPath = INSTRUMENT_ICONS[inst.type] || INSTRUMENT_ICONS.Autre;
+              const iconPath = getInstrumentIcon(inst.type);
               const attr = normalizeInstrumentAttribution(inst);
 
             return (
@@ -204,7 +219,7 @@ export default function InstrumentsDataTable({
                     className="theme-input text-xs font-bold py-1 px-2 bg-cordel-bg-light/90 border-encre-noire/20 hover:border-encre-noire w-full rounded text-cordel-wood cursor-pointer"
                     title={t('logistics.editInstrumentFamilyTitle')}
                   >
-                    {INSTRUMENT_TYPES.map((tVal) => (
+                    {availableTypes.map((tVal) => (
                       <option key={tVal} value={tVal}>{tVal}</option>
                     ))}
                   </select>

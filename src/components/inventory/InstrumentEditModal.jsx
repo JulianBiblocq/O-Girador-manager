@@ -3,7 +3,7 @@ import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { XiloClose } from '../XiloIcons';
 import XiloAvatar from '../XiloAvatar';
-import { INSTRUMENT_TYPES, ETAT_OPTIONS } from './inventoryConstants';
+import { INSTRUMENT_TYPES, ETAT_OPTIONS, getAvailableInstrumentTypes } from './inventoryConstants';
 import InstrumentAttributionSection from './InstrumentAttributionSection';
 import { useTranslation } from '../LanguageContext';
 import useModalEscape from '../../hooks/useModalEscape';
@@ -28,6 +28,9 @@ import useModalEscape from '../../hooks/useModalEscape';
  * @param {Array} props.inventoryParts Pièces détachées de l'inventaire
  * @param {Array} props.logisticsKits Kits logistiques configurés
  * @param {Array} props.supplies Matières premières / fournitures pour le contrôle des stocks
+ * @param {Array} [props.availableInstrumentTypes] Liste dynamique des types de pupitres/instruments
+ * @param {Object} [props.associationData] Données de configuration de l'association
+ * @param {string} [props.universeId] Identifiant de l'univers culturel actif
  * @param {Function} props.t Fonction de traduction
  */
 export default function InstrumentEditModal({
@@ -46,6 +49,9 @@ export default function InstrumentEditModal({
   inventoryParts = [],
   logisticsKits = [],
   supplies = [],
+  availableInstrumentTypes: propAvailableTypes,
+  associationData,
+  universeId,
   t: propT
 }) {
   const { t: hookT } = useTranslation();
@@ -54,6 +60,24 @@ export default function InstrumentEditModal({
   // Fermeture accessible avec touche Échap
   useModalEscape(isOpen, onClose, saving);
 
+  // Résolution dynamique des types d'instruments (Priorité 1: Asso, Priorité 2: Univers, Priorité 3: INSTRUMENT_TYPES)
+  const availableTypes = React.useMemo(() => {
+    const list = Array.isArray(propAvailableTypes) && propAvailableTypes.length > 0
+      ? [...propAvailableTypes]
+      : getAvailableInstrumentTypes(associationData, universeId);
+    
+    // Si le type actuel de l'instrument n'est pas dans la liste, l'inclure avant 'Autre'
+    if (formData.type && !list.some(t => t.toLowerCase() === formData.type.toLowerCase())) {
+      const autreIdx = list.indexOf('Autre');
+      if (autreIdx !== -1) {
+        list.splice(autreIdx, 0, formData.type);
+      } else {
+        list.push(formData.type);
+      }
+    }
+    return list;
+  }, [propAvailableTypes, associationData, universeId, formData.type]);
+
   if (!isOpen) return null;
 
   const handleFormSubmit = (e) => {
@@ -61,7 +85,9 @@ export default function InstrumentEditModal({
     if (onSave) onSave(e);
   };
 
-  const activeKit = (logisticsKits || []).find((k) => k.pupitre === formData.type);
+  const activeKit = (logisticsKits || []).find((k) => 
+    (k.pupitre || '').trim().toLowerCase() === (formData.type || '').trim().toLowerCase()
+  );
   const kitAccessories = activeKit?.accessories || [];
   const checkedKitItems = formData.kitChecklist || [];
 
@@ -122,12 +148,12 @@ export default function InstrumentEditModal({
                   </label>
                   <select
                     name="type"
-                    value={formData.type || 'Alfaia'}
+                    value={formData.type || availableTypes[0] || 'Alfaia'}
                     onChange={onInputChange}
                     disabled={saving}
                     className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
                   >
-                    {INSTRUMENT_TYPES.map((tOpt) => (
+                    {availableTypes.map((tOpt) => (
                       <option key={tOpt} value={tOpt}>{tOpt}</option>
                     ))}
                   </select>

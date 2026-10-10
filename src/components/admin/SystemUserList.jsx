@@ -173,9 +173,15 @@ export default function SystemUserList({
             return appRightsUsage[app] >= quotas[app];
           };
 
+          const isQuotaZero = (app) => quotas[app] === 0;
+
           const seqReached = isQuotaReached('sequenciador');
           const danReached = isQuotaReached('dansador');
           const orchReached = isQuotaReached('orchestrador');
+
+          const seqZero = isQuotaZero('sequenciador');
+          const danZero = isQuotaZero('dansador');
+          const orchZero = isQuotaZero('orchestrador');
 
           const hasChanged = 
             draftRole !== undefined || 
@@ -520,12 +526,16 @@ export default function SystemUserList({
                     Accès Autres Applications (Écriture)
                   </label>
                   <div className="flex flex-wrap gap-x-4 gap-y-2 mt-0.5">
-                    <label className={`flex items-center gap-1.5 cursor-pointer text-[9px] font-bold select-none hover:opacity-80 ${seqReached && !activeAppRights.sequenciador ? 'opacity-50 grayscale' : ''}`}>
+                    <label 
+                      title={seqZero && !activeAppRights.sequenciador ? "Aucun badge disponible dans le forfait de l'association" : (seqReached && !activeAppRights.sequenciador ? "Quota maximum atteint pour l'association" : undefined)}
+                      className={`flex items-center gap-1.5 cursor-pointer text-[9px] font-bold select-none hover:opacity-80 ${(seqReached || seqZero) && !activeAppRights.sequenciador ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
+                    >
                       <input
                         type="checkbox"
                         checked={activeAppRights.sequenciador}
                         onChange={(e) => handleAppRightToggle(userItem.id, 'sequenciador', e.target.checked)}
-                        disabled={savingId === userItem.id || (seqReached && !activeAppRights.sequenciador)}
+                        disabled={savingId === userItem.id || ((seqReached || seqZero) && !activeAppRights.sequenciador)}
+                        title={seqZero && !activeAppRights.sequenciador ? "Aucun badge disponible dans le forfait de l'association" : (seqReached && !activeAppRights.sequenciador ? "Quota maximum atteint pour l'association" : undefined)}
                         className="w-3 h-3 cursor-pointer"
                       />
                       <span>
@@ -535,12 +545,16 @@ export default function SystemUserList({
                         )}
                       </span>
                     </label>
-                    <label className={`flex items-center gap-1.5 cursor-pointer text-[9px] font-bold select-none hover:opacity-80 ${danReached && !activeAppRights.dansador ? 'opacity-50 grayscale' : ''}`}>
+                    <label 
+                      title={danZero && !activeAppRights.dansador ? "Aucun badge disponible dans le forfait de l'association" : (danReached && !activeAppRights.dansador ? "Quota maximum atteint pour l'association" : undefined)}
+                      className={`flex items-center gap-1.5 cursor-pointer text-[9px] font-bold select-none hover:opacity-80 ${(danReached || danZero) && !activeAppRights.dansador ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
+                    >
                       <input
                         type="checkbox"
                         checked={activeAppRights.dansador}
                         onChange={(e) => handleAppRightToggle(userItem.id, 'dansador', e.target.checked)}
-                        disabled={savingId === userItem.id || (danReached && !activeAppRights.dansador)}
+                        disabled={savingId === userItem.id || ((danReached || danZero) && !activeAppRights.dansador)}
+                        title={danZero && !activeAppRights.dansador ? "Aucun badge disponible dans le forfait de l'association" : (danReached && !activeAppRights.dansador ? "Quota maximum atteint pour l'association" : undefined)}
                         className="w-3 h-3 cursor-pointer"
                       />
                       <span>
@@ -550,12 +564,16 @@ export default function SystemUserList({
                         )}
                       </span>
                     </label>
-                    <label className={`flex items-center gap-1.5 cursor-pointer text-[9px] font-bold select-none hover:opacity-80 ${orchReached && !activeAppRights.orchestrador ? 'opacity-50 grayscale' : ''}`}>
+                    <label 
+                      title={orchZero && !activeAppRights.orchestrador ? "Aucun badge disponible dans le forfait de l'association" : (orchReached && !activeAppRights.orchestrador ? "Quota maximum atteint pour l'association" : undefined)}
+                      className={`flex items-center gap-1.5 cursor-pointer text-[9px] font-bold select-none hover:opacity-80 ${(orchReached || orchZero) && !activeAppRights.orchestrador ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
+                    >
                       <input
                         type="checkbox"
                         checked={activeAppRights.orchestrador}
                         onChange={(e) => handleAppRightToggle(userItem.id, 'orchestrador', e.target.checked)}
-                        disabled={savingId === userItem.id || (orchReached && !activeAppRights.orchestrador)}
+                        disabled={savingId === userItem.id || ((orchReached || orchZero) && !activeAppRights.orchestrador)}
+                        title={orchZero && !activeAppRights.orchestrador ? "Aucun badge disponible dans le forfait de l'association" : (orchReached && !activeAppRights.orchestrador ? "Quota maximum atteint pour l'association" : undefined)}
                         className="w-3 h-3 cursor-pointer"
                       />
                       <span>

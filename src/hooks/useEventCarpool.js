@@ -4,15 +4,24 @@ import { db } from '../firebase';
 import useConfirm from './useConfirm';
 import {
   inspectDriverCarpoolSituation,
-  buildDriverDepartureWarningMessage
+  buildDriverDepartureWarningMessage,
+  getCarpoolBulkyTerminology
 } from '../utils/carpoolCascadeUtils';
+
+export { getCarpoolBulkyTerminology };
 
 export const calculateCarStatus = (car, associationSettings) => {
   const passengers = (car?.passengers || car?.passagers || []);
 
-  const totalAlfayas = passengers.reduce((sum, p) => sum + (Number(p?.alfayasCount) || 0), 0);
-  const alfayasInTrunk = Math.min(totalAlfayas, Number(car?.trunkAlfayaCapacity) || 0);
-  const alfayasOnSeats = totalAlfayas - alfayasInTrunk;
+  const totalBulky = passengers.reduce((sum, p) => {
+    const val = p?.bulkyCount !== undefined ? Number(p.bulkyCount) : (Number(p?.alfayasCount) || 0);
+    return sum + (isNaN(val) ? 0 : val);
+  }, 0);
+  const trunkCapacity = car?.trunkBulkyCapacity !== undefined
+    ? (Number(car.trunkBulkyCapacity) || 0)
+    : (Number(car?.trunkAlfayaCapacity) || 0);
+  const bulkyInTrunk = Math.min(totalBulky, trunkCapacity);
+  const bulkyOnSeats = Math.max(0, totalBulky - bulkyInTrunk);
 
   const physicalPassengers = passengers.reduce((sum, p) => sum + (p?.isPassenger ? 1 : 0), 0);
   
@@ -20,7 +29,7 @@ export const calculateCarStatus = (car, associationSettings) => {
   const placesReserveesExternes = Number(car?.placesReserveesExternes) || 0;
   const motifReserveesExternes = car?.motifReserveesExternes || '';
 
-  const occupiedSeats = physicalPassengers + alfayasOnSeats + placesReserveesExternes;
+  const occupiedSeats = physicalPassengers + bulkyOnSeats + placesReserveesExternes;
   const availableSeats = (Number(car?.passengerSeats) || 0) - occupiedSeats;
 
   const isFull = availableSeats === 0;
@@ -38,9 +47,13 @@ export const calculateCarStatus = (car, associationSettings) => {
   const isOverbooked = availableSeats < 0;
 
   return {
-    totalAlfayas,
-    alfayasInTrunk,
-    alfayasOnSeats,
+    totalBulky,
+    totalAlfayas: totalBulky,
+    bulkyInTrunk,
+    alfayasInTrunk: bulkyInTrunk,
+    bulkyOnSeats,
+    alfayasOnSeats: bulkyOnSeats,
+    trunkCapacity,
     physicalPassengers,
     placesReserveesExternes,
     motifReserveesExternes,
@@ -113,10 +126,13 @@ export function useEventCarpool({
   
   // Pré-remplissage depuis le profil membre
   const defaultSeats = profileData?.defaultPassengerSeats !== undefined ? profileData.defaultPassengerSeats : 3;
-  const defaultTrunk = profileData?.defaultTrunkCapacity !== undefined ? profileData.defaultTrunkCapacity : 1;
+  const defaultTrunk = profileData?.defaultTrunkBulkyCapacity !== undefined
+    ? profileData.defaultTrunkBulkyCapacity
+    : (profileData?.defaultTrunkCapacity !== undefined ? profileData.defaultTrunkCapacity : 1);
 
   const [voitureForm, setVoitureForm] = useState({
     passengerSeats: defaultSeats,
+    trunkBulkyCapacity: defaultTrunk,
     trunkAlfayaCapacity: defaultTrunk,
     placesReserveesExternes: 0,
     motifReserveesExternes: '',
@@ -128,6 +144,7 @@ export function useEventCarpool({
   const [joiningVoitureId, setJoiningVoitureId] = useState(null);
   const [joinForm, setJoinForm] = useState({
     isPassenger: true,
+    bulkyCount: 0,
     alfayasCount: 0,
     doitRentrerDirect: false
   });
@@ -165,12 +182,14 @@ export function useEventCarpool({
           );
         }
 
+        const trunkCap = parseInt(voitureForm.trunkBulkyCapacity ?? voitureForm.trunkAlfayaCapacity, 10) || 0;
         const newVoiture = {
           id: `voiture_${user.uid}`,
           chauffeurId: user.uid,
           chauffeurNom: `${profileData?.prenom} ${profileData?.nom}`,
           passengerSeats: parseInt(voitureForm.passengerSeats, 10) || 0,
-          trunkAlfayaCapacity: parseInt(voitureForm.trunkAlfayaCapacity, 10) || 0,
+          trunkBulkyCapacity: trunkCap,
+          trunkAlfayaCapacity: trunkCap,
           placesReserveesExternes: Math.max(0, parseInt(voitureForm.placesReserveesExternes, 10) || 0),
           motifReserveesExternes: (voitureForm.motifReserveesExternes || '').trim(),
           materielCharge: (voitureForm.materielCharge || '').trim(),
@@ -202,6 +221,7 @@ export function useEventCarpool({
       setShowProposerForm(false);
       setVoitureForm({
         passengerSeats: defaultSeats,
+        trunkBulkyCapacity: defaultTrunk,
         trunkAlfayaCapacity: defaultTrunk,
         placesReserveesExternes: 0,
         motifReserveesExternes: '',
@@ -222,11 +242,13 @@ export function useEventCarpool({
     if (!user?.uid) return;
 
     const cleanPassengers = (voiture.passengers || []).filter(p => p.uid !== user.uid);
+    const bulkyCount = parseInt(joinForm.bulkyCount ?? joinForm.alfayasCount, 10) || 0;
     const candidatePassenger = {
       uid: user.uid,
       nom: `${profileData?.prenom} ${profileData?.nom}`,
       isPassenger: joinForm.isPassenger,
-      alfayasCount: joinForm.alfayasCount,
+      bulkyCount: bulkyCount,
+      alfayasCount: bulkyCount,
       doitRentrerDirect: Boolean(joinForm.doitRentrerDirect)
     };
     const simulatedCar = {
@@ -356,7 +378,7 @@ export function useEventCarpool({
       const thirdPartyItems = (targetCar.passengers || targetCar.passagers || []).filter(p => p && p.uid !== user.uid);
       if (thirdPartyItems.length > 0) {
         const passCount = thirdPartyItems.filter(p => p.isPassenger !== false).length;
-        const instCount = thirdPartyItems.reduce((sum, p) => sum + (Number(p.alfayasCount) || (p.isPassenger === false ? 1 : 0)), 0);
+        const instCount = thirdPartyItems.reduce((sum, p) => sum + (Number(p.bulkyCount ?? p.alfayasCount) || (p.isPassenger === false ? 1 : 0)), 0);
         const warningMsg = buildDriverDepartureWarningMessage({
           passengersCount: passCount,
           instrumentsCount: instCount,
@@ -395,7 +417,7 @@ export function useEventCarpool({
 
         passengersToQueue.forEach(p => {
           const isPhysical = p.isPassenger !== false;
-          const hasInst = Boolean(p.isPassenger === false || Number(p.alfayasCount) > 0);
+          const hasInst = Boolean(p.isPassenger === false || Number(p.bulkyCount ?? p.alfayasCount) > 0);
           const existingIdx = recherchePlace.findIndex(r => r.uid === p.uid);
 
           if (existingIdx >= 0) {
@@ -614,6 +636,7 @@ export function useEventCarpool({
           uid: passengerUid,
           nom: passengerNom,
           isPassenger: true,
+          bulkyCount: 0,
           alfayasCount: 0,
           isInvite: !!isInvite
         };

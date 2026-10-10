@@ -77,7 +77,8 @@ export function useUserProfile(user, profileData, t) {
     hasVehicle: profileData?.hasVehicle || false,
     vehicleType: profileData?.vehicleType || 'Berline',
     defaultPassengerSeats: profileData?.defaultPassengerSeats !== undefined ? profileData.defaultPassengerSeats : 3,
-    defaultTrunkCapacity: profileData?.defaultTrunkCapacity !== undefined ? profileData.defaultTrunkCapacity : 1,
+    defaultTrunkCapacity: profileData?.defaultTrunkCapacity !== undefined ? profileData.defaultTrunkCapacity : (profileData?.defaultTrunkBulkyCapacity !== undefined ? profileData.defaultTrunkBulkyCapacity : 1),
+    defaultTrunkBulkyCapacity: profileData?.defaultTrunkBulkyCapacity !== undefined ? profileData.defaultTrunkBulkyCapacity : (profileData?.defaultTrunkCapacity !== undefined ? profileData.defaultTrunkCapacity : 1),
     hasRoofBars: profileData?.hasRoofBars || false,
     hasTowHitch: profileData?.hasTowHitch || false,
     iban: profileData?.iban || profileData?.ribIban || ''
@@ -89,6 +90,7 @@ export function useUserProfile(user, profileData, t) {
   const [loadingInst, setLoadingInst] = useState(true);
   const [droitImageDocUrl, setDroitImageDocUrl] = useState('');
   const [aptitudeMedicaleDocUrl, setAptitudeMedicaleDocUrl] = useState('');
+  const [universe, setUniverse] = useState(profileData?.universe || 'maracatu');
   const [fieldsConfig, setFieldsConfig] = useState(null);
   const [instrumentsDisponibles, setInstrumentsDisponibles] = useState(DEFAULT_INSTRUMENTS);
   const [linkedInstruments, setLinkedInstruments] = useState([]);
@@ -146,7 +148,8 @@ export function useUserProfile(user, profileData, t) {
       hasVehicle: profileData?.hasVehicle || false,
       vehicleType: profileData?.vehicleType || 'Berline',
       defaultPassengerSeats: profileData?.defaultPassengerSeats !== undefined ? profileData.defaultPassengerSeats : 3,
-      defaultTrunkCapacity: profileData?.defaultTrunkCapacity !== undefined ? profileData.defaultTrunkCapacity : 1,
+      defaultTrunkCapacity: profileData?.defaultTrunkCapacity !== undefined ? profileData.defaultTrunkCapacity : (profileData?.defaultTrunkBulkyCapacity !== undefined ? profileData.defaultTrunkBulkyCapacity : 1),
+      defaultTrunkBulkyCapacity: profileData?.defaultTrunkBulkyCapacity !== undefined ? profileData.defaultTrunkBulkyCapacity : (profileData?.defaultTrunkCapacity !== undefined ? profileData.defaultTrunkCapacity : 1),
       hasRoofBars: profileData?.hasRoofBars || false,
       hasTowHitch: profileData?.hasTowHitch || false,
       iban: profileData?.iban || profileData?.ribIban || ''
@@ -213,6 +216,9 @@ export function useUserProfile(user, profileData, t) {
     const unsubscribe = onSnapshot(assocRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
+        if (data.universe) {
+          setUniverse(data.universe.toLowerCase().trim());
+        }
         setDemanderDroitImage(data.demanderDroitImage || false);
         setDemanderAttestationSante(data.demanderAttestationSante || false);
         if (data.fieldsConfig) {
@@ -485,7 +491,8 @@ export function useUserProfile(user, profileData, t) {
         hasVehicle: Boolean(formData.hasVehicle),
         vehicleType: formData.hasVehicle ? (formData.vehicleType || 'Berline') : (profileData?.vehicleType || 'Berline'),
         defaultPassengerSeats: formData.hasVehicle ? (parseInt(formData.defaultPassengerSeats, 10) || 0) : (profileData?.defaultPassengerSeats !== undefined ? profileData.defaultPassengerSeats : 3),
-        defaultTrunkCapacity: formData.hasVehicle ? (parseInt(formData.defaultTrunkCapacity, 10) || 0) : (profileData?.defaultTrunkCapacity !== undefined ? profileData.defaultTrunkCapacity : 1),
+        defaultTrunkCapacity: formData.hasVehicle ? (parseInt(formData.defaultTrunkCapacity ?? formData.defaultTrunkBulkyCapacity, 10) || 0) : (profileData?.defaultTrunkCapacity !== undefined ? profileData.defaultTrunkCapacity : (profileData?.defaultTrunkBulkyCapacity !== undefined ? profileData.defaultTrunkBulkyCapacity : 1)),
+        defaultTrunkBulkyCapacity: formData.hasVehicle ? (parseInt(formData.defaultTrunkBulkyCapacity ?? formData.defaultTrunkCapacity, 10) || 0) : (profileData?.defaultTrunkBulkyCapacity !== undefined ? profileData.defaultTrunkBulkyCapacity : (profileData?.defaultTrunkCapacity !== undefined ? profileData.defaultTrunkCapacity : 1)),
         hasRoofBars: formData.hasVehicle ? Boolean(formData.hasRoofBars) : false,
         hasTowHitch: formData.hasVehicle ? Boolean(formData.hasTowHitch) : false,
         iban: formData.iban ? formData.iban.trim().toUpperCase() : (profileData?.iban || '')
@@ -620,6 +627,7 @@ export function useUserProfile(user, profileData, t) {
     loadingInst,
     droitImageDocUrl,
     aptitudeMedicaleDocUrl,
+    universe,
     fieldsConfig,
     instrumentsDisponibles,
     linkedInstruments,

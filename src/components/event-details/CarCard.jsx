@@ -1,21 +1,20 @@
 import React from 'react';
-import { calculateCarStatus } from '../../hooks/useEventCarpool';
+import { calculateCarStatus, getCarpoolBulkyTerminology } from '../../hooks/useEventCarpool';
 import { useTranslation } from '../LanguageContext';
 
 /**
  * Carte individuelle représentant un véhicule dans le covoiturage.
  * Affiche l'état des places, les passagers, le badge retour direct et l'accès à la discussion d'équipage.
- *
- * @param {Object} props
  */
 export default function CarCard({
-  voiture, event, user, isAuthorized, enableCarpoolReimbursement, reimbursementRule,
-  submittingCovoit, joiningVoitureId, setJoiningVoitureId, joinForm, setJoinForm,
-  demandeRemboursementKm, handleToggleRemboursement, handleRetirerVoiture,
-  handleQuitterVoiture, handleConfirmJoin, handleAssignPassenger, handleRemovePassenger,
-  onOpenDiscussion
+  voiture, event, user, isAuthorized, enableCarpoolReimbursement, reimbursementRule, submittingCovoit,
+  joiningVoitureId, setJoiningVoitureId, joinForm, setJoinForm, demandeRemboursementKm,
+  handleToggleRemboursement, handleRetirerVoiture, handleQuitterVoiture, handleConfirmJoin,
+  handleAssignPassenger, handleRemovePassenger, onOpenDiscussion, universeId, terminology
 }) {
   const { t } = useTranslation();
+  const currentUniverse = (universeId || event?.universeId || event?.universe || 'maracatu').toLowerCase().trim();
+  const term = terminology || getCarpoolBulkyTerminology(currentUniverse);
   const status = calculateCarStatus(voiture, { enableCarpoolReimbursement, reimbursementRule });
   const isUserChauffeur = voiture.chauffeurId === user?.uid;
   const passengersList = voiture.passengers || voiture.passagers || [];
@@ -74,7 +73,7 @@ export default function CarCard({
 
         {/* Détail Coffre & Matériel */}
         <div className="flex flex-col gap-0.5 text-[11px] font-semibold text-encre-noire opacity-90 mb-2">
-          <span>🥁 <strong className="text-cordel-wood">Alfaias :</strong> {status.alfayasInTrunk}/{voiture.trunkAlfayaCapacity || 0}</span>
+          <span>🥁 <strong className="text-cordel-wood">{term.carCardBadge || `${term.instrumentName} :`}</strong> {status.bulkyInTrunk ?? status.alfayasInTrunk ?? 0}/{voiture.trunkBulkyCapacity ?? voiture.trunkAlfayaCapacity ?? 0}</span>
           {voiture.materielCharge && <span>📦 <strong className="text-cordel-wood">Matériel asso :</strong> {voiture.materielCharge}</span>}
           {voiture.materielTransporte && <span>💼 <strong className="text-cordel-wood">Coffre :</strong> {voiture.materielTransporte}</span>}
         </div>
@@ -131,8 +130,18 @@ export default function CarCard({
               <span>{t('agenda.carpoolOfferSeats') ? `${t('agenda.carpoolOfferSeats')} (1 place)` : "Je monte dans la voiture (1 place)"}</span>
             </label>
             <label className="flex items-center justify-between gap-2">
-              <span>Alfaias transportées :</span>
-              <input type="number" min="0" max="5" value={joinForm.alfayasCount} onChange={(e) => setJoinForm(prev => ({ ...prev, alfayasCount: Math.max(0, parseInt(e.target.value) || 0) }))} className="theme-input text-xs font-bold py-0.5 px-1 w-10 text-center bg-white" />
+              <span>{term.transportedLabel || `${term.instrumentName} transporté(e)s :`}</span>
+              <input
+                type="number"
+                min="0"
+                max="5"
+                value={joinForm.bulkyCount !== undefined ? joinForm.bulkyCount : (joinForm.alfayasCount || 0)}
+                onChange={(e) => {
+                  const val = Math.max(0, parseInt(e.target.value, 10) || 0);
+                  setJoinForm(prev => ({ ...prev, bulkyCount: val, alfayasCount: val }));
+                }}
+                className="theme-input text-xs font-bold py-0.5 px-1 w-10 text-center bg-white"
+              />
             </label>
             <label className="flex items-center gap-1.5 cursor-pointer select-none text-[10px] text-amber-900 bg-amber-50 p-1 rounded border border-amber-200">
               <input type="checkbox" checked={Boolean(joinForm.doitRentrerDirect)} onChange={(e) => setJoinForm(prev => ({ ...prev, doitRentrerDirect: e.target.checked }))} className="accent-amber-700" />
@@ -169,24 +178,12 @@ export default function CarCard({
 
           <div className="flex items-center gap-1.5">
             {isUserChauffeur ? (
-              <button type="button" disabled={submittingCovoit} onClick={() => handleRetirerVoiture(voiture.id)} className="text-[9px] font-black uppercase bg-red-100 hover:bg-red-200 text-red-700 border border-red-300 px-2 py-1 rounded">
-                Retirer voiture
-              </button>
+              <button type="button" disabled={submittingCovoit} onClick={() => handleRetirerVoiture(voiture.id)} className="text-[9px] font-black uppercase bg-red-100 hover:bg-red-200 text-red-700 border border-red-300 px-2 py-1 rounded">Retirer voiture</button>
             ) : isUserPassager ? (
-              <button type="button" disabled={submittingCovoit} onClick={() => handleQuitterVoiture(voiture.id)} className="text-[9px] font-black uppercase bg-neutral-200 hover:bg-neutral-300 text-encre-noire border border-encre-noire px-2 py-1 rounded">
-                Quitter
-              </button>
+              <button type="button" disabled={submittingCovoit} onClick={() => handleQuitterVoiture(voiture.id)} className="text-[9px] font-black uppercase bg-neutral-200 hover:bg-neutral-300 text-encre-noire border border-encre-noire px-2 py-1 rounded">Quitter</button>
             ) : (
               joiningVoitureId !== voiture.id && (
-                <button
-                  type="button"
-                  disabled={submittingCovoit}
-                  onClick={() => {
-                    setJoiningVoitureId(voiture.id);
-                    setJoinForm({ isPassenger: true, alfayasCount: 0, doitRentrerDirect: false });
-                  }}
-                  className="text-[9px] font-black uppercase bg-cordel-vert hover:bg-cordel-vert/90 text-encre-noire border border-encre-noire px-2.5 py-1 rounded shadow-xs"
-                >S'inscrire</button>
+                <button type="button" disabled={submittingCovoit} onClick={() => { setJoiningVoitureId(voiture.id); setJoinForm({ isPassenger: true, bulkyCount: 0, alfayasCount: 0, doitRentrerDirect: false }); }} className="text-[9px] font-black uppercase bg-cordel-vert hover:bg-cordel-vert/90 text-encre-noire border border-encre-noire px-2.5 py-1 rounded shadow-xs">S'inscrire</button>
               )
             )}
           </div>

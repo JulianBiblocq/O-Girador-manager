@@ -324,3 +324,31 @@ export const resolvePedagogicalRoles = (member) => {
     icon
   };
 };
+
+/**
+ * Détermine si un membre possède le statut CA ou Bureau (porteur d'un badge CA, Bureau,
+ * Président, Trésorier, Secrétaire ou d'un rôle d'administration étendu).
+ *
+ * @param {Object} profile Profil ou données du membre
+ * @param {Array} userTags Étiquettes additionnelles (optionnel)
+ * @returns {boolean} true si le membre a accès aux contenus restreints CA / Bureau
+ */
+export const isMemberCaOrBureau = (profile, userTags = []) => {
+  if (!profile && (!userTags || userTags.length === 0)) return false;
+  const role = String(profile?.role || '').toLowerCase().trim();
+  if (role === 'mestre' || role === 'super-admin' || role === 'admin' || role === 'bureau' || role === 'ca' || role === 'secretaire') {
+    return true;
+  }
+  if (profile?.isSystemAdmin === true) return true;
+
+  const effectiveTags = getEffectiveMemberTags(profile || {});
+  const combined = [
+    ...effectiveTags,
+    ...(Array.isArray(userTags) ? userTags : [])
+  ];
+
+  return combined.some(t => {
+    const k = getCanonicalTagKey(t);
+    return k === 'ca' || k === 'bureau' || k === 'president' || k === 'tresorier' || k === 'secretaire';
+  });
+};

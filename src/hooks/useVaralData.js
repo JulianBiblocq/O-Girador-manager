@@ -8,6 +8,7 @@ import { normalizeVaralCategoryId, resolveProjectRopeLabel } from '../utils/docu
 import { useTranslation } from '../components/LanguageContext';
 import useConfirm from './useConfirm';
 import { useViewSimulator } from '../context/ViewSimulatorContext';
+import { isMemberCaOrBureau } from '../utils/memberUtils';
 
 /**
  * Catégories par défaut suspendues sur le Varal de documents.
@@ -120,6 +121,9 @@ export default function useVaralData({
   // Sur l'accueil (ou le varal général de l'accueil), un encadrant doit voir le Varal comme les élèves (aucun document masqué).
   const isManagementView = Boolean(poleId && poleId !== 'accueil');
   const canSeeHidden = isAuthorized && isManagementView;
+
+  // Détection des droits d'accès aux documents et réunions restreints au Conseil d'Administration / Bureau
+  const canAccessCa = isAuthorized || isMemberCaOrBureau(activeProfile, activeUserTags);
 
   // 1. Écouteur Firestore pour tous les documents réels de l'association (sans troncature)
   useEffect(() => {
@@ -374,6 +378,13 @@ export default function useVaralData({
         catId = 'TutosFabrication';
       }
 
+      // Règle d'audience CA vs Publique :
+      // Les documents à portée 'ca' sont strictement réservés aux membres porteurs du badge CA/Bureau et encadrants
+      const isDocCa = (docItem.audience === 'ca' || docItem.portee === 'ca');
+      if (isDocCa && !canAccessCa) {
+        return;
+      }
+
       // Si le document est visible OU si l'utilisateur possède les droits de gestion dans un pôle métier
       if (!docItem.isHidden || canSeeHidden) {
         if (!groups[catId]) {
@@ -436,6 +447,12 @@ export default function useVaralData({
         groups['ComptesRendus'] = [];
       }
       reunions.forEach(reunion => {
+        // Filtrage de portée CA vs Publique pour les réunions
+        const isReunionCa = (reunion.audience === 'ca' || reunion.portee === 'ca');
+        if (isReunionCa && !canAccessCa) {
+          return;
+        }
+
         const eventDate = new Date(reunion.date);
         const now = new Date();
         const isPast = eventDate <= now;
@@ -456,6 +473,8 @@ export default function useVaralData({
             type: 'reunion',
             typeDoc: 'reunion',
             date: reunion.date,
+            audience: reunion.audience || reunion.portee || 'publique',
+            portee: reunion.audience || reunion.portee || 'publique',
             isHidden: isHidden,
             isPast: isPast,
             isPublished: isPublished,

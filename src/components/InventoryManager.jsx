@@ -26,7 +26,7 @@ import CarpoolBlock from './association-settings/blocks/CarpoolBlock';
 import { HorizontalRibbonContainer } from './navigation/HorizontalTabRibbon';
 import CollectiveKitsManager from './logistics/CollectiveKitsManager';
 
-import { getKitCompletionRatio, getKitCompletionText } from './inventory/inventoryConstants';
+import { getKitCompletionRatio, getKitCompletionText, getAvailableInstrumentTypes } from './inventory/inventoryConstants';
 
 /**
  * Gestionnaire et routeur d'onglets pour le parc d'instruments, les kits,
@@ -83,6 +83,12 @@ export default function InventoryManager({
   const [filter, setFilter] = useState('all');
   const [viewMode, setViewMode] = useState('table');
   const [sortConfig, setSortConfig] = useState({ key: 'nom', direction: 'asc' });
+
+  // Résolution dynamique des types d'instruments selon l'univers et la configuration de l'association
+  const currentUniverse = (settings?.universeId || settings?.universe || 'maracatu').toLowerCase().trim();
+  const availableInstrumentTypes = useMemo(() => {
+    return getAvailableInstrumentTypes(settings, currentUniverse);
+  }, [settings, currentUniverse]);
 
   // Hook centralisé de données d'inventaire
   const {
@@ -367,6 +373,9 @@ export default function InventoryManager({
               onDelete={(id) => handleDeleteWithSupplies(id, supplies)}
               onDiagnose={setDiagnosticInstrument}
               logisticsKits={settings?.logisticsKits}
+              availableInstrumentTypes={availableInstrumentTypes}
+              associationData={settings}
+              universeId={currentUniverse}
               t={t}
             />
           ) : (
@@ -407,6 +416,9 @@ export default function InventoryManager({
         inventoryParts={inventoryParts}
         logisticsKits={settings?.logisticsKits}
         supplies={supplies}
+        availableInstrumentTypes={availableInstrumentTypes}
+        associationData={settings}
+        universeId={currentUniverse}
         t={t}
       />
 

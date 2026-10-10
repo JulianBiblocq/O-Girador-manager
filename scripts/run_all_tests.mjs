@@ -144,7 +144,10 @@ const testScripts = [
   'scripts/test_use_hardware_back_safety.mjs',
   'scripts/test_forum_thread_context_bar.mjs',
   'scripts/test_dashboard_lcp_cls_optimization.mjs',
-  'scripts/test_commission_varal_rich_content.mjs'
+  'scripts/test_commission_varal_rich_content.mjs',
+  'scripts/test_multi_universe_presets.mjs',
+  'scripts/test_nomenclature_pupitres_multi_universe.mjs',
+  'scripts/test_inventory_carpool_multi_universe.mjs'
 ];
 
 console.log("===============================================================");

@@ -156,9 +156,19 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
         } else {
           setFieldsConfig(DEFAULT_FIELDS_CONFIG);
         }
-        if (data.quotas) {
-          setQuotas(data.quotas);
-        }
+        const rawQuotas = data.quotas || {};
+        const effectiveQuotas = {
+          sequenciador: (data.appAccess?.sequenciador === false || data.appAccess?.sequenceur === false || data.mestreSequenciadorQuota === 0 || rawQuotas.sequenciador === 0) 
+            ? 0 
+            : (rawQuotas.sequenciador ?? 20),
+          dansador: (data.appAccess?.dancador === false || data.appAccess?.dansador === false || data.mestreDansadorQuota === 0 || rawQuotas.dansador === 0) 
+            ? 0 
+            : (rawQuotas.dansador ?? 10),
+          orchestrador: (data.appAccess?.orchestrador === false || data.mestreOrchestradorQuota === 0 || rawQuotas.orchestrador === 0) 
+            ? 0 
+            : (rawQuotas.orchestrador ?? 10)
+        };
+        setQuotas(effectiveQuotas);
       }
     }, (error) => {
       console.error("SystemAdminPanel - Erreur onSnapshot associations :", error);
@@ -257,13 +267,25 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
     };
 
     if (appRights.sequenciador !== undefined) {
-      updatePayload.canWriteSequenciador = appRights.sequenciador;
+      if (appRights.sequenciador && quotas.sequenciador === 0 && !currentUserItem.canWriteSequenciador) {
+        // Bloqué : quota à zéro
+      } else {
+        updatePayload.canWriteSequenciador = appRights.sequenciador;
+      }
     }
     if (appRights.dansador !== undefined) {
-      updatePayload.canWriteDansador = appRights.dansador;
+      if (appRights.dansador && quotas.dansador === 0 && !currentUserItem.canWriteDansador) {
+        // Bloqué : quota à zéro
+      } else {
+        updatePayload.canWriteDansador = appRights.dansador;
+      }
     }
     if (appRights.orchestrador !== undefined) {
-      updatePayload.canWriteOrchestrador = appRights.orchestrador;
+      if (appRights.orchestrador && quotas.orchestrador === 0 && !currentUserItem.canWriteOrchestrador) {
+        // Bloqué : quota à zéro
+      } else {
+        updatePayload.canWriteOrchestrador = appRights.orchestrador;
+      }
     }
 
     if (userDraft.instrument !== undefined) {

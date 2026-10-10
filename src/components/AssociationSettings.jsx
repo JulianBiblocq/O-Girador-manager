@@ -23,6 +23,7 @@ export { DEFAULT_FIELDS_CONFIG, DEFAULT_VARAL_CATEGORIES, DEFAULT_INSTRUMENTS } 
 
 export default function AssociationSettings({ 
   groupId, 
+  associationData,
   onBack, 
   role, 
   isSystemAdmin, 
@@ -74,7 +75,7 @@ export default function AssociationSettings({
     toastMessage,
     handleSaveHelloAssoKey,
     handleSave
-  } = useAssociationSettings(groupId, isAuthorized, onBack, t);
+  } = useAssociationSettings(groupId, isAuthorized, onBack, t, associationData);
 
   const [activeSettingsTab, setActiveSettingsTab] = useState(activeTabProp || 'identity');
   const [vitrineSubTab, setVitrineSubTab] = useState('general');
@@ -132,6 +133,7 @@ export default function AssociationSettings({
         return (
           <TabOrganization
             formData={formData}
+            associationData={associationData || formData}
             handleChange={handleChange}
             saving={saving}
             t={t}

@@ -29,7 +29,7 @@ export function getEventTypeEmoji(type = '') {
  */
 export function resolveTypeEffectiveConfig(type = '', rawConfig = {}) {
   const norm = String(type).trim().toLowerCase();
-  const isPresta = ['prestation', 'concert', 'spectacle', 'festival', 'parade'].includes(norm);
+  const isPresta = ['prestation', 'concert', 'spectacle', 'festival', 'parade', 'deambulation', 'déambulation', 'cortège', 'cortejo', 'carnaval'].some(k => norm.includes(k));
   const isRepet = norm.includes('repetition') || norm.includes('répétition');
   const isStage = norm.includes('stage');
   const isAtelier = norm.includes('atelier');

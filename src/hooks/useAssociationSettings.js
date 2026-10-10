@@ -5,6 +5,7 @@ import imageCompression from 'browser-image-compression';
 import { db, storage } from '../firebase';
 import { DEFAULT_CUSTOM_CATEGORIES, batchMigrateUserCategories } from '../utils/categoryUtils';
 import { DEFAULT_MARACATU_NOMENCLATURE, normalizeGroupNomenclature } from '../constants/nomenclature';
+import { DEFAULT_BATUCADA_NOMENCLATURE } from '../constants/universeNomenclaturePresets';
 import {
   UNIVERSE_DEFAULT_INSTRUMENTS,
   getUniverseDefaultInstruments,
@@ -188,59 +189,62 @@ export const DEFAULT_PUBLIC_THEME = {
   galleryPhotos: []
 };
 
-export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
-  const [formData, setFormData] = useState({
-    universeId: 'maracatu',
-    fieldsConfig: DEFAULT_FIELDS_CONFIG,
-    customCategories: DEFAULT_CUSTOM_CATEGORIES,
-    instrumentsDisponibles: [],
-    linkedInstruments: [],
-    varalCategories: [],
-    sequenceurUrl: '',
-    branding: {
-      logoUrl: '',
-      colors: {
-        primary: '#d99f4d',
-        secondary: '#84967a',
-        background: '#f4ecd8',
-        text: '#1a1a1a'
-      }
-    },
-    // Thème dynamique pour le site vitrine public
-    publicTheme: DEFAULT_PUBLIC_THEME,
-    droitImageDocUrl: '',
-    aptitudeMedicaleDocUrl: '',
-    demanderDroitImage: false,
-    demanderAttestationSante: false,
-    majoriteFeminine: false,
-    majorityFemale: false,
-    indemniteKilometrique: 0,
-    adresseLocal: '',
-    pointRassemblementDefaut: '',
-    enableCarpoolReimbursement: true,
-    reimbursementRule: 'full_cars_only',
-    defaultDepartureLocation: '',
-    montantAdhesion: 0,
-    optionsCotisation: [],
-    lienPaiementExterne: '',
-    instructionsPaiement: '',
-    permissionsMatrice: { troupe: [], tresorerie: [], logistique: [], studio: [] },
-    helloAssoSignatureKey: '',
-    tagsDisponibles: [],
-    agendaRequireInstrument: false,
-    agendaEnableMaybeStatus: true,
-    agendaEnableStageLayout: true,
-    agendaEnableRevisionProgram: true,
-    agendaEnableCarpool: true,
-    agendaEnableFinance: true,
-    agendaEnableInscriptions: true,
-    pupitresColors: { Mestre: '#8b2a1a' },
-    saisonDebutMois: 9,
-    exerciceDebutMois: 1,
-    nomenclature: {
-      maracatu: { ...DEFAULT_MARACATU_NOMENCLATURE }
-    },
-    nomenclaturePreset: 'traditional_baque_virado',
+export function useAssociationSettings(groupId, isAuthorized, onBack, t, initialAssociationData = null) {
+  const [formData, setFormData] = useState(() => {
+    const initUniverse = normalizeUniverseId(initialAssociationData?.universeId || initialAssociationData?.universe || 'maracatu');
+    return {
+      universeId: initUniverse,
+      fieldsConfig: DEFAULT_FIELDS_CONFIG,
+      customCategories: DEFAULT_CUSTOM_CATEGORIES,
+      instrumentsDisponibles: getUniverseDefaultInstruments(initUniverse),
+      linkedInstruments: initUniverse === 'batucada' ? [{ name: 'Surdos', instruments: ['Surdo 1', 'Surdo 2', 'Surdo 3'] }] : [],
+      varalCategories: [],
+      sequenceurUrl: '',
+      branding: {
+        logoUrl: '',
+        colors: {
+          primary: '#d99f4d',
+          secondary: '#84967a',
+          background: '#f4ecd8',
+          text: '#1a1a1a'
+        }
+      },
+      // Thème dynamique pour le site vitrine public
+      publicTheme: DEFAULT_PUBLIC_THEME,
+      droitImageDocUrl: '',
+      aptitudeMedicaleDocUrl: '',
+      demanderDroitImage: false,
+      demanderAttestationSante: false,
+      majoriteFeminine: false,
+      majorityFemale: false,
+      indemniteKilometrique: 0,
+      adresseLocal: '',
+      pointRassemblementDefaut: '',
+      enableCarpoolReimbursement: true,
+      reimbursementRule: 'full_cars_only',
+      defaultDepartureLocation: '',
+      montantAdhesion: 0,
+      optionsCotisation: [],
+      lienPaiementExterne: '',
+      instructionsPaiement: '',
+      permissionsMatrice: { troupe: [], tresorerie: [], logistique: [], studio: [] },
+      helloAssoSignatureKey: '',
+      tagsDisponibles: [],
+      agendaRequireInstrument: false,
+      agendaEnableMaybeStatus: true,
+      agendaEnableStageLayout: true,
+      agendaEnableRevisionProgram: true,
+      agendaEnableCarpool: true,
+      agendaEnableFinance: true,
+      agendaEnableInscriptions: true,
+      pupitresColors: { Mestre: '#8b2a1a' },
+      saisonDebutMois: 9,
+      exerciceDebutMois: 1,
+      nomenclature: {
+        maracatu: { ...DEFAULT_MARACATU_NOMENCLATURE },
+        ...(initUniverse === 'batucada' ? { batucada: { ...DEFAULT_BATUCADA_NOMENCLATURE } } : {})
+      },
+      nomenclaturePreset: initUniverse === 'batucada' ? 'batucada_standard' : 'traditional_baque_virado',
     eventTypes: ['prestation', 'repetition', 'stage', 'atelier', 'reunion'],
     eventTypeConfigs: {},
     wardrobeMemberMode: 'personal',
@@ -281,7 +285,8 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
     // Registre dynamique des playlists YouTube de l'association
     youtubePlaylists: [],
     youtubeApiKey: ''
-  });
+  };
+});
 
   const [logoFile, setLogoFile] = useState(null);
   const [heroImageFile, setHeroImageFile] = useState(null);
@@ -416,7 +421,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
           instrumentsDisponibles: Array.isArray(data.instrumentsDisponibles) && data.instrumentsDisponibles.length > 0
             ? data.instrumentsDisponibles
             : getUniverseDefaultInstruments(data.universeId || 'maracatu'),
-          linkedInstruments: Array.isArray(data.linkedInstruments) ? data.linkedInstruments.map(link => {
+          linkedInstruments: Array.isArray(data.linkedInstruments) && data.linkedInstruments.length > 0 ? data.linkedInstruments.map(link => {
             if (Array.isArray(link)) {
               return { name: '', instruments: link };
             } else if (link && typeof link === 'object') {
@@ -427,7 +432,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
               }
             }
             return null;
-          }).filter(Boolean) : [],
+          }).filter(Boolean) : (normalizeUniverseId(data.universeId) === 'batucada' ? [{ name: 'Surdos', instruments: ['Surdo 1', 'Surdo 2', 'Surdo 3'] }] : []),
           logisticsKits: Array.isArray(data.logisticsKits) ? data.logisticsKits : [],
           varalCategories: Array.isArray(data.varalCategories) ? data.varalCategories : DEFAULT_VARAL_CATEGORIES,
           branding: {
@@ -529,12 +534,13 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
           saisonDebutMois: data.saisonDebutMois !== undefined ? Number(data.saisonDebutMois) : 9,
           exerciceDebutMois: data.exerciceDebutMois !== undefined ? Number(data.exerciceDebutMois) : 1,
           nomenclature: {
-            maracatu: {
-              ...DEFAULT_MARACATU_NOMENCLATURE,
-              ...normalizeGroupNomenclature(data.nomenclature, 'maracatu')
-            }
+            ...((data.nomenclature && typeof data.nomenclature === 'object') ? data.nomenclature : {}),
+            ...(normalizeUniverseId(data.universeId) === 'batucada'
+              ? { batucada: data.nomenclature?.batucada || { ...DEFAULT_BATUCADA_NOMENCLATURE } }
+              : { maracatu: data.nomenclature?.maracatu || { ...DEFAULT_MARACATU_NOMENCLATURE, ...normalizeGroupNomenclature(data.nomenclature, 'maracatu') } }
+            )
           },
-          nomenclaturePreset: data.nomenclaturePreset || 'traditional_baque_virado',
+          nomenclaturePreset: data.nomenclaturePreset || (normalizeUniverseId(data.universeId) === 'batucada' ? 'batucada_standard' : 'traditional_baque_virado'),
           eventTypes: Array.isArray(data.eventTypes) && data.eventTypes.length > 0 
             ? data.eventTypes 
             : ['prestation', 'repetition', 'stage', 'atelier', 'reunion'],
@@ -808,9 +814,13 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
         saisonDebutMois: Number(formData.saisonDebutMois) || 9,
         exerciceDebutMois: Number(formData.exerciceDebutMois) || 1,
         nomenclature: {
-          maracatu: formData.nomenclature?.maracatu || formData.nomenclature || DEFAULT_MARACATU_NOMENCLATURE
+          ...((formData.nomenclature && typeof formData.nomenclature === 'object') ? formData.nomenclature : {}),
+          ...(normalizeUniverseId(formData.universeId) === 'batucada'
+            ? { batucada: formData.nomenclature?.batucada || DEFAULT_BATUCADA_NOMENCLATURE }
+            : { maracatu: formData.nomenclature?.maracatu || formData.nomenclature || DEFAULT_MARACATU_NOMENCLATURE }
+          )
         },
-        nomenclaturePreset: formData.nomenclaturePreset || 'traditional_baque_virado',
+        nomenclaturePreset: formData.nomenclaturePreset || (normalizeUniverseId(formData.universeId) === 'batucada' ? 'batucada_standard' : 'traditional_baque_virado'),
         agendaEnableInscriptions: formData.agendaEnableInscriptions !== undefined ? formData.agendaEnableInscriptions : true,
         agendaEnableCarpool: formData.agendaEnableCarpool !== undefined ? formData.agendaEnableCarpool : true,
         agendaEnableFinance: formData.agendaEnableFinance !== undefined ? formData.agendaEnableFinance : true,

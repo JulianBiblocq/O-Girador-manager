@@ -23,6 +23,9 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
   // Mode de création : 'date' (date fixe) ou 'poll' (sondage multi-dates)
   const [creationMode, setCreationMode] = useState('date');
   
+  // Portée de la réunion : 'publique' (toute l'asso) ou 'ca' (CA / Bureau restreint)
+  const [audience, setAudience] = useState('publique');
+
   // Champs généraux de création
   const [title, setTitle] = useState('');
   const [date, setDate] = useState('');
@@ -174,6 +177,8 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
             pollRestrictionType: pollRestrictionType || 'aucun',
             pollTarget: pollTarget || '',
             groupId: groupId,
+            audience: audience,
+            portee: audience,
             pointsOrdreDuJour: pointsOrdreDuJour,
             lienDocument: (lienDocument || '').trim(),
             compteRenduStatus: 'brouillon',
@@ -197,6 +202,8 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
           dateFin: dateTimeEndStr,
           type: 'reunion',
           groupId: groupId,
+          audience: audience,
+          portee: audience,
           pointsOrdreDuJour: pointsOrdreDuJour,
           lienDocument: (lienDocument || '').trim(),
           compteRenduStatus: 'brouillon',
@@ -217,6 +224,7 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
       setDate('');
       setTime('');
       setTimeEnd('');
+      setAudience('publique');
       setPointsOrdreDuJour([]);
       setLienDocument('');
       setLieuId(null);
@@ -379,6 +387,48 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
                       placeholder={t('governance.placeholderMeetingTitle')}
                       className="theme-input bg-white w-full py-1.5 text-xs font-bold"
                     />
+                  </div>
+
+                  {/* Portée de la réunion : Publique vs CA / Bureau */}
+                  <div className="flex flex-col gap-1.5 p-2.5 bg-white/70 rounded border border-cordel-master-dark/15">
+                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+                      Portée de la réunion
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setAudience('publique')}
+                        className={`py-1.5 px-2 text-[10px] font-black uppercase rounded border transition-all cursor-pointer ${
+                          audience === 'publique'
+                            ? 'bg-[var(--color-cordel-vert)] text-white border-encre-noire shadow-2xs'
+                            : 'bg-white text-stone-700 border-neutral-300 hover:bg-neutral-50'
+                        }`}
+                      >
+                        👥 Publique / Toute l'asso
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAudience('ca');
+                          if (creationMode === 'poll' && pollRestrictionType === 'aucun') {
+                            setPollRestrictionType('tag');
+                            setPollTarget('CA');
+                          }
+                        }}
+                        className={`py-1.5 px-2 text-[10px] font-black uppercase rounded border transition-all cursor-pointer ${
+                          audience === 'ca'
+                            ? 'bg-cordel-wood text-white border-encre-noire shadow-2xs'
+                            : 'bg-white text-stone-700 border-neutral-300 hover:bg-neutral-50'
+                        }`}
+                      >
+                        🔒 CA / Bureau (Restreinte)
+                      </button>
+                    </div>
+                    <p className="text-[9.5px] italic text-stone-600 leading-snug">
+                      {audience === 'ca'
+                        ? "🔒 Réservé : visible uniquement par les membres du CA et du Bureau, archivage Varal restreint."
+                        : "👥 Ouverte : visible par l'ensemble des adhérents, archivage au Varal général (Administratif)."}
+                    </p>
                   </div>
 
                   {/* Lieu de la réunion avec sélecteur intelligent */}
@@ -665,7 +715,16 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
                             className="border-b border-dashed border-encre-noire/15 hover:bg-cordel-hover/50 transition-colors"
                           >
                             <td className="py-3 px-3 font-bold text-encre-noire">
-                              {ev.titre}
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span>{ev.titre}</span>
+                                <span className={`text-[7.5px] font-black uppercase px-1.5 py-0.2 rounded border ${
+                                  (ev.audience === 'ca' || ev.portee === 'ca')
+                                    ? 'bg-amber-100 text-amber-900 border-amber-400'
+                                    : 'bg-green-50 text-green-800 border-green-300'
+                                }`}>
+                                  {(ev.audience === 'ca' || ev.portee === 'ca') ? '🔒 CA' : '👥 Publique'}
+                                </span>
+                              </div>
                             </td>
                             <td className="py-3 px-3 font-semibold opacity-85">
                               {formatDate(ev.date)}

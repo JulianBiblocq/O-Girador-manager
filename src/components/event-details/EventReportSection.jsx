@@ -9,6 +9,7 @@ import ImportAgendaModal from '../agenda/ImportAgendaModal';
 import { generateCompteRenduPDF } from '../../utils/pdfGenerator';
 import { triggerEventStatusAutomation } from '../../utils/automationEngine';
 import { notifyMembersByTag } from '../../utils/inAppNotificationService';
+import EventEmargementSection from './EventEmargementSection';
 
 export default function EventReportSection({ event, user, profileData, associationSettings }) {
   const { t } = useTranslation();
@@ -21,6 +22,9 @@ export default function EventReportSection({ event, user, profileData, associati
   const [editingPointId, setEditingPointId] = useState(null);
   const [editingPointTitle, setEditingPointTitle] = useState('');
   
+  // État local de la portée / audience de la réunion ('publique' ou 'ca')
+  const [localAudience, setLocalAudience] = useState(event?.audience || event?.portee || 'publique');
+
   // Collaborative suggestions states
   const [newSuggestionTitle, setNewSuggestionTitle] = useState('');
   const [secretaryResponses, setSecretaryResponses] = useState({});
@@ -47,6 +51,13 @@ export default function EventReportSection({ event, user, profileData, associati
 
   // Current report status: empty, 'brouillon', 'attente_relecture', 'publie'
   const reportStatus = event.compteRenduStatus || '';
+
+  // Synchronisation de l'audience avec les props de l'événement
+  useEffect(() => {
+    if (event?.audience || event?.portee) {
+      setLocalAudience(event.audience || event.portee || 'publique');
+    }
+  }, [event?.audience, event?.portee]);
 
   // Synchronize local points with Firestore pointsOrdreDuJour
   useEffect(() => {
@@ -102,6 +113,47 @@ export default function EventReportSection({ event, user, profileData, associati
     } catch (err) {
       console.error("Error adding point:", err);
       alert("Erreur lors de l'ajout du point à l'ordre du jour.");
+    }
+  };
+
+  // Modifier la portée de la réunion (CA vs Publique)
+  const handleUpdateAudience = async (newAudience) => {
+    setLocalAudience(newAudience);
+    if (event) {
+      event.audience = newAudience;
+      event.portee = newAudience;
+    }
+    try {
+      const eventRef = doc(db, 'events', event.id);
+      await updateDoc(eventRef, {
+        audience: newAudience,
+        portee: newAudience
+      });
+    } catch (err) {
+      console.error("EventReportSection - Erreur mise à jour portée réunion :", err);
+    }
+  };
+
+  // Initialisation immédiate d'un compte-rendu libre en cas de réunion sans ODJ préalable
+  const handleInitFreeReport = async () => {
+    const freePoint = {
+      id: Date.now().toString(),
+      titre: "Compte-rendu des échanges",
+      notesCR: ""
+    };
+
+    const updatedPoints = [...localPoints, freePoint];
+    setLocalPoints(updatedPoints);
+
+    try {
+      const eventRef = doc(db, 'events', event.id);
+      await updateDoc(eventRef, {
+        pointsOrdreDuJour: updatedPoints,
+        ...(reportStatus === '' ? { compteRenduStatus: 'brouillon' } : {})
+      });
+    } catch (err) {
+      console.error("EventReportSection - Erreur initialisation CR libre :", err);
+      alert("Erreur lors de l'initialisation du compte-rendu.");
     }
   };
 
@@ -304,25 +356,34 @@ export default function EventReportSection({ event, user, profileData, associati
   const handlePublishDefinitive = async (pointsToPublish = localPoints, approvals = event.compteRenduApprovals || {}) => {
     setIsSaving(true);
     try {
-      // 1. Compile Markdown Content
-      const compiledMarkdown = pointsToPublish.map(p => {
-        return `### 📌 ${p.titre}\n\n${p.notesCR ? p.notesCR.trim() : "*Aucune note rédigée.*"}`;
-      }).join('\n\n---\n\n');
+      // 1. Compiler le contenu en Markdown
+      const compiledMarkdown = pointsToPublish.length > 0 
+        ? pointsToPublish.map(p => `### 📌 ${p.titre}\n\n${p.notesCR ? p.notesCR.trim() : "*Aucune note rédigée.*"}`).join('\n\n---\n\n')
+        : "*Aucun point consigné dans ce compte-rendu.*";
 
-      // 2. Récupérer Present users names
-
+      // 2. Récupérer les noms des membres émargés et invités
       const presentsNames = presents.map(ins => ins.userName || 'Membre anonyme');
+      const invites = Math.max(0, parseInt(event.invitesOuPublicCount, 10) || 0);
+      const totalParticipants = presentsNames.length + invites;
 
-      // 3. Standard Title: "CR du JJ/MM/AAAA"
+      const isCA = (localAudience === 'ca' || event.audience === 'ca' || event.portee === 'ca');
+      const audienceLabel = isCA ? "Réunion de CA / Bureau" : "Réunion Publique / Assemblée";
+      const presentsSummary = invites > 0
+        ? `${presentsNames.length} adhérent(s) + ${invites} invité(s)`
+        : `${presentsNames.length} présent(s)`;
+
+      // 3. Titre et sous-titre standard
       const docTitle = `CR du ${formatDate(event.date)}`;
+      const docSousTitre = `${audienceLabel} • ${presentsSummary}`;
       const eventYear = event.date ? new Date(event.date).getFullYear() : new Date().getFullYear();
 
-      // 4. Créer document in Varal
+      // 4. Créer le document dans le Varal
       const docRef = await addDoc(collection(db, 'documents'), {
         titre: docTitle,
-        categoryId: 'ComptesRendus',
-        categorie: 'ComptesRendus',
-        sousCategorie: 'Comptes Rendus',
+        sousTitre: docSousTitre,
+        categoryId: isCA ? 'ComptesRendus' : 'Administratif',
+        categorie: isCA ? 'ComptesRendus' : 'Administratif',
+        sousCategorie: isCA ? 'Comptes Rendus CA' : 'Comptes Rendus Publics',
         annee: eventYear,
         type: 'report',
         texte: compiledMarkdown,
@@ -330,22 +391,34 @@ export default function EventReportSection({ event, user, profileData, associati
         dateAjout: new Date().toISOString(),
         groupId: event.groupId,
         eventId: event.id,
+        audience: isCA ? 'ca' : 'publique',
+        portee: isCA ? 'ca' : 'publique',
+        allowedTags: isCA ? ['CA', 'Bureau', 'C.A', 'C.A.', 'Conseil d\'Administration'] : [],
         presents: presentsNames,
+        invitesOuPublicCount: invites,
+        totalParticipants: totalParticipants,
         order: 9999,
-        fileUrl: '' // Dynamic document
+        fileUrl: '' // Document dynamique Cordel
       });
 
-      // 5. Mettre à jour event status to locked/published
+      // 5. Mettre à jour le statut et l'audience de l'événement
       const eventRef = doc(db, 'events', event.id);
       await updateDoc(eventRef, {
         compteRenduStatus: 'publie',
-        compteRenduVaralId: docRef.id
+        compteRenduVaralId: docRef.id,
+        audience: isCA ? 'ca' : 'publique',
+        portee: isCA ? 'ca' : 'publique'
       });
 
-      // 6. Generate and enregistrer PDF document automatically
+      // 6. Générer et enregistrer le PDF officiel automatiquement
       try {
-        const pdfDoc = generateCompteRenduPDF(event, pointsToPublish, presentsNames, associationSettings || event.associationSettings || "O Girador");
-        pdfDoc.save(`Compte_Rendu_${event.titre ? event.titre.replace(/[^a-zA-Z0-9]/g, '_') : 'Reunion'}.pdf`);
+        const enrichedEvent = {
+          ...event,
+          audience: isCA ? 'ca' : 'publique',
+          invitesOuPublicCount: invites
+        };
+        const pdfDoc = generateCompteRenduPDF(enrichedEvent, pointsToPublish, presentsNames, associationSettings || event.associationSettings || "O Girador");
+        pdfDoc.save(`Compte_Rendu_${isCA ? 'CA_' : 'Public_'}${event.titre ? event.titre.replace(/[^a-zA-Z0-9]/g, '_') : 'Reunion'}.pdf`);
       } catch (pdfErr) {
         console.error("Erreur génération PDF automatique :", pdfErr);
       }
@@ -386,10 +459,15 @@ export default function EventReportSection({ event, user, profileData, associati
   // On-demand PDF download
   const handleDownloadPDF = () => {
     try {
-
       const presentsNames = presents.map(ins => ins.userName || 'Membre anonyme');
-      const pdfDoc = generateCompteRenduPDF(event, localPoints, presentsNames, associationSettings || event.associationSettings || "O Girador");
-      pdfDoc.save(`Compte_Rendu_${event.titre ? event.titre.replace(/[^a-zA-Z0-9]/g, '_') : 'Reunion'}.pdf`);
+      const isCA = (localAudience === 'ca' || event.audience === 'ca' || event.portee === 'ca');
+      const enrichedEvent = {
+        ...event,
+        audience: isCA ? 'ca' : 'publique',
+        invitesOuPublicCount: event.invitesOuPublicCount || 0
+      };
+      const pdfDoc = generateCompteRenduPDF(enrichedEvent, localPoints, presentsNames, associationSettings || event.associationSettings || "O Girador");
+      pdfDoc.save(`Compte_Rendu_${isCA ? 'CA_' : 'Public_'}${event.titre ? event.titre.replace(/[^a-zA-Z0-9]/g, '_') : 'Reunion'}.pdf`);
     } catch (err) {
       console.error("Erreur génération PDF :", err);
       alert("Erreur lors du téléchargement du PDF.");
@@ -615,8 +693,8 @@ export default function EventReportSection({ event, user, profileData, associati
           )}
         </div>
 
-        {/* Sélection du rédacteur */}
-        <div className="flex items-center gap-2 text-[10px]">
+        {/* Sélection du rédacteur et Portée de la réunion */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[10px] pt-1">
           {isGlobalAdmin && (reportStatus === '' || reportStatus === 'brouillon') ? (
             <div className="flex items-center gap-2 p-1.5 bg-neutral-100 rounded border border-dashed border-neutral-300">
                <label className="font-bold text-neutral-600 uppercase tracking-wider">Rédacteur de séance :</label>
@@ -649,14 +727,64 @@ export default function EventReportSection({ event, user, profileData, associati
           ) : (
             <span className="italic text-neutral-400">Aucun rédacteur désigné</span>
           )}
+
+          {/* Sélecteur de Portée : CA vs Publique */}
+          <div className="flex items-center gap-1.5">
+            <span className="font-extrabold uppercase text-[9px] text-cordel-master-dark opacity-75">
+              Portée :
+            </span>
+            {isAdmin && (reportStatus === '' || reportStatus === 'brouillon') ? (
+              <div className="flex p-0.5 bg-white rounded border border-cordel-master-dark/20">
+                <button
+                  type="button"
+                  onClick={() => handleUpdateAudience('publique')}
+                  className={`px-2 py-0.5 text-[9px] font-extrabold uppercase rounded transition-all cursor-pointer ${
+                    localAudience !== 'ca'
+                      ? 'bg-[var(--color-cordel-vert)] text-white shadow-2xs'
+                      : 'text-stone-600 hover:text-stone-900'
+                  }`}
+                  title="Visible par l'ensemble des adhérents, archivage Varal général"
+                >
+                  👥 Publique
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleUpdateAudience('ca')}
+                  className={`px-2 py-0.5 text-[9px] font-extrabold uppercase rounded transition-all cursor-pointer ${
+                    localAudience === 'ca'
+                      ? 'bg-cordel-wood text-white shadow-2xs'
+                      : 'text-stone-600 hover:text-stone-900'
+                  }`}
+                  title="Visible uniquement par les membres porteurs du badge CA/Bureau, archivage restreint"
+                >
+                  🔒 CA / Bureau
+                </button>
+              </div>
+            ) : (
+              <span className={`theme-stamp-badge text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${
+                localAudience === 'ca'
+                  ? 'bg-amber-100 text-amber-900 border-amber-500'
+                  : 'bg-[var(--color-cordel-vert)]/10 text-[var(--color-cordel-vert)] border-[var(--color-cordel-vert)]/40'
+              }`}>
+                {localAudience === 'ca' ? '🔒 Réunion de CA / Bureau' : '👥 Réunion Publique'}
+              </span>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* 👥 Émargement des présents & participants */}
+      <EventEmargementSection
+        event={event}
+        groupId={event.groupId || profileData?.groupId}
+        isAdmin={isAdmin}
+      />
 
       {/* 1. Mettre en place l'ordre du jour (Mode brouillon - ADMIN ONLY) */}
       {(reportStatus === '' || reportStatus === 'brouillon') && isAdmin && (
         <CordelCard variant="default" useExtremeBorder={false} className="p-4 bg-cordel-bg-light/45 border-dashed">
           <div className="flex justify-between items-center mb-2 flex-wrap gap-2">
-            <h4 className="font-bold text-xs text-cordel-wood">➕ Ajouter un point à l'Ordre du Jour</h4>
+            <h4 className="font-bold text-xs text-cordel-wood">➕ Ajouter un point ou un sujet abordé</h4>
             <CordelButton
               type="button"
               variant="vert"
@@ -669,10 +797,11 @@ export default function EventReportSection({ event, user, profileData, associati
           </div>
           <form onSubmit={handleAddPoint} className="flex gap-2">
             <input 
+              id="new-agenda-point-input"
               type="text" 
               value={newPointTitle}
               onChange={(e) => setNewPointTitle(e.target.value)}
-              placeholder="Ex: Point 1 : Trésorerie..."
+              placeholder="Ex: Point 1 : Trésorerie, ou sujet spontané..."
               className="theme-input text-xs flex-1 bg-white/70 py-1.5"
             />
             <CordelButton variant="ocre" type="submit" className="text-xs px-3 py-1 font-bold whitespace-nowrap">
@@ -687,7 +816,46 @@ export default function EventReportSection({ event, user, profileData, associati
         isAdmin ? (
           <div className="flex flex-col gap-4">
             {localPoints.length === 0 ? (
-              <p className="text-xs italic opacity-60 text-center py-4">{t('agenda.noReportYet') || "L'ordre du jour est vide. Ajoutez des points ci-dessus pour commencer."}</p>
+              /* Encart d'accueil Tolérance Zéro-ODJ */
+              <div className="p-5 bg-white/75 border-2 border-dashed border-cordel-master-dark/25 rounded-[6px_10px_5px_8px] text-center flex flex-col items-center gap-3">
+                <span className="text-3xl select-none">📝</span>
+                <div className="max-w-md">
+                  <h4 className="font-extrabold text-xs uppercase text-cordel-wood tracking-wide">
+                    Aucun ordre du jour préalable pour cette réunion
+                  </h4>
+                  <p className="text-[11px] text-stone-600 mt-1 leading-relaxed">
+                    Cette réunion s'est tenue sans ordre du jour formel ? Vous pouvez rédiger directement le compte-rendu libre ou consigner les sujets abordés. La saisie et la dictée vocale sont disponibles immédiatement.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2.5 justify-center mt-1">
+                  <CordelButton
+                    type="button"
+                    variant="vert"
+                    useExtremeBorder={true}
+                    onClick={handleInitFreeReport}
+                    className="text-xs font-bold py-2 px-4 flex items-center gap-1.5 shadow-sm"
+                  >
+                    <span>✍️</span>
+                    <span>Initialiser un compte-rendu libre</span>
+                  </CordelButton>
+                  <CordelButton
+                    type="button"
+                    variant="ocre"
+                    useExtremeBorder={false}
+                    onClick={() => {
+                      const inputEl = document.getElementById('new-agenda-point-input');
+                      if (inputEl) {
+                        inputEl.focus();
+                        inputEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }
+                    }}
+                    className="text-xs font-bold py-2 px-3.5 flex items-center gap-1.5"
+                  >
+                    <span>➕</span>
+                    <span>Ajouter un sujet abordé</span>
+                  </CordelButton>
+                </div>
+              </div>
             ) : (
               localPoints.map((point, index) => (
                 <div key={point.id} className="theme-inner-panel p-4 rounded-[4px_6px_3px_5px] flex flex-col gap-2 relative">
@@ -1080,15 +1248,22 @@ export default function EventReportSection({ event, user, profileData, associati
               ))}
             </div>
 
-            {/* List of present members */}
-            {presents.length > 0 && (
+            {/* Liste des adhérents et participants présents */}
+            {(presents.length > 0 || (event.invitesOuPublicCount || 0) > 0) && (
               <div className="border-t border-dashed border-encre-noire/10 pt-3 flex flex-wrap gap-1.5 items-center">
-                <span className="text-[8px] uppercase font-black tracking-wider text-cordel-master-dark opacity-65">Présents :</span>
+                <span className="text-[8px] uppercase font-black tracking-wider text-cordel-master-dark opacity-65">
+                  Présents ({presents.length + (event.invitesOuPublicCount || 0)}) :
+                </span>
                 {presents.map(ins => (
                   <span key={ins.userId} className="text-[9px] font-bold px-2 py-0.5 bg-neutral-200/60 rounded text-encre-noire">
                     👤 {ins.userName}
                   </span>
                 ))}
+                {(event.invitesOuPublicCount || 0) > 0 && (
+                  <span className="text-[9px] font-bold px-2 py-0.5 bg-amber-100 text-amber-900 border border-amber-300 rounded">
+                    👥 + {event.invitesOuPublicCount} invité(s) / public
+                  </span>
+                )}
               </div>
             )}
           </div>

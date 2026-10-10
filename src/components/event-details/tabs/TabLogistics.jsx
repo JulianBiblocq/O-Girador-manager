@@ -154,6 +154,7 @@ export default function TabLogistics({
             user={user}
             profileData={profileData}
             isAuthorized={isAuthorized}
+            universeId={event?.universeId || event?.universe || currentConfig?.universe || 'maracatu'}
             enableCarpoolReimbursement={enableCarpoolReimbursement}
             indemniteKilometrique={indemniteKilometrique}
             convoiDrivers={convoiDrivers}

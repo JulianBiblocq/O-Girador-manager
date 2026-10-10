@@ -6,6 +6,7 @@ import CordelCard from '../../CordelCard';
 import CordelButton from '../../CordelButton';
 import { XiloCaixa } from '../../XiloIcons';
 import useConfirm from '../../../hooks/useConfirm';
+import { getUniverseDefaultInstruments } from '../../../constants/universeDefaults';
 
 export default function AccessoriesKitsBlock({ formData = {}, handleChange, saving, t: propT, groupId, supplies = [] }) {
   const { t: hookT } = useTranslation();
@@ -24,14 +25,18 @@ export default function AccessoriesKitsBlock({ formData = {}, handleChange, savi
   const kits = safeFormData.logisticsKits || [];
 
   // Calcul des pupitres / instruments disponibles
-  const { instrumentsDisponibles = [], linkedInstruments = [] } = safeFormData;
+  const { instrumentsDisponibles = [], linkedInstruments = [], universeId } = safeFormData;
+  const effectiveInstrumentsDisponibles = Array.isArray(instrumentsDisponibles) && instrumentsDisponibles.length > 0
+    ? instrumentsDisponibles
+    : getUniverseDefaultInstruments(universeId || safeFormData.universe || 'maracatu');
+
   const rawPupitres = [
     'Mestre',
     ...linkedInstruments.map(g => {
       const instrumentsArray = g.instruments || (Array.isArray(g) ? g : [g.inst1, g.inst2]);
       return g.name ? g.name.trim() : instrumentsArray.join(' + ');
     }).filter(Boolean),
-    ...instrumentsDisponibles.filter(inst => {
+    ...effectiveInstrumentsDisponibles.filter(inst => {
       const isInLinked = linkedInstruments.some(g => {
         const instrumentsArray = g.instruments || (Array.isArray(g) ? g : [g.inst1, g.inst2]);
         return instrumentsArray.includes(inst);

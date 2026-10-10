@@ -238,6 +238,13 @@ export const generateCompteRenduPDF = (event, points = [], presents = [], associ
   const eventDate = event.date ? new Date(event.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : "Non spécifiée";
   doc.text(`${eventDate}`, 55, yPos);
 
+  yPos += 7;
+  doc.setFont("helvetica", "bold");
+  doc.text("Portée :", 20, yPos);
+  doc.setFont("helvetica", "normal");
+  const isCaMeeting = (event?.audience === 'ca' || event?.portee === 'ca');
+  doc.text(isCaMeeting ? "Réunion de CA / Bureau (Restreinte)" : "Réunion Publique / Assemblée (Ouverte à tous)", 55, yPos);
+
   // Injections dynamiques : Membres du Bureau Officiel
   if (bureauMembres.length > 0) {
     yPos += 7;
@@ -274,11 +281,21 @@ export const generateCompteRenduPDF = (event, points = [], presents = [], associ
   doc.setFont("helvetica", "normal");
   const presentsText = (presents && presents.length > 0)
     ? (typeof presents[0] === 'string' ? presents.join(', ') : presents.map(p => p.userName || `${p.prenom || ''} ${p.nom || ''}`.trim()).join(', '))
-    : "Aucun présent enregistré";
+    : "Aucun adhérent enregistré";
   const presentsLines = doc.splitTextToSize(presentsText, 135);
   doc.text(presentsLines, 55, yPos);
+  yPos += (presentsLines.length * 5);
 
-  yPos += (presentsLines.length * 6) + 6;
+  const invites = Math.max(0, parseInt(event?.invitesOuPublicCount, 10) || 0);
+  if (invites > 0) {
+    yPos += 5;
+    doc.setFont("helvetica", "bold");
+    doc.text("Invités / Public :", 20, yPos);
+    doc.setFont("helvetica", "normal");
+    doc.text(`${invites} personne(s) non-adhérente(s) (Total participants : ${(presents?.length || 0) + invites})`, 55, yPos);
+  }
+
+  yPos += 8;
   doc.setDrawColor(200, 200, 200);
   doc.setLineWidth(0.5);
   doc.line(20, yPos, 190, yPos);

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTranslation } from '../LanguageContext';
+import { getCarpoolBulkyTerminology } from '../../utils/carpoolCascadeUtils';
 
 /**
  * Formulaire de proposition d'un véhicule dans le covoiturage.
@@ -12,9 +13,12 @@ export default function CarpoolProposerForm({
   setVoitureForm,
   submittingCovoit = false,
   handleProposerVoiture,
-  onCancel
+  onCancel,
+  universeId,
+  terminology
 }) {
   const { t } = useTranslation();
+  const term = terminology || getCarpoolBulkyTerminology(universeId);
 
   return (
     <form onSubmit={handleProposerVoiture} className="flex flex-col gap-3 theme-inner-panel p-4 rounded text-left">
@@ -41,14 +45,21 @@ export default function CarpoolProposerForm({
 
         <div className="flex flex-col gap-1">
           <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-            Volume coffre (Alfaias)
+            {term.trunkVolumeLabel || `Volume coffre (${term.instrumentName})`}
           </label>
           <input
             type="number"
             min="0"
             max="10"
-            value={voitureForm.trunkAlfayaCapacity}
-            onChange={(e) => setVoitureForm((prev) => ({ ...prev, trunkAlfayaCapacity: parseInt(e.target.value, 10) || 0 }))}
+            value={voitureForm.trunkBulkyCapacity !== undefined ? voitureForm.trunkBulkyCapacity : (voitureForm.trunkAlfayaCapacity || 0)}
+            onChange={(e) => {
+              const val = parseInt(e.target.value, 10) || 0;
+              setVoitureForm((prev) => ({
+                ...prev,
+                trunkBulkyCapacity: val,
+                trunkAlfayaCapacity: val
+              }));
+            }}
             disabled={submittingCovoit}
             required
             className="theme-input text-xs font-bold py-1 text-center bg-cordel-bg-light"
@@ -128,7 +139,7 @@ export default function CarpoolProposerForm({
         </label>
         <input
           type="text"
-          placeholder="Ex: Je prends 2 Alfaias, mon coffre est plein..."
+          placeholder={term.placeholder || `Ex: Je prends 2 ${term.instrumentName}, mon coffre est plein...`}
           value={voitureForm.materielTransporte || ''}
           onChange={(e) => setVoitureForm((prev) => ({ ...prev, materielTransporte: e.target.value }))}
           disabled={submittingCovoit}

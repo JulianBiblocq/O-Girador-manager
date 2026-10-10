@@ -334,6 +334,28 @@ export default function DocumentViewerModal({ document: docItem, onClose }) {
           {/* 6. CAS COMPTE-RENDU TEXTUEL OU MIXTE AVEC PDF */}
           {isReport && (
             <div className="flex flex-col gap-4">
+              {/* Portée de la réunion (CA vs Publique) */}
+              <div className="flex items-center justify-between gap-2 p-2.5 bg-white/70 rounded border border-dashed border-encre-noire/15 flex-wrap">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-bold text-stone-600">Portée :</span>
+                  <span className={`theme-stamp-badge text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${
+                    (docItem.audience === 'ca' || docItem.portee === 'ca' || (docItem.sousCategorie || '').includes('CA'))
+                      ? 'bg-amber-100 text-amber-900 border-amber-600'
+                      : 'bg-green-50 text-green-900 border-green-600'
+                  }`}>
+                    {(docItem.audience === 'ca' || docItem.portee === 'ca' || (docItem.sousCategorie || '').includes('CA'))
+                      ? '🔒 Réunion de CA / Bureau (Restreinte)'
+                      : '👥 Réunion Publique / Assemblée'}
+                  </span>
+                </div>
+
+                {(docItem.presents?.length > 0 || (docItem.invitesOuPublicCount || 0) > 0) && (
+                  <span className="text-[10px] font-bold text-stone-600">
+                    Total : <strong>{(docItem.presents?.length || 0) + (docItem.invitesOuPublicCount || 0)}</strong> participant(s)
+                  </span>
+                )}
+              </div>
+
               {/* Quorum de l'assemblée ou réunion */}
               {docItem.quorum && (
                 <div className="bg-[var(--color-cordel-vert,#2d6a4f)]/10 text-[var(--color-cordel-vert,#2d6a4f)] border border-[var(--color-cordel-vert,#2d6a4f)]/30 px-3 py-2 rounded text-xs font-bold flex items-center gap-2">
@@ -343,17 +365,22 @@ export default function DocumentViewerModal({ document: docItem, onClose }) {
               )}
 
               {/* Affichage des membres présents s'ils sont renseignés */}
-              {docItem.presents && docItem.presents.length > 0 && (
+              {((docItem.presents && docItem.presents.length > 0) || (docItem.invitesOuPublicCount || 0) > 0) && (
                 <div className="bg-white/70 p-3 rounded border border-dashed border-encre-noire/15 flex flex-col gap-1.5 text-xs">
                   <span className="text-[8px] font-black uppercase tracking-wider text-cordel-master-dark opacity-75">
-                    Membres présents à cette réunion :
+                    Participants à cette réunion ({(docItem.presents?.length || 0) + (docItem.invitesOuPublicCount || 0)}) :
                   </span>
-                  <div className="flex flex-wrap gap-1">
-                    {docItem.presents.map((name, i) => (
+                  <div className="flex flex-wrap gap-1 items-center">
+                    {(docItem.presents || []).map((name, i) => (
                       <span key={`${name}-${i}`} className="text-[9px] font-bold px-2 py-0.5 bg-neutral-200/60 rounded">
                         👤 {name}
                       </span>
                     ))}
+                    {(docItem.invitesOuPublicCount || 0) > 0 && (
+                      <span className="text-[9px] font-bold px-2 py-0.5 bg-amber-100 text-amber-900 border border-amber-300 rounded">
+                        👥 + {docItem.invitesOuPublicCount} invité(s) / non-adhérent(s)
+                      </span>
+                    )}
                   </div>
                 </div>
               )}
