@@ -13,6 +13,7 @@ import { canPublishAnnonces } from '../utils/permissionUtils';
 import { resolveEffectiveUserTags } from '../utils/tagUtils';
 import ReadReceiptBadge from './common/ReadReceiptBadge';
 import { useReadReceipt } from '../hooks/useReadReceipt';
+import { getCachedAnnouncements, setCachedAnnouncements } from '../utils/dashboardCacheUtils';
 
 /**
  * Composant de carte d'annonce avec observateur d'accusé de lecture (70% pendant 1,5s)
@@ -154,14 +155,20 @@ export default function WidgetAnnonces({
 }) {
   const { t } = useTranslation();
   const { confirm } = useConfirm();
-  const [announcements, setAnnouncements] = useState([]);
+  const [announcements, setAnnouncements] = useState(() => getCachedAnnouncements(groupId));
   const [tagsDisponibles, setTagsDisponibles] = useState([]);
   const [assocPermissionsMatrice, setAssocPermissionsMatrice] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => announcements.length === 0);
   const [isAdding, setIsAdding] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const [showBanner, setShowBanner] = useState(false);
+  // Initialisation synchrone de la bannière push pour éviter tout décalage tardif (CLS)
+  const [showBanner, setShowBanner] = useState(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window && user?.uid) {
+      return Notification.permission !== 'granted';
+    }
+    return false;
+  });
   const [isSubscribingPush, setIsSubscribingPush] = useState(false);
 
   // Vérifier la permission des notifications au chargement ou au changement d'utilisateur
@@ -252,7 +259,9 @@ export default function WidgetAnnonces({
       return;
     }
 
-    setLoading(true);
+    if (announcements.length === 0) {
+      setLoading(true);
+    }
     const announcementsRef = collection(db, 'announcements');
     const q = query(announcementsRef, where('groupId', '==', groupId), limit(15));
 
@@ -267,6 +276,7 @@ export default function WidgetAnnonces({
       // Trier par dateCreation descendante
       fetched.sort((a, b) => new Date(b.dateCreation) - new Date(a.dateCreation));
       setAnnouncements(fetched);
+      setCachedAnnouncements(groupId, fetched);
       setLoading(false);
     }, (error) => {
       console.error("WidgetAnnonces - Erreur onSnapshot announcements :", error);
@@ -509,10 +519,23 @@ export default function WidgetAnnonces({
         );
       })()}
 
-      {/* Chargement de Indicator */}
-      {loading && (
-        <div className="flex justify-center items-center py-6">
-          <span className="text-xs uppercase tracking-widest font-black animate-pulse opacity-60">⏳</span>
+      {/* Squelette de chargement initial si aucun cache disponible (stabilisation CLS) */}
+      {loading && announcements.length === 0 && (
+        <div className="flex flex-col gap-3 animate-pulse select-none" aria-busy="true">
+          <div className="py-3 px-4 rounded border-2 border-dashed border-cordel-master-dark/20 bg-cordel-bg/40 min-h-[140px] flex flex-col justify-between">
+            <div className="flex justify-between items-start gap-4">
+              <div className="flex-1 space-y-2">
+                <div className="h-2.5 bg-cordel-master-dark/15 rounded w-1/3"></div>
+                <div className="h-4 bg-cordel-master-dark/20 rounded w-2/3"></div>
+              </div>
+              <div className="h-3 w-12 bg-cordel-master-dark/15 rounded"></div>
+            </div>
+            <div className="space-y-1.5 mt-3">
+              <div className="h-2.5 bg-cordel-master-dark/15 rounded w-full"></div>
+              <div className="h-2.5 bg-cordel-master-dark/15 rounded w-4/5"></div>
+            </div>
+            <div className="h-2 bg-cordel-master-dark/10 rounded w-1/4 mt-3"></div>
+          </div>
         </div>
       )}
 

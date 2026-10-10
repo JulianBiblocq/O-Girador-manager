@@ -5,6 +5,11 @@ import imageCompression from 'browser-image-compression';
 import { db, storage } from '../firebase';
 import { DEFAULT_CUSTOM_CATEGORIES, batchMigrateUserCategories } from '../utils/categoryUtils';
 import { DEFAULT_MARACATU_NOMENCLATURE, normalizeGroupNomenclature } from '../constants/nomenclature';
+import {
+  UNIVERSE_DEFAULT_INSTRUMENTS,
+  getUniverseDefaultInstruments,
+  normalizeUniverseId
+} from '../constants/universeDefaults';
 
 export const DEFAULT_FIELDS_CONFIG = {
   telephone: { key: "telephone", label: "Téléphone", enabled: true, filledBy: "member", isRequired: false },
@@ -58,7 +63,7 @@ export const DEFAULT_ECOSYSTEM_ACCESS = {
   hub: true
 };
 
-export const DEFAULT_INSTRUMENTS = ["Alfaia", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant"];
+export const DEFAULT_INSTRUMENTS = UNIVERSE_DEFAULT_INSTRUMENTS.maracatu;
 
 // Textes, badges et titres par défaut des sections de la vitrine publique
 export const DEFAULT_VITRINE_TEXTS = {
@@ -185,6 +190,7 @@ export const DEFAULT_PUBLIC_THEME = {
 
 export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
   const [formData, setFormData] = useState({
+    universeId: 'maracatu',
     fieldsConfig: DEFAULT_FIELDS_CONFIG,
     customCategories: DEFAULT_CUSTOM_CATEGORIES,
     instrumentsDisponibles: [],
@@ -402,11 +408,14 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
           signatureTresorierUrl: data.signatureTresorierUrl || '',
           ribIban: data.ribIban || data.iban || '',
           mentionTVA: data.mentionTVA || '',
+          universeId: normalizeUniverseId(data.universeId),
           demanderDroitImage: data.demanderDroitImage || false,
           demanderAttestationSante: data.demanderAttestationSante || false,
           fieldsConfig: data.fieldsConfig ? { ...DEFAULT_FIELDS_CONFIG, ...data.fieldsConfig } : DEFAULT_FIELDS_CONFIG,
           customCategories: Array.isArray(data.customCategories) && data.customCategories.length > 0 ? data.customCategories : DEFAULT_CUSTOM_CATEGORIES,
-          instrumentsDisponibles: Array.isArray(data.instrumentsDisponibles) ? data.instrumentsDisponibles : DEFAULT_INSTRUMENTS,
+          instrumentsDisponibles: Array.isArray(data.instrumentsDisponibles) && data.instrumentsDisponibles.length > 0
+            ? data.instrumentsDisponibles
+            : getUniverseDefaultInstruments(data.universeId || 'maracatu'),
           linkedInstruments: Array.isArray(data.linkedInstruments) ? data.linkedInstruments.map(link => {
             if (Array.isArray(link)) {
               return { name: '', instruments: link };
@@ -753,6 +762,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t) {
         legalClause: formData.clauseSpecifique || formData.legalClause || '',
         signaturePresidentUrl: finalSignaturePresidentUrl,
         signatureTresorierUrl: finalSignatureTresorierUrl,
+        universeId: formData.universeId || 'maracatu',
         fieldsConfig: formData.fieldsConfig,
         customCategories: formData.customCategories || DEFAULT_CUSTOM_CATEGORIES,
         instrumentsDisponibles: formData.instrumentsDisponibles,

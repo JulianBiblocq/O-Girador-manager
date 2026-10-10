@@ -2068,7 +2068,7 @@ export default function App() {
   };
 
   return (
-    <TerminologyProvider majoriteFeminine={majoriteFeminine}>
+    <TerminologyProvider majoriteFeminine={majoriteFeminine} universeId={associationData?.universeId || 'maracatu'}>
       <ViewSimulatorProvider
         realProfileData={profileData}
         tagsDisponibles={tagsDisponibles}

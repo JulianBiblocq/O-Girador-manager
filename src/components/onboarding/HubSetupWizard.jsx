@@ -6,6 +6,7 @@ import imageCompression from 'browser-image-compression';
 import { auth, db, storage } from '../../firebase';
 import CordelButton from '../CordelButton';
 import WizardProgressBar from './wizard/WizardProgressBar';
+import { getUniverseDefaultInstruments, normalizeUniverseId } from '../../constants/universeDefaults';
 
 export default function HubSetupWizard({ brandingStyle, onComplete }) {
   const [currentStep, setCurrentStep] = useState(1);
@@ -16,10 +17,12 @@ export default function HubSetupWizard({ brandingStyle, onComplete }) {
   const tokenUrl = searchParams.get('token') || '';
   const assocNameUrl = searchParams.get('assoc') || '';
   const emailUrl = searchParams.get('email') || '';
+  const universeUrl = searchParams.get('universe') || searchParams.get('universeId') || 'maracatu';
 
   const [wizardData, setWizardData] = useState({
     token: tokenUrl,
     assocName: assocNameUrl,
+    universeId: normalizeUniverseId(universeUrl),
     billingEmail: emailUrl,
     useBillingEmail: true,
     personalEmail: '',
@@ -143,12 +146,17 @@ export default function HubSetupWizard({ brandingStyle, onComplete }) {
         mestre: true
       };
 
+      const effectiveUniverse = normalizeUniverseId(wizardData.universeId || 'maracatu');
+      const allDefaultInstruments = getUniverseDefaultInstruments(effectiveUniverse);
+      const nonPercussionRoles = ['Chant', 'Danse', 'Passistas'];
+      const defaultPercussions = allDefaultInstruments.filter(i => !nonPercussionRoles.includes(i));
+
       if (wizardData.poles.percussion) {
-        instrumentsDisponibles = ["Alfaia", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal"];
+        instrumentsDisponibles = [...defaultPercussions];
       }
       
       if (wizardData.poles.danse) {
-        instrumentsDisponibles.push("Danse");
+        instrumentsDisponibles.push(effectiveUniverse === 'samba' ? "Passistas" : "Danse");
       } else {
         // Désactiver le vestiaire si pas de danse
         enabledModules.vestiaire = false;
@@ -163,6 +171,7 @@ export default function HubSetupWizard({ brandingStyle, onComplete }) {
       await setDoc(assocRef, {
         nom: wizardData.assocName,
         ville: wizardData.city,
+        universeId: effectiveUniverse,
         majoriteFeminine: wizardData.genre === 'feminin',
         branding: {
           logoUrl: finalLogoUrl,
@@ -370,6 +379,20 @@ export default function HubSetupWizard({ brandingStyle, onComplete }) {
                     />
                     <p className="text-[10px] text-stone-500 mt-1">Sert de repère par défaut.</p>
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">Univers culturel</label>
+                  <select
+                    value={wizardData.universeId || 'maracatu'}
+                    onChange={(e) => updateData('universeId', e.target.value)}
+                    className="w-full border-2 border-stone-300 rounded-lg px-3 py-2 text-sm focus:border-[var(--color-cordel-ocre,#c05621)] outline-none transition-colors bg-white font-medium"
+                  >
+                    <option value="maracatu">Maracatu de Baque Virado</option>
+                    <option value="batucada">Batucada & Samba-Reggae</option>
+                    <option value="samba">Samba de Enredo (Bateria)</option>
+                    <option value="capoeira">Capoeira Regional & Angola</option>
+                  </select>
                 </div>
 
                 <div>

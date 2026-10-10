@@ -142,7 +142,9 @@ const testScripts = [
   'scripts/test_varal_rope_labels_and_project_ropes.mjs',
   'scripts/test_commission_modal_backdrop_and_enter_key.mjs',
   'scripts/test_use_hardware_back_safety.mjs',
-  'scripts/test_forum_thread_context_bar.mjs'
+  'scripts/test_forum_thread_context_bar.mjs',
+  'scripts/test_dashboard_lcp_cls_optimization.mjs',
+  'scripts/test_commission_varal_rich_content.mjs'
 ];
 
 console.log("===============================================================");

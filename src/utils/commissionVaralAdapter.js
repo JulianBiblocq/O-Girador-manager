@@ -1,22 +1,18 @@
-import { 
-  collection, doc, getDoc, getDocs, addDoc, updateDoc, query, where 
-} from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, addDoc, updateDoc, query, where } from 'firebase/firestore';
 import { db } from '../firebase.js';
 import { generateCommissionMarkdown } from '../components/event-details/commissions/commissionUtils.js';
 
 export { generateCommissionMarkdown };
 
 export const DEFAULT_VARAL_CATEGORIES = [
-  { id: 'Toadas', nom: 'Toadas', actif: true },
-  { id: 'Culture', nom: 'Culture', actif: true },
-  { id: 'TutosFabrication', nom: 'Tutos Fabrication', actif: true },
-  { id: 'PhotosPrestations', nom: 'Photos Prestations', actif: true },
+  { id: 'Toadas', nom: 'Toadas', actif: true }, { id: 'Culture', nom: 'Culture', actif: true },
+  { id: 'TutosFabrication', nom: 'Tutos Fabrication', actif: true }, { id: 'PhotosPrestations', nom: 'Photos Prestations', actif: true },
   { id: 'ComptesRendus', nom: 'Documents administratifs', actif: true }
 ];
 
 /**
  * Convertit les données d'une commission en un document Varal normalisé (Livret Cordel).
- * Conforme à la spécification de la passerelle Commissions ➔ Varal.
+ * Enrichi avec la mission, les jalons (statuts, butoirs, notes détaillées indentées) et les postes.
  */
 export function convertCommissionToVaralDoc(event, commission, referentsNames = []) {
   if (!event || !commission) throw new Error('Événement et commission requis pour la conversion');
@@ -28,10 +24,17 @@ export function convertCommissionToVaralDoc(event, commission, referentsNames = 
   const eventTitle = event.titre || event.title || 'Événement associatif';
 
   const jalons = (commission.jalons || []).map((j) => {
-    const check = j.status === 'fait' ? '[x]' : '[ ]';
-    const st = j.status === 'fait' ? '✅ Fait' : j.status === 'en_cours' ? '⏳ En cours' : '🎯 À faire';
-    return `- ${check} **${j.titre}** [${st}]${j.deadline ? ` (Butoir : ${j.deadline})` : ''}`;
-  }).join('\n') || '_Aucun jalon défini pour le moment._';
+    const isDone = j.status === 'fait';
+    const isProgress = j.status === 'en_cours';
+    const check = isDone ? '[x]' : '[ ]';
+    const st = isDone ? '✅ Fait' : isProgress ? '⏳ En cours' : '🎯 À faire';
+    const head = `- ${check} **${j.titre}** [${st}]${j.deadline ? ` (Butoir : ${j.deadline})` : ''}`;
+    const rawDetails = j.notes || j.description || j.details || '';
+    const details = typeof rawDetails === 'string' ? rawDetails.trim() : '';
+    if (!details) return head;
+    const indented = details.split('\n').map((l) => `  > ${l}`).join('\n');
+    return `${head}\n${indented}`;
+  }).join('\n\n') || '_Aucun jalon défini pour le moment._';
 
   const creneaux = (commission.creneauxBenevoles || []).map((c) => {
     const left = Math.max(0, (c.places || 1) - (c.inscritsIds || []).length);
@@ -45,13 +48,14 @@ export function convertCommissionToVaralDoc(event, commission, referentsNames = 
   }).join('\n') || '_Aucun besoin matériel listé._';
 
   const contacts = refs.length > 0 ? refs.map((r) => `- 👤 ${r}`).join('\n') : '_Référents non assignés pour le moment._';
+  const desc = commission.description?.trim() || '_Aucune description ou mission détaillée renseignée._';
 
   const md = [
     `# ${commission.icone || '📌'} Commission : ${commission.titre}`, '',
     `**🎪 Événement :** ${eventTitle}`,
     `**✍️ Auteur(s) :** ${auteur}`,
     commission.budget?.alloue ? `**💰 Enveloppe allouée :** ${commission.budget.alloue} €` : '',
-    '', '## 🎯 Mission & Description', commission.description?.trim() || '_Aucune description ou mission détaillée renseignée._',
+    '', '## 🎯 Mission & Description', desc,
     '', '## 🗓️ Jalons clés', jalons,
     '', '## 🤝 Postes bénévoles', creneaux,
     '', '## 📦 Besoins matériels', besoins,
@@ -72,7 +76,11 @@ export function convertCommissionToVaralDoc(event, commission, referentsNames = 
     commissionSourceId: commission.id, eventId, eventTitle, projetTitre: eventTitle,
     eventDate, eventDateFin, isEventClosed, eventStatut,
     dateModification: nowIso, dateMiseAJour: nowIso,
-    contenu: md, texte: md, order: 50
+    contenu: md, texte: md, order: 50,
+    commissionData: {
+      id: commission.id, titre: commission.titre, icone: commission.icone,
+      description: commission.description, jalons: commission.jalons || []
+    }
   };
 }
 
@@ -80,10 +88,7 @@ export function convertCommissionToVaralDoc(event, commission, referentsNames = 
 export const formatCommissionToCordelDoc = convertCommissionToVaralDoc;
 
 /**
- * Détermine si une corde de projet est active selon les règles du cycle de vie Cordel :
- * 1. Zéro bloc vide : si 0 document publié, la corde est masquée.
- * 2. Clôture / archivage : si l'événement est clos ou archivé, la corde est masquée du carrousel principal.
- * 3. Péremption temporelle : si l'événement s'est terminé il y a plus de 30 jours, la corde s'efface naturellement.
+ * Détermine si une corde de projet est active selon les règles du cycle de vie Cordel.
  */
 export function isProjectRopeActive({ category, docs = [], event = null, now = new Date() }) {
   if (!category?.id?.startsWith('projet_')) return true;
@@ -138,7 +143,6 @@ export async function ensureProjectVaralRope(groupId, event) {
 
 /**
  * Publie ou met à jour le livret Cordel d'une commission dans la collection documents du Varal.
- * Opération idempotente : réutilise le document existant sans doublon.
  */
 export async function syncCommissionToVaral({ event, commission, referentsNames = [], usersMap = {}, groupId }) {
   if (!event?.id || !commission?.id) throw new Error('Paramètres manquants pour la synchronisation Varal');

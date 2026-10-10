@@ -5,18 +5,19 @@ import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { XiloChisel, XiloClose } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
+import { getCachedDashboardItem, setCachedDashboardItem } from '../utils/dashboardCacheUtils';
 
 export default function WidgetMotMestre({ role, isSystemAdmin, groupId, profileData, onNavigateToView }) {
   const { t } = useTranslation();
-  const [motDuMestre, setMotDuMestre] = useState('');
-  const [auteurNom, setAuteurNom] = useState('');
-  const [actionText, setActionText] = useState('');
-  const [actionLink, setActionLink] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [motDuMestre, setMotDuMestre] = useState(() => getCachedDashboardItem(groupId, 'mot_du_mestre', ''));
+  const [auteurNom, setAuteurNom] = useState(() => getCachedDashboardItem(groupId, 'mot_du_mestre_auteur', ''));
+  const [actionText, setActionText] = useState(() => getCachedDashboardItem(groupId, 'mot_du_mestre_action_text', ''));
+  const [actionLink, setActionLink] = useState(() => getCachedDashboardItem(groupId, 'mot_du_mestre_action_link', ''));
+  const [loading, setLoading] = useState(() => !motDuMestre);
   const [isEditing, setIsEditing] = useState(false);
   const [draftText, setDraftText] = useState('');
   const [saving, setSaving] = useState(false);
-  const [publie, setPublie] = useState(true);
+  const [publie, setPublie] = useState(() => getCachedDashboardItem(groupId, 'mot_du_mestre_publie', true));
 
   const isAuthorized = role === 'mestre' || role === 'super-admin' || isSystemAdmin === true;
 
@@ -43,16 +44,28 @@ export default function WidgetMotMestre({ role, isSystemAdmin, groupId, profileD
       return;
     }
 
-    setLoading(true);
+    if (!motDuMestre) {
+      setLoading(true);
+    }
     const docRef = doc(db, 'associations', groupId);
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
-        setMotDuMestre(data.motDuMestre || '');
-        setAuteurNom(data.motDuMestreAuteur || '');
-        setPublie(data.motDuMestrePublie !== false);
-        setActionText(data.motDuMestreActionText || '');
-        setActionLink(data.motDuMestreActionLink || '');
+        const m = data.motDuMestre || '';
+        const a = data.motDuMestreAuteur || '';
+        const p = data.motDuMestrePublie !== false;
+        const at = data.motDuMestreActionText || '';
+        const al = data.motDuMestreActionLink || '';
+        setMotDuMestre(m);
+        setAuteurNom(a);
+        setPublie(p);
+        setActionText(at);
+        setActionLink(al);
+        setCachedDashboardItem(groupId, 'mot_du_mestre', m);
+        setCachedDashboardItem(groupId, 'mot_du_mestre_auteur', a);
+        setCachedDashboardItem(groupId, 'mot_du_mestre_publie', p);
+        setCachedDashboardItem(groupId, 'mot_du_mestre_action_text', at);
+        setCachedDashboardItem(groupId, 'mot_du_mestre_action_link', al);
       } else {
         setMotDuMestre('');
         setAuteurNom('');
@@ -67,7 +80,7 @@ export default function WidgetMotMestre({ role, isSystemAdmin, groupId, profileD
     });
 
     return () => unsubscribe();
-  }, [groupId]);
+  }, [groupId, motDuMestre]);
 
   const handleEditToggle = () => {
     setDraftText(motDuMestre || t('widgetMotMestre.welcomeDefault'));
@@ -102,11 +115,12 @@ export default function WidgetMotMestre({ role, isSystemAdmin, groupId, profileD
 
   const displayedMessage = motDuMestre || t('widgetMotMestre.welcomeDefault');
 
-  if (!loading && !publie) {
+  if (!publie) {
     return null;
   }
 
-  if (!loading && !isAuthorized && (!motDuMestre || !motDuMestre.trim())) {
+  // Si l'utilisateur n'est pas autorisé et qu'aucun message n'est disponible, masquage immédiat (zéro CLS)
+  if (!isAuthorized && (!motDuMestre || !motDuMestre.trim())) {
     return null;
   }
 

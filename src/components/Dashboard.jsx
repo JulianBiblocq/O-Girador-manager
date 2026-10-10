@@ -23,6 +23,12 @@ import { canPublishAnnonces } from '../utils/permissionUtils';
 import { resolveEffectiveUserTags } from '../utils/tagUtils';
 import HeaderBrandTitle from './common/HeaderBrandTitle';
 import { useViewSimulator } from '../context/ViewSimulatorContext';
+import { 
+  getCachedDashboardItem, 
+  setCachedDashboardItem, 
+  getCachedDashboardLayout, 
+  setCachedDashboardLayout 
+} from '../utils/dashboardCacheUtils';
 
 export default function Dashboard({ 
   user, 
@@ -63,7 +69,8 @@ export default function Dashboard({
     return canPublishAnnonces(currentProfile, _permissionsMatrice, effectiveUserTags, breakGlassActive);
   }, [currentProfile, _permissionsMatrice, effectiveUserTags, breakGlassActive]);
 
-  const [layout, setLayout] = useState(["motMestre", "annonces", "agenda", "commandes", "forum", "documents", "tresorerie", "anniversaires"]);
+  const defaultLayout = useMemo(() => ["motMestre", "annonces", "agenda", "commandes", "forum", "documents", "tresorerie", "anniversaires"], []);
+  const [layout, setLayout] = useState(() => getCachedDashboardLayout(profileData?.groupId, defaultLayout));
   const [agendaFocusMode, setAgendaFocusMode] = useState(false);
   const [selectedEventForAgenda, setSelectedEventForAgenda] = useState(null);
 
@@ -88,10 +95,10 @@ export default function Dashboard({
   };
 
   // Synchronisation en temps réel de l'ordre d'affichage des widgets élèves, de motDuMestre et de la vidéo à la une
-  const [motDuMestre, setMotDuMestre] = useState('');
-  const [videoALaUne, setVideoALaUne] = useState(null);
-  const [hasActiveAnnouncements, setHasActiveAnnouncements] = useState(false);
-  const [hasOpenCampaign, setHasOpenCampaign] = useState(false);
+  const [motDuMestre, setMotDuMestre] = useState(() => getCachedDashboardItem(profileData?.groupId, 'mot_du_mestre', ''));
+  const [videoALaUne, setVideoALaUne] = useState(() => getCachedDashboardItem(profileData?.groupId, 'video_a_la_une', null));
+  const [hasActiveAnnouncements, setHasActiveAnnouncements] = useState(() => getCachedDashboardItem(profileData?.groupId, 'has_active_announcements', false));
+  const [hasOpenCampaign, setHasOpenCampaign] = useState(() => getCachedDashboardItem(profileData?.groupId, 'has_open_campaign', false));
 
   useEffect(() => {
     if (!profileData?.groupId) return;
@@ -148,8 +155,13 @@ export default function Dashboard({
         }
 
         setLayout(activeLayout);
-        setMotDuMestre(data.motDuMestre || '');
-        setVideoALaUne(data.videoALaUne || null);
+        setCachedDashboardLayout(profileData?.groupId, activeLayout);
+        const m = data.motDuMestre || '';
+        setMotDuMestre(m);
+        setCachedDashboardItem(profileData?.groupId, 'mot_du_mestre', m);
+        const v = data.videoALaUne || null;
+        setVideoALaUne(v);
+        setCachedDashboardItem(profileData?.groupId, 'video_a_la_une', v);
       }
     }, (error) => {
       console.error("Dashboard - Erreur onSnapshot association :", error);
@@ -181,7 +193,9 @@ export default function Dashboard({
         }
         return ann.cibles.some(t => userTags.includes(t));
       });
-      setHasActiveAnnouncements(visible.length > 0);
+      const hasActive = visible.length > 0;
+      setHasActiveAnnouncements(hasActive);
+      setCachedDashboardItem(profileData?.groupId, 'has_active_announcements', hasActive);
     }, (error) => {
       console.error("Dashboard - Erreur onSnapshot announcements :", error);
     });
@@ -195,7 +209,9 @@ export default function Dashboard({
     const campaignsRef = collection(db, 'campaigns');
     const q = query(campaignsRef, where('groupId', '==', profileData.groupId), where('status', '==', 'open'));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      setHasOpenCampaign(!querySnapshot.empty);
+      const isOpen = !querySnapshot.empty;
+      setHasOpenCampaign(isOpen);
+      setCachedDashboardItem(profileData?.groupId, 'has_open_campaign', isOpen);
     }, (error) => {
       console.error("Dashboard - Erreur onSnapshot campaigns :", error);
     });
@@ -301,7 +317,7 @@ export default function Dashboard({
                   alt={`${profileData?.prenom} ${profileData?.nom}`} 
                   width={40}
                   height={40}
-                  loading="lazy"
+                  loading="eager"
                   className="w-10 h-10 rounded-[8px_4px_7px_6px] border border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] object-cover grayscale contrast-[130%] sepia-[40%] mix-blend-multiply brightness-[95%] select-none pointer-events-none"
                 />
               ) : (
@@ -394,7 +410,20 @@ export default function Dashboard({
               break;
             case 'agenda':
               widgetContent = (
-                <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement de l'Agenda...</div>}>
+                <React.Suspense fallback={
+                  <div className="bg-cordel-master-dark/5 border-2 border-dashed border-cordel-master-dark/15 rounded-[8px_12px_9px_11px] p-4 min-h-[380px] animate-pulse flex flex-col justify-between select-none" aria-busy="true">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-cordel-master-dark/15 rounded-md shrink-0" />
+                      <div className="h-4 bg-cordel-master-dark/15 rounded w-1/3" />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 my-3">
+                      {[1, 2, 3].map((n) => (
+                        <div key={n} className="h-28 bg-cordel-master-dark/10 rounded" />
+                      ))}
+                    </div>
+                    <div className="h-3 bg-cordel-master-dark/15 rounded w-1/4" />
+                  </div>
+                }>
                   <WidgetAgenda 
                     role={currentProfile?.role} 
                     isSystemAdmin={currentProfile?.isSystemAdmin} 
@@ -442,7 +471,13 @@ export default function Dashboard({
               break;
             case 'documents':
               widgetContent = (
-                <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement du Varal...</div>}>
+                <React.Suspense fallback={
+                  <div className="bg-cordel-master-dark/5 border-2 border-dashed border-cordel-master-dark/15 rounded-[8px_12px_9px_11px] p-4 min-h-[160px] animate-pulse flex flex-col justify-between select-none" aria-busy="true">
+                    <div className="h-4 bg-cordel-master-dark/15 rounded w-1/4" />
+                    <div className="h-16 bg-cordel-master-dark/10 rounded my-2" />
+                    <div className="h-3 bg-cordel-master-dark/15 rounded w-1/3" />
+                  </div>
+                }>
                   <WidgetDocuments 
                     role={currentProfile?.role} 
                     isSystemAdmin={currentProfile?.isSystemAdmin} 
@@ -455,7 +490,12 @@ export default function Dashboard({
               break;
             case 'tresorerie':
               widgetContent = (
-                <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement de la Trésorerie...</div>}>
+                <React.Suspense fallback={
+                  <div className="bg-cordel-master-dark/5 border-2 border-dashed border-cordel-master-dark/15 rounded-[8px_12px_9px_11px] p-4 min-h-[120px] animate-pulse flex flex-col justify-between select-none" aria-busy="true">
+                    <div className="h-4 bg-cordel-master-dark/15 rounded w-1/3" />
+                    <div className="h-10 bg-cordel-master-dark/10 rounded my-2" />
+                  </div>
+                }>
                   <WidgetTreasury 
                     groupId={currentProfile?.groupId} 
                     profileData={currentProfile} 

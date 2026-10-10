@@ -1,5 +1,6 @@
 import React from 'react';
 import FramaspaceGalleryViewer from '../studio/FramaspaceGalleryViewer';
+import CommissionDocReader from './varal/CommissionDocReader';
 
 /**
  * Utilitaires pour analyser les URLs vidéo (YouTube, Vimeo, fichiers directs).
@@ -527,9 +528,7 @@ export default function DocumentViewerModal({ document: docItem, onClose }) {
                 )}
               </div>
 
-              <div className="p-4 sm:p-6 bg-white border-2 border-encre-noire/20 rounded-[6px_10px_4px_8px] shadow-xs text-xs whitespace-pre-wrap leading-relaxed font-medium text-encre-noire">
-                {docItem.contenu || docItem.texte || "Aucun contenu rédigé pour cette commission."}
-              </div>
+              <CommissionDocReader docItem={docItem} />
             </div>
           )}
         </div>
