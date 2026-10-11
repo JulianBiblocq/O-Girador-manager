@@ -16,6 +16,7 @@ import PublicThemeProvider from './components/PublicThemeProvider';
 import { tracker } from './utils/O-Girador-Tracker';
 import { useAppUpdate } from './hooks/useAppUpdate';
 import { useConversations } from './hooks/useConversations';
+import useDynamicFavicon from './hooks/useDynamicFavicon';
 
 import { lazyWithRetry } from './utils/pwaUtils';
 import { resolveEffectiveUserTags } from './utils/tagUtils';
@@ -393,6 +394,22 @@ export default function App() {
   const [showOnboardingWizard, setShowOnboardingWizard] = useState(false);
   const [hasTriggeredOnboardingAuto, setHasTriggeredOnboardingAuto] = useState(false);
 
+  // Hook modulaire générant dynamiquement le favicon composite (O Girador × Association)
+  const effectiveFaviconAssociationData = useMemo(() => {
+    if (associationData) return associationData;
+    if (associationName || branding?.logoUrl) {
+      return {
+        nom: associationName,
+        name: associationName,
+        logoUrl: branding?.logoUrl,
+        branding
+      };
+    }
+    return null;
+  }, [associationData, associationName, branding]);
+
+  useDynamicFavicon(effectiveFaviconAssociationData);
+
   const isAdministrativeUser = Boolean(
     profileData?.isSystemAdmin || 
     profileData?.role === 'super-admin' || 
@@ -633,149 +650,24 @@ export default function App() {
     setInstallPromptAvailable(false);
   };
 
-  // Generate dynamic Manifest with canvas branded stamp
+  // Synchronisation de la couleur de thème mobile et du lien manifest PWA statique
   useEffect(() => {
-    let activeGroupId = profileData?.groupId || null;
-    if (!activeGroupId) {
-      const searchParams = new URLSearchParams(window.location.search);
-      activeGroupId = searchParams.get('groupe') || null;
+    const primaryCol = branding?.colors?.primary || '#8B2A1A';
+    const themeMeta = document.querySelector('meta[name="theme-color"]');
+    if (themeMeta && primaryCol) {
+      themeMeta.setAttribute('content', primaryCol);
     }
 
-    if (!activeGroupId) return;
-
-    const generateAndInjectManifest = async () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = 512;
-      canvas.height = 512;
-      const ctx = canvas.getContext('2d');
-
-      const bgCol = branding?.colors?.background || '#f4ecd8';
-      const primaryCol = branding?.colors?.primary || '#8B2A1A';
-      const textCol = branding?.colors?.text || '#181716';
-      const logoSrc = branding?.logoUrl;
-
-      // Appliquer un masque circulaire strict pour garantir la transparence extérieure
-      ctx.beginPath();
-      ctx.arc(256, 256, 256, 0, Math.PI * 2);
-      ctx.clip();
-
-      // Draw paper background
-      ctx.fillStyle = bgCol;
-      ctx.fillRect(0, 0, 512, 512);
-
-      // Draw double textured woodcut circles
-      ctx.strokeStyle = primaryCol;
-      ctx.lineWidth = 14;
-      ctx.beginPath();
-      ctx.arc(256, 256, 230, 0, Math.PI * 2);
-      ctx.stroke();
-
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.arc(256, 256, 215, 0, Math.PI * 2);
-      ctx.stroke();
-
-      ctx.lineWidth = 2;
-      ctx.setLineDash([8, 6]);
-      ctx.beginPath();
-      ctx.arc(256, 256, 205, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      // Dessin du texte circulaire "★ O GIRADOR ★" en bas à l'intérieur de l'anneau (de gauche à droite)
-      ctx.font = 'bold 24px Courier New, Courier, monospace';
-      ctx.fillStyle = textCol;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      
-      const label = "★ O GIRADOR ★";
-      const radius = 175;
-      const angleStep = 0.16;
-      // Pour afficher le texte de gauche à droite sur l'arc inférieur (angle PI/2 = bas) :
-      // L'angle de départ commence du côté gauche (> PI/2) et diminue vers le côté droit (< PI/2).
-      const startAngle = Math.PI / 2 + (label.length - 1) * angleStep / 2;
-
-      for (let i = 0; i < label.length; i++) {
-        const charAngle = startAngle - i * angleStep;
-        const x = 256 + Math.cos(charAngle) * radius;
-        const y = 256 + Math.sin(charAngle) * radius;
-        
-        ctx.save();
-        ctx.translate(x, y);
-        ctx.rotate(charAngle - Math.PI / 2);
-        ctx.fillText(label[i], 0, 0);
-        ctx.restore();
-      }
-
-      if (logoSrc) {
-        try {
-          const img = new Image();
-          img.crossOrigin = 'anonymous';
-          img.src = logoSrc;
-          await new Promise((resolve, reject) => {
-            img.onload = resolve;
-            img.onerror = reject;
-          });
-
-          const targetSize = 310;
-          let w = img.width;
-          let h = img.height;
-          const ratio = w / h;
-          if (w > h) {
-            w = targetSize;
-            h = targetSize / ratio;
-          } else {
-            h = targetSize;
-            w = targetSize * ratio;
-          }
-          ctx.drawImage(img, 256 - w / 2, 235 - h / 2, w, h);
-        } catch (err) {
-          console.error("App - Erreur logo Canvas PWA fallback text :", err);
-          ctx.font = 'bold 42px Courier New, Courier, monospace';
-          ctx.fillStyle = textCol;
-          ctx.fillText(associationName ? associationName.substring(0, 12).toUpperCase() : 'RODA', 256, 220);
-        }
-      } else {
-        ctx.font = 'bold 42px Courier New, Courier, monospace';
-        ctx.fillStyle = textCol;
-        ctx.fillText(associationName ? associationName.substring(0, 12).toUpperCase() : 'RODA', 256, 220);
-      }
-
-      const iconDataUrl = canvas.toDataURL('image/png');
-      
-      // Partager ce logo combiné au reste de l'application (ex: LayoutShell)
-      window.dispatchEvent(new CustomEvent('combined-logo-ready', { detail: iconDataUrl }));
-
-      // Mettre à jour favicon and apple-touch-icon with branded canvas icon
-      let faviconElement = document.querySelector('link#favicon') || document.querySelector('link[rel="icon"]');
-      if (faviconElement && iconDataUrl) {
-        faviconElement.href = iconDataUrl;
-      }
-      let appleIconElement = document.querySelector('link[rel="apple-touch-icon"]');
-      if (appleIconElement && iconDataUrl) {
-        appleIconElement.href = iconDataUrl;
-      }
-
-      // Mettre à jour meta theme-color
-      let themeMeta = document.querySelector('meta[name="theme-color"]');
-      if (themeMeta && primaryCol) {
-        themeMeta.setAttribute('content', primaryCol);
-      }
-
-      // Ensure manifest link always points to valid static /manifest.json (never a blob: URL)
-      let linkElement = document.querySelector('link[rel="manifest"]');
-      if (!linkElement) {
-        linkElement = document.createElement('link');
-        linkElement.rel = 'manifest';
-        linkElement.href = '/manifest.json';
-        document.head.appendChild(linkElement);
-      } else {
-        linkElement.href = '/manifest.json';
-      }
-    };
-
-    generateAndInjectManifest();
-  }, [branding, associationName, profileData?.groupId]);
+    let linkElement = document.querySelector('link[rel="manifest"]');
+    if (!linkElement) {
+      linkElement = document.createElement('link');
+      linkElement.rel = 'manifest';
+      linkElement.href = '/manifest.json';
+      document.head.appendChild(linkElement);
+    } else {
+      linkElement.href = '/manifest.json';
+    }
+  }, [branding?.colors?.primary]);
 
   // Automatically associate or switch the user's group if they open the app via an invitation URL
   // containing a different groupId than their current profileData.groupId

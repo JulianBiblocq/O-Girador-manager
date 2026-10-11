@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Sentier pour le texte circulaire "★ O GIRADOR ★" sur l'arc inférieur -->
+    <path id="textArcBottom" d="M 54,285 A 206,206 0 0,0 458,285" fill="none" />
+  </defs>
+
+  <!-- Fond parchemin / papier kraft clair -->
+  <circle cx="256" cy="256" r="248" fill="#f4ecd8" stroke="#8B2A1A" stroke-width="14" />
+  <circle cx="256" cy="256" r="232" fill="none" stroke="#c05621" stroke-width="4" />
+  <circle cx="256" cy="256" r="220" fill="none" stroke="#8B2A1A" stroke-width="3" stroke-dasharray="8,6" />
+
+  <!-- Disque central neutre pour accueillir le blason ou logo de l'association -->
+  <circle cx="256" cy="235" r="160" fill="#faf6ec" stroke="#8B2A1A" stroke-width="2.5" stroke-opacity="0.35" />
+
+  <!-- Gravure circulaire "★ O GIRADOR ★" en bas -->
+  <text font-family="'Cinzel Decorative', 'Georgia', 'Courier New', serif" font-size="28" font-weight="900" fill="#181716" letter-spacing="8">
+    <textPath href="#textArcBottom" startOffset="50%" text-anchor="middle">
+      ★ O GIRADOR ★
+    </textPath>
+  </text>
+</svg>
