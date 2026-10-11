@@ -15,22 +15,12 @@ function drawNeutralFrame(ctx, bgCol = '#f4ecd8', primaryCol = '#8B2A1A', textCo
   ctx.fillRect(0, 0, 128, 128);
   ctx.strokeStyle = primaryCol;
   ctx.lineWidth = 4;
-  ctx.beginPath();
-  ctx.arc(64, 64, 57, 0, Math.PI * 2);
-  ctx.stroke();
-
-  ctx.strokeStyle = '#c05621';
-  ctx.lineWidth = 1.2;
-  ctx.beginPath();
-  ctx.arc(64, 64, 53, 0, Math.PI * 2);
-  ctx.stroke();
-
-  ctx.strokeStyle = primaryCol;
-  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(64, 64, 57, 0, Math.PI * 2); ctx.stroke();
+  ctx.strokeStyle = '#c05621'; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.arc(64, 64, 53, 0, Math.PI * 2); ctx.stroke();
+  ctx.strokeStyle = primaryCol; ctx.lineWidth = 1;
   ctx.setLineDash([3, 2]);
-  ctx.beginPath();
-  ctx.arc(64, 64, 50, 0, Math.PI * 2);
-  ctx.stroke();
+  ctx.beginPath(); ctx.arc(64, 64, 50, 0, Math.PI * 2); ctx.stroke();
   ctx.setLineDash([]);
 
   // Gravure circulaire "★ O GIRADOR ★"
@@ -111,9 +101,13 @@ function updateFavicon(url) {
 }
 
 /**
- * Hook dynamique de génération du favicon composite (O Girador × Association).
+ * Hook dynamique de gestion du favicon :
+ * - Mode 'pure' (Mostrador) : logo direct de l'association sans anneau
+ * - Mode 'composite' (Organizad'Or) : macaron gravé O Girador avec logo ou initiales
  */
-export default function useDynamicFavicon(associationData) {
+export default function useDynamicFavicon(associationData, options = {}) {
+  const isPureLogo = Boolean(options?.isPureLogo);
+
   useEffect(() => {
     if (typeof window === 'undefined' || typeof document === 'undefined') return;
     let isMounted = true;
@@ -123,6 +117,18 @@ export default function useDynamicFavicon(associationData) {
     const name = associationData?.nom || associationData?.name || associationData?.associationName || '';
     const colors = associationData?.branding?.colors || {};
 
+    // 1. Mode Vitrine Publique (Mostrador) : injection directe du logo pur de l'association
+    if (isPureLogo) {
+      if (logoUrl) {
+        updateFavicon(logoUrl);
+        window.dispatchEvent(new CustomEvent('combined-logo-ready', { detail: logoUrl }));
+      } else {
+        updateFavicon('/og-girador-frame.svg');
+      }
+      return () => { isMounted = false; };
+    }
+
+    // 2. Mode Manager (Organizad'Or) : composition sur canvas Retina avec anneau O Girador
     const generateFavicon = () => {
       try {
         const canvas = document.createElement('canvas');
@@ -157,7 +163,8 @@ export default function useDynamicFavicon(associationData) {
               updateFavicon('/og-girador-frame.svg');
             }
           };
-          activeImg.src = logoUrl;
+          // Sécurisation anti-collision cache navigateur (CORS vs no-CORS)
+          activeImg.src = logoUrl.includes('?') ? `${logoUrl}&cvs=1` : `${logoUrl}?cvs=1`;
         } else {
           drawInitialsInCenter(ctx, name, colors.primary || '#8B2A1A');
           const dataUrl = canvas.toDataURL('image/png');
@@ -183,6 +190,7 @@ export default function useDynamicFavicon(associationData) {
     associationData?.name,
     associationData?.nom,
     associationData?.id,
-    associationData?.groupId
+    associationData?.groupId,
+    isPureLogo
   ]);
 }

@@ -394,7 +394,19 @@ export default function App() {
   const [showOnboardingWizard, setShowOnboardingWizard] = useState(false);
   const [hasTriggeredOnboardingAuto, setHasTriggeredOnboardingAuto] = useState(false);
 
-  // Hook modulaire générant dynamiquement le favicon composite (O Girador × Association)
+  // Détection du mode Vitrine Publique (Mostrador) pour afficher le logo pur de l'association
+  const isVitrineMode = useMemo(() => {
+    if (appMode === 'mostrador') return true;
+    if (typeof window === 'undefined') return false;
+    const path = currentRoute || window.location.pathname || '';
+    if (path.startsWith('/app') || path.startsWith('/events') || path.startsWith('/agenda') || path.startsWith('/forum')) return false;
+    if (['/setup', '/login'].includes(path)) return false;
+    return !user || path.includes('/vitrine') || path.includes('/mostrador');
+  }, [appMode, currentRoute, user]);
+
+  // Hook modulaire générant dynamiquement le favicon :
+  // - Mode pure pour Mostrador (logo de l'association seul)
+  // - Mode composite pour Organizad'Or (anneau gravé O Girador x Association)
   const effectiveFaviconAssociationData = useMemo(() => {
     if (associationData) return associationData;
     if (associationName || branding?.logoUrl) {
@@ -408,7 +420,7 @@ export default function App() {
     return null;
   }, [associationData, associationName, branding]);
 
-  useDynamicFavicon(effectiveFaviconAssociationData);
+  useDynamicFavicon(effectiveFaviconAssociationData, { isPureLogo: isVitrineMode });
 
   const isAdministrativeUser = Boolean(
     profileData?.isSystemAdmin || 
@@ -461,7 +473,13 @@ export default function App() {
     
     if (!activeGroupId) {
       const searchParams = new URLSearchParams(window.location.search);
-      activeGroupId = canonicalizeGroupId(searchParams.get('groupe') || searchParams.get('tenant') || searchParams.get('assoc') || null);
+      activeGroupId = canonicalizeGroupId(
+        searchParams.get('groupe') || 
+        searchParams.get('tenant') || 
+        searchParams.get('assoc') || 
+        urlGroupId || 
+        null
+      );
     }
 
     if (!activeGroupId) {
@@ -481,6 +499,8 @@ export default function App() {
         setAssociationData({ id: docSnap.id, groupId: docSnap.id, ...data });
         if (data.branding) {
           setBranding(data.branding);
+        } else if (data.logoUrl) {
+          setBranding({ logoUrl: data.logoUrl });
         } else {
           setBranding(null);
         }
@@ -517,7 +537,7 @@ export default function App() {
     });
 
     return () => unsubscribe();
-  }, [profileData?.groupId, user]);
+  }, [profileData?.groupId, user, urlGroupId, appMode]);
 
   // Déclenchement automatique de l'assistant d'onboarding pour l'administrateur/mestre lors du premier démarrage
   useEffect(() => {

@@ -32,10 +32,20 @@ const frameContent = fs.readFileSync(framePath, 'utf-8');
 assert.ok(frameContent.includes('O GIRADOR'), 'L\'asset doit contenir la gravure O GIRADOR');
 console.log('✅ Asset public/og-girador-frame.svg : PRÉSENT ET VALIDE');
 
-// 4. Vérification de l'intégration dans App.jsx
+// 4. Vérification du mode pur (Mostrador) et composite (Organizad'Or)
+assert.ok(hookContent.includes('isPureLogo'), 'Le hook doit supporter l\'option isPureLogo pour la vitrine');
+console.log('✅ Support mode logo pur (Mostrador) & macaron composite (Organizad\'Or) : VALIDÉ');
+
+// 5. Vérification de l'intégration dans App.jsx et PublicSeoHead.jsx
 const appPath = path.resolve('./src/App.jsx');
 const appContent = fs.readFileSync(appPath, 'utf-8');
 assert.ok(appContent.includes('useDynamicFavicon'), 'useDynamicFavicon doit être importé et appelé dans App.jsx');
-console.log('✅ Intégration dans App.jsx : VALIDÉE');
+assert.ok(appContent.includes('isVitrineMode'), 'App.jsx doit différencier isVitrineMode pour le favicon');
+console.log('✅ Intégration dans App.jsx avec isVitrineMode : VALIDÉE');
+
+const seoHeadPath = path.resolve('./src/components/public/PublicSeoHead.jsx');
+const seoHeadContent = fs.readFileSync(seoHeadPath, 'utf-8');
+assert.ok(seoHeadContent.includes('publicTheme?.logoUrl'), 'PublicSeoHead doit utiliser publicTheme.logoUrl pour le favicon vitrine');
+console.log('✅ Intégration dans PublicSeoHead.jsx : VALIDÉE');
 
 console.log('\n🎉 TOUTES LES VÉRIFICATIONS DU FAVICON DYNAMIQUE ONT RÉUSSI AVEC SUCCÈS !');

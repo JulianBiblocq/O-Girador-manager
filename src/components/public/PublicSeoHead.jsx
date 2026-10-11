@@ -33,8 +33,8 @@ export default function PublicSeoHead({ publicTheme = {}, associationName = '', 
   // 4. Image de couverture Open Graph (og:image)
   const ogImage = publicTheme?.publicHeroImage || branding?.logoUrl || '/favicon.svg';
 
-  // 5. Favicon de l'association
-  const faviconUrl = branding?.logoUrl;
+  // 5. Favicon pur de l'association (pour le site vitrine Mostrador)
+  const faviconUrl = branding?.logoUrl || publicTheme?.logoUrl || publicTheme?.branding?.logoUrl || '';
 
   return (
     <Helmet>
@@ -43,7 +43,7 @@ export default function PublicSeoHead({ publicTheme = {}, associationName = '', 
       <meta name="description" content={displayDescription} />
       <meta name="keywords" content={finalKeywords} />
 
-      {/* Favicons dynamiques (remplace ceux par défaut du manager) */}
+      {/* Favicon pur de l'association sur Mostrador */}
       {faviconUrl && (
         <>
           <link rel="icon" href={faviconUrl} />
