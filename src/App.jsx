@@ -291,6 +291,36 @@ export default function App() {
     }
   }, []);
 
+  // ✂️ Rétrocompatibilité Mostrador : migration automatique et silencieuse de ?tenant=xxx vers /xxx
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const hostname = window.location.hostname || '';
+      if (hostname.includes('mostrador')) {
+        const url = new URL(window.location.href);
+        const legacyTenant = url.searchParams.get('tenant') || 
+                             url.searchParams.get('groupe') || 
+                             url.searchParams.get('groupId') || 
+                             url.searchParams.get('assoc');
+
+        if (legacyTenant) {
+          const cleanTenant = legacyTenant.trim().toLowerCase();
+          url.searchParams.delete('tenant');
+          url.searchParams.delete('groupe');
+          url.searchParams.delete('groupId');
+          url.searchParams.delete('assoc');
+
+          const remainingSearch = url.searchParams.toString();
+          const cleanPath = `/${encodeURIComponent(cleanTenant)}`;
+          const cleanUrl = cleanPath + (remainingSearch ? `?${remainingSearch}` : '') + url.hash;
+
+          window.history.replaceState({}, document.title, cleanUrl);
+          setCurrentRoute(cleanPath);
+        }
+      }
+    } catch (_) {}
+  }, []);
+
   const { appMode, groupId: urlGroupId, isTenantLoading, tenantError } = useTenantContext();
   const { t } = useTranslation();
 

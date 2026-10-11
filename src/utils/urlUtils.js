@@ -12,8 +12,8 @@ import { isDemoMode } from '../demo/demoManager.js';
  * 2. Si un nom de domaine personnalisé existe (customDomain ou premier élément de customDomains) :
  *    renvoie `https://${customDomain}`.
  * 3. Sinon (association sans domaine dédié) :
- *    renvoie l'URL mutualisée Mostrador avec le tenant explicite :
- *    `https://mostrador.o-girador.com/?tenant=${currentGroupId}`.
+ *    renvoie l'URL mutualisée Mostrador en chemin direct convivial :
+ *    `https://mostrador.o-girador.com/${currentGroupId}`.
  * 
  * Signature polymorphe supportant :
  * - `getVitrineUrl(currentGroupId, associationSettings)`
@@ -81,9 +81,9 @@ export function getVitrineUrl(targetGroupIdOrUrls, associationSettings = {}, exp
       : `https://${cleanDomain}`;
   }
 
-  // Cas 2 : URL mutualisée Mostrador avec identification explicite du tenant
+  // Cas 2 : URL mutualisée Mostrador en chemin direct convivial (/:tenantId)
   if (cleanGroupId) {
-    return `https://mostrador.o-girador.com/?tenant=${encodeURIComponent(cleanGroupId)}`;
+    return `https://mostrador.o-girador.com/${encodeURIComponent(cleanGroupId)}`;
   }
 
   return 'https://mostrador.o-girador.com';

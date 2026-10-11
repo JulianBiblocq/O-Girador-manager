@@ -10,11 +10,23 @@ export default function useTenantResolver() {
     let initialMode = 'organizador', initGroup = null, initTenantId = null;
     if (typeof window !== 'undefined') {
       const h = window.location.hostname || '', p = window.location.pathname || '', s = new URLSearchParams(window.location.search || '');
+      const pathTenant = p.split('/').filter(Boolean)[0];
+      const reservedRoutes = ['api', 'login', 'setup', 'app', 'vitrine', 'mostrador', 'demo', 'agenda', 'events'];
+      const isPathTenantValid = pathTenant && !reservedRoutes.includes(pathTenant.toLowerCase());
+
       if (h === 'samambaia-maracatu.fr' || h === 'www.samambaia-maracatu.fr' || h.includes('samambaia')) {
         initGroup = 'Samambaia'; initTenantId = 'samambaia';
         initialMode = (p.startsWith('/app') || p.startsWith('/login') || p.startsWith('/events') || p.startsWith('/agenda')) ? 'organizador' : 'mostrador';
       } else if (s.get('app') === 'mostrador' || p.startsWith('/vitrine') || p.startsWith('/mostrador') || h.includes('mostrador')) {
         initialMode = 'mostrador';
+        if (h.includes('mostrador') && isPathTenantValid) {
+          initTenantId = pathTenant.toLowerCase();
+          initGroup = pathTenant;
+        } else if (s.get('tenant') || s.get('groupe') || s.get('groupId')) {
+          const legacy = (s.get('tenant') || s.get('groupe') || s.get('groupId')).trim();
+          initTenantId = legacy.toLowerCase();
+          initGroup = legacy;
+        }
       }
     }
     return {
@@ -29,6 +41,9 @@ export default function useTenantResolver() {
       if (typeof window === 'undefined') return;
       const hostname = window.location.hostname, urlParams = new URLSearchParams(window.location.search);
       const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
+      const reservedRoutes = ['api', 'login', 'setup', 'app', 'vitrine', 'mostrador', 'demo', 'agenda', 'events'];
+      const pathTenant = (window.location.pathname || '').split('/').filter(Boolean)[0];
+      const isPathTenantValid = pathTenant && !reservedRoutes.includes(pathTenant.toLowerCase());
 
       // 0. Sécurisation inconditionnelle absolue pour Samambaia sur son domaine dédié
       if (hostname === 'samambaia-maracatu.fr' || hostname === 'www.samambaia-maracatu.fr' || hostname.includes('samambaia')) {
@@ -65,14 +80,24 @@ export default function useTenantResolver() {
       if (isLocal) {
         const isPathVitrine = window.location.pathname.startsWith('/vitrine') || window.location.pathname.startsWith('/mostrador');
         currentMode = (urlParams.get('app') === 'mostrador' || isPathVitrine) ? 'mostrador' : (urlParams.get('app') || import.meta.env.VITE_DEFAULT_APP || 'organizador');
-        extractedGroupId = tenantParam || import.meta.env.VITE_DEFAULT_TENANT || null;
+        if (currentMode === 'mostrador' && isPathTenantValid) {
+          extractedGroupId = pathTenant.toLowerCase();
+        } else {
+          extractedGroupId = tenantParam || import.meta.env.VITE_DEFAULT_TENANT || null;
+        }
       } 
       // 2. Production
       else {
         if (hostname === 'o-girador.com' || hostname === 'www.o-girador.com') {
           currentMode = 'orchestrador'; extractedGroupId = tenantParam || null;
         } else if (hostname.includes('o-girador.com') || hostname.includes('web.app') || hostname.includes('firebaseapp.com')) {
-          if (hostname.includes('mostrador')) currentMode = 'mostrador';
+          if (hostname.includes('mostrador')) {
+            currentMode = 'mostrador';
+            // Extraction directe du tenant par le chemin (ex: mostrador.o-girador.com/sambabulles)
+            if (isPathTenantValid) {
+              extractedGroupId = pathTenant.toLowerCase();
+            }
+          }
           else if (hostname.includes('organizador') || hostname.includes('manager')) currentMode = 'organizador';
           else if (hostname.includes('sequenciador')) currentMode = 'sequenciador';
           else if (hostname.includes('dancador')) currentMode = 'dancador';
@@ -81,7 +106,10 @@ export default function useTenantResolver() {
           if (parts.length > 2 && !['mostrador', 'organizador', 'manager', 'sequenciador', 'dancador', 'www', 'o-girador-organizador'].includes(parts[0])) {
             extractedGroupId = parts[0];
           }
-          if (tenantParam) extractedGroupId = tenantParam;
+          // Repli de compatibilité : searchParams (?tenant=...)
+          if (!extractedGroupId && tenantParam) {
+            extractedGroupId = tenantParam;
+          }
           if (urlParams.get('app') === 'mostrador' || window.location.pathname.startsWith('/vitrine') || window.location.pathname.startsWith('/mostrador')) {
             currentMode = 'mostrador';
           }
@@ -104,8 +132,8 @@ export default function useTenantResolver() {
         }
       }
 
-      // 4. Validation directe Firestore si paramètre explicite
-      if (tenantParam && extractedGroupId) {
+      // 4. Validation directe Firestore de l'identifiant de groupe (chemin direct ou paramètre)
+      if (extractedGroupId) {
         try {
           const canonicalId = canonicalizeGroupId(extractedGroupId);
           let assocSnap = await getDoc(doc(db, 'associations', canonicalId));
@@ -130,11 +158,11 @@ export default function useTenantResolver() {
       let mostradorUrl = '', organizadorUrl = '';
 
       if (isLocal) {
-        mostradorUrl = `/?app=mostrador${canonicalGroupId ? `&tenant=${encodeURIComponent(canonicalGroupId)}` : ''}`;
+        mostradorUrl = canonicalGroupId ? `/?app=mostrador&tenant=${encodeURIComponent(canonicalGroupId)}` : '/?app=mostrador';
         organizadorUrl = `/login?app=organizador${canonicalGroupId ? `&tenant=${encodeURIComponent(canonicalGroupId)}` : ''}`;
       } else {
         const groupPrefix = canonicalGroupId ? `${canonicalGroupId.toLowerCase()}.` : '';
-        mostradorUrl = canonicalGroupId ? `https://mostrador.o-girador.com/?tenant=${encodeURIComponent(canonicalGroupId.toLowerCase())}` : 'https://mostrador.o-girador.com';
+        mostradorUrl = canonicalGroupId ? `https://mostrador.o-girador.com/${encodeURIComponent(canonicalGroupId.toLowerCase())}` : 'https://mostrador.o-girador.com';
         organizadorUrl = `https://${groupPrefix}organizador.o-girador.com`;
       }
 

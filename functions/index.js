@@ -2086,7 +2086,17 @@ exports.serveDynamicApp = onRequest(async (req, res) => {
     // 1. Détection du groupe via paramètres d'URL, sous-domaine ou domaine personnalisé
     if (req.query && (req.query.groupe || req.query.tenant)) {
       groupId = req.query.groupe || req.query.tenant;
-    } else if (hostname.includes('mostrador.o-girador.com') || hostname.includes('organizador.o-girador.com')) {
+    } else if (hostname.includes('mostrador.o-girador.com') || hostname.includes('mostrador')) {
+      const pathTenant = (urlPath || '').split('/').filter(Boolean)[0];
+      const reserved = ['api', 'login', 'setup', 'app', 'vitrine', 'mostrador', 'demo', 'agenda', 'events'];
+      if (pathTenant && !reserved.includes(pathTenant.toLowerCase())) {
+        groupId = pathTenant.toLowerCase();
+      }
+      const parts = hostname.split('.');
+      if (!groupId && parts.length > 3 && parts[0] !== 'mostrador' && parts[0] !== 'organizador') {
+        groupId = parts[0];
+      }
+    } else if (hostname.includes('organizador.o-girador.com')) {
       const parts = hostname.split('.');
       if (parts.length > 3 && parts[0] !== 'mostrador' && parts[0] !== 'organizador') {
         groupId = parts[0];
