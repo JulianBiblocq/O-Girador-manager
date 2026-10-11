@@ -162,7 +162,7 @@ export function useConversations(user, groupId, profileData) {
               participantIds: existing.participantIds,
               senderId: user.uid,
               senderName: senderFullName,
-              senderAvatar: profileData?.photoURL || user.photoURL || '',
+              senderAvatar: profileData?.photoURL || user?.photoURL || '',
               content: initialMessage.trim(),
               timestamp: nowIso,
               reactions: {}
@@ -246,7 +246,7 @@ export function useConversations(user, groupId, profileData) {
             participantIds: participants,
             senderId: user.uid,
             senderName: senderFullName,
-            senderAvatar: profileData?.photoURL || user.photoURL || '',
+            senderAvatar: profileData?.photoURL || user?.photoURL || '',
             content: initialMessage.trim(),
             timestamp: nowIso,
             reactions: {}
@@ -306,7 +306,7 @@ export function useConversations(user, groupId, profileData) {
           participantIds: allParticipants,
           senderId: user.uid,
           senderName: senderFullName,
-          senderAvatar: profileData?.photoURL || user.photoURL || '',
+          senderAvatar: profileData?.photoURL || user?.photoURL || '',
           content: initialMessage.trim(),
           timestamp: nowIso,
           reactions: {}

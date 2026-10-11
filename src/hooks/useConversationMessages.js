@@ -89,7 +89,7 @@ export function useConversationMessages(conversationId, groupId, user, profileDa
         participantIds: effectiveParticipants,
         senderId: user.uid,
         senderName: senderFullName,
-        senderAvatar: profileData?.photoURL || user.photoURL || '',
+        senderAvatar: profileData?.photoURL || user?.photoURL || '',
         content: effectiveContent,
         imageUrl: imageUrl || null,
         thumbnailUrl: thumbnailUrl || imageUrl || null,

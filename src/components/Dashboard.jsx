@@ -313,8 +313,8 @@ export default function Dashboard({
             <div className="relative shrink-0">
               {(profileData?.photoURL || user?.photoURL) ? (
                 <img 
-                  src={profileData.photoURL || user.photoURL} 
-                  alt={`${profileData?.prenom} ${profileData?.nom}`} 
+                  src={profileData?.photoURL || user?.photoURL} 
+                  alt={`${profileData?.prenom || user?.displayName || ''} ${profileData?.nom || ''}`.trim() || 'Utilisateur'} 
                   width={40}
                   height={40}
                   loading="eager"

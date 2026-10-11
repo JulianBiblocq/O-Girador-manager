@@ -347,7 +347,7 @@ export default function PrivateChatView({
           senderAvatar:
             legacyMsg.senderAvatar ||
             (legacyMsg.senderId === user?.uid
-              ? (profileData?.photoURL || user.photoURL || '')
+              ? (profileData?.photoURL || user?.photoURL || '')
               : (effectiveOtherUser?.photoURL || ''))
         });
       }

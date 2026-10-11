@@ -509,9 +509,9 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
     const list = [...allUsers];
     if (user?.uid && profileData) {
       const idx = list.findIndex(u => u.id === user.uid || u.uid === user.uid);
-      const myProfile = { id: user.uid, uid: user.uid, ...profileData, photoURL: profileData.photoURL || user.photoURL };
+      const myProfile = { id: user?.uid, uid: user?.uid, ...profileData, photoURL: profileData?.photoURL || user?.photoURL };
       if (idx >= 0) {
-        list[idx] = { ...myProfile, ...list[idx], photoURL: list[idx].photoURL || profileData.photoURL || user.photoURL };
+        list[idx] = { ...myProfile, ...list[idx], photoURL: list[idx].photoURL || profileData?.photoURL || user?.photoURL };
       } else {
         list.push(myProfile);
       }
