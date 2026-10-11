@@ -254,7 +254,7 @@ function VaralWidgetContent({
       });
     } else if (docType === 'cordel_commission') {
       setSelectedDocumentView(docItem);
-    } else if (docType === 'report' || docType === 'compte_rendu') {
+    } else if (docType === 'report' || docType === 'compte_rendu' || docType === 'reunion_pv') {
       // Si le compte-rendu est un fichier PDF sans points structurés rédigés, l'ouvrir dans le lecteur universel
       if (docItem.fileUrl && (!docItem.points || docItem.points.length === 0) && !docItem.texte) {
         setSelectedDocumentView(docItem);

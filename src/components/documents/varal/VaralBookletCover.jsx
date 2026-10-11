@@ -3,7 +3,7 @@ import VaralClothespinSVG from './VaralClothespinSVG';
 import { getInstrumentStamp } from '../../InstrumentStampSVG';
 import { isWorkshopVirtualDoc } from '../../../utils/workshopProjectionUtils';
 import { useTranslation } from '../../LanguageContext';
-import { isAdministrativeDoc } from '../../../hooks/useVaralData';
+import { isAdministrativeDoc, isReportDoc } from '../../../hooks/useVaralData';
 
 /**
  * Calcule une couleur déterministe Cordel pour un document
@@ -42,6 +42,7 @@ export default function VaralBookletCover({
 
   const isArchived = docItem.isArchived === true;
   const isHidden = docItem.isHidden === true;
+  const isReport = isReportDoc(docItem);
   const isAdminDoc = isAdministrativeDoc(docItem);
 
   // Année du document pour la règle d'opacité des comptes-rendus
@@ -52,26 +53,31 @@ export default function VaralBookletCover({
   let colorClass = 'default';
   let opacityClass = 'opacity-100';
 
-  if (category?.id === 'ComptesRendus' || category?.nom?.includes('Comptes-rendus')) {
-    if (isAdminDoc) {
-      // Documents administratifs fixes : Bleu ardoise et 100% d'opacité permanente
-      colorClass = 'bleu-ardoise';
-      opacityClass = 'opacity-100';
+  // 1. Cloisonnement strict et mutuellement exclusif : Comptes-rendus (ROUGE) vs Documents statutaires (BLEU)
+  if (isReport) {
+    // Livrets rouges (Comptes-rendus de réunion) : theme-bg-rouge, opacité 50% pour les années antérieures
+    colorClass = 'rouge';
+    if (isPastYear || isArchived) {
+      opacityClass = 'opacity-50 grayscale-[0.2] hover:opacity-100 hover:grayscale-0 transition-all duration-300';
+    } else if (isHidden) {
+      opacityClass = 'opacity-85 hover:opacity-100 transition-all duration-300';
     } else {
-      // Comptes-rendus de réunions : Rouge Cordel
-      colorClass = 'rouge';
-      // Règle d'opacité : opacité réduite (50%) UNIQUEMENT pour les comptes-rendus des années antérieures
-      if (isPastYear || isArchived) {
-        opacityClass = 'opacity-50 grayscale-[0.2] hover:opacity-100 hover:grayscale-0 transition-all duration-300';
-      } else if (isHidden) {
-        opacityClass = 'opacity-85 hover:opacity-100 transition-all duration-300';
-      } else {
-        opacityClass = 'opacity-100';
-      }
+      opacityClass = 'opacity-100';
     }
-  } else if (category?.id === 'Administratif' || category?.id === 'DocumentsFixes' || category?.nom === 'Administratif') {
+  } else if (isAdminDoc || category?.id === 'Administratif' || category?.id === 'DocumentsFixes' || category?.nom === 'Administratif') {
+    // Livrets bleus (Documents administratifs statutaires fixes) : theme-bg-bleu-ardoise, opacité fixe 100%
     colorClass = 'bleu-ardoise';
     opacityClass = 'opacity-100';
+  } else if (category?.id === 'ComptesRendus' || category?.nom?.includes('Comptes-rendus') || category?.nom?.includes('Documents administratifs')) {
+    // Repli sécurisé sur la 5e corde partagée : les pièces non statutaires sont traitées en compte-rendu rouge
+    colorClass = 'rouge';
+    if (isPastYear || isArchived) {
+      opacityClass = 'opacity-50 grayscale-[0.2] hover:opacity-100 hover:grayscale-0 transition-all duration-300';
+    } else if (isHidden) {
+      opacityClass = 'opacity-85 hover:opacity-100 transition-all duration-300';
+    } else {
+      opacityClass = 'opacity-100';
+    }
   } else if (category?.id?.startsWith('projet_') || category?.isProjectRope || docItem.type === 'cordel_commission' || docType === 'cordel_commission') {
     colorClass = 'ocre';
     opacityClass = 'opacity-100';

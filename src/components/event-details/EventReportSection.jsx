@@ -377,12 +377,29 @@ export default function EventReportSection({ event, user, profileData, associati
       const docSousTitre = `${audienceLabel} • ${presentsSummary}`;
       const eventYear = event.date ? new Date(event.date).getFullYear() : new Date().getFullYear();
 
-      // 4. Créer le document dans le Varal
-      const docRef = await addDoc(collection(db, 'documents'), {
+      // 4. Créer ou mettre à jour le document unique dans le Varal
+      let docRefId = event.compteRenduVaralId || null;
+      if (!docRefId) {
+        try {
+          const existingQuery = query(
+            collection(db, 'documents'),
+            where('groupId', '==', event.groupId),
+            where('eventId', '==', event.id)
+          );
+          const existingSnap = await getDocs(existingQuery);
+          if (!existingSnap.empty) {
+            docRefId = existingSnap.docs[0].id;
+          }
+        } catch (findErr) {
+          console.warn("EventReportSection - Recherche document existant :", findErr);
+        }
+      }
+
+      const docPayload = {
         titre: docTitle,
         sousTitre: docSousTitre,
-        categoryId: isCA ? 'ComptesRendus' : 'Administratif',
-        categorie: isCA ? 'ComptesRendus' : 'Administratif',
+        categoryId: 'ComptesRendus',
+        categorie: 'ComptesRendus',
         sousCategorie: isCA ? 'Comptes Rendus CA' : 'Comptes Rendus Publics',
         annee: eventYear,
         type: 'report',
@@ -399,13 +416,20 @@ export default function EventReportSection({ event, user, profileData, associati
         totalParticipants: totalParticipants,
         order: 9999,
         fileUrl: '' // Document dynamique Cordel
-      });
+      };
+
+      if (docRefId) {
+        await updateDoc(doc(db, 'documents', docRefId), docPayload);
+      } else {
+        const newDocRef = await addDoc(collection(db, 'documents'), docPayload);
+        docRefId = newDocRef.id;
+      }
 
       // 5. Mettre à jour le statut et l'audience de l'événement
       const eventRef = doc(db, 'events', event.id);
       await updateDoc(eventRef, {
         compteRenduStatus: 'publie',
-        compteRenduVaralId: docRef.id,
+        compteRenduVaralId: docRefId,
         audience: isCA ? 'ca' : 'publique',
         portee: isCA ? 'ca' : 'publique'
       });

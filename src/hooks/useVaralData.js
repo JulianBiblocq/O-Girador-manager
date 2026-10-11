@@ -36,13 +36,74 @@ export const DEFAULT_POLE_ROPES = {
 };
 
 /**
- * Détermine si un document relève de la documentation administrative fixe
+ * Détermine si un document porte un tag ou une métadonnée explicite de compte-rendu ou PV.
+ */
+export const hasReportTag = (docItem) => {
+  if (!docItem) return false;
+  const sousCat = (docItem.sousCategorie || docItem.sousCategorieFiche || '').toLowerCase();
+  if (sousCat.includes('compte') || sousCat.includes('rendu') || sousCat.includes('pv') || sousCat.includes('procès') || sousCat.includes('proces')) {
+    return true;
+  }
+  if (Array.isArray(docItem.tags)) {
+    return docItem.tags.some((t) => {
+      const val = (typeof t === 'string' ? t : (t?.label || t?.nom || t?.name || '')).toLowerCase().trim();
+      return val === 'cr' || val === 'pv' || val.includes('compte-rendu') || val.includes('compte rendu') || val.includes('procès-verbal') || val.includes('proces-verbal');
+    });
+  }
+  return false;
+};
+
+/**
+ * Détermine si un document relève STRICTEMENT des comptes-rendus de réunion (Livret ROUGE).
+ * Condition : doc.type === 'report' || doc.type === 'reunion_pv' || doc.categoryId === 'ComptesRendus'
+ * (ou type reunion / métadonnées de compte-rendu associées).
+ */
+export const isReportDoc = (docItem) => {
+  if (!docItem) return false;
+  if (docItem.type === 'report' || docItem.typeDoc === 'report') return true;
+  if (docItem.type === 'reunion_pv' || docItem.typeDoc === 'reunion_pv') return true;
+  if (docItem.type === 'reunion' || docItem.typeDoc === 'reunion' || docItem.reunionData) return true;
+  if (docItem.categoryId === 'ComptesRendus' || docItem.categorie === 'ComptesRendus') return true;
+  if (hasReportTag(docItem)) return true;
+  return false;
+};
+
+/**
+ * Détermine si un document relève STRICTEMENT des documents administratifs statutaires fixes (Livret BLEU).
  * (statuts, règlement intérieur, RIB, attestation d'assurance, composition CA)
  * par opposition aux comptes-rendus de réunions périodiques.
+ * 
+ * Condition : doc.categoryId === 'Administratif' && doc.type !== 'report' && doc.type !== 'reunion_pv'
+ * (et exclusion stricte de tout compte-rendu ou tag associé).
  */
 export const isAdministrativeDoc = (docItem) => {
   if (!docItem) return false;
-  if (docItem.type === 'reunion' || docItem.typeDoc === 'reunion' || docItem.reunionData) return false;
+  // Cloisonnement strict mutuellement exclusif : un compte-rendu ne peut JAMAIS être un document statutaire
+  if (
+    docItem.type === 'report' || 
+    docItem.typeDoc === 'report' || 
+    docItem.type === 'reunion_pv' || 
+    docItem.typeDoc === 'reunion_pv' || 
+    docItem.type === 'reunion' || 
+    docItem.typeDoc === 'reunion' || 
+    docItem.reunionData || 
+    docItem.categoryId === 'ComptesRendus' || 
+    docItem.categorie === 'ComptesRendus'
+  ) {
+    return false;
+  }
+  const sousCat = (docItem.sousCategorie || docItem.sousCategorieFiche || '').toLowerCase();
+  if (sousCat.includes('compte') || sousCat.includes('rendu') || sousCat.includes('pv') || sousCat.includes('procès') || sousCat.includes('proces')) {
+    return false;
+  }
+  if (Array.isArray(docItem.tags)) {
+    const hasTag = docItem.tags.some((t) => {
+      const val = (typeof t === 'string' ? t : (t?.label || t?.nom || t?.name || '')).toLowerCase().trim();
+      return val === 'cr' || val === 'pv' || val.includes('compte-rendu') || val.includes('compte rendu') || val.includes('procès-verbal') || val.includes('proces-verbal');
+    });
+    if (hasTag) return false;
+  }
+
   if (docItem.typeDoc === 'statuts' || docItem.type === 'statuts') return true;
   if (docItem.categoryId === 'Administratif' || docItem.categorie === 'Administratif') return true;
   const titre = (docItem.titre || '').toLowerCase();
@@ -453,6 +514,24 @@ export default function useVaralData({
           return;
         }
 
+        // DÉDUPLICATION STRICTE : Si un livret représentant déjà cette réunion existe dans la collection documents,
+        // ne JAMAIS injecter de livret doublon
+        const existingDoc = groups['ComptesRendus'].find(d => 
+          (d.eventId && d.eventId === reunion.id) || 
+          (reunion.compteRenduVaralId && d.id === reunion.compteRenduVaralId) ||
+          (d.id === reunion.id)
+        );
+
+        if (existingDoc) {
+          if (!existingDoc.reunionData) {
+            existingDoc.reunionData = reunion;
+          }
+          if (!existingDoc.date && reunion.date) {
+            existingDoc.date = reunion.date;
+          }
+          return;
+        }
+
         const eventDate = new Date(reunion.date);
         const now = new Date();
         const isPast = eventDate <= now;
@@ -484,6 +563,25 @@ export default function useVaralData({
           });
         }
       });
+    }
+
+    // Déduplication finale et tri strict sur "ComptesRendus" :
+    // Documents administratifs fixes (bleus) en tête, puis comptes-rendus (rouges) par date décroissante
+    if (groups['ComptesRendus'] && groups['ComptesRendus'].length > 0) {
+      // Déduplication par id unique et eventId
+      const seenIds = new Set();
+      const seenEventIds = new Set();
+      groups['ComptesRendus'] = groups['ComptesRendus'].filter(docItem => {
+        if (!docItem || !docItem.id) return false;
+        if (seenIds.has(docItem.id)) return false;
+        seenIds.add(docItem.id);
+
+        if (docItem.eventId) {
+          if (seenEventIds.has(docItem.eventId)) return false;
+          seenEventIds.add(docItem.eventId);
+        }
+        return true;
+      });
 
       // Trier "ComptesRendus" : Documents administratifs fixes en premier (à gauche), puis comptes-rendus par date décroissante
       groups['ComptesRendus'].sort((a, b) => {
@@ -500,9 +598,32 @@ export default function useVaralData({
           return (a.titre || '').localeCompare(b.titre || '');
         }
 
-        const dateA = a.date ? new Date(a.date).getTime() : new Date(a.createdAt || a.dateAjout || 0).getTime();
-        const dateB = b.date ? new Date(b.date).getTime() : new Date(b.createdAt || b.dateAjout || 0).getTime();
-        return dateB - dateA;
+        const getDateTimestamp = (item) => {
+          if (item.date) {
+            const t = new Date(item.date).getTime();
+            if (!isNaN(t)) return t;
+          }
+          if (item.dateAjout) {
+            const t = new Date(item.dateAjout).getTime();
+            if (!isNaN(t)) return t;
+          }
+          if (item.createdAt) {
+            const t = typeof item.createdAt.toMillis === 'function'
+              ? item.createdAt.toMillis()
+              : new Date(item.createdAt).getTime();
+            if (!isNaN(t)) return t;
+          }
+          if (item.annee) {
+            return new Date(`${item.annee}-01-01`).getTime();
+          }
+          return 0;
+        };
+
+        const dateA = getDateTimestamp(a);
+        const dateB = getDateTimestamp(b);
+        if (dateB !== dateA) return dateB - dateA;
+
+        return (a.titre || '').localeCompare(b.titre || '');
       });
     }
 
@@ -797,6 +918,8 @@ export default function useVaralData({
     saveCategory,
     deleteCategory,
     getDocType,
+    isReportDoc,
+    isAdministrativeDoc,
     allEventsMap
   };
 }
