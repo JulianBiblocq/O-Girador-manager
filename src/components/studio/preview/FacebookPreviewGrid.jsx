@@ -10,8 +10,8 @@ export default function FacebookPreviewGrid({
   publicationText = ''
 }) {
   const { t } = useTranslation();
-  const assocName = branding?.nom || 'Samambaia Maracatu';
-  const logoUrl = branding?.logoUrl || '/Pictures/tambour.png';
+  const assocName = branding?.nom || t('common.association', { defaultValue: 'Notre Association' });
+  const logoUrl = branding?.logoUrl || '/og-girador-frame.svg';
   const count = mediaList.length;
 
   return (

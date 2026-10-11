@@ -58,11 +58,11 @@ async function generateIcon(size, outputPath) {
     ctx.restore();
   }
 
-  // Draw association logo in center
+  // Dessin central neutre si aucun logo d'association n'est fourni
   try {
-    const logoPath = path.resolve('public/Pictures/logo-samambaia.png');
-    if (fs.existsSync(logoPath)) {
-      const img = await loadImage(logoPath);
+    const customLogoPath = process.env.CUSTOM_LOGO_PATH ? path.resolve(process.env.CUSTOM_LOGO_PATH) : null;
+    if (customLogoPath && fs.existsSync(customLogoPath)) {
+      const img = await loadImage(customLogoPath);
       const targetSize = 310 * scale;
       let w = img.width;
       let h = img.height;
@@ -77,7 +77,7 @@ async function generateIcon(size, outputPath) {
       ctx.drawImage(img, (256 * scale) - (w / 2), (235 * scale) - (h / 2), w, h);
     }
   } catch (err) {
-    console.error("Error drawing logo:", err);
+    console.error("Erreur lors du dessin du logo :", err);
   }
 
   const buffer = canvas.toBuffer('image/png');

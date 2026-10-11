@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "O Girador Samambaia",
-  "short_name": "O Girador Samambaia",
-  "description": "Application de gestion pour le groupe O Girador Samambaia",
+  "name": "Organizad'Or — O Girador",
+  "short_name": "Organizad'Or",
+  "description": "Application de gestion associative pour l'écosystème O Girador",
   "start_url": "/app",
   "scope": "/",
   "display": "standalone",

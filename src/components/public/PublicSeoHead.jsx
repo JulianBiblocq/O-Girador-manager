@@ -31,7 +31,7 @@ export default function PublicSeoHead({ publicTheme = {}, associationName = '', 
   const finalKeywords = userKeywords ? `${userKeywords}, ${forcedSaasKeywords}` : forcedSaasKeywords;
 
   // 4. Image de couverture Open Graph (og:image)
-  const ogImage = publicTheme?.publicHeroImage || branding?.logoUrl || '/favicon.svg';
+  const ogImage = publicTheme?.publicHeroImage || branding?.logoUrl || '/og-girador-frame.svg';
 
   // 5. Favicon pur de l'association (pour le site vitrine Mostrador)
   const faviconUrl = branding?.logoUrl || publicTheme?.logoUrl || publicTheme?.branding?.logoUrl || '';

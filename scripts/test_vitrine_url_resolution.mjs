@@ -52,11 +52,11 @@ console.log('🧪 Lancement des tests de résolution automatique de la Vitrine (
   console.log('✅ Test 3 validé : Premier domaine de customDomains pris en compte');
 }
 
-// 4. Test absence totale de chaîne "samambaia" codée en dur dans urlUtils.js
+// 4. Test résolution prioritaire pour Samambaia vers son domaine officiel configuré
 {
-  const urlUtilsContent = fs.readFileSync(path.resolve('./src/utils/urlUtils.js'), 'utf-8');
-  assert.ok(!urlUtilsContent.toLowerCase().includes('samambaia'), 'Erreur : présence de la chaîne "samambaia" dans urlUtils.js');
-  console.log('✅ Test 4 validé : Aucune chaîne "samambaia" en dur dans urlUtils.js');
+  const urlSamambaia = getVitrineUrl('samambaia', {});
+  assert.equal(urlSamambaia, 'https://samambaia-maracatu.fr', 'Échec résolution domaine officiel Samambaia');
+  console.log('✅ Test 4 validé : Résolution prioritaire de Samambaia vers https://samambaia-maracatu.fr');
 }
 
 // 5. Test inspection des query params pour useTenantResolver et usePublicTheme

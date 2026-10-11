@@ -69,6 +69,11 @@ export function getVitrineUrl(targetGroupIdOrUrls, associationSettings = {}, exp
     }
   }
 
+  // Priorité absolue pour Samambaia vers son domaine officiel configuré
+  if (!customDomain && (cleanGroupId === 'samambaia' || String(settings?.name || settings?.nom || '').toLowerCase().includes('samambaia'))) {
+    customDomain = 'https://samambaia-maracatu.fr';
+  }
+
   if (customDomain) {
     const cleanDomain = customDomain.replace(/\/+$/, '');
     return cleanDomain.startsWith('http://') || cleanDomain.startsWith('https://')

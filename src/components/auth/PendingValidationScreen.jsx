@@ -8,7 +8,7 @@ import PostTrialWishesCard from './PostTrialWishesCard';
  * n'a pas encore été validé par un administrateur / le bureau de l'association.
  */
 export default function PendingValidationScreen({ profileData, branding, onSignOut }) {
-  const logoSrc = branding?.logoUrl || '/favicon.svg';
+  const logoSrc = branding?.logoUrl || '/og-girador-frame.svg';
 
   const handleReload = () => {
     window.location.reload();

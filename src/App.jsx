@@ -1196,20 +1196,22 @@ export default function App() {
 
   // 1. Écran de chargement (Authentification ou chargement Firestore)
   if (loading || checkingProfile) {
-    const logoSrc = branding?.logoUrl || '/favicon.svg';
+    // Résolution dynamique du visuel : logo de l'association si résolu, sinon macaron neutre O Girador
+    const activeLogo = branding?.logoUrl || associationData?.logoUrl || null;
+    const logoSrc = activeLogo || '/og-girador-frame.svg';
     return (
       <div style={brandingStyle} className="min-h-screen w-full flex flex-col justify-center items-center p-6 bg-[var(--cordel-bg)] text-[var(--cordel-text)] transition-colors duration-300">
         <div className="flex flex-col items-center gap-4 text-center max-w-xs sm:max-w-sm w-full">
           {logoSrc && (
-            <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden flex items-center justify-center mb-2 mx-auto">
+            <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden flex items-center justify-center mb-2 mx-auto bg-transparent">
               <img 
                 src={logoSrc} 
-                alt="Logo Association" 
-                className="w-full h-full object-cover select-none" 
+                alt={activeLogo ? (associationName || 'Logo Association') : 'O Girador'} 
+                className="w-full h-full object-contain select-none" 
               />
             </div>
           )}
-          {/* Spinner stylisé */}
+          {/* Spinner stylisé Cordel */}
           <div className="relative w-16 h-16 select-none animate-spin">
             <div className="absolute inset-0 rounded-full border-4 border-[var(--cordel-border)]/20 animate-pulse"></div>
             <div className="absolute inset-0 rounded-full border-4 border-t-cordel-wood border-r-transparent border-b-transparent border-l-transparent"></div>
@@ -1273,7 +1275,10 @@ export default function App() {
     if (isTenantLoading) {
       return (
         <div style={brandingStyle} className="min-h-screen flex flex-col justify-center items-center py-12 bg-[#f4ecd8]">
-          <div className="animate-spin text-4xl mb-4 select-none">⏳</div>
+          <div className="w-20 h-20 rounded-full overflow-hidden flex items-center justify-center mb-3 select-none bg-transparent">
+            <img src="/og-girador-frame.svg" alt="O Girador" className="w-full h-full object-contain" />
+          </div>
+          <div className="animate-spin text-3xl mb-3 select-none">⏳</div>
           <span className="font-bold text-xs uppercase tracking-widest text-[#8b2a1a]">Chargement de la plateforme...</span>
         </div>
       );

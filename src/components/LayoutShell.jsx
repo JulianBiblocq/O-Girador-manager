@@ -40,7 +40,7 @@ import ViewSimulatorSelector from './navigation/ViewSimulatorSelector';
 import useLicenseGuard from '../hooks/useLicenseGuard';
 import SubscriptionBanner from './SubscriptionBanner';
 import { isDemoMode } from '../demo/demoManager';
-import { getVitrineUrl } from '../utils/urlUtils';
+import HeaderSealLogo from './common/HeaderSealLogo';
 import NotificationCenter from './notifications/NotificationCenter';
 import EcosystemAppLauncher from './navigation/EcosystemAppLauncher';
 import { HorizontalRibbonContainer } from './navigation/HorizontalTabRibbon';
@@ -103,10 +103,7 @@ export default function LayoutShell({
     return () => window.removeEventListener('combined-logo-ready', handleLogoReady);
   }, []);
 
-  const isDemo = isDemoMode();
-  const finalLogoUrl = isDemo
-    ? (logoUrl || '/brandings/logo-nachuva-girador.svg')
-    : (combinedLogoUrl || logoUrl || '/favicon.svg');
+
 
   const handleLogoClick = () => {
     setIsLogoTilting(true);
@@ -164,18 +161,7 @@ export default function LayoutShell({
   const onlineUserIds = React.useMemo(() => new Set(onlineMembers.map(m => m.id || m.uid)), [onlineMembers]);
   const isMasterKeyActive = isSuperAdmin && effectiveBreakGlassActive;
 
-  // Accès et ouverture sécurisée de la Vitrine publique
-  const hasVitrineModuleAccess = associationData?.appAccess?.vitrine ?? associationData?.appAccess?.mostrador;
-  const isVitrineButtonVisible = isDemoMode() || (hasVitrineModuleAccess !== false && Boolean(currentGroupId));
 
-  const handleOpenVitrine = () => {
-    const vitrineUrl = getVitrineUrl(urls, associationData, currentGroupId);
-    if (isDemoMode()) {
-      window.location.href = vitrineUrl;
-    } else {
-      window.open(vitrineUrl, '_blank', 'noopener,noreferrer');
-    }
-  };
   // isPrivileged contrôle l'affichage des boutons inaccessibles avec un cadenas (🔒).
   // Si le mode intervention est inactif ou en simulation, le super-admin subit le même masquage propre que les autres membres.
   const isPrivileged = isMasterKeyActive;
@@ -482,12 +468,13 @@ export default function LayoutShell({
               }`}
               title={t('poles.accueil')}
             >
-              <img 
-                src={finalLogoUrl} 
-                alt="Logo" 
-                width={40}
-                height={40}
-                className="w-10 h-10 landscape:w-8 landscape:h-8 object-cover rounded-full pointer-events-none drop-shadow-sm" 
+              <HeaderSealLogo
+                associationData={associationData}
+                associationName={associationName}
+                currentGroupId={currentGroupId}
+                logoUrl={logoUrl}
+                combinedLogoUrl={combinedLogoUrl}
+                size={40}
               />
               <div className="flex flex-col text-left truncate">
                 <span className="font-extrabold text-[8px] uppercase tracking-widest text-cordel-master-dark/50 truncate">
@@ -567,21 +554,16 @@ export default function LayoutShell({
         {/* Left Sidebar for Desktop (hidden on Mobile & Tablet) */}
         <div className="hidden lg:flex w-56 border-r-4 border-cordel-master-dark bg-cordel-bg-light flex-col items-center justify-between py-6 px-3 shrink-0 select-none">
           <div className="flex flex-col items-center gap-3 w-full flex-grow min-h-0">
-            <div 
+            <HeaderSealLogo
+              associationData={associationData}
+              associationName={associationName}
+              currentGroupId={currentGroupId}
+              logoUrl={logoUrl}
+              combinedLogoUrl={combinedLogoUrl}
+              isLogoTilting={isLogoTilting}
               onClick={handleLogoClick}
-              className={`w-20 h-20 rounded-full overflow-hidden flex items-center justify-center cursor-pointer hover:scale-[1.04] hover:rotate-[-4deg] active:translate-x-[0.5px] active:translate-y-[0.5px] transition-all duration-300 shrink-0 drop-shadow-md ${
-                isLogoTilting ? 'animate-logo-tilt' : ''
-              }`}
-              title={t('poles.accueil')}
-            >
-              <img 
-                src={finalLogoUrl} 
-                alt="Logo" 
-                width={80}
-                height={80}
-                className="w-full h-full object-cover pointer-events-none" 
-              />
-            </div>
+              size={80}
+            />
             <div className="flex flex-col items-center justify-center text-center px-1 shrink-0 mt-1">
               <div className="flex items-center gap-2 justify-center">
                 <span 
@@ -592,16 +574,6 @@ export default function LayoutShell({
                 </span>
               </div>
 
-              {isVitrineButtonVisible && (
-                <button
-                  type="button"
-                  onClick={handleOpenVitrine}
-                  className="w-full mt-1.5 py-1 px-2 text-[9px] font-black uppercase tracking-wider bg-[var(--color-cordel-vert)] text-white rounded-[5px_8px_6px_9px] border-2 border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-110 cursor-pointer flex items-center justify-center gap-1 transition-all"
-                  title={t('menu.vitrine')}
-                >
-                  <span>🌍 {t('menu.vitrine')} ↗</span>
-                </button>
-              )}
               {associationName && (
                 <span className="font-black text-xs uppercase tracking-wider text-cordel-wood mt-1 leading-tight text-center break-words max-w-[160px]">
                   {associationName}
@@ -1069,7 +1041,7 @@ export default function LayoutShell({
 
           <div className="w-full flex justify-between items-center mt-8 border-t border-dashed border-cordel-master-dark/10 pt-2 select-none shrink-0 pb-safe">
             <span className="text-[8px] font-black uppercase tracking-wider opacity-20">
-              © O Girador {associationName || (isDemo ? 'Maracatu Na Chuva' : 'Samambaia')}
+              © O Girador {associationName || (isDemoMode() ? 'Maracatu Na Chuva' : '')}
             </span>
             <span className="text-[8px] font-black uppercase tracking-widest opacity-25 lg:hidden">
               {import.meta.env.VITE_APP_VERSION || 'v1.0.1'}
@@ -1100,9 +1072,15 @@ export default function LayoutShell({
 
               {/* Drawer Header */}
               <div className="flex flex-col items-center gap-2 mt-4 mb-6 pb-4 border-b border-dashed border-cordel-master-dark/20 text-center">
-                <div className="w-16 h-16 rounded-full overflow-hidden flex items-center justify-center drop-shadow-md">
-                  <img src={finalLogoUrl} alt="Logo" className="w-full h-full object-cover" />
-                </div>
+                <HeaderSealLogo
+                  associationData={associationData}
+                  associationName={associationName}
+                  currentGroupId={currentGroupId}
+                  logoUrl={logoUrl}
+                  combinedLogoUrl={combinedLogoUrl}
+                  isLogoTilting={false}
+                  size={64}
+                />
                 <span className="font-extrabold text-[9px] uppercase tracking-widest text-cordel-master-dark/50">
                   O Girador
                 </span>
@@ -1112,16 +1090,6 @@ export default function LayoutShell({
                   </span>
                 )}
 
-                {isVitrineButtonVisible && (
-                  <button
-                    type="button"
-                    onClick={handleOpenVitrine}
-                    className="w-full mt-1.5 py-1 px-2 text-[9px] font-black uppercase tracking-wider bg-[var(--color-cordel-vert)] text-white rounded-[5px_8px_6px_9px] border-2 border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-110 cursor-pointer flex items-center justify-center gap-1 transition-all"
-                    title={t('menu.vitrine')}
-                  >
-                    <span>🌍 {t('menu.vitrine')} ↗</span>
-                  </button>
-                )}
 
                 {/* Encart réservé Administration Technique (Super-Admin / Mestres réels ou simulation active) */}
                 {canUseViewSimulator && (

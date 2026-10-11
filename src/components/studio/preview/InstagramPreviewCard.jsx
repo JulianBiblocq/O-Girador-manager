@@ -18,8 +18,8 @@ export default function InstagramPreviewCard({
     : [{ id: 'empty', url: null, name: t('studio.communication.vide') }];
   const currentPhoto = photos[currentIndex] || photos[0];
 
-  const assocName = branding?.nom || 'Samambaia Maracatu';
-  const logoUrl = branding?.logoUrl || '/Pictures/tambour.png';
+  const assocName = branding?.nom || t('common.association', { defaultValue: 'Notre Association' });
+  const logoUrl = branding?.logoUrl || '/og-girador-frame.svg';
   const locationName = selectedEvent?.lieu || '';
 
   const formatTextWithHashtags = (text) => {
