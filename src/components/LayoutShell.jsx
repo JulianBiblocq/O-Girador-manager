@@ -40,6 +40,7 @@ import ViewSimulatorSelector from './navigation/ViewSimulatorSelector';
 import useLicenseGuard from '../hooks/useLicenseGuard';
 import SubscriptionBanner from './SubscriptionBanner';
 import { isDemoMode } from '../demo/demoManager';
+import { canonicalizeGroupId } from '../utils/tenantUtils';
 import HeaderSealLogo from './common/HeaderSealLogo';
 import NotificationCenter from './notifications/NotificationCenter';
 import EcosystemAppLauncher from './navigation/EcosystemAppLauncher';
@@ -142,7 +143,8 @@ export default function LayoutShell({
     profileData?.isSystemAdmin === true || 
     (profileData?.role || '').toLowerCase() === 'super-admin' || 
     profileData?.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
-    profileData?.id === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1'
+    profileData?.id === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
+    profileData?.email === 'julian.bzh@gmail.com'
   );
   const realIsSystemOrSuperAdminOrMestre = realIsSuperAdmin || (profileData?.role || '').toLowerCase() === 'mestre';
   const canUseViewSimulator = realIsSystemOrSuperAdminOrMestre || isSimulating;
@@ -156,6 +158,16 @@ export default function LayoutShell({
   const isPresenceEnabled = activerPresenceEnLigne !== false;
   const currentUserId = currentProfile?.uid || currentProfile?.id;
   const currentGroupId = currentProfile?.groupId || associationData?.groupId || associationData?.id || null;
+
+  // Résolution robuste et permanente du nom de l'association pour la Sidebar et le Header
+  const effectiveAssocName = 
+    associationName || 
+    associationData?.nom || 
+    associationData?.name || 
+    associationData?.branding?.name || 
+    associationData?.branding?.nom || 
+    (currentGroupId ? canonicalizeGroupId(currentGroupId) : (isDemoMode() ? 'Maracatu Na Chuva' : 'Samambaia'));
+
   const afficherEnLigne = currentProfile?.afficherEnLigne !== false;
   const { onlineMembers, onlineCount } = usePresence(currentUserId, currentGroupId, isPresenceEnabled, afficherEnLigne, isSystemOrSuperAdminOrMestre);
   const onlineUserIds = React.useMemo(() => new Set(onlineMembers.map(m => m.id || m.uid)), [onlineMembers]);
@@ -343,6 +355,7 @@ export default function LayoutShell({
   };
 
   const isAdministrativeUser = isMasterKeyActive || 
+                               realIsSuperAdmin ||
                                currentProfile?.role === 'bureau' || 
                                currentProfile?.role === 'ca' || 
                                currentProfile?.role === 'mestre' ||
@@ -470,7 +483,7 @@ export default function LayoutShell({
             >
               <HeaderSealLogo
                 associationData={associationData}
-                associationName={associationName}
+                associationName={effectiveAssocName}
                 currentGroupId={currentGroupId}
                 logoUrl={logoUrl}
                 combinedLogoUrl={combinedLogoUrl}
@@ -480,19 +493,19 @@ export default function LayoutShell({
                 <span className="font-extrabold text-[8px] uppercase tracking-widest text-cordel-master-dark/50 truncate">
                   O Girador
                 </span>
-                {associationName && (
+                {effectiveAssocName && (
                   <span className="font-black text-[10px] uppercase tracking-wider text-cordel-wood truncate max-w-[110px] sm:max-w-[150px] -mt-0.5">
-                    {associationName}
+                    {effectiveAssocName}
                   </span>
                 )}
               </div>
             </div>
           </div>
 
-          {associationName && (
+          {effectiveAssocName && (
             <div className="hidden md:flex flex-grow justify-center px-2 select-none pointer-events-none">
               <span className="font-black text-xs md:text-sm uppercase tracking-widest text-cordel-wood truncate max-w-[200px]">
-                {associationName}
+                {effectiveAssocName}
               </span>
             </div>
           )}
@@ -556,7 +569,7 @@ export default function LayoutShell({
           <div className="flex flex-col items-center gap-3 w-full flex-grow min-h-0">
             <HeaderSealLogo
               associationData={associationData}
-              associationName={associationName}
+              associationName={effectiveAssocName}
               currentGroupId={currentGroupId}
               logoUrl={logoUrl}
               combinedLogoUrl={combinedLogoUrl}
@@ -574,9 +587,9 @@ export default function LayoutShell({
                 </span>
               </div>
 
-              {associationName && (
+              {effectiveAssocName && (
                 <span className="font-black text-xs uppercase tracking-wider text-cordel-wood mt-1 leading-tight text-center break-words max-w-[160px]">
-                  {associationName}
+                  {effectiveAssocName}
                 </span>
               )}
             </div>
@@ -1041,7 +1054,7 @@ export default function LayoutShell({
 
           <div className="w-full flex justify-between items-center mt-8 border-t border-dashed border-cordel-master-dark/10 pt-2 select-none shrink-0 pb-safe">
             <span className="text-[8px] font-black uppercase tracking-wider opacity-20">
-              © O Girador {associationName || (isDemoMode() ? 'Maracatu Na Chuva' : '')}
+              © O Girador {effectiveAssocName || (isDemoMode() ? 'Maracatu Na Chuva' : '')}
             </span>
             <span className="text-[8px] font-black uppercase tracking-widest opacity-25 lg:hidden">
               {import.meta.env.VITE_APP_VERSION || 'v1.0.1'}
@@ -1074,7 +1087,7 @@ export default function LayoutShell({
               <div className="flex flex-col items-center gap-2 mt-4 mb-6 pb-4 border-b border-dashed border-cordel-master-dark/20 text-center">
                 <HeaderSealLogo
                   associationData={associationData}
-                  associationName={associationName}
+                  associationName={effectiveAssocName}
                   currentGroupId={currentGroupId}
                   logoUrl={logoUrl}
                   combinedLogoUrl={combinedLogoUrl}
@@ -1084,9 +1097,9 @@ export default function LayoutShell({
                 <span className="font-extrabold text-[9px] uppercase tracking-widest text-cordel-master-dark/50">
                   O Girador
                 </span>
-                {associationName && (
+                {effectiveAssocName && (
                   <span className="font-black text-xs uppercase tracking-wider text-cordel-wood leading-tight text-center break-words max-w-[200px]">
-                    {associationName}
+                    {effectiveAssocName}
                   </span>
                 )}
 
@@ -1370,7 +1383,7 @@ export default function LayoutShell({
         isOpen={isFeedbackModalOpen}
         onClose={() => setIsFeedbackModalOpen(false)}
         profileData={profileData}
-        associationName={associationName}
+        associationName={effectiveAssocName}
       />
 
       {/* Modale de la Salle d'Attente Multijoueur (Lobby), Arène et Podium */}

@@ -1,5 +1,6 @@
 export const fr = {
   common: {
+    association: "Notre Association",
     back: "Retour",
     accessRestricted: "Accès restreint",
     save: "Enregistrer",

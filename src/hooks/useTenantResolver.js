@@ -6,13 +6,24 @@ import { DEMO_GROUP_ID } from '../data/demoData';
 import { canonicalizeGroupId } from '../utils/tenantUtils';
 
 export default function useTenantResolver() {
-  const [tenantState, setTenantState] = useState({
-    appMode: 'organizador', // Default
-    groupId: null,
-    isLocalhost: false,
-    isTenantLoading: true,
-    tenantError: null,
-    urls: { mostrador: '', organizador: '' }
+  const [tenantState, setTenantState] = useState(() => {
+    let initialMode = 'organizador';
+    if (typeof window !== 'undefined') {
+      const h = window.location.hostname || '';
+      const p = window.location.pathname || '';
+      const s = new URLSearchParams(window.location.search || '');
+      if (s.get('app') === 'mostrador' || p.startsWith('/vitrine') || p.startsWith('/mostrador') || h.includes('mostrador') || h.includes('samambaia-maracatu.fr')) {
+        initialMode = 'mostrador';
+      }
+    }
+    return {
+      appMode: initialMode,
+      groupId: null,
+      isLocalhost: false,
+      isTenantLoading: true,
+      tenantError: null,
+      urls: { mostrador: '', organizador: '' }
+    };
   });
 
   useEffect(() => {
@@ -52,8 +63,12 @@ export default function useTenantResolver() {
 
       // 1. Détermination du mode et groupId via environnement local
       if (isLocal) {
-        // Paramètres URL (priorité haute) ou Variables d'environnement
-        currentMode = urlParams.get('app') || import.meta.env.VITE_DEFAULT_APP || 'organizador';
+        const isPathVitrine = window.location.pathname.startsWith('/vitrine') || window.location.pathname.startsWith('/mostrador');
+        if (urlParams.get('app') === 'mostrador' || isPathVitrine) {
+          currentMode = 'mostrador';
+        } else {
+          currentMode = urlParams.get('app') || import.meta.env.VITE_DEFAULT_APP || 'organizador';
+        }
         extractedGroupId = tenantParam || import.meta.env.VITE_DEFAULT_TENANT || null;
       } 
       // 2. Environnement de production / En ligne
@@ -84,37 +99,35 @@ export default function useTenantResolver() {
           if (tenantParam) {
             extractedGroupId = tenantParam;
           }
+          if (urlParams.get('app') === 'mostrador' || window.location.pathname.startsWith('/vitrine') || window.location.pathname.startsWith('/mostrador')) {
+            currentMode = 'mostrador';
+          }
         } else {
-          // 3. Domaine personnalisé externe (ex: www.samambaia-maracatu.fr)
-          // On considère par défaut que c'est une vitrine publique (Mostrador) pour ce groupe
+          // 3. Domaine personnalisé externe (ex: www.samambaia-maracatu.fr) -> Vitrine publique
           currentMode = 'mostrador';
 
           if (tenantParam) {
             extractedGroupId = tenantParam;
+          } else if (hostname.includes('samambaia-maracatu.fr') || hostname.includes('samambaia')) {
+            extractedGroupId = 'Samambaia';
+            hasError = null;
           } else {
             try {
               const associationsRef = collection(db, 'associations');
-              
-              // Pour supporter "www.domaine.fr" ou "domaine.fr" indifféremment
               const possibleHostnames = [hostname];
-              if (hostname.startsWith('www.')) {
-                possibleHostnames.push(hostname.replace(/^www\./, ''));
-              } else {
-                possibleHostnames.push(`www.${hostname}`);
-              }
+              if (hostname.startsWith('www.')) possibleHostnames.push(hostname.replace(/^www\./, ''));
+              else possibleHostnames.push(`www.${hostname}`);
 
               const q = query(associationsRef, where('customDomains', 'array-contains-any', possibleHostnames));
               const snapshot = await getDocs(q);
 
               if (!snapshot.empty) {
-                const docSnap = snapshot.docs[0];
-                extractedGroupId = docSnap.id;
+                extractedGroupId = snapshot.docs[0].id;
               } else {
-                // Domaine inconnu
                 hasError = 'NOT_FOUND';
               }
             } catch (error) {
-              console.error("Erreur lors de la résolution du domaine personnalisé :", error);
+              console.error("Erreur résolution domaine personnalisé :", error);
               hasError = 'ERROR';
             }
           }
@@ -126,13 +139,21 @@ export default function useTenantResolver() {
         try {
           const canonicalId = canonicalizeGroupId(extractedGroupId);
           const assocDocRef = doc(db, 'associations', canonicalId);
-          const assocSnap = await getDoc(assocDocRef);
+          let assocSnap = await getDoc(assocDocRef);
+          if (!assocSnap.exists() && canonicalId.toLowerCase() !== canonicalId) {
+            const lowerSnap = await getDoc(doc(db, 'associations', canonicalId.toLowerCase()));
+            if (lowerSnap.exists()) {
+              assocSnap = lowerSnap;
+            }
+          }
           if (assocSnap.exists()) {
             extractedGroupId = assocSnap.id;
             hasError = null;
+          } else if (canonicalId.toLowerCase() === 'samambaia') {
+            extractedGroupId = 'Samambaia';
+            hasError = null;
           } else {
             console.warn(`useTenantResolver - Association '${canonicalId}' introuvable dans Firestore.`);
-            // Si explicitement demandé mais introuvable, lever NOT_FOUND pour éviter tout fallback silencieux vers Samambaia
             hasError = 'NOT_FOUND';
           }
         } catch (error) {

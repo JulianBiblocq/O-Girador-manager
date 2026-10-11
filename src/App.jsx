@@ -305,7 +305,16 @@ export default function App() {
     return false;
   });
 
-  const isSystemOrSuperAdminOrMestre = profileData?.isSystemAdmin || profileData?.role === 'super-admin' || profileData?.role === 'mestre';
+  const isSystemOrSuperAdminOrMestre = Boolean(
+    profileData?.isSystemAdmin || 
+    profileData?.role === 'super-admin' || 
+    profileData?.role === 'mestre' ||
+    profileData?.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
+    profileData?.id === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
+    profileData?.email === 'julian.bzh@gmail.com' ||
+    user?.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
+    user?.email === 'julian.bzh@gmail.com'
+  );
   const isMasterKeyActive = isSystemOrSuperAdminOrMestre && breakGlassActive;
 
   const handleToggleBreakGlass = () => {
@@ -394,15 +403,38 @@ export default function App() {
   const [showOnboardingWizard, setShowOnboardingWizard] = useState(false);
   const [hasTriggeredOnboardingAuto, setHasTriggeredOnboardingAuto] = useState(false);
 
-  // Détection du mode Vitrine Publique (Mostrador) pour afficher le logo pur de l'association
+  // Détection exhaustive du mode Vitrine Publique (Mostrador)
   const isVitrineMode = useMemo(() => {
     if (appMode === 'mostrador') return true;
     if (typeof window === 'undefined') return false;
+    const hostname = window.location.hostname || '';
     const path = currentRoute || window.location.pathname || '';
+
+    // Si la route est explicitement une page interne d'administration ou setup/login
     if (path.startsWith('/app') || path.startsWith('/events') || path.startsWith('/agenda') || path.startsWith('/forum')) return false;
     if (['/setup', '/login'].includes(path)) return false;
-    return !user || path.includes('/vitrine') || path.includes('/mostrador');
-  }, [appMode, currentRoute, user]);
+
+    // 1. Sous-domaine Mostrador (ex: mostrador.o-girador.com)
+    if (hostname.includes('mostrador')) return true;
+
+    // 2. Domaine personnalisé de l'association (ex: samambaia-maracatu.fr)
+    const customDomainList = [];
+    if (associationData?.customDomain) customDomainList.push(associationData.customDomain);
+    if (Array.isArray(associationData?.customDomains)) customDomainList.push(...associationData.customDomains);
+    customDomainList.push('samambaia-maracatu.fr', 'www.samambaia-maracatu.fr');
+    if (customDomainList.some(d => d && (hostname === d || hostname.replace(/^www\./, '') === d.replace(/^www\./, '')))) {
+      return true;
+    }
+
+    // 3. Paramètre de test (?app=mostrador)
+    const searchParams = new URLSearchParams(window.location.search || '');
+    if (searchParams.get('app') === 'mostrador') return true;
+
+    // 4. Chemin de secours (/vitrine ou /mostrador)
+    if (path.startsWith('/vitrine') || path.startsWith('/mostrador') || path.includes('/vitrine') || path.includes('/mostrador')) return true;
+
+    return false;
+  }, [appMode, currentRoute, associationData]);
 
   // Hook modulaire générant dynamiquement le favicon :
   // - Mode pure pour Mostrador (logo de l'association seul)
@@ -417,8 +449,17 @@ export default function App() {
         branding
       };
     }
+    // Repli immédiat Organizad'Or : si on n'est pas en vitrine, présumer Samambaia
+    if (!isVitrineMode) {
+      return {
+        id: 'Samambaia',
+        groupId: 'Samambaia',
+        nom: 'SAMAMBAIA',
+        name: 'SAMAMBAIA'
+      };
+    }
     return null;
-  }, [associationData, associationName, branding]);
+  }, [associationData, associationName, branding, isVitrineMode]);
 
   useDynamicFavicon(effectiveFaviconAssociationData, { isPureLogo: isVitrineMode });
 
@@ -426,7 +467,8 @@ export default function App() {
     profileData?.isSystemAdmin || 
     profileData?.role === 'super-admin' || 
     profileData?.role === 'mestre' ||
-    profileData?.role === 'admin'
+    profileData?.role === 'admin' ||
+    isSystemOrSuperAdminOrMestre
   );
 
   useEffect(() => {
@@ -482,6 +524,18 @@ export default function App() {
       );
     }
 
+    // Repli canonique garanti vers Samambaia pour Julian ou en environnement standard Organizad'Or
+    if (!activeGroupId && (
+      profileData?.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
+      profileData?.id === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
+      profileData?.email === 'julian.bzh@gmail.com' ||
+      user?.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
+      user?.email === 'julian.bzh@gmail.com' ||
+      (!isDemoMode() && appMode === 'organizador')
+    )) {
+      activeGroupId = 'Samambaia';
+    }
+
     if (!activeGroupId) {
       setAssociationData(null);
       setBranding(null);
@@ -504,7 +558,7 @@ export default function App() {
         } else {
           setBranding(null);
         }
-        setAssociationName(data.nom || data.name || '');
+        setAssociationName(data.nom || data.name || (activeGroupId.toLowerCase() === 'samambaia' ? 'SAMAMBAIA' : ''));
         setMajoriteFeminine(Boolean(data.majoriteFeminine ?? data.majorityFemale ?? false));
         setSequenceurUrl(data.sequenceurUrl || '');
         setPermissionsMatrice(data.permissionsMatrice || null);
@@ -513,39 +567,75 @@ export default function App() {
         setActiverPresenceEnLigne(data.activerPresenceEnLigne !== false);
         setFeatures(data.features || null);
       } else {
+        // Tenter la casse alternative dans Firestore (minuscules vs majuscule)
+        const altGroupId = activeGroupId.toLowerCase() === activeGroupId ? canonicalizeGroupId(activeGroupId) : activeGroupId.toLowerCase();
+        if (altGroupId && altGroupId !== activeGroupId) {
+          getDoc(doc(db, 'associations', altGroupId)).then((altSnap) => {
+            if (altSnap.exists()) {
+              const altData = altSnap.data();
+              setAssociationData({ id: altSnap.id, groupId: altSnap.id, ...altData });
+              if (altData.branding) setBranding(altData.branding);
+              else if (altData.logoUrl) setBranding({ logoUrl: altData.logoUrl });
+              setAssociationName(altData.nom || altData.name || (activeGroupId.toLowerCase() === 'samambaia' ? 'SAMAMBAIA' : ''));
+              setMajoriteFeminine(Boolean(altData.majoriteFeminine ?? altData.majorityFemale ?? false));
+              setSequenceurUrl(altData.sequenceurUrl || '');
+              setPermissionsMatrice(altData.permissionsMatrice || null);
+              setEnabledModules(altData.enabledModules || null);
+              setTagsDisponibles(Array.isArray(altData.tagsDisponibles) ? altData.tagsDisponibles : []);
+              setActiverPresenceEnLigne(altData.activerPresenceEnLigne !== false);
+              setFeatures(altData.features || null);
+              return;
+            }
+          }).catch(() => {});
+        }
+
+        // Si l'association est Samambaia, maintenir le nom et le branding par défaut
+        if (activeGroupId.toLowerCase() === 'samambaia') {
+          setAssociationName('SAMAMBAIA');
+          setAssociationData(prev => prev || { id: 'Samambaia', groupId: 'Samambaia', nom: 'SAMAMBAIA', name: 'SAMAMBAIA' });
+        } else {
+          setAssociationData(null);
+          setBranding(null);
+          setAssociationName('');
+          setMajoriteFeminine(false);
+          setSequenceurUrl('');
+          setPermissionsMatrice(null);
+          setEnabledModules(null);
+          setTagsDisponibles([]);
+          setActiverPresenceEnLigne(true);
+          setFeatures(null);
+        }
+      }
+    }, (error) => {
+      console.error("App - Erreur onSnapshot branding :", error);
+      if (activeGroupId.toLowerCase() === 'samambaia') {
+        setAssociationName('SAMAMBAIA');
+      } else {
         setAssociationData(null);
         setBranding(null);
         setAssociationName('');
         setMajoriteFeminine(false);
         setSequenceurUrl('');
         setPermissionsMatrice(null);
-        setEnabledModules(null);
         setTagsDisponibles([]);
-        setActiverPresenceEnLigne(true);
         setFeatures(null);
       }
-    }, (error) => {
-      console.error("App - Erreur onSnapshot branding :", error);
-      setAssociationData(null);
-      setBranding(null);
-      setAssociationName('');
-      setMajoriteFeminine(false);
-      setSequenceurUrl('');
-      setPermissionsMatrice(null);
-      setTagsDisponibles([]);
-      setFeatures(null);
     });
 
     return () => unsubscribe();
-  }, [profileData?.groupId, user, urlGroupId, appMode]);
+  }, [profileData?.groupId, profileData?.uid, user?.uid, urlGroupId, appMode]);
 
   // Déclenchement automatique de l'assistant d'onboarding pour l'administrateur/mestre lors du premier démarrage
   useEffect(() => {
+    const isSamambaiaGroup = String(associationData?.groupId || associationData?.id || '').toLowerCase() === 'samambaia' ||
+      String(associationData?.nom || associationData?.name || '').toLowerCase().includes('samambaia');
+
     if (
       user &&
       isAdministrativeUser &&
       associationData &&
       associationData.onboardingCompleted === false &&
+      !isSamambaiaGroup &&
       !hasTriggeredOnboardingAuto
     ) {
       setShowOnboardingWizard(true);
@@ -1034,7 +1124,12 @@ export default function App() {
               const canonicalGroup = canonicalizeGroupId(data.groupId);
 
               // 1. Court-circuit Fondateur / Super-Admin
-              const isFounderOrSuperAdmin = docSnap.id === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' || data.isSystemAdmin === true || data.role === 'super-admin';
+              const isFounderOrSuperAdmin = docSnap.id === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' || 
+                currentUser.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
+                currentUser.email === 'julian.bzh@gmail.com' ||
+                data.email === 'julian.bzh@gmail.com' ||
+                data.isSystemAdmin === true || 
+                data.role === 'super-admin';
 
               // 2. Fusion strictement additive des tags pour TOUS les utilisateurs
               const existingTags = Array.isArray(data.tags) ? data.tags : [];
@@ -1088,6 +1183,43 @@ export default function App() {
                 });
               }
             } else {
+              // Sécurité Fondateur : si Julian se connecte mais que son document est sous l'UID historique
+              const isFounderAccount = currentUser.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' || currentUser.email === 'julian.bzh@gmail.com';
+              if (isFounderAccount) {
+                getDoc(doc(db, 'users', 'iA0SweEHyOPzAPGIDVZdeKAV2mk1')).then((founderSnap) => {
+                  if (founderSnap.exists()) {
+                    const fData = founderSnap.data();
+                    const canonicalGroup = canonicalizeGroupId(fData.groupId) || 'Samambaia';
+                    setProfileData({
+                      uid: currentUser.uid,
+                      id: currentUser.uid,
+                      ...fData,
+                      groupId: canonicalGroup,
+                      role: 'mestre',
+                      isSystemAdmin: true,
+                      canViewAll: true,
+                      paymentStatus: 'exempt',
+                      cotisationStatus: 'exonere',
+                      isCotisationExoneree: true,
+                      onboardingCompleted: true
+                    });
+                    setProfileExists(true);
+                  } else {
+                    setProfileData(null);
+                    setProfileExists(false);
+                  }
+                  setCheckingProfile(false);
+                  setLoading(false);
+                }).catch((err) => {
+                  console.warn("App - Erreur lecture secours profil fondateur :", err);
+                  setProfileData(null);
+                  setProfileExists(false);
+                  setCheckingProfile(false);
+                  setLoading(false);
+                });
+                return;
+              }
+
               // Réconciliation automatique : vérifier si une fiche membre pré-existante créée par le Bureau correspond à cet e-mail
               if (currentUser?.email) {
                 reconcilePreExistingMember(currentUser).then((reconciled) => {
@@ -1097,12 +1229,17 @@ export default function App() {
                   } else {
                     setProfileData(null);
                     setProfileExists(false);
+                    setCheckingProfile(false);
+                    setLoading(false);
                   }
                 }).catch((err) => {
                   console.warn("App - Erreur réconciliation automatique :", err);
                   setProfileData(null);
                   setProfileExists(false);
+                  setCheckingProfile(false);
+                  setLoading(false);
                 });
+                return;
               } else {
                 setProfileData(null);
                 setProfileExists(false);
@@ -1195,7 +1332,10 @@ export default function App() {
   };
 
   // 1. Écran de chargement (Authentification ou chargement Firestore)
-  if (loading || checkingProfile) {
+  // Sécurisation anti-bascule prématurée : tant qu'un compte Auth est actif et que le profil
+  // Firestore n'est pas encore résolu, maintenir impérativement l'écran de chargement
+  const isWaitingForProfile = Boolean(user && profileData === null && profileExists !== false);
+  if (loading || checkingProfile || isWaitingForProfile) {
     // Résolution dynamique du visuel : logo de l'association si résolu, sinon macaron neutre O Girador
     const activeLogo = branding?.logoUrl || associationData?.logoUrl || null;
     const logoSrc = activeLogo || '/og-girador-frame.svg';
@@ -1226,20 +1366,13 @@ export default function App() {
 
   // 2. Routage dynamique : Vitrine Publique One-Page, Racine, Setup
 
-  // Détection explicite du mode Vitrine (Mostrador) en démo
-  const isDemoVitrine = isDemoMode() && (
-    appMode === 'mostrador' || 
-    (typeof window !== 'undefined' && (
-      new URLSearchParams(window.location.search).get('app') === 'mostrador' ||
-      window.location.pathname.includes('/vitrine') ||
-      window.location.pathname.includes('/mostrador')
-    ))
-  );
+  // Détection explicite du mode Vitrine (Mostrador)
+  const isDemoVitrine = isDemoMode() && isVitrineMode;
 
-  const isDemoPath = (currentRoute === '/demo' || currentRoute === '/demo/' || currentRoute.startsWith('/demo/') || isDemoMode()) && !isDemoVitrine;
-  const isRootPath = (!currentRoute || currentRoute === '/' || currentRoute === '' || currentRoute === '/index.html' || currentRoute.startsWith('/?') || currentRoute.startsWith('/#')) && !isDemoPath && !isDemoVitrine;
+  const isDemoPath = (currentRoute === '/demo' || currentRoute === '/demo/' || currentRoute.startsWith('/demo/') || isDemoMode()) && !isVitrineMode;
+  const isRootPath = (!currentRoute || currentRoute === '/' || currentRoute === '' || currentRoute === '/index.html' || currentRoute.startsWith('/?') || currentRoute.startsWith('/#')) && !isDemoPath && !isVitrineMode;
   const isSetupPath = currentRoute.startsWith('/setup');
-  const isLoginPath = (currentRoute === '/login' || currentRoute === '/login/') && !isDemoPath && !isDemoVitrine;
+  const isLoginPath = (currentRoute === '/login' || currentRoute === '/login/') && !isDemoPath && !isVitrineMode;
 
   // Préfixes des routes internes d'Organizad'Or pour ne jamais les confondre avec une vitrine publique
   const INTERNAL_APP_PREFIXES = [
@@ -1250,11 +1383,11 @@ export default function App() {
     '/orders', '/commandes', '/documents', '/reunions', '/studio'
   ];
   const isInternalPath = INTERNAL_APP_PREFIXES.some(prefix => currentRoute === prefix || currentRoute.startsWith(prefix + '/') || currentRoute.startsWith(prefix + '?'));
-  const isAppPath = currentRoute.startsWith('/app') || isInternalPath || isDemoPath || (Boolean(user) && !isLoginPath && !isSetupPath && !isDemoVitrine);
+  const isAppPath = !isVitrineMode && (currentRoute.startsWith('/app') || isInternalPath || isDemoPath || (Boolean(user) && !isLoginPath && !isSetupPath));
   
-  // Toute autre route (ex: /asso-01 ou vitrine démo) est traitée comme une route vitrine
-  const isVitrinePath = isDemoVitrine || (!isRootPath && !isSetupPath && !isAppPath && !isLoginPath);
-  const vitrineGroupId = isDemoMode() ? DEMO_GROUP_ID : (isVitrinePath ? currentRoute.split('/')[1]?.split('?')[0] : null);
+  // Toute autre route (ex: /asso-01 ou vitrine démo ou isVitrineMode) est traitée comme une route vitrine
+  const isVitrinePath = isVitrineMode || isDemoVitrine || (!isRootPath && !isSetupPath && !isAppPath && !isLoginPath);
+  const vitrineGroupId = isDemoMode() ? DEMO_GROUP_ID : (isVitrinePath ? (currentRoute.startsWith('/vitrine') || currentRoute.startsWith('/mostrador') ? currentRoute.split('/')[2]?.split('?')[0] : currentRoute.split('/')[1]?.split('?')[0]) : null);
 
   if (isSetupPath) {
     return (
@@ -1292,7 +1425,7 @@ export default function App() {
       return <OrchestradorRedirector brandingStyle={brandingStyle} />;
     }
 
-    if (appMode === 'organizador' && isRootPath) {
+    if (appMode === 'organizador' && isRootPath && !isVitrineMode) {
       return <OrganizadorRedirector user={user} navigateToRoute={navigateToRoute} brandingStyle={brandingStyle} />;
     }
 

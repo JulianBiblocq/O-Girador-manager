@@ -63,7 +63,7 @@ export default function EcosystemAppLauncher({ urls, associationData, currentGro
   };
 
   const isDemo = isDemoMode();
-  const effectiveGroupId = currentGroupId || associationData?.id || associationData?.groupId || null;
+  const effectiveGroupId = currentGroupId || associationData?.id || associationData?.groupId || 'Samambaia';
 
   const apps = [
     {
@@ -200,8 +200,8 @@ export default function EcosystemAppLauncher({ urls, associationData, currentGro
     e.preventDefault();
     if (launchingAppKey) return;
 
-    // Vitrine publique ou non connecté : ouverture directe en nouvel onglet
-    if (app.isPublic || !auth.currentUser) {
+    // Vitrine publique ou non connecté : ouverture directe impérative en nouvel onglet
+    if (app.isPublic || app.key === 'vitrine' || !auth.currentUser) {
       window.open(app.url, '_blank', 'noopener,noreferrer');
       setIsOpen(false);
       return;
@@ -306,6 +306,8 @@ export default function EcosystemAppLauncher({ urls, associationData, currentGro
                   <a
                     key={app.key}
                     href={app.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     onClick={(e) => handleLaunchApp(e, app)}
                     className={`p-1.5 sm:p-2 border-2 border-encre-noire/25 hover:border-encre-noire rounded-[5px_7px_4px_6px] bg-white hover:bg-amber-50/60 transition-all flex items-center justify-between cursor-pointer group shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] ${
                       isLaunching ? 'opacity-60 pointer-events-none' : ''

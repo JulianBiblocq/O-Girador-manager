@@ -9,8 +9,6 @@ function drawNeutralFrame(ctx, bgCol = '#f4ecd8', primaryCol = '#8B2A1A', textCo
   ctx.beginPath();
   ctx.arc(64, 64, 62, 0, Math.PI * 2);
   ctx.clip();
-
-  // Fond parchemin & cercles gravure bois
   ctx.fillStyle = bgCol;
   ctx.fillRect(0, 0, 128, 128);
   ctx.strokeStyle = primaryCol;
@@ -23,7 +21,6 @@ function drawNeutralFrame(ctx, bgCol = '#f4ecd8', primaryCol = '#8B2A1A', textCo
   ctx.beginPath(); ctx.arc(64, 64, 50, 0, Math.PI * 2); ctx.stroke();
   ctx.setLineDash([]);
 
-  // Gravure circulaire "★ O GIRADOR ★"
   ctx.font = 'bold 8px Courier New, monospace, serif';
   ctx.fillStyle = textCol;
   ctx.textAlign = 'center';
@@ -39,7 +36,6 @@ function drawNeutralFrame(ctx, bgCol = '#f4ecd8', primaryCol = '#8B2A1A', textCo
     ctx.restore();
   }
 
-  // Disque central
   ctx.beginPath();
   ctx.arc(64, 58, 36, 0, Math.PI * 2);
   ctx.fillStyle = '#faf6ec';
@@ -50,9 +46,6 @@ function drawNeutralFrame(ctx, bgCol = '#f4ecd8', primaryCol = '#8B2A1A', textCo
   ctx.restore();
 }
 
-/**
- * Dessine le logo de l'association centré et proportionné dans le masque circulaire.
- */
 function drawLogoInCenter(ctx, img) {
   ctx.save();
   ctx.beginPath();
@@ -66,9 +59,6 @@ function drawLogoInCenter(ctx, img) {
   ctx.restore();
 }
 
-/**
- * Dessine les initiales sobres en l'absence de logo.
- */
 function drawInitialsInCenter(ctx, name, textCol = '#8B2A1A') {
   const words = (name || '').trim().split(/\s+/).filter(Boolean);
   const initials = words.length >= 2 ? (words[0][0] + words[1][0]).toUpperCase() : (words[0]?.slice(0, 2) || 'OG').toUpperCase();
@@ -81,29 +71,34 @@ function drawInitialsInCenter(ctx, name, textCol = '#8B2A1A') {
   ctx.restore();
 }
 
-/**
- * Injecte l'icône dans les balises favicon et apple-touch-icon du DOM.
- */
-function updateFavicon(url) {
-  if (!url || typeof document === 'undefined') return;
-  let link = document.querySelector("link[rel*='icon']");
-  if (!link) {
-    link = document.createElement('link');
-    link.rel = 'icon';
-    document.head.appendChild(link);
+function updateFavicon(rawUrl) {
+  if (!rawUrl || typeof document === 'undefined') return;
+  const versionTag = 'v=og-2';
+  const finalUrl = rawUrl.startsWith('data:') 
+    ? rawUrl 
+    : (rawUrl.includes('?') ? `${rawUrl}&${versionTag}` : `${rawUrl}?${versionTag}`);
+
+  let mainFavicon = document.getElementById('favicon') || document.querySelector("link[rel*='icon']");
+  if (!mainFavicon) {
+    mainFavicon = document.createElement('link');
+    mainFavicon.id = 'favicon';
+    mainFavicon.rel = 'icon';
+    document.head.appendChild(mainFavicon);
   }
-  if (link.href !== url) {
-    link.type = 'image/png';
-    link.href = url;
-  }
-  const appleLink = document.querySelector("link[rel='apple-touch-icon']");
-  if (appleLink && appleLink.href !== url) appleLink.href = url;
+  mainFavicon.type = finalUrl.endsWith('.svg') ? 'image/svg+xml' : 'image/png';
+  mainFavicon.href = finalUrl;
+
+  const allIcons = document.querySelectorAll("link[rel*='icon'], link[rel='apple-touch-icon'], link[rel='shortcut icon']");
+  allIcons.forEach(link => {
+    link.href = finalUrl;
+    if (!finalUrl.endsWith('.svg')) link.type = 'image/png';
+  });
 }
 
 /**
  * Hook dynamique de gestion du favicon :
- * - Mode 'pure' (Mostrador) : logo direct de l'association sans anneau
- * - Mode 'composite' (Organizad'Or) : macaron gravé O Girador avec logo ou initiales
+ * - Mode 'pure' (Mostrador) : logo direct sans anneau
+ * - Mode 'composite' (Organizad'Or) : sceau combiné officiel O Girador × Association
  */
 export default function useDynamicFavicon(associationData, options = {}) {
   const isPureLogo = Boolean(options?.isPureLogo);
@@ -117,7 +112,7 @@ export default function useDynamicFavicon(associationData, options = {}) {
     const name = associationData?.nom || associationData?.name || associationData?.associationName || '';
     const colors = associationData?.branding?.colors || {};
 
-    // 1. Mode Vitrine Publique (Mostrador) : injection directe du logo pur de l'association
+    // 1. Mode Vitrine Publique (Mostrador) : logo pur de l'association
     if (isPureLogo) {
       if (logoUrl) {
         updateFavicon(logoUrl);
@@ -128,7 +123,17 @@ export default function useDynamicFavicon(associationData, options = {}) {
       return () => { isMounted = false; };
     }
 
-    // 2. Mode Manager (Organizad'Or) : composition sur canvas Retina avec anneau O Girador
+    // 2. Mode Manager (Organizad'Or) : blason officiel combiné O Girador x Association
+    const rawGroup = associationData?.groupId || associationData?.id || '';
+    const isSamambaia = !rawGroup || String(rawGroup).trim().toLowerCase() === 'samambaia' || name.toLowerCase().includes('samambaia');
+
+    if (isSamambaia) {
+      const combinedSealUrl = '/brandings/logoOGSamambaia.png';
+      updateFavicon(combinedSealUrl);
+      window.dispatchEvent(new CustomEvent('combined-logo-ready', { detail: combinedSealUrl }));
+      return () => { isMounted = false; };
+    }
+
     const generateFavicon = () => {
       try {
         const canvas = document.createElement('canvas');
@@ -163,7 +168,6 @@ export default function useDynamicFavicon(associationData, options = {}) {
               updateFavicon('/og-girador-frame.svg');
             }
           };
-          // Sécurisation anti-collision cache navigateur (CORS vs no-CORS)
           activeImg.src = logoUrl.includes('?') ? `${logoUrl}&cvs=1` : `${logoUrl}?cvs=1`;
         } else {
           drawInitialsInCenter(ctx, name, colors.primary || '#8B2A1A');
@@ -185,12 +189,9 @@ export default function useDynamicFavicon(associationData, options = {}) {
       }
     };
   }, [
-    associationData?.logoUrl,
-    associationData?.branding?.logoUrl,
-    associationData?.name,
-    associationData?.nom,
-    associationData?.id,
-    associationData?.groupId,
+    associationData?.logoUrl, associationData?.branding?.logoUrl,
+    associationData?.name, associationData?.nom,
+    associationData?.id, associationData?.groupId,
     isPureLogo
   ]);
 }

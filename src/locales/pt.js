@@ -1,5 +1,6 @@
 export const pt = {
   common: {
+    association: "Nossa Associação",
     back: "Voltar",
     accessRestricted: "Acesso restrito",
     save: "Salvar",
