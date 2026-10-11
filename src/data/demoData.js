@@ -144,7 +144,7 @@ export const INITIAL_DEMO_DATA = {
         associationName: 'Maracatu Na Chuva',
         primaryColor: '#c05621',
         secondaryColor: '#2d6a4f',
-        backgroundColor: '#FAF6EE',
+        backgroundColor: '#F4ECD8',
         textColor: '#181716',
         buttonBgColor: '#c05621',
         buttonTextColor: '#FFFFFF',

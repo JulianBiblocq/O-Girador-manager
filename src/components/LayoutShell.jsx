@@ -40,6 +40,7 @@ import ViewSimulatorSelector from './navigation/ViewSimulatorSelector';
 import useLicenseGuard from '../hooks/useLicenseGuard';
 import SubscriptionBanner from './SubscriptionBanner';
 import { isDemoMode } from '../demo/demoManager';
+import { getVitrineUrl } from '../utils/urlUtils';
 import NotificationCenter from './notifications/NotificationCenter';
 import EcosystemAppLauncher from './navigation/EcosystemAppLauncher';
 import { HorizontalRibbonContainer } from './navigation/HorizontalTabRibbon';
@@ -157,11 +158,24 @@ export default function LayoutShell({
 
   const isPresenceEnabled = activerPresenceEnLigne !== false;
   const currentUserId = currentProfile?.uid || currentProfile?.id;
-  const currentGroupId = currentProfile?.groupId;
+  const currentGroupId = currentProfile?.groupId || associationData?.groupId || associationData?.id || null;
   const afficherEnLigne = currentProfile?.afficherEnLigne !== false;
   const { onlineMembers, onlineCount } = usePresence(currentUserId, currentGroupId, isPresenceEnabled, afficherEnLigne, isSystemOrSuperAdminOrMestre);
   const onlineUserIds = React.useMemo(() => new Set(onlineMembers.map(m => m.id || m.uid)), [onlineMembers]);
   const isMasterKeyActive = isSuperAdmin && effectiveBreakGlassActive;
+
+  // Accès et ouverture sécurisée de la Vitrine publique
+  const hasVitrineModuleAccess = associationData?.appAccess?.vitrine ?? associationData?.appAccess?.mostrador;
+  const isVitrineButtonVisible = isDemoMode() || (hasVitrineModuleAccess !== false && Boolean(currentGroupId));
+
+  const handleOpenVitrine = () => {
+    const vitrineUrl = getVitrineUrl(urls, associationData, currentGroupId);
+    if (isDemoMode()) {
+      window.location.href = vitrineUrl;
+    } else {
+      window.open(vitrineUrl, '_blank', 'noopener,noreferrer');
+    }
+  };
   // isPrivileged contrôle l'affichage des boutons inaccessibles avec un cadenas (🔒).
   // Si le mode intervention est inactif ou en simulation, le super-admin subit le même masquage propre que les autres membres.
   const isPrivileged = isMasterKeyActive;
@@ -498,7 +512,7 @@ export default function LayoutShell({
 
           {/* Actions rapides Mobile : Écosystème, Présence compacte, Notifications & Menu */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            <EcosystemAppLauncher urls={urls} associationData={associationData} />
+            <EcosystemAppLauncher urls={urls} associationData={associationData} currentGroupId={currentGroupId} />
             {isDefisAuthorized && activeLobbyRoom && (
               <button
                 type="button"
@@ -578,12 +592,10 @@ export default function LayoutShell({
                 </span>
               </div>
 
-              {isDemoMode() && (
+              {isVitrineButtonVisible && (
                 <button
                   type="button"
-                  onClick={() => {
-                    window.location.href = '/demo?app=mostrador';
-                  }}
+                  onClick={handleOpenVitrine}
                   className="w-full mt-1.5 py-1 px-2 text-[9px] font-black uppercase tracking-wider bg-[var(--color-cordel-vert)] text-white rounded-[5px_8px_6px_9px] border-2 border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-110 cursor-pointer flex items-center justify-center gap-1 transition-all"
                   title={t('menu.vitrine')}
                 >
@@ -832,7 +844,7 @@ export default function LayoutShell({
               <div className="hidden lg:grid lg:grid-cols-3 items-center w-full border-b-2 border-dashed border-cordel-master-dark/25 pb-3 mb-2 pt-1 select-none shrink-0">
                 {/* 1. Gauche : Lanceur d'applications de l'écosystème (le gaufrier) */}
                 <div className="flex items-center justify-start">
-                  <EcosystemAppLauncher urls={urls} associationData={associationData} />
+                  <EcosystemAppLauncher urls={urls} associationData={associationData} currentGroupId={currentGroupId} />
                 </div>
 
                 {/* 2. Centre : Titre "O GIRADOR" surmontant le tampon "ORGANIZADOR" */}
@@ -901,7 +913,7 @@ export default function LayoutShell({
                 <div className="hidden lg:flex items-center justify-between w-full py-1.5 px-0 mb-0.5">
                   {/* Gauche : Lanceur d'applications de l'écosystème (le gaufrier) */}
                   <div className="flex items-center justify-start shrink-0">
-                    <EcosystemAppLauncher urls={urls} associationData={associationData} />
+                    <EcosystemAppLauncher urls={urls} associationData={associationData} currentGroupId={currentGroupId} />
                   </div>
 
                   {/* Droite : Composants de session regroupés */}
@@ -1100,12 +1112,10 @@ export default function LayoutShell({
                   </span>
                 )}
 
-                {isDemoMode() && (
+                {isVitrineButtonVisible && (
                   <button
                     type="button"
-                    onClick={() => {
-                      window.location.href = '/demo?app=mostrador';
-                    }}
+                    onClick={handleOpenVitrine}
                     className="w-full mt-1.5 py-1 px-2 text-[9px] font-black uppercase tracking-wider bg-[var(--color-cordel-vert)] text-white rounded-[5px_8px_6px_9px] border-2 border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-110 cursor-pointer flex items-center justify-center gap-1 transition-all"
                     title={t('menu.vitrine')}
                   >

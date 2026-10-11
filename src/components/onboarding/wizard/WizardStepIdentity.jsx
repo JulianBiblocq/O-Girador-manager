@@ -1,5 +1,6 @@
 import React from 'react';
 import CordelCard from '../../CordelCard';
+import { DEFAULT_BRANDING } from '../../../hooks/useAssociationSettings';
 
 /**
  * Étape 1 du Wizard : Identité & Couleurs 🎨
@@ -7,42 +8,37 @@ import CordelCard from '../../CordelCard';
  */
 export default function WizardStepIdentity({ wizardData, updateWizardData, logoFile, setLogoFile }) {
   const { nom = '', branding = {} } = wizardData;
-  const colors = branding.colors || {
-    primary: '#d99f4d',
-    secondary: '#84967a',
-    background: '#f4ecd8',
-    text: '#1a1a1a'
-  };
+  const colors = branding.colors || DEFAULT_BRANDING.colors;
 
-  // Palettes de couleurs prédéfinies thématiques Cordel & Maracatu
+  // Palettes de couleurs prédéfinies thématiques Cordel & Samambaia (chaleureuses et artisanales)
   const colorPresets = [
     {
-      name: 'Cordel Traditionnel (Ocre & Vert)',
-      primary: '#d99f4d',
-      secondary: '#84967a',
-      background: '#f4ecd8',
-      text: '#1a1a1a'
+      name: 'Samambaia (Terre cuite & Fougère sacrée)',
+      primary: '#8B2A1A',
+      secondary: '#15803D',
+      background: '#F4ECD8',
+      text: '#181716'
+    },
+    {
+      name: 'Cordel Cuivré (Orange & Vert nature)',
+      primary: '#C85A17',
+      secondary: '#15803D',
+      background: '#F4ECD8',
+      text: '#181716'
     },
     {
       name: 'Terre Cuite & Soleil (Sertão)',
-      primary: '#8b2a1a',
-      secondary: '#c05621',
-      background: '#fdfaf2',
-      text: '#1a1a1a'
+      primary: '#8B2A1A',
+      secondary: '#C05621',
+      background: '#FDFAF2',
+      text: '#181716'
     },
     {
-      name: 'Maracatu Ferveur (Rouge & Doré)',
-      primary: '#9b2c2c',
-      secondary: '#d69e2e',
-      background: '#faf5ff',
-      text: '#1a202c'
-    },
-    {
-      name: 'Océan Recifense (Bleu & Émeraude)',
-      primary: '#2b6cb0',
-      secondary: '#276749',
-      background: '#f0fff4',
-      text: '#1a202c'
+      name: 'Cordel Traditionnel (Ocre & Sauge)',
+      primary: '#D99F4D',
+      secondary: '#84967A',
+      background: '#F4ECD8',
+      text: '#181716'
     }
   ];
 
@@ -171,7 +167,7 @@ export default function WizardStepIdentity({ wizardData, updateWizardData, logoF
             <div className="flex items-center gap-2">
               <input
                 type="color"
-                value={colors.primary || '#d99f4d'}
+                value={colors.primary || '#8B2A1A'}
                 onChange={(e) => handleColorChange('primary', e.target.value)}
                 className="w-7 h-7 rounded border border-stone-300 cursor-pointer"
               />
@@ -184,7 +180,7 @@ export default function WizardStepIdentity({ wizardData, updateWizardData, logoF
             <div className="flex items-center gap-2">
               <input
                 type="color"
-                value={colors.secondary || '#84967a'}
+                value={colors.secondary || '#15803D'}
                 onChange={(e) => handleColorChange('secondary', e.target.value)}
                 className="w-7 h-7 rounded border border-stone-300 cursor-pointer"
               />
@@ -197,7 +193,7 @@ export default function WizardStepIdentity({ wizardData, updateWizardData, logoF
             <div className="flex items-center gap-2">
               <input
                 type="color"
-                value={colors.background || '#f4ecd8'}
+                value={colors.background || '#F4ECD8'}
                 onChange={(e) => handleColorChange('background', e.target.value)}
                 className="w-7 h-7 rounded border border-stone-300 cursor-pointer"
               />
@@ -210,7 +206,7 @@ export default function WizardStepIdentity({ wizardData, updateWizardData, logoF
             <div className="flex items-center gap-2">
               <input
                 type="color"
-                value={colors.text || '#1a1a1a'}
+                value={colors.text || '#181716'}
                 onChange={(e) => handleColorChange('text', e.target.value)}
                 className="w-7 h-7 rounded border border-stone-300 cursor-pointer"
               />

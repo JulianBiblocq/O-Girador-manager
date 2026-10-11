@@ -38,7 +38,7 @@ export default function PublicEventCard({ event, onClickDetails, isPast = false 
       className={`rounded-xl border transition-all flex flex-col overflow-hidden group cursor-pointer border-t-4 relative ${
         isPast || isPastOrToday 
           ? 'bg-stone-50/90 border-stone-300 shadow-xs hover:shadow border-t-stone-500' 
-          : 'bg-white border-stone-200 shadow-sm hover:shadow-md border-t-[var(--public-primary,#D32F2F)]'
+          : 'bg-white border-stone-200 shadow-sm hover:shadow-md border-t-[var(--public-primary,#8B2A1A)]'
       }`}
     >
       {/* Visuel d'illustration / Affiche */}
@@ -52,7 +52,7 @@ export default function PublicEventCard({ event, onClickDetails, isPast = false 
           <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
             <span 
               className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded text-white shadow-xs backdrop-blur-xs"
-              style={{ backgroundColor: isPast ? '#6B7280' : 'var(--public-secondary, #1976D2)' }}
+              style={{ backgroundColor: isPast ? '#6B7280' : 'var(--public-secondary, #15803D)' }}
             >
               {event.type || 'Événement'}
             </span>
@@ -73,7 +73,7 @@ export default function PublicEventCard({ event, onClickDetails, isPast = false 
             <div className="flex items-center justify-between">
               <span 
                 className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded text-white"
-                style={{ backgroundColor: isPast ? '#6B7280' : 'var(--public-secondary, #1976D2)' }}
+                style={{ backgroundColor: isPast ? '#6B7280' : 'var(--public-secondary, #15803D)' }}
               >
                 {event.type || 'Événement'}
               </span>
@@ -136,7 +136,7 @@ export default function PublicEventCard({ event, onClickDetails, isPast = false 
             <span 
               className="text-xs font-bold uppercase tracking-wider flex items-center gap-1 group-hover:translate-x-1 transition-transform"
               style={{ 
-                color: 'var(--public-primary, #D32F2F)',
+                color: 'var(--public-primary, #8B2A1A)',
                 fontFamily: 'var(--public-font-heading, sans-serif)'
               }}
             >

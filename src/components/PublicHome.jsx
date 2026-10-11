@@ -128,7 +128,7 @@ export default function PublicHome({
     return (
       <div 
         className="min-h-screen w-full flex flex-col items-center justify-center p-6 text-center select-none"
-        style={{ backgroundColor: 'var(--public-bg, #FAF6EE)', color: 'var(--public-text, #1C1917)' }}
+        style={{ backgroundColor: 'var(--public-bg, #F4ECD8)', color: 'var(--public-text, #181716)' }}
       >
         <div className="relative w-14 h-14 animate-spin mb-4">
           <div className="absolute inset-0 rounded-full border-4 border-amber-300/40 animate-pulse"></div>
@@ -247,8 +247,8 @@ export default function PublicHome({
         className="min-h-screen flex flex-col transition-colors duration-300 selection:bg-stone-200 public-paper-bg"
         style={{ 
           fontFamily: 'var(--public-font-body, sans-serif)',
-          backgroundColor: 'var(--public-bg, #FAF6EE)',
-          color: 'var(--public-text, #1C1917)'
+          backgroundColor: 'var(--public-bg, #F4ECD8)',
+          color: 'var(--public-text, #181716)'
         }}
       >
       {/* ==========================================
@@ -272,7 +272,7 @@ export default function PublicHome({
               className="text-lg font-bold tracking-tight"
               style={{ 
                 fontFamily: 'var(--public-font-heading, sans-serif)',
-                color: 'var(--public-primary, #D32F2F)' 
+                color: 'var(--public-primary, #8B2A1A)' 
               }}
             >
               {groupTitle}
@@ -285,7 +285,7 @@ export default function PublicHome({
               <button
                 type="button"
                 onClick={() => scrollToSection('presentation')}
-                className="text-xs font-bold uppercase tracking-wider text-stone-600 hover:text-[var(--public-primary,#D32F2F)] transition-colors cursor-pointer"
+                className="text-xs font-bold uppercase tracking-wider text-stone-600 hover:text-[var(--public-primary,#8B2A1A)] transition-colors cursor-pointer"
               >
                 {titrePresentation}
               </button>
@@ -294,7 +294,7 @@ export default function PublicHome({
               <button
                 type="button"
                 onClick={() => scrollToSection('recrutement')}
-                className="text-xs font-bold uppercase tracking-wider text-stone-600 hover:text-[var(--public-primary,#D32F2F)] transition-colors cursor-pointer"
+                className="text-xs font-bold uppercase tracking-wider text-stone-600 hover:text-[var(--public-primary,#8B2A1A)] transition-colors cursor-pointer"
               >
                 {vitrineTexts.titreRecrutement || publicTheme?.titreRecrutement || "Recrutement"}
               </button>
@@ -303,7 +303,7 @@ export default function PublicHome({
               <button
                 type="button"
                 onClick={() => scrollToSection('galerie')}
-                className="text-xs font-bold uppercase tracking-wider text-stone-600 hover:text-[var(--public-primary,#D32F2F)] transition-colors cursor-pointer"
+                className="text-xs font-bold uppercase tracking-wider text-stone-600 hover:text-[var(--public-primary,#8B2A1A)] transition-colors cursor-pointer"
               >
                 {vitrineTexts.titreGalerie || "Galerie"}
               </button>
@@ -312,7 +312,7 @@ export default function PublicHome({
               <button
                 type="button"
                 onClick={() => scrollToSection('agenda')}
-                className="text-xs font-bold uppercase tracking-wider text-stone-600 hover:text-[var(--public-primary,#D32F2F)] transition-colors cursor-pointer"
+                className="text-xs font-bold uppercase tracking-wider text-stone-600 hover:text-[var(--public-primary,#8B2A1A)] transition-colors cursor-pointer"
               >
                 {titreAgenda}
               </button>
@@ -321,7 +321,7 @@ export default function PublicHome({
               <button
                 type="button"
                 onClick={() => scrollToSection('programmer')}
-                className="text-xs font-bold uppercase tracking-wider text-stone-600 hover:text-[var(--public-primary,#D32F2F)] transition-colors cursor-pointer"
+                className="text-xs font-bold uppercase tracking-wider text-stone-600 hover:text-[var(--public-primary,#8B2A1A)] transition-colors cursor-pointer"
               >
                 {titreProgrammer}
               </button>
@@ -356,7 +356,7 @@ export default function PublicHome({
               <button
                 type="button"
                 onClick={() => { scrollToSection('presentation'); setMobileMenuOpen(false); }}
-                className="text-xs font-bold uppercase tracking-wider text-stone-700 hover:text-[var(--public-primary,#D32F2F)] text-left py-1.5 border-b border-stone-200/60 cursor-pointer"
+                className="text-xs font-bold uppercase tracking-wider text-stone-700 hover:text-[var(--public-primary,#8B2A1A)] text-left py-1.5 border-b border-stone-200/60 cursor-pointer"
               >
                 👉 {titrePresentation}
               </button>
@@ -365,7 +365,7 @@ export default function PublicHome({
               <button
                 type="button"
                 onClick={() => { scrollToSection('recrutement'); setMobileMenuOpen(false); }}
-                className="text-xs font-bold uppercase tracking-wider text-stone-700 hover:text-[var(--public-primary,#D32F2F)] text-left py-1.5 border-b border-stone-200/60 cursor-pointer"
+                className="text-xs font-bold uppercase tracking-wider text-stone-700 hover:text-[var(--public-primary,#8B2A1A)] text-left py-1.5 border-b border-stone-200/60 cursor-pointer"
               >
                 <span className="flex items-center gap-1.5">
                   <XiloMegaphone size={14} className="text-cordel-wood shrink-0" />
@@ -377,7 +377,7 @@ export default function PublicHome({
               <button
                 type="button"
                 onClick={() => { scrollToSection('galerie'); setMobileMenuOpen(false); }}
-                className="text-xs font-bold uppercase tracking-wider text-stone-700 hover:text-[var(--public-primary,#D32F2F)] text-left py-1.5 border-b border-stone-200/60 cursor-pointer"
+                className="text-xs font-bold uppercase tracking-wider text-stone-700 hover:text-[var(--public-primary,#8B2A1A)] text-left py-1.5 border-b border-stone-200/60 cursor-pointer"
               >
                 📸 {vitrineTexts.titreGalerie || "Galerie Photos"}
               </button>
@@ -386,7 +386,7 @@ export default function PublicHome({
               <button
                 type="button"
                 onClick={() => { scrollToSection('agenda'); setMobileMenuOpen(false); }}
-                className="text-xs font-bold uppercase tracking-wider text-stone-700 hover:text-[var(--public-primary,#D32F2F)] text-left py-1.5 border-b border-stone-200/60 cursor-pointer"
+                className="text-xs font-bold uppercase tracking-wider text-stone-700 hover:text-[var(--public-primary,#8B2A1A)] text-left py-1.5 border-b border-stone-200/60 cursor-pointer"
               >
                 📅 {titreAgenda}
               </button>
@@ -395,7 +395,7 @@ export default function PublicHome({
               <button
                 type="button"
                 onClick={() => { scrollToSection('programmer'); setMobileMenuOpen(false); }}
-                className="text-xs font-bold uppercase tracking-wider text-stone-700 hover:text-[var(--public-primary,#D32F2F)] text-left py-1.5 cursor-pointer"
+                className="text-xs font-bold uppercase tracking-wider text-stone-700 hover:text-[var(--public-primary,#8B2A1A)] text-left py-1.5 cursor-pointer"
               >
                 🎪 {titreProgrammer}
               </button>
@@ -427,7 +427,7 @@ export default function PublicHome({
             className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight max-w-4xl leading-tight drop-shadow-xl"
             style={{ 
               fontFamily: 'var(--public-font-heading, sans-serif)',
-              color: heroImage ? '#FFFFFF' : 'var(--public-primary, #D32F2F)',
+              color: heroImage ? '#FFFFFF' : 'var(--public-primary, #8B2A1A)',
               textShadow: heroImage ? '0 3px 12px rgba(0,0,0,0.85), 0 1px 4px rgba(0,0,0,0.9)' : 'none'
             }}
           >
@@ -453,7 +453,7 @@ export default function PublicHome({
                   onClick={() => scrollToSection(heroCtaLink.substring(1))}
                   className="px-6 py-3.5 text-sm font-bold uppercase tracking-wider rounded-lg shadow-xl hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center gap-2"
                   style={{
-                    backgroundColor: 'var(--public-btn-bg, var(--public-primary, #D32F2F))',
+                    backgroundColor: 'var(--public-btn-bg, var(--public-primary, #8B2A1A))',
                     color: 'var(--public-btn-text, #FFFFFF)',
                     fontFamily: 'var(--public-font-heading, sans-serif)'
                   }}
@@ -468,7 +468,7 @@ export default function PublicHome({
                   rel={heroCtaLink.startsWith('http') ? "noopener noreferrer" : undefined}
                   className="px-6 py-3.5 text-sm font-bold uppercase tracking-wider rounded-lg shadow-xl hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center gap-2"
                   style={{
-                    backgroundColor: 'var(--public-btn-bg, var(--public-primary, #D32F2F))',
+                    backgroundColor: 'var(--public-btn-bg, var(--public-primary, #8B2A1A))',
                     color: 'var(--public-btn-text, #FFFFFF)',
                     fontFamily: 'var(--public-font-heading, sans-serif)'
                   }}
@@ -486,7 +486,7 @@ export default function PublicHome({
                 onClick={() => scrollToSection('programmer')}
                 className="px-6 py-3.5 text-sm font-bold uppercase tracking-wider text-white rounded-lg shadow-xl hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center gap-2"
                 style={{
-                  backgroundColor: 'var(--public-secondary, #1976D2)',
+                  backgroundColor: 'var(--public-secondary, #15803D)',
                   fontFamily: 'var(--public-font-heading, sans-serif)'
                 }}
               >
@@ -508,14 +508,14 @@ export default function PublicHome({
               className="text-3xl sm:text-4xl font-extrabold tracking-tight uppercase"
               style={{ 
                 fontFamily: 'var(--public-font-heading, sans-serif)',
-                color: 'var(--public-primary, #D32F2F)' 
+                color: 'var(--public-primary, #8B2A1A)' 
               }}
             >
               {titrePresentation}
             </h2>
             <div 
               className="w-20 h-1 rounded-full"
-              style={{ backgroundColor: 'var(--public-secondary, #1976D2)' }}
+              style={{ backgroundColor: 'var(--public-secondary, #15803D)' }}
             ></div>
           </div>
 
@@ -569,14 +569,14 @@ export default function PublicHome({
                 className="text-3xl font-extrabold tracking-tight uppercase"
                 style={{ 
                   fontFamily: 'var(--public-font-heading, sans-serif)',
-                  color: 'var(--public-primary, #D32F2F)' 
+                  color: 'var(--public-primary, #8B2A1A)' 
                 }}
               >
                 {titreAgenda}
               </h2>
               <div 
                 className="w-16 h-1 rounded-full"
-                style={{ backgroundColor: 'var(--public-secondary, #1976D2)' }}
+                style={{ backgroundColor: 'var(--public-secondary, #15803D)' }}
               ></div>
               <p className="text-sm text-stone-500 max-w-md">
                 {accrocheAgenda}
@@ -654,7 +654,7 @@ export default function PublicHome({
           id="programmer" 
           className="py-16 border-b border-stone-200/60 relative overflow-hidden"
           style={{
-            backgroundColor: 'color-mix(in srgb, var(--public-secondary, #1976D2) 6%, white 94%)'
+            backgroundColor: 'color-mix(in srgb, var(--public-secondary, #15803D) 6%, white 94%)'
           }}
         >
           <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col gap-12">
@@ -662,7 +662,7 @@ export default function PublicHome({
             <div className="text-center flex flex-col items-center gap-3">
               <span 
                 className="text-xs font-bold uppercase tracking-widest px-3 py-1 rounded text-white shadow-xs"
-                style={{ backgroundColor: 'var(--public-secondary, #1976D2)' }}
+                style={{ backgroundColor: 'var(--public-secondary, #15803D)' }}
               >
                 {badgeProgrammer}
               </span>
@@ -670,14 +670,14 @@ export default function PublicHome({
                 className="text-3xl sm:text-4xl font-extrabold tracking-tight uppercase"
                 style={{ 
                   fontFamily: 'var(--public-font-heading, sans-serif)',
-                  color: 'var(--public-primary, #D32F2F)' 
+                  color: 'var(--public-primary, #8B2A1A)' 
                 }}
               >
                 {titreProgrammer}
               </h2>
               <div 
                 className="w-16 h-1 rounded-full"
-                style={{ backgroundColor: 'var(--public-primary, #D32F2F)' }}
+                style={{ backgroundColor: 'var(--public-primary, #8B2A1A)' }}
               ></div>
               <p className="text-sm text-stone-600 max-w-xl">
                 {accrocheProgrammer}
@@ -692,7 +692,7 @@ export default function PublicHome({
                   className="text-xl font-bold border-b border-stone-100 pb-3 flex items-center gap-2"
                   style={{ 
                     fontFamily: 'var(--public-font-heading, sans-serif)',
-                    color: 'var(--public-primary, #D32F2F)' 
+                    color: 'var(--public-primary, #8B2A1A)' 
                   }}
                 >
                   <span>🥁 {titreFormats}</span>
@@ -709,7 +709,7 @@ export default function PublicHome({
                     <li className="flex items-start gap-3">
                       <span 
                         className="w-2 h-2 rounded-full mt-2 shrink-0"
-                        style={{ backgroundColor: 'var(--public-secondary, #1976D2)' }}
+                        style={{ backgroundColor: 'var(--public-secondary, #15803D)' }}
                       ></span>
                       <div>
                         <strong className="text-stone-900 block font-bold">Festivals & Fêtes de Ville</strong>
@@ -720,7 +720,7 @@ export default function PublicHome({
                     <li className="flex items-start gap-3">
                       <span 
                         className="w-2 h-2 rounded-full mt-2 shrink-0"
-                        style={{ backgroundColor: 'var(--public-secondary, #1976D2)' }}
+                        style={{ backgroundColor: 'var(--public-secondary, #15803D)' }}
                       ></span>
                       <div>
                         <strong className="text-stone-900 block font-bold">Animations Culturelles & Associatives</strong>
@@ -731,7 +731,7 @@ export default function PublicHome({
                     <li className="flex items-start gap-3">
                       <span 
                         className="w-2 h-2 rounded-full mt-2 shrink-0"
-                        style={{ backgroundColor: 'var(--public-secondary, #1976D2)' }}
+                        style={{ backgroundColor: 'var(--public-secondary, #15803D)' }}
                       ></span>
                       <div>
                         <strong className="text-stone-900 block font-bold">Événements Privés & Sur-Mesure</strong>
@@ -749,7 +749,7 @@ export default function PublicHome({
                     className="text-xl font-bold border-b border-stone-100 pb-3 flex items-center gap-2"
                     style={{ 
                       fontFamily: 'var(--public-font-heading, sans-serif)',
-                      color: 'var(--public-primary, #D32F2F)' 
+                      color: 'var(--public-primary, #8B2A1A)' 
                     }}
                   >
                     <span>📞 {titreContactReseaux}</span>
@@ -885,7 +885,7 @@ export default function PublicHome({
                     onClick={() => setIsBookingModalOpen(true)}
                     className="w-full py-3.5 px-6 text-sm font-bold uppercase tracking-wider rounded-lg shadow-md hover:brightness-110 active:scale-95 transition-all text-center flex items-center justify-center gap-2 cursor-pointer"
                     style={{
-                      backgroundColor: 'var(--public-btn-bg, var(--public-primary, #D32F2F))',
+                      backgroundColor: 'var(--public-btn-bg, var(--public-primary, #8B2A1A))',
                       color: 'var(--public-btn-text, #FFFFFF)',
                       fontFamily: 'var(--public-font-heading, sans-serif)'
                     }}

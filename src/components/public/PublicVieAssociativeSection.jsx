@@ -24,7 +24,7 @@ export default function PublicVieAssociativeSection({ publicTheme }) {
   return (
     <section 
       id="vie-associative" 
-      className="py-16 sm:py-20 border-b border-stone-200/60 relative overflow-hidden transition-all duration-300 bg-[#FAF6EE]/90"
+      className="py-16 sm:py-20 border-b border-stone-200/60 relative overflow-hidden transition-all duration-300 bg-[#F4ECD8]/90"
     >
       <div className="max-w-5xl mx-auto px-4 sm:px-6 md:px-8 flex flex-col gap-8">
         
@@ -33,7 +33,7 @@ export default function PublicVieAssociativeSection({ publicTheme }) {
           <span 
             className="text-xs font-bold uppercase tracking-widest px-4 py-1 rounded-full text-white shadow-xs flex items-center gap-2"
             style={{ 
-              backgroundColor: 'var(--public-secondary, #1976D2)',
+              backgroundColor: 'var(--public-secondary, #15803D)',
               fontFamily: 'var(--public-font-heading, sans-serif)' 
             }}
           >
@@ -45,7 +45,7 @@ export default function PublicVieAssociativeSection({ publicTheme }) {
             className="text-3xl sm:text-4xl font-extrabold tracking-tight uppercase"
             style={{ 
               fontFamily: 'var(--public-font-heading, sans-serif)',
-              color: 'var(--public-primary, #D32F2F)' 
+              color: 'var(--public-primary, #8B2A1A)' 
             }}
           >
             {titreVieAssociative}
@@ -53,7 +53,7 @@ export default function PublicVieAssociativeSection({ publicTheme }) {
 
           <div 
             className="w-20 h-1 rounded-full"
-            style={{ backgroundColor: 'var(--public-secondary, #1976D2)' }}
+            style={{ backgroundColor: 'var(--public-secondary, #15803D)' }}
           ></div>
         </div>
 

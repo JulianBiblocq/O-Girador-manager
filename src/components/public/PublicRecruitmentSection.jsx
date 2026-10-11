@@ -82,7 +82,7 @@ export default function PublicRecruitmentSection({ publicTheme }) {
       id="recrutement" 
       className="py-16 sm:py-20 border-b border-stone-200/60 relative overflow-hidden transition-all duration-300"
       style={{
-        backgroundColor: 'color-mix(in srgb, var(--public-primary, #D32F2F) 5%, var(--public-bg, #FAF8F5) 95%)'
+        backgroundColor: 'color-mix(in srgb, var(--public-primary, #8B2A1A) 5%, var(--public-bg, #F4ECD8) 95%)'
       }}
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-8 flex flex-col gap-12 text-left">
@@ -92,7 +92,7 @@ export default function PublicRecruitmentSection({ publicTheme }) {
           <span 
             className="text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full text-white shadow-xs flex items-center gap-2"
             style={{ 
-              backgroundColor: 'var(--public-primary, #D32F2F)',
+              backgroundColor: 'var(--public-primary, #8B2A1A)',
               fontFamily: 'var(--public-font-heading, sans-serif)' 
             }}
           >
@@ -106,7 +106,7 @@ export default function PublicRecruitmentSection({ publicTheme }) {
             className="text-3xl sm:text-5xl font-extrabold tracking-tight max-w-3xl leading-tight uppercase"
             style={{ 
               fontFamily: 'var(--public-font-heading, sans-serif)',
-              color: 'var(--public-primary, #D32F2F)'
+              color: 'var(--public-primary, #8B2A1A)'
             }}
           >
             {title}
@@ -114,7 +114,7 @@ export default function PublicRecruitmentSection({ publicTheme }) {
 
           <div 
             className="w-20 h-1 rounded-full opacity-80"
-            style={{ backgroundColor: 'var(--public-secondary, #1976D2)' }}
+            style={{ backgroundColor: 'var(--public-secondary, #15803D)' }}
           ></div>
 
           {/* Message d'invitation au recrutement (PublicRichText) */}
@@ -176,7 +176,7 @@ export default function PublicRecruitmentSection({ publicTheme }) {
                         className={`text-lg font-bold leading-snug ${hasBgImage ? 'text-white drop-shadow-sm' : ''}`}
                         style={{ 
                           fontFamily: 'var(--public-font-heading, sans-serif)',
-                          color: hasBgImage ? '#FFFFFF' : 'var(--public-primary, #D32F2F)' 
+                          color: hasBgImage ? '#FFFFFF' : 'var(--public-primary, #8B2A1A)' 
                         }}
                       >
                         {formule.titre}
@@ -228,7 +228,7 @@ export default function PublicRecruitmentSection({ publicTheme }) {
                     className={`w-full py-2.5 px-4 text-xs font-bold uppercase tracking-wider rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 shadow-sm cursor-pointer ${
                       hasBgImage
                         ? 'bg-white text-stone-900 hover:bg-amber-400 hover:text-stone-950 font-extrabold'
-                        : 'bg-stone-100 text-stone-800 hover:bg-[var(--public-primary,#D32F2F)] hover:text-white'
+                        : 'bg-stone-100 text-stone-800 hover:bg-[var(--public-primary,#8B2A1A)] hover:text-white'
                     }`}
                     style={{ fontFamily: 'var(--public-font-heading, sans-serif)' }}
                   >
@@ -249,7 +249,7 @@ export default function PublicRecruitmentSection({ publicTheme }) {
               rel={effectiveLink.startsWith('http') ? "noopener noreferrer" : undefined}
               className="inline-flex items-center justify-center gap-3 px-8 py-4 text-base font-bold uppercase tracking-wider text-white rounded-xl shadow-xl hover:brightness-110 active:scale-95 transition-all cursor-pointer border border-white/20"
               style={{
-                backgroundColor: 'var(--public-btn-bg, var(--public-primary, #D32F2F))',
+                backgroundColor: 'var(--public-btn-bg, var(--public-primary, #8B2A1A))',
                 color: 'var(--public-btn-text, #FFFFFF)',
                 fontFamily: 'var(--public-font-heading, sans-serif)'
               }}

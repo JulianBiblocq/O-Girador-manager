@@ -122,7 +122,7 @@ export default function TabPublicGeneral({ formData, handleChange, groupId, savi
 
             <button
               type="button"
-              onClick={() => window.open(getVitrineUrl(urls, formData), '_blank', 'noopener,noreferrer')}
+              onClick={() => window.open(getVitrineUrl(urls, formData, groupId), '_blank', 'noopener,noreferrer')}
               className="px-4 py-2 text-xs font-black uppercase tracking-wider bg-cordel-vert text-white rounded-[6px_8px_5px_7px] border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-110 cursor-pointer flex items-center gap-1.5 select-none"
               title={t('vitrine.admin.general.tabPublicGeneral.ouvrirLeSitePublicDans')}
             >

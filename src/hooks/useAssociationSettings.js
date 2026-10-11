@@ -117,12 +117,22 @@ export const DEFAULT_VITRINE_TEXTS = {
   accrocheNewsletter: "Recevez nos prochaines dates de prestations, défilés et actualités du groupe directement dans votre boîte mail."
 };
 
+export const DEFAULT_BRANDING = {
+  logoUrl: '',
+  colors: {
+    primary: '#8B2A1A',
+    secondary: '#15803D',
+    background: '#F4ECD8',
+    text: '#181716'
+  }
+};
+
 export const DEFAULT_PUBLIC_THEME = {
-  primaryColor: '#D32F2F',
-  secondaryColor: '#1976D2',
-  backgroundColor: '#FAF6EE',
-  textColor: '#1C1917',
-  buttonBgColor: '#D32F2F',
+  primaryColor: '#8B2A1A',
+  secondaryColor: '#15803D',
+  backgroundColor: '#F4ECD8',
+  textColor: '#181716',
+  buttonBgColor: '#8B2A1A',
   buttonTextColor: '#FFFFFF',
   headingFont: 'Oswald',
   bodyFont: 'Roboto',
@@ -202,12 +212,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t, initial
       sequenceurUrl: '',
       branding: {
         logoUrl: '',
-        colors: {
-          primary: '#d99f4d',
-          secondary: '#84967a',
-          background: '#f4ecd8',
-          text: '#1a1a1a'
-        }
+        colors: { ...DEFAULT_BRANDING.colors }
       },
       // Thème dynamique pour le site vitrine public
       publicTheme: DEFAULT_PUBLIC_THEME,
@@ -438,10 +443,10 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t, initial
           branding: {
             logoUrl: data.branding?.logoUrl || '',
             colors: {
-              primary: data.branding?.colors?.primary || '#d99f4d',
-              secondary: data.branding?.colors?.secondary || '#84967a',
-              background: data.branding?.colors?.background || '#f4ecd8',
-              text: data.branding?.colors?.text || '#1a1a1a'
+              primary: data.branding?.colors?.primary || DEFAULT_BRANDING.colors.primary,
+              secondary: data.branding?.colors?.secondary || DEFAULT_BRANDING.colors.secondary,
+              background: data.branding?.colors?.background || DEFAULT_BRANDING.colors.background,
+              text: data.branding?.colors?.text || DEFAULT_BRANDING.colors.text
             }
           },
           // Configuration du thème visuel et du contenu pour le site vitrine public

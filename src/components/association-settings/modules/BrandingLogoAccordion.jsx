@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from '../../LanguageContext';
 import CordelCard from '../../CordelCard';
+import { DEFAULT_BRANDING } from '../../../hooks/useAssociationSettings';
 
 /**
  * Accordéon compact pour l'identité visuelle, logo officiel et palette de couleurs.
@@ -16,12 +17,7 @@ export default function BrandingLogoAccordion({
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const { branding = {} } = formData;
-  const colors = branding.colors || {
-    primary: '#d99f4d',
-    secondary: '#84967a',
-    background: '#f4ecd8',
-    text: '#1a1a1a'
-  };
+  const colors = branding.colors || DEFAULT_BRANDING.colors;
 
   const setColors = (updater) => {
     const updated = typeof updater === 'function' ? updater(colors) : updater;

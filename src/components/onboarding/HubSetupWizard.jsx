@@ -7,6 +7,7 @@ import { auth, db, storage } from '../../firebase';
 import CordelButton from '../CordelButton';
 import WizardProgressBar from './wizard/WizardProgressBar';
 import { getUniverseDefaultInstruments, normalizeUniverseId } from '../../constants/universeDefaults';
+import { DEFAULT_BRANDING, DEFAULT_PUBLIC_THEME } from '../../hooks/useAssociationSettings';
 
 export default function HubSetupWizard({ brandingStyle, onComplete }) {
   const [currentStep, setCurrentStep] = useState(1);
@@ -175,8 +176,9 @@ export default function HubSetupWizard({ brandingStyle, onComplete }) {
         majoriteFeminine: wizardData.genre === 'feminin',
         branding: {
           logoUrl: finalLogoUrl,
-          colors: { primary: '#d99f4d', secondary: '#84967a', background: '#f4ecd8', text: '#1a1a1a' }
+          colors: { ...DEFAULT_BRANDING.colors }
         },
+        publicTheme: { ...DEFAULT_PUBLIC_THEME },
         instrumentsDisponibles,
         enabledModules,
         onboardingCompleted: true,

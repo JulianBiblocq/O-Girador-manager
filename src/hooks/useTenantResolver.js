@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { isDemoMode } from '../demo/demoManager';
 import { DEMO_GROUP_ID } from '../data/demoData';
@@ -47,18 +47,21 @@ export default function useTenantResolver() {
       let extractedGroupId = null;
       let hasError = null;
 
+      // Détection prioritaire absolue des Query Parameters (?tenant=... ou ?groupe=...)
+      const tenantParam = urlParams.get('tenant') || urlParams.get('groupe') || urlParams.get('groupId') || urlParams.get('assoc');
+
       // 1. Détermination du mode et groupId via environnement local
       if (isLocal) {
         // Paramètres URL (priorité haute) ou Variables d'environnement
         currentMode = urlParams.get('app') || import.meta.env.VITE_DEFAULT_APP || 'organizador';
-        extractedGroupId = urlParams.get('groupId') || urlParams.get('tenant') || urlParams.get('groupe') || urlParams.get('assoc') || import.meta.env.VITE_DEFAULT_TENANT || null;
+        extractedGroupId = tenantParam || import.meta.env.VITE_DEFAULT_TENANT || null;
       } 
       // 2. Environnement de production / En ligne
       else {
         // Est-ce le domaine racine absolu ?
         if (hostname === 'o-girador.com' || hostname === 'www.o-girador.com') {
           currentMode = 'orchestrador';
-          extractedGroupId = null;
+          extractedGroupId = tenantParam || null;
         } else if (hostname.includes('o-girador.com') || hostname.includes('web.app') || hostname.includes('firebaseapp.com')) {
           // Sous-domaine standard de notre écosystème
           if (hostname.includes('mostrador')) {
@@ -77,40 +80,63 @@ export default function useTenantResolver() {
             extractedGroupId = parts[0];
           }
 
-          // Tolérance Deep Linking : paramètre URL explicite prioritaire
-          const queryGroupId = urlParams.get('groupId') || urlParams.get('tenant') || urlParams.get('groupe') || urlParams.get('assoc');
-          if (queryGroupId) {
-            extractedGroupId = queryGroupId;
+          // Tolérance Deep Linking : paramètre URL explicite prioritaire absolu
+          if (tenantParam) {
+            extractedGroupId = tenantParam;
           }
         } else {
           // 3. Domaine personnalisé externe (ex: www.samambaia-maracatu.fr)
           // On considère par défaut que c'est une vitrine publique (Mostrador) pour ce groupe
           currentMode = 'mostrador';
-          try {
-            const associationsRef = collection(db, 'associations');
-            
-            // Pour supporter "www.domaine.fr" ou "domaine.fr" indifféremment
-            const possibleHostnames = [hostname];
-            if (hostname.startsWith('www.')) {
-              possibleHostnames.push(hostname.replace(/^www\./, ''));
-            } else {
-              possibleHostnames.push(`www.${hostname}`);
-            }
 
-            const q = query(associationsRef, where('customDomains', 'array-contains-any', possibleHostnames));
-            const snapshot = await getDocs(q);
+          if (tenantParam) {
+            extractedGroupId = tenantParam;
+          } else {
+            try {
+              const associationsRef = collection(db, 'associations');
+              
+              // Pour supporter "www.domaine.fr" ou "domaine.fr" indifféremment
+              const possibleHostnames = [hostname];
+              if (hostname.startsWith('www.')) {
+                possibleHostnames.push(hostname.replace(/^www\./, ''));
+              } else {
+                possibleHostnames.push(`www.${hostname}`);
+              }
 
-            if (!snapshot.empty) {
-              const doc = snapshot.docs[0];
-              extractedGroupId = doc.id;
-            } else {
-              // Domaine inconnu
-              hasError = 'NOT_FOUND';
+              const q = query(associationsRef, where('customDomains', 'array-contains-any', possibleHostnames));
+              const snapshot = await getDocs(q);
+
+              if (!snapshot.empty) {
+                const docSnap = snapshot.docs[0];
+                extractedGroupId = docSnap.id;
+              } else {
+                // Domaine inconnu
+                hasError = 'NOT_FOUND';
+              }
+            } catch (error) {
+              console.error("Erreur lors de la résolution du domaine personnalisé :", error);
+              hasError = 'ERROR';
             }
-          } catch (error) {
-            console.error("Erreur lors de la résolution du domaine personnalisé :", error);
-            hasError = 'ERROR';
           }
+        }
+      }
+
+      // 4. Validation directe dans Firestore si un tenant a été explicitement transmis
+      if (tenantParam && extractedGroupId) {
+        try {
+          const canonicalId = canonicalizeGroupId(extractedGroupId);
+          const assocDocRef = doc(db, 'associations', canonicalId);
+          const assocSnap = await getDoc(assocDocRef);
+          if (assocSnap.exists()) {
+            extractedGroupId = assocSnap.id;
+            hasError = null;
+          } else {
+            console.warn(`useTenantResolver - Association '${canonicalId}' introuvable dans Firestore.`);
+            // Si explicitement demandé mais introuvable, lever NOT_FOUND pour éviter tout fallback silencieux vers Samambaia
+            hasError = 'NOT_FOUND';
+          }
+        } catch (error) {
+          console.error("useTenantResolver - Erreur lors de la vérification Firestore :", error);
         }
       }
 
@@ -121,11 +147,13 @@ export default function useTenantResolver() {
       const canonicalGroupId = canonicalizeGroupId(extractedGroupId);
 
       if (isLocal) {
-        mostradorUrl = `/?app=mostrador${canonicalGroupId ? `&tenant=${canonicalGroupId}` : ''}`;
-        organizadorUrl = `/login?app=organizador${canonicalGroupId ? `&tenant=${canonicalGroupId}` : ''}`;
+        mostradorUrl = `/?app=mostrador${canonicalGroupId ? `&tenant=${encodeURIComponent(canonicalGroupId)}` : ''}`;
+        organizadorUrl = `/login?app=organizador${canonicalGroupId ? `&tenant=${encodeURIComponent(canonicalGroupId)}` : ''}`;
       } else {
         const groupPrefix = canonicalGroupId ? `${canonicalGroupId.toLowerCase()}.` : '';
-        mostradorUrl = `https://${groupPrefix}mostrador.o-girador.com`;
+        mostradorUrl = canonicalGroupId 
+          ? `https://mostrador.o-girador.com/?tenant=${encodeURIComponent(canonicalGroupId.toLowerCase())}` 
+          : 'https://mostrador.o-girador.com';
         organizadorUrl = `https://${groupPrefix}organizador.o-girador.com`;
       }
 

@@ -64,7 +64,7 @@ export default function PublicPhotoGallery({ photos = [], publicTheme = {} }) {
         <div className="text-center flex flex-col items-center gap-3">
           <span 
             className="text-xs font-bold uppercase tracking-widest px-3 py-1 rounded text-white shadow-xs"
-            style={{ backgroundColor: 'var(--public-secondary, #1976D2)' }}
+            style={{ backgroundColor: 'var(--public-secondary, #15803D)' }}
           >
             {badgeGalerie}
           </span>
@@ -73,7 +73,7 @@ export default function PublicPhotoGallery({ photos = [], publicTheme = {} }) {
             className="text-3xl sm:text-4xl font-extrabold tracking-tight uppercase"
             style={{ 
               fontFamily: 'var(--public-font-heading, sans-serif)',
-              color: 'var(--public-primary, #D32F2F)' 
+              color: 'var(--public-primary, #8B2A1A)' 
             }}
           >
             {titreGalerie}
@@ -81,7 +81,7 @@ export default function PublicPhotoGallery({ photos = [], publicTheme = {} }) {
 
           <div 
             className="w-16 h-1 rounded-full"
-            style={{ backgroundColor: 'var(--public-primary, #D32F2F)' }}
+            style={{ backgroundColor: 'var(--public-primary, #8B2A1A)' }}
           ></div>
           
           <p className="text-sm text-stone-600 max-w-md">
@@ -160,7 +160,7 @@ export default function PublicPhotoGallery({ photos = [], publicTheme = {} }) {
                   aria-label={`Aller à la photo ${dotIdx + 1}`}
                   className={`transition-all duration-300 rounded-full cursor-pointer ${
                     activeIndex === dotIdx 
-                      ? 'w-8 h-2.5 bg-[var(--public-primary,#D32F2F)] shadow-sm' 
+                      ? 'w-8 h-2.5 bg-[var(--public-primary,#8B2A1A)] shadow-sm' 
                       : 'w-2.5 h-2.5 bg-stone-300 hover:bg-stone-400'
                   }`}
                 />

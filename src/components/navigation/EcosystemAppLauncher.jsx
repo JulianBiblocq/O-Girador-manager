@@ -42,9 +42,10 @@ export function CordelGridIcon({ size = 16, className = "" }) {
  * @param {Object} props
  * @param {Object} [props.urls] - URLs spécifiques du locataire
  * @param {Object} [props.associationData] - Données de l'association (dont ecosystemAccess)
+ * @param {string} [props.currentGroupId] - Identifiant de l'association courante
  * @param {string} [props.className] - Classes de conteneur additionnelles
  */
-export default function EcosystemAppLauncher({ urls, associationData, className = "" }) {
+export default function EcosystemAppLauncher({ urls, associationData, currentGroupId, className = "" }) {
   const [isOpen, setIsOpen] = useState(false);
   const [launchingAppKey, setLaunchingAppKey] = useState(null);
   const [popoverStyle, setPopoverStyle] = useState({});
@@ -62,11 +63,12 @@ export default function EcosystemAppLauncher({ urls, associationData, className 
   };
 
   const isDemo = isDemoMode();
+  const effectiveGroupId = currentGroupId || associationData?.id || associationData?.groupId || null;
 
   const apps = [
     {
       key: 'vitrine',
-      url: getVitrineUrl(urls, associationData),
+      url: getVitrineUrl(urls, associationData, effectiveGroupId),
       img: '/ecosystem/logo-mostrador.png',
       label: 'Mostrador',
       subtitle: 'Site vitrine public',

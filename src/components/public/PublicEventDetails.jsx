@@ -61,7 +61,7 @@ export default function PublicEventDetails({ event, onClose }) {
             />
             <span 
               className="absolute bottom-4 left-4 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded text-white shadow-md backdrop-blur-md"
-              style={{ backgroundColor: 'var(--public-secondary, #1976D2)' }}
+              style={{ backgroundColor: 'var(--public-secondary, #15803D)' }}
             >
               {event.type || 'Événement'}
             </span>
@@ -74,7 +74,7 @@ export default function PublicEventDetails({ event, onClose }) {
             <div className="flex items-center justify-between">
               <span 
                 className="text-xs font-bold uppercase tracking-wider px-3 py-1 rounded text-white"
-                style={{ backgroundColor: 'var(--public-secondary, #1976D2)' }}
+                style={{ backgroundColor: 'var(--public-secondary, #15803D)' }}
               >
                 {event.type || 'Événement'}
               </span>
@@ -85,7 +85,7 @@ export default function PublicEventDetails({ event, onClose }) {
             className="text-2xl sm:text-3xl font-extrabold text-stone-900 leading-tight"
             style={{ 
               fontFamily: 'var(--public-font-heading, sans-serif)',
-              color: 'var(--public-primary, #D32F2F)'
+              color: 'var(--public-primary, #8B2A1A)'
             }}
           >
             {event.titre}
@@ -113,7 +113,7 @@ export default function PublicEventDetails({ event, onClose }) {
                       href={mapsSearchUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs font-bold text-[var(--public-primary,#D32F2F)] hover:underline mt-0.5 inline-flex items-center gap-1"
+                      className="text-xs font-bold text-[var(--public-primary,#8B2A1A)] hover:underline mt-0.5 inline-flex items-center gap-1"
                     >
                       <span>Voir sur Google Maps ↗</span>
                     </a>
@@ -160,7 +160,7 @@ export default function PublicEventDetails({ event, onClose }) {
               rel="noopener noreferrer"
               className="px-5 py-2.5 text-xs font-bold uppercase tracking-wider rounded-lg text-white shadow-md hover:brightness-110 active:scale-95 transition-all ml-auto flex items-center gap-2"
               style={{
-                backgroundColor: 'var(--public-btn-bg, var(--public-primary, #D32F2F))',
+                backgroundColor: 'var(--public-btn-bg, var(--public-primary, #8B2A1A))',
                 color: 'var(--public-btn-text, #FFFFFF)',
                 fontFamily: 'var(--public-font-heading, sans-serif)'
               }}

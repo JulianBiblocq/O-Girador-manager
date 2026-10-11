@@ -105,7 +105,7 @@ export default function PublicBookingModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 select-none overflow-y-auto">
-      <div className="w-full max-w-xl bg-[var(--public-bg,#FAF6EE)] text-[var(--public-text,#1C1917)] rounded-xl shadow-2xl p-5 sm:p-7 border border-amber-900/20 max-h-[92vh] overflow-y-auto text-left relative">
+      <div className="w-full max-w-xl bg-[var(--public-bg,#F4ECD8)] text-[var(--public-text,#181716)] rounded-xl shadow-2xl p-5 sm:p-7 border border-amber-900/20 max-h-[92vh] overflow-y-auto text-left relative">
         
         {/* Bouton de fermeture */}
         <button
@@ -139,7 +139,7 @@ export default function PublicBookingModal({
             <button
               type="button"
               onClick={handleResetAndClose}
-              className="mt-4 px-6 py-2.5 text-xs font-extrabold uppercase tracking-wider rounded-lg bg-[var(--public-btn-bg,#D32F2F)] text-[var(--public-btn-text,#FFFFFF)] shadow-md hover:opacity-90 transition-all cursor-pointer"
+              className="mt-4 px-6 py-2.5 text-xs font-extrabold uppercase tracking-wider rounded-lg bg-[var(--public-btn-bg,#8B2A1A)] text-[var(--public-btn-text,#FFFFFF)] shadow-md hover:opacity-90 transition-all cursor-pointer"
             >
               Fermer la fenêtre
             </button>
@@ -303,7 +303,7 @@ export default function PublicBookingModal({
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-5 py-2.5 text-xs font-extrabold uppercase tracking-wider rounded-lg bg-[var(--public-btn-bg,#D32F2F)] text-[var(--public-btn-text,#FFFFFF)] shadow-md hover:opacity-95 transition-all cursor-pointer disabled:opacity-50"
+                  className="px-5 py-2.5 text-xs font-extrabold uppercase tracking-wider rounded-lg bg-[var(--public-btn-bg,#8B2A1A)] text-[var(--public-btn-text,#FFFFFF)] shadow-md hover:opacity-95 transition-all cursor-pointer disabled:opacity-50"
                 >
                   {submitting ? '⏳ Envoi en cours...' : '📤 Transmettre la demande'}
                 </button>

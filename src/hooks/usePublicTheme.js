@@ -65,6 +65,10 @@ const buildThemeData = (data) => {
     heroCtaIcon: data.publicTheme?.heroCtaIcon !== undefined ? data.publicTheme.heroCtaIcon : "📅",
     primaryColor: data.publicTheme?.primaryColor || DEFAULT_PUBLIC_THEME.primaryColor,
     secondaryColor: data.publicTheme?.secondaryColor || DEFAULT_PUBLIC_THEME.secondaryColor,
+    backgroundColor: data.publicTheme?.backgroundColor || DEFAULT_PUBLIC_THEME.backgroundColor,
+    textColor: data.publicTheme?.textColor || DEFAULT_PUBLIC_THEME.textColor,
+    buttonBgColor: data.publicTheme?.buttonBgColor || DEFAULT_PUBLIC_THEME.buttonBgColor,
+    buttonTextColor: data.publicTheme?.buttonTextColor || DEFAULT_PUBLIC_THEME.buttonTextColor,
     headingFont: data.publicTheme?.headingFont || DEFAULT_PUBLIC_THEME.headingFont,
     bodyFont: data.publicTheme?.bodyFont || DEFAULT_PUBLIC_THEME.bodyFont
   };
@@ -85,6 +89,10 @@ export function usePublicTheme(groupId, themeOverride = null) {
 
     setLoading(true);
 
+    const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const urlTenant = searchParams ? (searchParams.get('tenant') || searchParams.get('groupe') || searchParams.get('groupId') || searchParams.get('assoc')) : null;
+    const effectiveGroupId = groupId || urlTenant;
+
     const tryFetchDefaultAssociation = async () => {
       try {
         const q = query(collection(db, 'associations'), limit(1));
@@ -103,12 +111,12 @@ export function usePublicTheme(groupId, themeOverride = null) {
       }
     };
 
-    if (!groupId) {
+    if (!effectiveGroupId) {
       tryFetchDefaultAssociation();
       return;
     }
 
-    const assocRef = doc(db, 'associations', groupId);
+    const assocRef = doc(db, 'associations', effectiveGroupId);
 
     const unsubscribe = onSnapshot(
       assocRef,
@@ -171,10 +179,10 @@ export function usePublicTheme(groupId, themeOverride = null) {
       :root, [data-public-theme] {
         --public-primary: ${primaryColor || DEFAULT_PUBLIC_THEME.primaryColor};
         --public-secondary: ${secondaryColor || DEFAULT_PUBLIC_THEME.secondaryColor};
-        --public-bg: ${backgroundColor || '#FAF6EE'};
-        --public-text: ${textColor || '#1C1917'};
-        --public-btn-bg: ${buttonBgColor || primaryColor || '#D32F2F'};
-        --public-btn-text: ${buttonTextColor || '#FFFFFF'};
+        --public-bg: ${backgroundColor || DEFAULT_PUBLIC_THEME.backgroundColor};
+        --public-text: ${textColor || DEFAULT_PUBLIC_THEME.textColor};
+        --public-btn-bg: ${buttonBgColor || primaryColor || DEFAULT_PUBLIC_THEME.buttonBgColor};
+        --public-btn-text: ${buttonTextColor || DEFAULT_PUBLIC_THEME.buttonTextColor};
         --public-font-heading: '${cleanHeadingFont}', sans-serif;
         --public-font-body: '${cleanBodyFont}', sans-serif;
       }
@@ -191,6 +199,10 @@ export function usePublicTheme(groupId, themeOverride = null) {
     // C. Application directe sur documentElement pour réactivité instantanée
     document.documentElement.style.setProperty('--public-primary', primaryColor || DEFAULT_PUBLIC_THEME.primaryColor);
     document.documentElement.style.setProperty('--public-secondary', secondaryColor || DEFAULT_PUBLIC_THEME.secondaryColor);
+    document.documentElement.style.setProperty('--public-bg', backgroundColor || DEFAULT_PUBLIC_THEME.backgroundColor);
+    document.documentElement.style.setProperty('--public-text', textColor || DEFAULT_PUBLIC_THEME.textColor);
+    document.documentElement.style.setProperty('--public-btn-bg', buttonBgColor || primaryColor || DEFAULT_PUBLIC_THEME.buttonBgColor);
+    document.documentElement.style.setProperty('--public-btn-text', buttonTextColor || DEFAULT_PUBLIC_THEME.buttonTextColor);
     document.documentElement.style.setProperty('--public-font-heading', `'${cleanHeadingFont}', sans-serif`);
     document.documentElement.style.setProperty('--public-font-body', `'${cleanBodyFont}', sans-serif`);
 

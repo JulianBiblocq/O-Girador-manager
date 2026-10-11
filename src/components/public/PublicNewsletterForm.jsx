@@ -73,7 +73,7 @@ export default function PublicNewsletterForm({ groupId, variant = 'card', public
             className="text-xl font-bold border-b border-stone-100 pb-3 flex items-center gap-2"
             style={{ 
               fontFamily: 'var(--public-font-heading, sans-serif)',
-              color: 'var(--public-primary, #D32F2F)' 
+              color: 'var(--public-primary, #8B2A1A)' 
             }}
           >
             <span>📬 {titreNewsletter}</span>
@@ -112,7 +112,7 @@ export default function PublicNewsletterForm({ groupId, variant = 'card', public
                 disabled={submitting}
                 className="w-full py-3 px-5 text-xs sm:text-sm font-bold uppercase tracking-wider text-white rounded-lg shadow-md hover:brightness-110 active:scale-95 transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
                 style={{
-                  backgroundColor: 'var(--public-btn-bg, var(--public-primary, #D32F2F))',
+                  backgroundColor: 'var(--public-btn-bg, var(--public-primary, #8B2A1A))',
                   color: 'var(--public-btn-text, #FFFFFF)',
                   fontFamily: 'var(--public-font-heading, sans-serif)'
                 }}
@@ -147,7 +147,7 @@ export default function PublicNewsletterForm({ groupId, variant = 'card', public
         <div className="flex flex-col items-center gap-2">
           <span 
             className="text-xs font-bold uppercase tracking-widest px-3 py-1 rounded text-white shadow-xs"
-            style={{ backgroundColor: 'var(--public-secondary, #1976D2)' }}
+            style={{ backgroundColor: 'var(--public-secondary, #15803D)' }}
           >
             {badgeNewsletter}
           </span>
@@ -195,7 +195,7 @@ export default function PublicNewsletterForm({ groupId, variant = 'card', public
               disabled={submitting}
               className="px-6 py-3 rounded-lg text-sm font-bold uppercase tracking-wider text-white shadow-lg hover:brightness-110 active:scale-95 transition-all cursor-pointer disabled:opacity-50 whitespace-nowrap"
               style={{
-                backgroundColor: 'var(--public-primary, #D32F2F)',
+                backgroundColor: 'var(--public-primary, #8B2A1A)',
                 fontFamily: 'var(--public-font-heading, sans-serif)'
               }}
             >

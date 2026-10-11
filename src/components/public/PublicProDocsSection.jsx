@@ -60,7 +60,7 @@ export default function PublicProDocsSection({ publicTheme }) {
           className="text-lg sm:text-xl font-extrabold uppercase tracking-tight flex items-center gap-2"
           style={{ 
             fontFamily: 'var(--public-font-heading, sans-serif)',
-            color: 'var(--public-primary, #D32F2F)'
+            color: 'var(--public-primary, #8B2A1A)'
           }}
         >
           <span>📂 {titreProDocs}</span>

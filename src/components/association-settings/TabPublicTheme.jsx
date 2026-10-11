@@ -2,6 +2,7 @@ import React from 'react';
 import CordelCard from '../CordelCard';
 import { XiloSparkles, XiloPalette } from '../XiloIcons';
 import { useTranslation } from '../../hooks/useTranslation';
+import { DEFAULT_PUBLIC_THEME } from '../../hooks/useAssociationSettings';
 
 // Liste des polices sélectionnées pour le site vitrine (incluant Cactus, la typo locale Cordel)
 export const GOOGLE_FONTS_OPTIONS = [
@@ -26,16 +27,7 @@ export default function TabPublicTheme({ formData, handleChange, saving, t: prop
   const { t: i18nT } = useTranslation();
   const t = propT || i18nT;
 
-  const publicTheme = formData.publicTheme || {
-    primaryColor: '#D32F2F',
-    secondaryColor: '#1976D2',
-    backgroundColor: '#FAF8F5',
-    textColor: '#1C1917',
-    buttonBgColor: '#D32F2F',
-    buttonTextColor: '#FFFFFF',
-    headingFont: 'Oswald',
-    bodyFont: 'Roboto'
-  };
+  const publicTheme = formData.publicTheme || DEFAULT_PUBLIC_THEME;
 
   const handleThemeChange = (field, value) => {
     const updatedTheme = {
@@ -76,17 +68,17 @@ export default function TabPublicTheme({ formData, handleChange, saving, t: prop
             <div className="flex items-center gap-3">
               <input
                 type="color"
-                value={publicTheme.primaryColor || '#D32F2F'}
+                value={publicTheme.primaryColor || '#8B2A1A'}
                 onChange={(e) => handleThemeChange('primaryColor', e.target.value)}
                 disabled={saving}
                 className="w-9 h-9 rounded cursor-pointer border border-encre-noire p-0.5 bg-white shrink-0"
               />
               <input
                 type="text"
-                value={publicTheme.primaryColor || '#D32F2F'}
+                value={publicTheme.primaryColor || '#8B2A1A'}
                 onChange={(e) => handleThemeChange('primaryColor', e.target.value)}
                 disabled={saving}
-                placeholder="#D32F2F"
+                placeholder="#8B2A1A"
                 className="flex-1 text-xs font-mono font-bold uppercase px-3 py-1.5 border border-encre-noire/30 rounded bg-white"
               />
             </div>
@@ -100,17 +92,17 @@ export default function TabPublicTheme({ formData, handleChange, saving, t: prop
             <div className="flex items-center gap-3">
               <input
                 type="color"
-                value={publicTheme.secondaryColor || '#1976D2'}
+                value={publicTheme.secondaryColor || '#15803D'}
                 onChange={(e) => handleThemeChange('secondaryColor', e.target.value)}
                 disabled={saving}
                 className="w-9 h-9 rounded cursor-pointer border border-encre-noire p-0.5 bg-white shrink-0"
               />
               <input
                 type="text"
-                value={publicTheme.secondaryColor || '#1976D2'}
+                value={publicTheme.secondaryColor || '#15803D'}
                 onChange={(e) => handleThemeChange('secondaryColor', e.target.value)}
                 disabled={saving}
-                placeholder="#1976D2"
+                placeholder="#15803D"
                 className="flex-1 text-xs font-mono font-bold uppercase px-3 py-1.5 border border-encre-noire/30 rounded bg-white"
               />
             </div>
@@ -124,17 +116,17 @@ export default function TabPublicTheme({ formData, handleChange, saving, t: prop
             <div className="flex items-center gap-3">
               <input
                 type="color"
-                value={publicTheme.backgroundColor || '#FAF8F5'}
+                value={publicTheme.backgroundColor || '#F4ECD8'}
                 onChange={(e) => handleThemeChange('backgroundColor', e.target.value)}
                 disabled={saving}
                 className="w-9 h-9 rounded cursor-pointer border border-encre-noire p-0.5 bg-white shrink-0"
               />
               <input
                 type="text"
-                value={publicTheme.backgroundColor || '#FAF8F5'}
+                value={publicTheme.backgroundColor || '#F4ECD8'}
                 onChange={(e) => handleThemeChange('backgroundColor', e.target.value)}
                 disabled={saving}
-                placeholder="#FAF8F5"
+                placeholder="#F4ECD8"
                 className="flex-1 text-xs font-mono font-bold uppercase px-3 py-1.5 border border-encre-noire/30 rounded bg-white"
               />
             </div>
@@ -148,17 +140,17 @@ export default function TabPublicTheme({ formData, handleChange, saving, t: prop
             <div className="flex items-center gap-3">
               <input
                 type="color"
-                value={publicTheme.textColor || '#1C1917'}
+                value={publicTheme.textColor || '#181716'}
                 onChange={(e) => handleThemeChange('textColor', e.target.value)}
                 disabled={saving}
                 className="w-9 h-9 rounded cursor-pointer border border-encre-noire p-0.5 bg-white shrink-0"
               />
               <input
                 type="text"
-                value={publicTheme.textColor || '#1C1917'}
+                value={publicTheme.textColor || '#181716'}
                 onChange={(e) => handleThemeChange('textColor', e.target.value)}
                 disabled={saving}
-                placeholder="#1C1917"
+                placeholder="#181716"
                 className="flex-1 text-xs font-mono font-bold uppercase px-3 py-1.5 border border-encre-noire/30 rounded bg-white"
               />
             </div>
@@ -172,17 +164,17 @@ export default function TabPublicTheme({ formData, handleChange, saving, t: prop
             <div className="flex items-center gap-3">
               <input
                 type="color"
-                value={publicTheme.buttonBgColor || publicTheme.primaryColor || '#D32F2F'}
+                value={publicTheme.buttonBgColor || publicTheme.primaryColor || '#8B2A1A'}
                 onChange={(e) => handleThemeChange('buttonBgColor', e.target.value)}
                 disabled={saving}
                 className="w-9 h-9 rounded cursor-pointer border border-encre-noire p-0.5 bg-white shrink-0"
               />
               <input
                 type="text"
-                value={publicTheme.buttonBgColor || publicTheme.primaryColor || '#D32F2F'}
+                value={publicTheme.buttonBgColor || publicTheme.primaryColor || '#8B2A1A'}
                 onChange={(e) => handleThemeChange('buttonBgColor', e.target.value)}
                 disabled={saving}
-                placeholder="#D32F2F"
+                placeholder="#8B2A1A"
                 className="flex-1 text-xs font-mono font-bold uppercase px-3 py-1.5 border border-encre-noire/30 rounded bg-white"
               />
             </div>
@@ -325,13 +317,13 @@ export default function TabPublicTheme({ formData, handleChange, saving, t: prop
 
         <div 
           className="p-6 rounded-lg border border-stone-300 flex flex-col gap-4 shadow-xs transition-colors"
-          style={{ backgroundColor: publicTheme.backgroundColor || '#FAF8F5' }}
+          style={{ backgroundColor: publicTheme.backgroundColor || '#F4ECD8' }}
         >
           <h3 
             className="text-2xl font-extrabold uppercase tracking-tight"
             style={{
               fontFamily: `'${publicTheme.headingFont || 'Oswald'}', sans-serif`,
-              color: publicTheme.primaryColor || '#D32F2F'
+              color: publicTheme.primaryColor || '#8B2A1A'
             }}
           >
             {t('vitrine.admin.theme.tabPublicTheme.titreDeLaVitrinePublique')}
@@ -341,7 +333,7 @@ export default function TabPublicTheme({ formData, handleChange, saving, t: prop
             className="text-xs leading-relaxed font-medium"
             style={{
               fontFamily: `'${publicTheme.bodyFont || 'Roboto'}', sans-serif`,
-              color: publicTheme.textColor || '#1C1917'
+              color: publicTheme.textColor || '#181716'
             }}
           >
             {t('vitrine.admin.theme.tabPublicTheme.ceciEstUnExempleDe')}
@@ -352,7 +344,7 @@ export default function TabPublicTheme({ formData, handleChange, saving, t: prop
               type="button"
               className="px-4 py-2 text-xs font-bold uppercase tracking-wider rounded shadow-md cursor-pointer transition-all"
               style={{
-                backgroundColor: publicTheme.buttonBgColor || publicTheme.primaryColor || '#D32F2F',
+                backgroundColor: publicTheme.buttonBgColor || publicTheme.primaryColor || '#8B2A1A',
                 color: publicTheme.buttonTextColor || '#FFFFFF',
                 fontFamily: `'${publicTheme.headingFont || 'Oswald'}', sans-serif`
               }}
@@ -362,7 +354,7 @@ export default function TabPublicTheme({ formData, handleChange, saving, t: prop
 
             <span 
               className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded text-white"
-              style={{ backgroundColor: publicTheme.secondaryColor || '#1976D2' }}
+              style={{ backgroundColor: publicTheme.secondaryColor || '#15803D' }}
             >
               {t('vitrine.admin.theme.tabPublicTheme.badgeSecondaire')}
             </span>

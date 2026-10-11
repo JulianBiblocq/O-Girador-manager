@@ -461,7 +461,7 @@ export default function App() {
     const unsubscribe = onSnapshot(assocRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
-        setAssociationData(data);
+        setAssociationData({ id: docSnap.id, groupId: docSnap.id, ...data });
         if (data.branding) {
           setBranding(data.branding);
         } else {
@@ -650,8 +650,8 @@ export default function App() {
       const ctx = canvas.getContext('2d');
 
       const bgCol = branding?.colors?.background || '#f4ecd8';
-      const primaryCol = branding?.colors?.primary || '#d99f4d';
-      const textCol = branding?.colors?.text || '#1a1a1a';
+      const primaryCol = branding?.colors?.primary || '#8B2A1A';
+      const textCol = branding?.colors?.text || '#181716';
       const logoSrc = branding?.logoUrl;
 
       // Appliquer un masque circulaire strict pour garantir la transparence extérieure
@@ -1379,7 +1379,9 @@ export default function App() {
       return <OrganizadorRedirector user={user} navigateToRoute={navigateToRoute} brandingStyle={brandingStyle} />;
     }
 
-    const publicGroupId = isDemoMode() ? DEMO_GROUP_ID : (vitrineGroupId || urlGroupId || profileData?.groupId || null);
+    const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const queryTenant = searchParams ? (searchParams.get('tenant') || searchParams.get('groupe') || searchParams.get('groupId') || searchParams.get('assoc')) : null;
+    const publicGroupId = isDemoMode() ? DEMO_GROUP_ID : (queryTenant || vitrineGroupId || urlGroupId || profileData?.groupId || null);
 
     return (
       <PublicThemeProvider groupId={publicGroupId}>

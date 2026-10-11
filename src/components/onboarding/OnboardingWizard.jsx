@@ -4,6 +4,7 @@ import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage
 import imageCompression from 'browser-image-compression';
 import { db, storage } from '../../firebase';
 import { seedNewTenant } from '../../services/seedTenantService';
+import { DEFAULT_BRANDING } from '../../hooks/useAssociationSettings';
 import CordelButton from '../CordelButton';
 
 import WizardProgressBar from './wizard/WizardProgressBar';
@@ -30,10 +31,7 @@ export default function OnboardingWizard({
   // État local du formulaire d'onboarding initialisé à partir des réglages actuels
   const [wizardData, setWizardData] = useState({
     nom: associationSettings.nom || '',
-    branding: associationSettings.branding || {
-      logoUrl: '',
-      colors: { primary: '#d99f4d', secondary: '#84967a', background: '#f4ecd8', text: '#1a1a1a' }
-    },
+    branding: associationSettings.branding || DEFAULT_BRANDING,
     instrumentsDisponibles: associationSettings.instrumentsDisponibles || [],
     majoriteFeminine: Boolean(associationSettings.majoriteFeminine),
     montantAdhesion: associationSettings.montantAdhesion !== undefined ? associationSettings.montantAdhesion : 10,
@@ -48,10 +46,7 @@ export default function OnboardingWizard({
     if (isOpen && associationSettings) {
       setWizardData({
         nom: associationSettings.nom || '',
-        branding: associationSettings.branding || {
-          logoUrl: '',
-          colors: { primary: '#d99f4d', secondary: '#84967a', background: '#f4ecd8', text: '#1a1a1a' }
-        },
+        branding: associationSettings.branding || DEFAULT_BRANDING,
         instrumentsDisponibles: associationSettings.instrumentsDisponibles || [],
         majoriteFeminine: Boolean(associationSettings.majoriteFeminine),
         montantAdhesion: associationSettings.montantAdhesion !== undefined ? associationSettings.montantAdhesion : 10,
@@ -118,7 +113,7 @@ export default function OnboardingWizard({
         nom: wizardData.nom || associationSettings.nom || '',
         branding: {
           logoUrl: finalLogoUrl,
-          colors: wizardData.branding?.colors || { primary: '#d99f4d', secondary: '#84967a', background: '#f4ecd8', text: '#1a1a1a' }
+          colors: wizardData.branding?.colors || DEFAULT_BRANDING.colors
         },
         instrumentsDisponibles: wizardData.instrumentsDisponibles,
         majoriteFeminine: wizardData.majoriteFeminine,
