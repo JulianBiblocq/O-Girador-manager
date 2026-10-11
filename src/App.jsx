@@ -307,13 +307,13 @@ export default function App() {
 
   const isSystemOrSuperAdminOrMestre = Boolean(
     profileData?.isSystemAdmin || 
-    profileData?.role === 'super-admin' || 
-    profileData?.role === 'mestre' ||
+    profileData?.canViewAll ||
+    ['mestre', 'super-admin', 'admin'].includes((profileData?.role || '').toLowerCase()) ||
     profileData?.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
     profileData?.id === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
-    profileData?.email === 'julian.bzh@gmail.com' ||
+    (profileData?.email || '').toLowerCase() === 'julian.bzh@gmail.com' ||
     user?.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
-    user?.email === 'julian.bzh@gmail.com'
+    (user?.email || '').toLowerCase() === 'julian.bzh@gmail.com'
   );
   const isMasterKeyActive = isSystemOrSuperAdminOrMestre && breakGlassActive;
 
@@ -465,9 +465,7 @@ export default function App() {
 
   const isAdministrativeUser = Boolean(
     profileData?.isSystemAdmin || 
-    profileData?.role === 'super-admin' || 
-    profileData?.role === 'mestre' ||
-    profileData?.role === 'admin' ||
+    ['super-admin', 'mestre', 'admin'].includes((profileData?.role || '').toLowerCase()) ||
     isSystemOrSuperAdminOrMestre
   );
 
@@ -1147,13 +1145,13 @@ export default function App() {
               const data = docSnap.data();
               const canonicalGroup = canonicalizeGroupId(data.groupId);
 
-              // 1. Court-circuit Fondateur / Super-Admin
+              // 1. Court-circuit Fondateur / Super-Admin / Mestre / Bureau
               const isFounderOrSuperAdmin = docSnap.id === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' || 
                 currentUser.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
-                currentUser.email === 'julian.bzh@gmail.com' ||
-                data.email === 'julian.bzh@gmail.com' ||
+                (currentUser.email || '').toLowerCase() === 'julian.bzh@gmail.com' ||
+                (data.email || '').toLowerCase() === 'julian.bzh@gmail.com' ||
                 data.isSystemAdmin === true || 
-                data.role === 'super-admin';
+                ['super-admin', 'mestre', 'admin'].includes((data.role || '').toLowerCase());
 
               // 2. Fusion strictement additive des tags pour TOUS les utilisateurs
               const existingTags = Array.isArray(data.tags) ? data.tags : [];
@@ -1185,18 +1183,26 @@ export default function App() {
                 canViewAll: isFounderOrSuperAdmin ? true : Boolean(data.canViewAll),
                 paymentStatus: (isFounderOrSuperAdmin || isExonere) ? 'exempt' : (data.paymentStatus || 'unpaid'),
                 cotisationStatus: (isFounderOrSuperAdmin || isExonere) ? 'exonere' : (data.cotisationStatus || 'non_payee'),
-                isCotisationExoneree: (isFounderOrSuperAdmin || isExonere) ? true : Boolean(data.isCotisationExoneree)
+                isCotisationExoneree: (isFounderOrSuperAdmin || isExonere) ? true : Boolean(data.isCotisationExoneree),
+                onboardingCompleted: isFounderOrSuperAdmin ? true : Boolean(data.onboardingCompleted)
               });
               setProfileExists(true);
 
-              // 4. Auto-guérison de la casse de groupId en arrière-plan (non-bloquant)
+              // 4. Auto-guérison silencieuse de l'onboarding pour le Mestre / Admin dans Firestore
+              if (isFounderOrSuperAdmin && data.onboardingCompleted !== true) {
+                updateDoc(profileRef, { onboardingCompleted: true }).catch(err => {
+                  console.warn("App - Auto-guérison onboardingCompleted profil (non-bloquant) :", err?.message);
+                });
+              }
+
+              // 5. Auto-guérison de la casse de groupId en arrière-plan (non-bloquant)
               if (data.groupId && data.groupId !== canonicalGroup && canonicalGroup) {
                 updateDoc(profileRef, { groupId: canonicalGroup }).catch(err => {
                   console.warn("App - Avertissement auto-heal groupId (non-bloquant) :", err);
                 });
               }
 
-              // 5. Migration des rôles et tags en arrière-plan (non-bloquant)
+              // 6. Migration des rôles et tags en arrière-plan (non-bloquant)
               // STRICTEMENT DÉSACTIVÉ pour le Fondateur / Super-Admin afin d'éviter tout écrasement descendant
               if (!isFounderOrSuperAdmin && migration.needsMigration) {
                 updateDoc(profileRef, {
@@ -1208,7 +1214,7 @@ export default function App() {
               }
             } else {
               // Sécurité Fondateur : si Julian se connecte mais que son document est sous l'UID historique
-              const isFounderAccount = currentUser.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' || currentUser.email === 'julian.bzh@gmail.com';
+              const isFounderAccount = currentUser.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' || (currentUser.email || '').toLowerCase() === 'julian.bzh@gmail.com';
               if (isFounderAccount) {
                 getDoc(doc(db, 'users', 'iA0SweEHyOPzAPGIDVZdeKAV2mk1')).then((founderSnap) => {
                   if (founderSnap.exists()) {
@@ -1229,15 +1235,50 @@ export default function App() {
                     });
                     setProfileExists(true);
                   } else {
-                    setProfileData(null);
-                    setProfileExists(false);
+                    setProfileData({
+                      uid: currentUser.uid,
+                      id: currentUser.uid,
+                      email: currentUser.email,
+                      firstName: 'Julian',
+                      lastName: 'Biblocq',
+                      prenom: 'Julian',
+                      nom: 'Biblocq',
+                      groupId: 'Samambaia',
+                      role: 'mestre',
+                      isSystemAdmin: true,
+                      canViewAll: true,
+                      paymentStatus: 'exempt',
+                      cotisationStatus: 'exonere',
+                      isCotisationExoneree: true,
+                      onboardingCompleted: true,
+                      isNew: false
+                    });
+                    setProfileExists(true);
                   }
+                  updateDoc(doc(db, 'users', currentUser.uid), { onboardingCompleted: true }).catch(() => {});
                   setCheckingProfile(false);
                   setLoading(false);
                 }).catch((err) => {
                   console.warn("App - Erreur lecture secours profil fondateur :", err);
-                  setProfileData(null);
-                  setProfileExists(false);
+                  setProfileData({
+                    uid: currentUser.uid,
+                    id: currentUser.uid,
+                    email: currentUser.email,
+                    firstName: 'Julian',
+                    lastName: 'Biblocq',
+                    prenom: 'Julian',
+                    nom: 'Biblocq',
+                    groupId: 'Samambaia',
+                    role: 'mestre',
+                    isSystemAdmin: true,
+                    canViewAll: true,
+                    paymentStatus: 'exempt',
+                    cotisationStatus: 'exonere',
+                    isCotisationExoneree: true,
+                    onboardingCompleted: true,
+                    isNew: false
+                  });
+                  setProfileExists(true);
                   setCheckingProfile(false);
                   setLoading(false);
                 });
@@ -1539,36 +1580,52 @@ export default function App() {
     );
   }
 
-  // 4. Utilisateur connecté mais profil Firestore manquant ou incomplet -> Onboarding
+  // 4. Déverrouillage absolu de l'Onboarding pour le Mestre / Admin / Super-Admin / Fondateur
+  const isPrivilegedUser = Boolean(
+    isSystemOrSuperAdminOrMestre ||
+    isAdministrativeUser ||
+    ['mestre', 'super-admin', 'admin'].includes((profileData?.role || '').toLowerCase()) ||
+    user?.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
+    profileData?.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
+    profileData?.id === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
+    (user?.email || '').toLowerCase() === 'julian.bzh@gmail.com' ||
+    (profileData?.email || '').toLowerCase() === 'julian.bzh@gmail.com'
+  );
+
   const isProfileComplete = 
+    isPrivilegedUser ||
     profileData?.onboardingCompleted === true || 
     profileData?.isNew === false ||
     Boolean(profileData?.telephone && (profileData?.adresseRue || profileData?.adresse)) ||
-    Boolean(profileData?.prenom && profileData?.nom && (profileData?.instrument || profileData?.instrumentPrincipal || profileData?.pratiqueDanse || profileData?.role));
+    Boolean((profileData?.prenom || profileData?.firstName) && (profileData?.nom || profileData?.lastName) && (profileData?.instrument || profileData?.instrumentPrincipal || profileData?.pratiqueDanse || profileData?.role));
 
-  if (!profileExists || !profileData || (!isProfileComplete && !isSystemOrSuperAdminOrMestre)) {
-    return (
-      <div style={brandingStyle} className="min-h-screen flex flex-col w-full force-light-theme">
-        <React.Suspense fallback={<div className="flex-1 flex justify-center items-center py-12 animate-pulse text-xs font-bold select-none">⏳ Initialisation...</div>}>
-          <Onboarding user={user} branding={branding} onComplete={handleOnboardingComplete} profileData={profileData} />
-        </React.Suspense>
-        <ReloadPrompt />
-      </div>
-    );
-  }
+  // Clause d'exclusion prioritaire absolue : un Mestre, Super-Admin, Admin ou compte Fondateur
+  // ne doit JAMAIS se voir bloqué par l'Onboarding adhérent.
+  if (!isPrivilegedUser) {
+    if (!profileExists || !profileData || !isProfileComplete) {
+      return (
+        <div style={brandingStyle} className="min-h-screen flex flex-col w-full force-light-theme">
+          <React.Suspense fallback={<div className="flex-1 flex justify-center items-center py-12 animate-pulse text-xs font-bold select-none">⏳ Initialisation...</div>}>
+            <Onboarding user={user} branding={branding} onComplete={handleOnboardingComplete} profileData={profileData} />
+          </React.Suspense>
+          <ReloadPrompt />
+        </div>
+      );
+    }
 
-  // 4b. Sécurisation : Compte nouvellement inscrit en attente de validation par le bureau (isNew === true)
-  if (profileData?.isNew === true && !isSystemOrSuperAdminOrMestre) {
-    return (
-      <div style={brandingStyle} className="min-h-screen flex flex-col w-full force-light-theme">
-        <PendingValidationScreen
-          profileData={profileData}
-          branding={branding}
-          onSignOut={handleSignOut}
-        />
-        <ReloadPrompt />
-      </div>
-    );
+    // 4b. Sécurisation : Compte nouvellement inscrit en attente de validation par le bureau (isNew === true)
+    if (profileData?.isNew === true) {
+      return (
+        <div style={brandingStyle} className="min-h-screen flex flex-col w-full force-light-theme">
+          <PendingValidationScreen
+            profileData={profileData}
+            branding={branding}
+            onSignOut={handleSignOut}
+          />
+          <ReloadPrompt />
+        </div>
+      );
+    }
   }
 
   // 5. Utilisateur connecté avec profil valide -> Rendu de l'Espace Membre Privé (/app)
