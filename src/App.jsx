@@ -566,6 +566,19 @@ export default function App() {
         setTagsDisponibles(Array.isArray(data.tagsDisponibles) ? data.tagsDisponibles : []);
         setActiverPresenceEnLigne(data.activerPresenceEnLigne !== false);
         setFeatures(data.features || null);
+
+        // Auto-guérison du champ customDomains pour Samambaia dans Firestore
+        if (activeGroupId.toLowerCase() === 'samambaia') {
+          const currentCustomDomains = Array.isArray(data.customDomains) ? data.customDomains : [];
+          const requiredDomains = ['samambaia-maracatu.fr', 'www.samambaia-maracatu.fr'];
+          const isMissing = requiredDomains.some(d => !currentCustomDomains.includes(d));
+          if (isMissing) {
+            const merged = Array.from(new Set([...currentCustomDomains, ...requiredDomains]));
+            updateDoc(docSnap.ref, { customDomains: merged }).catch(err => {
+              console.warn("App - Auto-guérison customDomains Samambaia différée :", err?.message);
+            });
+          }
+        }
       } else {
         // Tenter la casse alternative dans Firestore (minuscules vs majuscule)
         const altGroupId = activeGroupId.toLowerCase() === activeGroupId ? canonicalizeGroupId(activeGroupId) : activeGroupId.toLowerCase();
@@ -584,6 +597,17 @@ export default function App() {
               setTagsDisponibles(Array.isArray(altData.tagsDisponibles) ? altData.tagsDisponibles : []);
               setActiverPresenceEnLigne(altData.activerPresenceEnLigne !== false);
               setFeatures(altData.features || null);
+
+              // Auto-guérison du champ customDomains alternatif
+              if (activeGroupId.toLowerCase() === 'samambaia') {
+                const currentCustomDomains = Array.isArray(altData.customDomains) ? altData.customDomains : [];
+                const requiredDomains = ['samambaia-maracatu.fr', 'www.samambaia-maracatu.fr'];
+                const isMissing = requiredDomains.some(d => !currentCustomDomains.includes(d));
+                if (isMissing) {
+                  const merged = Array.from(new Set([...currentCustomDomains, ...requiredDomains]));
+                  updateDoc(altSnap.ref, { customDomains: merged }).catch(() => {});
+                }
+              }
               return;
             }
           }).catch(() => {});
@@ -1364,6 +1388,27 @@ export default function App() {
     );
   }
 
+  // 1b. Filet de sécurité inter-domaines : Si un utilisateur accède à /app, /login ou toute route privée
+  // depuis le domaine de vitrine publique exclusive (samambaia-maracatu.fr), redirection automatique vers Organizador
+  const isDedicatedVitrineHost = typeof window !== 'undefined' && 
+    (window.location.hostname === 'samambaia-maracatu.fr' || window.location.hostname === 'www.samambaia-maracatu.fr');
+
+  if (isDedicatedVitrineHost) {
+    const rawPath = currentRoute || (typeof window !== 'undefined' ? window.location.pathname : '');
+    const isAppAccess = rawPath.startsWith('/app') || rawPath.startsWith('/login') || rawPath.startsWith('/events') || rawPath.startsWith('/agenda');
+    if (isAppAccess) {
+      if (typeof window !== 'undefined') {
+        window.location.replace('https://organizador.o-girador.com/?tenant=samambaia');
+      }
+      return (
+        <div style={brandingStyle} className="min-h-screen flex flex-col justify-center items-center py-12 bg-[#f4ecd8]">
+          <div className="animate-spin text-4xl mb-4 select-none">⏳</div>
+          <span className="font-bold text-xs uppercase tracking-widest text-[#8b2a1a]">Redirection vers l'Espace Membre Organizad'Or...</span>
+        </div>
+      );
+    }
+  }
+
   // 2. Routage dynamique : Vitrine Publique One-Page, Racine, Setup
 
   // Détection explicite du mode Vitrine (Mostrador)
@@ -1417,7 +1462,12 @@ export default function App() {
       );
     }
 
-    if (tenantError) {
+    const isSamambaiaHost = typeof window !== 'undefined' && 
+      (window.location.hostname === 'samambaia-maracatu.fr' || 
+       window.location.hostname === 'www.samambaia-maracatu.fr' ||
+       window.location.hostname.includes('samambaia'));
+
+    if (tenantError && !isSamambaiaHost) {
       return <TenantNotFound />;
     }
 
@@ -1449,14 +1499,28 @@ export default function App() {
             if (isDemoMode()) {
               window.location.href = '/demo?app=organizador';
             } else {
-              navigateToRoute(user ? '/app' : '/login');
+              const isLocal = typeof window !== 'undefined' && 
+                (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+              if (isLocal) {
+                navigateToRoute(user ? '/app' : '/login');
+              } else {
+                const targetTenant = (publicGroupId || 'samambaia').toLowerCase();
+                window.location.href = `https://organizador.o-girador.com/?tenant=${encodeURIComponent(targetTenant)}`;
+              }
             }
           }}
           onNavigateToLogin={() => {
             if (isDemoMode()) {
               window.location.href = '/demo?app=organizador';
             } else {
-              navigateToRoute('/login');
+              const isLocal = typeof window !== 'undefined' && 
+                (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+              if (isLocal) {
+                navigateToRoute('/login');
+              } else {
+                const targetTenant = (publicGroupId || 'samambaia').toLowerCase();
+                window.location.href = `https://organizador.o-girador.com/login?tenant=${encodeURIComponent(targetTenant)}`;
+              }
             }
           }}
         />

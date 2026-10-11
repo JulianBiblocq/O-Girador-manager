@@ -1,6 +1,16 @@
 import React from 'react';
 
 export default function TenantNotFound() {
+  const isLocal = typeof window !== 'undefined' && 
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
+  const isSamambaia = hostname.includes('samambaia-maracatu.fr') || hostname.includes('samambaia');
+
+  // Sur le domaine vitrine ou en externe, rediriger vers l'URL officielle Organizador
+  const appHref = (!isLocal && isSamambaia) 
+    ? 'https://organizador.o-girador.com/?tenant=samambaia' 
+    : '/app';
+
   return (
     <div className="min-h-screen flex flex-col justify-center items-center py-12 bg-[var(--theme-bg)] px-4 text-center">
       <div className="text-6xl mb-6">🏜️</div>
@@ -10,7 +20,7 @@ export default function TenantNotFound() {
       </p>
       <div className="flex gap-3 flex-wrap justify-center">
         <a 
-          href="/app" 
+          href={appHref} 
           className="px-6 py-3 bg-[var(--color-cordel-vert,#2d6a4f)] text-white font-bold rounded-md hover:brightness-110 transition-colors shadow-md"
         >
           Accéder à mon espace membre
