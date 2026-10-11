@@ -1,3 +1,15 @@
+// ✂️ Nettoyage silencieux et immédiat du paramètre de cache-busting (_upd) dans l'URL
+if (typeof window !== 'undefined') {
+  try {
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('_upd')) {
+      url.searchParams.delete('_upd');
+      const cleanUrl = url.pathname + (url.search ? url.search : '') + url.hash;
+      window.history.replaceState({}, document.title, cleanUrl);
+    }
+  } catch (_) {}
+}
+
 // Rechargement automatique en cas d'erreur de module obsolète après un nouveau déploiement
 const handleStaleChunkError = (reason) => {
   const msg = String(reason?.message || reason || '');

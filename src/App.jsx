@@ -276,6 +276,21 @@ function OrchestradorRedirector({ brandingStyle }) {
 
 export default function App() {
   useAppUpdate();
+
+  // Nettoyage silencieux de l'URL au montage (suppression du paramètre de cache-busting _upd)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const url = new URL(window.location.href);
+        if (url.searchParams.has('_upd')) {
+          url.searchParams.delete('_upd');
+          const cleanUrl = url.pathname + (url.search ? url.search : '') + url.hash;
+          window.history.replaceState({}, document.title, cleanUrl);
+        }
+      } catch (_) {}
+    }
+  }, []);
+
   const { appMode, groupId: urlGroupId, isTenantLoading, tenantError } = useTenantContext();
   const { t } = useTranslation();
 
