@@ -2646,13 +2646,14 @@ export default function App() {
                   <SystemAdminPanel 
                     user={user} 
                     profileData={profileData} 
+                    groupId={urlGroupId || profileData?.groupId}
                     associationName={associationName}
                     onBack={() => handleNavigateToPole('accueil')} 
                     onNavigateToView={handleNavigateToView}
                   />
                 ) : (currentTab === 'tag-manager' && hasAccessConfig) ? (
                   <TagManager 
-                    groupId={profileData?.groupId}
+                    groupId={urlGroupId || profileData?.groupId}
                     role={profileData?.role}
                     isSystemAdmin={profileData?.isSystemAdmin}
                     onBack={() => setCurrentTab('export-annu')} 

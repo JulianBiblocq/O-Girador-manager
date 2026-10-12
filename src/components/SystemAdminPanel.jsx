@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { collection, query, onSnapshot, doc, updateDoc, where, deleteField, deleteDoc, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import Tooltip from './Tooltip';
 import { useTranslation } from './LanguageContext';
+import { useTenantContext } from '../context/TenantContext';
+import useGroupContext from '../hooks/useGroupContext';
 import { forceUpdateAndClearCache } from '../utils/pwaUtils';
 import { XiloSettings, XiloPeople } from './XiloIcons';
 import SystemUserList from './admin/SystemUserList';
@@ -27,9 +29,17 @@ const DEFAULT_FIELDS_CONFIG = {
   niveaux: { key: "niveaux", label: "Affichage des niveaux dans le trombinoscope", enabled: true, filledBy: "admin", isRequired: false }
 };
 
-export default function SystemAdminPanel({ profileData, associationName: propAssociationName, onBack, onNavigateToView }) {
+export default function SystemAdminPanel({ user, profileData, groupId: propGroupId, associationName: propAssociationName, onBack, onNavigateToView }) {
   const { t } = useTranslation();
   const { confirm } = useConfirm();
+  const tenantCtx = useTenantContext();
+  const groupCtx = useGroupContext(profileData);
+
+  // Résolution prioritaire et résiliente du groupe actif (Multi-Tenant strict)
+  const currentGroupId = useMemo(() => {
+    const candidate = propGroupId || tenantCtx?.groupId || groupCtx?.groupId || profileData?.groupId || '';
+    return typeof candidate === 'string' ? candidate.trim() : '';
+  }, [propGroupId, tenantCtx?.groupId, groupCtx?.groupId, profileData?.groupId]);
 
   const translate = (key, fallback) => {
     const val = t(key);
@@ -59,25 +69,44 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
     }
   }, [propAssociationName]);
 
-  // Synchronisation en temps réel de l'ensemble des profils membres
+  // Synchronisation en temps réel de l'ensemble des profils membres du groupe actif (Cloisonnement strict multi-tenant)
   useEffect(() => {
-    if (!profileData) return;
-    const isAuthorized = profileData.isSystemAdmin === true || profileData.role === 'super-admin' || profileData.role === 'mestre' || profileData.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1';
-    if (!isAuthorized) return;
+    // Si aucun groupe actif n'est résolu, vider la liste sans déclencher de requête globale
+    if (!currentGroupId) {
+      setUsersList([]);
+      setLoading(false);
+      return;
+    }
+
+    const isAuthorized = profileData?.isSystemAdmin === true || profileData?.role === 'super-admin' || profileData?.role === 'mestre' || profileData?.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1';
+    if (!isAuthorized) {
+      setUsersList([]);
+      setLoading(false);
+      return;
+    }
 
     if (usersList.length === 0) {
       setLoading(true);
     }
     const usersRef = collection(db, 'users');
-    const q = profileData.isSystemAdmin === true
-      ? query(usersRef)
-      : query(usersRef, where('groupId', '==', profileData.groupId));
+
+    // Variantes de casse dédoublonnées pour compatibilité résiliente
+    const groupVariants = Array.from(new Set([currentGroupId, currentGroupId.toLowerCase()].filter(Boolean)));
+    const q = query(usersRef, where('groupId', 'in', groupVariants));
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const fetchedUsers = [];
+      const canonicalLower = currentGroupId.toLowerCase();
+
       querySnapshot.forEach((docSnap) => {
         const uData = docSnap.data();
         if (docSnap.id.startsWith('draft_') || uData.isNewDraft === true) {
+          return;
+        }
+
+        // Garde-fou local en mémoire : confirmation stricte du groupe pour immunité transversale absolue
+        const docGroupId = String(uData.groupId || '').trim().toLowerCase();
+        if (docGroupId !== canonicalLower) {
           return;
         }
 
@@ -99,7 +128,7 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
               tags: migration.newTags
             }).catch(err => {
               console.error("SystemAdminPanel - Erreur migration utilisateur :", err);
-              telemetryService.logError(err, 'SystemAdminPanel_Migration', profileData?.groupId);
+              telemetryService.logError(err, 'SystemAdminPanel_Migration', currentGroupId);
             });
 
             fetchedUsers.push({
@@ -127,15 +156,15 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
     });
 
     return () => unsubscribe();
-  }, [profileData?.uid, profileData?.groupId, profileData?.role, profileData?.isSystemAdmin]);
+  }, [profileData?.uid, currentGroupId, profileData?.role, profileData?.isSystemAdmin]);
 
   // Synchronisation temps réel de la liste des étiquettes et des paramètres depuis la collection associations
   useEffect(() => {
-    if (!profileData || !profileData.groupId) return;
-    const isAuthorized = profileData.isSystemAdmin === true || profileData.role === 'super-admin' || profileData.role === 'mestre' || profileData.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1';
+    if (!currentGroupId) return;
+    const isAuthorized = profileData?.isSystemAdmin === true || profileData?.role === 'super-admin' || profileData?.role === 'mestre' || profileData?.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1';
     if (!isAuthorized) return;
 
-    const assocRef = doc(db, 'associations', profileData.groupId);
+    const assocRef = doc(db, 'associations', currentGroupId);
     const unsubscribe = onSnapshot(assocRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
@@ -175,7 +204,7 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
     });
 
     return () => unsubscribe();
-  }, [profileData?.uid, profileData?.groupId, profileData?.role, profileData?.isSystemAdmin]);
+  }, [profileData?.uid, currentGroupId, profileData?.role, profileData?.isSystemAdmin]);
 
   // Contrôle de sécurité ultime
   const isAuthorized = profileData?.isSystemAdmin === true || profileData?.role === 'super-admin' || profileData?.role === 'mestre' || profileData?.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1';
@@ -366,7 +395,7 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
       alert(t('common.saveSuccess'));
     } catch (error) {
       console.error("SystemAdminPanel - Erreur updateDoc :", error);
-      telemetryService.logError(error, 'SystemAdminPanel_SavePermissions', profileData?.groupId);
+      telemetryService.logError(error, 'SystemAdminPanel_SavePermissions', currentGroupId || profileData?.groupId);
       alert(t('common.saveError'));
     } finally {
       setSavingId(null);
@@ -407,7 +436,7 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
       }
     } catch (error) {
       console.error("SystemAdminPanel - Erreur lors de la validation du nouveau membre :", error);
-      telemetryService.logError(error, 'SystemAdminPanel_ValidateNewMember', profileData?.groupId);
+      telemetryService.logError(error, 'SystemAdminPanel_ValidateNewMember', currentGroupId || profileData?.groupId);
       alert("Erreur lors de la validation : " + (error.message || error));
     } finally {
       setSavingId(null);
@@ -424,7 +453,7 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
       alert("Fiche membre mise à jour avec succès.");
     } catch (error) {
       console.error("SystemAdminPanel - Erreur lors de la mise à jour complète du membre :", error);
-      telemetryService.logError(error, 'SystemAdminPanel_SaveFullModalProfile', profileData?.groupId);
+      telemetryService.logError(error, 'SystemAdminPanel_SaveFullModalProfile', currentGroupId || profileData?.groupId);
       alert("Erreur de sauvegarde : " + (error.message || error));
     } finally {
       setSavingId(null);
@@ -433,7 +462,8 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
 
   // Assainissement immédiat et purge complète des doublons HelloAsso dans le Journal des Opérations
   const handleCleanHelloAssoDuplicates = async () => {
-    if (!profileData?.groupId) {
+    const activeGroupId = currentGroupId || profileData?.groupId;
+    if (!activeGroupId) {
       alert("Identifiant de groupe manquant.");
       return;
     }
@@ -449,7 +479,7 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
 
     setCleaningDuplicates(true);
     try {
-      const res = await purgeAndRebuildHelloAssoTransactions(db, profileData.groupId);
+      const res = await purgeAndRebuildHelloAssoTransactions(db, activeGroupId);
       if (res.success) {
         alert(`Journal des Opérations assaini avec succès !\n- ${res.deletedCount} écriture(s) corrompue(s) ou en double supprimée(s)\n- ${res.rebuiltCount} écriture(s) unitaire(s) reconstruite(s) sans aucun doublon.`);
       } else {
@@ -483,7 +513,7 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
       alert(`Membre ${shouldReactivate ? 'réactivé' : 'archivé'} avec succès.`);
     } catch (error) {
       console.error("SystemAdminPanel - Erreur lors de l'archivage/réactivation :", error);
-      telemetryService.logError(error, 'SystemAdminPanel_ToggleArchive', profileData?.groupId);
+      telemetryService.logError(error, 'SystemAdminPanel_ToggleArchive', currentGroupId || profileData?.groupId);
       alert("Une erreur est survenue.");
     } finally {
       setSavingId(null);
@@ -508,7 +538,7 @@ export default function SystemAdminPanel({ profileData, associationName: propAss
       alert(`Le membre ${userFullName || ''} a été définitivement supprimé.`);
     } catch (error) {
       console.error("SystemAdminPanel - Erreur lors de la suppression du membre :", error);
-      telemetryService.logError(error, 'SystemAdminPanel_DeleteUser', profileData?.groupId);
+      telemetryService.logError(error, 'SystemAdminPanel_DeleteUser', currentGroupId || profileData?.groupId);
       alert("Erreur lors de la suppression : " + (error.message || error));
     } finally {
       setSavingId(null);
