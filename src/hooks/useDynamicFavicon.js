@@ -1,74 +1,29 @@
 import { useEffect } from 'react';
+import { 
+  drawSealNeutralFrame, 
+  drawSealLogoCenter, 
+  drawSealInitialsCenter, 
+  updateDocumentOpenGraphTags 
+} from '../utils/shareUtils.js';
 
 /**
  * Dessine l'anneau officiel gravé O Girador (128x128).
  */
 function drawNeutralFrame(ctx, bgCol = '#f4ecd8', primaryCol = '#8B2A1A', textCol = '#181716') {
-  ctx.clearRect(0, 0, 128, 128);
   ctx.save();
   ctx.beginPath();
   ctx.arc(64, 64, 62, 0, Math.PI * 2);
   ctx.clip();
-  ctx.fillStyle = bgCol;
-  ctx.fillRect(0, 0, 128, 128);
-  ctx.strokeStyle = primaryCol;
-  ctx.lineWidth = 4;
-  ctx.beginPath(); ctx.arc(64, 64, 57, 0, Math.PI * 2); ctx.stroke();
-  ctx.strokeStyle = '#c05621'; ctx.lineWidth = 1.2;
-  ctx.beginPath(); ctx.arc(64, 64, 53, 0, Math.PI * 2); ctx.stroke();
-  ctx.strokeStyle = primaryCol; ctx.lineWidth = 1;
-  ctx.setLineDash([3, 2]);
-  ctx.beginPath(); ctx.arc(64, 64, 50, 0, Math.PI * 2); ctx.stroke();
-  ctx.setLineDash([]);
-
-  ctx.font = 'bold 8px Courier New, monospace, serif';
-  ctx.fillStyle = textCol;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  const label = '★ O GIRADOR ★';
-  const startAngle = Math.PI / 2 + (label.length - 1) * 0.20 / 2;
-  for (let i = 0; i < label.length; i++) {
-    const charAngle = startAngle - i * 0.20;
-    ctx.save();
-    ctx.translate(64 + Math.cos(charAngle) * 43, 64 + Math.sin(charAngle) * 43);
-    ctx.rotate(charAngle - Math.PI / 2);
-    ctx.fillText(label[i], 0, 0);
-    ctx.restore();
-  }
-
-  ctx.beginPath();
-  ctx.arc(64, 58, 36, 0, Math.PI * 2);
-  ctx.fillStyle = '#faf6ec';
-  ctx.fill();
-  ctx.lineWidth = 1.2;
-  ctx.strokeStyle = primaryCol;
-  ctx.stroke();
+  drawSealNeutralFrame(ctx, 128, bgCol, primaryCol, '#c05621', textCol);
   ctx.restore();
 }
 
 function drawLogoInCenter(ctx, img) {
-  ctx.save();
-  ctx.beginPath();
-  ctx.arc(64, 58, 35, 0, Math.PI * 2);
-  ctx.clip();
-  const targetSize = 70;
-  const ratio = (img.width || targetSize) / (img.height || targetSize);
-  const w = ratio > 1 ? targetSize : targetSize * ratio;
-  const h = ratio > 1 ? targetSize / ratio : targetSize;
-  ctx.drawImage(img, 64 - w / 2, 58 - h / 2, w, h);
-  ctx.restore();
+  drawSealLogoCenter(ctx, 128, img);
 }
 
 function drawInitialsInCenter(ctx, name, textCol = '#8B2A1A') {
-  const words = (name || '').trim().split(/\s+/).filter(Boolean);
-  const initials = words.length >= 2 ? (words[0][0] + words[1][0]).toUpperCase() : (words[0]?.slice(0, 2) || 'OG').toUpperCase();
-  ctx.save();
-  ctx.font = 'bold 22px Courier New, monospace, serif';
-  ctx.fillStyle = textCol;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(initials, 64, 59);
-  ctx.restore();
+  drawSealInitialsCenter(ctx, 128, name, textCol);
 }
 
 function updateFavicon(rawUrl) {
@@ -96,7 +51,7 @@ function updateFavicon(rawUrl) {
 }
 
 /**
- * Hook dynamique de gestion du favicon :
+ * Hook dynamique de gestion du favicon et des méta-tags de partage :
  * - Mode 'pure' (Mostrador) : logo direct sans anneau
  * - Mode 'composite' (Organizad'Or) : sceau combiné officiel O Girador × Association
  */
@@ -109,6 +64,7 @@ export default function useDynamicFavicon(associationData, options = {}) {
     let activeImg = null;
 
     const logoUrl = associationData?.branding?.logoUrl || associationData?.logoUrl || null;
+    const combinedLogoUrl = associationData?.branding?.combinedLogoUrl || null;
     const name = associationData?.nom || associationData?.name || associationData?.associationName || '';
     const colors = associationData?.branding?.colors || {};
 
@@ -116,21 +72,31 @@ export default function useDynamicFavicon(associationData, options = {}) {
     if (isPureLogo) {
       if (logoUrl) {
         updateFavicon(logoUrl);
+        updateDocumentOpenGraphTags({ image: logoUrl, title: name || undefined });
         window.dispatchEvent(new CustomEvent('combined-logo-ready', { detail: logoUrl }));
       } else {
         updateFavicon('/og-girador-frame.svg');
+        updateDocumentOpenGraphTags({ image: '/og-girador-frame.png', title: name || undefined });
       }
       return () => { isMounted = false; };
     }
 
-    // 2. Mode Manager (Organizad'Or) : blason officiel combiné O Girador x Association
+    // 2. Mode Manager (Organizad'Or) : Sceau combiné persistant ou Samambaia
     const rawGroup = associationData?.groupId || associationData?.id || '';
     const isSamambaia = !rawGroup || String(rawGroup).trim().toLowerCase() === 'samambaia' || name.toLowerCase().includes('samambaia');
 
+    if (combinedLogoUrl) {
+      updateFavicon(combinedLogoUrl);
+      updateDocumentOpenGraphTags({ image: combinedLogoUrl, title: name ? `O Girador | ${name}` : undefined });
+      window.dispatchEvent(new CustomEvent('combined-logo-ready', { detail: combinedLogoUrl }));
+      return () => { isMounted = false; };
+    }
+
     if (isSamambaia) {
-      const combinedSealUrl = '/brandings/logoOGSamambaia.png';
-      updateFavicon(combinedSealUrl);
-      window.dispatchEvent(new CustomEvent('combined-logo-ready', { detail: combinedSealUrl }));
+      const sealUrl = '/brandings/logoOGSamambaia.png';
+      updateFavicon(sealUrl);
+      updateDocumentOpenGraphTags({ image: sealUrl, title: 'O Girador | Samambaia' });
+      window.dispatchEvent(new CustomEvent('combined-logo-ready', { detail: sealUrl }));
       return () => { isMounted = false; };
     }
 
@@ -153,17 +119,22 @@ export default function useDynamicFavicon(associationData, options = {}) {
               drawLogoInCenter(ctx, activeImg);
               const dataUrl = canvas.toDataURL('image/png');
               updateFavicon(dataUrl);
+              updateDocumentOpenGraphTags({ image: dataUrl, title: name ? `O Girador | ${name}` : undefined });
               window.dispatchEvent(new CustomEvent('combined-logo-ready', { detail: dataUrl }));
             } catch {
               drawInitialsInCenter(ctx, name, colors.primary || '#8B2A1A');
-              updateFavicon(canvas.toDataURL('image/png'));
+              const fallbackUrl = canvas.toDataURL('image/png');
+              updateFavicon(fallbackUrl);
+              updateDocumentOpenGraphTags({ image: fallbackUrl, title: name ? `O Girador | ${name}` : undefined });
             }
           };
           activeImg.onerror = () => {
             if (!isMounted) return;
             drawInitialsInCenter(ctx, name, colors.primary || '#8B2A1A');
             try {
-              updateFavicon(canvas.toDataURL('image/png'));
+              const fallbackUrl = canvas.toDataURL('image/png');
+              updateFavicon(fallbackUrl);
+              updateDocumentOpenGraphTags({ image: fallbackUrl, title: name ? `O Girador | ${name}` : undefined });
             } catch {
               updateFavicon('/og-girador-frame.svg');
             }
@@ -173,6 +144,7 @@ export default function useDynamicFavicon(associationData, options = {}) {
           drawInitialsInCenter(ctx, name, colors.primary || '#8B2A1A');
           const dataUrl = canvas.toDataURL('image/png');
           updateFavicon(dataUrl);
+          updateDocumentOpenGraphTags({ image: dataUrl, title: name ? `O Girador | ${name}` : undefined });
           window.dispatchEvent(new CustomEvent('combined-logo-ready', { detail: dataUrl }));
         }
       } catch {

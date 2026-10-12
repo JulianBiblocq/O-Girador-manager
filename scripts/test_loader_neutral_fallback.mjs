@@ -14,12 +14,12 @@ for (const file of svgFiles) {
   console.log(`✅ ${file} est 100% neutre O Girador`);
 }
 
-// 2. Vérification de public/manifest.json
+// 2. Vérification de public/manifest.json (Bannissement de "Organizad'Or" et conformité "O Girador")
 const manifest = JSON.parse(fs.readFileSync(path.resolve('public/manifest.json'), 'utf-8'));
-assert(!manifest.name.toLowerCase().includes('samambaia'), 'manifest.json name ne doit pas contenir samambaia');
-assert(!manifest.short_name.toLowerCase().includes('samambaia'), 'manifest.json short_name ne doit pas contenir samambaia');
-assert(!manifest.description.toLowerCase().includes('samambaia'), 'manifest.json description ne doit pas contenir samambaia');
-console.log('✅ public/manifest.json est 100% neutralisé');
+assert(!manifest.name.toLowerCase().includes("organizad'or"), 'manifest.json name ne doit pas contenir "Organizad\'Or"');
+assert(!manifest.short_name.toLowerCase().includes("organizad'or"), 'manifest.json short_name ne doit pas contenir "Organizad\'Or"');
+assert(manifest.name.startsWith('O Girador'), 'manifest.json name doit débuter par "O Girador"');
+console.log('✅ public/manifest.json est conforme à la charte O Girador (sans mention Organizad\'Or)');
 
 // 3. Vérification de index.html
 const indexHtml = fs.readFileSync(path.resolve('index.html'), 'utf-8');

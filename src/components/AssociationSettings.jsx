@@ -74,7 +74,8 @@ export default function AssociationSettings({
     loading,
     toastMessage,
     handleSaveHelloAssoKey,
-    handleSave
+    handleSave,
+    handleSyncCombinedSeal
   } = useAssociationSettings(groupId, isAuthorized, onBack, t, associationData);
 
   const [activeSettingsTab, setActiveSettingsTab] = useState(activeTabProp || 'identity');
@@ -125,6 +126,7 @@ export default function AssociationSettings({
             saving={saving}
             t={t}
             onReopenOnboarding={onReopenOnboarding}
+            onSyncCombinedSeal={handleSyncCombinedSeal}
           />
         );
 

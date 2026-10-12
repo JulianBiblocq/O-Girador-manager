@@ -143,6 +143,7 @@ export default function SecretariatReportsView({ groupId, onBack }) {
     setError(null);
 
     try {
+      const groupVariants = Array.from(new Set([groupId, groupId.toLowerCase()].filter(Boolean)));
       // Exécution en parallèle de toutes les requêtes ponctuelles
       const [
         usersSnap,
@@ -154,7 +155,7 @@ export default function SecretariatReportsView({ groupId, onBack }) {
         assocSnap,
         gigsSnap
       ] = await Promise.all([
-        getDocs(query(collection(db, 'users'), where('groupId', '==', groupId))),
+        getDocs(query(collection(db, 'users'), where('groupId', 'in', groupVariants))),
         getDocs(query(collection(db, 'events'), where('groupId', '==', groupId))),
         getDocs(query(collection(db, 'coutureProjects'), where('groupId', '==', groupId))),
         getDocs(query(collection(db, 'inventory_parts'), where('groupId', '==', groupId))),

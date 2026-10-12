@@ -17,6 +17,7 @@ import { tracker } from './utils/O-Girador-Tracker';
 import { useAppUpdate } from './hooks/useAppUpdate';
 import { useConversations } from './hooks/useConversations';
 import useDynamicFavicon from './hooks/useDynamicFavicon';
+import LoadingSeal from './components/common/LoadingSeal';
 
 import { lazyWithRetry } from './utils/pwaUtils';
 import { resolveEffectiveUserTags } from './utils/tagUtils';
@@ -494,7 +495,21 @@ export default function App() {
         branding
       };
     }
-    // Repli immédiat Organizad'Or : si on n'est pas en vitrine, présumer Samambaia
+    // Détection d'un groupe spécifique dans les paramètres d'URL
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      const urlGroup = searchParams.get('groupe') || searchParams.get('tenant') || searchParams.get('assoc') || urlGroupId;
+      if (urlGroup) {
+        const cleanGroup = canonicalizeGroupId(urlGroup);
+        return {
+          id: cleanGroup,
+          groupId: cleanGroup,
+          nom: cleanGroup,
+          name: cleanGroup
+        };
+      }
+    }
+    // Repli immédiat Organizad'Or : si on n'est pas en vitrine et sans groupe spécifié, présumer Samambaia
     if (!isVitrineMode) {
       return {
         id: 'Samambaia',
@@ -504,7 +519,7 @@ export default function App() {
       };
     }
     return null;
-  }, [associationData, associationName, branding, isVitrineMode]);
+  }, [associationData, associationName, branding, isVitrineMode, urlGroupId]);
 
   useDynamicFavicon(effectiveFaviconAssociationData, { isPureLogo: isVitrineMode });
 
@@ -610,6 +625,21 @@ export default function App() {
         setActiverPresenceEnLigne(data.activerPresenceEnLigne !== false);
         setFeatures(data.features || null);
 
+        // Mise en cache locale du logo / sceau pour affichage instantané lors d'un F5
+        if (typeof window !== 'undefined') {
+          const isSamambaiaGroup = activeGroupId.toLowerCase() === 'samambaia';
+          const logoToCache = data.branding?.combinedLogoUrl || 
+                              data.branding?.logoUrl || 
+                              data.logoUrl || 
+                              (isSamambaiaGroup ? '/brandings/logoOGSamambaia.png' : '');
+          if (logoToCache) {
+            try {
+              localStorage.setItem('og_cached_loader_logo', logoToCache);
+              localStorage.setItem('og_cached_loader_group', activeGroupId || '');
+            } catch (_) {}
+          }
+        }
+
         // Auto-guérison du champ customDomains pour Samambaia dans Firestore
         if (activeGroupId.toLowerCase() === 'samambaia') {
           const currentCustomDomains = Array.isArray(data.customDomains) ? data.customDomains : [];
@@ -640,6 +670,21 @@ export default function App() {
               setTagsDisponibles(Array.isArray(altData.tagsDisponibles) ? altData.tagsDisponibles : []);
               setActiverPresenceEnLigne(altData.activerPresenceEnLigne !== false);
               setFeatures(altData.features || null);
+
+              // Mise en cache locale du logo / sceau alternatif pour affichage instantané lors d'un F5
+              if (typeof window !== 'undefined') {
+                const isSamambaiaGroup = activeGroupId.toLowerCase() === 'samambaia';
+                const logoToCache = altData.branding?.combinedLogoUrl || 
+                                    altData.branding?.logoUrl || 
+                                    altData.logoUrl || 
+                                    (isSamambaiaGroup ? '/brandings/logoOGSamambaia.png' : '');
+                if (logoToCache) {
+                  try {
+                    localStorage.setItem('og_cached_loader_logo', logoToCache);
+                    localStorage.setItem('og_cached_loader_group', activeGroupId || '');
+                  } catch (_) {}
+                }
+              }
 
               // Auto-guérison du champ customDomains alternatif
               if (activeGroupId.toLowerCase() === 'samambaia') {
@@ -827,24 +872,80 @@ export default function App() {
     setInstallPromptAvailable(false);
   };
 
-  // Synchronisation de la couleur de thème mobile et du lien manifest PWA statique
+  // Synchronisation dynamique du Web App Manifest (Blob URL) et du thème mobile PWA
   useEffect(() => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+
     const primaryCol = branding?.colors?.primary || '#8B2A1A';
     const themeMeta = document.querySelector('meta[name="theme-color"]');
     if (themeMeta && primaryCol) {
       themeMeta.setAttribute('content', primaryCol);
     }
 
-    let linkElement = document.querySelector('link[rel="manifest"]');
-    if (!linkElement) {
-      linkElement = document.createElement('link');
-      linkElement.rel = 'manifest';
-      linkElement.href = '/manifest.json';
-      document.head.appendChild(linkElement);
-    } else {
-      linkElement.href = '/manifest.json';
+    // Résolution du nom dynamique de la PWA selon la marque et le tenant actif
+    const rawAssoName = associationName || branding?.appName || 'Samambaia';
+    const cleanAssoName = String(rawAssoName).trim();
+    const manifestName = `O Girador ${cleanAssoName}`;
+
+    // Le short_name doit impérativement rester sous 12 caractères pour éviter la troncature sur mobile
+    let shortName = cleanAssoName;
+    if (shortName.length > 12) {
+      shortName = 'O Girador';
     }
-  }, [branding?.colors?.primary]);
+
+    const dynamicManifest = {
+      id: '/',
+      name: manifestName,
+      short_name: shortName,
+      description: `Application de gestion pour le groupe O Girador ${cleanAssoName}`,
+      start_url: '/app',
+      scope: '/',
+      display: 'standalone',
+      display_override: ['standalone', 'window-controls-overlay'],
+      orientation: 'any',
+      background_color: branding?.colors?.background || '#f4ecd8',
+      theme_color: primaryCol,
+      prefer_related_applications: false,
+      categories: ['music', 'management', 'productivity'],
+      icons: [
+        {
+          src: '/icon-192.png',
+          sizes: '192x192',
+          type: 'image/png',
+          purpose: 'any'
+        },
+        {
+          src: '/icon-512.png',
+          sizes: '512x512',
+          type: 'image/png',
+          purpose: 'any'
+        }
+      ]
+    };
+
+    let manifestBlobUrl = null;
+    try {
+      const manifestString = JSON.stringify(dynamicManifest);
+      const blob = new Blob([manifestString], { type: 'application/manifest+json' });
+      manifestBlobUrl = URL.createObjectURL(blob);
+
+      let linkElement = document.querySelector('link[rel="manifest"]');
+      if (!linkElement) {
+        linkElement = document.createElement('link');
+        linkElement.rel = 'manifest';
+        document.head.appendChild(linkElement);
+      }
+      linkElement.href = manifestBlobUrl;
+    } catch (err) {
+      console.warn("Génération du manifest dynamique différée :", err?.message);
+    }
+
+    return () => {
+      if (manifestBlobUrl) {
+        URL.revokeObjectURL(manifestBlobUrl);
+      }
+    };
+  }, [associationName, branding?.appName, branding?.colors?.primary, branding?.colors?.background]);
 
   // Automatically associate or switch the user's group if they open the app via an invitation URL
   // containing a different groupId than their current profileData.groupId
@@ -1490,15 +1591,15 @@ export default function App() {
     return (
       <div style={brandingStyle} className="min-h-screen w-full flex flex-col justify-center items-center p-6 bg-[var(--cordel-bg)] text-[var(--cordel-text)] transition-colors duration-300">
         <div className="flex flex-col items-center gap-4 text-center max-w-xs sm:max-w-sm w-full">
-          {logoSrc && (
-            <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden flex items-center justify-center mb-2 mx-auto bg-transparent">
-              <img 
-                src={logoSrc} 
-                alt={activeLogo ? (associationName || 'Logo Association') : 'O Girador'} 
-                className="w-full h-full object-contain select-none" 
-              />
-            </div>
-          )}
+          {/* Sceau combiné O Girador × Asso (object-contain select-none garantissant le centrage sans layout shift) */}
+          <LoadingSeal
+            associationData={associationData}
+            branding={branding}
+            associationName={associationName}
+            currentGroupId={profileData?.groupId || urlGroupId}
+            size="large"
+            className="mb-2 mx-auto"
+          />
           {/* Spinner stylisé Cordel */}
           <div className="relative w-16 h-16 select-none animate-spin">
             <div className="absolute inset-0 rounded-full border-4 border-[var(--cordel-border)]/20 animate-pulse"></div>
@@ -1577,9 +1678,14 @@ export default function App() {
     if (isTenantLoading) {
       return (
         <div style={brandingStyle} className="min-h-screen flex flex-col justify-center items-center py-12 bg-[#f4ecd8]">
-          <div className="w-20 h-20 rounded-full overflow-hidden flex items-center justify-center mb-3 select-none bg-transparent">
-            <img src="/og-girador-frame.svg" alt="O Girador" className="w-full h-full object-contain" />
-          </div>
+          <LoadingSeal
+            associationData={associationData}
+            branding={branding}
+            associationName={associationName}
+            currentGroupId={urlGroupId}
+            size="small"
+            className="mb-3"
+          />
           <div className="animate-spin text-3xl mb-3 select-none">⏳</div>
           <span className="font-bold text-xs uppercase tracking-widest text-[#8b2a1a]">Chargement de la plateforme...</span>
         </div>
@@ -2502,6 +2608,7 @@ export default function App() {
                   <Trombinoscope 
                     user={user} 
                     profileData={profileData} 
+                    groupId={urlGroupId || profileData?.groupId}
                     onBack={() => handleNavigateToPole('accueil')} 
                     onContactUser={(otherUserId) => {
                       setActivePrivateChatUserId(otherUserId);
@@ -2532,6 +2639,7 @@ export default function App() {
                   <AdminExport 
                     user={user}
                     profileData={profileData}
+                    groupId={urlGroupId || profileData?.groupId}
                     onBack={() => handleNavigateToPole('accueil')} 
                   />
                 ) : (currentTab === 'system-admin' && hasAccessConfig) ? (

@@ -25,18 +25,33 @@ export function ViewSimulatorProvider({ children, realProfileData, tagsDisponibl
 
   const targetGroupId = groupId || realProfileData?.groupId;
 
-  // Chargement réactif des membres actifs du groupe en lecture seule
+  // Chargement réactif des membres actifs du groupe en lecture seule (Cloisonnement strict)
   useEffect(() => {
-    if (!targetGroupId) return;
+    if (!targetGroupId) {
+      setAvailableMembers([]);
+      setLoadingMembers(false);
+      return;
+    }
 
     setLoadingMembers(true);
     const usersRef = collection(db, 'users');
-    const q = query(usersRef, where('groupId', '==', targetGroupId));
+    const groupVariants = Array.from(new Set([
+      targetGroupId,
+      targetGroupId.toLowerCase()
+    ].filter(Boolean)));
+    const q = query(usersRef, where('groupId', 'in', groupVariants));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const fetched = [];
+      const canonicalLower = targetGroupId.toLowerCase();
+
       snapshot.forEach((docSnap) => {
         const data = docSnap.data();
+        const docGroupId = String(data.groupId || '').trim().toLowerCase();
+        if (docGroupId !== canonicalLower) {
+          return;
+        }
+
         if (data.statutActuel !== 'archived') {
           fetched.push({ id: docSnap.id, ...data });
         }
@@ -53,6 +68,7 @@ export function ViewSimulatorProvider({ children, realProfileData, tagsDisponibl
       setLoadingMembers(false);
     }, (err) => {
       console.warn("ViewSimulatorContext - Erreur lecture membres du groupe :", err);
+      setAvailableMembers([]);
       setLoadingMembers(false);
     });
 

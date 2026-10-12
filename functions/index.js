@@ -2055,105 +2055,230 @@ exports.createStripeCheckoutSession = onCall(
 
 
 // ============================================================================
-// 🌍 PHASE 4 : SEO & RÉFÉRENCEMENT MULTI-TENANT (MOSTRADOR)
+// 🌍 PHASE 4 : SEO & RÉFÉRENCEMENT MULTI-TENANT (MOSTRADOR & INVITATIONS)
 // ============================================================================
+
+/**
+ * Fonction utilitaire pour échapper les caractères spéciaux HTML dans les balises meta.
+ */
+function escapeHtmlMeta(str) {
+  if (!str) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+/**
+ * Détecte si le User-Agent correspond à un robot d'indexation ou d'aperçu de partage
+ * (WhatsApp, Facebook, Twitter/X, LinkedIn, Telegram, Discord, Skype, Googlebot, etc.).
+ */
+function isSocialBotOrCrawler(userAgent = "") {
+  if (!userAgent || typeof userAgent !== "string") return false;
+  const ua = userAgent.toLowerCase();
+  return /whatsapp|facebookexternalhit|facebot|twitterbot|slackbot|linkedinbot|telegrambot|discordbot|skypeuripreview|applebot|googlebot|bingbot|yandex|duckduckbot/i.test(ua);
+}
 
 /**
  * Cloud Function HTTP (v2) : serveDynamicApp
  * Intercepte les requêtes Firebase Hosting, identifie le tenant (association),
- * et injecte dynamiquement les balises Meta SEO dans le fichier index.html.
+ * et injecte dynamiquement les balises Meta SEO et Open Graph (Sceau combiné Asso × O Girador)
+ * adaptées aux invitations et partages sur réseaux sociaux.
  */
 exports.serveDynamicApp = onRequest(async (req, res) => {
   const hostname = req.hostname;
-  const urlPath = req.path;
-  const projectId = process.env.GCLOUD_PROJECT || "o-girador-7828c";
-  
+  const urlPath = req.path || "/";
+  const userAgent = req.headers["user-agent"] || "";
+  const isBot = isSocialBotOrCrawler(userAgent);
+
   // Détermination du site Firebase Hosting source
-  const hostingDomain = (hostname.includes('mostrador') && !hostname.includes('organizador'))
-    ? 'o-girador-mostrador.web.app'
-    : 'o-girador-organizador.web.app';
+  const hostingDomain = (hostname.includes("mostrador") && !hostname.includes("organizador"))
+    ? "o-girador-mostrador.web.app"
+    : "o-girador-organizador.web.app";
 
   // Valeurs O Girador par défaut
-  let seoTitle = "O Girador";
-  let seoDesc = "Application de gestion pour groupes et associations.";
-  let seoImage = `https://${hostingDomain}/og-image.png`;
-  let seoUrl = `https://${hostname}${urlPath}`;
+  let seoTitle = "O Girador | Plateforme de Gestion Associative";
+  let seoDesc = "Espace adhérents : agenda, répétitions, vestiaire et vie du groupe.";
+  let seoImage = `https://${hostingDomain}/og-girador-frame.png`;
+  let seoUrl = `https://${hostname}${urlPath}${req.url && req.url.includes("?") ? req.url.slice(req.url.indexOf("?")) : ""}`;
 
   try {
     const db = getFirestore();
     let groupId = null;
-    
-    // 1. Détection du groupe via paramètres d'URL, sous-domaine ou domaine personnalisé
-    if (req.query && (req.query.groupe || req.query.tenant)) {
-      groupId = req.query.groupe || req.query.tenant;
-    } else if (hostname.includes('mostrador.o-girador.com') || hostname.includes('mostrador')) {
-      const pathTenant = (urlPath || '').split('/').filter(Boolean)[0];
-      const reserved = ['api', 'login', 'setup', 'app', 'vitrine', 'mostrador', 'demo', 'agenda', 'events'];
+    const query = req.query || {};
+
+    // 1. Détection du groupe via paramètres d'URL (?groupe=, ?tenant=, ?group=, ?groupId=)
+    if (query.groupe || query.tenant || query.group || query.groupId || query.assoc) {
+      groupId = query.groupe || query.tenant || query.group || query.groupId || query.assoc;
+    } 
+    // Détection via chemin d'accès (ex: /invite/sambabulles ou /sambabulles)
+    else if (urlPath.startsWith("/invite/") && urlPath.split("/")[2]) {
+      groupId = urlPath.split("/")[2];
+    } else if (hostname.includes("mostrador.o-girador.com") || hostname.includes("mostrador")) {
+      const pathTenant = urlPath.split("/").filter(Boolean)[0];
+      const reserved = ["api", "login", "setup", "app", "vitrine", "mostrador", "demo", "agenda", "events", "invite"];
       if (pathTenant && !reserved.includes(pathTenant.toLowerCase())) {
         groupId = pathTenant.toLowerCase();
       }
-      const parts = hostname.split('.');
-      if (!groupId && parts.length > 3 && parts[0] !== 'mostrador' && parts[0] !== 'organizador') {
+      const parts = hostname.split(".");
+      if (!groupId && parts.length > 3 && parts[0] !== "mostrador" && parts[0] !== "organizador") {
         groupId = parts[0];
       }
-    } else if (hostname.includes('organizador.o-girador.com')) {
-      const parts = hostname.split('.');
-      if (parts.length > 3 && parts[0] !== 'mostrador' && parts[0] !== 'organizador') {
+    } else if (hostname.includes("organizador.o-girador.com")) {
+      const parts = hostname.split(".");
+      if (parts.length > 3 && parts[0] !== "mostrador" && parts[0] !== "organizador") {
         groupId = parts[0];
       }
-    } else if (!hostname.includes('o-girador.com') && !hostname.includes('web.app') && !hostname.includes('localhost')) {
-      const associationsRef = db.collection('associations');
+    } else if (!hostname.includes("o-girador.com") && !hostname.includes("web.app") && !hostname.includes("localhost")) {
+      const associationsRef = db.collection("associations");
       const possibleHostnames = [hostname];
-      if (hostname.startsWith('www.')) possibleHostnames.push(hostname.replace(/^www\./, ''));
+      if (hostname.startsWith("www.")) possibleHostnames.push(hostname.replace(/^www\./, ""));
       else possibleHostnames.push(`www.${hostname}`);
-      
-      const snapshot = await associationsRef.where('customDomains', 'array-contains-any', possibleHostnames).get();
+
+      const snapshot = await associationsRef.where("customDomains", "array-contains-any", possibleHostnames).get();
       if (!snapshot.empty) {
         groupId = snapshot.docs[0].id;
       }
     }
 
-    // 2. Récupération des infos SEO depuis Firestore
+    // 2. Détection du mode invitation / adhésion
+    const isInviteOrSignup = query.mode === "signup" ||
+                             urlPath.startsWith("/invite") ||
+                             query.invite === "true" ||
+                             Boolean(groupId && (query.mode || query.signup || query.invitation));
+
+    // 3. Récupération des informations d'identité et de branding depuis Firestore
     if (groupId) {
-      const assocDoc = await db.collection('associations').doc(groupId).get();
+      const cleanId = String(groupId).trim();
+      let assocDoc = await db.collection("associations").doc(cleanId).get();
+
+      // Tolérance multi-casse résiliente
+      if (!assocDoc.exists && cleanId.toLowerCase() !== cleanId) {
+        assocDoc = await db.collection("associations").doc(cleanId.toLowerCase()).get();
+      }
+      if (!assocDoc.exists) {
+        const capitalized = cleanId.charAt(0).toUpperCase() + cleanId.slice(1).toLowerCase();
+        assocDoc = await db.collection("associations").doc(capitalized).get();
+      }
+
       if (assocDoc.exists) {
-        const data = assocDoc.data();
-        seoTitle = data.nom ? `O Girador | ${data.nom}` : seoTitle;
-        seoDesc = data.description ? data.description.substring(0, 180) : `Rejoignez notre association sur O Girador : agenda, répétitions, vestiaire et matériel.`;
-        seoImage = data.logoUrl || data.coverUrl || seoImage;
+        const data = assocDoc.data() || {};
+        const assoName = data.nom || data.name || data.branding?.name || cleanId;
+
+        if (isInviteOrSignup) {
+          seoTitle = `Rejoindre ${assoName} sur O Girador`;
+          seoDesc = "Espace adhérents : agenda, répétitions, vestiaire et vie du groupe.";
+        } else {
+          seoTitle = `${assoName} | O Girador`;
+          seoDesc = data.description
+            ? data.description.substring(0, 180)
+            : `Plateforme de gestion pour ${assoName} : agenda, répétitions, vestiaire et vie du groupe.`;
+        }
+
+        // Priorité absolue au Sceau Combiné officiel (anneau Cordel ★ O GIRADOR ★ + logo de l'asso)
+        seoImage = data.branding?.combinedLogoUrl ||
+                   data.combinedLogoUrl ||
+                   data.branding?.logoUrl ||
+                   data.logoUrl ||
+                   data.coverUrl ||
+                   seoImage;
       }
     }
 
-    // 3. Récupération du HTML statique de base (bypasse le rewrite car pointe sur le fichier exact)
-    const htmlResponse = await fetch(`https://${hostingDomain}/index.html?t=${Date.now()}`, {
-      cache: 'no-store',
-      headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
-    });
-    let htmlContent = await htmlResponse.text();
+    // Détermination de l'URL cible de redirection pour les utilisateurs finaux
+    const targetRedirectUrl = urlPath.startsWith("/invite")
+      ? `https://${hostname}/?groupe=${encodeURIComponent(groupId || "")}&mode=signup`
+      : seoUrl;
 
-    // 4. Injection des métadonnées
-    htmlContent = htmlContent
-      .replace(/<title>.*?<\/title>/gi, `<title>${seoTitle}</title>`)
-      .replace(/<meta name="title" content=".*?" \/>/gi, `<meta name="title" content="${seoTitle}" />`)
-      .replace(/<meta name="description" content=".*?" \/>/gi, `<meta name="description" content="${seoDesc}" />`)
-      .replace(/<meta property="og:title" content=".*?" \/>/gi, `<meta property="og:title" content="${seoTitle}" />`)
-      .replace(/<meta property="og:description" content=".*?" \/>/gi, `<meta property="og:description" content="${seoDesc}" />`)
-      .replace(/<meta property="og:image" content=".*?" \/>/gi, `<meta property="og:image" content="${seoImage}" />`)
-      .replace(/<meta property="og:image:secure_url" content=".*?" \/>/gi, `<meta property="og:image:secure_url" content="${seoImage}" />`)
-      .replace(/<meta property="og:url" content=".*?" \/>/gi, `<meta property="og:url" content="${seoUrl}" />`)
-      .replace(/<meta name="twitter:title" content=".*?" \/>/gi, `<meta name="twitter:title" content="${seoTitle}" />`)
-      .replace(/<meta name="twitter:description" content=".*?" \/>/gi, `<meta name="twitter:description" content="${seoDesc}" />`)
-      .replace(/<meta name="twitter:image" content=".*?" \/>/gi, `<meta name="twitter:image" content="${seoImage}" />`);
+    // 4. Si la requête provient d'un robot crawler (WhatsApp, Facebook, Twitter...),
+    // renvoyer immédiatement un template HTML minimaliste et ultra-rapide (< 1KB)
+    if (isBot) {
+      const safeTitle = escapeHtmlMeta(seoTitle);
+      const safeDesc = escapeHtmlMeta(seoDesc);
+      const safeImage = escapeHtmlMeta(seoImage);
+      const safeUrl = escapeHtmlMeta(seoUrl);
 
-    // 5. Entêtes anti-cache strictes pour que le HTML ne soit jamais gelé par les CDN et navigateurs
-    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.set('Pragma', 'no-cache');
-    res.set('Expires', '0');
-    res.status(200).send(htmlContent);
+      const botHtml = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${safeTitle}</title>
+  <meta name="description" content="${safeDesc}" />
+
+  <!-- Open Graph / WhatsApp / Facebook / LinkedIn / Telegram -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="O Girador" />
+  <meta property="og:url" content="${safeUrl}" />
+  <meta property="og:title" content="${safeTitle}" />
+  <meta property="og:description" content="${safeDesc}" />
+  <meta property="og:image" content="${safeImage}" />
+  <meta property="og:image:secure_url" content="${safeImage}" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:width" content="512" />
+  <meta property="og:image:height" content="512" />
+  <meta property="og:image:alt" content="${safeTitle}" />
+
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="${safeTitle}" />
+  <meta name="twitter:description" content="${safeDesc}" />
+  <meta name="twitter:image" content="${safeImage}" />
+</head>
+<body style="font-family:sans-serif;text-align:center;padding:2rem;background:#f4ecd8;color:#181716;">
+  <h2>${safeTitle}</h2>
+  <p>${safeDesc}</p>
+  <p><a href="${escapeHtmlMeta(targetRedirectUrl)}">Accéder à l'application</a></p>
+  <script>
+    window.location.replace(${JSON.stringify(targetRedirectUrl)});
+  </script>
+</body>
+</html>`;
+
+      res.set("Content-Type", "text/html; charset=utf-8");
+      res.set("Cache-Control", "public, max-age=300, s-maxage=600");
+      return res.status(200).send(botHtml);
+    }
+
+    // 5. Redirection directe des navigateurs réels accédant à /invite
+    if (urlPath.startsWith("/invite") && groupId) {
+      return res.redirect(302, `/?groupe=${encodeURIComponent(groupId)}&mode=signup`);
+    }
+
+    // 6. Pour les vrais navigateurs : injection des métadonnées dynamiques dans index.html
+    try {
+      const htmlResponse = await fetch(`https://${hostingDomain}/index.html?t=${Date.now()}`, {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache, no-store, must-revalidate" }
+      });
+      let htmlContent = await htmlResponse.text();
+
+      htmlContent = htmlContent
+        .replace(/<title>.*?<\/title>/gi, `<title>${escapeHtmlMeta(seoTitle)}</title>`)
+        .replace(/<meta name="title" content=".*?" \/>/gi, `<meta name="title" content="${escapeHtmlMeta(seoTitle)}" />`)
+        .replace(/<meta name="description" content=".*?" \/>/gi, `<meta name="description" content="${escapeHtmlMeta(seoDesc)}" />`)
+        .replace(/<meta property="og:title" content=".*?" \/>/gi, `<meta property="og:title" content="${escapeHtmlMeta(seoTitle)}" />`)
+        .replace(/<meta property="og:description" content=".*?" \/>/gi, `<meta property="og:description" content="${escapeHtmlMeta(seoDesc)}" />`)
+        .replace(/<meta property="og:image" content=".*?" \/>/gi, `<meta property="og:image" content="${escapeHtmlMeta(seoImage)}" />`)
+        .replace(/<meta property="og:image:secure_url" content=".*?" \/>/gi, `<meta property="og:image:secure_url" content="${escapeHtmlMeta(seoImage)}" />`)
+        .replace(/<meta property="og:url" content=".*?" \/>/gi, `<meta property="og:url" content="${escapeHtmlMeta(seoUrl)}" />`)
+        .replace(/<meta name="twitter:title" content=".*?" \/>/gi, `<meta name="twitter:title" content="${escapeHtmlMeta(seoTitle)}" />`)
+        .replace(/<meta name="twitter:description" content=".*?" \/>/gi, `<meta name="twitter:description" content="${escapeHtmlMeta(seoDesc)}" />`)
+        .replace(/<meta name="twitter:image" content=".*?" \/>/gi, `<meta name="twitter:image" content="${escapeHtmlMeta(seoImage)}" />`);
+
+      res.set("Cache-Control", "no-cache, no-store, must-revalidate");
+      res.set("Pragma", "no-cache");
+      res.set("Expires", "0");
+      return res.status(200).send(htmlContent);
+    } catch (fetchErr) {
+      console.warn("serveDynamicApp - Erreur chargement index.html distant, secours local :", fetchErr);
+      return res.redirect(302, targetRedirectUrl);
+    }
 
   } catch (error) {
-    console.error("serveDynamicApp - Erreur :", error);
-    // En cas de crash, on renvoie une erreur classique pour éviter de bloquer l'app
+    console.error("serveDynamicApp - Erreur générale :", error);
     res.status(500).send("Erreur de génération SEO dynamique.");
   }
 });

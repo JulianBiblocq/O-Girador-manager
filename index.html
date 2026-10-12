@@ -8,32 +8,32 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="Plateforme Associative" />
+    <meta name="apple-mobile-web-app-title" content="O Girador" />
     
     <!-- Primary Meta Tags -->
-    <title>Plateforme de Gestion Associative</title>
-    <meta name="title" content="Plateforme de Gestion Associative" />
+    <title>O Girador | Plateforme de Gestion Associative</title>
+    <meta name="title" content="O Girador | Plateforme de Gestion Associative" />
     <meta name="description" content="Rejoignez notre association : agenda, répétitions, vestiaire, matériel et espace d'échange." />
 
     <!-- Open Graph / Facebook / WhatsApp / SMS Social Sharing -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://organizador.o-girador.com/" />
-    <meta property="og:site_name" content="Plateforme Associative" />
-    <meta property="og:title" content="Plateforme de Gestion Associative" />
+    <meta property="og:site_name" content="O Girador" />
+    <meta property="og:title" content="O Girador | Plateforme de Gestion Associative" />
     <meta property="og:description" content="Rejoignez notre association : agenda, répétitions, vestiaire, matériel et espace d'échange." />
-    <meta property="og:image" content="https://organizador.o-girador.com/og-image.png" />
-    <meta property="og:image:secure_url" content="https://organizador.o-girador.com/og-image.png" />
+    <meta property="og:image" content="https://organizador.o-girador.com/og-girador-frame.png" />
+    <meta property="og:image:secure_url" content="https://organizador.o-girador.com/og-girador-frame.png" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="512" />
     <meta property="og:image:height" content="512" />
-    <meta property="og:image:alt" content="Logo Association" />
+    <meta property="og:image:alt" content="O Girador" />
 
     <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:url" content="https://organizador.o-girador.com/" />
-    <meta name="twitter:title" content="Plateforme de Gestion Associative" />
+    <meta name="twitter:title" content="O Girador | Plateforme de Gestion Associative" />
     <meta name="twitter:description" content="Rejoignez notre association : agenda, répétitions, vestiaire, matériel et espace d'échange." />
-    <meta name="twitter:image" content="https://organizador.o-girador.com/og-image.png" />
+    <meta name="twitter:image" content="https://organizador.o-girador.com/og-girador-frame.png" />
 
     <!-- Icons & Manifest -->
     <link rel="preload" href="/fonts/Cactus%20Regular.otf" as="font" type="font/otf" crossorigin />
@@ -50,9 +50,30 @@
       <!-- Pré-chargeur statique initial neutre (remplacé automatiquement au montage de React) -->
       <div style="min-height:100vh;width:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:1.5rem;background-color:#f4ecd8;color:#181716;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;text-align:center;">
         <div style="display:flex;flex-direction:column;align-items:center;gap:1rem;max-width:20rem;width:100%;">
-          <div style="width:6rem;height:6rem;border-radius:9999px;overflow:hidden;display:flex;align-items:center;justify-content:center;margin:0 auto 0.5rem;background:transparent;">
-            <img src="/og-girador-frame.svg" alt="O Girador" style="width:100%;height:100%;object-fit:contain;user-select:none;" />
+          <div id="og-static-seal" style="position:relative;width:6rem;height:6rem;border-radius:9999px;overflow:hidden;display:flex;align-items:center;justify-content:center;margin:0 auto 0.5rem;background:transparent;">
+            <img id="og-static-frame" src="/og-girador-frame.svg" alt="O Girador" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;user-select:none;pointer-events:none;" />
+            <div id="og-static-inner-wrap" style="display:none;position:absolute;width:62%;height:62%;top:14%;border-radius:9999px;overflow:hidden;align-items:center;justify-content:center;padding:2px;pointer-events:none;">
+              <img id="og-static-inner-logo" src="" alt="Association" style="width:100%;height:100%;object-fit:contain;border-radius:9999px;user-select:none;" />
+            </div>
           </div>
+          <script>
+            (function() {
+              try {
+                var cached = localStorage.getItem('og_cached_loader_logo');
+                if (cached) {
+                  var frame = document.getElementById('og-static-frame');
+                  var wrap = document.getElementById('og-static-inner-wrap');
+                  var inner = document.getElementById('og-static-inner-logo');
+                  if (cached.indexOf('logoOG') !== -1 || cached.indexOf('combined') !== -1) {
+                    if (frame) frame.src = cached;
+                  } else if (wrap && inner) {
+                    inner.src = cached;
+                    wrap.style.display = 'flex';
+                  }
+                }
+              } catch (_) {}
+            })();
+          </script>
           <!-- Spinner stylisé aux couleurs Cordel -->
           <div style="position:relative;width:3rem;height:3rem;">
             <div style="position:absolute;inset:0;border-radius:9999px;border:3px solid rgba(139,42,26,0.15);"></div>

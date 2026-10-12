@@ -11,6 +11,8 @@ import {
   getUniverseDefaultInstruments,
   normalizeUniverseId
 } from '../constants/universeDefaults';
+import { generateCombinedSealBlob, updateDocumentOpenGraphTags, uploadCombinedSealToStorage } from '../utils/shareUtils.js';
+export { uploadCombinedSealToStorage } from '../utils/shareUtils.js';
 
 export const DEFAULT_FIELDS_CONFIG = {
   telephone: { key: "telephone", label: "Téléphone", enabled: true, filledBy: "member", isRequired: false },
@@ -622,6 +624,8 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t, initial
     setSaving(true);
     try {
       let finalLogoUrl = formData.branding?.logoUrl || '';
+      let finalCombinedLogoUrl = formData.branding?.combinedLogoUrl || '';
+
       if (logoFile && logoFile instanceof File) {
         let fileToUpload = logoFile;
         const compressionOptions = { maxSizeMB: 0.3, maxWidthOrHeight: 800, useWebWorker: true };
@@ -635,6 +639,44 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t, initial
         const snapshot = await uploadBytes(logoStorageRef, fileToUpload, { contentType: fileToUpload.type || 'image/png' });
         finalLogoUrl = await getDownloadURL(snapshot.ref);
         setLogoFile(null);
+      }
+
+      // Génération et persistance du Sceau Combiné O Girador × Association pour le partage et réseaux sociaux
+      if (finalLogoUrl && (logoFile || !finalCombinedLogoUrl)) {
+        try {
+          const sealBlob = await generateCombinedSealBlob({
+            ...formData,
+            nom: formData.nom,
+            branding: {
+              ...(formData.branding || {}),
+              logoUrl: finalLogoUrl
+            }
+          }, { size: 512 });
+
+          if (sealBlob) {
+            // Sauvegarde prioritaire sur le chemin standardisé pour les crawlers et réseaux sociaux
+            const combinedStorageRef = storageRef(storage, `brandings/${groupId}/combined-logo.png`);
+            const combinedSnapshot = await uploadBytes(combinedStorageRef, sealBlob, { contentType: 'image/png' });
+            finalCombinedLogoUrl = await getDownloadURL(combinedSnapshot.ref);
+
+            // Miroir de compatibilité
+            try {
+              const mirrorRef = storageRef(storage, `associations/${groupId}/brandings/combined-logo.png`);
+              await uploadBytes(mirrorRef, sealBlob, { contentType: 'image/png' });
+            } catch (mirrorErr) {
+              console.warn("Miroir stockage sceau combiné :", mirrorErr);
+            }
+
+            // Mise à jour immédiate des balises Open Graph du document
+            updateDocumentOpenGraphTags({
+              title: `Rejoindre ${formData.nom || 'notre groupe'} sur O Girador`,
+              description: "Espace adhérents : agenda, répétitions, vestiaire et vie du groupe.",
+              image: finalCombinedLogoUrl
+            });
+          }
+        } catch (sealErr) {
+          console.warn("Erreur génération/sauvegarde du sceau combiné :", sealErr);
+        }
       }
 
       let finalPublicHeroImage = formData.publicTheme?.publicHeroImage || '';
@@ -786,6 +828,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t, initial
         customDomains: formData.customDomains || [],
         branding: {
           logoUrl: finalLogoUrl,
+          combinedLogoUrl: finalCombinedLogoUrl || '',
           colors: formData.branding.colors
         },
         // Sauvegarde de l'identité visuelle et du contenu de la vitrine publique
@@ -896,6 +939,46 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t, initial
     }
   };
 
+  /**
+   * Génère et synchronise immédiatement le Sceau Combiné officiel vers Firebase Storage et Firestore.
+   */
+  const handleSyncCombinedSeal = useCallback(async () => {
+    if (!groupId) return null;
+    const logoUrl = formData.branding?.logoUrl || formData.logoUrl;
+    if (!logoUrl) {
+      showToast("⚠️ Veuillez d'abord téléverser un logo officiel pour générer le sceau combiné.");
+      return null;
+    }
+
+    try {
+      setSaving(true);
+      const url = await uploadCombinedSealToStorage(groupId, {
+        nom: formData.nom || '',
+        branding: {
+          ...(formData.branding || {}),
+          logoUrl
+        }
+      }, { size: 512, updateFirestore: true, updateMetaTags: true });
+
+      if (url) {
+        setFormData(prev => ({
+          ...prev,
+          branding: {
+            ...(prev.branding || {}),
+            combinedLogoUrl: url
+          }
+        }));
+        showToast("✅ Sceau combiné généré et synchronisé pour les partages WhatsApp !");
+      }
+      return url;
+    } catch (err) {
+      console.warn("Erreur lors de la synchronisation manuelle du sceau :", err);
+      return null;
+    } finally {
+      setSaving(false);
+    }
+  }, [groupId, formData, showToast]);
+
   return {
     formData,
     handleChange,
@@ -928,6 +1011,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t, initial
     setToastMessage,
     showToast,
     handleSaveHelloAssoKey,
-    handleSave
+    handleSave,
+    handleSyncCombinedSeal
   };
 }

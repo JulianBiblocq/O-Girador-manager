@@ -29,10 +29,23 @@ import {
 
 
 
-export default function Trombinoscope({ user, profileData, onBack, onContactUser }) {
+import { useTenantContext } from '../context/TenantContext';
+import useGroupContext from '../hooks/useGroupContext';
+import { canonicalizeGroupId } from '../utils/tenantUtils';
+
+export default function Trombinoscope({ user, profileData, groupId: propGroupId, onBack, onContactUser }) {
   const { t, locale } = useTranslation();
   const { tRole, majoriteFeminine } = useTerminologie();
-  const { getColorForInstrument } = useInstrumentColor(profileData?.groupId);
+  const tenantCtx = useTenantContext();
+  const groupCtx = useGroupContext(profileData);
+
+  // Résolution résiliente et prioritaire du groupe actif (Multi-Tenant strict)
+  const currentGroupId = useMemo(() => {
+    const candidate = propGroupId || tenantCtx?.groupId || groupCtx?.groupId || profileData?.groupId || '';
+    return typeof candidate === 'string' ? candidate.trim() : '';
+  }, [propGroupId, tenantCtx?.groupId, groupCtx?.groupId, profileData?.groupId]);
+
+  const { getColorForInstrument } = useInstrumentColor(currentGroupId);
   const [members, setMembers] = useState([]);
   const [tagsDisponibles, setTagsDisponibles] = useState([]);
   const [fieldsConfig, setFieldsConfig] = useState(null);
@@ -101,11 +114,19 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
 
   // Charger les étiquettes et instruments de l'association
   useEffect(() => {
-    if (!profileData?.groupId) return;
+    if (!currentGroupId) {
+      setTagsDisponibles([]);
+      setInstrumentsDisponibles(DEFAULT_INSTRUMENTS);
+      setLinkedInstruments([]);
+      return;
+    }
     const loadAssocData = async () => {
       try {
-        const assocRef = doc(db, 'associations', profileData.groupId);
-        const docSnap = await getDoc(assocRef);
+        const assocRef = doc(db, 'associations', currentGroupId);
+        let docSnap = await getDoc(assocRef);
+        if (!docSnap.exists() && currentGroupId.toLowerCase() !== currentGroupId) {
+          docSnap = await getDoc(doc(db, 'associations', currentGroupId.toLowerCase()));
+        }
         if (docSnap.exists()) {
           const data = docSnap.data();
           if (Array.isArray(data.tagsDisponibles)) {
@@ -142,23 +163,13 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
       }
     };
     loadAssocData();
-  }, [profileData?.groupId]);
+  }, [currentGroupId]);
 
+  // Écoute en temps réel des adhérents du groupe actif (Cloisonnement strict multi-tenant)
   useEffect(() => {
-    if (!profileData?.groupId) {
-      setMembers([{
-        id: user?.uid || 'temp',
-        prenom: profileData?.prenom || 'Vous',
-        nom: profileData?.nom || '',
-        email: user?.email || '',
-        photoURL: profileData?.photoURL || user?.photoURL || null,
-        role: profileData?.role || 'membre',
-        tags: profileData?.tags || [],
-        statutActuel: profileData?.statutActuel || 'active',
-        dateNaissance: profileData?.dateNaissance || '',
-        afficherDateNaissance: profileData?.afficherDateNaissance,
-        publierDateNaissance: profileData?.publierDateNaissance
-      }]);
+    // Si aucun groupId n'est résolu, ne renvoyer aucun membre plutôt que de charger la collection complète
+    if (!currentGroupId) {
+      setMembers([]);
       setLoading(false);
       return;
     }
@@ -167,28 +178,47 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
     setError(null);
 
     const usersRef = collection(db, 'users');
-    const q = query(usersRef, where('groupId', '==', profileData.groupId));
+
+    // Variantes de casse dédoublonnées pour compatibilité multi-tenant
+    const groupVariants = Array.from(new Set([
+      currentGroupId,
+      currentGroupId.toLowerCase()
+    ].filter(Boolean)));
+
+    const q = query(usersRef, where('groupId', 'in', groupVariants));
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const fetchedMembers = [];
       const currentUserId = user?.uid;
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
+      const canonicalLower = currentGroupId.toLowerCase();
+
+      querySnapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+
+        // Cloisonnement strict : ignorer tout profil n'appartenant pas rigoureusement au groupe actif
+        const docGroupId = String(data.groupId || '').trim().toLowerCase();
+        if (docGroupId !== canonicalLower) {
+          return;
+        }
+
         const cleanData = { ...data };
-        if (!isViewerAdmin && doc.id !== currentUserId) {
+        if (!isViewerAdmin && docSnap.id !== currentUserId) {
           delete cleanData.adresse;
           delete cleanData.adresseRue;
           delete cleanData.adresseCP;
           delete cleanData.adressePhysique;
         }
         fetchedMembers.push({
-          id: doc.id,
+          id: docSnap.id,
           ...cleanData,
-          photoURL: (currentUserId && doc.id === currentUserId) ? (cleanData.photoURL || user?.photoURL) : cleanData.photoURL || null
+          photoURL: (currentUserId && docSnap.id === currentUserId) ? (cleanData.photoURL || user?.photoURL) : cleanData.photoURL || null
         });
       });
 
-      if (fetchedMembers.length === 0) {
+      // Si aucun membre n'est retourné et que l'utilisateur connecté appartient au groupe actif,
+      // on peut afficher son propre profil de secours
+      const userBelongsToGroup = String(profileData?.groupId || '').trim().toLowerCase() === canonicalLower;
+      if (fetchedMembers.length === 0 && userBelongsToGroup && user) {
         fetchedMembers.push({
           id: user?.uid || 'temp',
           prenom: profileData?.prenom || 'Vous',
@@ -209,11 +239,12 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
     }, (err) => {
       console.error("Trombinoscope - Erreur Firestore :", err);
       setError(t('trombinoscope.error'));
+      setMembers([]);
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [profileData, user, isViewerAdmin, t]);
+  }, [currentGroupId, user, profileData, isViewerAdmin, t]);
 
   const handleFileSelected = async (e) => {
     const file = e.target.files?.[0];
@@ -401,7 +432,7 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
       {/* Info / Group badge */}
       <div className="text-center -mt-2 select-none">
         <span className="text-[10px] uppercase font-bold tracking-widest text-cordel-master-dark opacity-65">
-          {t('trombinoscope.group')}{profileData?.groupId || t('trombinoscope.noGroup')}
+          {t('trombinoscope.group')}{currentGroupId || t('trombinoscope.noGroup')}
         </span>
       </div>
 
@@ -540,7 +571,7 @@ export default function Trombinoscope({ user, profileData, onBack, onContactUser
       ) : (
         <div className="flex flex-col gap-4">
           {/* Group Warning if no groupId */}
-          {!profileData?.groupId && (
+          {!currentGroupId && (
             <CordelCard variant="ocre" useExtremeBorder={false} className="p-3 text-left">
               <p className="text-xs leading-relaxed font-semibold">
                 ⚠️ {t('trombinoscope.noGroupWarning')}

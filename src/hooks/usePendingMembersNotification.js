@@ -29,12 +29,13 @@ export function usePendingMembersNotification(profileData) {
     const usersRef = collection(db, 'users');
     let q;
 
-    if (profileData.isSystemAdmin === true) {
-      // Un super admin système voit toutes les nouvelles inscriptions
+    if (profileData.groupId) {
+      // Priorité au groupe actif : n'écouter que les nouveaux membres de son association
+      const groupVariants = Array.from(new Set([profileData.groupId, profileData.groupId.toLowerCase()].filter(Boolean)));
+      q = query(usersRef, where('groupId', 'in', groupVariants), where('isNew', '==', true));
+    } else if (profileData.isSystemAdmin === true) {
+      // Un super admin système sans groupe assigné voit toutes les nouvelles inscriptions
       q = query(usersRef, where('isNew', '==', true));
-    } else if (profileData.groupId) {
-      // Un admin de groupe voit uniquement les nouveaux membres de son groupe
-      q = query(usersRef, where('groupId', '==', profileData.groupId), where('isNew', '==', true));
     } else {
       q = query(usersRef, where('isNew', '==', true));
     }

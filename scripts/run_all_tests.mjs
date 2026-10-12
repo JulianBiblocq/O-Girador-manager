@@ -147,7 +147,13 @@ const testScripts = [
   'scripts/test_commission_varal_rich_content.mjs',
   'scripts/test_multi_universe_presets.mjs',
   'scripts/test_nomenclature_pupitres_multi_universe.mjs',
-  'scripts/test_inventory_carpool_multi_universe.mjs'
+  'scripts/test_inventory_carpool_multi_universe.mjs',
+  'scripts/test_share_utils.mjs',
+  'scripts/test_invitation_dynamic_seal.mjs',
+  'scripts/test_loader_neutral_fallback.mjs',
+  'scripts/test_loader_combined_seal.mjs',
+  'scripts/test_pwa_dynamic_manifest_and_title.mjs',
+  'scripts/test_tooltip_styling_and_position.mjs'
 ];
 
 console.log("===============================================================");

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { collection, query, where, onSnapshot, doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
@@ -9,10 +9,22 @@ import { XiloScroll, XiloPeople } from './XiloIcons';
 import AdminExportModal from './admin/AdminExportModal';
 import ManualMemberModal from './directory/ManualMemberModal';
 import { formatPratiques, getPratiquesList } from '../utils/instrumentUtils';
+import { useTenantContext } from '../context/TenantContext';
+import useGroupContext from '../hooks/useGroupContext';
+import { canonicalizeGroupId } from '../utils/tenantUtils';
 
-export default function AdminExport({ user, profileData, onBack }) {
+export default function AdminExport({ user, profileData, groupId: propGroupId, onBack }) {
   const { t } = useTranslation();
   const { tRole } = useTerminologie();
+  const tenantCtx = useTenantContext();
+  const groupCtx = useGroupContext(profileData);
+
+  // Résolution résiliente et prioritaire du groupe actif (Multi-Tenant strict)
+  const currentGroupId = useMemo(() => {
+    const candidate = propGroupId || tenantCtx?.groupId || groupCtx?.groupId || profileData?.groupId || '';
+    return typeof candidate === 'string' ? candidate.trim() : '';
+  }, [propGroupId, tenantCtx?.groupId, groupCtx?.groupId, profileData?.groupId]);
+
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [associationSettings, setAssociationSettings] = useState(null);
@@ -86,56 +98,84 @@ export default function AdminExport({ user, profileData, onBack }) {
     return initial;
   });
 
-  // Charger association settings (adhesion fee amount, options description, etc.)
+  // Charger les paramètres de l'association active (tarifs, options de cotisation, etc.)
   useEffect(() => {
-    if (!profileData?.groupId) return;
-    const assocRef = doc(db, 'associations', profileData.groupId);
+    if (!currentGroupId) {
+      setAssociationSettings(null);
+      return;
+    }
+    const assocRef = doc(db, 'associations', currentGroupId);
     getDoc(assocRef).then((snap) => {
       if (snap.exists()) {
         setAssociationSettings(snap.data());
+      } else if (currentGroupId.toLowerCase() !== currentGroupId) {
+        // Secours si l'identifiant est stocké en minuscules
+        getDoc(doc(db, 'associations', currentGroupId.toLowerCase())).then((fallbackSnap) => {
+          if (fallbackSnap.exists()) {
+            setAssociationSettings(fallbackSnap.data());
+          }
+        }).catch(() => {});
       }
     }).catch(err => {
-      console.error("AdminExport - Error fetching association settings:", err);
+      console.error("AdminExport - Erreur chargement configuration association :", err);
     });
-  }, [profileData?.groupId]);
+  }, [currentGroupId]);
 
-  // Charger group members in real-time
+  // Écoute en temps réel des adhérents du groupe actif (Cloisonnement strict multi-tenant)
   useEffect(() => {
-    if (!profileData?.groupId) {
+    // Si aucun groupId n'est résolu, ne charger aucun membre pour éviter toute fuite transversale
+    if (!currentGroupId) {
+      setMembers([]);
       setLoading(false);
       return;
     }
 
     setLoading(true);
     const usersRef = collection(db, 'users');
-    const q = profileData.isSystemAdmin === true
-      ? query(usersRef)
-      : query(usersRef, where('groupId', '==', profileData.groupId));
+
+    // Variantes de casse dédoublonnées pour compatibilité résiliente
+    const groupVariants = Array.from(new Set([
+      currentGroupId,
+      currentGroupId.toLowerCase()
+    ].filter(Boolean)));
+
+    const q = query(usersRef, where('groupId', 'in', groupVariants));
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const fetchedMembers = [];
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        // We only export active members by default, as requested for association active roster
+      const canonicalLower = currentGroupId.toLowerCase();
+
+      querySnapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+
+        // Cloisonnement strict : vérification en mémoire pour immunité absolue
+        const docGroupId = String(data.groupId || '').trim().toLowerCase();
+        if (docGroupId !== canonicalLower) {
+          return;
+        }
+
+        // Seuls les membres actifs sont affichés par défaut dans l'annuaire
         const isActive = !data.statutActuel || data.statutActuel === 'active';
         if (isActive) {
           fetchedMembers.push({
-            id: doc.id,
+            id: docSnap.id,
             ...data
           });
         }
       });
-      // Trier users by last name
+
+      // Tri alphabétique par nom de famille
       fetchedMembers.sort((a, b) => (a.nom || '').localeCompare(b.nom || ''));
       setMembers(fetchedMembers);
       setLoading(false);
     }, (error) => {
-      console.error("AdminExport - Error fetching users:", error);
+      console.error("AdminExport - Erreur lors de l'écoute des adhérents :", error);
+      setMembers([]);
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [profileData?.groupId, profileData?.isSystemAdmin]);
+  }, [currentGroupId]);
 
   const handleCheckboxChange = (fieldKey) => {
     setCheckedFields(prev => ({
@@ -465,7 +505,7 @@ export default function AdminExport({ user, profileData, onBack }) {
       <ManualMemberModal
         isOpen={isManualModalOpen}
         onClose={() => setIsManualModalOpen(false)}
-        groupId={profileData?.groupId}
+        groupId={currentGroupId}
         profileData={profileData}
         onMemberCreated={(newMember) => {
           if (newMember) {

@@ -1,18 +1,38 @@
 import React, { useState } from 'react';
 import CordelCard from '../../CordelCard';
 import CordelButton from '../../CordelButton';
+import HeaderSealLogo from '../../common/HeaderSealLogo';
+import InvitationModal from '../../InvitationModal';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../../firebase';
 import { canonicalizeGroupId } from '../../../utils/tenantUtils';
+import { uploadCombinedSealToStorage } from '../../../utils/shareUtils';
 import { useTranslation } from '../../LanguageContext';
 
 /**
- * En-tête compact présentant l'abonnement SaaS et le bouton d'invitation au groupe.
+ * En-tête compact présentant l'abonnement SaaS et le bouton d'invitation au groupe avec Sceau Combiné.
  */
-export default function SubscriptionInvitationHeader({ formData = {}, groupId, onReopenOnboarding }) {
+export default function SubscriptionInvitationHeader({ formData = {}, groupId, onReopenOnboarding, onSyncCombinedSeal }) {
   const { t } = useTranslation();
   const [portalLoading, setPortalLoading] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [syncingSeal, setSyncingSeal] = useState(false);
+
+  const handleTriggerSyncSeal = async () => {
+    setSyncingSeal(true);
+    try {
+      if (onSyncCombinedSeal) {
+        await onSyncCombinedSeal();
+      } else {
+        await uploadCombinedSealToStorage(groupId, formData);
+      }
+    } catch (err) {
+      console.warn("Erreur synchronisation sceau :", err);
+    } finally {
+      setSyncingSeal(false);
+    }
+  };
 
   const handleOpenStripePortal = async () => {
     setPortalLoading(true);
@@ -95,22 +115,79 @@ export default function SubscriptionInvitationHeader({ formData = {}, groupId, o
           </CordelButton>
         </CordelCard>
 
-        <CordelCard variant="default" useExtremeBorder={true} className="p-3.5 flex flex-col justify-between gap-2">
-          <div>
-            <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-1">{t('settings.identity.subscriptionInvitationHeader.invitationAuGroupe')}</h3>
-            <p className="text-[10px] text-stone-600 leading-snug">{t('settings.identity.subscriptionInvitationHeader.partagezCeLienDInscription')}</p>
+        <CordelCard variant="default" useExtremeBorder={true} className="p-3.5 flex flex-col justify-between gap-2.5">
+          <div className="flex items-start gap-2.5">
+            <div className="shrink-0 cursor-pointer" onClick={() => setIsInviteModalOpen(true)} title="Aperçu du macaron et QR Code">
+              <HeaderSealLogo
+                associationData={formData}
+                associationName={formData.nom || ''}
+                currentGroupId={groupId}
+                logoUrl={formData.branding?.logoUrl || formData.logoUrl}
+                combinedLogoUrl={formData.branding?.combinedLogoUrl}
+                size={40}
+              />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-0.5">{t('settings.identity.subscriptionInvitationHeader.invitationAuGroupe')}</h3>
+              <p className="text-[10px] text-stone-600 leading-snug">{t('settings.identity.subscriptionInvitationHeader.partagezCeLienDInscription')}</p>
+              <div className="flex items-center gap-1.5 mt-1">
+                {formData.branding?.combinedLogoUrl ? (
+                  <button
+                    type="button"
+                    onClick={handleTriggerSyncSeal}
+                    disabled={syncingSeal}
+                    title="Cliquer pour régénérer le sceau combiné officiel sur Firebase Storage"
+                    className="text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-emerald-200 transition-colors flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>✓ Sceau WhatsApp actif</span>
+                    {syncingSeal && <span className="animate-spin text-[8px]">↻</span>}
+                  </button>
+                ) : (formData.branding?.logoUrl || formData.logoUrl) ? (
+                  <button
+                    type="button"
+                    onClick={handleTriggerSyncSeal}
+                    disabled={syncingSeal}
+                    title="Générer et sauvegarder le blason officiel Asso × O Girador"
+                    className="text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300 hover:bg-amber-200 transition-colors flex items-center gap-1 cursor-pointer animate-pulse"
+                  >
+                    <span>⚡ Activer le sceau WhatsApp</span>
+                    {syncingSeal && <span className="animate-spin text-[8px]">↻</span>}
+                  </button>
+                ) : null}
+              </div>
+            </div>
           </div>
-          <CordelButton
-            type="button"
-            variant={copySuccess ? 'vert' : 'default'}
-            useExtremeBorder={true}
-            onClick={handleCopyInvitationLink}
-            className="py-1 px-3 text-[9.5px] font-black uppercase tracking-wider w-full cursor-pointer"
-          >
-            {copySuccess ? t('settings.identity.subscriptionInvitationHeader.lienCopie') : t('settings.identity.subscriptionInvitationHeader.copierLeLienDInvitation')}
-          </CordelButton>
+          <div className="grid grid-cols-2 gap-1.5 w-full">
+            <CordelButton
+              type="button"
+              variant={copySuccess ? 'vert' : 'default'}
+              useExtremeBorder={true}
+              onClick={handleCopyInvitationLink}
+              className="py-1 px-2 text-[9px] font-black uppercase tracking-wider w-full cursor-pointer truncate"
+              title={copySuccess ? t('settings.identity.subscriptionInvitationHeader.lienCopie') : t('settings.identity.subscriptionInvitationHeader.copierLeLienDInvitation')}
+            >
+              {copySuccess ? t('settings.identity.subscriptionInvitationHeader.lienCopie') : t('settings.identity.subscriptionInvitationHeader.copierLeLienDInvitation')}
+            </CordelButton>
+            <CordelButton
+              type="button"
+              variant="ocre"
+              useExtremeBorder={true}
+              onClick={() => setIsInviteModalOpen(true)}
+              className="py-1 px-2 text-[9px] font-black uppercase tracking-wider w-full cursor-pointer truncate"
+            >
+              📨 Carte & Sceau
+            </CordelButton>
+          </div>
         </CordelCard>
       </div>
+
+      {/* Modale d'invitation avec Sceau Combiné officiel O Girador × Asso et QR Code */}
+      <InvitationModal
+        isOpen={isInviteModalOpen}
+        onClose={() => setIsInviteModalOpen(false)}
+        associationData={formData}
+        groupId={groupId}
+      />
     </div>
   );
 }

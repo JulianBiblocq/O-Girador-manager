@@ -21,7 +21,8 @@ export default function TabIdentity({
   groupId,
   saving,
   t,
-  onReopenOnboarding
+  onReopenOnboarding,
+  onSyncCombinedSeal
 }) {
   const { t: tHook } = useTranslation();
   const tFunc = t || tHook;
@@ -32,6 +33,7 @@ export default function TabIdentity({
         formData={formData}
         groupId={groupId}
         onReopenOnboarding={onReopenOnboarding}
+        onSyncCombinedSeal={onSyncCombinedSeal}
       />
 
       {/* 2. Dénomination officielle & Nom court / Sigle de l'Association */}
