@@ -12,6 +12,7 @@ import LateCancellationModal from '../agenda/LateCancellationModal';
 import LateRegistrationModal from '../agenda/LateRegistrationModal';
 import { useTranslation } from '../LanguageContext';
 import { checkRegistrationDeadlinePassed } from '../../hooks/useEventRSVP';
+import { resolveParticipantInstrument } from '../../utils/tagUtils';
 
 export default function EventRSVPSection({
   event,
@@ -853,7 +854,8 @@ export default function EventRSVPSection({
         photoURL: profileData?.photoURL || user?.photoURL || null,
         dietaryRestrictions: profileData?.dietaryRestrictions || [],
         allergies: profileData?.allergies || '',
-        instrument: profileData?.instrument || profileData?.instrumentsJoues?.[0] || 'Autre',
+        instrumentPrincipal: profileData?.instrumentPrincipal || profileData?.instrument || '',
+        instrument: profileData?.instrument || profileData?.instrumentPrincipal || profileData?.instrumentsJoues?.[0] || 'Autre',
         ...profileData
       };
     }
@@ -1463,7 +1465,7 @@ export default function EventRSVPSection({
                     .map(ins => {
                       const userInfo = allUsers.find(u => u.id === ins.userId) || {};
                       const memberInstruments = getMemberInstrumentOptions(userInfo);
-                      const currentInst = ins.instrumentChoisi || userInfo.instrument || 'Autre';
+                      const currentInst = resolveParticipantInstrument(ins, userInfo);
                       const isLocked = !!ins.instrumentImposeParMestre;
 
                       return (

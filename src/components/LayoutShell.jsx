@@ -294,7 +294,7 @@ export default function LayoutShell({
       const effectiveFeatures = features || associationData?.features;
       const role = (currentProfile?.role || '').toLowerCase();
       const isMestreOrAdmin = role === 'mestre' || role === 'super-admin' || role === 'admin' || currentProfile?.isSystemAdmin === true;
-      const hasAccessMestreLocal = isMasterKeyActive || isMestreOrAdmin;
+      const hasAccessMestreLocal = !isSimulating && (isMasterKeyActive || isMestreOrAdmin);
       if (effectiveFeatures?.repertoireEleves !== true && !hasAccessMestreLocal) return false;
     }
 
@@ -354,8 +354,12 @@ export default function LayoutShell({
     return false;
   };
 
-  const isAdministrativeUser = isMasterKeyActive || 
-                               realIsSuperAdmin ||
+  // En mode simulation, les prérogatives réelles du Super-Administrateur racine sont neutralisées
+  const effectiveIsSuperAdmin = !isSimulating && realIsSuperAdmin;
+  const effectiveMasterKey = !isSimulating && isMasterKeyActive;
+
+  const isAdministrativeUser = effectiveMasterKey || 
+                               effectiveIsSuperAdmin ||
                                currentProfile?.role === 'bureau' || 
                                currentProfile?.role === 'ca' || 
                                currentProfile?.role === 'mestre' ||
@@ -364,26 +368,138 @@ export default function LayoutShell({
                                currentProfile?.isSystemAdmin === true ||
                                polesList.some(pole => pole.id !== 'accueil' && pole.id !== 'mon-espace' && isPoleUnlocked(pole.id));
 
+  // Détection explicite du mode simulation d'un adhérent / membre
+  const isSimulatingMember = Boolean(
+    isSimulating && (
+      simulationTarget?.type === 'standard' ||
+      simulationTarget?.role === 'membre' ||
+      ['membre', 'adherent', 'eleve'].includes(String(currentProfile?.role || '').toLowerCase()) ||
+      !['admin', 'super-admin', 'mestre', 'bureau', 'ca'].includes(String(currentProfile?.role || '').toLowerCase())
+    ) && (
+      currentProfile?.role !== 'admin' &&
+      currentProfile?.role !== 'super-admin' &&
+      currentProfile?.role !== 'mestre' &&
+      currentProfile?.role !== 'bureau' &&
+      currentProfile?.role !== 'ca' &&
+      currentProfile?.isSystemAdmin !== true
+    )
+  );
+
+  // Basculement strict de la barre latérale :
+  // N'affiche les Pôles administratifs que pour les profils gestionnaires réels ou simulés.
+  // Pour un adhérent standard ou en simulation de membre, affiche directement la liste plate memberMenuItems.
+  const showAdminPoles = isAdministrativeUser && !isSimulatingMember;
+
   const canSendFeedback = currentProfile?.role === 'admin' || currentProfile?.role === 'mestre' || currentProfile?.role === 'super-admin' || currentProfile?.role === 'bureau' || currentProfile?.isSystemAdmin;
 
   const allMemberMenuItems = [
-    { id: 'accueil', label: 'Accueil', labelKey: 'poles.tabAccueil', icon: <XiloHome size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('accueil', 'dashboard'); onNavigateToTab && onNavigateToTab('dashboard'); } },
-    { id: 'profil', label: 'Profil', labelKey: 'poles.tabProfil', icon: <XiloUser size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'profil'); onNavigateToTab && onNavigateToTab('profil'); } },
-    { id: 'mon-parcours', label: 'Mon Parcours', labelKey: 'poles.tabParcours', icon: <XiloCompass size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'mon-parcours'); onNavigateToTab && onNavigateToTab('mon-parcours'); } },
-    { id: 'agenda', label: 'Agenda', labelKey: 'poles.tabAgenda', icon: <XiloCalendar size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'agenda'); onNavigateToTab && onNavigateToTab('agenda'); } },
-    { id: 'repertoire', label: 'Répertoire', labelKey: 'poles.tabRepertoire', icon: <XiloScroll size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'repertoire'); onNavigateToTab && onNavigateToTab('repertoire'); } },
-    { id: 'atelier', label: 'Atelier', labelKey: 'poles.tabAtelier', icon: <XiloChisel size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'atelier'); onNavigateToTab && onNavigateToTab('atelier'); } },
-    { id: 'materiel', label: 'Instruments', labelKey: 'poles.tabMateriel', icon: <XiloCaixa size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'materiel'); onNavigateToTab && onNavigateToTab('materiel'); } },
+    { 
+      id: 'accueil', 
+      label: 'Accueil', 
+      labelKey: 'poles.tabAccueil', 
+      icon: <XiloHome size={12} />, 
+      onClick: () => { 
+        if (onNavigateToPole) onNavigateToPole('accueil', 'dashboard'); 
+        if (onNavigateToTab) onNavigateToTab('dashboard'); 
+      } 
+    },
+    { 
+      id: 'profil', 
+      label: 'Mon Profil', 
+      labelKey: 'poles.tabProfil', 
+      icon: <XiloUser size={12} />, 
+      onClick: () => { 
+        if (onNavigateToPole) onNavigateToPole('mon-espace', 'profil'); 
+        if (onNavigateToTab) onNavigateToTab('profil'); 
+      } 
+    },
+    { 
+      id: 'trombinoscope', 
+      label: 'Trombinoscope', 
+      labelKey: 'poles.tabTrombinoscope', 
+      icon: <XiloPeople size={12} />, 
+      onClick: () => { 
+        if (onNavigateToPole) onNavigateToPole('mon-espace', 'trombinoscope'); 
+        if (onNavigateToTab) onNavigateToTab('trombinoscope'); 
+      } 
+    },
+    { 
+      id: 'agenda', 
+      label: 'Agenda', 
+      labelKey: 'poles.tabAgenda', 
+      icon: <XiloCalendar size={12} />, 
+      onClick: () => { 
+        if (onNavigateToPole) onNavigateToPole('mon-espace', 'agenda'); 
+        if (onNavigateToTab) onNavigateToTab('agenda'); 
+      } 
+    },
+    { 
+      id: 'forum', 
+      label: 'Porte-voix', 
+      labelKey: 'poles.tabPorteVoix', 
+      icon: <XiloMegaphone size={12} />, 
+      onClick: () => { 
+        if (onNavigateToPole) onNavigateToPole('mon-espace', 'forum'); 
+        if (onNavigateToTab) onNavigateToTab('forum'); 
+      } 
+    },
+    { 
+      id: 'varal', 
+      label: 'Varal', 
+      labelKey: 'poles.tabVaral', 
+      icon: <XiloScroll size={12} />, 
+      onClick: () => { 
+        if (onNavigateToPole) onNavigateToPole('mon-espace', 'varal'); 
+        if (onNavigateToTab) onNavigateToTab('varal'); 
+      } 
+    },
+    { 
+      id: 'repertoire', 
+      label: 'Répertoire', 
+      labelKey: 'poles.tabRepertoire', 
+      icon: <XiloScroll size={12} />, 
+      onClick: () => { 
+        if (onNavigateToPole) onNavigateToPole('mon-espace', 'repertoire'); 
+        if (onNavigateToTab) onNavigateToTab('repertoire'); 
+      } 
+    },
+    { 
+      id: 'mon-parcours', 
+      label: 'Mon Parcours', 
+      labelKey: 'poles.tabParcours', 
+      icon: <XiloCompass size={12} />, 
+      onClick: () => { 
+        if (onNavigateToPole) onNavigateToPole('mon-espace', 'mon-parcours'); 
+        if (onNavigateToTab) onNavigateToTab('mon-parcours'); 
+      } 
+    },
+    { 
+      id: 'atelier', 
+      label: 'Atelier', 
+      labelKey: 'poles.tabAtelier', 
+      icon: <XiloChisel size={12} />, 
+      onClick: () => { 
+        if (onNavigateToPole) onNavigateToPole('mon-espace', 'atelier'); 
+        if (onNavigateToTab) onNavigateToTab('atelier'); 
+      } 
+    },
+    { id: 'materiel', label: 'Instruments', labelKey: 'poles.tabMateriel', 
+      icon: <XiloCaixa size={12} />, 
+      onClick: () => { 
+        if (onNavigateToPole) onNavigateToPole('mon-espace', 'materiel'); 
+        if (onNavigateToTab) onNavigateToTab('materiel'); 
+      } 
+    },
     { 
       id: 'vestiaire', 
       label: associationData?.wardrobeMemberMode === 'collective_workshop' ? 'Atelier Costumes' : 'Vestiaire', 
       labelKey: associationData?.wardrobeMemberMode === 'collective_workshop' ? null : 'poles.tabVestiaire', 
       icon: associationData?.wardrobeMemberMode === 'collective_workshop' ? <XiloChisel size={12} /> : <XiloHanger size={12} />, 
-      onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'vestiaire'); onNavigateToTab && onNavigateToTab('vestiaire'); } 
-    },
-    { id: 'trombinoscope', label: 'Trombinoscope', labelKey: 'poles.tabTrombinoscope', icon: <XiloPeople size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'trombinoscope'); onNavigateToTab && onNavigateToTab('trombinoscope'); } },
-    { id: 'forum', label: 'Porte-voix', labelKey: 'poles.tabPorteVoix', icon: <XiloMegaphone size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'forum'); onNavigateToTab && onNavigateToTab('forum'); } },
-    { id: 'varal', label: 'Varal', labelKey: 'poles.tabVaral', icon: <XiloScroll size={12} />, onClick: () => { onNavigateToPole && onNavigateToPole('mon-espace', 'varal'); onNavigateToTab && onNavigateToTab('varal'); } }
+      onClick: () => { 
+        if (onNavigateToPole) onNavigateToPole('mon-espace', 'vestiaire'); 
+        if (onNavigateToTab) onNavigateToTab('vestiaire'); 
+      } 
+    }
   ];
 
   const memberMenuItems = allMemberMenuItems.filter(item => isModuleEnabled(item.id, 'mon-espace'));
@@ -598,7 +714,7 @@ export default function LayoutShell({
             
             {/* Desktop Poles Navigation */}
             <div className="w-full flex-grow overflow-y-auto flex flex-col gap-2 pr-1 max-h-[calc(100vh-220px)] scrollbar-thin">
-              {isAdministrativeUser ? (
+              {showAdminPoles ? (
                 visiblePoles.map((pole) => {
                   const isUnlocked = isPoleUnlocked(pole.id);
                   const isActive = currentPole === pole.id;
@@ -1151,7 +1267,7 @@ export default function LayoutShell({
 
               {/* Drawer Navigation Links */}
               <div className="flex flex-col gap-2.5 flex-grow overflow-y-auto pr-1">
-                {isAdministrativeUser ? (
+                {showAdminPoles ? (
                   visiblePoles.map((pole) => {
                     const isUnlocked = isPoleUnlocked(pole.id);
                     const isActive = currentPole === pole.id;

@@ -9,6 +9,7 @@ import { useInstrumentColor } from '../../hooks/useInstrumentColor';
 import useConfirm from '../../hooks/useConfirm';
 import { useGroupNomenclature } from '../../hooks/useGroupNomenclature';
 import { getVoiceLabel } from '../../constants/nomenclature';
+import { resolveParticipantInstrument, resolvePupitreForInstrument } from '../../utils/tagUtils';
 import UserStagePositionBanner from './stage-layout/UserStagePositionBanner';
 import StageVisualGrid from './stage-layout/StageVisualGrid';
 import StageLayoutFullscreenModal from './stage-layout/StageLayoutFullscreenModal';
@@ -98,7 +99,10 @@ export default function EventStageLayoutSection({
       .filter((ins) => ins.status === 'present')
       .map((ins) => {
         const userInfo = allUsers.find((u) => u.id === ins.userId) || {};
-        const instrument = ins.instrumentChoisi || userInfo.instrument || userInfo.instrumentPrincipal || 'Autre';
+        const rawInst = resolveParticipantInstrument(ins, userInfo);
+        const instrument = rawInst === 'En attente'
+          ? 'En attente'
+          : (resolvePupitreForInstrument(rawInst) || rawInst);
         return {
           id: ins.userId,
           name: ins.userName || `${userInfo.prenom} ${userInfo.nom}`,
@@ -106,13 +110,17 @@ export default function EventStageLayoutSection({
           instrument
         };
       }),
-    ...(event.invitesExternes || []).map((guest) => ({
-      id: guest.id,
-      name: `${guest.nom} [Invité]`,
-      photoURL: '',
-      instrument: guest.instrument || guest.fonction || 'Autre',
-      isInvite: true
-    }))
+    ...(event.invitesExternes || []).map((guest) => {
+      const rawInst = guest.instrument || guest.fonction || 'Autre';
+      const instrument = resolvePupitreForInstrument(rawInst) || rawInst;
+      return {
+        id: guest.id,
+        name: `${guest.nom} [Invité]`,
+        photoURL: '',
+        instrument,
+        isInvite: true
+      };
+    })
   ];
 
   // Filtrer out any placements of members who are no longer registered as present

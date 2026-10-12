@@ -153,7 +153,8 @@ const testScripts = [
   'scripts/test_loader_neutral_fallback.mjs',
   'scripts/test_loader_combined_seal.mjs',
   'scripts/test_pwa_dynamic_manifest_and_title.mjs',
-  'scripts/test_tooltip_styling_and_position.mjs'
+  'scripts/test_tooltip_styling_and_position.mjs',
+  'scripts/test_casse_tete_attendance_pupitre_normalization.mjs'
 ];
 
 console.log("===============================================================");

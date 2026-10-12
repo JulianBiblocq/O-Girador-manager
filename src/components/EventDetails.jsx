@@ -13,7 +13,7 @@ import { useEventSetlist } from '../hooks/useEventSetlist';
 import useConfirm from '../hooks/useConfirm';
 
 import { DEFAULT_CUSTOM_CATEGORIES, resolveCategory, isUserCategoryMatchingEvent } from '../utils/categoryUtils';
-import { resolveEffectiveUserTags, findTagObject, getTagId, computePupitresList, resolvePupitreForInstrument } from '../utils/tagUtils';
+import { resolveEffectiveUserTags, findTagObject, getTagId, computePupitresList, resolvePupitreForInstrument, resolveParticipantInstrument } from '../utils/tagUtils';
 import { canManageEvents } from '../utils/permissionUtils';
 import EventEditForm from './event-details/EventEditForm';
 import EventPollSection from './event-details/EventPollSection';
@@ -193,14 +193,14 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
   const [adresseLocal, setAdresseLocal] = useState('');
   const [lieuxImportants, setLieuxImportants] = useState([]);
   const [defaultLocationsByEventType, setDefaultLocationsByEventType] = useState({});
-  const [instrumentsDisponibles, setInstrumentsDisponibles] = useState(["Alfaia", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"]);
+  const [instrumentsDisponibles, setInstrumentsDisponibles] = useState(["Alfaias", "Caixas", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"]);
   const [linkedInstruments, setLinkedInstruments] = useState([]);
 
   // Calcul dynamique des vrais pupitres configurés pour l'association
   const pupitresList = useMemo(() => {
     const base = (Array.isArray(instrumentsDisponibles) && instrumentsDisponibles.length > 0)
       ? instrumentsDisponibles
-      : ["Alfaia", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant"];
+      : ["Alfaias", "Caixas", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant"];
     const list = computePupitresList(base, linkedInstruments);
     if (!list.some(p => p.toLowerCase() === 'danse')) {
       list.push('Danse');
@@ -542,7 +542,8 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
         photoURL: profileData?.photoURL || user?.photoURL || null,
         dietaryRestrictions: profileData?.dietaryRestrictions || [],
         allergies: profileData?.allergies || '',
-        instrument: profileData?.instrument || profileData?.instrumentsJoues?.[0] || 'Autre',
+        instrumentPrincipal: profileData?.instrumentPrincipal || profileData?.instrument || '',
+        instrument: profileData?.instrument || profileData?.instrumentPrincipal || profileData?.instrumentsJoues?.[0] || 'Autre',
         ...profileData
       };
     }
@@ -1174,8 +1175,12 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
       targetEvent.inscriptions.forEach((ins) => {
         if (ins.status === 'present') {
           const userInfo = resolveUserInfo(ins.userId, ins.userName);
-          const rawInst = ins.instrumentChoisi || userInfo.instrument || 'Autre';
-          const resolvedPupitre = resolvePupitreForInstrument(rawInst, pupitresList, linkedInstruments) || rawInst;
+          // Résolution en cascade : date (instrumentChoisi/assignedInstrument) -> profil users (instrumentPrincipal/instrument) -> 'En attente'
+          const rawInst = resolveParticipantInstrument(ins, userInfo);
+          const resolvedPupitre = rawInst === 'En attente'
+            ? 'En attente'
+            : (resolvePupitreForInstrument(rawInst, pupitresList, linkedInstruments) || rawInst);
+
           if (!grouped[resolvedPupitre]) {
             grouped[resolvedPupitre] = [];
           }

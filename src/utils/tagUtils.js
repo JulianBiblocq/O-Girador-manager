@@ -222,15 +222,17 @@ export function computePupitresList(instrumentsDisponibles = [], linkedInstrumen
 
   // 2. Consolidation automatique du pupitre "Caixas" si Caixa et Tarol sont présents sans groupe lié explicite
   const lowerInsts = (instrumentsDisponibles || []).map(i => String(i).toLowerCase().trim());
-  const hasCaixa = lowerInsts.includes('caixa');
-  const hasTarol = lowerInsts.includes('tarol');
-  const caixaUsed = usedInstruments.has('caixa');
-  const tarolUsed = usedInstruments.has('tarol');
+  const hasCaixa = lowerInsts.some(k => k === 'caixa' || k === 'caixas');
+  const hasTarol = lowerInsts.some(k => k === 'tarol' || k === 'tarols');
+  const caixaUsed = usedInstruments.has('caixa') || usedInstruments.has('caixas');
+  const tarolUsed = usedInstruments.has('tarol') || usedInstruments.has('tarols');
 
   if (hasCaixa && hasTarol && !caixaUsed && !tarolUsed) {
     result.push('Caixas');
     usedInstruments.add('caixa');
+    usedInstruments.add('caixas');
     usedInstruments.add('tarol');
+    usedInstruments.add('tarols');
   }
 
   // 3. Instruments autonomes configurés (non inclus dans un groupe lié et hors mots-clés réservés)
@@ -238,50 +240,72 @@ export function computePupitresList(instrumentsDisponibles = [], linkedInstrumen
     const lower = String(inst).toLowerCase().trim();
     if (!usedInstruments.has(lower) && !EXCLUDED_KEYWORDS.some(k => lower === k)) {
       result.push(inst);
+      usedInstruments.add(lower);
     }
   });
 
   // 4. Si "Alfaia" n'est pas déjà présent mais que des voix d'Alfaia étaient fournies, assurer la présence du pupitre "Alfaia"
-  const hasAlfaia = result.some(r => r.toLowerCase().trim() === 'alfaia');
+  const hasAlfaia = result.some(r => r.toLowerCase().trim().includes('alfaia'));
   const hadAlfaiaSubvoice = lowerInsts.some(k => ['marcante', 'meião', 'meiao', 'repique'].includes(k));
   if (!hasAlfaia && hadAlfaiaSubvoice) {
     result.unshift('Alfaia');
   }
 
-  return result;
+  // 5. Normalisation et déduplication canonique des pupitres (Fusion singulier/pluriel vers le libellé unique)
+  const canonicalResult = [];
+  result.forEach(p => {
+    const pTrim = String(p).trim();
+    const pLower = pTrim.toLowerCase();
+
+    // Déduplication Alfaia vs Alfaias -> si les deux sont présents, privilégier 'Alfaias'
+    if (pLower.includes('alfaia')) {
+      const existingAlfaiaIdx = canonicalResult.findIndex(cp => cp.toLowerCase().includes('alfaia'));
+      if (existingAlfaiaIdx === -1) {
+        canonicalResult.push(pTrim);
+      } else if (!canonicalResult[existingAlfaiaIdx].toLowerCase().endsWith('s') && pLower.endsWith('s')) {
+        canonicalResult[existingAlfaiaIdx] = pTrim;
+      }
+      return;
+    }
+
+    // Déduplication Caixa vs Caixas -> si les deux sont présents, privilégier 'Caixas'
+    if (pLower.includes('caixa')) {
+      const existingCaixaIdx = canonicalResult.findIndex(cp => cp.toLowerCase().includes('caixa'));
+      if (existingCaixaIdx === -1) {
+        canonicalResult.push(pTrim);
+      } else if (!canonicalResult[existingCaixaIdx].toLowerCase().endsWith('s') && pLower.endsWith('s')) {
+        canonicalResult[existingCaixaIdx] = pTrim;
+      }
+      return;
+    }
+
+    // Déduplication exacte insensible à la casse
+    if (!canonicalResult.some(cp => cp.toLowerCase() === pLower)) {
+      canonicalResult.push(pTrim);
+    }
+  });
+
+  return canonicalResult;
 }
 
 /**
- * Résout le pupitre canonique correspondant à un nom d'instrument ou sous-voix.
- * Mappe notamment Marcante/Meião/Repique vers Alfaia, et Caixa/Tarol vers Caixas.
+ * Normalise canoniquement le nom d'un instrument vers le libellé officiel unique du pupitre.
+ * Fusionne obligatoirement 'Alfaia' et 'Alfaias' vers le libellé officiel unique (ex. 'Alfaias'),
+ * ainsi que 'Caixa', 'Tarol' et 'Caixas' vers 'Caixas', tout en respectant les groupes liés.
  *
  * @param {string} instName - Nom de l'instrument ou de la voix
- * @param {Array<string>} pupitresList - Liste des pupitres disponibles
- * @param {Array<Object>} linkedInstruments - Groupes liés de l'association
+ * @param {Array<string>} pupitresList - Liste officielle des pupitres de l'association
+ * @param {Array<Object>} linkedInstruments - Groupes d'instruments liés configurés
  * @returns {string} Nom du pupitre canonique résolu
  */
 export function resolvePupitreForInstrument(instName, pupitresList = [], linkedInstruments = []) {
-  if (!instName || instName === 'En attente') return '';
-  const cleanInst = String(instName).trim();
+  if (!instName || typeof instName !== 'string') return '';
+  const cleanInst = instName.trim();
+  if (!cleanInst || cleanInst.toLowerCase() === 'en attente') return '';
+
   const lower = cleanInst.toLowerCase();
 
-  // 1. Si c'est déjà exactement un pupitre reconnu dans pupitresList
-  const exactMatch = (pupitresList || []).find(p => p.toLowerCase() === lower);
-  if (exactMatch) return exactMatch;
-
-  // 2. Sous-voix et déclinaisons d'Alfaia -> Pupitre Alfaia
-  if (lower.includes('alfaia') || lower === 'marcante' || lower === 'meião' || lower === 'meiao' || lower === 'repique') {
-    const alfaiaPupitre = (pupitresList || []).find(p => p.toLowerCase().includes('alfaia'));
-    return alfaiaPupitre || 'Alfaia';
-  }
-
-  // 3. Caixa ou Tarol -> Pupitre Caixas (ou groupe lié correspondant)
-  if (lower === 'caixa' || lower === 'tarol' || lower === 'caisse') {
-    const caixasPupitre = (pupitresList || []).find(p => p.toLowerCase().includes('caixa') || p.toLowerCase().includes('tarol'));
-    if (caixasPupitre) return caixasPupitre;
-  }
-
-  // 4. Groupes d'instruments liés configurés (ex: "Agbê & Mineiro")
+  // 1. Groupes d'instruments liés configurés (ex: "Agbê & Mineiro", "Caixa & Tarol")
   const matchingGroup = (linkedInstruments || []).find(group => {
     const groupInsts = Array.isArray(group.instruments)
       ? group.instruments
@@ -293,10 +317,100 @@ export function resolvePupitreForInstrument(instName, pupitresList = [], linkedI
     const gName = matchingGroup.name && matchingGroup.name.trim()
       ? matchingGroup.name.trim()
       : (Array.isArray(matchingGroup.instruments) ? matchingGroup.instruments.join(' + ') : '');
-    if ((pupitresList || []).includes(gName)) return gName;
+    if (gName) {
+      const matchInPupitres = (pupitresList || []).find(p => p.toLowerCase().trim() === gName.toLowerCase().trim());
+      return matchInPupitres || gName;
+    }
   }
 
+  // 2. Normalisation canonique d'Alfaia (singulier, pluriel et sous-voix Marcante, Meião, Repique)
+  if (lower.includes('alfaia') || lower === 'marcante' || lower === 'meião' || lower === 'meiao' || lower === 'repique') {
+    const matchingAlfaias = (pupitresList || []).filter(p => p.toLowerCase().includes('alfaia'));
+    if (matchingAlfaias.length > 0) {
+      // Priorité au libellé pluriel 'Alfaias' s'il est présent dans l'association
+      const pluralMatch = matchingAlfaias.find(p => p.toLowerCase().trim().endsWith('s'));
+      return pluralMatch || matchingAlfaias[0];
+    }
+    return 'Alfaias';
+  }
+
+  // 3. Normalisation canonique de Caixa (Caixa, Caixas, Tarol, Caisse)
+  if (lower.includes('caixa') || lower === 'tarol' || lower.includes('caisse')) {
+    const matchingCaixas = (pupitresList || []).filter(p => p.toLowerCase().includes('caixa') || p.toLowerCase().includes('tarol'));
+    if (matchingCaixas.length > 0) {
+      const pluralMatch = matchingCaixas.find(p => p.toLowerCase().trim().endsWith('s'));
+      return pluralMatch || matchingCaixas[0];
+    }
+    return 'Caixas';
+  }
+
+  // 4. Tolérance singulier/pluriel pour les autres pupitres (Agbê(s), Gonguê(s), Mineiro(s), etc.)
+  // a) Correspondance exacte
+  const exactMatch = (pupitresList || []).find(p => p.toLowerCase().trim() === lower);
+  if (exactMatch) return exactMatch;
+
+  // b) Tolérance pluriel/singulier
+  const pluralVariant = (pupitresList || []).find(p => {
+    const pLower = p.toLowerCase().trim();
+    return pLower === `${lower}s` || (lower.endsWith('s') && pLower === lower.slice(0, -1));
+  });
+  if (pluralVariant) return pluralVariant;
+
+  // c) Recherche par inclusion
+  const inclusionMatch = (pupitresList || []).find(p => {
+    const pLower = p.toLowerCase().trim();
+    return pLower.includes(lower) || lower.includes(pLower);
+  });
+  if (inclusionMatch) return inclusionMatch;
+
   return cleanInst;
+}
+
+export const canonicalizePupitreName = resolvePupitreForInstrument;
+
+/**
+ * Résolution en cascade de l'instrument d'un participant :
+ * 1. participant.instrumentChoisi ou participant.assignedInstrument (choix spécifique à la date).
+ * 2. À défaut, userInfo.instrumentPrincipal ou userInfo.instrument (issu du document profil dans users).
+ * 3. Si aucun instrument n'existe dans ces deux sources, seulement alors classer le membre dans « En attente ».
+ *
+ * @param {Object} participant - Inscription spécifique à la date (ins)
+ * @param {Object} userInfo - Profil utilisateur résolu dans la collection users
+ * @returns {string} Instrument brut résolu ou 'En attente'
+ */
+export function resolveParticipantInstrument(participant, userInfo) {
+  const isInvalid = (val) => {
+    if (!val || typeof val !== 'string') return true;
+    const trimmed = val.trim().toLowerCase();
+    return !trimmed || 
+      trimmed === 'en attente' || 
+      trimmed === 'en_attente' || 
+      trimmed === 'autre' || 
+      trimmed === 'non défini' || 
+      trimmed === 'non defini' || 
+      trimmed === 'aucun';
+  };
+
+  // 1. Choix spécifique à la date
+  const dateInst = participant?.instrumentChoisi || participant?.assignedInstrument;
+  if (!isInvalid(dateInst)) {
+    return String(dateInst).trim();
+  }
+
+  // 2. Profil utilisateur dans la collection users
+  const profileInst = userInfo?.instrumentPrincipal || userInfo?.instrument;
+  if (!isInvalid(profileInst)) {
+    return String(profileInst).trim();
+  }
+
+  // 2 bis. Repli sur le premier instrument joué déclaré dans le profil
+  if (Array.isArray(userInfo?.instrumentsJoues) && userInfo.instrumentsJoues.length > 0) {
+    const firstPlayed = userInfo.instrumentsJoues.find(i => !isInvalid(i));
+    if (firstPlayed) return String(firstPlayed).trim();
+  }
+
+  // 3. Repli si aucun instrument valide n'a été trouvé
+  return 'En attente';
 }
 
 /**
