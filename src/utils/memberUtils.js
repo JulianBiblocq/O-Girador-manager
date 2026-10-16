@@ -3,6 +3,37 @@
  */
 
 /**
+ * Détermine si un membre est archivé ou suspendu.
+ * Vérifie l'ensemble des indicateurs d'archivage ou d'inactivité de la base de données.
+ *
+ * @param {Object} user Objet profil ou membre Firestore
+ * @returns {boolean} true si le membre est archivé ou suspendu
+ */
+export const isMemberArchived = (user) => {
+  if (!user) return false;
+  return Boolean(
+    user.isArchived === true ||
+    user.statut === 'archive' ||
+    user.status === 'archived' ||
+    user.statutActuel === 'archived' ||
+    user.statut === 'suspendu' ||
+    user.statutActuel === 'inactive' ||
+    user.status === 'inactive'
+  );
+};
+
+/**
+ * Détermine si un membre est actif dans l'association pour la saison en cours.
+ * Inverse strict de isMemberArchived.
+ *
+ * @param {Object} user Objet profil ou membre Firestore
+ * @returns {boolean} true si le membre est actif
+ */
+export const isActiveMember = (user) => {
+  return !isMemberArchived(user);
+};
+
+/**
  * Normalise et formate le libellé du niveau d'un membre.
  * Gère la rétrocompatibilité des données historiques :
  * - "La référence" (confirmés / anciens : 'confirme', 'confirmé', 'reference', 'la_reference', '2')

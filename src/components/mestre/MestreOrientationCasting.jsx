@@ -11,6 +11,8 @@ import { DEFAULT_CUSTOM_CATEGORIES, resolveCategory, getCustomCategories, getCat
 import { getVoiceLabel, normalizeGroupNomenclature } from '../../constants/nomenclature';
 import { getInstrumentIconPath } from '../../utils/instrumentUtils';
 import CastingAssignmentModal from './CastingAssignmentModal';
+import MestreVocalSynthesisPanel from './MestreVocalSynthesisPanel';
+import { isActiveMember } from '../../utils/memberUtils';
 
 const DEFAULT_INSTRUMENTS = [
   "Alfaia",
@@ -110,6 +112,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
   const [groupNomenclature, setGroupNomenclature] = useState({});
   const [selectedPupitreFilter, setSelectedPupitreFilter] = useState(null);
   const [selectedMemberForAssignment, setSelectedMemberForAssignment] = useState(null);
+  const [activeSubTab, setActiveSubTab] = useState('pupitres'); // 'pupitres' | 'vocal'
 
   const groupId = profileData?.groupId || null;
 
@@ -232,14 +235,19 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
     return hasAssignedPercussion || hasPercussionWishes;
   };
 
-  // Filtrer les membres actifs (exclure uniquement les inactifs)
+  // Filtrer les membres actifs (exclure les membres archivés et inactifs)
   const activeMembers = useMemo(() => {
-    return members.filter(m => m.statutActuel !== 'inactive');
+    return members.filter(m => isActiveMember(m) && m.statutActuel !== 'inactive');
   }, [members]);
 
   // Décompte global en temps réel des danseurs actifs
   const dancersCount = useMemo(() => {
     return activeMembers.filter(isDanseMember).length;
+  }, [activeMembers]);
+
+  // Décompte des profils vocaux disponibles
+  const vocalProfilesCount = useMemo(() => {
+    return activeMembers.filter(m => Boolean(m.vocalProfile?.lowestSolidNote || m.vocalProfile?.vocalProfile?.lowestSolidNote)).length;
   }, [activeMembers]);
 
   // Liste des percussions de base configurées dans l'association (hors Danse, Mestre)
@@ -1163,8 +1171,45 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
         </div>
       </div>
 
-      {/* 1. Jauges des Quotas (Bandeau visuel interactif des pupitres) */}
-      <CordelCard data-tour="mestre-orientation-gauges" variant="default" useExtremeBorder={false} className="flex flex-col gap-3">
+      {/* Sélecteur de sous-onglets : Pupitres & Quotas vs Synthèse Vocale */}
+      <div className="flex items-center gap-2 border-b-2 border-cordel-master-dark/20 pb-2">
+        <button
+          type="button"
+          onClick={() => setActiveSubTab('pupitres')}
+          className={`px-3 py-1.5 rounded-sm font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${
+            activeSubTab === 'pupitres'
+              ? 'bg-cordel-wood text-white shadow-xs'
+              : 'bg-white/60 dark:bg-black/20 text-cordel-master-dark border border-cordel-master-dark/20 hover:bg-white/80'
+          }`}
+        >
+          <span>🎭</span>
+          <span>{t('mestre.casting.subTabPupitres')}</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveSubTab('vocal')}
+          className={`px-3 py-1.5 rounded-sm font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${
+            activeSubTab === 'vocal'
+              ? 'bg-cordel-wood text-white shadow-xs'
+              : 'bg-white/60 dark:bg-black/20 text-cordel-master-dark border border-cordel-master-dark/20 hover:bg-white/80'
+          }`}
+        >
+          <span>🎤</span>
+          <span>{t('mestre.casting.subTabVocal')}</span>
+          {vocalProfilesCount > 0 && (
+            <span className="bg-amber-600 text-white text-[9px] px-1.5 py-0.2 rounded-full font-black">
+              {vocalProfilesCount}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {activeSubTab === 'vocal' ? (
+        <MestreVocalSynthesisPanel members={activeMembers} />
+      ) : (
+        <>
+          {/* 1. Jauges des Quotas (Bandeau visuel interactif des pupitres) */}
+          <CordelCard data-tour="mestre-orientation-gauges" variant="default" useExtremeBorder={false} className="flex flex-col gap-3">
         <h3 className="font-bold text-xs uppercase tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1 flex items-center justify-between">
           <span>{t('mestre.casting.quotasEffectifsHeading')}</span>
           <span className="text-[9px] text-cordel-master-dark/70 font-semibold normal-case">
@@ -1718,6 +1763,8 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
           </table>
         </div>
       </CordelCard>
+        </>
+      )}
 
       {/* Modale d'affectation universelle du Mestre */}
       <CastingAssignmentModal

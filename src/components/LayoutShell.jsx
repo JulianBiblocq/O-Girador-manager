@@ -28,6 +28,8 @@ import OnlineStatusWidget from './OnlineStatusWidget';
 import { canAccessPole, canAccessTabPermission } from '../utils/permissionUtils';
 import { usePendingMembersNotification } from '../hooks/usePendingMembersNotification';
 import { resolveEffectiveUserTags } from '../utils/tagUtils'; // Utilitaire de résolution des étiquettes effectives
+import { isMemberArchived } from '../utils/memberUtils';
+import ArchivedAccountScreen from './auth/ArchivedAccountScreen';
 import InfoPoleBanner, { InfoPoleHelpButton } from './InfoPoleBanner';
 import PageAccessBadgeIndicator from './common/PageAccessBadgeIndicator';
 import FeedbackModal from './FeedbackModal';
@@ -576,7 +578,22 @@ export default function LayoutShell({
 
   const isAccueil = currentPole === 'accueil' || !currentPole;
 
-
+  // Garde-fou strict de sécurité : blocage des comptes membres archivés ou suspendus
+  const isPrivilegedAccess = Boolean(
+    effectiveMasterKey ||
+    effectiveIsSuperAdmin ||
+    currentProfile?.isSystemAdmin === true ||
+    ['mestre', 'super-admin', 'admin'].includes(String(currentProfile?.role || '').toLowerCase())
+  );
+  if (!isPrivilegedAccess && currentProfile && isMemberArchived(currentProfile)) {
+    return (
+      <ArchivedAccountScreen
+        profileData={currentProfile}
+        branding={{ logoUrl }}
+        onSignOut={onSignOut}
+      />
+    );
+  }
 
   return (
     <div className={`min-h-[100dvh] h-[100dvh] max-h-[100dvh] w-full max-w-full m-0 rounded-none border-0 ${forceLight ? 'bg-cordel-bg-light' : 'bg-cordel-bg-dark'} ${isBirthdayMonth ? 'theme-birthday-month' : ''} flex flex-col items-stretch justify-stretch p-0 overflow-hidden`}>

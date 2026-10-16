@@ -14,6 +14,7 @@ import SuppliesListView from '../inventory/SuppliesListView';
 import WorkshopToolsListView from '../inventory/WorkshopToolsListView';
 import useConfirm from '../../hooks/useConfirm';
 import { HorizontalRibbonContainer } from '../navigation/HorizontalTabRibbon';
+import { isActiveMember } from '../../utils/memberUtils';
 
 export default function WardrobeManager({ 
   groupId, 
@@ -483,7 +484,7 @@ export default function WardrobeManager({
                       className="theme-input font-bold py-1.5 px-2 bg-cordel-bg-light"
                     >
                       <option value="" disabled>{t('costumerie.selectionnerUnMembre')}</option>
-                      {(allUsers || []).map(u => (
+                      {(allUsers || []).filter(isActiveMember).map(u => (
                         <option key={u.id} value={u.id}>{u.prenom} {u.nom}</option>
                       ))}
                     </select>

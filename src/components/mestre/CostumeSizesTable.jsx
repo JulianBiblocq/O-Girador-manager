@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from '../LanguageContext';
 import CordelCard from '../CordelCard';
 import XiloAvatar from '../XiloAvatar';
+import { isActiveMember } from '../../utils/memberUtils';
 
 export default function CostumeSizesTable({ allUsers = [], profileData = {} }) {
   const { t } = useTranslation();
@@ -30,8 +31,8 @@ export default function CostumeSizesTable({ allUsers = [], profileData = {} }) {
     );
   }
 
-  // Filtrer users belonging to this association
-  const associationUsers = allUsers.filter(u => u.groupId === profileData.groupId);
+  // Filtrer les membres actifs de l'association (exclure les archivés)
+  const associationUsers = allUsers.filter(u => u.groupId === profileData.groupId && isActiveMember(u));
 
   // Compute summary stats
   const tshirtsCounts = { S: 0, M: 0, L: 0, XL: 0, XXL: 0, "Non renseigné": 0 };

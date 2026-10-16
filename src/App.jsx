@@ -24,6 +24,8 @@ import { resolveEffectiveUserTags } from './utils/tagUtils';
 import { getMigratedRoleAndTags } from './utils/roleMigration';
 import { canAccessPole, canAccessTabPermission, canAccessMestre } from './utils/permissionUtils';
 import PendingValidationScreen from './components/auth/PendingValidationScreen';
+import ArchivedAccountScreen from './components/auth/ArchivedAccountScreen';
+import { isMemberArchived } from './utils/memberUtils';
 import { useTenantContext } from './context/TenantContext';
 import TenantNotFound from './components/TenantNotFound';
 import { DEFAULT_VARAL_CATEGORIES } from './hooks/useAssociationSettings';
@@ -1791,6 +1793,20 @@ export default function App() {
   // Clause d'exclusion prioritaire absolue : un Mestre, Super-Admin, Admin ou compte Fondateur
   // ne doit JAMAIS se voir bloqué par l'Onboarding adhérent.
   if (!isPrivilegedUser) {
+    // 4a. Sécurisation : Compte membre archivé ou suspendu -> Blocage immédiat de l'accès privé
+    if (profileData && isMemberArchived(profileData)) {
+      return (
+        <div style={brandingStyle} className="min-h-screen flex flex-col w-full force-light-theme">
+          <ArchivedAccountScreen
+            profileData={profileData}
+            branding={branding}
+            onSignOut={handleSignOut}
+          />
+          <ReloadPrompt />
+        </div>
+      );
+    }
+
     if (!profileExists || !profileData || !isProfileComplete) {
       return (
         <div style={brandingStyle} className="min-h-screen flex flex-col w-full force-light-theme">

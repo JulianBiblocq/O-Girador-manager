@@ -12,10 +12,14 @@ import { formatPratiques, getPratiquesList } from '../utils/instrumentUtils';
 import { useTenantContext } from '../context/TenantContext';
 import useGroupContext from '../hooks/useGroupContext';
 import { canonicalizeGroupId } from '../utils/tenantUtils';
+import useConfirm from '../hooks/useConfirm';
+import { isMemberArchived, isActiveMember } from '../utils/memberUtils';
+import { archiveMember, unarchiveMember } from '../services/memberArchiveService';
 
 export default function AdminExport({ user, profileData, groupId: propGroupId, onBack }) {
   const { t } = useTranslation();
   const { tRole } = useTerminologie();
+  const { confirm } = useConfirm();
   const tenantCtx = useTenantContext();
   const groupCtx = useGroupContext(profileData);
 
@@ -30,6 +34,8 @@ export default function AdminExport({ user, profileData, groupId: propGroupId, o
   const [associationSettings, setAssociationSettings] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('active'); // 'active' | 'archived' | 'all'
+  const [actionLoadingId, setActionLoadingId] = useState(null);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
 
@@ -154,14 +160,11 @@ export default function AdminExport({ user, profileData, groupId: propGroupId, o
           return;
         }
 
-        // Seuls les membres actifs sont affichés par défaut dans l'annuaire
-        const isActive = !data.statutActuel || data.statutActuel === 'active';
-        if (isActive) {
-          fetchedMembers.push({
-            id: docSnap.id,
-            ...data
-          });
-        }
+        // Charger tous les membres du groupe
+        fetchedMembers.push({
+          id: docSnap.id,
+          ...data
+        });
       });
 
       // Tri alphabétique par nom de famille
@@ -176,6 +179,61 @@ export default function AdminExport({ user, profileData, groupId: propGroupId, o
 
     return () => unsubscribe();
   }, [currentGroupId]);
+
+  const activeCount = useMemo(() => members.filter(m => !isMemberArchived(m)).length, [members]);
+  const archivedCount = useMemo(() => members.filter(m => isMemberArchived(m)).length, [members]);
+
+  const handleToggleArchiveMember = async (targetMember) => {
+    if (!targetMember?.id) return;
+    const isArchived = isMemberArchived(targetMember);
+    const memberName = `${targetMember.prenom || ''} ${targetMember.nom || ''}`.trim() || 'ce membre';
+
+    if (isArchived) {
+      const confirmed = await confirm({
+        title: "Désarchiver le membre",
+        message: `Voulez-vous réactiver ${memberName} dans l'association ? Son accès à l'application sera rétabli.`,
+        confirmText: "Oui, réactiver",
+        cancelText: "Annuler",
+        variant: "warning"
+      });
+      if (!confirmed) return;
+
+      setActionLoadingId(targetMember.id);
+      try {
+        await unarchiveMember(targetMember.id);
+        alert(`Le membre ${memberName} a été réactivé avec succès.`);
+      } catch (err) {
+        console.error("Erreur lors de la réactivation :", err);
+        alert("Une erreur est survenue lors de la réactivation.");
+      } finally {
+        setActionLoadingId(null);
+      }
+    } else {
+      const confirmed = await confirm({
+        title: "Archiver le membre",
+        message: `Voulez-vous vraiment archiver ${memberName} ?\n\nSon accès à l'application sera suspendu et il sera automatiquement retiré des inscriptions (RSVP), du covoiturage et du plan de scène de tous les événements à venir. L'historique des événements passés sera intégralement préservé.`,
+        confirmText: "Oui, archiver",
+        cancelText: "Annuler",
+        variant: "danger"
+      });
+      if (!confirmed) return;
+
+      setActionLoadingId(targetMember.id);
+      try {
+        const result = await archiveMember(targetMember.id, currentGroupId);
+        if (result.modifiedEventsCount > 0) {
+          alert(`Le membre ${memberName} a été archivé.\n${result.modifiedEventsCount} événement(s) à venir mis à jour.`);
+        } else {
+          alert(`Le membre ${memberName} a été archivé avec succès.`);
+        }
+      } catch (err) {
+        console.error("Erreur lors de l'archivage :", err);
+        alert("Une erreur est survenue lors de l'archivage.");
+      } finally {
+        setActionLoadingId(null);
+      }
+    }
+  };
 
   const handleCheckboxChange = (fieldKey) => {
     setCheckedFields(prev => ({
@@ -195,8 +253,13 @@ export default function AdminExport({ user, profileData, groupId: propGroupId, o
     });
   };
 
-  // Filtrer members list based on search bar query & role filter
+  // Filtrer members list based on search bar query, role filter & status filter
   const filteredMembers = members.filter(member => {
+    // 0. Filtre par statut d'archivage
+    const isArchived = isMemberArchived(member);
+    if (statusFilter === 'active' && isArchived) return false;
+    if (statusFilter === 'archived' && !isArchived) return false;
+
     // 1. Filtre par rôle
     if (roleFilter !== 'all') {
       const mRole = (member.role || 'membre').toLowerCase();
@@ -386,6 +449,60 @@ export default function AdminExport({ user, profileData, groupId: propGroupId, o
           </div>
 
           <div className="flex items-center gap-2 w-full md:w-auto flex-wrap">
+            {/* Barre d'onglets de statut : Actifs / Archivés / Tous */}
+            <div className="flex items-center gap-1.5 bg-cordel-master-dark/5 p-1 rounded border border-cordel-master-dark/15">
+              <button
+                type="button"
+                onClick={() => setStatusFilter('active')}
+                className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1 ${
+                  statusFilter === 'active'
+                    ? 'bg-[var(--color-cordel-vert)] text-white shadow-xs'
+                    : 'text-cordel-master-dark hover:bg-black/5'
+                }`}
+              >
+                <span>Actifs</span>
+                <span className={`text-[8.5px] px-1 py-0.2 rounded-full font-black ${
+                  statusFilter === 'active' ? 'bg-white/20 text-white' : 'bg-black/10'
+                }`}>
+                  {activeCount}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setStatusFilter('archived')}
+                className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1 ${
+                  statusFilter === 'archived'
+                    ? 'bg-cordel-wood text-white shadow-xs'
+                    : 'text-cordel-master-dark hover:bg-black/5'
+                }`}
+              >
+                <span>Archivés</span>
+                <span className={`text-[8.5px] px-1 py-0.2 rounded-full font-black ${
+                  statusFilter === 'archived' ? 'bg-white/20 text-white' : 'bg-black/10'
+                }`}>
+                  {archivedCount}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setStatusFilter('all')}
+                className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1 ${
+                  statusFilter === 'all'
+                    ? 'bg-cordel-master-dark text-white shadow-xs'
+                    : 'text-cordel-master-dark hover:bg-black/5'
+                }`}
+              >
+                <span>Tous</span>
+                <span className={`text-[8.5px] px-1 py-0.2 rounded-full font-black ${
+                  statusFilter === 'all' ? 'bg-white/20 text-white' : 'bg-black/10'
+                }`}>
+                  {members.length}
+                </span>
+              </button>
+            </div>
+
             {/* Filtre de rôle */}
             <select
               value={roleFilter}
@@ -406,7 +523,7 @@ export default function AdminExport({ user, profileData, groupId: propGroupId, o
               placeholder={t('secretariat.searchMemberDirectoryPlaceholder') || "Rechercher nom, email, instrument..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="theme-input text-xs w-full md:w-64"
+              className="theme-input text-xs w-full md:w-56"
             />
           </div>
         </div>
@@ -429,6 +546,7 @@ export default function AdminExport({ user, profileData, groupId: propGroupId, o
                   <th className="px-2 py-2 md:px-4 md:py-2.5 text-left">{t('secretariat.thPhone') || "Téléphone"}</th>
                   <th className="px-2 py-2 md:px-4 md:py-2.5 text-left">{t('secretariat.thRole') || "Rôle"}</th>
                   <th className="px-2 py-2 md:px-4 md:py-2.5 text-left">{t('secretariat.thInstruments') || "Instruments"}</th>
+                  <th className="px-2 py-2 md:px-4 md:py-2.5 text-right">{t('common.status') || "Statut & Actions"}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-cordel-master-dark/5 text-xs font-semibold text-encre-noire">
@@ -477,6 +595,49 @@ export default function AdminExport({ user, profileData, groupId: propGroupId, o
                                 </span>
                               );
                             })}
+                          </div>
+                        );
+                      })()}
+                    </td>
+                    <td className="px-2 py-2 md:px-4 md:py-2.5 whitespace-nowrap text-right">
+                      {(() => {
+                        const isArchived = isMemberArchived(member);
+                        const isLoading = actionLoadingId === member.id;
+                        return (
+                          <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                            {isArchived ? (
+                              <span className="theme-stamp-badge text-[7.5px] bg-red-600/15 border-red-700/40 text-red-900 dark:text-red-300 font-black px-1.5 py-0.5">
+                                🗄️ Archivé
+                              </span>
+                            ) : (
+                              <span className="theme-stamp-badge text-[7.5px] bg-[var(--color-cordel-vert)]/15 border-[#2d6a4f]/40 text-[var(--color-cordel-vert)] font-black px-1.5 py-0.5">
+                                Actif
+                              </span>
+                            )}
+
+                            {canCreateMember && (
+                              isArchived ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleArchiveMember(member)}
+                                  disabled={isLoading}
+                                  className="text-[9px] font-black uppercase bg-[var(--color-cordel-vert)]/10 hover:bg-[var(--color-cordel-vert)] text-[var(--color-cordel-vert)] hover:text-white border border-[#2d6a4f]/40 px-2 py-0.5 rounded shadow-xs active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer transition-colors"
+                                  title="Réintégrer ce membre dans l'association"
+                                >
+                                  {isLoading ? "..." : "Désarchiver"}
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleArchiveMember(member)}
+                                  disabled={isLoading}
+                                  className="text-[9px] font-black uppercase bg-cordel-wood/10 hover:bg-cordel-wood text-cordel-wood hover:text-white border border-cordel-wood/30 px-2 py-0.5 rounded shadow-xs active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer transition-colors"
+                                  title="Archiver ce membre et suspendre son accès"
+                                >
+                                  {isLoading ? "..." : "Archiver"}
+                                </button>
+                              )
+                            )}
                           </div>
                         );
                       })()}

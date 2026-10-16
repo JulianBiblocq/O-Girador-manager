@@ -4,6 +4,7 @@ import { db } from '../firebase';
 import useConfirm from './useConfirm';
 import { canonicalizeGroupId } from '../utils/tenantUtils';
 import { normalizeInstrumentAttribution } from '../components/inventory/inventoryConstants';
+import { isActiveMember } from '../utils/memberUtils';
 
 /**
  * Hook personnalisé pour piloter l'inventaire du matériel et des instruments d'une association.
@@ -15,6 +16,7 @@ import { normalizeInstrumentAttribution } from '../components/inventory/inventor
 export function useInventoryData(groupId, isAuthorized, t) {
   const { confirm } = useConfirm();
   const [instruments, setInstruments] = useState([]);
+  const [allUsersList, setAllUsersList] = useState([]);
   const [usersList, setUsersList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -78,7 +80,9 @@ export function useInventoryData(groupId, isAuthorized, t) {
           fetchedUsers.push({ id: docSnap.id, ...docSnap.data() });
         });
         fetchedUsers.sort((a, b) => (a.nom || '').localeCompare(b.nom || ''));
-        setUsersList(fetchedUsers);
+        setAllUsersList(fetchedUsers);
+        // Ne proposer que les membres actifs dans les listes déroulantes de prêt et d'attribution
+        setUsersList(fetchedUsers.filter(isActiveMember));
       },
       (error) => {
         console.error("useInventoryData - Erreur snapshot membres :", error);
@@ -161,13 +165,13 @@ export function useInventoryData(groupId, isAuthorized, t) {
     };
   }, [canonicalGroupId, groupId, isAuthorized]);
 
-  // Carte de résolution O(1) des noms d'utilisateurs
+  // Carte de résolution O(1) des noms d'utilisateurs (incluant l'historique)
   const usersMap = useMemo(() => {
-    return usersList.reduce((acc, u) => {
+    return (allUsersList.length > 0 ? allUsersList : usersList).reduce((acc, u) => {
       acc[u.id] = `${u.prenom} ${u.nom}`;
       return acc;
     }, {});
-  }, [usersList]);
+  }, [allUsersList, usersList]);
 
   const handleOpenAdd = useCallback(() => {
     setFormData({

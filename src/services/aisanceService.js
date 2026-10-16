@@ -71,7 +71,7 @@ export function subscribeUserAisance(userId, callback) {
     (snapshot) => {
       const aisanceMap = {};
       snapshot.docs.forEach((d) => {
-        if (d.id === 'reflexes' || d.id === 'conducteurs') return; // Réservé aux Défis Réflexes et Conducteurs à trous
+        if (d.id === 'reflexes' || d.id === 'conducteurs' || d.id === 'vocal') return; // Réservé aux Défis Réflexes, Conducteurs à trous et Profils Vocaux
         const data = d.data();
         aisanceMap[d.id] = Array.isArray(data.stagesCompleted) ? data.stagesCompleted : [];
       });

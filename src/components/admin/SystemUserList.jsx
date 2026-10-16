@@ -6,6 +6,7 @@ import { getMigratedRoleAndTags, VALID_SYSTEM_ROLES } from '../../utils/roleMigr
 import { DEFAULT_CUSTOM_CATEGORIES } from '../../utils/categoryUtils';
 import MemberProfileEditModal from './MemberProfileEditModal';
 import CordelAccordion, { CordelAccordionGroup } from '../CordelAccordion';
+import { isMemberArchived } from '../../utils/memberUtils';
 
 /**
  * Composant SystemUserList
@@ -44,7 +45,16 @@ export default function SystemUserList({
 }) {
   const [modalUser, setModalUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('active'); // 'active' | 'archived' | 'all'
   const [expandedUsers, setExpandedUsers] = useState({});
+
+  const activeCount = useMemo(() => {
+    return (usersList || []).filter(u => !isMemberArchived(u)).length;
+  }, [usersList]);
+
+  const archivedCount = useMemo(() => {
+    return (usersList || []).filter(u => isMemberArchived(u)).length;
+  }, [usersList]);
 
   const pupitresList = useMemo(() => {
     const base = (Array.isArray(instrumentsDisponibles) && instrumentsDisponibles.length > 0)
@@ -86,6 +96,10 @@ export default function SystemUserList({
   };
 
   const filteredUsers = usersList.filter(user => {
+    const isArchived = isMemberArchived(user);
+    if (statusFilter === 'active' && isArchived) return false;
+    if (statusFilter === 'archived' && !isArchived) return false;
+
     if (!searchTerm) return true;
     const term = searchTerm.toLowerCase();
     const fullName = `${user.prenom || ''} ${user.nom || ''}`.toLowerCase();
@@ -94,6 +108,60 @@ export default function SystemUserList({
 
   return (
     <>
+      {/* Barre d'onglets de statut : Actifs / Archivés / Tous */}
+      <div className="flex items-center gap-2 mb-3 select-none flex-wrap">
+        <button
+          type="button"
+          onClick={() => setStatusFilter('active')}
+          className={`px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider border transition-all cursor-pointer flex items-center gap-1.5 ${
+            statusFilter === 'active'
+              ? 'bg-[var(--color-cordel-vert)] text-white border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+              : 'bg-cordel-bg-light hover:bg-neutral-200 text-encre-noire border-cordel-master-dark/30'
+          }`}
+        >
+          <span>👥 Actifs</span>
+          <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-black ${
+            statusFilter === 'active' ? 'bg-white/25 text-white' : 'bg-black/10 text-encre-noire'
+          }`}>
+            {activeCount}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setStatusFilter('archived')}
+          className={`px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider border transition-all cursor-pointer flex items-center gap-1.5 ${
+            statusFilter === 'archived'
+              ? 'bg-cordel-wood text-white border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+              : 'bg-cordel-bg-light hover:bg-neutral-200 text-encre-noire border-cordel-master-dark/30'
+          }`}
+        >
+          <span>🗄️ Archivés</span>
+          <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-black ${
+            statusFilter === 'archived' ? 'bg-white/25 text-white' : 'bg-black/10 text-encre-noire'
+          }`}>
+            {archivedCount}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setStatusFilter('all')}
+          className={`px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider border transition-all cursor-pointer flex items-center gap-1.5 ${
+            statusFilter === 'all'
+              ? 'bg-cordel-master-dark text-white border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+              : 'bg-cordel-bg-light hover:bg-neutral-200 text-encre-noire border-cordel-master-dark/30'
+          }`}
+        >
+          <span>Tous</span>
+          <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-black ${
+            statusFilter === 'all' ? 'bg-white/25 text-white' : 'bg-black/10 text-encre-noire'
+          }`}>
+            {usersList.length}
+          </span>
+        </button>
+      </div>
+
       <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mb-4 bg-cordel-bg-light p-3 rounded border border-cordel-master-dark/20">
         <div className="flex-1 w-full relative">
           <input 
@@ -165,7 +233,7 @@ export default function SystemUserList({
             orchestrador: draftUserAppRights.orchestrador !== undefined ? draftUserAppRights.orchestrador : currentAppRights.orchestrador
           };
 
-          const isArchived = userItem.statutActuel === 'archived';
+          const isArchived = isMemberArchived(userItem);
           const isNewMember = userItem.isNew === true;
 
           const isQuotaReached = (app) => {

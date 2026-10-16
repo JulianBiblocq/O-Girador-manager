@@ -15,6 +15,8 @@ import { getMigratedRoleAndTags, VALID_SYSTEM_ROLES } from '../utils/roleMigrati
 import { telemetryService } from '../services/telemetryService';
 import { findDuplicateHelloAssoTransactions } from '../utils/treasuryDeduplication';
 import { purgeAndRebuildHelloAssoTransactions } from '../services/helloAssoService';
+import { isMemberArchived } from '../utils/memberUtils';
+import { archiveMember, unarchiveMember } from '../services/memberArchiveService';
 
 const DEFAULT_FIELDS_CONFIG = {
   telephone: { key: "telephone", label: "Téléphone", enabled: true, filledBy: "member", isRequired: false },
@@ -110,7 +112,7 @@ export default function SystemAdminPanel({ user, profileData, groupId: propGroup
           return;
         }
 
-        const isArchived = uData.isArchived === true || uData.statutActuel === 'inactive';
+        const isArchived = isMemberArchived(uData);
         if (isArchived) {
           fetchedUsers.push({
             id: docSnap.id,
@@ -495,9 +497,13 @@ export default function SystemAdminPanel({ user, profileData, groupId: propGroup
 
   const handleToggleArchive = async (targetUserId, shouldReactivate) => {
     const actionText = shouldReactivate ? "réactiver" : "archiver";
+    const message = shouldReactivate 
+      ? "Voulez-vous vraiment réactiver ce membre ? Son accès à l'application sera rétabli."
+      : "Voulez-vous vraiment archiver ce membre ?\n\nSon accès à l'application sera suspendu et il sera automatiquement retiré des inscriptions (RSVP), du covoiturage et du plan de scène de tous les événements à venir. L'historique des événements passés sera intégralement conservé.";
+
     const confirmation = await confirm({
       title: shouldReactivate ? "Réactiver le membre" : "Archiver le membre",
-      message: `Voulez-vous vraiment ${actionText} ce membre ?`,
+      message,
       confirmText: shouldReactivate ? "Oui, réactiver" : "Oui, archiver",
       cancelText: "Annuler",
       variant: shouldReactivate ? "warning" : "danger"
@@ -506,15 +512,21 @@ export default function SystemAdminPanel({ user, profileData, groupId: propGroup
 
     setSavingId(targetUserId);
     try {
-      const userRef = doc(db, 'users', targetUserId);
-      await updateDoc(userRef, {
-        statutActuel: shouldReactivate ? 'active' : 'archived'
-      });
-      alert(`Membre ${shouldReactivate ? 'réactivé' : 'archivé'} avec succès.`);
+      if (shouldReactivate) {
+        await unarchiveMember(targetUserId);
+        alert("Membre réactivé avec succès.");
+      } else {
+        const result = await archiveMember(targetUserId, currentGroupId || profileData?.groupId);
+        if (result.modifiedEventsCount > 0) {
+          alert(`Membre archivé avec succès.\n${result.modifiedEventsCount} événement(s) à venir mis à jour.`);
+        } else {
+          alert("Membre archivé avec succès.");
+        }
+      }
     } catch (error) {
       console.error("SystemAdminPanel - Erreur lors de l'archivage/réactivation :", error);
       telemetryService.logError(error, 'SystemAdminPanel_ToggleArchive', currentGroupId || profileData?.groupId);
-      alert("Une erreur est survenue.");
+      alert("Une erreur est survenue lors de l'opération.");
     } finally {
       setSavingId(null);
     }

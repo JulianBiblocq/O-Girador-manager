@@ -4,11 +4,13 @@ import PieceVideoSection from '../repertoire/PieceVideoSection';
 import PieceQuizModal from './PieceQuizModal';
 import { useTranslation } from '../LanguageContext';
 import { launchGlobalSequencer } from '../../utils/trainingLauncher';
+import { getEcosystemUrl } from '../../constants/ecosystemUrls';
+import { launchCrossApp } from '../../utils/crossAppAuth';
 
 /**
  * Contenu déplié de la carte morceau pour adhérents (lecture seule stricte).
- * Affiche les notes, lecteurs audios, toadas, tablatures, danse, culture,
- * lecteur vidéo multi-pupitres avec smart-default, entraînements et quiz de révision.
+ * Affiche notes, audio, toadas, tablatures, danse, culture, signaux,
+ * passerelle Atelier Vocal, vidéos, entraînements et quiz.
  */
 export default function MemberPieceUnfoldedContent({
   piece,
@@ -28,24 +30,27 @@ export default function MemberPieceUnfoldedContent({
   const [isQuizModalOpen, setIsQuizModalOpen] = useState(false);
   const audioUrl = piece.activeAudioUrl || piece.audioUrl;
   const hasToada = Boolean(piece.activeToada && (
-    (typeof piece.activeToada.paroles === 'string' && piece.activeToada.paroles.trim() !== '') ||
-    (typeof piece.activeToada.texte === 'string' && piece.activeToada.texte.trim() !== '') ||
-    (Array.isArray(piece.activeToada.strophes) && piece.activeToada.strophes.length > 0) ||
-    (typeof piece.activeToada.titre === 'string' && piece.activeToada.titre.trim() !== '')
+    piece.activeToada.paroles?.trim() || piece.activeToada.texte?.trim() ||
+    piece.activeToada.strophes?.length || piece.activeToada.titre?.trim()
   ));
   const cultureDocs = Array.isArray(piece.activeCultureDocs) && piece.activeCultureDocs.length > 0
     ? piece.activeCultureDocs : (piece.activeCultureDoc ? [piece.activeCultureDoc] : []);
-  const hasCulture = Boolean(cultureDocs.length > 0 || (Array.isArray(piece.cultureDocIds) && piece.cultureDocIds.length > 0) || piece.cultureDocId);
-  const hasSignals = Boolean((Array.isArray(piece.sinaisDoMestre) && piece.sinaisDoMestre.length > 0) || (Array.isArray(piece.activeSinaisDoMestre) && piece.activeSinaisDoMestre.length > 0) || (Array.isArray(piece.signalIds) && piece.signalIds.length > 0));
+  const hasCulture = Boolean(cultureDocs.length > 0 || piece.cultureDocIds?.length || piece.cultureDocId);
+  const hasSignals = Boolean(piece.sinaisDoMestre?.length || piece.activeSinaisDoMestre?.length || piece.signalIds?.length);
+  const isSongPiece = piece.type === 'song' || piece.typeMorceau === 'song' || hasToada || Boolean(piece.toadaId || piece.toadaDocId || piece.toada);
+
+  const handleOpenVocalLab = () => {
+    const songId = encodeURIComponent(piece.id || '');
+    launchCrossApp(getEcosystemUrl('vocalLab', `?mode=eleve&songId=${songId}`), { appLabel: "l'Atelier Vocal" });
+  };
 
   return (
     <div className="p-3.5 flex flex-col gap-3 text-left">
-      {/* 1. {t('pedagogy.modals.notesDuMestre')} */}
+      {/* 1. Notes du Mestre */}
       {piece.notes && piece.notes.trim() !== '' && (
         <div className="p-2.5 rounded bg-amber-50/80 border border-dashed border-amber-300 text-left">
           <span className="text-[9.5px] uppercase font-black text-amber-950 flex items-center gap-1 mb-1">
-            <span>📝</span>
-            <span>{t('pedagogy.modals.notesDuMestre')}</span>
+            <span>📝</span><span>{t('pedagogy.modals.notesDuMestre')}</span>
           </span>
           <p className="text-xs text-amber-900 whitespace-pre-wrap leading-relaxed">{piece.notes}</p>
         </div>
@@ -62,135 +67,81 @@ export default function MemberPieceUnfoldedContent({
 
       {/* 3. Passerelles multimédias épurées */}
       <div className="flex flex-wrap items-center gap-2">
-        {/* Passerelle Paroles (lecture complète directe) */}
+        {/* Paroles */}
         {hasToada && (
-          <button
-            type="button"
-            onClick={() => onOpenToada && onOpenToada(piece.activeToada, piece)}
-            className="px-2.5 py-1 text-xs font-bold rounded bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-950 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all select-none"
-            title={t('pedagogy.modals.consulterLesParolesCompletes')}
-          >
-            <span>🗣️</span>
-            <span>{t('repertoire.lyricsTab') || t('pedagogy.modals.paroles')}{piece.activeToada?.titre ? ` (${piece.activeToada.titre})` : ''}</span>
+          <button type="button" onClick={() => onOpenToada && onOpenToada(piece.activeToada, piece)} className="px-2.5 py-1 text-xs font-bold rounded bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-950 flex items-center gap-1.5 cursor-pointer shadow-2xs select-none" title={t('pedagogy.modals.consulterLesParolesCompletes')}>
+            <span>🗣️</span><span>{t('repertoire.lyricsTab') || t('pedagogy.modals.paroles')}{piece.activeToada?.titre ? ` (${piece.activeToada.titre})` : ''}</span>
           </button>
         )}
 
-        {/* Passerelle Fiches Culturelles (lecture seule avec support direct multi-fiches) */}
+        {/* Fiches Culturelles */}
         {hasCulture && (
           cultureDocs.length > 1 ? (
             <div className="flex flex-wrap items-center gap-1.5">
               {cultureDocs.map((cDoc, cIdx) => (
-                <button
-                  key={cDoc.id || cIdx}
-                  type="button"
-                  onClick={() => onOpenCulture && onOpenCulture(cDoc, piece, cultureDocs)}
-                  className="px-2.5 py-1 text-xs font-bold rounded bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-900 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all select-none"
-                  title={`Consulter la fiche culturelle : ${cDoc.titre || cDoc.name || 'Culture'}`}
-                >
-                  <span>📖</span>
-                  <span className="truncate max-w-[140px]">{cDoc.titre || cDoc.name || `Culture #${cIdx + 1}`}</span>
-                  <span className="text-[9px] opacity-70">↗</span>
+                <button key={cDoc.id || cIdx} type="button" onClick={() => onOpenCulture && onOpenCulture(cDoc, piece, cultureDocs)} className="px-2.5 py-1 text-xs font-bold rounded bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-900 flex items-center gap-1.5 cursor-pointer shadow-2xs select-none" title={`Consulter la fiche culturelle : ${cDoc.titre || cDoc.name || 'Culture'}`}>
+                  <span>📖</span><span className="truncate max-w-[140px]">{cDoc.titre || cDoc.name || `Culture #${cIdx + 1}`}</span><span className="text-[9px] opacity-70">↗</span>
                 </button>
               ))}
             </div>
           ) : (
-            <button
-              type="button"
-              onClick={() => onOpenCulture && onOpenCulture(cultureDocs[0] || null, piece, cultureDocs)}
-              className="px-2.5 py-1 text-xs font-bold rounded bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-900 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all select-none"
-              title={t('pedagogy.modals.consulterLaFicheCulturelle')}
-            >
-              <span>📖</span>
-              <span>
-                {t('repertoire.cultureTab') || t('pedagogy.modals.cultureHistoire')}
-                {(cultureDocs[0]?.titre || cultureDocs[0]?.name)
-                  ? ` : ${cultureDocs[0].titre || cultureDocs[0].name}`
-                  : ''}
-              </span>
+            <button type="button" onClick={() => onOpenCulture && onOpenCulture(cultureDocs[0] || null, piece, cultureDocs)} className="px-2.5 py-1 text-xs font-bold rounded bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-900 flex items-center gap-1.5 cursor-pointer shadow-2xs select-none" title={t('pedagogy.modals.consulterLaFicheCulturelle')}>
+              <span>📖</span><span>{t('repertoire.cultureTab') || t('pedagogy.modals.cultureHistoire')}{(cultureDocs[0]?.titre || cultureDocs[0]?.name) ? ` : ${cultureDocs[0].titre || cultureDocs[0].name}` : ''}</span>
             </button>
           )
         )}
 
-        {/* Passerelle Tablature */}
+        {/* Tablature */}
         {piece.hasTablature && (
-          <button
-            type="button"
-            onClick={() => onOpenTablature && onOpenTablature(piece)}
-            className="px-2.5 py-1 text-xs font-bold rounded bg-stone-50 hover:bg-stone-100 border border-stone-300 text-stone-900 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all select-none"
-            title={t('pedagogy.modals.consulterLaTablatureComplete')}
-          >
-            <span>📄</span>
-            <span>{t('pedagogy.modals.tablature')}</span>
+          <button type="button" onClick={() => onOpenTablature && onOpenTablature(piece)} className="px-2.5 py-1 text-xs font-bold rounded bg-stone-50 hover:bg-stone-100 border border-stone-300 text-stone-900 flex items-center gap-1.5 cursor-pointer shadow-2xs select-none" title={t('pedagogy.modals.consulterLaTablatureComplete')}>
+            <span>📄</span><span>{t('pedagogy.modals.tablature')}</span>
           </button>
         )}
 
-        {/* Passerelle Signes du Mestre (affiché UNIQUEMENT si signaux déclarés) */}
+        {/* Signes du Mestre */}
         {hasSignals && (
-          <button
-            type="button"
-            onClick={() => onOpenSignals && onOpenSignals(piece)}
-            className="px-2.5 py-1 text-xs font-bold rounded bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-950 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all select-none"
-            title={t('pedagogy.modals.consulterLAideMemoire')}
-          >
-            <span>🖐️</span>
-            <span>{t('repertoire.signalsTab') || t('pedagogy.modals.signesDuMestre')}</span>
+          <button type="button" onClick={() => onOpenSignals && onOpenSignals(piece)} className="px-2.5 py-1 text-xs font-bold rounded bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-950 flex items-center gap-1.5 cursor-pointer shadow-2xs select-none" title={t('pedagogy.modals.consulterLAideMemoire')}>
+            <span>🖐️</span><span>{t('repertoire.signalsTab') || t('pedagogy.modals.signesDuMestre')}</span>
           </button>
         )}
 
-        {/* Danse / Chorégraphie */}
+        {/* Danse */}
         {piece.activeChoreography && (
           <div className="px-2.5 py-1 text-xs font-bold rounded bg-purple-50 border border-purple-200 text-purple-900 flex items-center gap-1.5 shadow-2xs select-none">
-            <span>💃</span>
-            <span>{t('pedagogy.modals.danse')} {piece.activeChoreography.nom || piece.activeChoreography.titre || t('pedagogy.modals.choregraphie')}</span>
+            <span>💃</span><span>{t('pedagogy.modals.danse')} {piece.activeChoreography.nom || piece.activeChoreography.titre || t('pedagogy.modals.choregraphie')}</span>
           </div>
         )}
 
-        {/* Passerelle Séquenceur — Écoute globale */}
+        {/* Séquenceur */}
         {piece.sequenceurId && (
-          <button
-            type="button"
-            onClick={() => launchGlobalSequencer(piece.sequenceurId, { baseUrl: sequenceurUrl })}
-            className="px-2.5 py-1 text-xs font-bold rounded bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-950 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all select-none"
-            title={t('repertoire.tooltipListenSequencer')}
-          >
-            <span>🥁</span>
-            <span>{t('repertoire.btnListenSequencer')}</span>
+          <button type="button" onClick={() => launchGlobalSequencer(piece.sequenceurId, { baseUrl: sequenceurUrl })} className="px-2.5 py-1 text-xs font-bold rounded bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-950 flex items-center gap-1.5 cursor-pointer shadow-2xs select-none" title={t('repertoire.tooltipListenSequencer')}>
+            <span>🥁</span><span>{t('repertoire.btnListenSequencer')}</span>
           </button>
         )}
 
-        {/* Passerelle Quiz Focus Répertoire */}
-        <button
-          type="button"
-          onClick={() => (onOpenQuiz ? onOpenQuiz(piece) : setIsQuizModalOpen(true))}
-          className="px-2.5 py-1 text-xs font-bold rounded bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-950 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all select-none"
-          title={t('pedagogy.modals.lancerLeQcmFocus')}
-        >
-          <span>🎯</span>
-          <span>{t('repertoire.revisePiece') || t('pedagogy.modals.reviserCeMorceau')}</span>
+        {/* Passerelle Atelier Vocal — Mode élève & ciblage chant */}
+        {isSongPiece && (
+          <button type="button" onClick={handleOpenVocalLab} className="px-2.5 py-1 text-xs font-bold rounded bg-orange-50 hover:bg-orange-100 border border-orange-300 text-orange-950 flex items-center gap-1.5 cursor-pointer shadow-2xs select-none" title={t('repertoire.tooltipVocalLab') || "Ouvrir l'Atelier Vocal en ligne"}>
+            <span>🎙️</span><span>{t('repertoire.btnVocalLab') || "Atelier Vocal / S'entraîner au chant"}</span>
+          </button>
+        )}
+
+        {/* Quiz Focus Répertoire */}
+        <button type="button" onClick={() => (onOpenQuiz ? onOpenQuiz(piece) : setIsQuizModalOpen(true))} className="px-2.5 py-1 text-xs font-bold rounded bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-950 flex items-center gap-1.5 cursor-pointer shadow-2xs select-none" title={t('pedagogy.modals.lancerLeQcmFocus')}>
+          <span>🎯</span><span>{t('repertoire.revisePiece') || t('pedagogy.modals.reviserCeMorceau')}</span>
         </button>
       </div>
 
-      {/* 4. Lecteur vidéo multi-pupitres avec smart-default adhérent */}
-      <PieceVideoSection
-        videos={piece.videos}
-        defaultVideoUrl={piece.videoUrl || piece.activeVideoUrl || piece.youtubeUrl}
-        userInstrument={profileData?.instrumentPrincipal || profileData?.instrument}
-      />
+      {/* 4. Lecteur vidéo multi-pupitres */}
+      <PieceVideoSection videos={piece.videos} defaultVideoUrl={piece.videoUrl || piece.activeVideoUrl || piece.youtubeUrl} userInstrument={profileData?.instrumentPrincipal || profileData?.instrument} />
 
-      {/* 5. Bloc Entraînements et Paliers d'Aisance */}
-      <PieceAisanceSection
-        piece={piece} trainings={trainings} aisanceMap={aisanceMap}
-        userId={userId} groupId={groupId} sequenceurUrl={sequenceurUrl} profileData={profileData}
-      />
+      {/* 5. Entraînements et Paliers d'Aisance */}
+      <PieceAisanceSection piece={piece} trainings={trainings} aisanceMap={aisanceMap} userId={userId} groupId={groupId} sequenceurUrl={sequenceurUrl} profileData={profileData} />
 
       {/* 6. Modale QCM Focus Répertoire */}
       {isQuizModalOpen && (
-        <PieceQuizModal
-          isOpen={isQuizModalOpen} onClose={() => setIsQuizModalOpen(false)}
-          piece={piece} groupId={groupId} profileData={profileData}
-        />
+        <PieceQuizModal isOpen={isQuizModalOpen} onClose={() => setIsQuizModalOpen(false)} piece={piece} groupId={groupId} profileData={profileData} />
       )}
     </div>
   );
 }
-

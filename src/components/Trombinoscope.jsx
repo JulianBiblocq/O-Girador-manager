@@ -32,6 +32,7 @@ import {
 import { useTenantContext } from '../context/TenantContext';
 import useGroupContext from '../hooks/useGroupContext';
 import { canonicalizeGroupId } from '../utils/tenantUtils';
+import { isMemberArchived, isActiveMember } from '../utils/memberUtils';
 
 export default function Trombinoscope({ user, profileData, groupId: propGroupId, onBack, onContactUser }) {
   const { t, locale } = useTranslation();
@@ -322,7 +323,8 @@ export default function Trombinoscope({ user, profileData, groupId: propGroupId,
     let count = 0;
 
     members.forEach((member) => {
-      if (member.statutActuel === 'archived') return;
+      // Masquer strictement les membres archivés
+      if (isMemberArchived(member)) return;
 
       // Expansion automatique des étiquettes (Présidence -> Bureau -> C.A.)
       const effectiveTags = getEffectiveMemberTags(member);
@@ -385,7 +387,7 @@ export default function Trombinoscope({ user, profileData, groupId: propGroupId,
 
   // Détection conditionnelle stricte : y a-t-il des musiciens extérieurs / renforts dans l'association ?
   const hasRenforts = useMemo(() => {
-    return (members || []).some((m) => m.statutActuel !== 'archived' && isRenfortMember(m));
+    return (members || []).some((m) => isActiveMember(m) && isRenfortMember(m));
   }, [members]);
 
   // Détection des membres en cours d'orientation

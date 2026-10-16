@@ -14,6 +14,8 @@ import UserStagePositionBanner from './stage-layout/UserStagePositionBanner';
 import StageVisualGrid from './stage-layout/StageVisualGrid';
 import StageLayoutFullscreenModal from './stage-layout/StageLayoutFullscreenModal';
 import { toggleStaggeredRow } from './stage-layout/stageLayoutUtils';
+import { isMemberArchived } from '../../utils/memberUtils';
+import { isPastEvent } from '../../utils/dateUtils';
 
 export default function EventStageLayoutSection({
   event,
@@ -94,18 +96,27 @@ export default function EventStageLayoutSection({
   }, [event.id, event.stageLayout, event.isStageLayoutPublished]);
 
   // Extract present members and external guests
+  const isFuture = !isPastEvent(event);
   const presentMembers = [
     ...(event.inscriptions || [])
-      .filter((ins) => ins.status === 'present')
+      .filter((ins) => {
+        if (ins.status !== 'present') return false;
+        // Filet de sécurité défensif : exclure les membres archivés sur les événements futurs
+        if (isFuture && Array.isArray(allUsers)) {
+          const userInfo = allUsers.find((u) => u.id === ins.userId || u.uid === ins.userId);
+          if (userInfo && isMemberArchived(userInfo)) return false;
+        }
+        return true;
+      })
       .map((ins) => {
-        const userInfo = allUsers.find((u) => u.id === ins.userId) || {};
+        const userInfo = (allUsers || []).find((u) => u.id === ins.userId || u.uid === ins.userId) || {};
         const rawInst = resolveParticipantInstrument(ins, userInfo);
         const instrument = rawInst === 'En attente'
           ? 'En attente'
           : (resolvePupitreForInstrument(rawInst) || rawInst);
         return {
           id: ins.userId,
-          name: ins.userName || `${userInfo.prenom} ${userInfo.nom}`,
+          name: ins.userName || `${userInfo.prenom || ''} ${userInfo.nom || ''}`.trim() || 'Membre',
           photoURL: userInfo.photoURL || '',
           instrument
         };

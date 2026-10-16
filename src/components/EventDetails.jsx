@@ -35,6 +35,8 @@ import useHardwareBack from '../hooks/useHardwareBack';
 import { triggerEventStatusAutomation } from '../utils/automationEngine';
 import { canonicalizeGroupId } from '../utils/tenantUtils';
 import { parseDateLinear, formatGoogleCalendarDate, openGoogleCalendar } from '../utils/calendarUtils';
+import { isMemberArchived } from '../utils/memberUtils';
+import { isPastEvent } from '../utils/dateUtils';
 
 export default function EventDetails({ event, user, profileData, groupId: propGroupId, onNavigateToView, onClose, onPrev, onNext, viewMode: _viewMode, setViewMode: _setViewMode, onGoToStageLayoutEditor }) {
   const { t } = useTranslation();
@@ -307,6 +309,78 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
 
   const isPrestationRestricted = isMusicLevelRestricted;
 
+  // Synchronisation en temps réel de la liste des utilisateurs de l'association
+  useEffect(() => {
+    const rawGroupId = targetEvent?.groupId || event?.groupId || profileData?.groupId;
+    if (!rawGroupId) return;
+    const canonicalGroup = canonicalizeGroupId(rawGroupId);
+    const groupVariants = Array.from(new Set([
+      canonicalGroup,
+      rawGroupId,
+      canonicalGroup?.toLowerCase(),
+      rawGroupId?.toLowerCase()
+    ].filter(Boolean)));
+
+    const q = groupVariants.length === 1
+      ? query(collection(db, 'users'), where('groupId', '==', groupVariants[0]))
+      : query(collection(db, 'users'), where('groupId', 'in', groupVariants));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const usersList = [];
+      snapshot.forEach(docSnap => {
+        usersList.push({ id: docSnap.id, ...docSnap.data() });
+      });
+      setAllUsers(usersList);
+    }, (err) => {
+      console.error("EventDetails - Erreur snapshot users :", err);
+    });
+    return () => unsubscribe();
+  }, [targetEvent?.groupId, event?.groupId, profileData?.groupId]);
+
+  // Liste enrichie avec garantie de présence du profil utilisateur local
+  const effectiveAllUsers = useMemo(() => {
+    const list = [...allUsers];
+    if (user?.uid && profileData) {
+      const idx = list.findIndex(u => u.id === user.uid || u.uid === user.uid);
+      const myProfile = { id: user?.uid, uid: user?.uid, ...profileData, photoURL: profileData?.photoURL || user?.photoURL };
+      if (idx >= 0) {
+        list[idx] = { ...myProfile, ...list[idx], photoURL: list[idx].photoURL || profileData?.photoURL || user?.photoURL };
+      } else {
+        list.push(myProfile);
+      }
+    }
+    return list;
+  }, [allUsers, user?.uid, user?.photoURL, profileData]);
+
+  // Dictionnaire indexé des utilisateurs pour accès O(1)
+  const usersMap = useMemo(() => {
+    const map = {};
+    (effectiveAllUsers || []).forEach((u) => {
+      if (u.id) map[u.id] = u;
+      if (u.uid) map[u.uid] = u;
+    });
+    return map;
+  }, [effectiveAllUsers]);
+
+  // Détection d'événement futur pour application des filtres de sécurité sur les membres archivés
+  const isFutureEvent = !isPastEvent(targetEvent);
+
+  // Filet de sécurité défensif : sur les événements futurs, masquer les membres archivés
+  const sanitizedInscriptions = useMemo(() => {
+    const raw = targetEvent?.inscriptions || [];
+    if (!isFutureEvent) return raw;
+    return raw.filter(ins => {
+      const u = usersMap[ins.userId] || (effectiveAllUsers || []).find(userItem => (userItem.id && userItem.id === ins.userId) || (userItem.uid && userItem.uid === ins.userId) || (ins.email && userItem.email === ins.email));
+      if (u && isMemberArchived(u)) return false;
+      return true;
+    });
+  }, [targetEvent?.inscriptions, isFutureEvent, usersMap, effectiveAllUsers]);
+
+  const sanitizedEvent = useMemo(() => ({
+    ...targetEvent,
+    inscriptions: sanitizedInscriptions
+  }), [targetEvent, sanitizedInscriptions]);
+
   // useEventRSVP hook
   const {
     status,
@@ -350,7 +424,7 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
     handleFamilyMemberStatusChange,
     handleFamilyMemberInstrumentChange,
     handleFamilySave
-  } = useEventRSVP(targetEvent, user, profileData, allUsers, isMusicLevelRestricted, setToastMessage);
+  } = useEventRSVP(sanitizedEvent, user, profileData, effectiveAllUsers, isMusicLevelRestricted, setToastMessage);
 
   // useEventCarpool hook
   const {
@@ -476,58 +550,7 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
     return () => unsubscribe();
   }, [event.groupId]);
 
-  // Synchronisation en temps réel de la liste des utilisateurs de l'association
-  useEffect(() => {
-    const rawGroupId = targetEvent?.groupId || event?.groupId || profileData?.groupId;
-    if (!rawGroupId) return;
-    const canonicalGroup = canonicalizeGroupId(rawGroupId);
-    const groupVariants = Array.from(new Set([
-      canonicalGroup,
-      rawGroupId,
-      canonicalGroup?.toLowerCase(),
-      rawGroupId?.toLowerCase()
-    ].filter(Boolean)));
 
-    const q = groupVariants.length === 1
-      ? query(collection(db, 'users'), where('groupId', '==', groupVariants[0]))
-      : query(collection(db, 'users'), where('groupId', 'in', groupVariants));
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const usersList = [];
-      snapshot.forEach(docSnap => {
-        usersList.push({ id: docSnap.id, ...docSnap.data() });
-      });
-      setAllUsers(usersList);
-    }, (err) => {
-      console.error("EventDetails - Erreur snapshot users :", err);
-    });
-    return () => unsubscribe();
-  }, [targetEvent?.groupId, event?.groupId, profileData?.groupId]);
-
-  // Liste enrichie avec garantie de présence du profil utilisateur local
-  const effectiveAllUsers = useMemo(() => {
-    const list = [...allUsers];
-    if (user?.uid && profileData) {
-      const idx = list.findIndex(u => u.id === user.uid || u.uid === user.uid);
-      const myProfile = { id: user?.uid, uid: user?.uid, ...profileData, photoURL: profileData?.photoURL || user?.photoURL };
-      if (idx >= 0) {
-        list[idx] = { ...myProfile, ...list[idx], photoURL: list[idx].photoURL || profileData?.photoURL || user?.photoURL };
-      } else {
-        list.push(myProfile);
-      }
-    }
-    return list;
-  }, [allUsers, user?.uid, user?.photoURL, profileData]);
-
-  // Dictionnaire indexé des utilisateurs pour accès O(1)
-  const usersMap = useMemo(() => {
-    const map = {};
-    (effectiveAllUsers || []).forEach((u) => {
-      if (u.id) map[u.id] = u;
-      if (u.uid) map[u.uid] = u;
-    });
-    return map;
-  }, [effectiveAllUsers]);
 
   // Résolution multi-critères fiable et anti-scintillement des informations de chaque participant
   const resolveUserInfo = useCallback((userId, userName = '') => {
@@ -1171,8 +1194,8 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
   // Regrouper les présents par pupitre unifié pour la liste de présence
   const presentsByInstrument = useMemo(() => {
     const grouped = {};
-    if (targetEvent.inscriptions && targetEvent.inscriptions.length > 0) {
-      targetEvent.inscriptions.forEach((ins) => {
+    if (sanitizedEvent.inscriptions && sanitizedEvent.inscriptions.length > 0) {
+      sanitizedEvent.inscriptions.forEach((ins) => {
         if (ins.status === 'present') {
           const userInfo = resolveUserInfo(ins.userId, ins.userName);
           // Résolution en cascade : date (instrumentChoisi/assignedInstrument) -> profil users (instrumentPrincipal/instrument) -> 'En attente'
@@ -1194,8 +1217,8 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
     }
 
     // Ajouter les invités externes à la liste groupée par pupitre
-    if (targetEvent.invitesExternes && targetEvent.invitesExternes.length > 0) {
-      targetEvent.invitesExternes.forEach((invite) => {
+    if (sanitizedEvent.invitesExternes && sanitizedEvent.invitesExternes.length > 0) {
+      sanitizedEvent.invitesExternes.forEach((invite) => {
         const rawInst = invite.instrument || invite.fonction || 'Autre';
         const resolvedPupitre = resolvePupitreForInstrument(rawInst, pupitresList, linkedInstruments) || rawInst;
         if (!grouped[resolvedPupitre]) {
@@ -1212,13 +1235,17 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
       });
     }
     return grouped;
-  }, [targetEvent.inscriptions, targetEvent.invitesExternes, resolveUserInfo, pupitresList, linkedInstruments]);
+  }, [sanitizedEvent.inscriptions, sanitizedEvent.invitesExternes, resolveUserInfo, pupitresList, linkedInstruments]);
 
   // Extract convoi drivers and individual drivers
   const convoiDrivers = [];
   if (targetEvent.covoiturage?.voitures) {
     targetEvent.covoiturage.voitures.forEach(voiture => {
       if (voiture.chauffeurId && voiture.chauffeurNom) {
+        if (isFutureEvent) {
+          const chUser = usersMap[voiture.chauffeurId] || (effectiveAllUsers || []).find(u => u.id === voiture.chauffeurId || u.uid === voiture.chauffeurId);
+          if (chUser && isMemberArchived(chUser)) return;
+        }
         const carStatus = calculateCarStatus(voiture, { enableCarpoolReimbursement, reimbursementRule });
         convoiDrivers.push({
           id: voiture.chauffeurId,
@@ -1231,8 +1258,8 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
 
   const convoiChauffeurIds = new Set(convoiDrivers.map(d => d.id));
   const individualDrivers = [];
-  if (targetEvent.inscriptions) {
-    targetEvent.inscriptions.forEach(ins => {
+  if (sanitizedEvent.inscriptions) {
+    sanitizedEvent.inscriptions.forEach(ins => {
       if (ins.status === 'present' && ins.transport === 'propre') {
         if (!convoiChauffeurIds.has(ins.userId)) {
           individualDrivers.push({
@@ -1289,12 +1316,14 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
   };
 
   const unregisteredUsers = useMemo(() => {
-    return effectiveAllUsers
+    return (effectiveAllUsers || [])
       .filter(u => {
         if (!u) return false;
+        // Filet de sécurité défensif : sur les événements futurs, exclure les membres archivés
+        if (isFutureEvent && isMemberArchived(u)) return false;
         const hasIdentity = Boolean(u.prenom || u.nom || u.displayName || u.email);
         if (!hasIdentity) return false;
-        const currentInscription = (targetEvent.inscriptions || []).find(ins => 
+        const currentInscription = (sanitizedEvent.inscriptions || []).find(ins => 
           ins.userId === u.id || ins.userId === u.uid || 
           (u.email && ins.email && ins.email === u.email)
         );
@@ -1302,7 +1331,7 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
         return !currentInscription || currentInscription.status !== 'present';
       })
       .map(u => {
-        const currentInscription = (targetEvent.inscriptions || []).find(ins => 
+        const currentInscription = (sanitizedEvent.inscriptions || []).find(ins => 
           ins.userId === u.id || ins.userId === u.uid || 
           (u.email && ins.email && ins.email === u.email)
         );
@@ -1313,11 +1342,11 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
         };
       })
       .sort((a, b) => a.displayNameFormatted.localeCompare(b.displayNameFormatted));
-  }, [effectiveAllUsers, targetEvent.inscriptions]);
+  }, [effectiveAllUsers, sanitizedEvent.inscriptions, isFutureEvent]);
 
   // Calcul des membres de l'association n'ayant pas encore répondu (aucun vote/inscription)
   const unansweredUsers = useMemo(() => {
-    const inscriptions = targetEvent?.inscriptions || [];
+    const inscriptions = sanitizedEvent?.inscriptions || [];
     const respondedUserIds = new Set();
     const respondedUserEmails = new Set();
     const respondedUserNames = new Set();
@@ -1331,6 +1360,8 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
     return (effectiveAllUsers || [])
       .filter(u => {
         if (!u) return false;
+        // Sur les événements futurs, ne pas comptabiliser les archivés dans les non-répondus
+        if (isFutureEvent && isMemberArchived(u)) return false;
         const hasIdentity = Boolean(u.prenom || u.nom || u.displayName || u.email);
         if (!hasIdentity) return false;
 
@@ -1348,7 +1379,7 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
         displayNameFormatted: formatUserDisplayName(u)
       }))
       .sort((a, b) => a.displayNameFormatted.localeCompare(b.displayNameFormatted));
-  }, [targetEvent?.inscriptions, effectiveAllUsers]);
+  }, [sanitizedEvent?.inscriptions, effectiveAllUsers, isFutureEvent]);
 
   const formatEventHeaderDate = (startDateStr, endDateStr, horaires) => {
     if (!startDateStr) return '';
@@ -1862,7 +1893,7 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
             activeTab={activeTab}
             setActiveTab={handleSelectTab}
             canAccessAdminTab={canAccessAdminTab}
-            attendeesCount={((event.inscriptions || []).filter(ins => ins.status === 'present').length) + ((event.invitesExternes || []).length)}
+            attendeesCount={((sanitizedEvent.inscriptions || []).filter(ins => ins.status === 'present').length) + ((sanitizedEvent.invitesExternes || []).length)}
             carsCount={(event.covoiturage?.voitures || []).length}
             hasProgram={Boolean(
               (event.linkedPatterns && event.linkedPatterns.length > 0) ||
@@ -1877,7 +1908,7 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
           <div className="mt-2">
             {activeTab === 'rsvp' && (
               <TabRsvp
-                event={activeEvent || event}
+                event={sanitizedEvent}
                 user={user}
                 profileData={profileData}
                 status={status}
@@ -1942,7 +1973,7 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
 
             {activeTab === 'logistics' && (
               <TabLogistics
-                event={activeEvent || event}
+                event={sanitizedEvent}
                 user={user}
                 profileData={profileData}
                 isAuthorized={isAuthorized}
@@ -2029,7 +2060,7 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
 
             {activeTab === 'program' && (
               <TabProgram
-                event={activeEvent || event}
+                event={sanitizedEvent}
                 activeEvent={activeEvent}
                 user={user}
                 profileData={profileData}

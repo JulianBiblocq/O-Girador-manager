@@ -21,6 +21,8 @@ import { useDancadorChoreographies } from '../../hooks/useDancadorData';
 import { useRepertoireVaralDocs } from '../../hooks/useRepertoireVaralDocs';
 import { openSequencerWithCrossApp } from '../../utils/sequencerUrlUtils';
 import { launchGlobalSequencer } from '../../utils/trainingLauncher';
+import { getEcosystemUrl } from '../../constants/ecosystemUrls';
+import { launchCrossApp } from '../../utils/crossAppAuth';
 import PieceVideoSection from '../repertoire/PieceVideoSection';
 import BatchAssignVideoModal from '../repertoire/BatchAssignVideoModal';
 import MestreRepertoireHeader from './MestreRepertoireHeader';
@@ -92,6 +94,13 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
   const showToast = (msg) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(null), 4000);
+  };
+
+  // Ouverture de l'Atelier Vocal pour un morceau de chant avec pré-ciblage du morceau dans le Studio
+  const handleOpenVocalLabForPiece = (p) => {
+    const songId = encodeURIComponent(p?.id || '');
+    const vocalLabUrl = getEcosystemUrl('vocalLab', `?songId=${songId}`);
+    launchCrossApp(vocalLabUrl, { appLabel: "l'Atelier Vocal" });
   };
 
   // Commutateur interactif d'ouverture du répertoire aux adhérents
@@ -596,6 +605,20 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                       </button>
                     )}
 
+                    {/* Badge Atelier Vocal pour les chants */}
+                    {(piece.type === 'song' || piece.typeMorceau === 'song' || piece.hasToada || Boolean(piece.toadaDocId || piece.toadaId || piece.activeToada)) && (
+                      <button
+                        type="button"
+                        onClick={() => handleOpenVocalLabForPiece(piece)}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-orange-50 hover:bg-orange-100 text-orange-950 border border-orange-300 transition-colors shadow-2xs cursor-pointer select-none"
+                        title={t('repertoire.tooltipVocalLab') || "Ouvrir l'Atelier Vocal en ligne"}
+                      >
+                        <span>🎙️</span>
+                        <span>{t('repertoire.vocalLabBadge') || "Atelier Vocal"}</span>
+                        <span className="text-[8px] opacity-70">↗</span>
+                      </button>
+                    )}
+
                     {piece.hasChoreography && piece.activeChoreography && (
                       <a
                         href={`https://dancador.ogirador.fr/?choreoId=${piece.activeChoreography.id}&groupId=${groupId}`}
@@ -926,6 +949,21 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                       >
                         <span>🗣️</span>
                         <span>{t('mestre.repertoire.toadaBadge')}</span>
+                      </CordelButton>
+                    )}
+
+                    {/* Bouton rapide Atelier Vocal si le morceau est un chant */}
+                    {(piece.type === 'song' || piece.typeMorceau === 'song' || piece.hasToada || Boolean(piece.toadaDocId || piece.toadaId || piece.activeToada)) && (
+                      <CordelButton
+                        type="button"
+                        variant="default"
+                        useExtremeBorder={false}
+                        onClick={() => handleOpenVocalLabForPiece(piece)}
+                        className="py-1 px-2 text-[9.5px] uppercase tracking-wider font-black bg-orange-50 hover:bg-orange-100 border border-orange-300 text-orange-950 flex items-center gap-1 shrink-0"
+                        title={t('repertoire.tooltipVocalLab') || "Ouvrir l'Atelier Vocal en ligne"}
+                      >
+                        <span>🎙️</span>
+                        <span>{t('repertoire.vocalLabBadge') || "Atelier Vocal"}</span>
                       </CordelButton>
                     )}
 

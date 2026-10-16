@@ -157,7 +157,8 @@ const testScripts = [
   'scripts/test_casse_tete_attendance_pupitre_normalization.mjs',
   'scripts/test_report_auto_validation_and_fcm.mjs',
   'scripts/test_report_validators_college.mjs',
-  'scripts/test_mobile_viewport_audit.mjs'
+  'scripts/test_mobile_viewport_audit.mjs',
+  'scripts/test_mestre_vocal_synthesis.mjs'
 ];
 
 console.log("===============================================================");
