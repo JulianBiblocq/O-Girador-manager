@@ -23,7 +23,7 @@
     "@tiptap/extension-image": "^3.31.3",
     "@tiptap/extension-link": "^3.31.3",
     "@tiptap/extension-text-align": "^3.31.3",
-    "@tiptap/react": "^3.31.3",
+    "@tiptap/react": "^3.31.4",
     "@tiptap/starter-kit": "^3.31.3",
     "browser-image-compression": "^2.0.2",
     "dompurify": "^3.4.16",
