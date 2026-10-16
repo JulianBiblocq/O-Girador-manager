@@ -41,7 +41,7 @@ export default function MemberPieceUnfoldedContent({
 
   const handleOpenVocalLab = () => {
     const songId = encodeURIComponent(piece.id || '');
-    launchCrossApp(getEcosystemUrl('vocalLab', `?mode=eleve&songId=${songId}`), { appLabel: "l'Atelier Vocal" });
+    launchCrossApp(getEcosystemUrl('vocalLab', `?mode=eleve&songId=${songId}`), { appLabel: "Cantador" });
   };
 
   return (

@@ -100,7 +100,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
   const handleOpenVocalLabForPiece = (p) => {
     const songId = encodeURIComponent(p?.id || '');
     const vocalLabUrl = getEcosystemUrl('vocalLab', `?songId=${songId}`);
-    launchCrossApp(vocalLabUrl, { appLabel: "l'Atelier Vocal" });
+    launchCrossApp(vocalLabUrl, { appLabel: "Cantador" });
   };
 
   // Commutateur interactif d'ouverture du répertoire aux adhérents

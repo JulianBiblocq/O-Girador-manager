@@ -16,7 +16,7 @@ export default function MestreVocalSynthesisPanel({ members = [] }) {
   const { t } = useTranslation();
 
   const handleOpenVocalLab = () => {
-    launchCrossApp(getEcosystemUrl('vocalLab'), { appLabel: "l'Atelier Vocal" });
+    launchCrossApp(getEcosystemUrl('vocalLab'), { appLabel: "Cantador" });
   };
 
   const evaluatedMembers = useMemo(() => {

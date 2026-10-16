@@ -245,13 +245,19 @@ requiredRepertoireVocalKeys.forEach(k => {
   assert.ok(pt.repertoire?.[k], `Clé repertoire.${k} manquante dans pt.js`);
 });
 
-// Vérification stricte de la nomenclature Oficina Vocal en PT-BR
-assert.strictEqual(pt.mestre.casting.openVocalLab, "Abrir a Oficina Vocal", "Nomenclature PT casting openVocalLab incorrecte");
-assert.strictEqual(pt.repertoire.btnVocalLab, "Oficina Vocal / Treinar canto", "Nomenclature PT repertoire btnVocalLab incorrecte");
-assert.strictEqual(pt.repertoire.tooltipVocalLab, "Abrir a Oficina Vocal online", "Nomenclature PT repertoire tooltipVocalLab incorrecte");
-assert.strictEqual(pt.repertoire.vocalLabBadge, "Oficina Vocal", "Nomenclature PT repertoire vocalLabBadge incorrecte");
+// Vérification stricte de la nomenclature officielle Cantador en FR
+assert.strictEqual(fr.mestre.casting.openVocalLab, "Ouvrir Cantador (Atelier Vocal)", "Nomenclature FR casting openVocalLab incorrecte");
+assert.strictEqual(fr.repertoire.btnVocalLab, "Cantador / S'entraîner au chant", "Nomenclature FR repertoire btnVocalLab incorrecte");
+assert.strictEqual(fr.repertoire.tooltipVocalLab, "Ouvrir Cantador en ligne", "Nomenclature FR repertoire tooltipVocalLab incorrecte");
+assert.strictEqual(fr.repertoire.vocalLabBadge, "Cantador", "Nomenclature FR repertoire vocalLabBadge incorrecte");
 
-console.log(`  ✅ [PASS] ${requiredVocalKeys.length + requiredRepertoireVocalKeys.length} clés i18n FR/PT-BR et nomenclature "Oficina Vocal" validées`);
+// Vérification stricte de la nomenclature officielle Cantador en PT-BR
+assert.strictEqual(pt.mestre.casting.openVocalLab, "Abrir o Cantador (Oficina Vocal)", "Nomenclature PT casting openVocalLab incorrecte");
+assert.strictEqual(pt.repertoire.btnVocalLab, "Cantador / Treinar canto", "Nomenclature PT repertoire btnVocalLab incorrecte");
+assert.strictEqual(pt.repertoire.tooltipVocalLab, "Abrir o Cantador online", "Nomenclature PT repertoire tooltipVocalLab incorrecte");
+assert.strictEqual(pt.repertoire.vocalLabBadge, "Cantador", "Nomenclature PT repertoire vocalLabBadge incorrecte");
+
+console.log(`  ✅ [PASS] ${requiredVocalKeys.length + requiredRepertoireVocalKeys.length} clés i18n FR/PT-BR et nomenclature officielle "Cantador" validées`);
 
 console.log("\n========================================================================");
 console.log("🏆 TOUS LES TESTS DE LA SYNTHÈSE VOCALE MAESTRIA SONT 100% VALIDÉS !");

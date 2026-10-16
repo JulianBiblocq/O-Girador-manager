@@ -2233,7 +2233,7 @@ export const pt = {
         badgePuxador: "Puxador",
         badgeCoro: "Coro",
         semitonesCount: "{{count}} semitões",
-        openVocalLab: "Abrir a Oficina Vocal",
+        openVocalLab: "Abrir o Cantador (Oficina Vocal)",
         orientationCastingTitle: "Orientação, Elenco & Naipes",
         orientationCastingSubtitle: "Painel de distribuição dos naipes e validação direta das preferências pela Mestria.",
         unassignedBadge: "Não atribuído",
@@ -2982,9 +2982,9 @@ export const pt = {
     // Accès Sequenciador — Écoute globale
     btnListenSequencer: "Ouvir no Sequenciador",
     tooltipListenSequencer: "Audição integral de referência (todas as faixas ativas)",
-    btnVocalLab: "Oficina Vocal / Treinar canto",
-    tooltipVocalLab: "Abrir a Oficina Vocal online",
-    vocalLabBadge: "Oficina Vocal",
+    btnVocalLab: "Cantador / Treinar canto",
+    tooltipVocalLab: "Abrir o Cantador online",
+    vocalLabBadge: "Cantador",
     revisePiece: "Revisar esta música",
 
     // Modales de contenu & États vides

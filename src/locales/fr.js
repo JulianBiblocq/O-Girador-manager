@@ -2247,7 +2247,7 @@ export const fr = {
         badgePuxador: "Puxador",
         badgeCoro: "Coro",
         semitonesCount: "{{count}} demi-tons",
-        openVocalLab: "Ouvrir l'Atelier Vocal",
+        openVocalLab: "Ouvrir Cantador (Atelier Vocal)",
         orientationCastingTitle: "Orientation, Casting & Pupitres",
         orientationCastingSubtitle: "Tableau de bord de répartition des pupitres et validation directe des vœux par la Mestria.",
         unassignedBadge: "Non affecté",
@@ -2996,9 +2996,9 @@ export const fr = {
     // Accès Sequenciador — Écoute globale
     btnListenSequencer: "Écouter dans le Séquenceur",
     tooltipListenSequencer: "Écoute intégrale de référence (toutes pistes actives)",
-    btnVocalLab: "Atelier Vocal / S'entraîner au chant",
-    tooltipVocalLab: "Ouvrir l'Atelier Vocal en ligne",
-    vocalLabBadge: "Atelier Vocal",
+    btnVocalLab: "Cantador / S'entraîner au chant",
+    tooltipVocalLab: "Ouvrir Cantador en ligne",
+    vocalLabBadge: "Cantador",
     revisePiece: "Réviser ce morceau",
 
     // Modales de contenu & États vides
