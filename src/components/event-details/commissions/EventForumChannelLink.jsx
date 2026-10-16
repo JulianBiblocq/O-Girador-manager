@@ -88,17 +88,17 @@ export default function EventForumChannelLink({
   };
 
   return (
-    <div className="w-full bg-cordel-bg border-2 border-encre-noire rounded-[8px_10px_7px_9px] p-3 shadow-[2px_2px_0px_0px_#181716] flex flex-wrap items-center justify-between gap-3 text-xs">
+    <div className="w-full bg-cordel-bg border-2 border-encre-noire rounded-[8px_10px_7px_9px] p-3 shadow-[2px_2px_0px_0px_#181716] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 text-xs">
       {/* Côté gauche : Informations sur le salon associé */}
-      <div className="flex items-center gap-2.5 min-w-0">
+      <div className="flex items-start sm:items-center gap-2.5 min-w-0 flex-1">
         <span className="text-xl shrink-0">💬</span>
-        <div className="flex flex-col min-w-0">
+        <div className="flex flex-col min-w-0 flex-1">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="font-black text-encre-noire uppercase tracking-wider text-[11px]">
+            <span className="font-black text-encre-noire uppercase tracking-wider text-[11px] shrink-0">
               Salon Porte-Voix :
             </span>
             {activeChannel ? (
-              <span className="px-2 py-0.5 rounded font-black text-xs border border-encre-noire bg-amber-100/90 text-amber-950 truncate max-w-[220px]">
+              <span className="px-2 py-0.5 rounded font-black text-xs border border-encre-noire bg-amber-100/90 text-amber-950 truncate max-w-full">
                 {activeChannel.name}
               </span>
             ) : (
@@ -115,8 +115,8 @@ export default function EventForumChannelLink({
         </div>
       </div>
 
-      {/* Côté droit : Actions (Ouvrir / Créer / Réassigner) */}
-      <div className="flex items-center gap-2 shrink-0 ml-auto">
+      {/* Côté droit : Actions (Ouvrir / Créer / Réassigner) fluides et sans débordement */}
+      <div className="flex flex-wrap items-center gap-2 shrink-0 justify-start sm:justify-end w-full sm:w-auto">
         {activeChannel && onNavigateToView && (
           <button
             type="button"
@@ -144,12 +144,12 @@ export default function EventForumChannelLink({
             )}
 
             {isChanging ? (
-              <div className="flex items-center gap-1">
+              <div className="flex flex-wrap items-center gap-1 w-full sm:w-auto">
                 <select
                   disabled={loadingChannels || isProcessing}
                   value={selectedChannelId}
                   onChange={(e) => setSelectedChannelId(e.target.value)}
-                  className="px-2 py-1 text-[11px] font-bold rounded border border-encre-noire bg-white"
+                  className="flex-1 sm:flex-initial px-2 py-1 text-[11px] font-bold rounded border border-encre-noire bg-white max-w-full truncate"
                 >
                   <option value="">Sélectionner un salon...</option>
                   {channels.map((ch) => (
@@ -162,14 +162,14 @@ export default function EventForumChannelLink({
                   type="button"
                   disabled={!selectedChannelId || isProcessing}
                   onClick={() => handleAssignChannel(selectedChannelId)}
-                  className="px-2 py-1 text-[11px] font-black rounded border border-encre-noire bg-[var(--color-cordel-vert)] text-white hover:opacity-90 disabled:opacity-40"
+                  className="px-2 py-1 text-[11px] font-black rounded border border-encre-noire bg-[var(--color-cordel-vert)] text-white hover:opacity-90 disabled:opacity-40 cursor-pointer"
                 >
                   ✓
                 </button>
                 <button
                   type="button"
                   onClick={() => setIsChanging(false)}
-                  className="px-2 py-1 text-[11px] font-black rounded border border-encre-noire bg-stone-200 hover:bg-stone-300"
+                  className="px-2 py-1 text-[11px] font-black rounded border border-encre-noire bg-stone-200 hover:bg-stone-300 cursor-pointer"
                 >
                   ✕
                 </button>

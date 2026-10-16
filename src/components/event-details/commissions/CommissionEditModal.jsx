@@ -87,7 +87,7 @@ export default function CommissionEditModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/60 backdrop-blur-xs select-none"
+      className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-3 bg-black/60 backdrop-blur-xs select-none overflow-y-auto"
       onMouseDown={(e) => { backdropMouseDownRef.current = (e.target === e.currentTarget); }}
       onClick={(e) => {
         if (!e.target || !e.target.isConnected) return;
@@ -99,7 +99,7 @@ export default function CommissionEditModal({
       }}
     >
       <div
-        className="w-full max-w-2xl bg-cordel-bg-light border-2 border-encre-noire rounded-[8px_12px_7px_10px] shadow-[4px_4px_0px_0px_#181716] flex flex-col max-h-[90dvh] overflow-hidden"
+        className="w-full max-w-2xl bg-cordel-bg-light border-0 sm:border-2 border-encre-noire rounded-none sm:rounded-[8px_12px_7px_10px] shadow-none sm:shadow-[4px_4px_0px_0px_#181716] flex flex-col h-full sm:h-auto max-h-[100dvh] sm:max-h-[90dvh] overflow-hidden my-auto"
         onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
       >
@@ -169,22 +169,22 @@ export default function CommissionEditModal({
           )}
           </div>
 
-          {/* Pied de dialogue fixe */}
-          <div className="shrink-0 p-4 border-t-2 border-dashed border-encre-noire/20 bg-[var(--theme-bg)] flex items-center justify-between gap-2 pb-[max(env(safe-area-inset-bottom),1rem)]">
-            <div>
+          {/* Pied de dialogue fixe avec repli mobile propre */}
+          <div className="shrink-0 p-3 sm:p-4 border-t-2 border-dashed border-encre-noire/20 bg-[var(--theme-bg)] flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2 pb-[max(env(safe-area-inset-bottom),1rem)]">
+            <div className="w-full sm:w-auto">
               {isEditing && onDelete && (
                 <button
                   type="button" onClick={handleDelete} disabled={isSaving}
-                  className="px-2.5 py-1.5 rounded font-black text-xs text-[var(--color-cordel-rouge)] hover:bg-rose-50 border border-transparent hover:border-[var(--color-cordel-rouge)]/30 transition-colors cursor-pointer shrink-0"
+                  className="w-full sm:w-auto px-2.5 py-1.5 rounded font-black text-xs text-[var(--color-cordel-rouge)] hover:bg-rose-50 border border-transparent hover:border-[var(--color-cordel-rouge)]/30 transition-colors cursor-pointer text-center"
                 >
                   🗑️ Supprimer la commission
                 </button>
               )}
             </div>
 
-            <div className="flex items-center gap-2 shrink-0">
-              <button type="button" onClick={() => { console.trace("⚠️ FERMETURE MODALE DÉCLENCHÉE PAR : Bouton Annuler CommissionEditModal"); onClose(); }} className="px-3 py-1.5 rounded border border-stone-300 font-bold bg-white text-stone-700 hover:bg-stone-50 cursor-pointer shrink-0">Annuler</button>
-              <button type="button" onClick={handleSave} disabled={isSaving || !formData.titre.trim()} className="px-4 py-1.5 font-black rounded border border-encre-noire bg-[var(--color-cordel-vert)] text-white hover:opacity-90 disabled:opacity-40 shadow-xs cursor-pointer shrink-0">{isSaving ? 'Enregistrement...' : 'Enregistrer la commission'}</button>
+            <div className="flex flex-wrap items-center gap-2 shrink-0 justify-end w-full sm:w-auto">
+              <button type="button" onClick={() => { console.trace("⚠️ FERMETURE MODALE DÉCLENCHÉE PAR : Bouton Annuler CommissionEditModal"); onClose(); }} className="flex-1 sm:flex-initial px-3 py-1.5 rounded border border-stone-300 font-bold bg-white text-stone-700 hover:bg-stone-50 cursor-pointer text-center">Annuler</button>
+              <button type="button" onClick={handleSave} disabled={isSaving || !formData.titre.trim()} className="flex-1 sm:flex-initial px-4 py-1.5 font-black rounded border border-encre-noire bg-[var(--color-cordel-vert)] text-white hover:opacity-90 disabled:opacity-40 shadow-xs cursor-pointer text-center">{isSaving ? 'Enregistrement...' : 'Enregistrer la commission'}</button>
             </div>
           </div>
         </div>

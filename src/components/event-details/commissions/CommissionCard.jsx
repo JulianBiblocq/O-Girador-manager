@@ -140,19 +140,20 @@ export default function CommissionCard({
         </div>
       </div>
 
-      {/* Boutons d'action Cordel & Synchronisation Varal */}
-      <div className="flex items-center justify-between gap-2 pt-2 border-t border-dashed border-cordel-master-dark/20">
-        {event && (
-          <CommissionVaralAction
-            event={event}
-            commission={commission}
-            usersMap={usersMap}
-            groupId={groupId}
-            variant="compact"
-          />
-        )}
+      {/* Boutons d'action Cordel & Synchronisation Varal : Grille 2×2 sur mobile, fluide sur grand écran */}
+      <div className="pt-2 border-t border-dashed border-cordel-master-dark/20 w-full">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-stretch gap-2 w-full">
+          {event && (
+            <CommissionVaralAction
+              event={event}
+              commission={commission}
+              usersMap={usersMap}
+              groupId={groupId}
+              variant="compact"
+              className="w-full col-span-1 sm:w-auto"
+            />
+          )}
 
-        <div className="flex items-center gap-1.5 ml-auto">
           {onNavigateToView && (
             <button
               type="button"
@@ -162,18 +163,18 @@ export default function CommissionCard({
                 e.stopPropagation();
                 handleOpenThread(commission);
               }}
-              className="px-2 py-1 text-[10px] font-black rounded border border-encre-noire bg-cordel-bg hover:bg-stone-200 cursor-pointer shadow-xs active:translate-y-0.5 flex items-center gap-1 text-encre-noire disabled:opacity-50"
+              className="w-full sm:w-auto col-span-1 px-2 py-1.5 text-[10px] font-black rounded border border-encre-noire bg-cordel-bg hover:bg-stone-200 cursor-pointer shadow-xs active:translate-y-0.5 flex items-center justify-center gap-1 text-encre-noire disabled:opacity-50 truncate"
               title="Ouvrir le salon de débat de cette commission sur le Porte-Voix"
             >
-              <span>{isOpeningForum ? '⏳' : '💬'}</span>
-              <span>Salon Débat</span>
+              <span className="shrink-0">{isOpeningForum ? '⏳' : '💬'}</span>
+              <span className="truncate">Salon Débat</span>
             </button>
           )}
 
           <button
             type="button"
             onClick={() => onView && onView(commission)}
-            className="px-2 py-1 text-[10px] font-black uppercase tracking-wider rounded border border-encre-noire bg-cordel-bg hover:bg-stone-200 cursor-pointer shadow-xs active:translate-y-0.5"
+            className="w-full sm:w-auto col-span-1 px-2 py-1.5 text-[10px] font-black uppercase tracking-wider rounded border border-encre-noire bg-cordel-bg hover:bg-stone-200 cursor-pointer shadow-xs active:translate-y-0.5 flex items-center justify-center truncate"
           >
             👁️ Consulter
           </button>
@@ -182,7 +183,7 @@ export default function CommissionCard({
             <button
               type="button"
               onClick={() => onManage && onManage(commission)}
-              className="px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded border-2 border-encre-noire bg-[var(--color-cordel-vert)] text-white hover:brightness-105 cursor-pointer shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-y-0.5"
+              className="w-full sm:w-auto col-span-1 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded border-2 border-encre-noire bg-[var(--color-cordel-vert)] text-white hover:brightness-105 cursor-pointer shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-y-0.5 flex items-center justify-center truncate"
             >
               ✏️ Gérer
             </button>

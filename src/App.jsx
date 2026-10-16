@@ -1628,7 +1628,7 @@ export default function App() {
       return (
         <div style={brandingStyle} className="min-h-screen flex flex-col justify-center items-center py-12 bg-[#f4ecd8]">
           <div className="animate-spin text-4xl mb-4 select-none">⏳</div>
-          <span className="font-bold text-xs uppercase tracking-widest text-[#8b2a1a]">Redirection vers l'Espace Membre Organizad'Or...</span>
+          <span className="font-bold text-xs uppercase tracking-widest text-[#8b2a1a]">Redirection vers l'Espace Membre Organizador...</span>
         </div>
       );
     }

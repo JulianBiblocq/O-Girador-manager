@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { doc, updateDoc, collection, addDoc, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
@@ -9,7 +9,10 @@ import ImportAgendaModal from '../agenda/ImportAgendaModal';
 import { generateCompteRenduPDF } from '../../utils/pdfGenerator';
 import { triggerEventStatusAutomation } from '../../utils/automationEngine';
 import { notifyMembersByTag } from '../../utils/inAppNotificationService';
+import { publishReportDefinitive } from '../../utils/reportPublicationUtils';
 import EventEmargementSection from './EventEmargementSection';
+import ReportValidatorsSelector from './ReportValidatorsSelector';
+import { getEffectiveMemberTags, getCanonicalTagKey, isMemberCaOrBureau } from '../../utils/memberUtils';
 
 export default function EventReportSection({ event, user, profileData, associationSettings }) {
   const { t } = useTranslation();
@@ -24,6 +27,28 @@ export default function EventReportSection({ event, user, profileData, associati
   
   // État local de la portée / audience de la réunion ('publique' ou 'ca')
   const [localAudience, setLocalAudience] = useState(event?.audience || event?.portee || 'publique');
+
+  // Option d'auto-validation à J+7 (décochée par défaut)
+  const [autoValidateAfter7Days, setAutoValidateAfter7Days] = useState(Boolean(event?.autoValidateAfter7Days ?? false));
+  const autoValidatedRef = useRef(false);
+
+  // Données membres et étiquettes pour la sélection SaaS du collège de validation
+  const [members, setMembers] = useState([]);
+  const [availableTags, setAvailableTags] = useState([]);
+
+  // Mode de validation et sélection des relecteurs ('all_presents' | 'present_by_tags' | 'custom_users')
+  const [validationMode, setValidationMode] = useState(
+    event?.compteRenduValidationMode || (event?.audience === 'ca' ? 'all_presents' : 'all_presents')
+  );
+  const [selectedValidationTags, setSelectedValidationTags] = useState(
+    Array.isArray(event?.compteRenduValidationTags) ? event.compteRenduValidationTags : []
+  );
+  const [selectedCustomUserIds, setSelectedCustomUserIds] = useState(() => {
+    if (Array.isArray(event?.compteRenduValidators) && event.compteRenduValidators.length > 0) {
+      return event.compteRenduValidators.map(v => (typeof v === 'object' ? v.uid : v));
+    }
+    return [];
+  });
 
   // Collaborative suggestions states
   const [newSuggestionTitle, setNewSuggestionTitle] = useState('');
@@ -59,6 +84,31 @@ export default function EventReportSection({ event, user, profileData, associati
     }
   }, [event?.audience, event?.portee]);
 
+  // Synchronisation de l'option autoValidateAfter7Days
+  useEffect(() => {
+    setAutoValidateAfter7Days(Boolean(event?.autoValidateAfter7Days ?? false));
+  }, [event?.autoValidateAfter7Days]);
+
+  // Fallback Frontend : Auto-validation à J+7 si échéance atteinte et sans opposition démocratique
+  useEffect(() => {
+    if (
+      reportStatus === 'attente_relecture' &&
+      event?.autoValidateAfter7Days &&
+      event?.compteRenduAutoValidateAt &&
+      !autoValidatedRef.current &&
+      !isSaving
+    ) {
+      const now = new Date();
+      const autoDate = new Date(event.compteRenduAutoValidateAt);
+      const hasRejection = Object.values(event.compteRenduApprovals || {}).some(v => v && v.approved === false);
+
+      if (!isNaN(autoDate.getTime()) && now >= autoDate && !hasRejection) {
+        autoValidatedRef.current = true;
+        handlePublishDefinitive(localPoints, event.compteRenduApprovals || {}, true /* isAutomatic */);
+      }
+    }
+  }, [reportStatus, event?.autoValidateAfter7Days, event?.compteRenduAutoValidateAt, event?.compteRenduApprovals, isSaving]);
+
   // Synchronize local points with Firestore pointsOrdreDuJour
   useEffect(() => {
     if (event.pointsOrdreDuJour) {
@@ -76,6 +126,190 @@ export default function EventReportSection({ event, user, profileData, associati
       }
     };
   }, []);
+
+  // Synchronisation du mode de validation si présent dans event
+  useEffect(() => {
+    if (event?.compteRenduValidationMode) {
+      setValidationMode(event.compteRenduValidationMode);
+    } else if (localAudience === 'ca' || event?.audience === 'ca') {
+      setValidationMode('all_presents');
+    }
+  }, [event?.compteRenduValidationMode, localAudience, event?.audience]);
+
+  useEffect(() => {
+    if (Array.isArray(event?.compteRenduValidationTags)) {
+      setSelectedValidationTags(event.compteRenduValidationTags);
+    }
+  }, [event?.compteRenduValidationTags]);
+
+  // Chargement des membres et des étiquettes disponibles de l'association
+  useEffect(() => {
+    const targetGroupId = event?.groupId || profileData?.groupId || user?.groupId;
+    if (!targetGroupId) return;
+
+    let isMounted = true;
+    const usersRef = collection(db, 'users');
+    const qUsers = query(usersRef, where('groupId', '==', targetGroupId));
+
+    getDocs(qUsers).then((snap) => {
+      if (!isMounted) return;
+      const fetchedMembers = [];
+      const tagsMap = new Map();
+
+      snap.forEach((docSnap) => {
+        const uData = { id: docSnap.id, uid: docSnap.id, ...docSnap.data() };
+        fetchedMembers.push(uData);
+
+        const effTags = getEffectiveMemberTags(uData);
+        effTags.forEach((t) => {
+          const raw = typeof t === 'object' ? (t.nomM || t.nom || t.label || t.id || '') : String(t);
+          const canonical = getCanonicalTagKey(t);
+          if (canonical && !tagsMap.has(canonical)) {
+            tagsMap.set(canonical, raw || canonical);
+          }
+        });
+      });
+
+      setMembers(fetchedMembers);
+
+      // Charger les étiquettes personnalisées de l'association
+      const assocRef = query(collection(db, 'associations'), where('__name__', '==', targetGroupId));
+      getDocs(assocRef).then((assocSnap) => {
+        if (!isMounted) return;
+        if (!assocSnap.empty) {
+          const assocData = assocSnap.docs[0].data();
+          if (Array.isArray(assocData.tagsDisponibles)) {
+            assocData.tagsDisponibles.forEach((t) => {
+              const raw = typeof t === 'object' ? (t.nomM || t.nom || t.label || t.id || '') : String(t);
+              const canonical = getCanonicalTagKey(t);
+              if (canonical && !tagsMap.has(canonical)) {
+                tagsMap.set(canonical, raw || canonical);
+              }
+            });
+          }
+        }
+
+        // Assurer la présence des badges institutionnels clés
+        if (!tagsMap.has('ca')) tagsMap.set('ca', 'CA');
+        if (!tagsMap.has('bureau')) tagsMap.set('bureau', 'Bureau');
+
+        const tagsList = Array.from(tagsMap.entries()).map(([key, label]) => ({
+          id: key,
+          label
+        }));
+        setAvailableTags(tagsList);
+      }).catch((assocErr) => {
+        console.warn("EventReportSection - Erreur lecture association tags :", assocErr);
+        if (!tagsMap.has('ca')) tagsMap.set('ca', 'CA');
+        if (!tagsMap.has('bureau')) tagsMap.set('bureau', 'Bureau');
+        setAvailableTags(Array.from(tagsMap.entries()).map(([k, l]) => ({ id: k, label: l })));
+      });
+    }).catch((err) => {
+      console.error("EventReportSection - Erreur chargement membres :", err);
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [event?.groupId, profileData?.groupId, user?.groupId]);
+
+  // Résolution en temps réel des relecteurs désignés avant soumission
+  const resolvedValidators = useMemo(() => {
+    if (validationMode === 'all_presents') {
+      return presents.map((p) => ({
+        uid: p.userId,
+        displayName: p.userName || 'Membre'
+      }));
+    }
+
+    if (validationMode === 'present_by_tags') {
+      if (selectedValidationTags.length === 0) return [];
+
+      return presents.filter((p) => {
+        const memberProfile = members.find((m) => (m.id || m.uid) === p.userId) || { uid: p.userId, displayName: p.userName };
+        const effTags = getEffectiveMemberTags(memberProfile);
+        const allMemberTags = [...effTags, ...(Array.isArray(memberProfile.tags) ? memberProfile.tags : [])];
+
+        return selectedValidationTags.some((selTag) => {
+          const selCanonical = getCanonicalTagKey(selTag);
+          if ((selCanonical === 'ca' || selCanonical === 'bureau') && isMemberCaOrBureau(memberProfile)) {
+            return true;
+          }
+          return allMemberTags.some((t) => {
+            const tCanonical = getCanonicalTagKey(t);
+            const tRaw = typeof t === 'object' ? (t.nomM || t.label || t.nom || t.id || '') : String(t);
+            const selRaw = typeof selTag === 'object' ? (selTag.nomM || selTag.label || selTag.nom || selTag.id || '') : String(selTag);
+            return (tCanonical && tCanonical === selCanonical) || tRaw.toLowerCase().trim() === selRaw.toLowerCase().trim();
+          });
+        });
+      }).map((p) => ({
+        uid: p.userId,
+        displayName: p.userName || 'Membre'
+      }));
+    }
+
+    if (validationMode === 'custom_users') {
+      return presents
+        .filter((p) => selectedCustomUserIds.includes(p.userId))
+        .map((p) => ({
+          uid: p.userId,
+          displayName: p.userName || 'Membre'
+        }));
+    }
+
+    return presents.map((p) => ({
+      uid: p.userId,
+      displayName: p.userName || 'Membre'
+    }));
+  }, [validationMode, presents, selectedValidationTags, selectedCustomUserIds, members]);
+
+  // Handlers pour la sélection de relecteurs
+  const handleToggleValidationTag = (tag) => {
+    setSelectedValidationTags((prev) => {
+      const exists = prev.some((t) => t === tag || getCanonicalTagKey(t) === getCanonicalTagKey(tag));
+      if (exists) {
+        return prev.filter((t) => t !== tag && getCanonicalTagKey(t) !== getCanonicalTagKey(tag));
+      } else {
+        return [...prev, tag];
+      }
+    });
+  };
+
+  const handleToggleCustomUser = (userId) => {
+    setSelectedCustomUserIds((prev) => {
+      if (prev.includes(userId)) {
+        return prev.filter((id) => id !== userId);
+      } else {
+        return [...prev, userId];
+      }
+    });
+  };
+
+  const handleSelectAllCustomUsers = () => {
+    setSelectedCustomUserIds(presents.map((p) => p.userId));
+  };
+
+  const handleDeselectAllCustomUsers = () => {
+    setSelectedCustomUserIds([]);
+  };
+
+  // Collège de validation effectif en phase de relecture (rétrocompatibilité si absent)
+  const effectiveValidators = useMemo(() => {
+    if (Array.isArray(event.compteRenduValidators) && event.compteRenduValidators.length > 0) {
+      return event.compteRenduValidators.map((v) => {
+        if (typeof v === 'object' && v.uid) {
+          return { uid: v.uid, displayName: v.displayName || v.userName || 'Membre' };
+        }
+        const found = presents.find((p) => p.userId === v);
+        return { uid: v, displayName: found ? found.userName : 'Membre' };
+      });
+    }
+    // Rétrocompatibilité : tous les membres pointés présents
+    return presents.map((p) => ({
+      uid: p.userId,
+      displayName: p.userName || 'Membre'
+    }));
+  }, [event.compteRenduValidators, presents]);
 
   // Formater date utilitaire: DD/MM/YYYY
   const formatDate = (dateStr) => {
@@ -315,9 +549,14 @@ export default function EventReportSection({ event, user, profileData, associati
 
   // Submit report for review (attente_relecture)
   const handleSubmitForReview = async () => {
+    if (resolvedValidators.length === 0) {
+      alert("Veuillez sélectionner au moins un validateur parmi les présents avant de soumettre.");
+      return;
+    }
+
     const confirmSubmit = await confirm({
       title: "Soumettre pour relecture",
-      message: "Voulez-vous soumettre ce compte-rendu à la relecture par les membres présents ?",
+      message: `Voulez-vous soumettre ce compte-rendu à la relecture par les ${resolvedValidators.length} membre(s) désigné(s) ?`,
       confirmText: "Oui, soumettre",
       cancelText: "Annuler",
       variant: "warning"
@@ -327,10 +566,21 @@ export default function EventReportSection({ event, user, profileData, associati
     setIsSaving(true);
     try {
       const eventRef = doc(db, 'events', event.id);
+      const nowIso = new Date().toISOString();
+      const autoValidateAtIso = autoValidateAfter7Days
+        ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+        : null;
+
       await updateDoc(eventRef, {
         pointsOrdreDuJour: localPoints,
         compteRenduStatus: 'attente_relecture',
-        compteRenduApprovals: {} // Réinitialiser approvals for new review cycle
+        compteRenduApprovals: {}, // Réinitialiser approvals for new review cycle
+        autoValidateAfter7Days: Boolean(autoValidateAfter7Days),
+        compteRenduSubmittedAt: nowIso,
+        compteRenduAutoValidateAt: autoValidateAtIso,
+        compteRenduValidationMode: validationMode,
+        compteRenduValidationTags: validationMode === 'present_by_tags' ? selectedValidationTags : [],
+        compteRenduValidators: resolvedValidators
       });
       
       // Déclenchement de l'automatisation de notification de relecture
@@ -353,104 +603,29 @@ export default function EventReportSection({ event, user, profileData, associati
   };
 
   // Publish report definitively
-  const handlePublishDefinitive = async (pointsToPublish = localPoints, approvals = event.compteRenduApprovals || {}) => {
+  const handlePublishDefinitive = async (pointsToPublish = localPoints, approvals = event.compteRenduApprovals || {}, isAutomatic = false) => {
     setIsSaving(true);
     try {
-      // 1. Compiler le contenu en Markdown
-      const compiledMarkdown = pointsToPublish.length > 0 
-        ? pointsToPublish.map(p => `### 📌 ${p.titre}\n\n${p.notesCR ? p.notesCR.trim() : "*Aucune note rédigée.*"}`).join('\n\n---\n\n')
-        : "*Aucun point consigné dans ce compte-rendu.*";
-
-      // 2. Récupérer les noms des membres émargés et invités
-      const presentsNames = presents.map(ins => ins.userName || 'Membre anonyme');
-      const invites = Math.max(0, parseInt(event.invitesOuPublicCount, 10) || 0);
-      const totalParticipants = presentsNames.length + invites;
-
-      const isCA = (localAudience === 'ca' || event.audience === 'ca' || event.portee === 'ca');
-      const audienceLabel = isCA ? "Réunion de CA / Bureau" : "Réunion Publique / Assemblée";
-      const presentsSummary = invites > 0
-        ? `${presentsNames.length} adhérent(s) + ${invites} invité(s)`
-        : `${presentsNames.length} présent(s)`;
-
-      // 3. Titre et sous-titre standard
-      const docTitle = `CR du ${formatDate(event.date)}`;
-      const docSousTitre = `${audienceLabel} • ${presentsSummary}`;
-      const eventYear = event.date ? new Date(event.date).getFullYear() : new Date().getFullYear();
-
-      // 4. Créer ou mettre à jour le document unique dans le Varal
-      let docRefId = event.compteRenduVaralId || null;
-      if (!docRefId) {
-        try {
-          const existingQuery = query(
-            collection(db, 'documents'),
-            where('groupId', '==', event.groupId),
-            where('eventId', '==', event.id)
-          );
-          const existingSnap = await getDocs(existingQuery);
-          if (!existingSnap.empty) {
-            docRefId = existingSnap.docs[0].id;
-          }
-        } catch (findErr) {
-          console.warn("EventReportSection - Recherche document existant :", findErr);
-        }
-      }
-
-      const docPayload = {
-        titre: docTitle,
-        sousTitre: docSousTitre,
-        categoryId: 'ComptesRendus',
-        categorie: 'ComptesRendus',
-        sousCategorie: isCA ? 'Comptes Rendus CA' : 'Comptes Rendus Publics',
-        annee: eventYear,
-        type: 'report',
-        texte: compiledMarkdown,
+      await publishReportDefinitive({
+        event: {
+          ...event,
+          audience: localAudience || event.audience || 'publique',
+          portee: localAudience || event.portee || 'publique'
+        },
         points: pointsToPublish,
-        dateAjout: new Date().toISOString(),
-        groupId: event.groupId,
-        eventId: event.id,
-        audience: isCA ? 'ca' : 'publique',
-        portee: isCA ? 'ca' : 'publique',
-        allowedTags: isCA ? ['CA', 'Bureau', 'C.A', 'C.A.', 'Conseil d\'Administration'] : [],
-        presents: presentsNames,
-        invitesOuPublicCount: invites,
-        totalParticipants: totalParticipants,
-        order: 9999,
-        fileUrl: '' // Document dynamique Cordel
-      };
-
-      if (docRefId) {
-        await updateDoc(doc(db, 'documents', docRefId), docPayload);
-      } else {
-        const newDocRef = await addDoc(collection(db, 'documents'), docPayload);
-        docRefId = newDocRef.id;
-      }
-
-      // 5. Mettre à jour le statut et l'audience de l'événement
-      const eventRef = doc(db, 'events', event.id);
-      await updateDoc(eventRef, {
-        compteRenduStatus: 'publie',
-        compteRenduVaralId: docRefId,
-        audience: isCA ? 'ca' : 'publique',
-        portee: isCA ? 'ca' : 'publique'
+        approvals,
+        isAutomatic,
+        associationSettings: associationSettings || event.associationSettings || "O Girador"
       });
 
-      // 6. Générer et enregistrer le PDF officiel automatiquement
-      try {
-        const enrichedEvent = {
-          ...event,
-          audience: isCA ? 'ca' : 'publique',
-          invitesOuPublicCount: invites
-        };
-        const pdfDoc = generateCompteRenduPDF(enrichedEvent, pointsToPublish, presentsNames, associationSettings || event.associationSettings || "O Girador");
-        pdfDoc.save(`Compte_Rendu_${isCA ? 'CA_' : 'Public_'}${event.titre ? event.titre.replace(/[^a-zA-Z0-9]/g, '_') : 'Reunion'}.pdf`);
-      } catch (pdfErr) {
-        console.error("Erreur génération PDF automatique :", pdfErr);
+      if (!isAutomatic) {
+        alert("Le compte-rendu a été définitivement validé, publié au Varal et le PDF officiel a été généré !");
       }
-
-      alert("Le compte-rendu a été définitivement validé, publié au Varal et le PDF officiel a été généré !");
     } catch (err) {
       console.error("Error publishing report:", err);
-      alert("Erreur lors de la publication : " + err.message);
+      if (!isAutomatic) {
+        alert("Erreur lors de la publication : " + err.message);
+      }
     } finally {
       setIsSaving(false);
     }
@@ -471,7 +646,8 @@ export default function EventReportSection({ event, user, profileData, associati
       const eventRef = doc(db, 'events', event.id);
       await updateDoc(eventRef, {
         compteRenduStatus: 'brouillon',
-        compteRenduApprovals: {}
+        compteRenduApprovals: {},
+        compteRenduAutoValidateAt: null
       });
       alert("Le compte-rendu a été réinitialisé en brouillon.");
     } catch (err) {
@@ -521,18 +697,15 @@ export default function EventReportSection({ event, user, profileData, associati
       setComment('');
       alert(approved ? "Vous avez approuvé ce compte-rendu !" : "Vos demandes de modifications ont été transmises.");
 
-      // Vérifier if 100% of present users approved
-
-      const totalPresents = presents.length;
-
-      if (totalPresents > 0) {
-        const approvedCount = presents.filter(ins => {
-          const vote = updatedApprovals[ins.userId];
+      // Vérifier si 100 % des validateurs désignés ont approuvé
+      if (totalValidators > 0) {
+        const isUnanimous = effectiveValidators.every(val => {
+          const vote = updatedApprovals[val.uid];
           return vote?.approved === true;
-        }).length;
+        });
 
-        if (approvedCount === totalPresents) {
-          // Auto publish if all present users approved
+        if (isUnanimous) {
+          // Publication automatique immédiate dès unanimité du collège
           await handlePublishDefinitive(localPoints, updatedApprovals);
         }
       }
@@ -673,19 +846,19 @@ export default function EventReportSection({ event, user, profileData, associati
     }
   };
 
-  // Calculer vote statistics
-
-  const totalPresents = presents.length;
+  // Calculer vote statistics sur le collège de validateurs désignés
+  const totalValidators = effectiveValidators.length;
   const approvals = event.compteRenduApprovals || {};
   
-  const approvedCount = presents.filter(ins => approvals[ins.userId]?.approved === true).length;
-  const rejectedCount = presents.filter(ins => approvals[ins.userId]?.approved === false).length;
-  const pendingCount = totalPresents - approvedCount - rejectedCount;
+  const validatorsApproved = effectiveValidators.filter(val => approvals[val.uid]?.approved === true);
+  const validatorsRejected = effectiveValidators.filter(val => approvals[val.uid]?.approved === false);
+  const validatorsPending = effectiveValidators.filter(val => !approvals[val.uid]);
 
-  const votersApproved = presents.filter(ins => approvals[ins.userId]?.approved === true);
-  const votersRejected = presents.filter(ins => approvals[ins.userId]?.approved === false);
-  const votersPending = presents.filter(ins => !approvals[ins.userId]);
+  const approvedCount = validatorsApproved.length;
+  const rejectedCount = validatorsRejected.length;
+  const pendingCount = validatorsPending.length;
 
+  const isUserValidator = effectiveValidators.some(val => val.uid === user.uid);
   const isUserPresent = presents.some(ins => ins.userId === user.uid);
   const userVote = approvals[user.uid];
 
@@ -707,7 +880,7 @@ export default function EventReportSection({ event, user, profileData, associati
           )}
           {reportStatus === 'attente_relecture' && (
             <span className="theme-stamp-badge theme-stamp-badge-dark text-[8px] tracking-wider animate-pulse">
-              ⏳ EN ATTENTE DE RELECTURE ({approvedCount}/{totalPresents} Approbations)
+              ⏳ EN ATTENTE DE RELECTURE ({approvedCount}/{totalValidators} Validations)
             </span>
           )}
           {(reportStatus === '' || reportStatus === 'brouillon') && localPoints.length > 0 && (
@@ -884,7 +1057,7 @@ export default function EventReportSection({ event, user, profileData, associati
               localPoints.map((point, index) => (
                 <div key={point.id} className="theme-inner-panel p-4 rounded-[4px_6px_3px_5px] flex flex-col gap-2 relative">
                   {/* Point Title Bar */}
-                  <div className="flex justify-between items-center border-b border-dashed border-encre-noire/10 pb-1.5">
+                  <div className="flex justify-between items-center border-b border-dashed border-encre-noire/10 pb-1.5 gap-2 flex-wrap">
                     {editingPointId === point.id ? (
                       <div className="flex items-center gap-1.5 flex-1">
                         <input 
@@ -1005,23 +1178,55 @@ export default function EventReportSection({ event, user, profileData, associati
 
             {/* Action Bar (Draft Mode) */}
             {localPoints.length > 0 && (
-              <div className="flex justify-end gap-2.5 mt-2">
-                <CordelButton 
-                  variant="default" 
-                  onClick={handleSaveDraft}
-                  disabled={isSaving}
-                  className="text-xs py-2 px-4 font-bold"
-                >
-                  {isSaving ? "⏳ Enregistrement..." : (t('agenda.btnSaveReport') ? `💾 ${t('agenda.btnSaveReport')}` : "💾 Enregistrer le compte-rendu")}
-                </CordelButton>
-                <CordelButton 
-                  variant="ocre" 
-                  onClick={handleSubmitForReview}
-                  disabled={isSaving}
-                  className="text-xs py-2 px-4 font-extrabold"
-                >
-                  {isSaving ? "⏳ Soumission..." : "📤 Soumettre pour validation"}
-                </CordelButton>
+              <div className="flex flex-col gap-3 mt-3">
+                {/* 👥 Sélecteur SaaS du collège de validation */}
+                <ReportValidatorsSelector
+                  validationMode={validationMode}
+                  onChangeValidationMode={setValidationMode}
+                  selectedTags={selectedValidationTags}
+                  onToggleTag={handleToggleValidationTag}
+                  availableTags={availableTags}
+                  presents={presents}
+                  members={members}
+                  selectedCustomUserIds={selectedCustomUserIds}
+                  onToggleCustomUser={handleToggleCustomUser}
+                  onSelectAllCustomUsers={handleSelectAllCustomUsers}
+                  onDeselectAllCustomUsers={handleDeselectAllCustomUsers}
+                  resolvedValidators={resolvedValidators}
+                  audience={localAudience}
+                />
+
+                <div className="flex flex-col items-end gap-2.5">
+                  {/* Case à cocher d'auto-validation à 7 jours (décochée par défaut) */}
+                  <label className="flex items-center gap-2 text-xs font-semibold text-cordel-master-dark cursor-pointer select-none bg-white/40 hover:bg-white/60 py-1.5 px-3 rounded border border-dashed border-cordel-master-dark/25 transition-colors">
+                    <input 
+                      type="checkbox"
+                      checked={autoValidateAfter7Days}
+                      onChange={(e) => setAutoValidateAfter7Days(e.target.checked)}
+                      className="rounded text-amber-600 focus:ring-0 cursor-pointer w-3.5 h-3.5"
+                    />
+                    <span>⏳ Valider et publier automatiquement au bout de 7 jours (sans opposition)</span>
+                  </label>
+
+                  <div className="flex justify-end gap-2.5">
+                    <CordelButton 
+                      variant="default" 
+                      onClick={handleSaveDraft}
+                      disabled={isSaving}
+                      className="text-xs py-2 px-4 font-bold"
+                    >
+                      {isSaving ? "⏳ Enregistrement..." : (t('agenda.btnSaveReport') ? `💾 ${t('agenda.btnSaveReport')}` : "💾 Enregistrer le compte-rendu")}
+                    </CordelButton>
+                    <CordelButton 
+                      variant="ocre" 
+                      onClick={handleSubmitForReview}
+                      disabled={isSaving || resolvedValidators.length === 0}
+                      className="text-xs py-2 px-4 font-extrabold disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isSaving ? "⏳ Soumission..." : "📤 Soumettre pour validation"}
+                    </CordelButton>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -1217,6 +1422,21 @@ export default function EventReportSection({ event, user, profileData, associati
               <p className="text-[8px] uppercase tracking-wider font-extrabold text-cordel-wood mt-0.5">
                 Statut : {reportStatus === 'publie' ? '✅ VALIDÉ ET PUBLIÉ' : '⏳ EN RELECTURE DÉMOCRATIQUE'}
               </p>
+
+              {/* Badge d'auto-validation à J+7 */}
+              {reportStatus === 'attente_relecture' && event.autoValidateAfter7Days && event.compteRenduAutoValidateAt && (
+                <div className="mt-2 py-1.5 px-2.5 rounded bg-amber-50/90 border border-dashed border-amber-400 flex items-center justify-between flex-wrap gap-2 text-[10px] font-bold text-amber-950">
+                  <span className="flex items-center gap-1.5">
+                    <span>⏳</span>
+                    <span>Validation automatique prévue le <strong>{formatDate(event.compteRenduAutoValidateAt)}</strong> (sauf demande de modification).</span>
+                  </span>
+                  {Object.values(approvals).some(v => v?.approved === false) && (
+                    <span className="text-[8.5px] font-black uppercase text-red-700 bg-red-100 px-1.5 py-0.5 rounded border border-red-300">
+                      ⚠️ Suspendue (modification demandée)
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="flex flex-col gap-4 text-xs">
@@ -1292,17 +1512,23 @@ export default function EventReportSection({ event, user, profileData, associati
             )}
           </div>
 
-          {/* 4. Sondage / Vote pour les Présents */}
+          {/* 4. Sondage / Vote pour les Présents et Validateurs désignés */}
           {reportStatus === 'attente_relecture' && (
             <div className="flex flex-col gap-3">
-              
-              {/* Vote Encart (Visible exclusively to present users) */}
-              {isUserPresent ? (
+              {/* Vote Encart (Visible exclusively to designated validators or info for other presents) */}
+              {isUserValidator ? (
                 <CordelCard variant="default" useExtremeBorder={true} className="p-5 border-2 border-cordel-wood bg-cordel-bg-light shadow-md">
                   <h4 className="text-xs font-extrabold uppercase text-cordel-wood tracking-wider mb-2.5 flex items-center gap-1.5">
-                    🗳️ Approbation du Compte-Rendu
+                    🗳️ Approbation du Compte-Rendu (Validateur désigné)
                   </h4>
                   
+                  {event.autoValidateAfter7Days && event.compteRenduAutoValidateAt && (
+                    <div className="mb-2.5 p-1.5 rounded bg-amber-50 text-[10px] text-amber-900 border border-amber-300 font-semibold flex items-center gap-1.5">
+                      <span>⏳</span>
+                      <span>Validation automatique prévue le <strong>{formatDate(event.compteRenduAutoValidateAt)}</strong> (sauf demande de modification).</span>
+                    </div>
+                  )}
+
                   {userVote ? (
                     <div className="flex flex-col gap-2.5">
                       <p className="text-xs font-semibold leading-relaxed text-encre-noire">
@@ -1336,7 +1562,7 @@ export default function EventReportSection({ event, user, profileData, associati
                   ) : (
                     <div className="flex flex-col gap-3">
                       <p className="text-[11px] leading-relaxed opacity-85">
-                        En tant que membre présent, veuillez valider si ce compte-rendu reflète fidèlement la réunion ou demander des modifications.
+                        En tant que validateur désigné, veuillez confirmer si ce compte-rendu reflète fidèlement la réunion ou demander des modifications.
                       </p>
                       
                       {/* Optional comments for modification */}
@@ -1345,7 +1571,7 @@ export default function EventReportSection({ event, user, profileData, associati
                           Commentaire facultatif (requis si demande de modif)
                         </label>
                         <input 
-                          type="text"
+                          type="text" 
                           value={comment}
                           onChange={(e) => setComment(e.target.value)}
                           placeholder="Ajoutez des précisions..."
@@ -1378,21 +1604,46 @@ export default function EventReportSection({ event, user, profileData, associati
                     </div>
                   )}
                 </CordelCard>
+              ) : isUserPresent ? (
+                /* Membre présent mais ne faisant pas partie du collège de relecteurs désignés */
+                <div className="p-4 bg-amber-50/80 border border-dashed border-amber-400 rounded text-amber-900 text-xs font-medium flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xl">⏳</span>
+                    <div>
+                      <p className="font-bold text-amber-950">
+                        En cours de relecture par les validateurs désignés ({approvedCount}/{totalValidators} validations).
+                      </p>
+                      <p className="text-[10.5px] opacity-80 mt-0.5">
+                        Vous étiez présent à cette réunion. La validation de ce compte-rendu a été confiée aux relecteurs désignés avant publication officielle.
+                      </p>
+                    </div>
+                  </div>
+                  <span className="theme-stamp-badge text-[8px] font-black uppercase tracking-wider bg-white/70 text-amber-800 border-amber-300">
+                    👀 Relecture restreinte
+                  </span>
+                </div>
               ) : (
                 <div className="p-3 bg-neutral-100 text-neutral-600 rounded text-center text-[10px] italic">
-                  🔒 Le vote d'approbation est réservé aux membres marqués comme présents à cette réunion.
+                  🔒 Le vote d'approbation est réservé aux validateurs désignés pour cette réunion.
                 </div>
               )}
 
               {/* Vote Statistics (For all, especially Admin) */}
               <div className="theme-inner-panel p-3.5 rounded-[4px_6px_3px_5px] flex flex-col gap-2">
-                <span className="text-[8px] uppercase font-black tracking-wider text-cordel-master-dark opacity-65">
-                  État des votes ({approvedCount + rejectedCount} / {totalPresents} votants)
-                </span>
+                <div className="flex justify-between items-center flex-wrap gap-2">
+                  <span className="text-[8px] uppercase font-black tracking-wider text-cordel-master-dark opacity-65">
+                    État des votes ({approvedCount + rejectedCount} / {totalValidators} validateur{totalValidators > 1 ? 's' : ''} désigné{totalValidators > 1 ? 's' : ''})
+                  </span>
+                  {event.compteRenduValidationMode && (
+                    <span className="text-[8px] uppercase font-extrabold px-1.5 py-0.5 rounded bg-stone-100 text-stone-700 border border-stone-300">
+                      Collège : {event.compteRenduValidationMode === 'present_by_tags' ? '🏷️ Par badge' : event.compteRenduValidationMode === 'custom_users' ? '👤 Nominatif' : '👥 Tous les présents'}
+                    </span>
+                  )}
+                </div>
                 
-                <div className="flex gap-4 text-xs font-semibold">
-                  <div className="text-green-700">✅ {approvedCount} Approbations</div>
-                  <div className="text-red-700">❌ {rejectedCount} Demandes de modifications</div>
+                <div className="flex gap-4 text-xs font-semibold flex-wrap">
+                  <div className="text-green-700">✅ {approvedCount} Approbation{approvedCount > 1 ? 's' : ''}</div>
+                  <div className="text-red-700">❌ {rejectedCount} Demande{rejectedCount > 1 ? 's' : ''} de modification</div>
                   <div className="text-neutral-500">⏳ {pendingCount} En attente</div>
                 </div>
 
@@ -1401,33 +1652,45 @@ export default function EventReportSection({ event, user, profileData, associati
                     onClick={() => setShowVoters(!showVoters)}
                     className="text-[10px] text-[var(--color-cordel-ocre,#c05621)] font-extrabold hover:underline uppercase tracking-wider bg-transparent border-0 cursor-pointer"
                   >
-                    👥 {showVoters ? "Masquer le détail des votes" : "Voir qui a voté (et qui n'a pas voté)"}
+                    👥 {showVoters ? "Masquer le détail des validateurs" : "Voir le détail des validateurs désignés"}
                   </button>
                 </div>
 
                 {showVoters && (
                   <div className="mt-1 mb-2 flex flex-col gap-3 p-3 bg-white/40 border border-dashed border-cordel-master-dark/15 rounded text-[10px]">
-                    {votersApproved.length > 0 && (
+                    {validatorsApproved.length > 0 && (
                       <div className="flex flex-col gap-1">
                         <span className="font-extrabold text-[var(--color-cordel-vert,#2d6a4f)]">✅ Ont approuvé :</span>
                         <div className="flex flex-wrap gap-1">
-                          {votersApproved.map(ins => <span key={ins.userId} className="px-1.5 py-0.5 bg-[var(--color-cordel-vert)]/10 text-[var(--color-cordel-vert,#2d6a4f)] rounded">{ins.userName}</span>)}
+                          {validatorsApproved.map(val => (
+                            <span key={val.uid} className="px-1.5 py-0.5 bg-[var(--color-cordel-vert)]/10 text-[var(--color-cordel-vert,#2d6a4f)] rounded font-semibold">
+                              {val.displayName}
+                            </span>
+                          ))}
                         </div>
                       </div>
                     )}
-                    {votersRejected.length > 0 && (
+                    {validatorsRejected.length > 0 && (
                       <div className="flex flex-col gap-1">
                         <span className="font-extrabold text-[var(--color-cordel-rouge,#8b2a1a)]">❌ Ont demandé une modification :</span>
                         <div className="flex flex-wrap gap-1">
-                          {votersRejected.map(ins => <span key={ins.userId} className="px-1.5 py-0.5 bg-[var(--theme-primary)]/10 text-[var(--color-cordel-rouge,#8b2a1a)] rounded">{ins.userName}</span>)}
+                          {validatorsRejected.map(val => (
+                            <span key={val.uid} className="px-1.5 py-0.5 bg-[var(--theme-primary)]/10 text-[var(--color-cordel-rouge,#8b2a1a)] rounded font-semibold">
+                              {val.displayName}
+                            </span>
+                          ))}
                         </div>
                       </div>
                     )}
-                    {votersPending.length > 0 && (
+                    {validatorsPending.length > 0 && (
                       <div className="flex flex-col gap-1">
-                        <span className="font-extrabold text-[var(--color-cordel-ocre,#c05621)]">⏳ N'ont pas encore voté :</span>
+                        <span className="font-extrabold text-[var(--color-cordel-ocre,#c05621)]">⏳ En attente de vote :</span>
                         <div className="flex flex-wrap gap-1">
-                          {votersPending.map(ins => <span key={ins.userId} className="px-1.5 py-0.5 bg-[var(--color-cordel-ocre)]/10 text-[var(--color-cordel-ocre,#c05621)] rounded">{ins.userName}</span>)}
+                          {validatorsPending.map(val => (
+                            <span key={val.uid} className="px-1.5 py-0.5 bg-[var(--color-cordel-ocre)]/10 text-[var(--color-cordel-ocre,#c05621)] rounded font-semibold">
+                              {val.displayName}
+                            </span>
+                          ))}
                         </div>
                       </div>
                     )}
@@ -1435,15 +1698,15 @@ export default function EventReportSection({ event, user, profileData, associati
                 )}
 
                 {/* List of comments/modifs */}
-                {Object.keys(approvals).some(uid => approvals[uid].commentaire) && (
+                {Object.keys(approvals).some(uid => approvals[uid]?.commentaire) && (
                   <div className="mt-2 border-t border-dashed border-encre-noire/10 pt-2 flex flex-col gap-1.5">
                     <span className="text-[8px] uppercase font-bold tracking-wider text-cordel-wood">Modifications demandées :</span>
                     {Object.keys(approvals).map(uid => {
                       const vote = approvals[uid];
-                      if (!vote.commentaire) return null;
+                      if (!vote?.commentaire) return null;
                       return (
                         <div key={uid} className="text-[10px] leading-relaxed bg-red-50 text-red-800 p-2 rounded border border-red-200">
-                          <span className="font-bold">👤 {vote.userName} :</span> "{vote.commentaire}"
+                          <span className="font-bold">👤 {vote.userName || 'Membre'} :</span> "{vote.commentaire}"
                         </div>
                       );
                     })}

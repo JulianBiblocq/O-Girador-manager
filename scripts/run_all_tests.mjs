@@ -154,7 +154,10 @@ const testScripts = [
   'scripts/test_loader_combined_seal.mjs',
   'scripts/test_pwa_dynamic_manifest_and_title.mjs',
   'scripts/test_tooltip_styling_and_position.mjs',
-  'scripts/test_casse_tete_attendance_pupitre_normalization.mjs'
+  'scripts/test_casse_tete_attendance_pupitre_normalization.mjs',
+  'scripts/test_report_auto_validation_and_fcm.mjs',
+  'scripts/test_report_validators_college.mjs',
+  'scripts/test_mobile_viewport_audit.mjs'
 ];
 
 console.log("===============================================================");

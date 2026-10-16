@@ -6,14 +6,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node scripts/post_build_prepare_hosting.mjs",
     "lint": "oxlint",
     "test": "node scripts/run_all_tests.mjs",
     "preview": "vite preview",
     "audit-deps": "npx npm-check-updates",
     "update-deps": "npx npm-check-updates -u",
-    "deploy": "vite build && firebase deploy --only hosting:organizador && firebase hosting:clone o-girador-organizador:live o-girador-7828c:live",
-    "deploy:hosting": "vite build && firebase deploy --only hosting:organizador",
+    "deploy": "vite build && node scripts/post_build_prepare_hosting.mjs && firebase deploy --only hosting:organizador && firebase hosting:clone o-girador-organizador:live o-girador-7828c:live",
+    "deploy:hosting": "vite build && node scripts/post_build_prepare_hosting.mjs && firebase deploy --only hosting:organizador",
     "deploy:functions": "firebase deploy --only functions"
   },
   "dependencies": {

@@ -122,7 +122,7 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
-        navigateFallback: 'index.html',
+        navigateFallback: 'app.html',
         navigateFallbackDenylist: [/^\/__/, /^\/robots\.txt$/, /^\/sitemap\.xml$/, /^\/version\.json$/],
         importScripts: ['/firebase-messaging-sw.js'],
         cleanupOutdatedCaches: true,

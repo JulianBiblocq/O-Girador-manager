@@ -7,7 +7,8 @@ import CordelButton from './CordelButton';
 import { useTranslation } from './LanguageContext';
 import { XiloCaixa } from './XiloIcons';
 import QrCodeLogin from './auth/QrCodeLogin';
-import useGroupContext from '../hooks/useGroupContext';
+import useGroupContext, { setStoredGroupId } from '../hooks/useGroupContext';
+import { canonicalizeGroupId } from '../utils/tenantUtils';
 import GroupSelectorStep from './auth/GroupSelectorStep';
 import RegisterForm from './auth/RegisterForm';
 
@@ -15,18 +16,38 @@ export default function Login({ branding, onSuccess }) {
   const { t, locale } = useTranslation();
   const { groupId, needsGroupSelection, setManualGroupId } = useGroupContext();
 
+  // 1. Persistance immédiate du groupId dès l'arrivée sur Login.jsx
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const rawGroup = params.get('groupe') || params.get('group') || params.get('assoc') || params.get('tenant');
+      if (rawGroup && rawGroup.trim()) {
+        const canonical = canonicalizeGroupId(rawGroup.trim());
+        setStoredGroupId(canonical);
+        localStorage.setItem('selected_group_id', canonical);
+        localStorage.setItem('girador_group_id', canonical);
+        if (setManualGroupId) setManualGroupId(canonical);
+      }
+    } catch (err) {
+      console.warn("Login - Erreur capture groupId :", err);
+    }
+  }, [setManualGroupId]);
+
   // Détection du mode initial : si l'utilisateur arrive via un lien d'invitation (groupe ou mode=signup),
   // on active directement le mode Création de compte pour éviter la confusion avec la connexion.
   const searchParams = useMemo(() => {
     return typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
   }, []);
 
-  const isInviteLink = useMemo(() => {
+  const initialSignUpMode = useMemo(() => {
     const mode = searchParams.get('mode');
     const signup = searchParams.get('signup');
     const inscription = searchParams.get('inscription');
+    if (mode === 'login' || mode === 'signin' || mode === 'connexion') return false;
+    if (mode === 'signup' || mode === 'register' || signup === 'true' || inscription === 'true') return true;
     const hasGroup = Boolean(searchParams.get('groupe') || searchParams.get('assoc') || searchParams.get('tenant'));
-    return mode === 'signup' || signup === 'true' || inscription === 'true' || hasGroup;
+    return hasGroup;
   }, [searchParams]);
 
   // Détection des navigateurs intégrés d'applications (Gmail, Yahoo, Mail iOS, Facebook, etc.)
@@ -44,13 +65,79 @@ export default function Login({ branding, onSuccess }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [isSignUpMode, setIsSignUpMode] = useState(isInviteLink);
+  const [isSignUpMode, setIsSignUpMode] = useState(initialSignUpMode);
   const [isResetPasswordMode, setIsResetPasswordMode] = useState(false);
   const [isQrLoginMode, setIsQrLoginMode] = useState(false);
   const [resetSent, setResetSent] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
   const [inAppDismissed, setInAppDismissed] = useState(false);
   const [googleNotice, setGoogleNotice] = useState(null);
+  const [authAssistanceBanner, setAuthAssistanceBanner] = useState(null);
+  const [resetConfirmationEmail, setResetConfirmationEmail] = useState(null);
+
+  const handleSwitchToLogin = (targetEmail, assistanceData = null) => {
+    if (targetEmail) {
+      setEmail(targetEmail);
+    }
+    setIsSignUpMode(false);
+    setGoogleNotice(null);
+    setResetConfirmationEmail(null);
+    if (assistanceData) {
+      setAuthAssistanceBanner(assistanceData);
+    }
+  };
+
+  const handleInstantPasswordReset = async (targetEmail) => {
+    const cleanEmail = (targetEmail || email).trim().toLowerCase();
+    if (!cleanEmail) return;
+
+    setAuthLoading(true);
+    try {
+      auth.languageCode = locale || 'fr';
+      await sendPasswordResetEmail(auth, cleanEmail);
+      setResetConfirmationEmail(cleanEmail);
+    } catch (err) {
+      console.error("Login - Erreur réinitialisation rapide :", err);
+      alert(getAuthErrorMessage(err));
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleQuickAccountActivation = async (targetEmail, targetPassword) => {
+    const cleanEmail = (targetEmail || email).trim().toLowerCase();
+    const currentPassword = targetPassword || password;
+
+    if (!cleanEmail) return;
+    if (!currentPassword || currentPassword.length < 6) {
+      setIsSignUpMode(true);
+      setAuthAssistanceBanner(null);
+      return;
+    }
+
+    setAuthLoading(true);
+    try {
+      await createUserWithEmailAndPassword(auth, cleanEmail, currentPassword);
+      console.info("Login - Activation rapide réussie pour :", cleanEmail);
+      if (onSuccess) onSuccess();
+    } catch (createErr) {
+      console.warn("Login - Erreur activation rapide :", createErr);
+      if (createErr.code === 'auth/email-already-in-use') {
+        setAuthAssistanceBanner({
+          type: 'confirmed_account_wrong_password',
+          email: cleanEmail,
+          isGoogleCandidate: cleanEmail.endsWith('@gmail.com') || cleanEmail.endsWith('@googlemail.com')
+        });
+      } else if (createErr.code === 'auth/weak-password') {
+        setIsSignUpMode(true);
+        setAuthAssistanceBanner(null);
+      } else {
+        alert(getAuthErrorMessage(createErr));
+      }
+    } finally {
+      setAuthLoading(false);
+    }
+  };
 
   const getAuthErrorMessage = (error) => {
     switch (error.code) {
@@ -99,12 +186,17 @@ export default function Login({ branding, onSuccess }) {
         });
         return;
       }
-      if (error.code === 'auth/popup-blocked') {
-        console.warn("Connexion Google : popup bloquée par le navigateur.");
+      if (
+        error.code === 'auth/popup-blocked' ||
+        error.code === 'auth/unauthorized-domain' ||
+        error.code === 'auth/operation-not-supported-in-this-environment' ||
+        error.code === 'auth/internal-error'
+      ) {
+        console.warn("Connexion Google : popup bloquée par le navigateur ou restriction in-app.");
         setGoogleNotice({
           type: 'warning',
-          title: t('login.popupBlockedTitle') || "Fenêtre bloquée par votre navigateur",
-          message: t('login.popupBlockedDesc') || "Votre navigateur a bloqué l'ouverture de la fenêtre Google. Vous pouvez autoriser les pop-ups pour ce site, ou utiliser l'inscription par e-mail ci-dessous."
+          title: "Fenêtre Google bloquée ou restreinte",
+          message: "Votre navigateur ou application de messagerie restreint l'ouverture des fenêtres Google. Vous pouvez ouvrir cette page dans Safari ou Chrome (via l'icône de partage ↗ ou les •••), ou utiliser directement le formulaire e-mail / mot de passe ci-dessous sans quitter votre écran."
         });
         return;
       }
@@ -118,19 +210,39 @@ export default function Login({ branding, onSuccess }) {
 
   const handleEmailAuth = async (e) => {
     e.preventDefault();
-    if (!email.trim() || !password) return;
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !password) return;
 
     setAuthLoading(true);
+    setAuthAssistanceBanner(null);
+    setResetConfirmationEmail(null);
+
     try {
       if (isSignUpMode) {
-        await createUserWithEmailAndPassword(auth, email.trim(), password);
+        await createUserWithEmailAndPassword(auth, cleanEmail, password);
       } else {
-        await signInWithEmailAndPassword(auth, email.trim(), password);
+        await signInWithEmailAndPassword(auth, cleanEmail, password);
       }
       if (onSuccess) onSuccess();
     } catch (error) {
-      console.error("Erreur d'authentification par email :", error);
-      alert(getAuthErrorMessage(error));
+      console.warn("Erreur d'authentification par e-mail :", error?.code, error?.message);
+
+      const isNotFoundOrInvalid = 
+        error?.code === 'auth/user-not-found' || 
+        error?.code === 'auth/invalid-credential' || 
+        error?.code === 'auth/wrong-password';
+
+      if (!isSignUpMode && isNotFoundOrInvalid) {
+        setAuthAssistanceBanner({
+          type: 'invalid_credentials_or_new_user',
+          code: error.code,
+          email: cleanEmail,
+          password: password,
+          isGoogleCandidate: cleanEmail.endsWith('@gmail.com') || cleanEmail.endsWith('@googlemail.com')
+        });
+      } else {
+        alert(getAuthErrorMessage(error));
+      }
     } finally {
       setAuthLoading(false);
     }
@@ -138,13 +250,14 @@ export default function Login({ branding, onSuccess }) {
 
   const handlePasswordReset = async (e) => {
     e.preventDefault();
-    if (!email.trim()) return;
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail) return;
 
     setAuthLoading(true);
     setResetSent(false);
     try {
       auth.languageCode = locale || 'fr';
-      await sendPasswordResetEmail(auth, email.trim());
+      await sendPasswordResetEmail(auth, cleanEmail);
       setResetSent(true);
     } catch (error) {
       console.error("Erreur de réinitialisation du mot de passe :", error);
@@ -298,6 +411,8 @@ export default function Login({ branding, onSuccess }) {
                     onClick={() => {
                       setIsSignUpMode(false);
                       setGoogleNotice(null);
+                      setAuthAssistanceBanner(null);
+                      setResetConfirmationEmail(null);
                     }}
                     className={`flex-1 py-2 px-2 text-xs font-black uppercase tracking-wider rounded transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                       !isSignUpMode
@@ -313,6 +428,8 @@ export default function Login({ branding, onSuccess }) {
                     onClick={() => {
                       setIsSignUpMode(true);
                       setGoogleNotice(null);
+                      setAuthAssistanceBanner(null);
+                      setResetConfirmationEmail(null);
                     }}
                     className={`flex-1 py-2 px-2 text-xs font-black uppercase tracking-wider rounded transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                       isSignUpMode
@@ -382,7 +499,9 @@ export default function Login({ branding, onSuccess }) {
                       /* Formulaire d'inscription garanti : Email + Mot de passe + Confirmation */
                       <RegisterForm
                         onSuccess={onSuccess}
-                        onSwitchToLogin={() => setIsSignUpMode(false)}
+                        onSwitchToLogin={handleSwitchToLogin}
+                        initialEmail={email}
+                        onEmailChange={(val) => setEmail(val)}
                       />
                     ) : (
                       /* Formulaire de connexion classique */
@@ -395,7 +514,10 @@ export default function Login({ branding, onSuccess }) {
                             type="email"
                             required
                             value={email}
-                            onChange={(e) => setEmail(e.target.value)}
+                            onChange={(e) => {
+                              setEmail(e.target.value);
+                              if (authAssistanceBanner) setAuthAssistanceBanner(null);
+                            }}
                             disabled={authLoading}
                             className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light"
                             placeholder="nom@exemple.com"
@@ -424,7 +546,10 @@ export default function Login({ branding, onSuccess }) {
                               type={showPassword ? "text" : "password"}
                               required
                               value={password}
-                              onChange={(e) => setPassword(e.target.value)}
+                              onChange={(e) => {
+                                setPassword(e.target.value);
+                                if (authAssistanceBanner) setAuthAssistanceBanner(null);
+                              }}
                               disabled={authLoading}
                               className="theme-input text-xs font-bold py-1.5 pr-10 bg-cordel-bg-light w-full"
                               placeholder="******"
@@ -441,6 +566,100 @@ export default function Login({ branding, onSuccess }) {
                             </button>
                           </div>
                         </div>
+
+                        {/* Encart d'assistance intelligente zéro-friction */}
+                        {authAssistanceBanner && (
+                          <div className="p-3 my-1 bg-amber-50/95 border-2 border-encre-noire rounded-[6px_8px_5px_7px] text-left text-xs shadow-[3px_3px_0px_0px_#181716] relative animate-fadeIn">
+                            <button
+                              type="button"
+                              onClick={() => setAuthAssistanceBanner(null)}
+                              className="absolute top-1.5 right-2 text-stone-500 hover:text-stone-900 font-black text-sm cursor-pointer select-none"
+                              title="Fermer cette notification"
+                              aria-label="Fermer"
+                            >
+                              ✕
+                            </button>
+
+                            <div className="flex items-start gap-2.5 pr-4">
+                              <span className="text-xl select-none">
+                                {authAssistanceBanner.type === 'confirmed_account_wrong_password' ? '🔑' : '💡'}
+                              </span>
+                              <div className="space-y-1.5 w-full">
+                                <p className="font-black text-[11px] uppercase tracking-wide text-cordel-wood">
+                                  {authAssistanceBanner.type === 'email_already_exists'
+                                    ? "Votre adresse e-mail est déjà enregistrée !"
+                                    : authAssistanceBanner.type === 'confirmed_account_wrong_password'
+                                    ? "Ce compte existe déjà avec cette adresse"
+                                    : "Identifiants non reconnus pour cet e-mail"}
+                                </p>
+
+                                <p className="text-[11px] leading-relaxed text-amber-950/90 font-medium">
+                                  {authAssistanceBanner.type === 'email_already_exists' ? (
+                                    <>
+                                      Votre adresse e-mail est déjà enregistrée ! Si vous aviez utilisé Google, cliquez sur <strong>Continuer avec Google</strong>. Sinon, vérifiez votre mot de passe ou cliquez ci-dessous pour le réinitialiser.
+                                    </>
+                                  ) : authAssistanceBanner.type === 'confirmed_account_wrong_password' ? (
+                                    <>
+                                      Votre compte existe bien pour <strong>{authAssistanceBanner.email}</strong>, mais le mot de passe saisi ne correspond pas (ou vous vous étiez connecté avec Google).
+                                    </>
+                                  ) : (
+                                    <>
+                                      S'il s'agit de votre première visite (après avoir réglé sur HelloAsso ou pour rejoindre l'association) ou si vous avez oublié votre mot de passe :
+                                    </>
+                                  )}
+                                </p>
+
+                                {/* Actions directes */}
+                                <div className="flex flex-col gap-2 pt-1.5">
+                                  {/* Action rapide : première visite / activation en 1 clic */}
+                                  {authAssistanceBanner.type === 'invalid_credentials_or_new_user' && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleQuickAccountActivation(authAssistanceBanner.email, password)}
+                                      disabled={authLoading}
+                                      className="w-full py-2 px-2.5 bg-[var(--color-cordel-vert,#2d6a4f)] text-white font-black text-[11px] uppercase tracking-wider rounded border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] hover:brightness-110 active:translate-y-0.5 cursor-pointer flex items-center justify-center gap-1.5 transition-all"
+                                    >
+                                      <span>✨</span>
+                                      <span>C'est ma première visite : activer mon compte avec cet e-mail</span>
+                                    </button>
+                                  )}
+
+                                  {/* Réinitialisation de mot de passe en 1 clic */}
+                                  {resetConfirmationEmail === authAssistanceBanner.email ? (
+                                    <div className="p-2 bg-emerald-50 border border-emerald-600 rounded text-[10px] font-bold text-emerald-900 shadow-xs">
+                                      ✓ Un e-mail de réinitialisation sécurisé vient d'être envoyé à <strong>{authAssistanceBanner.email}</strong>. Cliquez sur le lien reçu pour choisir votre mot de passe, puis revenez vous connecter. (Pensez à vérifier vos courriers indésirables / spams).
+                                    </div>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleInstantPasswordReset(authAssistanceBanner.email)}
+                                      disabled={authLoading}
+                                      className="w-full py-2 px-2.5 bg-cordel-wood text-white font-extrabold text-[11px] uppercase tracking-wider rounded border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] hover:brightness-110 active:translate-y-0.5 cursor-pointer flex items-center justify-center gap-1.5 transition-all"
+                                    >
+                                      <span>🔑</span>
+                                      <span>M'envoyer un e-mail de réinitialisation de mot de passe</span>
+                                    </button>
+                                  )}
+
+                                  {/* Option Google directe */}
+                                  <button
+                                    type="button"
+                                    onClick={handleLogin}
+                                    disabled={authLoading}
+                                    className={`w-full py-2 px-2.5 font-extrabold text-[11px] uppercase tracking-wider rounded border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] active:translate-y-0.5 cursor-pointer flex items-center justify-center gap-1.5 transition-all ${
+                                      authAssistanceBanner.isGoogleCandidate
+                                        ? 'bg-amber-300 text-amber-950 ring-2 ring-amber-600 font-black'
+                                        : 'bg-amber-100/90 text-amber-950 hover:bg-amber-200'
+                                    }`}
+                                  >
+                                    <span>🌐</span>
+                                    <span>Continuer avec Google</span>
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
 
                         <CordelButton 
                           variant="default" 

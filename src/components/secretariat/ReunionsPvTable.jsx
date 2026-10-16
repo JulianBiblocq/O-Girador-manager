@@ -58,7 +58,7 @@ export default function ReunionsPvTable({
                         type="button"
                         onClick={() => onOpenPv(reunion)}
                         className="px-2 py-0.5 text-[9px] font-black uppercase rounded bg-cordel-bg border border-encre-noire shadow-2xs hover:bg-white cursor-pointer"
-                        title="Ouvrir le compte-rendu dans Organizad'Or"
+                        title="Ouvrir le compte-rendu dans Organizador"
                       >
                         📜 {t('secretariatDocs.btnPreview')}
                       </button>

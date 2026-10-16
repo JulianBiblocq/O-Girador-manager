@@ -28,9 +28,13 @@ export default function WidgetValidations({ groupId, user, onOpenEvent }) {
       snapshot.forEach(docSnap => {
         const data = docSnap.data();
         
-        // 1. L'utilisateur doit être présent à la réunion
-        const isPresent = data.inscriptions?.some(ins => ins.userId === user.uid && ins.status === 'present');
-        if (!isPresent) return;
+        // 1. Éligibilité de l'utilisateur au collège de relecture (rétrocompatibilité si compteRenduValidators absent)
+        const hasValidatorsList = Array.isArray(data.compteRenduValidators) && data.compteRenduValidators.length > 0;
+        const isEligibleValidator = hasValidatorsList
+          ? data.compteRenduValidators.some(v => (typeof v === 'object' ? v.uid : v) === user.uid)
+          : data.inscriptions?.some(ins => ins.userId === user.uid && ins.status === 'present');
+
+        if (!isEligibleValidator) return;
 
         // 2. L'utilisateur ne doit pas avoir déjà voté
         const hasVoted = data.compteRenduApprovals && data.compteRenduApprovals[user.uid];

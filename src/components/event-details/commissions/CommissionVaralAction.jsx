@@ -19,6 +19,7 @@ export default function CommissionVaralAction({
   usersMap = {},
   groupId,
   variant = 'full',
+  className = '',
   onSyncSuccess
 }) {
   const [isSyncing, setIsSyncing] = useState(false);
@@ -82,7 +83,7 @@ export default function CommissionVaralAction({
     }
 
     return (
-      <div className="flex items-center gap-1.5 text-[9.5px]">
+      <div className={`flex items-center gap-1.5 text-[9.5px] w-full ${className}`}>
         {/* Pastille d'alerte si modifié après la synchronisation */}
         {isPublished && !isUpToDate && (
           <span
@@ -96,15 +97,15 @@ export default function CommissionVaralAction({
           type="button"
           disabled={isSyncing}
           onClick={handleSync}
-          className={`px-2 py-1 rounded border font-black cursor-pointer disabled:opacity-50 flex items-center gap-1 shadow-2xs active:translate-y-0.5 transition-all ${buttonStyle}`}
+          className={`w-full h-full px-2 py-1.5 rounded border font-black cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1 shadow-2xs active:translate-y-0.5 transition-all text-center truncate ${buttonStyle}`}
           title={isPublished ? (isUpToDate ? 'Livret synchronisé avec le Varal' : 'Changements à synchroniser') : 'Publier ce livret sur la corde du projet'}
         >
-          <span>{isSyncing ? '⏳' : buttonLabel.slice(0, 2)}</span>
-          <span>{isSyncing ? 'Synchronisation...' : buttonLabel.slice(2).trim()}</span>
+          <span className="shrink-0">{isSyncing ? '⏳' : buttonLabel.slice(0, 2)}</span>
+          <span className="truncate">{isSyncing ? 'Synchro...' : buttonLabel.slice(2).trim()}</span>
         </button>
 
         {feedback && (
-          <span className={`text-[9px] font-bold ${feedback.type === 'error' ? 'text-[var(--color-cordel-rouge)]' : 'text-[var(--color-cordel-vert)]'}`}>
+          <span className={`text-[9px] font-bold shrink-0 truncate ${feedback.type === 'error' ? 'text-[var(--color-cordel-rouge)]' : 'text-[var(--color-cordel-vert)]'}`}>
             {feedback.message}
           </span>
         )}

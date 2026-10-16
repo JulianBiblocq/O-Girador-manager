@@ -163,7 +163,7 @@ export default function CarCard({
           </div>
         )}
 
-        <div className="flex justify-between items-center gap-1.5 mt-1 pt-1 border-t border-dashed border-encre-noire/10">
+        <div className="flex justify-between items-center gap-1.5 mt-1 pt-1 border-t border-dashed border-encre-noire/10 flex-wrap">
           {canAccessDiscussion ? (
             <button
               type="button"

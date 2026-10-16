@@ -655,16 +655,15 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t, initial
 
           if (sealBlob) {
             // Sauvegarde prioritaire sur le chemin standardisé pour les crawlers et réseaux sociaux
-            const combinedStorageRef = storageRef(storage, `brandings/${groupId}/combined-logo.png`);
-            const combinedSnapshot = await uploadBytes(combinedStorageRef, sealBlob, { contentType: 'image/png' });
-            finalCombinedLogoUrl = await getDownloadURL(combinedSnapshot.ref);
-
-            // Miroir de compatibilité
             try {
+              const combinedStorageRef = storageRef(storage, `brandings/${groupId}/combined-logo.png`);
+              const combinedSnapshot = await uploadBytes(combinedStorageRef, sealBlob, { contentType: 'image/png' });
+              finalCombinedLogoUrl = await getDownloadURL(combinedSnapshot.ref);
+            } catch (primaryErr) {
+              console.warn("Chemin brandings restreint, bascule sur associations/... :", primaryErr);
               const mirrorRef = storageRef(storage, `associations/${groupId}/brandings/combined-logo.png`);
-              await uploadBytes(mirrorRef, sealBlob, { contentType: 'image/png' });
-            } catch (mirrorErr) {
-              console.warn("Miroir stockage sceau combiné :", mirrorErr);
+              const combinedSnapshot = await uploadBytes(mirrorRef, sealBlob, { contentType: 'image/png' });
+              finalCombinedLogoUrl = await getDownloadURL(combinedSnapshot.ref);
             }
 
             // Mise à jour immédiate des balises Open Graph du document

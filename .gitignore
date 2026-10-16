@@ -35,3 +35,6 @@ dist-ssr
 
 # Scratch & temporary scripts
 scratch/
+scripts/scratch_*
+*.test.*
+public/brandings/test-*

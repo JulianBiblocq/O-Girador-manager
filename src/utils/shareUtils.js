@@ -439,16 +439,16 @@ export async function uploadCombinedSealToStorage(groupId, associationData, opti
     if (!sealBlob) return null;
 
     // Chemin Firebase Storage standardisé : brandings/{groupId}/combined-logo.png
-    const fileRef = storageRef(storage, `brandings/${groupId}/combined-logo.png`);
-    const snapshot = await uploadBytes(fileRef, sealBlob, { contentType: 'image/png' });
-    const downloadUrl = await getDownloadURL(snapshot.ref);
-
-    // Miroir de compatibilité
+    let downloadUrl = null;
     try {
+      const fileRef = storageRef(storage, `brandings/${groupId}/combined-logo.png`);
+      const snapshot = await uploadBytes(fileRef, sealBlob, { contentType: 'image/png' });
+      downloadUrl = await getDownloadURL(snapshot.ref);
+    } catch (primaryErr) {
+      console.warn("Chemin brandings restreint, bascule sur associations/... :", primaryErr);
       const mirrorRef = storageRef(storage, `associations/${groupId}/brandings/combined-logo.png`);
-      await uploadBytes(mirrorRef, sealBlob, { contentType: 'image/png' });
-    } catch (mirrorErr) {
-      console.warn("Miroir stockage sceau combiné :", mirrorErr);
+      const snapshot = await uploadBytes(mirrorRef, sealBlob, { contentType: 'image/png' });
+      downloadUrl = await getDownloadURL(snapshot.ref);
     }
 
     // Persistance dans le document Firestore du groupe : branding.combinedLogoUrl

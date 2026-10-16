@@ -8,6 +8,7 @@ import ImportAgendaModal from './agenda/ImportAgendaModal';
 import LocationSelector from './LocationSelector';
 import { useTranslation } from './LanguageContext';
 import { XiloCalendar } from './XiloIcons';
+import { checkAndExecuteAutoValidation } from '../utils/reportPublicationUtils';
 
 /**
  * Composant de gestion des Réunions dans le Studio.
@@ -74,6 +75,13 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
       fetched.sort((a, b) => new Date(b.date) - new Date(a.date));
       setEvents(fetched);
       setLoading(false);
+
+      // Fallback Frontend : Auto-validation à J+7 des comptes-rendus échus sans opposition
+      fetched.forEach((ev) => {
+        if (ev.compteRenduStatus === 'attente_relecture' && ev.autoValidateAfter7Days && ev.compteRenduAutoValidateAt) {
+          checkAndExecuteAutoValidation(ev);
+        }
+      });
     }, (error) => {
       console.error("ReunionManager - Erreur lors de la récupération des réunions :", error);
       setLoading(false);
@@ -183,6 +191,11 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
             lienDocument: (lienDocument || '').trim(),
             compteRenduStatus: 'brouillon',
             compteRenduApprovals: {},
+            autoValidateAfter7Days: false,
+            compteRenduAutoValidateAt: null,
+            compteRenduValidationMode: 'all_presents',
+            compteRenduValidationTags: [],
+            compteRenduValidators: [],
             suggestionsOrdreDuJour: [],
             inscriptions: [],
             lieu: (lieu || '').trim() || 'Salle de réunion / En ligne',
@@ -208,6 +221,11 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
           lienDocument: (lienDocument || '').trim(),
           compteRenduStatus: 'brouillon',
           compteRenduApprovals: {},
+          autoValidateAfter7Days: false,
+          compteRenduAutoValidateAt: null,
+          compteRenduValidationMode: 'all_presents',
+          compteRenduValidationTags: [],
+          compteRenduValidators: [],
           suggestionsOrdreDuJour: [],
           inscriptions: [],
           lieu: (lieu || '').trim() || 'Salle de réunion / En ligne',
@@ -254,7 +272,21 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
       case 'publie':
         return <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px]">📜 ARCHIVÉ</span>;
       case 'attente_relecture':
-        return <span className="theme-stamp-badge theme-stamp-badge-dark text-[8px] animate-pulse">⏳ RELECTURE</span>;
+        return (
+          <div className="flex flex-col gap-0.5">
+            <span className="theme-stamp-badge theme-stamp-badge-dark text-[8px] animate-pulse">⏳ RELECTURE</span>
+            {Array.isArray(eventObj.compteRenduValidators) && eventObj.compteRenduValidators.length > 0 && (
+              <span className="text-[7.5px] font-bold text-stone-600">
+                👥 {eventObj.compteRenduValidators.length} validateur{eventObj.compteRenduValidators.length > 1 ? 's' : ''}
+              </span>
+            )}
+            {eventObj.autoValidateAfter7Days && eventObj.compteRenduAutoValidateAt && (
+              <span className="text-[7.5px] font-bold text-amber-800">
+                ⏳ Auto le {new Date(eventObj.compteRenduAutoValidateAt).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}
+              </span>
+            )}
+          </div>
+        );
       default:
         return <span className="theme-stamp-badge theme-stamp-badge-dark text-[8px] opacity-75">✏️ BROUILLON</span>;
     }

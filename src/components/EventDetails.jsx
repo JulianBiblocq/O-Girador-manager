@@ -1501,9 +1501,9 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
       )}
 
       {/* Barre supérieure : Retour, Navigation temporelle et Actions prioritaires */}
-      <div className="flex justify-between items-center border-b-2 border-dashed border-cordel-master-dark/30 pb-2 select-none gap-2">
+      <div className="flex justify-between items-center border-b-2 border-dashed border-cordel-master-dark/30 pb-2 select-none gap-2 flex-wrap">
         {/* Navigation & Retour */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 shrink-0">
           <CordelButton variant="default" onClick={onClose} className="px-3 py-1 text-xs font-black">
             ← {t('common.back')}
           </CordelButton>
@@ -1531,7 +1531,7 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
 
         {/* Barre d'actions rationalisée */}
         {!isEditingEvent ? (
-          <div className="flex items-center gap-2 relative">
+          <div className="flex items-center gap-2 relative flex-wrap">
             {/* 1. Bouton prioritaire : ✏️ Modifier (si Mestre/Admin) */}
             {isAuthorized && (
               <button

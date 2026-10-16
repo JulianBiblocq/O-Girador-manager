@@ -579,16 +579,16 @@ export default function LayoutShell({
 
 
   return (
-    <div className={`min-h-[100dvh] h-[100dvh] max-h-[100dvh] w-full ${forceLight ? 'bg-cordel-bg-light' : 'bg-cordel-bg-dark'} ${isBirthdayMonth ? 'theme-birthday-month' : ''} flex flex-col items-stretch justify-stretch p-0 overflow-hidden`}>
+    <div className={`min-h-[100dvh] h-[100dvh] max-h-[100dvh] w-full max-w-full m-0 rounded-none border-0 ${forceLight ? 'bg-cordel-bg-light' : 'bg-cordel-bg-dark'} ${isBirthdayMonth ? 'theme-birthday-month' : ''} flex flex-col items-stretch justify-stretch p-0 overflow-hidden`}>
       <SubscriptionBanner licenseInfo={licenseInfo} profileData={currentProfile} />
       {/* Bannière persistante d'avertissement du mode simulation */}
       <SimulationBanner />
 
-      {/* Responsive board container */}
-      <div className="w-full h-full max-h-full overflow-hidden flex flex-col lg:flex-row relative bg-cordel-bg-light text-encre-noire">
+      {/* Conteneur principal sans cadre ni marge externe sur mobile (< 768px) */}
+      <div className="w-full max-w-full h-full max-h-full m-0 rounded-none border-0 overflow-hidden flex flex-col lg:flex-row relative bg-cordel-bg-light text-encre-noire">
         
-        {/* Top Header / Navbar for Mobile and Tablet (hidden on Desktop) */}
-        <div className="lg:hidden w-full h-16 landscape:h-12 border-b-4 border-cordel-master-dark bg-cordel-bg-light flex items-center px-3 sm:px-4 justify-between select-none shrink-0 z-[90]">
+        {/* Bandeau supérieur Mobile : sticky z-40 pour laisser les modales z-50 au-dessus */}
+        <div className="lg:hidden w-full h-16 landscape:h-12 border-b-2 sm:border-b-4 border-cordel-master-dark bg-cordel-bg-light flex items-center px-3 sm:px-4 justify-between select-none shrink-0 sticky top-0 z-40">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <div 
               onClick={handleLogoClick}
@@ -920,8 +920,8 @@ export default function LayoutShell({
           </div>
         </div>
 
-        {/* Main Content Area */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden w-full max-w-full min-w-0 overscroll-contain touch-pan-y cordel-bg p-4 sm:p-5 sm:px-7 md:px-9 sm:py-6 md:py-8 flex flex-col justify-between">
+        {/* Zone de contenu principale (balise sémantique main avec espacement mobile strict pt-3 px-2.5) */}
+        <main id="main-content" className="flex-1 overflow-y-auto overflow-x-hidden w-full max-w-full min-w-0 overscroll-contain touch-pan-y cordel-bg px-2.5 sm:px-7 md:px-9 pt-3 pb-4 sm:py-6 md:py-8 flex flex-col justify-between">
           <div className="flex flex-col gap-5 w-full max-w-full flex-1 min-w-0">
             
             {/* Break-Glass Active Warning Banner */}
@@ -1176,7 +1176,7 @@ export default function LayoutShell({
               {import.meta.env.VITE_APP_VERSION || 'v1.0.1'}
             </span>
           </div>
-        </div>
+        </main>
 
         {/* Sliding Navigation Drawer (Mobile & Tablet overlay) */}
         {isDrawerOpen && (

@@ -174,6 +174,20 @@ export default function TabAutomations({ groupId, eventTypes = ['prestation', 'r
       messageNotification: "Voici les informations et la feuille de route pour demain pour {{nomEvenement}}.",
       isActive: true,
       description: t('settings.communication.tabAutomations.envoiDeLaFeuilleDe')
+    },
+    {
+      id: 'publication_cr',
+      badge: '📜 ' + (t('settings.communication.tabAutomations.varal') || 'Varal'),
+      titre: t('settings.communication.tabAutomations.publicationDuCompteRenduAuVaral') || '📜 Publication Compte-Rendu au Varal',
+      typeEvenementCible: 'reunion',
+      publicCible: 'tous',
+      joursAvant: 0,
+      joursApres: 0,
+      pointDeReference: 'on_report_published',
+      titreNotification: '📜 Nouveau compte-rendu disponible',
+      messageNotification: 'Le compte-rendu de "{{nomEvenement}}" est validé et accroché sur le Varal !',
+      isActive: true,
+      description: t('settings.communication.tabAutomations.notificationDesQueLeCR') || "Notification Push automatique dès qu'un compte-rendu est validé et accroché sur le Varal."
     }
   ];
 
@@ -382,7 +396,7 @@ export default function TabAutomations({ groupId, eventTypes = ['prestation', 'r
                     className="theme-input text-xs font-bold py-1.5"
                   />
                 </div>
-              ) : !['eventConfirmed', 'eventCancelled', 'reportValidation'].includes(formData.pointDeReference) && (
+              ) : !['eventConfirmed', 'eventCancelled', 'reportValidation', 'on_report_published'].includes(formData.pointDeReference) && (
                 <div className="flex flex-col gap-1">
                   <label className="text-[9px] uppercase font-bold text-cordel-master-dark">
                     {t('settings.communication.tabAutomations.nombreDeJoursAvantDeclenchement')}
@@ -425,6 +439,13 @@ export default function TabAutomations({ groupId, eventTypes = ['prestation', 'r
                         if (!prev.joursApres) {
                           next.joursApres = 1;
                         }
+                      } else if (newPoint === 'on_report_published') {
+                        next.typeEvenementCible = 'reunion';
+                        next.titreNotification = '📜 Nouveau compte-rendu disponible';
+                        next.messageNotification = 'Le compte-rendu de "{{nomEvenement}}" est validé et accroché sur le Varal !';
+                        if (!prev.titre || prev.titre === '⏳ Rappel : Réponse attendue' || !prev.titre.trim()) {
+                          next.titre = t('settings.communication.tabAutomations.publicationDuCompteRenduAuVaral') || 'Publication Compte-Rendu au Varal';
+                        }
                       }
                       return next;
                     });
@@ -438,6 +459,7 @@ export default function TabAutomations({ groupId, eventTypes = ['prestation', 'r
                   <option value="eventConfirmed">{t('settings.communication.tabAutomations.aLaConfirmationDeL')}</option>
                   <option value="eventCancelled">{t('settings.communication.tabAutomations.aLAnnulationDeL')}</option>
                   <option value="reportValidation">{t('settings.communication.tabAutomations.aLaSoumissionDuCompte')}</option>
+                  <option value="on_report_published">{t('settings.communication.tabAutomations.aLaPublicationDuCompteRenduAuVaral') || "📜 À la publication d'un Compte-Rendu au Varal"}</option>
                 </select>
               </div>
 
@@ -490,6 +512,16 @@ export default function TabAutomations({ groupId, eventTypes = ['prestation', 'r
                 <span>🔗</span>
                 <span>
                   {t('settings.communication.tabAutomations.destinationAutomatiqueAuClicDeep')} <strong>/mon-vestiaire?eventId={t('settings.communication.tabAutomations.eventid')}</strong>
+                </span>
+              </div>
+            )}
+
+            {/* Deep link automatique explicatif si on_report_published */}
+            {formData.pointDeReference === 'on_report_published' && (
+              <div className="text-[10px] font-semibold text-emerald-900 dark:text-emerald-200 bg-emerald-50 dark:bg-emerald-950/20 p-2 rounded border border-dashed border-emerald-300 flex items-center gap-1.5">
+                <span>🔗</span>
+                <span>
+                  {t('settings.communication.tabAutomations.destinationAutomatiqueAuClicDeep')} <strong>/events/{t('settings.communication.tabAutomations.eventid')}</strong> • Filtrage strict selon l'audience (CA / Bureau si réunion CA, public ciblé si réunion publique).
                 </span>
               </div>
             )}
@@ -581,8 +613,12 @@ export default function TabAutomations({ groupId, eventTypes = ['prestation', 'r
                       {r.titre}
                     </span>
                     
-                    {/* Badge Cordel distinctif : Post-Événement vs Pré-Événement */}
-                    {r.pointDeReference === 'after_event' ? (
+                    {/* Badge Cordel distinctif : Post-Événement vs Pré-Événement vs Varal */}
+                    {r.pointDeReference === 'on_report_published' ? (
+                      <span className="bg-emerald-100 text-emerald-900 border border-emerald-400 text-[8.5px] font-black px-2 py-0.5 rounded uppercase tracking-wider">
+                        {t('settings.communication.tabAutomations.publicationVaral') || "📜 Publication Varal"}
+                      </span>
+                    ) : r.pointDeReference === 'after_event' ? (
                       <span className="bg-purple-100 text-purple-900 border border-purple-400 text-[8.5px] font-black px-2 py-0.5 rounded uppercase tracking-wider">
                         {t('settings.communication.tabAutomations.postEvenementJ')}{r.joursApres || r.joursAvant || 1})
                       </span>
@@ -608,6 +644,8 @@ export default function TabAutomations({ groupId, eventTypes = ['prestation', 'r
                       <span className="font-extrabold ml-1">{t('settings.communication.tabAutomations.immediatALAnnulation')}</span>
                     ) : r.pointDeReference === 'reportValidation' ? (
                       <span className="font-extrabold ml-1">{t('settings.communication.tabAutomations.immediatALaSoumissionDu')}</span>
+                    ) : r.pointDeReference === 'on_report_published' ? (
+                      <span className="font-extrabold text-emerald-800 ml-1">{t('settings.communication.tabAutomations.immediatALaPublicationAuVaral') || "À la publication au Varal"}</span>
                     ) : r.pointDeReference === 'after_event' ? (
                       <>
                         <span className="underline decoration-amber-500 font-extrabold mx-1">{r.joursApres || r.joursAvant || 1} {t('settings.communication.tabAutomations.jourS')}</span>

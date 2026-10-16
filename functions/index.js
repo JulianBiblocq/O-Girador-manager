@@ -2078,7 +2078,7 @@ function escapeHtmlMeta(str) {
 function isSocialBotOrCrawler(userAgent = "") {
   if (!userAgent || typeof userAgent !== "string") return false;
   const ua = userAgent.toLowerCase();
-  return /whatsapp|facebookexternalhit|facebot|twitterbot|slackbot|linkedinbot|telegrambot|discordbot|skypeuripreview|applebot|googlebot|bingbot|yandex|duckduckbot/i.test(ua);
+  return /curl|wget|whatsapp|facebookexternalhit|facebot|twitterbot|slackbot|linkedinbot|telegrambot|discordbot|skypeuripreview|applebot|googlebot|bingbot|yandex|duckduckbot/i.test(ua);
 }
 
 /**
@@ -2113,12 +2113,12 @@ exports.serveDynamicApp = onRequest(async (req, res) => {
     if (query.groupe || query.tenant || query.group || query.groupId || query.assoc) {
       groupId = query.groupe || query.tenant || query.group || query.groupId || query.assoc;
     } 
-    // Détection via chemin d'accès (ex: /invite/sambabulles ou /sambabulles)
-    else if (urlPath.startsWith("/invite/") && urlPath.split("/")[2]) {
+    // Détection via chemin d'accès (ex: /rejoindre/sambabulles ou /invite/sambabulles)
+    else if ((urlPath.startsWith("/rejoindre/") || urlPath.startsWith("/invite/")) && urlPath.split("/")[2]) {
       groupId = urlPath.split("/")[2];
     } else if (hostname.includes("mostrador.o-girador.com") || hostname.includes("mostrador")) {
       const pathTenant = urlPath.split("/").filter(Boolean)[0];
-      const reserved = ["api", "login", "setup", "app", "vitrine", "mostrador", "demo", "agenda", "events", "invite"];
+      const reserved = ["api", "login", "setup", "app", "vitrine", "mostrador", "demo", "agenda", "events", "invite", "rejoindre"];
       if (pathTenant && !reserved.includes(pathTenant.toLowerCase())) {
         groupId = pathTenant.toLowerCase();
       }
@@ -2145,6 +2145,7 @@ exports.serveDynamicApp = onRequest(async (req, res) => {
 
     // 2. Détection du mode invitation / adhésion
     const isInviteOrSignup = query.mode === "signup" ||
+                             urlPath.startsWith("/rejoindre") ||
                              urlPath.startsWith("/invite") ||
                              query.invite === "true" ||
                              Boolean(groupId && (query.mode || query.signup || query.invitation));
@@ -2162,10 +2163,22 @@ exports.serveDynamicApp = onRequest(async (req, res) => {
         const capitalized = cleanId.charAt(0).toUpperCase() + cleanId.slice(1).toLowerCase();
         assocDoc = await db.collection("associations").doc(capitalized).get();
       }
+      if (!assocDoc.exists) {
+        const allAssocs = await db.collection("associations").get();
+        for (const docSnap of allAssocs.docs) {
+          if (docSnap.id.toLowerCase() === cleanId.toLowerCase() ||
+              docSnap.data()?.nom?.toLowerCase() === cleanId.toLowerCase() ||
+              docSnap.data()?.shortName?.toLowerCase() === cleanId.toLowerCase()) {
+            assocDoc = docSnap;
+            break;
+          }
+        }
+      }
 
       if (assocDoc.exists) {
         const data = assocDoc.data() || {};
         const assoName = data.nom || data.name || data.branding?.name || cleanId;
+        const canonicalDocId = assocDoc.id;
 
         if (isInviteOrSignup) {
           seoTitle = `Rejoindre ${assoName} sur O Girador`;
@@ -2174,12 +2187,35 @@ exports.serveDynamicApp = onRequest(async (req, res) => {
           seoTitle = `${assoName} | O Girador`;
           seoDesc = data.description
             ? data.description.substring(0, 180)
-            : `Plateforme de gestion pour ${assoName} : agenda, répétitions, vestiaire et vie du groupe.`;
+            : `Rejoignez ${assoName} : inscriptions, agenda, répétitions, vestiaire et vie de l'association.`;
         }
 
+        const ogTitle = isInviteOrSignup
+          ? `${assoName} — Espace Membre O Girador`
+          : `${assoName} | O Girador`;
+        const ogDesc = `Rejoignez ${assoName} : inscriptions, agenda, répétitions, vestiaire et vie de l'association.`;
+
         // Priorité absolue au Sceau Combiné officiel (anneau Cordel ★ O GIRADOR ★ + logo de l'asso)
-        seoImage = data.branding?.combinedLogoUrl ||
-                   data.combinedLogoUrl ||
+        let combinedUrl = data.branding?.combinedLogoUrl || data.combinedLogoUrl;
+        if (!combinedUrl) {
+          if (cleanId.toLowerCase() === "samambaia") {
+            combinedUrl = `https://${hostingDomain}/brandings/logoOGSamambaia.png`;
+            db.collection("associations").doc(canonicalDocId).set({
+              branding: { combinedLogoUrl: combinedUrl, customFaviconUrl: combinedUrl },
+              combinedLogoUrl: combinedUrl,
+              customFaviconUrl: combinedUrl
+            }, { merge: true }).catch(err => console.warn("Auto-sync Samambaia seal err:", err));
+          } else if (cleanId.toLowerCase() === "sambabulles") {
+            combinedUrl = `https://${hostingDomain}/brandings/logoOGSambabulles.png`;
+            db.collection("associations").doc(canonicalDocId).set({
+              branding: { combinedLogoUrl: combinedUrl, customFaviconUrl: combinedUrl },
+              combinedLogoUrl: combinedUrl,
+              customFaviconUrl: combinedUrl
+            }, { merge: true }).catch(err => console.warn("Auto-sync Sambabulles seal err:", err));
+          }
+        }
+
+        seoImage = combinedUrl ||
                    data.branding?.logoUrl ||
                    data.logoUrl ||
                    data.coverUrl ||
@@ -2188,11 +2224,11 @@ exports.serveDynamicApp = onRequest(async (req, res) => {
     }
 
     // Détermination de l'URL cible de redirection pour les utilisateurs finaux
-    const targetRedirectUrl = urlPath.startsWith("/invite")
+    const targetRedirectUrl = (urlPath.startsWith("/rejoindre") || urlPath.startsWith("/invite"))
       ? `https://${hostname}/?groupe=${encodeURIComponent(groupId || "")}&mode=signup`
       : seoUrl;
 
-    // 4. Si la requête provient d'un robot crawler (WhatsApp, Facebook, Twitter...),
+    // 4. Si la requête provient d'un robot crawler (WhatsApp, Facebook, Twitter, curl...),
     // renvoyer immédiatement un template HTML minimaliste et ultra-rapide (< 1KB)
     if (isBot) {
       const safeTitle = escapeHtmlMeta(seoTitle);
@@ -2222,7 +2258,7 @@ exports.serveDynamicApp = onRequest(async (req, res) => {
   <meta property="og:image:alt" content="${safeTitle}" />
 
   <!-- Twitter / X Card -->
-  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:card" content="summary" />
   <meta name="twitter:title" content="${safeTitle}" />
   <meta name="twitter:description" content="${safeDesc}" />
   <meta name="twitter:image" content="${safeImage}" />
@@ -2242,17 +2278,24 @@ exports.serveDynamicApp = onRequest(async (req, res) => {
       return res.status(200).send(botHtml);
     }
 
-    // 5. Redirection directe des navigateurs réels accédant à /invite
-    if (urlPath.startsWith("/invite") && groupId) {
+    // 5. Redirection directe des navigateurs réels accédant à /rejoindre ou /invite
+    if ((urlPath.startsWith("/rejoindre") || urlPath.startsWith("/invite")) && groupId) {
       return res.redirect(302, `/?groupe=${encodeURIComponent(groupId)}&mode=signup`);
     }
 
-    // 6. Pour les vrais navigateurs : injection des métadonnées dynamiques dans index.html
+    // 6. Pour les vrais navigateurs : injection des métadonnées dynamiques dans app.html (ou index.html)
     try {
-      const htmlResponse = await fetch(`https://${hostingDomain}/index.html?t=${Date.now()}`, {
+      let htmlResponse = await fetch(`https://${hostingDomain}/app.html?t=${Date.now()}`, {
         cache: "no-store",
         headers: { "Cache-Control": "no-cache, no-store, must-revalidate" }
       });
+      if (!htmlResponse.ok) {
+        htmlResponse = await fetch(`https://${hostingDomain}/index.html?t=${Date.now()}`, {
+          cache: "no-store",
+          headers: { "Cache-Control": "no-cache, no-store, must-revalidate" }
+        });
+      }
+
       let htmlContent = await htmlResponse.text();
 
       htmlContent = htmlContent
@@ -2268,18 +2311,58 @@ exports.serveDynamicApp = onRequest(async (req, res) => {
         .replace(/<meta name="twitter:description" content=".*?" \/>/gi, `<meta name="twitter:description" content="${escapeHtmlMeta(seoDesc)}" />`)
         .replace(/<meta name="twitter:image" content=".*?" \/>/gi, `<meta name="twitter:image" content="${escapeHtmlMeta(seoImage)}" />`);
 
-      res.set("Cache-Control", "no-cache, no-store, must-revalidate");
-      res.set("Pragma", "no-cache");
-      res.set("Expires", "0");
+      res.set("Content-Type", "text/html; charset=utf-8");
+      res.set("Cache-Control", "public, max-age=300, s-maxage=600");
       return res.status(200).send(htmlContent);
     } catch (fetchErr) {
-      console.warn("serveDynamicApp - Erreur chargement index.html distant, secours local :", fetchErr);
+      console.warn("serveDynamicApp - Erreur chargement HTML distant, secours local :", fetchErr);
       return res.redirect(302, targetRedirectUrl);
     }
 
   } catch (error) {
     console.error("serveDynamicApp - Erreur générale :", error);
     res.status(500).send("Erreur de génération SEO dynamique.");
+  }
+});
+
+/**
+ * Cloud Function HTTP (v2) : syncSealsAdmin
+ * Endpoint d'administration pour synchroniser immédiatement les sceaux combinés dans Firestore.
+ */
+exports.syncSealsAdmin = onRequest(async (req, res) => {
+  try {
+    const db = getFirestore();
+    const samambaiaUrl = "https://organizador.o-girador.com/brandings/logoOGSamambaia.png";
+    const sambabullesUrl = "https://organizador.o-girador.com/brandings/logoOGSambabulles.png";
+
+    await db.collection("associations").doc("Samambaia").set({
+      branding: {
+        combinedLogoUrl: samambaiaUrl,
+        customFaviconUrl: samambaiaUrl
+      },
+      combinedLogoUrl: samambaiaUrl,
+      customFaviconUrl: samambaiaUrl
+    }, { merge: true });
+
+    await db.collection("associations").doc("sambabulles").set({
+      branding: {
+        combinedLogoUrl: sambabullesUrl,
+        customFaviconUrl: sambabullesUrl
+      },
+      combinedLogoUrl: sambabullesUrl,
+      customFaviconUrl: sambabullesUrl
+    }, { merge: true });
+
+    res.json({
+      success: true,
+      updated: {
+        Samambaia: samambaiaUrl,
+        sambabulles: sambabullesUrl
+      }
+    });
+  } catch (err) {
+    console.error("syncSealsAdmin error:", err);
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -2599,7 +2682,238 @@ async function runRelanceAutomations(db) {
 }
 
 /**
- * Cloud Function Cron planifiée pour l'exécution quotidienne des relances.
+ * Notifie les membres à la publication d'un compte-rendu selon les règles d'automatisation on_report_published actives.
+ * Filtrage strict :
+ * - Si réunion CA : uniquement les membres du CA ou du Bureau
+ * - Si réunion Publique : selon le publicCible de la règle
+ *
+ * @param {Object} db Instance Firestore Admin SDK
+ * @param {Object} event Données de l'événement publié
+ */
+async function notifyReportPublishedBackend(db, event) {
+  const groupId = event.groupId;
+  if (!groupId) return;
+
+  const rulesSnap = await db.collection("associations").doc(groupId)
+    .collection("automation_rules")
+    .where("isActive", "==", true)
+    .where("pointDeReference", "==", "on_report_published")
+    .get();
+
+  if (rulesSnap.empty) return;
+
+  const usersSnap = await db.collection("users")
+    .where("groupId", "==", groupId)
+    .get();
+
+  const isCA = (event.audience === "ca" || event.portee === "ca");
+  const eventName = event.titre || event.nom || "Réunion";
+
+  for (const ruleDoc of rulesSnap.docs) {
+    const rule = ruleDoc.data();
+    if (rule.typeEvenementCible && rule.typeEvenementCible !== "tous" && rule.typeEvenementCible !== (event.type || "reunion")) {
+      continue;
+    }
+
+    const targetUsers = [];
+    usersSnap.forEach((uDoc) => {
+      const u = { id: uDoc.id, ...uDoc.data() };
+      if (u.statutActuel === "archived") return;
+
+      if (isCA) {
+        const uRole = String(u.role || "").toLowerCase().trim();
+        const isAdmin = uRole === "mestre" || uRole === "super-admin" || uRole === "admin" || uRole === "bureau" || uRole === "ca" || uRole === "secretaire" || u.isSystemAdmin === true;
+        const tags = Array.isArray(u.tags)
+          ? u.tags.map(t => String(typeof t === 'string' ? t : (t.label || t.nom || '')).toLowerCase().trim())
+          : [];
+        const isCaTag = tags.some(t => ['ca', 'bureau', 'president', 'tresorier', 'secretaire'].includes(t));
+        if (isAdmin || isCaTag) {
+          targetUsers.push(u);
+        }
+      } else {
+        // Publique : selon le publicCible de la règle
+        if (rule.publicCible === "tous" || !rule.publicCible) {
+          targetUsers.push(u);
+        } else if (rule.publicCible === "present_only") {
+          const isPresent = (event.inscriptions || []).some(ins => ins.userId === u.id && ins.status === "present");
+          if (isPresent) targetUsers.push(u);
+        } else if (rule.publicCible === "inscrits") {
+          const isIns = (event.inscriptions || []).some(ins => ins.userId === u.id);
+          if (isIns) targetUsers.push(u);
+        } else {
+          targetUsers.push(u);
+        }
+      }
+    });
+
+    const notifTitle = rule.titreNotification || "📜 Nouveau compte-rendu disponible";
+    const notifBody = (rule.messageNotification || 'Le compte-rendu de "{{nomEvenement}}" est validé et accroché sur le Varal !')
+      .replace(/\{\{nomEvenement\}\}/g, eventName);
+    const deepLinkUrl = `/events/${event.id}`;
+
+    for (const targetUser of targetUsers) {
+      await db.collection("notifications_queue").add({
+        groupId: groupId,
+        recipientId: targetUser.id,
+        title: notifTitle,
+        body: notifBody,
+        eventId: event.id,
+        url: deepLinkUrl,
+        createdAt: new Date().toISOString()
+      });
+    }
+  }
+}
+
+/**
+ * Auto-validation à J+7 des comptes-rendus de réunion.
+ * Parcourt les réunions en attente de relecture ayant autoValidateAfter7Days: true.
+ * Si l'échéance est atteinte et qu'aucun refus démocratique n'est actif,
+ * publie automatiquement le compte-rendu dans le Varal et déclenche la notification FCM.
+ * 
+ * @param {Object} db Instance Firestore Admin SDK
+ * @returns {Promise<Object>} Rapport d'exécution
+ */
+async function autoValidateReports(db) {
+  const report = { checked: 0, validated: 0, suspended: 0, details: [] };
+  const now = new Date();
+
+  try {
+    const eventsSnap = await db.collection("events")
+      .where("compteRenduStatus", "==", "attente_relecture")
+      .get();
+
+    if (eventsSnap.empty) {
+      return report;
+    }
+
+    for (const evDoc of eventsSnap.docs) {
+      const evData = evDoc.data();
+      report.checked++;
+
+      if (!evData.autoValidateAfter7Days || !evData.compteRenduAutoValidateAt) {
+        continue;
+      }
+
+      const deadline = new Date(evData.compteRenduAutoValidateAt);
+      if (isNaN(deadline.getTime()) || now < deadline) {
+        continue;
+      }
+
+      // Sécurité démocratique : aucun membre présent ne doit avoir voté contre (approved === false)
+      const approvals = evData.compteRenduApprovals || {};
+      const hasRejection = Object.values(approvals).some(v => v && v.approved === false);
+      if (hasRejection) {
+        report.suspended++;
+        report.details.push(`[${evDoc.id}] Auto-validation J+7 suspendue : opposition active d'un membre présent.`);
+        continue;
+      }
+
+      // Aucune opposition et échéance dépassée : publication définitive automatique
+      const isCA = (evData.audience === "ca" || evData.portee === "ca");
+      const points = evData.pointsOrdreDuJour || [];
+      const compiledMarkdown = points.length > 0
+        ? points.map(p => `### 📌 ${p.titre}\n\n${p.notesCR ? p.notesCR.trim() : "*Aucune note rédigée.*"}`).join('\n\n---\n\n')
+        : "*Aucun point consigné dans ce compte-rendu.*";
+
+      const presents = (evData.inscriptions || []).filter(ins => ins.status === "present");
+      const presentsNames = presents.map(ins => ins.userName || "Membre anonyme");
+      const invites = Math.max(0, parseInt(evData.invitesOuPublicCount, 10) || 0);
+      const totalParticipants = presentsNames.length + invites;
+
+      const audienceLabel = isCA ? "Réunion de CA / Bureau" : "Réunion Publique / Assemblée";
+      const presentsSummary = invites > 0
+        ? `${presentsNames.length} adhérent(s) + ${invites} invité(s)`
+        : `${presentsNames.length} présent(s)`;
+
+      const evDateObj = new Date(evData.date || now);
+      const day = String(evDateObj.getDate()).padStart(2, "0");
+      const month = String(evDateObj.getMonth() + 1).padStart(2, "0");
+      const year = evDateObj.getFullYear();
+      const docTitle = `CR du ${day}/${month}/${year}`;
+      const docSousTitre = `${audienceLabel} • ${presentsSummary}`;
+
+      // Recherche document existant dans le Varal
+      let docRefId = evData.compteRenduVaralId || null;
+      if (!docRefId) {
+        try {
+          const existingSnap = await db.collection("documents")
+            .where("groupId", "==", evData.groupId)
+            .where("eventId", "==", evDoc.id)
+            .get();
+          if (!existingSnap.empty) {
+            docRefId = existingSnap.docs[0].id;
+          }
+        } catch (findErr) {
+          console.warn("autoValidateReports - Erreur recherche doc existant :", findErr);
+        }
+      }
+
+      const docPayload = {
+        titre: docTitle,
+        sousTitre: docSousTitre,
+        categoryId: "Administratif",
+        categorie: "ComptesRendus",
+        sousCategorie: isCA ? "Comptes Rendus CA" : "Comptes Rendus Publics",
+        annee: year,
+        type: "report",
+        texte: compiledMarkdown,
+        points: points,
+        dateAjout: new Date().toISOString(),
+        groupId: evData.groupId,
+        eventId: evDoc.id,
+        audience: isCA ? "ca" : "publique",
+        portee: isCA ? "ca" : "publique",
+        allowedTags: isCA ? ["CA", "Bureau", "C.A", "C.A.", "Conseil d'Administration"] : [],
+        presents: presentsNames,
+        invitesOuPublicCount: invites,
+        totalParticipants: totalParticipants,
+        order: 9999,
+        fileUrl: ""
+      };
+
+      if (docRefId) {
+        await db.collection("documents").doc(docRefId).update(docPayload);
+      } else {
+        const newDocRef = await db.collection("documents").add(docPayload);
+        docRefId = newDocRef.id;
+      }
+
+      // Mise à jour de l'événement
+      await evDoc.ref.update({
+        compteRenduStatus: "publie",
+        compteRenduVaralId: docRefId,
+        audience: isCA ? "ca" : "publique",
+        portee: isCA ? "ca" : "publique",
+        compteRenduAutoValidated: true,
+        compteRenduAutoValidatedAt: new Date().toISOString()
+      });
+
+      report.validated++;
+      report.details.push(`[${evDoc.id}] Compte-rendu auto-validé à J+7 et publié au Varal (${docTitle}).`);
+
+      // Déclenchement de la notification Push FCM si une règle on_report_published existe
+      try {
+        await notifyReportPublishedBackend(db, {
+          id: evDoc.id,
+          ...evData,
+          audience: isCA ? "ca" : "publique",
+          portee: isCA ? "ca" : "publique"
+        });
+      } catch (notifErr) {
+        console.error("autoValidateReports - Erreur notification :", notifErr);
+      }
+    }
+  } catch (err) {
+    console.error("autoValidateReports - Erreur globale :", err);
+    report.error = err.message;
+  }
+
+  return report;
+}
+
+/**
+ * Cloud Function Cron planifiée pour l'exécution quotidienne des relances et auto-validations.
  * Déclenchée chaque matin à 08:00 (fuseau Europe/Paris).
  */
 exports.cronRelances = onSchedule(
@@ -2610,16 +2924,18 @@ exports.cronRelances = onSchedule(
     timeoutSeconds: 300
   },
   async (event) => {
-    console.log("cronRelances - Démarrage du traitement planifié des relances...");
+    console.log("cronRelances - Démarrage du traitement planifié des relances et auto-validations...");
     const db = getFirestore();
-    const result = await runRelanceAutomations(db);
-    console.log("cronRelances - Bilan :", result);
-    return result;
+    const resultRelances = await runRelanceAutomations(db);
+    const resultAutoValidation = await autoValidateReports(db);
+    console.log("cronRelances - Bilan Relances :", resultRelances);
+    console.log("cronRelances - Bilan Auto-Validation CR :", resultAutoValidation);
+    return { resultRelances, resultAutoValidation };
   }
 );
 
 /**
- * Cloud Function HTTPS / OnCall permettant de déclencher manuellement le moteur de relances.
+ * Cloud Function HTTPS / OnCall permettant de déclencher manuellement le moteur de relances et auto-validations.
  * Utile pour les tests d'intégration et le forçage administrateur.
  */
 exports.triggerRelancesManual = onCall(async (request) => {
@@ -2627,7 +2943,9 @@ exports.triggerRelancesManual = onCall(async (request) => {
     throw new HttpsError("unauthenticated", "Authentification requise pour déclencher les relances.");
   }
   const db = getFirestore();
-  return await runRelanceAutomations(db);
+  const resultRelances = await runRelanceAutomations(db);
+  const resultAutoValidation = await autoValidateReports(db);
+  return { resultRelances, resultAutoValidation };
 });
 
 // ==========================================

@@ -1,6 +1,7 @@
 import { collection, query, where, getDocs, addDoc, doc, getDoc } from 'firebase/firestore';
-import { db } from '../firebase';
-import { resolveCategory, isUserCategoryMatchingEvent } from './categoryUtils';
+import { db } from '../firebase.js';
+import { resolveCategory, isUserCategoryMatchingEvent } from './categoryUtils.js';
+import { isMemberCaOrBureau } from './memberUtils.js';
 
 /**
  * Helper: Vérifie si un membre est éligible pour recevoir la relance d'une règle spécifique
@@ -148,6 +149,12 @@ export async function runAutomationEngine(groupId, isSimulation = false) {
 
     // 5. Évaluation des règles
     for (const rule of activeRules) {
+      if (['eventConfirmed', 'eventCancelled', 'reportValidation', 'on_report_published'].includes(rule.pointDeReference)) {
+        const triggerLabel = rule.pointDeReference === 'on_report_published' ? 'publication au Varal' : rule.pointDeReference;
+        details.push(`ℹ️ [Règle "${rule.titre}"] : Déclencheur instantané (${triggerLabel}) — actif aux événements en temps réel.`);
+        continue;
+      }
+
       const rulePublicCible = rule.publicCible || 'tous';
       const isAfterEvent = rule.pointDeReference === 'after_event';
 
@@ -337,6 +344,20 @@ export async function triggerEventStatusAutomation(groupId, event, triggerType) 
         if (triggerType === 'reportValidation') {
           const isPresent = eventInscriptions.some(ins => ins.userId === docSnap.id && ins.status === 'present');
           if (isPresent) interestedUsersForRule.push({ id: docSnap.id, ...uData });
+        } else if (triggerType === 'on_report_published') {
+          // Filtrage strict selon l'audience de la réunion :
+          // Si réunion CA / Bureau : strictement les membres du CA ou du Bureau
+          const isCA = (event.audience === 'ca' || event.portee === 'ca');
+          if (isCA) {
+            if (isMemberCaOrBureau(uData, uData.tags)) {
+              interestedUsersForRule.push({ id: docSnap.id, ...uData });
+            }
+          } else {
+            // Réunion publique : selon le publicCible de la règle
+            if (isUserEligibleForRule(uData, rulePublicCible, event, customCategories, eventInscriptions)) {
+              interestedUsersForRule.push({ id: docSnap.id, ...uData });
+            }
+          }
         } else {
           // Pour les autres déclencheurs, on applique le filtrage fin
           if (isUserEligibleForRule(uData, rulePublicCible, event, customCategories, eventInscriptions)) {
@@ -348,13 +369,18 @@ export async function triggerEventStatusAutomation(groupId, event, triggerType) 
       if (interestedUsersForRule.length === 0) continue;
 
       const eventName = event.titre || event.nom || 'Événement';
-      const bodyMessage = (rule.messageNotification || '').replace(/\{\{nomEvenement\}\}/g, eventName);
+      const fallbackMsg = triggerType === 'on_report_published'
+        ? 'Le compte-rendu de "{{nomEvenement}}" est validé et accroché sur le Varal !'
+        : '';
+      const bodyMessage = (rule.messageNotification || fallbackMsg).replace(/\{\{nomEvenement\}\}/g, eventName);
 
       const defaultTitle = triggerType === 'eventCancelled' ? 'Événement Annulé !' : 
                            triggerType === 'reportValidation' ? 'Compte-rendu à valider !' : 
+                           triggerType === 'on_report_published' ? '📜 Nouveau compte-rendu disponible' :
                            'Événement Confirmé !';
       const actionText = triggerType === 'eventCancelled' ? 'l\'annulation' : 
                          triggerType === 'reportValidation' ? 'la mise en relecture du CR' :
+                         triggerType === 'on_report_published' ? 'la publication du compte-rendu au Varal' :
                          'la confirmation';
 
       details.push(`🔔 [Règle "${rule.titre}"] : ${interestedUsersForRule.length} membre(s) notifié(s) de ${actionText} pour "${eventName}"`);
@@ -367,7 +393,7 @@ export async function triggerEventStatusAutomation(groupId, event, triggerType) 
           title: rule.titreNotification || defaultTitle,
           body: bodyMessage,
           eventId: event.id,
-          url: `/app/events/${event.id}`,
+          url: `/events/${event.id}`,
           createdAt: new Date().toISOString()
         });
       }

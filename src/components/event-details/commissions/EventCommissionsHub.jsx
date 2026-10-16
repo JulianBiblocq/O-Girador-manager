@@ -56,80 +56,73 @@ export default function EventCommissionsHub({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs select-none"
+      className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs select-none overflow-y-auto"
       onMouseDown={(e) => { backdropMouseDownRef.current = (e.target === e.currentTarget); }}
       onClick={(e) => {
-        if (!e.target || !e.target.isConnected) return;
-        if (backdropMouseDownRef.current && e.target === e.currentTarget) {
-          console.trace("⚠️ FERMETURE MODALE DÉCLENCHÉE PAR : Clic backdrop EventCommissionsHub");
-          onClose();
-        }
+        if (!e.target?.isConnected) return;
+        if (backdropMouseDownRef.current && e.target === e.currentTarget) { console.trace("⚠️ FERMETURE MODALE : Clic backdrop EventCommissionsHub"); onClose(); }
         backdropMouseDownRef.current = false;
       }}
     >
       <div
-        className="w-full max-w-5xl bg-cordel-bg-light border-3 border-encre-noire rounded-[10px_14px_9px_12px] shadow-[6px_6px_0px_0px_#181716] flex flex-col max-h-[95vh] overflow-hidden"
+        className="w-full max-w-5xl bg-cordel-bg-light border-0 sm:border-3 border-encre-noire rounded-none sm:rounded-[10px_14px_9px_12px] shadow-none sm:shadow-[6px_6px_0px_0px_#181716] flex flex-col h-full sm:h-auto max-h-[100dvh] sm:max-h-[95vh] overflow-hidden my-auto"
         onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* En-tête Cordel de la Tour de Contrôle */}
-        <div className="px-4 py-3 border-b-2 border-encre-noire bg-cordel-bg flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <span className="text-2xl">🎪</span>
-            <div className="flex flex-col min-w-0">
-              <div className="flex items-center gap-2">
-                <h2 className="text-sm sm:text-base font-black uppercase tracking-wide text-encre-noire truncate">
-                  Tour de Contrôle — {event?.title || event?.titre || 'Événement'}
-                </h2>
-                {countdownText && (
-                  <span className="px-2 py-0.5 rounded text-[10px] font-black border border-encre-noire bg-[var(--color-cordel-ocre)] text-white shrink-0">
-                    {countdownText}
-                  </span>
-                )}
+        {/* En-tête Cordel de la Tour de Contrôle (Repli responsive garanti) */}
+        <div className="px-3 sm:px-4 py-2.5 sm:py-3 border-b-2 border-encre-noire bg-cordel-bg flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 shrink-0">
+          <div className="flex items-center justify-between gap-2.5 min-w-0 flex-1">
+            <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
+              <span className="text-xl sm:text-2xl shrink-0">🎪</span>
+              <div className="flex flex-col min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                  <h2 className="text-xs sm:text-base font-black uppercase tracking-wide text-encre-noire truncate">
+                    Tour de Contrôle — {event?.title || event?.titre || 'Événement'}
+                  </h2>
+                  {countdownText && (
+                    <span className="px-2 py-0.5 rounded text-[9.5px] sm:text-[10px] font-black border border-encre-noire bg-[var(--color-cordel-ocre)] text-white shrink-0">
+                      {countdownText}
+                    </span>
+                  )}
+                </div>
+                <p className="text-[9.5px] sm:text-[10px] text-stone-600 truncate">
+                  Coordination générale des chantiers et des commissions associatives
+                </p>
               </div>
-              <p className="text-[10px] text-stone-600 truncate">
-                Coordination générale des chantiers et des commissions associatives
-              </p>
             </div>
+
+            {/* Bouton fermeture mobile en haut à droite */}
+            <button
+              type="button"
+              onClick={() => { console.trace("⚠️ FERMETURE MODALE : Bouton ✕ EventCommissionsHub"); onClose(); }}
+              className="sm:hidden w-7 h-7 rounded border border-encre-noire bg-white flex items-center justify-center font-black text-xs hover:bg-stone-100 shrink-0 cursor-pointer"
+              title="Fermer la Tour de Contrôle"
+            >✕</button>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 justify-end w-full sm:w-auto">
             {canCreate && (
               <button
                 type="button"
                 onClick={handleOpenCreate}
-                className="px-3 py-1.5 font-black text-xs rounded border border-encre-noire bg-[var(--color-cordel-vert)] text-white hover:opacity-90 shadow-xs flex items-center gap-1"
+                className="flex-1 sm:flex-initial px-3 py-1.5 font-black text-xs rounded border border-encre-noire bg-[var(--color-cordel-vert)] text-white hover:opacity-90 shadow-xs flex items-center justify-center gap-1 cursor-pointer"
               >
-                <span>+</span>
-                <span className="hidden sm:inline">Nouvelle commission</span>
+                <span>+</span><span>Nouvelle commission</span>
               </button>
             )}
             <button
               type="button"
-              onClick={() => {
-                console.trace("⚠️ FERMETURE MODALE DÉCLENCHÉE PAR : Bouton ✕ EventCommissionsHub");
-                onClose();
-              }}
-              className="w-8 h-8 rounded border border-encre-noire bg-white flex items-center justify-center font-black text-sm hover:bg-stone-100"
+              onClick={() => { console.trace("⚠️ FERMETURE MODALE : Bouton ✕ EventCommissionsHub"); onClose(); }}
+              className="hidden sm:flex w-8 h-8 rounded border border-encre-noire bg-white items-center justify-center font-black text-sm hover:bg-stone-100 shrink-0 cursor-pointer"
               title="Fermer la Tour de Contrôle"
-            >
-              ✕
-            </button>
+            >✕</button>
           </div>
         </div>
 
         {/* Corps défilant du Hub */}
         <div className="p-4 flex-1 overflow-y-auto flex flex-col gap-4">
-          {/* Baromètre de santé global */}
           <CommissionBarometer stats={stats} />
-
-          {/* Liaison Salon Porte-Voix */}
-          <EventForumChannelLink
-            event={event}
-            groupId={event?.groupId}
-            canManage={canCreate}
-            onNavigateToView={onNavigateToView}
-          />
+          <EventForumChannelLink event={event} groupId={event?.groupId} canManage={canCreate} onNavigateToView={onNavigateToView} />
 
           {/* Grille des commissions */}
           <div className="flex flex-col gap-2">

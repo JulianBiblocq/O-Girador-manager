@@ -60,9 +60,26 @@
               "value": "no-cache, no-store, must-revalidate"
             }
           ]
+        },
+        {
+          "source": "/app.html",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, no-store, must-revalidate"
+            }
+          ]
         }
       ],
       "rewrites": [
+        {
+          "source": "/rejoindre/**",
+          "function": "serveDynamicApp"
+        },
+        {
+          "source": "/invite/**",
+          "function": "serveDynamicApp"
+        },
         {
           "source": "/sitemap.xml",
           "function": "serveSitemap"
@@ -134,9 +151,26 @@
               "value": "no-cache, no-store, must-revalidate"
             }
           ]
+        },
+        {
+          "source": "/app.html",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, no-store, must-revalidate"
+            }
+          ]
         }
       ],
       "rewrites": [
+        {
+          "source": "/rejoindre/**",
+          "function": "serveDynamicApp"
+        },
+        {
+          "source": "/invite/**",
+          "function": "serveDynamicApp"
+        },
         {
           "source": "/sitemap.xml",
           "function": "serveSitemap"

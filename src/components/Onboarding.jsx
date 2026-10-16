@@ -387,8 +387,11 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
         instrumentsJoues: cleanVoeux,
         genre: formData.genre,
         isNew: isAncien ? false : true,
+        status: isAncien ? (profileData?.status || "active") : "pending",
         statutActuel: isAncien ? (profileData?.statutActuel || "active") : "pending",
-        groupId: (profileData?.groupId || groupId)?.toLowerCase() === 'samambaia' ? 'Samambaia' : (profileData?.groupId || groupId),
+        groupId: (profileData?.groupId || groupId)?.toLowerCase() === 'samambaia' ? 'Samambaia' : (profileData?.groupId || groupId || 'Samambaia'),
+        role: profileData?.role || 'membre',
+        tags: Array.isArray(profileData?.tags) ? profileData.tags : [],
         afficherTelephone: Boolean(formData.afficherTelephone),
         afficherDateNaissance: Boolean(formData.afficherDateNaissance),
         visibiliteAdresse: formData.visibiliteAdresse || 'ville',
@@ -409,67 +412,43 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
       // pour éradiquer tout rejet par les règles Firestore ou affectedKeys()
       const sanitizedUserDoc = sanitizeUserDocPayload(userDoc);
 
-      if (isNewDoc) {
-        // --- 1. CRÉATION D'UN NOUVEAU DOCUMENT UTILISATEUR ---
-        // Conformité stricte avec les règles Firestore allow create :
-        // - role doit être 'membre'
-        // - tags doit être []
-        // - Règle absolue de sécurité : Ne JAMAIS inclure paymentStatus ni isSystemAdmin
-        //   dans les écritures clientes. Le rattachement du paiement HelloAsso est délégué
-        //   exclusivement au trigger Cloud Function onUserCreate (Cloud Function administrative).
-        sanitizedUserDoc.role = "membre";
-        sanitizedUserDoc.tags = [];
+      // Conformité stricte avec les règles Firestore :
+      // - Règle absolue de sécurité : Ne JAMAIS inclure paymentStatus ni isSystemAdmin
+      //   dans les écritures clientes. Le rattachement du paiement HelloAsso est délégué
+      //   exclusivement au trigger Cloud Function onUserCreate (Cloud Function administrative).
+      sanitizedUserDoc.role = profileData?.role || "membre";
+      if (!Array.isArray(sanitizedUserDoc.tags)) sanitizedUserDoc.tags = [];
+      if (!Array.isArray(sanitizedUserDoc.selectedOptions)) sanitizedUserDoc.selectedOptions = [];
 
-        delete sanitizedUserDoc.paymentStatus;
-        delete sanitizedUserDoc.isSystemAdmin;
-        delete sanitizedUserDoc.hasAccessLogistique;
-        delete sanitizedUserDoc.canWriteSequenciador;
-        delete sanitizedUserDoc.canWriteDansador;
-        delete sanitizedUserDoc.canWriteOrchestrador;
-        delete sanitizedUserDoc.cotisationAjour;
-        delete sanitizedUserDoc.cotisation;
-        delete sanitizedUserDoc.helloAssoLastPayment;
+      delete sanitizedUserDoc.paymentStatus;
+      delete sanitizedUserDoc.isSystemAdmin;
+      delete sanitizedUserDoc.hasAccessLogistique;
+      delete sanitizedUserDoc.canWriteSequenciador;
+      delete sanitizedUserDoc.canWriteDansador;
+      delete sanitizedUserDoc.canWriteOrchestrador;
+      delete sanitizedUserDoc.cotisationAjour;
+      delete sanitizedUserDoc.cotisation;
+      delete sanitizedUserDoc.helloAssoLastPayment;
 
-        // Création initiale autorisée par les règles de sécurité en un seul setDoc
-        await setDoc(userRef, sanitizedUserDoc);
-      } else {
-        // --- 2. MISE À JOUR D'UN DOCUMENT EXISTANT ---
-        // Les règles Firestore allow update interdisent formellement aux membres non-admin
-        // de modifier les clés système et de trésorerie protégées par affectedKeys()
-        delete sanitizedUserDoc.role;
-        delete sanitizedUserDoc.isSystemAdmin;
-        delete sanitizedUserDoc.hasAccessLogistique;
-        delete sanitizedUserDoc.canWriteSequenciador;
-        delete sanitizedUserDoc.canWriteDansador;
-        delete sanitizedUserDoc.canWriteOrchestrador;
-        delete sanitizedUserDoc.paymentStatus;
-        delete sanitizedUserDoc.cotisationAjour;
-        delete sanitizedUserDoc.cotisation;
-        delete sanitizedUserDoc.helloAssoLastPayment;
-        delete sanitizedUserDoc.groupId;
-        delete sanitizedUserDoc.adhesionBase;
-        delete sanitizedUserDoc.selectedOptions;
-        delete sanitizedUserDoc.tags;
-        delete sanitizedUserDoc.statutActuel;
-        delete sanitizedUserDoc.isNew;
-
-        await setDoc(userRef, sanitizedUserDoc, { merge: true });
-      }
+      // Écriture unifiée et résiliente en un seul appel setDoc avec merge
+      // Couvre à 100% tant la création de compte que la mise à jour d'un document partiel préexistant
+      await setDoc(userRef, sanitizedUserDoc, { merge: true });
 
       // Notification interne pour la direction artistique / mestre si des vœux sont formulés
+      // Entièrement encapsulée dans son propre sous-bloc try/catch non bloquant
       if (cleanVoeux.length > 0) {
         try {
           const userName = `${formData.firstName || ''} ${formData.lastName || ''}`.trim() || user?.displayName || 'Un membre';
           notifyMembersByTag({
-            groupId: (profileData?.groupId || groupId)?.toLowerCase() === 'samambaia' ? 'Samambaia' : (profileData?.groupId || groupId),
+            groupId: sanitizedUserDoc.groupId,
             tags: ['Mestre', 'mestre', 'Direction'],
             title: "🥁 Vœux d'instruments mis à jour",
             message: `${userName} a formulé ses souhaits de pupitre`,
             targetUrl: "/app/mestre?tab=casting",
             icon: "🥁"
-          }).catch((err) => console.warn("Onboarding - Notification vœux mestre ignorée :", err));
+          }).catch((err) => console.warn("Onboarding - Notification vœux mestre ignorée (non-bloquante) :", err?.message));
         } catch (notifErr) {
-          console.warn("Onboarding - Erreur notification mestre :", notifErr);
+          console.warn("Onboarding - Erreur notification mestre (non-bloquante) :", notifErr?.message);
         }
       }
 

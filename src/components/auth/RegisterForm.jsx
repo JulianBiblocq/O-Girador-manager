@@ -13,15 +13,21 @@ import { useTranslation } from '../LanguageContext';
  * @param {Function} props.onSuccess Callback appelé en cas de succès d'inscription
  * @param {Function} [props.onSwitchToLogin] Callback pour basculer vers le mode connexion
  */
-export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
+export default function RegisterForm({ onSuccess, onSwitchToLogin, initialEmail = '', onEmailChange }) {
   const { t } = useTranslation();
 
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(initialEmail || '');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  React.useEffect(() => {
+    if (initialEmail && initialEmail !== email) {
+      setEmail(initialEmail);
+    }
+  }, [initialEmail]);
 
   const getFriendlyErrorMessage = (error) => {
     switch (error?.code) {
@@ -42,7 +48,7 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
     e.preventDefault();
     setErrorMessage('');
 
-    const cleanEmail = email.trim();
+    const cleanEmail = email.trim().toLowerCase();
     if (!cleanEmail || !password) {
       setErrorMessage("Veuillez renseigner votre e-mail et votre mot de passe.");
       return;
@@ -63,7 +69,32 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
       await createUserWithEmailAndPassword(auth, cleanEmail, password);
       if (onSuccess) onSuccess();
     } catch (err) {
-      console.error("RegisterForm - Erreur création de compte :", err);
+      console.warn("RegisterForm - Tentative de création de compte :", err);
+
+      // Scénario d'auto-rattrapage : l'utilisateur clique sur « Créer un compte » alors qu'il a déjà un compte
+      if (err?.code === 'auth/email-already-in-use') {
+        try {
+          // 1. Tentative de connexion transparente avec le mot de passe qu'il vient de saisir
+          await signInWithEmailAndPassword(auth, cleanEmail, password);
+          console.info("RegisterForm - Connexion transparente réussie suite à email-already-in-use !");
+          if (onSuccess) {
+            onSuccess();
+            return;
+          }
+        } catch (signInErr) {
+          console.info("RegisterForm - Échec connexion transparente (mauvais mot de passe ou compte Google) :", signInErr);
+          // 2. Bascule automatique en mode « Se connecter » avec e-mail conservé et encart d'aide
+          if (onSwitchToLogin) {
+            onSwitchToLogin(cleanEmail, {
+              type: 'email_already_exists',
+              email: cleanEmail,
+              isGoogleCandidate: cleanEmail.endsWith('@gmail.com') || cleanEmail.endsWith('@googlemail.com')
+            });
+            return;
+          }
+        }
+      }
+
       setErrorMessage(getFriendlyErrorMessage(err));
     } finally {
       setLoading(false);
@@ -84,7 +115,9 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
           required
           value={email}
           onChange={(e) => {
-            setEmail(e.target.value);
+            const val = e.target.value;
+            setEmail(val);
+            if (onEmailChange) onEmailChange(val);
             if (errorMessage) setErrorMessage('');
           }}
           disabled={loading}
@@ -185,7 +218,7 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
         <div className="text-center pt-2">
           <button
             type="button"
-            onClick={onSwitchToLogin}
+            onClick={() => onSwitchToLogin(email.trim().toLowerCase())}
             className="text-[11px] font-bold text-cordel-wood hover:underline cursor-pointer"
           >
             Déjà inscrit ? Connectez-vous ici →

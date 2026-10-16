@@ -86,7 +86,7 @@ ctx.fillText('OG', cx, 225);
 
 ctx.font = 'bold 15px serif';
 ctx.fillStyle = secondaryCol;
-ctx.fillText('ORGANIZAD\'OR', cx, 280);
+ctx.fillText('ORGANIZADOR', cx, 280);
 ctx.restore();
 
 ctx.restore();
