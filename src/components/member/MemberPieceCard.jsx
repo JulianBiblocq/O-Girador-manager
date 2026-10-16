@@ -6,6 +6,8 @@ import PieceLyricsModal from './PieceLyricsModal';
 import PieceCultureModal from './PieceCultureModal';
 import { useTranslation } from '../LanguageContext';
 import { launchGlobalSequencer } from '../../utils/trainingLauncher';
+import { getEcosystemUrl } from '../../constants/ecosystemUrls';
+import { launchCrossApp } from '../../utils/crossAppAuth';
 
 // Échelle des 4 niveaux de confort personnel de l'adhérent
 export const COMFORT_LEVELS = [
@@ -17,27 +19,14 @@ export const COMFORT_LEVELS = [
 
 /**
  * Carte individuelle repliable d'un morceau du Répertoire (< 200 lignes).
- * Mode replié : En-tête avec titre, indicateur, curseur de confort et demande de révision.
+ * Mode replié : En-tête avec titre, curseur de confort, accès Séquenceur et Cantador direct.
  * Mode déplié : Ressources multimédias via MemberPieceUnfoldedContent et modales dédiées.
  */
 export default function MemberPieceCard({
-  piece,
-  userId,
-  groupId,
-  profileData = null,
-  trainings = [],
-  aisanceMap = {},
-  isRevisionRequested = false,
-  comfortLevel = 0,
-  isExpanded = false,
-  onToggleExpand,
-  onToggleRevision,
-  onSetComfortLevel,
-  onOpenTablature,
-  onOpenToada,
-  onOpenCulture,
-  onOpenSignals = null,
-  sequenceurUrl
+  piece, userId, groupId, profileData = null, trainings = [], aisanceMap = {},
+  isRevisionRequested = false, comfortLevel = 0, isExpanded = false,
+  onToggleExpand, onToggleRevision, onSetComfortLevel,
+  onOpenTablature, onOpenToada, onOpenCulture, onOpenSignals = null, sequenceurUrl
 }) {
   const { t } = useTranslation();
   const [isSignalsModalOpen, setIsSignalsModalOpen] = useState(false);
@@ -113,6 +102,27 @@ export default function MemberPieceCard({
                 <span>{t('repertoire.btnListenSequencer')}</span>
               </button>
             )}
+
+            {/* Entraînement Chant Cantador direct */}
+            {(piece.cantadorToadaId || piece.type === 'song' || piece.hasToada || piece.toadaDocId) && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const toadaId = encodeURIComponent(piece.cantadorToadaId || '');
+                  const songId = encodeURIComponent(piece.id || '');
+                  launchCrossApp(
+                    getEcosystemUrl('vocalLab', `?mode=eleve&toadaId=${toadaId}&songId=${songId}`),
+                    { appLabel: 'Cantador' }
+                  );
+                }}
+                className="px-2.5 py-1 text-xs font-black rounded border border-orange-300 bg-orange-50 text-orange-950 hover:bg-orange-100 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs select-none"
+                title={t('repertoire.tooltipVocalLab') || "Ouvrir Cantador en ligne"}
+              >
+                <span>🎙️</span>
+                <span>{t('repertoire.btnTrainVocalDirect') || "S'entraîner au chant (Cantador)"}</span>
+              </button>
+            )}
           </div>
 
           <div
@@ -148,12 +158,7 @@ export default function MemberPieceCard({
       {/* 2. Contenu déplié (panneau accordéon conditionnel en lecture seule stricte) */}
       {isExpanded && (
         <MemberPieceUnfoldedContent
-          piece={piece}
-          userId={userId}
-          groupId={groupId}
-          profileData={profileData}
-          trainings={trainings}
-          aisanceMap={aisanceMap}
+          piece={piece} userId={userId} groupId={groupId} profileData={profileData} trainings={trainings} aisanceMap={aisanceMap}
           onOpenTablature={onOpenTablature}
           onOpenToada={(t, p) => (onOpenToada ? onOpenToada(t, p) : setIsLyricsModalOpen(true))}
           onOpenCulture={(c, p, docs) => (onOpenCulture ? onOpenCulture(c, p, docs) : setIsCultureModalOpen(true))}
@@ -162,29 +167,16 @@ export default function MemberPieceCard({
         />
       )}
 
-      {/* 3. Modale dédiée des Signes du Mestre */}
+      {/* 3. Modales dédiées des Signes, Paroles et Culture */}
       {isSignalsModalOpen && (
-        <PieceSignalsModal
-          isOpen={isSignalsModalOpen}
-          onClose={() => setIsSignalsModalOpen(false)}
-          piece={piece} groupId={groupId} profileData={profileData}
-        />
+        <PieceSignalsModal isOpen={isSignalsModalOpen} onClose={() => setIsSignalsModalOpen(false)} piece={piece} groupId={groupId} profileData={profileData} />
       )}
-
-      {/* 4. Modale dédiée des Paroles */}
       {isLyricsModalOpen && (
-        <PieceLyricsModal
-          isOpen={isLyricsModalOpen}
-          onClose={() => setIsLyricsModalOpen(false)}
-          song={piece.activeToada} piece={piece} groupId={groupId} profileData={profileData}
-        />
+        <PieceLyricsModal isOpen={isLyricsModalOpen} onClose={() => setIsLyricsModalOpen(false)} song={piece.activeToada} piece={piece} groupId={groupId} profileData={profileData} />
       )}
-
-      {/* 5. Modale dédiée Culture */}
       {isCultureModalOpen && (
         <PieceCultureModal
-          isOpen={isCultureModalOpen}
-          onClose={() => setIsCultureModalOpen(false)}
+          isOpen={isCultureModalOpen} onClose={() => setIsCultureModalOpen(false)}
           cultureDocs={Array.isArray(piece.activeCultureDocs) && piece.activeCultureDocs.length > 0 ? piece.activeCultureDocs : (piece.activeCultureDoc ? [piece.activeCultureDoc] : [])}
           initialDocId={piece.activeCultureDocs?.[0]?.id || piece.activeCultureDoc?.id}
           piece={piece} groupId={groupId} profileData={profileData}

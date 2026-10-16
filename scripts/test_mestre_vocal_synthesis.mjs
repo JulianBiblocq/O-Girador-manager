@@ -257,7 +257,62 @@ assert.strictEqual(pt.repertoire.btnVocalLab, "Cantador / Treinar canto", "Nomen
 assert.strictEqual(pt.repertoire.tooltipVocalLab, "Abrir o Cantador online", "Nomenclature PT repertoire tooltipVocalLab incorrecte");
 assert.strictEqual(pt.repertoire.vocalLabBadge, "Cantador", "Nomenclature PT repertoire vocalLabBadge incorrecte");
 
-console.log(`  ✅ [PASS] ${requiredVocalKeys.length + requiredRepertoireVocalKeys.length} clés i18n FR/PT-BR et nomenclature officielle "Cantador" validées`);
+const newRepertoireKeys = [
+  'fieldCantadorToada',
+  'selectCantadorToadaPlaceholder',
+  'btnCreateCantador',
+  'tooltipCreateCantador',
+  'cantadorToadaLinkedNotice',
+  'btnTrainVocalDirect'
+];
+newRepertoireKeys.forEach(k => {
+  assert.ok(fr.repertoire?.[k], `Clé repertoire.${k} manquante dans fr.js`);
+  assert.ok(pt.repertoire?.[k], `Clé repertoire.${k} manquante dans pt.js`);
+});
+
+const newPedagogyKeys = [
+  'cantadorBannerTitle',
+  'cantadorBannerDesc',
+  'btnCantadorAmbitus'
+];
+newPedagogyKeys.forEach(k => {
+  assert.ok(fr.pedagogy?.[k], `Clé pedagogy.${k} manquante dans fr.js`);
+  assert.ok(pt.pedagogy?.[k], `Clé pedagogy.${k} manquante dans pt.js`);
+});
+
+console.log(`  ✅ [PASS] ${requiredVocalKeys.length + requiredRepertoireVocalKeys.length + newRepertoireKeys.length + newPedagogyKeys.length} clés i18n FR/PT-BR et nomenclature officielle "Cantador" validées`);
+
+// -------------------------------------------------------------
+// 8. Passerelle Répertoire & Entraînement Toada Cantador
+// -------------------------------------------------------------
+console.log("\n▶️ Test 8 : Validation Passerelle Répertoire & Toada Cantador");
+const hookPath = path.resolve('src/hooks/useCantadorToadas.js');
+assert.ok(fs.existsSync(hookPath), "useCantadorToadas.js doit exister");
+const hookContent = fs.readFileSync(hookPath, 'utf-8');
+assert.ok(hookContent.includes('toada_packs'), "useCantadorToadas doit écouter toada_packs");
+
+const repModalPath = path.resolve('src/components/mestre/RepertoirePieceModal.jsx');
+const repModalContent = fs.readFileSync(repModalPath, 'utf-8');
+assert.ok(repModalContent.includes('cantadorToadaId'), "RepertoirePieceModal doit gérer cantadorToadaId");
+assert.ok(repModalContent.includes('useCantadorToadas'), "RepertoirePieceModal doit utiliser useCantadorToadas");
+
+const cardPath = path.resolve('src/components/member/MemberPieceCard.jsx');
+const cardContent = fs.readFileSync(cardPath, 'utf-8');
+const cardLines = cardContent.split('\n').length;
+assert.ok(cardLines < 200, `MemberPieceCard.jsx doit être < 200 lignes (actuel: ${cardLines})`);
+assert.ok(cardContent.includes('cantadorToadaId'), "MemberPieceCard doit vérifier cantadorToadaId");
+assert.ok(cardContent.includes('toadaId'), "MemberPieceCard doit passer toadaId");
+
+const unfoldedPath = path.resolve('src/components/member/MemberPieceUnfoldedContent.jsx');
+const unfoldedContent = fs.readFileSync(unfoldedPath, 'utf-8');
+const unfoldedLines = unfoldedContent.split('\n').length;
+assert.ok(unfoldedLines < 200, `MemberPieceUnfoldedContent.jsx doit être < 200 lignes (actuel: ${unfoldedLines})`);
+assert.ok(unfoldedContent.includes('toadaId'), "MemberPieceUnfoldedContent doit passer toadaId");
+
+const carnetPath = path.resolve('src/components/pedagogy/MonCarnetAisance.jsx');
+const carnetContent = fs.readFileSync(carnetPath, 'utf-8');
+assert.ok(carnetContent.includes('cantadorBannerTitle'), "MonCarnetAisance doit afficher la bannière Cantador");
+console.log("  ✅ [PASS] Passerelle Répertoire & Entraînement Toada Cantador 100% validée");
 
 console.log("\n========================================================================");
 console.log("🏆 TOUS LES TESTS DE LA SYNTHÈSE VOCALE MAESTRIA SONT 100% VALIDÉS !");

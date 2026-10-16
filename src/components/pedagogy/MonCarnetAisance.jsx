@@ -10,6 +10,7 @@ import AtelierModelPartsProgress from './AtelierModelPartsProgress';
 import DailyRevisionSession from './DailyRevisionSession';
 import CarnetPercussionSection from './CarnetPercussionSection';
 import { launchCrossApp } from '../../utils/crossAppAuth';
+import { getEcosystemUrl } from '../../constants/ecosystemUrls';
 import ReflexGameModal from './ReflexGameModal';
 import ConductorGameModal from './ConductorGameModal';
 import {
@@ -520,6 +521,30 @@ export default function MonCarnetAisance({
 
   return (
     <div className="flex flex-col gap-6">
+      {/* BANNIÈRE PASSERELLE CANTADOR (AMBITUS & ENTRAÎNEMENT VOCAL ÉLÈVE) */}
+      <div className="p-3.5 sm:p-4 rounded-xl bg-orange-50/80 dark:bg-orange-950/20 border-2 border-orange-300 dark:border-orange-800 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl sm:text-3xl p-2 rounded-lg bg-white dark:bg-stone-900 border border-orange-200 dark:border-orange-800 shadow-2xs shrink-0">🎙️</span>
+          <div>
+            <h4 className="font-black text-xs sm:text-sm text-orange-950 dark:text-orange-200 uppercase tracking-wide">
+              {t('pedagogy.cantadorBannerTitle') || "Cantador — Mon Ambitus & Entraînement Vocal"}
+            </h4>
+            <p className="text-[11px] sm:text-xs text-orange-900/80 dark:text-orange-300/80">
+              {t('pedagogy.cantadorBannerDesc') || "Découvre ton étendue vocale en 4 étapes et entraîne-toi sur les Toadas du groupe."}
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => launchCrossApp(getEcosystemUrl('vocalLab', '?mode=eleve'), { appLabel: 'Cantador' })}
+          className="inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg font-black uppercase text-xs tracking-wider bg-orange-600 hover:bg-orange-700 text-white border border-encre-noire shadow-[2px_2px_0px_0px_#181716] cursor-pointer transition-transform active:scale-95 shrink-0"
+        >
+          <span>🎙️</span>
+          <span>{t('pedagogy.btnCantadorAmbitus') || "Cantador — Mon Ambitus & Entraînement Vocal"}</span>
+          <span className="text-[9px] opacity-80">↗</span>
+        </button>
+      </div>
+
       {/* SOUS-MENU DES ONGLETS DU PARCOURS */}
       <div className="flex flex-wrap gap-2 mb-6">
         {subTabs.map(tab => (

@@ -99,7 +99,9 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
   // Ouverture de l'Atelier Vocal pour un morceau de chant avec pré-ciblage du morceau dans le Studio
   const handleOpenVocalLabForPiece = (p) => {
     const songId = encodeURIComponent(p?.id || '');
-    const vocalLabUrl = getEcosystemUrl('vocalLab', `?songId=${songId}`);
+    const toadaId = encodeURIComponent(p?.cantadorToadaId || '');
+    const query = toadaId ? `?songId=${songId}&toadaId=${toadaId}` : `?songId=${songId}`;
+    const vocalLabUrl = getEcosystemUrl('vocalLab', query);
     launchCrossApp(vocalLabUrl, { appLabel: "Cantador" });
   };
 
@@ -606,7 +608,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                     )}
 
                     {/* Badge Atelier Vocal pour les chants */}
-                    {(piece.type === 'song' || piece.typeMorceau === 'song' || piece.hasToada || Boolean(piece.toadaDocId || piece.toadaId || piece.activeToada)) && (
+                    {(piece.cantadorToadaId || piece.type === 'song' || piece.typeMorceau === 'song' || piece.hasToada || Boolean(piece.toadaDocId || piece.toadaId || piece.activeToada)) && (
                       <button
                         type="button"
                         onClick={() => handleOpenVocalLabForPiece(piece)}
@@ -953,7 +955,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                     )}
 
                     {/* Bouton rapide Atelier Vocal si le morceau est un chant */}
-                    {(piece.type === 'song' || piece.typeMorceau === 'song' || piece.hasToada || Boolean(piece.toadaDocId || piece.toadaId || piece.activeToada)) && (
+                    {(piece.cantadorToadaId || piece.type === 'song' || piece.typeMorceau === 'song' || piece.hasToada || Boolean(piece.toadaDocId || piece.toadaId || piece.activeToada)) && (
                       <CordelButton
                         type="button"
                         variant="default"

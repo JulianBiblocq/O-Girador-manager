@@ -37,11 +37,12 @@ export default function MemberPieceUnfoldedContent({
     ? piece.activeCultureDocs : (piece.activeCultureDoc ? [piece.activeCultureDoc] : []);
   const hasCulture = Boolean(cultureDocs.length > 0 || piece.cultureDocIds?.length || piece.cultureDocId);
   const hasSignals = Boolean(piece.sinaisDoMestre?.length || piece.activeSinaisDoMestre?.length || piece.signalIds?.length);
-  const isSongPiece = piece.type === 'song' || piece.typeMorceau === 'song' || hasToada || Boolean(piece.toadaId || piece.toadaDocId || piece.toada);
+  const isSongPiece = piece.type === 'song' || piece.typeMorceau === 'song' || hasToada || Boolean(piece.toadaId || piece.toadaDocId || piece.toada || piece.cantadorToadaId);
 
   const handleOpenVocalLab = () => {
+    const toadaId = encodeURIComponent(piece.cantadorToadaId || '');
     const songId = encodeURIComponent(piece.id || '');
-    launchCrossApp(getEcosystemUrl('vocalLab', `?mode=eleve&songId=${songId}`), { appLabel: "Cantador" });
+    launchCrossApp(getEcosystemUrl('vocalLab', `?mode=eleve&toadaId=${toadaId}&songId=${songId}`), { appLabel: "Cantador" });
   };
 
   return (
@@ -119,10 +120,10 @@ export default function MemberPieceUnfoldedContent({
           </button>
         )}
 
-        {/* Passerelle Atelier Vocal — Mode élève & ciblage chant */}
+        {/* Passerelle Cantador — Mode élève & ciblage chant */}
         {isSongPiece && (
-          <button type="button" onClick={handleOpenVocalLab} className="px-2.5 py-1 text-xs font-bold rounded bg-orange-50 hover:bg-orange-100 border border-orange-300 text-orange-950 flex items-center gap-1.5 cursor-pointer shadow-2xs select-none" title={t('repertoire.tooltipVocalLab') || "Ouvrir l'Atelier Vocal en ligne"}>
-            <span>🎙️</span><span>{t('repertoire.btnVocalLab') || "Atelier Vocal / S'entraîner au chant"}</span>
+          <button type="button" onClick={handleOpenVocalLab} className="px-2.5 py-1 text-xs font-bold rounded bg-orange-50 hover:bg-orange-100 border border-orange-300 text-orange-950 flex items-center gap-1.5 cursor-pointer shadow-2xs select-none" title={t('repertoire.tooltipVocalLab') || "Ouvrir Cantador en ligne"}>
+            <span>🎙️</span><span>{t('repertoire.btnTrainVocalDirect') || t('repertoire.btnVocalLab') || "S'entraîner au chant (Cantador)"}</span>
           </button>
         )}
 

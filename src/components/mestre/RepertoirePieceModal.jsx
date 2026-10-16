@@ -18,6 +18,9 @@ import RepertoireModalNavArrows from './RepertoireModalNavArrows';
 import SongCard from '../SongCard';
 import { useDancadorChoreographies } from '../../hooks/useDancadorData';
 import { useRepertoireVaralDocs } from '../../hooks/useRepertoireVaralDocs';
+import { useCantadorToadas } from '../../hooks/useCantadorToadas';
+import { getEcosystemUrl } from '../../constants/ecosystemUrls';
+import { launchCrossApp } from '../../utils/crossAppAuth';
 import { cleanFirestorePayload } from '../../utils/firestoreUtils';
 import { subscribeGroupTrainings } from '../../services/aisanceService';
 import {
@@ -64,6 +67,7 @@ export default function RepertoirePieceModal({
 
   // Pointeurs réactifs vers les applications et modules transversaux
   const [selectedToadaId, setSelectedToadaId] = useState('');
+  const [cantadorToadaId, setCantadorToadaId] = useState('');
   const [toadaFilterMode, setToadaFilterMode] = useState('all'); // 'all' | 'available'
   const [selectedSeqUrl, setSelectedSeqUrl] = useState('');
   const [selectedSeqType, setSelectedSeqType] = useState(null); // 'presets' | 'sections' | 'patterns'
@@ -205,10 +209,11 @@ export default function RepertoirePieceModal({
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
 
-  // Hooks réactifs en direct (Séquenceur, Dançad'Or, Varal)
+  // Hooks réactifs en direct (Séquenceur, Dançad'Or, Varal, Cantador)
   const { catalogRhythms, loadingRhythms } = useSequencerRhythms(groupId);
   const { choreographies, loading: loadingChoreos } = useDancadorChoreographies(groupId);
   const { toadasList, cultureDocsList, loadingDocs } = useRepertoireVaralDocs(groupId);
+  const { toadaPacks, loadingToadaPacks } = useCantadorToadas();
 
   // Détection du preset Séquenceur sélectionné en mémoire
   const selectedPreset = useMemo(() => {
@@ -247,6 +252,7 @@ export default function RepertoirePieceModal({
       }
       setSinaisDoMestre(initialSinais);
       setSelectedToadaId(pieceToEdit.toadaDocId || '');
+      setCantadorToadaId(pieceToEdit.cantadorToadaId || '');
 
       const rawSeq = pieceToEdit.sequenceurFileUrl || pieceToEdit.sequenceurId || '';
       setSelectedSeqUrl(rawSeq);
@@ -270,6 +276,7 @@ export default function RepertoirePieceModal({
       setNotes('');
       setSinaisDoMestre([]);
       setSelectedToadaId('');
+      setCantadorToadaId('');
       setSelectedSeqUrl('');
       setSelectedSeqType(null);
       setCustomAudioUrl('');
@@ -624,6 +631,7 @@ export default function RepertoirePieceModal({
       histoire: (histoire || '').trim() || null,
       dancadorChoreoId: selectedChoreoId || null,
       toadaDocId: selectedToadaId || null,
+      cantadorToadaId: cantadorToadaId ? cantadorToadaId.trim() : null,
       cultureDocIds: Array.from(new Set((selectedCultureIds || []).filter((id) => typeof id === 'string' && id.trim() !== ''))),
       cultureDocId: (selectedCultureIds && selectedCultureIds.length > 0) ? selectedCultureIds[0] : null,
       updatedAt: new Date().toISOString()
@@ -1067,6 +1075,57 @@ export default function RepertoirePieceModal({
                 )}
               </div>
 
+              {/* 1b. Chant Cantador associé (Toada enregistrée) */}
+              <div className="flex flex-col gap-1 p-2.5 rounded bg-orange-50/60 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800/50">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <label className="text-[9px] uppercase font-bold tracking-wider text-orange-950 dark:text-orange-200 flex items-center gap-1">
+                    <span>🎙️</span>
+                    <span>{t('repertoire.fieldCantadorToada') || "Chant Cantador associé (Toada)"}</span>
+                    {cantadorToadaId && (
+                      <span className="text-[8.5px] text-orange-700 font-bold lowercase">
+                        ✓ liée
+                      </span>
+                    )}
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const songId = encodeURIComponent(pieceToEdit?.id || '');
+                      launchCrossApp(
+                        getEcosystemUrl('vocalLab', songId ? `?songId=${songId}` : ''),
+                        { appLabel: 'Cantador' }
+                      );
+                    }}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase text-white bg-cordel-vert hover:bg-cordel-vert/90 rounded border border-encre-noire shadow-2xs cursor-pointer select-none"
+                    title={t('repertoire.tooltipCreateCantador') || "Ouvrir le Studio Cantador pour enregistrer ou éditer ce chant"}
+                  >
+                    <span>🎙️</span>
+                    <span>{t('repertoire.btnCreateCantador') || "Créer / Enregistrer dans Cantador"}</span>
+                    <span className="text-[8px] opacity-70">↗</span>
+                  </button>
+                </div>
+
+                <select
+                  value={cantadorToadaId}
+                  onChange={(e) => setCantadorToadaId(e.target.value)}
+                  disabled={submitting || loadingToadaPacks}
+                  className="theme-input text-xs font-semibold p-2 bg-cordel-bg-light border border-encre-noire/30 rounded cursor-pointer"
+                >
+                  <option value="">-- {t('repertoire.selectCantadorToadaPlaceholder') || "Sélectionner une Toada Cantador publiée..."} --</option>
+                  {toadaPacks.map((pack) => (
+                    <option key={pack.id} value={pack.id}>
+                      🎙️ {pack.title || pack.id} {pack.bpm ? `(${pack.bpm} BPM)` : ''}
+                    </option>
+                  ))}
+                </select>
+
+                {cantadorToadaId && (
+                  <span className="text-[8.5px] text-orange-900/80 dark:text-orange-300 font-semibold italic">
+                    ✓ {t('repertoire.cantadorToadaLinkedNotice') || "Toada Cantador liée. Les élèves accèderont directement à l'entraînement de ce chant."}
+                  </span>
+                )}
+              </div>
+
               {/* 2. Séquence / Préréglage Séquenceur */}
               <div className="flex flex-col gap-1">
                 <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center justify-between">
@@ -1283,7 +1342,12 @@ export default function RepertoirePieceModal({
                     📖 {selectedCultureIds.length} {t('mestre.repertoire.cultureSheetsCountLabel')}
                   </span>
                 )}
-                {!selectedSong && !selectedPreset && !selectedChoreoId && selectedCultureIds.length === 0 && (
+                {cantadorToadaId && (
+                  <span className="bg-orange-50 text-orange-950 px-2 py-0.5 rounded border border-orange-300">
+                    🎙️ Cantador
+                  </span>
+                )}
+                {!selectedSong && !cantadorToadaId && !selectedPreset && !selectedChoreoId && selectedCultureIds.length === 0 && (
                   <span className="italic opacity-60">{t('mestre.repertoire.noActiveCrossLinks')}</span>
                 )}
               </div>
