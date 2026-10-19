@@ -1,18 +1,20 @@
 /**
- * Utilitaire de découpage, analyse et sérialisation des toadas par mesure (.txt).
+ * Utilitaire de découpage et analyse des toadas par mesure (.txt) (< 145 lignes).
  * Gère 1 paragraphe = 1 mesure, anacrouse (+), mesure liée (/),
- * accords harmoniques [Dm7], Puxador (*gras*) / Coro et retours visuels.
- * Rétrocompatible 100 % avec le format HTML TipTap hérité.
+ * sections ([Intro], [Refrain]...), accords [Dm7], Puxador (*gras*) / Coro.
  */
 
 // Regex pour extraire les accords entre crochets : [Dm7], [C#m], [G/B]
-const CHORD_REGEX = /\[([A-G][b#]?(?:m|maj|min|dim|aug|sus|[0-9]|b5|#5|\/[A-G][b#]?)*)\]/g;
+export const CHORD_REGEX = /\[([A-G][b#]?(?:m|maj|min|dim|aug|sus|[0-9]|b5|#5|\/[A-G][b#]?)*)\]/g;
 
-/**
- * Analyse une ligne de texte pour séparer les syllabes/mots et leurs accords associés.
- * @param {string} lineText - Ligne brute avec accords éventuels
- * @returns {Array<{ text: string, chord: string|null, isPuxador: boolean }>}
- */
+// Regex pour identifier une section : [Intro], [Partie 1], [Refrain]... (exclut les accords seuls)
+export const SECTION_HEADER_REGEX = /^\s*\[(?!(?:[A-G][b#]?(?:m|maj|min|dim|aug|sus|[0-9]|b5|#5|\/[A-G][b#]?)*)\])([^\]]+)\]\s*$/i;
+
+export function isSectionHeader(line) {
+  if (!line || typeof line !== 'string') return false;
+  return SECTION_HEADER_REGEX.test(line.trim());
+}
+
 export function parseLineWithChords(lineText) {
   if (!lineText) return [];
   const segments = [];
@@ -22,24 +24,17 @@ export function parseLineWithChords(lineText) {
   while (remaining.length > 0) {
     const match = CHORD_REGEX.exec(remaining);
     if (!match) {
-      if (remaining.length > 0) {
-        segments.push({ text: remaining, chord: currentChord });
-      }
+      if (remaining.length > 0) segments.push({ text: remaining, chord: currentChord });
       break;
     }
-
     const chordIndex = match.index;
     const textBefore = remaining.slice(0, chordIndex);
-    if (textBefore.length > 0 || currentChord) {
-      segments.push({ text: textBefore, chord: currentChord });
-    }
-
+    if (textBefore.length > 0 || currentChord) segments.push({ text: textBefore, chord: currentChord });
     currentChord = match[1];
     remaining = remaining.slice(chordIndex + match[0].length);
     CHORD_REGEX.lastIndex = 0;
   }
 
-  // Traitement du Puxador (*gras*) dans les segments
   return segments.flatMap((seg) => {
     const parts = seg.text.split(/(\*[^*]+\*)/g);
     let chordAssigned = false;
@@ -53,79 +48,62 @@ export function parseLineWithChords(lineText) {
   });
 }
 
-/**
- * Analyse un contenu brut de toada (texte ou HTML) en liste structurée de mesures.
- * @param {string} rawText - Contenu brut de la toada
- * @returns {{ isMeasureFormat: boolean, measures: Array, rawHtml?: string }}
- */
 export function parseToadaMeasures(rawText) {
-  if (!rawText || typeof rawText !== 'string') {
-    return { isMeasureFormat: false, measures: [] };
-  }
-
-  // Détection du format HTML hérité TipTap
+  if (!rawText || typeof rawText !== 'string') return { isMeasureFormat: false, measures: [], sections: [] };
   const isHtml = /<[a-z][\s\S]*>/i.test(rawText);
-  if (isHtml) {
-    return { isMeasureFormat: false, rawHtml: rawText, measures: [] };
-  }
+  if (isHtml) return { isMeasureFormat: false, rawHtml: rawText, measures: [], sections: [] };
 
-  // Découpage par paragraphe : un double saut de ligne sépare chaque mesure
   const paragraphs = rawText.split(/\r?\n\s*\r?\n/).map((p) => p.trim()).filter(Boolean);
-  if (paragraphs.length === 0) {
-    return { isMeasureFormat: false, measures: [] };
-  }
+  if (paragraphs.length === 0) return { isMeasureFormat: false, measures: [], sections: [] };
 
-  const measures = paragraphs.map((para, index) => {
-    let cleanPara = para;
-    let hasAnacrusis = false;
-    let isLinked = false;
+  const sections = [];
+  let currentSection = { name: '', measures: [] };
+  let globalMeasureIdx = 0;
 
-    // Détection Anacrouse (+) en tête de mesure
-    if (cleanPara.startsWith('+')) {
-      hasAnacrusis = true;
-      cleanPara = cleanPara.slice(1).trimStart();
+  for (const para of paragraphs) {
+    const lines = para.split(/\r?\n/);
+    const firstLine = lines[0]?.trim();
+    if (isSectionHeader(firstLine)) {
+      if (currentSection.measures.length > 0 || currentSection.name) sections.push(currentSection);
+      const sectionName = firstLine.replace(/^\s*\[|\]\s*$/g, '').trim();
+      currentSection = { name: sectionName, measures: [] };
+      if (lines.length === 1) continue;
+      lines.shift();
     }
 
-    // Détection Mesure liée (/) en tête de mesure
-    if (cleanPara.startsWith('/')) {
-      isLinked = true;
-      cleanPara = cleanPara.slice(1).trimStart();
-    }
+    let cleanPara = lines.join('\n');
+    let hasAnacrusis = cleanPara.startsWith('+');
+    let isLinked = cleanPara.startsWith('/');
+    if (hasAnacrusis || isLinked) cleanPara = cleanPara.slice(1).trimStart();
 
-    // Découpage en lignes pour identifier les retours visuels (lignes avec espace initial)
-    const rawLines = para.split(/\r?\n/);
-    const lines = rawLines.map((line, lIdx) => {
+    const parsedLines = lines.map((line, lIdx) => {
       const isVisualBreak = lIdx > 0 && /^\s+/.test(line);
       let lineContent = line.trim();
-      if (lIdx === 0) {
-        if (lineContent.startsWith('+') || lineContent.startsWith('/')) {
-          lineContent = lineContent.slice(1).trimStart();
-        }
+      if (lIdx === 0 && (lineContent.startsWith('+') || lineContent.startsWith('/'))) {
+        lineContent = lineContent.slice(1).trimStart();
       }
-      return {
-        isVisualBreak,
-        segments: parseLineWithChords(lineContent),
-        rawLine: lineContent
-      };
-    }).filter(l => l.rawLine.length > 0);
+      return { isVisualBreak, segments: parseLineWithChords(lineContent), rawLine: lineContent };
+    }).filter((l) => l.rawLine.length > 0);
 
-    const hasChords = lines.some((l) => l.segments.some((s) => Boolean(s.chord)));
-
-    return {
-      measureNumber: index + 1,
+    globalMeasureIdx++;
+    const measureObj = {
+      measureNumber: globalMeasureIdx,
       hasAnacrusis,
       isLinked,
-      hasChords,
-      lines
+      hasChords: parsedLines.some((l) => l.segments.some((s) => Boolean(s.chord))),
+      lines: parsedLines,
+      rawContent: cleanPara
     };
-  });
+    currentSection.measures.push(measureObj);
+  }
 
-  return { isMeasureFormat: true, measures };
+  if (currentSection.measures.length > 0 || currentSection.name) sections.push(currentSection);
+  const flatMeasures = sections.flatMap((s) => s.measures);
+  return { isMeasureFormat: true, measures: flatMeasures, sections };
 }
 
-/**
- * Nettoie une mesure pour l'affichage épuré élève (retire +, /, crochets d'accords et astérisques).
- */
+export const parseToadaMeasureText = (text) => parseToadaMeasures(text).measures;
+
 export function cleanMeasureTextForStudent(text) {
   if (!text) return '';
   return text

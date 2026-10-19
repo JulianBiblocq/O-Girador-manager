@@ -1,118 +1,128 @@
-import React, { useRef } from 'react';
-import { useTranslation } from '../../LanguageContext';
+import React, { useState, useMemo, useRef } from 'react';
+import { parseToadaMeasures } from '../../../utils/toadaMeasureParser';
+import { serializeToadaMeasures, downloadToadaTxtFile } from '../../../utils/toadaSerializer';
+import ToadaVisualSectionBlock from './ToadaVisualSectionBlock';
+import ToadaLegendModal from './ToadaLegendModal';
 
 /**
- * Éditeur textuel structuré par mesure (1 paragraphe = 1 mesure).
- * Boutons rapides : [+] Anacrouse, [🔗] Mesure liée, [*] Puxador, et [+ Accord].
+ * Éditeur Toada hybride (< 140 lignes).
+ * Permet de basculer entre le mode Boîtes de mesures et le mode Texte brut (.txt),
+ * avec import/export de fichier .txt et modale de légende intégrée.
  */
 export default function ToadaMeasureEditor({
   value = '',
   onChange,
   disabled = false,
   placeholder = '',
-  minHeight = '180px'
+  title = 'toada'
 }) {
-  const { t } = useTranslation();
-  const textareaRef = useRef(null);
+  const [mode, setMode] = useState('boxes');
+  const [isLegendOpen, setIsLegendOpen] = useState(false);
+  const fileInputRef = useRef(null);
 
-  // Insertion de texte ou préfixe à la position du curseur
-  const insertToken = (prefix, suffix = '') => {
-    const el = textareaRef.current;
-    if (!el) return;
-    const start = el.selectionStart;
-    const end = el.selectionEnd;
-    const selected = value.slice(start, end);
-    const replacement = `${prefix}${selected || ''}${suffix}`;
-    const nextValue = value.slice(0, start) + replacement + value.slice(end);
-    onChange(nextValue);
+  const parsed = useMemo(() => parseToadaMeasures(value), [value]);
+  const sections = useMemo(() => (
+    parsed.sections.length > 0
+      ? parsed.sections
+      : [{ name: '', measures: [{ id: 1, rawContent: '', hasAnacrusis: false, isLinked: false }] }]
+  ), [parsed]);
 
-    setTimeout(() => {
-      el.focus();
-      const cursorTarget = start + prefix.length + (selected ? selected.length : 0);
-      el.setSelectionRange(cursorTarget, cursorTarget);
-    }, 50);
+  const updateSections = (nextSections) => onChange(serializeToadaMeasures(nextSections));
+
+  const handleUpdateMeasure = (sIdx, mIdx, patch) => {
+    const next = sections.map((s, i) => i !== sIdx ? s : {
+      ...s,
+      measures: s.measures.map((m, j) => j !== mIdx ? m : { ...m, ...patch })
+    });
+    updateSections(next);
   };
 
-  // Insertion en début de paragraphe/mesure courante
-  const insertMeasurePrefix = (prefixChar) => {
-    const el = textareaRef.current;
-    if (!el) return;
-    const start = el.selectionStart;
-    const beforeCursor = value.slice(0, start);
-    const lastDoubleBreak = Math.max(beforeCursor.lastIndexOf('\n\n'), -1);
-    const measureStart = lastDoubleBreak === -1 ? 0 : lastDoubleBreak + 2;
-
-    const currentMeasurePrefix = value.slice(measureStart, measureStart + 1);
-    let nextValue;
-    if (currentMeasurePrefix === prefixChar) {
-      // Toggle off
-      nextValue = value.slice(0, measureStart) + value.slice(measureStart + 1);
-    } else {
-      // Toggle on
-      nextValue = value.slice(0, measureStart) + `${prefixChar} ` + value.slice(measureStart);
-    }
-    onChange(nextValue);
-    setTimeout(() => el.focus(), 50);
+  const handleAddMeasure = (sIdx, atIndex) => {
+    const next = sections.map((s, i) => {
+      if (i !== sIdx) return s;
+      const measures = [...s.measures];
+      measures.splice(atIndex, 0, { id: Date.now(), rawContent: '', hasAnacrusis: false, isLinked: false });
+      return { ...s, measures };
+    });
+    updateSections(next);
   };
+
+  const handleDeleteMeasure = (sIdx, mIdx) => {
+    const next = sections.map((s, i) => i !== sIdx ? s : {
+      ...s,
+      measures: s.measures.filter((_, j) => j !== mIdx)
+    }).filter((s) => s.measures.length > 0 || sections.length === 1);
+    updateSections(next);
+  };
+
+  const handleAddSection = () => {
+    updateSections([...sections, { name: '', measures: [{ id: Date.now(), rawContent: '', hasAnacrusis: false, isLinked: false }] }]);
+  };
+
+  const handleImportFile = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => onChange(evt.target?.result || '');
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  let globalOffset = 0;
 
   return (
     <div className="flex flex-col gap-2 w-full text-left">
-      {/* Barre d'outils d'édition rapide Cordel */}
+      <input ref={fileInputRef} type="file" accept=".txt" onChange={handleImportFile} className="hidden" />
+      <ToadaLegendModal isOpen={isLegendOpen} onClose={() => setIsLegendOpen(false)} />
+
+      {/* Barre d'outils de l'éditeur */}
       <div className="flex flex-wrap items-center justify-between gap-1.5 p-1.5 bg-cordel-bg-light border border-encre-noire/20 rounded-[4px_6px_3px_5px]">
-        <div className="flex flex-wrap gap-1">
-          <button
-            type="button"
-            onClick={() => insertMeasurePrefix('+')}
-            disabled={disabled}
-            className="px-2 py-0.5 text-[9.5px] font-black uppercase rounded bg-white hover:bg-amber-100 border border-encre-noire/30 cursor-pointer shadow-2xs"
-            title={t('toada.tooltipAnacrusis') || "Ajouter une Anacrouse (+) sur la mesure courante"}
-          >
-            [+] Anacrouse
-          </button>
-          <button
-            type="button"
-            onClick={() => insertMeasurePrefix('/')}
-            disabled={disabled}
-            className="px-2 py-0.5 text-[9.5px] font-black uppercase rounded bg-white hover:bg-amber-100 border border-encre-noire/30 cursor-pointer shadow-2xs"
-            title={t('toada.tooltipLinked') || "Lier cette mesure à la précédente (/)"}
-          >
-            [🔗] Mesure liée
-          </button>
-          <button
-            type="button"
-            onClick={() => insertToken('*', '*')}
-            disabled={disabled}
-            className="px-2 py-0.5 text-[9.5px] font-black uppercase rounded bg-white hover:bg-stone-100 border border-encre-noire/30 cursor-pointer shadow-2xs"
-            title={t('toada.tooltipPuxador') || "Entourer avec * pour marquer le Puxador/Soliste"}
-          >
-            *Puxador*
-          </button>
-          <button
-            type="button"
-            onClick={() => insertToken('[Dm7]')}
-            disabled={disabled}
-            className="px-2 py-0.5 text-[9.5px] font-black uppercase rounded bg-white hover:bg-emerald-50 border border-emerald-800 text-emerald-900 cursor-pointer shadow-2xs"
-            title={t('toada.tooltipChord') || "Insérer un accord harmonique [Accord]"}
-          >
-            [+ Accord]
-          </button>
+        <div className="flex items-center gap-1">
+          <button type="button" onClick={() => setMode('boxes')}
+            className={`px-2 py-0.5 text-[9px] font-black uppercase rounded cursor-pointer ${
+              mode === 'boxes' ? 'bg-cordel-wood text-white shadow-2xs' : 'bg-white text-stone-700 border border-stone-300'
+            }`}>🎛️ Boîtes</button>
+          <button type="button" onClick={() => setMode('text')}
+            className={`px-2 py-0.5 text-[9px] font-black uppercase rounded cursor-pointer ${
+              mode === 'text' ? 'bg-cordel-wood text-white shadow-2xs' : 'bg-white text-stone-700 border border-stone-300'
+            }`}>📝 Brut .txt</button>
         </div>
 
-        <span className="text-[8.5px] text-stone-500 font-semibold italic hidden sm:inline">
-          1 paragraphe = 1 mesure (sauter 2 lignes)
-        </span>
+        <div className="flex items-center gap-1">
+          <button type="button" onClick={() => fileInputRef.current?.click()} disabled={disabled}
+            className="px-2 py-0.5 text-[9px] font-black uppercase bg-white hover:bg-stone-100 border border-stone-300 rounded cursor-pointer">📥 Importer .txt</button>
+          <button type="button" onClick={() => downloadToadaTxtFile(title, value)} disabled={disabled || !value.trim()}
+            className="px-2 py-0.5 text-[9px] font-black uppercase bg-white hover:bg-stone-100 border border-stone-300 rounded cursor-pointer">📤 Exporter .txt</button>
+          <button type="button" onClick={() => setIsLegendOpen(true)}
+            className="px-2 py-0.5 text-[9px] font-black uppercase bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded cursor-pointer">ℹ️ Légende</button>
+        </div>
       </div>
 
-      {/* Zone de texte de saisie par mesure */}
-      <textarea
-        ref={textareaRef}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        disabled={disabled}
-        placeholder={placeholder || "+ *Soliste* [Dm7] texte de la mesure...\n\n/ Suite du chœur dans la mesure liée..."}
-        style={{ minHeight }}
-        className="theme-input font-mono text-xs font-semibold p-2.5 bg-white leading-relaxed resize-y w-full rounded-[4px_6px_3px_5px] border border-encre-noire/30 shadow-inner"
-      />
+      {/* Rendu dynamique : Boîtes visuelles ou Zone de texte brut */}
+      {mode === 'boxes' ? (
+        <div className="flex flex-col gap-3">
+          {sections.map((section, sIdx) => {
+            const currentOffset = globalOffset;
+            globalOffset += section.measures.length;
+            return (
+              <ToadaVisualSectionBlock key={sIdx} section={section} sectionIndex={sIdx} globalMeasureOffset={currentOffset}
+                onChangeSectionName={(name) => updateSections(sections.map((s, i) => i === sIdx ? { ...s, name } : s))}
+                onDeleteSection={sections.length > 1 ? () => updateSections(sections.filter((_, i) => i !== sIdx)) : null}
+                onUpdateMeasure={(mIdx, patch) => handleUpdateMeasure(sIdx, mIdx, patch)}
+                onAddMeasure={(atIdx) => handleAddMeasure(sIdx, atIdx)}
+                onDeleteMeasure={(mIdx) => handleDeleteMeasure(sIdx, mIdx)} disabled={disabled} />
+            );
+          })}
+          <button type="button" onClick={handleAddSection} disabled={disabled}
+            className="py-1.5 text-[10px] font-black uppercase text-cordel-wood bg-white hover:bg-amber-50 border-2 border-dashed border-cordel-master-dark/30 rounded cursor-pointer">
+            + Ajouter une nouvelle Section [Section]
+          </button>
+        </div>
+      ) : (
+        <textarea value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled}
+          placeholder={placeholder || "+ *Soliste* [Dm7] Première mesure...\n\n/ Suite du chœur liée..."} rows={8}
+          className="theme-input font-mono text-xs font-semibold p-2.5 bg-white leading-relaxed resize-y w-full rounded border border-encre-noire/30 shadow-inner" />
+      )}
     </div>
   );
 }

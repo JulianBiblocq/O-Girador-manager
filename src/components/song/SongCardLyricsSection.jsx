@@ -21,7 +21,7 @@ export default function SongCardLyricsSection({
   const hasPhonetic = Boolean(song?.parolesPhonetiques && song.parolesPhonetiques.trim() !== '');
   const rawLyrics = lyricsType === 'phonetic' && hasPhonetic
     ? song.parolesPhonetiques
-    : (song?.parolesOriginales || song?.paroles || song?.texte || '');
+    : (song?.rawTxtCode || song?.parolesOriginales || song?.paroles || song?.texte || '');
 
   return (
     <div className="flex flex-col gap-3 w-full text-left">
