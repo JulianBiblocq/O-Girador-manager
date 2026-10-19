@@ -7,9 +7,6 @@
       "hosting": {
         "organizador": [
           "o-girador-organizador"
-        ],
-        "default": [
-          "o-girador-7828c"
         ]
       }
     }

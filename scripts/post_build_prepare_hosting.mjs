@@ -46,4 +46,25 @@ for (const file of brandingsToSync) {
   }
 }
 
+// 4. Synchronisation automatique de version.json avec package.json
+const packageJsonPath = path.resolve('package.json');
+if (fs.existsSync(packageJsonPath)) {
+  try {
+    const pkg = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+    const versionPayload = JSON.stringify({ version: pkg.version }, null, 2) + '\n';
+    
+    // Mise à jour de public/version.json
+    fs.writeFileSync(path.resolve('public/version.json'), versionPayload, 'utf-8');
+    console.log(`✅ public/version.json synchronisé avec la version ${pkg.version}`);
+
+    // Mise à jour de dist/version.json si dist existe
+    if (fs.existsSync(distDir)) {
+      fs.writeFileSync(path.join(distDir, 'version.json'), versionPayload, 'utf-8');
+      console.log(`✅ dist/version.json synchronisé avec la version ${pkg.version}`);
+    }
+  } catch (err) {
+    console.error('⚠️ Erreur lors de la synchronisation de version.json :', err);
+  }
+}
+
 console.log('🎉 Post-build terminé avec succès !\n');

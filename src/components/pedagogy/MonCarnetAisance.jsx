@@ -907,6 +907,7 @@ export default function MonCarnetAisance({
           handleToggleRevisionDemandee={handleToggleRevisionDemandee}
           sequenceurUrl={sequenceurUrl}
           comfortLevels={comfortLevels}
+          groupNomenclature={groupNomenclature}
         />
       )}
 

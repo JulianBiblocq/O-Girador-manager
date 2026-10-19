@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import CordelCard from '../../CordelCard';
 import InstrumentsCatalogBlock from '../blocks/InstrumentsCatalogBlock';
+import BateriaNomenclatureSection from './BateriaNomenclatureSection';
 import {
   getUniverseNomenclaturePresets,
   getUniverseRolesList,
@@ -13,10 +14,16 @@ import {
 import { useTranslation } from '../../LanguageContext';
 
 /**
- * Accordéon d'administration multi-univers pour la nomenclature des percussions/tambours,
- * la gestion des pupitres et les attributions de couleurs Cordel.
+ * Accordéon d'administration multi-univers pour la nomenclature des percussions (< 140 lignes).
+ * Intègre BateriaNomenclatureSection pour une gestion claire et intuitive de la Bateria.
  */
-export default function PupitresNomenclatureAccordion({ formData = {}, associationData, handleChange, saving, t }) {
+export default function PupitresNomenclatureAccordion({
+  formData = {},
+  associationData,
+  handleChange,
+  saving,
+  t
+}) {
   const { t: tHook } = useTranslation();
   const tFunc = t || tHook;
   const [isOpen, setIsOpen] = useState(false);
@@ -26,13 +33,7 @@ export default function PupitresNomenclatureAccordion({ formData = {}, associati
   const presetsList = getUniverseNomenclaturePresets(currentUniverse);
   const defaultPresetId = currentUniverse === 'batucada' ? 'batucada_standard' : 'traditional_baque_virado';
   const currentPresetId = formData.nomenclaturePreset || defaultPresetId;
-  const rolesList = getUniverseRolesList(currentUniverse, currentPresetId);
   const currentPreset = presetsList.find(p => p.id === currentPresetId) || { label: tFunc('settings.organization.pupitresNomenclatureAccordion.personnalise') || 'Personnalisé' };
-
-  // Nomenclature active pour l'univers courant
-  const activeNomenclature = formData.nomenclature?.[currentUniverse] || 
-    (currentUniverse === 'maracatu' ? (formData.nomenclature?.maracatu || formData.nomenclature) : null) || 
-    getDefaultUniverseNomenclature(currentUniverse);
 
   // Initialisation et liaison automatique pour Batucada si non configuré
   useEffect(() => {
@@ -50,21 +51,9 @@ export default function PupitresNomenclatureAccordion({ formData = {}, associati
   const instrumentsCount = Array.isArray(formData.instrumentsDisponibles) ? formData.instrumentsDisponibles.length : 0;
   const linkedCount = Array.isArray(formData.linkedInstruments) ? formData.linkedInstruments.length : 0;
 
-  const handleSelectPreset = (presetId) => {
-    const preset = presetsList.find(p => p.id === presetId);
-    if (!preset) return;
-    const defaultNom = getDefaultUniverseNomenclature(currentUniverse);
-    handleChange('nomenclaturePreset', presetId);
-    handleChange(`nomenclature.${currentUniverse}`, { ...defaultNom, ...preset.mapping });
-  };
-
-  const handleRoleChange = (roleKey, value) => {
-    handleChange(`nomenclature.${currentUniverse}.${roleKey}`, value);
-  };
-
   return (
     <CordelCard variant="default" useExtremeBorder={true} className="p-0 overflow-hidden mb-4">
-      {/* Bandeau d'en-tête repliable titré dynamiquement selon l'univers */}
+      {/* Bandeau d'en-tête repliable */}
       <div 
         onClick={() => setIsOpen(prev => !prev)}
         className="py-3 px-4 flex items-center justify-between cursor-pointer bg-cordel-bg-light/60 hover:bg-cordel-bg-light transition-colors select-none"
@@ -111,66 +100,18 @@ export default function PupitresNomenclatureAccordion({ formData = {}, associati
             </button>
           </div>
 
-          {/* Section A : Nomenclature & Voix */}
+          {/* Section A : Nomenclature de la Bateria */}
           {activeSection === 'nomenclature' && (
-            <div className="flex flex-col gap-3 animate-fade-in">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-dashed border-stone-200">
-                <div>
-                  <span className="text-[10px] font-black uppercase tracking-wider text-cordel-wood block">
-                    {tFunc('settings.organization.pupitresNomenclatureAccordion.traditionPrereglagesRapides')}
-                  </span>
-                  <p className="text-[9px] text-stone-500">
-                    {tFunc('settings.organization.pupitresNomenclatureAccordion.selectionnezUnPresetPourAligner')}
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {presetsList.map(p => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => handleSelectPreset(p.id)}
-                      disabled={saving}
-                      className={`px-2.5 py-1 text-[9.5px] font-bold rounded cursor-pointer transition-all ${
-                        currentPresetId === p.id ? 'bg-[var(--color-cordel-vert,#2d6a4f)] text-white shadow-2xs' : 'bg-white text-stone-700 border border-stone-300 hover:bg-stone-50'
-                      }`}
-                    >
-                      {p.label || p.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Grille dynamique des voix selon l'univers */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
-                {rolesList.map((role) => {
-                  const defaultNom = getDefaultUniverseNomenclature(currentUniverse);
-                  const currentValue = activeNomenclature[role.key] ?? 
-                    (role.key === 'chant' ? (activeNomenclature['puxador'] ?? defaultNom['chant']) : null) ?? 
-                    (role.key === 'puxador' ? (activeNomenclature['chant'] ?? defaultNom['puxador']) : null) ?? 
-                    (role.key === 'cuica' ? (activeNomenclature['timba'] ?? defaultNom['cuica']) : null) ?? 
-                    defaultNom[role.key] ?? role.defaultLabel ?? role.label;
-                  return (
-                    <div key={role.key} className="flex flex-col gap-0.5 p-2 bg-white rounded border border-stone-200">
-                      <span className="text-[9px] font-bold text-stone-500 uppercase">{role.label || role.defaultLabel || role.key}</span>
-                      <input
-                        type="text"
-                        value={currentValue || ''}
-                        onChange={(e) => handleRoleChange(role.key, e.target.value)}
-                        disabled={saving}
-                        className="theme-input text-xs font-bold py-1 bg-stone-50 w-full"
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            <BateriaNomenclatureSection
+              formData={formData}
+              handleChange={handleChange}
+              saving={saving}
+            />
           )}
 
           {/* Section B : Pupitres, Couleurs & Instruments Associés */}
           {activeSection === 'catalog' && (
-            <div className="flex flex-col gap-3 animate-fade-in">
-              <InstrumentsCatalogBlock formData={formData} handleChange={handleChange} saving={saving} t={t} />
-            </div>
+            <InstrumentsCatalogBlock formData={formData} handleChange={handleChange} saving={saving} t={t} />
           )}
         </div>
       )}

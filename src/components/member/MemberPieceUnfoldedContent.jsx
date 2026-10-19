@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import PieceAisanceSection from './PieceAisanceSection';
 import PieceVideoSection from '../repertoire/PieceVideoSection';
 import PieceQuizModal from './PieceQuizModal';
+import SequencerAccessButtons from '../repertoire/SequencerAccessButtons';
 import { useTranslation } from '../LanguageContext';
-import { launchGlobalSequencer } from '../../utils/trainingLauncher';
 import { getEcosystemUrl } from '../../constants/ecosystemUrls';
 import { launchCrossApp } from '../../utils/crossAppAuth';
 
@@ -113,11 +113,9 @@ export default function MemberPieceUnfoldedContent({
           </div>
         )}
 
-        {/* Séquenceur */}
+        {/* Séquenceur découplé : Écouter & Jouer avec */}
         {piece.sequenceurId && (
-          <button type="button" onClick={() => launchGlobalSequencer(piece.sequenceurId, { baseUrl: sequenceurUrl })} className="px-2.5 py-1 text-xs font-bold rounded bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-950 flex items-center gap-1.5 cursor-pointer shadow-2xs select-none" title={t('repertoire.tooltipListenSequencer')}>
-            <span>🥁</span><span>{t('repertoire.btnListenSequencer')}</span>
-          </button>
+          <SequencerAccessButtons piece={piece} sequenceurUrl={sequenceurUrl} profileData={profileData} />
         )}
 
         {/* Passerelle Cantador — Mode élève & ciblage chant */}

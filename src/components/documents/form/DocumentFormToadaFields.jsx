@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import RichTextEditor from '../../RichTextEditor';
+import ToadaAudioWitnessField from './ToadaAudioWitnessField';
+import ToadaHeaderMetadataForm from '../toada/ToadaHeaderMetadataForm';
+import ToadaMeasureEditor from '../toada/ToadaMeasureEditor';
 
 /**
- * Sous-formulaire pour la saisie des chants et Toadas :
- * Paroles originales, transcription phonétique, traduction, audio témoin et informations contextuelles.
+ * Sous-formulaire modulaire pour la saisie des chants et Toadas (< 135 lignes) :
+ * Métadonnées musicales d'en-tête, éditeur par mesure ou texte riche, et audio témoin.
  */
 export default function DocumentFormToadaFields({
   category = 'Toadas',
@@ -11,6 +14,12 @@ export default function DocumentFormToadaFields({
   setNacao,
   rythme = '',
   setRythme,
+  signature = '4/4',
+  setSignature,
+  bpmDefaut = '',
+  setBpmDefaut,
+  tonaliteDefaut = '',
+  setTonaliteDefaut,
   audioUploadType = 'file',
   setAudioUploadType,
   audioFile = null,
@@ -19,164 +28,68 @@ export default function DocumentFormToadaFields({
   setAudioUrl,
   parolesOriginales = '',
   setParolesOriginales,
-  parolesPhonetiques = '',
-  setParolesPhonetiques,
   traduction = '',
   setTraduction,
   anecdote = '',
   setAnecdote,
   isSubmitting = false
 }) {
+  const isHtml = /<[a-z][\s\S]*>/i.test(parolesOriginales || '');
+  const [editorMode, setEditorMode] = useState(isHtml ? 'richtext' : 'measures');
+
   return (
-    <div className="flex flex-col gap-4 mt-2 border-t-2 border-dashed border-cordel-master-dark/20 pt-4">
-      <div className="grid grid-cols-2 gap-4">
+    <div className="flex flex-col gap-3.5 mt-2 border-t-2 border-dashed border-cordel-master-dark/20 pt-4 text-left">
+      {/* 1. Origine & Rythme */}
+      <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1">
-          <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-            Origine / Nation / Auteur
-          </label>
-          <input
-            type="text"
-            value={nacao}
-            onChange={(e) => setNacao(e.target.value)}
-            disabled={isSubmitting}
-            placeholder="Ex: Porto Rico"
-            className="theme-input w-full disabled:opacity-50 text-xs"
-          />
+          <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">Origine / Auteur</label>
+          <input type="text" value={nacao} onChange={(e) => setNacao(e.target.value)} disabled={isSubmitting} placeholder="Ex: Porto Rico" className="theme-input w-full text-xs" />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-            {category === 'Culture' ? "Époque / Période" : "Rythme"}
-          </label>
-          <input
-            type="text"
-            value={rythme}
-            onChange={(e) => setRythme(e.target.value)}
-            disabled={isSubmitting}
-            placeholder={category === 'Culture' ? "Ex: 19ème Siècle" : "Ex: Baque de Virada"}
-            className="theme-input w-full disabled:opacity-50 text-xs"
-          />
+          <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">{category === 'Culture' ? "Période" : "Rythme"}</label>
+          <input type="text" value={rythme} onChange={(e) => setRythme(e.target.value)} disabled={isSubmitting} placeholder={category === 'Culture' ? "19ème Siècle" : "Baque de Virada"} className="theme-input w-full text-xs" />
         </div>
       </div>
 
-      {/* Audio Témoin du Chant */}
-      <div className="flex flex-col gap-2 p-3 bg-cordel-wood/5 border border-cordel-wood/20 rounded-md">
-        <div className="flex items-center justify-between">
-          <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center gap-1">
-            <span>🎵</span> Audio témoin (Enregistrement de référence)
-          </label>
-          <div className="flex gap-1.5">
-            <button
-              type="button"
-              onClick={() => setAudioUploadType('file')}
-              className={`text-[8px] uppercase font-extrabold px-2 py-0.5 rounded transition-all cursor-pointer ${
-                audioUploadType === 'file' ? 'bg-cordel-wood text-[#fdfaf2] shadow-xs' : 'text-encre-noire hover:bg-encre-noire/10'
-              }`}
-            >
-              Fichier audio
-            </button>
-            <button
-              type="button"
-              onClick={() => setAudioUploadType('url')}
-              className={`text-[8px] uppercase font-extrabold px-2 py-0.5 rounded transition-all cursor-pointer ${
-                audioUploadType === 'url' ? 'bg-cordel-wood text-[#fdfaf2] shadow-xs' : 'text-encre-noire hover:bg-encre-noire/10'
-              }`}
-            >
-              Lien URL
-            </button>
-          </div>
-        </div>
-
-        {audioUploadType === 'file' ? (
-          <div className="flex items-center gap-2">
-            <input
-              type="file"
-              accept="audio/*,.mp3,.wav,.ogg,.m4a"
-              onChange={(e) => setAudioFile(e.target.files[0] || null)}
-              disabled={isSubmitting}
-              className="theme-input w-full text-xs py-1.5 file:mr-3 file:py-1 file:px-2 file:rounded file:border-0 file:text-[9px] file:font-bold file:bg-cordel-master-light file:text-encre-noire file:cursor-pointer"
-            />
-            {(audioUrl && !audioFile) && (
-              <span className="text-[9px] text-cordel-vert font-bold whitespace-nowrap">✓ Audio actuel conservé</span>
-            )}
-          </div>
-        ) : (
-          <input
-            type="url"
-            value={audioUrl}
-            onChange={(e) => setAudioUrl(e.target.value)}
-            disabled={isSubmitting}
-            placeholder="https://... (Lien direct vers fichier audio)"
-            className="theme-input w-full text-xs font-semibold"
-          />
-        )}
-      </div>
-
-      <div className={`grid grid-cols-1 ${category === 'Toadas' ? 'md:grid-cols-2' : ''} gap-4`}>
-        <div className="flex flex-col gap-1">
-          <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-            {category === 'Culture' ? "Texte de contenu (Fiche Culturelle)" : "Paroles Originales (Mettez en gras le Puxador/Soliste)"}
-          </label>
-          <div className="mt-1">
-            <RichTextEditor
-              value={parolesOriginales}
-              onChange={(html) => setParolesOriginales(html)}
-              disabled={isSubmitting}
-              placeholder={category === 'Culture' ? "Rédigez la fiche culturelle ici..." : "Paroles dans la langue d'origine..."}
-              minHeight="120px"
-              showImage={category === 'Culture'}
-              showLists={category === 'Culture'}
-              showAlign={category === 'Culture'}
-            />
-          </div>
-        </div>
-        
-        {category === 'Toadas' && (
-          <div className="flex flex-col gap-1">
-            <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              Paroles Phonétiques (Mettez en gras le Puxador/Soliste)
-            </label>
-            <div className="mt-1">
-              <RichTextEditor
-                value={parolesPhonetiques}
-                onChange={(html) => setParolesPhonetiques(html)}
-                disabled={isSubmitting}
-                placeholder="Prononciation..."
-                minHeight="120px"
-                showImage={false}
-                showLists={false}
-                showAlign={false}
-              />
-            </div>
-          </div>
-        )}
-      </div>
-      
+      {/* 2. En-tête Musical de la Toada (Signature, BPM, Tonalité) */}
       {category === 'Toadas' && (
-        <div className="flex flex-col gap-1">
-          <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-            Traduction
-          </label>
-          <textarea
-            value={traduction}
-            onChange={(e) => setTraduction(e.target.value)}
-            disabled={isSubmitting}
-            placeholder="Traduction française..."
-            className="theme-input w-full disabled:opacity-50 text-xs min-h-[60px] resize-y"
-          />
+        <ToadaHeaderMetadataForm signature={signature} onChangeSignature={setSignature} bpmDefaut={bpmDefaut} onChangeBpm={setBpmDefaut} tonaliteDefaut={tonaliteDefaut} onChangeTonalite={setTonaliteDefaut} disabled={isSubmitting} />
+      )}
+
+      {/* 3. Audio Témoin du Chant */}
+      <ToadaAudioWitnessField audioUploadType={audioUploadType} setAudioUploadType={setAudioUploadType} audioFile={audioFile} setAudioFile={setAudioFile} audioUrl={audioUrl} setAudioUrl={setAudioUrl} isSubmitting={isSubmitting} />
+
+      {/* 4. Format des Paroles */}
+      {category === 'Toadas' && (
+        <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-1">
+          <span className="text-[9.5px] uppercase font-black tracking-wider text-cordel-wood">Format des Paroles</span>
+          <div className="flex gap-1">
+            <button type="button" onClick={() => setEditorMode('measures')} className={`text-[8.5px] font-black uppercase px-2 py-0.5 rounded cursor-pointer ${editorMode === 'measures' ? 'bg-cordel-wood text-white shadow-2xs' : 'bg-white text-stone-700 border border-stone-300'}`}>Mesures (.txt)</button>
+            <button type="button" onClick={() => setEditorMode('richtext')} className={`text-[8.5px] font-black uppercase px-2 py-0.5 rounded cursor-pointer ${editorMode === 'richtext' ? 'bg-cordel-wood text-white shadow-2xs' : 'bg-white text-stone-700 border border-stone-300'}`}>Texte Riche</button>
+          </div>
         </div>
       )}
 
-      <div className="flex flex-col gap-1 mt-2">
-        <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-          Information
-        </label>
-        <textarea
-          value={anecdote}
-          onChange={(e) => setAnecdote(e.target.value)}
-          disabled={isSubmitting}
-          placeholder="Informations ou contexte supplémentaire..."
-          className="theme-input w-full disabled:opacity-50 text-xs min-h-[60px] resize-y"
-        />
+      {/* 5. Paroles Originales */}
+      <div className="flex flex-col gap-1">
+        <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">{category === 'Culture' ? "Contenu Fiche" : "Paroles Originales"}</label>
+        {editorMode === 'measures' && category === 'Toadas' ? (
+          <ToadaMeasureEditor value={parolesOriginales} onChange={setParolesOriginales} disabled={isSubmitting} placeholder="+ *Soliste* [Dm7] Première mesure...\n\n/ Suite du chœur liée..." />
+        ) : (
+          <RichTextEditor value={parolesOriginales} onChange={(html) => setParolesOriginales(html)} disabled={isSubmitting} placeholder="Paroles..." minHeight="120px" />
+        )}
+      </div>
+
+      {/* 6. Traduction & Informations */}
+      {category === 'Toadas' && (
+        <div className="flex flex-col gap-1">
+          <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">Traduction</label>
+          <textarea value={traduction} onChange={(e) => setTraduction(e.target.value)} disabled={isSubmitting} placeholder="Traduction française..." className="theme-input w-full text-xs min-h-[45px] resize-y" />
+        </div>
+      )}
+      <div className="flex flex-col gap-1">
+        <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">Informations</label>
+        <textarea value={anecdote} onChange={(e) => setAnecdote(e.target.value)} disabled={isSubmitting} placeholder="Contexte supplémentaire..." className="theme-input w-full text-xs min-h-[45px] resize-y" />
       </div>
     </div>
   );

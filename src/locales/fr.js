@@ -19,6 +19,9 @@ export const fr = {
     add: "Ajouter",
     close: "Fermer",
     open: "Ouvrir",
+    file: "Fichier",
+    url: "Lien URL",
+    print: "Imprimer",
     send: "Envoyer",
     required: "Requis",
     success: "Succès",
@@ -2996,9 +2999,15 @@ export const fr = {
     // Accès Sequenciador — Écoute globale
     btnListenSequencer: "Écouter dans le Séquenceur",
     tooltipListenSequencer: "Écoute intégrale de référence (toutes pistes actives)",
+    btnTrainTocarJunto: "S'entraîner (Jouer avec)",
+    selectPupitreTitle: "Choisissez votre pupitre",
+    selectPupitreSubtitle: "Sélectionnez votre instrument pour lancer la session « Jouer avec » avec votre piste en sourdine :",
     btnVocalLab: "Cantador / S'entraîner au chant",
     btnTrainVocalDirect: "S'entraîner au chant (Cantador)",
     tooltipVocalLab: "Ouvrir Cantador en ligne",
+    translationTitle: "Traduction française",
+    contextTitle: "Contexte & Histoire",
+    witnessAudio: "Audio témoin :",
     vocalLabBadge: "Cantador",
     revisePiece: "Réviser ce morceau",
 
@@ -6292,6 +6301,8 @@ export const fr = {
         exerciceActif: "Exercice actif :"
       },
       pupitresNomenclatureAccordion: {
+        bateriaNomenclatureTitle: "Nomenclature de la Bateria",
+        bateriaNomenclatureSubtitle: "Choisissez un préréglage traditionnel ou personnalisez les voix :",
         personnalise: "Personnalisé",
         pupitresTamboursNomenclature: "Pupitres, Tambours & Nomenclature (",
         instrument: "instrument",
@@ -6952,6 +6963,19 @@ export const fr = {
       step2: "Prévisualisez le rendu visuel sur ordinateur et smartphone.",
       step3: "Enregistrez les modifications d'apparence pour le site public."
     }
+  },
+  toada: {
+    headerMetadataTitle: "En-tête Musical de la Toada",
+    signature: "Signature",
+    bpm: "Tempo (BPM)",
+    tonalite: "Tonalité",
+    showChords: "Afficher les accords",
+    tooltipAnacrusis: "Ajouter une Anacrouse (+) sur la mesure courante",
+    tooltipLinked: "Lier cette mesure à la précédente (/)",
+    tooltipPuxador: "Entourer avec * pour marquer le Puxador/Soliste",
+    tooltipChord: "Insérer un accord harmonique [Accord]",
+    audioWitnessTitle: "Audio témoin (Enregistrement de référence)",
+    currentAudioPreserved: "Audio actuel conservé"
   }
 };
 

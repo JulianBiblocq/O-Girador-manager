@@ -125,6 +125,9 @@ export default function DocumentUploadForm({
 
   const [nacao, setNacao] = useState(documentToEdit ? documentToEdit.nacao || '' : '');
   const [rythme, setRythme] = useState(documentToEdit ? documentToEdit.rythme || '' : '');
+  const [signature, setSignature] = useState(documentToEdit ? documentToEdit.signature || '4/4' : '4/4');
+  const [bpmDefaut, setBpmDefaut] = useState(documentToEdit ? documentToEdit.bpmDefaut || documentToEdit.bpm || '' : '');
+  const [tonaliteDefaut, setTonaliteDefaut] = useState(documentToEdit ? documentToEdit.tonaliteDefaut || documentToEdit.tonalite || '' : '');
   const [parolesOriginales, setParolesOriginales] = useState(() =>
     documentToEdit ? normalizeLyricsToHtml(documentToEdit.parolesOriginales) : ''
   );
@@ -251,6 +254,9 @@ export default function DocumentUploadForm({
       songData: {
         nacao,
         rythme,
+        signature,
+        bpmDefaut,
+        tonaliteDefaut,
         parolesOriginales,
         parolesPhonetiques,
         traduction,
@@ -519,6 +525,12 @@ export default function DocumentUploadForm({
                 setNacao={setNacao}
                 rythme={rythme}
                 setRythme={setRythme}
+                signature={signature}
+                setSignature={setSignature}
+                bpmDefaut={bpmDefaut}
+                setBpmDefaut={setBpmDefaut}
+                tonaliteDefaut={tonaliteDefaut}
+                setTonaliteDefaut={setTonaliteDefaut}
                 audioUploadType={audioUploadType}
                 setAudioUploadType={setAudioUploadType}
                 audioFile={audioFile}

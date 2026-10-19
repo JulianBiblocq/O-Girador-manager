@@ -4,23 +4,21 @@ import MemberPieceUnfoldedContent from './MemberPieceUnfoldedContent';
 import PieceSignalsModal from './PieceSignalsModal';
 import PieceLyricsModal from './PieceLyricsModal';
 import PieceCultureModal from './PieceCultureModal';
+import SequencerAccessButtons from '../repertoire/SequencerAccessButtons';
 import { useTranslation } from '../LanguageContext';
-import { launchGlobalSequencer } from '../../utils/trainingLauncher';
 import { getEcosystemUrl } from '../../constants/ecosystemUrls';
 import { launchCrossApp } from '../../utils/crossAppAuth';
 
-// Échelle des 4 niveaux de confort personnel de l'adhérent
 export const COMFORT_LEVELS = [
-  { level: 1, labelKey: 'pedagogy.modals.decouverte', icon: '🌱', tipKey: 'pedagogy.modals.enPhaseDeDecouverte' },
-  { level: 2, labelKey: 'pedagogy.modals.enPratique', icon: '🌿', tipKey: 'pedagogy.modals.enCoursDApprentissage' },
-  { level: 3, labelKey: 'pedagogy.modals.aLAise', icon: '🌳', tipKey: 'pedagogy.modals.autonomeSurLeMorceau' },
-  { level: 4, labelKey: 'pedagogy.modals.referent', icon: '👑', tipKey: 'pedagogy.modals.parfaitementMaitrise' }
+  { level: 1, labelKey: 'pedagogy.modals.decouverte', icon: '🌱' },
+  { level: 2, labelKey: 'pedagogy.modals.enPratique', icon: '🌿' },
+  { level: 3, labelKey: 'pedagogy.modals.aLAise', icon: '🌳' },
+  { level: 4, labelKey: 'pedagogy.modals.referent', icon: '👑' }
 ];
 
 /**
- * Carte individuelle repliable d'un morceau du Répertoire (< 200 lignes).
- * Mode replié : En-tête avec titre, curseur de confort, accès Séquenceur et Cantador direct.
- * Mode déplié : Ressources multimédias via MemberPieceUnfoldedContent et modales dédiées.
+ * Carte individuelle repliable d'un morceau du Répertoire (< 145 lignes).
+ * Découplage Séquenceur (Écouter & Jouer avec) et passerelle Cantador.
  */
 export default function MemberPieceCard({
   piece, userId, groupId, profileData = null, trainings = [], aisanceMap = {},
@@ -42,22 +40,17 @@ export default function MemberPieceCard({
       useExtremeBorder={true}
       className="p-0 overflow-hidden flex flex-col text-left transition-all border-2 border-encre-noire"
     >
-      {/* 1. En-tête repliable (toujours visible, style Cordel avec cadre noir net) */}
+      {/* 1. En-tête repliable */}
       <div
         onClick={onToggleExpand}
         className={`p-3 bg-cordel-bg-light/90 hover:bg-stone-100/90 cursor-pointer transition-colors flex flex-col gap-2 select-none ${
           isExpanded ? 'border-b-2 border-dashed border-cordel-master-dark/25' : ''
         }`}
       >
-        {/* Ligne supérieure : Flèche de déploiement + Titre en gras + BPM */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 min-w-0">
-            <span className="text-xs font-black text-cordel-wood flex-shrink-0">
-              {isExpanded ? '▾' : '▸'}
-            </span>
-            <h3 className="text-xs sm:text-sm font-black text-encre-noire uppercase tracking-wide truncate">
-              {piece.titre}
-            </h3>
+            <span className="text-xs font-black text-cordel-wood flex-shrink-0">{isExpanded ? '▾' : '▸'}</span>
+            <h3 className="text-xs sm:text-sm font-black text-encre-noire uppercase tracking-wide truncate">{piece.titre}</h3>
             {piece.activeBpm && (
               <span className="text-[9.5px] font-bold text-stone-600 bg-black/5 px-1.5 py-0.5 rounded border border-encre-noire/15 flex-shrink-0">
                 {t ? t('repertoire.tempoBpm', { bpm: piece.activeBpm }) : `${piece.activeBpm} BPM`}
@@ -66,10 +59,10 @@ export default function MemberPieceCard({
           </div>
         </div>
 
-        {/* Ligne inférieure : Demande de révision 1-clic & Curseur de confort compact */}
+        {/* Ligne inférieure : Actions rapides, Séquenceur découplé, Cantador et Confort */}
         <div className="flex items-center justify-between gap-2 flex-wrap pt-0.5">
           <div className="flex items-center gap-1.5 flex-wrap">
-            {/* Demande de révision 1-clic */}
+            {/* Demande de révision */}
             <button
               type="button"
               onClick={(e) => {
@@ -77,31 +70,15 @@ export default function MemberPieceCard({
                 onToggleRevision && onToggleRevision(piece.id);
               }}
               className={`px-2.5 py-1 text-xs font-black rounded border transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs select-none ${
-                isRevisionRequested
-                  ? 'bg-amber-100 border-[var(--color-cordel-ocre,#c05621)] text-[var(--color-cordel-ocre,#c05621)]'
-                  : 'bg-white border-encre-noire/25 text-stone-700 hover:bg-stone-50'
+                isRevisionRequested ? 'bg-amber-100 border-[var(--color-cordel-ocre,#c05621)] text-[var(--color-cordel-ocre,#c05621)]' : 'bg-white border-encre-noire/25 text-stone-700 hover:bg-stone-50'
               }`}
-              title={isRevisionRequested ? 'Annuler la demande' : 'Signaler au Mestre le besoin de réviser'}
             >
               <span>🙋</span>
               <span>{isRevisionRequested ? (t('pedagogy.revisionRequestedNotice') || 'Révision demandée ✓') : (t('pedagogy.requestRevisionBtn') || 'Demander à réviser')}</span>
             </button>
 
-            {/* Écoute globale Séquenceur (toutes pistes actives) */}
-            {piece.sequenceurId && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  launchGlobalSequencer(piece.sequenceurId, { baseUrl: sequenceurUrl });
-                }}
-                className="px-2.5 py-1 text-xs font-black rounded border border-encre-noire/25 bg-white text-stone-700 hover:bg-stone-50 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs select-none"
-                title={t('repertoire.tooltipListenSequencer')}
-              >
-                <span>🥁</span>
-                <span>{t('repertoire.btnListenSequencer')}</span>
-              </button>
-            )}
+            {/* Accès Séquenceur découplés (Écouter & Jouer avec) */}
+            <SequencerAccessButtons piece={piece} sequenceurUrl={sequenceurUrl} profileData={profileData} />
 
             {/* Entraînement Chant Cantador direct */}
             {(piece.cantadorToadaId || piece.type === 'song' || piece.hasToada || piece.toadaDocId) && (
@@ -111,13 +88,10 @@ export default function MemberPieceCard({
                   e.stopPropagation();
                   const toadaId = encodeURIComponent(piece.cantadorToadaId || '');
                   const songId = encodeURIComponent(piece.id || '');
-                  launchCrossApp(
-                    getEcosystemUrl('vocalLab', `?mode=eleve&toadaId=${toadaId}&songId=${songId}`),
-                    { appLabel: 'Cantador' }
-                  );
+                  launchCrossApp(getEcosystemUrl('vocalLab', `?mode=eleve&toadaId=${toadaId}&songId=${songId}`), { appLabel: 'Cantador' });
                 }}
                 className="px-2.5 py-1 text-xs font-black rounded border border-orange-300 bg-orange-50 text-orange-950 hover:bg-orange-100 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs select-none"
-                title={t('repertoire.tooltipVocalLab') || "Ouvrir Cantador en ligne"}
+                title="Ouvrir Cantador en ligne"
               >
                 <span>🎙️</span>
                 <span>{t('repertoire.btnTrainVocalDirect') || "S'entraîner au chant (Cantador)"}</span>
@@ -125,11 +99,8 @@ export default function MemberPieceCard({
             )}
           </div>
 
-          <div
-            className="flex items-center gap-1"
-            onClick={(e) => e.stopPropagation()}
-            title={t('pedagogy.modals.monNiveauDAisance')}
-          >
+          {/* Curseur de confort personnel */}
+          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
             {COMFORT_LEVELS.map((c) => {
               const isSelected = comfortLevel === c.level;
               return (
@@ -141,11 +112,8 @@ export default function MemberPieceCard({
                     onSetComfortLevel && onSetComfortLevel(piece.id, isSelected ? 0 : c.level);
                   }}
                   className={`w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded text-xs border transition-all cursor-pointer shadow-2xs select-none ${
-                    isSelected
-                      ? 'bg-emerald-700 text-white border-emerald-950 scale-110 shadow-sm'
-                      : 'bg-white border-stone-200 hover:bg-stone-100 opacity-70 hover:opacity-100'
+                    isSelected ? 'bg-emerald-700 text-white border-emerald-950 scale-110 shadow-sm' : 'bg-white border-stone-200 hover:bg-stone-100 opacity-70 hover:opacity-100'
                   }`}
-                  title={`${c.icon} ${t(c.labelKey) || c.label} : ${c.tip}`}
                 >
                   <span>{c.icon}</span>
                 </button>
@@ -155,7 +123,7 @@ export default function MemberPieceCard({
         </div>
       </div>
 
-      {/* 2. Contenu déplié (panneau accordéon conditionnel en lecture seule stricte) */}
+      {/* 2. Contenu déplié */}
       {isExpanded && (
         <MemberPieceUnfoldedContent
           piece={piece} userId={userId} groupId={groupId} profileData={profileData} trainings={trainings} aisanceMap={aisanceMap}
@@ -167,21 +135,10 @@ export default function MemberPieceCard({
         />
       )}
 
-      {/* 3. Modales dédiées des Signes, Paroles et Culture */}
-      {isSignalsModalOpen && (
-        <PieceSignalsModal isOpen={isSignalsModalOpen} onClose={() => setIsSignalsModalOpen(false)} piece={piece} groupId={groupId} profileData={profileData} />
-      )}
-      {isLyricsModalOpen && (
-        <PieceLyricsModal isOpen={isLyricsModalOpen} onClose={() => setIsLyricsModalOpen(false)} song={piece.activeToada} piece={piece} groupId={groupId} profileData={profileData} />
-      )}
-      {isCultureModalOpen && (
-        <PieceCultureModal
-          isOpen={isCultureModalOpen} onClose={() => setIsCultureModalOpen(false)}
-          cultureDocs={Array.isArray(piece.activeCultureDocs) && piece.activeCultureDocs.length > 0 ? piece.activeCultureDocs : (piece.activeCultureDoc ? [piece.activeCultureDoc] : [])}
-          initialDocId={piece.activeCultureDocs?.[0]?.id || piece.activeCultureDoc?.id}
-          piece={piece} groupId={groupId} profileData={profileData}
-        />
-      )}
+      {/* 3. Modales dédiées */}
+      {isSignalsModalOpen && <PieceSignalsModal isOpen={isSignalsModalOpen} onClose={() => setIsSignalsModalOpen(false)} piece={piece} groupId={groupId} profileData={profileData} />}
+      {isLyricsModalOpen && <PieceLyricsModal isOpen={isLyricsModalOpen} onClose={() => setIsLyricsModalOpen(false)} song={piece.activeToada} piece={piece} groupId={groupId} profileData={profileData} />}
+      {isCultureModalOpen && <PieceCultureModal isOpen={isCultureModalOpen} onClose={() => setIsCultureModalOpen(false)} cultureDocs={Array.isArray(piece.activeCultureDocs) && piece.activeCultureDocs.length > 0 ? piece.activeCultureDocs : (piece.activeCultureDoc ? [piece.activeCultureDoc] : [])} initialDocId={piece.activeCultureDocs?.[0]?.id || piece.activeCultureDoc?.id} piece={piece} groupId={groupId} profileData={profileData} />}
     </CordelCard>
   );
 }

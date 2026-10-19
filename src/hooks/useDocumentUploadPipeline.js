@@ -410,6 +410,9 @@ export function useDocumentUploadPipeline({
         if (isSongType) {
           updateData.nacao = songData.nacao || '';
           updateData.rythme = songData.rythme || '';
+          if (songData.signature) updateData.signature = songData.signature;
+          if (songData.bpmDefaut) updateData.bpmDefaut = songData.bpmDefaut;
+          if (songData.tonaliteDefaut) updateData.tonaliteDefaut = songData.tonaliteDefaut;
           updateData.parolesOriginales = songData.parolesOriginales || '';
           updateData.parolesPhonetiques = songData.parolesPhonetiques || '';
           updateData.traduction = songData.traduction || '';
@@ -529,6 +532,9 @@ export function useDocumentUploadPipeline({
       if (isSongType) {
         newDoc.nacao = songData.nacao || '';
         newDoc.rythme = songData.rythme || '';
+        if (songData.signature) newDoc.signature = songData.signature;
+        if (songData.bpmDefaut) newDoc.bpmDefaut = songData.bpmDefaut;
+        if (songData.tonaliteDefaut) newDoc.tonaliteDefaut = songData.tonaliteDefaut;
         newDoc.parolesOriginales = songData.parolesOriginales || '';
         newDoc.parolesPhonetiques = songData.parolesPhonetiques || '';
         newDoc.traduction = songData.traduction || '';

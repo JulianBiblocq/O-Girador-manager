@@ -19,6 +19,9 @@ export const pt = {
     add: "Adicionar",
     close: "Fechar",
     open: "Abrir",
+    file: "Arquivo",
+    url: "Link URL",
+    print: "Imprimir",
     send: "Enviar",
     required: "Obrigatório",
     success: "Sucesso",
@@ -2982,9 +2985,15 @@ export const pt = {
     // Accès Sequenciador — Écoute globale
     btnListenSequencer: "Ouvir no Sequenciador",
     tooltipListenSequencer: "Audição integral de referência (todas as faixas ativas)",
+    btnTrainTocarJunto: "Treinar (Tocar Junto)",
+    selectPupitreTitle: "Escolha seu naipe",
+    selectPupitreSubtitle: "Selecione seu instrumento para iniciar a sessão « Tocar Junto » com sua faixa mutada :",
     btnVocalLab: "Cantador / Treinar canto",
     btnTrainVocalDirect: "Treinar canto (Cantador)",
     tooltipVocalLab: "Abrir o Cantador online",
+    translationTitle: "Tradução",
+    contextTitle: "Contexto & História",
+    witnessAudio: "Áudio guia:",
     vocalLabBadge: "Cantador",
     revisePiece: "Revisar esta música",
 
@@ -6261,6 +6270,8 @@ export const pt = {
         exerciceActif: "Exercício ativo:"
       },
       pupitresNomenclatureAccordion: {
+        bateriaNomenclatureTitle: "Nomenclatura da Bateria",
+        bateriaNomenclatureSubtitle: "Escolha uma predefinição tradicional ou personalize as vozes:",
         personnalise: "Personalizado",
         pupitresTamboursNomenclature: "Naipes, Tambores & Nomenclatura (",
         instrument: "instrumento",
@@ -6921,6 +6932,19 @@ export const pt = {
       step2: "Visualize o resultado em tempo real para computador e celular.",
       step3: "Salve as alterações visuais para o site público."
     }
+  },
+  toada: {
+    headerMetadataTitle: "Cabeçalho Musical da Toada",
+    signature: "Fórmula de compasso",
+    bpm: "Andamento (BPM)",
+    tonalite: "Tonalidade",
+    showChords: "Exibir acordes",
+    tooltipAnacrusis: "Adicionar uma Anacruse (+) no compasso atual",
+    tooltipLinked: "Ligar este compasso ao anterior (/)",
+    tooltipPuxador: "Envolver com * para marcar o Puxador/Solista",
+    tooltipChord: "Inserir um acorde harmônico [Acorde]",
+    audioWitnessTitle: "Áudio guia (Gravação de referência)",
+    currentAudioPreserved: "Áudio atual mantido"
   }
 };
 

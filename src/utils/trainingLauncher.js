@@ -101,6 +101,8 @@ export function resolveUserSequencerRole(profileData) {
   return null;
 }
 
+export const resolveUserRole = resolveUserSequencerRole;
+
 /**
  * Lanceur SSO vers sequenciador pour l'écoute globale d'un morceau de référence.
  * Ouvre Sequenciador en mode lecture complète (toutes pistes actives, pas de mode entraînement).
