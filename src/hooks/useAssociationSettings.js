@@ -4,7 +4,12 @@ import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage
 import imageCompression from 'browser-image-compression';
 import { db, storage } from '../firebase';
 import { DEFAULT_CUSTOM_CATEGORIES, batchMigrateUserCategories } from '../utils/categoryUtils';
-import { DEFAULT_MARACATU_NOMENCLATURE, normalizeGroupNomenclature } from '../constants/nomenclature';
+import {
+  DEFAULT_MARACATU_NOMENCLATURE,
+  DEFAULT_MARACATU_NOMENCLATURE_ABBR,
+  normalizeGroupNomenclature,
+  normalizeGroupNomenclatureAbbr
+} from '../constants/nomenclature';
 import { DEFAULT_BATUCADA_NOMENCLATURE } from '../constants/universeNomenclaturePresets';
 import {
   UNIVERSE_DEFAULT_INSTRUMENTS,
@@ -250,6 +255,9 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t, initial
       nomenclature: {
         maracatu: { ...DEFAULT_MARACATU_NOMENCLATURE },
         ...(initUniverse === 'batucada' ? { batucada: { ...DEFAULT_BATUCADA_NOMENCLATURE } } : {})
+      },
+      nomenclatureAbbr: {
+        maracatu: { ...DEFAULT_MARACATU_NOMENCLATURE_ABBR }
       },
       nomenclaturePreset: initUniverse === 'batucada' ? 'batucada_standard' : 'traditional_baque_virado',
     eventTypes: ['prestation', 'repetition', 'stage', 'atelier', 'reunion'],
@@ -546,6 +554,13 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t, initial
               ? { batucada: data.nomenclature?.batucada || { ...DEFAULT_BATUCADA_NOMENCLATURE } }
               : { maracatu: data.nomenclature?.maracatu || { ...DEFAULT_MARACATU_NOMENCLATURE, ...normalizeGroupNomenclature(data.nomenclature, 'maracatu') } }
             )
+          },
+          nomenclatureAbbr: {
+            ...((data.nomenclatureAbbr && typeof data.nomenclatureAbbr === 'object') ? data.nomenclatureAbbr : {}),
+            maracatu: data.nomenclatureAbbr?.maracatu || {
+              ...DEFAULT_MARACATU_NOMENCLATURE_ABBR,
+              ...normalizeGroupNomenclatureAbbr(data.nomenclatureAbbr, 'maracatu')
+            }
           },
           nomenclaturePreset: data.nomenclaturePreset || (normalizeUniverseId(data.universeId) === 'batucada' ? 'batucada_standard' : 'traditional_baque_virado'),
           eventTypes: Array.isArray(data.eventTypes) && data.eventTypes.length > 0 
@@ -866,6 +881,10 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t, initial
             ? { batucada: formData.nomenclature?.batucada || DEFAULT_BATUCADA_NOMENCLATURE }
             : { maracatu: formData.nomenclature?.maracatu || formData.nomenclature || DEFAULT_MARACATU_NOMENCLATURE }
           )
+        },
+        nomenclatureAbbr: {
+          ...((formData.nomenclatureAbbr && typeof formData.nomenclatureAbbr === 'object') ? formData.nomenclatureAbbr : {}),
+          maracatu: formData.nomenclatureAbbr?.maracatu || DEFAULT_MARACATU_NOMENCLATURE_ABBR
         },
         nomenclaturePreset: formData.nomenclaturePreset || (normalizeUniverseId(formData.universeId) === 'batucada' ? 'batucada_standard' : 'traditional_baque_virado'),
         agendaEnableInscriptions: formData.agendaEnableInscriptions !== undefined ? formData.agendaEnableInscriptions : true,

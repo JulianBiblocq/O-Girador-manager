@@ -23,6 +23,7 @@ export default function StageVisualGrid({
   presentMembers,
   currentUserId,
   groupNomenclature,
+  groupNomenclatureAbbr,
   getColorForInstrument,
   isEditingMode,
   readOnly,
@@ -71,7 +72,7 @@ export default function StageVisualGrid({
     const assignedVoice = pos?.voice;
 
     if (isAlf && assignedVoice) {
-      return `${member.instrument.split(' ')[0]} (${getVoiceLabel(assignedVoice, groupNomenclature, true)})`;
+      return `${member.instrument.split(' ')[0]} (${getVoiceLabel(assignedVoice, groupNomenclature, true, groupNomenclatureAbbr)})`;
     }
     if (isCx && assignedVoice) {
       return assignedVoice.toLowerCase() === 'tarol' ? 'Tarol' : 'Caixa';

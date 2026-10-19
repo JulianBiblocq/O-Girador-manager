@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import CordelCard from '../../CordelCard';
 import InstrumentsCatalogBlock from '../blocks/InstrumentsCatalogBlock';
-import BateriaNomenclatureSection from './BateriaNomenclatureSection';
+import PercussionNomenclatureSection from './PercussionNomenclatureSection';
 import {
   getUniverseNomenclaturePresets,
   getUniverseRolesList,
@@ -100,9 +100,9 @@ export default function PupitresNomenclatureAccordion({
             </button>
           </div>
 
-          {/* Section A : Nomenclature de la Bateria */}
+          {/* Section A : Nomenclature des Percussions */}
           {activeSection === 'nomenclature' && (
-            <BateriaNomenclatureSection
+            <PercussionNomenclatureSection
               formData={formData}
               handleChange={handleChange}
               saving={saving}

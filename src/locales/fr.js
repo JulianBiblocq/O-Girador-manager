@@ -6301,8 +6301,8 @@ export const fr = {
         exerciceActif: "Exercice actif :"
       },
       pupitresNomenclatureAccordion: {
-        bateriaNomenclatureTitle: "Nomenclature de la Bateria",
-        bateriaNomenclatureSubtitle: "Choisissez un préréglage traditionnel ou personnalisez les voix :",
+        bateriaNomenclatureTitle: "Nomenclature des Percussions",
+        bateriaNomenclatureSubtitle: "Choisissez un préréglage traditionnel ou personnalisez les voix et codes :",
         personnalise: "Personnalisé",
         pupitresTamboursNomenclature: "Pupitres, Tambours & Nomenclature (",
         instrument: "instrument",

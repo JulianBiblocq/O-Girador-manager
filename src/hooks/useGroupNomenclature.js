@@ -1,24 +1,29 @@
 import { useState, useEffect } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
-import { normalizeGroupNomenclature, DEFAULT_NOMENCLATURE } from '../constants/nomenclature';
+import {
+  normalizeGroupNomenclature,
+  normalizeGroupNomenclatureAbbr,
+  DEFAULT_NOMENCLATURE,
+  DEFAULT_NOMENCLATURE_ABBR
+} from '../constants/nomenclature';
 
 /**
- * Hook d'abonnement en temps réel à la nomenclature instrumentale d'un groupe.
- * Rétrocompatible : supporte le format imbriqué { nomenclature: { maracatu: { ... } } }
- * et le format plat historique { nomenclature: { alfaia_grave: "..." } }.
- * Fallback silencieux vers DEFAULT_NOMENCLATURE si aucun groupId n'est fourni.
+ * Hook d'abonnement en temps réel à la nomenclature et aux abréviations d'un groupe.
+ * Rétrocompatible : supporte nomenclature (noms complets) et nomenclatureAbbr (codes 2 lettres).
  *
  * @param {string|null} groupId Identifiant de l'association/structure
- * @returns {{ nomenclature: object, loading: boolean }}
+ * @returns {{ nomenclature: object, nomenclatureAbbr: object, loading: boolean }}
  */
 export function useGroupNomenclature(groupId) {
   const [nomenclature, setNomenclature] = useState(DEFAULT_NOMENCLATURE);
+  const [nomenclatureAbbr, setNomenclatureAbbr] = useState(DEFAULT_NOMENCLATURE_ABBR);
   const [loading, setLoading] = useState(Boolean(groupId));
 
   useEffect(() => {
     if (!groupId) {
       setNomenclature(DEFAULT_NOMENCLATURE);
+      setNomenclatureAbbr(DEFAULT_NOMENCLATURE_ABBR);
       setLoading(false);
       return;
     }
@@ -28,22 +33,29 @@ export function useGroupNomenclature(groupId) {
       if (docSnap.exists()) {
         const data = docSnap.data();
         const normalized = normalizeGroupNomenclature(data?.nomenclature, 'maracatu');
+        const normalizedAbbr = normalizeGroupNomenclatureAbbr(data?.nomenclatureAbbr, 'maracatu');
         setNomenclature({
           ...DEFAULT_NOMENCLATURE,
           ...normalized
         });
+        setNomenclatureAbbr({
+          ...DEFAULT_NOMENCLATURE_ABBR,
+          ...normalizedAbbr
+        });
       } else {
         setNomenclature(DEFAULT_NOMENCLATURE);
+        setNomenclatureAbbr(DEFAULT_NOMENCLATURE_ABBR);
       }
       setLoading(false);
     }, (error) => {
       console.error("useGroupNomenclature - Erreur de lecture de l'association :", error);
       setNomenclature(DEFAULT_NOMENCLATURE);
+      setNomenclatureAbbr(DEFAULT_NOMENCLATURE_ABBR);
       setLoading(false);
     });
 
     return () => unsubscribe();
   }, [groupId]);
 
-  return { nomenclature, loading };
+  return { nomenclature, nomenclatureAbbr, loading };
 }

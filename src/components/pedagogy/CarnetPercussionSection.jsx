@@ -6,7 +6,7 @@ import { getInstrumentLabel } from '../../constants/nomenclature';
 
 /**
  * Section Percussion du Carnet d'Aisance (< 135 lignes).
- * Respecte la nomenclature de la Bateria et la règle anti-monolithe.
+ * Respecte la nomenclature des percussions et la règle anti-monolithe.
  */
 export default function CarnetPercussionSection({
   repertoire = [],

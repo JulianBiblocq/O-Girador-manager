@@ -30,7 +30,7 @@ export default function EventStageLayoutSection({
   const { t: tr } = useTranslation();
   const { confirm } = useConfirm();
   const { getColorForInstrument } = useInstrumentColor(profileData?.groupId);
-  const { nomenclature: groupNomenclature } = useGroupNomenclature(profileData?.groupId || event?.groupId);
+  const { nomenclature: groupNomenclature, nomenclatureAbbr: groupNomenclatureAbbr } = useGroupNomenclature(profileData?.groupId || event?.groupId);
   const currentUserId = user?.uid || profileData?.uid || profileData?.id;
 
   // Vérifier if a layout exists
@@ -768,6 +768,7 @@ export default function EventStageLayoutSection({
                 presentMembers={presentMembers}
                 currentUserId={currentUserId}
                 groupNomenclature={groupNomenclature}
+                groupNomenclatureAbbr={groupNomenclatureAbbr}
                 getColorForInstrument={getColorForInstrument}
                 isEditingMode={isEditingMode}
                 readOnly={readOnly}
@@ -896,6 +897,7 @@ export default function EventStageLayoutSection({
             presentMembers={presentMembers}
             currentUserId={currentUserId}
             groupNomenclature={groupNomenclature}
+            groupNomenclatureAbbr={groupNomenclatureAbbr}
             getColorForInstrument={getColorForInstrument}
             isEditingMode={false}
             readOnly={true}
