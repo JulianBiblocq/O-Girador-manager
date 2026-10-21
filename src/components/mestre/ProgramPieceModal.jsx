@@ -123,6 +123,9 @@ export default function ProgramPieceModal({
       if (piece.toadaDocId) {
         setlistItem.toadaDocId = piece.toadaDocId;
       }
+      if (piece.cantadorToadaId) {
+        setlistItem.cantadorToadaId = piece.cantadorToadaId;
+      }
       if (piece.dancadorChoreoId) {
         setlistItem.dancadorChoreoId = piece.dancadorChoreoId;
       }

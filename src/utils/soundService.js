@@ -1,5 +1,5 @@
 /**
- * Service audio pour la restitution des signatures sonores d'Organizad'Or.
+ * Service audio pour la restitution des signatures sonores d'Organizador.
  * Fournit la lecture de la notification sonore (deux frappes douces d'Alfaia)
  * avec gestion de la compatibilité multi-navigateurs et des restrictions d'autoplay.
  */

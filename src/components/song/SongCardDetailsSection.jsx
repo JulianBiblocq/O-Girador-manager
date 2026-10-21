@@ -1,10 +1,11 @@
 import React from 'react';
 import { useTranslation } from '../LanguageContext';
 import RepertoirePasserelleButton from '../repertoire/RepertoirePasserelleButton';
+import { launchCantador } from '../../utils/trainingLauncher';
 
 /**
  * Section contextuelle de la fiche SongCard :
- * Traduction, Lexique, Anecdote, Audio témoin et Passerelle Répertoire.
+ * Traduction, Lexique, Anecdote, Audio témoin, Passerelle Cantador et Passerelle Répertoire.
  */
 export default function SongCardDetailsSection({
   song,
@@ -13,6 +14,15 @@ export default function SongCardDetailsSection({
 }) {
   const { t } = useTranslation();
   const audioSrc = song?.audioUrl || (song?.fileUrl && /\.(mp3|wav|ogg|m4a|aac)$/i.test(song.fileUrl) ? song.fileUrl : null);
+
+  const handleTrainInCantador = () => {
+    launchCantador({
+      songId: song?.id,
+      toadaId: song?.cantadorToadaId,
+      mode: 'eleve',
+      groupId: groupId || song?.groupId
+    });
+  };
 
   return (
     <div className="flex flex-col gap-3.5 w-full text-left pt-2 border-t-2 border-dashed border-cordel-master-dark/20">
@@ -51,8 +61,19 @@ export default function SongCardDetailsSection({
         </div>
       )}
 
-      {/* 4. Passerelle vers la fiche Répertoire */}
-      <div className="flex justify-end pt-1">
+      {/* 4. Passerelles Cantador & Répertoire */}
+      <div className="flex items-center justify-between gap-2 flex-wrap pt-1">
+        <button
+          type="button"
+          onClick={handleTrainInCantador}
+          className="px-2.5 py-1 text-[10px] font-black uppercase rounded bg-orange-50 hover:bg-orange-100 text-orange-950 border border-orange-300 shadow-2xs transition-colors cursor-pointer flex items-center gap-1.5 select-none"
+          title={t('repertoire.tooltipTrainInCantador') || "S'entraîner dans Cantador"}
+        >
+          <span>🎙️</span>
+          <span>{t('repertoire.trainInCantador') || "S'entraîner dans Cantador"}</span>
+          <span className="text-[8px] opacity-70">↗</span>
+        </button>
+
         <RepertoirePasserelleButton
           toadaId={song?.id}
           groupId={groupId || song?.groupId}

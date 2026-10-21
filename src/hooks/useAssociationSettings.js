@@ -68,7 +68,8 @@ export const DEFAULT_ECOSYSTEM_ACCESS = {
   vitrine: true,
   sequenciador: true,
   dancador: true,
-  hub: true
+  hub: true,
+  cantador: true
 };
 
 export const DEFAULT_INSTRUMENTS = UNIVERSE_DEFAULT_INSTRUMENTS.maracatu;

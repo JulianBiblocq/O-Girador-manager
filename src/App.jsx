@@ -486,7 +486,7 @@ export default function App() {
 
   // Hook modulaire générant dynamiquement le favicon :
   // - Mode pure pour Mostrador (logo de l'association seul)
-  // - Mode composite pour Organizad'Or (anneau gravé O Girador x Association)
+  // - Mode composite pour Organizador (anneau gravé O Girador x Association)
   const effectiveFaviconAssociationData = useMemo(() => {
     if (associationData) return associationData;
     if (associationName || branding?.logoUrl) {
@@ -511,7 +511,7 @@ export default function App() {
         };
       }
     }
-    // Repli immédiat Organizad'Or : si on n'est pas en vitrine et sans groupe spécifié, présumer Samambaia
+    // Repli immédiat Organizador : si on n'est pas en vitrine et sans groupe spécifié, présumer Samambaia
     if (!isVitrineMode) {
       return {
         id: 'Samambaia',
@@ -584,7 +584,7 @@ export default function App() {
       );
     }
 
-    // Repli canonique garanti vers Samambaia pour Julian ou en environnement standard Organizad'Or
+    // Repli canonique garanti vers Samambaia pour Julian ou en environnement standard Organizador
     if (!activeGroupId && (
       profileData?.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
       profileData?.id === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
@@ -895,13 +895,14 @@ export default function App() {
       shortName = 'O Girador';
     }
 
+    const origin = typeof window !== 'undefined' && window.location?.origin ? window.location.origin : '';
     const dynamicManifest = {
-      id: '/',
+      id: `${origin}/`,
       name: manifestName,
       short_name: shortName,
       description: `Application de gestion pour le groupe O Girador ${cleanAssoName}`,
-      start_url: '/app',
-      scope: '/',
+      start_url: `${origin}/`,
+      scope: `${origin}/`,
       display: 'standalone',
       display_override: ['standalone', 'window-controls-overlay'],
       orientation: 'any',
@@ -911,13 +912,13 @@ export default function App() {
       categories: ['music', 'management', 'productivity'],
       icons: [
         {
-          src: '/icon-192.png',
+          src: `${origin}/icon-192.png`,
           sizes: '192x192',
           type: 'image/png',
           purpose: 'any'
         },
         {
-          src: '/icon-512.png',
+          src: `${origin}/icon-512.png`,
           sizes: '512x512',
           type: 'image/png',
           purpose: 'any'
@@ -1073,7 +1074,7 @@ export default function App() {
         }
       }
 
-      // Normalisation impérative : dans Organizad'Or, l'espace membre est toujours /app
+      // Normalisation impérative : dans Organizador, l'espace membre est toujours /app
       // Cela évite que /events/... ne soit interprété à tort comme une vitrine d'association inconnue
       setCurrentRoute('/app');
       const finalQuery = searchParams.toString();
@@ -1243,7 +1244,7 @@ export default function App() {
         signInWithCustomToken(auth, ssoToken)
           .then(() => {})
           .catch((err) => {
-            console.warn("[Organizad'Or SSO] Erreur custom token :", err);
+            console.warn("[Organizador SSO] Erreur custom token :", err);
           })
           .finally(() => {
             isSSOPending = false;
@@ -1646,7 +1647,7 @@ export default function App() {
   const isSetupPath = currentRoute.startsWith('/setup');
   const isLoginPath = (currentRoute === '/login' || currentRoute === '/login/') && !isDemoPath && !isVitrineMode;
 
-  // Préfixes des routes internes d'Organizad'Or pour ne jamais les confondre avec une vitrine publique
+  // Préfixes des routes internes d'Organizador pour ne jamais les confondre avec une vitrine publique
   const INTERNAL_APP_PREFIXES = [
     '/events', '/agenda', '/forum', '/threads', '/profil', '/profile',
     '/treasury', '/frais-km', '/diffusion', '/mestre', '/logistique', '/logistics',

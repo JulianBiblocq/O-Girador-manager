@@ -4,8 +4,7 @@ import PieceVideoSection from '../repertoire/PieceVideoSection';
 import PieceQuizModal from './PieceQuizModal';
 import SequencerAccessButtons from '../repertoire/SequencerAccessButtons';
 import { useTranslation } from '../LanguageContext';
-import { getEcosystemUrl } from '../../constants/ecosystemUrls';
-import { launchCrossApp } from '../../utils/crossAppAuth';
+import { launchCantador } from '../../utils/trainingLauncher';
 
 /**
  * Contenu déplié de la carte morceau pour adhérents (lecture seule stricte).
@@ -40,9 +39,9 @@ export default function MemberPieceUnfoldedContent({
   const isSongPiece = piece.type === 'song' || piece.typeMorceau === 'song' || hasToada || Boolean(piece.toadaId || piece.toadaDocId || piece.toada || piece.cantadorToadaId);
 
   const handleOpenVocalLab = () => {
-    const toadaId = encodeURIComponent(piece.cantadorToadaId || '');
-    const songId = encodeURIComponent(piece.id || '');
-    launchCrossApp(getEcosystemUrl('vocalLab', `?mode=eleve&toadaId=${toadaId}&songId=${songId}`), { appLabel: "Cantador" });
+    const toadaId = piece.cantadorToadaId || '';
+    const songId = piece.toadaDocId || piece.id || '';
+    launchCantador({ songId, toadaId, mode: 'eleve', groupId });
   };
 
   return (

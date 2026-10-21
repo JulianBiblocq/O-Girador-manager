@@ -1,6 +1,6 @@
 /**
  * Utilitaire de sérialisation, conversion HTML et export/import des Toadas (.txt) (< 140 lignes).
- * Conforme aux standards d'interopérabilité Organizad'Or <-> Cantador.
+ * Conforme aux standards d'interopérabilité Organizador <-> Cantador.
  */
 import { CHORD_REGEX, isSectionHeader } from './toadaMeasureParser.js';
 

@@ -27,7 +27,8 @@ import {
   findMatchingPreset,
   findMatchingToada,
   findMatchingCultureDoc,
-  findMatchingChoreography
+  findMatchingChoreography,
+  findMatchingCantadorPack
 } from '../../utils/repertoireMatcher';
 import { useTranslation } from '../LanguageContext';
 import { useConfirm } from '../../context/ConfirmContext';
@@ -35,7 +36,7 @@ import { useConfirm } from '../../context/ConfirmContext';
 /**
  * Modale de création et d'édition d'un morceau du répertoire musical.
  * Architecture réactive : ne stocke que les identifiants et pointeurs vers les ressources sources
- * (Séquenceur, Toadas du Varal, Dançad'Or, Fiches Culturelles).
+ * (Séquenceur, Toadas du Varal, Dançador, Fiches Culturelles).
  * Ne persiste aucun snapshot statique volumineux (tablature, signes ou audio dérivés).
  *
  * @param {boolean} isOpen - Indique si la modale est affichée
@@ -209,7 +210,7 @@ export default function RepertoirePieceModal({
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
 
-  // Hooks réactifs en direct (Séquenceur, Dançad'Or, Varal, Cantador)
+  // Hooks réactifs en direct (Séquenceur, Dançador, Varal, Cantador)
   const { catalogRhythms, loadingRhythms } = useSequencerRhythms(groupId);
   const { choreographies, loading: loadingChoreos } = useDancadorChoreographies(groupId);
   const { toadasList, cultureDocsList, loadingDocs } = useRepertoireVaralDocs(groupId);
@@ -331,15 +332,17 @@ export default function RepertoirePieceModal({
     const toadaMatch = !selectedToadaId ? findMatchingToada(titre, toadasList) : null;
     const choreoMatch = !selectedChoreoId ? findMatchingChoreography(titre, choreographies) : null;
     const cultureMatch = selectedCultureIds.length === 0 ? findMatchingCultureDoc(titre, cultureDocsList) : null;
+    const cantadorMatch = !cantadorToadaId ? findMatchingCantadorPack(titre, toadaPacks) : null;
 
     return {
       seqMatch,
       toadaMatch,
       choreoMatch,
       cultureMatch,
-      hasAny: Boolean(seqMatch || toadaMatch || choreoMatch || cultureMatch)
+      cantadorMatch,
+      hasAny: Boolean(seqMatch || toadaMatch || choreoMatch || cultureMatch || cantadorMatch)
     };
-  }, [titre, selectedSeqUrl, selectedToadaId, selectedChoreoId, selectedCultureIds, catalogRhythms, toadasList, choreographies, cultureDocsList]);
+  }, [titre, selectedSeqUrl, selectedToadaId, selectedChoreoId, selectedCultureIds, cantadorToadaId, catalogRhythms, toadasList, choreographies, cultureDocsList, toadaPacks]);
 
 
   // Gestion de la saisie du titre avec auto-liaison NON DESTRUCTIVE (champs vides uniquement)
@@ -348,7 +351,7 @@ export default function RepertoirePieceModal({
     setTitre(newTitre);
 
     if (newTitre.trim()) {
-      // 1. Auto-liaison Séquenceur si non renseigné
+      // 1. Auto-liaison Sequenciador si non renseigné
       if (!selectedSeqUrl && catalogRhythms.length > 0) {
         const foundSeq = findMatchingPreset(newTitre, catalogRhythms);
         if (foundSeq) {
@@ -384,6 +387,14 @@ export default function RepertoirePieceModal({
           setSelectedCultureIds([foundCulture.id]);
         }
       }
+
+      // 5. Auto-liaison Pack Cantador si non renseigné
+      if (!cantadorToadaId && toadaPacks.length > 0) {
+        const foundPack = findMatchingCantadorPack(newTitre, toadaPacks);
+        if (foundPack) {
+          setCantadorToadaId(foundPack.id);
+        }
+      }
     }
   };
 
@@ -409,6 +420,14 @@ export default function RepertoirePieceModal({
         if (!selectedChoreoId && choreographies.length > 0) {
           const matchChoreo = findMatchingChoreography(chosenSong.titre, choreographies);
           if (matchChoreo) setSelectedChoreoId(matchChoreo.id);
+        }
+        if (!cantadorToadaId && toadaPacks.length > 0) {
+          if (chosenSong.cantadorToadaId) {
+            setCantadorToadaId(chosenSong.cantadorToadaId);
+          } else {
+            const matchPack = findMatchingCantadorPack(chosenSong.titre, toadaPacks);
+            if (matchPack) setCantadorToadaId(matchPack.id);
+          }
         }
       }
     }
@@ -1278,7 +1297,7 @@ export default function RepertoirePieceModal({
                 )}
               </div>
 
-              {/* 4. Chorégraphie Dançad'Or */}
+              {/* 4. Chorégraphie Dançador */}
               <div className="flex flex-col gap-1">
                 <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center gap-1">
                   <span>💃</span>

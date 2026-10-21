@@ -67,4 +67,24 @@ if (fs.existsSync(packageJsonPath)) {
   }
 }
 
+// 5. Sécurisation du Service Worker Workbox (synchronisation app.html dans le precache)
+const swPath = path.join(distDir, 'sw.js');
+if (fs.existsSync(swPath)) {
+  try {
+    let swContent = fs.readFileSync(swPath, 'utf-8');
+    if (swContent.includes('url:"index.html"') || swContent.includes('"url":"index.html"')) {
+      swContent = swContent
+        .replace(/url:"index\.html"/g, 'url:"app.html"')
+        .replace(/"url":"index\.html"/g, '"url":"app.html"');
+      fs.writeFileSync(swPath, swContent, 'utf-8');
+      console.log('✅ dist/sw.js mis à jour : index.html remplacé par app.html dans le precache Workbox');
+    } else {
+      console.log('✅ dist/sw.js déjà aligné sur app.html');
+    }
+  } catch (err) {
+    console.warn('⚠️ Erreur lors de la mise à jour de sw.js :', err);
+  }
+}
+
 console.log('🎉 Post-build terminé avec succès !\n');
+

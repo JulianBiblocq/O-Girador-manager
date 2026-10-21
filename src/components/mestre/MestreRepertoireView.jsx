@@ -20,7 +20,7 @@ import { useSequencerRhythms } from '../../hooks/useSequencerRhythms';
 import { useDancadorChoreographies } from '../../hooks/useDancadorData';
 import { useRepertoireVaralDocs } from '../../hooks/useRepertoireVaralDocs';
 import { openSequencerWithCrossApp } from '../../utils/sequencerUrlUtils';
-import { launchGlobalSequencer } from '../../utils/trainingLauncher';
+import { launchGlobalSequencer, launchCantador } from '../../utils/trainingLauncher';
 import { getEcosystemUrl } from '../../constants/ecosystemUrls';
 import { launchCrossApp } from '../../utils/crossAppAuth';
 import PieceVideoSection from '../repertoire/PieceVideoSection';
@@ -60,7 +60,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
   const { signals } = useMestreSignals(groupId);
   const signalsMap = useMemo(() => new Map((signals || []).map((s) => [s.id, s])), [signals]);
 
-  // Catalogues vivants des modules transversaux (Séquenceur, Dançad'Or, Varal)
+  // Catalogues vivants des modules transversaux (Séquenceur, Dançador, Varal)
   const { catalogRhythms } = useSequencerRhythms(groupId);
   const { choreographies } = useDancadorChoreographies(groupId);
   const { toadasList, cultureDocsList } = useRepertoireVaralDocs(groupId);
@@ -96,13 +96,11 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
     setTimeout(() => setToastMsg(null), 4000);
   };
 
-  // Ouverture de l'Atelier Vocal pour un morceau de chant avec pré-ciblage du morceau dans le Studio
+  // Ouverture de Cantador pour un morceau de chant avec pré-ciblage du morceau dans le Studio
   const handleOpenVocalLabForPiece = (p) => {
-    const songId = encodeURIComponent(p?.id || '');
-    const toadaId = encodeURIComponent(p?.cantadorToadaId || '');
-    const query = toadaId ? `?songId=${songId}&toadaId=${toadaId}` : `?songId=${songId}`;
-    const vocalLabUrl = getEcosystemUrl('vocalLab', query);
-    launchCrossApp(vocalLabUrl, { appLabel: "Cantador" });
+    const songId = p?.toadaDocId || p?.id || '';
+    const toadaId = p?.cantadorToadaId || '';
+    launchCantador({ songId, toadaId, mode: 'studio', groupId });
   };
 
   // Commutateur interactif d'ouverture du répertoire aux adhérents
@@ -627,7 +625,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-pink-50 hover:bg-pink-100 text-pink-900 border border-pink-300 transition-colors shadow-2xs"
-                        title={`Ouvrir « ${piece.activeChoreography.nom} » dans Dançad'Or`}
+                        title={`Ouvrir « ${piece.activeChoreography.nom} » dans Dançador`}
                       >
                         <span>💃</span>
                         <span className="truncate max-w-[120px]">{piece.activeChoreography.nom}</span>

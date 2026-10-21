@@ -573,7 +573,8 @@ export default function LayoutShell({
     vitrine: true,
     sequenciador: true,
     dancador: true,
-    hub: true
+    hub: true,
+    cantador: true
   };
 
   const isAccueil = currentPole === 'accueil' || !currentPole;

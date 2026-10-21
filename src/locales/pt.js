@@ -1937,7 +1937,7 @@ export const pt = {
         selectCultureToConsult: "Selecione a ficha cultural para consultar:",
         btnConsultExternal: "Consultar ↗",
         headerArtisticDirection: "Direção Artística —",
-        headerSubtitleArchitecture: "Arquitetura viva integrada ao Sequenciador, ao Varal e ao Dançad'Or",
+        headerSubtitleArchitecture: "Arquitetura viva integrada ao Sequenciador, ao Varal e ao Dançador",
         statusOpenToGroup: "Aberto ao grupo",
         hideRepertoireTitle: "Ocultar o repertório dos integrantes",
         btnHide: "Ocultar",
@@ -1954,7 +1954,7 @@ export const pt = {
         linkToPresetBtn: "🥁 Vincular ao Preset «",
         linkToToadaTitle: "Vincular à Toada detectada",
         linkToToadaBtn: "🗣️ Vincular à Toada «",
-        linkToDanceTitle: "Vincular à coreografia do Dançad'Or detectada",
+        linkToDanceTitle: "Vincular à coreografia do Dançador detectada",
         linkToDanceBtn: "💃 Vincular à Dança «",
         linkToCultureTitle: "Vincular à ficha do Varal de Cultura detectada",
         linkToCultureBtn: "📖 Vincular à Cultura «",
@@ -2991,6 +2991,9 @@ export const pt = {
     btnVocalLab: "Cantador / Treinar canto",
     btnTrainVocalDirect: "Treinar canto (Cantador)",
     tooltipVocalLab: "Abrir o Cantador online",
+    openCantador: "Cantador",
+    trainInCantador: "Treinar no Cantador",
+    tooltipTrainInCantador: "Abrir o Cantador online para treinar canto",
     translationTitle: "Tradução",
     contextTitle: "Contexto & História",
     witnessAudio: "Áudio guia:",
@@ -6540,7 +6543,8 @@ export const pt = {
         fonctionnalitesTransversalesVisibilite: "⚡ Recursos Transversais & Visibilidade",
         pastillesDeStatutEnLigne: "🟢 Indicadores de status online",
         repertoireOuvertAuxMembres: "📜 Repertório aberto aos integrantes",
-        autoEvaluationIndividuelle: "📈 Autoavaliação individual"
+        autoEvaluationIndividuelle: "📈 Autoavaliação individual",
+        ecosystemApps: "Aplicações Satélites do Ecossistema"
       },
       wardrobeMemberModeCard: {
         gardeRobePersonnelle: "Guarda-roupa individual",
@@ -6945,6 +6949,13 @@ export const pt = {
     tooltipChord: "Inserir um acorde harmônico [Acorde]",
     audioWitnessTitle: "Áudio guia (Gravação de referência)",
     currentAudioPreserved: "Áudio atual mantido"
+  },
+  navigation: {
+    mostradorSubtitle: "Site vitrine público",
+    sequenciadorSubtitle: "Partituras & Ritmos",
+    dancadorSubtitle: "Oficina coreográfica",
+    cantadorSubtitle: "Oficina vocal & Toadas",
+    orquestradorSubtitle: "Portal central O Girador"
   }
 };
 

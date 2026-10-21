@@ -10,7 +10,8 @@ export const ECOSYSTEM_DOMAINS = Object.freeze({
   organizador: 'https://organizador.o-girador.com',
   dancador: 'https://dancador.o-girador.com',
   mostrador: 'https://mostrador.o-girador.com',
-  vocalLab: 'https://o-girador-vocal-lab.web.app',
+  cantador: 'https://cantador.o-girador.com',
+  vocalLab: 'https://cantador.o-girador.com',
 });
 
 export const LOCAL_DEV_PORTS = Object.freeze({
@@ -20,6 +21,7 @@ export const LOCAL_DEV_PORTS = Object.freeze({
   organizador: 5175,
   dancador: 5176,
   mostrador: 5170,
+  cantador: 5177,
   vocalLab: 5177,
 });
 
@@ -28,6 +30,7 @@ export const ECOSYSTEM_LOCAL_URLS = Object.freeze({
   SEQUENCIADOR: 'http://localhost:5174',
   ORGANIZADOR: 'http://localhost:5175',
   DANCADOR: 'http://localhost:5176',
+  CANTADOR: 'http://localhost:5177',
   VOCAL_LAB: 'http://localhost:5177',
 });
 
@@ -38,7 +41,10 @@ export function isLocalEnvironment() {
 }
 
 export function getEcosystemUrl(appKey, path = '') {
-  const normalizedKey = appKey === 'sequenceur' ? 'sequenciador' : appKey;
+  let normalizedKey = appKey === 'sequenceur' ? 'sequenciador' : appKey;
+  if (normalizedKey === 'vocal' || normalizedKey === 'vocal-lab' || normalizedKey === 'vocallab') {
+    normalizedKey = 'cantador';
+  }
   const isLocal = isLocalEnvironment();
 
   let baseUrl = ECOSYSTEM_DOMAINS[normalizedKey] || ECOSYSTEM_DOMAINS.hub;

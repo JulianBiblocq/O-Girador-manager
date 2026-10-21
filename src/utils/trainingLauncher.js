@@ -1,4 +1,5 @@
 import { launchCrossApp } from './crossAppAuth.js';
+import { getEcosystemUrl } from '../constants/ecosystemUrls.js';
 
 /**
  * Liste officielle des 7 pupitres traditionnels supportés pour l'entraînement par le Séquenceur.
@@ -203,6 +204,39 @@ export async function launchTrainingStage(presetId, trainingId, stageIndex = 0, 
   const targetUrl = `${baseWithSlash}?${params.toString()}`;
 
   return launchCrossApp(targetUrl, {
+    appLabel,
+    forceSameTab
+  });
+}
+
+/**
+ * Lanceur SSO vers Cantador (Atelier Vocal).
+ *
+ * @param {Object} [params] - Identifiants et mode de la Toada
+ * @param {string} [params.songId] - ID du chant Varal (/documents) ou morceau Répertoire
+ * @param {string} [params.toadaId] - ID du pack studio (/toada_packs)
+ * @param {'eleve'|'studio'} [params.mode='eleve'] - Rôle d'ouverture (Élève vs Studio)
+ * @param {string} [params.groupId] - Identifiant de l'association
+ * @param {Object} [options] - Options supplémentaires
+ * @param {string} [options.baseUrl] - URL de base de Cantador
+ * @param {string} [options.appLabel='Cantador'] - Libellé de l'application
+ * @param {boolean} [options.forceSameTab=false] - Navigation dans le même onglet
+ * @returns {Promise<void>}
+ */
+export async function launchCantador({ songId, toadaId, mode = 'eleve', groupId } = {}, options = {}) {
+  const {
+    baseUrl = getEcosystemUrl('cantador'),
+    appLabel = 'Cantador',
+    forceSameTab = false
+  } = options;
+
+  const urlObj = new URL(baseUrl, window.location.origin);
+  if (mode) urlObj.searchParams.set('mode', mode);
+  if (toadaId) urlObj.searchParams.set('toadaId', toadaId);
+  if (songId) urlObj.searchParams.set('songId', songId);
+  if (groupId) urlObj.searchParams.set('groupId', groupId);
+
+  return launchCrossApp(urlObj.toString(), {
     appLabel,
     forceSameTab
   });

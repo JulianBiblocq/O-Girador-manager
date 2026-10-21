@@ -123,14 +123,14 @@ export function findMatchingCultureDoc(pieceOrTitle, cultureDocsList = []) {
 }
 
 /**
- * Recherche la chorégraphie Dançad'Or correspondante.
+ * Recherche la chorégraphie Dançador correspondante.
  * Priorité :
  * 1. `dancadorChoreoId` explicite
  * 2. `sequenceurId` ou `presetId` ou `audioMasterId`
  * 3. Titre / nom normalisé
  *
  * @param {Object|string} pieceOrTitle - Objet morceau ou titre brut
- * @param {Array} choreographies - Catalogue des chorégraphies publiées Dançad'Or
+ * @param {Array} choreographies - Catalogue des chorégraphies publiées Dançador
  * @returns {Object|null} Chorégraphie correspondante ou null
  */
 export function findMatchingChoreography(pieceOrTitle, choreographies = []) {
@@ -148,7 +148,7 @@ export function findMatchingChoreography(pieceOrTitle, choreographies = []) {
     if (direct) return direct;
   }
 
-  // 2. Référence vers un preset ou audio master Séquenceur
+  // 2. Référence vers un preset ou audio master Sequenciador
   if (seqId) {
     const seqMatch = choreographies.find(
       (c) =>
@@ -170,6 +170,48 @@ export function findMatchingChoreography(pieceOrTitle, choreographies = []) {
 }
 
 /**
+ * Recherche le pack Cantador correspondant dans le catalogue des toada_packs.
+ * Priorité :
+ * 1. Identifiant exact (`id`, `cantadorToadaId`, `toadaId`)
+ * 2. Correspondance par titre normalisé (`title`, `titre`, `nom`)
+ *
+ * @param {Object|string} pieceOrTitleOrId - Objet morceau, identifiant ou titre brut
+ * @param {Array} toadaPacks - Catalogue des toada_packs de Cantador
+ * @returns {Object|null} Pack trouvé ou null
+ */
+export function findMatchingCantadorPack(pieceOrTitleOrId, toadaPacks = []) {
+  if (!Array.isArray(toadaPacks) || toadaPacks.length === 0) return null;
+
+  const isObj = typeof pieceOrTitleOrId === 'object' && pieceOrTitleOrId !== null;
+  const targetId = isObj
+    ? (pieceOrTitleOrId.cantadorToadaId || pieceOrTitleOrId.toadaId || pieceOrTitleOrId.id)
+    : pieceOrTitleOrId;
+  const rawTitle = isObj
+    ? (pieceOrTitleOrId.titre || pieceOrTitleOrId.title || pieceOrTitleOrId.nom)
+    : pieceOrTitleOrId;
+  const normTitle = normalizeString(rawTitle);
+
+  // 1. Recherche par identifiant direct
+  if (targetId) {
+    const directMatch = toadaPacks.find((p) => p.id === targetId);
+    if (directMatch) return directMatch;
+  }
+
+  // 2. Recherche par correspondance de titre normalisé
+  if (normTitle) {
+    const titleMatch = toadaPacks.find((p) => {
+      const pTitle = normalizeString(
+        p.title || p.titre || p.nom || p.metadata?.title || p.metadata?.toada || p.project?.title
+      );
+      return pTitle && pTitle === normTitle;
+    });
+    if (titleMatch) return titleMatch;
+  }
+
+  return null;
+}
+
+/**
  * Construit un ensemble de dictionnaires mémoïsés pour une résolution instantanée en temps constant O(1).
  *
  * @param {Object} params
@@ -177,13 +219,15 @@ export function findMatchingChoreography(pieceOrTitle, choreographies = []) {
  * @param {Array} params.toadasList
  * @param {Array} params.cultureDocsList
  * @param {Array} params.choreographies
+ * @param {Array} [params.toadaPacks]
  * @returns {Object} Index mémoïsés
  */
 export function buildResolutionDictionaries({
   catalogRhythms = [],
   toadasList = [],
   cultureDocsList = [],
-  choreographies = []
+  choreographies = [],
+  toadaPacks = []
 }) {
   // Index Séquenceur
   const seqById = new Map();
@@ -221,7 +265,7 @@ export function buildResolutionDictionaries({
     }
   });
 
-  // Index Chorégraphies Dançad'Or
+  // Index Chorégraphies Dançador
   const choreosById = new Map();
   const choreosBySeqId = new Map();
   const choreosByNormTitle = new Map();
@@ -238,6 +282,19 @@ export function buildResolutionDictionaries({
     }
   });
 
+  // Index Cantador (toada_packs)
+  const cantadorById = new Map();
+  const cantadorByNormTitle = new Map();
+  (toadaPacks || []).forEach((p) => {
+    if (p.id) cantadorById.set(p.id, p);
+    const norm = normalizeString(
+      p.title || p.titre || p.nom || p.metadata?.title || p.metadata?.toada || p.project?.title
+    );
+    if (norm && !cantadorByNormTitle.has(norm)) {
+      cantadorByNormTitle.set(norm, p);
+    }
+  });
+
   return {
     seqById,
     seqByNormTitle,
@@ -247,7 +304,9 @@ export function buildResolutionDictionaries({
     cultureByNormTitle,
     choreosById,
     choreosBySeqId,
-    choreosByNormTitle
+    choreosByNormTitle,
+    cantadorById,
+    cantadorByNormTitle
   };
 }
 
@@ -271,12 +330,14 @@ export function resolvePieceLiveTechnicalData(piece, dicts) {
     cultureByNormTitle,
     choreosById,
     choreosBySeqId,
-    choreosByNormTitle
+    choreosByNormTitle,
+    cantadorById,
+    cantadorByNormTitle
   } = dicts || {};
 
   const normTitre = normalizeString(piece.titre);
 
-  // 1. Résolution du preset Séquenceur
+  // 1. Résolution du preset Sequenciador
   let preset = null;
   if (piece.sequenceurId && seqById?.has(piece.sequenceurId)) {
     preset = seqById.get(piece.sequenceurId);
@@ -309,7 +370,7 @@ export function resolvePieceLiveTechnicalData(piece, dicts) {
 
   const activeCultureDoc = activeCultureDocs[0] || null;
 
-  // 4. Résolution de la Chorégraphie Dançad'Or
+  // 4. Résolution de la Chorégraphie Dançador
   let activeChoreography = null;
   if (piece.dancadorChoreoId && choreosById?.has(piece.dancadorChoreoId)) {
     activeChoreography = choreosById.get(piece.dancadorChoreoId);
@@ -320,6 +381,23 @@ export function resolvePieceLiveTechnicalData(piece, dicts) {
   } else if (normTitre && choreosByNormTitle?.has(normTitre)) {
     activeChoreography = choreosByNormTitle.get(normTitre);
   }
+
+  // 4b. Résolution du Pack Cantador (Atelier Vocal)
+  let activeCantadorPack = null;
+  const targetCantadorId = piece.cantadorToadaId || activeToada?.cantadorToadaId;
+  if (targetCantadorId && cantadorById?.has(targetCantadorId)) {
+    activeCantadorPack = cantadorById.get(targetCantadorId);
+  } else if (normTitre && cantadorByNormTitle?.has(normTitre)) {
+    activeCantadorPack = cantadorByNormTitle.get(normTitre);
+  }
+
+  const resolvedCantadorToadaId =
+    piece.cantadorToadaId ||
+    activeToada?.cantadorToadaId ||
+    activeCantadorPack?.id ||
+    null;
+
+  const hasCantador = Boolean(resolvedCantadorToadaId || activeToada || piece.toadaDocId);
 
   // 5. Audio actif (Preset > Toada > Morceau personnalisé > Repli ancien)
   const activeAudioUrl =
@@ -387,6 +465,8 @@ export function resolvePieceLiveTechnicalData(piece, dicts) {
     activeCultureDoc,
     activeCultureDocs,
     activeChoreography,
+    activeCantadorPack,
+    cantadorToadaId: resolvedCantadorToadaId,
     // Données dérivées résolues
     activeAudioUrl,
     hasTablature,
@@ -394,7 +474,7 @@ export function resolvePieceLiveTechnicalData(piece, dicts) {
     activeBpm,
     activeVideoUrl,
     activeHistoire,
-    // Type et identifiant Séquenceur résolus et alignés
+    // Type et identifiant Sequenciador résolus et alignés
     sequenceurType: preset?._collection || piece.sequenceurType || (preset ? 'presets' : null),
     sequenceurId: piece.sequenceurId || preset?.id || null,
     // Indicateurs sémantiques de liaison
@@ -402,7 +482,8 @@ export function resolvePieceLiveTechnicalData(piece, dicts) {
     hasAudio: Boolean(activeAudioUrl),
     hasChoreography: Boolean(activeChoreography || piece.dancadorChoreoId),
     hasToada: Boolean(activeToada || piece.toadaDocId),
-    hasCulture: activeCultureDocs.length > 0 || Boolean(piece.cultureDocId) || (Array.isArray(piece.cultureDocIds) && piece.cultureDocIds.length > 0)
+    hasCulture: activeCultureDocs.length > 0 || Boolean(piece.cultureDocId) || (Array.isArray(piece.cultureDocIds) && piece.cultureDocIds.length > 0),
+    hasCantador
   };
 }
 

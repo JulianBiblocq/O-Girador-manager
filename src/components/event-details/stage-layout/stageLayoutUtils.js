@@ -1,5 +1,5 @@
 /**
- * Utilitaires pour le plan de scène scénographique (Organizad'Or)
+ * Utilitaires pour le plan de scène scénographique (Organizador)
  * Gestion du calcul des positions, des voisins de proximité, du nettoyage conditionnel
  * et du compactage des cartouches d'instruments pour mobile.
  */

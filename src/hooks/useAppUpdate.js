@@ -4,7 +4,7 @@ import { forceUpdateAndClearCache } from '../utils/pwaUtils';
 export const CURRENT_VERSION = (import.meta.env.VITE_APP_VERSION || 'v1.0.0').replace(/^v/, '');
 
 /**
- * Hook de détection de version et purge de cache PWA pour Organizad'Or.
+ * Hook de détection de version et purge de cache PWA pour Organizador.
  * Désactivé en développement. En production, sonde /version.json au montage
  * et lors du retour au premier plan de l'onglet avec un délai de temporisation.
  */

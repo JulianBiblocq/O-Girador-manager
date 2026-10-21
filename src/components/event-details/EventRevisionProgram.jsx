@@ -13,6 +13,8 @@ import PieceLyricsModal from '../member/PieceLyricsModal';
 import PieceCultureModal from '../member/PieceCultureModal';
 import { buildSequencerUrl, openSequencerWithCrossApp } from '../../utils/sequencerUrlUtils';
 import { launchCrossApp } from '../../utils/crossAppAuth';
+import { launchCantador } from '../../utils/trainingLauncher';
+import { useCantadorToadas } from '../../hooks/useCantadorToadas';
 import { subscribeGroupTrainings } from '../../services/aisanceService';
 import { resolvePieceTrainings, buildResolutionDictionaries, resolvePieceLiveTechnicalData } from '../../utils/repertoireMatcher';
 import TrainingCompactCard from '../pedagogy/TrainingCompactCard';
@@ -138,9 +140,10 @@ export default function EventRevisionProgram({
     );
   }, [allSequencerRhythms, linkedPatterns, setlist]);
 
-  // Hooks pour Dançador
+  // Hooks pour Dançador & Cantador
   const { choreographies: allChoreographies, loading: loadingChoreos } = useDancadorChoreographies(groupId);
   const { steps: allSteps, loading: loadingSteps } = useDancadorSteps(groupId);
+  const { toadaPacks } = useCantadorToadas();
 
   // Dictionnaires de résolution instantanée O(1)
   const resolutionDicts = useMemo(() => {
@@ -148,15 +151,16 @@ export default function EventRevisionProgram({
       catalogRhythms: allSequencerRhythms || [],
       toadasList: toadasList || [],
       cultureDocsList: cultureDocsList || [],
-      choreographies: allChoreographies || []
+      choreographies: allChoreographies || [],
+      toadaPacks: toadaPacks || []
     });
-  }, [allSequencerRhythms, toadasList, cultureDocsList, allChoreographies]);
+  }, [allSequencerRhythms, toadasList, cultureDocsList, allChoreographies, toadaPacks]);
 
   // Détermination sémantique multi-disciplines (Percussion, Chant, Danse, Culture)
   const getDisciplineBadges = (morceau, resolved) => {
     const badges = [];
     const hasDanse = Boolean(morceau.dancadorChoreoId || resolved?.hasChoreography || morceau.type === 'danse');
-    const hasChant = Boolean(morceau.toadaDocId || resolved?.hasToada || morceau.type === 'song');
+    const hasChant = Boolean(morceau.toadaDocId || morceau.cantadorToadaId || resolved?.hasToada || resolved?.hasCantador || morceau.type === 'song');
     const hasCulture = Boolean(morceau.cultureDocId || (Array.isArray(morceau.cultureDocIds) && morceau.cultureDocIds.length > 0) || resolved?.hasCulture);
     const hasPercu = Boolean(morceau.sequenceurId || morceau.sequenceurType || morceau.jsonUrl || morceau.sequenceurUrl || resolved?.hasSequencer || (!hasDanse && !hasChant && !hasCulture));
 
@@ -422,12 +426,28 @@ export default function EventRevisionProgram({
                         {choreoId && (
                           <button
                             type="button"
-                            onClick={() => launchCrossApp(`https://dancador.ogirador.fr/?choreoId=${choreoId}&groupId=${groupId}`, { appLabel: "Dançad'Or" })}
+                            onClick={() => launchCrossApp(`https://dancador.ogirador.fr/?choreoId=${choreoId}&groupId=${groupId}`, { appLabel: "Dançador" })}
                             className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black uppercase rounded bg-pink-50 hover:bg-pink-100 text-pink-900 border border-pink-300 shadow-2xs transition-colors cursor-pointer"
-                            title="Ouvrir la chorégraphie dans Dançad'Or"
+                            title="Ouvrir la chorégraphie dans Dançador"
                           >
                             <span>💃</span>
                             <span>Chorégraphie</span>
+                          </button>
+                        )}
+
+                        {(morceau.cantadorToadaId || resolved.cantadorToadaId || morceau.toadaDocId || resolved.activeToada) && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const toadaId = morceau.cantadorToadaId || resolved.cantadorToadaId || '';
+                              const songId = morceau.repertoireId || morceau.toadaDocId || resolved.activeToada?.id || '';
+                              launchCantador({ toadaId, songId, mode: 'eleve', groupId });
+                            }}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black uppercase rounded bg-orange-50 hover:bg-orange-100 text-orange-950 border border-orange-300 shadow-2xs transition-colors cursor-pointer"
+                            title={t('repertoire.tooltipTrainInCantador') || "S'entraîner au chant dans Cantador"}
+                          >
+                            <span>🎙️</span>
+                            <span>{t('repertoire.openCantador') || "Cantador"}</span>
                           </button>
                         )}
 

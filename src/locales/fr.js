@@ -1951,7 +1951,7 @@ export const fr = {
         selectCultureToConsult: "Sélectionnez la fiche culturelle à consulter :",
         btnConsultExternal: "Consulter ↗",
         headerArtisticDirection: "Direction Artistique —",
-        headerSubtitleArchitecture: "Architecture réactive vivante liée au Séquenceur, au Varal et à Dançad'Or",
+        headerSubtitleArchitecture: "Architecture réactive vivante liée au Séquenceur, au Varal et à Dançador",
         statusOpenToGroup: "Ouvert au groupe",
         hideRepertoireTitle: "Masquer le répertoire aux adhérents",
         btnHide: "Masquer",
@@ -1968,7 +1968,7 @@ export const fr = {
         linkToPresetBtn: "🥁 Lier au Preset «",
         linkToToadaTitle: "Lier à la Toada détectée",
         linkToToadaBtn: "🗣️ Lier à la Toada «",
-        linkToDanceTitle: "Lier à la chorégraphie Dançad'Or détectée",
+        linkToDanceTitle: "Lier à la chorégraphie Dançador détectée",
         linkToDanceBtn: "💃 Lier à la Danse «",
         linkToCultureTitle: "Lier à la fiche Varal Culture détectée",
         linkToCultureBtn: "📖 Lier à la Culture «",
@@ -3005,6 +3005,9 @@ export const fr = {
     btnVocalLab: "Cantador / S'entraîner au chant",
     btnTrainVocalDirect: "S'entraîner au chant (Cantador)",
     tooltipVocalLab: "Ouvrir Cantador en ligne",
+    openCantador: "Cantador",
+    trainInCantador: "S'entraîner dans Cantador",
+    tooltipTrainInCantador: "Ouvrir Cantador en ligne pour s'entraîner au chant",
     translationTitle: "Traduction française",
     contextTitle: "Contexte & Histoire",
     witnessAudio: "Audio témoin :",
@@ -3048,7 +3051,7 @@ export const fr = {
     fieldCultureDocs: "Fiches culturelles associées",
     addCultureDocPlaceholder: "+ Ajouter une fiche culturelle...",
     btnCreateCultureFiche: "Créer une fiche Varal Culture",
-    fieldDancador: "Chorégraphie Dançad'Or",
+    fieldDancador: "Chorégraphie Dançador",
     dancadorPlaceholder: "Choisir une chorégraphie...",
     fieldVideos: "Vidéos techniques & tutoriels",
     btnAddVideo: "+ Ajouter une vidéo",
@@ -6571,7 +6574,8 @@ export const fr = {
         fonctionnalitesTransversalesVisibilite: "⚡ Fonctionnalités Transversales & Visibilité",
         pastillesDeStatutEnLigne: "🟢 Pastilles de statut en ligne",
         repertoireOuvertAuxMembres: "📜 Répertoire ouvert aux membres",
-        autoEvaluationIndividuelle: "📈 Auto-évaluation individuelle"
+        autoEvaluationIndividuelle: "📈 Auto-évaluation individuelle",
+        ecosystemApps: "Applications Satellites Écosystème"
       },
       wardrobeMemberModeCard: {
         gardeRobePersonnelle: "Garde-robe personnelle",
@@ -6976,6 +6980,13 @@ export const fr = {
     tooltipChord: "Insérer un accord harmonique [Accord]",
     audioWitnessTitle: "Audio témoin (Enregistrement de référence)",
     currentAudioPreserved: "Audio actuel conservé"
+  },
+  navigation: {
+    mostradorSubtitle: "Site vitrine public",
+    sequenciadorSubtitle: "Partitions & Rythmes",
+    dancadorSubtitle: "Atelier chorégraphique",
+    cantadorSubtitle: "Atelier vocal & Toadas",
+    orquestradorSubtitle: "Portail central O Girador"
   }
 };
 

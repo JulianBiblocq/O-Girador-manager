@@ -6,8 +6,7 @@ import PieceLyricsModal from './PieceLyricsModal';
 import PieceCultureModal from './PieceCultureModal';
 import SequencerAccessButtons from '../repertoire/SequencerAccessButtons';
 import { useTranslation } from '../LanguageContext';
-import { getEcosystemUrl } from '../../constants/ecosystemUrls';
-import { launchCrossApp } from '../../utils/crossAppAuth';
+import { launchCantador } from '../../utils/trainingLauncher';
 
 export const COMFORT_LEVELS = [
   { level: 1, labelKey: 'pedagogy.modals.decouverte', icon: '🌱' },
@@ -86,9 +85,12 @@ export default function MemberPieceCard({
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  const toadaId = encodeURIComponent(piece.cantadorToadaId || '');
-                  const songId = encodeURIComponent(piece.id || '');
-                  launchCrossApp(getEcosystemUrl('vocalLab', `?mode=eleve&toadaId=${toadaId}&songId=${songId}`), { appLabel: 'Cantador' });
+                  launchCantador({
+                    songId: piece.toadaDocId || piece.id,
+                    toadaId: piece.cantadorToadaId,
+                    mode: 'eleve',
+                    groupId
+                  });
                 }}
                 className="px-2.5 py-1 text-xs font-black rounded border border-orange-300 bg-orange-50 text-orange-950 hover:bg-orange-100 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs select-none"
                 title="Ouvrir Cantador en ligne"

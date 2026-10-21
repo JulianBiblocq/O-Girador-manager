@@ -110,8 +110,8 @@ export default function EventRepertoireProgramSelector({
   // Détermination des badges de disciplines d'un morceau
   const getDisciplineBadges = (item) => {
     const badges = [];
-    const hasPercu = Boolean(item.sequenceurId || item.sequenceurFileUrl || item.jsonUrl || item.tracks || (!item.toadaDocId && !item.dancadorChoreoId));
-    const hasChant = Boolean(item.toadaDocId || item.lyrics || item.paroles);
+    const hasPercu = Boolean(item.sequenceurId || item.sequenceurFileUrl || item.jsonUrl || item.tracks || (!item.toadaDocId && !item.dancadorChoreoId && !item.cantadorToadaId));
+    const hasChant = Boolean(item.toadaDocId || item.cantadorToadaId || item.lyrics || item.paroles);
     const hasDanse = Boolean(item.dancadorChoreoId);
     const hasCulture = Boolean(item.cultureDocId || (Array.isArray(item.cultureDocIds) && item.cultureDocIds.length > 0) || item.histoire);
 
@@ -136,6 +136,7 @@ export default function EventRepertoireProgramSelector({
     jsonUrl: piece.sequenceurFileUrl || piece.jsonUrl || null,
     audioUrl: piece.audioUrl || null,
     toadaDocId: piece.toadaDocId || null,
+    cantadorToadaId: piece.cantadorToadaId || null,
     cultureDocId: piece.cultureDocId || (Array.isArray(piece.cultureDocIds) && piece.cultureDocIds.length > 0 ? piece.cultureDocIds[0] : null) || null,
     cultureDocIds: Array.isArray(piece.cultureDocIds) ? piece.cultureDocIds : (piece.cultureDocId ? [piece.cultureDocId] : []),
     dancadorChoreoId: piece.dancadorChoreoId || null,

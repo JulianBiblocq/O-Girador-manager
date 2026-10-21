@@ -53,7 +53,7 @@ function updateFavicon(rawUrl) {
 /**
  * Hook dynamique de gestion du favicon et des méta-tags de partage :
  * - Mode 'pure' (Mostrador) : logo direct sans anneau
- * - Mode 'composite' (Organizad'Or) : sceau combiné officiel O Girador × Association
+ * - Mode 'composite' (Organizador) : sceau combiné officiel O Girador × Association
  */
 export default function useDynamicFavicon(associationData, options = {}) {
   const isPureLogo = Boolean(options?.isPureLogo);
@@ -81,7 +81,7 @@ export default function useDynamicFavicon(associationData, options = {}) {
       return () => { isMounted = false; };
     }
 
-    // 2. Mode Manager (Organizad'Or) : Sceau combiné persistant ou Samambaia
+    // 2. Mode Manager (Organizador) : Sceau combiné persistant ou Samambaia
     const rawGroup = associationData?.groupId || associationData?.id || '';
     const isSamambaia = !rawGroup || String(rawGroup).trim().toLowerCase() === 'samambaia' || name.toLowerCase().includes('samambaia');
 

@@ -100,6 +100,7 @@ function newsletterApiPlugin() {
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: '/',
   resolve: {
     alias: {
       'firebase/firestore': fileURLToPath(new URL('./src/demo/firestoreDemoAdapter.js', import.meta.url)),
@@ -122,6 +123,17 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
+        manifestTransforms: [
+          async (entries) => {
+            const manifest = entries.map((entry) => {
+              if (entry.url === 'index.html') {
+                return { ...entry, url: 'app.html' };
+              }
+              return entry;
+            });
+            return { manifest, warnings: [] };
+          }
+        ],
         navigateFallback: 'app.html',
         navigateFallbackDenylist: [/^\/__/, /^\/robots\.txt$/, /^\/sitemap\.xml$/, /^\/version\.json$/],
         importScripts: ['/firebase-messaging-sw.js'],

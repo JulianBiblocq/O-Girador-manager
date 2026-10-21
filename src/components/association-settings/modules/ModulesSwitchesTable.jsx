@@ -152,6 +152,71 @@ export default function ModulesSwitchesTable({ formData = {}, handleChange, savi
           </label>
         </div>
       </div>
+
+      {/* Applications satellites de l'écosystème O Girador */}
+      <div className="pt-3 border-t border-dashed border-cordel-master-dark/20 flex flex-col gap-2 text-left">
+        <span className="text-[10px] font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
+          <span>🌐</span>
+          {t('settings.modules.modulesSwitchesTable.ecosystemApps') || 'Applications Satellites Écosystème'}
+        </span>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-[10px]">
+          {/* Sequenciador */}
+          <label className="flex items-center justify-between p-2 rounded bg-white border border-stone-200 cursor-pointer">
+            <span className="font-bold text-stone-700 flex items-center gap-1.5">
+              <span>🎧</span> Sequenciador
+            </span>
+            <input
+              type="checkbox"
+              checked={ecosystemAccess.sequenciador !== false}
+              onChange={(e) => handleToggleEcosystem('sequenciador', e.target.checked)}
+              disabled={saving}
+              className="w-4 h-4 cursor-pointer accent-[var(--color-cordel-vert,#2d6a4f)] shrink-0"
+            />
+          </label>
+
+          {/* Dançador */}
+          <label className="flex items-center justify-between p-2 rounded bg-white border border-stone-200 cursor-pointer">
+            <span className="font-bold text-stone-700 flex items-center gap-1.5">
+              <span>💃</span> Dançador
+            </span>
+            <input
+              type="checkbox"
+              checked={ecosystemAccess.dancador !== false}
+              onChange={(e) => handleToggleEcosystem('dancador', e.target.checked)}
+              disabled={saving}
+              className="w-4 h-4 cursor-pointer accent-[var(--color-cordel-vert,#2d6a4f)] shrink-0"
+            />
+          </label>
+
+          {/* Cantador */}
+          <label className="flex items-center justify-between p-2 rounded bg-white border border-stone-200 cursor-pointer">
+            <span className="font-bold text-stone-700 flex items-center gap-1.5">
+              <span>🎙️</span> Cantador
+            </span>
+            <input
+              type="checkbox"
+              checked={ecosystemAccess.cantador !== false}
+              onChange={(e) => handleToggleEcosystem('cantador', e.target.checked)}
+              disabled={saving}
+              className="w-4 h-4 cursor-pointer accent-[var(--color-cordel-vert,#2d6a4f)] shrink-0"
+            />
+          </label>
+
+          {/* Mostrador (Vitrine) */}
+          <label className="flex items-center justify-between p-2 rounded bg-white border border-stone-200 cursor-pointer">
+            <span className="font-bold text-stone-700 flex items-center gap-1.5">
+              <span>🏛️</span> Mostrador
+            </span>
+            <input
+              type="checkbox"
+              checked={ecosystemAccess.vitrine !== false}
+              onChange={(e) => handleToggleEcosystem('vitrine', e.target.checked)}
+              disabled={saving}
+              className="w-4 h-4 cursor-pointer accent-[var(--color-cordel-vert,#2d6a4f)] shrink-0"
+            />
+          </label>
+        </div>
+      </div>
     </CordelCard>
   );
 }

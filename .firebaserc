@@ -7,6 +7,9 @@
       "hosting": {
         "organizador": [
           "o-girador-organizador"
+        ],
+        "organizador-legacy": [
+          "o-girador-7828c"
         ]
       }
     }

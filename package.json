@@ -1,7 +1,7 @@
 {
   "name": "o-girador-manager",
   "private": true,
-  "version": "1.5.17",
+  "version": "1.5.18",
   "license": "MIT",
   "type": "module",
   "scripts": {
@@ -12,8 +12,8 @@
     "preview": "vite preview",
     "audit-deps": "npx npm-check-updates",
     "update-deps": "npx npm-check-updates -u",
-    "deploy": "vite build && node scripts/post_build_prepare_hosting.mjs && firebase deploy --only hosting:organizador,hosting:organizador-legacy",
-    "deploy:hosting": "vite build && node scripts/post_build_prepare_hosting.mjs && firebase deploy --only hosting:organizador,hosting:organizador-legacy",
+    "deploy": "vite build && node scripts/post_build_prepare_hosting.mjs && firebase deploy --only hosting:organizador",
+    "deploy:hosting": "vite build && node scripts/post_build_prepare_hosting.mjs && firebase deploy --only hosting:organizador",
     "deploy:functions": "firebase deploy --only functions"
   },
   "dependencies": {

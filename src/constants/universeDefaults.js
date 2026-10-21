@@ -1,6 +1,6 @@
 /**
  * Référentiel centralisé des Univers Culturels, Instruments par défaut et Vocabulaire métier
- * Écosystème O Girador — Organizad'Or
+ * Écosystème O Girador — Organizador
  */
 
 export const UNIVERSE_DEFAULT_INSTRUMENTS = {

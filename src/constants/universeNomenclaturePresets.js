@@ -1,6 +1,6 @@
 /**
  * Référentiel des Presets, Rôles et Nomenclatures Multi-Univers
- * Écosystème O Girador — Organizad'Or
+ * Écosystème O Girador — Organizador
  */
 
 import {

@@ -5,6 +5,7 @@ import { launchCrossApp } from '../../utils/crossAppAuth';
 import { getVitrineUrl } from '../../utils/urlUtils';
 import { isDemoMode } from '../../demo/demoManager';
 import { getEcosystemUrl } from '../../constants/ecosystemUrls';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Icône SVG Cordel 3x3 représentant le "Gaufrier" applicatif
@@ -46,6 +47,7 @@ export function CordelGridIcon({ size = 16, className = "" }) {
  * @param {string} [props.className] - Classes de conteneur additionnelles
  */
 export default function EcosystemAppLauncher({ urls, associationData, currentGroupId, className = "" }) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [launchingAppKey, setLaunchingAppKey] = useState(null);
   const [popoverStyle, setPopoverStyle] = useState({});
@@ -59,7 +61,8 @@ export default function EcosystemAppLauncher({ urls, associationData, currentGro
     vitrine: true,
     sequenciador: true,
     dancador: true,
-    hub: true
+    hub: true,
+    cantador: true
   };
 
   const isDemo = isDemoMode();
@@ -71,23 +74,31 @@ export default function EcosystemAppLauncher({ urls, associationData, currentGro
       url: getVitrineUrl(urls, associationData, effectiveGroupId),
       img: '/ecosystem/logo-mostrador.png',
       label: 'Mostrador',
-      subtitle: 'Site vitrine public',
+      subtitle: t('navigation.mostradorSubtitle') || 'Site vitrine public',
       isPublic: true
     },
     {
       key: 'sequenciador',
       url: getEcosystemUrl('sequenciador'),
-      img: '/ecosystem/favicon.svg',
+      img: '/ecosystem/sequenciador.png',
       label: 'Sequenciador',
-      subtitle: 'Partitions & Rythmes',
+      subtitle: t('navigation.sequenciadorSubtitle') || 'Partitions & Rythmes',
       isPublic: false
     },
     {
       key: 'dancador',
       url: getEcosystemUrl('dancador'),
       img: '/ecosystem/dancador-logo.png',
-      label: 'Dancador',
-      subtitle: 'Atelier chorégraphique',
+      label: 'Dançador',
+      subtitle: t('navigation.dancadorSubtitle') || 'Atelier chorégraphique',
+      isPublic: false
+    },
+    {
+      key: 'cantador',
+      url: getEcosystemUrl('cantador'),
+      img: '/ecosystem/cantador-logo.svg',
+      label: 'Cantador',
+      subtitle: t('navigation.cantadorSubtitle') || 'Atelier vocal & Toadas',
       isPublic: false
     },
     {
@@ -95,7 +106,7 @@ export default function EcosystemAppLauncher({ urls, associationData, currentGro
       url: getEcosystemUrl('hub'),
       img: '/ecosystem/hub-logo.png',
       label: 'Orquestrador',
-      subtitle: 'Portail central O Girador',
+      subtitle: t('navigation.orquestradorSubtitle') || 'Portail central O Girador',
       isPublic: false
     }
   ];
