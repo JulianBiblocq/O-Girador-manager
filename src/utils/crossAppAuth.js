@@ -21,12 +21,24 @@ export async function launchCrossApp(targetUrl, options = {}) {
 
   if (!targetUrl) return;
 
+  // Résolution de l'URL cible avec injection optionnelle du mode cible
+  let resolvedTargetUrl = targetUrl;
+  if (options.mode && typeof options.mode === 'string' && options.mode.trim()) {
+    try {
+      const u = new URL(targetUrl, window.location.origin);
+      if (!u.searchParams.has('mode')) {
+        u.searchParams.set('mode', options.mode.trim());
+        resolvedTargetUrl = u.toString();
+      }
+    } catch (_) {}
+  }
+
   // Si l'utilisateur n'est pas connecté, ouverture directe
   if (!auth.currentUser) {
     if (forceSameTab) {
-      window.location.href = targetUrl;
+      window.location.href = resolvedTargetUrl;
     } else {
-      window.open(targetUrl, '_blank', 'noopener,noreferrer');
+      window.open(resolvedTargetUrl, '_blank', 'noopener,noreferrer');
     }
     return;
   }
@@ -105,7 +117,7 @@ export async function launchCrossApp(targetUrl, options = {}) {
     const res = await getSSOToken();
     const customToken = res.data?.token || res.data?.customToken;
 
-    const urlObj = new URL(targetUrl, window.location.origin);
+    const urlObj = new URL(resolvedTargetUrl, window.location.origin);
     if (customToken) {
       urlObj.searchParams.set('ssoToken', customToken);
     }
@@ -125,12 +137,12 @@ export async function launchCrossApp(targetUrl, options = {}) {
     console.warn("[CrossApp SSO] Impossible de forger le jeton SSO, ouverture directe de secours :", error);
     if (newTab && !newTab.closed) {
       try {
-        newTab.location.href = targetUrl;
+        newTab.location.href = resolvedTargetUrl;
       } catch (_) {
-        window.location.href = targetUrl;
+        window.location.href = resolvedTargetUrl;
       }
     } else {
-      window.location.href = targetUrl;
+      window.location.href = resolvedTargetUrl;
     }
   }
 }

@@ -90,6 +90,7 @@ export default function TabProgram({
             <span>Fil conducteur</span>
           </h4>
           <EventRevisionProgram
+            event={event || activeEvent}
             setlist={setlist}
             isAuthorized={isAuthorized}
             updatingSetlist={updatingSetlist}

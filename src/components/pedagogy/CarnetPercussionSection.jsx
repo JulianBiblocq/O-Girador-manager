@@ -34,11 +34,11 @@ export default function CarnetPercussionSection({
   }, [repertoire]);
 
   const buildSequencerUrl = (piece, bpm) => {
-    const baseUrl = sequenceurUrl || 'https://sequenceur.app';
+    const baseUrl = sequenceurUrl || 'https://sequenciador.o-girador.com';
     const targetId = piece.sequenceurId || piece.presetId || piece.id;
     const sep = baseUrl.includes('?') ? '&' : '?';
-    const param = piece.sequenceurType === 'sections' ? 'sectionId' : 'loadPreset';
-    return `${baseUrl}${sep}${param}=${targetId}${bpm ? `&bpm=${bpm}` : ''}`;
+    const param = piece.sequenceurType === 'sections' ? 'sectionId' : 'presetId';
+    return `${baseUrl}${sep}${param}=${encodeURIComponent(targetId)}&mode=percussion${bpm ? `&bpm=${bpm}` : ''}`;
   };
 
   if (seasonPieces.length === 0) {

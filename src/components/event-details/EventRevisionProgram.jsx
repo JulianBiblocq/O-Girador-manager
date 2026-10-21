@@ -14,6 +14,7 @@ import PieceCultureModal from '../member/PieceCultureModal';
 import { buildSequencerUrl, openSequencerWithCrossApp } from '../../utils/sequencerUrlUtils';
 import { launchCrossApp } from '../../utils/crossAppAuth';
 import { launchCantador } from '../../utils/trainingLauncher';
+import { getEcosystemUrl } from '../../constants/ecosystemUrls';
 import { useCantadorToadas } from '../../hooks/useCantadorToadas';
 import { subscribeGroupTrainings } from '../../services/aisanceService';
 import { resolvePieceTrainings, buildResolutionDictionaries, resolvePieceLiveTechnicalData } from '../../utils/repertoireMatcher';
@@ -22,6 +23,7 @@ import { canonicalizeGroupId } from '../../utils/tenantUtils';
 import { useTranslation } from '../LanguageContext';
 
 export default function EventRevisionProgram({
+  event = null,
   setlist = [],
   isAuthorized,
   updatingSetlist,
@@ -42,6 +44,20 @@ export default function EventRevisionProgram({
 }) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('filConducteur'); // 'filConducteur' | 'danse'
+
+  // Détection si l'événement courant est un cours, stage ou événement de Danse
+  const isEventDanse = useMemo(() => {
+    if (!event) return false;
+    if (event.isDanceOnly) return true;
+    if (event.includesDance && event.includesPercussion === false) return true;
+    const typeStr = String(event.type || '').toLowerCase();
+    const specStr = String(event.specialiteAtelier || event.specialite || '').toLowerCase();
+    const titleStr = String(event.titre || event.title || '').toLowerCase();
+    if (typeStr === 'danse' || typeStr === 'cours_danse' || typeStr === 'stage_danse') return true;
+    if (specStr.includes('danse') || specStr.includes('dance')) return true;
+    if ((titleStr.includes('cours de danse') || titleStr.includes('atelier danse') || titleStr.includes('stage danse')) && !titleStr.includes('percu')) return true;
+    return false;
+  }, [event]);
   const [selectedChoreoToAdd, setSelectedChoreoToAdd] = useState('');
   const [activeVideoToWatch, setActiveVideoToWatch] = useState(null);
   const [activeSignalToZoom, setActiveSignalToZoom] = useState(null);
@@ -278,16 +294,21 @@ export default function EventRevisionProgram({
                   const seqFileUrl = morceau.jsonUrl || morceau.sequenceurUrl || resolved.sequenceurFileUrl;
                   const seqType = morceau.sequenceurType || resolved.sequenceurType;
 
+                  // Détection si l'ouverture doit cibler la console Danse
+                  const isMorceauDanse = isEventDanse || morceau.type === 'danse' || morceau.discipline === 'danse';
+                  const targetMode = isMorceauDanse ? 'danse' : undefined;
+
                   const pieceForSequencer = {
                     sequenceurType: seqType,
                     sequenceurId: seqId,
                     sequenceurFileUrl: seqFileUrl,
                     jsonUrl: seqFileUrl,
-                    titre: morceau.titre
+                    titre: morceau.titre,
+                    mode: targetMode
                   };
 
                   if (seqType || seqId || seqFileUrl) {
-                    targetUrl = buildSequencerUrl(assocSequenceurUrl, pieceForSequencer);
+                    targetUrl = buildSequencerUrl(assocSequenceurUrl, pieceForSequencer, { mode: targetMode });
                   }
 
                   const activeToadaDoc = resolved.activeToada || (morceau.toadaDocId ? toadasMap.get(morceau.toadaDocId) : null);
@@ -415,18 +436,18 @@ export default function EventRevisionProgram({
                         {targetUrl && (
                           <button
                             type="button"
-                            onClick={() => openSequencerWithCrossApp(assocSequenceurUrl, pieceForSequencer)}
+                            onClick={() => openSequencerWithCrossApp(assocSequenceurUrl, pieceForSequencer, { mode: targetMode })}
                             className="theme-btn theme-bg-ocre text-encre-noire px-3 py-1.5 text-[10px] font-black rounded-[4px_6px_3px_5px] shadow-[1px_1px_0px_0px_rgba(0,0,0,0.15)] inline-flex items-center justify-center gap-1.5 hover:brightness-105 active:translate-x-[0.5px] active:translate-y-[0.5px] flex-1 text-center cursor-pointer"
-                            title="Ouvrir dans le Séquenceur avec SSO transparent"
+                            title={isMorceauDanse ? "Ouvrir dans le Séquenceur (Console Danse)" : "Ouvrir dans le Séquenceur avec SSO transparent"}
                           >
-                            🎧 {morceau.sequenceurType === 'presets' ? 'Ouvrir le Preset dans le Séquenceur' : (morceau.sequenceurType === 'sections' ? 'Ouvrir la Séquence dans le Séquenceur' : 'Écouter dans le Séquenceur')}
+                            🎧 {isMorceauDanse ? 'Console Danse (Séquenceur)' : (morceau.sequenceurType === 'presets' ? 'Ouvrir le Preset dans le Séquenceur' : (morceau.sequenceurType === 'sections' ? 'Ouvrir la Séquence dans le Séquenceur' : 'Écouter dans le Séquenceur'))}
                           </button>
                         )}
 
                         {choreoId && (
                           <button
                             type="button"
-                            onClick={() => launchCrossApp(`https://dancador.ogirador.fr/?choreoId=${choreoId}&groupId=${groupId}`, { appLabel: "Dançador" })}
+                            onClick={() => launchCrossApp(getEcosystemUrl('dancador', `?choreoId=${choreoId}&groupId=${groupId}`), { appLabel: "Dançador" })}
                             className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black uppercase rounded bg-pink-50 hover:bg-pink-100 text-pink-900 border border-pink-300 shadow-2xs transition-colors cursor-pointer"
                             title="Ouvrir la chorégraphie dans Dançador"
                           >
@@ -488,11 +509,12 @@ export default function EventRevisionProgram({
                     </h5>
                     {linkedSequencerRhythms.map((rhythm) => {
                       let targetUrl = '';
-                      const baseUrl = assocSequenceurUrl || 'https://sequenceur.app';
-                      const paramKey = rhythm._collection === 'sections' ? 'sectionId' : 'loadPreset';
+                      const baseUrl = assocSequenceurUrl || 'https://sequenciador.o-girador.com';
+                      const paramKey = rhythm._collection === 'sections' ? 'sectionId' : 'presetId';
+                      const modeParam = isEventDanse ? '&mode=danse' : '';
                       targetUrl = baseUrl.includes('?') 
-                        ? `${baseUrl}&${paramKey}=${rhythm.id}`
-                        : `${baseUrl}?${paramKey}=${rhythm.id}`;
+                        ? `${baseUrl}&${paramKey}=${rhythm.id}${modeParam}`
+                        : `${baseUrl}?${paramKey}=${rhythm.id}${modeParam}`;
 
                       return (
                         <div 
@@ -522,10 +544,10 @@ export default function EventRevisionProgram({
 
                           <button
                             type="button"
-                            onClick={() => launchCrossApp(targetUrl, { appLabel: 'le Séquenceur' })}
+                            onClick={() => launchCrossApp(targetUrl, { appLabel: isEventDanse ? 'le Séquenceur (Danse)' : 'le Séquenceur', mode: isEventDanse ? 'danse' : undefined })}
                             className="theme-btn theme-bg-ocre text-encre-noire px-3 py-1.5 text-[10px] font-black rounded-[4px_6px_3px_5px] shadow-[1px_1px_0px_0px_rgba(0,0,0,0.15)] inline-flex items-center justify-center gap-1.5 hover:brightness-105 active:translate-x-[0.5px] active:translate-y-[0.5px] w-full text-center mt-1 cursor-pointer"
                           >
-                            🎧 Ouvrir dans le Séquenceur
+                            🎧 {isEventDanse ? 'Console Danse (Séquenceur)' : 'Ouvrir dans le Séquenceur'}
                           </button>
                         </div>
                       );
@@ -645,13 +667,14 @@ export default function EventRevisionProgram({
             ) : (
               <div className="flex flex-col gap-4 mb-4">
                 {eventChoreographies.map((choreo) => {
-                  const dancadorUrl = `https://dancador.ogirador.fr/?choreoId=${choreo.id}&groupId=${groupId}`;
+                  const dancadorUrl = getEcosystemUrl('dancador', `?choreoId=${choreo.id}&groupId=${groupId}`);
                   
                   // Récupérer les pas associés à cette chorégraphie
                   const elements = choreo.elements || [];
                   // Extraire les IDs de pas uniques de cette choré
                   const stepIdsInChoreo = [...new Set(elements.filter(e => e.type === 'step').map(e => e.stepId))];
                   const stepsForChoreo = allSteps.filter(s => stepIdsInChoreo.includes(s.id));
+                  const choreoSeqId = choreo.presetId || choreo.sequenceurId || (repertoirePieces.find(p => p.dancadorChoreoId === choreo.id)?.sequenceurId);
 
                   return (
                     <div key={choreo.id} className="border-2 border-cordel-master-dark/10 rounded-lg p-3 bg-white shadow-sm flex flex-col gap-3">
@@ -680,7 +703,7 @@ export default function EventRevisionProgram({
                           </p>
                           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                             {stepsForChoreo.map(step => {
-                              const stepUrl = `https://dancador.ogirador.fr/player/step/${step.id}?groupId=${groupId}`;
+                              const stepUrl = getEcosystemUrl('dancador', `/player/step/${step.id}?groupId=${groupId}`);
                               return (
                                 <a 
                                   href={stepUrl}
@@ -706,14 +729,33 @@ export default function EventRevisionProgram({
                         </div>
                       )}
 
-                      <a
-                        href={dancadorUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="theme-btn theme-bg-ocre text-encre-noire px-3 py-1.5 text-[10px] font-black rounded-[4px_6px_3px_5px] shadow-[1px_1px_0px_0px_rgba(0,0,0,0.15)] inline-flex items-center justify-center gap-1.5 hover:brightness-105 active:translate-x-[0.5px] active:translate-y-[0.5px] w-full text-center mt-1"
-                      >
-                        💃 Ouvrir dans Dançador
-                      </a>
+                      <div className="flex flex-col sm:flex-row items-center gap-2 mt-1">
+                        <a
+                          href={dancadorUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="theme-btn theme-bg-ocre text-encre-noire px-3 py-1.5 text-[10px] font-black rounded-[4px_6px_3px_5px] shadow-[1px_1px_0px_0px_rgba(0,0,0,0.15)] inline-flex items-center justify-center gap-1.5 hover:brightness-105 active:translate-x-[0.5px] active:translate-y-[0.5px] flex-1 text-center w-full sm:w-auto"
+                        >
+                          💃 Ouvrir dans Dançador
+                        </a>
+
+                        {choreoSeqId && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const baseUrl = assocSequenceurUrl || 'https://sequenciador.o-girador.com';
+                              const cleanBase = baseUrl.trim().replace(/\/+$/, '');
+                              const seqDanseUrl = `${cleanBase}/?presetId=${encodeURIComponent(choreoSeqId)}&mode=danse`;
+                              launchCrossApp(seqDanseUrl, { appLabel: 'le Séquenceur (Danse)', mode: 'danse' });
+                            }}
+                            className="theme-btn bg-pink-100 hover:bg-pink-200 text-pink-950 border border-pink-300 px-3 py-1.5 text-[10px] font-black rounded-[4px_6px_3px_5px] shadow-[1px_1px_0px_0px_rgba(0,0,0,0.15)] inline-flex items-center justify-center gap-1.5 active:translate-x-[0.5px] active:translate-y-[0.5px] flex-1 text-center w-full sm:w-auto cursor-pointer"
+                            title="Ouvrir la musique dans le Séquenceur (Console Danse)"
+                          >
+                            <span>🎧</span>
+                            <span>Console Danse (Séquenceur)</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
                   );
                 })}

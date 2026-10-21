@@ -415,6 +415,7 @@ export function useDocumentUploadPipeline({
           if (songData.tonaliteDefaut) updateData.tonaliteDefaut = songData.tonaliteDefaut;
           updateData.parolesOriginales = songData.parolesOriginales || '';
           updateData.parolesPhonetiques = songData.parolesPhonetiques || '';
+          if (songData.rawTxtCode) updateData.rawTxtCode = songData.rawTxtCode;
           updateData.traduction = songData.traduction || '';
           updateData.anecdote = songData.anecdote || '';
           if (finalAudioUrl) {
@@ -537,6 +538,7 @@ export function useDocumentUploadPipeline({
         if (songData.tonaliteDefaut) newDoc.tonaliteDefaut = songData.tonaliteDefaut;
         newDoc.parolesOriginales = songData.parolesOriginales || '';
         newDoc.parolesPhonetiques = songData.parolesPhonetiques || '';
+        if (songData.rawTxtCode) newDoc.rawTxtCode = songData.rawTxtCode;
         newDoc.traduction = songData.traduction || '';
         newDoc.anecdote = songData.anecdote || '';
         if (finalAudioUrl) {

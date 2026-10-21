@@ -44,6 +44,30 @@
     <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png" />
     <link rel="shortcut icon" href="/icon-192.png" />
     <link id="app-manifest" rel="manifest" href="/manifest.json" />
+    <script>
+      // Détection de secours : si la feuille de style Tailwind/Cordel est bloquée par un cache HTTP corrompu
+      window.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+          try {
+            var probe = document.createElement('div');
+            probe.className = 'hidden';
+            document.body.appendChild(probe);
+            var isStyled = window.getComputedStyle(probe).display === 'none';
+            document.body.removeChild(probe);
+            if (!isStyled) {
+              console.warn('[O Girador] Styles manquants détectés, réapplication forcée avec cache-buster...');
+              var links = document.querySelectorAll('link[rel="stylesheet"]');
+              links.forEach(function(l) {
+                var href = l.getAttribute('href');
+                if (href && !href.includes('?v=')) {
+                  l.href = href + '?v=' + Date.now();
+                }
+              });
+            }
+          } catch (_) {}
+        }, 300);
+      });
+    </script>
   </head>
   <body>
     <div id="root">

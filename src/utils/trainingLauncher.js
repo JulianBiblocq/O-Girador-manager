@@ -114,13 +114,15 @@ export const resolveUserRole = resolveUserSequencerRole;
  * @param {string} [options.baseUrl] - URL de base du Séquenceur (défaut: https://sequenciador.o-girador.com)
  * @param {string} [options.appLabel] - Libellé affiché pendant la connexion SSO
  * @param {boolean} [options.forceSameTab] - Navigation dans le même onglet si souhaité
+ * @param {string} [options.mode] - Mode cible optionnel ('percussion' | 'danse')
  * @returns {Promise<void>}
  */
 export async function launchGlobalSequencer(sequenceurId, options = {}) {
   const {
     baseUrl = 'https://sequenciador.o-girador.com',
     appLabel = 'sequenciador',
-    forceSameTab = false
+    forceSameTab = false,
+    mode
   } = options;
 
   if (!sequenceurId) {
@@ -129,7 +131,15 @@ export async function launchGlobalSequencer(sequenceurId, options = {}) {
   }
 
   const baseWithSlash = (baseUrl || 'https://sequenciador.o-girador.com').trim().replace(/\/+$/, '') + '/';
-  const targetUrl = `${baseWithSlash}?presetId=${encodeURIComponent(sequenceurId)}`;
+  const params = new URLSearchParams();
+  params.set('presetId', sequenceurId);
+
+  // Le mode n'est ajouté que s'il est expressément fourni pour respecter l'ouverture de la dernière vue
+  if (mode && typeof mode === 'string' && mode.trim()) {
+    params.set('mode', mode.trim());
+  }
+
+  const targetUrl = `${baseWithSlash}?${params.toString()}`;
 
   return launchCrossApp(targetUrl, {
     appLabel,
@@ -142,9 +152,9 @@ export async function launchGlobalSequencer(sequenceurId, options = {}) {
  * Construit l'URL pré-paramétrée et l'ouvre via la passerelle SSO sans blocage pop-up.
  *
  * Format attendu :
- * https://sequenciador.o-girador.com/?presetId=${presetId}&role=${userRole}&tocarJunto=1&baseOnly=1
+ * https://sequenciador.o-girador.com/?presetId=${presetId}&mode=percussion&role=${userRole}&tocarJunto=1&baseOnly=1
  * Avec trainingId et stage si le lancement provient d'un palier d'entraînement précis :
- * https://sequenciador.o-girador.com/?presetId=${presetId}&trainingId=${trainingId}&stage=${stageIndex}&role=${userRole}&tocarJunto=1&baseOnly=1
+ * https://sequenciador.o-girador.com/?presetId=${presetId}&mode=percussion&role=${userRole}&trainingId=${trainingId}&stage=${stageIndex}&tocarJunto=1&baseOnly=1
  *
  * Si le rôle utilisateur est vide ou absent, le paramètre role est omis et Sequenciador
  * affichera lui-même sa modale de sélection de pupitre.
@@ -156,6 +166,7 @@ export async function launchGlobalSequencer(sequenceurId, options = {}) {
  * @param {string} [options.role] - Rôle/pupitre en sourdine (ex: 'caixa', 'marcante', ...)
  * @param {number|boolean} [options.tocarJunto=1] - Activation du mode « Tocar Junto » (défaut: 1)
  * @param {number|boolean} [options.baseOnly=1] - Activation du mode boucle de base (défaut: 1)
+ * @param {string} [options.mode='percussion'] - Mode console Sequenciador (défaut: 'percussion')
  * @param {string} [options.baseUrl] - URL de base du Séquenceur (défaut: https://sequenciador.o-girador.com)
  * @param {string} [options.appLabel] - Libellé affiché pendant la connexion SSO
  * @param {boolean} [options.forceSameTab] - Navigation dans le même onglet si souhaité
@@ -168,7 +179,8 @@ export async function launchTrainingStage(presetId, trainingId, stageIndex = 0, 
     forceSameTab = false,
     role,
     tocarJunto = 1,
-    baseOnly = 1
+    baseOnly = 1,
+    mode = 'percussion'
   } = options;
 
   if (!presetId) {
@@ -180,17 +192,22 @@ export async function launchTrainingStage(presetId, trainingId, stageIndex = 0, 
   const params = new URLSearchParams();
   params.set('presetId', presetId);
 
+  // Ciblage explicite du mode console Sequenciador (défaut percussion pour les entraînements)
+  if (mode && typeof mode === 'string' && mode.trim()) {
+    params.set('mode', mode.trim());
+  }
+
+  // Rôle de l'adhérent s'il a été identifié
+  if (role && typeof role === 'string' && role.trim()) {
+    params.set('role', role.trim());
+  }
+
   // Inclure trainingId et stage si le lancement provient d'un entraînement précis
   if (trainingId) {
     params.set('trainingId', trainingId);
     if (stageIndex !== undefined && stageIndex !== null) {
       params.set('stage', String(stageIndex));
     }
-  }
-
-  // Rôle de l'adhérent s'il a été identifié
-  if (role && typeof role === 'string' && role.trim()) {
-    params.set('role', role.trim());
   }
 
   // Paramètres d'entraînement interactif Tocar Junto

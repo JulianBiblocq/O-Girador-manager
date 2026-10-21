@@ -255,7 +255,7 @@ export default function AutoEvalQuiz({
 
     const matchedRhythm = rhythms.find(r => targetRhythmName.includes(r.titre.toLowerCase()) || r.titre.toLowerCase().includes(targetRhythmName));
     if (matchedRhythm) {
-      const baseUrl = sequenceurUrl || 'https://sequenceur.app';
+      const baseUrl = sequenceurUrl || 'https://sequenciador.o-girador.com';
       return baseUrl.includes('?') 
         ? `${baseUrl}&file=${encodeURIComponent(matchedRhythm.jsonUrl)}&karaoke=true`
         : `${baseUrl}?file=${encodeURIComponent(matchedRhythm.jsonUrl)}&karaoke=true`;

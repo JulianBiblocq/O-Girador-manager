@@ -5,8 +5,9 @@ import ToadaHeaderMetadataForm from '../toada/ToadaHeaderMetadataForm';
 import ToadaMeasureEditor from '../toada/ToadaMeasureEditor';
 
 /**
- * Sous-formulaire modulaire pour la saisie des chants et Toadas (< 135 lignes) :
- * Métadonnées musicales d'en-tête, éditeur par mesure ou texte riche, et audio témoin.
+ * Sous-formulaire modulaire pour la saisie des chants et Toadas (< 140 lignes) :
+ * Métadonnées musicales d'en-tête, grille 2 colonnes (Originale & Phonétique),
+ * éditeur par mesure (.txt) ou texte riche, et audio témoin.
  */
 export default function DocumentFormToadaFields({
   category = 'Toadas',
@@ -28,6 +29,8 @@ export default function DocumentFormToadaFields({
   setAudioUrl,
   parolesOriginales = '',
   setParolesOriginales,
+  parolesPhonetiques = '',
+  setParolesPhonetiques,
   traduction = '',
   setTraduction,
   anecdote = '',
@@ -70,13 +73,32 @@ export default function DocumentFormToadaFields({
         </div>
       )}
 
-      {/* 5. Paroles Originales */}
-      <div className="flex flex-col gap-1">
-        <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">{category === 'Culture' ? "Contenu Fiche" : "Paroles Originales"}</label>
-        {editorMode === 'measures' && category === 'Toadas' ? (
-          <ToadaMeasureEditor value={parolesOriginales} onChange={setParolesOriginales} disabled={isSubmitting} placeholder="+ *Soliste* [Dm7] Première mesure...\n\n/ Suite du chœur liée..." />
-        ) : (
-          <RichTextEditor value={parolesOriginales} onChange={(html) => setParolesOriginales(html)} disabled={isSubmitting} placeholder="Paroles..." minHeight="120px" />
+      {/* 5. Paroles Originales & Paroles Phonétiques (Grille 2 colonnes) */}
+      <div className={`grid grid-cols-1 ${category === 'Toadas' ? 'md:grid-cols-2' : ''} gap-3`}>
+        {/* Paroles Originales */}
+        <div className="flex flex-col gap-1">
+          <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+            {category === 'Culture' ? "Contenu Fiche" : "Paroles Originales (Langue d'origine)"}
+          </label>
+          {editorMode === 'measures' && category === 'Toadas' ? (
+            <ToadaMeasureEditor value={parolesOriginales} onChange={setParolesOriginales} disabled={isSubmitting} placeholder="+ *Soliste* [Dm7] Première mesure...\n\n/ Suite du chœur liée..." title="paroles-originales" />
+          ) : (
+            <RichTextEditor value={parolesOriginales} onChange={(html) => setParolesOriginales(html)} disabled={isSubmitting} placeholder="Paroles..." minHeight="120px" />
+          )}
+        </div>
+
+        {/* Paroles Phonétiques */}
+        {category === 'Toadas' && (
+          <div className="flex flex-col gap-1">
+            <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+              Paroles Phonétiques (Prononciation)
+            </label>
+            {editorMode === 'measures' ? (
+              <ToadaMeasureEditor value={parolesPhonetiques} onChange={setParolesPhonetiques} disabled={isSubmitting} placeholder="+ *Soliste* Prononciation phonétique...\n\n/ Suite phonétique..." title="paroles-phonetiques" />
+            ) : (
+              <RichTextEditor value={parolesPhonetiques} onChange={(html) => setParolesPhonetiques(html)} disabled={isSubmitting} placeholder="Prononciation..." minHeight="120px" />
+            )}
+          </div>
         )}
       </div>
 

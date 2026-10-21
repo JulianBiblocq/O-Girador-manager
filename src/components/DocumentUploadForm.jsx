@@ -259,6 +259,7 @@ export default function DocumentUploadForm({
         tonaliteDefaut,
         parolesOriginales,
         parolesPhonetiques,
+        rawTxtCode: parolesOriginales,
         traduction,
         anecdote: currentAnecdote,
         audioUploadType,

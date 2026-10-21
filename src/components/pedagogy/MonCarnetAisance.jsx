@@ -448,23 +448,27 @@ export default function MonCarnetAisance({
   const [targetedAtelierQuiz, setTargetedAtelierQuiz] = useState(null); // { model, partId, stepIndex }
 
   // Construction de l'URL du séquenceur avec paramètres
-  const getSequencerUrl = (rhythm, bpm) => {
-    const baseUrl = sequenceurUrl || 'https://sequenceur.app';
+  const getSequencerUrl = (rhythm, bpm, mode = null) => {
+    const baseUrl = sequenceurUrl || 'https://sequenciador.o-girador.com';
     if (!rhythm) return baseUrl;
     let url = baseUrl;
-    
-    if (rhythm._collection) {
-       const paramKey = rhythm._collection === 'sections' ? 'sectionId' : 'loadPreset';
-       url = baseUrl.includes('?') 
-         ? `${baseUrl}&${paramKey}=${rhythm.id}`
-         : `${baseUrl}?${paramKey}=${rhythm.id}`;
-    } else if (rhythm.jsonUrl) {
-       url = baseUrl.includes('?') 
-         ? `${baseUrl}&file=${encodeURIComponent(rhythm.jsonUrl)}`
-         : `${baseUrl}?file=${encodeURIComponent(rhythm.jsonUrl)}`;
+    const sep = url.includes('?') ? '&' : '?';
+    const targetId = rhythm.presetId || rhythm.sequenceurId || rhythm.id;
+
+    if (rhythm._collection === 'sections' || rhythm.sequenceurType === 'sections') {
+      url = `${baseUrl}${sep}sectionId=${encodeURIComponent(targetId)}`;
+    } else if (rhythm.jsonUrl && !rhythm._collection && !rhythm.presetId && !rhythm.sequenceurId) {
+      url = `${baseUrl}${sep}file=${encodeURIComponent(rhythm.jsonUrl)}`;
+    } else {
+      url = `${baseUrl}${sep}presetId=${encodeURIComponent(targetId)}`;
     }
-    
-    if (bpm) url += `&bpm=${bpm}`;
+
+    if (mode && typeof mode === 'string' && mode.trim()) {
+      url += `&mode=${encodeURIComponent(mode.trim())}`;
+    }
+    if (bpm) {
+      url += `&bpm=${bpm}`;
+    }
     return url;
   };
 
@@ -967,7 +971,7 @@ export default function MonCarnetAisance({
                     <button
                       key={bpm}
                       type="button"
-                      onClick={() => launchCrossApp(getSequencerUrl(rhythm, bpm), { appLabel: 'le Séquenceur' })}
+                      onClick={() => launchCrossApp(getSequencerUrl(rhythm, bpm, 'danse'), { appLabel: 'le Séquenceur', mode: 'danse' })}
                       className="text-[9px] font-bold bg-[var(--theme-bg)] border border-encre-noire/50 px-2.5 py-1 rounded hover:bg-[#ebdcc0] shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all cursor-pointer"
                     >
                       {bpm} BPM

@@ -1,4 +1,4 @@
-/* O Girador Organizador - Feuille de styles principale v1.5.18 */
+/* O Girador Organizador - Feuille de styles principale v1.5.20 */
 @import "tailwindcss";
 
 @variant dark (&:where(.dark, .dark *));
@@ -12,7 +12,7 @@
 }
 
 :root {
-  --v-release-bust: '1.5.18';
+  --v-release-bust: '1.5.20';
   /* Mode Clair par défaut (Thème papier crème Cordel) */
   --cordel-bg: #f4ecd8;
   --color-cordel-bg: #f4ecd8;
