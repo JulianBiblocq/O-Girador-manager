@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { runTransaction, doc, collection, query, where, getDocs, Timestamp, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
 import CordelButton from '../CordelButton';
@@ -18,6 +18,8 @@ export default function GigDetailsModal({
   onDeleteGig,
   onOpenAgendaOptionModal,
   onOpenQuoteGeneratorModal,
+  onEditGig,
+  onUpdateGig,
   saving = false
 }) {
   const [isSendContractModalOpen, setIsSendContractModalOpen] = useState(false);
@@ -27,8 +29,19 @@ export default function GigDetailsModal({
   const [toastMessage, setToastMessage] = useState(null);
   const { confirm } = useConfirm();
 
-  // Fermeture accessible avec touche Échap
-  useModalEscape(isOpen, onClose);
+  // États pour l'édition rapide des notes en ligne
+  const [isEditingNotes, setIsEditingNotes] = useState(false);
+  const [localNotes, setLocalNotes] = useState(gig?.notes || '');
+  const [isSavingNotes, setIsSavingNotes] = useState(false);
+
+  // Synchronisation des notes locales avec le dossier actif
+  useEffect(() => {
+    setLocalNotes(gig?.notes || '');
+    setIsEditingNotes(false);
+  }, [gig?.id, gig?.notes]);
+
+  // Fermeture accessible avec touche Échap (suspendue si l'édition des notes est active)
+  useModalEscape(isOpen && !isEditingNotes, onClose);
 
   if (!isOpen || !gig) return null;
 
@@ -55,6 +68,23 @@ export default function GigDetailsModal({
     onClose();
     if (onOpenAgendaOptionModal) {
       onOpenAgendaOptionModal(gig);
+    }
+  };
+
+  // Action automatisée : Sauvegarde rapide des notes libres sans quitter la fiche
+  const handleSaveNotes = async () => {
+    if (!gig || !gig.id || !onUpdateGig) return;
+    setIsSavingNotes(true);
+    try {
+      const cleanNotes = (localNotes || '').trim();
+      await onUpdateGig(gig.id, { notes: cleanNotes });
+      setIsEditingNotes(false);
+      triggerWorkflowToast('✓ Notes du dossier mises à jour');
+    } catch (err) {
+      console.error("GigDetailsModal - Erreur sauvegarde notes :", err);
+      alert(err.message || "Erreur lors de la sauvegarde des notes.");
+    } finally {
+      setIsSavingNotes(false);
     }
   };
 
@@ -310,11 +340,79 @@ export default function GigDetailsModal({
             )}
           </div>
 
-          <div className="flex flex-col gap-1 p-3 bg-stone-50 border border-stone-200 rounded">
-            <span className="text-[10px] font-bold uppercase text-stone-500">Historique & Notes libres du dossier :</span>
-            <p className="text-xs text-stone-800 whitespace-pre-wrap leading-relaxed">
-              {gig.notes || 'Aucune note consignée pour ce dossier.'}
-            </p>
+          {/* Bloc Notes Libres & Prise de notes rapide */}
+          <div className="flex flex-col gap-1.5 p-3.5 bg-stone-50 border border-stone-200 rounded-lg">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-stone-600 flex items-center gap-1.5">
+                <span>📝</span>
+                <span>Historique & Notes libres du dossier</span>
+              </span>
+
+              {!isEditingNotes && (
+                <button
+                  type="button"
+                  onClick={() => setIsEditingNotes(true)}
+                  className="px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-white hover:bg-stone-100 text-stone-700 border border-stone-300 shadow-xs flex items-center gap-1 cursor-pointer transition-all active:scale-95"
+                  title="Modifier les notes libres du dossier"
+                >
+                  <span>✏️</span>
+                  <span>Éditer</span>
+                </button>
+              )}
+            </div>
+
+            {isEditingNotes ? (
+              <div className="flex flex-col gap-2 pt-1">
+                <textarea
+                  autoFocus
+                  rows={4}
+                  value={localNotes}
+                  onChange={(e) => setLocalNotes(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') {
+                      e.stopPropagation();
+                      setIsEditingNotes(false);
+                      setLocalNotes(gig?.notes || '');
+                    }
+                  }}
+                  placeholder="Consigner ici un échange téléphonique, un mémo logistique ou des notes libres..."
+                  className="w-full text-xs p-2.5 bg-white border border-stone-300 rounded shadow-inner resize-y focus:outline-hidden focus:ring-1 focus:ring-amber-500 font-normal"
+                />
+                <div className="flex items-center justify-end gap-2">
+                  <CordelButton
+                    type="button"
+                    variant="default"
+                    disabled={isSavingNotes || saving}
+                    onClick={() => {
+                      setIsEditingNotes(false);
+                      setLocalNotes(gig?.notes || '');
+                    }}
+                    className="text-[10px] py-1 px-3"
+                  >
+                    Annuler
+                  </CordelButton>
+                  <CordelButton
+                    type="button"
+                    variant="vert"
+                    disabled={isSavingNotes || saving}
+                    onClick={handleSaveNotes}
+                    className="text-[10px] font-extrabold uppercase py-1 px-3"
+                  >
+                    {isSavingNotes ? '⏳ Enregistrement...' : '💾 Enregistrer'}
+                  </CordelButton>
+                </div>
+              </div>
+            ) : (
+              <div
+                onClick={() => setIsEditingNotes(true)}
+                className="group cursor-pointer rounded p-1 hover:bg-white/80 transition-colors"
+                title="Cliquer pour modifier les notes"
+              >
+                <p className="text-xs text-stone-800 whitespace-pre-wrap leading-relaxed">
+                  {gig.notes ? gig.notes : <span className="italic text-stone-400">Aucune note consignée pour ce dossier. Cliquez pour ajouter une note...</span>}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Stepper / Barre de Progression à 5 Étapes Strictes */}
@@ -449,8 +547,8 @@ export default function GigDetailsModal({
           </div>
         </div>
 
-        {/* Pied de Modale & Suppression */}
-        <div className="shrink-0 p-4 border-t border-dashed border-cordel-master-dark/20 bg-[var(--theme-bg)] flex items-center justify-between pb-[max(env(safe-area-inset-bottom),1rem)]">
+        {/* Pied de Modale & Actions Générales */}
+        <div className="shrink-0 p-4 border-t border-dashed border-cordel-master-dark/20 bg-[var(--theme-bg)] flex items-center justify-between pb-[max(env(safe-area-inset-bottom),1rem)] gap-2">
           <CordelButton
             type="button"
             variant="rouge"
@@ -461,9 +559,23 @@ export default function GigDetailsModal({
             🗑️ Supprimer ce dossier
           </CordelButton>
 
-          <CordelButton type="button" variant="default" onClick={onClose} className="text-xs shrink-0">
-            Fermer
-          </CordelButton>
+          <div className="flex items-center gap-2 shrink-0">
+            {onEditGig && (
+              <CordelButton
+                type="button"
+                variant="ocre"
+                onClick={() => onEditGig(gig)}
+                disabled={saving}
+                className="text-xs font-bold shrink-0"
+              >
+                ✏️ Modifier ce dossier
+              </CordelButton>
+            )}
+
+            <CordelButton type="button" variant="default" onClick={onClose} className="text-xs shrink-0">
+              Fermer
+            </CordelButton>
+          </div>
         </div>
       </div>
 

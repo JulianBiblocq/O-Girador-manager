@@ -59,6 +59,9 @@ export default function GigsPipelineManager({ groupId, associationSettings: prop
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [selectedGig, setSelectedGig] = useState(null);
 
+  // Synchronisation temps réel du dossier actif avec le flux Firestore
+  const activeGig = gigs.find((g) => g.id === selectedGig?.id) || selectedGig;
+
   const [isOptionModalOpen, setIsOptionModalOpen] = useState(false);
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [toastNotification, setToastNotification] = useState(null);
@@ -426,7 +429,7 @@ export default function GigsPipelineManager({ groupId, associationSettings: prop
       <GigDetailsModal
         isOpen={isDetailsOpen}
         onClose={() => setIsDetailsOpen(false)}
-        gig={selectedGig}
+        gig={activeGig}
         associationSettings={associationSettings}
         onStatusChange={async (gigId, newStatus) => {
           try {
@@ -448,6 +451,11 @@ export default function GigsPipelineManager({ groupId, associationSettings: prop
           setSelectedGig(gig);
           setIsQuoteModalOpen(true);
         }}
+        onEditGig={(gigToEdit) => {
+          setIsDetailsOpen(false);
+          handleOpenEdit(gigToEdit);
+        }}
+        onUpdateGig={updateGig}
         saving={saving}
       />
 
@@ -456,16 +464,16 @@ export default function GigsPipelineManager({ groupId, associationSettings: prop
         isOpen={isOptionModalOpen}
         onClose={() => {
           setIsOptionModalOpen(false);
-          if (selectedGig) {
+          if (activeGig) {
             setIsDetailsOpen(true); // Retour fluide vers la fiche du dossier
           }
         }}
-        gig={selectedGig}
+        gig={activeGig}
         groupId={groupId}
         onSuccess={() => {
           setToastNotification("Événement créé avec succès et option posée dans le pipeline Diffusion !");
           setTimeout(() => setToastNotification(null), 5000);
-          if (selectedGig) {
+          if (activeGig) {
             setIsDetailsOpen(true);
           }
         }}
@@ -476,17 +484,17 @@ export default function GigsPipelineManager({ groupId, associationSettings: prop
         isOpen={isQuoteModalOpen}
         onClose={() => {
           setIsQuoteModalOpen(false);
-          if (selectedGig) {
+          if (activeGig) {
             setIsDetailsOpen(true); // Sécurité : Retour automatique vers la fiche du dossier sans perte de contexte
           }
         }}
-        gig={selectedGig}
+        gig={activeGig}
         groupId={groupId}
         associationSettings={associationSettings}
         onSuccess={(devisNum) => {
           setToastNotification(`Devis ${devisNum} généré et statut du dossier mis à jour (Devis émis) !`);
           setTimeout(() => setToastNotification(null), 5000);
-          if (selectedGig) {
+          if (activeGig) {
             setIsDetailsOpen(true);
           }
         }}

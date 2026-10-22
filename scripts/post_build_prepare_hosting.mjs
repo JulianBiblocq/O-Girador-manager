@@ -15,15 +15,13 @@ const appHtmlPath = path.join(distDir, 'app.html');
 console.log('=== PRÉPARATION POST-BUILD FIREBASE HOSTING ===');
 
 if (fs.existsSync(indexHtmlPath)) {
-  // 1. Copie vers dist/app.html
+  // 1. Copie vers dist/app.html (sécurise la coexistence physique de index.html et app.html)
   fs.copyFileSync(indexHtmlPath, appHtmlPath);
-  console.log('✅ dist/index.html copié vers dist/app.html');
-
-  // 2. Suppression de dist/index.html pour activer les rewrites sur / et ?groupe=
-  fs.unlinkSync(indexHtmlPath);
-  console.log('✅ dist/index.html supprimé (permet l\'interception Cloud Function serveDynamicApp)');
+  console.log('✅ dist/index.html copié vers dist/app.html (coexistence de index.html et app.html garantie)');
 } else if (fs.existsSync(appHtmlPath)) {
-  console.log('ℹ️ dist/app.html est déjà en place.');
+  // Réciproque si app.html existe sans index.html
+  fs.copyFileSync(appHtmlPath, indexHtmlPath);
+  console.log('✅ dist/app.html copié vers dist/index.html (coexistence garantie)');
 } else {
   console.warn('⚠️ Aucun index.html ou app.html trouvé dans dist/ !');
 }

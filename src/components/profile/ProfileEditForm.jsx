@@ -44,6 +44,7 @@ export default function ProfileEditForm({
   saving,
   isFieldVisible,
   isFieldRequired = () => false,
+  isCostumerieEnabled = true,
   validationError = '',
   isInstrumentsValid = true,
   demanderDroitImage = true,
@@ -344,7 +345,7 @@ export default function ProfileEditForm({
         )}
 
         {/* Tailles Vêtements */}
-        {(isFieldVisible('tailleTshirt') || isFieldVisible('taillePantalon')) && (
+        {isCostumerieEnabled && (isFieldVisible('tailleTshirt') || isFieldVisible('taillePantalon')) && (
           <div className="flex flex-col gap-2 text-left">
             <h5 className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood flex items-center gap-1">
               <XiloShirt size={12} /> Mensurations / Taille des Costumes

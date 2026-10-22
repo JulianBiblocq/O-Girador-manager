@@ -2295,6 +2295,21 @@ exports.serveDynamicApp = onRequest(async (req, res) => {
           headers: { "Cache-Control": "no-cache, no-store, must-revalidate" }
         });
       }
+      if (!htmlResponse.ok && hostingDomain !== "o-girador-organizador.web.app") {
+        htmlResponse = await fetch(`https://o-girador-organizador.web.app/app.html?t=${Date.now()}`, {
+          cache: "no-store",
+          headers: { "Cache-Control": "no-cache, no-store, must-revalidate" }
+        });
+        if (!htmlResponse.ok) {
+          htmlResponse = await fetch(`https://o-girador-organizador.web.app/index.html?t=${Date.now()}`, {
+            cache: "no-store",
+            headers: { "Cache-Control": "no-cache, no-store, must-revalidate" }
+          });
+        }
+      }
+      if (!htmlResponse.ok) {
+        throw new Error(`Impossible de récupérer app.html ou index.html (status: ${htmlResponse.status})`);
+      }
 
       let htmlContent = await htmlResponse.text();
 

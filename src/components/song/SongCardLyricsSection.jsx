@@ -30,7 +30,11 @@ function parseMeasureLines(measure) {
   }
   const rawLines = measure.split(/\r?\n/).filter((l) => !SECTION_STRIP_REGEX.test(l.trim()));
   return rawLines.map((line) => {
-    const clean = line.replace(/^\s*[+/]\s*/, '').replace(CHORD_STRIP_REGEX, '').trim();
+    const clean = line
+      .replace(/^\s*[+/]\s*/, '')
+      .replace(CHORD_STRIP_REGEX, '')
+      .replace(/(^|\s|\*)\+\s+/g, '$1')
+      .trim();
     return clean.split(/(\*[^*]+\*)/g).filter(Boolean).map((p) => {
       const isBold = p.startsWith('*') && p.endsWith('*') && p.length > 2;
       return { text: isBold ? p.slice(1, -1) : p, isBold };

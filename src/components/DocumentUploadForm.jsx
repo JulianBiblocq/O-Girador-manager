@@ -128,12 +128,16 @@ export default function DocumentUploadForm({
   const [signature, setSignature] = useState(documentToEdit ? documentToEdit.signature || '4/4' : '4/4');
   const [bpmDefaut, setBpmDefaut] = useState(documentToEdit ? documentToEdit.bpmDefaut || documentToEdit.bpm || '' : '');
   const [tonaliteDefaut, setTonaliteDefaut] = useState(documentToEdit ? documentToEdit.tonaliteDefaut || documentToEdit.tonalite || '' : '');
-  const [parolesOriginales, setParolesOriginales] = useState(() =>
-    documentToEdit ? normalizeLyricsToHtml(documentToEdit.parolesOriginales) : ''
-  );
-  const [parolesPhonetiques, setParolesPhonetiques] = useState(() =>
-    documentToEdit ? normalizeLyricsToHtml(documentToEdit.parolesPhonetiques) : ''
-  );
+  const [parolesOriginales, setParolesOriginales] = useState(() => {
+    if (!documentToEdit) return '';
+    if (documentToEdit.rawTxtCode) return documentToEdit.rawTxtCode;
+    return normalizeLyricsToHtml(documentToEdit.parolesOriginales);
+  });
+  const [parolesPhonetiques, setParolesPhonetiques] = useState(() => {
+    if (!documentToEdit) return '';
+    if (typeof documentToEdit.parolesPhonetiques === 'string') return documentToEdit.parolesPhonetiques;
+    return normalizeLyricsToHtml(documentToEdit.parolesPhonetiques);
+  });
   const [traduction, setTraduction] = useState(documentToEdit ? documentToEdit.traduction || '' : '');
   const [anecdoteSong, setAnecdoteSong] = useState(documentToEdit ? documentToEdit.anecdote || '' : '');
   const [audioUploadType, setAudioUploadType] = useState('file');

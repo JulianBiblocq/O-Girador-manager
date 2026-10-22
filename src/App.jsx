@@ -249,15 +249,29 @@ const POLES_CONFIG = [
 
 function OrganizadorRedirector({ user, navigateToRoute, brandingStyle }) {
   useEffect(() => {
-    navigateToRoute(user ? '/app' : '/login');
+    const target = user ? '/app' : '/login';
+    navigateToRoute(target);
+    const timer = setTimeout(() => {
+      if (typeof window !== 'undefined' && (window.location.pathname === '/' || window.location.pathname === '')) {
+        window.location.replace(target + window.location.search);
+      }
+    }, 1200);
+    return () => clearTimeout(timer);
   }, [user, navigateToRoute]);
 
   return (
     <div style={brandingStyle} className="min-h-screen flex flex-col justify-center items-center py-12 bg-[#f4ecd8]">
       <div className="animate-spin text-4xl mb-4 select-none">⏳</div>
-      <span className="font-bold text-xs uppercase tracking-widest text-[#8b2a1a]">
-        Redirection...
+      <span className="font-bold text-xs uppercase tracking-widest text-[#8b2a1a] mb-4">
+        Redirection vers l'application...
       </span>
+      <button
+        type="button"
+        onClick={() => navigateToRoute(user ? '/app' : '/login')}
+        className="px-4 py-2 bg-[#8b2a1a] text-white text-xs font-bold uppercase rounded shadow hover:bg-[#6b1f13] transition-colors cursor-pointer"
+      >
+        Accéder à l'application
+      </button>
     </div>
   );
 }
@@ -337,6 +351,7 @@ export default function App() {
   const [checkingProfile, setCheckingProfile] = useState(false);
   const [profileExists, setProfileExists] = useState(() => (isDemoMode() ? true : false));
   const [profileData, setProfileData] = useState(() => (isDemoMode() ? getDemoProfileData() : null));
+  const isWaitingForProfile = Boolean(user && profileData === null && profileExists !== false);
   const [branding, setBranding] = useState(null);
   const [associationName, setAssociationName] = useState('');
   const [majoriteFeminine, setMajoriteFeminine] = useState(false);
@@ -453,10 +468,21 @@ export default function App() {
 
   // Détection exhaustive du mode Vitrine Publique (Mostrador)
   const isVitrineMode = useMemo(() => {
-    if (appMode === 'mostrador') return true;
     if (typeof window === 'undefined') return false;
     const hostname = window.location.hostname || '';
     const path = currentRoute || window.location.pathname || '';
+    const searchParams = new URLSearchParams(window.location.search || '');
+
+    // Requête explicite de vitrine
+    const isExplicitVitrineRequest = searchParams.get('app') === 'mostrador' ||
+      path.startsWith('/vitrine') || path.startsWith('/mostrador') || path.includes('/vitrine') || path.includes('/mostrador');
+
+    // Sur les hôtes d'Organizador (production ou dev), c'est TOUJOURS Organizador sauf demande explicite de vitrine
+    if (hostname.includes('organizador') || hostname.includes('manager')) {
+      return isExplicitVitrineRequest;
+    }
+
+    if (appMode === 'mostrador') return true;
 
     // Si la route est explicitement une page interne d'administration ou setup/login
     if (path.startsWith('/app') || path.startsWith('/events') || path.startsWith('/agenda') || path.startsWith('/forum')) return false;
@@ -475,11 +501,7 @@ export default function App() {
     }
 
     // 3. Paramètre de test (?app=mostrador)
-    const searchParams = new URLSearchParams(window.location.search || '');
-    if (searchParams.get('app') === 'mostrador') return true;
-
-    // 4. Chemin de secours (/vitrine ou /mostrador)
-    if (path.startsWith('/vitrine') || path.startsWith('/mostrador') || path.includes('/vitrine') || path.includes('/mostrador')) return true;
+    if (isExplicitVitrineRequest) return true;
 
     return false;
   }, [appMode, currentRoute, associationData]);
@@ -1290,100 +1312,126 @@ export default function App() {
           setCheckingProfile(true);
           const profileRef = doc(db, 'users', currentUser.uid);
           unsubscribeProfile = onSnapshot(profileRef, (docSnap) => {
-            if (docSnap.exists()) {
-              const data = docSnap.data();
-              const canonicalGroup = canonicalizeGroupId(data.groupId);
+            try {
+              if (docSnap.exists()) {
+                const data = docSnap.data();
+                const canonicalGroup = canonicalizeGroupId(data.groupId);
 
-              // 1. Court-circuit Fondateur / Super-Admin / Mestre / Bureau
-              const isFounderOrSuperAdmin = docSnap.id === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' || 
-                currentUser.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
-                (currentUser.email || '').toLowerCase() === 'julian.bzh@gmail.com' ||
-                (data.email || '').toLowerCase() === 'julian.bzh@gmail.com' ||
-                data.isSystemAdmin === true || 
-                ['super-admin', 'mestre', 'admin'].includes((data.role || '').toLowerCase());
+                // 1. Court-circuit Fondateur / Super-Admin / Mestre / Bureau
+                const isFounderOrSuperAdmin = docSnap.id === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' || 
+                  currentUser.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
+                  (currentUser.email || '').toLowerCase() === 'julian.bzh@gmail.com' ||
+                  (data.email || '').toLowerCase() === 'julian.bzh@gmail.com' ||
+                  data.isSystemAdmin === true || 
+                  ['super-admin', 'mestre', 'admin'].includes((data.role || '').toLowerCase());
 
-              // 2. Fusion strictement additive des tags pour TOUS les utilisateurs
-              const existingTags = Array.isArray(data.tags) ? data.tags : [];
-              const migration = getMigratedRoleAndTags(data);
-              const mergedTags = Array.from(new Set([...existingTags, ...(migration.newTags || [])]));
+                // 2. Fusion strictement additive des tags pour TOUS les utilisateurs
+                const existingTags = Array.isArray(data.tags) ? data.tags : [];
+                const migration = getMigratedRoleAndTags(data);
+                const mergedTags = Array.from(new Set([...existingTags, ...(migration.newTags || [])]));
 
-              // Si le profil était déjà exonéré, préserver absolument le statut :
-              const isExonere = existingTags.includes('Exonéré') ||
-                                data.cotisationStatus === 'exonere' ||
-                                data.paymentStatus === 'exempt' ||
-                                data.paymentStatus === 'exempted' ||
-                                data.isCotisationExoneree === true;
-              if (isExonere && !mergedTags.includes('Exonéré')) {
-                mergedTags.push('Exonéré');
-              }
+                // Si le profil était déjà exonéré, préserver absolument le statut :
+                const isExonere = existingTags.includes('Exonéré') ||
+                                  data.cotisationStatus === 'exonere' ||
+                                  data.paymentStatus === 'exempt' ||
+                                  data.paymentStatus === 'exempted' ||
+                                  data.isCotisationExoneree === true;
+                if (isExonere && !mergedTags.includes('Exonéré')) {
+                  mergedTags.push('Exonéré');
+                }
 
-              // Détermination du rôle résolu
-              const resolvedRole = isFounderOrSuperAdmin ? (data.role || 'mestre') : (migration.needsMigration ? migration.newRole : data.role);
+                // Détermination du rôle résolu
+                const resolvedRole = isFounderOrSuperAdmin ? (data.role || 'mestre') : (migration.needsMigration ? migration.newRole : data.role);
 
-              // 3. Injection immédiate dans le state React (zéro latence)
-              setProfileData({
-                uid: docSnap.id,
-                id: docSnap.id,
-                ...data,
-                groupId: canonicalGroup || data.groupId || (isFounderOrSuperAdmin ? 'Samambaia' : null),
-                role: resolvedRole,
-                tags: mergedTags,
-                isSystemAdmin: isFounderOrSuperAdmin ? true : Boolean(data.isSystemAdmin),
-                canViewAll: isFounderOrSuperAdmin ? true : Boolean(data.canViewAll),
-                paymentStatus: (isFounderOrSuperAdmin || isExonere) ? 'exempt' : (data.paymentStatus || 'unpaid'),
-                cotisationStatus: (isFounderOrSuperAdmin || isExonere) ? 'exonere' : (data.cotisationStatus || 'non_payee'),
-                isCotisationExoneree: (isFounderOrSuperAdmin || isExonere) ? true : Boolean(data.isCotisationExoneree),
-                onboardingCompleted: isFounderOrSuperAdmin ? true : Boolean(data.onboardingCompleted)
-              });
-              setProfileExists(true);
-
-              // 4. Auto-guérison silencieuse de l'onboarding pour le Mestre / Admin dans Firestore
-              if (isFounderOrSuperAdmin && data.onboardingCompleted !== true) {
-                updateDoc(profileRef, { onboardingCompleted: true }).catch(err => {
-                  console.warn("App - Auto-guérison onboardingCompleted profil (non-bloquant) :", err?.message);
+                // 3. Injection immédiate dans le state React (zéro latence)
+                setProfileData({
+                  uid: docSnap.id,
+                  id: docSnap.id,
+                  ...data,
+                  groupId: canonicalGroup || data.groupId || (isFounderOrSuperAdmin ? 'Samambaia' : null),
+                  role: resolvedRole,
+                  tags: mergedTags,
+                  isSystemAdmin: isFounderOrSuperAdmin ? true : Boolean(data.isSystemAdmin),
+                  canViewAll: isFounderOrSuperAdmin ? true : Boolean(data.canViewAll),
+                  paymentStatus: (isFounderOrSuperAdmin || isExonere) ? 'exempt' : (data.paymentStatus || 'unpaid'),
+                  cotisationStatus: (isFounderOrSuperAdmin || isExonere) ? 'exonere' : (data.cotisationStatus || 'non_payee'),
+                  isCotisationExoneree: (isFounderOrSuperAdmin || isExonere) ? true : Boolean(data.isCotisationExoneree),
+                  onboardingCompleted: isFounderOrSuperAdmin ? true : Boolean(data.onboardingCompleted)
                 });
-              }
+                setProfileExists(true);
 
-              // 5. Auto-guérison de la casse de groupId en arrière-plan (non-bloquant)
-              if (data.groupId && data.groupId !== canonicalGroup && canonicalGroup) {
-                updateDoc(profileRef, { groupId: canonicalGroup }).catch(err => {
-                  console.warn("App - Avertissement auto-heal groupId (non-bloquant) :", err);
-                });
-              }
+                // 4. Auto-guérison silencieuse de l'onboarding pour le Mestre / Admin dans Firestore
+                if (isFounderOrSuperAdmin && data.onboardingCompleted !== true) {
+                  updateDoc(profileRef, { onboardingCompleted: true }).catch(err => {
+                    console.warn("App - Auto-guérison onboardingCompleted profil (non-bloquant) :", err?.message);
+                  });
+                }
 
-              // 6. Migration des rôles et tags en arrière-plan (non-bloquant)
-              // STRICTEMENT DÉSACTIVÉ pour le Fondateur / Super-Admin afin d'éviter tout écrasement descendant
-              if (!isFounderOrSuperAdmin && migration.needsMigration) {
-                updateDoc(profileRef, {
-                  role: migration.newRole,
-                  tags: mergedTags
-                }).catch(err => {
-                  console.warn("App - Avertissement migration profil utilisateur (non-bloquant) :", err);
-                });
-              }
-            } else {
-              // Sécurité Fondateur : si Julian se connecte mais que son document est sous l'UID historique
-              const isFounderAccount = currentUser.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' || (currentUser.email || '').toLowerCase() === 'julian.bzh@gmail.com';
-              if (isFounderAccount) {
-                getDoc(doc(db, 'users', 'iA0SweEHyOPzAPGIDVZdeKAV2mk1')).then((founderSnap) => {
-                  if (founderSnap.exists()) {
-                    const fData = founderSnap.data();
-                    const canonicalGroup = canonicalizeGroupId(fData.groupId) || 'Samambaia';
-                    setProfileData({
-                      uid: currentUser.uid,
-                      id: currentUser.uid,
-                      ...fData,
-                      groupId: canonicalGroup,
-                      role: 'mestre',
-                      isSystemAdmin: true,
-                      canViewAll: true,
-                      paymentStatus: 'exempt',
-                      cotisationStatus: 'exonere',
-                      isCotisationExoneree: true,
-                      onboardingCompleted: true
-                    });
-                    setProfileExists(true);
-                  } else {
+                // 5. Auto-guérison de la casse de groupId en arrière-plan (non-bloquant)
+                if (data.groupId && data.groupId !== canonicalGroup && canonicalGroup) {
+                  updateDoc(profileRef, { groupId: canonicalGroup }).catch(err => {
+                    console.warn("App - Avertissement auto-heal groupId (non-bloquant) :", err);
+                  });
+                }
+
+                // 6. Migration des rôles et tags en arrière-plan (non-bloquant)
+                // STRICTEMENT DÉSACTIVÉ pour le Fondateur / Super-Admin afin d'éviter tout écrasement descendant
+                if (!isFounderOrSuperAdmin && migration.needsMigration) {
+                  updateDoc(profileRef, {
+                    role: migration.newRole,
+                    tags: mergedTags
+                  }).catch(err => {
+                    console.warn("App - Avertissement migration profil utilisateur (non-bloquant) :", err);
+                  });
+                }
+              } else {
+                // Sécurité Fondateur : si Julian se connecte mais que son document est sous l'UID historique
+                const isFounderAccount = currentUser.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' || (currentUser.email || '').toLowerCase() === 'julian.bzh@gmail.com';
+                if (isFounderAccount) {
+                  getDoc(doc(db, 'users', 'iA0SweEHyOPzAPGIDVZdeKAV2mk1')).then((founderSnap) => {
+                    if (founderSnap.exists()) {
+                      const fData = founderSnap.data();
+                      const canonicalGroup = canonicalizeGroupId(fData.groupId) || 'Samambaia';
+                      setProfileData({
+                        uid: currentUser.uid,
+                        id: currentUser.uid,
+                        ...fData,
+                        groupId: canonicalGroup,
+                        role: 'mestre',
+                        isSystemAdmin: true,
+                        canViewAll: true,
+                        paymentStatus: 'exempt',
+                        cotisationStatus: 'exonere',
+                        isCotisationExoneree: true,
+                        onboardingCompleted: true
+                      });
+                      setProfileExists(true);
+                    } else {
+                      setProfileData({
+                        uid: currentUser.uid,
+                        id: currentUser.uid,
+                        email: currentUser.email,
+                        firstName: 'Julian',
+                        lastName: 'Biblocq',
+                        prenom: 'Julian',
+                        nom: 'Biblocq',
+                        groupId: 'Samambaia',
+                        role: 'mestre',
+                        isSystemAdmin: true,
+                        canViewAll: true,
+                        paymentStatus: 'exempt',
+                        cotisationStatus: 'exonere',
+                        isCotisationExoneree: true,
+                        onboardingCompleted: true,
+                        isNew: false
+                      });
+                      setProfileExists(true);
+                    }
+                    updateDoc(doc(db, 'users', currentUser.uid), { onboardingCompleted: true }).catch(() => {});
+                    setCheckingProfile(false);
+                    setLoading(false);
+                  }).catch((err) => {
+                    console.warn("App - Erreur lecture secours profil fondateur :", err);
                     setProfileData({
                       uid: currentUser.uid,
                       id: currentUser.uid,
@@ -1403,64 +1451,42 @@ export default function App() {
                       isNew: false
                     });
                     setProfileExists(true);
-                  }
-                  updateDoc(doc(db, 'users', currentUser.uid), { onboardingCompleted: true }).catch(() => {});
-                  setCheckingProfile(false);
-                  setLoading(false);
-                }).catch((err) => {
-                  console.warn("App - Erreur lecture secours profil fondateur :", err);
-                  setProfileData({
-                    uid: currentUser.uid,
-                    id: currentUser.uid,
-                    email: currentUser.email,
-                    firstName: 'Julian',
-                    lastName: 'Biblocq',
-                    prenom: 'Julian',
-                    nom: 'Biblocq',
-                    groupId: 'Samambaia',
-                    role: 'mestre',
-                    isSystemAdmin: true,
-                    canViewAll: true,
-                    paymentStatus: 'exempt',
-                    cotisationStatus: 'exonere',
-                    isCotisationExoneree: true,
-                    onboardingCompleted: true,
-                    isNew: false
+                    setCheckingProfile(false);
+                    setLoading(false);
                   });
-                  setProfileExists(true);
-                  setCheckingProfile(false);
-                  setLoading(false);
-                });
-                return;
-              }
+                  return;
+                }
 
-              // Réconciliation automatique : vérifier si une fiche membre pré-existante créée par le Bureau correspond à cet e-mail
-              if (currentUser?.email) {
-                reconcilePreExistingMember(currentUser).then((reconciled) => {
-                  if (reconciled) {
-                    console.info("App - Fiche pré-existante Bureau réconciliée pour l'UID :", currentUser.uid);
-                    // L'écouteur onSnapshot va automatiquement recevoir le nouveau document créé
-                  } else {
+                // Réconciliation automatique : vérifier si une fiche membre pré-existante créée par le Bureau correspond à cet e-mail
+                if (currentUser?.email) {
+                  reconcilePreExistingMember(currentUser).then((reconciled) => {
+                    if (reconciled) {
+                      console.info("App - Fiche pré-existante Bureau réconciliée pour l'UID :", currentUser.uid);
+                    } else {
+                      setProfileData(null);
+                      setProfileExists(false);
+                      setCheckingProfile(false);
+                      setLoading(false);
+                    }
+                  }).catch((err) => {
+                    console.warn("App - Erreur réconciliation automatique :", err);
                     setProfileData(null);
                     setProfileExists(false);
                     setCheckingProfile(false);
                     setLoading(false);
-                  }
-                }).catch((err) => {
-                  console.warn("App - Erreur réconciliation automatique :", err);
+                  });
+                  return;
+                } else {
                   setProfileData(null);
                   setProfileExists(false);
-                  setCheckingProfile(false);
-                  setLoading(false);
-                });
-                return;
-              } else {
-                setProfileData(null);
-                setProfileExists(false);
+                }
               }
+            } catch (snapErr) {
+              console.error("App - Erreur traitement onSnapshot profil :", snapErr);
+            } finally {
+              setCheckingProfile(false);
+              setLoading(false);
             }
-            setCheckingProfile(false);
-            setLoading(false);
           }, (error) => {
             console.error("App - Erreur onSnapshot profil utilisateur :", error);
             const isFounderAccount = currentUser?.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' || (currentUser?.email || '').toLowerCase() === 'julian.bzh@gmail.com';
@@ -1530,6 +1556,46 @@ export default function App() {
     };
   }, []);
 
+  // Watchdog de sécurité anti-blocage (chargement infini)
+  // Si le chargement ou la vérification du profil dure plus de 3.5 secondes, débloquer impérativement l'écran
+  useEffect(() => {
+    if (!loading && !checkingProfile && !isWaitingForProfile) return;
+
+    const watchdogTimer = setTimeout(() => {
+      console.warn("App - Watchdog de sécurité déclenché : déblocage forcé du chargement.");
+      const currentUser = auth.currentUser;
+      const isFounder = currentUser?.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' || (currentUser?.email || '').toLowerCase() === 'julian.bzh@gmail.com';
+      if (currentUser && isFounder && !profileData) {
+        setProfileData({
+          uid: currentUser.uid,
+          id: currentUser.uid,
+          email: currentUser.email,
+          firstName: 'Julian',
+          lastName: 'Biblocq',
+          prenom: 'Julian',
+          nom: 'Biblocq',
+          displayName: 'Julian Biblocq',
+          groupId: 'Samambaia',
+          groupName: 'Samambaia',
+          role: 'mestre',
+          isSystemAdmin: true,
+          canViewAll: true,
+          paymentStatus: 'exempt',
+          cotisationStatus: 'exonere',
+          isCotisationExoneree: true,
+          onboardingCompleted: true,
+          isNew: false,
+          tags: ['Visiteur', 'Mestre', 'Direction', 'Bureau', 'CA', 'Exonéré', 'Fondateur', 'Webmaster']
+        });
+        setProfileExists(true);
+      }
+      setCheckingProfile(false);
+      setLoading(false);
+    }, 3500);
+
+    return () => clearTimeout(watchdogTimer);
+  }, [loading, checkingProfile, isWaitingForProfile, profileData]);
+
   const handleSignOut = async () => {
     try {
       await signOut(auth);
@@ -1543,11 +1609,213 @@ export default function App() {
 
   const [accessDeniedToast, setAccessDeniedToast] = useState(false);
 
+  // Privilèges étendus et profil effectif (déclarés au niveau racine avant les retours conditionnels)
+  const isPrivilegedUser = Boolean(
+    isSystemOrSuperAdminOrMestre ||
+    isAdministrativeUser ||
+    ['mestre', 'super-admin', 'admin'].includes((profileData?.role || '').toLowerCase()) ||
+    user?.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
+    profileData?.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
+    profileData?.id === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
+    (user?.email || '').toLowerCase() === 'julian.bzh@gmail.com' ||
+    (profileData?.email || '').toLowerCase() === 'julian.bzh@gmail.com'
+  );
+
+  const effectiveProfileData = profileData || (isPrivilegedUser ? {
+    uid: user?.uid || 'iA0SweEHyOPzAPGIDVZdeKAV2mk1',
+    id: user?.uid || 'iA0SweEHyOPzAPGIDVZdeKAV2mk1',
+    email: user?.email || 'julian.bzh@gmail.com',
+    firstName: 'Julian',
+    lastName: 'Biblocq',
+    prenom: 'Julian',
+    nom: 'Biblocq',
+    displayName: user?.displayName || 'Julian Biblocq',
+    groupId: 'Samambaia',
+    groupName: 'Samambaia',
+    role: 'mestre',
+    isSystemAdmin: true,
+    canViewAll: true,
+    paymentStatus: 'exempt',
+    cotisationStatus: 'exonere',
+    isCotisationExoneree: true,
+    onboardingCompleted: true,
+    isNew: false,
+    tags: ['Visiteur', 'Mestre', 'Direction', 'Bureau', 'CA', 'Exonéré', 'Fondateur', 'Webmaster'],
+    photoURL: user?.photoURL || 'https://firebasestorage.googleapis.com/v0/b/o-girador-7828c.firebasestorage.app/o/avatars%2FiA0SweEHyOPzAPGIDVZdeKAV2mk1%2Fprofile_pic_1784300672361.jpg?alt=media&token=a19cfe69-6066-4e58-af9c-1b0665ef08be'
+  } : null);
+
+  const hasAccessMestre = isMasterKeyActive || 
+    effectiveProfileData?.role === 'mestre' || 
+    effectiveProfileData?.role === 'super-admin' || 
+    effectiveProfileData?.role === 'admin' || 
+    effectiveProfileData?.isSystemAdmin === true ||
+    canAccessMestre(effectiveProfileData, permissionsMatrice, userTags);
+
+  const memberTabsVisibility = associationData?.memberTabsVisibility || {};
+
+  // Vérification stricte d'activation d'un Pôle complet (Niveau 1)
+  const isPoleEnabled = (poleId) => {
+    if (poleId === 'accueil' || poleId === 'mon-espace') return true;
+
+    if (poleId === 'vitrine') {
+      const hasVitrineAccess = associationData?.appAccess?.vitrine ?? associationData?.appAccess?.mostrador;
+      if (hasVitrineAccess === false) return false;
+      if (enabledModules?.vitrine === false) return false;
+      return true;
+    }
+
+    if (poleId === 'config') {
+      if (enabledModules?.config === false) return false;
+      return true;
+    }
+
+    if (poleId === 'gouvernance' && enabledModules?.gouvernance === false) return false;
+    if (poleId === 'secretariat' && enabledModules?.secretariat === false) return false;
+    if (poleId === 'diffusion' && enabledModules?.diffusion === false) return false;
+    if (poleId === 'tresorerie' && enabledModules?.tresorerie === false) return false;
+    if (poleId === 'logistique' && enabledModules?.logistique === false && enabledModules?.commandes === false) return false;
+    if (poleId === 'lutherie' && enabledModules?.lutherie === false) return false;
+
+    // Costumerie : désactivé si costumerie === false OU (si costumerie non défini et vestiaire === false)
+    if (poleId === 'costumerie' || poleId === 'vestiaire') {
+      if (enabledModules?.costumerie === false) return false;
+      if (enabledModules?.costumerie === undefined && enabledModules?.vestiaire === false) return false;
+    }
+
+    if (poleId === 'studio' && enabledModules?.studioSocial === false) return false;
+
+    // Pédagogie : désactivé si pedagogie === false OU (si non défini, repli sur mestre + studioSocial)
+    if (poleId === 'pedagogie') {
+      if (enabledModules?.pedagogie === false) return false;
+      if (enabledModules?.pedagogie === undefined && (enabledModules?.mestre === false && enabledModules?.studioSocial === false)) return false;
+    }
+
+    if (poleId === 'mestre' && enabledModules?.mestre === false) return false;
+
+    return true;
+  };
+
+  // Vérification stricte d'activation d'un Onglet (Niveau 2 SaaS)
+  const isModuleEnabled = (tabId, poleId) => {
+    if (!enabledModules) return true;
+
+    // Vitrine : vérifier l'accès appAccess (vitrine ou mostrador) et le toggle module
+    if (poleId === 'vitrine' || (tabId && tabId.startsWith('vitrine-'))) {
+      const hasVitrineAccess = associationData?.appAccess?.vitrine ?? associationData?.appAccess?.mostrador;
+      if (hasVitrineAccess === false) return false;
+      if (enabledModules.vitrine === false) return false;
+      return true;
+    }
+
+    // Config : toujours actif au niveau module si pas explicitement désactivé
+    if (poleId === 'config' || (tabId && tabId.startsWith('config-'))) {
+      if (enabledModules.config === false) return false;
+      return true;
+    }
+
+    // Pôles complets d'administration
+    if (poleId && poleId !== 'mon-espace' && !isPoleEnabled(poleId)) return false;
+
+    // --- RÈGLES À 2 NIVEAUX POUR L'ESPACE MEMBRE ('mon-espace') ---
+    if (poleId === 'mon-espace' || !poleId) {
+      if (tabId === 'materiel') {
+        const hasParent = enabledModules.logistique !== false || enabledModules.lutherie !== false;
+        if (!hasParent || memberTabsVisibility.materiel === false) return false;
+        return true;
+      }
+
+      if (tabId === 'vestiaire') {
+        if (!isPoleEnabled('costumerie')) return false;
+        if (associationData?.wardrobeMemberMode === 'disabled') {
+          const hasCostumerieAdmin = isMasterKeyActive || canAccessPole('costumerie', effectiveProfileData, permissionsMatrice, userTags);
+          if (!hasCostumerieAdmin) return false;
+        }
+        if (memberTabsVisibility.vestiaire === false) return false;
+        return true;
+      }
+
+      if (tabId === 'atelier') {
+        const hasParent = isPoleEnabled('lutherie') || isPoleEnabled('costumerie');
+        if (!hasParent || memberTabsVisibility.atelier === false) return false;
+        return true;
+      }
+
+      if (tabId === 'mon-parcours') {
+        if (!isPoleEnabled('pedagogie')) return false;
+        if (enabledModules.monParcoursGlobal === false) return false;
+        if (memberTabsVisibility.monParcours === false) return false;
+        return true;
+      }
+
+      if (tabId === 'repertoire') {
+        const hasParent = isPoleEnabled('pedagogie') || isPoleEnabled('mestre');
+        if (!hasParent) return false;
+        const effectiveFeatures = features || associationData?.features;
+        const role = (effectiveProfileData?.role || '').toLowerCase();
+        const isMestreOrAdmin = role === 'mestre' || role === 'super-admin' || role === 'admin' || effectiveProfileData?.isSystemAdmin === true;
+        const hasAccessMestreLocal = isMasterKeyActive || isMestreOrAdmin;
+        const isRepertoireAllowed = memberTabsVisibility.repertoire === true || effectiveFeatures?.repertoireEleves === true || hasAccessMestreLocal;
+        if (!isRepertoireAllowed) return false;
+        return true;
+      }
+
+      if (tabId === 'trombinoscope') {
+        if (memberTabsVisibility.trombinoscope === false) return false;
+        return true;
+      }
+
+      if (tabId === 'varal') {
+        if (enabledModules.studioSocial === false) return false;
+        if (memberTabsVisibility.varal === false) return false;
+        return true;
+      }
+
+      if (tabId === 'covoiturage') {
+        if (enabledModules.covoiturage === false || memberTabsVisibility.covoiturage === false) return false;
+        return true;
+      }
+
+      if (tabId === 'forum' && enabledModules.forum === false) return false;
+    }
+
+    // Tab-level checks pour les pôles métiers d'administration
+    if (['gigs-pipeline', 'ca-prestations'].includes(tabId) && enabledModules.diffusion === false) return false;
+    if (['dashboard-finance', 'cotisations', 'events-finances', 'operations-diverses', 'frais-km', 'reports-exports', 'ca-finances'].includes(tabId) && enabledModules.tresorerie === false) return false;
+    if (['inventory', 'logistics-kits', 'logistics-carpool'].includes(tabId) && enabledModules.logistique === false) return false;
+    if (['orders', 'orders-manager'].includes(tabId) && enabledModules.commandes === false) return false;
+    if (['inventory-projects', 'instrument-models', 'inventory-parts', 'inventory-supplies', 'workshop-tools', 'varal-lutherie'].includes(tabId) && enabledModules.lutherie === false) return false;
+    if (['wardrobe-inventory', 'wardrobe-couture', 'wardrobe-sizes', 'wardrobe-projects', 'wardrobe-models', 'wardrobe-pieces', 'wardrobe-supplies', 'wardrobe-tools', 'varal-costumerie'].includes(tabId)) {
+      if (enabledModules.costumerie === false) return false;
+      if (enabledModules.costumerie === undefined && enabledModules.vestiaire === false) return false;
+    }
+    if (['export-annu', 'secretariat-reports', 'studio-events', 'varal-secretariat', 'secretariat-documents'].includes(tabId) && enabledModules.secretariat === false) return false;
+    if (['studio-social', 'studio-lexique', 'varal-manager', 'newsletter', 'varal-photos', 'studio-communication'].includes(tabId) && enabledModules.studioSocial === false) return false;
+    if (['reunion-manager', 'ca-reunions'].includes(tabId) && enabledModules.reunions === false) return false;
+    if (tabId === 'forum' && enabledModules.forum === false) return false;
+    if (['mestre-repertoire', 'mestre-sante-troupe', 'mestre-pedagogy-dashboard', 'varal-manager', 'mestre-pedagogy-qcm', 'mestre-orientation', 'mestre-categories', 'mestre-events', 'mestre-stage-layout', 'mestre-mot-mestre'].includes(tabId) && enabledModules.mestre === false) return false;
+
+    return true;
+  };
+
+  // Garde de routage de sécurité réactif (placé au sommet de App() avec les autres hooks)
+  useEffect(() => {
+    if (currentPole === 'mon-espace' && currentTab && currentTab !== 'dashboard') {
+      if (!isModuleEnabled(currentTab, 'mon-espace')) {
+        setCurrentPole('accueil');
+        setCurrentTab('dashboard');
+      }
+    } else if (currentPole && currentPole !== 'accueil' && currentPole !== 'mon-espace') {
+      if (!isPoleEnabled(currentPole)) {
+        setCurrentPole('accueil');
+        setCurrentTab('dashboard');
+      }
+    }
+  }, [currentPole, currentTab, enabledModules, associationData?.memberTabsVisibility]);
+
   // Interception ProtectedRoutes : si le membre standard tente d'accéder à un pôle ou onglet réservé
   useEffect(() => {
     if (!profileData || profileData.isNew) return;
     // Si l'utilisateur est Mestre (ou direction/admin) et navigue vers le pôle mestre, vitrine ou config, l'accès est garanti d'office
-    const isPrivilegedUser = profileData.role === 'mestre' || profileData.role === 'super-admin' || profileData.role === 'admin' || profileData.isSystemAdmin === true || profileData.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1';
     if ((currentPole === 'mestre' || currentPole === 'vitrine' || currentPole === 'config' || currentPole === null) && isPrivilegedUser) {
       return;
     }
@@ -1586,7 +1854,6 @@ export default function App() {
   // 1. Écran de chargement (Authentification ou chargement Firestore)
   // Sécurisation anti-bascule prématurée : tant qu'un compte Auth est actif et que le profil
   // Firestore n'est pas encore résolu, maintenir impérativement l'écran de chargement
-  const isWaitingForProfile = Boolean(user && profileData === null && profileExists !== false);
   if (loading || checkingProfile || isWaitingForProfile) {
     // Résolution dynamique du visuel : logo de l'association si résolu, sinon macaron neutre O Girador
     const activeLogo = branding?.logoUrl || associationData?.logoUrl || null;
@@ -1611,6 +1878,16 @@ export default function App() {
           <span className="font-black text-xs uppercase tracking-widest text-cordel-wood animate-pulse">
             {checkingProfile ? t('dashboard.loadingProfile') : t('common.loading')}
           </span>
+          <button
+            type="button"
+            onClick={() => {
+              setCheckingProfile(false);
+              setLoading(false);
+            }}
+            className="mt-3 text-[11px] font-bold uppercase tracking-wider text-cordel-wood/80 hover:text-cordel-wood underline cursor-pointer transition-opacity"
+          >
+            Accéder directement
+          </button>
         </div>
       </div>
     );
@@ -1695,12 +1972,16 @@ export default function App() {
       );
     }
 
-    const isSamambaiaHost = typeof window !== 'undefined' && 
+    const isProtectedTenant = typeof window !== 'undefined' && 
       (window.location.hostname === 'samambaia-maracatu.fr' || 
        window.location.hostname === 'www.samambaia-maracatu.fr' ||
-       window.location.hostname.includes('samambaia'));
+       window.location.hostname.includes('samambaia') ||
+       window.location.hostname.includes('sambabulles') ||
+       (urlGroupId && (urlGroupId.toLowerCase() === 'samambaia' || urlGroupId.toLowerCase() === 'sambabulles')) ||
+       (vitrineGroupId && (vitrineGroupId.toLowerCase() === 'samambaia' || vitrineGroupId.toLowerCase() === 'sambabulles')) ||
+       window.location.pathname.toLowerCase().includes('sambabulles'));
 
-    if (tenantError && !isSamambaiaHost) {
+    if (tenantError && !isProtectedTenant) {
       return <TenantNotFound />;
     }
 
@@ -1773,17 +2054,6 @@ export default function App() {
   }
 
   // 4. Déverrouillage absolu de l'Onboarding pour le Mestre / Admin / Super-Admin / Fondateur
-  const isPrivilegedUser = Boolean(
-    isSystemOrSuperAdminOrMestre ||
-    isAdministrativeUser ||
-    ['mestre', 'super-admin', 'admin'].includes((profileData?.role || '').toLowerCase()) ||
-    user?.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
-    profileData?.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
-    profileData?.id === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
-    (user?.email || '').toLowerCase() === 'julian.bzh@gmail.com' ||
-    (profileData?.email || '').toLowerCase() === 'julian.bzh@gmail.com'
-  );
-
   const isProfileComplete = 
     isPrivilegedUser ||
     profileData?.onboardingCompleted === true || 
@@ -1835,84 +2105,6 @@ export default function App() {
   }
 
   // 5. Utilisateur connecté avec profil valide -> Rendu de l'Espace Membre Privé (/app)
-  const effectiveProfileData = profileData || (isPrivilegedUser ? {
-    uid: user?.uid || 'iA0SweEHyOPzAPGIDVZdeKAV2mk1',
-    id: user?.uid || 'iA0SweEHyOPzAPGIDVZdeKAV2mk1',
-    email: user?.email || 'julian.bzh@gmail.com',
-    firstName: 'Julian',
-    lastName: 'Biblocq',
-    prenom: 'Julian',
-    nom: 'Biblocq',
-    displayName: user?.displayName || 'Julian Biblocq',
-    groupId: 'Samambaia',
-    groupName: 'Samambaia',
-    role: 'mestre',
-    isSystemAdmin: true,
-    canViewAll: true,
-    paymentStatus: 'exempt',
-    cotisationStatus: 'exonere',
-    isCotisationExoneree: true,
-    onboardingCompleted: true,
-    isNew: false,
-    tags: ['Visiteur', 'Mestre', 'Direction', 'Bureau', 'CA', 'Exonéré', 'Fondateur', 'Webmaster'],
-    photoURL: user?.photoURL || 'https://firebasestorage.googleapis.com/v0/b/o-girador-7828c.firebasestorage.app/o/avatars%2FiA0SweEHyOPzAPGIDVZdeKAV2mk1%2Fprofile_pic_1784300672361.jpg?alt=media&token=a19cfe69-6066-4e58-af9c-1b0665ef08be'
-  } : null);
-
-  const hasAccessMestre = isMasterKeyActive || 
-    effectiveProfileData?.role === 'mestre' || 
-    effectiveProfileData?.role === 'super-admin' || 
-    effectiveProfileData?.role === 'admin' || 
-    effectiveProfileData?.isSystemAdmin === true ||
-    canAccessMestre(effectiveProfileData, permissionsMatrice, userTags);
-
-  const isModuleEnabled = (tabId, poleId) => {
-    if (!enabledModules) return true;
-
-    // Vitrine : vérifier l'accès appAccess (vitrine ou mostrador) et le toggle module
-    if (poleId === 'vitrine' || (tabId && tabId.startsWith('vitrine-'))) {
-      const hasVitrineAccess = associationData?.appAccess?.vitrine ?? associationData?.appAccess?.mostrador;
-      if (hasVitrineAccess === false) return false;
-      if (enabledModules.vitrine === false) return false;
-      return true;
-    }
-
-    // Config : toujours actif au niveau module si pas explicitement désactivé
-    if (poleId === 'config' || (tabId && tabId.startsWith('config-'))) {
-      if (enabledModules.config === false) return false;
-      return true;
-    }
-
-    // Vérifier Pôles activation
-    if (poleId === 'gouvernance' && enabledModules.gouvernance === false) return false;
-    if (poleId === 'diffusion' && enabledModules.diffusion === false) return false;
-    if (poleId === 'tresorerie' && enabledModules.tresorerie === false) return false;
-    if (poleId === 'secretariat' && enabledModules.secretariat === false) return false;
-    if (poleId === 'logistique' && enabledModules.logistique === false && enabledModules.commandes === false) return false;
-    if (poleId === 'lutherie' && enabledModules.lutherie === false) return false;
-    if (poleId === 'costumerie' && enabledModules.costumerie === false && enabledModules.vestiaire === false) return false;
-    if (poleId === 'vestiaire' && enabledModules.vestiaire === false) return false;
-    if (poleId === 'mestre' && enabledModules.mestre === false) return false;
-    if (poleId === 'pedagogie' && enabledModules.mestre === false && enabledModules.studioSocial === false) return false;
-
-    // Specific Tabs Checks
-    if (['mestre-sante-troupe', 'mestre-pedagogy-dashboard'].includes(tabId) && enabledModules.mestre === false) return false;
-    if (tabId === 'varal-manager' && enabledModules.studioSocial === false) return false;
-
-    // Vérifier Tab-level module basculer
-    if (['gigs-pipeline', 'ca-prestations'].includes(tabId) && enabledModules.diffusion === false) return false;
-    if (['dashboard-finance', 'cotisations', 'events-finances', 'operations-diverses', 'frais-km', 'reports-exports', 'ca-finances'].includes(tabId) && enabledModules.tresorerie === false) return false;
-    if (tabId === 'mon-parcours' && enabledModules.monParcoursGlobal === false) return false;
-    if (tabId === 'repertoire' && features?.repertoireEleves !== true && !hasAccessMestre) return false;
-    if (tabId === 'inventory' && enabledModules.logistique === false) return false;
-    if (['orders', 'orders-manager'].includes(tabId) && enabledModules.commandes === false) return false;
-    if (['wardrobe-projects', 'wardrobe-models', 'wardrobe-pieces', 'wardrobe-supplies', 'wardrobe-tools', 'wardrobe-sizes', 'varal-costumerie', 'wardrobe', 'vestiaire', 'wardrobe-inventory', 'wardrobe-couture'].includes(tabId) && enabledModules.vestiaire === false && enabledModules.costumerie === false) return false;
-    if (['studio-social', 'studio-lexique', 'newsletter'].includes(tabId) && enabledModules.studioSocial === false) return false;
-    if (['reunion-manager', 'ca-reunions'].includes(tabId) && enabledModules.reunions === false) return false;
-    if (tabId === 'forum' && enabledModules.forum === false) return false;
-    if (['mestre-repertoire', 'mestre-sante-troupe', 'mestre-pedagogy-dashboard', 'varal-manager', 'mestre-pedagogy-qcm', 'mestre-orientation', 'mestre-categories', 'mestre-events', 'mestre-stage-layout', 'mestre-mot-mestre'].includes(tabId) && enabledModules.mestre === false) return false;
-
-    return true;
-  };
 
   const checkTabAccess = (tabId, poleId) => {
     // 0. Strict Global Feature Basculer vérifier (Hides & blocks for EVERYONE including super-admin if OFF)
@@ -1973,6 +2165,16 @@ export default function App() {
         return;
       }
     }
+
+    // Garde de navigation pour l'espace membre : vérifier que l'onglet cible est bien activé
+    if (poleId === 'mon-espace' && targetTab && !isModuleEnabled(targetTab, 'mon-espace')) {
+      setAccessDeniedToast(true);
+      setTimeout(() => setAccessDeniedToast(false), 4000);
+      setCurrentPole('accueil');
+      setCurrentTab('dashboard');
+      return;
+    }
+
     setCurrentPole(poleId);
     if (poleId === 'accueil') {
       cleanUrlParams(['eventId', 'threadId']);
@@ -1999,6 +2201,8 @@ export default function App() {
       setCurrentTab(null);
     }
   };
+
+
 
   const handleNavigateToView = (viewName, extraOptions = null) => {
     if (activeMestreEventDetails) {
@@ -2555,6 +2759,7 @@ export default function App() {
                     user={user} 
                     profileData={profileData} 
                     associationName={associationName}
+                    enabledModules={enabledModules}
                     onBack={() => handleNavigateToPole('accueil')} 
                   />
                 ) : currentTab === 'mon-parcours' ? (
@@ -2584,6 +2789,7 @@ export default function App() {
                   <MonAtelier 
                     user={user} 
                     profileData={profileData} 
+                    enabledModules={enabledModules}
                     onBack={() => handleNavigateToPole('accueil')} 
                   />
                 ) : currentTab === 'materiel' ? (

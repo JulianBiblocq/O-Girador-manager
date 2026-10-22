@@ -5,6 +5,7 @@ import { collection, addDoc, doc, updateDoc, writeBatch } from 'firebase/firesto
 import { db, storage } from '../firebase';
 import { useTranslation } from '../components/LanguageContext';
 import { cleanFirestorePayload } from '../utils/firestoreUtils';
+import { toadaToCleanHtml } from '../utils/toadaSerializer';
 
 /**
  * Hook personnalisé gérant l'ensemble du pipeline de soumission, d'upload Firebase Storage,
@@ -413,9 +414,16 @@ export function useDocumentUploadPipeline({
           if (songData.signature) updateData.signature = songData.signature;
           if (songData.bpmDefaut) updateData.bpmDefaut = songData.bpmDefaut;
           if (songData.tonaliteDefaut) updateData.tonaliteDefaut = songData.tonaliteDefaut;
-          updateData.parolesOriginales = songData.parolesOriginales || '';
+          const sourceRaw = songData.rawTxtCode || songData.parolesOriginales || '';
+          const isHtmlSource = /<[a-z][\s\S]*>/i.test(sourceRaw);
+          if (!isHtmlSource && sourceRaw.trim()) {
+            updateData.rawTxtCode = sourceRaw;
+            updateData.parolesOriginales = toadaToCleanHtml(sourceRaw);
+          } else {
+            updateData.parolesOriginales = songData.parolesOriginales || '';
+            if (songData.rawTxtCode) updateData.rawTxtCode = songData.rawTxtCode;
+          }
           updateData.parolesPhonetiques = songData.parolesPhonetiques || '';
-          if (songData.rawTxtCode) updateData.rawTxtCode = songData.rawTxtCode;
           updateData.traduction = songData.traduction || '';
           updateData.anecdote = songData.anecdote || '';
           if (finalAudioUrl) {
@@ -536,9 +544,16 @@ export function useDocumentUploadPipeline({
         if (songData.signature) newDoc.signature = songData.signature;
         if (songData.bpmDefaut) newDoc.bpmDefaut = songData.bpmDefaut;
         if (songData.tonaliteDefaut) newDoc.tonaliteDefaut = songData.tonaliteDefaut;
-        newDoc.parolesOriginales = songData.parolesOriginales || '';
+        const sourceRaw = songData.rawTxtCode || songData.parolesOriginales || '';
+        const isHtmlSource = /<[a-z][\s\S]*>/i.test(sourceRaw);
+        if (!isHtmlSource && sourceRaw.trim()) {
+          newDoc.rawTxtCode = sourceRaw;
+          newDoc.parolesOriginales = toadaToCleanHtml(sourceRaw);
+        } else {
+          newDoc.parolesOriginales = songData.parolesOriginales || '';
+          if (songData.rawTxtCode) newDoc.rawTxtCode = songData.rawTxtCode;
+        }
         newDoc.parolesPhonetiques = songData.parolesPhonetiques || '';
-        if (songData.rawTxtCode) newDoc.rawTxtCode = songData.rawTxtCode;
         newDoc.traduction = songData.traduction || '';
         newDoc.anecdote = songData.anecdote || '';
         if (finalAudioUrl) {

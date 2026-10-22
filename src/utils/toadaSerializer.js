@@ -59,6 +59,7 @@ export function toadaToCleanHtml(rawTxtCode = '') {
       let clean = line
         .replace(/^\s*[+/]\s*/, '')
         .replace(CHORD_REGEX, '')
+        .replace(/(^|\s|\*)\+\s+/g, '$1')
         .trim();
       // Remplace *gras* par <strong>
       clean = clean.replace(/\*([^*]+)\*/g, '<strong>$1</strong>');

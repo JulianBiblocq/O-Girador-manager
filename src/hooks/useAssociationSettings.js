@@ -17,6 +17,7 @@ import {
   normalizeUniverseId
 } from '../constants/universeDefaults';
 import { generateCombinedSealBlob, updateDocumentOpenGraphTags, uploadCombinedSealToStorage } from '../utils/shareUtils.js';
+import { canonicalizeGroupId } from '../utils/tenantUtils';
 export { uploadCombinedSealToStorage } from '../utils/shareUtils.js';
 
 export const DEFAULT_FIELDS_CONFIG = {
@@ -45,16 +46,20 @@ export const DEFAULT_VARAL_CATEGORIES = [
 
 export const DEFAULT_ENABLED_MODULES = {
   gouvernance: true,
-  diffusion: true,
+  secretariat: true,
   tresorerie: true,
   logistique: true,
+  lutherie: true,
+  costumerie: true,
+  diffusion: true,
+  pedagogie: true,
   commandes: true,
-  vestiaire: true,
+  vestiaire: true, // Rétrocompatibilité
   covoiturage: true,
   studioSocial: true,
   reunions: true,
   forum: true,
-  mestre: true,
+  mestre: true, // Rétrocompatibilité
   monParcoursGlobal: true,
   monParcoursPercussion: true,
   monParcoursDanse: true,
@@ -62,6 +67,17 @@ export const DEFAULT_ENABLED_MODULES = {
   monParcoursAtelier: true,
   monParcoursCulture: true,
   defisEnLigne: false // Désactivé par défaut pour les adhérents standards
+};
+
+export const DEFAULT_MEMBER_TABS_VISIBILITY = {
+  materiel: true,
+  vestiaire: true,
+  atelier: true,
+  monParcours: true,
+  repertoire: false, // Par défaut false pour les nouvelles assos, synchronisé avec features.repertoireEleves
+  trombinoscope: true,
+  varal: true,
+  covoiturage: true
 };
 
 export const DEFAULT_ECOSYSTEM_ACCESS = {
@@ -265,6 +281,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t, initial
     eventTypeConfigs: {},
     wardrobeMemberMode: 'personal',
     enabledModules: DEFAULT_ENABLED_MODULES,
+    memberTabsVisibility: DEFAULT_MEMBER_TABS_VISIBILITY,
     ecosystemAccess: DEFAULT_ECOSYSTEM_ACCESS,
     activerPresenceEnLigne: true,
     enableIndividualProgression: false,
@@ -387,14 +404,19 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t, initial
   };
 
   useEffect(() => {
-    if (!isAuthorized || !groupId) {
+    const cleanGroupId = canonicalizeGroupId(groupId);
+    if (!isAuthorized || !cleanGroupId) {
       setLoading(false);
       return;
     }
 
     setLoading(true);
 
-    const credentialsRef = doc(db, 'associations', groupId, 'private_settings', 'credentials');
+    const safetyTimer = setTimeout(() => {
+      setLoading(false);
+    }, 3000);
+
+    const credentialsRef = doc(db, 'associations', cleanGroupId, 'private_settings', 'credentials');
     getDoc(credentialsRef).then((docSnap) => {
       if (docSnap.exists()) {
         const creds = docSnap.data();
@@ -410,8 +432,9 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t, initial
       console.error("AssociationSettings - Erreur de lecture des credentials :", err);
     });
 
-    const assocRef = doc(db, 'associations', groupId);
+    const assocRef = doc(db, 'associations', cleanGroupId);
     const unsubscribe = onSnapshot(assocRef, (docSnap) => {
+      clearTimeout(safetyTimer);
       if (docSnap.exists()) {
         const data = docSnap.data();
         setFormData(prev => ({
@@ -569,7 +592,42 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t, initial
             : ['prestation', 'repetition', 'stage', 'atelier', 'reunion'],
           eventTypeConfigs: data.eventTypeConfigs || {},
           wardrobeMemberMode: data.wardrobeMemberMode || 'personal',
-          enabledModules: data.enabledModules ? { ...DEFAULT_ENABLED_MODULES, ...data.enabledModules } : DEFAULT_ENABLED_MODULES,
+          enabledModules: (() => {
+            const raw = data.enabledModules || {};
+            return {
+              ...DEFAULT_ENABLED_MODULES,
+              ...raw,
+              // Rétrocompatibilité costumerie <-> vestiaire
+              costumerie: raw.costumerie !== undefined ? raw.costumerie : (raw.vestiaire !== undefined ? raw.vestiaire : true),
+              // Rétrocompatibilité pédagogie <-> mestre / studioSocial
+              pedagogie: raw.pedagogie !== undefined ? raw.pedagogie : !(raw.mestre === false && raw.studioSocial === false),
+              // Rétrocompatibilité lutherie <-> logistique
+              lutherie: raw.lutherie !== undefined ? raw.lutherie : (raw.logistique !== undefined ? raw.logistique : true),
+              // Rétrocompatibilité secrétariat <-> gouvernance
+              secretariat: raw.secretariat !== undefined ? raw.secretariat : (raw.gouvernance !== undefined ? raw.gouvernance : true)
+            };
+          })(),
+          memberTabsVisibility: (() => {
+            const rawVis = data.memberTabsVisibility || {};
+            const rawMod = data.enabledModules || {};
+            const effectiveCostumerie = rawMod.costumerie !== undefined ? rawMod.costumerie : (rawMod.vestiaire !== undefined ? rawMod.vestiaire : true);
+            return {
+              ...DEFAULT_MEMBER_TABS_VISIBILITY,
+              ...rawVis,
+              // Si non défini, hériter de features.repertoireEleves
+              repertoire: rawVis.repertoire !== undefined 
+                ? Boolean(rawVis.repertoire) 
+                : (data.features?.repertoireEleves === true),
+              // Si non défini, hériter de enableIndividualProgression et monParcoursGlobal
+              monParcours: rawVis.monParcours !== undefined 
+                ? Boolean(rawVis.monParcours) 
+                : (data.enableIndividualProgression !== false && rawMod.monParcoursGlobal !== false),
+              // Si non défini, hériter du mode vestiaire adhérent et de costumerie
+              vestiaire: rawVis.vestiaire !== undefined 
+                ? Boolean(rawVis.vestiaire) 
+                : (data.wardrobeMemberMode !== 'disabled' && effectiveCostumerie !== false)
+            };
+          })(),
           ecosystemAccess: data.ecosystemAccess ? { ...DEFAULT_ECOSYSTEM_ACCESS, ...data.ecosystemAccess } : DEFAULT_ECOSYSTEM_ACCESS,
           activerPresenceEnLigne: data.activerPresenceEnLigne !== false,
           enableIndividualProgression: data.enableIndividualProgression || false,
@@ -613,11 +671,15 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t, initial
       }
       setLoading(false);
     }, (error) => {
+      clearTimeout(safetyTimer);
       console.error("AssociationSettings - Erreur onSnapshot association :", error);
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      clearTimeout(safetyTimer);
+      unsubscribe();
+    };
   }, [groupId, isAuthorized]);
 
   const handleSaveHelloAssoKey = async () => {
@@ -898,6 +960,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t, initial
         eventTypeConfigs: formData.eventTypeConfigs || {},
         wardrobeMemberMode: formData.wardrobeMemberMode || 'personal',
         enabledModules: formData.enabledModules || DEFAULT_ENABLED_MODULES,
+        memberTabsVisibility: formData.memberTabsVisibility || DEFAULT_MEMBER_TABS_VISIBILITY,
         ecosystemAccess: formData.ecosystemAccess || DEFAULT_ECOSYSTEM_ACCESS,
         activerPresenceEnLigne: formData.activerPresenceEnLigne !== false,
         enableIndividualProgression: formData.enableIndividualProgression || false,

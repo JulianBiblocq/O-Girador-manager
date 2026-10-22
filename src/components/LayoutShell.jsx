@@ -242,6 +242,50 @@ export default function LayoutShell({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  const memberTabsVisibility = associationData?.memberTabsVisibility || {};
+
+  // Strict Feature Toggle check for the entire Pole (enabled globally for group)
+  const isPoleEnabled = (poleId) => {
+    if (poleId === 'accueil' || poleId === 'mon-espace') return true;
+
+    if (poleId === 'vitrine') {
+      const hasVitrineAccess = associationData?.appAccess?.vitrine ?? associationData?.appAccess?.mostrador;
+      if (hasVitrineAccess === false) return false;
+      if (enabledModules?.vitrine === false) return false;
+      return true;
+    }
+
+    if (poleId === 'config') {
+      if (enabledModules?.config === false) return false;
+      return true;
+    }
+
+    if (poleId === 'gouvernance' && enabledModules?.gouvernance === false) return false;
+    if (poleId === 'secretariat' && enabledModules?.secretariat === false) return false;
+    if (poleId === 'diffusion' && enabledModules?.diffusion === false) return false;
+    if (poleId === 'tresorerie' && enabledModules?.tresorerie === false) return false;
+    if (poleId === 'logistique' && enabledModules?.logistique === false && enabledModules?.commandes === false) return false;
+    if (poleId === 'lutherie' && enabledModules?.lutherie === false) return false;
+
+    // Costumerie : désactivé si costumerie === false OU (si costumerie non défini et vestiaire === false)
+    if (poleId === 'costumerie' || poleId === 'vestiaire') {
+      if (enabledModules?.costumerie === false) return false;
+      if (enabledModules?.costumerie === undefined && enabledModules?.vestiaire === false) return false;
+    }
+
+    if (poleId === 'studio' && enabledModules?.studioSocial === false) return false;
+
+    // Pédagogie : désactivé si pedagogie === false OU (si non défini, repli sur mestre + studioSocial)
+    if (poleId === 'pedagogie') {
+      if (enabledModules?.pedagogie === false) return false;
+      if (enabledModules?.pedagogie === undefined && (enabledModules?.mestre === false && enabledModules?.studioSocial === false)) return false;
+    }
+
+    if (poleId === 'mestre' && enabledModules?.mestre === false) return false;
+
+    return true;
+  };
+
   const isModuleEnabled = (tabId, poleId) => {
     if (!enabledModules) return true;
 
@@ -259,84 +303,86 @@ export default function LayoutShell({
       return true;
     }
 
-    // Vérifier Pole-level module basculer
-    if (poleId === 'gouvernance' && enabledModules?.gouvernance === false) return false;
-    if (poleId === 'diffusion' && enabledModules.diffusion === false) return false;
-    if (poleId === 'tresorerie' && enabledModules.tresorerie === false) return false;
-    if (poleId === 'logistique' && enabledModules.logistique === false && enabledModules.commandes === false) return false;
-    if (poleId === 'vestiaire' && enabledModules.vestiaire === false) return false;
-    if (poleId === 'costumerie' && enabledModules.vestiaire === false && enabledModules.costumerie === false) return false;
-    if (poleId === 'mestre' && enabledModules.mestre === false) return false;
+    // Pôles d'administration complets
+    if (poleId && poleId !== 'mon-espace' && !isPoleEnabled(poleId)) return false;
 
-    // Vérifier Tab-level module basculer
-    if (tabId === 'gigs-pipeline' && enabledModules.diffusion === false) return false;
-    if (['dashboard-finance', 'cotisations', 'events-finances', 'operations-diverses', 'frais-km', 'reports-exports'].includes(tabId) && enabledModules.tresorerie === false) return false;
-    if (tabId === 'inventory' && enabledModules.logistique === false) return false;
-    if (tabId === 'orders-manager' && enabledModules.commandes === false) return false;
-    if (['vestiaire', 'wardrobe-inventory', 'wardrobe-couture', 'wardrobe-sizes', 'wardrobe-projects', 'wardrobe-models', 'wardrobe-pieces', 'wardrobe-supplies', 'wardrobe-tools', 'varal-costumerie'].includes(tabId) && enabledModules.vestiaire === false && enabledModules.costumerie === false) return false;
-
-    // Gestion modulaire du Vestiaire Adhérent ('personal' | 'collective_workshop' | 'disabled')
-    if (tabId === 'vestiaire' && (poleId === 'mon-espace' || !poleId)) {
-      const wardrobeMode = associationData?.wardrobeMemberMode || 'personal';
-      if (wardrobeMode === 'disabled') {
-        const hasCostumerieAdmin = isMasterKeyActive || canAccessPole('costumerie', currentProfile, permissionsMatrice, userTags, effectiveBreakGlassActive);
-        if (!hasCostumerieAdmin) return false;
+    // --- RÈGLES À 2 NIVEAUX POUR L'ESPACE MEMBRE ('mon-espace') ---
+    if (poleId === 'mon-espace' || !poleId) {
+      if (tabId === 'materiel') {
+        const hasParent = enabledModules.logistique !== false || enabledModules.lutherie !== false;
+        if (!hasParent || memberTabsVisibility.materiel === false) return false;
+        return true;
       }
+
+      if (tabId === 'vestiaire') {
+        if (!isPoleEnabled('costumerie')) return false;
+        if (associationData?.wardrobeMemberMode === 'disabled') {
+          const hasCostumerieAdmin = isMasterKeyActive || canAccessPole('costumerie', currentProfile, permissionsMatrice, userTags, effectiveBreakGlassActive);
+          if (!hasCostumerieAdmin) return false;
+        }
+        if (memberTabsVisibility.vestiaire === false) return false;
+        return true;
+      }
+
+      if (tabId === 'atelier') {
+        const hasParent = isPoleEnabled('lutherie') || isPoleEnabled('costumerie');
+        if (!hasParent || memberTabsVisibility.atelier === false) return false;
+        return true;
+      }
+
+      if (tabId === 'mon-parcours') {
+        if (!isPoleEnabled('pedagogie')) return false;
+        if (enabledModules.monParcoursGlobal === false) return false;
+        if (memberTabsVisibility.monParcours === false) return false;
+        return true;
+      }
+
+      if (tabId === 'repertoire') {
+        const hasParent = isPoleEnabled('pedagogie') || isPoleEnabled('mestre');
+        if (!hasParent) return false;
+        const effectiveFeatures = features || associationData?.features;
+        const role = (currentProfile?.role || '').toLowerCase();
+        const isMestreOrAdmin = role === 'mestre' || role === 'super-admin' || role === 'admin' || currentProfile?.isSystemAdmin === true;
+        const hasAccessMestreLocal = !isSimulating && (isMasterKeyActive || isMestreOrAdmin);
+        const isRepertoireAllowed = memberTabsVisibility.repertoire === true || effectiveFeatures?.repertoireEleves === true || hasAccessMestreLocal;
+        if (!isRepertoireAllowed) return false;
+        return true;
+      }
+
+      if (tabId === 'trombinoscope') {
+        if (memberTabsVisibility.trombinoscope === false) return false;
+        return true;
+      }
+
+      if (tabId === 'varal') {
+        if (enabledModules.studioSocial === false) return false;
+        if (memberTabsVisibility.varal === false) return false;
+        return true;
+      }
+
+      if (tabId === 'covoiturage') {
+        if (enabledModules.covoiturage === false || memberTabsVisibility.covoiturage === false) return false;
+        return true;
+      }
+
+      if (tabId === 'forum' && enabledModules.forum === false) return false;
     }
-    if (['studio-social', 'studio-lexique', 'varal-manager'].includes(tabId) && enabledModules.studioSocial === false) return false;
+
+    // Tab-level checks pour les pôles métiers d'administration
+    if (tabId === 'gigs-pipeline' && enabledModules.diffusion === false) return false;
+    if (['dashboard-finance', 'cotisations', 'events-finances', 'operations-diverses', 'frais-km', 'reports-exports', 'ca-finances'].includes(tabId) && enabledModules.tresorerie === false) return false;
+    if (['inventory', 'logistics-kits', 'logistics-carpool'].includes(tabId) && enabledModules.logistique === false) return false;
+    if (['orders', 'orders-manager'].includes(tabId) && enabledModules.commandes === false) return false;
+    if (['inventory-projects', 'instrument-models', 'inventory-parts', 'inventory-supplies', 'workshop-tools', 'varal-lutherie'].includes(tabId) && enabledModules.lutherie === false) return false;
+    if (['wardrobe-inventory', 'wardrobe-couture', 'wardrobe-sizes', 'wardrobe-projects', 'wardrobe-models', 'wardrobe-pieces', 'wardrobe-supplies', 'wardrobe-tools', 'varal-costumerie'].includes(tabId)) {
+      if (enabledModules.costumerie === false) return false;
+      if (enabledModules.costumerie === undefined && enabledModules.vestiaire === false) return false;
+    }
+    if (['export-annu', 'secretariat-reports', 'studio-events', 'varal-secretariat', 'secretariat-documents'].includes(tabId) && enabledModules.secretariat === false) return false;
+    if (['studio-social', 'studio-lexique', 'varal-manager', 'newsletter', 'varal-photos', 'studio-communication'].includes(tabId) && enabledModules.studioSocial === false) return false;
     if (['reunion-manager', 'ca-reunions'].includes(tabId) && enabledModules.reunions === false) return false;
     if (tabId === 'forum' && enabledModules.forum === false) return false;
     if (['mestre-repertoire', 'mestre-sante-troupe', 'mestre-pedagogy-manager', 'mestre-orientation', 'mestre-events', 'mestre-stage-layout', 'mestre-mot-mestre'].includes(tabId) && enabledModules.mestre === false) return false;
-
-    if (tabId === 'mon-parcours') {
-      if (enabledModules.monParcoursGlobal === false) return false;
-    }
-
-    if (tabId === 'repertoire') {
-      const effectiveFeatures = features || associationData?.features;
-      const role = (currentProfile?.role || '').toLowerCase();
-      const isMestreOrAdmin = role === 'mestre' || role === 'super-admin' || role === 'admin' || currentProfile?.isSystemAdmin === true;
-      const hasAccessMestreLocal = !isSimulating && (isMasterKeyActive || isMestreOrAdmin);
-      if (effectiveFeatures?.repertoireEleves !== true && !hasAccessMestreLocal) return false;
-    }
-
-    return true;
-  };
-
-  const checkTabAccess = (tabId, poleId) => {
-    // 0. Strict Global Feature Basculer vérifier (Hides for EVERYONE including super-admin if OFF)
-    if (!isModuleEnabled(tabId, poleId)) return false;
-
-    // Master Key Bypass ONLY if Break-Glass Technical Intervention Mode is ACTIVE
-    if (isMasterKeyActive) return true;
-
-    return canAccessTabPermission(tabId, poleId, currentProfile, permissionsMatrice, userTags, effectiveBreakGlassActive);
-  };
-
-
-  // Strict Feature Basculer vérifier for the entire Pole (enabled globally for group)
-  const isPoleEnabled = (poleId) => {
-    if (poleId === 'accueil' || poleId === 'mon-espace') return true;
-
-    if (poleId === 'vitrine') {
-      const hasVitrineAccess = associationData?.appAccess?.vitrine ?? associationData?.appAccess?.mostrador;
-      if (hasVitrineAccess === false) return false;
-      if (enabledModules?.vitrine === false) return false;
-      return true;
-    }
-
-    if (poleId === 'config') {
-      if (enabledModules?.config === false) return false;
-      return true;
-    }
-
-    if (poleId === 'gouvernance' && enabledModules?.gouvernance === false) return false;
-    if (poleId === 'tresorerie' && enabledModules?.tresorerie === false) return false;
-    if (poleId === 'logistique' && enabledModules?.logistique === false && enabledModules?.commandes === false) return false;
-    if (poleId === 'costumerie' && enabledModules?.vestiaire === false && enabledModules?.costumerie === false) return false;
-
-    if (poleId === 'mestre' && enabledModules?.mestre === false) return false;
-    if (poleId === 'pedagogie' && enabledModules?.mestre === false && enabledModules?.studioSocial === false) return false;
 
     return true;
   };
@@ -354,6 +400,12 @@ export default function LayoutShell({
     }
 
     return false;
+  };
+
+  const checkTabAccess = (tabId, poleId) => {
+    if (!isModuleEnabled(tabId, poleId)) return false;
+    if (isMasterKeyActive) return true;
+    return canAccessTabPermission(tabId, poleId, currentProfile, permissionsMatrice, userTags, effectiveBreakGlassActive);
   };
 
   // En mode simulation, les prérogatives réelles du Super-Administrateur racine sont neutralisées

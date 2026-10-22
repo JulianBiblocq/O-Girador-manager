@@ -10,18 +10,18 @@ console.log('🧪 Lancement des tests de résolution automatique de la Vitrine (
 // 1. Test association "Samb'à bulles" sans domaine propre
 {
   const url1 = getVitrineUrl('sambabulles', {});
-  assert.equal(url1, 'https://mostrador.o-girador.com/?tenant=sambabulles', 'Échec résolution URL par groupId direct');
+  assert.equal(url1, 'https://mostrador.o-girador.com/sambabulles', 'Échec résolution URL par groupId direct');
 
   const url2 = getVitrineUrl({ mostrador: 'https://mostrador.o-girador.com' }, { id: 'sambabulles' });
-  assert.equal(url2, 'https://mostrador.o-girador.com/?tenant=sambabulles', 'Échec résolution URL via settings.id');
+  assert.equal(url2, 'https://mostrador.o-girador.com/sambabulles', 'Échec résolution URL via settings.id');
 
   const url3 = getVitrineUrl({ mostrador: 'https://mostrador.o-girador.com' }, {}, 'sambabulles');
-  assert.equal(url3, 'https://mostrador.o-girador.com/?tenant=sambabulles', 'Échec résolution URL via 3e argument explicitGroupId');
+  assert.equal(url3, 'https://mostrador.o-girador.com/sambabulles', 'Échec résolution URL via 3e argument explicitGroupId');
 
   const urlCaseInsensitive = getVitrineUrl('  SambaBulles  ', {});
-  assert.equal(urlCaseInsensitive, 'https://mostrador.o-girador.com/?tenant=sambabulles', 'Échec normalisation minuscules/trim');
+  assert.equal(urlCaseInsensitive, 'https://mostrador.o-girador.com/sambabulles', 'Échec normalisation minuscules/trim');
 
-  console.log('✅ Test 1 validé : Résolution de Samb\'à bulles vers https://mostrador.o-girador.com/?tenant=sambabulles');
+  console.log('✅ Test 1 validé : Résolution de Samb\'à bulles vers https://mostrador.o-girador.com/sambabulles');
 }
 
 // 2. Test domaine personnalisé propre (customDomain string)

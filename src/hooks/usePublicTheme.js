@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { doc, onSnapshot, collection, getDocs, limit, query } from 'firebase/firestore';
 import { db } from '../firebase';
 import { DEFAULT_PUBLIC_THEME, DEFAULT_VITRINE_TEXTS } from './useAssociationSettings';
+import { canonicalizeGroupId } from '../utils/tenantUtils';
 
 /**
  * Utilitaire d'aide à la construction d'un objet thème public à partir d'un snapshot Firestore
@@ -44,7 +45,9 @@ const buildThemeData = (data) => {
     formulesRecrutement: Array.isArray(data.publicTheme?.formulesRecrutement)
       ? data.publicTheme.formulesRecrutement
       : (data.publicTheme?.formulesRecrutement || []),
-    isPublished: data.publicTheme?.isPublished === true, // Stricte vérification boolean !
+    isPublished: data.publicTheme?.isPublished !== undefined 
+      ? Boolean(data.publicTheme.isPublished) 
+      : (data.appAccess?.vitrine !== false && data.ecosystemAccess?.vitrine !== false),
     afficherVieAssociative: data.publicTheme?.afficherVieAssociative !== false,
     afficherRecrutement: data.publicTheme?.afficherRecrutement !== false,
     afficherGalerie: data.publicTheme?.afficherGalerie !== false,
@@ -91,7 +94,13 @@ export function usePublicTheme(groupId, themeOverride = null) {
 
     const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
     const urlTenant = searchParams ? (searchParams.get('tenant') || searchParams.get('groupe') || searchParams.get('groupId') || searchParams.get('assoc')) : null;
-    const effectiveGroupId = groupId || urlTenant;
+    const rawGroupId = groupId || urlTenant;
+    const effectiveGroupId = canonicalizeGroupId(rawGroupId);
+
+    // Watchdog de sécurité anti-blocage : débloque loading après 2.5 secondes
+    const safetyTimer = setTimeout(() => {
+      setLoading(false);
+    }, 2500);
 
     const tryFetchDefaultAssociation = async () => {
       try {
@@ -107,13 +116,14 @@ export function usePublicTheme(groupId, themeOverride = null) {
         console.error("usePublicTheme - Erreur lors de la récupération de l'association par défaut :", err);
         setPublicTheme(DEFAULT_PUBLIC_THEME);
       } finally {
+        clearTimeout(safetyTimer);
         setLoading(false);
       }
     };
 
     if (!effectiveGroupId) {
       tryFetchDefaultAssociation();
-      return;
+      return () => clearTimeout(safetyTimer);
     }
 
     const assocRef = doc(db, 'associations', effectiveGroupId);
@@ -121,6 +131,7 @@ export function usePublicTheme(groupId, themeOverride = null) {
     const unsubscribe = onSnapshot(
       assocRef,
       (docSnap) => {
+        clearTimeout(safetyTimer);
         if (docSnap.exists()) {
           const data = docSnap.data();
           setPublicTheme(buildThemeData(data));
@@ -132,13 +143,17 @@ export function usePublicTheme(groupId, themeOverride = null) {
         setLoading(false);
       },
       (err) => {
+        clearTimeout(safetyTimer);
         console.error("usePublicTheme - Erreur lors de l'écoute Firestore :", err);
         setError(err);
         setLoading(false);
       }
     );
 
-    return () => unsubscribe();
+    return () => {
+      clearTimeout(safetyTimer);
+      unsubscribe();
+    };
   }, [groupId, themeOverride]);
 
   // 2. Injection dynamique des balises <link> (Google Fonts) et <style> (Variables CSS) dans le DOM

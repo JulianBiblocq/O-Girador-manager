@@ -12,15 +12,30 @@ import { useTranslation } from '../LanguageContext';
  * - 🧵 Vestiaire & Costumes : Confection et personnalisation des tenues, bracelets et chapeaux.
  * - 🎨 Artisanat : Reliure de carnets de toadas, pochoirs, travail du cuir et accessoires.
  */
-export default function MonAtelier({ user, profileData, onBack, initialSubTab = 'instruments' }) {
+export default function MonAtelier({ user, profileData, onBack, initialSubTab = null, enabledModules = {} }) {
   const { t } = useTranslation();
-  const [activeSubTab, setActiveSubTab] = useState(initialSubTab);
+
+  const isLutherieActive = enabledModules?.lutherie !== false;
+  const isCostumerieActive = enabledModules?.costumerie !== false && (enabledModules?.costumerie !== undefined || enabledModules?.vestiaire !== false);
 
   const subTabs = [
-    { id: 'instruments', label: t('workshopMember.tabInstruments'), icon: '🥁', description: 'Fabrication et assemblage' },
-    { id: 'vestiaire', label: t('workshopMember.tabCostumes'), icon: '🧵', description: 'Couture et ornements' },
+    ...(isLutherieActive ? [{ id: 'instruments', label: t('workshopMember.tabInstruments'), icon: '🥁', description: 'Fabrication et assemblage' }] : []),
+    ...(isCostumerieActive ? [{ id: 'vestiaire', label: t('workshopMember.tabCostumes'), icon: '🧵', description: 'Couture et ornements' }] : []),
     { id: 'artisanat', label: t('workshopMember.tabCrafts'), icon: '🎨', description: 'Reliure, pochoirs et accessoires' }
   ];
+
+  const defaultTab = (initialSubTab && subTabs.some(t => t.id === initialSubTab)) 
+    ? initialSubTab 
+    : (subTabs[0]?.id || 'artisanat');
+
+  const [activeSubTab, setActiveSubTab] = useState(defaultTab);
+
+  // Synchronisation sécurisée si un pôle parent devient inactif
+  React.useEffect(() => {
+    if (!subTabs.some(t => t.id === activeSubTab)) {
+      setActiveSubTab(subTabs[0]?.id || 'artisanat');
+    }
+  }, [isLutherieActive, isCostumerieActive]);
 
   return (
     <div className="flex flex-col gap-5 p-4 max-w-6xl mx-auto">
@@ -71,18 +86,18 @@ export default function MonAtelier({ user, profileData, onBack, initialSubTab = 
 
       {/* Contenu du sous-onglet sélectionné */}
       <div className="mt-1">
-        {activeSubTab === 'instruments' && (
+        {activeSubTab === 'instruments' && isLutherieActive && (
           <StudentInstrumentsWorkshop
             user={user}
             profileData={profileData}
           />
         )}
 
-        {activeSubTab === 'vestiaire' && (
+        {activeSubTab === 'vestiaire' && isCostumerieActive && (
           <div className="flex flex-col gap-4">
             <AtelierCouture
               groupId={profileData?.groupId}
-              onBack={() => setActiveSubTab('instruments')}
+              onBack={() => setActiveSubTab(subTabs[0]?.id || 'artisanat')}
             />
           </div>
         )}
@@ -92,7 +107,7 @@ export default function MonAtelier({ user, profileData, onBack, initialSubTab = 
             groupId={profileData?.groupId}
             user={user}
             profileData={profileData}
-            onBack={() => setActiveSubTab('instruments')}
+            onBack={() => setActiveSubTab(subTabs[0]?.id || 'artisanat')}
           />
         )}
       </div>

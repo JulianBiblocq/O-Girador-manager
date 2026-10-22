@@ -75,10 +75,10 @@ const filesToCheck = [
   'src/utils/toadaMeasureParser.js',
   'src/utils/toadaSerializer.js',
   'src/utils/toadaDocumentFormatter.js',
-  'src/components/documents/toada/ToadaMeasureCard.jsx',
-  'src/components/documents/toada/ToadaVisualSectionBlock.jsx',
-  'src/components/documents/toada/ToadaLegendModal.jsx',
-  'src/components/documents/toada/ToadaMeasureEditor.jsx',
+  'src/utils/toadaNotebookParser.js',
+  'src/components/documents/toada/ToadaInlineFormattingBar.jsx',
+  'src/components/documents/toada/ToadaNotebookRow.jsx',
+  'src/components/documents/toada/ToadaLinedNotebookEditor.jsx',
   'src/components/song/SongCardLyricsSection.jsx',
   'src/components/documents/form/DocumentFormToadaFields.jsx'
 ];

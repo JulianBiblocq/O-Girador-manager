@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
+import { canonicalizeGroupId } from '../utils/tenantUtils';
 
 /**
  * Hook réactif de récupération des événements publics.
@@ -19,11 +20,16 @@ export function usePublicEvents(groupId = null) {
   useEffect(() => {
     setLoading(true);
 
+    const safetyTimer = setTimeout(() => {
+      setLoading(false);
+    }, 2500);
+
+    const cleanGroupId = canonicalizeGroupId(groupId);
     let q;
-    if (groupId) {
+    if (cleanGroupId) {
       q = query(
         collection(db, 'events'),
-        where('groupId', '==', groupId),
+        where('groupId', '==', cleanGroupId),
         where('isPublic', '==', true)
       );
     } else {
@@ -36,6 +42,7 @@ export function usePublicEvents(groupId = null) {
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
+        clearTimeout(safetyTimer);
         const todayStr = new Date().toISOString().split('T')[0];
         const nowMs = Date.now();
         const fifteenDaysAgoMs = nowMs - (15 * 24 * 60 * 60 * 1000);
@@ -79,13 +86,17 @@ export function usePublicEvents(groupId = null) {
         setLoading(false);
       },
       (err) => {
+        clearTimeout(safetyTimer);
         console.error("usePublicEvents - Erreur de lecture :", err);
         setError(err);
         setLoading(false);
       }
     );
 
-    return () => unsubscribe();
+    return () => {
+      clearTimeout(safetyTimer);
+      unsubscribe();
+    };
   }, [groupId]);
 
   return { events, upcomingEvents, pastEvents, loading, error };

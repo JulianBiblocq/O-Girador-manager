@@ -36,11 +36,13 @@ import { generateImageCharterPDF, generateMedicalAttestationPDF } from '../utils
 import { useViewSimulator } from '../context/ViewSimulatorContext';
 import { getCarpoolBulkyTerminology } from '../utils/carpoolCascadeUtils';
 
-export default function UserProfile({ user, profileData, associationName, onBack }) {
+export default function UserProfile({ user, profileData, associationName, onBack, enabledModules = {} }) {
   const { t, locale } = useTranslation();
   const { tRole } = useTerminologie();
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [showQrScanner, setShowQrScanner] = useState(false);
+
+  const isCostumerieEnabled = enabledModules?.costumerie !== false && (enabledModules?.costumerie !== undefined || enabledModules?.vestiaire !== false);
 
   const { isSimulating, effectiveProfile } = useViewSimulator();
   const currentProfile = isSimulating && effectiveProfile ? effectiveProfile : profileData;
@@ -498,7 +500,7 @@ export default function UserProfile({ user, profileData, associationName, onBack
                 </div>
               )}
 
-              {(isFieldVisible('tailleTshirt') || isFieldVisible('taillePantalon')) && (
+              {isCostumerieEnabled && (isFieldVisible('tailleTshirt') || isFieldVisible('taillePantalon')) && (
                 <div className="col-span-1 md:col-span-2 border-t border-dashed border-cordel-master-dark/15 pt-2 mt-1">
                   <span className="text-[10px] uppercase font-black text-cordel-wood flex items-center gap-1 mb-1">
                     <XiloShirt size={12} /> {t('userProfile.costumeSizes')}
@@ -676,6 +678,7 @@ export default function UserProfile({ user, profileData, associationName, onBack
           handleSave={handleSave}
           setIsEditing={setIsEditing}
           saving={saving}
+          isCostumerieEnabled={isCostumerieEnabled}
           isFieldVisible={isFieldVisible}
           isFieldRequired={isFieldRequired}
           validationError={validationError}

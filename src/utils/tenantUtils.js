@@ -16,6 +16,9 @@ export function canonicalizeGroupId(groupId) {
   if (trimmed.toLowerCase() === 'samambaia') {
     return 'Samambaia';
   }
+  if (trimmed.toLowerCase() === 'sambabulles') {
+    return 'sambabulles';
+  }
   return trimmed;
 }
 

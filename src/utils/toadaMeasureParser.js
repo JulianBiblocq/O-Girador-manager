@@ -109,6 +109,7 @@ export function cleanMeasureTextForStudent(text) {
   return text
     .replace(/^\s*[+/]\s*/, '')
     .replace(CHORD_REGEX, '')
+    .replace(/(^|\s|\*)\+\s+/g, '$1')
     .replace(/\*([^*]+)\*/g, '$1')
     .trim();
 }
