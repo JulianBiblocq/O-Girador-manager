@@ -185,9 +185,19 @@ export default function PrivateChatView({
     effectiveConversation
   );
 
+  // Vérification de la propriété du message (support multi-clés : senderId, authorId, userId, auteurId)
+  const isMsgAuthor = (msg) => Boolean(
+    msg && user?.uid && (
+      msg.senderId === user.uid ||
+      msg.authorId === user.uid ||
+      msg.userId === user.uid ||
+      msg.auteurId === user.uid
+    )
+  );
+
   // Suppression d'un de ses propres messages
   const handleDeleteMessage = async (msg) => {
-    if (!msg || msg.senderId !== user?.uid) return;
+    if (!isMsgAuthor(msg)) return;
 
     const ok = await confirm({
       title: "Supprimer le message",
@@ -212,7 +222,7 @@ export default function PrivateChatView({
 
   // Début d'édition d'un de ses propres messages
   const handleStartEdit = (msg) => {
-    if (!msg || msg.senderId !== user?.uid) return;
+    if (!isMsgAuthor(msg)) return;
     setEditingMessage(msg);
     setEditText(msg.content || '');
   };
@@ -220,18 +230,19 @@ export default function PrivateChatView({
   // Enregistrement de l'édition
   const handleSaveEdit = async (e) => {
     if (e) e.preventDefault();
-    const trimmed = editText.trim();
+    const trimmed = (editText || '').trim();
     if (!editingMessage || !trimmed || isSubmittingEdit) return;
 
     setIsSubmittingEdit(true);
     try {
       const nowIso = new Date().toISOString();
       if (editingMessage.isLegacy || !conversationId) {
-        await updateDoc(doc(db, 'private_messages', editingMessage.id), {
+        const payload = {
           content: trimmed,
           isEdited: true,
           editedAt: nowIso
-        });
+        };
+        await updateDoc(doc(db, 'private_messages', editingMessage.id), payload);
       } else {
         await editConvMessage(editingMessage.id, trimmed);
       }
@@ -651,7 +662,7 @@ export default function PrivateChatView({
           </div>
         ) : (
           activeMessages.map((msg) => {
-            const isMe = msg.senderId === user.uid || msg.auteurId === user.uid;
+            const isMe = isMsgAuthor(msg);
             const senderProfile = usersMap[msg.senderId] || { prenom: msg.senderName || 'Membre' };
             const senderDisplayName = msg.senderName || `${senderProfile.prenom || ''} ${senderProfile.nom || ''}`.trim() || 'Membre';
 

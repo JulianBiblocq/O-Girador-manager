@@ -33,7 +33,7 @@ if (!getApps().length) {
  * @param {Object} db - Instance Firestore
  * @param {Object} params - Paramètres d'envoi
  */
-async function sendPushToUsers(db, { groupId, recipientId, cibles, title, body, dataPayload }) {
+async function sendPushToUsers(db, { groupId, recipientId, cibles, targetUserIds, title, body, dataPayload }) {
   if (!groupId && !recipientId) {
     console.error("sendPushToUsers - groupId ou recipientId manquant.");
     return false;
@@ -53,7 +53,9 @@ async function sendPushToUsers(db, { groupId, recipientId, cibles, title, body, 
   }
 
   const allTokens = [];
-  const cibleTous = !cibles || cibles.includes("Tous") || cibles.length === 0;
+  const normalizedTargetUserIds = Array.isArray(targetUserIds) ? targetUserIds.filter(Boolean) : [];
+  const hasTargetUsers = normalizedTargetUserIds.length > 0;
+  const cibleTous = (!cibles || cibles.includes("Tous") || cibles.length === 0) && !hasTargetUsers;
 
   usersSnap.docs.forEach((userDoc) => {
     const userData = userDoc.data();
@@ -67,11 +69,14 @@ async function sendPushToUsers(db, { groupId, recipientId, cibles, title, body, 
       const userRole = userData.role || "membre";
       const isAdmin = userRole === "mestre" || userRole === "super-admin";
 
-      const matchesCible = cibles.some((c) => {
+      const isNominativeTarget = hasTargetUsers && normalizedTargetUserIds.includes(userId);
+      const matchesCible = cibles && cibles.some((c) => {
+        if (c === "Tous") return false;
         if (c === "role:admin" && isAdmin) return true;
         return userTags.includes(c);
       });
-      if (!matchesCible) return;
+
+      if (!isNominativeTarget && !matchesCible) return;
     }
 
     // Dédoublonner les jetons de l'utilisateur pour éviter les envois multiples au même token
@@ -244,11 +249,13 @@ exports.onAnnouncementCreated = onDocumentCreated(
 
     const db = getFirestore();
     const cibles = Array.isArray(data.cibles) ? data.cibles : ["Tous"];
+    const targetUserIds = Array.isArray(data.targetUserIds) ? data.targetUserIds : [];
     
     const announcementId = event.params.announcementId;
     await sendPushToUsers(db, {
       groupId: data.groupId,
       cibles: cibles,
+      targetUserIds: targetUserIds,
       title: data.titre || "Nouvelle annonce",
       body: data.message || "",
       dataPayload: { url: "/app", click_action: "/app", announcementId, tag: `annonce-${announcementId}` }

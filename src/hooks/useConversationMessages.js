@@ -210,18 +210,25 @@ export function useConversationMessages(conversationId, groupId, user, profileDa
       if (!messageId || !user?.uid || !trimmed) return;
 
       const targetMsg = messages.find((m) => m.id === messageId);
-      if (!targetMsg || targetMsg.senderId !== user.uid) {
+      const isAuthor = targetMsg && (
+        targetMsg.senderId === user.uid ||
+        targetMsg.authorId === user.uid ||
+        targetMsg.userId === user.uid ||
+        targetMsg.auteurId === user.uid
+      );
+      if (!isAuthor) {
         throw new Error("Action non autorisée : vous ne pouvez modifier que vos propres messages.");
       }
 
       try {
         const nowIso = new Date().toISOString();
         const msgRef = doc(db, 'conversation_messages', messageId);
-        await updateDoc(msgRef, {
+        const editPayload = {
           content: trimmed,
           isEdited: true,
           editedAt: nowIso
-        });
+        };
+        await updateDoc(msgRef, editPayload);
 
         // Mettre à jour l'aperçu du dernier message de la conversation s'il s'agissait du dernier message
         if (conversationId && messages.length > 0 && messages[messages.length - 1]?.id === messageId) {
@@ -244,7 +251,13 @@ export function useConversationMessages(conversationId, groupId, user, profileDa
       if (!messageId || !user?.uid) return;
 
       const targetMsg = messages.find((m) => m.id === messageId);
-      if (targetMsg && targetMsg.senderId !== user.uid) {
+      const isAuthor = targetMsg && (
+        targetMsg.senderId === user.uid ||
+        targetMsg.authorId === user.uid ||
+        targetMsg.userId === user.uid ||
+        targetMsg.auteurId === user.uid
+      );
+      if (!isAuthor) {
         throw new Error("Action non autorisée : vous ne pouvez supprimer que vos propres messages.");
       }
 

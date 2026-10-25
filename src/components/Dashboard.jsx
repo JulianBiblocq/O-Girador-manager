@@ -29,6 +29,7 @@ import {
   getCachedDashboardLayout, 
   setCachedDashboardLayout 
 } from '../utils/dashboardCacheUtils';
+import { isAnnouncementVisibleForUser } from '../utils/announcementUtils';
 
 export default function Dashboard({ 
   user, 
@@ -182,17 +183,15 @@ export default function Dashboard({
         fetched.push({ id: doc.id, ...doc.data() });
       });
 
-      const userTags = profileData?.tags || [];
-      const userRole = profileData?.role || 'membre';
-      const visible = fetched.filter(ann => {
-        if (ann.publishOnApp === false) return false;
-        if (!Array.isArray(ann.cibles) || ann.cibles.length === 0) return true;
-        if (ann.cibles.includes('Tous')) return true;
-        if (ann.cibles.includes('role:admin') && (userRole === 'mestre' || userRole === 'super-admin' || profileData?.isSystemAdmin === true)) {
-          return true;
-        }
-        return ann.cibles.some(t => userTags.includes(t));
-      });
+      const userRole = currentProfile?.role || 'membre';
+      const visible = fetched.filter((ann) => isAnnouncementVisibleForUser({
+        announcement: ann,
+        userId: user?.uid,
+        userTags: effectiveUserTags,
+        userRole,
+        isSystemAdmin: currentProfile?.isSystemAdmin === true,
+        canPublish: canUserPublishAnnonces
+      }));
       const hasActive = visible.length > 0;
       setHasActiveAnnouncements(hasActive);
       setCachedDashboardItem(profileData?.groupId, 'has_active_announcements', hasActive);
@@ -201,7 +200,7 @@ export default function Dashboard({
     });
 
     return () => unsubscribe();
-  }, [profileData?.groupId, profileData?.tags, profileData?.role, profileData?.isSystemAdmin]);
+  }, [profileData?.groupId, effectiveUserTags, currentProfile?.role, currentProfile?.isSystemAdmin, user?.uid, canUserPublishAnnonces]);
 
   // Real-time vérifier for active campaigns (open orders)
   useEffect(() => {

@@ -1,152 +1,31 @@
-import React, { useState, useEffect } from 'react';
-import { collection, query, where, onSnapshot, addDoc, deleteDoc, doc, updateDoc, arrayUnion, limit } from 'firebase/firestore';
+import React, { useState, useEffect, useMemo } from 'react';
+import { collection, addDoc, doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db, messaging } from '../firebase';
 import { getToken } from 'firebase/messaging';
-import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
-import { XiloMegaphone, XiloClose } from './XiloIcons';
+import { XiloMegaphone } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
-import { formatTagGender, getTagId } from '../utils/tagUtils';
 import { showPushActivationConfirmation } from '../utils/pushNotificationHelper';
-import useConfirm from '../hooks/useConfirm';
 import { canPublishAnnonces } from '../utils/permissionUtils';
 import { resolveEffectiveUserTags } from '../utils/tagUtils';
-import ReadReceiptBadge from './common/ReadReceiptBadge';
-import { useReadReceipt } from '../hooks/useReadReceipt';
 import { getCachedAnnouncements, setCachedAnnouncements } from '../utils/dashboardCacheUtils';
+import { isAnnouncementVisibleForUser, resolveTargetRecipientIds } from '../utils/announcementUtils';
+import { dispatchBulkInAppAndPushNotification } from '../utils/inAppNotificationService';
+import { useAnnoncesData } from '../hooks/useAnnoncesData';
+import AnnonceCardItem from './annonces/AnnonceCardItem';
+import AnnonceForm from './annonces/AnnonceForm';
+import AnnoncePushBanner from './annonces/AnnoncePushBanner';
 
 /**
- * Composant de carte d'annonce avec observateur d'accusé de lecture (70% pendant 1,5s)
- * et affichage Cordel de la double coche / compteur de lecteurs.
+ * WidgetAnnonces : Gestionnaire et affichage des pancartes du tableau de bord.
+ * Respecte strictement la règle Anti-Monolithe (< 200 lignes) par délégation modulaire.
  */
-function AnnonceCardItem({
-  ann,
-  user,
+export default function WidgetAnnonces({
+  groupId,
   profileData,
-  canPublish,
-  handleCtaClick,
-  handleDelete,
-  allMembers,
-  t
-}) {
-  const cardRef = React.useRef(null);
-  const dateObj = new Date(ann.dateCreation);
-  const formattedDate = isNaN(dateObj.getTime())
-    ? ''
-    : dateObj.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
-
-  const isCibleTous = ann.cibles && ann.cibles.includes('Tous');
-  const isAlreadyRead = Boolean(user?.uid && ann.lectures?.[user.uid]);
-  const currentUserName = `${profileData?.prenom || ''} ${profileData?.nom || ''}`.trim() || 'Membre';
-
-  useReadReceipt({
-    targetRef: cardRef,
-    collectionName: 'announcements',
-    documentId: ann.id,
-    authorId: ann.auteurId,
-    currentUserId: user?.uid,
-    currentUserName,
-    isAlreadyRead,
-    enabled: Boolean(ann.id && user?.uid),
-    minVisibility: 0.7,
-    minDurationMs: 1500
-  });
-
-  return (
-    <div ref={cardRef}>
-      <CordelCard 
-        variant={isCibleTous ? "ocre" : "default"}
-        useExtremeBorder={true}
-        className="py-3 px-4 relative overflow-hidden bg-cordel-bg text-left border-l-4 border-l-cordel-wood shadow-[2px_2px_0px_0px_#181716]"
-      >
-        <div className="flex justify-between items-start gap-4 pr-6">
-          <div className="flex-1 min-w-0">
-            {/* Meta */}
-            <div className="flex flex-wrap items-center gap-1.5 text-[8px] font-bold text-cordel-master-dark/70 select-none">
-              <span className="inline-flex items-center gap-0.5"><XiloMegaphone size={10} /> {t('widgetAnnonces.roleLabel')}</span>
-              <span>•</span>
-              <span>{formattedDate}</span>
-              <span>•</span>
-              <span>Par {ann.auteurNom}</span>
-            </div>
-
-            {/* Title */}
-            <h4 className="font-extrabold text-sm text-encre-noire mt-1">
-              {ann.titre}
-            </h4>
-          </div>
-
-          {/* Stamp Targets badge */}
-          <div className="flex flex-wrap gap-1 select-none">
-            {ann.cibles && ann.cibles.map(c => (
-              <span 
-                key={c}
-                className={`theme-stamp-badge ${isCibleTous ? 'theme-stamp-badge-wood' : 'theme-stamp-badge-dark'} text-[6px] rotate-[-1deg] px-1 py-0`}
-              >
-                {c}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {/* Message body */}
-        <p className="text-xs font-semibold leading-relaxed mt-2 text-encre-noire/90 whitespace-pre-wrap">
-          {ann.message}
-        </p>
-
-        {/* Call to Action Button */}
-        {ann.actionText && ann.actionLink && (
-          <div className="mt-3 pt-2.5 border-t border-dashed border-cordel-master-dark/20 flex justify-start select-none">
-            <CordelButton
-              type="button"
-              variant="ocre"
-              useExtremeBorder={true}
-              onClick={() => handleCtaClick(ann.actionLink)}
-              className="text-xs py-2 px-3.5 font-black uppercase tracking-wider flex items-center gap-2 shadow-sm hover:scale-[1.02] transition-transform"
-            >
-              <span>🚀 {ann.actionText}</span>
-              <span className="text-sm font-bold">→</span>
-            </CordelButton>
-          </div>
-        )}
-
-        {/* Pied de l'annonce : accusé de lecture WhatsApp Cordel */}
-        <div className="mt-3 pt-2 border-t border-dashed border-cordel-master-dark/20 flex items-center justify-between select-none">
-          <ReadReceiptBadge
-            lectures={ann.lectures || {}}
-            currentUserId={user?.uid}
-            authorId={ann.auteurId}
-            isAuthorOrBureau={canPublish || (ann.auteurId && user?.uid === ann.auteurId)}
-            allMembers={allMembers}
-            title={`Accusé de lecture - ${ann.titre}`}
-          />
-          <span className="text-[7.5px] font-black text-cordel-master-dark/50">
-            {ann.auteurNom}
-          </span>
-        </div>
-
-        {/* Supprimer trigger (visible for authorized publishers or author) */}
-        {(canPublish || (ann.auteurId && user?.uid && ann.auteurId === user.uid)) && (
-          <button
-            type="button"
-            onClick={() => handleDelete(ann.id, ann.titre)}
-            className="absolute top-2 right-2 p-1 border border-dashed border-red-400 hover:border-red-600 text-red-500 hover:text-red-700 bg-transparent rounded cursor-pointer flex items-center justify-center shrink-0"
-            title={t('widgetAnnonces.deleteTitle') || "Supprimer l'annonce"}
-          >
-            <XiloClose size={8} />
-          </button>
-        )}
-      </CordelCard>
-    </div>
-  );
-}
-
-export default function WidgetAnnonces({ 
-  groupId, 
-  profileData, 
-  role, 
-  isSystemAdmin, 
-  user, 
+  role,
+  isSystemAdmin,
+  user,
   onNavigateToView,
   permissionsMatrice,
   canPublish: canPublishProp,
@@ -154,630 +33,148 @@ export default function WidgetAnnonces({
   userTags: userTagsProp
 }) {
   const { t } = useTranslation();
-  const { confirm } = useConfirm();
   const [announcements, setAnnouncements] = useState(() => getCachedAnnouncements(groupId));
-  const [tagsDisponibles, setTagsDisponibles] = useState([]);
-  const [assocPermissionsMatrice, setAssocPermissionsMatrice] = useState(null);
-  const [loading, setLoading] = useState(() => announcements.length === 0);
+  const { tagsDisponibles, assocPermissionsMatrice, allMembers, loading, handleDeleteAnnouncement } = useAnnoncesData(groupId, t, announcements, setAnnouncements);
   const [isAdding, setIsAdding] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [isSubscribingPush, setIsSubscribingPush] = useState(false);
 
-  // Initialisation synchrone de la bannière push pour éviter tout décalage tardif (CLS)
+  // État synchrone de la bannière push (prévention CLS)
   const [showBanner, setShowBanner] = useState(() => {
     if (typeof window !== 'undefined' && 'Notification' in window && user?.uid) {
       return Notification.permission !== 'granted';
     }
     return false;
   });
-  const [isSubscribingPush, setIsSubscribingPush] = useState(false);
 
-  // Vérifier la permission des notifications au chargement ou au changement d'utilisateur
   useEffect(() => {
     if (typeof window !== 'undefined' && 'Notification' in window && messaging && user?.uid) {
       setShowBanner(Notification.permission !== 'granted');
     }
   }, [user?.uid]);
 
-  const handleEnableNotifications = async () => {
-    if (!messaging || !user?.uid) {
-      alert("Les notifications Push ne sont pas prises en charge par ce navigateur ou vous n'êtes pas connecté.");
-      return;
-    }
-    setIsSubscribingPush(true);
-    try {
-      let permission = Notification.permission;
-      if (permission === 'default') {
-        permission = await new Promise((resolve) => {
-          const p = Notification.requestPermission(resolve);
-          if (p && typeof p.then === 'function') {
-            p.then(resolve);
-          }
-        });
-      }
-
-      if (permission === 'granted') {
-        let registration = undefined;
-        if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-          try {
-            registration = await navigator.serviceWorker.ready;
-          } catch (swErr) {
-            console.error("Could not get ready service worker:", swErr);
-          }
-        }
-        const token = await getToken(messaging, { 
-          vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY || undefined,
-          serviceWorkerRegistration: registration
-        });
-        if (token) {
-          const userRef = doc(db, 'users', user.uid);
-          await updateDoc(userRef, {
-            fcmTokens: arrayUnion(token)
-          });
-          
-          // Déclencher immédiatement la notification de confirmation via le Service Worker
-          await showPushActivationConfirmation(registration);
-
-          alert("Notifications activées avec succès !");
-          setShowBanner(false);
-        } else {
-          console.error("FCM Token not generated.");
-          alert("Impossible de générer le jeton de notification.");
-        }
-      } else if (permission === 'denied') {
-        alert("La permission d'envoi de notifications a été refusée. Veuillez l'activer dans les paramètres de votre navigateur.");
-      }
-    } catch (err) {
-      console.error("Error enabling notifications:", err);
-      alert("Erreur lors de l'activation des notifications.");
-    } finally {
-      setIsSubscribingPush(false);
-    }
-  };
-
-  // Form states
-  const [titre, setTitre] = useState('');
-  const [message, setMessage] = useState('');
-  const [actionText, setActionText] = useState('');
-  const [actionLink, setActionLink] = useState('');
-  const [cibles, setCibles] = useState(['Tous']);
-  const [publishOnApp, setPublishOnApp] = useState(true);
-  const [sendViaEmail, setSendViaEmail] = useState(false);
-  const [sendPushNotification, setSendPushNotification] = useState(false);
-
   const effectiveMatrice = permissionsMatrice || assocPermissionsMatrice;
   const effectiveTags = userTagsProp || resolveEffectiveUserTags(profileData?.tags || [], tagsDisponibles);
-  const canPublish = canPublishProp !== undefined 
-    ? canPublishProp 
+  const canPublish = canPublishProp !== undefined
+    ? canPublishProp
     : canPublishAnnonces(profileData, effectiveMatrice, effectiveTags, breakGlassActive);
-  const isAdmin = canPublish;
 
-  // Synchronisation en temps réel des annonces
-  useEffect(() => {
-    if (!groupId) {
-      setAnnouncements([]);
-      setLoading(false);
-      return;
-    }
-
-    if (announcements.length === 0) {
-      setLoading(true);
-    }
-    const announcementsRef = collection(db, 'announcements');
-    const q = query(announcementsRef, where('groupId', '==', groupId), limit(15));
-
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const fetched = [];
-      querySnapshot.forEach((doc) => {
-        fetched.push({
-          id: doc.id,
-          ...doc.data()
-        });
-      });
-      // Trier par dateCreation descendante
-      fetched.sort((a, b) => new Date(b.dateCreation) - new Date(a.dateCreation));
-      setAnnouncements(fetched);
-      setCachedAnnouncements(groupId, fetched);
-      setLoading(false);
-    }, (error) => {
-      console.error("WidgetAnnonces - Erreur onSnapshot announcements :", error);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [groupId]);
-
-  // Charger les étiquettes disponibles dans le document d'association
-  useEffect(() => {
-    if (!groupId) return;
-
-    const assocRef = doc(db, 'associations', groupId);
-    const unsubscribe = onSnapshot(assocRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setTagsDisponibles(data.tagsDisponibles || []);
-        if (data.permissionsMatrice) {
-          setAssocPermissionsMatrice(data.permissionsMatrice);
+  const handleEnableNotifications = async () => {
+    if (!messaging || !user?.uid) return alert('Notifications non prises en charge.');
+    setIsSubscribingPush(true);
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        const reg = navigator.serviceWorker ? await navigator.serviceWorker.ready : undefined;
+        const token = await getToken(messaging, { vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY, serviceWorkerRegistration: reg });
+        if (token) {
+          await updateDoc(doc(db, 'users', user.uid), { fcmTokens: arrayUnion(token) });
+          await showPushActivationConfirmation(reg);
+          setShowBanner(false);
         }
       }
-    }, (error) => {
-      console.error("WidgetAnnonces - Erreur onSnapshot association tags :", error);
-    });
-
-    return () => unsubscribe();
-  }, [groupId]);
-
-  // Chargement des membres du groupe pour le suivi des accusés de lecture
-  const [allMembers, setAllMembers] = useState([]);
-  useEffect(() => {
-    if (!groupId) return;
-    const usersRef = collection(db, 'users');
-    const q = query(usersRef, where('groupId', '==', groupId));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const list = [];
-      snapshot.forEach(docSnap => {
-        list.push({ id: docSnap.id, ...docSnap.data() });
-      });
-      setAllMembers(list);
-    }, (err) => {
-      console.warn("WidgetAnnonces - Erreur chargement membres pour accusés :", err);
-    });
-    return () => unsubscribe();
-  }, [groupId]);
-
-  const handleCibleToggle = (target) => {
-    if (target === 'Tous') {
-      setCibles(['Tous']);
-    } else {
-      setCibles(prev => {
-        let copy = prev.filter(c => c !== 'Tous');
-        const idx = copy.indexOf(target);
-        if (idx > -1) {
-          copy.splice(idx, 1);
-        } else {
-          copy.push(target);
-        }
-        if (copy.length === 0) {
-          copy = ['Tous'];
-        }
-        return copy;
-      });
+    } catch (err) {
+      console.error('WidgetAnnonces - Erreur push :', err);
+    } finally {
+      setIsSubscribingPush(false);
     }
   };
 
   const handleCtaClick = (link) => {
     if (!link) return;
     const trimmed = link.trim();
-    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-      window.open(trimmed, '_blank', 'noopener,noreferrer');
-      return;
-    }
-    let cleanRoute = trimmed.startsWith('/') ? trimmed.slice(1) : trimmed;
-
-    // Mapping des alias de routes internes
-    if (cleanRoute === 'profile') cleanRoute = 'profil';
-    if (cleanRoute === 'materiel') cleanRoute = 'inventory';
-    if (cleanRoute === 'vestiaire') cleanRoute = 'wardrobe-inventory';
-
-    if (onNavigateToView) {
-      onNavigateToView(cleanRoute);
-    } else {
-      window.location.href = trimmed;
-    }
+    if (trimmed.startsWith('http')) return window.open(trimmed, '_blank', 'noopener,noreferrer');
+    const cleanRoute = trimmed.startsWith('/') ? trimmed.slice(1) : trimmed;
+    const map = { profile: 'profil', materiel: 'inventory', vestiaire: 'wardrobe-inventory' };
+    if (onNavigateToView) onNavigateToView(map[cleanRoute] || cleanRoute);
+    else window.location.href = trimmed;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!groupId || !titre.trim() || !message.trim()) return;
-
+  const handleSubmitForm = async (formData) => {
+    if (!groupId) return;
     setSaving(true);
     try {
       const payload = {
+        ...formData,
         groupId,
-        titre: titre.trim(),
-        message: message.trim(),
-        actionText: actionText.trim(),
-        actionLink: actionLink.trim(),
         auteurId: user?.uid || null,
         auteurNom: `${profileData?.prenom || 'Admin'} ${profileData?.nom || ''}`.trim() || 'Association',
-        dateCreation: new Date().toISOString(),
-        cibles,
-        publishOnApp,
-        sendViaEmail,
-        sendPushNotification
+        dateCreation: new Date().toISOString()
       };
-
       await addDoc(collection(db, 'announcements'), payload);
-      
-      // Réinitialiser form
-      setTitre('');
-      setMessage('');
-      setActionText('');
-      setActionLink('');
-      setCibles(['Tous']);
-      setPublishOnApp(true);
-      setSendViaEmail(false);
-      setSendPushNotification(false);
+
+      if (formData.sendPushNotification) {
+        const recipientIds = resolveTargetRecipientIds({ announcement: payload, allMembers, authorId: user?.uid });
+        if (recipientIds.length > 0) {
+          await dispatchBulkInAppAndPushNotification({
+            recipientIds,
+            groupId,
+            titre: payload.titre,
+            message: payload.message,
+            targetUrl: '/app',
+            sendPush: true
+          });
+        }
+      }
       setIsAdding(false);
     } catch (err) {
-      console.error("WidgetAnnonces - Erreur de sauvegarde :", err);
+      console.error('WidgetAnnonces - Erreur sauvegarde :', err);
       alert("Erreur lors de la publication de l'annonce.");
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDelete = async (annId, annTitre) => {
-    const confirmDelete = await confirm({
-      title: "Supprimer l'annonce",
-      message: `${t('widgetAnnonces.deleteConfirm') || "Voulez-vous supprimer l'annonce"} "${annTitre}" ?`,
-      confirmText: "Oui, supprimer",
-      cancelText: "Annuler",
-      variant: "danger"
-    });
-    if (!confirmDelete) return;
-
-    try {
-      await deleteDoc(doc(db, 'announcements', annId));
-    } catch (err) {
-      console.error("WidgetAnnonces - Erreur de suppression :", err);
-    }
-  };
-
-  // Local JS filtering: Visible based on target rules
+  // Filtrage des pancartes visibles pour l'adhérent connecté
   const userTags = profileData?.tags || [];
   const userRole = role || profileData?.role || 'membre';
-  const visibleAnnouncements = announcements.filter(ann => {
-    // If not publishOnApp, hide it from App dashboard
-    if (ann.publishOnApp === false) return false;
+  const visibleAnnouncements = useMemo(() => {
+    return announcements.filter((ann) => isAnnouncementVisibleForUser({
+      announcement: ann,
+      userId: user?.uid,
+      userTags,
+      userRole,
+      isSystemAdmin,
+      canPublish
+    }));
+  }, [announcements, user?.uid, userTags, userRole, isSystemAdmin, canPublish]);
 
-    if (!Array.isArray(ann.cibles) || ann.cibles.length === 0) return true;
-    if (ann.cibles.includes('Tous')) return true;
-
-    // Vérifier if target is admin and current user is admin
-    if (ann.cibles.includes('role:admin') && (userRole === 'mestre' || userRole === 'super-admin' || isSystemAdmin === true)) {
-      return true;
-    }
-
-    return ann.cibles.some(t => userTags.includes(t));
-  });
-
-  if (!loading && !canPublish && visibleAnnouncements.length === 0) {
-    return null;
-  }
+  if (!loading && !canPublish && visibleAnnouncements.length === 0) return null;
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Header bar */}
       <div className="flex justify-between items-center pl-1 pr-1 select-none">
         <h3 className="text-xs font-extrabold tracking-wider text-cordel-master-dark opacity-75 uppercase text-left flex items-center gap-1.5">
           <XiloMegaphone size={16} className="text-cordel-wood" /> {t('widgetAnnonces.title')}
         </h3>
         {!loading && canPublish && !isAdding && (
-          <CordelButton 
-            variant="default" 
-            onClick={() => setIsAdding(true)} 
-            className="text-[10px] px-2 py-1 uppercase tracking-widest font-black"
-          >
+          <CordelButton variant="default" onClick={() => setIsAdding(true)} className="text-[10px] px-2 py-1 uppercase tracking-widest font-black">
             {t('widgetAnnonces.announceBtn')}
           </CordelButton>
         )}
       </div>
 
-      {/* Bannière d'incitation aux notifications PUSH */}
-      {showBanner && messaging && (() => {
-        // Détection iOS (iPhone/iPad) hors mode PWA standalone
-        const isIos = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/.test(navigator.userAgent);
-        const isStandalone = typeof window !== 'undefined' && (
-          window.matchMedia('(display-mode: standalone)').matches ||
-          window.navigator.standalone === true
-        );
-        const showIosWarning = isIos && !isStandalone;
+      {showBanner && messaging && (
+        <AnnoncePushBanner onEnableNotifications={handleEnableNotifications} isSubscribingPush={isSubscribingPush} t={t} />
+      )}
 
-        return (
-          <CordelCard 
-            variant="ocre" 
-            useExtremeBorder={true} 
-            className="p-3 text-left border-dashed flex flex-col gap-2 bg-[#fdfaf2] dark:bg-black/10"
-          >
-            <div className="flex gap-2 items-start">
-              <XiloMegaphone size={18} className="text-cordel-wood shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <h4 className="font-extrabold text-[11px] text-encre-noire uppercase tracking-wider">
-                  {t('widgetAnnonces.bannerTitle')}
-                </h4>
-                <p className="text-[10px] font-semibold leading-relaxed text-encre-noire/80 mt-0.5">
-                  {t('widgetAnnonces.bannerText')}
-                </p>
-              </div>
-            </div>
-
-            {/* Avertissement spécifique pour les utilisateurs iOS hors PWA */}
-            {showIosWarning && (
-              <div className="flex items-start gap-1.5 px-2 py-1.5 rounded bg-[var(--color-cordel-ocre)]/10 border border-dashed border-[var(--color-cordel-ocre)]/30">
-                <span className="text-sm shrink-0">📱</span>
-                <p className="text-[9px] italic font-semibold leading-relaxed text-encre-noire/80">
-                  {t('widgetAnnonces.bannerIosWarning')}
-                </p>
-              </div>
-            )}
-
-            <div className="flex justify-end pt-1">
-              <button
-                type="button"
-                disabled={isSubscribingPush || showIosWarning}
-                onClick={handleEnableNotifications}
-                className={`text-[9px] font-black uppercase border border-encre-noire px-2.5 py-1 rounded shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all whitespace-nowrap ${
-                  showIosWarning
-                    ? 'bg-encre-noire/20 text-encre-noire/40 cursor-not-allowed'
-                    : 'bg-cordel-wood text-cordel-bg-light cursor-pointer'
-                }`}
-              >
-                {isSubscribingPush ? "..." : t('widgetAnnonces.bannerBtn')}
-              </button>
-            </div>
-          </CordelCard>
-        );
-      })()}
-
-      {/* Squelette de chargement initial si aucun cache disponible (stabilisation CLS) */}
       {loading && announcements.length === 0 && (
         <div className="flex flex-col gap-3 animate-pulse select-none" aria-busy="true">
-          <div className="py-3 px-4 rounded border-2 border-dashed border-cordel-master-dark/20 bg-cordel-bg/40 min-h-[140px] flex flex-col justify-between">
-            <div className="flex justify-between items-start gap-4">
-              <div className="flex-1 space-y-2">
-                <div className="h-2.5 bg-cordel-master-dark/15 rounded w-1/3"></div>
-                <div className="h-4 bg-cordel-master-dark/20 rounded w-2/3"></div>
-              </div>
-              <div className="h-3 w-12 bg-cordel-master-dark/15 rounded"></div>
-            </div>
-            <div className="space-y-1.5 mt-3">
-              <div className="h-2.5 bg-cordel-master-dark/15 rounded w-full"></div>
-              <div className="h-2.5 bg-cordel-master-dark/15 rounded w-4/5"></div>
-            </div>
-            <div className="h-2 bg-cordel-master-dark/10 rounded w-1/4 mt-3"></div>
-          </div>
+          <div className="py-3 px-4 rounded border-2 border-dashed border-cordel-master-dark/20 bg-cordel-bg/40 min-h-[140px]" />
         </div>
       )}
 
-      {/* Inline Form View (Visible to admins when isAdding is true) */}
       {!loading && isAdding && (
-        <CordelCard variant="default" useExtremeBorder={true} className="py-5 px-6 relative text-left">
-          <button
-            type="button"
-            onClick={() => setIsAdding(false)}
-            disabled={saving}
-            className="absolute top-3 right-3 p-1.5 border border-encre-noire bg-cordel-bg hover:bg-neutral-200 text-encre-noire rounded shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center justify-center disabled:opacity-50"
-          >
-            <XiloClose size={10} />
-          </button>
-
-          <h4 className="panel-title text-sm font-bold text-cordel-wood mb-4">
-            {t('widgetAnnonces.publishTitle')}
-          </h4>
-
-          <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
-            {/* Titre */}
-            <div className="flex flex-col gap-1">
-              <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                {t('widgetAnnonces.annTitleLabel')}
-              </label>
-              <input
-                type="text"
-                value={titre}
-                onChange={(e) => setTitre(e.target.value)}
-                required
-                disabled={saving}
-                placeholder={t('widgetAnnonces.annTitlePlaceholder')}
-                className="theme-input text-xs font-bold py-1.5"
-              />
-            </div>
-
-            {/* Message */}
-            <div className="flex flex-col gap-1">
-              <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                {t('widgetAnnonces.annMsgLabel')}
-              </label>
-              <textarea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                required
-                disabled={saving}
-                rows="3"
-                placeholder={t('widgetAnnonces.annMsgPlaceholder')}
-                className="theme-input text-xs font-semibold py-1.5 resize-none w-full"
-              />
-            </div>
-
-            {/* Call to Action optionnel (CTA) */}
-            <div className="flex flex-col gap-1.5 pt-2 border-t border-dashed border-cordel-master-dark/15 text-left">
-              <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center gap-1">
-                🚀 Bouton d'action / Call to Action (Optionnel)
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {/* Texte du bouton */}
-                <div className="flex flex-col gap-0.5">
-                  <label className="text-[8px] font-semibold text-cordel-wood uppercase">
-                    Texte du bouton (ex: Mettre à jour mon profil)
-                  </label>
-                  <input
-                    type="text"
-                    value={actionText}
-                    onChange={(e) => setActionText(e.target.value)}
-                    disabled={saving}
-                    placeholder="Ex: Mettre à jour mon profil"
-                    className="theme-input text-xs py-1 font-medium"
-                  />
-                </div>
-
-                {/* Page de destination (Select) */}
-                <div className="flex flex-col gap-0.5">
-                  <label className="text-[8px] font-semibold text-cordel-wood uppercase">
-                    Page de destination
-                  </label>
-                  <select
-                    value={actionLink}
-                    onChange={(e) => setActionLink(e.target.value)}
-                    disabled={saving}
-                    className="theme-input text-xs py-1 font-bold bg-cordel-bg-light"
-                  >
-                    <option value="">Sélectionner une page...</option>
-                    <option value="/profil">👤 Mon Profil</option>
-                    <option value="/agenda">📅 Agenda</option>
-                    <option value="/forum">🗣️ Porte-Voix / Forum</option>
-                    <option value="/varal">📜 Varal / Documents</option>
-                    <option value="/treasury">💰 Trésorerie / Cotisations</option>
-                    <option value="/trombinoscope">👥 Trombinoscope</option>
-                    <option value="/materiel">🥁 Matériel</option>
-                    <option value="/vestiaire">👗 Vestiaire</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* Cibles checklist */}
-            <div className="flex flex-col gap-1 pt-1 border-t border-dashed border-cordel-master-dark/15">
-              <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                {t('widgetAnnonces.targetsLabel')}
-              </label>
-              <div className="flex flex-wrap gap-1.5 p-2 border border-dashed border-encre-noire/25 rounded bg-[#fdfaf2] dark:bg-[#201d1a] max-h-24 overflow-y-auto">
-                <button
-                  type="button"
-                  disabled={saving}
-                  onClick={() => handleCibleToggle('Tous')}
-                  className={`text-[9px] px-2 py-0.5 border rounded-[3px_5px_2px_4px] transition-all cursor-pointer font-bold ${
-                    cibles.includes('Tous') 
-                      ? 'bg-cordel-wood text-cordel-bg-light border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]' 
-                      : 'bg-transparent text-encre-noire border-dashed border-encre-noire/30'
-                  }`}
-                >
-                  <span className="inline-flex items-center gap-1"><XiloMegaphone size={10} /> {t('widgetAnnonces.targetAll')}</span>
-                </button>
-
-                <button
-                  type="button"
-                  disabled={saving}
-                  onClick={() => handleCibleToggle('role:admin')}
-                  className={`text-[9px] px-2 py-0.5 border rounded-[3px_5px_2px_4px] transition-all cursor-pointer font-bold ${
-                    cibles.includes('role:admin') 
-                      ? 'bg-cordel-wood text-cordel-bg-light border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]' 
-                      : 'bg-transparent text-encre-noire border-dashed border-encre-noire/30'
-                  }`}
-                >
-                  👑 {t('widgetAnnonces.targetAdmins')}
-                </button>
-
-                {tagsDisponibles.map((tag) => {
-                  const tagId = getTagId(tag);
-                  const formattedLabel = formatTagGender(tag, null, false, tagsDisponibles);
-                  const isActive = cibles.includes(tagId) || (typeof tag === 'string' && cibles.includes(tag));
-                  return (
-                    <button
-                      key={tagId}
-                      type="button"
-                      disabled={saving}
-                      onClick={() => handleCibleToggle(tagId)}
-                      className={`text-[9px] px-2 py-0.5 border rounded-[3px_5px_2px_4px] transition-all cursor-pointer font-bold ${
-                        isActive 
-                          ? 'bg-cordel-wood text-cordel-bg-light border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]' 
-                          : 'bg-transparent text-encre-noire border-dashed border-encre-noire/30'
-                      }`}
-                    >
-                      🏷️ {formattedLabel}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Canaux de diffusion */}
-            <div className="flex flex-col gap-1.5 pt-1.5 border-t border-dashed border-cordel-master-dark/15 text-left">
-              <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                {t('widgetAnnonces.channelsLabel')}
-              </label>
-              <div className="flex flex-col gap-1.5 pl-1 select-none">
-                <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={publishOnApp}
-                    onChange={(e) => setPublishOnApp(e.target.checked)}
-                    disabled={saving}
-                    className="accent-cordel-wood scale-105"
-                  />
-                  <span>{t('widgetAnnonces.channelApp')}</span>
-                </label>
-                <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={sendViaEmail}
-                    onChange={(e) => setSendViaEmail(e.target.checked)}
-                    disabled={saving}
-                    className="accent-cordel-wood scale-105"
-                  />
-                  <span>{t('widgetAnnonces.channelEmail')}</span>
-                </label>
-                <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={sendPushNotification}
-                    onChange={(e) => setSendPushNotification(e.target.checked)}
-                    disabled={saving}
-                    className="accent-cordel-wood scale-105"
-                  />
-                  <span className="inline-flex items-center gap-1.5"><XiloMegaphone size={12} /> Envoyer une notification aux membres</span>
-                </label>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex justify-end gap-2 border-t border-dashed border-cordel-master-dark/10 pt-3">
-              <CordelButton
-                type="button"
-                variant="default"
-                disabled={saving}
-                onClick={() => setIsAdding(false)}
-                className="text-xs px-3 py-1.5"
-              >
-                {t('common.cancel')}
-              </CordelButton>
-              <CordelButton
-                type="submit"
-                variant="ocre"
-                useExtremeBorder={true}
-                disabled={saving || !titre.trim() || !message.trim()}
-                className="text-xs px-4 py-1.5 font-bold"
-              >
-                {saving ? "..." : t('widgetAnnonces.publishBtn')}
-              </CordelButton>
-            </div>
-          </form>
-        </CordelCard>
+        <AnnonceForm onSubmit={handleSubmitForm} onCancel={() => setIsAdding(false)} saving={saving} tagsDisponibles={tagsDisponibles} allMembers={allMembers} t={t} />
       )}
 
-      {/* Announcements list view (Visible when not chargement de and not adding) */}
       {!loading && !isAdding && (
-        visibleAnnouncements.length === 0 ? (
-          <CordelCard variant="default" useExtremeBorder={false} className="p-4 text-center bg-cordel-bg opacity-75 select-none">
-            <p className="text-[10px] italic font-semibold">{t('widgetAnnonces.noAnnouncements')}</p>
-          </CordelCard>
-        ) : (
-          <div className="flex flex-col gap-3">
-            {visibleAnnouncements.map((ann) => (
-              <AnnonceCardItem
-                key={ann.id}
-                ann={ann}
-                user={user}
-                profileData={profileData}
-                canPublish={canPublish}
-                handleCtaClick={handleCtaClick}
-                handleDelete={handleDelete}
-                allMembers={allMembers}
-                t={t}
-              />
-            ))}
-          </div>
-        )
+        <div className="flex flex-col gap-3">
+          {visibleAnnouncements.map((ann) => (
+            <AnnonceCardItem key={ann.id} ann={ann} user={user} profileData={profileData} canPublish={canPublish} handleCtaClick={handleCtaClick} handleDelete={handleDeleteAnnouncement} allMembers={allMembers} t={t} />
+          ))}
+        </div>
       )}
-
     </div>
   );
 }
