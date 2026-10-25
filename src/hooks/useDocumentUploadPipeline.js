@@ -414,14 +414,10 @@ export function useDocumentUploadPipeline({
           if (songData.signature) updateData.signature = songData.signature;
           if (songData.bpmDefaut) updateData.bpmDefaut = songData.bpmDefaut;
           if (songData.tonaliteDefaut) updateData.tonaliteDefaut = songData.tonaliteDefaut;
-          const sourceRaw = songData.rawTxtCode || songData.parolesOriginales || '';
-          const isHtmlSource = /<[a-z][\s\S]*>/i.test(sourceRaw);
-          if (!isHtmlSource && sourceRaw.trim()) {
-            updateData.rawTxtCode = sourceRaw;
-            updateData.parolesOriginales = toadaToCleanHtml(sourceRaw);
-          } else {
-            updateData.parolesOriginales = songData.parolesOriginales || '';
-            if (songData.rawTxtCode) updateData.rawTxtCode = songData.rawTxtCode;
+          // Étanchéité absolue : parolesOriginales (Varal) et rawTxtCode (Cantador) sont strictement indépendants
+          updateData.parolesOriginales = songData.parolesOriginales || '';
+          if (songData.rawTxtCode !== undefined) {
+            updateData.rawTxtCode = songData.rawTxtCode;
           }
           updateData.parolesPhonetiques = songData.parolesPhonetiques || '';
           updateData.traduction = songData.traduction || '';
@@ -544,14 +540,10 @@ export function useDocumentUploadPipeline({
         if (songData.signature) newDoc.signature = songData.signature;
         if (songData.bpmDefaut) newDoc.bpmDefaut = songData.bpmDefaut;
         if (songData.tonaliteDefaut) newDoc.tonaliteDefaut = songData.tonaliteDefaut;
-        const sourceRaw = songData.rawTxtCode || songData.parolesOriginales || '';
-        const isHtmlSource = /<[a-z][\s\S]*>/i.test(sourceRaw);
-        if (!isHtmlSource && sourceRaw.trim()) {
-          newDoc.rawTxtCode = sourceRaw;
-          newDoc.parolesOriginales = toadaToCleanHtml(sourceRaw);
-        } else {
-          newDoc.parolesOriginales = songData.parolesOriginales || '';
-          if (songData.rawTxtCode) newDoc.rawTxtCode = songData.rawTxtCode;
+        // Étanchéité absolue : parolesOriginales (Varal) et rawTxtCode (Cantador) sont strictement indépendants
+        newDoc.parolesOriginales = songData.parolesOriginales || '';
+        if (songData.rawTxtCode !== undefined) {
+          newDoc.rawTxtCode = songData.rawTxtCode;
         }
         newDoc.parolesPhonetiques = songData.parolesPhonetiques || '';
         newDoc.traduction = songData.traduction || '';

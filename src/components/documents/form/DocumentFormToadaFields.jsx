@@ -1,16 +1,15 @@
-import React, { useState } from 'react';
-import RichTextEditor from '../../RichTextEditor';
+import React, { useState, useEffect } from 'react';
 import ToadaAudioWitnessField from './ToadaAudioWitnessField';
 import ToadaHeaderMetadataForm from '../toada/ToadaHeaderMetadataForm';
-import ToadaLinedNotebookEditor from '../toada/ToadaLinedNotebookEditor';
+import ToadaMusicalStructureEditor from '../toada/ToadaMusicalStructureEditor';
+import ToadaChantTabFields from './ToadaChantTabFields';
+import { cleanHistoricalHtml } from '../../../utils/toadaHtmlCleaner';
 
-/**
- * Sous-formulaire modulaire pour la saisie des chants et Toadas (< 140 lignes) :
- * Métadonnées musicales d'en-tête, Cahier Ligné 2 colonnes (Originale & Phonétique),
- * éditeur par mesure (.txt) ou texte riche, et audio témoin.
- */
 export default function DocumentFormToadaFields({
   category = 'Toadas',
+  titre = '',
+  activeTab: propActiveTab,
+  setActiveTab: propSetActiveTab,
   nacao = '',
   setNacao,
   rythme = '',
@@ -29,6 +28,8 @@ export default function DocumentFormToadaFields({
   setAudioUrl,
   parolesOriginales = '',
   setParolesOriginales,
+  rawTxtCode = '',
+  setRawTxtCode,
   parolesPhonetiques = '',
   setParolesPhonetiques,
   traduction = '',
@@ -37,12 +38,26 @@ export default function DocumentFormToadaFields({
   setAnecdote,
   isSubmitting = false
 }) {
-  const isHtml = /<[a-z][\s\S]*>/i.test(parolesOriginales || '');
-  const [editorMode, setEditorMode] = useState(isHtml ? 'richtext' : 'measures');
+  const [localActiveTab, setLocalActiveTab] = useState('chant');
+  const activeTab = propActiveTab !== undefined ? propActiveTab : localActiveTab;
+  const setActiveTab = propSetActiveTab || setLocalActiveTab;
+
+  useEffect(() => {
+    if (parolesOriginales && typeof parolesOriginales === 'string') {
+      let cleaned = parolesOriginales;
+      if (/<[a-z][\s\S]*>/i.test(cleaned)) cleaned = cleanHistoricalHtml(cleaned);
+      if (/\[(?:[1-9]|1[0-2])\]|_|\[sig:[^\]]+\]/i.test(cleaned)) {
+        cleaned = cleaned.replace(/\[(?:[1-9]|1[0-2])\]/g, '').replace(/\[sig:[^\]]+\]/gi, '').replace(/_/g, '').replace(/\s{2,}/g, ' ').trim();
+      }
+      if (cleaned !== parolesOriginales && setParolesOriginales) setParolesOriginales(cleaned);
+    }
+    if (parolesPhonetiques && /<[a-z][\s\S]*>/i.test(parolesPhonetiques) && setParolesPhonetiques) {
+      setParolesPhonetiques(cleanHistoricalHtml(parolesPhonetiques));
+    }
+  }, []);
 
   return (
-    <div className="flex flex-col gap-3.5 mt-2 border-t-2 border-dashed border-cordel-master-dark/20 pt-4 text-left">
-      {/* 1. Origine & Rythme */}
+    <div className="flex flex-col gap-3 mt-2 border-t-2 border-dashed border-cordel-master-dark/20 pt-4 text-left w-full">
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1">
           <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">Origine / Auteur</label>
@@ -54,67 +69,48 @@ export default function DocumentFormToadaFields({
         </div>
       </div>
 
-      {/* 2. En-tête Musical de la Toada (Signature, BPM, Tonalité) */}
       {category === 'Toadas' && (
         <ToadaHeaderMetadataForm signature={signature} onChangeSignature={setSignature} bpmDefaut={bpmDefaut} onChangeBpm={setBpmDefaut} tonaliteDefaut={tonaliteDefaut} onChangeTonalite={setTonaliteDefaut} disabled={isSubmitting} />
       )}
 
-      {/* 3. Audio Témoin du Chant */}
       <ToadaAudioWitnessField audioUploadType={audioUploadType} setAudioUploadType={setAudioUploadType} audioFile={audioFile} setAudioFile={setAudioFile} audioUrl={audioUrl} setAudioUrl={setAudioUrl} isSubmitting={isSubmitting} />
 
-      {/* 4. Format des Paroles */}
       {category === 'Toadas' && (
-        <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-1">
-          <span className="text-[9.5px] uppercase font-black tracking-wider text-cordel-wood">Format des Paroles</span>
-          <div className="flex gap-1">
-            <button type="button" onClick={() => setEditorMode('measures')} className={`text-[8.5px] font-black uppercase px-2 py-0.5 rounded cursor-pointer ${editorMode === 'measures' ? 'bg-cordel-wood text-white shadow-2xs' : 'bg-white text-stone-700 border border-stone-300'}`}>Cahier Ligné (.txt)</button>
-            <button type="button" onClick={() => setEditorMode('richtext')} className={`text-[8.5px] font-black uppercase px-2 py-0.5 rounded cursor-pointer ${editorMode === 'richtext' ? 'bg-cordel-wood text-white shadow-2xs' : 'bg-white text-stone-700 border border-stone-300'}`}>Texte Riche</button>
-          </div>
+        <div className="flex items-center gap-2 border-b-2 border-cordel-master-dark/20 pt-2 pb-1">
+          <button
+            type="button" onClick={() => setActiveTab('chant')}
+            className={`px-3 py-1.5 rounded-t text-[10px] font-black uppercase cursor-pointer transition-all ${
+              activeTab === 'chant' ? 'bg-cordel-wood text-white shadow-xs' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+            }`}
+          >
+            📖 Fiche Chant (Varal & Impression)
+          </button>
+          <button
+            type="button" onClick={() => setActiveTab('structure')}
+            className={`px-3 py-1.5 rounded-t text-[10px] font-black uppercase cursor-pointer transition-all ${
+              activeTab === 'structure' ? 'bg-cordel-wood text-white shadow-xs' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+            }`}
+          >
+            🎼 Structure Musicale (Cantador & Sequenciador)
+          </button>
         </div>
       )}
 
-      {/* 5. Paroles Originales & Paroles Phonétiques */}
-      {category === 'Toadas' && editorMode === 'measures' ? (
-        <ToadaLinedNotebookEditor
-          value={parolesOriginales}
-          onChange={setParolesOriginales}
-          phoneticValue={parolesPhonetiques}
-          onChangePhonetic={setParolesPhonetiques}
-          disabled={isSubmitting}
+      {(category !== 'Toadas' || activeTab === 'chant') && (
+        <ToadaChantTabFields
+          category={category} parolesOriginales={parolesOriginales} setParolesOriginales={setParolesOriginales}
+          parolesPhonetiques={parolesPhonetiques} setParolesPhonetiques={setParolesPhonetiques}
+          traduction={traduction} setTraduction={setTraduction} anecdote={anecdote} setAnecdote={setAnecdote} disabled={isSubmitting}
         />
-      ) : (
-        <div className={`grid grid-cols-1 ${category === 'Toadas' ? 'md:grid-cols-2' : ''} gap-3`}>
-          {/* Paroles Originales */}
-          <div className="flex flex-col gap-1">
-            <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              {category === 'Culture' ? "Contenu Fiche" : "Paroles Originales (Langue d'origine)"}
-            </label>
-            <RichTextEditor value={parolesOriginales} onChange={(html) => setParolesOriginales(html)} disabled={isSubmitting} placeholder="Paroles..." minHeight="120px" />
-          </div>
-
-          {/* Paroles Phonétiques */}
-          {category === 'Toadas' && (
-            <div className="flex flex-col gap-1">
-              <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                Paroles Phonétiques (Prononciation)
-              </label>
-              <RichTextEditor value={parolesPhonetiques} onChange={(html) => setParolesPhonetiques(html)} disabled={isSubmitting} placeholder="Prononciation..." minHeight="120px" />
-            </div>
-          )}
-        </div>
       )}
 
-      {/* 6. Traduction & Informations */}
-      {category === 'Toadas' && (
-        <div className="flex flex-col gap-1">
-          <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">Traduction</label>
-          <textarea value={traduction} onChange={(e) => setTraduction(e.target.value)} disabled={isSubmitting} placeholder="Traduction française..." className="theme-input w-full text-xs min-h-[45px] resize-y" />
-        </div>
+      {category === 'Toadas' && activeTab === 'structure' && (
+        <ToadaMusicalStructureEditor
+          value={rawTxtCode} onChange={setRawTxtCode} tab1Lyrics={parolesOriginales}
+          onUpdateTab1Lyrics={setParolesOriginales} signature={signature} onChangeSignature={setSignature}
+          bpmDefaut={bpmDefaut} tonaliteDefaut={tonaliteDefaut} rythme={rythme} titre={titre} disabled={isSubmitting}
+        />
       )}
-      <div className="flex flex-col gap-1">
-        <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">Informations</label>
-        <textarea value={anecdote} onChange={(e) => setAnecdote(e.target.value)} disabled={isSubmitting} placeholder="Contexte supplémentaire..." className="theme-input w-full text-xs min-h-[45px] resize-y" />
-      </div>
     </div>
   );
 }

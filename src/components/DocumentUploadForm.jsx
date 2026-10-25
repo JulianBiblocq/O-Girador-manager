@@ -130,9 +130,17 @@ export default function DocumentUploadForm({
   const [tonaliteDefaut, setTonaliteDefaut] = useState(documentToEdit ? documentToEdit.tonaliteDefaut || documentToEdit.tonalite || '' : '');
   const [parolesOriginales, setParolesOriginales] = useState(() => {
     if (!documentToEdit) return '';
-    if (documentToEdit.rawTxtCode) return documentToEdit.rawTxtCode;
-    return normalizeLyricsToHtml(documentToEdit.parolesOriginales);
+    const orig = documentToEdit.parolesOriginales || documentToEdit.paroles || '';
+    const cleaned = typeof orig === 'string'
+      ? orig.replace(/\[(?:[1-9]|1[0-2])\]/g, '').replace(/\[sig:[^\]]+\]/gi, '').replace(/_/g, '')
+      : orig;
+    return normalizeLyricsToHtml(cleaned);
   });
+  const [rawTxtCode, setRawTxtCode] = useState(() => {
+    if (!documentToEdit) return '';
+    return documentToEdit.rawTxtCode || '';
+  });
+  const [toadaActiveTab, setToadaActiveTab] = useState('chant');
   const [parolesPhonetiques, setParolesPhonetiques] = useState(() => {
     if (!documentToEdit) return '';
     if (typeof documentToEdit.parolesPhonetiques === 'string') return documentToEdit.parolesPhonetiques;
@@ -262,8 +270,8 @@ export default function DocumentUploadForm({
         bpmDefaut,
         tonaliteDefaut,
         parolesOriginales,
+        rawTxtCode,
         parolesPhonetiques,
-        rawTxtCode: parolesOriginales,
         traduction,
         anecdote: currentAnecdote,
         audioUploadType,
@@ -526,6 +534,9 @@ export default function DocumentUploadForm({
             {computedType === 'song' && (
               <DocumentFormToadaFields
                 category={category}
+                titre={title}
+                activeTab={toadaActiveTab}
+                setActiveTab={setToadaActiveTab}
                 nacao={nacao}
                 setNacao={setNacao}
                 rythme={rythme}
@@ -544,6 +555,8 @@ export default function DocumentUploadForm({
                 setAudioUrl={setAudioUrl}
                 parolesOriginales={parolesOriginales}
                 setParolesOriginales={setParolesOriginales}
+                rawTxtCode={rawTxtCode}
+                setRawTxtCode={setRawTxtCode}
                 parolesPhonetiques={parolesPhonetiques}
                 setParolesPhonetiques={setParolesPhonetiques}
                 traduction={traduction}
@@ -643,8 +656,8 @@ export default function DocumentUploadForm({
               />
             )}
 
-            {/* SECTION 4 : Lexique & Constructeur de QCM */}
-            {(computedType === 'song' || computedType === 'fabrication' || computedType === 'culture_fiche') && (
+            {/* SECTION 4 : Lexique & Constructeur de QCM (Masqué en Onglet 2 Structure Musicale) */}
+            {(computedType !== 'song' || toadaActiveTab === 'chant') && (computedType === 'song' || computedType === 'fabrication' || computedType === 'culture_fiche') && (
               <DocumentFormQuizBuilder
                 notesLexique={notesLexique}
                 setNotesLexique={setNotesLexique}
@@ -656,7 +669,7 @@ export default function DocumentUploadForm({
             )}
 
             {/* Options globales : Pédagogie, Archivage, Masquage */}
-            {(category === 'Toadas' || category === 'Culture') && (
+            {(computedType !== 'song' || toadaActiveTab === 'chant') && (category === 'Toadas' || category === 'Culture') && (
               <div className="flex flex-col gap-2 mt-2">
                 <div className="flex items-center gap-2 bg-cordel-bg border border-cordel-ocre/50 p-3 rounded shadow-xs">
                   <input

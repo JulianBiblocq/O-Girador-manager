@@ -711,7 +711,7 @@ function VaralWidgetContent({
           onClick={() => setSelectedToada(null)}
         >
           <div 
-            className="relative w-full max-w-[580px] max-h-[92vh] flex flex-col items-center min-h-0"
+            className="relative w-full max-w-3xl max-h-[92vh] flex flex-col items-center min-h-0"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Bouton de fermeture tactile ergonomique et toujours accessible */}

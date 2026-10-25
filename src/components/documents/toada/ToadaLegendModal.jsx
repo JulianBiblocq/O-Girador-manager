@@ -1,68 +1,90 @@
 import React from 'react';
+import { useTranslation } from '../../LanguageContext';
 
-/**
- * Modale d'aide et de légende pour la syntaxe des Toadas (< 85 lignes).
- * Détaille la convention 1 paragraphe = 1 mesure, +, /, *soliste*, [Section] et [Accord].
- */
 export default function ToadaLegendModal({ isOpen, onClose }) {
+  const { t } = useTranslation();
   if (!isOpen) return null;
 
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const rules = [
+    {
+      num: 1,
+      badge: "Gras / Normal",
+      color: "bg-stone-800 text-white",
+      desc: "Gras = Puxador (Soliste) • Normal / Italique = Coro (Chœur). Utilisez Ctrl+B en mode texte pour marquer le soliste."
+    },
+    {
+      num: 2,
+      badge: "1..4 ou 1..6",
+      color: "bg-slate-700 text-white",
+      desc: "Poser un temps : cliquez sur une lettre ou un porte-temps _, puis tapez le chiffre au clavier (ou cliquez un tampon du bandeau)."
+    },
+    {
+      num: 3,
+      badge: "Temps 1 (Rouge)",
+      color: "bg-[#b91c1c] text-white",
+      desc: "Chaque 1 rouge ouvre une nouvelle mesure (M1, M2...). Tout ce qui est noté avant le premier 1 constitue l'anacrouse."
+    },
+    {
+      num: 4,
+      badge: "Tiret _",
+      color: "bg-stone-300 text-stone-900 border border-stone-400 font-mono",
+      desc: "Porte-temps muet : sert à placer un temps dans le vide entre deux syllabes (Tra_zen), entre mots (Trazen _ dou), en fin de phrase, ou pour une mesure de silence (_ _ _ _)."
+    },
+    {
+      num: 5,
+      badge: "Métrique 🎼",
+      color: "bg-amber-600 text-white",
+      desc: "Changement de métrique : sélectionnez un temps 1 et choisissez une nouvelle signature (ex: 6/8, 12/8) dans le bandeau du haut si le rythme change en cours de morceau."
+    }
+  ];
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-      <div className="flex flex-col gap-3 max-w-lg w-full bg-cordel-bg p-4 rounded-[6px_8px_5px_7px] border-2 border-cordel-master-dark text-encre-noire shadow-2xl animate-fade-in text-left">
-        {/* En-tête de la modale */}
-        <div className="flex items-center justify-between border-b-2 border-dashed border-cordel-master-dark/30 pb-2">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+      <div className="bg-[#fdfbf7] dark:bg-stone-900 rounded-lg shadow-2xl border border-cordel-master-dark/30 max-w-lg w-full p-5 flex flex-col gap-4 text-left">
+        <div className="flex items-center justify-between border-b border-cordel-master-dark/20 pb-2.5">
           <div className="flex items-center gap-2">
-            <span className="text-base">ℹ️</span>
-            <h3 className="font-title text-base font-black uppercase text-cordel-wood">
-              Légende de la Notation Toada
+            <span className="text-xl">📜</span>
+            <h3 className="text-xs font-black uppercase tracking-wider text-cordel-wood">
+              {t('toada.legendTitle') || "Légende & Guide de Notation Musicale"}
             </h3>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-6 h-6 flex items-center justify-center rounded-full bg-stone-200 hover:bg-stone-300 font-bold text-xs cursor-pointer"
-          >
-            ✕
-          </button>
-        </div>
-
-        {/* Corps des explications */}
-        <div className="flex flex-col gap-2.5 text-xs leading-relaxed max-h-[65vh] overflow-y-auto pr-1">
-          <div className="p-2 bg-white/70 rounded border border-stone-200">
-            <p className="font-bold text-cordel-wood">📐 Structure des Mesures :</p>
-            <ul className="list-disc list-inside mt-1 space-y-1 text-stone-700">
-              <li><strong>1 paragraphe (2 sauts de ligne)</strong> = 1 mesure musicale complète.</li>
-              <li><strong>Shift + Entrée</strong> (ligne débutant par un espace) = retour visuel sans changer de mesure.</li>
-            </ul>
-          </div>
-
-          <div className="p-2 bg-white/70 rounded border border-stone-200">
-            <p className="font-bold text-cordel-wood">🎼 Symboles Techniques :</p>
-            <ul className="list-disc list-inside mt-1 space-y-1 text-stone-700">
-              <li><code className="font-mono font-black text-amber-700">+</code> en début de mesure = <strong>Anacrouse</strong> (départ anticipé).</li>
-              <li><code className="font-mono font-black text-emerald-700">/</code> en début de mesure = <strong>Mesure liée</strong> (continuité avec la précédente).</li>
-              <li><code className="font-mono font-black text-stone-800">*texte*</code> = <strong>Puxador (Soliste)</strong>. Le texte normal est chanté par le chœur.</li>
-            </ul>
-          </div>
-
-          <div className="p-2 bg-white/70 rounded border border-stone-200">
-            <p className="font-bold text-cordel-wood">🏷️ Sections & Accords :</p>
-            <ul className="list-disc list-inside mt-1 space-y-1 text-stone-700">
-              <li><code className="font-mono font-bold text-purple-700">[Intro]</code>, <code className="font-mono font-bold text-purple-700">[Refrain]</code> = Balises de section.</li>
-              <li><code className="font-mono font-bold text-emerald-800">[Dm7]</code>, <code className="font-mono font-bold text-emerald-800">[A7]</code> = Accords harmoniques intégrés aux paroles.</li>
-            </ul>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handlePrint}
+              className="px-2.5 py-1 rounded text-[10px] font-black uppercase bg-cordel-wood text-white hover:bg-cordel-master-dark shadow-xs cursor-pointer"
+            >
+              🖨️ {t('toada.printLegendBtn') || "Imprimer"}
+            </button>
+            <button type="button" onClick={onClose} className="text-stone-400 hover:text-stone-700 text-sm font-bold cursor-pointer">✕</button>
           </div>
         </div>
 
-        {/* Bouton de fermeture */}
-        <div className="flex justify-end pt-2 border-t border-dashed border-cordel-master-dark/20">
+        <div className="flex flex-col gap-2.5">
+          {rules.map((r) => (
+            <div key={r.num} className="flex items-start gap-2.5 p-2 rounded bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 shadow-2xs">
+              <span className={`text-[10px] font-black px-2 py-0.5 rounded shrink-0 ${r.color}`}>
+                {r.badge}
+              </span>
+              <p className="text-[11px] text-stone-700 dark:text-stone-300 leading-snug">
+                {r.desc}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex items-center justify-between pt-2 border-t border-cordel-master-dark/15 text-[10px] text-stone-500 italic">
+          <span>O Girador • Écosystème Musical & Pédagogique</span>
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-1.5 text-xs font-black uppercase text-white bg-[var(--color-cordel-vert,#2d6a4f)] hover:bg-emerald-800 rounded cursor-pointer transition-colors shadow-2xs"
+            className="px-3 py-1 rounded text-[10px] font-bold text-stone-700 bg-stone-100 hover:bg-stone-200 border border-stone-300 cursor-pointer"
           >
-            Compris
+            {t('common.close') || "Fermer"}
           </button>
         </div>
       </div>

@@ -43,7 +43,7 @@ export default function PieceLyricsModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/60 backdrop-blur-xs">
-      <div className="relative w-full max-w-2xl max-h-[92vh] flex flex-col bg-[#fdfaf2] rounded-lg shadow-2xl overflow-hidden border-2 border-encre-noire text-left mt-2 sm:mt-0">
+      <div className="relative w-full max-w-3xl max-h-[92vh] flex flex-col bg-[#fdfaf2] rounded-lg shadow-2xl overflow-hidden border-2 border-encre-noire text-left mt-2 sm:mt-0">
         {/* En-tête Cordel épuré */}
         <div className="w-full flex justify-between items-center gap-3 p-3 sm:p-4 bg-stone-100/90 border-b-2 border-dashed border-cordel-master-dark/20 shrink-0">
           <div className="flex-1 min-w-0 pr-2">
@@ -78,7 +78,7 @@ export default function PieceLyricsModal({
 
         {/* Corps : Affichage direct de la SongCard complète */}
         <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-4 bg-cordel-bg-light flex flex-col items-center">
-          <div className="w-full max-w-[580px]">
+          <div className="w-full max-w-3xl">
             <SongCard
               song={song}
               defaultOpen={true}

@@ -1678,7 +1678,7 @@ export default function RepertoirePieceModal({
       {/* Modale d'aperçu d'une Toada (Chant & Paroles) */}
       {toadaToPreview && (
         <div className="fixed inset-0 z-60 flex items-center justify-center p-3 bg-black/60 backdrop-blur-xs">
-          <div className="relative w-full max-w-[580px] max-h-[92vh] flex flex-col min-h-0 bg-[#fdfaf2] rounded-lg shadow-2xl overflow-hidden border-2 border-encre-noire text-left">
+          <div className="relative w-full max-w-3xl max-h-[92vh] flex flex-col min-h-0 bg-[#fdfaf2] rounded-lg shadow-2xl overflow-hidden border-2 border-encre-noire text-left">
             <div className="w-full flex justify-between items-center px-4 py-2.5 border-b-2 border-dashed border-cordel-master-dark/20 shrink-0 bg-[#fdfaf2]">
               <div className="flex items-center gap-2">
                 <span className="text-base">🗣️</span>
