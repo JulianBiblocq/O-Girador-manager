@@ -10,7 +10,7 @@ import { useMemo } from 'react';
 export default function useLicenseGuard(associationSettings) {
   return useMemo(() => {
     // Règle de non-régression stricte : on ne bloque jamais un ancien tenant sans abonnement
-    if (!associationSettings || !associationSettings.subscription) {
+    if (!associationSettings || (!associationSettings.subscription && !associationSettings.subscriptionStatus)) {
       return {
         isReadOnly: false,
         status: 'exempt',
@@ -20,7 +20,11 @@ export default function useLicenseGuard(associationSettings) {
       };
     }
 
-    const { subscription } = associationSettings;
+    const subscription = associationSettings.subscription || {
+      status: associationSettings.subscriptionStatus || 'active',
+      plan: associationSettings.planType || 'trial',
+      trialEndsAt: associationSettings.trialEndsAt || associationSettings.endDate
+    };
     const { status, plan, trialEndsAt } = subscription;
     
     // Vérification du statut bloquant

@@ -184,7 +184,10 @@ export default function useTenantResolver() {
         organizadorUrl = `/login?app=organizador${canonicalGroupId ? `&tenant=${encodeURIComponent(canonicalGroupId)}` : ''}`;
       } else {
         const groupParam = canonicalGroupId ? `?tenant=${encodeURIComponent(canonicalGroupId.toLowerCase())}` : '';
-        mostradorUrl = canonicalGroupId ? `https://mostrador.o-girador.com/${encodeURIComponent(canonicalGroupId.toLowerCase())}` : 'https://mostrador.o-girador.com';
+        const isSam = canonicalGroupId && canonicalGroupId.toLowerCase() === 'samambaia';
+        mostradorUrl = isSam
+          ? 'https://samambaia-maracatu.fr'
+          : (canonicalGroupId ? `https://mostrador.o-girador.com/${encodeURIComponent(canonicalGroupId.toLowerCase())}` : 'https://mostrador.o-girador.com');
         organizadorUrl = `https://organizador.o-girador.com/${groupParam}`;
       }
 
