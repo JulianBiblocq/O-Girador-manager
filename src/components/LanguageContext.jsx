@@ -7,20 +7,26 @@ const translations = { fr, pt };
 
 export function LanguageProvider({ children }) {
   const [locale, setLocale] = useState(() => {
-    const saved = localStorage.getItem('preferredLanguage');
-    if (saved === 'fr' || saved === 'pt') return saved;
-    
-    // Auto-detect browser language
-    const browserLang = navigator.language || '';
-    if (browserLang.toLowerCase().startsWith('pt')) {
-      return 'pt';
-    }
+    try {
+      const saved = localStorage.getItem('preferredLanguage');
+      if (saved === 'fr' || saved === 'pt') return saved;
+      
+      // Détection automatique de la langue du navigateur
+      const browserLang = typeof navigator !== 'undefined' ? (navigator.language || '') : '';
+      if (browserLang.toLowerCase().startsWith('pt')) {
+        return 'pt';
+      }
+    } catch (_) {}
     return 'fr';
   });
 
   useEffect(() => {
-    localStorage.setItem('preferredLanguage', locale);
-    document.documentElement.lang = locale;
+    try {
+      localStorage.setItem('preferredLanguage', locale);
+    } catch (_) {}
+    if (typeof document !== 'undefined') {
+      document.documentElement.lang = locale;
+    }
   }, [locale]);
 
   const toggleLanguage = () => {

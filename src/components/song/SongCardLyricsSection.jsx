@@ -6,45 +6,58 @@ const CHORD_STRIP_REGEX = /\[[A-G][b#]?(?:m|maj|min|dim|aug|sus|[0-9]|b5|#5|\/[A
 const SECTION_STRIP_REGEX = /^\s*\[(?!(?:[A-G][b#]?))[^\]]+\]\s*$/i;
 
 function cleanVaralLyrics(text) {
-  if (!text || typeof text !== 'string') return text || '';
+  if (typeof text !== 'string') return text ? String(text) : '';
   return text.replace(/\[\d+\]/g, '').replace(/\[sig:[^\]]+\]/gi, '').replace(/_/g, '');
 }
 
 function normalizeToLineArray(content) {
   if (!content) return [];
-  if (Array.isArray(content)) {
-    return content.flatMap((c) => normalizeToLineArray(c));
+  if (Array.isArray(content)) return content.flatMap((c) => normalizeToLineArray(c));
+  // Gestion robuste des objets structurés (puxador, coro, segments)
+  if (typeof content === 'object') {
+    if (Array.isArray(content.lines)) return content.lines.flatMap((c) => normalizeToLineArray(c));
+    if (typeof content.text === 'string' && !content.puxador && !content.coro && !content.segments) {
+      return normalizeToLineArray(content.text);
+    }
+    return [content];
   }
+  if (typeof content !== 'string') return [String(content)];
+
   const cleaned = cleanVaralLyrics(content);
-  if (typeof cleaned === 'string' && /<[a-z][\s\S]*>/i.test(cleaned)) {
+  if (/<[a-z][\s\S]*>/i.test(cleaned)) {
     const parsed = parseLyricsString(cleaned);
     if (Array.isArray(parsed)) return parsed.flatMap((c) => normalizeToLineArray(c));
-    const clean = cleaned
-      .replace(/<p\b[^>]*>\s*(?:<br\b[^>]*>|&nbsp;|\s)*<\/p>/gi, '\n\n')
-      .replace(/<\/p>|<\/div>/gi, '\n')
-      .replace(/<br\s*\/?>/gi, '\n')
-      .replace(/<[^>]+>/g, '');
+    const clean = cleaned.replace(/<p\b[^>]*>\s*(?:<br\b[^>]*>|&nbsp;|\s)*<\/p>/gi, '\n\n').replace(/<\/p>|<\/div>|<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '');
     return clean.split(/\r?\n/).map((l) => l.trim());
   }
   return cleaned.split(/\r?\n/).map((l) => l.trim());
 }
 
 function parseLineSegments(line) {
-  if (!line || SECTION_STRIP_REGEX.test(line)) return [];
+  if (!line) return [];
   if (typeof line !== 'string') {
-    if (line.puxador) return [{ text: line.puxador, isBold: true }];
-    if (line.coro || line.choeur) return [{ text: line.coro || line.choeur, isBold: false }];
+    if (line.segments && Array.isArray(line.segments)) {
+      return line.segments.map((seg) => ({
+        text: typeof seg.text === 'string' ? cleanVaralLyrics(seg.text) : (seg.text || ''),
+        isBold: Boolean(seg.isBold)
+      }));
+    }
+    if (line.puxador && (line.coro || line.choeur)) {
+      return [
+        { text: cleanVaralLyrics(line.puxador), isBold: true },
+        { text: ' ' + cleanVaralLyrics(line.coro || line.choeur), isBold: false }
+      ];
+    }
+    if (line.puxador) return [{ text: cleanVaralLyrics(line.puxador), isBold: true }];
+    if (line.coro || line.choeur) return [{ text: cleanVaralLyrics(line.coro || line.choeur), isBold: false }];
+    if (line.text) return [{ text: cleanVaralLyrics(line.text), isBold: Boolean(line.isBold) }];
     return [];
   }
+  if (SECTION_STRIP_REGEX.test(line)) return [];
   const clean = line
-    .replace(/^\s*[+/]\s*/, '')
-    .replace(CHORD_STRIP_REGEX, '')
-    .replace(/\[\d+\]/g, '')
-    .replace(/\[sig:[^\]]+\]/gi, '')
-    .replace(/_/g, '')
-    .replace(/(^|\s|\*)\+\s+/g, '$1')
-    .replace(/\s{2,}/g, ' ')
-    .trim();
+    .replace(/^\s*[+/]\s*/, '').replace(CHORD_STRIP_REGEX, '').replace(/\[\d+\]/g, '')
+    .replace(/\[sig:[^\]]+\]/gi, '').replace(/_/g, '').replace(/(^|\s|\*)\+\s+/g, '$1')
+    .replace(/\s{2,}/g, ' ').trim();
   if (!clean) return [];
   return clean.split(/(\*[^*]+\*)/g).filter(Boolean).map((p) => {
     const isBold = p.startsWith('*') && p.endsWith('*') && p.length > 2;
@@ -59,7 +72,6 @@ export default function SongCardLyricsSection({
   const rawOrig = song?.parolesOriginales || song?.paroles || '';
   const rawPhon = song?.parolesPhonetiques || '';
   const hasPhon = Boolean(rawPhon && (typeof rawPhon !== 'string' || rawPhon.trim().length > 0) && showPhonetic);
-
   const origLines = normalizeToLineArray(rawOrig);
   const phonLines = normalizeToLineArray(rawPhon);
   const maxLines = Math.max(origLines.length, phonLines.length, 1);
@@ -88,7 +100,6 @@ export default function SongCardLyricsSection({
           </p>
         </div>
       )}
-
       <div className={`grid ${hasPhon && showOriginal ? 'grid-cols-2 divide-x divide-encre-noire/15' : 'grid-cols-1'} mb-2 print:grid-cols-2`}>
         {showOriginal && (
           <div className={hasPhon ? 'pr-3 md:pr-4' : ''}>
@@ -105,15 +116,11 @@ export default function SongCardLyricsSection({
           </div>
         )}
       </div>
-
       <div className="flex flex-col">
         {Array.from({ length: maxLines }).map((_, idx) => {
           const origSegs = parseLineSegments(origLines[idx]);
           const phonSegs = parseLineSegments(phonLines[idx]);
-          const isEmpty = origSegs.length === 0 && phonSegs.length === 0;
-
-          if (isEmpty) return <div key={idx} className="h-3 md:h-3.5 print:h-2" />;
-
+          if (origSegs.length === 0 && phonSegs.length === 0) return <div key={idx} className="h-3 md:h-3.5 print:h-2" />;
           return (
             <div key={idx} className={`grid ${hasPhon && showOriginal ? 'grid-cols-2 divide-x divide-encre-noire/15' : 'grid-cols-1'} items-start py-0.5 print:grid-cols-2`}>
               {showOriginal && (

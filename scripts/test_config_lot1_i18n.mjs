@@ -94,7 +94,7 @@ const TARGET_FILES = [
   'src/components/PermissionsGuideBox.jsx',
 
   // Pilier 4 : Modules SaaS, Apparence & Médias (7)
-  'src/components/association-settings/modules/ModulesSwitchesTable.jsx',
+  'src/components/association-settings/modules/MemberTabsVisibilityCard.jsx',
   'src/components/association-settings/modules/WardrobeMemberModeCard.jsx',
   'src/components/association-settings/modules/TamboursNamingAccordion.jsx',
   'src/components/association-settings/modules/BrandingLogoAccordion.jsx',

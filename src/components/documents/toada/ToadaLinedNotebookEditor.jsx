@@ -59,6 +59,7 @@ export default function ToadaLinedNotebookEditor({
       {/* 1. Barre d'outils et raccourcis Puxador */}
       <ToadaInlineFormattingBar
         onBold={() => {}}
+        onUnderline={() => {}}
         totalMeasures={rows.length}
         disabled={disabled}
       />

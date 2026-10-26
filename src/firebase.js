@@ -54,7 +54,15 @@ export const db = initializeFirestore(app, {
 export const storage = getStorage(app);
 export const functions = getFunctions(app);
 
-// Initialiser le service de messagerie push uniquement côté client
+// Initialiser le service de messagerie push uniquement côté client avec protection try/catch
 import { getMessaging } from 'firebase/messaging';
-export const messaging = typeof window !== 'undefined' ? getMessaging(app) : null;
+let messagingInstance = null;
+if (typeof window !== 'undefined') {
+  try {
+    messagingInstance = getMessaging(app);
+  } catch (err) {
+    console.warn("Firebase Messaging non disponible ou restreint dans cet environnement :", err?.message || err);
+  }
+}
+export const messaging = messagingInstance;
 

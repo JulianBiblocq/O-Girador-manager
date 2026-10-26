@@ -7011,6 +7011,8 @@ export const fr = {
     currentAudioPreserved: "Audio actuel conservé",
     boldPuxador: "Puxador (Gras)",
     boldPuxadorTooltip: "Sélectionnez du texte et pressez Ctrl+B pour marquer le Puxador (*Soliste*)",
+    underlineSyllable: "Syllabe",
+    underlineTooltip: "Souligner la 1re lettre d'une syllabe (Ctrl+U)",
     boldShortcutHint: "Soliste / Reste : Chœur",
     measuresCountSingular: "mesure",
     measuresCountPlural: "mesures",

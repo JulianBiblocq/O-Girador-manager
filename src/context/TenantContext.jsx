@@ -13,10 +13,24 @@ export function TenantProvider({ children }) {
   );
 }
 
+const defaultTenantState = {
+  appMode: 'organizador',
+  groupId: 'Samambaia',
+  tenantId: 'samambaia',
+  isLocalhost: false,
+  isTenantLoading: false,
+  tenantError: null,
+  error: null,
+  notFound: false,
+  urls: { mostrador: '', organizador: '' }
+};
+
 export function useTenantContext() {
   const context = useContext(TenantContext);
   if (!context) {
-    throw new Error('useTenantContext doit être utilisé à l\'intérieur d\'un TenantProvider');
+    console.warn("useTenantContext appelé hors d'un TenantProvider, repli gracieux par défaut appliqué.");
+    return defaultTenantState;
   }
   return context;
 }
+

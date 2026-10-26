@@ -26,10 +26,10 @@ const formatDateISO = (d) => {
   return `${year}-${month}-${day}`;
 };
 
-const yesterday = new Date(todayMidnight.getTime() - 24 * 60 * 60 * 1000);
-const tomorrow = new Date(todayMidnight.getTime() + 24 * 60 * 60 * 1000);
-const inTwoDays = new Date(todayMidnight.getTime() + 48 * 60 * 60 * 1000);
-const tenDaysAgo = new Date(todayMidnight.getTime() - 10 * 24 * 60 * 60 * 1000);
+const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+const inTwoDays = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2);
+const tenDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 10);
 
 const strToday = formatDateISO(todayMidnight);
 const strYesterday = formatDateISO(yesterday);

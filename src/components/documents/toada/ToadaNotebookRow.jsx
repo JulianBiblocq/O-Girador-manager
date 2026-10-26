@@ -23,23 +23,28 @@ export default function ToadaNotebookRow({
   const textWithoutBold = (row.origText || '').replace(/\*[^*]+\*/g, '').replace(/\[[^\]]+\]/g, '').trim();
   const hasNormal = textWithoutBold.length > 0;
 
-  const toggleBoldSelection = () => {
+  const wrapSelection = (pre, post) => {
     const el = origTextareaRef.current;
     if (!el) return;
     const { selectionStart: s, selectionEnd: e } = el;
     const val = row.origText || '', sel = val.slice(s, e);
     if (!sel) return;
-    const isB = sel.startsWith('*') && sel.endsWith('*') && sel.length > 2;
-    const nextVal = val.slice(0, s) + (isB ? sel.slice(1, -1) : `*${sel}*`) + val.slice(e);
-    const [ns, ne] = isB ? [s, e - 2] : [s, e + 2];
+    const hasTag = sel.startsWith(pre) && sel.endsWith(post) && sel.length >= pre.length + post.length;
+    const nextVal = val.slice(0, s) + (hasTag ? sel.slice(pre.length, sel.length - post.length) : `${pre}${sel}${post}`) + val.slice(e);
+    const [ns, ne] = hasTag ? [s, e - (pre.length + post.length)] : [s, e + pre.length + post.length];
     onUpdateRow({ origText: nextVal });
     setTimeout(() => { el.focus(); el.setSelectionRange(ns, ne); }, 20);
   };
+  const toggleBoldSelection = () => wrapSelection('*', '*');
+  const toggleUnderlineSelection = () => wrapSelection('<u>', '</u>');
 
   const handleOrigKeyDown = (e) => {
     if ((e.ctrlKey || e.metaKey) && (e.key === 'b' || e.key === 'B')) {
       e.preventDefault();
       toggleBoldSelection();
+    } else if ((e.ctrlKey || e.metaKey) && (e.key === 'u' || e.key === 'U')) {
+      e.preventDefault();
+      toggleUnderlineSelection();
     } else if (e.key === 'Enter') {
       if (!e.shiftKey) { e.preventDefault(); onAddRowAfter(); }
     } else if (e.key === 'Backspace' && !(row.origText || '').trim() && onFocusPrevRow && !isFirst && origTextareaRef.current?.selectionStart === 0) {

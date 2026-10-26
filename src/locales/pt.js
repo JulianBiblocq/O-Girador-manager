@@ -6980,6 +6980,8 @@ export const pt = {
     currentAudioPreserved: "Áudio atual mantido",
     boldPuxador: "Puxador (Negrito)",
     boldPuxadorTooltip: "Selecione o texto e pressione Ctrl+B para marcar o Puxador (*Solista*)",
+    underlineSyllable: "Sílaba",
+    underlineTooltip: "Sublinhar a 1ª letra de uma sílaba (Ctrl+U)",
     boldShortcutHint: "Solista / Resto : Coro",
     measuresCountSingular: "compasso",
     measuresCountPlural: "compassos",

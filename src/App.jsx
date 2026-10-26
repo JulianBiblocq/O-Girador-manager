@@ -363,7 +363,11 @@ export default function App() {
   const [features, setFeatures] = useState(null);
   const [breakGlassActive, setBreakGlassActive] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('breakGlassActive') === 'true';
+      try {
+        return localStorage.getItem('breakGlassActive') === 'true';
+      } catch (_) {
+        return false;
+      }
     }
     return false;
   });
@@ -384,7 +388,9 @@ export default function App() {
     setBreakGlassActive(prev => {
       const nextVal = !prev;
       if (typeof window !== 'undefined') {
-        localStorage.setItem('breakGlassActive', String(nextVal));
+        try {
+          localStorage.setItem('breakGlassActive', String(nextVal));
+        } catch (_) {}
       }
       return nextVal;
     });

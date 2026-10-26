@@ -1,5 +1,5 @@
 import React from 'react';
-import { useTranslation } from '../../../LanguageContext';
+import { useTranslation } from '../../LanguageContext';
 import CordelCard from '../../CordelCard';
 
 export default function SequenceurLinkBlock({ formData = {}, handleChange, saving }) {

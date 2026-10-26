@@ -4,7 +4,7 @@ import CordelCard from '../../CordelCard';
 import { DEFAULT_ECOSYSTEM_ACCESS } from '../../../hooks/useAssociationSettings';
 
 const APPS_CONFIG = [
-  { key: 'sequenciador', name: "Séquenciad'Or", icon: '🎛️', desc: "Séquenceur rythmique & métronome interactif" },
+  { key: 'sequenciador', name: "Séquenceur", icon: '🎛️', desc: "Séquenceur rythmique & métronome interactif" },
   { key: 'dancador', name: "Dançad'Or", icon: '💃', desc: "Simulateur de chorégraphies & pas de danse" },
   { key: 'cantador', name: "Cantad'Or", icon: '🎤', desc: "Carnet de chants & prompteur de toadas" },
   { key: 'vitrine', name: "Mostrad'Or", icon: '🌐', desc: "Site vitrine public de l'association" }

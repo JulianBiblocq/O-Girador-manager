@@ -7,6 +7,7 @@ import { useTranslation } from '../../LanguageContext';
  */
 export default function ToadaInlineFormattingBar({
   onBold,
+  onUnderline,
   totalMeasures = 1,
   disabled = false
 }) {
@@ -26,8 +27,19 @@ export default function ToadaInlineFormattingBar({
           <span>{t('toada.boldPuxador') || "Puxador (Gras)"}</span>
         </button>
 
+        <button
+          type="button"
+          onClick={onUnderline}
+          disabled={disabled}
+          title={t('toada.underlineTooltip') || "Souligner la 1re lettre d'une syllabe (Ctrl+U)"}
+          className="px-2 py-0.5 rounded font-bold bg-white text-stone-900 hover:bg-stone-100 border border-stone-300 transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
+        >
+          <span className="font-serif font-bold text-[11px] underline">U</span>
+          <span>{t('toada.underlineSyllable') || "Syllabe"}</span>
+        </button>
+
         <span className="text-[9px] text-stone-600 hidden sm:inline">
-          <kbd className="px-1 py-0.2 bg-white border border-stone-300 rounded font-mono text-[8.5px]">Ctrl+B</kbd> : {t('toada.boldShortcutHint') || "Soliste / Reste : Chœur"}
+          <kbd className="px-1 py-0.2 bg-white border border-stone-300 rounded font-mono text-[8.5px]">Ctrl+B</kbd> : Solo / <kbd className="px-1 py-0.2 bg-white border border-stone-300 rounded font-mono text-[8.5px]">Ctrl+U</kbd> : Syllabe
         </span>
       </div>
 

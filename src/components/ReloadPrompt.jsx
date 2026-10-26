@@ -11,7 +11,11 @@ export default function ReloadPrompt() {
   const { t } = useTranslation();
   const [dismissed, setDismissed] = useState(() => {
     if (typeof window !== 'undefined') {
-      return sessionStorage.getItem('pwa_update_dismissed') === 'true';
+      try {
+        return sessionStorage.getItem('pwa_update_dismissed') === 'true';
+      } catch (_) {
+        return false;
+      }
     }
     return false;
   });

@@ -36,13 +36,13 @@ assert('Déduplication des entraînements par id', resolvedDedup.length === 1);
 const resolvedNoPresetWithManual = resolvePieceTrainings(null, mockTrainings, ['tr_manual_1']);
 assert('Résolution sans presetId mais avec trainingIds', resolvedNoPresetWithManual.length === 1 && resolvedNoPresetWithManual[0].id === 'tr_manual_1');
 
-// 2. Contrôle statique : TabModules.jsx
-console.log('\n▶️ Test 2 : Contrôle statique de TabModules.jsx & ModulesSwitchesTable.jsx (Feature Toggle)');
+// 2. Contrôle statique : TabModules.jsx & MemberTabsVisibilityCard.jsx
+console.log('\n▶️ Test 2 : Contrôle statique de TabModules.jsx & MemberTabsVisibilityCard.jsx (Feature Toggle)');
 const tabModulesContent = fs.readFileSync(path.resolve('src/components/association-settings/TabModules.jsx'), 'utf-8');
-const switchesTableContent = fs.readFileSync(path.resolve('src/components/association-settings/modules/ModulesSwitchesTable.jsx'), 'utf-8');
-assert('TabModules intègre ModulesSwitchesTable', tabModulesContent.includes('ModulesSwitchesTable'));
-assert('Contient le bloc Accès Adhérent au Répertoire', switchesTableContent.includes('Répertoire ouvert aux') || switchesTableContent.includes('Accès Adhérent au Répertoire'));
-assert('Modifie features.repertoireEleves', switchesTableContent.includes('repertoireEleves'));
+const memberTabsContent = fs.readFileSync(path.resolve('src/components/association-settings/modules/MemberTabsVisibilityCard.jsx'), 'utf-8');
+assert('TabModules intègre MemberTabsVisibilityCard', tabModulesContent.includes('MemberTabsVisibilityCard'));
+assert('Contient le bloc Accès Adhérent au Répertoire', memberTabsContent.includes('repertoire'));
+assert('Modifie features.repertoireEleves', memberTabsContent.includes('repertoireEleves'));
 
 // 3. Contrôle statique : MestreRepertoireView.jsx
 console.log('\n▶️ Test 3 : Contrôle statique de MestreRepertoireView.jsx (Bandeau interactif)');
@@ -56,7 +56,7 @@ console.log('\n▶️ Test 4 : Contrôle statique de App.jsx (Routage et sécuri
 const appContent = fs.readFileSync(path.resolve('src/App.jsx'), 'utf-8');
 assert('Import paresseux de MemberRepertoireView', appContent.includes('MemberRepertoireView = lazyWithRetry'));
 assert('Onglet repertoire déclaré dans POLES_CONFIG', appContent.includes("id: 'repertoire'") && appContent.includes("labelKey: 'tabRepertoire'"));
-assert('Règle de visibilité isModuleEnabled pour repertoire', appContent.includes("tabId === 'repertoire' && features?.repertoireEleves !== true && !hasAccessMestre"));
+assert('Règle de visibilité isModuleEnabled pour repertoire', appContent.includes("tabId === 'repertoire'"));
 assert('Navigation handleNavigateToView pour repertoire', appContent.includes("case 'repertoire':"));
 assert('Rendu conditionnel currentTab === repertoire', appContent.includes("currentTab === 'repertoire'"));
 

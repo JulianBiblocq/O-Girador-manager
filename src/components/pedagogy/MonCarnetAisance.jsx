@@ -1017,7 +1017,7 @@ export default function MonCarnetAisance({
                       title={lvl.label}
                       className={`text-xs p-1.5 rounded transition-all ${evaluations[songDoc.id] === lvl.level ? 'bg-cordel-wood text-white scale-110 shadow-md' : 'bg-transparent text-encre-noire/50 hover:bg-neutral-100'}`}
                     >
-                      {lvl.label.split(' ')[0]} {/* Affiche juste l'émoji */}
+                      {(lvl.label || '').split(' ')[0]} {/* Affiche juste l'émoji */}
                     </button>
                   ))}
                 </div>
