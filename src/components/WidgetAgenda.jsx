@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { collection, query, where, onSnapshot, addDoc, doc } from 'firebase/firestore';
-import { httpsCallable } from 'firebase/functions';
-import { db, functions } from '../firebase';
+import { db } from '../firebase';
 import CordelButton from './CordelButton';
 import ErrorBoundary from './ErrorBoundary';
 const EventDetails = React.lazy(() => import('./EventDetails'));
@@ -30,6 +29,7 @@ import { formatLocationShort } from '../utils/locationUtils';
 import useHardwareBack from '../hooks/useHardwareBack';
 import { useViewSimulator } from '../context/ViewSimulatorContext';
 import { calculateRoadDistance } from '../utils/googleMaps';
+import { notifyNewAgendaEventOrPoll, triggerFramaspaceEventProvisioning } from '../utils/agendaNotificationUtils';
 
 const formatDateWithDay = (dateStr, includeYear = true, locale = 'fr') => {
   const date = new Date(dateStr);
@@ -320,6 +320,7 @@ export default function WidgetAgenda({
     hasCommissions: false,
     activerRecolteMedias: true,
     publierSurVaral: true,
+    sendPushNotification: true,
     description: '',
     latitude: null,
     longitude: null,
@@ -524,6 +525,7 @@ export default function WidgetAgenda({
       hasCommissions: Boolean(typeCfg.hasCommissionsByDefault ?? typeCfg.hasCommissions),
       activerRecolteMedias: typeCfg.activerRecolteMedias !== undefined ? Boolean(typeCfg.activerRecolteMedias) : true,
       publierSurVaral: typeCfg.publierSurVaral !== undefined ? Boolean(typeCfg.publierSurVaral) : true,
+      sendPushNotification: true,
       dropUrl: '',
       videoUrl: '',
       enableVideoDrop: typeCfg.enableVideoDrop !== undefined
@@ -651,7 +653,7 @@ export default function WidgetAgenda({
           hasCommissions: Boolean(formData.hasCommissions),
           activerRecolteMedias: isRecolteActiveForDoc,
           publierSurVaral: formData.publierSurVaral !== undefined ? Boolean(formData.publierSurVaral) : (isRecolteActiveForDoc !== false),
-          sendPushNotification: Boolean(formData.sendPushNotification),
+          sendPushNotification: formData.sendPushNotification !== false,
           description: formData.description || '',
           latitude: formData.latitude ? Number(formData.latitude) : null,
           longitude: formData.longitude ? Number(formData.longitude) : null,
@@ -678,40 +680,53 @@ export default function WidgetAgenda({
           programmeFabrication: (formData.type === 'atelier' || formData.type === 'stage') && formData.specialiteAtelier === 'fabrication' ? (formData.programmeFabrication || null) : null
         });
 
-        // Provisionnement automatique immédiat Framaspace (dossier, QR-Code spectateurs et Varal)
         if (isRecolteActiveForDoc && newDocRef?.id && groupId) {
-          try {
-            const provisionFn = httpsCallable(functions, 'provisionFramaspaceEventFolders');
-            provisionFn({
-              eventId: newDocRef.id,
-              groupId,
-              eventData: {
-                id: newDocRef.id,
-                titre: formData.titre,
-                type: formData.type,
-                date: dateVal,
-                dateDebut: dateVal,
-                groupId,
-                activerRecolteMedias: true,
-                publierSurVaral: formData.publierSurVaral !== false
-              }
-            }).catch((provErr) => {
-              console.warn("WidgetAgenda - Auto-provision Framaspace différé :", provErr.message);
-            });
-          } catch (fnErr) {
-            console.warn("WidgetAgenda - Exception appel provisionFramaspaceEventFolders :", fnErr.message);
-          }
+          triggerFramaspaceEventProvisioning({
+            eventId: newDocRef.id,
+            groupId,
+            titre: formData.titre,
+            type: formData.type,
+            dateVal,
+            publierSurVaral: formData.publierSurVaral
+          });
         }
+        return newDocRef?.id || null;
       };
 
       if (formData.isPoll) {
         const validDates = (formData.pollDates || []).filter(d => d && d.trim() !== '');
         const pollGroupId = `poll_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        let firstCreatedEventId = null;
         for (let i = 0; i < validDates.length; i++) {
-          await createSingleDoc(validDates[i], true, pollGroupId, i + 1, validDates.length);
+          const createdId = await createSingleDoc(validDates[i], true, pollGroupId, i + 1, validDates.length);
+          if (i === 0) firstCreatedEventId = createdId;
+        }
+        if (formData.sendPushNotification !== false && firstCreatedEventId) {
+          await notifyNewAgendaEventOrPoll({
+            groupId,
+            creatorId: user?.uid,
+            titre: formData.titre,
+            description: formData.description,
+            isPoll: true,
+            validDatesCount: validDates.length,
+            firstCreatedEventId,
+            pollRestrictionType: formData.pollRestrictionType,
+            pollTarget: formData.pollTarget
+          });
         }
       } else {
-        await createSingleDoc(formData.date, false);
+        const createdEventId = await createSingleDoc(formData.date, false);
+        if (formData.sendPushNotification !== false && createdEventId) {
+          await notifyNewAgendaEventOrPoll({
+            groupId,
+            creatorId: user?.uid,
+            titre: formData.titre,
+            description: formData.description,
+            isPoll: false,
+            dateStr: formData.date,
+            firstCreatedEventId: createdEventId
+          });
+        }
       }
 
       setIsAdding(false);

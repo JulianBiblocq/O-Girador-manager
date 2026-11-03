@@ -18,6 +18,7 @@ import { XiloMandacaru } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
 import { useTerminologie } from '../hooks/useTerminologie';
 import InstrumentReminderBanner from './dashboard/InstrumentReminderBanner';
+import PushActivationModal from './dashboard/PushActivationModal';
 import { usePresenceContext } from '../context/PresenceContext';
 import { canPublishAnnonces } from '../utils/permissionUtils';
 import { resolveEffectiveUserTags } from '../utils/tagUtils';
@@ -571,6 +572,9 @@ export default function Dashboard({
           );
         })}
       </div>
+
+      {/* Modale d'activation des notifications Push en 1 clic */}
+      <PushActivationModal user={user} profileData={profileData} />
     </div>
   );
 }

@@ -11,6 +11,8 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { dispatchBulkInAppAndPushNotification, NOTIFICATION_TYPES } from '../utils/inAppNotificationService';
+import { isGeneralGroupConversation, ensureGeneralGroupConversation } from '../utils/generalGroupChatUtils';
+import { isPushCooldownActive } from '../utils/forumThreadSyncUtils';
 
 /**
  * Hook personnalisé useConversationMessages
@@ -79,9 +81,30 @@ export function useConversationMessages(conversationId, groupId, user, profileDa
         ? `${profileData.prenom} ${profileData.nom || ''}`.trim()
         : user.displayName || 'Membre';
 
-      const effectiveParticipants = Array.isArray(participantIds) && participantIds.length > 0
+      let effectiveParticipants = Array.isArray(participantIds) && participantIds.length > 0
         ? participantIds
         : [user.uid];
+
+      const isGeneralGroup =
+        isGeneralGroupConversation(conversation, groupId) ||
+        isGeneralGroupConversation(conversationId, groupId);
+
+      if (isGeneralGroup && effectiveParticipants.length <= 1) {
+        const resolvedParticipants = await ensureGeneralGroupConversation({
+          userId: user.uid,
+          groupId,
+          returnParticipants: true
+        });
+        if (Array.isArray(resolvedParticipants) && resolvedParticipants.length > 0) {
+          effectiveParticipants = resolvedParticipants;
+        }
+      }
+
+      const isGroup = conversation?.type === 'group' || isGeneralGroup;
+      const hasDirectMention = /@[A-Za-zÀ-ÖØ-öø-ÿ]{2,}/.test(effectiveContent);
+      const shouldSendPush = hasDirectMention
+        ? true
+        : !(isGroup && isPushCooldownActive(conversation?.lastPushSentAt));
 
       const newMsgData = {
         conversationId,
@@ -122,21 +145,21 @@ export function useConversationMessages(conversationId, groupId, user, profileDa
             senderName: senderFullName,
             timestamp: nowIso
           },
-          [`readStatus.${user.uid}`]: nowIso
+          [`readStatus.${user.uid}`]: nowIso,
+          ...(shouldSendPush ? { lastPushSentAt: nowIso } : {})
         });
 
-        // 3. Diffuser les notifications aux autres participants
+        // 3. Diffuser les notifications aux autres participants (cloche systématique + Push sous cooldown 5 min)
         try {
           const otherParticipants = effectiveParticipants.filter((uid) => uid !== user.uid);
           if (otherParticipants.length > 0) {
-            const isGroup = conversation?.type === 'group';
             const cleanSnippet = effectiveContent.length > 80 
               ? `${effectiveContent.slice(0, 80)}...` 
               : effectiveContent;
 
             const notifType = isGroup ? NOTIFICATION_TYPES.CHAT_GROUP : NOTIFICATION_TYPES.CHAT_DIRECT;
             const notifTitle = isGroup 
-              ? `👥 ${conversation?.name || 'Groupe'} : ${senderFullName}`
+              ? `👥 ${conversation?.name || (isGeneralGroup ? '💬 Tout le groupe' : 'Groupe')} : ${senderFullName}`
               : `✉️ ${senderFullName}`;
             const targetUrl = isGroup
               ? `/forum?tab=groups&conversationId=${conversationId}`
@@ -149,7 +172,7 @@ export function useConversationMessages(conversationId, groupId, user, profileDa
               titre: notifTitle,
               message: `"${cleanSnippet}"`,
               targetUrl,
-              sendPush: true
+              sendPush: shouldSendPush
             });
           }
         } catch (notifErr) {

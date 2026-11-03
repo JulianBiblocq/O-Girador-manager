@@ -7,7 +7,9 @@ import { XiloMegaphone } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
 import RichTextEditor from './RichTextEditor';
 import { canUserReadForumChannel } from '../utils/permissionUtils';
-import { dispatchInAppAndPushNotification, NOTIFICATION_TYPES } from '../utils/inAppNotificationService';
+import { dispatchBulkInAppAndPushNotification, NOTIFICATION_TYPES } from '../utils/inAppNotificationService';
+import { getEffectiveMemberTags } from '../utils/memberUtils';
+import CreateThreadPollSection from './forum/CreateThreadPollSection';
 
 import { getTagId } from '../utils/tagUtils';
 
@@ -16,6 +18,7 @@ export default function CreateThreadForm({ groupId, channelId, channels = [], us
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
   const [availableTargets, setAvailableTargets] = useState([]);
+  const [tagsDisponibles, setTagsDisponibles] = useState([]);
   const [selectedTarget, setSelectedTarget] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -24,8 +27,8 @@ export default function CreateThreadForm({ groupId, channelId, channels = [], us
   const currentChannel = (channels || []).find((c) => c.id === targetChannelId);
   const currentChannelName = currentChannel?.name || 'Général';
 
-  // État de notification Push FCM
-  const [sendPushNotification, setSendPushNotification] = useState(false);
+  // État de notification Push FCM (coché par défaut)
+  const [sendPushNotification, setSendPushNotification] = useState(true);
 
   // État du sondage
   const [showPollForm, setShowPollForm] = useState(false);
@@ -67,6 +70,7 @@ export default function CreateThreadForm({ groupId, channelId, channels = [], us
       if (snap.exists()) {
         const data = snap.data();
         const tags = data.tagsDisponibles || [];
+        setTagsDisponibles(tags);
         const tagLabels = tags.map(t => getTagId(t)).filter(Boolean);
         const instruments = data.instrumentsDisponibles || [];
         const combined = [...new Set([...tagLabels, ...instruments])].filter(Boolean).sort();
@@ -124,7 +128,11 @@ export default function CreateThreadForm({ groupId, channelId, channels = [], us
         derniereModification: nowIso,
         targetTag: selectedTarget || null,
         isPinned: false,
-        sendPushNotification: sendPushNotification,
+        sendPushNotification: Boolean(sendPushNotification),
+        lastPushSentAt: sendPushNotification ? nowIso : null,
+        lectures: {
+          [user.uid]: { luLe: nowIso, nom: authorName }
+        },
         ...(pollPayload ? { poll: pollPayload } : {}),
         reponses: [
           {
@@ -134,7 +142,10 @@ export default function CreateThreadForm({ groupId, channelId, channels = [], us
             authorName: authorName,
             message: cleanMessage,
             dateCreation: nowIso,
-            targetTag: selectedTarget || null
+            targetTag: selectedTarget || null,
+            lectures: {
+              [user.uid]: { luLe: nowIso, nom: authorName }
+            }
           }
         ]
       });
@@ -151,29 +162,26 @@ export default function CreateThreadForm({ groupId, channelId, channels = [], us
         const targetChannel = (channels || []).find((c) => c.id === targetChannelId);
 
         (allUsers || []).forEach((u) => {
-          if (!u.id || u.id === user.uid) return;
-          if (targetChannel && !canUserReadForumChannel(targetChannel, u, u.tags || [])) {
+          if (!u.id || u.id === user.uid || u.statut === 'archive') return;
+          if (targetChannel && !canUserReadForumChannel(targetChannel, u, tagsDisponibles, getEffectiveMemberTags(u))) {
             return;
           }
           notifRecipientIds.add(u.id);
         });
 
-        const snippet = cleanMessage.length > 80 ? `${cleanMessage.slice(0, 80)}...` : cleanMessage;
+        const plainText = cleanMessage.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+        const snippet = plainText.length > 80 ? `${plainText.slice(0, 80)}...` : plainText;
         const channelLabel = currentChannelName || 'Porte-voix';
 
-        await Promise.allSettled(
-          Array.from(notifRecipientIds).map((recipientId) => {
-            return dispatchInAppAndPushNotification({
-              recipientId,
-              groupId: groupId,
-              type: NOTIFICATION_TYPES.FORUM_NEW_THREAD,
-              titre: `${authorName} dans "${channelLabel}" : "${cleanTitle}"`,
-              message: `"${snippet}"`,
-              targetUrl: `/app/forum?threadId=${docRef.id}`,
-              sendPush: true
-            });
-          })
-        );
+        await dispatchBulkInAppAndPushNotification({
+          recipientIds: Array.from(notifRecipientIds),
+          groupId: groupId,
+          type: NOTIFICATION_TYPES.FORUM_NEW_THREAD,
+          titre: `${authorName} dans "${channelLabel}" : "${cleanTitle}"`,
+          message: `"${snippet}"`,
+          targetUrl: `/app/forum?threadId=${docRef.id}`,
+          sendPush: Boolean(sendPushNotification)
+        });
       } catch (notifErr) {
         console.warn("CreateThreadForm - Erreur envoi notifications nouveau sujet :", notifErr);
       }
@@ -295,85 +303,18 @@ export default function CreateThreadForm({ groupId, channelId, channels = [], us
         </div>
 
         {/* Poll Form Section */}
-        <div className="flex flex-col gap-2 select-none">
-          {showPollForm && (
-            <div className="p-3.5 bg-cordel-bg-light border-2 border-cordel-master-dark/25 rounded-[6px] flex flex-col gap-3">
-              <span className="text-[10px] font-black uppercase tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1">
-                📊 Paramètres du Sondage
-              </span>
-
-              {/* Poll Question */}
-              <div className="flex flex-col gap-1">
-                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  Question du sondage
-                </label>
-                <input
-                  type="text"
-                  value={pollQuestion}
-                  onChange={(e) => setPollQuestion(e.target.value)}
-                  placeholder="Ex : Quelle date préférez-vous pour le stage ?"
-                  disabled={saving}
-                  className="theme-input w-full text-xs font-bold"
-                />
-              </div>
-
-              {/* Options */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  Choix de réponses (Minimum 2)
-                </label>
-                {pollOptions.map((opt, idx) => (
-                  <div key={idx} className="flex gap-2 items-center">
-                    <input
-                      type="text"
-                      value={opt}
-                      onChange={(e) => handlePollOptionChange(idx, e.target.value)}
-                      placeholder={`Choix ${idx + 1}...`}
-                      disabled={saving}
-                      className="theme-input text-xs flex-1 font-semibold py-1.5"
-                    />
-                    {pollOptions.length > 2 && (
-                      <button
-                        type="button"
-                        onClick={() => handleRemovePollOption(idx)}
-                        disabled={saving}
-                        className="text-red-700 hover:text-red-900 text-xs font-black px-2 py-1 rounded bg-red-50 border border-red-200 cursor-pointer"
-                        title="Supprimer ce choix"
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
-                ))}
-
-                {pollOptions.length < 10 && (
-                  <button
-                    type="button"
-                    onClick={handleAddPollOption}
-                    disabled={saving}
-                    className="text-[9px] font-black uppercase text-cordel-wood hover:underline mt-1 self-start cursor-pointer"
-                  >
-                    ➕ Ajouter un choix
-                  </button>
-                )}
-              </div>
-
-              {/* Autoriser Multiple Choices option */}
-              <label className="flex items-center gap-2 cursor-pointer select-none border-t border-dashed border-cordel-master-dark/15 pt-2 mt-1">
-                <input
-                  type="checkbox"
-                  checked={pollAllowMultiple}
-                  onChange={(e) => setPollAllowMultiple(e.target.checked)}
-                  disabled={saving}
-                  className="w-3.5 h-3.5 border border-encre-noire rounded accent-cordel-wood cursor-pointer"
-                />
-                <span className="text-[10px] font-bold text-encre-noire">
-                  Autoriser les choix multiples (les membres peuvent voter pour plusieurs réponses)
-                </span>
-              </label>
-            </div>
-          )}
-        </div>
+        <CreateThreadPollSection
+          showPollForm={showPollForm}
+          pollQuestion={pollQuestion}
+          setPollQuestion={setPollQuestion}
+          pollOptions={pollOptions}
+          onAddOption={handleAddPollOption}
+          onRemoveOption={handleRemovePollOption}
+          onOptionChange={handlePollOptionChange}
+          pollAllowMultiple={pollAllowMultiple}
+          setPollAllowMultiple={setPollAllowMultiple}
+          saving={saving}
+        />
 
         {/* Basculer Notification Push FCM */}
         <div className="flex items-center gap-2 pt-2 border-t border-dashed border-cordel-master-dark/15 text-left select-none">

@@ -11,6 +11,7 @@ import { DEFAULT_CUSTOM_CATEGORIES } from '../../utils/categoryUtils';
 import EventMediaFields from './EventMediaFields';
 import EventPupitresQuotasFields from './EventPupitresQuotasFields';
 import EventPollFormSection from './EventPollFormSection';
+import EventVolunteerShiftsEditor from './EventVolunteerShiftsEditor';
 import { useTranslation } from '../LanguageContext';
 
 /**
@@ -756,7 +757,7 @@ export default function EventFormFields({
                 <input
                   type="checkbox"
                   name="sendPushNotification"
-                  checked={Boolean(formData.sendPushNotification)}
+                  checked={formData.sendPushNotification !== false}
                   onChange={(e) => setFormData(prev => ({ ...prev, sendPushNotification: e.target.checked }))}
                   disabled={saving}
                   className="w-4 h-4 rounded accent-cordel-wood cursor-pointer"
@@ -847,89 +848,12 @@ export default function EventFormFields({
 
           {/* Créneaux Bénévoles */}
           {createConfig.agendaEnableVolunteerShifts !== false && (
-            <div className="border-t border-dashed border-cordel-master-dark/15 pt-3 flex flex-col gap-2">
-              <div className="flex justify-between items-center">
-                <h5 className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood flex items-center gap-1">
-                  🤝 {tr('agenda.volunteerSlots')}
-                </h5>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const newShifts = [...(formData.volunteerShifts || []), { label: '', horaires: '', neededCount: 1 }];
-                    setFormData(prev => ({ ...prev, volunteerShifts: newShifts }));
-                  }}
-                  className="text-[9px] font-black uppercase tracking-wider bg-cordel-bg-light border border-encre-noire px-2 py-1 rounded cursor-pointer hover:bg-cordel-hover"
-                >
-                  ＋ Ajouter un poste
-                </button>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                {(formData.volunteerShifts || []).length === 0 ? (
-                  <p className="text-[10px] italic opacity-60">Aucun créneau bénévole configuré.</p>
-                ) : (
-                  (formData.volunteerShifts || []).map((shift, idx) => (
-                    <div key={idx} className="flex gap-2 items-end p-2 bg-cordel-bg border border-dashed border-cordel-master-dark/25 rounded relative">
-                      <div className="flex-1 flex flex-col gap-1">
-                        <label className="text-[8px] uppercase font-bold text-cordel-master-dark">Mission</label>
-                        <input
-                          type="text"
-                          value={shift.label}
-                          placeholder="Accueil, Buvette..."
-                          onChange={(e) => {
-                            const newShifts = [...formData.volunteerShifts];
-                            newShifts[idx].label = e.target.value;
-                            setFormData(prev => ({ ...prev, volunteerShifts: newShifts }));
-                          }}
-                          className="theme-input py-1 px-2 text-xs w-full"
-                          required
-                        />
-                      </div>
-                      <div className="w-16 flex flex-col gap-1">
-                        <label className="text-[8px] uppercase font-bold text-cordel-master-dark">Besoin</label>
-                        <input
-                          type="number"
-                          min="1"
-                          value={shift.neededCount}
-                          onChange={(e) => {
-                            const newShifts = [...formData.volunteerShifts];
-                            newShifts[idx].neededCount = parseInt(e.target.value) || 1;
-                            setFormData(prev => ({ ...prev, volunteerShifts: newShifts }));
-                          }}
-                          className="theme-input py-1 px-2 text-xs w-full text-center"
-                          required
-                        />
-                      </div>
-                      <div className="flex-1 flex flex-col gap-1">
-                        <label className="text-[8px] uppercase font-bold text-cordel-master-dark">Horaires</label>
-                        <input
-                          type="text"
-                          value={shift.horaires}
-                          placeholder="14:00 - 16:00"
-                          onChange={(e) => {
-                            const newShifts = [...formData.volunteerShifts];
-                            newShifts[idx].horaires = e.target.value;
-                            setFormData(prev => ({ ...prev, volunteerShifts: newShifts }));
-                          }}
-                          className="theme-input py-1 px-2 text-xs w-full"
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const newShifts = formData.volunteerShifts.filter((_, sIdx) => sIdx !== idx);
-                          setFormData(prev => ({ ...prev, volunteerShifts: newShifts }));
-                        }}
-                        className="text-[9.5px] font-black uppercase bg-cordel-rouge text-white border border-encre-noire px-2 py-2 rounded cursor-pointer hover:bg-red-800 shrink-0"
-                        title="Supprimer ce créneau"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
+            <EventVolunteerShiftsEditor
+              formData={formData}
+              setFormData={setFormData}
+              saving={saving}
+              tr={tr}
+            />
           )}
 
           {/* Sondage multi-dates (Création uniquement) */}

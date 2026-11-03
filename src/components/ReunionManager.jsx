@@ -11,6 +11,8 @@ import { XiloCalendar } from './XiloIcons';
 import { checkAndExecuteAutoValidation } from '../utils/reportPublicationUtils';
 import { getEffectiveMemberTags, isMemberCaOrBureau } from '../utils/memberUtils';
 import { canManageReunions } from '../utils/permissionUtils';
+import { notifyNewAgendaEventOrPoll } from '../utils/agendaNotificationUtils';
+import ReunionPollSlotsEditor from './agenda/ReunionPollSlotsEditor';
 
 /**
  * Composant de gestion des Réunions dans le Studio.
@@ -51,6 +53,7 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
   const [lieuId, setLieuId] = useState(null);
   const [lieuxImportants, setLieuxImportants] = useState([]);
   const [lienDocument, setLienDocument] = useState('');
+  const [sendPushNotification, setSendPushNotification] = useState(true);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -173,7 +176,8 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
       if (creationMode === 'poll') {
         const validSlots = pollSlots.filter(s => s.date && s.timeStart);
         const pollGroupId = `poll_reunion_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-        
+        let firstCreatedEventId = null;
+
         for (let i = 0; i < validSlots.length; i++) {
           const slot = validSlots[i];
           const dateTimeStartStr = `${slot.date}T${slot.timeStart}:00`;
@@ -195,6 +199,7 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
             portee: audience,
             pointsOrdreDuJour: pointsOrdreDuJour,
             lienDocument: (lienDocument || '').trim(),
+            sendPushNotification: sendPushNotification !== false,
             compteRenduStatus: 'brouillon',
             compteRenduApprovals: {},
             autoValidateAfter7Days: false,
@@ -208,7 +213,21 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
             lieuSimple: (lieu || '').trim() || 'Salle de réunion / En ligne',
             lieuId: lieuId || null
           };
-          await addDoc(collection(db, 'events'), newEventDoc);
+          const createdRef = await addDoc(collection(db, 'events'), newEventDoc);
+          if (i === 0) firstCreatedEventId = createdRef.id;
+        }
+        if (sendPushNotification !== false && firstCreatedEventId) {
+          await notifyNewAgendaEventOrPoll({
+            groupId,
+            creatorId: user?.uid,
+            titre: title.trim(),
+            isPoll: true,
+            validDatesCount: validSlots.length,
+            firstCreatedEventId,
+            audience,
+            pollRestrictionType: pollRestrictionType === 'tag' ? 'badge' : pollRestrictionType,
+            pollTarget
+          });
         }
         alert(`Sondage de réunion créé avec succès ! (${validSlots.length} créneaux générés dans l'Agenda)`);
       } else {
@@ -225,6 +244,7 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
           portee: audience,
           pointsOrdreDuJour: pointsOrdreDuJour,
           lienDocument: (lienDocument || '').trim(),
+          sendPushNotification: sendPushNotification !== false,
           compteRenduStatus: 'brouillon',
           compteRenduApprovals: {},
           autoValidateAfter7Days: false,
@@ -239,6 +259,17 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
           lieuId: lieuId || null
         };
         const docRef = await addDoc(collection(db, 'events'), newEventDoc);
+        if (sendPushNotification !== false && docRef?.id) {
+          await notifyNewAgendaEventOrPoll({
+            groupId,
+            creatorId: user?.uid,
+            titre: title.trim(),
+            isPoll: false,
+            dateStr: dateTimeStartStr,
+            firstCreatedEventId: docRef.id,
+            audience
+          });
+        }
         setSelectedEventId(docRef.id);
         alert("Réunion créée avec succès !");
       }
@@ -251,6 +282,7 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
       setAudience('publique');
       setPointsOrdreDuJour([]);
       setLienDocument('');
+      setSendPushNotification(true);
       setLieuId(null);
       setPollSlots([
         { date: '', timeStart: '19:00', timeEnd: '21:00' },
@@ -526,114 +558,16 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
                     </div>
                   ) : (
                     /* Mode Sondage Multi-Créneaux */
-                    <div className="flex flex-col gap-3 border-t border-dashed border-cordel-master-dark/15 pt-2">
-                      <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-wood flex items-center justify-between">
-                        <span>Créneaux proposés (min. 2 dates)</span>
-                      </label>
-
-                      <div className="flex flex-col gap-2 max-h-52 overflow-y-auto pr-1">
-                        {pollSlots.map((slot, idx) => (
-                          <div key={idx} className="p-2 bg-white/70 rounded border border-cordel-master-dark/20 flex flex-col gap-1.5 relative">
-                            <div className="flex justify-between items-center">
-                              <span className="text-[9px] font-extrabold text-cordel-wood uppercase">
-                                Option {idx + 1}
-                              </span>
-                              {idx >= 2 && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemovePollSlot(idx)}
-                                  className="text-red-600 hover:text-red-800 text-[10px] font-bold px-1"
-                                >
-                                  ✖
-                                </button>
-                              )}
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
-                              <input
-                                type="date"
-                                value={slot.date}
-                                onChange={(e) => handlePollSlotChange(idx, 'date', e.target.value)}
-                                required
-                                className="theme-input text-[11px] py-1 bg-white"
-                              />
-                              <input
-                                type="time"
-                                value={slot.timeStart}
-                                onChange={(e) => handlePollSlotChange(idx, 'timeStart', e.target.value)}
-                                required
-                                className="theme-input text-[11px] py-1 bg-white"
-                              />
-                              <input
-                                type="time"
-                                value={slot.timeEnd}
-                                onChange={(e) => handlePollSlotChange(idx, 'timeEnd', e.target.value)}
-                                className="theme-input text-[11px] py-1 bg-white"
-                              />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={handleAddPollSlot}
-                        className="text-[9px] font-black uppercase text-cordel-wood hover:underline text-left mt-0.5 cursor-pointer"
-                      >
-                        + Ajouter une date proposée
-                      </button>
-
-                      {/* Restriction du vote */}
-                      <div className="flex flex-col gap-1 mt-1 pt-2 border-t border-dashed border-cordel-master-dark/15">
-                        <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                          Restriction du vote
-                        </label>
-                        <select
-                          value={pollRestrictionType}
-                          onChange={(e) => {
-                            setPollRestrictionType(e.target.value);
-                            setPollTarget('');
-                          }}
-                          className="theme-input text-xs font-bold py-1 bg-white"
-                        >
-                          <option value="aucun">👥 Tous les membres</option>
-                          <option value="tag">🏷️ Par Étiquette (ex: C.A, Bureau)</option>
-                          <option value="instrument">🥁 Par Pupitre / Instrument</option>
-                        </select>
-                      </div>
-
-                      {pollRestrictionType === 'tag' && (
-                        <div className="flex flex-col gap-1">
-                          <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                            Étiquette ciblée
-                          </label>
-                          <input
-                            type="text"
-                            value={pollTarget}
-                            onChange={(e) => setPollTarget(e.target.value)}
-                            placeholder="Ex: C.A, Bureau..."
-                            className="theme-input text-xs font-bold py-1 bg-white"
-                          />
-                        </div>
-                      )}
-
-                      {pollRestrictionType === 'instrument' && (
-                        <div className="flex flex-col gap-1">
-                          <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                            Pupitre / Instrument ciblé
-                          </label>
-                          <select
-                            value={pollTarget}
-                            onChange={(e) => setPollTarget(e.target.value)}
-                            className="theme-input text-xs font-bold py-1 bg-white"
-                          >
-                            <option value="">-- Choisir l'instrument --</option>
-                            {['Alfaia', 'Caixa', 'Gonguê', 'Agbê', 'Mineiro', 'Timbal', 'Chant', 'Danse'].map(inst => (
-                              <option key={inst} value={inst}>{inst}</option>
-                            ))}
-                          </select>
-                        </div>
-                      )}
-                    </div>
+                    <ReunionPollSlotsEditor
+                      pollSlots={pollSlots}
+                      onAddSlot={handleAddPollSlot}
+                      onRemoveSlot={handleRemovePollSlot}
+                      onSlotChange={handlePollSlotChange}
+                      pollRestrictionType={pollRestrictionType}
+                      setPollRestrictionType={setPollRestrictionType}
+                      pollTarget={pollTarget}
+                      setPollTarget={setPollTarget}
+                    />
                   )}
 
                   {/* Section Rédactrice de l'Ordre du Jour */}
@@ -699,6 +633,18 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
                       className="theme-input text-[11px] w-full py-1 bg-white"
                     />
                   </div>
+
+                  {/* Case à cocher d'alerte Push (cochée par défaut) */}
+                  <label className="flex items-center gap-2 pt-2 border-t border-dashed border-cordel-master-dark/15 text-xs font-bold text-cordel-wood cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={sendPushNotification}
+                      onChange={(e) => setSendPushNotification(e.target.checked)}
+                      disabled={isSubmitting}
+                      className="w-4 h-4 rounded accent-cordel-wood cursor-pointer"
+                    />
+                    <span>🔔 Envoyer une notification Push aux membres</span>
+                  </label>
 
                   <CordelButton 
                     variant="ocre" 

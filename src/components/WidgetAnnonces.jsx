@@ -5,7 +5,7 @@ import { getToken } from 'firebase/messaging';
 import CordelButton from './CordelButton';
 import { XiloMegaphone } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
-import { showPushActivationConfirmation } from '../utils/pushNotificationHelper';
+import { showPushActivationConfirmation, resolveActiveMessagingSwRegistration } from '../utils/pushNotificationHelper';
 import { canPublishAnnonces } from '../utils/permissionUtils';
 import { resolveEffectiveUserTags } from '../utils/tagUtils';
 import { getCachedAnnouncements } from '../utils/dashboardCacheUtils';
@@ -77,8 +77,7 @@ export default function WidgetAnnonces({
     try {
       const permission = await Notification.requestPermission();
       if (permission === 'granted') {
-        let reg = 'serviceWorker' in navigator ? await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js') : undefined;
-        if (!reg && 'serviceWorker' in navigator) reg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+        const reg = await resolveActiveMessagingSwRegistration();
         const token = await getToken(messaging, { vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY, serviceWorkerRegistration: reg });
         if (token) {
           await updateDoc(doc(db, 'users', user.uid), { fcmTokens: arrayUnion(token) });

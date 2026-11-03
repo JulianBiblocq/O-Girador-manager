@@ -1,19 +1,21 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { doc, onSnapshot, updateDoc, arrayUnion, runTransaction, getDoc } from 'firebase/firestore';
-import { db, auth } from '../firebase';
-import { getFirstUnreadIndex, toTimestamp, getLocalReadThreads, saveLocalReadThread } from '../utils/forumUnreadUtils';
+import { db } from '../firebase';
+import { getFirstUnreadIndex, getLocalReadThreads } from '../utils/forumUnreadUtils';
 import { useForumModeration } from './useForumModeration';
 import { getTagId, resolveEffectiveUserTags } from '../utils/tagUtils';
 import {
   isUserModeratorOrAdmin,
   canUserWriteInForumChannel,
-  canUserReadForumChannel,
-  checkUserAccessToList
+  canUserReadForumChannel
 } from '../utils/permissionUtils';
 import useConfirm from './useConfirm';
 import { extractMentionedUserIds } from '../components/forum/MentionAutocomplete';
-import { canonicalizeGroupId } from '../utils/tenantUtils';
-import { dispatchInAppAndPushNotification, NOTIFICATION_TYPES } from '../utils/inAppNotificationService';
+import {
+  syncThreadReadStatus,
+  isPushCooldownActive,
+  dispatchThreadReplyNotifications
+} from '../utils/forumThreadSyncUtils';
 
 /**
  * Hook personnalisé encapsulant toute la logique d'état, les écoutes temps réel,
@@ -251,34 +253,10 @@ export function useThreadData({
     return getFirstUnreadIndex(thread, currentUserId, initialLastRead);
   }, [thread, user?.uid, profileData?.uid, profileData?.id, initialLastRead]);
 
-  // Marquage automatique comme lu lorsque le sujet est ouvert
+  // Marquage automatique comme lu (users/{uid} ET forum/{threadId}.lectures.{uid}) lorsque le sujet est ouvert
   useEffect(() => {
-    const currentUserId = user?.uid || profileData?.uid || profileData?.id || auth?.currentUser?.uid;
-    const currentThreadId = thread?.id || threadId;
-    if (thread && currentUserId && currentThreadId) {
-      const modStr = thread.derniereModification || thread.dateCreation;
-      if (!modStr) return;
-
-      const threadLastMod = toTimestamp(modStr);
-      const localReads = getLocalReadThreads(currentUserId);
-      const userLastReadStr = profileData?.readThreads?.[currentThreadId] || localReads[currentThreadId];
-      const userLastRead = toTimestamp(userLastReadStr);
-
-      const now = Date.now();
-      const safeReadTime = new Date(Math.max(now, threadLastMod + 1000)).toISOString();
-
-      // 1. Sauvegarde locale synchrone immédiate (zéro latence)
-      saveLocalReadThread(currentUserId, currentThreadId, safeReadTime);
-
-      // 2. Sauvegarde Firestore distante
-      if (!userLastRead || threadLastMod >= userLastRead) {
-        const userRef = doc(db, 'users', currentUserId);
-        updateDoc(userRef, {
-          [`readThreads.${currentThreadId}`]: safeReadTime
-        }).catch((err) => console.warn("useThreadData - Avertissement mise à jour lecture:", err));
-      }
-    }
-  }, [thread, user, threadId, profileData?.readThreads]);
+    syncThreadReadStatus({ thread, threadId, user, profileData });
+  }, [thread, user, threadId, profileData]);
 
   const previousRepliesCountRef = useRef(0);
 
@@ -382,70 +360,31 @@ export function useThreadData({
         mentionedUserIds: detectedMentionIds
       };
 
+      const allowChannelPush = !isPushCooldownActive(thread?.lastPushSentAt);
+
       await updateDoc(threadRef, {
         reponses: arrayUnion(newReply),
-        derniereModification: now
+        derniereModification: now,
+        ...(allowChannelPush ? { lastPushSentAt: now } : {})
       });
 
       setReplyingTo(null);
 
-      // Notification automatique pour tous les membres ayant accès au salon de discussion
+      // Notification automatique pour tous les membres ayant accès au salon (avec cooldown Push 5 min)
       try {
-        const notifRecipientIds = new Set();
-
-        // 1. Tous les membres autorisés dans le salon (à l'exception de l'auteur du message)
-        (allUsers || []).forEach((u) => {
-          if (!u.id || u.id === user?.uid) return;
-          if (threadChannel && !canUserReadForumChannel(threadChannel, u, activeTagsDisponibles, u.tags || [], false)) {
-            return;
-          }
-          notifRecipientIds.add(u.id);
+        await dispatchThreadReplyNotifications({
+          thread,
+          threadId,
+          threadChannel,
+          user,
+          profileData,
+          allUsers,
+          activeTagsDisponibles,
+          replyText,
+          selectedTarget,
+          detectedMentionIds,
+          allowChannelPush
         });
-
-        // 2. Mentions explicites d'utilisateurs
-        if (detectedMentionIds.length > 0) {
-          detectedMentionIds.forEach((uid) => {
-            if (uid !== user?.uid) notifRecipientIds.add(uid);
-          });
-        }
-
-        // 3. Utilisateurs avec instrument ou étiquette ciblée
-        if (selectedTarget) {
-          allUsers.forEach((u) => {
-            if (u.id === user?.uid) return;
-            const playsInst = (u.instrumentsJoues && u.instrumentsJoues.includes(selectedTarget)) || (u.instrument === selectedTarget);
-            const hasTag = checkUserAccessToList([selectedTarget], u, u.tags || []);
-            if (playsInst || hasTag) {
-              notifRecipientIds.add(u.id);
-            }
-          });
-        }
-
-        const senderName = `${profileData?.prenom || ''} ${profileData?.nom || ''}`.trim() || 'Un membre';
-        const cleanMsg = replyText.replace(/<[^>]*>?/gm, '').trim();
-        const snippet = cleanMsg.length > 80 ? `${cleanMsg.slice(0, 80)}...` : cleanMsg;
-        const effectiveGroupId = canonicalizeGroupId(profileData?.groupId || thread?.groupId);
-
-        const notifPromises = Array.from(notifRecipientIds).map((recipientId) => {
-          const isMentioned = detectedMentionIds.includes(recipientId);
-          const notifTitle = isMentioned
-            ? `🗣️ ${senderName} vous a mentionné(e)`
-            : `💬 ${senderName} dans "${thread?.titre || 'Discussion'}"`;
-
-          return dispatchInAppAndPushNotification({
-            recipientId,
-            groupId: effectiveGroupId,
-            type: isMentioned ? NOTIFICATION_TYPES.FORUM_MENTION : NOTIFICATION_TYPES.FORUM_MESSAGE,
-            titre: notifTitle,
-            message: `"${snippet}"`,
-            targetUrl: `/app/forum?threadId=${threadId}`,
-            sendPush: true
-          });
-        });
-
-        if (notifPromises.length > 0) {
-          await Promise.allSettled(notifPromises);
-        }
       } catch (notifErr) {
         console.error("useThreadData - Erreur envoi notifications forum :", notifErr);
       }

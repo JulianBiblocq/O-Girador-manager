@@ -265,56 +265,23 @@ exports.onAnnouncementCreated = onDocumentCreated(
 );
 
 /**
- * Trigger : onEventCreated
+ * Trigger : onEventCreated (Neutralisé : le pipeline unifié dispatchBulkInAppAndPushNotification
+ * alimente déjà in_app_notifications et notifications_queue sans doublon)
  */
 exports.onEventCreated = onDocumentCreated(
   "evenements/{eventId}",
-  async (event) => {
-    const snap = event.data;
-    if (!snap) return null;
-    const data = snap.data();
-    
-    // N'envoie que si expressément demandé via la case "sendPushNotification"
-    if (!data.sendPushNotification || !data.groupId) return null;
-
-    const db = getFirestore();
-    const cibles = Array.isArray(data.cible) ? data.cible : ["Tous"];
-    const eventId = event.params.eventId;
-    
-    await sendPushToUsers(db, {
-      groupId: data.groupId,
-      cibles: cibles,
-      title: `📅 Nouvel événement : ${data.titre || data.nom || "Événement"}`,
-      body: data.description || "Un nouvel événement a été ajouté à l'agenda.",
-      dataPayload: { url: `/app/events/${eventId}`, click_action: `/app/events/${eventId}`, eventId, tag: `event-${eventId}` }
-    });
+  async () => {
     return null;
   }
 );
 
 /**
- * Trigger : onForumThreadCreated
+ * Trigger : onForumThreadCreated (Neutralisé : le pipeline unifié dispatchBulkInAppAndPushNotification
+ * alimente déjà in_app_notifications et notifications_queue sans doublon)
  */
 exports.onForumThreadCreated = onDocumentCreated(
   "forum/{threadId}",
-  async (event) => {
-    const snap = event.data;
-    if (!snap) return null;
-    const data = snap.data();
-    
-    if (!data.sendPushNotification || !data.groupId) return null;
-
-    const db = getFirestore();
-    const threadId = event.params.threadId;
-    const cibles = data.targetTag ? [data.targetTag] : ["Tous"];
-    
-    await sendPushToUsers(db, {
-      groupId: data.groupId,
-      cibles: cibles,
-      title: `💬 Nouveau sujet : ${data.titre}`,
-      body: `Posté par ${data.auteurNom || "Un membre"}`,
-      dataPayload: { url: `/app/forum/${threadId}`, click_action: `/app/forum/${threadId}`, threadId, tag: `forum-${threadId}` }
-    });
+  async () => {
     return null;
   }
 );

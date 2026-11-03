@@ -1,6 +1,7 @@
 import React from 'react';
 import ThreadMessageItem from './ThreadMessageItem';
 import PollCard from '../PollCard';
+import { resolveEffectiveMessageLectures } from '../../../utils/forumThreadSyncUtils';
 
 /**
  * Conteneur scrollable des messages d'une discussion avec gestion du séparateur
@@ -102,7 +103,7 @@ export default function ThreadMessageList({
                 <ThreadMessageItem
                   reply={{
                     ...reply,
-                    lectures: reply.lectures || (index === 0 ? thread?.lectures : {})
+                    lectures: resolveEffectiveMessageLectures(thread, reply)
                   }}
                   index={index}
                   threadId={thread?.id}

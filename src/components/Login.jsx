@@ -11,6 +11,7 @@ import useGroupContext, { setStoredGroupId } from '../hooks/useGroupContext';
 import { canonicalizeGroupId } from '../utils/tenantUtils';
 import GroupSelectorStep from './auth/GroupSelectorStep';
 import RegisterForm from './auth/RegisterForm';
+import { InAppBrowserHelpBanner, AuthAssistanceBannerCard } from './auth/LoginAssistanceBanners';
 
 const syncAuthLocale = (authInstance, lang) => {
   if (authInstance) {
@@ -40,8 +41,8 @@ export default function Login({ branding, onSuccess }) {
     }
   }, [setManualGroupId]);
 
-  // Détection du mode initial : si l'utilisateur arrive via un lien d'invitation (groupe ou mode=signup),
-  // on active directement le mode Création de compte pour éviter la confusion avec la connexion.
+  // Détection du mode initial : toujours « Se connecter » par défaut (même avec ?groupe= ou ?tenant=),
+  // sauf si l'URL demande explicitement l'inscription (?mode=signup ou ?signup=1).
   const searchParams = useMemo(() => {
     return typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
   }, []);
@@ -50,10 +51,14 @@ export default function Login({ branding, onSuccess }) {
     const mode = searchParams.get('mode');
     const signup = searchParams.get('signup');
     const inscription = searchParams.get('inscription');
-    if (mode === 'login' || mode === 'signin' || mode === 'connexion') return false;
-    if (mode === 'signup' || mode === 'register' || signup === 'true' || inscription === 'true') return true;
-    const hasGroup = Boolean(searchParams.get('groupe') || searchParams.get('assoc') || searchParams.get('tenant'));
-    return hasGroup;
+    return (
+      mode === 'signup' ||
+      mode === 'register' ||
+      signup === '1' ||
+      signup === 'true' ||
+      inscription === '1' ||
+      inscription === 'true'
+    );
   }, [searchParams]);
 
   // Détection des navigateurs intégrés d'applications (Gmail, Yahoo, Mail iOS, Facebook, etc.)
@@ -382,32 +387,9 @@ export default function Login({ branding, onSuccess }) {
               </div>
             ) : (
               <>
-                {/* Bandeau d'aide In-App Browser (Gmail, Yahoo, Mail iOS, etc.) */}
+                {/* Bandeau d'aide In-App Browser (WhatsApp, Instagram, Gmail, etc.) */}
                 {isInAppBrowser && !inAppDismissed && (
-                  <div className="p-3 mb-5 bg-amber-50/90 border-2 border-amber-600/50 rounded-[6px_8px_5px_7px] text-left text-xs text-amber-900 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.1)] relative animate-fadeIn">
-                    <button 
-                      type="button" 
-                      onClick={() => setInAppDismissed(true)} 
-                      className="absolute top-1.5 right-2 text-stone-500 hover:text-stone-800 text-sm font-bold cursor-pointer"
-                      aria-label="Fermer cette notification"
-                    >
-                      ✕
-                    </button>
-                    <div className="flex items-start gap-2.5 pr-4">
-                      <span className="text-lg select-none">💡</span>
-                      <div className="space-y-1">
-                        <p className="font-extrabold text-[11px] uppercase tracking-wide">
-                          Ouverture depuis votre application de messagerie
-                        </p>
-                        <p className="text-[10px] leading-relaxed text-amber-950/80">
-                          Si la connexion Google bloque ou si l'affichage est tronqué, appuyez sur les <strong>•••</strong> ou l'icône de partage <strong>↗</strong> de votre écran pour choisir <em>« Ouvrir dans Chrome / Safari »</em>.
-                        </p>
-                        <p className="text-[10px] font-bold text-amber-800">
-                          ✨ Astuce : La création de compte par e-mail et mot de passe ci-dessous fonctionne directement ici sans quitter votre écran !
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                  <InAppBrowserHelpBanner onDismiss={() => setInAppDismissed(true)} />
                 )}
 
                 {/* Onglets segmentés Cordel : Se connecter / Créer un compte */}
@@ -574,98 +556,16 @@ export default function Login({ branding, onSuccess }) {
                         </div>
 
                         {/* Encart d'assistance intelligente zéro-friction */}
-                        {authAssistanceBanner && (
-                          <div className="p-3 my-1 bg-amber-50/95 border-2 border-encre-noire rounded-[6px_8px_5px_7px] text-left text-xs shadow-[3px_3px_0px_0px_#181716] relative animate-fadeIn">
-                            <button
-                              type="button"
-                              onClick={() => setAuthAssistanceBanner(null)}
-                              className="absolute top-1.5 right-2 text-stone-500 hover:text-stone-900 font-black text-sm cursor-pointer select-none"
-                              title="Fermer cette notification"
-                              aria-label="Fermer"
-                            >
-                              ✕
-                            </button>
-
-                            <div className="flex items-start gap-2.5 pr-4">
-                              <span className="text-xl select-none">
-                                {authAssistanceBanner.type === 'confirmed_account_wrong_password' ? '🔑' : '💡'}
-                              </span>
-                              <div className="space-y-1.5 w-full">
-                                <p className="font-black text-[11px] uppercase tracking-wide text-cordel-wood">
-                                  {authAssistanceBanner.type === 'email_already_exists'
-                                    ? "Votre adresse e-mail est déjà enregistrée !"
-                                    : authAssistanceBanner.type === 'confirmed_account_wrong_password'
-                                    ? "Ce compte existe déjà avec cette adresse"
-                                    : "Identifiants non reconnus pour cet e-mail"}
-                                </p>
-
-                                <p className="text-[11px] leading-relaxed text-amber-950/90 font-medium">
-                                  {authAssistanceBanner.type === 'email_already_exists' ? (
-                                    <>
-                                      Votre adresse e-mail est déjà enregistrée ! Si vous aviez utilisé Google, cliquez sur <strong>Continuer avec Google</strong>. Sinon, vérifiez votre mot de passe ou cliquez ci-dessous pour le réinitialiser.
-                                    </>
-                                  ) : authAssistanceBanner.type === 'confirmed_account_wrong_password' ? (
-                                    <>
-                                      Votre compte existe bien pour <strong>{authAssistanceBanner.email}</strong>, mais le mot de passe saisi ne correspond pas (ou vous vous étiez connecté avec Google).
-                                    </>
-                                  ) : (
-                                    <>
-                                      S'il s'agit de votre première visite (après avoir réglé sur HelloAsso ou pour rejoindre l'association) ou si vous avez oublié votre mot de passe :
-                                    </>
-                                  )}
-                                </p>
-
-                                {/* Actions directes */}
-                                <div className="flex flex-col gap-2 pt-1.5">
-                                  {/* Action rapide : première visite / activation en 1 clic */}
-                                  {authAssistanceBanner.type === 'invalid_credentials_or_new_user' && (
-                                    <button
-                                      type="button"
-                                      onClick={() => handleQuickAccountActivation(authAssistanceBanner.email, password)}
-                                      disabled={authLoading}
-                                      className="w-full py-2 px-2.5 bg-[var(--color-cordel-vert,#2d6a4f)] text-white font-black text-[11px] uppercase tracking-wider rounded border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] hover:brightness-110 active:translate-y-0.5 cursor-pointer flex items-center justify-center gap-1.5 transition-all"
-                                    >
-                                      <span>✨</span>
-                                      <span>C'est ma première visite : activer mon compte avec cet e-mail</span>
-                                    </button>
-                                  )}
-
-                                  {/* Réinitialisation de mot de passe en 1 clic */}
-                                  {resetConfirmationEmail === authAssistanceBanner.email ? (
-                                    <div className="p-2 bg-emerald-50 border border-emerald-600 rounded text-[10px] font-bold text-emerald-900 shadow-xs">
-                                      ✓ Un e-mail de réinitialisation sécurisé vient d'être envoyé à <strong>{authAssistanceBanner.email}</strong>. Cliquez sur le lien reçu pour choisir votre mot de passe, puis revenez vous connecter. (Pensez à vérifier vos courriers indésirables / spams).
-                                    </div>
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      onClick={() => handleInstantPasswordReset(authAssistanceBanner.email)}
-                                      disabled={authLoading}
-                                      className="w-full py-2 px-2.5 bg-cordel-wood text-white font-extrabold text-[11px] uppercase tracking-wider rounded border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] hover:brightness-110 active:translate-y-0.5 cursor-pointer flex items-center justify-center gap-1.5 transition-all"
-                                    >
-                                      <span>🔑</span>
-                                      <span>M'envoyer un e-mail de réinitialisation de mot de passe</span>
-                                    </button>
-                                  )}
-
-                                  {/* Option Google directe */}
-                                  <button
-                                    type="button"
-                                    onClick={handleLogin}
-                                    disabled={authLoading}
-                                    className={`w-full py-2 px-2.5 font-extrabold text-[11px] uppercase tracking-wider rounded border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] active:translate-y-0.5 cursor-pointer flex items-center justify-center gap-1.5 transition-all ${
-                                      authAssistanceBanner.isGoogleCandidate
-                                        ? 'bg-amber-300 text-amber-950 ring-2 ring-amber-600 font-black'
-                                        : 'bg-amber-100/90 text-amber-950 hover:bg-amber-200'
-                                    }`}
-                                  >
-                                    <span>🌐</span>
-                                    <span>Continuer avec Google</span>
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
+                        <AuthAssistanceBannerCard
+                          banner={authAssistanceBanner}
+                          password={password}
+                          authLoading={authLoading}
+                          resetConfirmationEmail={resetConfirmationEmail}
+                          onClose={() => setAuthAssistanceBanner(null)}
+                          onQuickActivation={handleQuickAccountActivation}
+                          onInstantReset={handleInstantPasswordReset}
+                          onGoogleLogin={handleLogin}
+                        />
 
                         <CordelButton 
                           variant="default" 

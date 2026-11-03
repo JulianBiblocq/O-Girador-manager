@@ -27,6 +27,11 @@ import { getMigratedRoleAndTags } from './utils/roleMigration';
 import { canAccessPole, canAccessTabPermission, canAccessMestre, canPublishAnnonces } from './utils/permissionUtils';
 import PendingValidationScreen from './components/auth/PendingValidationScreen';
 import ArchivedAccountScreen from './components/auth/ArchivedAccountScreen';
+import ProfileNetworkRetryScreen, {
+  hasKnownCompletedProfile,
+  markKnownCompletedProfile,
+  checkIsProfileComplete
+} from './components/auth/ProfileNetworkRetryScreen';
 import { isMemberArchived } from './utils/memberUtils';
 import { useTenantContext } from './context/TenantContext';
 import TenantNotFound from './components/TenantNotFound';
@@ -359,9 +364,10 @@ export default function App() {
   const [user, setUser] = useState(() => (isDemoMode() ? getDemoAuthUser() : null));
   const [loading, setLoading] = useState(() => (isDemoMode() ? false : true));
   const [checkingProfile, setCheckingProfile] = useState(false);
-  const [profileExists, setProfileExists] = useState(() => (isDemoMode() ? true : false));
+  const [profileExists, setProfileExists] = useState(() => (isDemoMode() ? true : null));
+  const [profileNetworkWaiting, setProfileNetworkWaiting] = useState(false);
   const [profileData, setProfileData] = useState(() => (isDemoMode() ? getDemoProfileData() : null));
-  const isWaitingForProfile = Boolean(user && profileData === null && profileExists !== false);
+  const isWaitingForProfile = Boolean(user && profileData === null && profileExists !== false && !profileNetworkWaiting);
   const [branding, setBranding] = useState(null);
   const [associationName, setAssociationName] = useState('');
   const [majoriteFeminine, setMajoriteFeminine] = useState(false);
@@ -1290,7 +1296,7 @@ export default function App() {
                 const resolvedRole = isFounderOrSuperAdmin ? (data.role || 'mestre') : (migration.needsMigration ? migration.newRole : data.role);
 
                 // 3. Injection immédiate dans le state React (zéro latence)
-                setProfileData({
+                const resolvedProfile = {
                   uid: docSnap.id,
                   id: docSnap.id,
                   ...data,
@@ -1303,8 +1309,13 @@ export default function App() {
                   cotisationStatus: (isFounderOrSuperAdmin || isExonere) ? 'exonere' : (data.cotisationStatus || 'non_payee'),
                   isCotisationExoneree: (isFounderOrSuperAdmin || isExonere) ? true : Boolean(data.isCotisationExoneree),
                   onboardingCompleted: isFounderOrSuperAdmin ? true : Boolean(data.onboardingCompleted)
-                });
+                };
+                setProfileData(resolvedProfile);
                 setProfileExists(true);
+                setProfileNetworkWaiting(false);
+                if (checkIsProfileComplete(resolvedProfile, isFounderOrSuperAdmin, currentUser.uid)) {
+                  markKnownCompletedProfile(currentUser.uid);
+                }
 
                 // 4. Auto-guérison silencieuse de l'onboarding pour le Mestre / Admin dans Firestore
                 if (isFounderOrSuperAdmin && data.onboardingCompleted !== true) {
@@ -1330,6 +1341,8 @@ export default function App() {
                     console.warn("App - Avertissement migration profil utilisateur (non-bloquant) :", err);
                   });
                 }
+                setCheckingProfile(false);
+                setLoading(false);
               } else {
                 // Sécurité Fondateur : si Julian se connecte mais que son document est sous l'UID historique
                 const isFounderAccount = currentUser.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' || (currentUser.email || '').toLowerCase() === 'julian.bzh@gmail.com';
@@ -1409,27 +1422,33 @@ export default function App() {
                     if (reconciled) {
                       console.info("App - Fiche pré-existante Bureau réconciliée pour l'UID :", currentUser.uid);
                     } else {
+                      const knownComplete = hasKnownCompletedProfile(currentUser.uid);
                       setProfileData(null);
-                      setProfileExists(false);
+                      setProfileExists(knownComplete ? null : false);
+                      setProfileNetworkWaiting(knownComplete);
                       setCheckingProfile(false);
                       setLoading(false);
                     }
                   }).catch((err) => {
-                    console.warn("App - Erreur réconciliation automatique :", err);
-                    setProfileData(null);
-                    setProfileExists(false);
+                    console.warn("App - Erreur réconciliation automatique (attente réseau maintenue) :", err);
+                    setProfileExists(prev => (prev === true ? true : null));
+                    setProfileNetworkWaiting(true);
                     setCheckingProfile(false);
                     setLoading(false);
                   });
                   return;
                 } else {
+                  const knownComplete = hasKnownCompletedProfile(currentUser.uid);
                   setProfileData(null);
-                  setProfileExists(false);
+                  setProfileExists(knownComplete ? null : false);
+                  setProfileNetworkWaiting(knownComplete);
+                  setCheckingProfile(false);
+                  setLoading(false);
                 }
               }
             } catch (snapErr) {
               console.error("App - Erreur traitement onSnapshot profil :", snapErr);
-            } finally {
+              setProfileNetworkWaiting(true);
               setCheckingProfile(false);
               setLoading(false);
             }
@@ -1472,15 +1491,17 @@ export default function App() {
               });
               setProfileExists(true);
             } else {
-              setProfileData(null);
-              setProfileExists(false);
+              // Ne jamais basculer profileExists à false sur erreur réseau : maintenir null pour afficher l'écran d'attente réseau
+              setProfileExists(prev => (prev === true ? true : null));
+              setProfileNetworkWaiting(true);
             }
             setCheckingProfile(false);
             setLoading(false);
           });
         } else {
           setProfileData(null);
-          setProfileExists(false);
+          setProfileExists(null);
+          setProfileNetworkWaiting(false);
           setCheckingProfile(false);
           if (!isSSOPending) {
             setLoading(false);
@@ -1503,12 +1524,12 @@ export default function App() {
   }, []);
 
   // Watchdog de sécurité anti-blocage (chargement infini)
-  // Si le chargement ou la vérification du profil dure plus de 3.5 secondes, débloquer impérativement l'écran
+  // Si le chargement ou la vérification du profil dure plus de 3.5 secondes, débloquer vers l'écran d'attente réseau (sans basculer vers Onboarding)
   useEffect(() => {
     if (!loading && !checkingProfile && !isWaitingForProfile) return;
 
     const watchdogTimer = setTimeout(() => {
-      console.warn("App - Watchdog de sécurité déclenché : déblocage forcé du chargement.");
+      console.warn("App - Watchdog de sécurité déclenché : passage en attente réseau sécurisée.");
       const currentUser = auth.currentUser;
       const isFounder = currentUser?.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' || (currentUser?.email || '').toLowerCase() === 'julian.bzh@gmail.com';
       if (currentUser && isFounder && !profileData) {
@@ -1534,6 +1555,8 @@ export default function App() {
           tags: ['Visiteur', 'Mestre', 'Direction', 'Bureau', 'CA', 'Exonéré', 'Fondateur', 'Webmaster']
         });
         setProfileExists(true);
+      } else if (currentUser && !profileData) {
+        setProfileNetworkWaiting(true);
       }
       setCheckingProfile(false);
       setLoading(false);
@@ -1788,6 +1811,7 @@ export default function App() {
 
   // Déclenché à la fin de l'onboarding : redirection automatique et fluide vers le tableau de bord adhérent
   const handleOnboardingComplete = () => {
+    markKnownCompletedProfile(user?.uid);
     setCurrentRoute('/app');
     setCurrentPole('accueil');
     setCurrentTab('dashboard');
@@ -1828,6 +1852,7 @@ export default function App() {
           <button
             type="button"
             onClick={() => {
+              setProfileNetworkWaiting(true);
               setCheckingProfile(false);
               setLoading(false);
             }}
@@ -2001,12 +2026,7 @@ export default function App() {
   }
 
   // 4. Déverrouillage absolu de l'Onboarding pour le Mestre / Admin / Super-Admin / Fondateur
-  const isProfileComplete = 
-    isPrivilegedUser ||
-    profileData?.onboardingCompleted === true || 
-    profileData?.isNew === false ||
-    Boolean(profileData?.telephone && (profileData?.adresseRue || profileData?.adresse)) ||
-    Boolean((profileData?.prenom || profileData?.firstName) && (profileData?.nom || profileData?.lastName) && (profileData?.instrument || profileData?.instrumentPrincipal || profileData?.pratiqueDanse || profileData?.role));
+  const isProfileComplete = checkIsProfileComplete(profileData, isPrivilegedUser, user?.uid);
 
   // Clause d'exclusion prioritaire absolue : un Mestre, Super-Admin, Admin ou compte Fondateur
   // ne doit JAMAIS se voir bloqué par l'Onboarding adhérent.
@@ -2018,6 +2038,30 @@ export default function App() {
           <ArchivedAccountScreen
             profileData={profileData}
             branding={branding}
+            onSignOut={handleSignOut}
+          />
+          <ReloadPrompt />
+        </div>
+      );
+    }
+
+    // 4a-bis. Réseau lent (> 3,5s) ou micro-coupure : ne jamais basculer vers Onboarding si l'absence de profil n'est pas formellement prouvée
+    if (profileExists === null || (!profileData && hasKnownCompletedProfile(user?.uid))) {
+      return (
+        <div style={brandingStyle} className="min-h-screen flex flex-col w-full force-light-theme">
+          <ProfileNetworkRetryScreen
+            user={user}
+            onRetry={() => {
+              setProfileNetworkWaiting(false);
+              setCheckingProfile(true);
+            }}
+            onProfileRecovered={(recoveredData) => {
+              setProfileData(recoveredData);
+              setProfileExists(true);
+              setProfileNetworkWaiting(false);
+              setCheckingProfile(false);
+              setLoading(false);
+            }}
             onSignOut={handleSignOut}
           />
           <ReloadPrompt />
@@ -2466,18 +2510,30 @@ export default function App() {
    * Gestionnaire central de navigation interne déclenchée par le Centre de Notifications
    * et le Deep Linking SPA sans rechargement de page.
    */
-  const handleNotificationNavigate = (targetUrl) => {
-    if (!targetUrl || typeof targetUrl !== 'string') return;
+  const handleNotificationNavigate = (targetUrl, notification = null) => {
+    if ((!targetUrl || typeof targetUrl !== 'string') && notification?.type !== 'push_reminder') return;
 
-    let path = targetUrl;
+    let path = targetUrl || '/app';
     let queryStr = '';
-    if (targetUrl.includes('?')) {
-      const parts = targetUrl.split('?');
+    if (path.includes('?')) {
+      const parts = path.split('?');
       path = parts[0];
       queryStr = parts[1];
     }
     const params = new URLSearchParams(queryStr);
     const basePath = '/app';
+
+    // 0. Relance d'activation des notifications Push en 1 clic (?setup-push=1 ou type === 'push_reminder')
+    if (params.get('setup-push') === '1' || notification?.type === 'push_reminder') {
+      setCurrentPole('accueil');
+      setCurrentTab('dashboard');
+      setCurrentRoute(basePath);
+      const newSearchParams = new URLSearchParams(window.location.search);
+      newSearchParams.set('setup-push', '1');
+      window.history.pushState({}, '', `${basePath}?${newSearchParams.toString()}`);
+      window.dispatchEvent(new CustomEvent('open-push-activation-modal'));
+      return;
+    }
 
     // 1. Forum / Discussions / Messages Privés / Groupes
     if (path.includes('/forum') || path.includes('/threads')) {

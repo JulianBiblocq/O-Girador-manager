@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { getToken } from 'firebase/messaging';
 import { db, messaging } from '../firebase';
+import { resolveActiveMessagingSwRegistration } from '../utils/pushNotificationHelper';
 
 /**
  * Hook léger d'auto-synchronisation du jeton FCM au chargement de l'application.
@@ -28,13 +29,7 @@ export function useAutoSyncPushToken(user, profileData, onTokenSynced) {
 
     const syncToken = async () => {
       try {
-        let swReg;
-        if ('serviceWorker' in navigator) {
-          swReg = await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js');
-          if (!swReg) {
-            swReg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-          }
-        }
+        const swReg = await resolveActiveMessagingSwRegistration();
         const currentToken = await getToken(messaging, {
           vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
           serviceWorkerRegistration: swReg

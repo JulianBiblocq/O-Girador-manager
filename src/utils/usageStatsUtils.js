@@ -57,9 +57,13 @@ export function computeAssociationUsageStats({ rawUsers = [], rawAnnouncements =
   let sumReadRates = 0;
   const recentAnnouncementsStats = sortedAnnouncements.map((ann) => {
     const targetIds = resolveTargetRecipientIds({ announcement: ann, allMembers: activeMembers, authorId: ann.auteurId });
+    const targetSet = targetIds.length > 0 ? new Set(targetIds) : null;
     const targetCount = Math.max(1, targetIds.length || totalActiveMembers || 1);
     const lecturesObj = ann.lectures && typeof ann.lectures === 'object' ? ann.lectures : {};
-    const readCount = Object.keys(lecturesObj).filter((uid) => uid !== ann.auteurId).length;
+    const validReaders = Object.keys(lecturesObj).filter(
+      (uid) => uid !== ann.auteurId && (!targetSet || targetSet.has(uid))
+    );
+    const readCount = Math.min(validReaders.length, targetCount);
     const rate = Math.min(100, Math.round((readCount / targetCount) * 100));
     sumReadRates += rate;
     return { id: ann.id, titre: ann.titre || 'Annonce', readCount, targetCount, rate };
