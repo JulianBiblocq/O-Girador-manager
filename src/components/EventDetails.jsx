@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { doc, updateDoc, collection, query, where, onSnapshot, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { httpsCallable } from 'firebase/functions';
@@ -180,6 +180,7 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
     pollTargetPupitres: Array.isArray(evt?.pollTargetPupitres) ? evt.pollTargetPupitres : [],
     pollDates: evt?.pollGroupId ? [String(evt?.dateDebut || evt?.date || '').slice(0, 16)] : [],
     pollOptionIds: evt?.pollGroupId && evt?.id ? [evt.id] : [],
+    deletedPollOptionIds: [],
     contactsJourJ: evt?.contactsJourJ || {
       referentOrgaNom: '',
       referentOrgaTel: '',
@@ -189,10 +190,17 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
   }), []);
 
   const [editForm, setEditForm] = useState(() => buildEditFormFromEvent(activeEvent));
+  const hasInitializedPollDatesRef = useRef(false);
+  const lastEditedEventIdRef = useRef(activeEvent?.id);
 
-  // Chargement de toutes les dates du sondage (pollGroupId) à l'ouverture du mode édition
+  // Chargement unique de toutes les dates du sondage (pollGroupId) à l'ouverture du mode édition
   useEffect(() => {
-    if (!isEditingEvent || !targetEvent?.pollGroupId) return;
+    if (!isEditingEvent) {
+      hasInitializedPollDatesRef.current = false;
+      return;
+    }
+    if (!targetEvent?.pollGroupId || hasInitializedPollDatesRef.current) return;
+    hasInitializedPollDatesRef.current = true;
     let cancelled = false;
     fetchPollSiblingsForEdit(db, targetEvent)
       .then((pollData) => {
@@ -205,6 +213,7 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
           pollTargetPupitres: pollData.pollTargetPupitres,
           pollOptionIds: pollData.pollOptionIds,
           pollDates: pollData.pollDates,
+          deletedPollOptionIds: [],
           date: pollData.pollDates[0] || prev.date
         }));
       })
@@ -214,7 +223,8 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
     return () => {
       cancelled = true;
     };
-  }, [isEditingEvent, targetEvent]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEditingEvent, targetEvent?.pollGroupId, targetEvent?.groupId]);
 
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imageMode, setImageMode] = useState(() => {
@@ -494,7 +504,14 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
 
 
   useEffect(() => {
+    const idChanged = lastEditedEventIdRef.current !== activeEvent?.id;
+    lastEditedEventIdRef.current = activeEvent?.id;
+    // Tant que l'utilisateur édite la même fiche, ne jamais réécraser editForm ni fermer le formulaire
+    if (isEditingEvent && !idChanged) {
+      return;
+    }
     setIsEditingEvent(false);
+    hasInitializedPollDatesRef.current = false;
     setEditForm(buildEditFormFromEvent(activeEvent));
     const url = activeEvent.imageUrl;
     setImageMode(url && (url.startsWith('http://') || url.startsWith('https://')) && !url.includes('firebasestorage') ? 'url' : 'upload');
@@ -1176,7 +1193,8 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
           videoUrl: savedVideoUrl,
           lienDepotMedias: savedDropUrl,
           pollOptionIds: syncResult.finalSlotIds,
-          pollDates: syncResult.validDates
+          pollDates: syncResult.validDates,
+          deletedPollOptionIds: []
         }));
         setIsEditingEvent(false);
         if (syncResult.currentEventWasDeleted && syncResult.firstRemainingId) {

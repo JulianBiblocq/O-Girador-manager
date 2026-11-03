@@ -114,11 +114,17 @@ export async function syncPollGroupOnSave({ db, event, editForm, sharedUpdates, 
     }
   });
 
-  const deletedIds = [];
+  const explicitDeleted = Array.isArray(editForm.deletedPollOptionIds) ? editForm.deletedPollOptionIds.filter(Boolean) : [];
+  const deletedSet = new Set(explicitDeleted);
   existingIdsInDb.forEach((existingId) => {
-    if (!keptIds.has(existingId)) {
-      deletedIds.push(existingId);
-      batch.delete(doc(db, 'events', existingId));
+    if (!keptIds.has(existingId)) deletedSet.add(existingId);
+  });
+
+  const deletedIds = [];
+  deletedSet.forEach((delId) => {
+    if (!keptIds.has(delId)) {
+      deletedIds.push(delId);
+      batch.delete(doc(db, 'events', delId));
     }
   });
 
@@ -133,4 +139,3 @@ export async function syncPollGroupOnSave({ db, event, editForm, sharedUpdates, 
   await batch.commit();
   return { currentEventWasDeleted, firstRemainingId, finalSlotIds, validDates: validEntries.map((e) => e.date) };
 }
-

@@ -61,3 +61,11 @@ These are the core architectural and design system rules for the O-Girador-manag
 - Interdiction de modifier le port local sans instruction explicite.
 - `strictPort: true` est obligatoire : si le port est occupé, tuer les processus résiduels au lieu de changer de port.
 - Les tests E2E et les liens de navigation locale doivent pointer rigoureusement vers ces ports dédiés.
+
+---
+
+### 🪶 Règle du "Boy Scout" (Amaigrissement progressif des anciens monolithes)
+- **Détection automatique (> 250 lignes) :** À chaque fois qu'une mission t'amène à modifier un fichier existant dépassant 250 lignes (ex: `App.jsx`, `EventFormFields.jsx`, `EventDetails.jsx`), il est interdit d'y empiler du nouveau code.
+- **Protocole obligatoire en 2 étapes (1 brique à la fois) :**
+  1. **Étape A (Extraction chirurgicale) :** Extraire uniquement la sous-section concernée par la mission (modale, sous-formulaire, bloc d'onglet ou groupe de hooks) dans un nouveau sous-composant ou Custom Hook dédié (< 150-200 lignes, commenté en français), à périmètre fonctionnel 100 % identique. Ne jamais tenter de découper tout le monolithe d'un coup.
+  2. **Étape B (Modification ciblée) :** Appliquer la nouveauté ou le correctif dans ce nouveau petit fichier isolé.

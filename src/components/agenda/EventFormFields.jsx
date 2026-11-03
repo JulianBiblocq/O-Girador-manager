@@ -40,6 +40,7 @@ export default function EventFormFields({
   t
 }) {
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
   const { t: contextT } = useTranslation();
   const tr = typeof t === 'function' ? t : contextT;
 
@@ -777,7 +778,8 @@ export default function EventFormFields({
         title={tr('agenda.advancedOptionsTitle')}
         subtitle={tr('agenda.advancedOptionsDesc') || "Date limite, créneaux bénévoles, budget prévisionnel et sondage de dates"}
         icon="⚙️"
-        defaultOpen={false}
+        isOpen={isAdvancedOpen}
+        onToggle={setIsAdvancedOpen}
       >
         <div className="flex flex-col gap-4 pt-1">
           {/* Date limite d'inscription */}
