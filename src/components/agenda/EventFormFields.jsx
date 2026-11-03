@@ -266,8 +266,8 @@ export default function EventFormFields({
           </select>
         </div>
 
-        {/* Dates & Horaires (Début & Fin) */}
-        {!formData.isPoll && (
+        {/* Dates & Horaires (Début & Fin) ou Sondage en mode édition */}
+        {!(formData.isPoll || formData.status === 'sondage' || formData.pollGroupId) ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* Date Début */}
             <div className="flex flex-col gap-1">
@@ -279,7 +279,7 @@ export default function EventFormFields({
                 name="date"
                 value={formData.date || ''}
                 onChange={handleDateDebutChange}
-                required={!formData.isPoll}
+                required={!(formData.isPoll || formData.status === 'sondage' || formData.pollGroupId)}
                 disabled={saving}
                 className="theme-input w-full text-xs font-bold disabled:opacity-50"
               />
@@ -301,7 +301,15 @@ export default function EventFormFields({
               />
             </div>
           </div>
-        )}
+        ) : isEdit ? (
+          <EventPollFormSection
+            formData={formData}
+            setFormData={setFormData}
+            pupitresList={pupitresList}
+            isEdit={true}
+            tr={tr}
+          />
+        ) : null}
 
         {/* Lieu & Adresse avec autocomplétion */}
         {createConfig.agendaEnableAdresse !== false && (

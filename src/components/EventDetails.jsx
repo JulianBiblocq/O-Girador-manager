@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { doc, updateDoc, collection, query, where, onSnapshot, writeBatch, getDocs, getDoc } from 'firebase/firestore';
+import { doc, updateDoc, collection, query, where, onSnapshot, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { httpsCallable } from 'firebase/functions';
 import { db, storage, functions } from '../firebase';
+import { fetchPollSiblingsForEdit, syncPollGroupOnSave } from '../utils/pollEditSyncUtils';
 import CordelButton from './CordelButton';
 import { XiloMegaphone } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
@@ -172,8 +173,13 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
     logistiqueMalles: Array.isArray(evt?.logistiqueMalles) ? evt.logistiqueMalles : [],
     mallesSpecifiques: Array.isArray(evt?.mallesSpecifiques) ? evt.mallesSpecifiques : [],
     quotasPupitres: evt?.quotasPupitres || {},
+    status: evt?.status || 'confirme',
+    isPoll: Boolean(evt?.isPoll || evt?.status === 'sondage' || evt?.pollGroupId),
+    pollGroupId: evt?.pollGroupId || null,
     pollMode: evt?.pollMode || 'single_winner',
     pollTargetPupitres: Array.isArray(evt?.pollTargetPupitres) ? evt.pollTargetPupitres : [],
+    pollDates: evt?.pollGroupId ? [String(evt?.dateDebut || evt?.date || '').slice(0, 16)] : [],
+    pollOptionIds: evt?.pollGroupId && evt?.id ? [evt.id] : [],
     contactsJourJ: evt?.contactsJourJ || {
       referentOrgaNom: '',
       referentOrgaTel: '',
@@ -183,6 +189,32 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
   }), []);
 
   const [editForm, setEditForm] = useState(() => buildEditFormFromEvent(activeEvent));
+
+  // Chargement de toutes les dates du sondage (pollGroupId) à l'ouverture du mode édition
+  useEffect(() => {
+    if (!isEditingEvent || !targetEvent?.pollGroupId) return;
+    let cancelled = false;
+    fetchPollSiblingsForEdit(db, targetEvent)
+      .then((pollData) => {
+        if (cancelled || !pollData) return;
+        setEditForm((prev) => ({
+          ...prev,
+          isPoll: true,
+          pollGroupId: targetEvent.pollGroupId,
+          pollMode: pollData.pollMode,
+          pollTargetPupitres: pollData.pollTargetPupitres,
+          pollOptionIds: pollData.pollOptionIds,
+          pollDates: pollData.pollDates,
+          date: pollData.pollDates[0] || prev.date
+        }));
+      })
+      .catch((err) => {
+        console.error("EventDetails - Erreur chargement des créneaux du sondage :", err);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isEditingEvent, targetEvent]);
 
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imageMode, setImageMode] = useState(() => {
@@ -1038,10 +1070,9 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
       const savedDropUrl = (editForm.dropUrl || editForm.lienDepotMedias || '').trim();
       const savedVideoUrl = (editForm.videoUrl || '').trim();
 
-      await updateDoc(eventRef, {
+      const sharedUpdates = {
         titre: editForm.titre,
         type: editForm.type,
-        date: editForm.date,
         dateFin: editForm.dateFin || '',
         lieu: updatedLieu,
         lieuSimple: updatedLieu,
@@ -1127,6 +1158,43 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
             ? editForm.pollTargetPupitres
             : (Array.isArray(event.pollTargetPupitres) ? event.pollTargetPupitres : [])
         } : {})
+      };
+
+      // Synchronisation atomique par lot (writeBatch) si l'événement fait partie d'un sondage (pollGroupId)
+      if (event.pollGroupId) {
+        const syncResult = await syncPollGroupOnSave({
+          db,
+          event,
+          editForm,
+          sharedUpdates,
+          resolvedGroupId
+        });
+        setEditForm((prev) => ({
+          ...prev,
+          enableVideoDrop: savedEnableVideoDrop,
+          dropUrl: savedDropUrl,
+          videoUrl: savedVideoUrl,
+          lienDepotMedias: savedDropUrl,
+          pollOptionIds: syncResult.finalSlotIds,
+          pollDates: syncResult.validDates
+        }));
+        setIsEditingEvent(false);
+        if (syncResult.currentEventWasDeleted && syncResult.firstRemainingId) {
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new PopStateEvent('popstate'));
+          }
+          if (onNavigateToView) {
+            onNavigateToView('agenda', { eventId: syncResult.firstRemainingId });
+          }
+        }
+        alert(t('agenda.saveSuccess'));
+        return;
+      }
+
+      await updateDoc(eventRef, {
+        ...sharedUpdates,
+        date: editForm.date,
+        dateDebut: editForm.date
       });
 
       setEditForm(prev => ({
@@ -1137,46 +1205,15 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
         lienDepotMedias: savedDropUrl
       }));
 
-      // Synchronisation automatique par lot (batch mettre à jour) si l'événement fait partie d'un sondage (pollGroupId)
-      if (event.pollGroupId) {
-        try {
-          const pollConstraints = [where('pollGroupId', '==', event.pollGroupId)];
-          if (event.groupId) {
-            pollConstraints.push(where('groupId', '==', event.groupId));
-          }
-          const pollQuery = query(collection(db, 'events'), ...pollConstraints);
-          const pollSnapshot = await getDocs(pollQuery);
-          if (!pollSnapshot.empty) {
-            const batch = writeBatch(db);
-            pollSnapshot.forEach((docSnap) => {
-              if (docSnap.id !== event.id) {
-                batch.update(docSnap.ref, {
-                  lieu: updatedLieu,
-                  lieuSimple: updatedLieu,
-                  lieuId: updatedLieuId,
-                  lienDocument: updatedLienDocument,
-                  description: updatedDescription,
-                  latitude: editForm.latitude ? Number(editForm.latitude) : null,
-                  longitude: editForm.longitude ? Number(editForm.longitude) : null,
-                  pollMode: editForm.pollMode || event.pollMode || 'single_winner',
-                  pollTargetPupitres: Array.isArray(editForm.pollTargetPupitres)
-                    ? editForm.pollTargetPupitres
-                    : (Array.isArray(event.pollTargetPupitres) ? event.pollTargetPupitres : [])
-                });
-              }
-            });
-            await batch.commit();
-          }
-        } catch (batchErr) {
-          console.error("EventDetails - Erreur de synchronisation des événements du sondage :", batchErr);
-        }
-      }
-
       setIsEditingEvent(false);
       alert(t('agenda.saveSuccess'));
     } catch (err) {
       console.error("EventDetails - Erreur de modification événement :", err);
-      alert("Erreur lors de l'enregistrement de l'événement.");
+      if (err?.message === 'POLL_MIN_TWO_DATES') {
+        alert("Un sondage doit comporter au moins 2 dates valides.");
+      } else {
+        alert("Erreur lors de l'enregistrement de l'événement.");
+      }
     } finally {
       setSavingEvent(false);
     }
@@ -1840,8 +1877,14 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
               pupitresList={pupitresList}
               linkedInstruments={linkedInstruments}
               onNavigateToEventId={(targetId) => {
+                if (typeof window !== 'undefined' && targetId) {
+                  const searchParams = new URLSearchParams(window.location.search);
+                  searchParams.set('eventId', targetId);
+                  window.history.pushState({ ...window.history.state, eventId: targetId }, '', `${window.location.pathname}?${searchParams.toString()}`);
+                  window.dispatchEvent(new PopStateEvent('popstate'));
+                }
                 if (onNavigateToView) {
-                  onNavigateToView('agenda', targetId);
+                  onNavigateToView('agenda', { eventId: targetId });
                 }
               }}
             />

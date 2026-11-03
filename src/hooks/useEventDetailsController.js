@@ -37,6 +37,11 @@ export function useEventDetailsController(event, onClose, t) {
         if (docSnap.exists()) {
           setLiveEventData({ id: docSnap.id, ...docSnap.data() });
         } else {
+          // Ne pas fermer la fiche si la vue a basculé sur un autre créneau du sondage
+          if (typeof window !== 'undefined') {
+            const urlEventId = new URLSearchParams(window.location.search).get('eventId');
+            if (urlEventId && urlEventId !== event.id) return;
+          }
           // L'événement a été supprimé de la base de données (ex: lors de la résolution d'un sondage)
           if (onClose) {
             onClose();

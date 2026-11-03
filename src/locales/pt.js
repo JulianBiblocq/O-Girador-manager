@@ -829,6 +829,8 @@ export const pt = {
     modulePhotos: "Baú de fotos",
     pollCreateTitle: "Criar uma enquete de datas",
     pollCreateSubtitle: "Propor vários horários para votação dos membros",
+    pollEditTitle: "Datas e parâmetros da enquete",
+    pollEditSubtitle: "Modificar, adicionar ou remover horários (os votos existentes são preservados)",
     pollModeSingleWinner: "📅 Data única (1 único horário selecionado)",
     pollModePupitreDispatch: "🥁 Distribuição por naipe (1 horário atribuído por naipe)",
     pollTargetPupitresLabel: "Naipes a distribuir nos horários:",

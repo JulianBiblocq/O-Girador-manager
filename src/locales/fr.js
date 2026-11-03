@@ -829,6 +829,8 @@ export const fr = {
     modulePhotos: "Boîte photos",
     pollCreateTitle: "Créer un sondage de dates",
     pollCreateSubtitle: "Proposer plusieurs créneaux au vote des membres",
+    pollEditTitle: "Dates et paramètres du sondage",
+    pollEditSubtitle: "Modifier, ajouter ou retirer des créneaux (les votes existants sont préservés)",
     pollModeSingleWinner: "📅 Date unique (1 seul créneau retenu)",
     pollModePupitreDispatch: "🥁 Répartition par pupitre (1 créneau attribué par pupitre)",
     pollTargetPupitresLabel: "Pupitres à répartir sur les créneaux :",
