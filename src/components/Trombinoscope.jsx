@@ -31,7 +31,11 @@ import {
 
 import { useTenantContext } from '../context/TenantContext';
 import useGroupContext from '../hooks/useGroupContext';
-// canonicalizeGroupId retiré (géré par useGroupContext)
+import {
+  resolveAssociationGroupId,
+  getAssociationGroupVariants,
+  matchesAssociationTenant
+} from '../hooks/useAssociationMembers';
 import { isMemberArchived, isActiveMember, isMemberCaOrBureau } from '../utils/memberUtils';
 
 export default function Trombinoscope({ user, profileData, groupId: propGroupId, onBack, onContactUser }) {
@@ -41,10 +45,12 @@ export default function Trombinoscope({ user, profileData, groupId: propGroupId,
   const groupCtx = useGroupContext(profileData);
 
   // Résolution résiliente et prioritaire du groupe actif (Multi-Tenant strict)
-  const currentGroupId = useMemo(() => {
-    const candidate = propGroupId || tenantCtx?.groupId || groupCtx?.groupId || profileData?.groupId || '';
-    return typeof candidate === 'string' ? candidate.trim() : '';
-  }, [propGroupId, tenantCtx?.groupId, groupCtx?.groupId, profileData?.groupId]);
+  const currentGroupId = useMemo(() => resolveAssociationGroupId({
+    propGroupId,
+    profileData,
+    tenantGroupId: tenantCtx?.groupId,
+    storedGroupId: groupCtx?.groupId
+  }), [propGroupId, profileData, tenantCtx?.groupId, groupCtx?.groupId]);
 
   const { getColorForInstrument } = useInstrumentColor(currentGroupId);
   const [members, setMembers] = useState([]);
@@ -182,10 +188,7 @@ export default function Trombinoscope({ user, profileData, groupId: propGroupId,
     const usersRef = collection(db, 'users');
 
     // Variantes de casse dédoublonnées pour compatibilité multi-tenant
-    const groupVariants = Array.from(new Set([
-      currentGroupId,
-      currentGroupId.toLowerCase()
-    ].filter(Boolean)));
+    const groupVariants = getAssociationGroupVariants(currentGroupId);
 
     const q = query(usersRef, where('groupId', 'in', groupVariants));
 
@@ -198,8 +201,7 @@ export default function Trombinoscope({ user, profileData, groupId: propGroupId,
         const data = docSnap.data();
 
         // Cloisonnement strict : ignorer tout profil n'appartenant pas rigoureusement au groupe actif
-        const docGroupId = String(data.groupId || '').trim().toLowerCase();
-        if (docGroupId !== canonicalLower) {
+        if (!matchesAssociationTenant(data, currentGroupId, docSnap.id)) {
           return;
         }
 

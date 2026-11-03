@@ -1,12 +1,11 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { collection, query, onSnapshot, doc, updateDoc, where, deleteField, deleteDoc } from 'firebase/firestore';
+import React, { useState, useEffect } from 'react';
+import { onSnapshot, doc, updateDoc, deleteField, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import Tooltip from './Tooltip';
 import { useTranslation } from './LanguageContext';
-import { useTenantContext } from '../context/TenantContext';
-import useGroupContext from '../hooks/useGroupContext';
+import { useAssociationMembers } from '../hooks/useAssociationMembers';
 import { forceUpdateAndClearCache } from '../utils/pwaUtils';
 import { XiloSettings, XiloPeople } from './XiloIcons';
 import SystemUserList from './admin/SystemUserList';
@@ -34,21 +33,56 @@ const DEFAULT_FIELDS_CONFIG = {
 export default function SystemAdminPanel({ user: _user, profileData, groupId: propGroupId, associationName: propAssociationName, onBack, onNavigateToView }) {
   const { t } = useTranslation();
   const { confirm } = useConfirm();
-  const tenantCtx = useTenantContext();
-  const groupCtx = useGroupContext(profileData);
 
-  // Résolution prioritaire et résiliente du groupe actif (Multi-Tenant strict)
-  const currentGroupId = useMemo(() => {
-    const candidate = propGroupId || tenantCtx?.groupId || groupCtx?.groupId || profileData?.groupId || '';
-    return typeof candidate === 'string' ? candidate.trim() : '';
-  }, [propGroupId, tenantCtx?.groupId, groupCtx?.groupId, profileData?.groupId]);
+  const isAuthorized = Boolean(
+    profileData?.isSystemAdmin === true ||
+    profileData?.canViewAll === true ||
+    ['super-admin', 'mestre', 'admin'].includes((profileData?.role || '').toLowerCase()) ||
+    profileData?.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
+    profileData?.id === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
+    (profileData?.email || '').toLowerCase() === 'julian.bzh@gmail.com'
+  );
+
+  // Synchronisation unifiée et multi-tenant des profils membres de l'association active
+  const { currentGroupId, members: usersList, loading } = useAssociationMembers({
+    groupId: propGroupId,
+    profileData,
+    enabled: isAuthorized,
+    transformMember: (docId, uData) => {
+      if (isMemberArchived(uData)) {
+        return {
+          id: docId,
+          ...uData,
+          role: 'inactif',
+          tags: [],
+          isArchived: true
+        };
+      }
+      const migration = getMigratedRoleAndTags(uData);
+      if (migration.needsMigration) {
+        updateDoc(doc(db, 'users', docId), {
+          role: migration.newRole,
+          tags: migration.newTags
+        }).catch((err) => {
+          console.error("SystemAdminPanel - Erreur migration utilisateur :", err);
+          telemetryService.logError(err, 'SystemAdminPanel_Migration', currentGroupId);
+        });
+        return {
+          id: docId,
+          ...uData,
+          role: migration.newRole,
+          tags: migration.newTags
+        };
+      }
+      return { id: docId, ...uData };
+    }
+  });
 
   const translate = (key, fallback) => {
     const val = t(key);
     return val === key ? fallback : val;
   };
 
-  const [usersList, setUsersList] = useState([]);
   const [availableTags, setAvailableTags] = useState([]);
   const [draftRoles, setDraftRoles] = useState({}); // { [userId]: newRole }
   const [draftTags, setDraftTags] = useState({}); // { [userId]: [tag1, tag2, ...] }
@@ -60,7 +94,6 @@ export default function SystemAdminPanel({ user: _user, profileData, groupId: pr
   const [fieldsConfig, setFieldsConfig] = useState(null);
   const [instrumentsDisponibles, setInstrumentsDisponibles] = useState([]);
   const [linkedInstruments, setLinkedInstruments] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState(null);
   const [associationName, setAssociationName] = useState(propAssociationName || '');
   const [cleaningDuplicates, setCleaningDuplicates] = useState(false);
@@ -71,100 +104,9 @@ export default function SystemAdminPanel({ user: _user, profileData, groupId: pr
     }
   }, [propAssociationName]);
 
-  // Synchronisation en temps réel de l'ensemble des profils membres du groupe actif (Cloisonnement strict multi-tenant)
-  useEffect(() => {
-    // Si aucun groupe actif n'est résolu, vider la liste sans déclencher de requête globale
-    if (!currentGroupId) {
-      setUsersList([]);
-      setLoading(false);
-      return;
-    }
-
-    const isAuthorized = profileData?.isSystemAdmin === true || profileData?.role === 'super-admin' || profileData?.role === 'mestre' || profileData?.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1';
-    if (!isAuthorized) {
-      setUsersList([]);
-      setLoading(false);
-      return;
-    }
-
-    if (usersList.length === 0) {
-      setLoading(true);
-    }
-    const usersRef = collection(db, 'users');
-
-    // Variantes de casse dédoublonnées pour compatibilité résiliente
-    const groupVariants = Array.from(new Set([currentGroupId, currentGroupId.toLowerCase()].filter(Boolean)));
-    const q = query(usersRef, where('groupId', 'in', groupVariants));
-
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const fetchedUsers = [];
-      const canonicalLower = currentGroupId.toLowerCase();
-
-      querySnapshot.forEach((docSnap) => {
-        const uData = docSnap.data();
-        if (docSnap.id.startsWith('draft_') || uData.isNewDraft === true) {
-          return;
-        }
-
-        // Garde-fou local en mémoire : confirmation stricte du groupe pour immunité transversale absolue
-        const docGroupId = String(uData.groupId || '').trim().toLowerCase();
-        if (docGroupId !== canonicalLower) {
-          return;
-        }
-
-        const isArchived = isMemberArchived(uData);
-        if (isArchived) {
-          fetchedUsers.push({
-            id: docSnap.id,
-            ...uData,
-            role: 'inactif',
-            tags: [],
-            isArchived: true
-          });
-        } else {
-          const migration = getMigratedRoleAndTags(uData);
-          if (migration.needsMigration) {
-            const uRef = doc(db, 'users', docSnap.id);
-            updateDoc(uRef, {
-              role: migration.newRole,
-              tags: migration.newTags
-            }).catch(err => {
-              console.error("SystemAdminPanel - Erreur migration utilisateur :", err);
-              telemetryService.logError(err, 'SystemAdminPanel_Migration', currentGroupId);
-            });
-
-            fetchedUsers.push({
-              id: docSnap.id,
-              ...uData,
-              role: migration.newRole,
-              tags: migration.newTags
-            });
-          } else {
-            fetchedUsers.push({
-              id: docSnap.id,
-              ...uData
-            });
-          }
-        }
-      });
-
-      // Trier les membres par nom de famille
-      fetchedUsers.sort((a, b) => (a.nom || '').localeCompare(b.nom || ''));
-      setUsersList(fetchedUsers);
-      setLoading(false);
-    }, (error) => {
-      console.error("SystemAdminPanel - Erreur onSnapshot users :", error);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [profileData?.uid, currentGroupId, profileData?.role, profileData?.isSystemAdmin]);
-
   // Synchronisation temps réel de la liste des étiquettes et des paramètres depuis la collection associations
   useEffect(() => {
-    if (!currentGroupId) return;
-    const isAuthorized = profileData?.isSystemAdmin === true || profileData?.role === 'super-admin' || profileData?.role === 'mestre' || profileData?.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1';
-    if (!isAuthorized) return;
+    if (!currentGroupId || !isAuthorized) return;
 
     const assocRef = doc(db, 'associations', currentGroupId);
     const unsubscribe = onSnapshot(assocRef, (docSnap) => {
@@ -209,7 +151,6 @@ export default function SystemAdminPanel({ user: _user, profileData, groupId: pr
   }, [profileData?.uid, currentGroupId, profileData?.role, profileData?.isSystemAdmin]);
 
   // Contrôle de sécurité ultime
-  const isAuthorized = profileData?.isSystemAdmin === true || profileData?.role === 'super-admin' || profileData?.role === 'mestre' || profileData?.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1';
   if (!profileData || !isAuthorized) {
     return (
       <div className="text-center py-12">

@@ -2834,7 +2834,7 @@ export default function App() {
                   <Trombinoscope 
                     user={user} 
                     profileData={profileData} 
-                    groupId={urlGroupId || profileData?.groupId}
+                    groupId={profileData?.groupId || urlGroupId}
                     onBack={() => handleNavigateToPole('accueil')} 
                     onContactUser={(otherUserId) => {
                       setActivePrivateChatUserId(otherUserId);
@@ -2865,21 +2865,21 @@ export default function App() {
                   <AdminExport 
                     user={user}
                     profileData={profileData}
-                    groupId={urlGroupId || profileData?.groupId}
+                    groupId={profileData?.groupId || urlGroupId}
                     onBack={() => handleNavigateToPole('accueil')} 
                   />
                 ) : (currentTab === 'system-admin' && hasAccessConfig) ? (
                   <SystemAdminPanel 
                     user={user} 
                     profileData={profileData} 
-                    groupId={urlGroupId || profileData?.groupId}
+                    groupId={profileData?.groupId || urlGroupId}
                     associationName={associationName}
                     onBack={() => handleNavigateToPole('accueil')} 
                     onNavigateToView={handleNavigateToView}
                   />
                 ) : (currentTab === 'tag-manager' && hasAccessConfig) ? (
                   <TagManager 
-                    groupId={urlGroupId || profileData?.groupId}
+                    groupId={profileData?.groupId || urlGroupId}
                     role={profileData?.role}
                     isSystemAdmin={profileData?.isSystemAdmin}
                     onBack={() => setCurrentTab('export-annu')} 

@@ -117,7 +117,7 @@ export default function useTenantResolver() {
             else if (hostname.includes('dancador')) currentMode = 'dancador';
 
             const parts = hostname.split('.');
-            if (parts.length > 2 && !['mostrador', 'organizador', 'manager', 'sequenciador', 'dancador', 'www', 'o-girador-organizador'].includes(parts[0])) {
+            if (parts.length > 2 && !['mostrador', 'organizador', 'manager', 'sequenciador', 'dancador', 'www', 'o-girador-organizador', 'o-girador-7828c', 'o-girador-mostrador'].includes(parts[0])) {
               extractedGroupId = parts[0];
             }
             if (!extractedGroupId && tenantParam) {
@@ -166,6 +166,7 @@ export default function useTenantResolver() {
                 extractedGroupId = assocSnap.id;
                 hasError = null;
               } else {
+                extractedGroupId = null;
                 hasError = 'NOT_FOUND';
               }
             } catch (error) {

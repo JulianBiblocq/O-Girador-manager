@@ -15,6 +15,7 @@ import ReportVolunteerCard from './reports/ReportVolunteerCard';
 import ReportAudienceCard from './reports/ReportAudienceCard';
 import AgSlideshowModal from './reports/AgSlideshowModal';
 import UsageStatsBanner from './reports/UsageStatsBanner';
+import { fetchAssociationMembersOnce, getAssociationGroupVariants } from '../../hooks/useAssociationMembers';
 import {
   getSeasonDateRange,
   getCurrentSeason,
@@ -146,10 +147,10 @@ export default function SecretariatReportsView({ groupId, onBack }) {
     setError(null);
 
     try {
-      const groupVariants = Array.from(new Set([groupId, groupId.toLowerCase()].filter(Boolean)));
+      const groupVariants = getAssociationGroupVariants(groupId);
       // Exécution en parallèle de toutes les requêtes ponctuelles
       const [
-        usersSnap,
+        usersList,
         eventsSnap,
         coutureSnap,
         partsSnap,
@@ -160,7 +161,7 @@ export default function SecretariatReportsView({ groupId, onBack }) {
         announcementsSnap,
         documentsSnap
       ] = await Promise.all([
-        getDocs(query(collection(db, 'users'), where('groupId', 'in', groupVariants))),
+        fetchAssociationMembersOnce(groupId),
         getDocs(query(collection(db, 'events'), where('groupId', '==', groupId))),
         getDocs(query(collection(db, 'coutureProjects'), where('groupId', '==', groupId))),
         getDocs(query(collection(db, 'inventory_parts'), where('groupId', '==', groupId))),
@@ -171,9 +172,6 @@ export default function SecretariatReportsView({ groupId, onBack }) {
         getDocs(query(collection(db, 'announcements'), where('groupId', 'in', groupVariants))).catch(() => ({ forEach: () => {} })),
         getDocs(query(collection(db, 'documents'), where('groupId', 'in', groupVariants))).catch(() => ({ forEach: () => {} }))
       ]);
-
-      const usersList = [];
-      usersSnap.forEach(d => usersList.push({ id: d.id, ...d.data() }));
 
       const eventsList = [];
       eventsSnap.forEach(d => eventsList.push({ id: d.id, ...d.data() }));
