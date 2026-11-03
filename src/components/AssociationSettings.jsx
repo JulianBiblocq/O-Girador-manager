@@ -61,10 +61,10 @@ export default function AssociationSettings({
     setPlanSceneFile,
     kitPresseFile,
     setKitPresseFile,
-    droitImageFile,
-    setDroitImageFile,
-    aptitudeMedicaleFile,
-    setAptitudeMedicaleFile,
+    droitImageFile: _droitImageFile,
+    setDroitImageFile: _setDroitImageFile,
+    aptitudeMedicaleFile: _aptitudeMedicaleFile,
+    setAptitudeMedicaleFile: _setAptitudeMedicaleFile,
     signaturePresidentFile,
     setSignaturePresidentFile,
     signatureTresorierFile,
@@ -73,7 +73,7 @@ export default function AssociationSettings({
     saving,
     loading,
     toastMessage,
-    handleSaveHelloAssoKey,
+    handleSaveHelloAssoKey: _handleSaveHelloAssoKey,
     handleSave,
     handleSyncCombinedSeal
   } = useAssociationSettings(groupId, isAuthorized, onBack, t, associationData);

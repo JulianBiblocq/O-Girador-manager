@@ -51,7 +51,7 @@ const calculateCarStatus = (car, associationSettings) => {
 export default function KilometricReimbursementManager({ groupId, onBack, role, isSystemAdmin, hasAccessTresorerie, isEmbedded }) {
   const { t, locale } = useTranslation();
   const [events, setEvents] = useState([]);
-  const [members, setMembers] = useState([]);
+  const [_members, setMembers] = useState([]);
   const [associationSettings, setAssociationSettings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('summary'); // 'summary', 'members', 'events'

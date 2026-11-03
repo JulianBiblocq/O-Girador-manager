@@ -185,10 +185,10 @@ export const applyCarpoolAbsenceCascade = (covoiturage = {}, inscriptions = [], 
   updatedRecherche = updatedRecherche.filter(p => p && p.uid !== userId);
 
   // 4. Réinitialisation des attributs de transport pour l'inscription de userId
-  let memberFound = false;
+  let _memberFound = false;
   updatedInscriptions = updatedInscriptions.map(ins => {
     if (ins.userId === userId) {
-      memberFound = true;
+      _memberFound = true;
       return {
         ...ins,
         status: 'absent',

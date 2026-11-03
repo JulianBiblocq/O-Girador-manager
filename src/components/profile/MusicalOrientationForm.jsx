@@ -24,8 +24,8 @@ export default function MusicalOrientationForm({
   saving,
   instrumentsDisponibles = DEFAULT_INSTRUMENTS,
   linkedInstruments = [],
-  isAncien = false,
-  t = (key, fallback) => fallback
+  isAncien: _isAncien = false,
+  t: _t = (key, fallback) => fallback
 }) {
   const rawList = Array.isArray(instrumentsDisponibles) && instrumentsDisponibles.length > 0
     ? instrumentsDisponibles

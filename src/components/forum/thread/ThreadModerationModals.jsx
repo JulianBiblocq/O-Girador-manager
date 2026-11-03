@@ -8,7 +8,7 @@ import ThreadEditReplyModal from './ThreadEditReplyModal';
  */
 export default function ThreadModerationModals({
   thread,
-  threadId,
+  threadId: _threadId,
   channels = [],
   availableThreads = [],
   profileData,

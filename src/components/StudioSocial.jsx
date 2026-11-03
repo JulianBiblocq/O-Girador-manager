@@ -315,7 +315,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
     }
   };
 
-  const handleUpdateSocialTag = async (idx, oldTag) => {
+  const handleUpdateSocialTag = async (idx, _oldTag) => {
     if (!editingTagValue.trim()) return;
     let tag = editingTagValue.trim();
     if (!tag.startsWith('#')) {

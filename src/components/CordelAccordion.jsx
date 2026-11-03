@@ -45,7 +45,7 @@ export default function CordelAccordion({
   };
 
   // If a child input triggers HTML5 validation error while closed, auto-expand accordion
-  const handleInvalid = (e) => {
+  const handleInvalid = (_e) => {
     if (!open) {
       if (!isControlled) {
         setInternalIsOpen(true);

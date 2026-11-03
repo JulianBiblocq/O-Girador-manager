@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { doc, updateDoc, collection, addDoc, query, where, getDocs, writeBatch } from 'firebase/firestore';
+import { doc, updateDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
@@ -13,6 +13,7 @@ import { publishReportDefinitive } from '../../utils/reportPublicationUtils';
 import EventEmargementSection from './EventEmargementSection';
 import ReportValidatorsSelector from './ReportValidatorsSelector';
 import { getEffectiveMemberTags, getCanonicalTagKey, isMemberCaOrBureau } from '../../utils/memberUtils';
+import { canManageReunions } from '../../utils/permissionUtils';
 
 export default function EventReportSection({ event, user, profileData, associationSettings }) {
   const { t } = useTranslation();
@@ -64,12 +65,19 @@ export default function EventReportSection({ event, user, profileData, associati
 
   const presents = event.inscriptions?.filter(ins => ins.status === 'present') || [];
 
-  // Vérifier roles: Admins, Secrétaires ou le Rédacteur désigné
-  const isGlobalAdmin = 
-    profileData?.role === 'mestre' || 
-    profileData?.role === 'super-admin' || 
-    profileData?.role === 'secretaire' || 
-    profileData?.isSystemAdmin === true;
+  // Vérifier les droits : Admins, Mestre, Secrétaires, Présidente, Bureau, C.A. ou le Rédacteur désigné
+  const effectiveMemberTags = getEffectiveMemberTags(profileData);
+  const isGlobalAdmin =
+    profileData?.role === 'mestre' ||
+    profileData?.role === 'super-admin' ||
+    profileData?.role === 'secretaire' ||
+    profileData?.isSystemAdmin === true ||
+    isMemberCaOrBureau(profileData) ||
+    canManageReunions(
+      profileData,
+      associationSettings?.permissionsMatrice || event?.associationSettings?.permissionsMatrice || null,
+      effectiveMemberTags
+    );
 
   const isRedacteur = event.redacteurId === user.uid;
   const isAdmin = isGlobalAdmin || isRedacteur;
@@ -88,6 +96,35 @@ export default function EventReportSection({ event, user, profileData, associati
   useEffect(() => {
     setAutoValidateAfter7Days(Boolean(event?.autoValidateAfter7Days ?? false));
   }, [event?.autoValidateAfter7Days]);
+
+  // Publish report definitively
+  const handlePublishDefinitive = async (pointsToPublish = localPoints, approvals = event.compteRenduApprovals || {}, isAutomatic = false) => {
+    setIsSaving(true);
+    try {
+      await publishReportDefinitive({
+        event: {
+          ...event,
+          audience: localAudience || event.audience || 'publique',
+          portee: localAudience || event.portee || 'publique'
+        },
+        points: pointsToPublish,
+        approvals,
+        isAutomatic,
+        associationSettings: associationSettings || event.associationSettings || "O Girador"
+      });
+
+      if (!isAutomatic) {
+        alert("Le compte-rendu a été définitivement validé, publié au Varal et le PDF officiel a été généré !");
+      }
+    } catch (err) {
+      console.error("Error publishing report:", err);
+      if (!isAutomatic) {
+        alert("Erreur lors de la publication : " + err.message);
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   // Fallback Frontend : Auto-validation à J+7 si échéance atteinte et sans opposition démocratique
   useEffect(() => {
@@ -353,10 +390,6 @@ export default function EventReportSection({ event, user, profileData, associati
   // Modifier la portée de la réunion (CA vs Publique)
   const handleUpdateAudience = async (newAudience) => {
     setLocalAudience(newAudience);
-    if (event) {
-      event.audience = newAudience;
-      event.portee = newAudience;
-    }
     try {
       const eventRef = doc(db, 'events', event.id);
       await updateDoc(eventRef, {
@@ -597,35 +630,6 @@ export default function EventReportSection({ event, user, profileData, associati
     } catch (err) {
       console.error("Error submitting for review:", err);
       alert("Erreur lors de la soumission pour relecture.");
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  // Publish report definitively
-  const handlePublishDefinitive = async (pointsToPublish = localPoints, approvals = event.compteRenduApprovals || {}, isAutomatic = false) => {
-    setIsSaving(true);
-    try {
-      await publishReportDefinitive({
-        event: {
-          ...event,
-          audience: localAudience || event.audience || 'publique',
-          portee: localAudience || event.portee || 'publique'
-        },
-        points: pointsToPublish,
-        approvals,
-        isAutomatic,
-        associationSettings: associationSettings || event.associationSettings || "O Girador"
-      });
-
-      if (!isAutomatic) {
-        alert("Le compte-rendu a été définitivement validé, publié au Varal et le PDF officiel a été généré !");
-      }
-    } catch (err) {
-      console.error("Error publishing report:", err);
-      if (!isAutomatic) {
-        alert("Erreur lors de la publication : " + err.message);
-      }
     } finally {
       setIsSaving(false);
     }
@@ -1440,7 +1444,7 @@ export default function EventReportSection({ event, user, profileData, associati
             </div>
 
             <div className="flex flex-col gap-4 text-xs">
-              {localPoints.map((point, index) => (
+              {localPoints.map((point, _index) => (
                 <div key={point.id} className="flex flex-col gap-1 pl-3 border-l-2 border-cordel-wood/30">
                   <h5 className="font-bold text-encre-noire">📌 {point.titre}</h5>
                   <p className="opacity-90 leading-relaxed font-medium whitespace-pre-wrap pl-2 italic">

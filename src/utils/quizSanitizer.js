@@ -250,7 +250,7 @@ export const sanitizeQuizText = (str) => {
   if (typeof str !== 'string') return String(str).trim();
 
   return str
-    .replace(/[«»‹›"'\`“”‘’„‟[\]()]/g, '')
+    .replace(/[«»‹›"'`“”‘’„‟[\]()]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
 };

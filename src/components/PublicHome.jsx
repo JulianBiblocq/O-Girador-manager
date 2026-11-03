@@ -44,7 +44,7 @@ const getEmbedVideoUrl = (url) => {
       const videoId = parts[1]?.split('?')[0];
       return videoId ? `https://player.vimeo.com/video/${videoId}` : null;
     }
-  } catch (err) {
+  } catch {
     console.warn("Format URL vidéo non reconnu :", url);
   }
   return null;
@@ -67,7 +67,7 @@ export default function PublicHome({
   onNavigateToLogin 
 }) {
   const { publicTheme, loading: loadingTheme, error: themeError } = usePublicThemeContext();
-  const { events: publicEvents, upcomingEvents = [], pastEvents = [], loading: loadingEvents } = usePublicEvents(groupId);
+  const { events: _publicEvents, upcomingEvents = [], pastEvents = [], loading: loadingEvents } = usePublicEvents(groupId);
   const [selectedEventDetails, setSelectedEventDetails] = React.useState(null);
   const [isBookingModalOpen, setIsBookingModalOpen] = React.useState(false);
   const [publishing, setPublishing] = React.useState(false);
@@ -181,17 +181,17 @@ export default function PublicHome({
   const titreProgrammer = vitrineTexts.titreProgrammer || "Nous Programmer / Fiche Technique";
   const accrocheProgrammer = vitrineTexts.accrocheProgrammer || "Toutes les informations pratiques pour accueillir notre groupe lors de vos festivals, défilés ou événements.";
   const titreFormats = vitrineTexts.titreFormats || "Nos Formats de Prestations";
-  const titreFicheTechnique = vitrineTexts.titreFicheTechnique || "Fiche technique et besoin logistique";
+  const _titreFicheTechnique = vitrineTexts.titreFicheTechnique || "Fiche technique et besoin logistique";
   const titreContactReseaux = vitrineTexts.titreContactReseaux || "Contact & Réseaux Sociaux";
   const accrocheContactReseaux = vitrineTexts.accrocheContactReseaux || "Une question, un projet d'événement ou une demande de prestation ? Contactez-nous directement ou suivez l'actualité de la troupe sur nos réseaux sociaux !";
-  const boutonContactEmail = vitrineTexts.boutonContactEmail || "Contactez-nous pour programmer";
+  const _boutonContactEmail = vitrineTexts.boutonContactEmail || "Contactez-nous pour programmer";
   const boutonHeroProgrammer = vitrineTexts.boutonHeroProgrammer || "Nous Programmer";
 
   // Données Espace Organisateur
   const enableOrganizerSection = publicTheme?.enableOrganizerSection !== false;
-  const technicalSheet = publicTheme?.publicTechnicalSheet || "• Effectif : 10 à 20 musiciens + 1 Mestre\n• Logistique : Loge fermée avec point d'eau & parking convoi\n• Sonorisation : Autonomie totale en défilé de rue, possibilité de reprise micro pour scène.";
+  const _technicalSheet = publicTheme?.publicTechnicalSheet || "• Effectif : 10 à 20 musiciens + 1 Mestre\n• Logistique : Loge fermée avec point d'eau & parking convoi\n• Sonorisation : Autonomie totale en défilé de rue, possibilité de reprise micro pour scène.";
   const performanceFormats = publicTheme?.publicPerformanceFormats || '';
-  const dossierProPdfUrl = publicTheme?.dossierProPdfUrl || '';
+  const _dossierProPdfUrl = publicTheme?.dossierProPdfUrl || '';
   const contactEmail = publicTheme?.publicContactEmail || '';
   const contactPhone = publicTheme?.publicContactPhone || '';
   const socialLinks = publicTheme?.socialLinks || {};
@@ -945,7 +945,7 @@ export default function PublicHome({
 
           {/* Réseaux sociaux dynamiques & Mention */}
           <div className="flex flex-col items-center md:items-end gap-3">
-            {Boolean(
+            {(
               socialLinks.facebook || 
               socialLinks.instagram || 
               socialLinks.youtube || 

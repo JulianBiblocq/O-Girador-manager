@@ -34,6 +34,7 @@ export default function EventRepertoireProgramSelector({
     }
 
     setLoading(true);
+    let unsubFallback = null;
     const colRef = collection(db, 'associations', targetGroupId, 'repertoire');
     const unsubscribe = onSnapshot(
       colRef,
@@ -45,8 +46,9 @@ export default function EventRepertoireProgramSelector({
 
         // Repli résilient si la collection avec la casse canonique est vide
         if (list.length === 0 && targetGroupId !== targetGroupId.toLowerCase()) {
+          if (unsubFallback) unsubFallback();
           const fallbackRef = collection(db, 'associations', targetGroupId.toLowerCase(), 'repertoire');
-          onSnapshot(fallbackRef, (fallbackSnap) => {
+          unsubFallback = onSnapshot(fallbackRef, (fallbackSnap) => {
             if (!fallbackSnap.empty) {
               const fallbackList = [];
               fallbackSnap.forEach((d) => fallbackList.push({ id: d.id, ...d.data() }));
@@ -55,7 +57,8 @@ export default function EventRepertoireProgramSelector({
               setAllPieces([]);
             }
             setLoading(false);
-          }, () => {
+          }, (fallbackErr) => {
+            console.warn("EventRepertoireProgramSelector - Erreur lecture répertoire repli :", fallbackErr);
             setAllPieces([]);
             setLoading(false);
           });
@@ -71,7 +74,10 @@ export default function EventRepertoireProgramSelector({
       }
     );
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      if (unsubFallback) unsubFallback();
+    };
   }, [groupId]);
 
   // 2. Filtrage des morceaux actifs (saison, chantier ou non archivés)

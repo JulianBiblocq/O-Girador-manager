@@ -49,7 +49,7 @@ export default function CollectiveWorkshopView({
   groupId,
   profileData = {},
   workshops = [],
-  costumes = [],
+  costumes: _costumes = [],
   onNavigateToTab,
   onNavigateToPole,
   onBack

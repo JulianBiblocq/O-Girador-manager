@@ -220,7 +220,7 @@ export function extractPupitrePattern(presetData, instrumentKey = 'caixa', measu
 function normalizeStepsArray(rawSteps) {
   const safe = Array.isArray(rawSteps) ? rawSteps : [];
   const result = [];
-  const len = Math.min(16, safe.length || 16);
+  const _len = Math.min(16, safe.length || 16);
 
   for (let i = 0; i < 16; i++) {
     if (i < safe.length) {

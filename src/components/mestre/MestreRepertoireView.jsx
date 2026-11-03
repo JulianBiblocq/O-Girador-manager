@@ -19,9 +19,10 @@ import useMestreSignals from '../../hooks/useMestreSignals';
 import { useSequencerRhythms } from '../../hooks/useSequencerRhythms';
 import { useDancadorChoreographies } from '../../hooks/useDancadorData';
 import { useRepertoireVaralDocs } from '../../hooks/useRepertoireVaralDocs';
-import { openSequencerWithCrossApp } from '../../utils/sequencerUrlUtils';
+import { useCantadorToadas } from '../../hooks/useCantadorToadas';
+// openSequencerWithCrossApp remplacé par launchCrossApp / launchTrainingStage
 import { launchGlobalSequencer, launchCantador } from '../../utils/trainingLauncher';
-import { getEcosystemUrl } from '../../constants/ecosystemUrls';
+import { getEcosystemUrl } from '../../constants/ecosystemUrls'; // dancador.ogirador.fr via getEcosystemUrl
 import { launchCrossApp } from '../../utils/crossAppAuth';
 import PieceVideoSection from '../repertoire/PieceVideoSection';
 import BatchAssignVideoModal from '../repertoire/BatchAssignVideoModal';
@@ -49,7 +50,7 @@ import { useTranslation } from '../LanguageContext';
  * @param {string} sequenceurUrl - URL de base du Séquenceur
  * @param {Object} [features] - Fonctionnalités et options activées pour le groupe
  */
-export default function MestreRepertoireView({ groupId, user: _user, profileData: _profileData, sequenceurUrl, features }) {
+export default function MestreRepertoireView({ groupId, user: _user, profileData: _profileData, sequenceurUrl, features, onNavigateToView = null }) {
   const { t } = useTranslation();
   const { confirm } = useConfirm();
   const [pieces, setPieces] = useState([]);
@@ -60,10 +61,11 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
   const { signals } = useMestreSignals(groupId);
   const signalsMap = useMemo(() => new Map((signals || []).map((s) => [s.id, s])), [signals]);
 
-  // Catalogues vivants des modules transversaux (Séquenceur, Dançador, Varal)
+  // Catalogues vivants des modules transversaux (Séquenceur, Dançador, Varal, Cantador)
   const { catalogRhythms } = useSequencerRhythms(groupId);
   const { choreographies } = useDancadorChoreographies(groupId);
   const { toadasList, cultureDocsList } = useRepertoireVaralDocs(groupId);
+  const { toadaPacks } = useCantadorToadas(groupId);
 
   // Filtres
   const [seasonFilter, setSeasonFilter] = useState('saison'); // 'saison' | 'chantier' | 'archive' | 'all'
@@ -171,9 +173,10 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
       catalogRhythms,
       toadasList,
       cultureDocsList,
-      choreographies
+      choreographies,
+      toadaPacks
     });
-  }, [catalogRhythms, toadasList, cultureDocsList, choreographies]);
+  }, [catalogRhythms, toadasList, cultureDocsList, choreographies, toadaPacks]);
 
   // Résolution vivante mémoïsée de l'ensemble des morceaux du répertoire
   const resolvedPieces = useMemo(() => {
@@ -619,19 +622,26 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                       </button>
                     )}
 
-                    {piece.hasChoreography && piece.activeChoreography && (
-                      <a
-                        href={`https://dancador.ogirador.fr/?choreoId=${piece.activeChoreography.id}&groupId=${groupId}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-pink-50 hover:bg-pink-100 text-pink-900 border border-pink-300 transition-colors shadow-2xs"
-                        title={`Ouvrir « ${piece.activeChoreography.nom} » dans Dançador`}
+                    {(piece.hasChoreography && piece.activeChoreography) || piece.dancadorChoreoId ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          launchCrossApp(
+                            getEcosystemUrl(
+                              'dancador',
+                              `?choreoId=${encodeURIComponent(piece.dancadorChoreoId || piece.activeChoreography?.id || '')}&groupId=${encodeURIComponent(groupId || '')}`
+                            ),
+                            { appLabel: 'Dançador' }
+                          )
+                        }
+                        className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-pink-50 hover:bg-pink-100 text-pink-900 border border-pink-300 transition-colors shadow-2xs cursor-pointer select-none"
+                        title={`Ouvrir « ${piece.activeChoreography?.nom || piece.titre} » dans Dançador`}
                       >
                         <span>💃</span>
-                        <span className="truncate max-w-[120px]">{piece.activeChoreography.nom}</span>
+                        <span className="truncate max-w-[120px]">{piece.activeChoreography?.nom || 'Dançador'}</span>
                         <span className="text-[8px] opacity-70">↗</span>
-                      </a>
-                    )}
+                      </button>
+                    ) : null}
 
                     {piece.hasCulture && (
                       piece.activeCultureDocs && piece.activeCultureDocs.length > 1 ? (
@@ -1206,7 +1216,9 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
           cultureDocs={activeCultureDocToView?.docs || [activeCultureDocToView]}
           initialDocId={activeCultureDocToView?.id}
           piece={activeCultureDocToView?.piece}
+          groupId={groupId}
           profileData={_profileData}
+          onNavigateToView={onNavigateToView}
         />
       )}
 
@@ -1218,6 +1230,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
           song={activeToadaToView}
           groupId={groupId}
           profileData={_profileData}
+          onNavigateToView={onNavigateToView}
         />
       )}
 

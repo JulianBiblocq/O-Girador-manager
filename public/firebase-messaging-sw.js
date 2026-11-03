@@ -80,6 +80,11 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw.js] Message d\'arrière-plan reçu :', payload);
 
+  // Allumer la pastille sur l'icône de l'application (App Badging API)
+  if ('setAppBadge' in self.navigator) {
+    self.navigator.setAppBadge().catch(() => {});
+  }
+
   const notificationTitle = payload.notification?.title || payload.data?.title || "O Girador";
   
   // Priorité absolue à l'icône transmise dans le payload (logo dynamique d'association ou repli)

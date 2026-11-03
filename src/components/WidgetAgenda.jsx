@@ -25,7 +25,7 @@ import EventThumbnail from './agenda/EventThumbnail';
 import BatchRehearsalModal from './agenda/BatchRehearsalModal';
 import AgendaAddMenu from './agenda/AgendaAddMenu';
 import { canManageEvents } from '../utils/permissionUtils';
-import { resolveEffectiveUserTags } from '../utils/tagUtils';
+import { resolveEffectiveUserTags, computePupitresList } from '../utils/tagUtils';
 import { formatLocationShort } from '../utils/locationUtils';
 import useHardwareBack from '../hooks/useHardwareBack';
 import { useViewSimulator } from '../context/ViewSimulatorContext';
@@ -117,6 +117,17 @@ export default function WidgetAgenda({
   const [defaultDropUrl, setDefaultDropUrl] = useState('');
 
   // Synchronisation des paramètres de l'association pour l'adresse locale et le tarif kilométrique par défaut
+  const [permissionsMatrice, setPermissionsMatrice] = useState(null);
+  const [tagsDisponibles, setTagsDisponibles] = useState([]);
+  const [instrumentsDisponibles, setInstrumentsDisponibles] = useState(["Alfaias", "Caixas", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"]);
+  const [linkedInstruments, setLinkedInstruments] = useState([]);
+
+  const pupitresList = useMemo(() => {
+    const list = computePupitresList(instrumentsDisponibles, linkedInstruments);
+    if (!list.some((p) => p.toLowerCase() === 'danse')) list.push('Danse');
+    return list;
+  }, [instrumentsDisponibles, linkedInstruments]);
+
   useEffect(() => {
     if (!groupId) return;
     const assocRef = doc(db, 'associations', groupId);
@@ -138,6 +149,12 @@ export default function WidgetAgenda({
         setLieuxImportants(Array.isArray(data.lieuxImportants) ? data.lieuxImportants : []);
         setDefaultLocationsByEventType(data.defaultLocationsByEventType && typeof data.defaultLocationsByEventType === 'object' ? data.defaultLocationsByEventType : {});
         setDefaultDropUrl(data.defaultDropUrl || '');
+        if (Array.isArray(data.instrumentsDisponibles) && data.instrumentsDisponibles.length > 0) {
+          setInstrumentsDisponibles(data.instrumentsDisponibles);
+        }
+        if (Array.isArray(data.linkedInstruments)) {
+          setLinkedInstruments(data.linkedInstruments);
+        }
         if (data.saisonDebutMois !== undefined) {
           setSaisonDebutMois(Number(data.saisonDebutMois));
         }
@@ -308,9 +325,6 @@ export default function WidgetAgenda({
     longitude: null,
     linkedPatterns: []
   });
-
-  const [permissionsMatrice, setPermissionsMatrice] = useState(null);
-  const [tagsDisponibles, setTagsDisponibles] = useState([]);
 
   // Consommation du simulateur de vue
   const { isSimulating, effectiveProfile, effectiveUserTags: simTags } = useViewSimulator();
@@ -598,9 +612,12 @@ export default function WidgetAgenda({
           distanceAllerRetourKm: activeConfig.agendaEnableCarpool ? (parseFloat(formData.distanceAllerRetourKm) || 0) : 0,
           status: isPollMode ? 'sondage' : 'confirme',
           ...(isPollMode ? {
+            isPoll: true,
             pollGroupId: pollGroupId,
             optionIndex: optionIndex,
             totalOptions: totalOptions,
+            pollMode: formData.pollMode || 'single_winner',
+            pollTargetPupitres: Array.isArray(formData.pollTargetPupitres) ? formData.pollTargetPupitres : [],
             pollRestrictionType: formData.pollRestrictionType || 'aucun',
             pollTarget: formData.pollTarget || '',
             votes: {}
@@ -952,6 +969,7 @@ export default function WidgetAgenda({
           defaultLocationsByEventType={defaultLocationsByEventType}
           eventTypeConfigs={eventTypeConfigs}
           defaultDropUrl={defaultDropUrl}
+          pupitresList={pupitresList}
           t={t}
           groupId={groupId}
         />

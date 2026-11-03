@@ -3,7 +3,7 @@ import { doc, runTransaction } from 'firebase/firestore';
 import { db } from '../firebase';
 import useConfirm from './useConfirm';
 import {
-  inspectDriverCarpoolSituation,
+  // inspectDriverCarpoolSituation retiré (non utilisé)
   buildDriverDepartureWarningMessage,
   getCarpoolBulkyTerminology
 } from '../utils/carpoolCascadeUtils';
@@ -116,7 +116,7 @@ export function useEventCarpool({
   event,
   user,
   profileData,
-  demandeRemboursementKm,
+  demandeRemboursementKm: _demandeRemboursementKm,
   setDemandeRemboursementKm,
   enableCarpoolReimbursement,
   reimbursementRule

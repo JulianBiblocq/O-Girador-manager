@@ -86,7 +86,7 @@ class OGiradorTracker {
       };
       
       this._sendPayload(payload);
-    } catch (err) {
+    } catch {
       // Silence silencieux pour ne pas impacter l'expérience utilisateur
     }
   }

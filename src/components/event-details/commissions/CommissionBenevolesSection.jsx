@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 export default function CommissionBenevolesSection({
   creneaux = [],
   onChangeCreneaux,
-  usersMap = {}
+  usersMap: _usersMap = {}
 }) {
   const [role, setRole] = useState('');
   const [horaireDebut, setHoraireDebut] = useState('');

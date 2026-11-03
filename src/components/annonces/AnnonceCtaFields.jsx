@@ -42,6 +42,9 @@ export default function AnnonceCtaFields({
             className="theme-input text-xs py-1 font-bold bg-cordel-bg-light"
           >
             <option value="">Sélectionner une page...</option>
+            {actionLink && actionLink.startsWith('http') && (
+              <option value={actionLink}>🔗 {actionLink.slice(0, 45)}</option>
+            )}
             <option value="/profil">👤 Mon Profil</option>
             <option value="/agenda">📅 Agenda</option>
             <option value="/forum">🗣️ Porte-Voix / Forum</option>

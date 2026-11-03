@@ -22,7 +22,7 @@ export default function EventBudgetSection({ event, groupId, onCreateQuote }) {
     isLegacyRevenue,
     documentStatusLabel,
     covoiturageAmount,
-    manualDepensesAmount,
+    manualDepensesAmount: _manualDepensesAmount,
     totalDepenses,
     soldeNet,
     loading

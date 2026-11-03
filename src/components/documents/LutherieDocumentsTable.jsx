@@ -14,7 +14,7 @@ export default function LutherieDocumentsTable({
   categories = [],
   canWrite = false,
   onSelectDoc,
-  onEditDoc,
+  onEditDoc: _onEditDoc,
   onDeleteDoc,
   onToggleViewMode
 }) {

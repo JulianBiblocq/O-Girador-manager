@@ -8,7 +8,7 @@ import { functions } from '../firebase';
  * ou en info pour la période d'essai.
  */
 export default function SubscriptionBanner({ licenseInfo, profileData }) {
-  const { isReadOnly, message, status, isTrial, trialDaysRemaining } = licenseInfo;
+  const { isReadOnly, message, status: _status, isTrial, trialDaysRemaining } = licenseInfo;
   const [loading, setLoading] = useState(false);
 
   if (!isReadOnly && !isTrial) return null;

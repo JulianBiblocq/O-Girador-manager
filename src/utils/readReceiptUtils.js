@@ -7,6 +7,8 @@
  * avec la carte `readStatus` du document parent de la discussion.
  */
 
+import { isMemberArchived } from './memberUtils';
+
 /**
  * Convertit de manière sécurisée n'importe quel horodatage (ISO string, Timestamp Firestore, Date, number)
  * en millisecondes depuis l'époque Unix.
@@ -215,9 +217,10 @@ export function getReadReceiptStats(lectures = {}, allMembers = [], authorId = n
   // Tri par date de lecture la plus récente en premier
   readers.sort((a, b) => getTimestampMs(b.luLe) - getTimestampMs(a.luLe));
 
-  // Liste des membres n'ayant pas encore validé
+  // Liste des membres actifs n'ayant pas encore validé (exclusion des membres archivés)
   const unreadMembers = [];
   safeMembers.forEach((m) => {
+    if (isMemberArchived(m)) return;
     const uid = m?.id || m?.uid || m?.userId;
     if (!uid || (authorId && uid === authorId)) return;
 

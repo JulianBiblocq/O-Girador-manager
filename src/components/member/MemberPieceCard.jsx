@@ -7,6 +7,7 @@ import PieceCultureModal from './PieceCultureModal';
 import SequencerAccessButtons from '../repertoire/SequencerAccessButtons';
 import { useTranslation } from '../LanguageContext';
 import { launchCantador } from '../../utils/trainingLauncher';
+import { isCantadorValidated } from '../../utils/repertoireMatcher';
 
 export const COMFORT_LEVELS = [
   { level: 1, labelKey: 'pedagogy.modals.decouverte', icon: '🌱' },
@@ -16,14 +17,14 @@ export const COMFORT_LEVELS = [
 ];
 
 /**
- * Carte individuelle repliable d'un morceau du Répertoire (< 145 lignes).
- * Découplage Séquenceur (Écouter & Jouer avec) et passerelle Cantador.
+ * Carte individuelle repliable d'un morceau du Répertoire (< 140 lignes).
+ * Découplage Sequenciador (Écouter & Jouer avec) et passerelle Cantador conditionnelle.
  */
 export default function MemberPieceCard({
   piece, userId, groupId, profileData = null, trainings = [], aisanceMap = {},
   isRevisionRequested = false, comfortLevel = 0, isExpanded = false,
   onToggleExpand, onToggleRevision, onSetComfortLevel,
-  onOpenTablature, onOpenToada, onOpenCulture, onOpenSignals = null, sequenceurUrl
+  onOpenTablature, onOpenToada, onOpenCulture, onOpenSignals = null, sequenceurUrl, onNavigateToView = null
 }) {
   const { t } = useTranslation();
   const [isSignalsModalOpen, setIsSignalsModalOpen] = useState(false);
@@ -31,6 +32,8 @@ export default function MemberPieceCard({
   const [isCultureModalOpen, setIsCultureModalOpen] = useState(false);
 
   if (!piece) return null;
+
+  const canTrainInCantador = isCantadorValidated(piece, piece.activeCantadorPack);
 
   return (
     <CordelCard
@@ -58,15 +61,14 @@ export default function MemberPieceCard({
           </div>
         </div>
 
-        {/* Ligne inférieure : Actions rapides, Séquenceur découplé, Cantador et Confort */}
+        {/* Ligne inférieure : Actions rapides, Sequenciador découplé, Cantador et Confort */}
         <div className="flex items-center justify-between gap-2 flex-wrap pt-0.5">
           <div className="flex items-center gap-1.5 flex-wrap">
-            {/* Demande de révision */}
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                onToggleRevision && onToggleRevision(piece.id);
+                if (onToggleRevision) onToggleRevision(piece.id);
               }}
               className={`px-2.5 py-1 text-xs font-black rounded border transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs select-none ${
                 isRevisionRequested ? 'bg-amber-100 border-[var(--color-cordel-ocre,#c05621)] text-[var(--color-cordel-ocre,#c05621)]' : 'bg-white border-encre-noire/25 text-stone-700 hover:bg-stone-50'
@@ -76,32 +78,24 @@ export default function MemberPieceCard({
               <span>{isRevisionRequested ? (t('pedagogy.revisionRequestedNotice') || 'Révision demandée ✓') : (t('pedagogy.requestRevisionBtn') || 'Demander à réviser')}</span>
             </button>
 
-            {/* Accès Séquenceur découplés (Écouter & Jouer avec) */}
             <SequencerAccessButtons piece={piece} sequenceurUrl={sequenceurUrl} profileData={profileData} />
 
-            {/* Entraînement Chant Cantador direct */}
-            {(piece.cantadorToadaId || piece.type === 'song' || piece.hasToada || piece.toadaDocId) && (
+            {/* Entraînement Chant Cantador direct (uniquement si validé) */}
+            {canTrainInCantador && (
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  launchCantador({
-                    songId: piece.toadaDocId || piece.id,
-                    toadaId: piece.cantadorToadaId,
-                    mode: 'eleve',
-                    groupId
-                  });
+                  launchCantador({ songId: piece.toadaDocId || piece.id, toadaId: piece.cantadorToadaId, mode: 'eleve', groupId });
                 }}
                 className="px-2.5 py-1 text-xs font-black rounded border border-orange-300 bg-orange-50 text-orange-950 hover:bg-orange-100 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs select-none"
                 title="Ouvrir Cantador en ligne"
               >
-                <span>🎙️</span>
-                <span>{t('repertoire.btnTrainVocalDirect') || "S'entraîner au chant (Cantador)"}</span>
+                <span>🎙️</span><span>{t('repertoire.btnTrainVocalDirect') || "S'entraîner au chant (Cantador)"}</span>
               </button>
             )}
           </div>
 
-          {/* Curseur de confort personnel */}
           <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
             {COMFORT_LEVELS.map((c) => {
               const isSelected = comfortLevel === c.level;
@@ -111,7 +105,7 @@ export default function MemberPieceCard({
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onSetComfortLevel && onSetComfortLevel(piece.id, isSelected ? 0 : c.level);
+                    if (onSetComfortLevel) onSetComfortLevel(piece.id, isSelected ? 0 : c.level);
                   }}
                   className={`w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded text-xs border transition-all cursor-pointer shadow-2xs select-none ${
                     isSelected ? 'bg-emerald-700 text-white border-emerald-950 scale-110 shadow-sm' : 'bg-white border-stone-200 hover:bg-stone-100 opacity-70 hover:opacity-100'
@@ -137,10 +131,9 @@ export default function MemberPieceCard({
         />
       )}
 
-      {/* 3. Modales dédiées */}
       {isSignalsModalOpen && <PieceSignalsModal isOpen={isSignalsModalOpen} onClose={() => setIsSignalsModalOpen(false)} piece={piece} groupId={groupId} profileData={profileData} />}
-      {isLyricsModalOpen && <PieceLyricsModal isOpen={isLyricsModalOpen} onClose={() => setIsLyricsModalOpen(false)} song={piece.activeToada} piece={piece} groupId={groupId} profileData={profileData} />}
-      {isCultureModalOpen && <PieceCultureModal isOpen={isCultureModalOpen} onClose={() => setIsCultureModalOpen(false)} cultureDocs={Array.isArray(piece.activeCultureDocs) && piece.activeCultureDocs.length > 0 ? piece.activeCultureDocs : (piece.activeCultureDoc ? [piece.activeCultureDoc] : [])} initialDocId={piece.activeCultureDocs?.[0]?.id || piece.activeCultureDoc?.id} piece={piece} groupId={groupId} profileData={profileData} />}
+      {isLyricsModalOpen && <PieceLyricsModal isOpen={isLyricsModalOpen} onClose={() => setIsLyricsModalOpen(false)} song={piece.activeToada} piece={piece} groupId={groupId} profileData={profileData} onNavigateToView={onNavigateToView} />}
+      {isCultureModalOpen && <PieceCultureModal isOpen={isCultureModalOpen} onClose={() => setIsCultureModalOpen(false)} cultureDocs={Array.isArray(piece.activeCultureDocs) && piece.activeCultureDocs.length > 0 ? piece.activeCultureDocs : (piece.activeCultureDoc ? [piece.activeCultureDoc] : [])} initialDocId={piece.activeCultureDocs?.[0]?.id || piece.activeCultureDoc?.id} piece={piece} groupId={groupId} profileData={profileData} onNavigateToView={onNavigateToView} />}
     </CordelCard>
   );
 }

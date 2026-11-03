@@ -1,25 +1,33 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { collection, query, where, onSnapshot, doc, updateDoc, writeBatch, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import useConfirm from '../../hooks/useConfirm';
 import XiloAvatar from '../XiloAvatar';
+import { isMemberArchived } from '../../utils/memberUtils';
+import PollPupitreDispatchPanel from './PollPupitreDispatchPanel';
 
-export default function EventPollSection({ event, user, profileData, onNavigateToEventId }) {
+export default function EventPollSection({
+  event,
+  user,
+  profileData,
+  onNavigateToEventId,
+  allUsers: propAllUsers,
+  pupitresList = [],
+  linkedInstruments = []
+}) {
   const { confirm } = useConfirm();
   const [pollEvents, setPollEvents] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [allUsersMap, setAllUsersMap] = useState({});
+  const [fallbackUsers, setFallbackUsers] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Vérification stricte des autorisations pour Super-Admin et Mestre
-  const isSuperAdminOrMestre = 
-    profileData?.role === 'mestre' || 
-    profileData?.role === 'super-admin' || 
+  const isSuperAdminOrMestre =
+    profileData?.role === 'mestre' ||
+    profileData?.role === 'super-admin' ||
     profileData?.isSystemAdmin === true;
-
-  const isAdmin = isSuperAdminOrMestre || profileData?.role === 'secretaire';
 
   // Synchronisation en temps réel de tous les créneaux partageant le même pollGroupId
   useEffect(() => {
@@ -28,8 +36,8 @@ export default function EventPollSection({ event, user, profileData, onNavigateT
 
     const eventsRef = collection(db, 'events');
     const q = query(
-      eventsRef, 
-      where('groupId', '==', event.groupId), 
+      eventsRef,
+      where('groupId', '==', event.groupId),
       where('pollGroupId', '==', event.pollGroupId)
     );
 
@@ -38,7 +46,6 @@ export default function EventPollSection({ event, user, profileData, onNavigateT
       snapshot.forEach((docSnap) => {
         list.push({ id: docSnap.id, ...docSnap.data() });
       });
-      // Tri par index d'option ou date
       list.sort((a, b) => (a.optionIndex || 0) - (b.optionIndex || 0));
       setPollEvents(list);
       setLoading(false);
@@ -50,27 +57,59 @@ export default function EventPollSection({ event, user, profileData, onNavigateT
     return () => unsubscribe();
   }, [event?.groupId, event?.pollGroupId]);
 
-  // Carte en temps réel des utilisateurs pour noms et avatars
+  // Écouteur de repli uniquement si la prop allUsers n'est pas fournie par le parent
   useEffect(() => {
-    if (!event?.groupId) return;
+    if (Array.isArray(propAllUsers) || !event?.groupId) return;
     const usersRef = collection(db, 'users');
     const q = query(usersRef, where('groupId', '==', event.groupId));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const map = {};
+      const list = [];
       snapshot.forEach((uDoc) => {
-        const uData = uDoc.data();
-        map[uDoc.id] = {
-          id: uDoc.id,
-          name: `${uData.prenom || ''} ${uData.nom || ''}`.trim() || 'Membre',
-          photoURL: uData.photoURL || ''
-        };
+        list.push({ id: uDoc.id, ...uDoc.data() });
       });
-      setAllUsersMap(map);
+      setFallbackUsers(list);
+    }, (err) => {
+      console.warn("EventPollSection - Erreur lecture utilisateurs de repli :", err);
     });
 
     return () => unsubscribe();
-  }, [event?.groupId]);
+  }, [propAllUsers, event?.groupId]);
+
+  // Liste consolidée des membres actifs (sans membres archivés)
+  const effectiveUsers = useMemo(() => {
+    const source = Array.isArray(propAllUsers) ? propAllUsers : fallbackUsers;
+    return source.filter((u) => u && !isMemberArchived(u));
+  }, [propAllUsers, fallbackUsers]);
+
+  // Dictionnaire indexé pour affichage rapide des noms et avatars
+  const allUsersMap = useMemo(() => {
+    const map = {};
+    effectiveUsers.forEach((u) => {
+      const uid = u.id || u.uid;
+      if (!uid) return;
+      map[uid] = {
+        ...u,
+        id: uid,
+        name: `${u.prenom || ''} ${u.nom || ''}`.trim() || u.displayName || 'Membre',
+        photoURL: u.photoURL || ''
+      };
+    });
+    return map;
+  }, [effectiveUsers]);
+
+  const isPupitreDispatch =
+    event?.pollMode === 'pupitre_dispatch' ||
+    pollEvents.some((ev) => ev.pollMode === 'pupitre_dispatch');
+
+  const effectiveTargetPupitres = useMemo(() => {
+    if (Array.isArray(event?.pollTargetPupitres) && event.pollTargetPupitres.length > 0) {
+      return event.pollTargetPupitres;
+    }
+    const fromSibling = pollEvents.find((ev) => Array.isArray(ev.pollTargetPupitres) && ev.pollTargetPupitres.length > 0);
+    if (fromSibling) return fromSibling.pollTargetPupitres;
+    return pupitresList;
+  }, [event?.pollTargetPupitres, pollEvents, pupitresList]);
 
   // Calcul d'éligibilité basé sur le type de restriction du sondage
   const checkEligibility = () => {
@@ -91,7 +130,7 @@ export default function EventPollSection({ event, user, profileData, onNavigateT
     }
 
     if (resType === 'instrument') {
-      const userFavInst = profileData?.instrumentFavori || profileData?.instrument || '';
+      const userFavInst = profileData?.instrumentPrincipal || profileData?.instrumentFavori || profileData?.instrument || '';
       const userInstList = profileData?.instrumentsJoues || profileData?.instruments || [];
       const playsInst = userFavInst === target || userInstList.includes(target);
       return {
@@ -111,9 +150,9 @@ export default function EventPollSection({ event, user, profileData, onNavigateT
 
     const newVotes = { ...(currentVotesObj || {}) };
     if (newVotes[user.uid] === choice) {
-      delete newVotes[user.uid]; // Annuler le vote
+      delete newVotes[user.uid];
     } else {
-      newVotes[user.uid] = choice; // Enregistrer 'dispo' ou 'indispo'
+      newVotes[user.uid] = choice;
     }
 
     try {
@@ -125,7 +164,7 @@ export default function EventPollSection({ event, user, profileData, onNavigateT
     }
   };
 
-  // Validation définitive du créneau gagnant via une transaction Firestore Batch
+  // Validation définitive du créneau gagnant unique (mode single_winner)
   const handleConfirmWinningOption = async (winningOptionEvent = event) => {
     if (!isSuperAdminOrMestre || isProcessing) return;
 
@@ -143,16 +182,14 @@ export default function EventPollSection({ event, user, profileData, onNavigateT
     setIsProcessing(true);
     try {
       const batch = writeBatch(db);
-
-      // 1. Récupération des votes "Disponible" et transfert automatique vers les inscriptions (RSVP)
       const votes = winningOptionEvent.votes || {};
-      const dispoUserIds = Object.keys(votes).filter(uid => votes[uid] === 'dispo');
+      const dispoUserIds = Object.keys(votes).filter((uid) => votes[uid] === 'dispo');
 
       const existingInscriptions = winningOptionEvent.inscriptions || [];
       const updatedInscriptions = [...existingInscriptions];
 
       dispoUserIds.forEach((uid) => {
-        const existingIdx = updatedInscriptions.findIndex(i => i.userId === uid);
+        const existingIdx = updatedInscriptions.findIndex((i) => i.userId === uid);
         if (existingIdx >= 0) {
           updatedInscriptions[existingIdx] = {
             ...updatedInscriptions[existingIdx],
@@ -167,7 +204,6 @@ export default function EventPollSection({ event, user, profileData, onNavigateT
         }
       });
 
-      // 2. Mise à jour de l'événement validé : retrait du statut sondage et conversion en réunion officielle
       const winningRef = doc(db, 'events', winningOptionEvent.id);
       batch.update(winningRef, {
         status: 'confirme',
@@ -176,7 +212,6 @@ export default function EventPollSection({ event, user, profileData, onNavigateT
         requiresValidation: false
       });
 
-      // 3. Recherche et suppression de tous les autres créneaux du même pollGroupId (cloisonné par groupId)
       const targetGroupId = event?.groupId;
       if (winningOptionEvent.pollGroupId && targetGroupId) {
         const pollQuery = query(
@@ -192,13 +227,88 @@ export default function EventPollSection({ event, user, profileData, onNavigateT
         });
       }
 
-      // 4. Exécution atomique de la transaction Firestore Batch
       await batch.commit();
-
       alert(`La date du ${dateFormatted} a été validée avec succès ! L'agenda a été nettoyé.`);
     } catch (err) {
       console.error("EventPollSection - Erreur confirmation option :", err);
       alert("Erreur lors de la validation du créneau.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Validation groupée par pupitre (mode pupitre_dispatch) via writeBatch atomique
+  const handleConfirmPupitreDispatch = async (allocation, matrix, targetPupitres) => {
+    if (!isSuperAdminOrMestre || isProcessing) return;
+
+    const baseTitre = String(event?.titre || 'Atelier').split(' — ')[0].trim();
+    const summaryLines = [];
+    pollEvents.forEach((ev) => {
+      const assigned = (targetPupitres || []).filter((p) => allocation[p] === ev.id);
+      if (assigned.length > 0) {
+        const count = assigned.reduce((s, p) => s + (matrix?.[ev.id]?.[p]?.count || 0), 0);
+        summaryLines.push(`• ${formatDate(ev.date)} ➔ ${assigned.join(' & ')} (${count} présent(s))`);
+      }
+    });
+
+    const isOk = await confirm({
+      title: "✅ Valider la répartition par pupitre ?",
+      message: `Voulez-vous confirmer simultanément les ateliers suivants ?\n\n${summaryLines.join('\n')}\n\n• Chaque créneau retenu sera renommé et confirmé avec les membres disponibles du pupitre attribué.\n• Les créneaux sans pupitre attribué seront supprimés.`,
+      confirmText: "Oui, valider la répartition",
+      cancelText: "Annuler",
+      variant: "vert"
+    });
+
+    if (!isOk) return;
+
+    setIsProcessing(true);
+    try {
+      const batch = writeBatch(db);
+      const nowIso = new Date().toISOString();
+
+      pollEvents.forEach((slotEv) => {
+        const assignedPupitres = (targetPupitres || []).filter((p) => allocation[p] === slotEv.id);
+        const slotRef = doc(db, 'events', slotEv.id);
+
+        if (assignedPupitres.length > 0) {
+          const updatedInscriptions = [...(slotEv.inscriptions || [])];
+          assignedPupitres.forEach((p) => {
+            const members = matrix?.[slotEv.id]?.[p]?.availableMembers || [];
+            members.forEach((m) => {
+              const idx = updatedInscriptions.findIndex((i) => i.userId === m.uid);
+              const entry = {
+                userId: m.uid,
+                userName: m.name,
+                status: 'present',
+                instrumentChoisi: m.instrumentChoisi || p,
+                timestamp: nowIso
+              };
+              if (idx >= 0) {
+                updatedInscriptions[idx] = { ...updatedInscriptions[idx], ...entry };
+              } else {
+                updatedInscriptions.push(entry);
+              }
+            });
+          });
+
+          batch.update(slotRef, {
+            titre: `${baseTitre} — ${assignedPupitres.join(' & ')}`,
+            status: 'confirme',
+            isPoll: false,
+            requiresValidation: false,
+            pollAssignedPupitres: assignedPupitres,
+            inscriptions: updatedInscriptions
+          });
+        } else {
+          batch.delete(slotRef);
+        }
+      });
+
+      await batch.commit();
+      alert("La répartition des ateliers par pupitre a été validée avec succès !");
+    } catch (err) {
+      console.error("EventPollSection - Erreur validation répartition pupitres :", err);
+      alert("Erreur lors de la validation de la répartition.");
     } finally {
       setIsProcessing(false);
     }
@@ -217,18 +327,20 @@ export default function EventPollSection({ event, user, profileData, onNavigateT
   if (!event?.isPoll && event?.status !== 'sondage') return null;
 
   return (
-    <CordelCard 
-      variant="ocre" 
-      useExtremeBorder={true} 
+    <CordelCard
+      variant="ocre"
+      useExtremeBorder={true}
       className="p-4 mb-4 bg-amber-50/80 dark:bg-amber-950/30 border-dashed border-amber-600/40 select-none flex flex-col gap-3"
     >
-      {/* Header title & restriction badge */}
+      {/* En-tête du sondage */}
       <div className="flex justify-between items-center flex-wrap gap-2 pb-2 border-b border-dashed border-amber-600/30">
         <div className="flex items-center gap-2">
-          <span className="text-xl animate-pulse">📊</span>
+          <span className="text-xl animate-pulse">{isPupitreDispatch ? '🥁' : '📊'}</span>
           <div>
             <h3 className="text-xs font-black uppercase tracking-wider text-cordel-wood">
-              Sondage de dates pour cette réunion
+              {isPupitreDispatch
+                ? 'Sondage de répartition par pupitre (Ateliers)'
+                : 'Sondage de dates pour cette réunion'}
             </h3>
             <p className="text-[10px] font-semibold opacity-80 text-encre-noire">
               Créneau actuellement affiché : <strong className="text-cordel-wood font-extrabold">Option {event.optionIndex || 1} sur {event.totalOptions || pollEvents.length || 1}</strong>
@@ -250,8 +362,8 @@ export default function EventPollSection({ event, user, profileData, onNavigateT
         </div>
       )}
 
-      {/* Pavé d'action prioritaire : Grand bouton de validation définitive pour Super-Admin / Mestre */}
-      {isSuperAdminOrMestre && (
+      {/* Pavé d'action prioritaire (uniquement en mode Date unique) */}
+      {isSuperAdminOrMestre && !isPupitreDispatch && (
         <div className="p-3.5 bg-emerald-100/90 dark:bg-emerald-950/50 border-2 border-emerald-700/60 rounded-lg flex flex-col sm:flex-row items-center justify-between gap-3 shadow-[2px_2px_0px_0px_#181716] my-1 select-none">
           <div className="flex flex-col text-left">
             <span className="text-xs font-black uppercase text-emerald-900 dark:text-emerald-200 flex items-center gap-1.5">
@@ -274,7 +386,7 @@ export default function EventPollSection({ event, user, profileData, onNavigateT
         </div>
       )}
 
-      {/* Liste des créneaux du sondage */}
+      {/* Liste des créneaux du sondage pour voter */}
       <div className="flex flex-col gap-2.5 mt-1">
         {loading ? (
           <p className="text-[10px] italic text-center opacity-60">Chargement des créneaux...</p>
@@ -283,20 +395,19 @@ export default function EventPollSection({ event, user, profileData, onNavigateT
             const isCurrentPageOption = optionEv.id === event.id;
             const votes = optionEv.votes || {};
             const userVote = votes[user?.uid];
-            
-            const dispoUserIds = Object.keys(votes).filter(uid => votes[uid] === 'dispo');
-            const indispoUserIds = Object.keys(votes).filter(uid => votes[uid] === 'indispo');
+
+            const dispoUserIds = Object.keys(votes).filter((uid) => votes[uid] === 'dispo');
+            const indispoUserIds = Object.keys(votes).filter((uid) => votes[uid] === 'indispo');
 
             return (
-              <div 
+              <div
                 key={optionEv.id}
                 className={`p-3 rounded-lg border flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all ${
-                  isCurrentPageOption 
-                    ? 'bg-white dark:bg-black/30 border-amber-600 shadow-[2px_2px_0px_0px_#d97706]' 
+                  isCurrentPageOption
+                    ? 'bg-white dark:bg-black/30 border-amber-600 shadow-[2px_2px_0px_0px_#d97706]'
                     : 'bg-white/60 dark:bg-black/10 border-encre-noire/20 hover:bg-white'
                 }`}
               >
-                {/* Informations du créneau */}
                 <div className="flex items-center gap-3 min-w-0">
                   <span className={`w-6 h-6 rounded-full border-2 border-encre-noire flex items-center justify-center text-[10px] font-black shrink-0 ${
                     isCurrentPageOption ? 'bg-amber-500 text-white' : 'bg-cordel-bg text-encre-noire'
@@ -316,13 +427,12 @@ export default function EventPollSection({ event, user, profileData, onNavigateT
                       )}
                     </div>
 
-                    {/* Liste des votants et avatars */}
                     <div className="flex items-center gap-3 mt-1 text-[9px] font-bold text-cordel-master-dark">
                       <div className="flex items-center gap-1">
                         <span className="text-emerald-700 font-extrabold">✅ {dispoUserIds.length} dispo</span>
                         {dispoUserIds.length > 0 && (
                           <div className="flex -space-x-1 ml-1">
-                            {dispoUserIds.slice(0, 4).map(uid => (
+                            {dispoUserIds.slice(0, 4).map((uid) => (
                               <XiloAvatar key={uid} src={allUsersMap[uid]?.photoURL} name={allUsersMap[uid]?.name} size={14} />
                             ))}
                           </div>
@@ -336,9 +446,7 @@ export default function EventPollSection({ event, user, profileData, onNavigateT
                   </div>
                 </div>
 
-                {/* Actions: Navigation, Vote & Validation */}
                 <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto flex-wrap">
-                  {/* Bouton de navigation vers la fiche d'une option */}
                   {!isCurrentPageOption && onNavigateToEventId && (
                     <button
                       type="button"
@@ -349,7 +457,6 @@ export default function EventPollSection({ event, user, profileData, onNavigateT
                     </button>
                   )}
 
-                  {/* Boutons de vote */}
                   {eligible && (
                     <div className="flex gap-1">
                       <button
@@ -378,8 +485,7 @@ export default function EventPollSection({ event, user, profileData, onNavigateT
                     </div>
                   )}
 
-                  {/* Bouton de confirmation pour une option du tableau */}
-                  {isSuperAdminOrMestre && (
+                  {isSuperAdminOrMestre && !isPupitreDispatch && (
                     <CordelButton
                       variant="vert"
                       onClick={() => handleConfirmWinningOption(optionEv)}
@@ -396,6 +502,21 @@ export default function EventPollSection({ event, user, profileData, onNavigateT
           })
         )}
       </div>
+
+      {/* Tableau de synthèse Mestre & Matrice croisée (Dates x Pupitres) en mode répartition */}
+      {!loading && isPupitreDispatch && (
+        <PollPupitreDispatchPanel
+          pollEvents={pollEvents}
+          allUsers={effectiveUsers}
+          targetPupitres={effectiveTargetPupitres}
+          pupitresList={pupitresList}
+          linkedInstruments={linkedInstruments}
+          isSuperAdminOrMestre={isSuperAdminOrMestre}
+          isProcessing={isProcessing}
+          formatDate={formatDate}
+          onConfirmDispatch={handleConfirmPupitreDispatch}
+        />
+      )}
     </CordelCard>
   );
 }

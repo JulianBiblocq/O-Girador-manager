@@ -41,7 +41,7 @@ export default function GigQuoteGeneratorModal({
     { id: '1', description: 'Prestation musicale Maracatu', quantite: 1, prixUnitaire: 0 }
   ]);
 
-  const [linkedEvent, setLinkedEvent] = useState(null);
+  const [_linkedEvent, setLinkedEvent] = useState(null);
   const [saving, setSaving] = useState(false);
 
   // Génération du numéro de devis auto DEV-YYYYMM-XXX

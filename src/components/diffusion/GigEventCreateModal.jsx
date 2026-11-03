@@ -89,6 +89,8 @@ export default function GigEventCreateModal({
         }
         setDressCodes(data.dressCodes || []);
       }
+    }, (err) => {
+      console.warn("GigEventCreateModal - Erreur lecture configuration association :", err);
     });
     return () => unsub();
   }, [groupId]);

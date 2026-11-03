@@ -20,7 +20,7 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
   const [mainView, setMainView] = useState('CARNET'); // 'CARNET' or 'ATELIER'
   
   // Data States
-  const { rhythms: firestoreRhythms, loading: loadingRhythms } = useSequencerFirestoreData(groupId);
+  const { rhythms: firestoreRhythms, loading: _loadingRhythms } = useSequencerFirestoreData(groupId);
   const [rhythmsMetadata, setRhythmsMetadata] = useState({});
   const [rhythmsJsonData, setRhythmsJsonData] = useState({});
   
@@ -30,7 +30,7 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
   
   const [evaluations, setEvaluations] = useState({}); // { [docId]: 'level' }
   const [revisionsDemandees, setRevisionsDemandees] = useState({});
-  const [saving, setSaving] = useState(false);
+  const [_saving, setSaving] = useState(false);
   
   const [qcmGlobalConfig, setQcmGlobalConfig] = useState({});
 
@@ -64,6 +64,8 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
         setEvaluations(data.evaluations || {});
         setRevisionsDemandees(data.revisionsDemandees || {});
       }
+    }, (err) => {
+      console.warn("MonParcours - Erreur écoute évaluations :", err);
     });
 
     // 2. Récupérer Rhythm Fallbacks (Mestre Metadata) & Global QCM Config
@@ -123,6 +125,8 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
       const fetched = [];
       snap.forEach(d => fetched.push({ id: d.id, ...d.data() }));
       setRepertoire(fetched);
+    }, (err) => {
+      console.warn("MonParcours - Erreur écoute répertoire :", err);
     });
 
     fetchMetadata();
@@ -161,7 +165,7 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
         await updateDoc(parcoursRef, {
           [`revisionsDemandees.${itemId}`]: newVal
         });
-      } catch (err) {
+      } catch {
         // Repli avec setDoc merge si le document n'est pas encore initialisé
         await setDoc(parcoursRef, {
           revisionsDemandees: {

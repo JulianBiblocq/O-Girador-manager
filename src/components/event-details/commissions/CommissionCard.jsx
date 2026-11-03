@@ -10,7 +10,7 @@ export default function CommissionCard({
   canManage = false, onManage, onView, onNavigateToView,
   getOrCreateCommissionThread, openOrCreateCommissionThread, userProfile = null, onCloseHub = null
 }) {
-  const { id, titre = 'Commission sans titre', icone = '📋', description = '', referentsIds = [], jalons = [], budget = {} } = commission;
+  const { id: _id, titre = 'Commission sans titre', icone = '📋', description = '', referentsIds = [], jalons = [], budget = {} } = commission;
   const [isOpeningForum, setIsOpeningForum] = useState(false);
 
   // Gestionnaire d'ouverture sécurisé du fil de discussion Porte-Voix
@@ -41,14 +41,9 @@ export default function CommissionCard({
 
   // Détection du prochain jalon et des retards
   const { nextJalon, hasOverdueJalon } = useMemo(() => {
-    let overdue = false;
+    const overdue = jalons.some((j) => j.status !== 'fait' && j.deadline && j.deadline < today);
     const upcoming = jalons
-      .filter((j) => {
-        if (j.status !== 'fait' && j.deadline && j.deadline < today) {
-          overdue = true;
-        }
-        return j.status !== 'fait' && j.deadline;
-      })
+      .filter((j) => j.status !== 'fait' && j.deadline)
       .sort((a, b) => a.deadline.localeCompare(b.deadline));
 
     return { nextJalon: upcoming[0] || null, hasOverdueJalon: overdue };

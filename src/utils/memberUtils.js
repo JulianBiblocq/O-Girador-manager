@@ -13,6 +13,7 @@ export const isMemberArchived = (user) => {
   if (!user) return false;
   return Boolean(
     user.isArchived === true ||
+    user.archived === true ||
     user.statut === 'archive' ||
     user.status === 'archived' ||
     user.statutActuel === 'archived' ||
@@ -125,7 +126,7 @@ export const getCanonicalTagKey = (tag) => {
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[\s\.\-_\'’]/g, '')
+    .replace(/[\s.\-_'’]/g, '')
     .trim();
 
   if (clean === 'ca' || clean === 'conseildadministration' || clean.includes('conseildadministration')) return 'ca';

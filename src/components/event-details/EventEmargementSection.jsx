@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { doc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
-import CordelButton from '../CordelButton';
+// CordelButton retiré (non utilisé)
 import { isMemberCaOrBureau, getEffectiveMemberTags } from '../../utils/memberUtils';
 
 /**
@@ -22,11 +22,16 @@ export default function EventEmargementSection({
   const [members, setMembers] = useState([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [invitesCount, setInvitesCount] = useState(event?.invitesOuPublicCount || 0);
+  const [optimisticInscriptions, setOptimisticInscriptions] = useState(null);
 
-  // Synchronisation du décompte d'invités avec l'événement
+  // Synchronisation du décompte d'invités et des inscriptions avec l'événement
   useEffect(() => {
     setInvitesCount(event?.invitesOuPublicCount || 0);
   }, [event?.invitesOuPublicCount]);
+
+  useEffect(() => {
+    setOptimisticInscriptions(null);
+  }, [event?.inscriptions]);
 
   // Si l'audience de la réunion change en CA, activer le filtre CA par défaut
   useEffect(() => {
@@ -76,8 +81,9 @@ export default function EventEmargementSection({
 
   // Liste des inscriptions actuelles et membres marqués présents
   const currentInscriptions = useMemo(() => {
+    if (Array.isArray(optimisticInscriptions)) return optimisticInscriptions;
     return Array.isArray(event?.inscriptions) ? event.inscriptions : [];
-  }, [event?.inscriptions]);
+  }, [optimisticInscriptions, event?.inscriptions]);
 
   const presentUserIds = useMemo(() => {
     const set = new Set();
@@ -149,10 +155,8 @@ export default function EventEmargementSection({
       ];
     }
 
-    // Mise à jour optimiste locale
-    if (event) {
-      event.inscriptions = updatedInscriptions;
-    }
+    // Mise à jour optimiste locale sans mutation directe de la prop event
+    setOptimisticInscriptions(updatedInscriptions);
     if (onInscriptionsChanged) {
       onInscriptionsChanged(updatedInscriptions);
     }
@@ -186,7 +190,7 @@ export default function EventEmargementSection({
       }
     });
 
-    if (event) event.inscriptions = updatedInscriptions;
+    setOptimisticInscriptions(updatedInscriptions);
     if (onInscriptionsChanged) onInscriptionsChanged(updatedInscriptions);
 
     try {
@@ -209,7 +213,7 @@ export default function EventEmargementSection({
       return ins;
     });
 
-    if (event) event.inscriptions = updatedInscriptions;
+    setOptimisticInscriptions(updatedInscriptions);
     if (onInscriptionsChanged) onInscriptionsChanged(updatedInscriptions);
 
     try {
@@ -224,7 +228,6 @@ export default function EventEmargementSection({
   const handleInvitesChange = async (newVal) => {
     const count = Math.max(0, parseInt(newVal, 10) || 0);
     setInvitesCount(count);
-    if (event) event.invitesOuPublicCount = count;
 
     if (!isAdmin || !event?.id) return;
     try {
@@ -342,7 +345,7 @@ export default function EventEmargementSection({
               {filteredMembers.map((member) => {
                 const memberId = member.id || member.uid;
                 const isChecked = presentUserIds.has(memberId);
-                const effectiveTags = getEffectiveMemberTags(member);
+                const _effectiveTags = getEffectiveMemberTags(member);
                 const isCaMember = isMemberCaOrBureau(member);
 
                 return (

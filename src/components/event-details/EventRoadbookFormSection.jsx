@@ -33,7 +33,7 @@ export default function EventRoadbookFormSection({
   const formatJeu = editForm.formatJeu || 'scene';
   const parcours = editForm.parcours || {};
   const hebergement = editForm.hebergement || {};
-  const logistiqueDepart = editForm.logistiqueDepart || {};
+  const _logistiqueDepart = editForm.logistiqueDepart || {};
   const contactsJourJ = editForm.contactsJourJ || {};
 
   const handleFieldChange = (section, field, value) => {

@@ -24,7 +24,7 @@ export default function GigRelanceEmailModal({
   const [recipientEmail, setRecipientEmail] = useState('');
   const [subject, setSubject] = useState('');
   const [messageBody, setMessageBody] = useState('');
-  const [brevoApiKey, setBrevoApiKey] = useState(configuredApiKey);
+  const [_brevoApiKey, setBrevoApiKey] = useState(configuredApiKey);
 
   const [sending, setSending] = useState(false);
   const [statusMessage, setStatusMessage] = useState(null);

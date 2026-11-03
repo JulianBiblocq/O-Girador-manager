@@ -77,8 +77,8 @@ export default function TabRsvp({
 
   return (
     <div className="flex flex-col gap-4 text-left">
-      {/* 1. Vote Individuel de Présence & Inscription */}
-      {currentConfig?.agendaEnableInscriptions !== false && (
+      {/* 1. Vote Individuel de Présence & Inscription (masqué si sondage actif) */}
+      {currentConfig?.agendaEnableInscriptions !== false && event?.status !== 'sondage' && !event?.isPoll && (
         <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
           <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-2 mb-3">
             <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">

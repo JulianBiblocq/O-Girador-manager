@@ -3,7 +3,7 @@
  * Remplace de manière asynchrone window.confirm, window.alert et window.prompt.
  */
 
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react';
 import CordelConfirmModal from '../components/common/CordelConfirmModal';
 import CordelPromptModal from '../components/common/CordelPromptModal';
 
@@ -251,15 +251,7 @@ export function ConfirmModalProvider({ children }) {
 // Alias ConfirmProvider pour compatibilité immédiate avec l'existant
 export const ConfirmProvider = ConfirmModalProvider;
 
-/**
- * Hook useConfirm
- * Supporte à la fois l'appel direct `const confirm = useConfirm(); await confirm(...)`
- * et la déstructuration `const { confirm, alert, prompt } = useConfirm();`.
- * Intègre un repli sécurisé non-bloquant en cas d'appel temporaire hors Provider (HMR).
- */
-export function useConfirm() {
-  const context = useContext(ConfirmModalContext);
-
+function buildConfirmCallable(context) {
   const confirmFn = (options) => {
     if (context?.confirm) {
       return context.confirm(options);
@@ -270,26 +262,35 @@ export function useConfirm() {
     return Promise.resolve(fallbackConfirm ? fallbackConfirm(msg) : true);
   };
 
-  confirmFn.confirm = confirmFn;
-  if (context) {
-    confirmFn.alert = context.alert;
-    confirmFn.prompt = context.prompt;
-  } else {
-    confirmFn.alert = (options) => {
-      const msg = typeof options === 'string' ? options : (options?.message || '');
-      const nativeAlert = typeof window !== 'undefined' ? window['alert'] : null;
-      if (nativeAlert) nativeAlert(msg);
-      return Promise.resolve(true);
-    };
-    confirmFn.prompt = (options, defaultVal) => {
-      const msg = typeof options === 'string' ? options : (options?.message || options?.title || '');
-      const def = typeof options === 'object' ? (options?.defaultValue || defaultVal) : defaultVal;
-      const nativePrompt = typeof window !== 'undefined' ? window['prompt'] : null;
-      return Promise.resolve(nativePrompt ? nativePrompt(msg, def) : null);
-    };
-  }
+  const fallbackAlert = (options) => {
+    const msg = typeof options === 'string' ? options : (options?.message || '');
+    const nativeAlert = typeof window !== 'undefined' ? window['alert'] : null;
+    if (nativeAlert) nativeAlert(msg);
+    return Promise.resolve(true);
+  };
 
+  const fallbackPrompt = (options, defaultVal) => {
+    const msg = typeof options === 'string' ? options : (options?.message || options?.title || '');
+    const def = typeof options === 'object' ? (options?.defaultValue || defaultVal) : defaultVal;
+    const nativePrompt = typeof window !== 'undefined' ? window['prompt'] : null;
+    return Promise.resolve(nativePrompt ? nativePrompt(msg, def) : null);
+  };
+
+  confirmFn.confirm = confirmFn;
+  confirmFn.alert = context ? context.alert : fallbackAlert; // confirmFn.alert = context.alert
+  confirmFn.prompt = context ? context.prompt : fallbackPrompt;
   return confirmFn;
+}
+
+/**
+ * Hook useConfirm
+ * Supporte à la fois l'appel direct `const confirm = useConfirm(); await confirm(...)`
+ * et la déstructuration `const { confirm, alert, prompt } = useConfirm();`.
+ * Intègre un repli sécurisé non-bloquant en cas d'appel temporaire hors Provider (HMR).
+ */
+export function useConfirm() {
+  const context = useContext(ConfirmModalContext);
+  return useMemo(() => buildConfirmCallable(context), [context]);
 }
 
 /**

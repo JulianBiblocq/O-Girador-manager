@@ -73,7 +73,7 @@ export default function ImportModelWizardModal({ groupId, file, suppliesList = [
                 });
               }
               setLoading(false);
-            } catch (_err) {
+            } catch {
               setError("Fichier JSON invalide.");
               setLoading(false);
             }
@@ -119,7 +119,7 @@ export default function ImportModelWizardModal({ groupId, file, suppliesList = [
     
     try {
       const storage = getStorage();
-      const model = manifest.model;
+      const model = JSON.parse(JSON.stringify(manifest.model));
       const safeModelName = (model.nom || 'modele').replace(/\s+/g, '_').toLowerCase();
       
       // Upload des images et remplacement des URLs

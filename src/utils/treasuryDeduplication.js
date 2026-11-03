@@ -20,14 +20,14 @@ export function getTransactionDayKey(tx) {
     if (typeof tx.date.toDate === 'function') {
       try {
         return tx.date.toDate().toISOString().split('T')[0];
-      } catch (e) {
+      } catch {
         // Fallback
       }
     }
     if (typeof tx.date._seconds === 'number') {
       try {
         return new Date(tx.date._seconds * 1000).toISOString().split('T')[0];
-      } catch (e) {
+      } catch {
         // Fallback
       }
     }
@@ -44,7 +44,7 @@ export function getTransactionDayKey(tx) {
     if (typeof tx.createdAt.toDate === 'function') {
       try {
         return tx.createdAt.toDate().toISOString().split('T')[0];
-      } catch (e) {
+      } catch {
         // Fallback
       }
     }

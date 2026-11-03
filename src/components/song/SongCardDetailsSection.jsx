@@ -2,11 +2,12 @@ import React from 'react';
 import { useTranslation } from '../LanguageContext';
 import RepertoirePasserelleButton from '../repertoire/RepertoirePasserelleButton';
 import { launchCantador } from '../../utils/trainingLauncher';
+import { isCantadorValidated } from '../../utils/repertoireMatcher';
 
 /**
- * Section contextuelle "Carnet de Chants" (style Cordel du 14-16 octobre) (< 125 lignes) :
+ * Section contextuelle "Carnet de Chants" (style Cordel) (< 135 lignes) :
  * Traduction en pleine largeur, Encart Lexique avec bordure gauche orange, Anecdote,
- * et passerelles Cantad'Or & Répertoire.
+ * et passerelles Cantador & Répertoire.
  */
 export default function SongCardDetailsSection({
   song,
@@ -14,7 +15,8 @@ export default function SongCardDetailsSection({
   onNavigateToView = null,
   isPrintVersion = false,
   printSections = null,
-  renderFlashcard = null
+  renderFlashcard = null,
+  hideCantadorButton = false
 }) {
   const { t } = useTranslation();
 
@@ -23,6 +25,8 @@ export default function SongCardDetailsSection({
     if (!printSections) return true;
     return Boolean(printSections[secKey]);
   };
+
+  const canTrainInCantador = !hideCantadorButton && isCantadorValidated(song);
 
   const handleTrainInCantador = () => {
     launchCantador({
@@ -108,19 +112,21 @@ export default function SongCardDetailsSection({
         </div>
       )}
 
-      {/* 5. Passerelles Écosystème Cantad'Or & Répertoire */}
+      {/* 5. Passerelles Écosystème Cantador & Répertoire */}
       {!isPrintVersion && (
         <div className="flex items-center justify-between gap-2 flex-wrap pt-3 mt-4 border-t border-dashed border-encre-noire/20 print:hidden">
-          <button
-            type="button"
-            onClick={handleTrainInCantador}
-            className="px-2.5 py-1 text-[10px] font-black uppercase rounded bg-orange-50 hover:bg-orange-100 text-orange-950 border border-orange-300 shadow-2xs transition-colors cursor-pointer flex items-center gap-1.5 select-none"
-            title={t('repertoire.tooltipTrainInCantador') || "S'entraîner dans Cantador"}
-          >
-            <span>🎙️</span>
-            <span>{t('repertoire.trainInCantador') || "S'entraîner dans Cantad'Or"}</span>
-            <span className="text-[8px] opacity-70">↗</span>
-          </button>
+          {canTrainInCantador && (
+            <button
+              type="button"
+              onClick={handleTrainInCantador}
+              className="px-2.5 py-1 text-[10px] font-black uppercase rounded bg-orange-50 hover:bg-orange-100 text-orange-950 border border-orange-300 shadow-2xs transition-colors cursor-pointer flex items-center gap-1.5 select-none"
+              title={t('repertoire.tooltipTrainInCantador') || "S'entraîner dans Cantador"}
+            >
+              <span>🎙️</span>
+              <span>{t('repertoire.trainInCantador') || "S'entraîner dans Cantador"}</span>
+              <span className="text-[8px] opacity-70">↗</span>
+            </button>
+          )}
 
           <RepertoirePasserelleButton
             toadaId={song?.id}

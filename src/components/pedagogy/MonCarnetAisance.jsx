@@ -245,7 +245,7 @@ export default function MonCarnetAisance({
   handleToggleRevisionDemandee = null,
   rhythms,
   rhythmsJsonData,
-  rhythmsMetadata,
+  rhythmsMetadata: _rhythmsMetadata,
   songs,
   educationalSheets,
   repertoire = [],

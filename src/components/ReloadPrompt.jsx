@@ -13,7 +13,7 @@ export default function ReloadPrompt() {
     if (typeof window !== 'undefined') {
       try {
         return sessionStorage.getItem('pwa_update_dismissed') === 'true';
-      } catch (_) {
+      } catch {
         return false;
       }
     }

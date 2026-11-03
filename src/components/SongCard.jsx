@@ -3,11 +3,11 @@ import { createPortal } from 'react-dom';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import PrintConfigModal from './PrintConfigModal';
-import RepertoirePasserelleButton from './repertoire/RepertoirePasserelleButton';
-import SongCardHeader from './song/SongCardHeader';
+import SongCardHeader from './song/SongCardHeader'; // intègre RepertoirePasserelleButton
 import SongCardLyricsSection from './song/SongCardLyricsSection';
 import SongCardDetailsSection from './song/SongCardDetailsSection';
 import { useTranslation } from './LanguageContext';
+import { recordVaralDocumentView } from '../utils/varalViewTracker';
 
 /**
  * Composant Fiche de Chant (Toada) O-Girador (restauration 14-16 octobre).
@@ -25,7 +25,8 @@ export default function SongCard({
   profileData = null,
   userId = null,
   groupId = null,
-  onNavigateToView = null
+  onNavigateToView = null,
+  hideCantadorButton = false
 }) {
   const { t } = useTranslation();
   const [activePuxador, setActivePuxador] = useState(!defaultRevisionMode || isPrintVersion);
@@ -41,6 +42,12 @@ export default function SongCard({
   const effectiveUserId = userId || profileData?.uid || profileData?.id || auth?.currentUser?.uid;
   const effectiveGroupId = groupId || profileData?.groupId || song?.groupId;
   const [internalRequested, setInternalRequested] = useState(false);
+
+  useEffect(() => {
+    if (!isPrintVersion && song?.id) {
+      recordVaralDocumentView(song, effectiveUserId);
+    }
+  }, [isPrintVersion, song, effectiveUserId]);
 
   useEffect(() => {
     if (isRevisionRequested !== null && isRevisionRequested !== undefined) {
@@ -248,6 +255,7 @@ export default function SongCard({
                   isPrintVersion={isPrintVersion}
                   printSections={localPrintSections || printSections}
                   renderFlashcard={renderFlashcard}
+                  hideCantadorButton={hideCantadorButton}
                 />
               </td>
             </tr>

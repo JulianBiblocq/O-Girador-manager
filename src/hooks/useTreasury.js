@@ -635,7 +635,7 @@ export function useTreasury(groupId) {
           return {
             id: inst.id,
             nom: inst.nom || 'Instrument',
-            type: inst.type || '',
+            instrumentType: inst.type || '',
             montant,
             statut,
             typeGarantie,

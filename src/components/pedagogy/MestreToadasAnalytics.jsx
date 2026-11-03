@@ -52,7 +52,7 @@ export default function MestreToadasAnalytics({
               if (snap.exists()) {
                 currentEvals[u.id] = snap.data().evaluations || {};
               }
-            } catch (e) {
+            } catch {
               currentEvals[u.id] = {};
             }
           }));

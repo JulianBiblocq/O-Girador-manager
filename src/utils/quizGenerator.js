@@ -17,8 +17,8 @@ import {
 import { detectAlfaiaSticks } from './sequencerParser.js';
 import {
   extractI18nVocabPool,
-  sanitizeQuizText as sanitizeQuizTextI18n,
-  hasLeak as hasLeakI18n,
+  // sanitizeQuizTextI18n retiré
+  // hasLeakI18n retiré
   getSmartDistractors,
   generateI18nTranslationQuiz
 } from './quizI18nEngine.js';
@@ -624,7 +624,7 @@ export const generateQuizFromSheet = (sheetData, allSheetsData = [], allSongsDat
     const hasElement = isOrixa && sheetData.elementNaturel;
     
     // Noms d'autres Orixás pour distracteurs
-    const stampsList = ['orixa', 'cuisine', 'histoire', 'musique', 'cortejo', 'territoire', 'folklore'];
+    const _stampsList = ['orixa', 'cuisine', 'histoire', 'musique', 'cortejo', 'territoire', 'folklore'];
     const colorsList = [['#EAB308'], ['#EF4444', '#FFFFFF'], ['#3B82F6'], ['#22C55E'], ['#A855F7'], ['#F97316']];
 
     // 3.1. Devinette Visuelle (Quel est cet Orixá ?)
@@ -1303,7 +1303,7 @@ export const generateQuizFromSong = (song, allSongs = [], allSheetsData = [], co
   allSongs = Array.isArray(allSongs) ? allSongs : [];
   allSheetsData = Array.isArray(allSheetsData) ? allSheetsData : [];
 
-  const { askRythme = true, askNacao = true, askTraduction = true, askLexique = true, difficulty = 'medium', customDistractors = {} } = config;
+  const { askRythme = true, askNacao = true, askTraduction: _askTraduction = true, askLexique = true, difficulty = 'medium', customDistractors = {} } = config;
   const diffLevel = difficulty?.toLowerCase() || 'medium';
 
   // Helpers pour récupérer des distracteurs depuis allSongs

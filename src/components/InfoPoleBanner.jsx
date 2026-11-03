@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { usePoleGuide, getGuideKey } from '../hooks/usePoleGuide';
-import { POLE_GUIDES } from '../config/poleGuides';
+// POLE_GUIDES résolu via getPoleGuide
 import PoleTourOverlay from './guided-tour/PoleTourOverlay';
 import { useTranslation } from './LanguageContext';
 import { matchesAllowedKeyword, canAccessPole } from '../utils/permissionUtils';

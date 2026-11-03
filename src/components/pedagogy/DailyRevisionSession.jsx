@@ -30,7 +30,7 @@ export default function DailyRevisionSession({ profileData, allSongs = [], allSh
           const srRef = doc(db, 'users', profileData.uid, 'spaced_repetition', groupId);
           const srSnap = await getDoc(srRef);
           srData = srSnap.exists() ? srSnap.data() : {};
-        } catch (_) {
+        } catch {
           // Historique non encore créé ou en attente d'initialisation : repli silencieux
           srData = {};
         }

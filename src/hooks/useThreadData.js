@@ -280,6 +280,8 @@ export function useThreadData({
     }
   }, [thread, user, threadId, profileData?.readThreads]);
 
+  const previousRepliesCountRef = useRef(0);
+
   // Gestion du défilement initial vers le séparateur ou le bas (confiné au conteneur interne pour préserver la stabilité du viewport mobile)
   useEffect(() => {
     let timer = null;
@@ -302,8 +304,6 @@ export function useThreadData({
       if (timer) clearTimeout(timer);
     };
   }, [loading, thread]);
-
-  const previousRepliesCountRef = useRef(0);
 
   // Défilement automatique vers l'ancre finale à chaque nouveau message reçu
   useEffect(() => {

@@ -2,33 +2,24 @@ import React, { useState } from 'react';
 import PieceAisanceSection from './PieceAisanceSection';
 import PieceVideoSection from '../repertoire/PieceVideoSection';
 import PieceQuizModal from './PieceQuizModal';
-import SequencerAccessButtons from '../repertoire/SequencerAccessButtons';
+import { getEcosystemUrl } from '../../constants/ecosystemUrls';
+import { launchCrossApp } from '../../utils/crossAppAuth';
 import { useTranslation } from '../LanguageContext';
-import { launchCantador } from '../../utils/trainingLauncher';
 
 /**
- * Contenu déplié de la carte morceau pour adhérents (lecture seule stricte).
+ * Contenu déplié de la carte morceau pour adhérents (lecture seule stricte) (< 140 lignes).
  * Affiche notes, audio, toadas, tablatures, danse, culture, signaux,
- * passerelle Atelier Vocal, vidéos, entraînements et quiz.
+ * vidéos, entraînements et quiz (sans doublon des boutons d'en-tête).
  */
 export default function MemberPieceUnfoldedContent({
-  piece,
-  userId,
-  groupId,
-  profileData = null,
-  trainings = [],
-  aisanceMap = {},
-  onOpenTablature,
-  onOpenToada,
-  onOpenCulture,
-  onOpenSignals,
-  onOpenQuiz = null,
-  sequenceurUrl
+  piece, userId, groupId, profileData = null, trainings = [], aisanceMap = {},
+  onOpenTablature, onOpenToada, onOpenCulture, onOpenSignals, onOpenQuiz = null, sequenceurUrl
 }) {
   const { t } = useTranslation();
   const [isQuizModalOpen, setIsQuizModalOpen] = useState(false);
   const audioUrl = piece.activeAudioUrl || piece.audioUrl;
   const hasToada = Boolean(piece.activeToada && (
+    piece.activeToada.parolesOriginales?.trim() || piece.activeToada.rawTxtCode?.trim() ||
     piece.activeToada.paroles?.trim() || piece.activeToada.texte?.trim() ||
     piece.activeToada.strophes?.length || piece.activeToada.titre?.trim()
   ));
@@ -36,13 +27,6 @@ export default function MemberPieceUnfoldedContent({
     ? piece.activeCultureDocs : (piece.activeCultureDoc ? [piece.activeCultureDoc] : []);
   const hasCulture = Boolean(cultureDocs.length > 0 || piece.cultureDocIds?.length || piece.cultureDocId);
   const hasSignals = Boolean(piece.sinaisDoMestre?.length || piece.activeSinaisDoMestre?.length || piece.signalIds?.length);
-  const isSongPiece = piece.type === 'song' || piece.typeMorceau === 'song' || hasToada || Boolean(piece.toadaId || piece.toadaDocId || piece.toada || piece.cantadorToadaId);
-
-  const handleOpenVocalLab = () => {
-    const toadaId = piece.cantadorToadaId || '';
-    const songId = piece.toadaDocId || piece.id || '';
-    launchCantador({ songId, toadaId, mode: 'eleve', groupId });
-  };
 
   return (
     <div className="p-3.5 flex flex-col gap-3 text-left">
@@ -65,7 +49,7 @@ export default function MemberPieceUnfoldedContent({
         </div>
       )}
 
-      {/* 3. Passerelles multimédias épurées */}
+      {/* 3. Passerelles multimédias épurées (toadaId géré en en-tête par MemberPieceCard) */}
       <div className="flex flex-wrap items-center gap-2">
         {/* Paroles */}
         {hasToada && (
@@ -105,22 +89,25 @@ export default function MemberPieceUnfoldedContent({
           </button>
         )}
 
-        {/* Danse */}
-        {piece.activeChoreography && (
-          <div className="px-2.5 py-1 text-xs font-bold rounded bg-purple-50 border border-purple-200 text-purple-900 flex items-center gap-1.5 shadow-2xs select-none">
-            <span>💃</span><span>{t('pedagogy.modals.danse')} {piece.activeChoreography.nom || piece.activeChoreography.titre || t('pedagogy.modals.choregraphie')}</span>
-          </div>
-        )}
-
-        {/* Séquenceur découplé : Écouter & Jouer avec */}
-        {piece.sequenceurId && (
-          <SequencerAccessButtons piece={piece} sequenceurUrl={sequenceurUrl} profileData={profileData} />
-        )}
-
-        {/* Passerelle Cantador — Mode élève & ciblage chant */}
-        {isSongPiece && (
-          <button type="button" onClick={handleOpenVocalLab} className="px-2.5 py-1 text-xs font-bold rounded bg-orange-50 hover:bg-orange-100 border border-orange-300 text-orange-950 flex items-center gap-1.5 cursor-pointer shadow-2xs select-none" title={t('repertoire.tooltipVocalLab') || "Ouvrir Cantador en ligne"}>
-            <span>🎙️</span><span>{t('repertoire.btnTrainVocalDirect') || t('repertoire.btnVocalLab') || "S'entraîner au chant (Cantador)"}</span>
+        {/* Danse (Passerelle SSO Dançador) */}
+        {(piece.activeChoreography || piece.dancadorChoreoId) && (
+          <button
+            type="button"
+            onClick={() =>
+              launchCrossApp(
+                getEcosystemUrl(
+                  'dancador',
+                  `?choreoId=${encodeURIComponent(piece.dancadorChoreoId || piece.activeChoreography?.id || '')}&groupId=${encodeURIComponent(groupId || '')}`
+                ),
+                { appLabel: 'Dançador' }
+              )
+            }
+            className="px-2.5 py-1 text-xs font-bold rounded bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-900 flex items-center gap-1.5 cursor-pointer shadow-2xs select-none"
+            title="Ouvrir la chorégraphie dans Dançador"
+          >
+            <span>💃</span>
+            <span>{t('pedagogy.modals.danse')} {piece.activeChoreography?.nom || piece.activeChoreography?.titre || t('pedagogy.modals.choregraphie')}</span>
+            <span className="text-[9px] opacity-70">↗</span>
           </button>
         )}
 

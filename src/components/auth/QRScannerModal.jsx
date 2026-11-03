@@ -11,12 +11,56 @@ import { useTranslation } from '../LanguageContext';
  * puis appelle la Cloud Function Firebase approveQrSession pour valider la connexion.
  */
 export default function QRScannerModal({ isOpen, onClose }) {
-  const { t } = useTranslation();
+  const { t: _t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const html5QrcodeRef = useRef(null);
   const isScanningRef = useRef(false);
+
+  // Callback en cas de succès du décodage du QR Code
+  const onScanSuccess = async (decodedText) => {
+    if (!isScanningRef.current) return;
+    isScanningRef.current = false;
+
+    // Arrêt immédiat de la vidéo pour éviter les scans multiples
+    if (html5QrcodeRef.current) {
+      try {
+        await html5QrcodeRef.current.stop();
+      } catch (err) {
+        console.warn("Erreur arrêt scanner :", err);
+      }
+    }
+
+    setLoading(true);
+    setErrorMessage('');
+
+    try {
+      // Appel de la Cloud Function HTTPS Callable approveQrSession
+      const approveFn = httpsCallable(functions, 'approveQrSession');
+      const result = await approveFn({ sessionId: decodedText.trim() });
+
+      if (result.data && result.data.success) {
+        setSuccessMessage("PC connecté avec succès !");
+        // Fermeture automatique après 1.5 seconde
+        setTimeout(() => {
+          onClose();
+        }, 1500);
+      } else {
+        setErrorMessage(result.data?.message || "La session n'a pas pu être validée.");
+      }
+    } catch (err) {
+      console.error("Erreur lors de l'approbation de la session QR :", err);
+      setErrorMessage(err.message || "Erreur de validation de la session. Code invalide ou expiré.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Callback facultatif d'échec de lecture à chaque frame (ignoré pour éviter les logs excessifs)
+  const onScanFailure = () => {
+    // Ne rien faire à chaque frame sans code
+  };
 
   useEffect(() => {
     if (!isOpen) return;
@@ -73,50 +117,6 @@ export default function QRScannerModal({ isOpen, onClose }) {
       }
     };
   }, [isOpen]);
-
-  // Callback en cas de succès du décodage du QR Code
-  const onScanSuccess = async (decodedText) => {
-    if (!isScanningRef.current) return;
-    isScanningRef.current = false;
-
-    // Arrêt immédiat de la vidéo pour éviter les scans multiples
-    if (html5QrcodeRef.current) {
-      try {
-        await html5QrcodeRef.current.stop();
-      } catch (err) {
-        console.warn("Erreur arrêt scanner :", err);
-      }
-    }
-
-    setLoading(true);
-    setErrorMessage('');
-
-    try {
-      // Appel de la Cloud Function HTTPS Callable approveQrSession
-      const approveFn = httpsCallable(functions, 'approveQrSession');
-      const result = await approveFn({ sessionId: decodedText.trim() });
-
-      if (result.data && result.data.success) {
-        setSuccessMessage("PC connecté avec succès !");
-        // Fermeture automatique après 1.5 seconde
-        setTimeout(() => {
-          onClose();
-        }, 1500);
-      } else {
-        setErrorMessage(result.data?.message || "La session n'a pas pu être validée.");
-      }
-    } catch (err) {
-      console.error("Erreur lors de l'approbation de la session QR :", err);
-      setErrorMessage(err.message || "Erreur de validation de la session. Code invalide ou expiré.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Callback facultatif d'échec de lecture à chaque frame (ignoré pour éviter les logs excessifs)
-  const onScanFailure = (error) => {
-    // Ne rien faire à chaque frame sans code
-  };
 
   // Recommencer le scan en cas d'erreur
   const handleRestartScan = () => {

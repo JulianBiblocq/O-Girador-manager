@@ -14,6 +14,7 @@ import ReportTerritoryCard from './reports/ReportTerritoryCard';
 import ReportVolunteerCard from './reports/ReportVolunteerCard';
 import ReportAudienceCard from './reports/ReportAudienceCard';
 import AgSlideshowModal from './reports/AgSlideshowModal';
+import UsageStatsBanner from './reports/UsageStatsBanner';
 import {
   getSeasonDateRange,
   getCurrentSeason,
@@ -53,6 +54,8 @@ export default function SecretariatReportsView({ groupId, onBack }) {
   const [rawInventory, setRawInventory] = useState([]);
   const [rawTransactions, setRawTransactions] = useState([]);
   const [rawGigs, setRawGigs] = useState([]);
+  const [rawAnnouncements, setRawAnnouncements] = useState([]);
+  const [rawDocuments, setRawDocuments] = useState([]);
   const [assocInfo, setAssocInfo] = useState(null);
 
   // Configuration temporelle de l'association
@@ -153,7 +156,9 @@ export default function SecretariatReportsView({ groupId, onBack }) {
         inventorySnap,
         txSnap,
         assocSnap,
-        gigsSnap
+        gigsSnap,
+        announcementsSnap,
+        documentsSnap
       ] = await Promise.all([
         getDocs(query(collection(db, 'users'), where('groupId', 'in', groupVariants))),
         getDocs(query(collection(db, 'events'), where('groupId', '==', groupId))),
@@ -162,7 +167,9 @@ export default function SecretariatReportsView({ groupId, onBack }) {
         getDocs(query(collection(db, 'inventory'), where('groupId', '==', groupId))),
         getDocs(query(collection(db, 'transactions'), where('groupId', '==', groupId))),
         getDoc(doc(db, 'associations', groupId)),
-        getDocs(query(collection(db, 'gigs_pipeline'), where('groupId', '==', groupId))).catch(() => ({ forEach: () => {} }))
+        getDocs(query(collection(db, 'gigs_pipeline'), where('groupId', '==', groupId))).catch(() => ({ forEach: () => {} })),
+        getDocs(query(collection(db, 'announcements'), where('groupId', 'in', groupVariants))).catch(() => ({ forEach: () => {} })),
+        getDocs(query(collection(db, 'documents'), where('groupId', 'in', groupVariants))).catch(() => ({ forEach: () => {} }))
       ]);
 
       const usersList = [];
@@ -188,6 +195,16 @@ export default function SecretariatReportsView({ groupId, onBack }) {
         gigsSnap.forEach(d => gigsList.push({ id: d.id, ...d.data() }));
       }
 
+      const announcementsList = [];
+      if (announcementsSnap && typeof announcementsSnap.forEach === 'function') {
+        announcementsSnap.forEach(d => announcementsList.push({ id: d.id, ...d.data() }));
+      }
+
+      const documentsList = [];
+      if (documentsSnap && typeof documentsSnap.forEach === 'function') {
+        documentsSnap.forEach(d => documentsList.push({ id: d.id, ...d.data() }));
+      }
+
       setRawUsers(usersList);
       setRawEvents(eventsList);
       setRawCouture(coutureList);
@@ -195,6 +212,8 @@ export default function SecretariatReportsView({ groupId, onBack }) {
       setRawInventory(inventoryList);
       setRawTransactions(txList);
       setRawGigs(gigsList);
+      setRawAnnouncements(announcementsList);
+      setRawDocuments(documentsList);
       setAssocInfo(assocSnap.exists() ? assocSnap.data() : null);
       setLastRefreshed(new Date());
     } catch (err) {
@@ -755,6 +774,17 @@ export default function SecretariatReportsView({ groupId, onBack }) {
         <div className="p-4 bg-red-100 text-red-900 border-2 border-red-800 rounded font-bold text-xs no-print">
           ⚠️ {error}
         </div>
+      )}
+
+      {/* BANDEAU DE STATISTIQUES D'USAGE NUMÉRIQUE & PUSH (ORGANIZADOR -> ORQUESTRADOR) */}
+      {!loading && !error && (
+        <UsageStatsBanner
+          groupId={groupId}
+          rawUsers={rawUsers}
+          rawAnnouncements={rawAnnouncements}
+          rawDocuments={rawDocuments}
+          canSyncOrquestrador={true}
+        />
       )}
 
       {/* GRILLE PRINCIPALE DES 4 BLOCS CORDEL */}

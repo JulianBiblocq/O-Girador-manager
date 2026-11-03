@@ -76,7 +76,7 @@ function GoogleMapsPreview({ address }) {
                 }
               });
             }
-          } catch (err) {
+          } catch {
             setMapError("Erreur d'initialisation de la carte");
           }
         })
@@ -115,7 +115,7 @@ function GoogleMapsPreview({ address }) {
 export default function DepartureLocationAccordion({
   formData = {},
   handleChange,
-  saving = false
+  saving: _saving = false
 }) {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);

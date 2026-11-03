@@ -5,7 +5,7 @@ import { useTranslation } from './LanguageContext';
 
 export default function CalendarGrid({ events = [], onSelectEvent, t }) {
   const { t: tCtx, locale } = useTranslation();
-  const tFunc = t || tCtx;
+  const _tFunc = t || tCtx;
   const [currentDate, setCurrentDate] = useState(new Date());
 
   const currentYear = currentDate.getFullYear();

@@ -12,9 +12,15 @@ import { canonicalizeGroupId } from '../utils/tenantUtils';
 import GroupSelectorStep from './auth/GroupSelectorStep';
 import RegisterForm from './auth/RegisterForm';
 
+const syncAuthLocale = (authInstance, lang) => {
+  if (authInstance) {
+    authInstance.languageCode = lang || 'fr';
+  }
+};
+
 export default function Login({ branding, onSuccess }) {
   const { t, locale } = useTranslation();
-  const { groupId, needsGroupSelection, setManualGroupId } = useGroupContext();
+  const { groupId: _groupId, needsGroupSelection, setManualGroupId } = useGroupContext();
 
   // 1. Persistance immédiate du groupId dès l'arrivée sur Login.jsx
   React.useEffect(() => {
@@ -93,7 +99,7 @@ export default function Login({ branding, onSuccess }) {
 
     setAuthLoading(true);
     try {
-      auth.languageCode = locale || 'fr';
+      syncAuthLocale(auth, locale);
       await sendPasswordResetEmail(auth, cleanEmail);
       setResetConfirmationEmail(cleanEmail);
     } catch (err) {

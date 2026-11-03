@@ -14,9 +14,10 @@ import {
  * et 3 membres de front sur smartphone. Hauteur 100% harmonisée avec alignement rigoureux.
  */
 function MemberStampCard({
-  member, isOnline = false, isCurrentUser = false, pupitreColor = '#181716', onClick, onEditPhoto, t = (key) => key
+  member, isOnline = false, isCurrentUser = false, canSeePushStatus = false, pupitreColor = '#181716', onClick, onEditPhoto, t = (key) => key
 }) {
   const { prenom = '', nom = '', surnom = '', photoURL = null, role = 'membre', isDependent = false, isGhost = false, primaryInstrumentName = '' } = member;
+  const isPushReachable = Array.isArray(member.fcmTokens) && member.fcmTokens.length > 0;
 
   const fullName = `${prenom} ${nom}`.trim() || 'Membre';
   const initialName = `${prenom} ${nom ? `${nom[0].toUpperCase()}.` : ''}`.trim();
@@ -45,7 +46,7 @@ function MemberStampCard({
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          onClick && onClick(member);
+          if (onClick) onClick(member);
         }
       }}
       className={`group relative h-full flex flex-col justify-between rounded-md border-2 border-[var(--color-cordel-encre,#181716)] bg-[var(--color-cordel-kraft-sombre,#e2d6b5)] shadow-[2px_2px_0px_0px_#181716] overflow-hidden cursor-pointer transition-transform hover:-translate-y-0.5 active:translate-y-0 select-none ${
@@ -63,15 +64,33 @@ function MemberStampCard({
           className="w-full h-full rounded-none border-none shadow-none"
         />
 
-        {/* Pastille de présence en ligne (Haut Gauche) */}
-        {isOnline && (
-          <span
-            className="absolute top-1 left-1 z-20 w-2.5 h-2.5 bg-emerald-500 border border-white rounded-full shadow-xs flex items-center justify-center"
-            title={t('trombinoscope.onlineNow') || 'Actuellement en ligne'}
-          >
-            <span className="w-1 h-1 bg-white rounded-full animate-ping" />
-          </span>
-        )}
+        {/* Pastille de présence en ligne et voyant Push Bureau/CA (Haut Gauche) */}
+        <div className="absolute top-1 left-1 z-20 flex items-center gap-1">
+          {isOnline && (
+            <span
+              className="w-2.5 h-2.5 bg-emerald-500 border border-white rounded-full shadow-xs flex items-center justify-center"
+              title={t('trombinoscope.onlineNow') || 'Actuellement en ligne'}
+            >
+              <span className="w-1 h-1 bg-white rounded-full animate-ping" />
+            </span>
+          )}
+          {canSeePushStatus && !isDependent && !isGhost && (
+            <span
+              className={`text-[8px] leading-none px-1 py-0.5 rounded border shadow-xs font-black ${
+                isPushReachable
+                  ? 'bg-[var(--color-cordel-vert,#2d6a4f)] text-white border-stone-900'
+                  : 'bg-stone-200/90 text-stone-600 border-stone-400'
+              }`}
+              title={
+                isPushReachable
+                  ? (t('trombinoscope.pushReachableTitle') || 'Notifications Push activées (joignable)')
+                  : (t('trombinoscope.pushUnreachableTitle') || 'Notifications Push non activées')
+              }
+            >
+              {isPushReachable ? '🔔' : '🔕'}
+            </span>
+          )}
+        </div>
 
         {/* Micro-tampons inclinés pour les distinctions (Haut Droite) */}
         <div className="absolute top-1 right-1 z-20 flex items-center gap-0.5">
@@ -168,6 +187,8 @@ function MemberStampCard({
 
 const arePropsEqual = (p, n) => (
   p.member.id === n.member.id && p.isOnline === n.isOnline && p.isCurrentUser === n.isCurrentUser &&
+  p.canSeePushStatus === n.canSeePushStatus &&
+  Boolean(p.member.fcmTokens?.length) === Boolean(n.member.fcmTokens?.length) &&
   p.pupitreColor === n.pupitreColor && p.member.photoURL === n.member.photoURL &&
   p.member.prenom === n.member.prenom && p.member.nom === n.member.nom && p.member.surnom === n.member.surnom &&
   p.member.role === n.member.role && p.member.instrument === n.member.instrument &&

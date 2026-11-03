@@ -270,7 +270,7 @@ export const generateCompteRenduPDF = (event, points = [], presents = [], associ
       .filter(m => m.nom || m.role)
       .map(m => `${m.role ? m.role + ' : ' : ''}${m.nom || ''}`.trim())
       .join(' | ');
-    const mestriaLines = doc.splitTextToSize(mestriaText || "Non renseignée", 55 ? 135 : 135);
+    const mestriaLines = doc.splitTextToSize(mestriaText || "Non renseignée", 135);
     doc.text(mestriaLines, 55, yPos);
     yPos += ((mestriaLines.length - 1) * 5);
   }

@@ -404,6 +404,8 @@ export default function Dashboard({
                   canPublish={canUserPublishAnnonces}
                   breakGlassActive={breakGlassActive}
                   userTags={effectiveUserTags}
+                  installPromptAvailable={installPromptAvailable}
+                  onTriggerInstall={onTriggerInstall}
                 />
               );
               break;
@@ -464,7 +466,13 @@ export default function Dashboard({
                   profileData={currentProfile}
                   breakGlassActive={breakGlassActive}
                   tagsDisponibles={tagsDisponibles}
-                  onOpen={(threadId) => onNavigateToView('forum', threadId ? { threadId } : null)} 
+                  onOpen={(target) => {
+                    if (target && typeof target === 'object') {
+                      onNavigateToView('forum', target);
+                    } else {
+                      onNavigateToView('forum', target ? { threadId: target } : null);
+                    }
+                  }} 
                 />
               );
               break;

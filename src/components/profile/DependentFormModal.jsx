@@ -11,7 +11,7 @@ export default function DependentFormModal({
   instrumentsDisponibles = [],
   customCategories = DEFAULT_CUSTOM_CATEGORIES,
   saving = false,
-  t = (k, fb) => fb || k
+  t: _t = (k, fb) => fb || k
 }) {
   const isEditing = !!initialData?.id;
 
@@ -57,7 +57,7 @@ export default function DependentFormModal({
       if (prev.includes(inst)) {
         const next = prev.filter(i => i !== inst);
         setNiveauxParInstrument(nPrev => {
-          const { [inst]: removed, ...rest } = nPrev;
+          const { [inst]: _removed, ...rest } = nPrev;
           return rest;
         });
         return next;

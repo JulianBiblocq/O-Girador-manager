@@ -83,16 +83,16 @@ export default function EventsDataGrid({
           valB = b.tenueRequise || b.tenue || '';
           break;
         case 'includesPercussion':
-          valA = Boolean(a.includesPercussion) ? 1 : 0;
-          valB = Boolean(b.includesPercussion) ? 1 : 0;
+          valA = a.includesPercussion ? 1 : 0;
+          valB = b.includesPercussion ? 1 : 0;
           break;
         case 'includesDance':
-          valA = Boolean(a.includesDance) ? 1 : 0;
-          valB = Boolean(b.includesDance) ? 1 : 0;
+          valA = a.includesDance ? 1 : 0;
+          valB = b.includesDance ? 1 : 0;
           break;
         case 'requiresValidation':
-          valA = Boolean(a.requiresValidation) ? 1 : 0;
-          valB = Boolean(b.requiresValidation) ? 1 : 0;
+          valA = a.requiresValidation ? 1 : 0;
+          valB = b.requiresValidation ? 1 : 0;
           break;
         case 'enableInscriptions':
           valA = a.enableInscriptions !== false ? 1 : 0;
@@ -103,8 +103,8 @@ export default function EventsDataGrid({
           valB = b.enableCarpool !== false ? 1 : 0;
           break;
         case 'isPublic':
-          valA = Boolean(a.isPublic) ? 1 : 0;
-          valB = Boolean(b.isPublic) ? 1 : 0;
+          valA = a.isPublic ? 1 : 0;
+          valB = b.isPublic ? 1 : 0;
           break;
         case 'morceaux':
           valA = (a.linkedPatterns || []).length;

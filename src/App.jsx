@@ -16,13 +16,15 @@ import PublicThemeProvider from './components/PublicThemeProvider';
 import { tracker } from './utils/O-Girador-Tracker';
 import { useAppUpdate } from './hooks/useAppUpdate';
 import { useConversations } from './hooks/useConversations';
+import { useShareTarget } from './hooks/useShareTarget';
 import useDynamicFavicon from './hooks/useDynamicFavicon';
 import LoadingSeal from './components/common/LoadingSeal';
+import ShareTargetModal from './components/share/ShareTargetModal';
 
 import { lazyWithRetry } from './utils/pwaUtils';
 import { resolveEffectiveUserTags } from './utils/tagUtils';
 import { getMigratedRoleAndTags } from './utils/roleMigration';
-import { canAccessPole, canAccessTabPermission, canAccessMestre } from './utils/permissionUtils';
+import { canAccessPole, canAccessTabPermission, canAccessMestre, canPublishAnnonces } from './utils/permissionUtils';
 import PendingValidationScreen from './components/auth/PendingValidationScreen';
 import ArchivedAccountScreen from './components/auth/ArchivedAccountScreen';
 import { isMemberArchived } from './utils/memberUtils';
@@ -304,9 +306,17 @@ export default function App() {
           const cleanUrl = url.pathname + (url.search ? url.search : '') + url.hash;
           window.history.replaceState({}, document.title, cleanUrl);
         }
-      } catch (_) {}
+      } catch {}
     }
   }, []);
+
+  // Gestion du routage dynamique (/ vitrine public, /app espace membre, /login connexion)
+  const [currentRoute, setCurrentRoute] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.location.pathname || '/';
+    }
+    return '/';
+  });
 
   // ✂️ Rétrocompatibilité Mostrador : migration automatique et silencieuse de ?tenant=xxx vers /xxx
   useEffect(() => {
@@ -335,7 +345,7 @@ export default function App() {
           setCurrentRoute(cleanPath);
         }
       }
-    } catch (_) {}
+    } catch {}
   }, []);
 
   const { appMode, groupId: urlGroupId, isTenantLoading, tenantError } = useTenantContext();
@@ -365,7 +375,7 @@ export default function App() {
     if (typeof window !== 'undefined') {
       try {
         return localStorage.getItem('breakGlassActive') === 'true';
-      } catch (_) {
+      } catch {
         return false;
       }
     }
@@ -390,19 +400,11 @@ export default function App() {
       if (typeof window !== 'undefined') {
         try {
           localStorage.setItem('breakGlassActive', String(nextVal));
-        } catch (_) {}
+        } catch {}
       }
       return nextVal;
     });
   };
-
-  // Gestion du routage dynamique (/ vitrine public, /app espace membre, /login connexion)
-  const [currentRoute, setCurrentRoute] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return window.location.pathname || '/';
-    }
-    return '/';
-  });
 
   const navigateToRoute = (route) => {
     setCurrentRoute(route);
@@ -437,6 +439,9 @@ export default function App() {
     createDirectConversation,
     totalUnreadCount: unreadConversationsCount
   } = useConversations(user, profileData?.groupId, profileData);
+
+  // Réception des contenus partagés via l'API Web Share Target
+  const { sharedPayload, clearShareTarget } = useShareTarget(user, profileData);
 
   // Redirection directe vers la messagerie privée (avec interlocuteur ou conversation spécifique si disponible)
   const handleOpenPrivateMessages = useCallback((senderId = null, conversationId = null) => {
@@ -666,7 +671,7 @@ export default function App() {
             try {
               localStorage.setItem('og_cached_loader_logo', logoToCache);
               localStorage.setItem('og_cached_loader_group', activeGroupId || '');
-            } catch (_) {}
+            } catch {}
           }
         }
 
@@ -712,7 +717,7 @@ export default function App() {
                   try {
                     localStorage.setItem('og_cached_loader_logo', logoToCache);
                     localStorage.setItem('og_cached_loader_group', activeGroupId || '');
-                  } catch (_) {}
+                  } catch {}
                 }
               }
 
@@ -902,7 +907,7 @@ export default function App() {
     setInstallPromptAvailable(false);
   };
 
-  // Synchronisation dynamique du Web App Manifest (Blob URL) et du thème mobile PWA
+  // Synchronisation dynamique du thème mobile PWA (sans écraser /manifest.json par un Blob pour préserver le WebAPK et share_target)
   useEffect(() => {
     if (typeof window === 'undefined' || typeof document === 'undefined') return;
 
@@ -911,72 +916,7 @@ export default function App() {
     if (themeMeta && primaryCol) {
       themeMeta.setAttribute('content', primaryCol);
     }
-
-    // Résolution du nom dynamique de la PWA selon la marque et le tenant actif
-    const rawAssoName = associationName || branding?.appName || 'Samambaia';
-    const cleanAssoName = String(rawAssoName).trim();
-    const manifestName = `O Girador ${cleanAssoName}`;
-
-    // Le short_name doit impérativement rester sous 12 caractères pour éviter la troncature sur mobile
-    let shortName = cleanAssoName;
-    if (shortName.length > 12) {
-      shortName = 'O Girador';
-    }
-
-    const origin = typeof window !== 'undefined' && window.location?.origin ? window.location.origin : '';
-    const dynamicManifest = {
-      id: `${origin}/`,
-      name: manifestName,
-      short_name: shortName,
-      description: `Application de gestion pour le groupe O Girador ${cleanAssoName}`,
-      start_url: `${origin}/`,
-      scope: `${origin}/`,
-      display: 'standalone',
-      display_override: ['standalone', 'window-controls-overlay'],
-      orientation: 'any',
-      background_color: branding?.colors?.background || '#f4ecd8',
-      theme_color: primaryCol,
-      prefer_related_applications: false,
-      categories: ['music', 'management', 'productivity'],
-      icons: [
-        {
-          src: `${origin}/icon-192.png`,
-          sizes: '192x192',
-          type: 'image/png',
-          purpose: 'any'
-        },
-        {
-          src: `${origin}/icon-512.png`,
-          sizes: '512x512',
-          type: 'image/png',
-          purpose: 'any'
-        }
-      ]
-    };
-
-    let manifestBlobUrl = null;
-    try {
-      const manifestString = JSON.stringify(dynamicManifest);
-      const blob = new Blob([manifestString], { type: 'application/manifest+json' });
-      manifestBlobUrl = URL.createObjectURL(blob);
-
-      let linkElement = document.querySelector('link[rel="manifest"]');
-      if (!linkElement) {
-        linkElement = document.createElement('link');
-        linkElement.rel = 'manifest';
-        document.head.appendChild(linkElement);
-      }
-      linkElement.href = manifestBlobUrl;
-    } catch (err) {
-      console.warn("Génération du manifest dynamique différée :", err?.message);
-    }
-
-    return () => {
-      if (manifestBlobUrl) {
-        URL.revokeObjectURL(manifestBlobUrl);
-      }
-    };
-  }, [associationName, branding?.appName, branding?.colors?.primary, branding?.colors?.background]);
+  }, [branding?.colors?.primary]);
 
   // Automatically associate or switch the user's group if they open the app via an invitation URL
   // containing a different groupId than their current profileData.groupId
@@ -1262,7 +1202,7 @@ export default function App() {
           const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
           tokenUid = payload.uid || payload.sub || null;
         }
-      } catch (_) {}
+      } catch {}
 
       // Si l'utilisateur actuel correspond déjà au token, pas besoin de réauthentification
       if (auth.currentUser && tokenUid && auth.currentUser.uid === tokenUid) {
@@ -1864,6 +1804,7 @@ export default function App() {
     // Résolution dynamique du visuel : logo de l'association si résolu, sinon macaron neutre O Girador
     const activeLogo = branding?.logoUrl || associationData?.logoUrl || null;
     const logoSrc = activeLogo || '/og-girador-frame.svg';
+    void logoSrc;
     return (
       <div style={brandingStyle} className="min-h-screen w-full flex flex-col justify-center items-center p-6 bg-[var(--cordel-bg)] text-[var(--cordel-text)] transition-colors duration-300">
         <div className="flex flex-col items-center gap-4 text-center max-w-xs sm:max-w-sm w-full">
@@ -3496,6 +3437,24 @@ export default function App() {
                   />
                 </ErrorBoundary>
               </React.Suspense>
+
+              {/* Modale d'aiguillage du partage entrant (Web Share Target API) */}
+              {sharedPayload && (
+                <ShareTargetModal
+                  sharedPayload={sharedPayload}
+                  user={user}
+                  profileData={effectiveProfileData || profileData}
+                  groupId={profileData?.groupId || urlGroupId || 'Samambaia'}
+                  canPublishAnnonce={canPublishAnnonces(
+                    effectiveProfileData || profileData,
+                    permissionsMatrice,
+                    userTags,
+                    breakGlassActive
+                  )}
+                  onClose={clearShareTarget}
+                  onNavigateToView={handleNavigateToView}
+                />
+              )}
             </LayoutShell>
             <ReloadPrompt />
           </div>

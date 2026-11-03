@@ -30,7 +30,7 @@ export default function InstrumentModelsManager({ groupId, isAuthorized, varalCa
         await updateModel(editingModel.id, modelData);
       }
       setEditingModel(null);
-    } catch (err) {
+    } catch {
       alert(t('lutherie.alertSaveModelError'));
     }
   };
@@ -46,7 +46,7 @@ export default function InstrumentModelsManager({ groupId, isAuthorized, varalCa
     if (ok) {
       try {
         await deleteModel(modelId);
-      } catch (err) {
+      } catch {
         alert(t('lutherie.alertDeleteModelError'));
       }
     }

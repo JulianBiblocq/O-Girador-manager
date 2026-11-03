@@ -6,7 +6,7 @@ import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { calculateToadaScore, calculateGlobalNacaoScore, getProgressColor } from '../../utils/toadaProgressEngine';
 
-export default function StudentToadasProgress({ profileData, allSongs = [], allSheets = [], onSelectToada = null }) {
+export default function StudentToadasProgress({ profileData, allSongs = [], allSheets: _allSheets = [], onSelectToada = null }) {
   const { t } = useTranslation();
   const [quizHistory, setQuizHistory] = useState([]);
 
@@ -17,6 +17,8 @@ export default function StudentToadasProgress({ profileData, allSongs = [], allS
       if (docSnap.exists() && docSnap.data().quizHistory) {
         setQuizHistory(docSnap.data().quizHistory);
       }
+    }, (err) => {
+      console.warn("StudentToadasProgress - Erreur lecture progression toadas :", err);
     });
     return () => unsub();
   }, [profileData?.uid]);

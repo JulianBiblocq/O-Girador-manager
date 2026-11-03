@@ -41,9 +41,19 @@ export function serializeToadaMeasures(sections = []) {
 
 export function toadaToCleanHtml(rawTxtCode = '') {
   if (!rawTxtCode || typeof rawTxtCode !== 'string') return '';
-  if (/<[a-z][\s\S]*>/i.test(rawTxtCode)) return rawTxtCode;
+  if (/<[a-z][\s\S]*>/i.test(rawTxtCode)) {
+    return rawTxtCode.replace(/\*([^*]+)\*/g, '<strong>$1</strong>');
+  }
 
-  const paragraphs = rawTxtCode.split(/\r?\n\s*\r?\n/).map((p) => p.trim()).filter(Boolean);
+  // Normalisation préalable des blocs *...* multi-lignes
+  const normalizedTxt = rawTxtCode.replace(/\*([^*]+)\*/g, (_, inner) =>
+    inner
+      .split(/\r?\n/)
+      .map((part) => (part.trim() ? `*${part.trim()}*` : ''))
+      .join('\n')
+  );
+
+  const paragraphs = normalizedTxt.split(/\r?\n\s*\r?\n/).map((p) => p.trim()).filter(Boolean);
   const htmlParas = [];
 
   for (const para of paragraphs) {

@@ -196,7 +196,7 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
     fetchConfig();
   }, [groupId]);
 
-  const [validationError, setValidationError] = useState('');
+  const [_validationError, setValidationError] = useState('');
   const [missingFieldsList, setMissingFieldsList] = useState([]);
 
   // Ensemble des clés manquantes pour un affichage réactif dans les sous-blocs
@@ -331,7 +331,7 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
       // Vérification préalable de l'existence du document pour distinguer création vs mise à jour
       const userRef = doc(db, 'users', user.uid);
       const userSnap = await getDoc(userRef);
-      const isNewDoc = !userSnap.exists();
+      const _isNewDoc = !userSnap.exists();
 
       // Réconciliation préalable avec le sas de paiement HelloAsso (pending_payments)
       // La détection visuelle a déjà été réalisée au montage du composant via pendingPaymentInfo.
@@ -343,7 +343,7 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
       const currentInstVal = isAncien ? (formData.instrumentPrincipal || "") : (isPercussion ? "En attente" : "");
 
       // Construction de la fiche utilisateur Firestore
-      const isExistingMember = Boolean(
+      const _isExistingMember = Boolean(
         isAncien ||
         profileData?.estAncienMembre ||
         profileData?.instrument ||

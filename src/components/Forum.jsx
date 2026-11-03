@@ -16,9 +16,11 @@ import { isUserModeratorOrAdmin, canUserWriteInForumChannel, canUserReadForumCha
 import { countThreadUnreadMessages, getAllChannelsUnreadStats, getEffectiveReadThreads, saveLocalAllReadThreads, saveLocalReadThread } from '../utils/forumUnreadUtils';
 import ForumThreadCard from './forum/ForumThreadCard';
 import ConversationCard from './forum/ConversationCard';
+import GeneralGroupBanner from './forum/GeneralGroupBanner';
 import NewDirectMessageModal from './forum/NewDirectMessageModal';
 import NewGroupModal from './forum/NewGroupModal';
 import { useConversations } from '../hooks/useConversations';
+import { getGeneralConversationId, isGeneralGroupConversation } from '../utils/generalGroupChatUtils';
 import useHardwareBack from '../hooks/useHardwareBack';
 import { forceUpdateAndClearCache } from '../utils/pwaUtils';
 import ForumChannelsManager from './ForumChannelsManager';
@@ -32,7 +34,6 @@ function ChannelTreeItem({
   onSelectThread,
   selectedThreadId,
   hasWriteAccess,
-  profileData,
   effectiveReadThreads = {},
   currentUserId,
   channelStatsMap = {},
@@ -132,7 +133,6 @@ function ChannelTreeItem({
               onSelectThread={onSelectThread}
               selectedThreadId={selectedThreadId}
               hasWriteAccess={hasWriteAccess}
-              profileData={profileData}
               effectiveReadThreads={effectiveReadThreads}
               currentUserId={currentUserId}
               channelStatsMap={channelStatsMap}
@@ -354,6 +354,8 @@ export default function Forum({
         map[doc.id] = { id: doc.id, ...doc.data() };
       });
       setUsersMap(map);
+    }, (err) => {
+      console.warn("Forum - Erreur écoute membres association :", err);
     });
     return () => unsub();
   }, [profileData?.groupId]);
@@ -431,6 +433,8 @@ export default function Forum({
       if (docSnap.exists()) {
         setTagsDisponibles(docSnap.data().tagsDisponibles || []);
       }
+    }, (err) => {
+      console.warn("Forum - Erreur écoute tags disponibles :", err);
     });
     return () => unsubscribe();
   }, [profileData?.groupId]);
@@ -813,12 +817,16 @@ export default function Forum({
 
     const combined = [...enrichedModern, ...legacyOnlyConvs];
     combined.sort((a, b) => {
+      const isGenA = isGeneralGroupConversation(a, profileData?.groupId);
+      const isGenB = isGeneralGroupConversation(b, profileData?.groupId);
+      if (isGenA && !isGenB) return -1;
+      if (!isGenA && isGenB) return 1;
       const timeA = new Date(a.updatedAt || a.lastMessage?.timestamp || 0).getTime();
       const timeB = new Date(b.updatedAt || b.lastMessage?.timestamp || 0).getTime();
       return timeB - timeA;
     });
     return combined;
-  }, [modernConversations, privateMessages, user?.uid]);
+  }, [modernConversations, privateMessages, user?.uid, profileData?.groupId]);
 
   // Ventilation étanche et rétrocompatible des discussions directes (1-à-1) et de groupes
   const directConversations = useMemo(() => {
@@ -830,12 +838,39 @@ export default function Forum({
   }, [allInboxConversations]);
 
   const groupConversations = useMemo(() => {
-    return allInboxConversations.filter((c) => {
+    const groups = allInboxConversations.filter((c) => {
       // Règle de rétrocompatibilité : seule une conversation avec type 'group' est considérée comme un groupe
-      const convType = c.type === 'group' ? 'group' : 'direct';
+      const convType = c.type === 'group' || c.isGeneralGroup ? 'group' : 'direct';
       return convType === 'group';
     });
+    groups.sort((a, b) => {
+      if (a.isGeneralGroup && !b.isGeneralGroup) return -1;
+      if (!a.isGeneralGroup && b.isGeneralGroup) return 1;
+      return 0;
+    });
+    return groups;
   }, [allInboxConversations]);
+
+  const generalConvId = useMemo(
+    () => getGeneralConversationId(profileData?.groupId),
+    [profileData?.groupId]
+  );
+
+  const generalConversation = useMemo(() => {
+    return (
+      groupConversations.find((c) => c.isGeneralGroup || c.id === generalConvId) ||
+      (generalConvId
+        ? {
+            id: generalConvId,
+            groupId: profileData?.groupId,
+            type: 'group',
+            isGeneralGroup: true,
+            name: '💬 Tout le groupe',
+            participantIds: Object.keys(usersMap)
+          }
+        : null)
+    );
+  }, [groupConversations, generalConvId, profileData?.groupId, usersMap]);
 
   const unreadDirectCount = useMemo(() => {
     return directConversations.filter((c) => c.isUnread).length;
@@ -954,7 +989,9 @@ export default function Forum({
 
   // Si une discussion privée (directe ou groupe) est active, afficher la vue de chat en pleine page
   if (activeConversationId || activeChatUserId) {
-    const activeConv = modernConversations.find((c) => c.id === activeConversationId);
+    const activeConv =
+      modernConversations.find((c) => c.id === activeConversationId) ||
+      (activeConversationId === generalConvId ? generalConversation : null);
     const resolvedOtherId =
       activeChatUserId ||
       (activeConv?.type === 'direct' ? activeConv?.participantIds?.find((id) => id !== user?.uid) : null);
@@ -1105,6 +1142,15 @@ export default function Forum({
           )}
         </button>
       </div>
+
+      {/* Bannière d'accès rapide prioritaire à la discussion générale « 💬 Tout le groupe » */}
+      {generalConversation && (
+        <GeneralGroupBanner
+          conversation={generalConversation}
+          onOpenGeneralChat={() => setActiveConversationId(generalConversation.id)}
+          t={t}
+        />
+      )}
 
       {activeTab === 'direct' && (
         /* Liste des messages privés (1-à-1) */

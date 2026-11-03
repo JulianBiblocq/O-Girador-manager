@@ -39,7 +39,7 @@ export const forceUpdateAndClearCache = async () => {
         sessionStorage.removeItem(key);
       }
     });
-  } catch (_) {}
+  } catch {}
 
   // 4. Temporisation brève pour laisser le navigateur libérer les verrous I/O des caches
   await new Promise(resolve => setTimeout(resolve, 200));
@@ -49,7 +49,7 @@ export const forceUpdateAndClearCache = async () => {
     const cleanUrl = new URL(window.location.href);
     cleanUrl.searchParams.set('_upd', Date.now().toString());
     window.location.replace(cleanUrl.toString());
-  } catch (_) {
+  } catch {
     window.location.reload();
   }
 };
@@ -73,7 +73,7 @@ export function lazyWithRetry(componentImport) {
           try {
             const keys = await caches.keys();
             await Promise.all(keys.map(k => caches.delete(k)));
-          } catch (e) {
+          } catch {
             // Ignorer
           }
         }

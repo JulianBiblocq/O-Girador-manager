@@ -29,6 +29,9 @@ export default function MestrePedagogyNotepad({ groupId }) {
       fetchedNotes.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       setNotes(fetchedNotes);
       setLoading(false);
+    }, (err) => {
+      console.warn("MestrePedagogyNotepad - Erreur lecture bloc-notes :", err);
+      setLoading(false);
     });
 
     return () => unsubscribe();

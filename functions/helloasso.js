@@ -29,7 +29,7 @@ function normalizeStr(str) {
  */
 function detectHelloAssoOptions(items = [], rawData = {}, configuredOptions = []) {
   const safeItems = Array.isArray(items) ? items : [];
-  const safeConfiguredOptions = Array.isArray(configuredOptions) ? configuredOptions : [];
+  const _safeConfiguredOptions = Array.isArray(configuredOptions) ? configuredOptions : [];
 
   let formulePrincipale = null;
   const optionsAdditionnelles = [];

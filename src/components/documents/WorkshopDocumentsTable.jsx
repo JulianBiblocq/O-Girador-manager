@@ -17,7 +17,7 @@ export default function WorkshopDocumentsTable({
   onSelectDoc,
   onToggleViewMode
 }) {
-  const { t } = useTranslation();
+  const { t: _t } = useTranslation();
   const [filterCategory, setFilterCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 

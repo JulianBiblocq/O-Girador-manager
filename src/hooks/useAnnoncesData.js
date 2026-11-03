@@ -50,6 +50,8 @@ export function useAnnoncesData(groupId, t, announcements, setAnnouncements) {
         setTagsDisponibles(d.tagsDisponibles || []);
         if (d.permissionsMatrice) setAssocPermissionsMatrice(d.permissionsMatrice);
       }
+    }, (err) => {
+      console.warn('useAnnoncesData - Erreur onSnapshot association :', err);
     });
   }, [groupId]);
 
@@ -59,6 +61,8 @@ export function useAnnoncesData(groupId, t, announcements, setAnnouncements) {
     const q = query(collection(db, 'users'), where('groupId', '==', groupId));
     return onSnapshot(q, (snapshot) => {
       setAllMembers(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })));
+    }, (err) => {
+      console.warn('useAnnoncesData - Erreur onSnapshot users :', err);
     });
   }, [groupId]);
 

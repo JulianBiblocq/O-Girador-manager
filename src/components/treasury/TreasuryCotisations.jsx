@@ -49,7 +49,7 @@ export default function TreasuryCotisations({
     helloAssoSignatureKey: ''
   });
 
-  const [copySuccess, setCopySuccess] = useState(false);
+  const [_copySuccess, setCopySuccess] = useState(false);
 
   const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID || 'o-girador-7828c';
   const webhookUrl = `https://us-central1-${projectId}.cloudfunctions.net/helloAssoWebhook?groupId=${groupId}`;
@@ -168,7 +168,7 @@ export default function TreasuryCotisations({
     }
   };
 
-  const handleCopyUrl = () => {
+  const _handleCopyUrl = () => {
     navigator.clipboard.writeText(webhookUrl).then(() => {
       setCopySuccess(true);
       setTimeout(() => setCopySuccess(false), 2000);
@@ -184,7 +184,7 @@ export default function TreasuryCotisations({
     }));
   };
 
-  const handleAddOption = () => {
+  const _handleAddOption = () => {
     setFormConfig(prev => ({
       ...prev,
       optionsCotisation: [
@@ -198,7 +198,7 @@ export default function TreasuryCotisations({
     }));
   };
 
-  const handleRemoveOption = (idx) => {
+  const _handleRemoveOption = (idx) => {
     setFormConfig(prev => ({
       ...prev,
       optionsCotisation: prev.optionsCotisation.filter((_, i) => i !== idx)

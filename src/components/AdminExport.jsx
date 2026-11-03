@@ -11,12 +11,12 @@ import ManualMemberModal from './directory/ManualMemberModal';
 import { formatPratiques, getPratiquesList } from '../utils/instrumentUtils';
 import { useTenantContext } from '../context/TenantContext';
 import useGroupContext from '../hooks/useGroupContext';
-import { canonicalizeGroupId } from '../utils/tenantUtils';
+// canonicalizeGroupId retiré (géré par useGroupContext)
 import useConfirm from '../hooks/useConfirm';
-import { isMemberArchived, isActiveMember } from '../utils/memberUtils';
+import { isMemberArchived } from '../utils/memberUtils';
 import { archiveMember, unarchiveMember } from '../services/memberArchiveService';
 
-export default function AdminExport({ user, profileData, groupId: propGroupId, onBack }) {
+export default function AdminExport({ user: _user, profileData, groupId: propGroupId, onBack }) {
   const { t } = useTranslation();
   const { tRole } = useTerminologie();
   const { confirm } = useConfirm();
@@ -35,6 +35,7 @@ export default function AdminExport({ user, profileData, groupId: propGroupId, o
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('active'); // 'active' | 'archived' | 'all'
+  const [pushFilter, setPushFilter] = useState('all'); // 'all' | 'reachable' | 'unreachable'
   const [actionLoadingId, setActionLoadingId] = useState(null);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
@@ -57,6 +58,7 @@ export default function AdminExport({ user, profileData, groupId: propGroupId, o
         { key: 'prenom', label: t('export.prenom', 'Prénom'), defaultSelected: true },
         { key: 'email', label: t('export.email', 'Email'), defaultSelected: true },
         { key: 'telephone', label: t('export.telephone', 'Téléphone'), defaultSelected: true },
+        { key: 'pushReachable', label: t('export.pushReachable', 'Notifications Push'), defaultSelected: true },
         { key: 'adresse', label: t('export.adresse', 'Adresse physique'), defaultSelected: false }
       ]
     },
@@ -182,6 +184,10 @@ export default function AdminExport({ user, profileData, groupId: propGroupId, o
 
   const activeCount = useMemo(() => members.filter(m => !isMemberArchived(m)).length, [members]);
   const archivedCount = useMemo(() => members.filter(m => isMemberArchived(m)).length, [members]);
+  const reachableActiveCount = useMemo(
+    () => members.filter(m => !isMemberArchived(m) && Array.isArray(m.fcmTokens) && m.fcmTokens.length > 0).length,
+    [members]
+  );
 
   const handleToggleArchiveMember = async (targetMember) => {
     if (!targetMember?.id) return;
@@ -260,6 +266,11 @@ export default function AdminExport({ user, profileData, groupId: propGroupId, o
     if (statusFilter === 'active' && isArchived) return false;
     if (statusFilter === 'archived' && !isArchived) return false;
 
+    // 0b. Filtre par joignabilité Push
+    const isPushReachable = Array.isArray(member.fcmTokens) && member.fcmTokens.length > 0;
+    if (pushFilter === 'reachable' && !isPushReachable) return false;
+    if (pushFilter === 'unreachable' && isPushReachable) return false;
+
     // 1. Filtre par rôle
     if (roleFilter !== 'all') {
       const mRole = (member.role || 'membre').toLowerCase();
@@ -318,6 +329,9 @@ export default function AdminExport({ user, profileData, groupId: propGroupId, o
         const val = member[field.key];
         
         // Custom formatting based on field key
+        if (field.key === 'pushReachable') {
+          return Array.isArray(member.fcmTokens) && member.fcmTokens.length > 0 ? 'Joignable (Oui)' : 'Non joignable (Non)';
+        }
         if (field.key === 'instrumentsJoues') {
           return formatPratiques(member);
         }
@@ -424,6 +438,12 @@ export default function AdminExport({ user, profileData, groupId: propGroupId, o
             <h3 className="text-sm font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
               <XiloPeople size={16} className="inline" /> {t('secretariat.membersDirectoryTitle', { count: filteredMembers.length })}
             </h3>
+            <span
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded border border-[var(--color-cordel-vert,#2d6a4f)]/40 bg-[var(--color-cordel-vert,#2d6a4f)]/10 text-[var(--color-cordel-vert,#2d6a4f)] text-[10px] font-black uppercase tracking-wider"
+              title="Nombre de membres actifs ayant activé les notifications Push sur au moins un appareil"
+            >
+              🔔 {reachableActiveCount} / {activeCount} {t('secretariat.pushReachableCounter') || 'membres actifs joignables'}
+            </span>
             <CordelButton
               type="button"
               variant="ocre"
@@ -502,6 +522,18 @@ export default function AdminExport({ user, profileData, groupId: propGroupId, o
                 </span>
               </button>
             </div>
+
+            {/* Filtre rapide Notifications Push */}
+            <select
+              value={pushFilter}
+              onChange={(e) => setPushFilter(e.target.value)}
+              className="theme-input text-xs font-bold py-1 px-2 bg-white"
+              title="Filtrer par réception des notifications Push"
+            >
+              <option value="all">{t('secretariat.pushFilterAll') || '🔔 Tous (Push)'}</option>
+              <option value="reachable">{t('secretariat.pushFilterReachable') || '🔔 Joignables'}</option>
+              <option value="unreachable">{t('secretariat.pushFilterUnreachable') || '🔕 Non joignables'}</option>
+            </select>
 
             {/* Filtre de rôle */}
             <select
@@ -603,8 +635,23 @@ export default function AdminExport({ user, profileData, groupId: propGroupId, o
                       {(() => {
                         const isArchived = isMemberArchived(member);
                         const isLoading = actionLoadingId === member.id;
+                        const isPushReachable = Array.isArray(member.fcmTokens) && member.fcmTokens.length > 0;
                         return (
                           <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                            <span
+                              className={`theme-stamp-badge text-[7.5px] font-black px-1.5 py-0.5 ${
+                                isPushReachable
+                                  ? 'bg-[var(--color-cordel-vert,#2d6a4f)]/15 border-[#2d6a4f]/40 text-[var(--color-cordel-vert,#2d6a4f)]'
+                                  : 'bg-stone-200/80 border-stone-400/50 text-stone-600'
+                              }`}
+                              title={
+                                isPushReachable
+                                  ? (t('secretariat.pushReachableBadgeTitle') || 'Notifications Push activées sur au moins un appareil')
+                                  : (t('secretariat.pushUnreachableBadgeTitle') || 'Aucun appareil inscrit aux notifications Push')
+                              }
+                            >
+                              {isPushReachable ? '🔔 Push' : '🔕 Muet'}
+                            </span>
                             {isArchived ? (
                               <span className="theme-stamp-badge text-[7.5px] bg-red-600/15 border-red-700/40 text-red-900 dark:text-red-300 font-black px-1.5 py-0.5">
                                 🗄️ Archivé

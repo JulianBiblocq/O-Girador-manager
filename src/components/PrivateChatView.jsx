@@ -15,7 +15,9 @@ import { uploadChatAttachment } from '../utils/attachmentUploadUtils';
 import { dispatchInAppAndPushNotification, NOTIFICATION_TYPES } from '../utils/inAppNotificationService';
 import VoiceDictationButton from './common/VoiceDictationButton';
 import MessageReadReceipt from './forum/MessageReadReceipt';
+import ChatYouTubePreview from './forum/ChatYouTubePreview';
 import { isMessageReadByAll, shouldMarkConversationAsRead, getTimestampMs } from '../utils/readReceiptUtils';
+import { isGeneralGroupConversation } from '../utils/generalGroupChatUtils';
 
 /**
  * Composant PrivateChatView
@@ -146,7 +148,8 @@ export default function PrivateChatView({
   }, [conversationId]);
 
   const effectiveConversation = liveConversation || conversation;
-  const isGroup = effectiveConversation?.type === 'group';
+  const isGeneralGroup = isGeneralGroupConversation(effectiveConversation, groupId);
+  const isGroup = effectiveConversation?.type === 'group' || isGeneralGroup;
   const effectiveReadStatus = effectiveConversation?.readStatus || {};
   const effectiveParticipantIds = effectiveConversation?.participantIds || [];
 
@@ -614,19 +617,26 @@ export default function PrivateChatView({
           <div className="flex items-center gap-2.5 min-w-0">
             {isGroup ? (
               <div className="w-9 h-9 rounded-full bg-cordel-bg-light border-2 border-encre-noire flex items-center justify-center text-sm shadow-xs shrink-0 select-none">
-                👥
+                {isGeneralGroup ? '💬' : '👥'}
               </div>
             ) : (
               <XiloAvatar src={effectiveOtherUser?.photoURL} name={headerTitle} size={36} />
             )}
             
             <div className="flex flex-col min-w-0">
-              <span className="font-extrabold text-xs text-encre-noire truncate">
-                {headerTitle}
-              </span>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="font-extrabold text-xs text-encre-noire truncate">
+                  {headerTitle}
+                </span>
+                {isGeneralGroup && (
+                  <span className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--color-cordel-vert,#2d6a4f)] text-white border border-encre-noire shadow-xs">
+                    🌐 Toute l'association
+                  </span>
+                )}
+              </div>
               {isGroup ? (
                 <span className="text-[9px] font-bold text-cordel-wood">
-                  {conversation?.participantIds?.length || 0} participants
+                  {effectiveParticipantIds.length || Object.keys(usersMap).length || 0} participants
                 </span>
               ) : (
                 <span className="theme-stamp-badge theme-stamp-badge-wood text-[7px] border-dashed mt-0.5 self-start scale-90 origin-left">
@@ -759,6 +769,8 @@ export default function PrivateChatView({
                         {msg.content}
                       </p>
                     )}
+
+                    {msg.content && <ChatYouTubePreview text={msg.content} />}
 
                     <div className="flex items-center justify-between gap-2 mt-0.5">
                       {/* Actions sur le message */}

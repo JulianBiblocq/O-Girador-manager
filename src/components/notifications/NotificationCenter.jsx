@@ -14,6 +14,7 @@ export default function NotificationCenter({
   currentUser,
   groupId,
   onNavigateToUrl,
+  unreadPrivateMessagesCount = 0,
   className = ''
 }) {
   const userId = currentUser?.uid || currentUser?.id;
@@ -26,6 +27,17 @@ export default function NotificationCenter({
     deleteNotification,
     clearAllNotifications
   } = useInAppNotifications(userId, groupId);
+
+  // Synchronisation de la pastille rouge sur l'icône du téléphone (App Badging API)
+  useEffect(() => {
+    if (typeof navigator === 'undefined') return;
+    const totalBadge = (unreadCount || 0) + (unreadPrivateMessagesCount || 0);
+    if (totalBadge > 0) {
+      navigator.setAppBadge?.(totalBadge)?.catch(() => {});
+    } else {
+      navigator.clearAppBadge?.()?.catch(() => {});
+    }
+  }, [unreadCount, unreadPrivateMessagesCount]);
 
   const confirm = useConfirm();
 

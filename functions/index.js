@@ -5,7 +5,7 @@
  * Sécurise les clés API via Firebase Secrets.
  */
 
-const functions = require("firebase-functions");
+const _functions = require("firebase-functions");
 const { onRequest, onCall, HttpsError } = require("firebase-functions/v2/https");
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
@@ -644,7 +644,7 @@ exports.exportNewsletter = onRequest(
     }
 
     try {
-      const { titre_campagne, message_accueil, prochaines_dates, evenements_passes } = req.body;
+      const { titre_campagne, message_accueil: _message_accueil, prochaines_dates, evenements_passes } = req.body;
 
       if (!titre_campagne) {
         return res.status(400).json({ error: "Le champ 'titre_campagne' est obligatoire." });
@@ -2197,10 +2197,10 @@ exports.serveDynamicApp = onRequest(async (req, res) => {
             : `Rejoignez ${assoName} : inscriptions, agenda, répétitions, vestiaire et vie de l'association.`;
         }
 
-        const ogTitle = isInviteOrSignup
+        const _ogTitle = isInviteOrSignup
           ? `${assoName} — Espace Membre O Girador`
           : `${assoName} | O Girador`;
-        const ogDesc = `Rejoignez ${assoName} : inscriptions, agenda, répétitions, vestiaire et vie de l'association.`;
+        const _ogDesc = `Rejoignez ${assoName} : inscriptions, agenda, répétitions, vestiaire et vie de l'association.`;
 
         // Priorité absolue au Sceau Combiné officiel (anneau Cordel ★ O GIRADOR ★ + logo de l'asso)
         let combinedUrl = data.branding?.combinedLogoUrl || data.combinedLogoUrl;
@@ -2945,7 +2945,7 @@ exports.cronRelances = onSchedule(
     memory: "512MiB",
     timeoutSeconds: 300
   },
-  async (event) => {
+  async (_event) => {
     console.log("cronRelances - Démarrage du traitement planifié des relances et auto-validations...");
     const db = getFirestore();
     const resultRelances = await runRelanceAutomations(db);
@@ -3922,7 +3922,7 @@ function parseWebdavMultistatus(xmlString, instanceUrl, token, baseDavPath = "/p
     if (cleanHref.includes("://")) {
       try {
         cleanHref = new URL(cleanHref).pathname;
-      } catch (e) {}
+      } catch {}
     }
     cleanHref = decodeURIComponent(cleanHref);
 
@@ -4059,7 +4059,7 @@ exports.getFramaspaceAlbumMedia = onCall(
       } else {
         token = parsedUrl.searchParams.get("token") || "";
       }
-    } catch (urlErr) {
+    } catch {
       console.warn("getFramaspaceAlbumMedia - URL invalide :", cleanUrl);
       return {
         success: false,
@@ -4233,7 +4233,7 @@ exports.getFramaspaceAlbumMedia = onCall(
                         const sXml = await sRes.text();
                         return parseWebdavMultistatus(sXml, instanceUrl, token, baseFolderDavPath).items;
                       }
-                    } catch (e) {}
+                    } catch {}
                     return [];
                   });
                   const sResults = await Promise.all(techSubPromises);

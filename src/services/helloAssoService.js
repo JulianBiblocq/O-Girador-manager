@@ -62,7 +62,7 @@ function normalizeStr(str) {
  */
 export function detectHelloAssoOptions(items = [], rawData = {}, configuredOptions = []) {
   const safeItems = Array.isArray(items) ? items : [];
-  const safeConfiguredOptions = Array.isArray(configuredOptions) ? configuredOptions : [];
+  const _safeConfiguredOptions = Array.isArray(configuredOptions) ? configuredOptions : [];
 
   let formulePrincipale = null;
   const optionsAdditionnelles = [];
@@ -563,7 +563,7 @@ export async function recordHelloAssoTransaction(dbInstance, groupId, txDetails)
     amountEuros,
     paymentDate = new Date(),
     payerName = 'Adhérent',
-    formule = 'Cotisation',
+    formule: _formule = 'Cotisation',
     memberId = null,
     montantDons = 0,
     hasPercussion = false,
@@ -1517,7 +1517,7 @@ export async function purgeAndRebuildHelloAssoTransactions(dbInstance, groupId) 
   let rebuiltCount = 0;
   const rebuiltDetails = [];
 
-  for (const [docKey, paymentData] of legitimatePayments.entries()) {
+  for (const [_docKey, paymentData] of legitimatePayments.entries()) {
     const res = await recordHelloAssoTransaction(dbInstance, groupId, {
       paymentId: paymentData.paymentId,
       orderId: paymentData.orderId,

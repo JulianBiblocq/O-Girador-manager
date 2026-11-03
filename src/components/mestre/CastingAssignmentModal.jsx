@@ -8,7 +8,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import CordelModalWrapper from '../common/CordelModalWrapper';
 import CordelButton from '../CordelButton';
 import XiloAvatar from '../XiloAvatar';
-import { XiloClose, XiloSparkles, XiloShield } from '../XiloIcons';
+import { XiloClose } from '../XiloIcons';
 import { useTranslation } from '../LanguageContext';
 import { resolveCategory, getCategoryName } from '../../utils/categoryUtils';
 
@@ -35,11 +35,11 @@ export default function CastingAssignmentModal({
   saving = false,
   resolvePupitreForInstrument = (i) => i
 }) {
-  const { t } = useTranslation();
+  const { t: _t } = useTranslation();
 
   // Extraction de l'historique et des vœux de l'adhérent
   const rawMain = member?.instrumentPrincipal || member?.instrument || '';
-  const currentPupitre = resolvePupitreForInstrument(rawMain) || rawMain;
+  const _currentPupitre = resolvePupitreForInstrument(rawMain) || rawMain;
 
   const previousInst = useMemo(() => {
     if (!member) return null;

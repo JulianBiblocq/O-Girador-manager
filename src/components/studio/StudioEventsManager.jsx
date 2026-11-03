@@ -58,6 +58,8 @@ export default function StudioEventsManager({ groupId, onBack }) {
         setAdresseLocal(data.adresseLocal || '');
         if (data.saisonDebutMois !== undefined) setSaisonDebutMois(Number(data.saisonDebutMois));
       }
+    }, (err) => {
+      console.warn("StudioEventsManager - Erreur lecture paramètres association :", err);
     });
 
     return () => {

@@ -10,7 +10,7 @@ import ManualMapMarkerModal from '../agenda/ManualMapMarkerModal';
  * Composant d'administration des Lieux Importants de l'association (Configuration).
  * Permet de gérer le répertoire centralisé des salles, locaux et lieux habituels (CRUD).
  */
-export default function TabLieux({ formData, handleChange, saving, t: propT }) {
+export default function TabLieux({ formData, handleChange, saving: _saving, t: propT }) {
   const { t: contextT } = useTranslation();
   const t = propT || contextT;
   const { confirm } = useConfirm();

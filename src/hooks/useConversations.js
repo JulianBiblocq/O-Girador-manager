@@ -12,6 +12,11 @@ import {
   arrayRemove 
 } from 'firebase/firestore';
 import { db } from '../firebase';
+import {
+  getGeneralConversationId,
+  isGeneralGroupConversation,
+  ensureGeneralGroupConversation
+} from '../utils/generalGroupChatUtils';
 
 /**
  * Hook personnalisé useConversations
@@ -33,6 +38,9 @@ export function useConversations(user, groupId, profileData) {
       setLoading(false);
       return;
     }
+
+    // Garantir l'existence et le rattachement au canal général « 💬 Tout le groupe »
+    ensureGeneralGroupConversation({ userId: user.uid, groupId });
 
     const convRef = collection(db, 'conversations');
     // Requête par participantIds (index simple natif Firestore sans index composé requis)
@@ -56,8 +64,12 @@ export function useConversations(user, groupId, profileData) {
           }
         });
 
-        // Trier par date de dernière activité (mise à jour ou création) décroissante
+        // Toujours placer la discussion générale en 1re position, puis trier par activité décroissante
         list.sort((a, b) => {
+          const isGenA = isGeneralGroupConversation(a, groupId);
+          const isGenB = isGeneralGroupConversation(b, groupId);
+          if (isGenA && !isGenB) return -1;
+          if (!isGenA && isGenB) return 1;
           const timeA = new Date(a.updatedAt || a.lastMessage?.timestamp || a.createdAt || 0).getTime();
           const timeB = new Date(b.updatedAt || b.lastMessage?.timestamp || b.createdAt || 0).getTime();
           return timeB - timeA;
@@ -106,7 +118,8 @@ export function useConversations(user, groupId, profileData) {
       }
 
       // Règle de rétrocompatibilité : toute conversation sans type 'group' est considérée comme 'direct'
-      const normalizedType = conv.type === 'group' ? 'group' : 'direct';
+      const isGen = isGeneralGroupConversation(conv, groupId);
+      const normalizedType = conv.type === 'group' || isGen ? 'group' : 'direct';
 
       if (isUnread) {
         totalUnread += 1;
@@ -120,9 +133,25 @@ export function useConversations(user, groupId, profileData) {
       return {
         ...conv,
         type: normalizedType,
+        isGeneralGroup: isGen,
+        name: isGen ? (conv.name || '💬 Tout le groupe') : conv.name,
         isUnread
       };
     });
+
+    // Garantir la présence immédiate du canal général en tête de liste même pendant l'initialisation
+    const generalId = getGeneralConversationId(groupId);
+    if (generalId && !list.some((c) => c.id === generalId || c.isGeneralGroup)) {
+      list.unshift({
+        id: generalId,
+        groupId,
+        type: 'group',
+        isGeneralGroup: true,
+        name: '💬 Tout le groupe',
+        participantIds: [user.uid],
+        isUnread: false
+      });
+    }
 
     return {
       conversationsWithUnread: list,
@@ -130,7 +159,7 @@ export function useConversations(user, groupId, profileData) {
       unreadDirectCount: directUnread,
       unreadGroupsCount: groupsUnread
     };
-  }, [conversations, user?.uid]);
+  }, [conversations, user?.uid, groupId]);
 
   // 3. Créer ou retrouver une discussion directe 1-à-1
   const createDirectConversation = useCallback(
@@ -374,10 +403,11 @@ export function useConversations(user, groupId, profileData) {
     []
   );
 
-  // 8. Quitter volontairement un groupe
+  // 8. Quitter volontairement un groupe (interdit pour la discussion générale)
   const leaveGroup = useCallback(
     async (conversationId) => {
       if (!user?.uid || !conversationId) return;
+      if (String(conversationId).startsWith('general_')) return;
 
       try {
         const convRef = doc(db, 'conversations', conversationId);

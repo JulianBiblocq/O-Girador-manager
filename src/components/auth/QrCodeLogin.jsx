@@ -20,6 +20,7 @@ export default function QrCodeLogin() {
   const [errorMessage, setErrorMessage] = useState('');
   const unsubscribeRef = useRef(null);
   const timerRef = useRef(null);
+  const isMountedRef = useRef(true);
 
   // Fonction pour initialiser une nouvelle session QR Code
   const generateNewSession = async () => {
@@ -46,6 +47,9 @@ export default function QrCodeLogin() {
         createdAt: serverTimestamp(),
         expiresAt: expirationTime
       });
+
+      // Si le composant a été démonté pendant l'attente asynchrone, abandonner proprement
+      if (!isMountedRef.current) return;
 
       setSessionId(newSessionId);
       setStatus('pending');
@@ -99,7 +103,14 @@ export default function QrCodeLogin() {
         }
       );
 
+      // Sécurité supplémentaire si démonté juste après l'initialisation de l'écouteur
+      if (!isMountedRef.current) {
+        unsubscribeRef.current?.();
+        unsubscribeRef.current = null;
+      }
+
     } catch (err) {
+      if (!isMountedRef.current) return;
       console.error("Erreur création session QR Code :", err);
       setErrorMessage("Impossible de générer le QR Code.");
       setStatus('error');
@@ -108,10 +119,12 @@ export default function QrCodeLogin() {
 
   // Effet au montage du composant : génération initiale de la session
   useEffect(() => {
+    isMountedRef.current = true;
     generateNewSession();
 
     // Nettoyage au démontage
     return () => {
+      isMountedRef.current = false;
       if (unsubscribeRef.current) unsubscribeRef.current();
       if (timerRef.current) clearInterval(timerRef.current);
     };

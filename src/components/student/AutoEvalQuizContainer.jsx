@@ -84,12 +84,6 @@ export default function AutoEvalQuizContainer({
     loadConfig();
   }, [profileData?.groupId]);
 
-useEffect(() => {
-  if (initialTheme && step === 'QUIZ' && questions.length === 0 && allSongs.length > 0) {
-    startQuiz(initialTheme, targetedToadaId);
-  }
-}, [initialTheme, allSongs, step]);
-
 const startQuiz = (theme, specificToadaId = null) => {
   setSelectedTheme(theme);
   setScore(0);
@@ -183,6 +177,12 @@ const startQuiz = (theme, specificToadaId = null) => {
     setQuestions(generated);
     setStep('QUIZ');
   };
+
+  useEffect(() => {
+    if (initialTheme && step === 'QUIZ' && questions.length === 0 && allSongs.length > 0) {
+      startQuiz(initialTheme, targetedToadaId);
+    }
+  }, [initialTheme, allSongs, step]);
 
   const handleChoiceClick = (choice) => {
     if (showFeedback) return;

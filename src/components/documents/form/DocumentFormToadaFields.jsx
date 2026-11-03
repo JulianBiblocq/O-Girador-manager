@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import ToadaAudioWitnessField from './ToadaAudioWitnessField';
 import ToadaHeaderMetadataForm from '../toada/ToadaHeaderMetadataForm';
 import ToadaMusicalStructureEditor from '../toada/ToadaMusicalStructureEditor';
 import ToadaChantTabFields from './ToadaChantTabFields';
-import { cleanHistoricalHtml } from '../../../utils/toadaHtmlCleaner';
 
 export default function DocumentFormToadaFields({
   category = 'Toadas',
@@ -26,6 +25,10 @@ export default function DocumentFormToadaFields({
   setAudioFile,
   audioUrl = '',
   setAudioUrl,
+  videoUrl = '',
+  setVideoUrl,
+  cantadorValidated = false,
+  setCantadorValidated,
   parolesOriginales = '',
   setParolesOriginales,
   rawTxtCode = '',
@@ -41,20 +44,6 @@ export default function DocumentFormToadaFields({
   const [localActiveTab, setLocalActiveTab] = useState('chant');
   const activeTab = propActiveTab !== undefined ? propActiveTab : localActiveTab;
   const setActiveTab = propSetActiveTab || setLocalActiveTab;
-
-  useEffect(() => {
-    if (parolesOriginales && typeof parolesOriginales === 'string') {
-      let cleaned = parolesOriginales;
-      if (/<[a-z][\s\S]*>/i.test(cleaned)) cleaned = cleanHistoricalHtml(cleaned);
-      if (/\[(?:[1-9]|1[0-2])\]|_|\[sig:[^\]]+\]/i.test(cleaned)) {
-        cleaned = cleaned.replace(/\[(?:[1-9]|1[0-2])\]/g, '').replace(/\[sig:[^\]]+\]/gi, '').replace(/_/g, '').replace(/\s{2,}/g, ' ').trim();
-      }
-      if (cleaned !== parolesOriginales && setParolesOriginales) setParolesOriginales(cleaned);
-    }
-    if (parolesPhonetiques && /<[a-z][\s\S]*>/i.test(parolesPhonetiques) && setParolesPhonetiques) {
-      setParolesPhonetiques(cleanHistoricalHtml(parolesPhonetiques));
-    }
-  }, []);
 
   return (
     <div className="flex flex-col gap-3 mt-2 border-t-2 border-dashed border-cordel-master-dark/20 pt-4 text-left w-full">
@@ -73,7 +62,20 @@ export default function DocumentFormToadaFields({
         <ToadaHeaderMetadataForm signature={signature} onChangeSignature={setSignature} bpmDefaut={bpmDefaut} onChangeBpm={setBpmDefaut} tonaliteDefaut={tonaliteDefaut} onChangeTonalite={setTonaliteDefaut} disabled={isSubmitting} />
       )}
 
-      <ToadaAudioWitnessField audioUploadType={audioUploadType} setAudioUploadType={setAudioUploadType} audioFile={audioFile} setAudioFile={setAudioFile} audioUrl={audioUrl} setAudioUrl={setAudioUrl} isSubmitting={isSubmitting} />
+      <ToadaAudioWitnessField
+        category={category}
+        audioUploadType={audioUploadType}
+        setAudioUploadType={setAudioUploadType}
+        audioFile={audioFile}
+        setAudioFile={setAudioFile}
+        audioUrl={audioUrl}
+        setAudioUrl={setAudioUrl}
+        videoUrl={videoUrl}
+        setVideoUrl={setVideoUrl}
+        cantadorValidated={cantadorValidated}
+        setCantadorValidated={setCantadorValidated}
+        isSubmitting={isSubmitting}
+      />
 
       {category === 'Toadas' && (
         <div className="flex items-center gap-2 border-b-2 border-cordel-master-dark/20 pt-2 pb-1">

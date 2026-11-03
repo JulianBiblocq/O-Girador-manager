@@ -3,9 +3,9 @@ import { XiloChisel } from '../XiloIcons';
 import XiloAvatar from '../XiloAvatar';
 import { useTranslation } from '../LanguageContext';
 import {
-  INSTRUMENT_TYPES,
+  // INSTRUMENT_TYPES retiré
   ETAT_OPTIONS,
-  INSTRUMENT_ICONS,
+  // INSTRUMENT_ICONS retiré
   getInstrumentIcon,
   getAvailableInstrumentTypes,
   getEtatLabel,

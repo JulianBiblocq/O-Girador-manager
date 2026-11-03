@@ -14,7 +14,7 @@ export default function CostumerieDocumentsTable({
   categories = [],
   canWrite = false,
   onSelectDoc,
-  onEditDoc,
+  onEditDoc: _onEditDoc,
   onDeleteDoc,
   onToggleViewMode
 }) {

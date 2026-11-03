@@ -4,6 +4,7 @@
  * et le Mode Intervention (Break-Glass / Passe-partout technique complet pour Super-Admin).
  */
 import { getTagId, findTagObject } from './tagUtils.js';
+import { getEffectiveMemberTags, getCanonicalTagKey, isMemberCaOrBureau } from './memberUtils.js';
 
 /**
  * Vérifie si une étiquette utilisateur correspond à un mot-clé d'accès autorisé.
@@ -62,9 +63,7 @@ export function isSuperAdminProfile(profileData) {
   return (
     profileData.isSystemAdmin === true ||
     role === 'super-admin' ||
-    role === 'mestre' ||
-    profileData.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
-    profileData.id === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1'
+    role === 'mestre'
   );
 }
 
@@ -91,14 +90,15 @@ export function canManageEvents(profileData, permissionsMatrice = null, effectiv
     return true;
   }
 
-  // Badges de direction / bureau / CA
-  const userTagsList = (
-    effectiveUserTags && effectiveUserTags.length > 0
-      ? effectiveUserTags
-      : profileData.tags || []
-  )
+  // Badges de direction / bureau / CA (incluant l'héritage automatique Président(e)/Trésorier(e)/Secrétaire -> Bureau/C.A.)
+  const mergedRawTags = [
+    ...(Array.isArray(effectiveUserTags) ? effectiveUserTags : []),
+    ...(Array.isArray(profileData.tags) ? profileData.tags : []),
+    ...getEffectiveMemberTags(profileData)
+  ];
+  const userTagsList = mergedRawTags
     .map(t => (typeof t === 'string' ? t.toLowerCase() : (t.id || t.nomM || t.nomF || '').toLowerCase()))
-    .filter(t => t !== 'super-admin' && t !== 'superadmin');
+    .filter(t => t && t !== 'super-admin' && t !== 'superadmin');
 
   const DEFAULT_ALLOWED_KEYWORDS = ['bureau', 'président', 'présidente', 'présidence', 'admin', 'direction', 'ca'];
   if (userTagsList.some(ut => DEFAULT_ALLOWED_KEYWORDS.some(kw => matchesAllowedKeyword(ut, kw)))) {
@@ -435,18 +435,18 @@ export const TAB_TO_POLE_MAP = {
  * Mots-clés d'étiquettes/badges autorisant les pôles d'administration par défaut.
  */
 export const POLE_ALLOWED_KEYWORDS = {
-  diffusion: ['diffusion', 'booking', 'communication', 'admin', 'bureau', 'direction'],
+  diffusion: ['diffusion', 'booking', 'communication', 'admin', 'bureau', 'direction', 'président', 'présidente'],
   tresorerie: ['trésorier', 'trésorière', 'trésorerie', 'comptable', 'finance', 'admin', 'bureau', 'direction', 'président', 'présidente'],
-  secretariat: ['secrétaire', 'secretaire', 'secrétariat', 'secretariat', 'bureau', 'direction', 'admin'],
-  gouvernance: ['gouvernance', 'ca', 'conseil', 'bureau', 'direction', 'admin'],
+  secretariat: ['secrétaire', 'secretaire', 'secrétariat', 'secretariat', 'bureau', 'direction', 'admin', 'président', 'présidente'],
+  gouvernance: ['gouvernance', 'ca', 'conseil', 'bureau', 'direction', 'admin', 'président', 'présidente', 'secrétaire', 'trésorier', 'trésorière'],
   logistique: ['logistique', 'matériel', 'inventaire', 'instruments', 'commandes', 'trésorier', 'trésorière', 'admin', 'bureau', 'direction'],
   lutherie: ['lutherie', 'atelier', 'artisan', 'fabrication', 'matériel', 'admin', 'bureau', 'direction', 'logistique'],
   costumerie: ['costume', 'costumes', 'costumière', 'couture', 'couturier', 'tailleur', 'habillage', 'vestiaire', 'admin', 'bureau', 'direction'],
-  studio: ['studio', 'communication', 'porte-voix', 'newsletter', 'admin', 'bureau', 'direction'],
+  studio: ['studio', 'communication', 'porte-voix', 'newsletter', 'admin', 'bureau', 'direction', 'président', 'présidente'],
   mestre: ['mestre', 'mestria', 'direction', 'artistique', 'scène', 'scene', 'chef de pupitre'],
-  vitrine: ['vitrine', 'communication', 'webmaster', 'admin', 'bureau', 'direction', 'mestre'],
+  vitrine: ['vitrine', 'communication', 'webmaster', 'admin', 'bureau', 'direction', 'mestre', 'président', 'présidente'],
   pedagogie: ['mestre', 'pédagogie', 'direction'],
-  config: ['config', 'sécurité', 'secrétaire', 'admin', 'bureau', 'direction', 'mestre']
+  config: ['config', 'sécurité', 'secrétaire', 'admin', 'bureau', 'direction', 'mestre', 'président', 'présidente']
 };
 
 /**
@@ -502,13 +502,14 @@ export function canAccessPole(poleId, profileData, permissionsMatrice = null, ef
   }
 
   // En Mode Normal, les étiquettes effectives sont filtrées pour exclure tout tag 'super-admin'
+  // et enrichies avec l'héritage institutionnel automatique (Président(e)/Trésorier(e)/Secrétaire -> Bureau/C.A.)
   const userTagsList = (
     effectiveUserTags && effectiveUserTags.length > 0
       ? effectiveUserTags
       : profileData.tags || []
   )
     .map(t => (typeof t === 'string' ? t.toLowerCase() : (t.id || t.nomM || t.nomF || '').toLowerCase()))
-    .filter(t => t !== 'super-admin' && t !== 'superadmin');
+    .filter(t => t && t !== 'super-admin' && t !== 'superadmin');
 
   // 1. Matrice des permissions Firestore de l'association (clé globale du pôle)
   if (permissionsMatrice && typeof permissionsMatrice === 'object') {
@@ -609,6 +610,9 @@ export function canAccessTabPermission(tabId, poleIdOrProfile, profileDataArg = 
     if (canAccessPole('gouvernance', profileData, permissionsMatrice, effectiveUserTags, breakGlassActive)) {
       return true;
     }
+    if (tabId === 'ca-reunions' && canManageReunions(profileData, permissionsMatrice, effectiveUserTags, breakGlassActive)) {
+      return true;
+    }
   }
 
   // 1. Si l'utilisateur possède les droits d'administration globaux sur le pôle parent, accorder l'accès
@@ -625,13 +629,14 @@ export function canAccessTabPermission(tabId, poleIdOrProfile, profileDataArg = 
       tabTags = permissionsMatrice['secretariat-reports'];
     }
     if (Array.isArray(tabTags) && tabTags.length > 0) {
-      const userTagsList = (
-        effectiveUserTags && effectiveUserTags.length > 0
-          ? effectiveUserTags
-          : profileData.tags || []
-      )
+      const mergedTabUserTags = [
+        ...(Array.isArray(effectiveUserTags) ? effectiveUserTags : []),
+        ...(Array.isArray(profileData.tags) ? profileData.tags : []),
+        ...getEffectiveMemberTags(profileData)
+      ];
+      const userTagsList = mergedTabUserTags
         .map(t => (typeof t === 'string' ? t.toLowerCase() : (t.id || t.nomM || t.nomF || '').toLowerCase()))
-        .filter(t => t !== 'super-admin' && t !== 'superadmin');
+        .filter(t => t && t !== 'super-admin' && t !== 'superadmin');
 
       const formattedTabTags = tabTags.map(t => (typeof t === 'string' ? t.toLowerCase() : (t.id || t.nomF || t.nomM || '').toLowerCase()));
       if (userTagsList.some(ut => formattedTabTags.includes(ut))) {
@@ -1107,6 +1112,114 @@ export function canPublishAnnonces(profileData, permissionsMatrice = null, effec
 
     if (configuredTags.length > 0) {
       if (userTagsList.some(ut => configuredTags.includes(ut))) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Vérifie si l'utilisateur possède les droits de gestion et de validation de l'Ordre du Jour
+ * et des Comptes-Rendus de Réunions.
+ * Garantit que les tags canoniques president, presidente, secretaire, tresorier, bureau, ca
+ * sont toujours autorisés, même si la matrice Firestore personnalisée ne mentionnait que bureau ou secretaire.
+ *
+ * @param {Object} profileData Profil de l'utilisateur
+ * @param {Object|null} permissionsMatrice Matrice des permissions de l'association
+ * @param {Array} effectiveUserTags Liste effective des étiquettes du membre
+ * @param {boolean} breakGlassActive Mode intervention d'urgence actif
+ * @returns {boolean} true si le membre peut gérer et valider l'ordre du jour des réunions
+ */
+export function canManageReunions(profileData, permissionsMatrice = null, effectiveUserTags = [], breakGlassActive = false) {
+  if (!profileData) return false;
+
+  if (breakGlassActive && isSuperAdminProfile(profileData)) {
+    return true;
+  }
+
+  if (profileData.isSystemAdmin === true) {
+    return true;
+  }
+
+  const systemRole = (profileData.role || '').toLowerCase().trim();
+  if (
+    [
+      'mestre',
+      'super-admin',
+      'admin',
+      'bureau',
+      'ca',
+      'secretaire',
+      'secrétaire',
+      'president',
+      'président',
+      'presidente',
+      'présidente',
+      'tresorier',
+      'trésorier',
+      'tresoriere',
+      'trésorière'
+    ].includes(systemRole)
+  ) {
+    return true;
+  }
+
+  // Vérification institutionnelle unifiée (Président(e), Secrétaire, Trésorier(e), Bureau, C.A.)
+  if (isMemberCaOrBureau(profileData, effectiveUserTags)) {
+    return true;
+  }
+
+  const combinedTags = [
+    ...(Array.isArray(effectiveUserTags) ? effectiveUserTags : []),
+    ...(Array.isArray(profileData.tags) ? profileData.tags : []),
+    ...getEffectiveMemberTags(profileData)
+  ];
+
+  const CANONICAL_REUNION_TAGS = new Set([
+    'president',
+    'presidente',
+    'presidence',
+    'secretaire',
+    'tresorier',
+    'tresoriere',
+    'bureau',
+    'ca',
+    'admin',
+    'mestre',
+    'direction'
+  ]);
+
+  for (const tag of combinedTags) {
+    if (!tag) continue;
+    const canonical = getCanonicalTagKey(tag);
+    if (canonical && CANONICAL_REUNION_TAGS.has(canonical)) {
+      return true;
+    }
+    const rawStr = typeof tag === 'string' ? tag.toLowerCase().trim() : String(tag.id || tag.nomM || tag.nomF || '').toLowerCase().trim();
+    if (rawStr && CANONICAL_REUNION_TAGS.has(rawStr)) {
+      return true;
+    }
+  }
+
+  // Vérification complémentaire dans la matrice des permissions Firestore si configurée
+  if (permissionsMatrice && typeof permissionsMatrice === 'object') {
+    const configuredTags = [
+      ...(permissionsMatrice['ca-reunions'] || []),
+      ...(permissionsMatrice['reunions'] || []),
+      ...(permissionsMatrice['secretariat'] || []),
+      ...(permissionsMatrice['secretariat-reports'] || []),
+      ...(permissionsMatrice['gouvernance'] || []),
+      ...(permissionsMatrice['studio-events'] || []),
+      ...(permissionsMatrice['agenda'] || [])
+    ].map(t => (typeof t === 'string' ? t.toLowerCase().trim() : (t.id || t.nomM || t.nomF || '').toLowerCase().trim()));
+
+    if (configuredTags.length > 0) {
+      const userTagsLower = combinedTags
+        .map(t => (typeof t === 'string' ? t.toLowerCase().trim() : (t.id || t.nomM || t.nomF || '').toLowerCase().trim()))
+        .filter(t => t && t !== 'super-admin' && t !== 'superadmin');
+      if (userTagsLower.some(ut => configuredTags.includes(ut))) {
         return true;
       }
     }

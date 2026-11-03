@@ -21,7 +21,7 @@ export default function TabModules({
   uploadingLogo,
   groupId,
   saving,
-  t
+  t: _t
 }) {
   return (
     <div className="flex flex-col gap-2 text-left select-none">

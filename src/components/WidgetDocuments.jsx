@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
@@ -84,13 +84,13 @@ export default function WidgetDocuments(props) {
  * Contenu principal du Varal Cordel avec tous ses hooks et états locaux.
  */
 function VaralWidgetContent({
-  role,
-  isSystemAdmin,
+  role: _role,
+  isSystemAdmin: _isSystemAdmin,
   groupId,
   user,
   profileData,
   poleId = null,
-  userTags = null,
+  userTags: _userTags = null,
   canWrite = false,
   onNavigateToView = null,
   activeProfile,
@@ -179,6 +179,24 @@ function VaralWidgetContent({
   const isWorkshopPole = ['lutherie', 'costumerie', 'pedagogie'].includes(poleId);
   const [workshopViewMode, setWorkshopViewMode] = useState('table'); // 'table' | 'rope'
   const [isAdding, setIsAdding] = useState(false);
+  const [initialSharedData, setInitialSharedData] = useState(null);
+
+  useEffect(() => {
+    const consumePendingVaral = (payload) => {
+      if (!payload) return;
+      setInitialSharedData(payload);
+      setSelectedCategoryForAdd(null);
+      setDocumentToEdit(null);
+      setIsAdding(true);
+      if (typeof window !== 'undefined') delete window.__ogPendingVaralShare;
+    };
+    if (typeof window !== 'undefined' && window.__ogPendingVaralShare) {
+      consumePendingVaral(window.__ogPendingVaralShare);
+    }
+    const handleEvent = (e) => consumePendingVaral(e.detail);
+    window.addEventListener('open-shared-varal', handleEvent);
+    return () => window.removeEventListener('open-shared-varal', handleEvent);
+  }, []);
   const [selectedCategoryForAdd, setSelectedCategoryForAdd] = useState(null);
   const [documentToEdit, setDocumentToEdit] = useState(null);
   const [editingCategory, setEditingCategory] = useState(null);
@@ -293,6 +311,7 @@ function VaralWidgetContent({
             variant="default"
             onClick={() => {
               setSelectedCategoryForAdd(null);
+              setInitialSharedData(null);
               setDocumentToEdit(null);
               setIsAdding(true);
             }}
@@ -320,6 +339,7 @@ function VaralWidgetContent({
                 setIsAdding(false);
                 setDocumentToEdit(null);
                 setSelectedCategoryForAdd(null);
+              setInitialSharedData(null);
               }}
               className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1.5 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex items-center gap-1.5 transition-all"
             >
@@ -334,10 +354,12 @@ function VaralWidgetContent({
             documentToEdit={documentToEdit}
             initialCategoryId={selectedCategoryForAdd ? selectedCategoryForAdd.id : undefined}
             lockCategory={!!selectedCategoryForAdd}
+            initialSharedData={initialSharedData}
             onClose={() => {
               setIsAdding(false);
               setDocumentToEdit(null);
               setSelectedCategoryForAdd(null);
+              setInitialSharedData(null);
             }}
           />
         </div>

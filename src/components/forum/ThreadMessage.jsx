@@ -111,7 +111,7 @@ function ThreadMessage({
   );
 
   // Détection si le message est critique ou important (Porte-Voix critique, mention, tag ciblé, ou flag)
-  const isCritical = Boolean(
+  const _isCritical = Boolean(
     reply.isImportant ||
     reply.important ||
     isDirectlyMentioned ||

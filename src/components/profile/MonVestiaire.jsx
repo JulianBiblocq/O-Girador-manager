@@ -20,11 +20,11 @@ export default function MonVestiaire({
   userId, 
   groupId, 
   userChecklist = {}, 
-  userSection = '', 
+  userSection: _userSection = '', 
   userEmail = '', 
   onBack,
   wardrobeMemberMode = 'personal',
-  associationData = null,
+  associationData: _associationData = null,
   profileData = {},
   onNavigateToTab = null,
   onNavigateToPole = null

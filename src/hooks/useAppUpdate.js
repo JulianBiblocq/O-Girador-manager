@@ -42,7 +42,7 @@ export function useAppUpdate() {
             await forceUpdateAndClearCache();
           }
         }
-      } catch (_) {}
+      } catch {}
     };
 
     checkVersion();

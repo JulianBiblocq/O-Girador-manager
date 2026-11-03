@@ -136,7 +136,7 @@ export default defineConfig({
         ],
         navigateFallback: 'app.html',
         navigateFallbackDenylist: [/^\/__/, /^\/robots\.txt$/, /^\/sitemap\.xml$/, /^\/version\.json$/],
-        importScripts: ['/firebase-messaging-sw.js'],
+        importScripts: ['/firebase-messaging-sw.js', '/share-target-sw.js'],
         cleanupOutdatedCaches: true,
         skipWaiting: true,
         clientsClaim: true

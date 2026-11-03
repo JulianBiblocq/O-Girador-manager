@@ -14,12 +14,13 @@ export default function AnnonceForm({
   saving = false,
   tagsDisponibles = [],
   allMembers = [],
+  initialValues = null,
   t
 }) {
-  const [titre, setTitre] = useState('');
-  const [message, setMessage] = useState('');
-  const [actionText, setActionText] = useState('');
-  const [actionLink, setActionLink] = useState('');
+  const [titre, setTitre] = useState(initialValues?.titre || '');
+  const [message, setMessage] = useState(initialValues?.message || '');
+  const [actionText, setActionText] = useState(initialValues?.actionText || '');
+  const [actionLink, setActionLink] = useState(initialValues?.actionLink || '');
   const [cibles, setCibles] = useState(['Tous']);
   const [targetUserIds, setTargetUserIds] = useState([]);
   const [publishOnApp, setPublishOnApp] = useState(true);

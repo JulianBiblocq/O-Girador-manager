@@ -7,6 +7,8 @@ import CordelButton from './CordelButton';
 import { XiloClose } from './XiloIcons';
 import useConfirm from '../hooks/useConfirm';
 import { notifyMembersByTag } from '../utils/inAppNotificationService';
+import { getEffectiveMemberTags, isMemberCaOrBureau } from '../utils/memberUtils';
+import { canManageReunions } from '../utils/permissionUtils';
 
 export default function ReunionAgendaManager({ event, user, profileData }) {
   const { confirm } = useConfirm();
@@ -14,9 +16,14 @@ export default function ReunionAgendaManager({ event, user, profileData }) {
   const [submittingTopic, setSubmittingTopic] = useState(false);
   const [uploadingPdf, setUploadingPdf] = useState(false);
 
-  const isAdmin = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin === true;
+  const isAdmin =
+    profileData?.role === 'mestre' ||
+    profileData?.role === 'super-admin' ||
+    profileData?.isSystemAdmin === true ||
+    isMemberCaOrBureau(profileData) ||
+    canManageReunions(profileData, null, getEffectiveMemberTags(profileData));
 
-  // Ajouter a topic to the sujetsProposes array in Firestore
+  // Ajouter un sujet à l'ordre du jour (validé d'office si ajouté par la Présidente / Bureau / Admin)
   const handleAddTopic = async (e) => {
     e.preventDefault();
     if (!newTopic.trim()) return;
@@ -25,18 +32,38 @@ export default function ReunionAgendaManager({ event, user, profileData }) {
     try {
       const currentSujets = event.sujetsProposes || [];
       const authorName = `${profileData?.prenom || ''} ${profileData?.nom || ''}`.trim() || user?.displayName || 'Un membre';
+      const topicTitle = newTopic.trim();
       const newSujetObj = {
         id: Date.now().toString(),
-        titre: newTopic.trim(),
+        titre: topicTitle,
         auteurId: user.uid,
         auteurNom: authorName,
-        status: 'attente'
+        status: isAdmin ? 'valide' : 'attente'
       };
 
-      const docRef = doc(db, 'events', event.id);
-      await updateDoc(docRef, {
+      const updatePayload = {
         sujetsProposes: [...currentSujets, newSujetObj]
-      });
+      };
+
+      // Si ajouté par un administrateur / Présidente / Bureau, synchroniser aussi avec pointsOrdreDuJour
+      if (isAdmin) {
+        const currentPoints = Array.isArray(event.pointsOrdreDuJour) ? event.pointsOrdreDuJour : [];
+        const alreadyExists = currentPoints.some(
+          (p) => (p.titre || '').trim().toLowerCase() === topicTitle.toLowerCase()
+        );
+        if (!alreadyExists) {
+          updatePayload.pointsOrdreDuJour = [
+            ...currentPoints,
+            { id: newSujetObj.id, titre: topicTitle, notesCR: '' }
+          ];
+          if (!event.compteRenduStatus) {
+            updatePayload.compteRenduStatus = 'brouillon';
+          }
+        }
+      }
+
+      const docRef = doc(db, 'events', event.id);
+      await updateDoc(docRef, updatePayload);
       setNewTopic('');
 
       // Notification interne pour le secrétariat et le bureau
@@ -61,7 +88,7 @@ export default function ReunionAgendaManager({ event, user, profileData }) {
     }
   };
 
-  // Moderate topic status (valide / refuse / supprimer)
+  // Modérer le statut d'un sujet proposé (valide / refuse) et synchroniser pointsOrdreDuJour
   const handleSetTopicStatus = async (topicId, newStatus) => {
     try {
       const currentSujets = event.sujetsProposes || [];
@@ -72,10 +99,35 @@ export default function ReunionAgendaManager({ event, user, profileData }) {
         return s;
       });
 
-      const docRef = doc(db, 'events', event.id);
-      await updateDoc(docRef, {
+      const updatePayload = {
         sujetsProposes: updated
-      });
+      };
+
+      if (newStatus === 'valide') {
+        const targetTopic = currentSujets.find(s => s.id === topicId);
+        if (targetTopic && targetTopic.titre) {
+          const currentPoints = Array.isArray(event.pointsOrdreDuJour) ? event.pointsOrdreDuJour : [];
+          const alreadyExists = currentPoints.some(
+            (p) => (p.titre || '').trim().toLowerCase() === targetTopic.titre.trim().toLowerCase()
+          );
+          if (!alreadyExists) {
+            updatePayload.pointsOrdreDuJour = [
+              ...currentPoints,
+              {
+                id: targetTopic.id || Date.now().toString(),
+                titre: targetTopic.titre.trim(),
+                notesCR: targetTopic.description || ''
+              }
+            ];
+            if (!event.compteRenduStatus) {
+              updatePayload.compteRenduStatus = 'brouillon';
+            }
+          }
+        }
+      }
+
+      const docRef = doc(db, 'events', event.id);
+      await updateDoc(docRef, updatePayload);
     } catch (err) {
       console.error("ReunionAgendaManager - Erreur status topic :", err);
       alert("Erreur lors de la modération du sujet.");

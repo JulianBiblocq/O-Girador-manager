@@ -29,7 +29,7 @@ export default function GigSendEmailModal({
   const [recipientName, setRecipientName] = useState('');
   const [subject, setSubject] = useState('');
   const [messageBody, setMessageBody] = useState('');
-  const [brevoApiKey, setBrevoApiKey] = useState(configuredApiKey);
+  const [_brevoApiKey, setBrevoApiKey] = useState(configuredApiKey);
 
   const [sending, setSending] = useState(false);
   const [statusMessage, setStatusMessage] = useState(null);

@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import FramaspaceGalleryViewer from '../studio/FramaspaceGalleryViewer';
 import CommissionDocReader from './varal/CommissionDocReader';
+import { recordVaralDocumentView } from '../../utils/varalViewTracker';
 
 /**
  * Utilitaires pour analyser les URLs vidéo (YouTube, Vimeo, fichiers directs).
@@ -107,6 +108,12 @@ function getMediaEmbedInfo(url) {
  * Résout le problème des documents non cliquables (PDF, vidéos, dossiers partagés, comptes-rendus).
  */
 export default function DocumentViewerModal({ document: docItem, onClose }) {
+  useEffect(() => {
+    if (docItem?.id) {
+      recordVaralDocumentView(docItem);
+    }
+  }, [docItem]);
+
   if (!docItem) return null;
 
   const targetUrl = docItem.fileUrl || docItem.url || docItem.link || '';

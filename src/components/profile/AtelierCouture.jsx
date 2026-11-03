@@ -23,7 +23,7 @@ export function getEmbedVideoUrl(url) {
   }
 
   // Vimeo link
-  const vimeoMatch = str.match(/vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/(?:[^\/]*)\/videos\/|album\/(?:\d+)\/video\/|video\/|)(\d+)/);
+  const vimeoMatch = str.match(/vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/(?:[^/]*)\/videos\/|album\/(?:\d+)\/video\/|video\/|)(\d+)/);
   if (vimeoMatch && vimeoMatch[1]) {
     return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
   }

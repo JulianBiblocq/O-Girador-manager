@@ -4,21 +4,35 @@ import StarterKit from '@tiptap/starter-kit';
 
 function markdownToInitialHtml(input = '') {
   if (!input || typeof input !== 'string') return '<p></p>';
-  if (/<[a-z][\s\S]*>/i.test(input)) return input;
-  return input
+
+  // Si la chaîne contient déjà du HTML TipTap, nettoyer uniquement les *...* résiduels et les <p><br></p> parasites
+  if (/<(p|div|br|strong|b|em|i|h[1-6])\b/i.test(input)) {
+    return input
+      .replace(/\*([^*]+)\*/g, '<strong>$1</strong>')
+      .replace(/(?:<p>\s*<br\s*\/?>\s*<\/p>\s*)+/gi, '');
+  }
+
+  // Conversion du gras Markdown (*...*), y compris lorsqu'il s'étend sur plusieurs lignes
+  const withBold = input.replace(/\*([^*]+)\*/g, (_, inner) =>
+    inner
+      .split(/\r?\n/)
+      .map((part) => (part.trim() ? `<strong>${part}</strong>` : ''))
+      .join('\n')
+  );
+
+  const lines = withBold
     .split(/\r?\n/)
-    .map((line) => {
-      if (!line.trim()) return '<p><br></p>';
-      const formatted = line.replace(/\*([^*]+)\*/g, '<strong>$1</strong>');
-      return `<p>${formatted}</p>`;
-    })
-    .join('');
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (lines.length === 0) return '<p></p>';
+  return lines.map((line) => `<p>${line}</p>`).join('');
 }
 
 export default function ToadaLyricsWysiwygEditor({
   value = '',
   onChange,
-  placeholder = 'Saisissez les paroles...',
+  placeholder: _placeholder = 'Saisissez les paroles...',
   minHeight = '280px',
   disabled = false
 }) {
@@ -47,7 +61,14 @@ export default function ToadaLyricsWysiwygEditor({
     if (value && currentHtml !== targetHtml && currentHtml !== value) {
       editor.commands.setContent(targetHtml);
     }
-  }, [value, editor]);
+    // Synchroniser immédiatement l'état parent en HTML propre si l'entrée contenait des *...* ou du texte brut
+    if (value && onChange && (/\*[^*]+\*/.test(value) || !/<p[\s>]/i.test(value))) {
+      const normalizedHtml = editor.getHTML();
+      if (normalizedHtml && normalizedHtml !== value) {
+        onChange(normalizedHtml);
+      }
+    }
+  }, [value, editor, onChange]);
 
   if (!editor) return null;
 

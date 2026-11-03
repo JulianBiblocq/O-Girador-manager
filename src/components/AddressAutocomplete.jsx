@@ -55,7 +55,7 @@ export default function AddressAutocomplete({
         if (el[prop] instanceof HTMLInputElement) {
           return el[prop];
         }
-      } catch (e) {}
+      } catch {}
     }
     return null;
   };
@@ -73,7 +73,7 @@ export default function AddressAutocomplete({
       if (originalAuthFailure) {
         try {
           originalAuthFailure();
-        } catch (e) {
+        } catch {
           // ignore
         }
       }

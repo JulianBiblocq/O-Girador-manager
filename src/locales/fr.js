@@ -54,7 +54,6 @@ export const fr = {
     document: "Document",
     moveUp: "Monter",
     moveDown: "Descendre",
-    saving: "Enregistrement...",
     importing: "Importation...",
     deleteConfirmTitle: "Confirmer la suppression",
     deleteConfirmMessage: "Êtes-vous sûr de vouloir supprimer cet élément ? Cette action est irréversible.",
@@ -256,7 +255,9 @@ export const fr = {
     bannerMissingTitle: "Votre photo est manquante dans le Trombinoscope",
     bannerMissingDesc: "Ajoutez votre portrait pour permettre aux autres membres du groupe de vous reconnaître facilement !",
     addMyPhoto: "Ajouter ma photo",
-    memberCard: "Fiche Membre"
+    memberCard: "Fiche Membre",
+    pushReachableTitle: "Notifications Push activées (joignable)",
+    pushUnreachableTitle: "Notifications Push non activées"
   },
   pwa: {
     newVersion: "Une nouvelle version est disponible !",
@@ -434,7 +435,10 @@ export const fr = {
     poll: "📊 Sondage",
     discussion: "💬 Discussion",
     viewDiscussion: "Voir la discussion ➔",
-    replyCountSuffix: "rép."
+    replyCountSuffix: "rép.",
+    liveGeneralTitle: "💬 En direct — Tout le groupe",
+    participateGeneralBtn: "💬 Participer / Partager une photo ou un lien",
+    liveGeneralEmpty: "Lancez la conversation générale : partagez une info, une photo ou une vidéo YouTube avec tout le groupe !"
   },
   agendaFilter: {
     disciplineLabel: "Discipline :",
@@ -486,7 +490,14 @@ export const fr = {
     bannerText: "Ne ratez aucune info importante de dernière minute (changement d'horaire, urgences...) ! Abonnez-vous pour recevoir les alertes en temps réel.",
     bannerBtn: "🔔 M'abonner aux alertes",
     bannerIosWarning: "Sur iPhone / iPad : vous devez d'abord installer l'application sur votre écran d'accueil (Partager → Sur l'écran d'accueil), puis revenir ici pour activer les notifications.",
-    deleteTitle: "Supprimer l'annonce"
+    deleteTitle: "Supprimer l'annonce",
+    pushBannerTitle: "Activez les notifications du groupe",
+    pushBannerDesc: "Recevez les annonces urgentes, changements d'horaire et rappels directement sur votre téléphone.",
+    enablePushBtn: "🔔 Activer les alertes",
+    activatingPush: "Activation...",
+    pushInAppWarning: "📱 Tu as ouvert ce lien dans WhatsApp/Instagram. Appuie sur les 3 points ⋮ (ou 🧭) pour l'ouvrir dans Chrome ou Safari et activer les alertes.",
+    pushIosInstallHint: "📲 Sur iPhone/iPad, touche Partager ⬆️ en bas de Safari puis « Sur l'écran d'accueil ➕ » pour recevoir les notifications du groupe.",
+    pushBlockedHint: "🔒 Les notifications sont bloquées dans les réglages de ton navigateur (icône 🔒 à gauche de l'adresse web). Autorise-les puis réessaie."
   },
   agenda: {
     title: "Agenda",
@@ -816,6 +827,15 @@ export const fr = {
     moduleInscriptions: "Inscriptions",
     moduleValidation: "Validation",
     modulePhotos: "Boîte photos",
+    pollCreateTitle: "Créer un sondage de dates",
+    pollCreateSubtitle: "Proposer plusieurs créneaux au vote des membres",
+    pollModeSingleWinner: "📅 Date unique (1 seul créneau retenu)",
+    pollModePupitreDispatch: "🥁 Répartition par pupitre (1 créneau attribué par pupitre)",
+    pollTargetPupitresLabel: "Pupitres à répartir sur les créneaux :",
+    pollProposedDatesLabel: "Créneaux proposés (minimum 2 dates)",
+    pollAddDateBtn: "Ajouter une option de date",
+    pollMatrixTitle: "Matrice de répartition par pupitre (Dates × Pupitres)",
+    pollConfirmDispatchBtn: "Valider la répartition",
   },
   widgetAgenda: {
     title: "Agenda",
@@ -1432,24 +1452,6 @@ export const fr = {
     archiveNotice: "Archiver (Griser sur la page principale et marquer comme ancienne année)",
     hideOnVaralNotice: "Masquer sur le Varal (Brouillon / En préparation)",
     pdfDocumentLabel: "Document PDF",
-
-    // --- Varal Culture & Toadas (Image 3) ---
-    btnBothTables: "Les 2 tableaux",
-    btnNewToada: "+ Nouvelle toada",
-    tableBCultureTitle: "Tableau B : Fiches Culture & Histoire ({{count}})",
-    tableBCultureSubtitle: "Histoire, traditions, figures et folklore",
-    thCultureTitle: "Titre de la fiche culture",
-    thThemeStamp: "Thème & Tampon",
-    btnConsult: "Consulter",
-    btnEditTextQcm: "Éditer texte / QCM",
-
-    // Filtres & Catégories du Varal Culture
-    catOrixasSpiritualite: "Orixás & Spiritualité",
-    catMusiqueNacoes: "Musique & Nations",
-    catHistoireCortege: "Histoire & Cortège",
-    catCuisineRecettes: "Cuisine & Recettes",
-    catTerritoire: "Territoire",
-    catCourRoyale: "Cour Royale",
 
     // --- Varal Culture & Toadas (Image 3) ---
     btnBothTables: "Les 2 tableaux",
@@ -2302,7 +2304,6 @@ export const fr = {
         categoriesUsageSubtitle: "Utilisées dans l'agenda, les castings et les filtres trombinoscope",
         noCategoriesSaved: "Aucune catégorie de pratique enregistrée pour l'instant.",
         retroactiveUpdateDesc: "🔄 Mettre à jour rétroactivement les anciens profils membres qui utilisent encore les intitulés par défaut.",
-        categoryAlreadyExistsAlert: "Une autre catégorie de pratique porte déjà cet intitulé !",
         editCategoryHeading: "✏️ Modifier la catégorie",
         keyShortcutsHint: "(Entrée pour valider, Échap pour annuler)",
         newCategoryLabel: "Nouvel intitulé",
@@ -3152,23 +3153,6 @@ export const fr = {
     rhythmAccuracy: "Précision Rythmique (Temps 1)",
     signalsRecognition: "Reconnaissance des Signes",
     btnTryChallenge: "Essayer le défi",
-
-    // --- En-tête Défis & Dashboard (Image 1) ---
-    trainerImmediateAccess: "Scores moyens des adhérents • Accès formateur immédiat",
-    quizzesCompletedCount: "{{count}} quiz passé",
-    quizzesCompletedCount_plural: "{{count}} quiz passés",
-    blindTestSub: "Arrêts au signal",
-    signalRecognitionSub: "Reconnaissance",
-    tabDanse: "Danse",
-    matrixSubtitle: "1 ligne par musique • Synthèse du niveau de confort de la troupe par famille d'instruments.",
-    legendComfortable: "≥ 75% À l'aise",
-    legendWorking: "50-74% Travail",
-    legendFragile: "< 50% Fragile",
-    officialSeasonBadge: "Saison officielle",
-
-    // --- Vue Danse & État vide (Image 2) ---
-    emptyDanseTitle: "Aucun élément de danse renseigné pour le moment",
-    emptyDanseDesc: "Les indicateurs apparaîtront automatiquement lorsque les morceaux de danse seront travaillés.",
 
     // --- En-tête Défis & Dashboard (Image 1) ---
     trainerImmediateAccess: "Scores moyens des adhérents • Accès formateur immédiat",
@@ -7068,6 +7052,16 @@ export const fr = {
     dancadorSubtitle: "Atelier chorégraphique",
     cantadorSubtitle: "Atelier vocal & Toadas",
     orquestradorSubtitle: "Portail central O Girador"
+  },
+  shareTarget: {
+    title: "Partager dans Organizador",
+    subtitle: "Choisis où publier ce contenu reçu depuis ton appareil :",
+    captionLabel: "Message ou légende (modifiable)",
+    captionPlaceholder: "Ajoute un mot pour le groupe...",
+    sendToGroupBtn: "💬 Envoyer dans Tout le groupe",
+    hangOnVaralBtn: "🪢 Accrocher sur le Varal",
+    publishMegaphoneBtn: "📢 Publier dans le Mégaphone",
+    openLinkBtn: "Ouvrir le lien"
   }
 };
 

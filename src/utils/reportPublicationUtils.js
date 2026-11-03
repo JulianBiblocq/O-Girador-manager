@@ -38,7 +38,7 @@ export const formatReportDate = (dateStr) => {
 export async function publishReportDefinitive({
   event,
   points = [],
-  approvals = {},
+  approvals: _approvals = {},
   isAutomatic = false,
   associationSettings = null
 }) {

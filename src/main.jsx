@@ -16,7 +16,7 @@ if (typeof window !== 'undefined') {
       const cleanUrl = url.pathname + (url.search ? url.search : '') + url.hash;
       window.history.replaceState({}, document.title, cleanUrl);
     }
-  } catch (_) {}
+  } catch {}
 }
 
 // Rechargement automatique en cas d'erreur de module obsolète après un nouveau déploiement
@@ -42,7 +42,7 @@ const handleStaleChunkError = (reason) => {
           window.location.reload();
         }
       }
-    } catch (_) {
+    } catch {
       window.location.reload();
     }
   }
@@ -68,7 +68,7 @@ if (typeof window !== 'undefined') {
     }
     localStorage.setItem('app_build_version', CURRENT_VERSION);
     localStorage.removeItem('app_build_timestamp');
-  } catch (_) {}
+  } catch {}
 }
 
 // Montage résilient de l'application React enveloppée au sommet par l'ErrorBoundary global

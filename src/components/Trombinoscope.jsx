@@ -31,8 +31,8 @@ import {
 
 import { useTenantContext } from '../context/TenantContext';
 import useGroupContext from '../hooks/useGroupContext';
-import { canonicalizeGroupId } from '../utils/tenantUtils';
-import { isMemberArchived, isActiveMember } from '../utils/memberUtils';
+// canonicalizeGroupId retiré (géré par useGroupContext)
+import { isMemberArchived, isActiveMember, isMemberCaOrBureau } from '../utils/memberUtils';
 
 export default function Trombinoscope({ user, profileData, groupId: propGroupId, onBack, onContactUser }) {
   const { t, locale } = useTranslation();
@@ -73,6 +73,7 @@ export default function Trombinoscope({ user, profileData, groupId: propGroupId,
   const [filterTag, setFilterTag] = useState('all');
 
   const isViewerAdmin = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin === true;
+  const canSeePushStatus = isViewerAdmin || isMemberCaOrBureau(profileData);
 
 
   const getPupitreName = useCallback((inst) => {
@@ -619,6 +620,7 @@ export default function Trombinoscope({ user, profileData, groupId: propGroupId,
                           member={member}
                           isOnline={member.isOnline === true}
                           isCurrentUser={Boolean(user?.uid && member.id === user.uid)}
+                          canSeePushStatus={canSeePushStatus}
                           pupitreColor={getColorForInstrument(sec.colorKey, 'solid') || '#181716'}
                           onClick={(m) => setSelectedMember(m)}
                           onEditPhoto={handleEditPhoto}
@@ -649,6 +651,7 @@ export default function Trombinoscope({ user, profileData, groupId: propGroupId,
                         member={member}
                         isOnline={member.isOnline === true}
                         isCurrentUser={Boolean(user?.uid && member.id === user.uid)}
+                        canSeePushStatus={canSeePushStatus}
                         pupitreColor={getColorForInstrument(member.instrumentPrincipal || member.instrument || 'Renfort', 'solid') || '#181716'}
                         onClick={(m) => setSelectedMember(m)}
                         onEditPhoto={handleEditPhoto}
@@ -678,6 +681,7 @@ export default function Trombinoscope({ user, profileData, groupId: propGroupId,
                         member={member}
                         isOnline={member.isOnline === true}
                         isCurrentUser={Boolean(user?.uid && member.id === user.uid)}
+                        canSeePushStatus={canSeePushStatus}
                         pupitreColor="var(--color-cordel-ocre, #c05621)"
                         onClick={(m) => setSelectedMember(m)}
                         onEditPhoto={handleEditPhoto}

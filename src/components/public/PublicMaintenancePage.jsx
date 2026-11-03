@@ -13,7 +13,7 @@ import React from 'react';
 export default function PublicMaintenancePage({
   associationName = 'O Girador',
   logoUrl = '',
-  publicTheme = {},
+  publicTheme: _publicTheme = {},
   onOpenLogin
 }) {
   const handleLoginClick = () => {

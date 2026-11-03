@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { extractYouTubeId } from '../utils/videoUtils';
 import { QRCodeSVG } from 'qrcode.react';
 import SeloAxeStamp from './SeloAxeStamp';
 import RepertoirePasserelleButton from './repertoire/RepertoirePasserelleButton';
 import { useTranslation } from './LanguageContext';
+import { recordVaralDocumentView } from '../utils/varalViewTracker';
 
 const renderHTMLorText = (content, extraClass = "") => {
   if (!content) return null;
@@ -45,6 +46,12 @@ function CultureCard({
   groupId = null
 }) {
   const { t } = useTranslation();
+  useEffect(() => {
+    if (!_isPrintVersion && culture?.id) {
+      recordVaralDocumentView(culture);
+    }
+  }, [_isPrintVersion, culture]);
+
   if (!culture) return null;
 
   const primaryColor = culture.hexPrimary || extractThemeColor(culture.couleurs, 0) || extractThemeColor(culture.couleursTheme, 0) || 'var(--encre-noire)';

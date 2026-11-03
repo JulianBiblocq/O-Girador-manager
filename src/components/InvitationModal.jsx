@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import CordelModalWrapper from './common/CordelModalWrapper';
 import CordelButton from './CordelButton';
-import CordelCard from './CordelCard';
+// CordelCard retiré (non utilisé)
 import { QRCodeSVG } from 'qrcode.react';
 import { 
   generateCombinedSealCanvas, 
@@ -28,7 +28,7 @@ export default function InvitationModal({
   const [sharingLoading, setSharingLoading] = useState(false);
 
   const invitationDetails = getGroupInvitationDetails(associationData, groupId);
-  const { invitationUrl, groupName, shareText } = invitationDetails;
+  const { invitationUrl, groupName, shareText: _shareText } = invitationDetails;
 
   // Génération du sceau combiné à l'ouverture de la modale
   useEffect(() => {

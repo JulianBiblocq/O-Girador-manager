@@ -30,6 +30,9 @@ export default function GroupMembersModal({
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [newTitle, setNewTitle] = useState(conversation?.name || '');
   const [submitting, setSubmitting] = useState(false);
+  const isGeneralGroup = Boolean(
+    conversation?.isGeneralGroup || String(conversation?.id || '').startsWith('general_')
+  );
 
   // Vérifier si l'utilisateur courant est administrateur du groupe ou de l'association
   const isGroupAdmin = useMemo(() => {
@@ -168,7 +171,7 @@ export default function GroupMembersModal({
         <div className="p-4 border-b-2 border-dashed border-cordel-master-dark/25 bg-cordel-bg-light flex-shrink-0">
           <div className="flex justify-between items-start">
             <span className="text-[9px] font-black uppercase text-cordel-wood tracking-widest block">
-              👥 Groupe Privé • {currentParticipants.length} participant{currentParticipants.length > 1 ? 's' : ''}
+              {isGeneralGroup ? "🌐 Canal Général de l'Association" : '👥 Groupe Privé'} • {currentParticipants.length} participant{currentParticipants.length > 1 ? 's' : ''}
             </span>
             <button
               type="button"
@@ -206,7 +209,7 @@ export default function GroupMembersModal({
               <h3 className="font-heading font-black text-base text-encre-noire tracking-wider uppercase truncate">
                 {conversation.name}
               </h3>
-              {isGroupAdmin && (
+              {isGroupAdmin && !isGeneralGroup && (
                 <button
                   type="button"
                   onClick={() => {
@@ -353,8 +356,8 @@ export default function GroupMembersModal({
                     </div>
                   </div>
 
-                  {/* Bouton de retrait si admin du groupe et pas sur soi-même */}
-                  {isGroupAdmin && !isMe && (
+                  {/* Bouton de retrait si admin du groupe et pas sur soi-même (désactivé pour le groupe général) */}
+                  {isGroupAdmin && !isMe && !isGeneralGroup && (
                     <button
                       type="button"
                       onClick={() => handleRemoveMember(member)}
@@ -370,17 +373,23 @@ export default function GroupMembersModal({
           </div>
         </div>
 
-        {/* 3. Pied de page avec bouton Quitter le groupe (Rouge Terre Cuite) */}
+        {/* 3. Pied de page avec bouton Quitter le groupe (masqué pour la discussion générale) */}
         <div className="p-3 border-t-2 border-dashed border-cordel-master-dark/20 bg-cordel-bg-light flex items-center justify-between">
-          <CordelButton
-            type="button"
-            variant="rouge"
-            onClick={handleLeaveGroup}
-            className="px-3 py-1.5 text-xs font-black uppercase tracking-wider flex items-center gap-1 text-white"
-          >
-            <span>🚪</span>
-            <span>Quitter le groupe</span>
-          </CordelButton>
+          {!isGeneralGroup ? (
+            <CordelButton
+              type="button"
+              variant="rouge"
+              onClick={handleLeaveGroup}
+              className="px-3 py-1.5 text-xs font-black uppercase tracking-wider flex items-center gap-1 text-white"
+            >
+              <span>🚪</span>
+              <span>Quitter le groupe</span>
+            </CordelButton>
+          ) : (
+            <span className="text-[10px] font-black uppercase tracking-wider text-[var(--color-cordel-vert,#2d6a4f)]">
+              🌐 Ce fil regroupe toute l'association
+            </span>
+          )}
 
           <CordelButton
             type="button"

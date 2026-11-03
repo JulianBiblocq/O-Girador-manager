@@ -15,7 +15,7 @@ import { useTranslation } from '../LanguageContext';
 
 export { matchesGigStatus };
 
-export default function GigsPipelineManager({ groupId, associationSettings: propAssocSettings = {}, onBack, initialTab = 'pipeline' }) {
+export default function GigsPipelineManager({ groupId, associationSettings: propAssocSettings = {}, onBack: _onBack, initialTab = 'pipeline' }) {
   const { t } = useTranslation();
   const { confirm } = useConfirm();
   const [activeTab, setActiveTab] = useState(initialTab); // 'pipeline' | 'contacts'
@@ -46,6 +46,8 @@ export default function GigsPipelineManager({ groupId, associationSettings: prop
       if (docSnap.exists()) {
         setAssociationSettings(docSnap.data());
       }
+    }, (err) => {
+      console.warn("GigsPipelineManager - Erreur lecture paramètres association :", err);
     });
     return () => unsub();
   }, [groupId]);

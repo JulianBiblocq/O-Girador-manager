@@ -115,7 +115,7 @@ const RYTHME_BASE_QUESTIONS = [
 /**
  * Génère 5 questions prêtes pour la manche multijoueur selon le thème.
  */
-export function generateGameQuestions(theme = 'rythme', contextData = {}) {
+export function generateGameQuestions(theme = 'rythme', _contextData = {}) {
   const pool = theme === 'culture' ? CULTURE_BASE_QUESTIONS : RYTHME_BASE_QUESTIONS;
   const shuffledPool = shuffle(pool);
   const selectedRaw = shuffledPool.slice(0, 5);

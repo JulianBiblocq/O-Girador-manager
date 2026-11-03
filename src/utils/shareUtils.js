@@ -15,7 +15,7 @@ export function getAssociationInitials(name = '') {
   const cleanName = (name || '').trim();
   if (!cleanName) return 'OG';
 
-  const allWords = cleanName.split(/[\s'’\-]+/).filter(Boolean);
+  const allWords = cleanName.split(/[\s'’-]+/).filter(Boolean);
   const significantWords = allWords.filter(w => !/^(a|à|de|du|des|d|l|la|le|o|do|da|e|en)$/i.test(w));
   const words = significantWords.length >= 2 ? significantWords : allWords;
 
@@ -203,7 +203,7 @@ export async function generateCombinedSealCanvas(associationData = {}, options =
   // 2. Si un logo image est configuré, tenter de le charger
   if (logoUrl) {
     try {
-      await new Promise((resolve, reject) => {
+      await new Promise((resolve, _reject) => {
         const img = (typeof window !== 'undefined' && window.Image) 
           ? new window.Image() 
           : (options.imageFactory ? options.imageFactory() : null);
@@ -218,7 +218,7 @@ export async function generateCombinedSealCanvas(associationData = {}, options =
           try {
             drawSealLogoCenter(ctx, size, img);
             resolve();
-          } catch (err) {
+          } catch {
             drawSealInitialsCenter(ctx, size, name, primaryCol);
             resolve();
           }
@@ -322,8 +322,8 @@ export function getGroupInvitationDetails(associationData = {}, groupId = null) 
  * @param {Function} [params.t]
  * @returns {Promise<{ success: boolean, method: 'share-file' | 'share-link' | 'clipboard' }>}
  */
-export async function shareGroupInvitation({ associationData = {}, groupId = null, t = null }) {
-  const { invitationUrl, groupName, shareTitle, shareText } = getGroupInvitationDetails(associationData, groupId);
+export async function shareGroupInvitation({ associationData = {}, groupId = null, t: _t = null }) {
+  const { invitationUrl, groupName: _groupName, shareTitle, shareText } = getGroupInvitationDetails(associationData, groupId);
 
   // 1. Tenter de générer le fichier Sceau Combiné pour les réseaux supportant le partage de fichiers
   let sealFile = null;

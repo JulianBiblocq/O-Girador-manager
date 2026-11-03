@@ -31,7 +31,7 @@ export async function fetchPlaylistVideos(playlistId, apiKey) {
         return parsed;
       }
     }
-  } catch (err) {
+  } catch {
     // sessionStorage indisponible ou désactivé
   }
 
@@ -84,7 +84,7 @@ export async function fetchPlaylistVideos(playlistId, apiKey) {
   MEMORY_CACHE.set(playlistId, items);
   try {
     sessionStorage.setItem(`yt_cache_${playlistId}`, JSON.stringify(items));
-  } catch (err) {
+  } catch {
     // Quota sessionStorage dépassé ou bloqué
   }
 

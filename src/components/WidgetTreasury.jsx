@@ -8,7 +8,7 @@ import MemberOrdersPaymentAlert from './orders/MemberOrdersPaymentAlert';
 
 export default function WidgetTreasury({ groupId, profileData, user, currentUser }) {
   const { t } = useTranslation();
-  const [montantCotisation, setMontantCotisation] = useState(0);
+  const [_montantCotisation, setMontantCotisation] = useState(0);
   const [montantAdhesion, setMontantAdhesion] = useState(0);
   const [optionsCotisation, setOptionsCotisation] = useState([]);
   const [lienPaiementExterne, setLienPaiementExterne] = useState('');
@@ -27,6 +27,25 @@ export default function WidgetTreasury({ groupId, profileData, user, currentUser
     profileData?.cotisationStatus === 'exonere' || 
     (Array.isArray(profileData?.tags) && profileData.tags.some(t => typeof t === 'string' && t.toLowerCase().includes('exon')));
   const paymentStatus = isExonere ? 'exempted' : rawStatus;
+
+  const handleRefreshStatus = async () => {
+    const userUid = profileData?.uid || profileData?.id;
+    if (!userUid) return;
+    setIsRefreshing(true);
+    try {
+      const userDoc = await getDoc(doc(db, 'users', userUid));
+      if (userDoc.exists()) {
+        const freshData = userDoc.data();
+        if (freshData.paymentStatus === 'paid') {
+          setShowSuccessBanner(false);
+        }
+      }
+    } catch (err) {
+      console.error("WidgetTreasury - Error refreshing status:", err);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   // Détection du retour de paiement HelloAsso (?payment=success, ?checkout=success...)
   useEffect(() => {
@@ -53,7 +72,7 @@ export default function WidgetTreasury({ groupId, profileData, user, currentUser
         try {
           const cleanUrl = window.location.pathname;
           window.history.replaceState({}, document.title, cleanUrl);
-        } catch (e) {
+        } catch {
           // ignore
         }
         return () => clearTimeout(timer);
@@ -103,27 +122,8 @@ export default function WidgetTreasury({ groupId, profileData, user, currentUser
       const finalUrl = `${lienPaiementExterne}${separator}email=${userEmail}&uid=${userUid}&returnUrl=${returnUrl}`;
 
       window.open(finalUrl, '_blank', 'noopener,noreferrer');
-    } catch (e) {
+    } catch {
       window.open(lienPaiementExterne, '_blank', 'noopener,noreferrer');
-    }
-  };
-
-  const handleRefreshStatus = async () => {
-    const userUid = profileData?.uid || profileData?.id;
-    if (!userUid) return;
-    setIsRefreshing(true);
-    try {
-      const userDoc = await getDoc(doc(db, 'users', userUid));
-      if (userDoc.exists()) {
-        const freshData = userDoc.data();
-        if (freshData.paymentStatus === 'paid') {
-          setShowSuccessBanner(false);
-        }
-      }
-    } catch (err) {
-      console.error("WidgetTreasury - Error refreshing status:", err);
-    } finally {
-      setIsRefreshing(false);
     }
   };
 

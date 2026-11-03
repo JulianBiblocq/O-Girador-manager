@@ -1,10 +1,12 @@
 import React from 'react';
 import SongCard from '../SongCard';
+import ErrorBoundary from '../ErrorBoundary';
 import { useTranslation } from '../LanguageContext';
 import { launchCantador } from '../../utils/trainingLauncher';
+import { isCantadorValidated } from '../../utils/repertoireMatcher';
 
 /**
- * Modale de consultation intégrale des Paroles / Toadas (< 70 lignes).
+ * Modale de consultation intégrale des Paroles / Toadas (< 95 lignes).
  * Ouvre directement la SongCard habituelle complète (paroles, phonétique, traduction).
  * En lecture seule, sans mode masqué et sans quiz.
  */
@@ -14,7 +16,8 @@ export default function PieceLyricsModal({
   song,
   piece = null,
   groupId = null,
-  profileData = null
+  profileData = null,
+  onNavigateToView = null
 }) {
   const { t } = useTranslation();
 
@@ -34,6 +37,8 @@ export default function PieceLyricsModal({
   }
 
   const songTitle = song.titre || piece?.titre || 'Chant';
+  const canTrainInCantador =
+    isCantadorValidated(piece, piece?.activeCantadorPack) || isCantadorValidated(song);
 
   const handleTrainInCantador = () => {
     const songId = song?.id || piece?.toadaDocId || piece?.id;
@@ -42,41 +47,44 @@ export default function PieceLyricsModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/60 backdrop-blur-xs">
+    <ErrorBoundary compact title="Paroles du Morceau">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/60 backdrop-blur-xs">
       <div className="relative w-full max-w-3xl max-h-[92vh] flex flex-col bg-[#fdfaf2] rounded-lg shadow-2xl overflow-hidden border-2 border-encre-noire text-left mt-2 sm:mt-0">
         {/* En-tête Cordel épuré */}
         <div className="w-full flex justify-between items-center gap-3 p-3 sm:p-4 bg-stone-100/90 border-b-2 border-dashed border-cordel-master-dark/20 shrink-0">
           <div className="flex-1 min-w-0 pr-2">
             <span className="text-xs sm:text-sm font-black uppercase text-cordel-wood tracking-wider break-words block">
-            🗣️ {t('repertoire.lyricsTitle') || t('pedagogy.modals.parolesDuMorceau')} — {songTitle}
+              🗣️ {t('repertoire.lyricsTitle') || t('pedagogy.modals.parolesDuMorceau')} — {songTitle}
             </span>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={handleTrainInCantador}
-              className="px-2.5 py-1 text-xs font-black uppercase rounded bg-orange-50 hover:bg-orange-100 text-orange-950 border border-orange-300 shadow-2xs transition-colors cursor-pointer flex items-center gap-1.5 select-none"
-              title={t('repertoire.tooltipTrainInCantador') || "S'entraîner dans Cantador"}
-            >
-              <span>🎙️</span>
-              <span className="hidden sm:inline">{t('repertoire.trainInCantador') || "S'entraîner dans Cantador"}</span>
-              <span className="sm:hidden">Cantador</span>
-              <span className="text-[9px] opacity-70">↗</span>
-            </button>
+            {canTrainInCantador && (
+              <button
+                type="button"
+                onClick={handleTrainInCantador}
+                className="px-2.5 py-1 text-xs font-black uppercase rounded bg-orange-50 hover:bg-orange-100 text-orange-950 border border-orange-300 shadow-2xs transition-colors cursor-pointer flex items-center gap-1.5 select-none"
+                title={t('repertoire.tooltipTrainInCantador') || "S'entraîner dans Cantador"}
+              >
+                <span>🎙️</span>
+                <span className="hidden sm:inline">{t('repertoire.trainInCantador') || "S'entraîner dans Cantador"}</span>
+                <span className="sm:hidden">Cantador</span>
+                <span className="text-[9px] opacity-70">↗</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={onClose}
               className="min-w-[44px] min-h-[44px] flex items-center justify-center -mr-2 rounded-lg text-white hover:bg-black/5 active:bg-black/10 transition-colors cursor-pointer shrink-0 select-none touch-manipulation"
               title={t('repertoire.closeModal') || "Fermer"}
             >
-                <span className="w-8 h-8 rounded-full bg-encre-noire text-white font-black text-sm flex items-center justify-center border-2 border-white hover:bg-red-700 transition-colors shadow-2xs pointer-events-none">
-                  ✕
-                </span>
+              <span className="w-8 h-8 rounded-full bg-encre-noire text-white font-black text-sm flex items-center justify-center border-2 border-white hover:bg-red-700 transition-colors shadow-2xs pointer-events-none">
+                ✕
+              </span>
             </button>
           </div>
         </div>
 
-        {/* Corps : Affichage direct de la SongCard complète */}
+        {/* Corps : Affichage direct de la SongCard complète (sans doublon du bouton Cantador) */}
         <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-4 bg-cordel-bg-light flex flex-col items-center">
           <div className="w-full max-w-3xl">
             <SongCard
@@ -85,10 +93,13 @@ export default function PieceLyricsModal({
               defaultRevisionMode={false}
               groupId={groupId}
               profileData={profileData}
+              onNavigateToView={onNavigateToView}
+              hideCantadorButton={true}
             />
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </ErrorBoundary>
   );
 }

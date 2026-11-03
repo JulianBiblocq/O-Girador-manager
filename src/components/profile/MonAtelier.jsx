@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import CordelCard from '../CordelCard';
+// CordelCard retiré (non utilisé)
 import StudentInstrumentsWorkshop from './StudentInstrumentsWorkshop';
 import AtelierCouture from './AtelierCouture';
 import AtelierArtisanat from './AtelierArtisanat';

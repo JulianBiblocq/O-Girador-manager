@@ -15,7 +15,7 @@ export default function StageRowToggleButton({
   rowIndex,
   isStaggered = false,
   onToggle,
-  label
+  label: _label
 }) {
   const { t } = useTranslation();
   const isDance = typeof rowIndex === 'number' && rowIndex < 0;

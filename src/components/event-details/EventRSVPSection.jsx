@@ -28,7 +28,7 @@ export default function EventRSVPSection({
   setInstrumentChoisi,
   isInstrumentLocked,
   transport,
-  demandeRemboursementKm,
+  demandeRemboursementKm: _demandeRemboursementKm,
   handleStatusChange,
   handleSave,
   getMemberInstrumentOptions,
@@ -56,7 +56,7 @@ export default function EventRSVPSection({
   handleLateCancellation,
   handleLateRegistration,
   handleCancelLateRegistration,
-  isRegistrationDeadlinePassed,
+  _isRegistrationDeadlinePassed,
   t,
   agendaRequireInstrument = false,
   agendaEnableMaybeStatus = true,
@@ -66,7 +66,7 @@ export default function EventRSVPSection({
   besoinTransportInstrument = false,
   setBesoinTransportInstrument,
   enableCarpool = true,
-  dependents = [],
+  _dependents = [],
   familyMembers = [],
   familyResponses = {},
   handleToggleFamilyMemberSelection,
@@ -122,11 +122,11 @@ export default function EventRSVPSection({
   };
 
   // Gestion du formulaire de demande de modification transmise au bureau
-  const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
-  const [requestStatusTarget, setRequestStatusTarget] = useState('present');
+  const [_isRequestModalOpen, setIsRequestModalOpen] = useState(false);
+  const [requestStatusTarget, _setRequestStatusTarget] = useState('present');
   const [requestMessage, setRequestMessage] = useState('');
-  const [requestInstrument, setRequestInstrument] = useState(() => instrumentChoisi || profileData?.instrument || profileData?.instrumentsJoues?.[0] || 'Autre');
-  const [submittingRequest, setSubmittingRequest] = useState(false);
+  const [requestInstrument, _setRequestInstrument] = useState(() => instrumentChoisi || profileData?.instrument || profileData?.instrumentsJoues?.[0] || 'Autre');
+  const [_submittingRequest, setSubmittingRequest] = useState(false);
 
   // Gestion des modales du sas bienveillant Cordel (Cas 1 : Désistement tardif, Cas 2 : Demande de place tardive)
   const [isLateCancellationOpen, setIsLateCancellationOpen] = useState(false);
@@ -169,7 +169,7 @@ export default function EventRSVPSection({
     req => req.status === 'pending'
   );
 
-  const onSubmitRegistrationRequest = async () => {
+  const _onSubmitRegistrationRequest = async () => {
     if (!handleRequestRegistrationChange) return;
     setSubmittingRequest(true);
     try {
@@ -893,7 +893,7 @@ export default function EventRSVPSection({
     });
 
     const restrictionParts = Object.entries(counts)
-      .filter(([_, qty]) => qty > 0)
+      .filter(([, qty]) => qty > 0)
       .map(([name, qty]) => `${qty} ${name}${qty > 1 ? 's' : ''}`);
 
     const totalWithDiet = (presentUsersList || []).filter(u => 

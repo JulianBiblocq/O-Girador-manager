@@ -29,7 +29,7 @@ export default function LoadingSeal({
     ? (() => {
         try {
           return localStorage.getItem('og_cached_loader_group') || '';
-        } catch (_) {
+        } catch {
           return '';
         }
       })()
@@ -39,7 +39,7 @@ export default function LoadingSeal({
     ? (() => {
         try {
           return localStorage.getItem('og_cached_loader_logo') || null;
-        } catch (_) {
+        } catch {
           return null;
         }
       })()

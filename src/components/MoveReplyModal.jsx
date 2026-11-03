@@ -5,7 +5,7 @@ import useModalEscape from '../hooks/useModalEscape';
 
 export default function MoveReplyModal({
   reply,
-  replyIndex,
+  replyIndex: _replyIndex,
   currentThreadId,
   availableThreads = [],
   channels = [],

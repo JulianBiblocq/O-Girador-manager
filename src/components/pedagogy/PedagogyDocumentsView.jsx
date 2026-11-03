@@ -16,7 +16,7 @@ export default function PedagogyDocumentsView({
   categories = [],
   canWrite = false,
   onSelectDoc,
-  onEditDoc,
+  onEditDoc: _onEditDoc,
   onDeleteDoc,
   onToggleViewMode
 }) {

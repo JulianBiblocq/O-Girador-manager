@@ -62,6 +62,8 @@ export function useEventFinance(event, groupId) {
       if (docSnap.exists()) {
         setAssociationSettings(docSnap.data());
       }
+    }, (err) => {
+      console.warn('useEventFinance - Erreur chargement paramètres association :', err);
     });
 
     return () => {

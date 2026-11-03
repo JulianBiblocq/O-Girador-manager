@@ -91,7 +91,7 @@ export default function MestrePedagogyDashboard({ profileData }) {
               evals[u.id] = {};
               revs[u.id] = {};
             }
-          } catch (e) {
+          } catch {
             evals[u.id] = {};
             revs[u.id] = {};
           }
@@ -159,7 +159,7 @@ export default function MestrePedagogyDashboard({ profileData }) {
               }
             });
             aisance[u.id] = uAisance;
-          } catch (e) {
+          } catch {
             aisance[u.id] = {};
           }
         }));

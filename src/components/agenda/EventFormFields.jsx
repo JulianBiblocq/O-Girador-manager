@@ -10,6 +10,7 @@ import EventRepertoireProgramSelector from './EventRepertoireProgramSelector';
 import { DEFAULT_CUSTOM_CATEGORIES } from '../../utils/categoryUtils';
 import EventMediaFields from './EventMediaFields';
 import EventPupitresQuotasFields from './EventPupitresQuotasFields';
+import EventPollFormSection from './EventPollFormSection';
 import { useTranslation } from '../LanguageContext';
 
 /**
@@ -466,14 +467,14 @@ export default function EventFormFields({
             onClick={() => toggleBooleanField('isPublic', Boolean(formData.isPublic))}
             disabled={saving}
             className={`flex items-center justify-center gap-2 p-2 rounded text-xs font-black uppercase tracking-wider border transition-all cursor-pointer ${
-              Boolean(formData.isPublic)
+              formData.isPublic
                 ? 'bg-sky-100 dark:bg-sky-950/40 text-sky-900 dark:text-sky-200 border-sky-500 shadow-xs'
                 : 'bg-neutral-100 dark:bg-neutral-800/40 text-neutral-400 border-neutral-300 dark:border-neutral-700'
             }`}
           >
             <span>🌍</span>
             <span>{tr('agenda.togglePublic')}</span>
-            <span className="ml-auto text-[10px]">{Boolean(formData.isPublic) ? 'ON' : 'OFF'}</span>
+            <span className="ml-auto text-[10px]">{formData.isPublic ? 'ON' : 'OFF'}</span>
           </button>
 
           {/* 5. Inscriptions requises */}
@@ -498,14 +499,14 @@ export default function EventFormFields({
             onClick={() => toggleBooleanField('requiresValidation', Boolean(formData.requiresValidation))}
             disabled={saving}
             className={`flex items-center justify-center gap-2 p-2 rounded text-xs font-black uppercase tracking-wider border transition-all cursor-pointer ${
-              Boolean(formData.requiresValidation)
+              formData.requiresValidation
                 ? 'bg-purple-100 dark:bg-purple-950/40 text-purple-900 dark:text-purple-200 border-purple-500 shadow-xs'
                 : 'bg-neutral-100 dark:bg-neutral-800/40 text-neutral-400 border-neutral-300 dark:border-neutral-700'
             }`}
           >
             <span>🔒</span>
             <span>{tr('agenda.toggleValidation')}</span>
-            <span className="ml-auto text-[10px]">{Boolean(formData.requiresValidation) ? 'ON' : 'OFF'}</span>
+            <span className="ml-auto text-[10px]">{formData.requiresValidation ? 'ON' : 'OFF'}</span>
           </button>
 
           {/* 7. Boîte à photos / QR Code (activerRecolteMedias) */}
@@ -531,7 +532,7 @@ export default function EventFormFields({
             onClick={() => toggleBooleanField('publierSurVaral', Boolean(formData.publierSurVaral))}
             disabled={saving}
             className={`flex items-center justify-center gap-2 p-2 rounded text-xs font-black uppercase tracking-wider border transition-all cursor-pointer ${
-              Boolean(formData.publierSurVaral)
+              formData.publierSurVaral
                 ? 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 border-emerald-500 shadow-xs'
                 : 'bg-neutral-100 dark:bg-neutral-800/40 text-neutral-400 border-neutral-300 dark:border-neutral-700'
             }`}
@@ -539,7 +540,7 @@ export default function EventFormFields({
           >
             <span>🪢</span>
             <span>{tr('agenda.toggleVaralPhotos') || "Varal photos"}</span>
-            <span className="ml-auto text-[10px]">{Boolean(formData.publierSurVaral) ? 'ON' : 'OFF'}</span>
+            <span className="ml-auto text-[10px]">{formData.publierSurVaral ? 'ON' : 'OFF'}</span>
           </button>
 
           {/* 9. Feuille de route (Roadbook) */}
@@ -565,7 +566,7 @@ export default function EventFormFields({
             onClick={() => toggleBooleanField('hasCommissions', Boolean(formData.hasCommissions))}
             disabled={saving}
             className={`flex items-center justify-center gap-2 p-2 rounded text-xs font-black uppercase tracking-wider border transition-all cursor-pointer ${
-              Boolean(formData.hasCommissions)
+              formData.hasCommissions
                 ? 'bg-amber-100 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 border-[var(--color-cordel-ocre,#c05621)] shadow-xs'
                 : 'bg-neutral-100 dark:bg-neutral-800/40 text-neutral-400 border-neutral-300 dark:border-neutral-700'
             }`}
@@ -573,7 +574,7 @@ export default function EventFormFields({
           >
             <span>🎪</span>
             <span>{tr('agenda.toggleCommissions') || "Commissions"}</span>
-            <span className="ml-auto text-[10px]">{Boolean(formData.hasCommissions) ? 'ON' : 'OFF'}</span>
+            <span className="ml-auto text-[10px]">{formData.hasCommissions ? 'ON' : 'OFF'}</span>
           </button>
         </div>
 
@@ -923,83 +924,12 @@ export default function EventFormFields({
 
           {/* Sondage multi-dates (Création uniquement) */}
           {!isEdit && (
-            <div className="p-3 bg-amber-50/80 dark:bg-amber-950/20 border-2 border-dashed border-amber-500/40 rounded flex flex-col gap-2.5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-base">📊</span>
-                  <div>
-                    <label className="text-xs font-black uppercase text-cordel-wood cursor-pointer">
-                      Créer un sondage de dates
-                    </label>
-                    <p className="text-[9px] font-semibold text-encre-noire/70">
-                      Proposer 2 à 4 créneaux pour soumettre au vote des membres
-                    </p>
-                  </div>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={Boolean(formData.isPoll)}
-                  onChange={(e) => setFormData(prev => ({
-                    ...prev,
-                    isPoll: e.target.checked,
-                    pollDates: prev.pollDates || [prev.date || '', '']
-                  }))}
-                  className="w-4 h-4 accent-amber-600 cursor-pointer"
-                />
-              </div>
-
-              {formData.isPoll && (
-                <div className="flex flex-col gap-2 pt-2 border-t border-dashed border-amber-500/30">
-                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                    Créneaux proposés (minimum 2 dates)
-                  </label>
-                  {(formData.pollDates || ['', '']).map((optDate, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <span className="text-[10px] font-black text-cordel-wood w-16 shrink-0">
-                        Option {idx + 1} :
-                      </span>
-                      <input
-                        type="datetime-local"
-                        value={optDate}
-                        onChange={(e) => {
-                          const newDates = [...(formData.pollDates || ['', ''])];
-                          newDates[idx] = e.target.value;
-                          setFormData(prev => ({
-                            ...prev,
-                            pollDates: newDates,
-                            date: idx === 0 ? e.target.value : prev.date
-                          }));
-                        }}
-                        required={idx < 2}
-                        className="theme-input text-xs py-1 flex-1 bg-white"
-                      />
-                      {idx >= 2 && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const newDates = (formData.pollDates || []).filter((_, i) => i !== idx);
-                            setFormData(prev => ({ ...prev, pollDates: newDates }));
-                          }}
-                          className="text-[10px] text-red-600 font-bold px-1.5 py-0.5 hover:bg-red-50 rounded cursor-pointer"
-                        >
-                          ✖
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const current = formData.pollDates || ['', ''];
-                      setFormData(prev => ({ ...prev, pollDates: [...current, ''] }));
-                    }}
-                    className="text-[9px] font-black uppercase text-cordel-wood hover:underline text-left mt-1 cursor-pointer"
-                  >
-                    + Ajouter une option de date
-                  </button>
-                </div>
-              )}
-            </div>
+            <EventPollFormSection
+              formData={formData}
+              setFormData={setFormData}
+              pupitresList={pupitresList}
+              tr={tr}
+            />
           )}
         </div>
       </CordelAccordion>

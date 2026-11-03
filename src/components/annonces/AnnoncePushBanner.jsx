@@ -1,65 +1,90 @@
-import React from 'react';
-import CordelCard from '../CordelCard';
-import { XiloMegaphone } from '../XiloIcons';
+import React, { useMemo } from 'react';
+import CordelButton from '../CordelButton';
+import { messaging } from '../../firebase';
 
 /**
- * Composant de bannière d'incitation à l'activation des notifications push.
+ * Bannière d'incitation à l'activation des notifications push (Accueil).
+ * Détecte les navigateurs intégrés (WhatsApp, Instagram, Facebook) ainsi que Safari iOS
+ * hors écran d'accueil pour guider l'adhérent pas à pas.
  */
 export default function AnnoncePushBanner({
   onEnableNotifications,
   isSubscribingPush,
+  installPromptAvailable = false,
+  onTriggerInstall = null,
   t
 }) {
-  // Détection iOS hors mode PWA autonome
-  const isIos = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/.test(navigator.userAgent);
-  const isStandalone = typeof window !== 'undefined' && (
-    window.matchMedia('(display-mode: standalone)').matches ||
-    window.navigator.standalone === true
-  );
-  const showIosWarning = isIos && !isStandalone;
+  const envInfo = useMemo(() => {
+    if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+      return { isInAppBrowser: false, isIosNotStandalone: false, isPermissionDenied: false };
+    }
+    const ua = navigator.userAgent || '';
+    const isInAppBrowser = /WhatsApp|FBAN|FBAV|Instagram/i.test(ua);
+    const isIos = /iPhone|iPad|iPod/i.test(ua);
+    const isStandalone =
+      Boolean(window.navigator.standalone) ||
+      Boolean(window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+    const isIosNotStandalone = isIos && !isStandalone;
+    const isPermissionDenied = 'Notification' in window && Notification.permission === 'denied';
+    return { isInAppBrowser, isIosNotStandalone, isPermissionDenied };
+  }, []);
 
   return (
-    <CordelCard
-      variant="ocre"
-      useExtremeBorder={true}
-      className="p-3 text-left border-dashed flex flex-col gap-2 bg-[#fdfaf2] dark:bg-black/10"
-    >
-      <div className="flex gap-2 items-start">
-        <XiloMegaphone size={18} className="text-cordel-wood shrink-0 mt-0.5" />
-        <div className="flex-1">
-          <h4 className="font-extrabold text-[11px] text-encre-noire uppercase tracking-wider">
-            {t('widgetAnnonces.bannerTitle')}
+    <div className="mb-1 p-3 rounded border-2 border-[var(--color-cordel-ocre,#c05621)] bg-[#fffaf0] dark:bg-amber-950/30 shadow-[2px_2px_0px_0px_#181716] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+      <div className="flex items-start gap-2.5 text-left">
+        <span className="text-xl leading-none mt-0.5 select-none">
+          {envInfo.isInAppBrowser ? '📱' : '🔔'}
+        </span>
+        <div>
+          <h4 className="font-bold text-xs uppercase tracking-wider text-encre-noire dark:text-amber-100">
+            {t('widgetAnnonces.pushBannerTitle')}
           </h4>
-          <p className="text-[10px] font-semibold leading-relaxed text-encre-noire/80 mt-0.5">
-            {t('widgetAnnonces.bannerText')}
-          </p>
+          {envInfo.isInAppBrowser ? (
+            <p className="text-[11px] font-bold text-[var(--color-cordel-rouge,#8b2a1a)] dark:text-amber-200 leading-snug mt-0.5">
+              {t('widgetAnnonces.pushInAppWarning') ||
+                "📱 Tu as ouvert ce lien dans WhatsApp/Instagram. Appuie sur les 3 points ⋮ (ou 🧭) pour l'ouvrir dans Chrome ou Safari et activer les alertes."}
+            </p>
+          ) : envInfo.isIosNotStandalone && !messaging ? (
+            <p className="text-[11px] text-stone-700 dark:text-amber-200/90 leading-snug mt-0.5">
+              {t('widgetAnnonces.pushIosInstallHint') ||
+                "📲 Sur iPhone/iPad, touche Partager ⬆️ en bas de Safari puis « Sur l'écran d'accueil ➕ » pour recevoir les notifications du groupe."}
+            </p>
+          ) : envInfo.isPermissionDenied ? (
+            <p className="text-[11px] text-stone-700 dark:text-amber-200/90 leading-snug mt-0.5">
+              {t('widgetAnnonces.pushBlockedHint') ||
+                "🔒 Les notifications sont bloquées dans les réglages de ton navigateur (icône 🔒 à gauche de l'adresse web). Autorise-les puis réessaie."}
+            </p>
+          ) : (
+            <p className="text-[11px] text-stone-700 dark:text-amber-200/80 leading-snug mt-0.5">
+              {t('widgetAnnonces.pushBannerDesc')}
+            </p>
+          )}
         </div>
       </div>
 
-      {/* Avertissement spécifique pour iOS */}
-      {showIosWarning && (
-        <div className="flex items-start gap-1.5 px-2 py-1.5 rounded bg-[var(--color-cordel-ocre)]/10 border border-dashed border-[var(--color-cordel-ocre)]/30">
-          <span className="text-sm shrink-0">📱</span>
-          <p className="text-[9px] italic font-semibold leading-relaxed text-encre-noire/80">
-            {t('widgetAnnonces.bannerIosWarning')}
-          </p>
+      {!envInfo.isInAppBrowser && (
+        <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+          {installPromptAvailable && onTriggerInstall && (
+            <CordelButton
+              variant="default"
+              onClick={onTriggerInstall}
+              className="text-[10px] py-1.5 px-3 shrink-0 font-black uppercase tracking-wider w-full sm:w-auto justify-center"
+            >
+              📲 {t('dashboard.installApp') || "Installer l'appli"}
+            </CordelButton>
+          )}
+          <CordelButton
+            variant="ocre"
+            onClick={onEnableNotifications}
+            disabled={isSubscribingPush}
+            className="text-[10px] py-1.5 px-3 shrink-0 font-black uppercase tracking-wider w-full sm:w-auto justify-center"
+          >
+            {isSubscribingPush
+              ? t('widgetAnnonces.activatingPush')
+              : t('widgetAnnonces.enablePushBtn')}
+          </CordelButton>
         </div>
       )}
-
-      <div className="flex justify-end pt-1">
-        <button
-          type="button"
-          disabled={isSubscribingPush || showIosWarning}
-          onClick={onEnableNotifications}
-          className={`text-[9px] font-black uppercase border border-encre-noire px-2.5 py-1 rounded shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all whitespace-nowrap ${
-            showIosWarning
-              ? 'bg-encre-noire/20 text-encre-noire/40 cursor-not-allowed'
-              : 'bg-cordel-wood text-cordel-bg-light cursor-pointer'
-          }`}
-        >
-          {isSubscribingPush ? '...' : t('widgetAnnonces.bannerBtn')}
-        </button>
-      </div>
-    </CordelCard>
+    </div>
   );
 }

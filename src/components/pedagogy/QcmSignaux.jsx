@@ -85,13 +85,6 @@ export default function QcmSignaux({ onExit, rhythms = [], rhythmsMetadata = {},
     fetchSignals();
   }, [groupId]);
 
-  // Generate questions once signals are loaded
-  useEffect(() => {
-    if (signals.length >= 4) {
-      generateQuestions(5);
-    }
-  }, [signals]);
-
   const generateQuestions = (numQuestions) => {
     const newQuestions = [];
     
@@ -151,6 +144,13 @@ export default function QcmSignaux({ onExit, rhythms = [], rhythmsMetadata = {},
     setShowFeedback(false);
     setSelectedChoice(null);
   };
+
+  // Generate questions once signals are loaded
+  useEffect(() => {
+    if (signals.length >= 4) {
+      generateQuestions(5);
+    }
+  }, [signals]);
 
   const handleChoice = (choice) => {
     if (showFeedback) return;

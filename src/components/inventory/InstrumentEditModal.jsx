@@ -1,9 +1,9 @@
 import React from 'react';
-import CordelCard from '../CordelCard';
+// CordelCard retiré (non utilisé)
 import CordelButton from '../CordelButton';
 import { XiloClose } from '../XiloIcons';
 import XiloAvatar from '../XiloAvatar';
-import { INSTRUMENT_TYPES, ETAT_OPTIONS, getAvailableInstrumentTypes } from './inventoryConstants';
+import { ETAT_OPTIONS, getAvailableInstrumentTypes } from './inventoryConstants';
 import InstrumentAttributionSection from './InstrumentAttributionSection';
 import { useTranslation } from '../LanguageContext';
 import useModalEscape from '../../hooks/useModalEscape';

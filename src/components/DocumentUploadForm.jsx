@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
+import ErrorBoundary from './ErrorBoundary';
 import { useTranslation } from './LanguageContext';
 import { useDocumentUploadPipeline } from '../hooks/useDocumentUploadPipeline';
 import { resolveVaralCategoryLabel } from '../utils/documentCategories';
@@ -33,15 +34,23 @@ export default function DocumentUploadForm({
   documentToEdit = null,
   initialCategoryId = null,
   defaultCategory = null,
-  lockCategory: _lockCategory = false
+  lockCategory: _lockCategory = false,
+  initialSharedData = null
 }) {
   const { t } = useTranslation();
   const isEditMode = Boolean(documentToEdit);
 
   // 1. États généraux du document
-  const [title, setTitle] = useState(documentToEdit ? documentToEdit.titre : '');
+  const [title, setTitle] = useState(() => {
+    if (documentToEdit) return documentToEdit.titre || '';
+    if (initialSharedData?.title) return initialSharedData.title;
+    if (initialSharedData?.file?.name) {
+      return initialSharedData.file.name.replace(/\.[^/.]+$/, '');
+    }
+    return '';
+  });
   const targetCategory = initialCategoryId || defaultCategory;
-  const [category] = useState(() => {
+  const [category, setCategory] = useState(() => {
     if (targetCategory) {
       const matchById = varalCategories.find(c => c.id === targetCategory);
       if (matchById) return matchById.id;
@@ -50,6 +59,14 @@ export default function DocumentUploadForm({
       return targetCategory;
     }
     if (!documentToEdit) {
+      if (initialSharedData?.file) {
+        const pdfCat = varalCategories.find(c => c.id === 'Administratif' || c.id === 'ComptesRendus');
+        if (pdfCat) return pdfCat.id;
+      }
+      if (initialSharedData?.externalUrl) {
+        const vidCat = varalCategories.find(c => c.id === 'TutorielsVideo' || c.id === 'PhotosPrestations');
+        if (vidCat) return vidCat.id;
+      }
       return varalCategories && varalCategories.length > 0 ? varalCategories[0].id : 'Toadas';
     }
     const match = (documentToEdit.categoryId && varalCategories.find(c => c.id === documentToEdit.categoryId))
@@ -95,8 +112,11 @@ export default function DocumentUploadForm({
     return 'pdf';
   })();
 
-  const [file, setFile] = useState(null);
-  const [externalUrl, setExternalUrl] = useState(documentToEdit ? documentToEdit.fileUrl || '' : '');
+  const [file, setFile] = useState(() => initialSharedData?.file || null);
+  const [externalUrl, setExternalUrl] = useState(() => {
+    if (documentToEdit) return documentToEdit.fileUrl || '';
+    return initialSharedData?.externalUrl || '';
+  });
   const [lienSequenceurId, setLienSequenceurId] = useState(documentToEdit ? documentToEdit.lienSequenceurId || '' : '');
 
   // 3. Mode Saisie manuelle vs Import par lot
@@ -152,12 +172,32 @@ export default function DocumentUploadForm({
   const [audioFile, setAudioFile] = useState(null);
   const [audioUrl, setAudioUrl] = useState(() => {
     if (documentToEdit) {
-      if (documentToEdit.audioUrl) return documentToEdit.audioUrl;
+      if (documentToEdit.audioUrl && !/youtube(?:-nocookie)?\.com|youtu\.be/i.test(documentToEdit.audioUrl)) {
+        return documentToEdit.audioUrl;
+      }
       if (documentToEdit.fileUrl && /\.(mp3|wav|ogg|m4a|aac)$/i.test(documentToEdit.fileUrl)) {
         return documentToEdit.fileUrl;
       }
     }
     return '';
+  });
+  const [videoUrlSong, setVideoUrlSong] = useState(() => {
+    if (!documentToEdit) {
+      if (initialSharedData?.externalUrl && /youtube(?:-nocookie)?\.com|youtu\.be/i.test(initialSharedData.externalUrl)) {
+        return initialSharedData.externalUrl;
+      }
+      return '';
+    }
+    if (documentToEdit.videoUrl) return documentToEdit.videoUrl;
+    if (documentToEdit.youtubeUrl) return documentToEdit.youtubeUrl;
+    if (documentToEdit.audioUrl && /youtube(?:-nocookie)?\.com|youtu\.be/i.test(documentToEdit.audioUrl)) {
+      return documentToEdit.audioUrl;
+    }
+    return '';
+  });
+  const [cantadorValidated, setCantadorValidated] = useState(() => {
+    if (!documentToEdit) return false;
+    return Boolean(documentToEdit.cantadorValidated === true || documentToEdit.cantadorStatus === 'valide');
   });
 
   // 5. Sous-états Culture
@@ -276,7 +316,9 @@ export default function DocumentUploadForm({
         anecdote: currentAnecdote,
         audioUploadType,
         audioFile,
-        audioUrl
+        audioUrl,
+        videoUrl: videoUrlSong,
+        cantadorValidated
       },
       cultureData: {
         categorieFiche,
@@ -330,7 +372,8 @@ export default function DocumentUploadForm({
   const showModeSelector = !isEditMode && (category === 'Toadas' || category === 'Culture' || category === 'TutosFabrication');
 
   return (
-    <CordelCard variant="default" useExtremeBorder={true} className="text-left py-6">
+    <ErrorBoundary compact title="Formulaire Document">
+      <CordelCard variant="default" useExtremeBorder={true} className="text-left py-6">
       {/* En-tête avec bouton retour direct */}
       <div className="flex justify-between items-center mb-4 pb-3 border-b border-dashed border-cordel-master-dark/20 select-none">
         <button
@@ -347,19 +390,34 @@ export default function DocumentUploadForm({
       </div>
 
       <form onSubmit={handleFormSubmit} className="flex flex-col gap-4">
-        {/* Corde Native (Fixe / Non modifiable) */}
+        {/* Corde Native (Fixe ou Sélectionnable) */}
         <div className="flex flex-col gap-1">
           <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
             {t('documents.associatedLine')}
           </label>
-          <div className="theme-input w-full bg-cordel-wood/10 text-cordel-wood font-extrabold text-xs py-2 px-3 border-2 border-cordel-wood/40 select-none flex items-center justify-between">
-            <span className="flex items-center gap-2">
-              <span>🪢</span> Corde : {currentCategoryName}
-            </span>
-            <span className="text-[9px] uppercase font-bold text-cordel-master-dark/60 tracking-wider">
-              {t('documents.badgeFixed')}
-            </span>
-          </div>
+          {!_lockCategory && !isEditMode && varalCategories.length > 1 ? (
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              disabled={isSubmitting}
+              className="theme-input w-full font-extrabold text-xs py-2 px-3 cursor-pointer"
+            >
+              {varalCategories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  🪢 {resolveVaralCategoryLabel(cat, t) || cat.nom || cat.id}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <div className="theme-input w-full bg-cordel-wood/10 text-cordel-wood font-extrabold text-xs py-2 px-3 border-2 border-cordel-wood/40 select-none flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <span>🪢</span> Corde : {currentCategoryName}
+              </span>
+              <span className="text-[9px] uppercase font-bold text-cordel-master-dark/60 tracking-wider">
+                {t('documents.badgeFixed')}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Sélecteur de mode (Manuel / Import par lot JSON) */}
@@ -519,12 +577,17 @@ export default function DocumentUploadForm({
                 <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
                   {t('documents.pdfDocumentLabel')}
                 </label>
+                {file && (
+                  <div className="text-xs font-bold text-cordel-wood bg-cordel-wood/10 px-2.5 py-1.5 rounded border border-cordel-wood/30 flex items-center justify-between">
+                    <span className="truncate">📎 {file.name}</span>
+                  </div>
+                )}
                 <input
                   type="file"
                   onChange={handleFileChange}
-                  required
+                  required={!file}
                   disabled={isSubmitting}
-                  accept="application/pdf"
+                  accept="application/pdf,image/*"
                   className="theme-input w-full disabled:opacity-50 text-xs py-2 file:mr-4 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-cordel-master-light file:text-encre-noire file:cursor-pointer"
                 />
               </div>
@@ -553,6 +616,10 @@ export default function DocumentUploadForm({
                 setAudioFile={setAudioFile}
                 audioUrl={audioUrl}
                 setAudioUrl={setAudioUrl}
+                videoUrl={videoUrlSong}
+                setVideoUrl={setVideoUrlSong}
+                cantadorValidated={cantadorValidated}
+                setCantadorValidated={setCantadorValidated}
                 parolesOriginales={parolesOriginales}
                 setParolesOriginales={setParolesOriginales}
                 rawTxtCode={rawTxtCode}
@@ -749,5 +816,6 @@ export default function DocumentUploadForm({
         </div>
       </form>
     </CordelCard>
+    </ErrorBoundary>
   );
 }

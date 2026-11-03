@@ -30,7 +30,7 @@ export async function launchCrossApp(targetUrl, options = {}) {
         u.searchParams.set('mode', options.mode.trim());
         resolvedTargetUrl = u.toString();
       }
-    } catch (_) {}
+    } catch {}
   }
 
   // Si l'utilisateur n'est pas connecté, ouverture directe
@@ -103,11 +103,11 @@ export async function launchCrossApp(targetUrl, options = {}) {
             </body>
             </html>
           `);
-        } catch (_) {
+        } catch {
           // Tolérance aux contextes de sécurité stricts
         }
       }
-    } catch (_) {
+    } catch {
       newTab = null;
     }
   }
@@ -126,7 +126,7 @@ export async function launchCrossApp(targetUrl, options = {}) {
     if (newTab && !newTab.closed) {
       try {
         newTab.location.href = finalDestination;
-      } catch (_) {
+      } catch {
         window.location.href = finalDestination;
       }
     } else {
@@ -138,7 +138,7 @@ export async function launchCrossApp(targetUrl, options = {}) {
     if (newTab && !newTab.closed) {
       try {
         newTab.location.href = resolvedTargetUrl;
-      } catch (_) {
+      } catch {
         window.location.href = resolvedTargetUrl;
       }
     } else {

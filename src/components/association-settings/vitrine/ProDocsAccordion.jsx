@@ -26,7 +26,7 @@ export default function ProDocsAccordion({
   const publicTheme = formData.publicTheme || {};
   
   // Comptage des documents renseignés
-  const docsKeys = ['dossierPresentationUrl', 'dossierProPdfUrl', 'ficheTechniqueUrl', 'planSceneUrl', 'kitPresseUrl'];
+  const _docsKeys = ['dossierPresentationUrl', 'dossierProPdfUrl', 'ficheTechniqueUrl', 'planSceneUrl', 'kitPresseUrl'];
   const uploadedCount = [
     publicTheme.dossierPresentationUrl || publicTheme.dossierProPdfUrl,
     publicTheme.ficheTechniqueUrl,

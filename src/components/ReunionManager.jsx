@@ -9,6 +9,8 @@ import LocationSelector from './LocationSelector';
 import { useTranslation } from './LanguageContext';
 import { XiloCalendar } from './XiloIcons';
 import { checkAndExecuteAutoValidation } from '../utils/reportPublicationUtils';
+import { getEffectiveMemberTags, isMemberCaOrBureau } from '../utils/memberUtils';
+import { canManageReunions } from '../utils/permissionUtils';
 
 /**
  * Composant de gestion des Réunions dans le Studio.
@@ -53,11 +55,13 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const isAdmin = 
-    profileData?.role === 'mestre' || 
-    profileData?.role === 'super-admin' || 
-    profileData?.role === 'secretaire' || 
-    profileData?.isSystemAdmin === true;
+  const isAdmin =
+    profileData?.role === 'mestre' ||
+    profileData?.role === 'super-admin' ||
+    profileData?.role === 'secretaire' ||
+    profileData?.isSystemAdmin === true ||
+    isMemberCaOrBureau(profileData) ||
+    canManageReunions(profileData, null, getEffectiveMemberTags(profileData));
 
   // Chargement en temps réel des événements de type réunion
   useEffect(() => {
@@ -105,6 +109,8 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
           }
         }
       }
+    }, (err) => {
+      console.warn("ReunionManager - Erreur lecture paramètres association :", err);
     });
 
     return () => {

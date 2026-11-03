@@ -54,7 +54,7 @@ export default function EcosystemAppLauncher({ urls, associationData, currentGro
   const buttonRef = useRef(null);
   const popoverRef = useRef(null);
 
-  const isLocal = typeof window !== 'undefined' && 
+  const _isLocal = typeof window !== 'undefined' && 
     (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
   const ecosystemAccess = associationData?.ecosystemAccess || {

@@ -45,7 +45,7 @@ export default function GigDetailsModal({
 
   if (!isOpen || !gig) return null;
 
-  const currentStatusObj = GIG_STATUSES.find(s => s.id === gig.status) || GIG_STATUSES[0];
+  const _currentStatusObj = GIG_STATUSES.find(s => s.id === gig.status) || GIG_STATUSES[0];
 
   // Action automatisée : Ouverture du générateur de Devis
   const handleOpenQuote = () => {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { canonicalizeGroupId } from '../utils/tenantUtils';
 
 const STORAGE_GROUP_KEY = 'girador_saved_group_id';

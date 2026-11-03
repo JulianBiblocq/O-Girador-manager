@@ -120,7 +120,7 @@ export default function TabLogistics({
 
   const presentsCount = ((event.inscriptions || []).filter(ins => ins.status === 'present').length) + ((event.invitesExternes || []).length);
   const pendingCount = ((event.inscriptions || []).filter(ins => ins.status === 'pending' || ins.status === 'en_attente_tardive').length);
-  const voituresCount = (event.covoiturage?.voitures || []).length;
+  const _voituresCount = (event.covoiturage?.voitures || []).length;
 
   // Calcul fiable du franchissement de l'événement avec reconstitution du timestamp exact
   const isEventPassed = isEventStrictlyPassed(event);

@@ -5,6 +5,7 @@ import { db, storage } from '../../firebase';
 import { DEFAULT_INSTRUMENTS } from '../../hooks/useAssociationSettings';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
+import ErrorBoundary from '../ErrorBoundary';
 import { useSequencerRhythms } from '../../hooks/useSequencerRhythms';
 import { formatPieceTablature } from '../../utils/tablatureFormatter';
 import { parseYouTubeMedia } from '../../utils/mediaUrlUtils';
@@ -64,11 +65,13 @@ export default function RepertoirePieceModal({
   const [notes, setNotes] = useState('');
 
   // Vidéos personnalisables & Signes gestuels du Mestre (IDs)
+  const [videos, setVideos] = useState([]);
   const [sinaisDoMestre, setSinaisDoMestre] = useState([]);
 
   // Pointeurs réactifs vers les applications et modules transversaux
   const [selectedToadaId, setSelectedToadaId] = useState('');
   const [cantadorToadaId, setCantadorToadaId] = useState('');
+  const [cantadorValidated, setCantadorValidated] = useState(false);
   const [toadaFilterMode, setToadaFilterMode] = useState('all'); // 'all' | 'available'
   const [selectedSeqUrl, setSelectedSeqUrl] = useState('');
   const [selectedSeqType, setSelectedSeqType] = useState(null); // 'presets' | 'sections' | 'patterns'
@@ -252,8 +255,17 @@ export default function RepertoirePieceModal({
         }));
       }
       setSinaisDoMestre(initialSinais);
+      setVideos(Array.isArray(pieceToEdit.videos) ? pieceToEdit.videos : []);
       setSelectedToadaId(pieceToEdit.toadaDocId || '');
       setCantadorToadaId(pieceToEdit.cantadorToadaId || '');
+      setCantadorValidated(
+        Boolean(
+          pieceToEdit.cantadorValidated === true ||
+            pieceToEdit.cantadorStatus === 'valide' ||
+            pieceToEdit.activeToada?.cantadorValidated === true ||
+            pieceToEdit.activeToada?.cantadorStatus === 'valide'
+        )
+      );
 
       const rawSeq = pieceToEdit.sequenceurFileUrl || pieceToEdit.sequenceurId || '';
       setSelectedSeqUrl(rawSeq);
@@ -276,8 +288,10 @@ export default function RepertoirePieceModal({
       setEtatValidation('pret');
       setNotes('');
       setSinaisDoMestre([]);
+      setVideos([]);
       setSelectedToadaId('');
       setCantadorToadaId('');
+      setCantadorValidated(false);
       setSelectedSeqUrl('');
       setSelectedSeqType(null);
       setCustomAudioUrl('');
@@ -651,6 +665,8 @@ export default function RepertoirePieceModal({
       dancadorChoreoId: selectedChoreoId || null,
       toadaDocId: selectedToadaId || null,
       cantadorToadaId: cantadorToadaId ? cantadorToadaId.trim() : null,
+      cantadorValidated: Boolean(cantadorValidated),
+      cantadorStatus: cantadorValidated ? 'valide' : null,
       cultureDocIds: Array.from(new Set((selectedCultureIds || []).filter((id) => typeof id === 'string' && id.trim() !== ''))),
       cultureDocId: (selectedCultureIds && selectedCultureIds.length > 0) ? selectedCultureIds[0] : null,
       updatedAt: new Date().toISOString()
@@ -737,7 +753,8 @@ export default function RepertoirePieceModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+    <ErrorBoundary compact title="Fiche Morceau Répertoire">
+      <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
       {/* Flèches de navigation persistantes au centre vertical de l'écran ("en dehors de la fiche d'ailleurs sur PC") */}
       {pieceToEdit && effectivePiecesList.length > 1 && (
         <RepertoireModalNavArrows
@@ -1143,6 +1160,19 @@ export default function RepertoirePieceModal({
                     ✓ {t('repertoire.cantadorToadaLinkedNotice') || "Toada Cantador liée. Les élèves accèderont directement à l'entraînement de ce chant."}
                   </span>
                 )}
+
+                <label className="mt-1 flex items-center gap-2 p-2 bg-white/80 dark:bg-black/20 border border-orange-300 rounded cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(cantadorValidated)}
+                    onChange={(e) => setCantadorValidated(e.target.checked)}
+                    disabled={submitting}
+                    className="w-4 h-4 accent-[var(--color-cordel-vert,#2d6a4f)] rounded cursor-pointer"
+                  />
+                  <span className="text-[10px] font-bold text-encre-noire">
+                    ✅ Chant prêt et validé dans Cantador (afficher le bouton aux adhérents)
+                  </span>
+                </label>
               </div>
 
               {/* 2. Séquence / Préréglage Séquenceur */}
@@ -1720,6 +1750,7 @@ export default function RepertoirePieceModal({
         groupId={groupId}
         initialPupitre={pickerInitialPupitre}
       />
-    </div>
+      </div>
+    </ErrorBoundary>
   );
 }

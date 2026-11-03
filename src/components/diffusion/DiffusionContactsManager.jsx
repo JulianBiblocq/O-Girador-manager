@@ -11,7 +11,7 @@ export { isToRelance };
 /**
  * Composant de gestion du Carnet de Contacts (CRM Global) du Pôle Diffusion.
  */
-export default function DiffusionContactsManager({ groupId, associationSettings = {} }) {
+export default function DiffusionContactsManager({ groupId, associationSettings: _associationSettings = {} }) {
   const { t } = useTranslation();
   const { confirm } = useConfirm();
   const [contacts, setContacts] = useState([]);
@@ -40,7 +40,7 @@ export default function DiffusionContactsManager({ groupId, associationSettings 
     setLoading(true);
 
     const contactsRef = collection(db, 'associations', groupId, 'contacts_diffusion');
-    const q = query(contactsRef, orderBy('createdAt', 'desc'));
+    const _q = query(contactsRef, orderBy('createdAt', 'desc'));
 
     const unsubscribe = onSnapshot(contactsRef, (snapshot) => {
       const docs = snapshot.docs.map(docSnap => ({

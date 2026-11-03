@@ -46,7 +46,7 @@ export default function ProfileEditForm({
   isFieldRequired = () => false,
   isCostumerieEnabled = true,
   validationError = '',
-  isInstrumentsValid = true,
+  isInstrumentsValid: _isInstrumentsValid = true,
   demanderDroitImage = true,
   demanderAttestationSante = true,
   instrumentsDisponibles,

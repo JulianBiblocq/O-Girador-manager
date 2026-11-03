@@ -16,14 +16,14 @@ export function LanguageProvider({ children }) {
       if (browserLang.toLowerCase().startsWith('pt')) {
         return 'pt';
       }
-    } catch (_) {}
+    } catch {}
     return 'fr';
   });
 
   useEffect(() => {
     try {
       localStorage.setItem('preferredLanguage', locale);
-    } catch (_) {}
+    } catch {}
     if (typeof document !== 'undefined') {
       document.documentElement.lang = locale;
     }

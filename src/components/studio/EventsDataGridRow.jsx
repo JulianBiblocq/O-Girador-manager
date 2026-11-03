@@ -79,7 +79,7 @@ function EventsDataGridRow({
     }
   };
 
-  const handleKeyDown = (e, field, originalValue) => {
+  const handleKeyDown = (e, _field, _originalValue) => {
     if (e.key === 'Enter') {
       e.target.blur();
     }

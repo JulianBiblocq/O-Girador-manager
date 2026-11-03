@@ -105,7 +105,7 @@ export function computePhraseMeasures(lineText = '', parsed = null) {
 export function isSilenceMeasure(lineText = '') {
   if (!lineText || !lineText.trim()) return false;
   const { cleanLine } = extractLineSignature(lineText);
-  return cleanLine.replace(/\[\d+\]/g, '').replace(/[\*_]/g, '').trim().length === 0;
+  return cleanLine.replace(/\[\d+\]/g, '').replace(/[*_]/g, '').trim().length === 0;
 }
 
 export function generateEmptySilenceMeasure(signature = '4/4') {

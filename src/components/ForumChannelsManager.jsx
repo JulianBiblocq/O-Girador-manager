@@ -15,7 +15,7 @@ import { telemetryService } from '../services/telemetryService';
  * Composant ForumChannelsManager
  * Outil d'administration pour gérer la hiérarchie des catégories du forum, les salons, sous-dossiers et la modération des messages.
  */
-export default function ForumChannelsManager({ groupId, role, isSystemAdmin, onBack }) {
+export default function ForumChannelsManager({ groupId, role: _role, isSystemAdmin: _isSystemAdmin, onBack }) {
   const { t } = useTranslation();
   const { confirm } = useConfirm();
   
@@ -42,6 +42,8 @@ export default function ForumChannelsManager({ groupId, role, isSystemAdmin, onB
       if (docSnap.exists()) {
         setTagsDisponibles(docSnap.data().tagsDisponibles || []);
       }
+    }, (err) => {
+      console.warn("ForumChannelsManager - Erreur écoute tags :", err);
     });
     return () => unsubscribe();
   }, [groupId]);

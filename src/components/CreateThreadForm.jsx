@@ -140,7 +140,7 @@ export default function CreateThreadForm({ groupId, channelId, channels = [], us
       });
 
       // Détecter les mentions @Badge
-      const mentions = availableTargets.filter(tag => {
+      const _mentions = availableTargets.filter(tag => {
         const regex = new RegExp(`@${tag}\\b`, 'gi');
         return regex.test(cleanMessage);
       });

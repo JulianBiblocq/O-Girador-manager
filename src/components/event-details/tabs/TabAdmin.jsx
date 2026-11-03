@@ -28,7 +28,7 @@ export default function TabAdmin({
   onNavigateToView,
   setIsSendContractModalOpen,
   handlePreparePublication,
-  currentConfig,
+  currentConfig: _currentConfig,
   onOpenQrCodeModal,
   hasQrCode,
   onEdit,
@@ -285,13 +285,13 @@ export default function TabAdmin({
               disabled={updatingField === 'requiresValidation'}
               onClick={() => handleToggleEventField('requiresValidation', Boolean(event.requiresValidation))}
               className={`flex items-center justify-between p-2 rounded text-xs font-bold uppercase border transition-all cursor-pointer ${
-                Boolean(event.requiresValidation)
+                event.requiresValidation
                   ? 'bg-purple-100 text-purple-900 border-purple-400 shadow-xs'
                   : 'bg-neutral-100 text-neutral-400 border-neutral-300'
               }`}
             >
               <span className="flex items-center gap-1.5">🔒 {t('agenda.moduleValidation')}</span>
-              <span className="text-[10px] font-black">{Boolean(event.requiresValidation) ? 'ON' : 'OFF'}</span>
+              <span className="text-[10px] font-black">{event.requiresValidation ? 'ON' : 'OFF'}</span>
             </button>
 
             {/* 6. Boîte à photos / QR Code */}

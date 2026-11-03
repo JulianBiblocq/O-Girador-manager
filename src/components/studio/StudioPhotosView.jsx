@@ -31,7 +31,7 @@ export default function StudioPhotosView({
   userTags,
   canWrite = true,
   onNavigateToView,
-  onBack
+  onBack: _onBack
 }) {
   const { t } = useTranslation();
   const [activeSubTab, setActiveSubTab] = useState('recolte'); // 'recolte' | 'varal'

@@ -5,7 +5,29 @@ import CordelButton from './CordelButton';
 export default class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { hasError: false, error: null, errorInfo: null };
+    this.state = {
+      hasError: false,
+      error: null,
+      errorInfo: null,
+      prevResetKey: props.resetKey,
+      prevTitle: props.title
+    };
+  }
+
+  static getDerivedStateFromProps(nextProps, prevState) {
+    if (
+      nextProps.resetKey !== prevState.prevResetKey ||
+      nextProps.title !== prevState.prevTitle
+    ) {
+      return {
+        hasError: false,
+        error: null,
+        errorInfo: null,
+        prevResetKey: nextProps.resetKey,
+        prevTitle: nextProps.title
+      };
+    }
+    return null;
   }
 
   static getDerivedStateFromError(error) {
@@ -58,7 +80,7 @@ export default class ErrorBoundary extends React.Component {
           body: JSON.stringify(payload)
         }).catch(() => {});
       }
-    } catch (e) {
+    } catch {
       // Ignorer silencieusement les erreurs de télémétrie
     }
   };
@@ -78,16 +100,6 @@ export default class ErrorBoundary extends React.Component {
   componentWillUnmount() {
     window.removeEventListener('error', this.handleGlobalError);
     window.removeEventListener('unhandledrejection', this.handleGlobalPromiseRejection);
-  }
-
-  componentDidUpdate(prevProps) {
-    // Réinitialise automatiquement l'état d'erreur dès que la section ou la clé change
-    if (
-      this.state.hasError &&
-      (this.props.resetKey !== prevProps.resetKey || this.props.title !== prevProps.title)
-    ) {
-      this.setState({ hasError: false, error: null, errorInfo: null });
-    }
   }
 
   componentDidCatch(error, errorInfo) {

@@ -39,7 +39,7 @@ export function readHiddenState(tabId, poleId) {
     }
     // Par défaut, l'aide reste masquée : elle ne s'ouvre que lorsque l'utilisateur clique sur le bouton 💡
     return true;
-  } catch (e) {
+  } catch {
     return true;
   }
 }

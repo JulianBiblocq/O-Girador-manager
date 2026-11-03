@@ -13,7 +13,7 @@ export default function PublicBookingModal({
   onClose,
   groupId,
   associationName = 'l\'Association',
-  publicTheme = {}
+  publicTheme: _publicTheme = {}
 }) {
   const [organizer, setOrganizer] = useState('');
   const [contactEmail, setContactEmail] = useState('');

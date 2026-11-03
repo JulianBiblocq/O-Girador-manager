@@ -760,7 +760,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
     }
   };
 
-  const handleTogglePoursuite = async (member, currentValue) => {
+  const _handleTogglePoursuite = async (member, currentValue) => {
     setSaving(true);
     try {
       const userRef = doc(db, 'users', member.id);
@@ -1397,7 +1397,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                   const mainInst = m.instrumentPrincipal || m.instrument;
                   const isLegacySecours = m.disponibleSecours && !m.dispoSecoursInstruments;
                   const isDispoMain = (m.dispoSecoursInstruments || []).includes(mainInst) || isLegacySecours;
-                  const isAssigned = isPercussionist && !isUnassigned;
+                  const _isAssigned = isPercussionist && !isUnassigned;
                   const rawWishes = (Array.isArray(m.voeuxInstruments) && m.voeuxInstruments.length > 0)
                     ? m.voeuxInstruments.map(w => typeof w === 'string' ? w : w?.instrument)
                     : [m.voeuPrincipal, m.voeuSecondaire, m.voeuTertiaire];

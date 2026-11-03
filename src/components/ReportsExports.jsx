@@ -60,10 +60,10 @@ const calculateCarStatus = (car, associationSettings) => {
 
 export default function ReportsExports({ 
   groupId, 
-  role, 
-  isSystemAdmin, 
-  hasAccessTresorerie, 
-  profileData, 
+  role: _role, 
+  isSystemAdmin: _isSystemAdmin, 
+  hasAccessTresorerie: _hasAccessTresorerie, 
+  profileData: _profileData, 
   onBack, 
   isEmbedded,
   associationSettings: propAssociationSettings

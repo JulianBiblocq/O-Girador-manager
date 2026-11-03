@@ -36,7 +36,7 @@ export default function FormattedMessageContent({ content, className = '' }) {
     });
 
     // Process Vimeo URLs (vimeo.com/VIDEO_ID)
-    const vimeoRegex = /(?:https?:\/\/)?(?:www\.)?vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/[^\/]*\/videos\/|album\/\d+\/video\/|video\/|)(\d+)(?:[^\s]*)/gi;
+    const vimeoRegex = /(?:https?:\/\/)?(?:www\.)?vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/[^/]*\/videos\/|album\/\d+\/video\/|video\/|)(\d+)(?:[^\s]*)/gi;
     html = html.replace(vimeoRegex, (match, videoId) => {
       return `<div class="my-2.5 w-full max-w-lg aspect-video rounded-md overflow-hidden border border-encre-noire/20 shadow-[2px_2px_0px_0px_rgba(24,23,22,0.15)] bg-black">
         <iframe 
@@ -70,7 +70,7 @@ export default function FormattedMessageContent({ content, className = '' }) {
     });
 
     // Normalisation automatique des liens d'images Framaspace / Nextcloud
-    html = html.replace(/(https?:\/\/[^\/]+)\/index\.php\/apps\/files_sharing\/publicpreview\?token=([a-zA-Z0-9_-]+)[^"'\s]*/gi, (match, domain, token) => {
+    html = html.replace(/(https?:\/\/[^/]+)\/index\.php\/apps\/files_sharing\/publicpreview\?token=([a-zA-Z0-9_-]+)[^"'\s]*/gi, (match, domain, token) => {
       return `${domain}/s/${token}/preview`;
     });
 
@@ -78,7 +78,7 @@ export default function FormattedMessageContent({ content, className = '' }) {
     return DOMPurify.sanitize(html, {
       ADD_TAGS: ['iframe', 'img', 'span'],
       ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder', 'scrolling', 'src', 'width', 'height', 'target', 'rel', 'class', 'style', 'alt', 'loading'],
-      ALLOWED_URI_REGEXP: /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i
+      ALLOWED_URI_REGEXP: /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i
     });
   }, [content]);
 

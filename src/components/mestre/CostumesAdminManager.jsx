@@ -51,6 +51,9 @@ export default function CostumesAdminManager({ groupId }) {
       fetched.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
       setCostumes(fetched);
       setLoading(false);
+    }, (err) => {
+      console.error("CostumesAdminManager - Erreur récupération costumes :", err);
+      setLoading(false);
     });
     return () => unsubscribe();
   }, [groupId]);

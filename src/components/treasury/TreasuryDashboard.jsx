@@ -11,7 +11,7 @@ export default function TreasuryDashboard({
   calculateGlobalBalance,
   associationSettings,
   handleSaveAssociationSettings,
-  groupId,
+  groupId: _groupId,
   onSelectTab
 }) {
   const { t } = useTranslation();

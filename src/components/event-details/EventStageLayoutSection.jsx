@@ -156,7 +156,7 @@ export default function EventStageLayoutSection({
   });
 
   // Instrument color mapping matching the project design system
-  const getInstrumentColorClass = (inst) => {
+  const getInstrumentColorClass = (_inst) => {
     return 'border-encre-noire/30 text-encre-noire';
   };
 

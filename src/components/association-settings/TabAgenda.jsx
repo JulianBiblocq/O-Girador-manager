@@ -10,7 +10,7 @@ export default function TabAgenda({
   formData = {},
   handleChange,
   saving,
-  groupId,
+  groupId: _groupId,
   t: propT
 }) {
   const { t: contextT } = useTranslation();

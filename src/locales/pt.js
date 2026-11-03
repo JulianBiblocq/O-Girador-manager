@@ -54,7 +54,6 @@ export const pt = {
     document: "Documento",
     moveUp: "Mover para cima",
     moveDown: "Mover para baixo",
-    saving: "Salvando...",
     importing: "Importando...",
     deleteConfirmTitle: "Confirmar exclusão",
     deleteConfirmMessage: "Tem certeza de que deseja excluir este item? Esta ação é irreversível.",
@@ -256,7 +255,9 @@ export const pt = {
     bannerMissingTitle: "Sua foto está ausente no Elenco",
     bannerMissingDesc: "Adicione sua foto para permitir que os outros membros do grupo o reconheçam facilmente!",
     addMyPhoto: "Adicionar minha foto",
-    memberCard: "Ficha do Membro"
+    memberCard: "Ficha do Membro",
+    pushReachableTitle: "Notificações Push ativadas (contactável)",
+    pushUnreachableTitle: "Notificações Push não ativadas"
   },
   pwa: {
     newVersion: "Uma nova versão está disponível!",
@@ -446,7 +447,14 @@ export const pt = {
     bannerTitle: "Ative as notificações",
     bannerText: "Não perca nenhuma informação importante de última hora! Inscreva-se para receber alertas em tempo real.",
     bannerBtn: "🔔 Inscrever-se nos alertas",
-    bannerIosWarning: "No iPhone / iPad: primeiro, adicione o aplicativo à tela inicial (Compartilhar → Tela de Início), depois volte aqui para ativar as notificações."
+    bannerIosWarning: "No iPhone / iPad: primeiro, adicione o aplicativo à tela inicial (Compartilhar → Tela de Início), depois volte aqui para ativar as notificações.",
+    pushBannerTitle: "Ative as notificações do grupo",
+    pushBannerDesc: "Receba avisos urgentes, mudanças de horário e lembretes diretamente no seu celular.",
+    enablePushBtn: "🔔 Ativar alertas",
+    activatingPush: "Ativando...",
+    pushInAppWarning: "📱 Você abriu este link no WhatsApp/Instagram. Toque nos 3 pontos ⋮ (ou 🧭) para abrir no Chrome ou Safari e ativar os alertas.",
+    pushIosInstallHint: "📲 No iPhone/iPad, toque em Compartilhar ⬆️ no Safari e depois em « Adicionar à Tela de Início ➕ » para receber notificações.",
+    pushBlockedHint: "🔒 As notificações estão bloqueadas nas configurações do seu navegador (ícone 🔒 ao lado do endereço). Autorize-as e tente novamente."
   },
   widgetForum: {
     title: "Porta-Voz",
@@ -459,7 +467,10 @@ export const pt = {
     poll: "📊 Enquete",
     discussion: "💬 Discussão",
     viewDiscussion: "Ver a discussão ➔",
-    replyCountSuffix: "res."
+    replyCountSuffix: "res.",
+    liveGeneralTitle: "💬 Ao vivo — Todo o grupo",
+    participateGeneralBtn: "💬 Participar / Compartilhar foto ou link",
+    liveGeneralEmpty: "Inicie a conversa geral: compartilhe uma informação, foto ou vídeo do YouTube com todo o grupo!"
   },
   agendaFilter: {
     disciplineLabel: "Disciplina:",
@@ -816,6 +827,15 @@ export const pt = {
     moduleInscriptions: "Inscrições",
     moduleValidation: "Aprovação",
     modulePhotos: "Baú de fotos",
+    pollCreateTitle: "Criar uma enquete de datas",
+    pollCreateSubtitle: "Propor vários horários para votação dos membros",
+    pollModeSingleWinner: "📅 Data única (1 único horário selecionado)",
+    pollModePupitreDispatch: "🥁 Distribuição por naipe (1 horário atribuído por naipe)",
+    pollTargetPupitresLabel: "Naipes a distribuir nos horários:",
+    pollProposedDatesLabel: "Horários propostos (mínimo 2 datas)",
+    pollAddDateBtn: "Adicionar uma opção de data",
+    pollMatrixTitle: "Matriz de distribuição por naipe (Datas × Naipes)",
+    pollConfirmDispatchBtn: "Validar a distribuição",
   },
   widgetAgenda: {
     title: "Agenda",
@@ -1587,10 +1607,6 @@ export const pt = {
     mestre: "Mestria",
     pedagogie: "Pedagogia",
     config: "Configurações",
-    vitrine: "Vitrine",
-    poleVitrine: "Vitrine Pública",
-    tabVitrine: "Website Vitrine",
-    tabVitrineEditor: "Editor do Site",
     tabDashboard: "Resumo",
     tabProfil: "Perfil",
     tabAgenda: "Agenda",
@@ -2288,7 +2304,6 @@ export const pt = {
         categoriesUsageSubtitle: "Usadas na agenda, no elenco e nos filtros do mural",
         noCategoriesSaved: "Nenhuma categoria de prática registrada no momento.",
         retroactiveUpdateDesc: "🔄 Atualizar retroativamente perfis antigos que ainda usam os nomes padrão.",
-        categoryAlreadyExistsAlert: "Outra categoria de prática já possui este nome!",
         editCategoryHeading: "✏️ Editar categoria",
         keyShortcutsHint: "(Enter para confirmar, Esc para cancelar)",
         newCategoryLabel: "Novo nome",
@@ -7037,6 +7052,16 @@ export const pt = {
     dancadorSubtitle: "Oficina coreográfica",
     cantadorSubtitle: "Oficina vocal & Toadas",
     orquestradorSubtitle: "Portal central O Girador"
+  },
+  shareTarget: {
+    title: "Compartilhar no Organizador",
+    subtitle: "Escolha onde publicar este conteúdo recebido do seu aparelho:",
+    captionLabel: "Mensagem ou legenda (editável)",
+    captionPlaceholder: "Adicione uma mensagem para o grupo...",
+    sendToGroupBtn: "💬 Enviar para Todo o grupo",
+    hangOnVaralBtn: "🪢 Pendurar no Varal",
+    publishMegaphoneBtn: "📢 Publicar no Megafone",
+    openLinkBtn: "Abrir o link"
   }
 };
 

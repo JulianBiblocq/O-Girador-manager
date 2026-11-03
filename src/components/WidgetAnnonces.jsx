@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { collection, addDoc, doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db, messaging } from '../firebase';
 import { getToken } from 'firebase/messaging';
@@ -8,50 +8,58 @@ import { useTranslation } from './LanguageContext';
 import { showPushActivationConfirmation } from '../utils/pushNotificationHelper';
 import { canPublishAnnonces } from '../utils/permissionUtils';
 import { resolveEffectiveUserTags } from '../utils/tagUtils';
-import { getCachedAnnouncements, setCachedAnnouncements } from '../utils/dashboardCacheUtils';
+import { getCachedAnnouncements } from '../utils/dashboardCacheUtils';
 import { isAnnouncementVisibleForUser, resolveTargetRecipientIds } from '../utils/announcementUtils';
 import { dispatchBulkInAppAndPushNotification } from '../utils/inAppNotificationService';
 import { useAnnoncesData } from '../hooks/useAnnoncesData';
+import { useAutoSyncPushToken } from '../hooks/useAutoSyncPushToken';
 import AnnonceCardItem from './annonces/AnnonceCardItem';
 import AnnonceForm from './annonces/AnnonceForm';
 import AnnoncePushBanner from './annonces/AnnoncePushBanner';
 
 /**
  * WidgetAnnonces : Gestionnaire et affichage des pancartes du tableau de bord.
- * Respecte strictement la règle Anti-Monolithe (< 200 lignes) par délégation modulaire.
+ * Respecte strictement la règle Anti-Monolithe par délégation modulaire.
  */
 export default function WidgetAnnonces({
-  groupId,
-  profileData,
-  role,
-  isSystemAdmin,
-  user,
-  onNavigateToView,
-  permissionsMatrice,
-  canPublish: canPublishProp,
-  breakGlassActive = false,
-  userTags: userTagsProp
+  groupId, profileData, role, isSystemAdmin, user, onNavigateToView,
+  permissionsMatrice, canPublish: canPublishProp, breakGlassActive = false,
+  userTags: userTagsProp, installPromptAvailable = false, onTriggerInstall = null
 }) {
   const { t } = useTranslation();
   const [announcements, setAnnouncements] = useState(() => getCachedAnnouncements(groupId));
   const { tagsDisponibles, assocPermissionsMatrice, allMembers, loading, handleDeleteAnnouncement } = useAnnoncesData(groupId, t, announcements, setAnnouncements);
   const [isAdding, setIsAdding] = useState(false);
+  const [initialFormValues, setInitialFormValues] = useState(null);
   const [saving, setSaving] = useState(false);
   const [isSubscribingPush, setIsSubscribingPush] = useState(false);
+  const [hasLocalToken, setHasLocalToken] = useState(false);
 
-  // État synchrone de la bannière push (prévention CLS)
-  const [showBanner, setShowBanner] = useState(() => {
-    if (typeof window !== 'undefined' && 'Notification' in window && user?.uid) {
-      return Notification.permission !== 'granted';
-    }
-    return false;
-  });
-
+  // Réception d'un contenu partagé dirigé vers le Mégaphone
   useEffect(() => {
-    if (typeof window !== 'undefined' && 'Notification' in window && messaging && user?.uid) {
-      setShowBanner(Notification.permission !== 'granted');
+    const consumePendingAnnonce = (payload) => {
+      if (!payload) return;
+      setInitialFormValues(payload);
+      setIsAdding(true);
+      if (typeof window !== 'undefined') {
+        delete window.__ogPendingAnnonceShare;
+      }
+    };
+    if (typeof window !== 'undefined' && window.__ogPendingAnnonceShare) {
+      consumePendingAnnonce(window.__ogPendingAnnonceShare);
     }
-  }, [user?.uid]);
+    const handleEvent = (e) => consumePendingAnnonce(e.detail);
+    window.addEventListener('open-shared-annonce', handleEvent);
+    return () => window.removeEventListener('open-shared-annonce', handleEvent);
+  }, []);
+
+  const handleTokenSynced = useCallback(() => setHasLocalToken(true), []);
+  useAutoSyncPushToken(user, profileData, handleTokenSynced);
+
+  // Afficher la bannière dès que l'adhérent n'a aucun jeton actif en base OU que la permission n'est pas accordée
+  const hasFcmTokenInDb = Array.isArray(profileData?.fcmTokens) && profileData.fcmTokens.length > 0;
+  const isPermissionGranted = typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted';
+  const showBanner = Boolean(user?.uid) && (!isPermissionGranted || (!hasFcmTokenInDb && !hasLocalToken));
 
   const effectiveMatrice = permissionsMatrice || assocPermissionsMatrice;
   const effectiveTags = userTagsProp || resolveEffectiveUserTags(profileData?.tags || [], tagsDisponibles);
@@ -60,17 +68,22 @@ export default function WidgetAnnonces({
     : canPublishAnnonces(profileData, effectiveMatrice, effectiveTags, breakGlassActive);
 
   const handleEnableNotifications = async () => {
-    if (!messaging || !user?.uid) return alert('Notifications non prises en charge.');
+    if (!user?.uid) return;
+    if (!messaging || typeof window === 'undefined' || !('Notification' in window)) {
+      if (onTriggerInstall && installPromptAvailable) return onTriggerInstall();
+      return alert(t('widgetAnnonces.pushIosInstallHint') || "Sur iPhone/iPad, touche Partager ⬆️ dans Safari puis « Sur l'écran d'accueil ➕ » pour installer l'application et activer les notifications.");
+    }
     setIsSubscribingPush(true);
     try {
       const permission = await Notification.requestPermission();
       if (permission === 'granted') {
-        const reg = navigator.serviceWorker ? await navigator.serviceWorker.ready : undefined;
+        let reg = 'serviceWorker' in navigator ? await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js') : undefined;
+        if (!reg && 'serviceWorker' in navigator) reg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
         const token = await getToken(messaging, { vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY, serviceWorkerRegistration: reg });
         if (token) {
           await updateDoc(doc(db, 'users', user.uid), { fcmTokens: arrayUnion(token) });
           await showPushActivationConfirmation(reg);
-          setShowBanner(false);
+          setHasLocalToken(true);
         }
       }
     } catch (err) {
@@ -107,12 +120,7 @@ export default function WidgetAnnonces({
         const recipientIds = resolveTargetRecipientIds({ announcement: payload, allMembers, authorId: user?.uid });
         if (recipientIds.length > 0) {
           await dispatchBulkInAppAndPushNotification({
-            recipientIds,
-            groupId,
-            titre: payload.titre,
-            message: payload.message,
-            targetUrl: '/app',
-            sendPush: true
+            recipientIds, groupId, titre: payload.titre, message: payload.message, targetUrl: '/app', sendPush: true
           });
         }
       }
@@ -125,21 +133,15 @@ export default function WidgetAnnonces({
     }
   };
 
-  // Filtrage des pancartes visibles pour l'adhérent connecté
-  const userTags = profileData?.tags || [];
   const userRole = role || profileData?.role || 'membre';
   const visibleAnnouncements = useMemo(() => {
+    const userTags = profileData?.tags || [];
     return announcements.filter((ann) => isAnnouncementVisibleForUser({
-      announcement: ann,
-      userId: user?.uid,
-      userTags,
-      userRole,
-      isSystemAdmin,
-      canPublish
+      announcement: ann, userId: user?.uid, userTags, userRole, isSystemAdmin, canPublish
     }));
-  }, [announcements, user?.uid, userTags, userRole, isSystemAdmin, canPublish]);
+  }, [announcements, user?.uid, profileData?.tags, userRole, isSystemAdmin, canPublish]);
 
-  if (!loading && !canPublish && visibleAnnouncements.length === 0) return null;
+  if (!loading && !canPublish && visibleAnnouncements.length === 0 && !showBanner) return null;
 
   return (
     <div className="flex flex-col gap-3">
@@ -154,8 +156,14 @@ export default function WidgetAnnonces({
         )}
       </div>
 
-      {showBanner && messaging && (
-        <AnnoncePushBanner onEnableNotifications={handleEnableNotifications} isSubscribingPush={isSubscribingPush} t={t} />
+      {showBanner && (
+        <AnnoncePushBanner
+          onEnableNotifications={handleEnableNotifications}
+          isSubscribingPush={isSubscribingPush}
+          installPromptAvailable={installPromptAvailable}
+          onTriggerInstall={onTriggerInstall}
+          t={t}
+        />
       )}
 
       {loading && announcements.length === 0 && (
@@ -165,7 +173,18 @@ export default function WidgetAnnonces({
       )}
 
       {!loading && isAdding && (
-        <AnnonceForm onSubmit={handleSubmitForm} onCancel={() => setIsAdding(false)} saving={saving} tagsDisponibles={tagsDisponibles} allMembers={allMembers} t={t} />
+        <AnnonceForm
+          onSubmit={handleSubmitForm}
+          onCancel={() => {
+            setIsAdding(false);
+            setInitialFormValues(null);
+          }}
+          saving={saving}
+          tagsDisponibles={tagsDisponibles}
+          allMembers={allMembers}
+          initialValues={initialFormValues}
+          t={t}
+        />
       )}
 
       {!loading && !isAdding && (

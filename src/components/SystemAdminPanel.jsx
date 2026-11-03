@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { collection, query, onSnapshot, doc, updateDoc, where, deleteField, deleteDoc, getDocs } from 'firebase/firestore';
+import { collection, query, onSnapshot, doc, updateDoc, where, deleteField, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
@@ -13,7 +13,7 @@ import SystemUserList from './admin/SystemUserList';
 import useConfirm from '../hooks/useConfirm';
 import { getMigratedRoleAndTags, VALID_SYSTEM_ROLES } from '../utils/roleMigration';
 import { telemetryService } from '../services/telemetryService';
-import { findDuplicateHelloAssoTransactions } from '../utils/treasuryDeduplication';
+// findDuplicateHelloAssoTransactions géré côté TreasuryOperations
 import { purgeAndRebuildHelloAssoTransactions } from '../services/helloAssoService';
 import { isMemberArchived } from '../utils/memberUtils';
 import { archiveMember, unarchiveMember } from '../services/memberArchiveService';
@@ -31,7 +31,7 @@ const DEFAULT_FIELDS_CONFIG = {
   niveaux: { key: "niveaux", label: "Affichage des niveaux dans le trombinoscope", enabled: true, filledBy: "admin", isRequired: false }
 };
 
-export default function SystemAdminPanel({ user, profileData, groupId: propGroupId, associationName: propAssociationName, onBack, onNavigateToView }) {
+export default function SystemAdminPanel({ user: _user, profileData, groupId: propGroupId, associationName: propAssociationName, onBack, onNavigateToView }) {
   const { t } = useTranslation();
   const { confirm } = useConfirm();
   const tenantCtx = useTenantContext();
@@ -496,7 +496,7 @@ export default function SystemAdminPanel({ user, profileData, groupId: propGroup
   };
 
   const handleToggleArchive = async (targetUserId, shouldReactivate) => {
-    const actionText = shouldReactivate ? "réactiver" : "archiver";
+    const _actionText = shouldReactivate ? "réactiver" : "archiver";
     const message = shouldReactivate 
       ? "Voulez-vous vraiment réactiver ce membre ? Son accès à l'application sera rétabli."
       : "Voulez-vous vraiment archiver ce membre ?\n\nSon accès à l'application sera suspendu et il sera automatiquement retiré des inscriptions (RSVP), du covoiturage et du plan de scène de tous les événements à venir. L'historique des événements passés sera intégralement conservé.";

@@ -3,7 +3,7 @@ import { BEAT_1_CLASS, BEAT_OTHER_CLASS } from '../../../utils/toadaLineEditorHe
 
 export default function ToadaCharAnchorCell({
   char = '',
-  cIdx = 0,
+  cIdx: _cIdx = 0,
   anchor = null,
   measureNum = null,
   sigChange = null,

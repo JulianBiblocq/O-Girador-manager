@@ -17,7 +17,7 @@ import { launchCantador } from '../../utils/trainingLauncher';
 import { getEcosystemUrl } from '../../constants/ecosystemUrls';
 import { useCantadorToadas } from '../../hooks/useCantadorToadas';
 import { subscribeGroupTrainings } from '../../services/aisanceService';
-import { resolvePieceTrainings, buildResolutionDictionaries, resolvePieceLiveTechnicalData } from '../../utils/repertoireMatcher';
+import { resolvePieceTrainings, buildResolutionDictionaries, resolvePieceLiveTechnicalData, isCantadorValidated } from '../../utils/repertoireMatcher';
 import TrainingCompactCard from '../pedagogy/TrainingCompactCard';
 import { canonicalizeGroupId } from '../../utils/tenantUtils';
 import { useTranslation } from '../LanguageContext';
@@ -78,6 +78,7 @@ export default function EventRevisionProgram({
     if (!targetGroupId) return;
 
     setLoadingRepertoire(true);
+    let unsubFallback = null;
     const colRef = collection(db, 'associations', targetGroupId, 'repertoire');
     const unsub = onSnapshot(colRef, (snap) => {
       const list = [];
@@ -85,8 +86,9 @@ export default function EventRevisionProgram({
 
       // Repli résilient si la collection avec la casse canonique est vide
       if (list.length === 0 && targetGroupId !== targetGroupId.toLowerCase()) {
+        if (unsubFallback) unsubFallback();
         const fallbackRef = collection(db, 'associations', targetGroupId.toLowerCase(), 'repertoire');
-        onSnapshot(fallbackRef, (fallbackSnap) => {
+        unsubFallback = onSnapshot(fallbackRef, (fallbackSnap) => {
           if (!fallbackSnap.empty) {
             const fallbackList = [];
             fallbackSnap.forEach((d) => fallbackList.push({ id: d.id, ...d.data() }));
@@ -96,7 +98,8 @@ export default function EventRevisionProgram({
             setRepertoirePieces([]);
           }
           setLoadingRepertoire(false);
-        }, () => {
+        }, (fallbackErr) => {
+          console.warn("EventRevisionProgram - Erreur répertoire repli :", fallbackErr);
           setRepertoirePieces([]);
           setLoadingRepertoire(false);
         });
@@ -111,7 +114,10 @@ export default function EventRevisionProgram({
       setLoadingRepertoire(false);
     });
 
-    return () => unsub();
+    return () => {
+      unsub();
+      if (unsubFallback) unsubFallback();
+    };
   }, [groupId]);
 
   const activeRepertoirePieces = useMemo(() => {
@@ -456,7 +462,7 @@ export default function EventRevisionProgram({
                           </button>
                         )}
 
-                        {(morceau.cantadorToadaId || resolved.cantadorToadaId || morceau.toadaDocId || resolved.activeToada) && (
+                        {(isCantadorValidated(resolved, resolved?.activeCantadorPack) || isCantadorValidated(morceau)) && (
                           <button
                             type="button"
                             onClick={() => {

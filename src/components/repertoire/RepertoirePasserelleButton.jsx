@@ -71,7 +71,7 @@ export default function RepertoirePasserelleButton({
       searchParams.set('tab', 'repertoire');
       searchParams.set('pieceId', matchedPiece.id);
       window.history.pushState({}, '', `${window.location.pathname}?${searchParams.toString()}`);
-    } catch (_err) {
+    } catch {
       // Ignorer si indisponible
     }
 

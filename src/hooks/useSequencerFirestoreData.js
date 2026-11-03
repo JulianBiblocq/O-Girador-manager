@@ -48,7 +48,7 @@ export function useSequencerFirestoreData(rawGroupId) {
     unsubsRef.current.forEach((unsub) => {
       try {
         if (typeof unsub === 'function') unsub();
-      } catch (_) {
+      } catch {
         // Tolérance aux désabonnements déjà effectués
       }
     });
@@ -93,12 +93,6 @@ export function useSequencerFirestoreData(rawGroupId) {
         } catch (userErr) {
           console.warn("useSequencerFirestoreData - Impossible de lister les utilisateurs par groupId :", userErr);
         }
-      }
-
-      // Garantie pour l'association Samambaia (Mestre historique & Bastien)
-      if (canonicalGroup.toLowerCase() === 'samambaia') {
-        memberIdsSet.add('iA0SweEHyOPzAPGIDVZdeKAV2mk1');
-        memberIdsSet.add('pFAmvjJWGtaWV0a6i9JcReuiyTJ2');
       }
 
       // Ajout du groupId canonique lui-même pour les motifs créés sous l'identifiant de groupe
@@ -158,7 +152,7 @@ export function useSequencerFirestoreData(rawGroupId) {
                 if (decompressed) {
                   try {
                     parsedData = JSON.parse(decompressed);
-                  } catch (_) {}
+                  } catch {}
                 }
               }
             }
@@ -259,7 +253,7 @@ export function useSequencerFirestoreData(rawGroupId) {
             }
           );
           unsubsRef.current.push(unsub);
-        } catch (_) {
+        } catch {
           listenCollectionTargeted(colName, colRef);
         }
       };
@@ -278,7 +272,7 @@ export function useSequencerFirestoreData(rawGroupId) {
               (err) => console.warn(`useSequencerFirestoreData - ${colName} groupVariants :`, err)
             );
             unsubsRef.current.push(unsubGroup);
-          } catch (_) {}
+          } catch {}
         }
 
         chunks.forEach((chunk) => {
@@ -293,7 +287,7 @@ export function useSequencerFirestoreData(rawGroupId) {
               (err) => console.warn(`useSequencerFirestoreData - ${colName} owner chunk :`, err)
             );
             unsubsRef.current.push(unsubOwner);
-          } catch (_) {}
+          } catch {}
         });
 
         try {
@@ -307,7 +301,7 @@ export function useSequencerFirestoreData(rawGroupId) {
             (err) => console.warn(`useSequencerFirestoreData - ${colName} public :`, err)
           );
           unsubsRef.current.push(unsubPublic);
-        } catch (_) {}
+        } catch {}
       };
 
       // Déclenchement exhaustif pour les ressources du Séquenceur
@@ -340,7 +334,7 @@ export function useSequencerFirestoreData(rawGroupId) {
             mergeAndSet();
           }, (err) => console.warn("useSequencerFirestoreData - Audio Masters :", err));
           unsubsRef.current.push(unsubAM);
-        } catch (_) {}
+        } catch {}
       }
 
       // 6. Récupération des fichiers physiques Firebase Storage (documents/${groupId}/sequencer)
@@ -377,9 +371,9 @@ export function useSequencerFirestoreData(rawGroupId) {
                     audioUrl: isAudio ? url : null
                   });
                 }
-              } catch (_) {}
+              } catch {}
             }
-          } catch (_) {
+          } catch {
             // Dossier Storage inexistant ou vide pour cette association
           }
         }

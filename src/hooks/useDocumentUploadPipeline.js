@@ -5,7 +5,6 @@ import { collection, addDoc, doc, updateDoc, writeBatch } from 'firebase/firesto
 import { db, storage } from '../firebase';
 import { useTranslation } from '../components/LanguageContext';
 import { cleanFirestorePayload } from '../utils/firestoreUtils';
-import { toadaToCleanHtml } from '../utils/toadaSerializer';
 
 /**
  * Hook personnalisé gérant l'ensemble du pipeline de soumission, d'upload Firebase Storage,
@@ -381,8 +380,14 @@ export function useDocumentUploadPipeline({
         }
       }
 
-      // 2. Traitement audio témoin (Chant / Toada)
-      let finalAudioUrl = songData.audioUrl || '';
+      // 2. Traitement audio témoin et vidéo YouTube (Chant / Toada)
+      let rawAudioInput = (songData.audioUrl || '').trim();
+      let finalVideoUrlSong = (songData.videoUrl || '').trim();
+      if (rawAudioInput && /youtube(?:-nocookie)?\.com|youtu\.be/i.test(rawAudioInput)) {
+        if (!finalVideoUrlSong) finalVideoUrlSong = rawAudioInput;
+        rawAudioInput = '';
+      }
+      let finalAudioUrl = rawAudioInput;
       if (isSongType && songData.audioUploadType === 'file' && songData.audioFile) {
         const audioStoragePath = `documents/${groupId}/audio_${Date.now()}_${songData.audioFile.name}`;
         const audioRef = ref(storage, audioStoragePath);
@@ -422,10 +427,23 @@ export function useDocumentUploadPipeline({
           updateData.parolesPhonetiques = songData.parolesPhonetiques || '';
           updateData.traduction = songData.traduction || '';
           updateData.anecdote = songData.anecdote || '';
+          updateData.videoUrl = finalVideoUrlSong || null;
+          updateData.cantadorValidated = Boolean(songData.cantadorValidated);
+          updateData.cantadorStatus = songData.cantadorValidated ? 'valide' : null;
           if (finalAudioUrl) {
             updateData.audioUrl = finalAudioUrl;
             if (!updateData.fileUrl) {
               updateData.fileUrl = finalAudioUrl;
+            }
+          } else {
+            updateData.audioUrl = null;
+            if (
+              documentToEdit?.fileUrl &&
+              (documentToEdit.fileUrl === documentToEdit.audioUrl ||
+                /\.(mp3|wav|ogg|m4a|aac)$/i.test(documentToEdit.fileUrl) ||
+                /youtube(?:-nocookie)?\.com|youtu\.be/i.test(documentToEdit.fileUrl))
+            ) {
+              updateData.fileUrl = null;
             }
           }
         }
@@ -548,6 +566,9 @@ export function useDocumentUploadPipeline({
         newDoc.parolesPhonetiques = songData.parolesPhonetiques || '';
         newDoc.traduction = songData.traduction || '';
         newDoc.anecdote = songData.anecdote || '';
+        newDoc.videoUrl = finalVideoUrlSong || '';
+        newDoc.cantadorValidated = Boolean(songData.cantadorValidated);
+        newDoc.cantadorStatus = songData.cantadorValidated ? 'valide' : null;
         if (finalAudioUrl) {
           newDoc.audioUrl = finalAudioUrl;
           if (!newDoc.fileUrl) {

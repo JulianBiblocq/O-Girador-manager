@@ -84,6 +84,8 @@ export default function MestreStageLayout({
         const data = docSnap.data();
         setLieuxImportants(Array.isArray(data.lieuxImportants) ? data.lieuxImportants : []);
       }
+    }, (err) => {
+      console.warn("MestreStageLayout - Erreur lecture lieux importants :", err);
     });
 
     return () => {
@@ -104,6 +106,8 @@ export default function MestreStageLayout({
       } else {
         setActiveEvent(null);
       }
+    }, (err) => {
+      console.warn("MestreStageLayout - Erreur écoute événement actif :", err);
     });
     return () => unsubscribe();
   }, [selectedEventId]);
@@ -118,6 +122,8 @@ export default function MestreStageLayout({
         usersList.push({ id: docSnap.id, ...docSnap.data() });
       });
       setAllUsers(usersList);
+    }, (err) => {
+      console.warn("MestreStageLayout - Erreur écoute membres :", err);
     });
     return () => unsubscribe();
   }, [groupId]);

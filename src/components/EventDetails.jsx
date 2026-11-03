@@ -35,7 +35,7 @@ import useHardwareBack from '../hooks/useHardwareBack';
 import { triggerEventStatusAutomation } from '../utils/automationEngine';
 import { canonicalizeGroupId } from '../utils/tenantUtils';
 import { parseDateLinear, formatGoogleCalendarDate, openGoogleCalendar } from '../utils/calendarUtils';
-import { isMemberArchived } from '../utils/memberUtils';
+import { isMemberArchived, getEffectiveMemberTags } from '../utils/memberUtils';
 import { isPastEvent } from '../utils/dateUtils';
 
 export default function EventDetails({ event, user, profileData, groupId: propGroupId, onNavigateToView, onClose, onPrev, onNext, viewMode: _viewMode, setViewMode: _setViewMode, onGoToStageLayoutEditor }) {
@@ -172,6 +172,8 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
     logistiqueMalles: Array.isArray(evt?.logistiqueMalles) ? evt.logistiqueMalles : [],
     mallesSpecifiques: Array.isArray(evt?.mallesSpecifiques) ? evt.mallesSpecifiques : [],
     quotasPupitres: evt?.quotasPupitres || {},
+    pollMode: evt?.pollMode || 'single_winner',
+    pollTargetPupitres: Array.isArray(evt?.pollTargetPupitres) ? evt.pollTargetPupitres : [],
     contactsJourJ: evt?.contactsJourJ || {
       referentOrgaNom: '',
       referentOrgaTel: '',
@@ -546,6 +548,8 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
           setLinkedInstruments([]);
         }
       }
+    }, (err) => {
+      console.warn("EventDetails - Erreur lecture paramètres association :", err);
     });
     return () => unsubscribe();
   }, [event.groupId]);
@@ -747,13 +751,17 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
         setTagsDisponibles(Array.isArray(data.tagsDisponibles) ? data.tagsDisponibles : []);
         setPermissionsMatrice(data.permissionsMatrice || null);
       }
+    }, (err) => {
+      console.warn("EventDetails - Erreur lecture matrice permissions :", err);
     });
     return () => unsubscribe();
   }, [event?.groupId]);
 
   const effectiveUserTags = React.useMemo(() => {
-    return resolveEffectiveUserTags(profileData?.tags || [], tagsDisponibles);
-  }, [profileData?.tags, tagsDisponibles]);
+    const resolvedFromCatalog = resolveEffectiveUserTags(profileData?.tags || [], tagsDisponibles);
+    const inheritedMemberTags = getEffectiveMemberTags(profileData);
+    return Array.from(new Set([...resolvedFromCatalog, ...inheritedMemberTags]));
+  }, [profileData, tagsDisponibles]);
 
   const rawIsAuthorized = React.useMemo(() => {
     return canManageEvents(profileData, permissionsMatrice, effectiveUserTags);
@@ -927,7 +935,7 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
 
   // Ajout sécurisé à Google Calendar via calendarUtils (pas de récursion, pas de SyntheticEvent)
   const handleAddToGoogleCalendar = () => {
-    const eventDate = parseDateLinear(event.date);
+    const _eventDate = parseDateLinear(event.date);
     if (!event.date) {
       alert("Impossible d'ajouter à l'agenda : date invalide.");
       return;
@@ -1112,7 +1120,13 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
         logistiqueMalles: Array.isArray(editForm.logistiqueMalles) ? editForm.logistiqueMalles : [],
         mallesSpecifiques: Array.isArray(editForm.mallesSpecifiques) ? editForm.mallesSpecifiques : [],
         quotasPupitres: editForm.quotasPupitres || {},
-        contactsJourJ: editForm.contactsJourJ || {}
+        contactsJourJ: editForm.contactsJourJ || {},
+        ...(event.pollGroupId || event.status === 'sondage' ? {
+          pollMode: editForm.pollMode || event.pollMode || 'single_winner',
+          pollTargetPupitres: Array.isArray(editForm.pollTargetPupitres)
+            ? editForm.pollTargetPupitres
+            : (Array.isArray(event.pollTargetPupitres) ? event.pollTargetPupitres : [])
+        } : {})
       });
 
       setEditForm(prev => ({
@@ -1143,7 +1157,11 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
                   lienDocument: updatedLienDocument,
                   description: updatedDescription,
                   latitude: editForm.latitude ? Number(editForm.latitude) : null,
-                  longitude: editForm.longitude ? Number(editForm.longitude) : null
+                  longitude: editForm.longitude ? Number(editForm.longitude) : null,
+                  pollMode: editForm.pollMode || event.pollMode || 'single_winner',
+                  pollTargetPupitres: Array.isArray(editForm.pollTargetPupitres)
+                    ? editForm.pollTargetPupitres
+                    : (Array.isArray(event.pollTargetPupitres) ? event.pollTargetPupitres : [])
                 });
               }
             });
@@ -1818,6 +1836,9 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
               event={event}
               user={user}
               profileData={profileData}
+              allUsers={effectiveAllUsers}
+              pupitresList={pupitresList}
+              linkedInstruments={linkedInstruments}
               onNavigateToEventId={(targetId) => {
                 if (onNavigateToView) {
                   onNavigateToView('agenda', targetId);
@@ -1906,7 +1927,7 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
 
           {/* Contenu de l'Onglet Actif */}
           <div className="mt-2">
-            {activeTab === 'rsvp' && (
+            {activeTab === 'rsvp' && event.status !== 'sondage' && (
               <TabRsvp
                 event={sanitizedEvent}
                 user={user}

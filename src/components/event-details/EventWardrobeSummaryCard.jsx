@@ -19,7 +19,7 @@ import { useTranslation } from '../LanguageContext';
  */
 export default function EventWardrobeSummaryCard({
   event,
-  user,
+  user: _user,
   profileData,
   isAuthorized
 }) {

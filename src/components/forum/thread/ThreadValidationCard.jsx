@@ -24,7 +24,7 @@ export default function ThreadValidationCard({
   userId,
   profileData,
   isModeratorOrAdmin = false,
-  allUsers = []
+  allUsers: _allUsers = []
 }) {
   const { confirm } = useConfirm();
   const [submittingAction, setSubmittingAction] = useState(false);

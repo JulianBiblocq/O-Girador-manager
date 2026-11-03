@@ -64,6 +64,8 @@ export default function InventoryProjectsView({ groupId, isAuthorized, profileDa
       });
       list.sort((a, b) => (a.prenom || '').localeCompare(b.prenom || ''));
       setMembersList(list);
+    }, (err) => {
+      console.warn("InventoryProjectsView - Erreur lecture membres :", err);
     });
     return () => unsub();
   }, [groupId]);

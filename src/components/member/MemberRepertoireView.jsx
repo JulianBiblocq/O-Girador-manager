@@ -7,6 +7,7 @@ import MemberMediaModals from './MemberMediaModals';
 import { useSequencerFirestoreData } from '../../hooks/useSequencerFirestoreData';
 import { useDancadorChoreographies } from '../../hooks/useDancadorData';
 import { useRepertoireVaralDocs } from '../../hooks/useRepertoireVaralDocs';
+import { useCantadorToadas } from '../../hooks/useCantadorToadas';
 import { buildResolutionDictionaries, resolvePieceLiveTechnicalData, getPieceTablature } from '../../utils/repertoireMatcher';
 import { subscribeGroupTrainings, subscribeUserAisance } from '../../services/aisanceService';
 import { useTranslation } from '../LanguageContext';
@@ -16,7 +17,7 @@ import { useTranslation } from '../LanguageContext';
  * Présentation en grille responsive 2 colonnes (PC) / 1 colonne (mobile)
  * avec accordéons repliables et bascule globale Tout déplier / replier.
  */
-export default function MemberRepertoireView({ groupId, user, profileData, sequenceurUrl }) {
+export default function MemberRepertoireView({ groupId, user, profileData, sequenceurUrl, onNavigateToView = null }) {
   const { t } = useTranslation();
   const effectiveUserId = user?.uid || profileData?.uid || profileData?.id;
 
@@ -38,6 +39,7 @@ export default function MemberRepertoireView({ groupId, user, profileData, seque
   const { rhythms } = useSequencerFirestoreData(groupId);
   const { choreographies } = useDancadorChoreographies(groupId);
   const { toadasList, cultureDocsList } = useRepertoireVaralDocs(groupId);
+  const { toadaPacks } = useCantadorToadas(groupId);
 
   // 1. Écoute temps-réel du répertoire (filtré strictement sur la saison)
   useEffect(() => {
@@ -70,6 +72,8 @@ export default function MemberRepertoireView({ groupId, user, profileData, seque
       const pData = snap.exists() ? snap.data() : {};
       setRevisionsDemandees(pData.revisionsDemandees || {});
       setPiecesProgress(pData.piecesProgress || {});
+    }, (err) => {
+      console.warn("MemberRepertoireView - Erreur lecture parcours adhérent :", err);
     });
     return () => unsub();
   }, [effectiveUserId, groupId]);
@@ -92,7 +96,7 @@ export default function MemberRepertoireView({ groupId, user, profileData, seque
     try {
       const pId = new URLSearchParams(window.location.search).get('pieceId');
       if (pId) focusPiece(pId);
-    } catch (_e) {}
+    } catch {}
     const onCustom = (e) => focusPiece(e.detail?.pieceId);
     window.addEventListener('open-repertoire-piece', onCustom);
     return () => {
@@ -103,50 +107,20 @@ export default function MemberRepertoireView({ groupId, user, profileData, seque
   }, [pieces]);
 
   // 5. Dictionnaires de résolution pour mapping direct O(1)
-  const dicts = useMemo(() => {
-    return buildResolutionDictionaries({
-      catalogRhythms: rhythms,
-      toadasList,
-      cultureDocsList,
-      choreographies
-    });
-  }, [rhythms, toadasList, cultureDocsList, choreographies]);
+  const dicts = useMemo(
+    () => buildResolutionDictionaries({ catalogRhythms: rhythms, toadasList, cultureDocsList, choreographies, toadaPacks }),
+    [rhythms, toadasList, cultureDocsList, choreographies, toadaPacks]
+  );
 
-  // 5. Morceaux résolus et filtrés par la recherche
+  // 6. Morceaux résolus et filtrés par la recherche
   const resolvedPieces = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    return pieces
-      .map((p) => resolvePieceLiveTechnicalData(p, dicts))
-      .filter((p) => {
-        if (!p) return false;
-        if (!q) return true;
-        return (p.titre || '').toLowerCase().includes(q) || (p.notes || '').toLowerCase().includes(q);
-      });
+    return pieces.map((p) => resolvePieceLiveTechnicalData(p, dicts)).filter((p) => p && (!q || (p.titre || '').toLowerCase().includes(q) || (p.notes || '').toLowerCase().includes(q)));
   }, [pieces, dicts, searchQuery]);
 
-  // Vérifie si tous les morceaux sont actuellement dépliés
-  const allExpanded = useMemo(() => {
-    return resolvedPieces.length > 0 && resolvedPieces.every((p) => expandedPieces.has(p.id));
-  }, [resolvedPieces, expandedPieces]);
-
-  // Bascule globale : tout déplier ou tout replier
-  const handleToggleAllExpanded = () => {
-    if (allExpanded) {
-      setExpandedPieces(new Set());
-    } else {
-      setExpandedPieces(new Set(resolvedPieces.map((p) => p.id)));
-    }
-  };
-
-  // Bascule individuelle de l'accordéon d'un morceau
-  const handleToggleExpand = (pieceId) => {
-    setExpandedPieces((prev) => {
-      const next = new Set(prev);
-      if (next.has(pieceId)) next.delete(pieceId);
-      else next.add(pieceId);
-      return next;
-    });
-  };
+  const allExpanded = useMemo(() => resolvedPieces.length > 0 && resolvedPieces.every((p) => expandedPieces.has(p.id)), [resolvedPieces, expandedPieces]);
+  const handleToggleAllExpanded = () => setExpandedPieces(allExpanded ? new Set() : new Set(resolvedPieces.map((p) => p.id)));
+  const handleToggleExpand = (pieceId) => setExpandedPieces((prev) => { const next = new Set(prev); if (next.has(pieceId)) next.delete(pieceId); else next.add(pieceId); return next; });
 
   // Mutation : Demande de révision
   const handleToggleRevision = async (pieceId) => {
@@ -201,6 +175,7 @@ export default function MemberRepertoireView({ groupId, user, profileData, seque
               onOpenToada={(t, p) => setActiveToadaToView(t ? { ...t, piece: p } : null)}
               onOpenCulture={(c, p, docs) => setActiveCultureDocToView(c ? { ...c, piece: p, docs: docs || (c ? [c] : []) } : null)}
               sequenceurUrl={sequenceurUrl}
+              onNavigateToView={onNavigateToView}
             />
           ))}
         </div>
@@ -211,7 +186,7 @@ export default function MemberRepertoireView({ groupId, user, profileData, seque
         activeTablaturePiece={activeTablaturePiece} onCloseTablature={() => setActiveTablaturePiece(null)}
         activeToadaToView={activeToadaToView} onCloseToada={() => setActiveToadaToView(null)}
         activeCultureDocToView={activeCultureDocToView} onCloseCulture={() => setActiveCultureDocToView(null)}
-        groupId={groupId} profileData={profileData}
+        groupId={groupId} profileData={profileData} onNavigateToView={onNavigateToView}
       />
     </div>
   );

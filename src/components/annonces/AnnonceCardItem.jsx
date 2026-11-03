@@ -4,7 +4,8 @@ import CordelButton from '../CordelButton';
 import { XiloMegaphone, XiloClose } from '../XiloIcons';
 import ReadReceiptBadge from '../common/ReadReceiptBadge';
 import { useReadReceipt } from '../../hooks/useReadReceipt';
-import { resolveTargetUserDisplayNames } from '../../utils/announcementUtils';
+import { resolveTargetUserDisplayNames, resolveTargetRecipientIds } from '../../utils/announcementUtils';
+import { isMemberCaOrBureau } from '../../utils/memberUtils';
 
 /**
  * Composant de carte d'annonce avec observateur d'accusé de lecture
@@ -48,6 +49,20 @@ export default function AnnonceCardItem({
     return resolveTargetUserDisplayNames(ann.targetUserIds || [], allMembers);
   }, [ann.targetUserIds, allMembers]);
 
+  // Filtrage des destinataires réellement ciblés par l'annonce pour l'accusé de lecture
+  const targetedMembers = useMemo(() => {
+    if (!Array.isArray(allMembers) || allMembers.length === 0) return [];
+    const recipientIds = resolveTargetRecipientIds({
+      announcement: ann,
+      allMembers,
+      authorId: ann.auteurId
+    });
+    if (recipientIds.length === 0) return [];
+    const recipientSet = new Set(recipientIds);
+    return allMembers.filter((m) => recipientSet.has(m.id || m.uid));
+  }, [ann, allMembers]);
+
+  const isBureauOrCaViewer = isMemberCaOrBureau(profileData);
   const hasTargetUsers = Array.isArray(ann.targetUserIds) && ann.targetUserIds.length > 0;
 
   return (
@@ -126,8 +141,8 @@ export default function AnnonceCardItem({
             lectures={ann.lectures || {}}
             currentUserId={user?.uid}
             authorId={ann.auteurId}
-            isAuthorOrBureau={canPublish || (ann.auteurId && user?.uid === ann.auteurId)}
-            allMembers={allMembers}
+            isAuthorOrBureau={Boolean(canPublish || isBureauOrCaViewer || (ann.auteurId && user?.uid === ann.auteurId))}
+            allMembers={targetedMembers}
             title={`Accusé de lecture - ${ann.titre}`}
           />
           <span className="text-[7.5px] font-black text-cordel-master-dark/50">

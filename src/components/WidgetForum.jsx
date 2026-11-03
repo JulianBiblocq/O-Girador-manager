@@ -7,6 +7,7 @@ import { XiloChat, XiloMegaphone } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
 import { canUserReadForumChannel } from '../utils/permissionUtils';
 import { resolveEffectiveUserTags } from '../utils/tagUtils';
+import WidgetGeneralChatLiveBox from './forum/WidgetGeneralChatLiveBox';
 
 export default function WidgetForum({ groupId, profileData, breakGlassActive = false, tagsDisponibles = [], onOpen }) {
   const { t } = useTranslation();
@@ -155,6 +156,15 @@ export default function WidgetForum({ groupId, profileData, breakGlassActive = f
             {t('widgetForum.openForum') || "💬 Ouvrir le Porte-Voix"}
           </CordelButton>
         </div>
+
+        {/* Encart prioritaire : En direct — Tout le groupe */}
+        <WidgetGeneralChatLiveBox
+          groupId={groupId}
+          onOpenGeneralChat={(generalConvId) =>
+            onOpen({ conversationId: generalConvId, tab: 'groups' })
+          }
+          t={t}
+        />
 
         {/* Grille responsive des discussions (1 col sur mobile, 2 cols sur tablette, 3 cols sur PC) */}
         {loading ? (

@@ -16,7 +16,8 @@ export default function MemberMediaModals({
   activeCultureDocToView,
   onCloseCulture,
   groupId,
-  profileData
+  profileData,
+  onNavigateToView = null
 }) {
   return (
     <>
@@ -35,6 +36,7 @@ export default function MemberMediaModals({
         piece={activeToadaToView?.piece}
         groupId={groupId}
         profileData={profileData}
+        onNavigateToView={onNavigateToView}
       />
 
       {/* Modale d'apprentissage Culture (Option A Lire la fiche, Option B Quiz Culture, Sélecteur multi-fiches) */}
@@ -46,6 +48,7 @@ export default function MemberMediaModals({
         piece={activeCultureDocToView?.piece}
         groupId={groupId}
         profileData={profileData}
+        onNavigateToView={onNavigateToView}
       />
     </>
   );

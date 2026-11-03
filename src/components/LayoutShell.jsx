@@ -59,7 +59,7 @@ export default function LayoutShell({
   logoUrl, 
   associationName,
   associationData,
-  sequenceurUrl, 
+  sequenceurUrl: _sequenceurUrl, 
   currentPole, 
   onNavigateToPole,
   currentTab,
@@ -621,7 +621,7 @@ export default function LayoutShell({
     ? activePoleObj.tabs.filter(tab => isModuleEnabled(tab.id, activePoleObj.id))
     : [];
 
-  const ecosystemAccess = associationData?.ecosystemAccess || {
+  const _ecosystemAccess = associationData?.ecosystemAccess || {
     vitrine: true,
     sequenciador: true,
     dancador: true,
@@ -728,6 +728,7 @@ export default function LayoutShell({
               currentUser={profileData || currentProfile}
               groupId={currentGroupId}
               onNavigateToUrl={onNotificationNavigate}
+              unreadPrivateMessagesCount={unreadPrivateMessagesCount}
             />
 
             {/* Hamburger Menu Button */}
@@ -1069,6 +1070,7 @@ export default function LayoutShell({
                     currentUser={profileData || currentProfile}
                     groupId={currentGroupId}
                     onNavigateToUrl={onNotificationNavigate}
+                    unreadPrivateMessagesCount={unreadPrivateMessagesCount}
                   />
 
                   {canUseViewSimulator && (
@@ -1133,6 +1135,7 @@ export default function LayoutShell({
                       currentUser={profileData || currentProfile}
                       groupId={currentGroupId}
                       onNavigateToUrl={onNotificationNavigate}
+                      unreadPrivateMessagesCount={unreadPrivateMessagesCount}
                     />
 
                     {canUseViewSimulator && (

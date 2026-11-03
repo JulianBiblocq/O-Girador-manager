@@ -21,7 +21,7 @@ export default function EventCommentsSection({ event, user, profileData, autoFoc
   const [errorMsg, setErrorMsg] = useState('');
   const commentsEndRef = useRef(null);
   const commentsContainerRef = useRef(null);
-  const inputRef = useRef(null);
+  const _inputRef = useRef(null);
 
   const isViewerAdmin = profileData?.role === 'mestre' || 
                         profileData?.role === 'super-admin' || 

@@ -14,7 +14,7 @@ import { useConfirm } from '../context/ConfirmContext';
 export default function RichTextEditor({ 
   value = '', 
   onChange, 
-  placeholder = 'Rédigez votre message...', 
+  placeholder: _placeholder = 'Rédigez votre message...', 
   groupId = '',
   lienDepotForum = '',
   consignesDepotForum = '',

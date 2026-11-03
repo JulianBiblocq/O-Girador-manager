@@ -12,7 +12,9 @@ export default function PieceCultureModal({
   onClose,
   cultureDocs = [],
   initialDocId = null,
-  piece = null
+  piece = null,
+  groupId = null,
+  onNavigateToView = null
 }) {
   const { t } = useTranslation();
   const docsList = useMemo(() => {
@@ -116,7 +118,7 @@ export default function PieceCultureModal({
         {/* Corps : Affichage direct de CultureCard en lecture seule (zéro QCM) */}
         <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-4 bg-cordel-bg-light flex flex-col items-center">
           <div className="w-full max-w-[600px]">
-            <CultureCard culture={activeDoc} />
+            <CultureCard culture={activeDoc} groupId={groupId} onNavigateToView={onNavigateToView} />
           </div>
         </div>
       </div>

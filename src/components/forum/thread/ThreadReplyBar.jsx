@@ -33,7 +33,7 @@ export default function ThreadReplyBar({
   allUsers = [],
   thread,
   user,
-  isModeratorOrAdmin = false,
+  isModeratorOrAdmin: _isModeratorOrAdmin = false,
   replyingTo = null,
   onCancelReply,
   onOpenAddPoll,

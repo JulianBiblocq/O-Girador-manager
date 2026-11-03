@@ -170,6 +170,39 @@ export function findMatchingChoreography(pieceOrTitle, choreographies = []) {
 }
 
 /**
+ * Vérifie strictement si un chant ou morceau est validé et prêt dans Cantador
+ * pour autoriser l'affichage du bouton d'entraînement aux adhérents.
+ *
+ * @param {Object|null} item - Fiche Toada ou morceau du Répertoire
+ * @param {Object|null} [activeCantadorPack=null] - Pack Cantador résolu optionnel
+ * @returns {boolean}
+ */
+export function isCantadorValidated(item, activeCantadorPack = null) {
+  if (!item && !activeCantadorPack) return false;
+
+  if (
+    item?.cantadorValidated === true ||
+    item?.cantadorStatus === 'valide' ||
+    item?.activeToada?.cantadorValidated === true ||
+    item?.activeToada?.cantadorStatus === 'valide'
+  ) {
+    return true;
+  }
+
+  const pack = activeCantadorPack || item?.activeCantadorPack || null;
+  if (
+    pack &&
+    (pack.status === 'valide' ||
+      pack.status === 'publie' ||
+      pack.cantadorValidated === true)
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
  * Recherche le pack Cantador correspondant dans le catalogue des toada_packs.
  * Priorité :
  * 1. Identifiant exact (`id`, `cantadorToadaId`, `toadaId`)
@@ -397,14 +430,26 @@ export function resolvePieceLiveTechnicalData(piece, dicts) {
     activeCantadorPack?.id ||
     null;
 
-  const hasCantador = Boolean(resolvedCantadorToadaId || activeToada || piece.toadaDocId);
+  const hasCantador = isCantadorValidated(
+    { ...piece, activeToada },
+    activeCantadorPack
+  );
 
-  // 5. Audio actif (Preset > Toada > Morceau personnalisé > Repli ancien)
-  const activeAudioUrl =
-    (preset?.audioUrl || '').trim() ||
-    (activeToada?.audioUrl || '').trim() ||
-    (piece.audioUrl || '').trim() ||
-    null;
+  const isYtUrl = (u) => Boolean(u && typeof u === 'string' && /youtube(?:-nocookie)?\.com|youtu\.be/i.test(u));
+  const pickCleanAudio = (...candidates) => {
+    for (const c of candidates) {
+      const trimmed = (c || '').trim();
+      if (trimmed && !isYtUrl(trimmed)) return trimmed;
+    }
+    return null;
+  };
+
+  // 5. Audio actif (Preset > Toada > Morceau personnalisé — exclut strictement toute URL YouTube)
+  const activeAudioUrl = pickCleanAudio(
+    preset?.audioUrl,
+    activeToada?.audioUrl,
+    piece.audioUrl
+  );
 
   // 6. Présence de tablature (calcul paresseux : simple booléen)
   const hasTablature = Boolean(preset?.parsedData || piece.tablature);
@@ -427,10 +472,17 @@ export function resolvePieceLiveTechnicalData(piece, dicts) {
     piece.bpm ||
     null;
 
-  // 9. Vidéo active (supporte videoUrl, youtubeUrl à la racine ou dans metadata)
+  // 9. Vidéo active (supporte videoUrl, youtubeUrl à la racine, dans la Toada ou collée par erreur dans audioUrl)
+  const youtubeInAudio =
+    (isYtUrl(piece.audioUrl) ? piece.audioUrl.trim() : '') ||
+    (isYtUrl(activeToada?.audioUrl) ? activeToada.audioUrl.trim() : '');
+
   const activeVideoUrl =
     (piece.videoUrl || '').trim() ||
     (piece.youtubeUrl || '').trim() ||
+    (activeToada?.videoUrl || '').trim() ||
+    (activeToada?.youtubeUrl || '').trim() ||
+    youtubeInAudio ||
     (preset?.videoUrl || '').trim() ||
     (preset?.youtubeUrl || '').trim() ||
     (preset?.parsedData?.videoUrl || '').trim() ||

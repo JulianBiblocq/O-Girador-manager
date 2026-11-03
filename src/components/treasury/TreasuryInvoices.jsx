@@ -52,7 +52,7 @@ export default function TreasuryInvoices({ groupId, associationSettings, handleS
     .reduce((sum, i) => sum + (parseFloat(i.montantTTC || i.montantHT) || 0), 0);
 
   // Actions
-  const handleOpenCreate = (type = 'facture') => {
+  const handleOpenCreate = (_type = 'facture') => {
     setEditingInvoice(null);
     setIsFormOpen(true);
   };

@@ -16,7 +16,7 @@ export default function PollCard({
   onOpenEdit,
   onDelete,
   voting = false,
-  t
+  t: _t
 }) {
   const [showVoters, setShowVoters] = useState(false);
 
