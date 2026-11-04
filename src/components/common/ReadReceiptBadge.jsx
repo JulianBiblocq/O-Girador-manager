@@ -14,22 +14,47 @@ import { formatReadReceiptDate, getReadReceiptStats } from '../../services/readR
 
 export default function ReadReceiptBadge({
   lectures = {},
+  luPar = [],
   currentUserId,
   authorId,
   isAuthorOrBureau = false,
   allMembers = [],
-  title = "Accusé de lecture"
+  title = "Accusé de lecture",
+  compact = false
 }) {
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState('read'); // 'read' | 'unread'
 
   const isCurrentUserAuthor = currentUserId && authorId && currentUserId === authorId;
-  const isReadByCurrentUser = currentUserId && lectures && Boolean(lectures[currentUserId]);
+  const isReadByCurrentUser = Boolean(
+    currentUserId && (
+      (lectures && lectures[currentUserId]) ||
+      (Array.isArray(luPar) && luPar.includes(currentUserId))
+    )
+  );
 
-  const { readCount, readers, unreadMembers } = getReadReceiptStats(lectures, allMembers, authorId);
+  const { readCount: rawReadCount, readers, unreadMembers } = getReadReceiptStats(lectures, allMembers, authorId);
+  const readCount = Math.max(rawReadCount, Array.isArray(luPar) ? luPar.filter(id => id !== authorId).length : 0);
 
   // Si l'utilisateur n'est ni auteur ni membre du bureau, on n'affiche que la double coche discrète du lecteur
   if (!isCurrentUserAuthor && !isAuthorOrBureau) {
+    if (compact) {
+      return (
+        <span
+          className={`inline-flex items-center gap-0.5 text-[9.5px] font-black select-none px-1.5 py-0.5 rounded border border-encre-noire/20 bg-cordel-bg-light/80 ${
+            isReadByCurrentUser ? 'text-[var(--color-cordel-vert)]' : 'text-neutral-500 opacity-75'
+          }`}
+          title={
+            isReadByCurrentUser
+              ? (formatReadReceiptDate(lectures?.[currentUserId]?.luLe) || "Lu par vous")
+              : "Message non lu"
+          }
+        >
+          <span>{isReadByCurrentUser ? '✓✓' : '✓'}</span>
+          {readCount > 0 && <span>{readCount}</span>}
+        </span>
+      );
+    }
     if (!isReadByCurrentUser) {
       return (
         <span 
@@ -52,22 +77,27 @@ export default function ReadReceiptBadge({
 
   // Côté auteur / organisateur / bureau : compteur cliquable et volet Cordel
   return (
-    <div className="relative inline-flex items-center">
+    <div className="relative inline-flex items-center" onClick={(e) => e.stopPropagation()}>
       <button
         type="button"
-        onClick={() => setShowModal(true)}
-        className="text-[9px] font-bold text-cordel-wood hover:text-cordel-master-dark flex items-center gap-1 cursor-pointer bg-cordel-bg-light/60 hover:bg-cordel-bg-light px-1.5 py-0.5 rounded border border-dashed border-cordel-master-dark/25 transition-all select-none"
-        title="Voir les accusés de lecture détaillés"
+        onClick={(e) => {
+          e.stopPropagation();
+          setShowModal(true);
+        }}
+        className="text-[9.5px] font-black text-cordel-wood hover:text-cordel-master-dark flex items-center gap-1 cursor-pointer bg-cordel-bg-light/85 hover:bg-white px-1.5 py-0.5 rounded border border-dashed border-cordel-master-dark/35 transition-all select-none shadow-[1px_1px_0px_0px_rgba(24,23,22,0.12)]"
+        title="Voir la liste des membres qui ont lu l'annonce"
       >
         <span className={`font-black tracking-tighter ${readCount > 0 ? 'text-[var(--color-cordel-vert)]' : 'text-neutral-400'}`}>
           ✓✓
         </span>
         <span>
-          {readCount === 0 
-            ? "0 lecture" 
-            : readCount === 1 
-              ? "Lu par 1 membre" 
-              : `Lu par ${readCount} membres`}
+          {compact
+            ? readCount
+            : readCount === 0 
+              ? "0 lecture" 
+              : readCount === 1 
+                ? "Lu par 1 membre" 
+                : `Lu par ${readCount} membres`}
         </span>
       </button>
 

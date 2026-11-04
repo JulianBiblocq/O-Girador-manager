@@ -22,7 +22,7 @@ export default function PoleStickyHeaderBar({
   const poleId = activePoleObj?.id || currentPole;
 
   return (
-    <div className="flex flex-col w-full select-none shrink-0 sticky top-0 z-30 bg-[var(--cordel-bg,#F4ECD8)] pt-2.5 sm:pt-4 md:pt-5">
+    <div className="flex flex-col w-[calc(100%+1.25rem)] sm:w-[calc(100%+3.5rem)] md:w-[calc(100%+4.5rem)] -mx-2.5 px-2.5 sm:-mx-7 sm:px-7 md:-mx-9 md:px-9 select-none shrink-0 sticky top-0 z-30 bg-[var(--cordel-bg,#F4ECD8)] pt-2.5 sm:pt-4 md:pt-5">
       {/* ÉTAGE 1 : Barre d'utilitaires Desktop (invisible sur mobile) */}
       <div className="hidden lg:flex items-center justify-between w-full py-1.5 px-0 mb-0.5">
         <div className="flex items-center justify-start shrink-0">

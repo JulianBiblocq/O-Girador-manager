@@ -91,9 +91,9 @@ export default function Dashboard({
       case 'agenda':
       case 'forum':
       case 'anniversaires':
-        return 'col-span-1 md:col-span-2 lg:col-span-3 w-full max-w-full overflow-hidden';
+        return 'col-span-1 md:col-span-2 lg:col-span-3 w-full max-w-full';
       default:
-        return 'col-span-1 w-full max-w-full overflow-hidden';
+        return 'col-span-1 w-full max-w-full';
     }
   };
 
@@ -252,7 +252,7 @@ export default function Dashboard({
   }
 
   return (
-    <div className="flex flex-col gap-4 w-full max-w-full overflow-hidden">
+    <div className="flex flex-col gap-4 w-full max-w-full pt-1.5 md:pt-0">
 
       {/* Header Panel Mobile (sur grand écran, fusionné dans l'en-tête universel de LayoutShell) */}
       <div className="lg:hidden flex justify-center items-center py-2 border-b-2 border-dashed border-cordel-master-dark/30 select-none">

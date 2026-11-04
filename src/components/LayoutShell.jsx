@@ -378,7 +378,7 @@ export default function LayoutShell({
       if (enabledModules.costumerie === false) return false;
       if (enabledModules.costumerie === undefined && enabledModules.vestiaire === false) return false;
     }
-    if (['export-annu', 'secretariat-reports', 'studio-events', 'varal-secretariat', 'secretariat-documents'].includes(tabId) && enabledModules.secretariat === false) return false;
+    if (['export-annu', 'studio-events', 'varal-secretariat', 'secretariat-documents'].includes(tabId) && enabledModules.secretariat === false) return false;
     if (['studio-social', 'studio-lexique', 'varal-manager', 'newsletter', 'varal-photos', 'studio-communication'].includes(tabId) && enabledModules.studioSocial === false) return false;
     if (['reunion-manager', 'ca-reunions'].includes(tabId) && enabledModules.reunions === false) return false;
     if (tabId === 'forum' && enabledModules.forum === false) return false;
@@ -992,7 +992,7 @@ export default function LayoutShell({
         </div>
 
         {/* Zone de contenu principale (balise sémantique main avec espacement mobile strict pt-3 px-2.5) */}
-        <main id="main-content" className={`flex-1 overflow-y-auto overflow-x-hidden w-full max-w-full min-w-0 overscroll-contain touch-pan-y cordel-bg px-2.5 sm:px-7 md:px-9 ${isAccueil ? 'pt-3 sm:pt-6 md:pt-8' : 'pt-0'} pb-4 sm:pb-6 md:pb-8 flex flex-col justify-between`}>
+        <main id="main-content" className={`flex-1 overflow-y-auto overflow-x-hidden max-md:no-scrollbar w-full max-w-full min-w-0 overscroll-contain touch-pan-y cordel-bg px-2.5 sm:px-7 md:px-9 ${isAccueil ? 'pt-4 sm:pt-6 md:pt-8' : 'pt-0'} pb-4 sm:pb-6 md:pb-8 flex flex-col justify-between`}>
           <div className="flex flex-col gap-5 w-full max-w-full flex-1 min-w-0">
             
             {/* Break-Glass Active Warning Banner */}

@@ -8,20 +8,15 @@ import useHardwareBack from '../../hooks/useHardwareBack';
 import { doc, updateDoc, collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { notifyMembersByTag } from '../../utils/inAppNotificationService';
-import { getInstrumentIconPath } from '../../utils/instrumentUtils';
+import UserMaterielAccordionCards from './UserMaterielAccordionCards';
 
 /**
  * UserMateriel Component
  * Displays member's personal instruments, borrowed association gear, and local assigned instruments.
  */
-export default function UserMateriel({ user, profileData, onBack }) {
+export default function UserMateriel({ user, profileData }) {
   const { t } = useTranslation();
   const { myInstruments, loadingInst } = useUserProfile(user, profileData, t);
-
-  const translate = (key, fallback) => {
-    const val = t(key);
-    return val === key ? fallback : val;
-  };
 
   const personal = myInstruments.filter(inst => inst.proprietaire === user?.uid);
   const borrowed = myInstruments.filter(inst => 
@@ -228,186 +223,32 @@ export default function UserMateriel({ user, profileData, onBack }) {
     }
   };
 
-  const renderNomenclature = (inst) => {
-    if (!inst.nomenclature || !Array.isArray(inst.nomenclature) || inst.nomenclature.length === 0) return null;
-    
-    // Find the actual parts from allInventoryParts
-    const parts = inst.nomenclature.map(partId => allInventoryParts.find(p => p.id === partId)).filter(Boolean);
-    
-    if (parts.length === 0) return null;
-
-    return (
-      <div className="mt-2 pt-2 border-t border-dashed border-cordel-master-dark/20 flex flex-col gap-1">
-        <span className="text-[9px] font-bold uppercase tracking-wider text-cordel-wood mb-1">{t('logistics.partsNomenclatureDetail')}</span>
-        {parts.map(part => (
-          <div key={part.id} className="flex justify-between items-center bg-white/40 px-2 py-1 rounded text-[9px] border border-cordel-master-dark/10">
-            <span className="font-bold text-encre-noire truncate pr-2">{part.nom}</span>
-            {part.status === 'À réparer' ? (
-              <span className="text-red-600 font-bold shrink-0">{t('logistics.inRepair')}</span>
-            ) : (
-              <span className="text-green-700 font-bold shrink-0">{t('logistics.statusOk')}</span>
-            )}
-          </div>
-        ))}
-      </div>
-    );
-  };
-
   return (
-    <div className="flex flex-col gap-4 text-left max-w-3xl mx-auto w-full select-none">
-      {/* Header bar */}
-      <div className="flex justify-between items-center border-b-2 border-dashed border-cordel-master-dark/30 pb-2">
-        <CordelButton variant="default" onClick={onBack} className="px-3 py-1 text-xs font-bold uppercase">
-          ← {t('common.back')}
-        </CordelButton>
-        <span className="panel-title text-base font-black tracking-wider text-cordel-wood uppercase flex items-center gap-2">
-          🎺 {translate('userProfile.instrumentsHeading', 'Instruments & Assignations')}
-        </span>
-        <div className="w-12"></div>
-      </div>
-
-      {/* Description */}
+    <div className="flex flex-col gap-3.5 text-left max-w-3xl mx-auto w-full select-none">
+      {/* Notice d'introduction (sans bouton Retour redondant) */}
       <p className="text-xs text-cordel-master-dark opacity-75 text-left leading-relaxed">
         {t('logistics.myInstrumentsNotice')}
       </p>
 
-      {/* Content */}
+      {/* Contenu en 3 accordéons pliables (repliés par défaut si compteur à 0) */}
       {loadingInst ? (
         <div className="flex justify-center items-center py-12">
           <span className="text-xs uppercase tracking-widest font-black animate-pulse opacity-60">{t('logistics.loadingYourMaterial')}</span>
         </div>
       ) : (
-        <div className="flex flex-col gap-5 mt-2">
-          {/* 1. Instruments Personnels */}
-          <CordelCard variant="default" useExtremeBorder={true} className="p-4 flex flex-col gap-3 bg-cordel-bg">
-            <span className="font-extrabold text-xs uppercase tracking-wider text-cordel-wood flex items-center justify-between border-b border-dashed border-cordel-master-dark/15 pb-2">
-              <span>🎸 {t('userProfile.personalInsts')}</span>
-              <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px]">{personal.length}</span>
-            </span>
-
-            {personal.length === 0 ? (
-              <p className="text-xs italic text-cordel-master-dark/60 py-2">{t('userProfile.noPersonal')}</p>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
-                {personal.map(inst => (
-                  <CordelCard key={inst.id} variant="default" useExtremeBorder={false} className="p-3 bg-white/50 dark:bg-black/20 flex flex-col gap-3 text-left hover:shadow-[2px_2px_0px_0px_#181716] transition-all">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <img src={getInstrumentIconPath(inst.type)} alt={inst.type} className="w-6 h-6 object-contain shrink-0" />
-                      <div className="flex flex-col min-w-0">
-                        <span className="text-xs font-bold truncate text-encre-noire">{inst.nom}</span>
-                        <span className="text-[9px] opacity-70 text-cordel-master-dark truncate">{inst.type}</span>
-                      </div>
-                    </div>
-                    <span className={`theme-stamp-badge ${inst.etat === 'À réparer' ? 'border-red-600 text-red-600' : 'theme-stamp-badge-wood'} text-[7px] shrink-0`}>
-                      {inst.etat}
-                    </span>
-                  </div>
-                  {renderNomenclature(inst)}
-                </CordelCard>
-                ))}
-              </div>
-            )}
-          </CordelCard>
-
-          {/* 2. Matériel Emprunté */}
-          <CordelCard variant="default" useExtremeBorder={true} className="p-4 flex flex-col gap-3 bg-cordel-bg">
-            <span className="font-extrabold text-xs uppercase tracking-wider text-cordel-wood flex items-center justify-between border-b border-dashed border-cordel-master-dark/15 pb-2">
-              <span>🎒 {t('userProfile.borrowedInsts')}</span>
-              <span className="theme-stamp-badge theme-stamp-badge-dark text-[8px]">{borrowed.length}</span>
-            </span>
-
-            {borrowed.length === 0 ? (
-              <p className="text-xs italic text-cordel-master-dark/60 py-2">{t('userProfile.noBorrowed')}</p>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
-                {borrowed.map(inst => (
-                  <CordelCard key={inst.id} variant="default" useExtremeBorder={false} className="p-3 bg-white/50 dark:bg-black/20 flex flex-col gap-3 text-left hover:shadow-[2px_2px_0px_0px_#181716] transition-all">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <img src={getInstrumentIconPath(inst.type)} alt={inst.type} className="w-6 h-6 object-contain shrink-0" />
-                        <div className="flex flex-col min-w-0">
-                          <span className="text-xs font-bold truncate text-encre-noire">{inst.nom}</span>
-                          <span className="text-[9px] opacity-70 text-cordel-master-dark truncate">{t('logistics.stockAssociation')}</span>
-                        </div>
-                      </div>
-                      <span className={`theme-stamp-badge ${inst.etat === 'À réparer' ? 'border-red-600 text-red-600' : 'theme-stamp-badge-dark'} text-[7px] shrink-0`}>
-                        {inst.etat}
-                      </span>
-                    </div>
-
-                    {inst.kit && (
-                      <div className="text-[9px] italic text-cordel-wood bg-cordel-wood/5 p-1.5 rounded border-l-2 border-cordel-wood">
-                        <span className="font-bold">{t('logistics.kitColon')}</span> {inst.kit}
-                      </div>
-                    )}
-
-                    {renderNomenclature(inst)}
-
-                    <div className="flex justify-end pt-1 gap-2 flex-wrap">
-                      <button
-                        onClick={() => {
-                          setReportInstrumentModal(inst);
-                          setReportTargetPartId('ALL');
-                          setReportDescription('');
-                        }}
-                        className="text-[9px] font-bold uppercase tracking-wider text-red-600 border border-red-600/30 hover:bg-red-600/10 px-2 py-1 rounded transition-colors"
-                      >
-                        {t('logistics.btnReportBreakage')}
-                      </button>
-                      
-                      {inst.pendingMovement ? (
-                        <span className="text-[9px] font-bold text-cordel-ocre bg-cordel-ocre/10 px-2 py-1 rounded border border-cordel-ocre/30">
-                          {t('logistics.waitingLogisticsValidation')}
-                        </span>
-                      ) : (
-                        <button
-                          onClick={() => setMovementModalInst(inst)}
-                          className="text-[9px] font-bold uppercase tracking-wider text-cordel-wood border border-cordel-wood/30 hover:bg-cordel-wood/10 px-2 py-1 rounded transition-colors"
-                        >
-                          {t('logistics.btnDeclareMovement')}
-                        </button>
-                      )}
-                    </div>
-                  </CordelCard>
-                ))}
-              </div>
-            )}
-          </CordelCard>
-
-          {/* 3. Instruments assignés au local */}
-          <CordelCard variant="default" useExtremeBorder={true} className="p-4 flex flex-col gap-3 bg-cordel-bg">
-            <span className="font-extrabold text-xs uppercase tracking-wider text-cordel-wood flex items-center justify-between border-b border-dashed border-cordel-master-dark/15 pb-2">
-              <span>🏠 {t('userProfile.localAssignedInsts')}</span>
-              <span className="theme-stamp-badge theme-stamp-badge-ocre text-[8px]">{localAssigned.length}</span>
-            </span>
-
-            {localAssigned.length === 0 ? (
-              <p className="text-xs italic text-cordel-master-dark/60 py-2">{t('userProfile.noLocal')}</p>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
-                {localAssigned.map(inst => (
-                  <CordelCard key={inst.id} variant="default" useExtremeBorder={false} className="p-3 bg-white/50 dark:bg-black/20 flex flex-col gap-3 text-left hover:shadow-[2px_2px_0px_0px_#181716] transition-all">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <img src={getInstrumentIconPath(inst.type)} alt={inst.type} className="w-6 h-6 object-contain shrink-0" />
-                        <div className="flex flex-col min-w-0">
-                          <span className="text-xs font-bold truncate text-encre-noire">{inst.nom}</span>
-                          <span className="text-[9px] opacity-70 text-cordel-master-dark truncate">{t('logistics.locationAtLocal')}</span>
-                        </div>
-                      </div>
-                      <span className="theme-stamp-badge theme-stamp-badge-wood text-[7px] shrink-0">
-                        {inst.etat}
-                      </span>
-                    </div>
-                    {renderNomenclature(inst)}
-                  </CordelCard>
-                ))}
-              </div>
-            )}
-          </CordelCard>
-
-        </div>
+        <UserMaterielAccordionCards
+          personal={personal}
+          borrowed={borrowed}
+          localAssigned={localAssigned}
+          allInventoryParts={allInventoryParts}
+          onOpenReportModal={(inst) => {
+            setReportInstrumentModal(inst);
+            setReportTargetPartId('ALL');
+            setReportDescription('');
+          }}
+          onOpenMovementModal={(inst) => setMovementModalInst(inst)}
+          t={t}
+        />
       )}
 
       {/* MODAL DE DECLARATION DE MOUVEMENT */}

@@ -1,19 +1,14 @@
 import React, { useState } from 'react';
 import { getValidEventThumbnailUrl } from '../../utils/videoUtils';
+import { resolveEventStampKey } from '../../utils/eventStampUtils';
+import EventStampSVG from './EventStampSVG';
 
 /**
- * Composant d'affichage résilient pour la vignette ou miniature d'un événement.
- * 
- * Avantages techniques :
- * 1. Filtrage préventif des URLs de CDN de réseaux sociaux (Facebook/Instagram) expirées (évite l'erreur HTTP 403 en console).
- * 2. Mémorisation de l'erreur via l'état React pour ne jamais retenter de requêter une image morte lors des re-renders.
- * 3. Repli visuel thématique Cordel élégant (icône de discipline ou type d'événement).
- * 4. Badge filigrane vidéo Play si un lien vidéo est associé.
- *
- * @param {Object} props
- * @param {Object} props.event - Objet événement Firestore
- * @param {Function} [props.onSelect] - Callback facultatif lors du clic
- * @param {string} [props.className] - Classes CSS personnalisées
+ * Composant d'affichage résilient pour la vignette ou miniature d'un événement :
+ * 1. Affiche l'image personnalisée (upload, Varal ou URL) si disponible et valide.
+ * 2. Sinon, affiche automatiquement le tampon vectoriel Cordel (EventStampSVG) correspondant
+ *    au choix manuel (`stampIcon`) ou aux propriétés de l'événement (Apito, Alfaia, Caixa, Gonguê, Agbê, Danse, Prestation, Stage, Réunion, Lutherie).
+ * 3. Ajoute le badge Play filigrane si un lien vidéo est associé.
  */
 export default function EventThumbnail({ event, onSelect, className = '' }) {
   const [hasError, setHasError] = useState(false);
@@ -22,9 +17,10 @@ export default function EventThumbnail({ event, onSelect, className = '' }) {
 
   const videoUrl = event.socialVideoUrl || event.videoUrl;
   const isVideo = Boolean(videoUrl || event.socialThumbnailUrl);
-  
+
   // Résolution sécurisée de l'URL (élimine d'office les liens fbcdn expirés)
   const thumbnailUrl = !hasError ? getValidEventThumbnailUrl(event) : null;
+  const resolvedStampKey = resolveEventStampKey(event);
 
   const handleContainerClick = (e) => {
     if (videoUrl) {
@@ -35,28 +31,11 @@ export default function EventThumbnail({ event, onSelect, className = '' }) {
     }
   };
 
-  const getFallbackIcon = () => {
-    switch (event.type) {
-      case 'prestation':
-        return '🎭';
-      case 'repetition':
-        return '🥁';
-      case 'stage':
-        return '🎓';
-      case 'atelier':
-        return '🔨';
-      case 'reunion':
-        return '📅';
-      default:
-        return '📆';
-    }
-  };
-
   return (
     <div
       className={`
-        w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 shrink-0 aspect-square min-w-[48px] min-h-[48px] rounded-[6px_8px_5px_7px] border border-encre-noire/30 bg-[#fdfaf2] dark:bg-[#1f1b18] 
-        overflow-hidden flex items-center justify-center select-none shadow-[1px_1px_0px_0px_#181716] relative group cursor-pointer
+        w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 shrink-0 aspect-square min-w-[48px] min-h-[48px] rounded-[6px_8px_5px_7px] border-2 border-encre-noire bg-[#F4ECD8]
+        overflow-hidden flex items-center justify-center select-none shadow-[1.5px_1.5px_0px_0px_#181716] relative group cursor-pointer
         ${className}
       `}
       onClick={handleContainerClick}
@@ -65,7 +44,7 @@ export default function EventThumbnail({ event, onSelect, className = '' }) {
       {thumbnailUrl ? (
         <img
           src={thumbnailUrl}
-          alt={event.title || "Visuel"}
+          alt={event.titre || event.title || 'Visuel'}
           width="64"
           height="64"
           loading="lazy"
@@ -74,9 +53,10 @@ export default function EventThumbnail({ event, onSelect, className = '' }) {
           className="w-full h-full object-cover group-hover:scale-105 transition-transform"
         />
       ) : (
-        <span className="text-lg opacity-40 grayscale select-none pointer-events-none">
-          {getFallbackIcon()}
-        </span>
+        <EventStampSVG
+          stampKey={resolvedStampKey}
+          className="w-full h-full group-hover:scale-105 transition-transform pointer-events-none"
+        />
       )}
 
       {/* Badge Play filigrane discret pour les événements intégrant un lien vidéo */}

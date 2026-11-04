@@ -24,7 +24,16 @@ export default function WidgetAnniversaires({ groupId, currentUser, profileData,
   const { t } = useTranslation();
   const [birthdayMembers, setBirthdayMembers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const nowDate = new Date();
+  const birthdaysStorageKey = `birthdays_collapsed_${nowDate.getFullYear()}_${String(nowDate.getMonth() + 1).padStart(2, '0')}`;
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    try { return window.localStorage.getItem(birthdaysStorageKey) === 'true'; } catch { return false; }
+  });
+  const handleToggleBirthdays = () => setIsCollapsed(prev => {
+    const next = !prev;
+    try { window.localStorage.setItem(birthdaysStorageKey, String(next)); } catch { /* Ignorer localStorage */ }
+    return next;
+  });
 
   const currentUserId = currentUser?.uid || profileData?.uid;
 
@@ -112,7 +121,7 @@ export default function WidgetAnniversaires({ groupId, currentUser, profileData,
       <div className="flex flex-col gap-3 text-left">
         {/* En-tête cliquable avec flèche de repliage (accordéon) */}
         <div 
-          onClick={() => setIsCollapsed(prev => !prev)}
+          onClick={handleToggleBirthdays}
           className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-1.5 cursor-pointer select-none group"
           title={isCollapsed ? "Déplier les anniversaires" : "Replier les anniversaires"}
         >

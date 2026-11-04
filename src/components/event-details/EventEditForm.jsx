@@ -6,13 +6,14 @@ import CordelButton from '../CordelButton';
 import EventFormFields from '../agenda/EventFormFields';
 import ImportAgendaModal from '../agenda/ImportAgendaModal';
 import EventRoadbookFormSection from './EventRoadbookFormSection';
+import EventCoverImageEditor from './EventCoverImageEditor';
 import { DEFAULT_CUSTOM_CATEGORIES } from '../../utils/categoryUtils';
 import { useTranslation } from '../LanguageContext';
 
 /**
  * EventEditForm - Formulaire de modification d'événement unifié
  * Repose sur le composant modulaire EventFormFields (3 étages)
- * et ajoute la gestion de l'image de couverture, le roadbook et la suppression.
+ * et délègue la gestion de l'image de couverture / Tampon Cordel à EventCoverImageEditor.
  */
 export default function EventEditForm({
   editForm,
@@ -74,7 +75,7 @@ export default function EventEditForm({
       photos.sort((a, b) => new Date(b.dateAjout || 0) - new Date(a.dateAjout || 0));
       setVaralPhotos(photos);
     }, (err) => {
-      console.error("EventEditForm - Erreur snapshot documents :", err);
+      console.error('EventEditForm - Erreur snapshot documents :', err);
     });
     return () => unsubscribe();
   }, [groupId]);
@@ -95,7 +96,7 @@ export default function EventEditForm({
     const list = [];
     const seen = new Set();
 
-    (wardrobeCostumes || []).forEach(item => {
+    (wardrobeCostumes || []).forEach((item) => {
       const name = typeof item === 'string' ? item : (item.name || item.title || item.titre || item.type || '');
       if (name && !seen.has(name)) {
         seen.add(name);
@@ -104,7 +105,7 @@ export default function EventEditForm({
       }
     });
 
-    (dressCodes || []).forEach(dc => {
+    (dressCodes || []).forEach((dc) => {
       const name = typeof dc === 'string' ? dc : (dc.name || dc.title || dc.type || '');
       if (name && !seen.has(name)) {
         seen.add(name);
@@ -118,7 +119,7 @@ export default function EventEditForm({
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setEditForm(prev => ({ ...prev, [name]: value }));
+    setEditForm((prev) => ({ ...prev, [name]: value }));
   };
 
   return (
@@ -152,7 +153,7 @@ export default function EventEditForm({
           t={t}
         />
 
-        {/* Section Feuille de route / Roadbook (Parcours, Scène, Hébergement, Checklist, Contacts) */}
+        {/* Section Feuille de route / Roadbook */}
         <EventRoadbookFormSection
           editForm={editForm}
           setEditForm={setEditForm}
@@ -162,140 +163,20 @@ export default function EventEditForm({
           t={t}
         />
 
-        {/* Section Image / Affiche de l'événement */}
+        {/* Section Image / Affiche & Tampon Cordel */}
         {editConfig.agendaEnableImage !== false && (
-          <div className="flex flex-col gap-2 pt-4 mt-2 border-t border-dashed border-cordel-master-dark/20 text-left">
-            <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              {translate('widgetAgenda.imageUrlLabel', "Image de l'événement / Affiche")}
-            </label>
-
-            <div className="flex gap-2 mb-1 flex-wrap">
-              <button
-                type="button"
-                onClick={() => setImageMode && setImageMode('upload')}
-                className={`text-[9px] uppercase font-black px-2.5 py-1.5 rounded border transition-all cursor-pointer ${
-                  imageMode === 'upload'
-                    ? 'bg-cordel-wood text-white border-encre-noire shadow-xs'
-                    : 'bg-white/50 border-dashed border-stone-300 text-stone-700'
-                }`}
-              >
-                📸 {tr('agenda.uploadClassicTab') || "Upload classique"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setImageMode && setImageMode('varal')}
-                className={`text-[9px] uppercase font-black px-2.5 py-1.5 rounded border transition-all cursor-pointer ${
-                  imageMode === 'varal'
-                    ? 'bg-cordel-wood text-white border-encre-noire shadow-xs'
-                    : 'bg-white/50 border-dashed border-stone-300 text-stone-700'
-                }`}
-              >
-                🪢 {tr('agenda.fromVaralTab', { count: varalPhotos.length }) || `Depuis le Varal (${varalPhotos.length})`}
-              </button>
-              <button
-                type="button"
-                onClick={() => setImageMode && setImageMode('url')}
-                className={`text-[9px] uppercase font-black px-2.5 py-1.5 rounded border transition-all cursor-pointer ${
-                  imageMode === 'url'
-                    ? 'bg-cordel-wood text-white border-encre-noire shadow-xs'
-                    : 'bg-white/50 border-dashed border-stone-300 text-stone-700'
-                }`}
-              >
-                🔗 {tr('agenda.externalUrlTab') || "Lien URL externe"}
-              </button>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-3">
-                {editForm.imageUrl && (
-                  <div className="w-14 h-14 border border-encre-noire rounded-[4px] overflow-hidden bg-white shrink-0 shadow-xs">
-                    <img src={editForm.imageUrl} alt="Affiche preview" className="w-full h-full object-cover" />
-                  </div>
-                )}
-
-                {imageMode === 'upload' && (
-                  <label className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-2 rounded shadow-xs hover:brightness-95 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5 shrink-0 select-none">
-                    {uploadingImage ? "⏳ Téléversement..." : "📸 Choisir un fichier"}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      disabled={savingEvent || uploadingImage}
-                      onChange={handleImageUpload}
-                      className="hidden"
-                    />
-                  </label>
-                )}
-
-                {imageMode === 'url' && (
-                  <input
-                    type="url"
-                    value={editForm.imageUrl || ''}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, imageUrl: e.target.value }))}
-                    disabled={savingEvent}
-                    placeholder="https://..."
-                    className="theme-input text-xs py-1.5 px-2 flex-1"
-                  />
-                )}
-
-                {editForm.imageUrl && (
-                  <button
-                    type="button"
-                    onClick={() => setEditForm(prev => ({ ...prev, imageUrl: '' }))}
-                    className="text-[10px] font-bold text-red-700 hover:underline select-none cursor-pointer"
-                  >
-                    {tr('agenda.btnRemoveImage') || "Supprimer l'image"}
-                  </button>
-                )}
-              </div>
-
-              {imageMode === 'varal' && (
-                <div className="flex flex-col gap-2 p-2 bg-cordel-bg/70 border border-dashed border-cordel-master-dark/30 rounded">
-                  {varalPhotos.length === 0 ? (
-                    <span className="text-[10px] italic opacity-60">
-                      Aucune photo trouvée dans la médiathèque du Varal.
-                    </span>
-                  ) : (
-                    <>
-                      <select
-                        value={editForm.imageUrl || ''}
-                        onChange={(e) => setEditForm(prev => ({ ...prev, imageUrl: e.target.value }))}
-                        className="theme-input w-full text-xs font-bold py-1.5 bg-white"
-                      >
-                        <option value="">-- Choisir une photo du Varal --</option>
-                        {varalPhotos.map((p) => (
-                          <option key={p.id} value={p.fileUrl}>
-                            {p.titre} ({p.categorie})
-                          </option>
-                        ))}
-                      </select>
-
-                      {/* Galerie de miniatures cliquables */}
-                      <div className="flex items-center gap-1.5 overflow-x-auto py-1">
-                        {varalPhotos.slice(0, 10).map((p) => {
-                          const isSelected = editForm.imageUrl === p.fileUrl;
-                          return (
-                            <button
-                              key={p.id}
-                              type="button"
-                              onClick={() => setEditForm(prev => ({ ...prev, imageUrl: p.fileUrl }))}
-                              className={`w-12 h-12 rounded border-2 shrink-0 overflow-hidden cursor-pointer transition-all ${
-                                isSelected
-                                  ? 'border-encre-noire ring-2 ring-cordel-wood scale-105 shadow-md'
-                                  : 'border-stone-300 opacity-80 hover:opacity-100 hover:border-encre-noire'
-                              }`}
-                              title={p.titre}
-                            >
-                              <img src={p.fileUrl} alt={p.titre} className="w-full h-full object-cover" loading="lazy" />
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
+          <EventCoverImageEditor
+            editForm={editForm}
+            setEditForm={setEditForm}
+            imageMode={imageMode}
+            setImageMode={setImageMode}
+            uploadingImage={uploadingImage}
+            handleImageUpload={handleImageUpload}
+            varalPhotos={varalPhotos}
+            savingEvent={savingEvent}
+            translate={translate}
+            tr={tr}
+          />
         )}
 
         {/* Actions du formulaire de modification */}
@@ -307,7 +188,7 @@ export default function EventEditForm({
             disabled={savingEvent}
             className="w-full py-3 text-xs font-black uppercase tracking-widest"
           >
-            {savingEvent ? tr('common.saving') : "💾 " + tr('agenda.btnUpdateEvent')}
+            {savingEvent ? tr('common.saving') : '💾 ' + tr('agenda.btnUpdateEvent')}
           </CordelButton>
 
           <CordelButton
@@ -330,8 +211,8 @@ export default function EventEditForm({
           onClose={() => setIsImportModalOpen(false)}
           groupId={editForm.groupId || groupId}
           onSelectTemplate={(template) => {
-            setEditForm(prev => {
-              const formattedPoints = (template.points || []).map(p => {
+            setEditForm((prev) => {
+              const formattedPoints = (template.points || []).map((p) => {
                 if (typeof p === 'object' && p.titre) return p;
                 return { id: Date.now().toString() + Math.random().toString(36).substring(2, 5), titre: String(p), notesCR: '' };
               });

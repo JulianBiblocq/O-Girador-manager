@@ -32,6 +32,12 @@ export function resolveMemberPollPupitres(user, targetPupitres = [], linkedInstr
   };
 }
 
+/** Retourne le pupitre principal résolu d'un adhérent parmi une liste de pupitres cibles */
+export function getMemberPrimaryPupitre(user, targetPupitres = [], linkedInstruments = []) {
+  const { primaryPupitre, primaryInstrument } = resolveMemberPollPupitres(user, targetPupitres, linkedInstruments);
+  return primaryPupitre || primaryInstrument || '';
+}
+
 /** Construit la matrice croisée (Dates x Pupitres) pour un sondage de répartition */
 export function buildPollPupitreMatrix({ pollEvents = [], allUsers = [], targetPupitres = [], linkedInstruments = [] }) {
   const activeMembers = (allUsers || [])

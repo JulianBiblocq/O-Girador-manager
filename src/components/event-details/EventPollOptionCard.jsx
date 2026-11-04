@@ -2,10 +2,11 @@ import React from 'react';
 import CordelButton from '../CordelButton';
 import XiloAvatar from '../XiloAvatar';
 import { getEffectiveEventVotes } from '../../utils/pollVoteUtils';
+import { checkRegistrationDeadlinePassed } from '../../hooks/useEventRSVP';
 
 /**
  * Carte individuelle d'un créneau de sondage dans EventPollSection.
- * Permet de voter (Dispo / Indispo), de visualiser les votants et de retenir la date.
+ * Verrouille individuellement chaque créneau ayant dépassé sa dateLimiteInscription (< 140 lignes).
  */
 export default function EventPollOptionCard({
   optionEv,
@@ -24,6 +25,8 @@ export default function EventPollOptionCard({
   const isCurrentPageOption = optionEv.id === currentEventId;
   const votes = getEffectiveEventVotes(optionEv);
   const userVote = userUid ? votes[userUid] : null;
+  const isSlotDeadlinePassed = checkRegistrationDeadlinePassed(optionEv);
+  const isVotingLockedForMember = isSlotDeadlinePassed && !isSuperAdminOrMestre;
 
   const dispoUserIds = Object.keys(votes).filter((uid) => votes[uid] === 'dispo');
   const indispoUserIds = Object.keys(votes).filter((uid) => votes[uid] === 'indispo');
@@ -39,49 +42,40 @@ export default function EventPollOptionCard({
       <div className="flex items-center gap-3 min-w-0">
         <span
           className={`w-6 h-6 rounded-full border-2 border-encre-noire flex items-center justify-center text-[10px] font-black shrink-0 ${
-            isCurrentPageOption
-              ? 'bg-[var(--color-cordel-ocre,#c05621)] text-white'
-              : 'bg-cordel-bg text-encre-noire'
+            isCurrentPageOption ? 'bg-[var(--color-cordel-ocre,#c05621)] text-white' : 'bg-cordel-bg text-encre-noire'
           }`}
         >
           {optionEv.optionIndex || '?'}
         </span>
 
         <div className="flex flex-col">
-          <div className="flex items-center gap-2">
-            <span className="font-extrabold text-xs text-encre-noire">
-              📅 {formatDate(optionEv.date)}
-            </span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-extrabold text-xs text-encre-noire">📅 {formatDate(optionEv.date)}</span>
             {isCurrentPageOption && (
               <span className="text-[8px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-300 px-1.5 py-0.2 rounded">
                 Fiche ouverte
+              </span>
+            )}
+            {isSlotDeadlinePassed && (
+              <span className="text-[8px] font-black uppercase tracking-wider bg-stone-200 text-stone-800 border border-stone-400 px-1.5 py-0.2 rounded">
+                🔒 Clôturé
               </span>
             )}
           </div>
 
           <div className="flex items-center gap-3 mt-1 text-[9px] font-bold text-cordel-master-dark">
             <div className="flex items-center gap-1">
-              <span className="text-[var(--color-cordel-vert,#2d6a4f)] font-extrabold">
-                ✅ {dispoUserIds.length} dispo
-              </span>
+              <span className="text-[var(--color-cordel-vert,#2d6a4f)] font-extrabold">✅ {dispoUserIds.length} dispo</span>
               {dispoUserIds.length > 0 && (
                 <div className="flex -space-x-1 ml-1">
                   {dispoUserIds.slice(0, 4).map((uid) => (
-                    <XiloAvatar
-                      key={uid}
-                      src={allUsersMap[uid]?.photoURL}
-                      name={allUsersMap[uid]?.name}
-                      size={14}
-                    />
+                    <XiloAvatar key={uid} src={allUsersMap[uid]?.photoURL} name={allUsersMap[uid]?.name} size={14} />
                   ))}
                 </div>
               )}
             </div>
-
             <div className="flex items-center gap-1 opacity-75">
-              <span className="text-[var(--color-cordel-rouge,#8b2a1a)]">
-                ❌ {indispoUserIds.length} indispo
-              </span>
+              <span className="text-[var(--color-cordel-rouge,#8b2a1a)]">❌ {indispoUserIds.length} indispo</span>
             </div>
           </div>
         </div>
@@ -99,31 +93,36 @@ export default function EventPollOptionCard({
         )}
 
         {eligible && (
-          <div className="flex gap-1">
-            <button
-              type="button"
-              onClick={() => onVote(optionEv, 'dispo')}
-              className={`text-[9px] font-extrabold uppercase px-2.5 py-1 rounded border transition-all cursor-pointer flex items-center gap-1 ${
-                userVote === 'dispo'
-                  ? 'bg-[var(--color-cordel-vert,#2d6a4f)] text-white border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
-                  : 'bg-white text-[var(--color-cordel-vert,#2d6a4f)] border-emerald-300 hover:bg-emerald-50'
-              }`}
-            >
-              ✅ {userVote === 'dispo' ? 'Dispo !' : 'Dispo'}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => onVote(optionEv, 'indispo')}
-              className={`text-[9px] font-extrabold uppercase px-2.5 py-1 rounded border transition-all cursor-pointer flex items-center gap-1 ${
-                userVote === 'indispo'
-                  ? 'bg-[var(--color-cordel-rouge,#8b2a1a)] text-white border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
-                  : 'bg-white text-[var(--color-cordel-rouge,#8b2a1a)] border-red-300 hover:bg-red-50'
-              }`}
-            >
-              ❌ {userVote === 'indispo' ? 'Indispo !' : 'Indispo'}
-            </button>
-          </div>
+          isVotingLockedForMember ? (
+            <span className="text-[9px] font-black uppercase px-2.5 py-1 rounded border border-stone-300 bg-stone-100 text-stone-600 select-none">
+              🔒 Clôturé {userVote === 'dispo' ? '(Dispo)' : userVote === 'indispo' ? '(Indispo)' : ''}
+            </span>
+          ) : (
+            <div className="flex gap-1">
+              <button
+                type="button"
+                onClick={() => onVote(optionEv, 'dispo')}
+                className={`text-[9px] font-extrabold uppercase px-2.5 py-1 rounded border transition-all cursor-pointer flex items-center gap-1 ${
+                  userVote === 'dispo'
+                    ? 'bg-[var(--color-cordel-vert,#2d6a4f)] text-white border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+                    : 'bg-white text-[var(--color-cordel-vert,#2d6a4f)] border-emerald-300 hover:bg-emerald-50'
+                }`}
+              >
+                ✅ {userVote === 'dispo' ? 'Dispo !' : 'Dispo'}
+              </button>
+              <button
+                type="button"
+                onClick={() => onVote(optionEv, 'indispo')}
+                className={`text-[9px] font-extrabold uppercase px-2.5 py-1 rounded border transition-all cursor-pointer flex items-center gap-1 ${
+                  userVote === 'indispo'
+                    ? 'bg-[var(--color-cordel-rouge,#8b2a1a)] text-white border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+                    : 'bg-white text-[var(--color-cordel-rouge,#8b2a1a)] border-red-300 hover:bg-red-50'
+                }`}
+              >
+                ❌ {userVote === 'indispo' ? 'Indispo !' : 'Indispo'}
+              </button>
+            </div>
+          )
         )}
 
         {isSuperAdminOrMestre && !isPupitreDispatch && (
@@ -141,4 +140,3 @@ export default function EventPollOptionCard({
     </div>
   );
 }
-

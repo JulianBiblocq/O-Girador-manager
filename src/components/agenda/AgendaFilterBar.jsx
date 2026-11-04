@@ -2,9 +2,41 @@ import React from 'react';
 import { XiloEye, XiloEyeOff } from '../XiloIcons';
 
 /**
- * AgendaFilterBar provides a 2-tier filtering system for the Agenda:
- * - Tier 1: Discipline filtrer (Tous, Percussion, Danse)
- * - Tier 2: Event type filtrer (Prestation, Répétition, Stage, etc.) with hide/show toggles
+ * Calcule le résumé visuel des filtres actifs de l'Agenda pour le bouton tiroir mobile.
+ */
+export function getActiveAgendaFilterSummary({ disciplineFilter, selectedTypeFilter, hiddenTypes = [], t }) {
+  const activeLabels = [];
+  if (disciplineFilter === 'percussion') {
+    activeLabels.push(t ? t('agendaFilter.percussion') : 'Percussion');
+  } else if (disciplineFilter === 'dance') {
+    activeLabels.push(t ? t('agendaFilter.dance') : 'Danse');
+  }
+
+  const standardTypes = {
+    prestation: t ? t('widgetAgenda.typePrestation') : 'Prestation',
+    repetition: t ? t('widgetAgenda.typeRepetition') : 'Répétition',
+    stage: t ? t('widgetAgenda.typeStage') : 'Stage',
+    atelier: t ? t('widgetAgenda.typeAtelier') : 'Atelier',
+    reunion: t ? t('widgetAgenda.typeReunion') : 'Réunion'
+  };
+
+  if (selectedTypeFilter && selectedTypeFilter !== 'all' && selectedTypeFilter !== 'custom') {
+    activeLabels.push(standardTypes[selectedTypeFilter] || selectedTypeFilter);
+  } else if (Array.isArray(hiddenTypes) && hiddenTypes.length > 0) {
+    activeLabels.push(`${hiddenTypes.length} masqué${hiddenTypes.length > 1 ? 's' : ''}`);
+  }
+
+  return {
+    hasActiveFilter: activeLabels.length > 0,
+    activeCount: activeLabels.length,
+    summaryText: activeLabels.length > 0 ? `${activeLabels.join(' • ')} (${activeLabels.length})` : ''
+  };
+}
+
+/**
+ * Barre de filtrage à 2 étages pour l'Agenda (Discipline + Type d'événement).
+ * Sur PC/Tablette (>= 768px), affichée directement en ligne.
+ * Sur Mobile (< 768px), affichée dans un tiroir replié par défaut commandé depuis l'en-tête.
  */
 export default function AgendaFilterBar({
   disciplineFilter,
@@ -14,17 +46,24 @@ export default function AgendaFilterBar({
   hiddenTypes,
   setHiddenTypes,
   eventTypes,
+  isMobileOpen = false,
   t
 }) {
   return (
-    <div className="flex flex-col gap-2 select-none text-[9px] font-black uppercase mt-1 pl-1">
+    <div
+      className={`${
+        isMobileOpen
+          ? 'flex max-md:p-2.5 max-md:bg-cordel-bg-light max-md:border-2 max-md:border-encre-noire max-md:rounded-[6px_10px_6px_8px] max-md:shadow-[2px_2px_0px_0px_#181716]'
+          : 'hidden md:flex'
+      } flex-col gap-2 select-none text-[9px] font-black uppercase mt-1 pl-1`}
+    >
       {/* Étage 1 : Filtrage par Discipline (Percussion / Danse) */}
       <div className="flex items-center gap-1.5 flex-wrap">
         <span className="text-[9px] font-extrabold tracking-wider text-cordel-master-dark/60 mr-1 uppercase">
           {t ? t('agendaFilter.disciplineLabel') : 'Discipline :'}
         </span>
 
-        {/* Option Tous */}
+        {/* Option Toutes */}
         <button
           type="button"
           onClick={() => setDisciplineFilter('all')}
@@ -88,7 +127,7 @@ export default function AgendaFilterBar({
           {t ? t('common.all') : 'Tous'}
         </button>
 
-        {/* Dynamic Event Types Buttons */}
+        {/* Boutons dynamiques par type d'événement */}
         {eventTypes.map(type => {
           const standardTypes = {
             prestation: t ? t('widgetAgenda.typePrestation') : 'Prestation',
@@ -108,14 +147,14 @@ export default function AgendaFilterBar({
               setHiddenTypes([]);
             } else {
               setSelectedTypeFilter(type);
-              setHiddenTypes(eventTypes.filter(t => t !== type));
+              setHiddenTypes(eventTypes.filter(tItem => tItem !== type));
             }
           };
 
           const handleToggleHide = (e) => {
             e.stopPropagation();
             if (isHidden) {
-              const nextHidden = hiddenTypes.filter(t => t !== type);
+              const nextHidden = hiddenTypes.filter(tItem => tItem !== type);
               setHiddenTypes(nextHidden);
               if (nextHidden.length === 0) {
                 setSelectedTypeFilter('all');
@@ -126,7 +165,7 @@ export default function AgendaFilterBar({
               const nextHidden = [...hiddenTypes, type];
               setHiddenTypes(nextHidden);
               if (nextHidden.length === eventTypes.length - 1) {
-                const remaining = eventTypes.find(t => !nextHidden.includes(t));
+                const remaining = eventTypes.find(tItem => !nextHidden.includes(tItem));
                 setSelectedTypeFilter(remaining || 'custom');
               } else {
                 setSelectedTypeFilter('custom');

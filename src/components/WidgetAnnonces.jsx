@@ -3,7 +3,7 @@ import { collection, addDoc, doc, updateDoc, arrayUnion } from 'firebase/firesto
 import { db, messaging } from '../firebase';
 import { getToken } from 'firebase/messaging';
 import CordelButton from './CordelButton';
-import { XiloMegaphone } from './XiloIcons';
+import TerracottaMegaphoneIcon from './annonces/TerracottaMegaphoneIcon';
 import { useTranslation } from './LanguageContext';
 import { showPushActivationConfirmation, resolveActiveMessagingSwRegistration } from '../utils/pushNotificationHelper';
 import { canPublishAnnonces } from '../utils/permissionUtils';
@@ -161,7 +161,7 @@ export default function WidgetAnnonces({
     <div className="flex flex-col gap-3">
       <div className="flex justify-between items-center pl-1 pr-1 select-none">
         <h3 className="text-xs font-extrabold tracking-wider text-cordel-master-dark opacity-75 uppercase text-left flex items-center gap-1.5">
-          <XiloMegaphone size={16} className="text-cordel-wood" /> {t('widgetAnnonces.title')}
+          <TerracottaMegaphoneIcon size={17} /> {t('widgetAnnonces.title')}
         </h3>
         {!loading && canPublish && !isAdding && (
           <CordelButton variant="default" onClick={() => setIsAdding(true)} className="text-[10px] px-2 py-1 uppercase tracking-widest font-black">

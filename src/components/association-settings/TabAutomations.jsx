@@ -5,6 +5,8 @@ import { useAutomationRules } from '../../hooks/useAutomationRules';
 import { runAutomationEngine } from '../../utils/automationEngine';
 import useConfirm from '../../hooks/useConfirm';
 import { useTranslation } from '../LanguageContext';
+import AutomationTargetTagsSelector from './AutomationTargetTagsSelector';
+import AutomationRuleCard from './AutomationRuleCard';
 
 /**
  * Composant TabAutomations
@@ -28,9 +30,10 @@ export default function TabAutomations({ groupId, eventTypes = ['prestation', 'r
     titre: '',
     typeEvenementCible: 'tous',
     publicCible: 'tous',
+    targetTags: ['Mestre', 'CA', 'Bureau'],
     joursAvant: 2,
     joursApres: 1,
-    pointDeReference: 'registrationDeadline', // 'registrationDeadline', 'eventDate', ou 'after_event'
+    pointDeReference: 'registrationDeadline', // 'registrationDeadline', 'eventDate', 'after_event' ou 'on_registration_deadline_summary'
     titreNotification: '⏳ Rappel : Réponse attendue',
     messageNotification: 'Bonjour ! N’oublie pas d’indiquer ta présence pour {{nomEvenement}} !',
     isActive: true
@@ -41,6 +44,7 @@ export default function TabAutomations({ groupId, eventTypes = ['prestation', 'r
       titre: '',
       typeEvenementCible: 'tous',
       publicCible: 'tous',
+      targetTags: ['Mestre', 'CA', 'Bureau'],
       joursAvant: 2,
       joursApres: 1,
       pointDeReference: 'registrationDeadline',
@@ -58,6 +62,7 @@ export default function TabAutomations({ groupId, eventTypes = ['prestation', 'r
       titre: rule.titre || '',
       typeEvenementCible: rule.typeEvenementCible || 'tous',
       publicCible: rule.publicCible || 'tous',
+      targetTags: Array.isArray(rule.targetTags) && rule.targetTags.length > 0 ? rule.targetTags : ['Mestre', 'CA', 'Bureau'],
       joursAvant: rule.joursAvant !== undefined ? rule.joursAvant : 2,
       joursApres: rule.joursApres !== undefined ? rule.joursApres : (rule.joursAvant !== undefined ? rule.joursAvant : 1),
       pointDeReference: rule.pointDeReference || 'registrationDeadline',
@@ -188,6 +193,21 @@ export default function TabAutomations({ groupId, eventTypes = ['prestation', 'r
       messageNotification: 'Le compte-rendu de "{{nomEvenement}}" est validé et accroché sur le Varal !',
       isActive: true,
       description: t('settings.communication.tabAutomations.notificationDesQueLeCR') || "Notification Push automatique dès qu'un compte-rendu est validé et accroché sur le Varal."
+    },
+    {
+      id: 'bilan_cloture_inscriptions',
+      badge: '📊 Encadrement',
+      titre: '📊 Bilan de clôture des inscriptions',
+      typeEvenementCible: 'tous',
+      publicCible: 'tous',
+      targetTags: ['Mestre', 'CA', 'Bureau'],
+      joursAvant: 0,
+      joursApres: 0,
+      pointDeReference: 'on_registration_deadline_summary',
+      titreNotification: '📊 Clôture des inscriptions : {{nomEvenement}}',
+      messageNotification: 'Bilan automatique des inscrits et votes par pupitre à la clôture.',
+      isActive: true,
+      description: "Envoie un bilan complet par pupitre à l'encadrement dès que la date limite d'inscription est atteinte."
     }
   ];
 
@@ -196,6 +216,7 @@ export default function TabAutomations({ groupId, eventTypes = ['prestation', 'r
       titre: tpl.titre,
       typeEvenementCible: tpl.typeEvenementCible,
       publicCible: tpl.publicCible,
+      targetTags: Array.isArray(tpl.targetTags) ? tpl.targetTags : ['Mestre', 'CA', 'Bureau'],
       joursAvant: tpl.joursAvant,
       joursApres: tpl.joursApres,
       pointDeReference: tpl.pointDeReference,
@@ -396,7 +417,7 @@ export default function TabAutomations({ groupId, eventTypes = ['prestation', 'r
                     className="theme-input text-xs font-bold py-1.5"
                   />
                 </div>
-              ) : !['eventConfirmed', 'eventCancelled', 'reportValidation', 'on_report_published'].includes(formData.pointDeReference) && (
+              ) : !['eventConfirmed', 'eventCancelled', 'reportValidation', 'on_report_published', 'on_registration_deadline_summary'].includes(formData.pointDeReference) && (
                 <div className="flex flex-col gap-1">
                   <label className="text-[9px] uppercase font-bold text-cordel-master-dark">
                     {t('settings.communication.tabAutomations.nombreDeJoursAvantDeclenchement')}
@@ -446,6 +467,15 @@ export default function TabAutomations({ groupId, eventTypes = ['prestation', 'r
                         if (!prev.titre || prev.titre === '⏳ Rappel : Réponse attendue' || !prev.titre.trim()) {
                           next.titre = t('settings.communication.tabAutomations.publicationDuCompteRenduAuVaral') || 'Publication Compte-Rendu au Varal';
                         }
+                      } else if (newPoint === 'on_registration_deadline_summary') {
+                        next.targetTags = Array.isArray(prev.targetTags) && prev.targetTags.length > 0
+                          ? prev.targetTags
+                          : ['Mestre', 'CA', 'Bureau'];
+                        next.titreNotification = '📊 Clôture des inscriptions : {{nomEvenement}}';
+                        next.messageNotification = 'Bilan automatique des inscrits et votes par pupitre à la clôture.';
+                        if (!prev.titre || prev.titre === '⏳ Rappel : Réponse attendue' || !prev.titre.trim()) {
+                          next.titre = '📊 Bilan de clôture des inscriptions';
+                        }
                       }
                       return next;
                     });
@@ -460,10 +490,20 @@ export default function TabAutomations({ groupId, eventTypes = ['prestation', 'r
                   <option value="eventCancelled">{t('settings.communication.tabAutomations.aLAnnulationDeL')}</option>
                   <option value="reportValidation">{t('settings.communication.tabAutomations.aLaSoumissionDuCompte')}</option>
                   <option value="on_report_published">{t('settings.communication.tabAutomations.aLaPublicationDuCompteRenduAuVaral') || "📜 À la publication d'un Compte-Rendu au Varal"}</option>
+                  <option value="on_registration_deadline_summary">📊 À la clôture des inscriptions : Bilan pour l'encadrement</option>
                 </select>
               </div>
 
             </div>
+
+            {formData.pointDeReference === 'on_registration_deadline_summary' && (
+              <AutomationTargetTagsSelector
+                groupId={groupId}
+                selectedTags={formData.targetTags}
+                onChangeTags={(nextTags) => setFormData(prev => ({ ...prev, targetTags: nextTags }))}
+                disabled={saving}
+              />
+            )}
 
             {/* Titre de la notification */}
             <div className="flex flex-col gap-1">
@@ -598,115 +638,14 @@ export default function TabAutomations({ groupId, eventTypes = ['prestation', 'r
         ) : (
           <div className="flex flex-col gap-3">
             {rules.map((r) => (
-              <div 
-                key={r.id} 
-                className={`p-3.5 rounded-lg border transition-all flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 ${
-                  r.isActive 
-                    ? 'bg-white/80 dark:bg-black/20 border-cordel-master-dark/25' 
-                    : 'bg-neutral-100/60 opacity-60 border-dashed border-neutral-300'
-                }`}
-              >
-                {/* Informations de la règle */}
-                <div className="flex flex-col gap-1 min-w-0 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-extrabold text-xs text-cordel-wood">
-                      {r.titre}
-                    </span>
-                    
-                    {/* Badge Cordel distinctif : Post-Événement vs Pré-Événement vs Varal */}
-                    {r.pointDeReference === 'on_report_published' ? (
-                      <span className="bg-emerald-100 text-emerald-900 border border-emerald-400 text-[8.5px] font-black px-2 py-0.5 rounded uppercase tracking-wider">
-                        {t('settings.communication.tabAutomations.publicationVaral') || "📜 Publication Varal"}
-                      </span>
-                    ) : r.pointDeReference === 'after_event' ? (
-                      <span className="bg-purple-100 text-purple-900 border border-purple-400 text-[8.5px] font-black px-2 py-0.5 rounded uppercase tracking-wider">
-                        {t('settings.communication.tabAutomations.postEvenementJ')}{r.joursApres || r.joursAvant || 1})
-                      </span>
-                    ) : (
-                      <span className="bg-amber-100 text-amber-900 border border-amber-300 text-[8.5px] font-black px-2 py-0.5 rounded uppercase tracking-wider">
-                        {t('settings.communication.tabAutomations.preEvenementJ')}{r.joursAvant || 0})
-                      </span>
-                    )}
-
-                    <span className="bg-amber-100/70 text-amber-900 border border-amber-300 text-[8.5px] font-bold px-1.5 py-0.2 rounded uppercase">
-                      🎭 {r.typeEvenementCible === 'tous' ? t('settings.communication.tabAutomations.tousEvenements') : r.typeEvenementCible}
-                    </span>
-                    <span className="bg-sky-100 text-sky-900 border border-sky-300 text-[8.5px] font-bold px-1.5 py-0.2 rounded uppercase">
-                      🎯 {r.publicCible === 'tous' ? t('settings.communication.tabAutomations.toutLeMonde') : r.publicCible === 'present_only' ? t('settings.communication.tabAutomations.confirmesPresents') : r.publicCible === 'inscrits' ? t('settings.communication.tabAutomations.inscrits') : r.publicCible === 'percussion' ? t('settings.communication.tabAutomations.percussion') : r.publicCible === 'danse' ? t('settings.communication.tabAutomations.danse') : t('settings.communication.tabAutomations.publicConcerne')}
-                    </span>
-                  </div>
-
-                  <p className="text-[11px] font-bold text-encre-noire/80 mt-0.5">
-                    {t('settings.communication.tabAutomations.declenchement')} 
-                    {r.pointDeReference === 'eventConfirmed' ? (
-                      <span className="font-extrabold ml-1">{t('settings.communication.tabAutomations.immediatALaConfirmation')}</span>
-                    ) : r.pointDeReference === 'eventCancelled' ? (
-                      <span className="font-extrabold ml-1">{t('settings.communication.tabAutomations.immediatALAnnulation')}</span>
-                    ) : r.pointDeReference === 'reportValidation' ? (
-                      <span className="font-extrabold ml-1">{t('settings.communication.tabAutomations.immediatALaSoumissionDu')}</span>
-                    ) : r.pointDeReference === 'on_report_published' ? (
-                      <span className="font-extrabold text-emerald-800 ml-1">{t('settings.communication.tabAutomations.immediatALaPublicationAuVaral') || "À la publication au Varal"}</span>
-                    ) : r.pointDeReference === 'after_event' ? (
-                      <>
-                        <span className="underline decoration-amber-500 font-extrabold mx-1">{r.joursApres || r.joursAvant || 1} {t('settings.communication.tabAutomations.jourS')}</span>
-                        {t('settings.communication.tabAutomations.apresLaDateDeFin')}
-                      </>
-                    ) : (
-                      <>
-                        <span className="underline decoration-amber-500 font-extrabold mx-1">{r.joursAvant} {t('settings.communication.tabAutomations.jourS')}</span>
-                        {r.pointDeReference === 'registrationDeadline' ? t('settings.communication.tabAutomations.avantLaDateLimiteD') : t('settings.communication.tabAutomations.avantLaDateDeL')}
-                      </>
-                    )}
-                  </p>
-
-                  <p className="text-[10px] font-semibold text-cordel-master-dark opacity-75 italic truncate">
-                    💬 "{r.messageNotification}"
-                  </p>
-                </div>
-
-                {/* Actions sur la règle avec Switch interactif direct */}
-                <div className="flex items-center gap-2.5 shrink-0 self-end sm:self-center">
-                  
-                  {/* Switch interactif inline */}
-                  <div className="flex items-center gap-1.5 bg-cordel-bg-light/90 py-1 px-2 rounded border border-cordel-master-dark/20 shadow-xs">
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={r.isActive}
-                      onClick={() => toggleRuleActive(r.id, r.isActive)}
-                      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border border-encre-noire transition-colors duration-200 ease-in-out focus:outline-none ${
-                        r.isActive ? 'bg-[var(--color-cordel-vert)]' : 'bg-neutral-300'
-                      }`}
-                      title={r.isActive ? "Désactiver la règle immédiatement" : "Activer la règle immédiatement"}
-                    >
-                      <span
-                        className={`pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out mt-[2px] ml-[2px] ${
-                          r.isActive ? 'translate-x-4' : 'translate-x-0'
-                        }`}
-                      />
-                    </button>
-                    <span className="text-[8.5px] font-black uppercase tracking-wider select-none">
-                      {r.isActive ? <span className="text-[var(--color-cordel-vert)]">{t('settings.communication.tabAutomations.on')}</span> : <span className="text-neutral-500">{t('settings.communication.tabAutomations.off')}</span>}
-                    </span>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => handleEdit(r)}
-                    className="text-[9.5px] font-extrabold uppercase bg-cordel-bg text-encre-noire border border-encre-noire px-2.5 py-1 rounded hover:bg-neutral-200 cursor-pointer"
-                  >
-                    {t('settings.communication.tabAutomations.editer')}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(r)}
-                    className="text-[9.5px] font-extrabold uppercase bg-red-100 text-red-800 border border-red-400 px-2 py-1 rounded hover:bg-red-200 cursor-pointer"
-                  >
-                    🗑️
-                  </button>
-                </div>
-              </div>
+              <AutomationRuleCard
+                key={r.id}
+                rule={r}
+                toggleRuleActive={toggleRuleActive}
+                handleEdit={handleEdit}
+                handleDelete={handleDelete}
+                t={t}
+              />
             ))}
           </div>
         )}

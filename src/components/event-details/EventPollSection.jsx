@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { collection, query, where, onSnapshot, doc, writeBatch, getDocs } from 'firebase/firestore';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
@@ -7,7 +7,13 @@ import useConfirm from '../../hooks/useConfirm';
 import { isMemberArchived } from '../../utils/memberUtils';
 import PollPupitreDispatchPanel from './PollPupitreDispatchPanel';
 import EventPollOptionCard from './EventPollOptionCard';
-import { getEffectiveEventVotes, submitPollVote } from '../../utils/pollVoteUtils';
+import { submitPollVote } from '../../utils/pollVoteUtils';
+import {
+  confirmSinglePupitrePollSlot,
+  executeBatchPupitreDispatch,
+  executeSingleWinningPollOption
+} from '../../utils/pollFunnelValidationUtils';
+import { checkAndNotifyFullPupitreParticipation } from '../../utils/pollPupitreAlertUtils';
 
 export default function EventPollSection({
   event,
@@ -103,14 +109,49 @@ export default function EventPollSection({
     event?.pollMode === 'pupitre_dispatch' ||
     pollEvents.some((ev) => ev.pollMode === 'pupitre_dispatch');
 
+  // Créneaux encore ouverts au sondage (exclut les créneaux déjà validés en entonnoir)
+  const openPollEvents = useMemo(() => {
+    const open = pollEvents.filter((ev) => ev.status === 'sondage' || ev.isPoll === true);
+    return open.length > 0 ? open : pollEvents;
+  }, [pollEvents]);
+
+  // Historique consolidé des créneaux déjà validés en entonnoir
+  const validatedHistory = useMemo(() => {
+    const map = new Map();
+    const sources = [event, ...pollEvents];
+    sources.forEach((src) => {
+      if (Array.isArray(src?.pollValidatedHistory)) {
+        src.pollValidatedHistory.forEach((item) => {
+          if (item?.pupitre) map.set(item.pupitre, item);
+        });
+      }
+      if (src?.status === 'confirme' && Array.isArray(src?.pollAssignedPupitres)) {
+        src.pollAssignedPupitres.forEach((p) => {
+          if (!map.has(p)) {
+            map.set(p, {
+              pupitre: p,
+              eventId: src.id,
+              date: src.dateDebut || src.date,
+              titre: src.titre
+            });
+          }
+        });
+      }
+    });
+    return Array.from(map.values());
+  }, [event, pollEvents]);
+
   const effectiveTargetPupitres = useMemo(() => {
+    const validatedPupitresSet = new Set(validatedHistory.map((h) => h.pupitre));
+    let baseList = pupitresList;
     if (Array.isArray(event?.pollTargetPupitres) && event.pollTargetPupitres.length > 0) {
-      return event.pollTargetPupitres;
+      baseList = event.pollTargetPupitres;
+    } else {
+      const fromSibling = openPollEvents.find((ev) => Array.isArray(ev.pollTargetPupitres) && ev.pollTargetPupitres.length > 0);
+      if (fromSibling) baseList = fromSibling.pollTargetPupitres;
     }
-    const fromSibling = pollEvents.find((ev) => Array.isArray(ev.pollTargetPupitres) && ev.pollTargetPupitres.length > 0);
-    if (fromSibling) return fromSibling.pollTargetPupitres;
-    return pupitresList;
-  }, [event?.pollTargetPupitres, pollEvents, pupitresList]);
+    return baseList.filter((p) => !validatedPupitresSet.has(p));
+  }, [event?.pollTargetPupitres, openPollEvents, pupitresList, validatedHistory]);
 
   // Calcul d'éligibilité basé sur le type de restriction du sondage
   const checkEligibility = () => {
@@ -145,17 +186,31 @@ export default function EventPollSection({
 
   const { eligible, message: restrictionMessage } = checkEligibility();
 
-  // Enregistrement ou bascule d'un vote pour une option spécifique
+  // Enregistrement ou bascule d'un vote pour une option spécifique + détection 100 % pupitre
   const handleVote = async (optionEvent, choice) => {
     if (!user?.uid || !eligible || isProcessing || !optionEvent?.id) return;
 
     try {
-      await submitPollVote({
+      const result = await submitPollVote({
         optionEvent,
         user,
         profileData,
         choice
       });
+      if (result?.nextVote === 'dispo' || result?.nextVote === 'indispo') {
+        await checkAndNotifyFullPupitreParticipation({
+          db,
+          pollOptions: openPollEvents,
+          event,
+          voterUid: user.uid,
+          updatedOptionId: optionEvent.id,
+          updatedVotesForOption: result.updatedVotes,
+          effectiveAllUsers: effectiveUsers,
+          pupitresList: effectiveTargetPupitres,
+          linkedInstruments,
+          formatDate
+        });
+      }
     } catch (err) {
       console.error("EventPollSection - Erreur update votes :", err);
       alert(`Erreur lors de l'enregistrement de votre réponse (${err?.code || err?.message || 'inconnu'}).`);
@@ -179,53 +234,12 @@ export default function EventPollSection({
 
     setIsProcessing(true);
     try {
-      const batch = writeBatch(db);
-      const votes = getEffectiveEventVotes(winningOptionEvent);
-      const dispoUserIds = Object.keys(votes).filter((uid) => votes[uid] === 'dispo');
-
-      const existingInscriptions = winningOptionEvent.inscriptions || [];
-      const updatedInscriptions = [...existingInscriptions];
-
-      dispoUserIds.forEach((uid) => {
-        const existingIdx = updatedInscriptions.findIndex((i) => i.userId === uid);
-        if (existingIdx >= 0) {
-          updatedInscriptions[existingIdx] = {
-            ...updatedInscriptions[existingIdx],
-            status: 'present'
-          };
-        } else {
-          updatedInscriptions.push({
-            userId: uid,
-            status: 'present',
-            timestamp: new Date().toISOString()
-          });
-        }
+      await executeSingleWinningPollOption({
+        db,
+        winningOptionEvent,
+        allUsersMap,
+        groupId: event?.groupId
       });
-
-      const winningRef = doc(db, 'events', winningOptionEvent.id);
-      batch.update(winningRef, {
-        status: 'confirme',
-        isPoll: false,
-        inscriptions: updatedInscriptions,
-        requiresValidation: false
-      });
-
-      const targetGroupId = event?.groupId;
-      if (winningOptionEvent.pollGroupId && targetGroupId) {
-        const pollQuery = query(
-          collection(db, 'events'),
-          where('pollGroupId', '==', winningOptionEvent.pollGroupId),
-          where('groupId', '==', targetGroupId)
-        );
-        const snapshot = await getDocs(pollQuery);
-        snapshot.forEach((docSnap) => {
-          if (docSnap.id !== winningOptionEvent.id) {
-            batch.delete(docSnap.ref);
-          }
-        });
-      }
-
-      await batch.commit();
       alert(`La date du ${dateFormatted} a été validée avec succès ! L'agenda a été nettoyé.`);
     } catch (err) {
       console.error("EventPollSection - Erreur confirmation option :", err);
@@ -235,13 +249,50 @@ export default function EventPollSection({
     }
   };
 
+  // Validation unitaire d'un seul créneau pour un pupitre ("En entonnoir")
+  const handleConfirmSinglePupitreSlot = async (pupitre, targetEventId, allowLatecomers, matrix) => {
+    if (!isSuperAdminOrMestre || isProcessing) return;
+    const targetEv = openPollEvents.find((ev) => ev.id === targetEventId);
+    if (!targetEv) return;
+
+    const dateLabel = formatDate(targetEv.date);
+    const count = matrix?.[targetEventId]?.[pupitre]?.count || 0;
+    const isOk = await confirm({
+      title: `📌 Valider le créneau ${pupitre} ?`,
+      message: `Voulez-vous fixer l'atelier ${pupitre} sur le créneau du ${dateLabel} (${count} disponible(s)) ?\n\n• Ce créneau deviendra l'atelier officiel pour ${pupitre}.\n• Les autres pupitres continueront de voter sur les créneaux restants du sondage.${allowLatecomers ? `\n• Les inscriptions resteront ouvertes aux retardataires du pupitre ${pupitre} jusqu'au jour de l'atelier.` : ''}`,
+      confirmText: `Oui, valider ${pupitre}`,
+      cancelText: "Annuler",
+      variant: "vert"
+    });
+    if (!isOk) return;
+
+    setIsProcessing(true);
+    try {
+      await confirmSinglePupitrePollSlot({
+        db,
+        pupitre,
+        targetEventId,
+        allowLatecomers,
+        matrix,
+        pollOptions: pollEvents,
+        event
+      });
+      alert(`Créneau validé pour ${pupitre} (${dateLabel}) !`);
+    } catch (err) {
+      console.error("EventPollSection - Erreur validation unitaire pupitre :", err);
+      alert("Erreur lors de la validation du créneau pour ce pupitre.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   // Validation groupée par pupitre (mode pupitre_dispatch) via writeBatch atomique
-  const handleConfirmPupitreDispatch = async (allocation, matrix, targetPupitres) => {
+  const handleConfirmPupitreDispatch = async (allocation, matrix, targetPupitres, allowLatecomers = true) => {
     if (!isSuperAdminOrMestre || isProcessing) return;
 
     const baseTitre = String(event?.titre || 'Atelier').split(' — ')[0].trim();
     const summaryLines = [];
-    pollEvents.forEach((ev) => {
+    openPollEvents.forEach((ev) => {
       const assigned = (targetPupitres || []).filter((p) => allocation[p] === ev.id);
       if (assigned.length > 0) {
         const count = assigned.reduce((s, p) => s + (matrix?.[ev.id]?.[p]?.count || 0), 0);
@@ -261,48 +312,15 @@ export default function EventPollSection({
 
     setIsProcessing(true);
     try {
-      const batch = writeBatch(db);
-      const nowIso = new Date().toISOString();
-
-      pollEvents.forEach((slotEv) => {
-        const assignedPupitres = (targetPupitres || []).filter((p) => allocation[p] === slotEv.id);
-        const slotRef = doc(db, 'events', slotEv.id);
-
-        if (assignedPupitres.length > 0) {
-          const updatedInscriptions = [...(slotEv.inscriptions || [])];
-          assignedPupitres.forEach((p) => {
-            const members = matrix?.[slotEv.id]?.[p]?.availableMembers || [];
-            members.forEach((m) => {
-              const idx = updatedInscriptions.findIndex((i) => i.userId === m.uid);
-              const entry = {
-                userId: m.uid,
-                userName: m.name || 'Membre',
-                status: 'present',
-                instrumentChoisi: m.instrumentChoisi || p || 'Autre',
-                timestamp: nowIso
-              };
-              if (idx >= 0) {
-                updatedInscriptions[idx] = { ...updatedInscriptions[idx], ...entry };
-              } else {
-                updatedInscriptions.push(entry);
-              }
-            });
-          });
-
-          batch.update(slotRef, {
-            titre: `${baseTitre} — ${assignedPupitres.join(' & ')}`,
-            status: 'confirme',
-            isPoll: false,
-            requiresValidation: false,
-            pollAssignedPupitres: assignedPupitres,
-            inscriptions: updatedInscriptions
-          });
-        } else {
-          batch.delete(slotRef);
-        }
+      await executeBatchPupitreDispatch({
+        db,
+        pollEvents: openPollEvents,
+        allocation,
+        matrix,
+        targetPupitres,
+        allowLatecomers,
+        baseTitre
       });
-
-      await batch.commit();
       alert("La répartition des ateliers par pupitre a été validée avec succès !");
     } catch (err) {
       console.error("EventPollSection - Erreur validation répartition pupitres :", err);
@@ -384,12 +402,31 @@ export default function EventPollSection({
         </div>
       )}
 
+      {/* Encart d'historique des créneaux déjà fixés en entonnoir */}
+      {validatedHistory.length > 0 && (
+        <div className="p-2.5 bg-emerald-100/90 dark:bg-emerald-950/40 border border-emerald-600/50 rounded flex flex-wrap items-center gap-2">
+          <span className="text-[10px] font-black uppercase text-[var(--color-cordel-vert,#2d6a4f)]">
+            ✅ Déjà fixé :
+          </span>
+          {validatedHistory.map((item) => (
+            <button
+              key={item.pupitre}
+              type="button"
+              onClick={() => item.eventId && onNavigateToEventId && onNavigateToEventId(item.eventId)}
+              className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-white border border-emerald-600/40 text-encre-noire hover:bg-emerald-50 cursor-pointer"
+            >
+              {item.pupitre} ➔ {formatDate(item.date)}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Liste des créneaux du sondage pour voter */}
       <div className="flex flex-col gap-2.5 mt-1">
         {loading ? (
           <p className="text-[10px] italic text-center opacity-60">Chargement des créneaux...</p>
         ) : (
-          pollEvents.map((optionEv) => (
+          openPollEvents.map((optionEv) => (
             <EventPollOptionCard
               key={optionEv.id}
               optionEv={optionEv}
@@ -412,7 +449,7 @@ export default function EventPollSection({
       {/* Tableau de synthèse Mestre & Matrice croisée (Dates x Pupitres) en mode répartition */}
       {!loading && isPupitreDispatch && (
         <PollPupitreDispatchPanel
-          pollEvents={pollEvents}
+          pollEvents={openPollEvents}
           allUsers={effectiveUsers}
           targetPupitres={effectiveTargetPupitres}
           pupitresList={pupitresList}
@@ -420,6 +457,7 @@ export default function EventPollSection({
           isSuperAdminOrMestre={isSuperAdminOrMestre}
           isProcessing={isProcessing}
           formatDate={formatDate}
+          onConfirmSinglePupitre={handleConfirmSinglePupitreSlot}
           onConfirmDispatch={handleConfirmPupitreDispatch}
         />
       )}

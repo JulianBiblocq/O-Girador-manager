@@ -74,15 +74,15 @@ export default function WidgetGeneralChatLiveBox({ groupId, onOpenGeneralChat, t
       }}
       className="w-full p-3 rounded-[6px_10px_6px_8px] border-2 border-encre-noire bg-[#fffaf0] dark:bg-amber-950/30 shadow-[2px_2px_0px_0px_#181716] hover:bg-amber-50/90 transition-all cursor-pointer flex flex-col gap-2.5 text-left"
     >
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-dashed border-cordel-master-dark/20 pb-2">
-        <div className="flex items-center gap-2">
-          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[var(--color-cordel-vert,#2d6a4f)] text-white text-xs border border-encre-noire shadow-xs">
+      <div className="flex items-center justify-between gap-2 border-b border-dashed border-cordel-master-dark/20 pb-2">
+        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+          <span className="inline-flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-[var(--color-cordel-vert,#2d6a4f)] text-white text-[11px] border border-encre-noire shadow-xs shrink-0">
             💬
           </span>
-          <h4 className="text-xs font-black uppercase tracking-wider text-encre-noire">
+          <h4 className="text-[11px] sm:text-xs font-black uppercase tracking-wider text-encre-noire truncate">
             {t?.('widgetForum.liveGeneralTitle') || '💬 En direct — Tout le groupe'}
           </h4>
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="Canal général actif" />
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" title="Canal général actif" />
         </div>
 
         <CordelButton
@@ -92,9 +92,12 @@ export default function WidgetGeneralChatLiveBox({ groupId, onOpenGeneralChat, t
             e.stopPropagation();
             if (onOpenGeneralChat) onOpenGeneralChat(generalConvId);
           }}
-          className="text-[9.5px] px-2.5 py-1 font-black uppercase tracking-wider"
+          className="text-[9.5px] px-2 py-1 font-black uppercase tracking-wider shrink-0"
         >
-          {t?.('widgetForum.participateGeneralBtn') || '💬 Participer / Partager une photo ou un lien'}
+          <span className="md:hidden">+ Participer</span>
+          <span className="hidden md:inline">
+            {t?.('widgetForum.participateGeneralBtn') || '💬 Participer / Partager une photo ou un lien'}
+          </span>
         </CordelButton>
       </div>
 

@@ -7,7 +7,8 @@ const EventDetails = React.lazy(() => import('./EventDetails'));
 import CalendarGrid from './CalendarGrid';
 import EventCreateForm from './agenda/EventCreateForm';
 import EmptyState from './EmptyState';
-import AgendaFilterBar from './agenda/AgendaFilterBar';
+import AgendaFilterBar, { getActiveAgendaFilterSummary } from './agenda/AgendaFilterBar';
+import AgendaEventTicketCard from './agenda/AgendaEventTicketCard';
 import EventDisciplineBadges from './agenda/EventDisciplineBadges';
 import { useTranslation } from './LanguageContext';
 import { XiloCalendar, XiloMegaphone } from './XiloIcons';
@@ -20,7 +21,6 @@ import {
   DEFAULT_SEASON_START_MONTH
 } from '../utils/seasonUtils';
 import AgendaTemporalTabs from './agenda/AgendaTemporalTabs';
-import EventThumbnail from './agenda/EventThumbnail';
 import BatchRehearsalModal from './agenda/BatchRehearsalModal';
 import AgendaAddMenu from './agenda/AgendaAddMenu';
 import { canManageEvents } from '../utils/permissionUtils';
@@ -29,6 +29,14 @@ import { formatLocationShort } from '../utils/locationUtils';
 import useHardwareBack from '../hooks/useHardwareBack';
 import { useViewSimulator } from '../context/ViewSimulatorContext';
 import { calculateRoadDistance } from '../utils/googleMaps';
+import {
+  getTodayLocalDayString,
+  buildDefaultScheduleForDay,
+  extractDayPart,
+  extractTimePart,
+  resolveDefaultTimesForForm,
+  resolveSlotRegistrationDeadline
+} from '../utils/eventScheduleUtils';
 import { notifyNewAgendaEventOrPoll, triggerFramaspaceEventProvisioning } from '../utils/agendaNotificationUtils';
 
 const formatDateWithDay = (dateStr, includeYear = true, locale = 'fr') => {
@@ -101,9 +109,79 @@ export default function WidgetAgenda({
   const [viewMode, setViewMode] = useState('cards'); // 'cards' ou 'list' ou 'grid'
   // En mode compact / dashboard (!isFullPage), forcer impérativement la vue "Cartes"
   const activeViewMode = isFullPage ? viewMode : 'cards';
-  const [disciplineFilter, setDisciplineFilter] = useState('all'); // 'all' | 'percussion' | 'dance'
-  const [selectedTypeFilter, setSelectedTypeFilter] = useState('all');
-  const [hiddenTypes, setHiddenTypes] = useState([]);
+
+  // Mémorisation des filtres dans localStorage ('agenda_active_filters')
+  const storedFilters = useMemo(() => {
+    try {
+      const raw = window.localStorage.getItem('agenda_active_filters');
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const [disciplineFilter, setDisciplineFilter] = useState(
+    () => storedFilters?.disciplineFilter || 'all'
+  ); // 'all' | 'percussion' | 'dance'
+  const [selectedTypeFilter, setSelectedTypeFilter] = useState(
+    () => storedFilters?.selectedTypeFilter || 'all'
+  );
+  const [hiddenTypes, setHiddenTypes] = useState(
+    () => (Array.isArray(storedFilters?.hiddenTypes) ? storedFilters.hiddenTypes : [])
+  );
+  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        'agenda_active_filters',
+        JSON.stringify({ disciplineFilter, selectedTypeFilter, hiddenTypes })
+      );
+    } catch {
+      // Ignorer les erreurs localStorage
+    }
+  }, [disciplineFilter, selectedTypeFilter, hiddenTypes]);
+
+  const { hasActiveFilter, activeCount: activeFilterCount } = useMemo(
+    () => getActiveAgendaFilterSummary({ disciplineFilter, selectedTypeFilter, hiddenTypes, t }),
+    [disciplineFilter, selectedTypeFilter, hiddenTypes, t]
+  );
+
+  const handleResetFilters = () => {
+    setDisciplineFilter('all');
+    setSelectedTypeFilter('all');
+    setHiddenTypes([]);
+  };
+
+  const mobileFilterTriggerNode = !loading && !isAdding ? (
+    <div className="flex md:hidden items-center gap-1.5">
+      <button
+        type="button"
+        onClick={() => setIsMobileFiltersOpen((prev) => !prev)}
+        className={`px-2.5 py-1 rounded-[4px_6px_3px_5px] text-[9.5px] font-black uppercase tracking-wider border cursor-pointer flex items-center gap-1 transition-all ${
+          hasActiveFilter
+            ? 'bg-cordel-wood text-white border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+            : 'bg-cordel-bg-light text-encre-noire border-encre-noire/35 hover:bg-white'
+        }`}
+      >
+        <span>
+          {hasActiveFilter ? `🎯 Filtre actif (${activeFilterCount})` : '🎯 Filtrer'}
+        </span>
+        <span>{isMobileFiltersOpen ? '▴' : '▾'}</span>
+      </button>
+
+      {hasActiveFilter && (
+        <button
+          type="button"
+          onClick={handleResetFilters}
+          className="px-2 py-1 rounded-[4px_6px_3px_5px] text-[9px] font-black uppercase tracking-wider bg-amber-100 hover:bg-amber-200 text-cordel-wood border border-cordel-wood/50 cursor-pointer transition-colors"
+          title="Réinitialiser tous les filtres"
+        >
+          ✕
+        </button>
+      )}
+    </div>
+  ) : null;
   
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
   const [adresseLocal, setAdresseLocal] = useState('');
@@ -309,6 +387,7 @@ export default function WidgetAgenda({
     distanceAllerRetourKm: '',
     lienSocial: '',
     imageUrl: '',
+    stampIcon: 'auto',
     requiresValidation: false,
     dateLimiteInscription: '',
     tenueRequise: '',
@@ -494,11 +573,24 @@ export default function WidgetAgenda({
       }
     }
 
+    const initialFormBase = {
+      type: defaultType,
+      includesPercussion: typeCfg.includesPercussion !== false,
+      includesDance: typeCfg.includesDance !== false,
+      niveauRequis: 'tous'
+    };
+    const initialSchedule = buildDefaultScheduleForDay(
+      getTodayLocalDayString(),
+      initialFormBase,
+      eventTypeConfigs
+    );
+
     setFormData({
       titre: '',
       type: defaultType,
-      date: '',
-      dateFin: '',
+      date: initialSchedule.date,
+      dateFin: initialSchedule.dateFin,
+      pollDates: [initialSchedule.date, ''],
       lieu: initialLieu,
       lieuId: initialLieuId,
       latitude: initialLat,
@@ -517,6 +609,8 @@ export default function WidgetAgenda({
       budgetRecettes: [],
       budgetDepenses: [],
       dateLimiteInscription: '',
+      registrationDeadlineMode: 'none',
+      registrationDeadlineDaysBefore: 7,
       includesPercussion: typeCfg.includesPercussion !== false,
       includesDance: typeCfg.includesDance !== false,
       enableCarpool: typeCfg.enableCarpool !== false,
@@ -588,13 +682,20 @@ export default function WidgetAgenda({
         const isRecolteActiveForDoc = formData.activerRecolteMedias !== undefined 
           ? Boolean(formData.activerRecolteMedias) 
           : Boolean(activeConfig.activerRecolteMedias);
+        const { endTime } = resolveDefaultTimesForForm(formData, eventTypeConfigs);
+        const slotEndDate = isPollMode && dateVal
+          ? `${extractDayPart(dateVal)}T${extractTimePart(formData.dateFin) || endTime}`
+          : (formData.dateFin || '');
+        const slotDeadline = activeConfig.agendaEnableInscriptions
+          ? resolveSlotRegistrationDeadline(dateVal, formData)
+          : '';
 
         const newDocRef = await addDoc(collection(db, 'events'), {
           titre: formData.titre,
           type: formData.type,
           date: dateVal,
           dateDebut: dateVal,
-          dateFin: formData.dateFin || '',
+          dateFin: slotEndDate,
           groupId: groupId,
           inscriptions: [],
           lieu: activeConfig.agendaEnableAdresse ? formData.lieu || '' : '',
@@ -626,12 +727,15 @@ export default function WidgetAgenda({
           } : {}),
           lienSocial: activeConfig.agendaEnableUrl ? formData.lienSocial || '' : '',
           imageUrl: activeConfig.agendaEnableImage ? formData.imageUrl || '' : '',
+          stampIcon: formData.stampIcon || 'auto',
           requiresValidation: activeConfig.agendaEnableInscriptions ? (formData.requiresValidation || false) : false,
           montantRecette: activeConfig.agendaEnableFinance ? (parseFloat(formData.montantRecette) || 0) : 0,
           montantDepense: activeConfig.agendaEnableFinance ? ((formData.budgetDepenses || []).reduce((sum, item) => sum + (parseFloat(item.montant) || 0), 0)) : 0,
           budgetRecettes: [], // Obsolète dans le nouveau modèle unifié
           budgetDepenses: activeConfig.agendaEnableFinance ? (formData.budgetDepenses || []) : [],
-          dateLimiteInscription: activeConfig.agendaEnableInscriptions ? formData.dateLimiteInscription || '' : '',
+          dateLimiteInscription: slotDeadline,
+          registrationDeadlineMode: formData.registrationDeadlineMode || (slotDeadline ? 'fixed' : 'none'),
+          registrationDeadlineDaysBefore: Number(formData.registrationDeadlineDaysBefore) || 7,
           dressCodePercussion: formData.dressCodePercussion || '',
           dressCodeDanse: formData.dressCodeDanse || '',
           tenueRequise: formData.tenueRequise || (
@@ -851,11 +955,16 @@ export default function WidgetAgenda({
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Title & Action Bar */}
+      {/* Barre de titre, bouton tiroir filtres mobile (Accueil) & actions */}
       <div className="flex flex-wrap justify-between items-center pl-1 pr-1 w-full gap-2">
-        <h3 className="text-xs font-extrabold tracking-wider text-cordel-master-dark opacity-75 uppercase text-left flex items-center gap-1.5">
-          <XiloCalendar size={16} /> {t('agenda.title').toUpperCase()}
-        </h3>
+        <div className="flex items-center gap-2 flex-wrap">
+          <h3 className="text-xs font-extrabold tracking-wider text-cordel-master-dark opacity-75 uppercase text-left flex items-center gap-1.5">
+            <XiloCalendar size={16} /> {t('agenda.title').toUpperCase()}
+          </h3>
+
+          {/* Sur l'Accueil, le bouton de filtre mobile est placé à côté du titre AGENDA */}
+          {isDashboardMode && mobileFilterTriggerNode}
+        </div>
         
         <div className="flex items-center gap-2 flex-wrap">
           {/* Sélecteur de vues (Cartes | Liste | Grille) - uniquement en vue dédiée pleine page */}
@@ -929,6 +1038,7 @@ export default function WidgetAgenda({
           pastInCurrentSeasonCount={pastInCurrentSeasonCount}
           pastSeasonCount={filteredPastBySeason.length}
           totalPastEventsCount={filteredPastAll.length}
+          mobileFilterControl={mobileFilterTriggerNode}
           t={t}
         />
       )}
@@ -943,6 +1053,7 @@ export default function WidgetAgenda({
           hiddenTypes={hiddenTypes}
           setHiddenTypes={setHiddenTypes}
           eventTypes={eventTypes}
+          isMobileOpen={isMobileFiltersOpen}
           t={t}
         />
       )}
@@ -1113,162 +1224,21 @@ export default function WidgetAgenda({
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5 sm:gap-4 p-1 overflow-visible">
-              {visibleEvents.map((event) => {
-                const dateObj = new Date(event.date);
-                const day = isNaN(dateObj.getTime()) ? '?' : dateObj.getDate();
-                const dateLocale = locale === 'pt' ? 'pt-BR' : 'fr-FR';
-                const month = isNaN(dateObj.getTime()) 
-                  ? '???' 
-                  : dateObj.toLocaleDateString(dateLocale, { month: 'short' }).toUpperCase().replace('.', '');
-                const time = isNaN(dateObj.getTime())
-                  ? '--h--'
-                  : dateObj.toLocaleTimeString(dateLocale, { hour: '2-digit', minute: '2-digit' });
-
-                const variant = variants[event.type] || 'kraft';
-
-                return (
-                  <div 
-                    key={event.id}
-                    onClick={() => handleSelectEvent(event)}
-                    className={`
-                      relative overflow-hidden
-                      border-2 border-encre-noire
-                      theme-bg-${variant}
-                      shadow-[4px_4px_0px_0px_#181716]
-                      rounded-[8px_12px_9px_11px]
-                      flex items-stretch
-                      min-h-[90px]
-                      cursor-pointer hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[5.5px_5.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-[2px_2px_0px_0px_#181716] transition-all
-                      ${effectiveTemporalTab === 'past' ? 'border-dashed border-cordel-master-dark/40 opacity-95' : ''}
-                    `}
-                  >
-                    {/* Effet tampon gros statut en biais */}
-                    {event.status === 'annule' && (
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 select-none">
-                        <span 
-                          style={{ transform: 'rotate(-15deg)' }}
-                          className="text-red-600 dark:text-red-500 border-[3.5px] border-red-600 dark:border-red-500 px-5 py-1.5 rounded-lg font-black text-[15px] tracking-widest uppercase opacity-80 bg-white/5 dark:bg-black/5"
-                        >
-                          {t('agenda.canceledStamp') || 'ANNULÉ'}
-                        </span>
-                      </div>
-                    )}
-                    {event.status === 'a_confirmer' && (
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 select-none">
-                        <span 
-                          style={{ transform: 'rotate(-15deg)' }}
-                          className="text-orange-600 dark:text-orange-400 border-[3.5px] border-orange-600 dark:border-orange-400 px-5 py-1.5 rounded-lg font-black text-[15px] tracking-widest uppercase opacity-80 bg-white/5 dark:bg-black/5"
-                        >
-                          {t('agenda.confirm') || 'À CONFIRMER'}
-                        </span>
-                      </div>
-                    )}
-                    {/* Tampon de validation distinctif (Règle 4: Vert Validation) */}
-                    {event.status === 'confirme' && event.wasConfirmedLater && (
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 select-none">
-                        <span 
-                          style={{ transform: 'rotate(-10deg)', color: 'var(--color-cordel-vert)', borderColor: 'var(--color-cordel-vert)' }}
-                          className="border-[3.5px] px-5 py-1.5 rounded-lg font-black text-[15px] tracking-widest uppercase opacity-80 bg-white/5 dark:bg-black/5"
-                        >
-                          {t('agenda.confirmedStamp') || 'CONFIRMÉ'}
-                        </span>
-                      </div>
-                    )}
-                    {event.status === 'sondage' && (
-                      <div className="absolute top-2 right-2 flex gap-1 select-none z-10">
-                        <span className="text-amber-900 bg-amber-100/90 border border-amber-600 font-black uppercase text-[8px] px-2 py-0.5 rounded shadow-sm">
-                          📊 {t('widgetAgenda.poll', 'Sondage') || 'SONDAGE'} ({event.optionIndex || 1}/{event.totalOptions || 1}) {event.pollTarget ? `• ${event.pollTarget}` : ''}
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Left Side: Date Block */}
-                    <div className="w-16 sm:w-20 shrink-0 flex flex-col justify-center items-center text-center border-r-2 border-dashed border-encre-noire/30 px-1 sm:px-2 select-none">
-                      <span className="text-xl sm:text-2xl font-black tracking-tighter leading-none">{day}</span>
-                      <span className="text-[9px] sm:text-[10px] font-bold tracking-widest mt-0.5">{month}</span>
-                      <span className="text-[8px] sm:text-[9px] font-semibold opacity-75 mt-0.5 sm:mt-1">{time}</span>
-                    </div>
-
-                    {/* Right Side: Details */}
-                    <div className="flex-1 p-3 sm:p-4 flex items-center gap-2.5 sm:gap-4 text-left pl-3.5 sm:pl-5 pr-7 sm:pr-8 min-w-0">
-                      <div className="flex-1 flex flex-col justify-center min-w-0">
-                        <div className="flex justify-between items-start gap-2 mb-0.5">
-                          <h4 className="font-bold text-sm leading-tight">{event.titre}</h4>
-                        </div>
-                        <span className="text-[9px] font-extrabold text-encre-noire/70 mb-1 leading-none select-none">
-                          {event.dateFin ? (
-                            locale === 'pt'
-                              ? `De ${formatDateWithDay(event.date, true, locale)} até ${formatDateWithDay(event.dateFin, false, locale)}`
-                              : `Du ${formatDateWithDay(event.date, true, locale)} au ${formatDateWithDay(event.dateFin, false, locale)}`
-                          ) : (
-                            `${formatDateWithDay(event.date, true, locale)}`
-                          )}
-                        </span>
-                        {event.lieu && (
-                          <div className="text-[10px] font-bold text-encre-noire flex items-center gap-1 my-0.5 truncate" title={event.lieu}>
-                            <span className="shrink-0">📍</span>
-                            <span className="truncate">{formatLocationShort(event, lieuxImportants)}</span>
-                          </div>
-                        )}
-                        <div className="flex justify-between items-center mt-1.5 border-t border-dashed border-encre-noire/10 pt-1.5 gap-2">
-                          <div className="flex flex-col items-start gap-1">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="text-[8px] uppercase tracking-widest font-black opacity-60">
-                                {event.type}
-                              </span>
-                              <EventDisciplineBadges event={event} />
-                              {effectiveTemporalTab === 'past' && (
-                                <span 
-                                  className="text-[8px] font-black uppercase tracking-wider bg-cordel-master-dark/10 text-encre-noire px-1.5 py-0.5 rounded-[4px_6px_3px_5px] border border-encre-noire/20 select-none inline-flex items-center gap-0.5"
-                                  title={`${t('agendaTemporal.seasonLabel') || 'Saison'} ${getSeasonFromDate(event.dateDebut || event.date, saisonDebutMois)}`}
-                                >
-                                  <span>🏛️</span>
-                                  <span>{getSeasonFromDate(event.dateDebut || event.date, saisonDebutMois)}</span>
-                                </span>
-                              )}
-                            </div>
-                            {/* Connected User Attendance Badge */}
-                            {(() => {
-                              if (event.enableInscriptions === false) {
-                                return <span className="inline-flex items-center gap-1 text-[8px] font-bold px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider bg-neutral-200 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 leading-none select-none"><XiloMegaphone size={10} className="text-cordel-wood" /> {t('widgetAgenda.informative', 'Informatif') || 'Informatif'}</span>;
-                              }
-                              const userInscription = (event.inscriptions || []).find(ins => ins.userId === user.uid);
-                              const userStatus = userInscription ? userInscription.status : null;
-                              if (userStatus === 'present') {
-                                return <span className="text-[8px] font-black px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-present leading-none select-none">{t('agenda.present')}</span>;
-                              } else if (userStatus === 'pending') {
-                                return <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider bg-yellow-100 text-yellow-800 border border-yellow-300 leading-none select-none">{t('agenda.waitingResponse') || t('userProfile.pendingValidation') || 'En attente de validation'}</span>;
-                              } else if (userStatus === 'refused') {
-                                return <span className="text-[8px] font-black px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-absent leading-none select-none">{t('userProfile.refused') || 'Refusé'}</span>;
-                              } else if (userStatus === 'absent') {
-                                return <span className="text-[8px] font-black px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-absent leading-none select-none">{t('agenda.absent')}</span>;
-                              } else if (userStatus === 'confirm') {
-                                return <span className="text-[8px] font-black px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-confirm leading-none select-none">{t('agenda.confirm')}</span>;
-                              } else {
-                                return <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-pending leading-none select-none">{t('agenda.waitingResponse') || t('common.pending')}</span>;
-                              }
-                            })()}
-                          </div>
-                          
-                          {/* Subscriptions counter */}
-                          {event.enableInscriptions !== false && ((event.inscriptions && event.inscriptions.length > 0) || (event.invitesExternes && event.invitesExternes.length > 0)) && (
-                            <span className="text-[8px] font-bold px-1.5 py-0.5 bg-encre-noire text-cordel-bg-light rounded-sm self-end shrink-0">
-                              {((event.inscriptions || []).filter(i => i.status === 'present').length) + ((event.invitesExternes || []).length)} {t('common.presentCountLabel')}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Miniature résiliente avec détection anti-403 et support vidéo */}
-                      <EventThumbnail event={event} />
-                    </div>
-
-                    {/* Ticket Circular Cut-out notches (blends dynamically with theme background using var(--cordel-bg)) */}
-                    <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-[var(--cordel-bg)] border-r-2 border-encre-noire"></div>
-                    <div className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-[var(--cordel-bg)] border-l-2 border-encre-noire"></div>
-                  </div>
-                );
-              })}
+              {visibleEvents.map((event) => (
+                <AgendaEventTicketCard
+                  key={event.id}
+                  event={event}
+                  user={user}
+                  locale={locale}
+                  variants={variants}
+                  effectiveTemporalTab={effectiveTemporalTab}
+                  saisonDebutMois={saisonDebutMois}
+                  lieuxImportants={lieuxImportants}
+                  formatDateWithDay={formatDateWithDay}
+                  onSelectEvent={handleSelectEvent}
+                  t={t}
+                />
+              ))}
             </div>
             
             {/* Bouton Voir plus pour le mode À venir si le nombre d'événements dépasse la limite initiale */}

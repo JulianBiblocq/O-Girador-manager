@@ -80,7 +80,11 @@ export function resolveTypeEffectiveConfig(type = '', rawConfig = {}) {
     defaultDeadlineHours: rawConfig.defaultDeadlineHours !== undefined
       ? rawConfig.defaultDeadlineHours
       : '',
-    defaultDropUrl: rawConfig.defaultDropUrl || ''
+    defaultDropUrl: rawConfig.defaultDropUrl || '',
+    defaultStartTime: rawConfig.defaultStartTime || '20:00',
+    defaultEndTime: rawConfig.defaultEndTime || '22:00',
+    defaultDanceStartTime: rawConfig.defaultDanceStartTime || '19:00',
+    defaultDanceEndTime: rawConfig.defaultDanceEndTime || '20:00'
   };
 }
 
@@ -92,6 +96,9 @@ export function resolveTypeEffectiveConfig(type = '', rawConfig = {}) {
  */
 export function buildConfigSummary(config = {}) {
   const badges = [];
+  if (config.defaultStartTime && config.defaultEndTime) {
+    badges.push(`🕒 ${config.defaultStartTime}-${config.defaultEndTime}`);
+  }
   if (config.enableRoadbook) badges.push('📄 Feuille de route');
   if (config.activerRecolteMedias) badges.push('📸 Photos');
   if (config.enableVideoDrop || config.activerDepotVideo) badges.push('📹 Vidéos');

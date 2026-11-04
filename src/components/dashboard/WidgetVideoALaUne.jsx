@@ -58,7 +58,7 @@ export default function WidgetVideoALaUne({
             <div className="flex items-center gap-2.5 min-w-0">
               <span className="text-xl shrink-0">🎬</span>
               <div>
-                <h4 className="font-heading font-black text-xs uppercase tracking-wider text-cordel-wood">
+                <h4 className="font-sans font-black text-xs uppercase tracking-wider text-cordel-wood">
                   Vidéo à la une (Accueil)
                 </h4>
                 <p className="text-[10px] text-cordel-master-dark/75 font-semibold mt-0.5">
@@ -111,7 +111,7 @@ export default function WidgetVideoALaUne({
                 {isCinemaMode ? "Format Grand Écran (Cinéma)" : "Format Compact"}
               </span>
             </div>
-            <h3 className="font-heading font-black text-sm sm:text-base text-encre-noire tracking-wide uppercase mt-1 truncate">
+            <h3 className="font-sans font-black text-sm sm:text-base text-encre-noire tracking-wide uppercase mt-1 truncate">
               {titreVideo}
             </h3>
           </div>

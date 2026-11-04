@@ -127,7 +127,6 @@ const POLES_CONFIG = [
     labelKey: 'poles.secretariat',
     tabs: [
       { id: 'export-annu', label: 'Annuaire & Exports', labelKey: 'tabExportAnnu' },
-      { id: 'secretariat-reports', label: "Rapports & Bilan AG", labelKey: 'tabSecretariatReports' },
       { id: 'studio-events', label: 'Registre des dates', labelKey: 'tabStudioEvents' },
       { id: 'varal-secretariat', label: 'Documents officiels', labelKey: 'tabVaralSecretariat' },
       { id: 'secretariat-documents', label: 'Chartes, Santé & Liens', labelKey: 'tabSecretariatDocuments' }
@@ -1757,7 +1756,7 @@ export default function App() {
       if (enabledModules.costumerie === false) return false;
       if (enabledModules.costumerie === undefined && enabledModules.vestiaire === false) return false;
     }
-    if (['export-annu', 'secretariat-reports', 'studio-events', 'varal-secretariat', 'secretariat-documents'].includes(tabId) && enabledModules.secretariat === false) return false;
+    if (['export-annu', 'studio-events', 'varal-secretariat', 'secretariat-documents'].includes(tabId) && enabledModules.secretariat === false) return false;
     if (['studio-social', 'studio-lexique', 'varal-manager', 'newsletter', 'varal-photos', 'studio-communication'].includes(tabId) && enabledModules.studioSocial === false) return false;
     if (['reunion-manager', 'ca-reunions'].includes(tabId) && enabledModules.reunions === false) return false;
     if (tabId === 'forum' && enabledModules.forum === false) return false;
@@ -2111,7 +2110,7 @@ export default function App() {
   const hasAccessGouvernance = isMasterKeyActive || canAccessPole('gouvernance', profileData, permissionsMatrice, userTags) || checkTabAccess('ca-reunions', 'gouvernance') || checkTabAccess('ca-reports', 'gouvernance') || checkTabAccess('ca-documents', 'gouvernance') || checkTabAccess('ca-finances', 'gouvernance') || checkTabAccess('ca-prestations', 'gouvernance');
   const hasAccessDiffusion = isMasterKeyActive || canAccessPole('diffusion', profileData, permissionsMatrice, userTags) || checkTabAccess('gigs-pipeline', 'diffusion');
   const hasAccessTresorerie = isMasterKeyActive || canAccessPole('tresorerie', profileData, permissionsMatrice, userTags) || checkTabAccess('dashboard-finance', 'tresorerie') || checkTabAccess('cotisations', 'tresorerie') || checkTabAccess('events-finances', 'tresorerie') || checkTabAccess('operations-diverses', 'tresorerie') || checkTabAccess('frais-km', 'tresorerie') || checkTabAccess('reports-exports', 'tresorerie');
-  const hasAccessSecretariat = isMasterKeyActive || canAccessPole('secretariat', profileData, permissionsMatrice, userTags) || checkTabAccess('export-annu', 'secretariat') || checkTabAccess('secretariat-reports', 'secretariat') || checkTabAccess('activity-reports', 'secretariat') || checkTabAccess('studio-events', 'secretariat') || checkTabAccess('varal-secretariat', 'secretariat') || checkTabAccess('secretariat-documents', 'secretariat');
+  const hasAccessSecretariat = isMasterKeyActive || canAccessPole('secretariat', profileData, permissionsMatrice, userTags) || checkTabAccess('export-annu', 'secretariat') || checkTabAccess('studio-events', 'secretariat') || checkTabAccess('varal-secretariat', 'secretariat') || checkTabAccess('secretariat-documents', 'secretariat');
   const hasAccessLogistique = isMasterKeyActive || canAccessPole('logistique', profileData, permissionsMatrice, userTags) || checkTabAccess('inventory', 'logistique') || checkTabAccess('logistics-kits', 'logistique') || checkTabAccess('logistics-carpool', 'logistique') || checkTabAccess('orders', 'logistique') || checkTabAccess('orders-manager', 'logistique');
   const hasAccessLutherie = isMasterKeyActive || canAccessPole('lutherie', profileData, permissionsMatrice, userTags) || checkTabAccess('instrument-models', 'lutherie') || checkTabAccess('inventory-projects', 'lutherie') || checkTabAccess('inventory-parts', 'lutherie') || checkTabAccess('inventory-supplies', 'lutherie') || checkTabAccess('workshop-tools', 'lutherie') || checkTabAccess('varal-lutherie', 'lutherie');
   const hasAccessCostumerie = isMasterKeyActive || canAccessPole('costumerie', profileData, permissionsMatrice, userTags) || checkTabAccess('wardrobe-projects', 'costumerie') || checkTabAccess('wardrobe-models', 'costumerie') || checkTabAccess('wardrobe-pieces', 'costumerie') || checkTabAccess('wardrobe-supplies', 'costumerie') || checkTabAccess('wardrobe-tools', 'costumerie') || checkTabAccess('wardrobe-sizes', 'costumerie') || checkTabAccess('varal-costumerie', 'costumerie');
@@ -2284,9 +2283,6 @@ export default function App() {
         break;
       case 'activity-reports':
       case 'secretariat-reports':
-        setCurrentPole('secretariat');
-        setCurrentTab('secretariat-reports');
-        break;
       case 'ca-reports':
         setCurrentPole('gouvernance');
         setCurrentTab('ca-reports');
@@ -3194,10 +3190,9 @@ export default function App() {
                     profileData={profileData}
                     onBack={() => handleNavigateToPole('accueil')} 
                   />
-                ) : (['ca-reports', 'secretariat-reports', 'activity-reports'].includes(currentTab) && (hasAccessGouvernance || hasAccessSecretariat)) ? (
+                ) : (currentTab === 'ca-reports' && hasAccessGouvernance) ? (
                   <SecretariatReportsView 
                     groupId={profileData?.groupId} 
-                    onBack={() => handleNavigateToPole('accueil')} 
                   />
                 ) : (currentTab === 'ca-documents' && hasAccessGouvernance) ? (
                   <div className="max-w-4xl mx-auto w-full">

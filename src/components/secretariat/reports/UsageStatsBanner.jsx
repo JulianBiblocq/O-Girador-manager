@@ -1,18 +1,16 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { computeAssociationUsageStats, syncUsageStatsToOrquestrador } from '../../../utils/usageStatsUtils';
 import { dispatchBulkInAppAndPushNotification } from '../../../utils/inAppNotificationService';
-import { useTranslation } from '../../LanguageContext';
 import TerracottaMegaphoneIcon from '../../TerracottaMegaphoneIcon';
 
 /**
- * Bandeau de statistiques d'usage numérique de l'association (Bureau & CA).
- * Présente 4 indicateurs clés : Couverture Push, Fréquentation App, Lectures Mégaphone
- * et Consultations du Varal (Top 5 + documents à 0 vue), avec outils de relance Push en 1 clic.
+ * Grille compacte de statistiques d'usage numérique de l'association (Bureau & CA) :
+ * - Ligne 1 (grid-cols-2) : 1. Couverture Push + 2. Fréquentation App
+ * - Ligne 2 (grid-cols-1 sm:grid-cols-2) : 3. Lectures Mégaphone (SVG Terracotta) + 4. Consultations Varal
  */
 export default function UsageStatsBanner({
   groupId, rawUsers = [], rawAnnouncements = [], rawDocuments = [], canSyncOrquestrador = false
 }) {
-  const { t } = useTranslation();
   const [showUnreachable, setShowUnreachable] = useState(false);
   const [showZeroViews, setShowZeroViews] = useState(false);
   const [remindingInApp, setRemindingInApp] = useState(false);
@@ -33,12 +31,10 @@ export default function UsageStatsBanner({
     try {
       await dispatchBulkInAppAndPushNotification({
         recipientIds: stats.unreachableMembers.map((m) => m.id),
-        groupId,
-        type: 'push_reminder',
+        groupId, type: 'push_reminder',
         titre: '🔔 Active tes alertes en 1 clic !',
         message: 'Ne manque aucune convocation ou annonce du groupe : clique ici pour activer les notifications sur ton appareil.',
-        targetUrl: '/app?setup-push=1',
-        sendPush: false
+        targetUrl: '/app?setup-push=1', sendPush: false
       });
       setReminderFeedback(`✅ Relance envoyée à ${stats.unreachableMembers.length} membre(s).`);
     } catch {
@@ -60,70 +56,65 @@ export default function UsageStatsBanner({
   };
 
   return (
-    <div className="bg-[var(--cordel-paper,#fffdf8)] text-[var(--cordel-text,#181716)] border-[var(--theme-border-width,2px)] border-[var(--theme-border-style,solid)] border-[var(--theme-border-color,#181716)] rounded-[var(--theme-border-radius,8px)] p-5 shadow-[2.5px_2.5px_0px_0px_var(--theme-shadow-color,#181716)] flex flex-col gap-4 print-card">
-      <div className="border-b border-dashed border-[var(--theme-border-color,#181716)]/25 pb-2 flex items-center justify-between flex-wrap gap-2">
-        <div>
-          <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-[var(--color-cordel-rouge,#8b2a1a)] flex items-center gap-2">
-            <span>📡</span><span>{t('secretariatReports.usageBannerTitle') || "Suivi d'Usage Numérique & Réception des Alertes"}</span>
-          </h3>
-          <p className="text-[10px] opacity-70 font-medium">{t('secretariatReports.usageBannerDesc') || "Couverture Push, fréquentation d'Organizador, lectures du Mégaphone et consultations du Varal."}</p>
-        </div>
-        <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-[var(--cordel-bg,#f4ecd8)] border border-[var(--color-cordel-ocre,#c05621)]/40 no-print">🔄 Synchronisé avec Orquestrador</span>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        {/* 1. Couverture Notifications Push */}
-        <div className="p-3 bg-[var(--cordel-bg,#f4ecd8)]/80 border border-[var(--theme-border-color,#181716)]/20 rounded-[var(--theme-border-radius,6px)] flex flex-col justify-between gap-2">
+    <div className="flex flex-col gap-2.5">
+      <div className="grid grid-cols-2 gap-2.5">
+        <div className="p-2.5 bg-[var(--cordel-bg,#f4ecd8)]/80 border border-[var(--theme-border-color,#181716)]/20 rounded-[var(--theme-border-radius,6px)] flex flex-col justify-between gap-1.5">
           <div>
-            <span className="text-[9px] font-black uppercase opacity-60 block">1. Couverture Push</span>
-            <div className="text-base font-black text-[var(--color-cordel-vert,#2d6a4f)] mt-0.5">🔔 {stats.pushReachableCount} / {stats.totalActiveMembers} <span className="text-xs">({stats.pushReachablePercent}%)</span></div>
-            <p className="text-[9.5px] opacity-70 font-semibold">membres actifs joignables</p>
+            <span className="text-[8.5px] sm:text-[9px] font-black uppercase opacity-65 block">1. Couverture Push</span>
+            <div className="text-sm sm:text-base font-black text-[var(--color-cordel-vert,#2d6a4f)] mt-0.5">
+              🔔 {stats.pushReachableCount}/{stats.totalActiveMembers} <span className="text-[11px]">({stats.pushReachablePercent}%)</span>
+            </div>
+            <p className="text-[9px] opacity-70 font-semibold">membres actifs joignables</p>
           </div>
           {stats.unreachableMembers.length > 0 && (
-            <div className="pt-1 border-t border-dashed border-[var(--theme-border-color,#181716)]/15 space-y-1.5 no-print">
-              <button type="button" onClick={() => setShowUnreachable((v) => !v)} className="text-[9.5px] font-black text-[var(--color-cordel-rouge,#8b2a1a)] hover:underline cursor-pointer">
-                {showUnreachable ? '▾ Masquer' : `▸ Voir les ${stats.unreachableMembers.length} non-joignables`}
+            <div className="pt-1 border-t border-dashed border-[var(--theme-border-color,#181716)]/15 space-y-1 no-print">
+              <button type="button" onClick={() => setShowUnreachable((v) => !v)} className="text-[9px] font-black text-[var(--color-cordel-rouge,#8b2a1a)] hover:underline cursor-pointer">
+                {showUnreachable ? '▾ Masquer' : `▸ ${stats.unreachableMembers.length} non-joignables`}
               </button>
               {showUnreachable && (
-                <ul className="max-h-24 overflow-y-auto text-[9.5px] font-semibold space-y-0.5 pr-1">
+                <ul className="max-h-20 overflow-y-auto text-[9px] font-semibold space-y-0.5 pr-1">
                   {stats.unreachableMembers.map((m) => <li key={m.id} className="truncate">🔕 {m.label}</li>)}
                 </ul>
               )}
               <div className="flex flex-col gap-1 pt-0.5">
-                <button type="button" onClick={handleRemindInApp} disabled={remindingInApp} className="w-full py-1 px-2 text-[9px] font-black uppercase bg-[var(--color-cordel-ocre,#c05621)] text-white rounded border border-[var(--theme-border-color,#181716)] cursor-pointer disabled:opacity-60">
-                  {remindingInApp ? '⏳ Envoi...' : "🔔 Relancer dans l'appli"}
+                <button type="button" onClick={handleRemindInApp} disabled={remindingInApp} className="w-full py-1 px-1.5 text-[8.5px] font-black uppercase bg-[var(--color-cordel-ocre,#c05621)] text-white rounded border border-[var(--theme-border-color,#181716)] cursor-pointer disabled:opacity-60 truncate">
+                  {remindingInApp ? '⏳ Envoi...' : "🔔 Relancer l'appli"}
                 </button>
-                <button type="button" onClick={handleCopyReminderMessage} className="w-full py-1 px-2 text-[9px] font-black uppercase bg-[var(--cordel-paper,#fffdf8)] rounded border border-[var(--theme-border-color,#181716)] cursor-pointer">
-                  📋 Copier les e-mails / Message WhatsApp
+                <button type="button" onClick={handleCopyReminderMessage} className="w-full py-1 px-1.5 text-[8.5px] font-black uppercase bg-[var(--cordel-paper,#fffdf8)] rounded border border-[var(--theme-border-color,#181716)] cursor-pointer truncate">
+                  📋 Copier WhatsApp
                 </button>
-                {reminderFeedback && <p className="text-[8.5px] font-bold text-[var(--color-cordel-vert,#2d6a4f)]">{reminderFeedback}</p>}
+                {reminderFeedback && <p className="text-[8px] font-bold text-[var(--color-cordel-vert,#2d6a4f)]">{reminderFeedback}</p>}
               </div>
             </div>
           )}
         </div>
 
-        {/* 2. Fréquentation de l'application */}
-        <div className="p-3 bg-[var(--cordel-bg,#f4ecd8)]/80 border border-[var(--theme-border-color,#181716)]/20 rounded-[var(--theme-border-radius,6px)] flex flex-col justify-between gap-2">
+        <div className="p-2.5 bg-[var(--cordel-bg,#f4ecd8)]/80 border border-[var(--theme-border-color,#181716)]/20 rounded-[var(--theme-border-radius,6px)] flex flex-col justify-between gap-1.5">
           <div>
-            <span className="text-[9px] font-black uppercase opacity-60 block">2. Fréquentation App</span>
-            <div className="flex items-baseline gap-3 mt-1">
-              <div><span className="text-base font-black text-[var(--color-cordel-vert,#2d6a4f)]">{stats.activeMembers7d}</span><span className="text-[9px] font-bold opacity-70 block">actifs 7j</span></div>
-              <div><span className="text-base font-black text-[var(--color-cordel-rouge,#8b2a1a)]">{stats.activeMembers30d}</span><span className="text-[9px] font-bold opacity-70 block">actifs 30j</span></div>
-              <div><span className="text-base font-black opacity-60">{stats.inactiveOver30d}</span><span className="text-[9px] font-bold opacity-70 block">&gt; 30j</span></div>
+            <span className="text-[8.5px] sm:text-[9px] font-black uppercase opacity-65 block">2. Fréquentation App</span>
+            <div className="grid grid-cols-3 gap-1 mt-1 text-center">
+              <div><span className="text-sm sm:text-base font-black text-[var(--color-cordel-vert,#2d6a4f)]">{stats.activeMembers7d}</span><span className="text-[8px] font-bold opacity-70 block">7j</span></div>
+              <div><span className="text-sm sm:text-base font-black text-[var(--color-cordel-rouge,#8b2a1a)]">{stats.activeMembers30d}</span><span className="text-[8px] font-bold opacity-70 block">30j</span></div>
+              <div><span className="text-sm sm:text-base font-black opacity-60">{stats.inactiveOver30d}</span><span className="text-[8px] font-bold opacity-70 block">&gt;30j</span></div>
             </div>
           </div>
-          <p className="text-[9px] opacity-60 italic">Basé sur la dernière connexion des membres actifs</p>
+          <p className="text-[8.5px] opacity-60 italic">Dernière connexion des actifs</p>
         </div>
+      </div>
 
-        {/* 3. Lectures du Mégaphone */}
-        <div className="p-3 bg-[var(--cordel-bg,#f4ecd8)]/80 border border-[var(--theme-border-color,#181716)]/20 rounded-[var(--theme-border-radius,6px)] flex flex-col justify-between gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <div className="p-2.5 bg-[var(--cordel-bg,#f4ecd8)]/80 border border-[var(--theme-border-color,#181716)]/20 rounded-[var(--theme-border-radius,6px)] flex flex-col justify-between gap-1.5">
           <div>
-            <span className="text-[9px] font-black uppercase opacity-60 block">3. Lectures Mégaphone</span>
-            <div className="text-base font-black text-[var(--color-cordel-ocre,#c05621)] mt-0.5 flex items-center gap-1"><TerracottaMegaphoneIcon size={15} /> {stats.avgMegaphoneReadRate}% <span className="text-[10px] font-bold opacity-70">de lecture moy.</span></div>
-            <p className="text-[9px] opacity-70 font-semibold">Sur les {stats.recentAnnouncementsCount} dernière(s) annonce(s)</p>
+            <span className="text-[8.5px] sm:text-[9px] font-black uppercase opacity-65 block">3. Lectures Mégaphone</span>
+            <div className="text-sm sm:text-base font-black text-[var(--color-cordel-ocre,#c05621)] mt-0.5 flex items-center gap-1.5">
+              <TerracottaMegaphoneIcon size={15} />
+              <span>{stats.avgMegaphoneReadRate}%</span>
+              <span className="text-[10px] font-bold opacity-70">de lecture moy.</span>
+            </div>
+            <p className="text-[9px] opacity-70 font-semibold">Sur {stats.recentAnnouncementsCount} annonce(s) récente(s)</p>
           </div>
           {stats.recentAnnouncementsStats.length > 0 && (
-            <div className="pt-1 border-t border-dashed border-[var(--theme-border-color,#181716)]/15 space-y-0.5 max-h-20 overflow-y-auto">
+            <div className="pt-1 border-t border-dashed border-[var(--theme-border-color,#181716)]/15 space-y-0.5 max-h-16 overflow-y-auto">
               {stats.recentAnnouncementsStats.slice(0, 3).map((a) => (
                 <div key={a.id} className="flex justify-between text-[9px] font-semibold gap-1"><span className="truncate">{a.titre}</span><span className="font-black shrink-0">{a.readCount}/{a.targetCount}</span></div>
               ))}
@@ -131,21 +122,22 @@ export default function UsageStatsBanner({
           )}
         </div>
 
-        {/* 4. Consultations du Varal */}
-        <div className="p-3 bg-[var(--cordel-bg,#f4ecd8)]/80 border border-[var(--theme-border-color,#181716)]/20 rounded-[var(--theme-border-radius,6px)] flex flex-col justify-between gap-2">
+        <div className="p-2.5 bg-[var(--cordel-bg,#f4ecd8)]/80 border border-[var(--theme-border-color,#181716)]/20 rounded-[var(--theme-border-radius,6px)] flex flex-col justify-between gap-1.5">
           <div>
-            <span className="text-[9px] font-black uppercase opacity-60 block">4. Consultations Varal</span>
-            <div className="text-base font-black text-[var(--color-cordel-rouge,#8b2a1a)] mt-0.5">🧺 {stats.varalTotalViews} vue{stats.varalTotalViews > 1 ? 's' : ''} <span className="text-[10px] font-bold opacity-70">({stats.varalTotalDocs} docs)</span></div>
+            <span className="text-[8.5px] sm:text-[9px] font-black uppercase opacity-65 block">4. Consultations Varal</span>
+            <div className="text-sm sm:text-base font-black text-[var(--color-cordel-rouge,#8b2a1a)] mt-0.5">
+              🧺 {stats.varalTotalViews} vue{stats.varalTotalViews > 1 ? 's' : ''} <span className="text-[10px] font-bold opacity-70">({stats.varalTotalDocs} docs)</span>
+            </div>
             {stats.top5VaralDocs.length > 0 && (
               <ul className="mt-1 space-y-0.5 text-[9px] font-semibold">
-                {stats.top5VaralDocs.slice(0, 5).map((d, i) => <li key={d.id} className="flex justify-between gap-1"><span className="truncate">{i + 1}. {d.titre}</span><span className="font-black shrink-0">👁️ {d.views}</span></li>)}
+                {stats.top5VaralDocs.slice(0, 3).map((d, i) => <li key={d.id} className="flex justify-between gap-1"><span className="truncate">{i + 1}. {d.titre}</span><span className="font-black shrink-0">👁️ {d.views}</span></li>)}
               </ul>
             )}
           </div>
           {stats.zeroViewVaralDocs.length > 0 && (
             <div className="pt-1 border-t border-dashed border-[var(--theme-border-color,#181716)]/15 no-print">
-              <button type="button" onClick={() => setShowZeroViews((v) => !v)} className="text-[9.5px] font-black text-[var(--color-cordel-rouge,#8b2a1a)] hover:underline cursor-pointer">{showZeroViews ? '▾ Masquer 0 vue' : `▸ ${stats.zeroViewVaralDocs.length} doc(s) à 0 vue`}</button>
-              {showZeroViews && <ul className="mt-1 max-h-24 overflow-y-auto text-[9px] font-semibold space-y-0.5 pr-1">{stats.zeroViewVaralDocs.map((d) => <li key={d.id} className="truncate">📄 {d.titre}</li>)}</ul>}
+              <button type="button" onClick={() => setShowZeroViews((v) => !v)} className="text-[9px] font-black text-[var(--color-cordel-rouge,#8b2a1a)] hover:underline cursor-pointer">{showZeroViews ? '▾ Masquer 0 vue' : `▸ ${stats.zeroViewVaralDocs.length} doc(s) à 0 vue`}</button>
+              {showZeroViews && <ul className="mt-1 max-h-20 overflow-y-auto text-[9px] font-semibold space-y-0.5 pr-1">{stats.zeroViewVaralDocs.map((d) => <li key={d.id} className="truncate">📄 {d.titre}</li>)}</ul>}
             </div>
           )}
         </div>

@@ -9,9 +9,20 @@ import WorkshopProgramSelector from './WorkshopProgramSelector';
 import EventRepertoireProgramSelector from './EventRepertoireProgramSelector';
 import { DEFAULT_CUSTOM_CATEGORIES } from '../../utils/categoryUtils';
 import EventMediaFields from './EventMediaFields';
+import EventStampSelector from './EventStampSelector';
+import EventDisciplineDressCodeFields from './EventDisciplineDressCodeFields';
 import EventPupitresQuotasFields from './EventPupitresQuotasFields';
 import EventPollFormSection from './EventPollFormSection';
 import EventVolunteerShiftsEditor from './EventVolunteerShiftsEditor';
+import EventQuickTogglesGrid from './EventQuickTogglesGrid';
+import EventDeadlineModeField from './EventDeadlineModeField';
+import {
+  extractDayPart,
+  extractTimePart,
+  resolveDefaultTimesForForm,
+  applyScheduleTransitionOnFormChange,
+  computeRelativeDeadlineForSlot
+} from '../../utils/eventScheduleUtils';
 import { useTranslation } from '../LanguageContext';
 
 /**
@@ -53,40 +64,48 @@ export default function EventFormFields({
     return fallback;
   };
 
-  // 1. Calcul d'heure de fin non destructif : s'applique uniquement si dateFin est vierge
+  // 1. Conservation de l'horaire type lors du changement de jour et synchronisation de dateFin
   const handleDateDebutChange = (e) => {
-    const newDate = e.target.value;
+    const rawNewDate = e.target.value;
     setFormData(prev => {
-      const updated = { ...prev, date: newDate };
-      // Calcul non destructif : uniquement si dateFin n'a jamais été renseignée
-      if (!prev.dateFin && newDate) {
-        try {
-          const d = new Date(newDate);
-          if (!isNaN(d.getTime())) {
-            d.setHours(d.getHours() + 2);
-            const tzOffset = d.getTimezoneOffset() * 60000;
-            const localISOTime = new Date(d.getTime() - tzOffset).toISOString().slice(0, 16);
-            updated.dateFin = localISOTime;
-          }
-        } catch (err) {
-          console.warn("Calcul automatique dateFin échoué :", err);
-        }
+      if (!rawNewDate) {
+        return { ...prev, date: '' };
+      }
+      const { startTime, endTime } = resolveDefaultTimesForForm(prev, eventTypeConfigs);
+      const newDay = extractDayPart(rawNewDate);
+      const rawTime = extractTimePart(rawNewDate);
+      const prevDay = prev.date ? extractDayPart(prev.date) : '';
+      const effectiveStartTime = (!prev.date && rawTime === '00:00') ? startTime : (rawTime || startTime);
+      const finalStart = `${newDay}T${effectiveStartTime}`;
+
+      const updated = { ...prev, date: finalStart };
+
+      const prevEndDay = prev.dateFin ? extractDayPart(prev.dateFin) : '';
+      const prevEndTime = prev.dateFin ? extractTimePart(prev.dateFin) : '';
+      if (!prev.dateFin || prevEndDay === prevDay) {
+        updated.dateFin = `${newDay}T${prevEndTime || endTime}`;
       }
 
-      // Calcul automatique de la date limite d'inscription selon le délai par défaut en heures
-      const activeType = prev.type || 'prestation';
-      const typePresets = eventTypeConfigs?.[activeType];
-      const deadlineHours = Number(typePresets?.defaultDeadlineHours);
-      if (deadlineHours > 0 && newDate && (!prev.dateLimiteInscription || !isEdit)) {
-        try {
-          const eventStart = new Date(newDate);
-          if (!isNaN(eventStart.getTime())) {
-            const deadlineDate = new Date(eventStart.getTime() - deadlineHours * 3600 * 1000);
-            const tzOffset = deadlineDate.getTimezoneOffset() * 60000;
-            updated.dateLimiteInscription = new Date(deadlineDate.getTime() - tzOffset).toISOString().slice(0, 16);
+      if (prev.registrationDeadlineMode === 'relative') {
+        updated.dateLimiteInscription = computeRelativeDeadlineForSlot(
+          finalStart,
+          prev.registrationDeadlineDaysBefore || 7
+        );
+      } else {
+        const activeType = prev.type || 'prestation';
+        const typePresets = eventTypeConfigs?.[activeType];
+        const deadlineHours = Number(typePresets?.defaultDeadlineHours);
+        if (deadlineHours > 0 && finalStart && (!prev.dateLimiteInscription || !isEdit)) {
+          try {
+            const eventStart = new Date(finalStart);
+            if (!isNaN(eventStart.getTime())) {
+              const deadlineDate = new Date(eventStart.getTime() - deadlineHours * 3600 * 1000);
+              const tzOffset = deadlineDate.getTimezoneOffset() * 60000;
+              updated.dateLimiteInscription = new Date(deadlineDate.getTime() - tzOffset).toISOString().slice(0, 16);
+            }
+          } catch (err) {
+            console.warn("Calcul automatique dateLimiteInscription échoué :", err);
           }
-        } catch (err) {
-          console.warn("Calcul automatique dateLimiteInscription échoué :", err);
         }
       }
 
@@ -199,16 +218,28 @@ export default function EventFormFields({
         updated.publierSurVaral = updated.activerRecolteMedias !== false;
       }
 
-      return updated;
+      return applyScheduleTransitionOnFormChange(prev, updated, eventTypeConfigs);
     });
   };
 
-  // Helper pour les toggles booléens réactifs
+  // Helper pour les toggles booléens réactifs avec bascule dynamique d'horaires Percussion <-> Danse
   const toggleBooleanField = (fieldName, currentVal) => {
-    setFormData(prev => ({
-      ...prev,
-      [fieldName]: !currentVal
-    }));
+    setFormData(prev => {
+      const next = {
+        ...prev,
+        [fieldName]: !currentVal
+      };
+      return applyScheduleTransitionOnFormChange(prev, next, eventTypeConfigs);
+    });
+  };
+
+  // Handler pour les champs de discipline (ex: niveauRequis === 'aucun' bascule sur l'horaire Danse)
+  const handleDisciplineFieldChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => {
+      const next = { ...prev, [name]: value };
+      return applyScheduleTransitionOnFormChange(prev, next, eventTypeConfigs);
+    });
   };
 
   return (
@@ -308,6 +339,7 @@ export default function EventFormFields({
             formData={formData}
             setFormData={setFormData}
             pupitresList={pupitresList}
+            eventTypeConfigs={eventTypeConfigs}
             isEdit={true}
             tr={tr}
           />
@@ -422,258 +454,24 @@ export default function EventFormFields({
         </div>
 
         {/* Barrette d'interrupteurs rapides */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 select-none">
-          {/* 1. Percussion (Fallback strict !== false) */}
-          <button
-            type="button"
-            onClick={() => toggleBooleanField('includesPercussion', formData.includesPercussion !== false)}
-            disabled={saving}
-            className={`flex items-center justify-center gap-2 p-2 rounded text-xs font-black uppercase tracking-wider border transition-all cursor-pointer ${
-              formData.includesPercussion !== false
-                ? 'bg-amber-100 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 border-amber-500 shadow-xs'
-                : 'bg-neutral-100 dark:bg-neutral-800/40 text-neutral-400 border-neutral-300 dark:border-neutral-700'
-            }`}
-          >
-            <span>🥁</span>
-            <span>{tr('agenda.togglePercussion')}</span>
-            <span className="ml-auto text-[10px]">{formData.includesPercussion !== false ? 'ON' : 'OFF'}</span>
-          </button>
-
-          {/* 2. Danse (Fallback strict !== false) */}
-          <button
-            type="button"
-            onClick={() => toggleBooleanField('includesDance', formData.includesDance !== false)}
-            disabled={saving}
-            className={`flex items-center justify-center gap-2 p-2 rounded text-xs font-black uppercase tracking-wider border transition-all cursor-pointer ${
-              formData.includesDance !== false
-                ? 'bg-pink-100 dark:bg-pink-950/40 text-pink-900 dark:text-pink-200 border-pink-500 shadow-xs'
-                : 'bg-neutral-100 dark:bg-neutral-800/40 text-neutral-400 border-neutral-300 dark:border-neutral-700'
-            }`}
-          >
-            <span>💃</span>
-            <span>{tr('agenda.toggleDance')}</span>
-            <span className="ml-auto text-[10px]">{formData.includesDance !== false ? 'ON' : 'OFF'}</span>
-          </button>
-
-          {/* 3. Covoiturage (Fallback strict !== false) */}
-          <button
-            type="button"
-            onClick={() => toggleBooleanField('enableCarpool', formData.enableCarpool !== false)}
-            disabled={saving}
-            className={`flex items-center justify-center gap-2 p-2 rounded text-xs font-black uppercase tracking-wider border transition-all cursor-pointer ${
-              formData.enableCarpool !== false
-                ? 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 border-emerald-500 shadow-xs'
-                : 'bg-neutral-100 dark:bg-neutral-800/40 text-neutral-400 border-neutral-300 dark:border-neutral-700'
-            }`}
-          >
-            <span>🚗</span>
-            <span>{tr('agenda.toggleCarpool')}</span>
-            <span className="ml-auto text-[10px]">{formData.enableCarpool !== false ? 'ON' : 'OFF'}</span>
-          </button>
-
-          {/* 4. Public / Vitrine */}
-          <button
-            type="button"
-            onClick={() => toggleBooleanField('isPublic', Boolean(formData.isPublic))}
-            disabled={saving}
-            className={`flex items-center justify-center gap-2 p-2 rounded text-xs font-black uppercase tracking-wider border transition-all cursor-pointer ${
-              formData.isPublic
-                ? 'bg-sky-100 dark:bg-sky-950/40 text-sky-900 dark:text-sky-200 border-sky-500 shadow-xs'
-                : 'bg-neutral-100 dark:bg-neutral-800/40 text-neutral-400 border-neutral-300 dark:border-neutral-700'
-            }`}
-          >
-            <span>🌍</span>
-            <span>{tr('agenda.togglePublic')}</span>
-            <span className="ml-auto text-[10px]">{formData.isPublic ? 'ON' : 'OFF'}</span>
-          </button>
-
-          {/* 5. Inscriptions requises */}
-          <button
-            type="button"
-            onClick={() => toggleBooleanField('enableInscriptions', formData.enableInscriptions !== false)}
-            disabled={saving}
-            className={`flex items-center justify-center gap-2 p-2 rounded text-xs font-black uppercase tracking-wider border transition-all cursor-pointer ${
-              formData.enableInscriptions !== false
-                ? 'bg-blue-100 dark:bg-blue-950/40 text-blue-900 dark:text-blue-200 border-blue-500 shadow-xs'
-                : 'bg-neutral-100 dark:bg-neutral-800/40 text-neutral-400 border-neutral-300 dark:border-neutral-700'
-            }`}
-          >
-            <span>📝</span>
-            <span>{tr('agenda.toggleRsvp')}</span>
-            <span className="ml-auto text-[10px]">{formData.enableInscriptions !== false ? 'ON' : 'OFF'}</span>
-          </button>
-
-          {/* 6. Soumis à validation admin */}
-          <button
-            type="button"
-            onClick={() => toggleBooleanField('requiresValidation', Boolean(formData.requiresValidation))}
-            disabled={saving}
-            className={`flex items-center justify-center gap-2 p-2 rounded text-xs font-black uppercase tracking-wider border transition-all cursor-pointer ${
-              formData.requiresValidation
-                ? 'bg-purple-100 dark:bg-purple-950/40 text-purple-900 dark:text-purple-200 border-purple-500 shadow-xs'
-                : 'bg-neutral-100 dark:bg-neutral-800/40 text-neutral-400 border-neutral-300 dark:border-neutral-700'
-            }`}
-          >
-            <span>🔒</span>
-            <span>{tr('agenda.toggleValidation')}</span>
-            <span className="ml-auto text-[10px]">{formData.requiresValidation ? 'ON' : 'OFF'}</span>
-          </button>
-
-          {/* 7. Boîte à photos / QR Code (activerRecolteMedias) */}
-          <button
-            type="button"
-            onClick={() => toggleBooleanField('activerRecolteMedias', formData.activerRecolteMedias !== false)}
-            disabled={saving}
-            className={`flex items-center justify-center gap-2 p-2 rounded text-xs font-black uppercase tracking-wider border transition-all cursor-pointer ${
-              formData.activerRecolteMedias !== false
-                ? 'bg-amber-100 dark:bg-amber-950/40 text-amber-950 dark:text-amber-200 border-amber-500 shadow-xs'
-                : 'bg-neutral-100 dark:bg-neutral-800/40 text-neutral-400 border-neutral-300 dark:border-neutral-700'
-            }`}
-            title="Activer la boîte à photos / QR Code et le stockage Framaspace"
-          >
-            <span>📸</span>
-            <span>{tr('agenda.togglePhotos') || "Boîte photos"}</span>
-            <span className="ml-auto text-[10px]">{formData.activerRecolteMedias !== false ? 'ON' : 'OFF'}</span>
-          </button>
-
-          {/* 8. Publication Varal Photos (publierSurVaral) */}
-          <button
-            type="button"
-            onClick={() => toggleBooleanField('publierSurVaral', Boolean(formData.publierSurVaral))}
-            disabled={saving}
-            className={`flex items-center justify-center gap-2 p-2 rounded text-xs font-black uppercase tracking-wider border transition-all cursor-pointer ${
-              formData.publierSurVaral
-                ? 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 border-emerald-500 shadow-xs'
-                : 'bg-neutral-100 dark:bg-neutral-800/40 text-neutral-400 border-neutral-300 dark:border-neutral-700'
-            }`}
-            title="Afficher sur le Varal Photos des membres"
-          >
-            <span>🪢</span>
-            <span>{tr('agenda.toggleVaralPhotos') || "Varal photos"}</span>
-            <span className="ml-auto text-[10px]">{formData.publierSurVaral ? 'ON' : 'OFF'}</span>
-          </button>
-
-          {/* 9. Feuille de route (Roadbook) */}
-          <button
-            type="button"
-            onClick={() => toggleBooleanField('enableRoadbook', formData.enableRoadbook !== false)}
-            disabled={saving}
-            className={`flex items-center justify-center gap-2 p-2 rounded text-xs font-black uppercase tracking-wider border transition-all cursor-pointer ${
-              formData.enableRoadbook !== false
-                ? 'bg-amber-100 dark:bg-amber-950/40 text-amber-950 dark:text-amber-200 border-amber-500 shadow-xs'
-                : 'bg-neutral-100 dark:bg-neutral-800/40 text-neutral-400 border-neutral-300 dark:border-neutral-700'
-            }`}
-            title="Activer la feuille de route opérationnelle (Roadbook jour J)"
-          >
-            <span>📄</span>
-            <span>{tr('agenda.toggleRoadbook') || "Feuille de route"}</span>
-            <span className="ml-auto text-[10px]">{formData.enableRoadbook !== false ? 'ON' : 'OFF'}</span>
-          </button>
-
-          {/* 10. Commissions & Chantiers de Projets (hasCommissions) */}
-          <button
-            type="button"
-            onClick={() => toggleBooleanField('hasCommissions', Boolean(formData.hasCommissions))}
-            disabled={saving}
-            className={`flex items-center justify-center gap-2 p-2 rounded text-xs font-black uppercase tracking-wider border transition-all cursor-pointer ${
-              formData.hasCommissions
-                ? 'bg-amber-100 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 border-[var(--color-cordel-ocre,#c05621)] shadow-xs'
-                : 'bg-neutral-100 dark:bg-neutral-800/40 text-neutral-400 border-neutral-300 dark:border-neutral-700'
-            }`}
-            title="Activer la gestion par commissions (Tour de contrôle, rétro-planning, budget, bénévoles)"
-          >
-            <span>🎪</span>
-            <span>{tr('agenda.toggleCommissions') || "Commissions"}</span>
-            <span className="ml-auto text-[10px]">{formData.hasCommissions ? 'ON' : 'OFF'}</span>
-          </button>
-        </div>
+        <EventQuickTogglesGrid
+          formData={formData}
+          toggleBooleanField={toggleBooleanField}
+          saving={saving}
+          tr={tr}
+        />
 
         {/* Détails conditionnels Artistiques & Covoiturage */}
         <div className="flex flex-col gap-3 pt-2 border-t border-dashed border-cordel-master-dark/15">
           {/* Tenues et niveaux selon les toggles */}
-          {(formData.includesPercussion !== false || formData.includesDance !== false) && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {/* Percussion : Niveau & Tenue */}
-              {formData.includesPercussion !== false && (
-                <div className="flex flex-col gap-2 p-2.5 bg-amber-50/50 dark:bg-amber-950/10 rounded border border-amber-300/40">
-                  <span className="text-[10px] font-black uppercase text-amber-900 dark:text-amber-300 flex items-center gap-1">
-                    🥁 {tr('agenda.percussionSectionTitle') || "Pupitre Percussion"}
-                  </span>
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[8px] uppercase font-bold text-stone-600">{tr('agenda.requiredLevel') || "Niveau requis"}</label>
-                    <select
-                      name="niveauRequis"
-                      value={formData.niveauRequis || 'tous'}
-                      onChange={handleChange}
-                      disabled={saving}
-                      className="theme-input text-xs font-bold py-1 bg-white"
-                    >
-                      <option value="tous">👥 Tous les niveaux</option>
-                      <option value="aucun">Aucun</option>
-                      {customCategories.map(cat => (
-                        <option key={cat} value={cat}>{cat}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[8px] uppercase font-bold text-stone-600">{tr('agenda.percussionOutfit') || "Tenue Percussion"}</label>
-                    <select
-                      name="dressCodePercussion"
-                      value={formData.dressCodePercussion || ''}
-                      onChange={handleChange}
-                      disabled={saving}
-                      className="theme-input text-xs font-bold py-1 bg-white"
-                    >
-                      <option value="">{tr('agenda.outfitFreeOption') || "-- Libre / Non spécifiée --"}</option>
-                      {combinedCostumeOptions.map(opt => (
-                        <option key={`perc-${opt.id}`} value={opt.name}>{opt.displayName || opt.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              )}
-
-              {/* Danse : Niveau & Tenue */}
-              {formData.includesDance !== false && (
-                <div className="flex flex-col gap-2 p-2.5 bg-pink-50/50 dark:bg-pink-950/10 rounded border border-pink-300/40">
-                  <span className="text-[10px] font-black uppercase text-pink-900 dark:text-pink-300 flex items-center gap-1">
-                    💃 {tr('agenda.danceSectionTitle') || "Section Danse"}
-                  </span>
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[8px] uppercase font-bold text-stone-600">{tr('agenda.requiredLevel') || "Niveau requis"}</label>
-                    <select
-                      name="niveauDanseRequis"
-                      value={formData.niveauDanseRequis || 'aucun'}
-                      onChange={handleChange}
-                      disabled={saving}
-                      className="theme-input text-xs font-bold py-1 bg-white"
-                    >
-                      <option value="aucun">Aucun</option>
-                      <option value="tous">👥 Tous les niveaux</option>
-                      {customCategories.map(cat => (
-                        <option key={cat} value={cat}>{cat}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[8px] uppercase font-bold text-stone-600">{tr('agenda.danceOutfit') || "Tenue Danse"}</label>
-                    <select
-                      name="dressCodeDanse"
-                      value={formData.dressCodeDanse || ''}
-                      onChange={handleChange}
-                      disabled={saving}
-                      className="theme-input text-xs font-bold py-1 bg-white"
-                    >
-                      <option value="">{tr('agenda.outfitFreeOption') || "-- Libre / Non spécifiée --"}</option>
-                      {combinedCostumeOptions.map(opt => (
-                        <option key={`danse-${opt.id}`} value={opt.name}>{opt.displayName || opt.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+          <EventDisciplineDressCodeFields
+            formData={formData}
+            handleChange={handleDisciplineFieldChange}
+            saving={saving}
+            customCategories={customCategories}
+            combinedCostumeOptions={combinedCostumeOptions}
+            tr={tr}
+          />
 
           {/* Pupitres Requis & Quotas Cibles */}
           {(formData.includesPercussion !== false || formData.includesDance !== false) && (
@@ -750,6 +548,15 @@ export default function EventFormFields({
             groupId={groupId}
           />
 
+          {/* Sélecteur de Tampon Cordel (Création) */}
+          {!isEdit && (
+            <EventStampSelector
+              formData={formData}
+              setFormData={setFormData}
+              disabled={saving}
+            />
+          )}
+
           {/* Notification Push (Création uniquement) */}
           {!isEdit && (
             <div className="flex items-center gap-2 pt-1 select-none">
@@ -783,20 +590,14 @@ export default function EventFormFields({
         onToggle={setIsAdvancedOpen}
       >
         <div className="flex flex-col gap-4 pt-1">
-          {/* Date limite d'inscription */}
-          <div className="flex flex-col gap-1">
-            <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              {tr('agenda.deadlineRsvp')}
-            </label>
-            <input
-              type="datetime-local"
-              name="dateLimiteInscription"
-              value={formData.dateLimiteInscription || ''}
-              onChange={handleChange}
-              disabled={saving}
-              className="theme-input w-full text-xs"
-            />
-          </div>
+          {/* Date limite d'inscription (Aucune / Délai relatif J-N / Date fixe) */}
+          <EventDeadlineModeField
+            formData={formData}
+            setFormData={setFormData}
+            handleChange={handleChange}
+            saving={saving}
+            tr={tr}
+          />
 
           {/* Horaires de passages (prestation) */}
           {formData.type === 'prestation' && (
@@ -862,6 +663,7 @@ export default function EventFormFields({
               formData={formData}
               setFormData={setFormData}
               pupitresList={pupitresList}
+              eventTypeConfigs={eventTypeConfigs}
               tr={tr}
             />
           )}

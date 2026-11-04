@@ -64,6 +64,10 @@ export default function TabAgenda({
       requiresValidation: false,
       defaultDeadlineHours: '',
       defaultDropUrl: '',
+      defaultStartTime: '20:00',
+      defaultEndTime: '22:00',
+      defaultDanceStartTime: '19:00',
+      defaultDanceEndTime: '20:00',
       agendaRequireInstrument: false,
       agendaEnableMaybeStatus: true,
       agendaEnableFinance: true,
@@ -229,9 +233,14 @@ export default function TabAgenda({
 
                   const handleChangeTypeConfig = (typeKey, updatedConfig) => {
                     const currentConfigs = formData.eventTypeConfigs || {};
-                    handleChange('eventTypeConfigs', {
+                    const nextConfigs = {
                       ...currentConfigs,
                       [typeKey]: updatedConfig
+                    };
+                    handleChange('eventTypeConfigs', nextConfigs);
+                    handleChange('agendaConfig', {
+                      ...(formData.agendaConfig || {}),
+                      eventTypeConfigs: nextConfigs
                     });
                   };
 

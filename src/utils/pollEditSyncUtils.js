@@ -1,4 +1,5 @@
 import { collection, doc, getDocs, query, where, writeBatch } from 'firebase/firestore';
+import { resolveSlotRegistrationDeadline, extractDayPart, extractTimePart } from './eventScheduleUtils';
 
 /**
  * Normalise et trie les documents frères d'un sondage par optionIndex ou par date.
@@ -76,8 +77,13 @@ export async function syncPollGroupOnSave({ db, event, editForm, sharedUpdates, 
   const keptIds = new Set();
   const finalSlotIds = [];
 
+  const slotEndTime = extractTimePart(editForm.dateFin) || '22:00';
+
   validEntries.forEach((entry, idx) => {
     const optionIndex = idx + 1;
+    const slotDeadline = resolveSlotRegistrationDeadline(entry.date, editForm);
+    const slotDateFin = entry.date ? `${extractDayPart(entry.date)}T${slotEndTime}` : (sharedUpdates.dateFin || '');
+
     if (entry.docId && existingIdsInDb.has(entry.docId)) {
       keptIds.add(entry.docId);
       finalSlotIds.push(entry.docId);
@@ -85,6 +91,8 @@ export async function syncPollGroupOnSave({ db, event, editForm, sharedUpdates, 
         ...sharedUpdates,
         date: entry.date,
         dateDebut: entry.date,
+        dateFin: slotDateFin,
+        dateLimiteInscription: slotDeadline,
         status: 'sondage',
         isPoll: true,
         pollGroupId: event.pollGroupId,
@@ -99,6 +107,8 @@ export async function syncPollGroupOnSave({ db, event, editForm, sharedUpdates, 
         groupId: event.groupId || resolvedGroupId,
         date: entry.date,
         dateDebut: entry.date,
+        dateFin: slotDateFin,
+        dateLimiteInscription: slotDeadline,
         status: 'sondage',
         isPoll: true,
         pollGroupId: event.pollGroupId,

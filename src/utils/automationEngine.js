@@ -2,6 +2,7 @@ import { collection, query, where, getDocs, addDoc, doc, getDoc } from 'firebase
 import { db } from '../firebase.js';
 import { resolveCategory, isUserCategoryMatchingEvent } from './categoryUtils.js';
 import { isMemberCaOrBureau } from './memberUtils.js';
+import { evaluateDeadlineSummaryForEvent } from './deadlineSummaryAutomationUtils.js';
 
 /**
  * Helper: Vérifie si un membre est éligible pour recevoir la relance d'une règle spécifique
@@ -152,6 +153,26 @@ export async function runAutomationEngine(groupId, isSimulation = false) {
       if (['eventConfirmed', 'eventCancelled', 'reportValidation', 'on_report_published'].includes(rule.pointDeReference)) {
         const triggerLabel = rule.pointDeReference === 'on_report_published' ? 'publication au Varal' : rule.pointDeReference;
         details.push(`ℹ️ [Règle "${rule.titre}"] : Déclencheur instantané (${triggerLabel}) — actif aux événements en temps réel.`);
+        continue;
+      }
+
+      if (rule.pointDeReference === 'on_registration_deadline_summary') {
+        for (const ev of eventsList) {
+          const matchesType = !rule.typeEvenementCible ||
+                              rule.typeEvenementCible === 'tous' ||
+                              rule.typeEvenementCible === ev.type;
+          if (!matchesType) continue;
+          const sentCount = await evaluateDeadlineSummaryForEvent({
+            db,
+            groupId,
+            rule,
+            ev,
+            activeUsers,
+            isSimulation,
+            details
+          });
+          triggeredCount += sentCount;
+        }
         continue;
       }
 

@@ -37,6 +37,7 @@ export default function AgendaTemporalTabs({
   pastInCurrentSeasonCount = 0,
   pastSeasonCount = 0,
   totalPastEventsCount = 0,
+  mobileFilterControl = null,
   t
 }) {
   const activePastSeason = selectedPastSeason || currentSeason;
@@ -88,6 +89,9 @@ export default function AgendaTemporalTabs({
             </span>
           </button>
         </div>
+
+        {/* Bouton tiroir de filtres sur Mobile (< 768px) aligné à droite du sélecteur À venir / Passés */}
+        {mobileFilterControl}
 
         {/* Indication contextuelle discrète pour le mode Passés */}
         {temporalTab === 'past' && (

@@ -2569,6 +2569,94 @@ async function runRelanceAutomations(db) {
                               rule.typeEvenementCible === ev.type;
           if (!matchesType) continue;
 
+          // Cas spécifique : Bilan pour l'encadrement à la clôture des inscriptions
+          if (rule.pointDeReference === "on_registration_deadline_summary") {
+            if (!ev.dateLimiteInscription || ev.deadlineSummarySent === true) continue;
+            const deadlineDate = ev.dateLimiteInscription.length === 10
+              ? new Date(`${ev.dateLimiteInscription}T23:59:59`)
+              : new Date(ev.dateLimiteInscription);
+            if (isNaN(deadlineDate.getTime()) || now < deadlineDate) continue;
+
+            const byPupitre = {};
+            let totalInscrits = 0;
+            if (ev.status === "sondage" || ev.isPoll) {
+              const votes = ev.votes || {};
+              for (const [uid, choice] of Object.entries(votes)) {
+                if (choice !== "dispo") continue;
+                totalInscrits++;
+                const u = activeUsers.find((usr) => usr.id === uid);
+                const pup = u?.instrumentPrincipal || u?.instrument || u?.instrumentsJoues?.[0] || "Autre";
+                byPupitre[pup] = (byPupitre[pup] || 0) + 1;
+              }
+            } else {
+              const presents = (ev.inscriptions || []).filter((ins) => ins.status === "present");
+              for (const ins of presents) {
+                totalInscrits++;
+                const u = activeUsers.find((usr) => usr.id === ins.userId);
+                const pup = ins.instrumentChoisi || ins.instrument || u?.instrumentPrincipal || u?.instrument || "Autre";
+                byPupitre[pup] = (byPupitre[pup] || 0) + 1;
+              }
+            }
+
+            const resumePupitres = Object.entries(byPupitre)
+              .map(([p, c]) => `${c} ${p}`)
+              .join(", ") || "Aucun inscrit";
+            const targetTags = (Array.isArray(rule.targetTags) && rule.targetTags.length > 0
+              ? rule.targetTags
+              : ["Mestre", "CA", "Bureau"]
+            ).map((t) => String(t).toLowerCase().trim());
+
+            const recipientUsers = activeUsers.filter((u) => {
+              const uRole = String(u.role || "").toLowerCase().trim();
+              const uTags = [
+                ...(Array.isArray(u.tags) ? u.tags : []),
+                ...(Array.isArray(u.userTags) ? u.userTags : []),
+                uRole
+              ].map((t) => String(typeof t === "string" ? t : (t?.nomM || t?.nom || t?.label || t?.id || "")).toLowerCase().trim());
+              if (targetTags.includes("mestre") && (uRole === "mestre" || uRole === "super-admin" || u.isSystemAdmin === true)) {
+                return true;
+              }
+              return targetTags.some((tg) => uTags.includes(tg));
+            });
+
+            const eventName = ev.titre || ev.nom || "Événement";
+            const notifTitle = (rule.titreNotification || `📊 Clôture des inscriptions : ${eventName}`)
+              .replace(/\{\{nomEvenement\}\}/g, eventName);
+            const notifBody = `${totalInscrits} inscrit(s) (${resumePupitres}). Clique pour consulter ou valider.`;
+            const deepLinkUrl = `/app/agenda?eventId=${ev.id}`;
+
+            await db.collection("events").doc(ev.id).update({
+              deadlineSummarySent: true,
+              deadlineSummarySentAt: new Date().toISOString()
+            });
+            ev.deadlineSummarySent = true;
+
+            for (const recipient of recipientUsers) {
+              report.triggeredCount++;
+              await db.collection("users").doc(recipient.id).collection("in_app_notifications").add({
+                title: notifTitle,
+                titre: notifTitle,
+                message: notifBody,
+                type: "registration_deadline_summary",
+                targetUrl: deepLinkUrl,
+                read: false,
+                lu: false,
+                createdAt: FieldValue.serverTimestamp()
+              });
+              await sendPushToUsers(db, {
+                groupId,
+                recipientId: recipient.id,
+                title: notifTitle,
+                body: notifBody,
+                dataPayload: { url: deepLinkUrl, click_action: deepLinkUrl }
+              });
+            }
+            report.details.push(
+              `[${groupId}] Bilan clôture envoyé (${recipientUsers.length} destinataire(s)) pour "${eventName}"`
+            );
+            continue;
+          }
+
           // Date de référence (registrationDeadline, after_event ou eventDate)
           let referenceDateStr = "";
           if (rule.pointDeReference === "registrationDeadline") {

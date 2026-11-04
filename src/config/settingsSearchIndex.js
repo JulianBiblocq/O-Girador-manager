@@ -117,7 +117,7 @@ export const SETTINGS_INDEX = [
     description: 'Historique technique des événements, présences et actions réalisées',
     keywords: ['journal', 'activite', 'logs', 'historique', 'csv', 'audit', 'tracabilite'],
     poleId: 'secretariat',
-    tabId: 'secretariat-reports',
+    tabId: 'ca-reports',
     requiredPole: 'secretariat'
   },
   {
@@ -126,7 +126,7 @@ export const SETTINGS_INDEX = [
     description: 'Préparation et archivage des rapports moral et d\'activité de l\'Assemblée Générale',
     keywords: ['rapport ag', 'assemblee generale', 'bilan moral', 'activite', 'rapport annuel', 'bureau'],
     poleId: 'secretariat',
-    tabId: 'secretariat-reports',
+    tabId: 'ca-reports',
     requiredPole: 'secretariat'
   },
   {

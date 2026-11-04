@@ -1,27 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useUserProfile } from '../hooks/useUserProfile';
 import XiloAvatar from './XiloAvatar';
 import { resolveCategory } from '../utils/categoryUtils';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
-import { 
-  XiloEye, 
-  XiloEyeOff, 
-  XiloLock, 
-  XiloShield, 
-  XiloPhone, 
-  XiloHome, 
-  XiloBirthday, 
-  XiloPin, 
-  XiloShirt, 
-  XiloHand, 
-  XiloSparkles, 
-  XiloDocument, 
-  XiloUser 
-} from './XiloIcons';
 import { useTerminologie } from '../hooks/useTerminologie';
 import { useTranslation } from './LanguageContext';
 import ProfileEditForm from './profile/ProfileEditForm';
+import ProfilePublicCard from './profile/ProfilePublicCard';
+import ProfileContactAndStageAccordions from './profile/ProfileContactAndStageAccordions';
+import ProfileDietAndVehicleAccordions from './profile/ProfileDietAndVehicleAccordions';
 import ImageLightboxModal from './ImageLightboxModal';
 import FamilyMembersManager from './profile/FamilyMembersManager';
 import NotificationDiagnostic from './profile/NotificationDiagnostic';
@@ -31,18 +19,48 @@ const CordelImageEditor = React.lazy(() => import('./CordelImageEditor'));
 
 import { formatTagGender, filterUserAssignedTags } from '../utils/tagUtils';
 import { getInstrumentIconPath } from '../utils/instrumentUtils';
-
-import { generateImageCharterPDF, generateMedicalAttestationPDF } from '../utils/pdfGenerator';
 import { useViewSimulator } from '../context/ViewSimulatorContext';
-import { getCarpoolBulkyTerminology } from '../utils/carpoolCascadeUtils';
 
-export default function UserProfile({ user, profileData, associationName, onBack, enabledModules = {} }) {
+const ACCORDION_STORAGE_KEY = 'organizador_profile_accordions_v1';
+
+export default function UserProfile({ user, profileData, associationName, enabledModules = {} }) {
   const { t, locale } = useTranslation();
   const { tRole } = useTerminologie();
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [showQrScanner, setShowQrScanner] = useState(false);
 
-  const isCostumerieEnabled = enabledModules?.costumerie !== false && (enabledModules?.costumerie !== undefined || enabledModules?.vestiaire !== false);
+  // État de pliage des accordéons avec persistance localStorage (repliés par défaut sur mobile < 768px)
+  const [openSections, setOpenSections] = useState(() => {
+    try {
+      const saved = localStorage.getItem(ACCORDION_STORAGE_KEY);
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // Ignorer erreurs localStorage
+    }
+    const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
+    return {
+      contact: isDesktop,
+      stage: isDesktop,
+      diet: isDesktop,
+      vehicle: isDesktop
+    };
+  });
+
+  const toggleSection = useCallback((key) => {
+    setOpenSections((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      try {
+        localStorage.setItem(ACCORDION_STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        // Ignorer erreurs localStorage
+      }
+      return next;
+    });
+  }, []);
+
+  const isCostumerieEnabled =
+    enabledModules?.costumerie !== false &&
+    (enabledModules?.costumerie !== undefined || enabledModules?.vestiaire !== false);
 
   const { isSimulating, effectiveProfile } = useViewSimulator();
   const currentProfile = isSimulating && effectiveProfile ? effectiveProfile : profileData;
@@ -80,9 +98,33 @@ export default function UserProfile({ user, profileData, associationName, onBack
     handleDisconnect
   } = useUserProfile(user, currentProfile, t);
 
-  const visibleTags = filterUserAssignedTags(currentProfile?.tags, tagsDisponibles);
+  const fullName = `${currentProfile?.prenom || ''} ${currentProfile?.nom || ''}`.trim();
+  const roleLabel = tRole(profileData?.role || 'membre', profileData?.genre);
+  const hasCustomPhoto = Boolean(profileData?.photoURL || user?.photoURL);
 
-  const fullName = `${currentProfile?.prenom || ''} ${currentProfile?.nom || ''}`;
+  // Déduplication stricte des badges de rôle pour ne jamais afficher « MESTRE » plusieurs fois
+  const deduplicatedTags = React.useMemo(() => {
+    const rawTags = filterUserAssignedTags(currentProfile?.tags, tagsDisponibles) || [];
+    const seen = new Set([
+      String(roleLabel || '').trim().toLowerCase(),
+      String(profileData?.role || '').trim().toLowerCase()
+    ]);
+    const result = [];
+    rawTags.forEach((tag) => {
+      const formatted = formatTagGender(
+        tag,
+        profileData?.genre,
+        profileData?.majoriteFeminine,
+        tagsDisponibles
+      );
+      const norm = String(formatted || '').trim().toLowerCase();
+      if (norm && !seen.has(norm)) {
+        seen.add(norm);
+        result.push({ raw: tag, formatted });
+      }
+    });
+    return result;
+  }, [currentProfile?.tags, tagsDisponibles, roleLabel, profileData?.role, profileData?.genre, profileData?.majoriteFeminine]);
 
   const translate = (key, fallback) => {
     const val = t(key);
@@ -113,33 +155,12 @@ export default function UserProfile({ user, profileData, associationName, onBack
   };
 
   const missingKeys = getMissingRequiredFields ? getMissingRequiredFields() : [];
-  const missingLabels = missingKeys.map(k => FIELD_LABELS[k] || k);
-  
+  const missingLabels = missingKeys.map((k) => FIELD_LABELS[k] || k);
   const currentNiveau = profileData?.niveauMusique || profileData?.niveau;
 
   return (
-    <div className="flex flex-col gap-4 text-left max-w-3xl mx-auto w-full">
-      {/* Barre d'en-tête du profil intégrée au flux normal (sans sticky parasite ni double pointillés) */}
-      <div className="flex items-center justify-between w-full py-1.5 select-none shrink-0">
-        {onBack ? (
-          <CordelButton variant="default" onClick={onBack} className="px-3 py-1 text-xs shrink-0 flex items-center gap-1 shadow-[1.5px_1.5px_0px_0px_#181716]">
-            ← {t('common.back')}
-          </CordelButton>
-        ) : (
-          <div className="w-16 shrink-0"></div>
-        )}
-        <div className="flex items-center gap-2 px-2">
-          <span className="panel-title text-base sm:text-lg font-extrabold tracking-wider text-cordel-wood uppercase">
-            {t('userProfile.mainTitle') || t('userProfile.title') || "Mon Profil"}
-          </span>
-          <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-cordel-wood/10 text-cordel-wood border border-cordel-wood/25 hidden xs:inline-block">
-            ⚙️ {t('userProfile.settingsTag') || "Paramètres"}
-          </span>
-        </div>
-        <div className="w-16 shrink-0 hidden sm:block"></div>
-      </div>
-
-      {/* Missing Required Fields Alert Banner */}
+    <div className="flex flex-col gap-3.5 text-left max-w-3xl mx-auto w-full">
+      {/* Bannière d'alerte en cas de champs obligatoires manquants */}
       {missingKeys.length > 0 && (
         <div className="bg-amber-100 dark:bg-amber-950/40 border-2 border-dashed border-amber-600 text-amber-900 dark:text-amber-200 p-3 rounded flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs text-left shadow-sm animate-fade-in select-none">
           <div className="flex flex-col">
@@ -163,21 +184,16 @@ export default function UserProfile({ user, profileData, associationName, onBack
         </div>
       )}
 
-      {/* Bloc d'identité utilisateur et photo de profil (Carte Cordel étanche avec padding généreux) */}
-      <CordelCard variant="default" useExtremeBorder={true} className="flex flex-col items-center gap-3 pt-6 pb-5 px-4 select-none w-full relative">
-        <div 
-          className="relative inline-block cursor-pointer group hover:scale-105 transition-transform my-1" 
-          onClick={() => (profileData?.photoURL || user?.photoURL) && setLightboxOpen(true)}
+      {/* Carte 1 : En-tête du Profil (Avatar, Nom, Surnom, Rôle unique, Photo et bouton Modifier) */}
+      <CordelCard variant="default" useExtremeBorder={true} className="flex flex-col items-center gap-2.5 pt-5 pb-4 px-4 select-none w-full relative">
+        <div
+          className="relative inline-block cursor-pointer group hover:scale-105 transition-transform"
+          onClick={() => hasCustomPhoto && setLightboxOpen(true)}
           title={t('userProfile.photoEnlargeTitle')}
         >
-          <XiloAvatar src={profileData?.photoURL || user?.photoURL} name={fullName} size={110} />
-          {/* Sceaux décoratifs ancrés strictement au conteneur de l'avatar */}
+          <XiloAvatar src={profileData?.photoURL || user?.photoURL} name={fullName} size={100} />
+          {/* Sceaux de niveau uniquement (pas de doublon du rôle sur l'avatar) */}
           <div className="absolute bottom-0 -right-2 z-10 flex flex-col gap-1 items-end pointer-events-none select-none max-w-[130px]">
-            {profileData?.role && profileData.role !== 'membre' && (
-              <span className="theme-stamp-badge theme-stamp-badge-wood text-[8.5px] font-black uppercase tracking-wider rotate-[6deg] shadow-xs">
-                {tRole(profileData.role, profileData?.genre)}
-              </span>
-            )}
             {currentNiveau && currentNiveau !== 'aucun' && (
               <span className="theme-stamp-badge theme-stamp-badge-ocre text-[7.5px] font-black uppercase tracking-wider -rotate-[4deg] shadow-xs">
                 🎵 {resolveCategory(currentNiveau)}
@@ -191,77 +207,73 @@ export default function UserProfile({ user, profileData, associationName, onBack
           </div>
         </div>
 
-        {/* Nom de l'utilisateur et rôle principal dégagés de toute collision */}
-        <div className="flex flex-col items-center gap-1 w-full text-center mt-2">
-          <h2 className="font-heading font-black text-2xl uppercase tracking-wider text-encre-noire">
+        {/* Nom complet, surnom intégré et rôle unique */}
+        <div className="flex flex-col items-center gap-0.5 w-full text-center mt-1">
+          <h2 className="font-heading font-black text-xl sm:text-2xl uppercase tracking-wider text-encre-noire leading-tight">
             {fullName}
           </h2>
-          <span className="text-xs font-black uppercase tracking-widest text-cordel-wood">
-            {tRole(profileData?.role || 'membre', profileData?.genre)}
+          {isFieldVisible('surnom') && formData.surnom && (
+            <span className="text-xs font-extrabold italic text-cordel-master-dark/80">
+              « {formData.surnom} »
+            </span>
+          )}
+          <span className="text-[11px] font-black uppercase tracking-widest text-cordel-wood mt-0.5">
+            {roleLabel}
           </span>
         </div>
 
-        {/* Badges de rôles et d'instruments */}
-        <div className="flex flex-wrap gap-2.5 justify-center items-center w-full px-2 max-w-2xl border-b border-dashed border-cordel-master-dark/10 pb-4">
-          {visibleTags && visibleTags.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 justify-center">
-              {visibleTags.map((tag, idx) => {
-                const formattedTag = formatTagGender(tag, profileData?.genre, profileData?.majoriteFeminine, tagsDisponibles);
-                const tagStr = typeof tag === 'string' ? tag : (tag.id || idx);
-                const rotation = ((String(tagStr).charCodeAt(0) + idx) % 5) - 2;
-                return (
-                  <span 
-                    key={`tag-${tagStr}`} 
-                    className="theme-stamp-badge theme-stamp-badge-wood text-[9px] px-2.5 py-1 bg-white/40"
-                    style={{ transform: `rotate(${rotation}deg)` }}
-                  >
-                    👤 {formattedTag}
-                  </span>
-                );
-              })}
-            </div>
-          )}
+        {/* Badges de fonctions (dédupliqués) et d'instruments */}
+        {(deduplicatedTags.length > 0 || (profileData?.instrumentsJoues && profileData.instrumentsJoues.length > 0) || profileData?.instrument) && (
+          <div className="flex flex-wrap gap-2 justify-center items-center w-full px-2 max-w-2xl border-b border-dashed border-cordel-master-dark/10 pb-3">
+            {deduplicatedTags.map(({ raw, formatted }, idx) => {
+              const tagStr = typeof raw === 'string' ? raw : raw.id || idx;
+              const rotation = ((String(tagStr).charCodeAt(0) + idx) % 5) - 2;
+              return (
+                <span
+                  key={`tag-${tagStr}`}
+                  className="theme-stamp-badge theme-stamp-badge-wood text-[9px] px-2 py-0.5 bg-white/40"
+                  style={{ transform: `rotate(${rotation}deg)` }}
+                >
+                  👤 {formatted}
+                </span>
+              );
+            })}
 
-          {((profileData?.instrumentsJoues && profileData.instrumentsJoues.length > 0) || profileData?.instrument) && (
-            <div className="flex flex-wrap gap-1.5 justify-center">
-              {(profileData.instrumentsJoues && profileData.instrumentsJoues.length > 0 
-                ? profileData.instrumentsJoues 
+            {((profileData?.instrumentsJoues && profileData.instrumentsJoues.length > 0) || profileData?.instrument) &&
+              (profileData.instrumentsJoues && profileData.instrumentsJoues.length > 0
+                ? profileData.instrumentsJoues
                 : [profileData.instrument].filter(Boolean)
               ).map((inst, idx) => {
                 const rotation = ((inst.charCodeAt(0) + idx) % 5) - 2;
                 return (
-                  <span 
-                    key={`inst-${inst}`} 
-                    className="theme-stamp-badge theme-stamp-badge-dark text-[9px] px-2.5 py-1 bg-cordel-bg-light/80 border-dashed"
-                    style={{ 
-                      transform: `rotate(${rotation}deg)`,
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px'
-                    }}
+                  <span
+                    key={`inst-${inst}`}
+                    className="theme-stamp-badge theme-stamp-badge-dark text-[9px] px-2 py-0.5 bg-cordel-bg-light/80 border-dashed inline-flex items-center gap-1"
+                    style={{ transform: `rotate(${rotation}deg)` }}
                   >
                     <img src={getInstrumentIconPath(inst)} alt={inst} className="w-3.5 h-3.5 object-contain dark:invert" />
                     <span>{inst}</span>
                   </span>
                 );
               })}
+          </div>
+        )}
+
+        {/* Boutons photo, email et bouton principal Modifier mon profil */}
+        <div className="flex flex-col items-center gap-2 w-full max-w-md">
+          {!hasCustomPhoto && (
+            <div className="bg-cordel-bg-light/90 border border-dashed border-cordel-master-dark/25 p-2 rounded-[6px] text-center w-full shadow-sm">
+              <p className="text-[10px] text-cordel-master-dark font-semibold leading-relaxed">
+                💡 <span className="font-extrabold text-cordel-wood">{t('userProfile.photoTipTitle')}</span> {t('userProfile.photoTipDesc')}
+              </p>
             </div>
           )}
-        </div>
-
-        {/* Boutons d'import et de prise de photo */}
-        <div className="flex flex-col items-center gap-2 mt-1 w-full max-w-md">
-          <div className="bg-cordel-bg-light/90 border border-dashed border-cordel-master-dark/25 p-2.5 rounded-[6px] text-center w-full shadow-sm">
-            <p className="text-[10px] text-cordel-master-dark font-semibold leading-relaxed">
-              💡 <span className="font-extrabold text-cordel-wood">{t('userProfile.photoTipTitle')}</span> {t('userProfile.photoTipDesc')}
-            </p>
-          </div>
 
           <div className="flex flex-wrap justify-center gap-2">
             <label className="relative overflow-hidden text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1.5 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1 select-none">
-              📸 {uploadingPhoto ? "⏳ " + t('userProfile.uploading') : t('userProfile.changePhoto')}
-              <input 
-                type="file" 
+              📸 {uploadingPhoto ? '⏳ ' + t('userProfile.uploading') : t('userProfile.changePhoto')}
+              <input
+                type="file"
                 accept="image/*"
                 disabled={uploadingPhoto || saving}
                 onChange={handlePhotoSelected}
@@ -270,8 +282,8 @@ export default function UserProfile({ user, profileData, associationName, onBack
             </label>
             <label className="relative overflow-hidden text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1.5 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1 select-none">
               📷 {t('userProfile.takePhoto')}
-              <input 
-                type="file" 
+              <input
+                type="file"
                 accept="image/*"
                 capture="user"
                 disabled={uploadingPhoto || saving}
@@ -280,395 +292,51 @@ export default function UserProfile({ user, profileData, associationName, onBack
               />
             </label>
           </div>
+
           <span className="text-[9px] font-bold tracking-widest text-cordel-master-dark opacity-60 break-all px-4 text-center">
             {user?.email}
           </span>
+
+          {!isEditing && (
+            <CordelButton
+              type="button"
+              variant="ocre"
+              useExtremeBorder={true}
+              onClick={handleStartEdit}
+              className="w-full mt-1 py-2.5 font-black uppercase tracking-wider text-xs shadow-[2.5px_2.5px_0px_0px_#181716]"
+            >
+              ✏️ {translate('userProfile.editBtn', 'Modifier mon profil')}
+            </CordelButton>
+          )}
         </div>
       </CordelCard>
 
-      {/* Profile Details in 3 Reassuring Cards */}
+      {/* Détails du profil en lecture (Carte publique + Accordéons) ou Formulaire d'édition */}
       {!isEditing ? (
-        <div className="flex flex-col gap-4">
-          {/* CARTE 1 : PROFIL PUBLIC */}
-          <CordelCard variant="default" useExtremeBorder={true} className="flex flex-col gap-3">
-            <div className="bg-emerald-50/90 dark:bg-emerald-950/30 border-2 border-dashed border-emerald-500/40 p-3 rounded-[6px] text-left">
-              <div className="flex items-center gap-2.5">
-                <XiloEye size={22} className="text-emerald-700 dark:text-emerald-400 shrink-0" />
-                <div>
-                  <h4 className="font-black text-xs uppercase text-emerald-900 dark:text-emerald-300 flex items-center gap-1.5">
-                    {t('userProfile.cardPublicTitle')}
-                  </h4>
-                  <p className="text-[10px] text-emerald-800 dark:text-emerald-200 opacity-90 font-medium">
-                    {t('userProfile.cardPublicDesc')}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3 text-xs text-encre-noire font-semibold text-left">
-              <div>
-                <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
-                  {t('userProfile.firstName')} / {t('userProfile.lastName')}
-                </span>
-                <span className="font-extrabold text-sm flex items-center gap-1">
-                  <XiloUser size={14} className="text-cordel-wood" /> {fullName}
-                </span>
-              </div>
-
-              {isFieldVisible('surnom') && (
-                <div>
-                  <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
-                    {t('userProfile.surnom')}
-                  </span>
-                  <span className="font-bold text-cordel-wood">{formData.surnom ? `"${formData.surnom}"` : <span className="italic opacity-50 font-normal">Aucun</span>}</span>
-                </div>
-              )}
-
-              <div>
-                <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
-                  {translate('onboarding.pupitre', t('userProfile.pupitrePrincipal'))}
-                </span>
-                <span className="font-extrabold text-cordel-wood flex items-center gap-1.5 flex-wrap">
-                  {profileData?.instrument || <span className="italic font-normal opacity-60">{t('userProfile.pendingValidation')}</span>}
-                  {profileData?.sousInstrument && (
-                    <span className="text-[10px] font-bold text-cordel-master-dark/80 bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded border border-cordel-master-dark/15">
-                      {t('userProfile.attribution')} : {profileData.sousInstrument}
-                    </span>
-                  )}
-                  {profileData?.instrument?.toLowerCase().includes('alfaia') && Array.isArray(profileData?.competencesAlfaia) && profileData.competencesAlfaia.length > 0 && (
-                    <span className="text-[10px] font-bold text-cordel-master-dark/80 bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded border border-cordel-master-dark/15">
-                      {t('userProfile.voix')} : {profileData.competencesAlfaia.join(', ')}
-                    </span>
-                  )}
-                </span>
-              </div>
-
-              {profileData?.instrumentSecondaire && (
-                <div>
-                  <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
-                    {t('userProfile.pupitreSecondaire')}
-                  </span>
-                  <span className="font-bold">{profileData.instrumentSecondaire}</span>
-                </div>
-              )}
-
-              {(profileData?.voeuPrincipal || profileData?.voeuSecondaire || profileData?.voeuTertiaire) && (
-                <div className="col-span-1 md:col-span-2 bg-cordel-bg-light/60 border border-dashed border-cordel-master-dark/20 p-2.5 rounded mt-1">
-                  <span className="text-[10px] uppercase font-black tracking-wider text-cordel-wood flex items-center gap-1 mb-1">
-                    <XiloSparkles size={12} /> {t('userProfile.voeuxOrientation')}
-                  </span>
-                  <div className="flex flex-wrap gap-2 text-xs">
-                    {profileData?.voeuPrincipal && (
-                      <span className="bg-white/70 dark:bg-black/20 px-2 py-1 rounded border border-cordel-master-dark/15">
-                        <strong className="text-cordel-wood">{t('userProfile.voeu1')}</strong> {profileData.voeuPrincipal}
-                      </span>
-                    )}
-                    {profileData?.voeuSecondaire && (
-                      <span className="bg-white/70 dark:bg-black/20 px-2 py-1 rounded border border-cordel-master-dark/15">
-                        <strong className="text-cordel-wood">{t('userProfile.voeu2')}</strong> {profileData.voeuSecondaire}
-                      </span>
-                    )}
-                    {profileData?.voeuTertiaire && (
-                      <span className="bg-white/70 dark:bg-black/20 px-2 py-1 rounded border border-cordel-master-dark/15">
-                        <strong className="text-cordel-wood">{t('userProfile.voeu3')}</strong> {profileData.voeuTertiaire}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          </CordelCard>
-
-          {/* CARTE 2 : COORDONNÉES & CONFIDENTIALITÉ */}
-          <CordelCard variant="default" useExtremeBorder={true} className="flex flex-col gap-3">
-            <div className="bg-amber-50/90 dark:bg-amber-950/30 border-2 border-dashed border-amber-500/40 p-3 rounded-[6px] text-left">
-              <div className="flex items-center gap-2.5">
-                <XiloLock size={22} className="text-amber-700 dark:text-amber-400 shrink-0" />
-                <div>
-                  <h4 className="font-black text-xs uppercase text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
-                    {t('userProfile.cardContactTitle')}
-                  </h4>
-                  <p className="text-[10px] text-amber-800 dark:text-amber-200 opacity-90 font-medium">
-                    {t('userProfile.cardContactDesc')}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3 text-xs text-encre-noire font-semibold text-left">
-              {isFieldVisible('telephone') && (
-                <div>
-                  <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 flex items-center gap-1">
-                    <XiloPhone size={12} /> {t('userProfile.phone')}
-                  </span>
-                  <div className="flex items-center gap-2 flex-wrap mt-0.5">
-                    <span className="font-extrabold">{formData.telephone || <span className="italic opacity-50">{t('userProfile.notSpecified')}</span>}</span>
-                    {formData.telephone && (
-                      <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded border flex items-center gap-1 ${
-                        (formData.afficherTelephone !== false && formData.publierTelephone !== false)
-                          ? 'bg-emerald-100 text-emerald-900 border-emerald-400'
-                          : 'bg-amber-100 text-amber-900 border-amber-400'
-                      }`}>
-                        {(formData.afficherTelephone !== false && formData.publierTelephone !== false) 
-                          ? <><XiloEye size={10} /> {t('userProfile.phoneVisible')}</> 
-                          : <><XiloEyeOff size={10} /> {t('userProfile.phoneHidden')}</>
-                        }
-                      </span>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {isFieldVisible('dateNaissance') && (
-                <div>
-                  <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 flex items-center gap-1">
-                    <XiloBirthday size={12} /> {t('userProfile.birthdate')}
-                  </span>
-                  <div className="flex items-center gap-2 flex-wrap mt-0.5">
-                    <span>
-                      {formData.dateNaissance 
-                        ? (formData.afficherDateNaissance 
-                            ? new Date(formData.dateNaissance).toLocaleDateString(locale === 'pt' ? 'pt-BR' : 'fr-FR', { day: 'numeric', month: 'long' })
-                            : new Date(formData.dateNaissance).toLocaleDateString(locale === 'pt' ? 'pt-BR' : 'fr-FR')) 
-                        : <span className="italic opacity-50">{t('userProfile.notSpecified')}</span>
-                      }
-                    </span>
-                    {formData.dateNaissance && (
-                      <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded border flex items-center gap-1 ${
-                        formData.afficherDateNaissance
-                          ? 'bg-emerald-100 text-emerald-900 border-emerald-400'
-                          : 'bg-amber-100 text-amber-900 border-amber-400'
-                      }`}>
-                        {formData.afficherDateNaissance 
-                          ? <><XiloBirthday size={10} /> {t('userProfile.birthdayVisible')}</> 
-                          : <><XiloEyeOff size={10} /> {t('userProfile.birthdayHidden')}</>
-                        }
-                      </span>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {isFieldVisible('adresse') && (
-                <div className="col-span-1 md:col-span-2 bg-cordel-bg-light/60 p-2.5 rounded border border-dashed border-cordel-master-dark/20">
-                  <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 flex items-center gap-1">
-                    <XiloHome size={12} /> {t('userProfile.addressAdmin')}
-                  </span>
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mt-0.5">
-                    <span className="font-bold">
-                      {formData.adresse || (profileData?.adresseRue ? `${profileData.adresseRue}, ${profileData.adresseCP || ''} ${profileData.adresseVille || ''}` : <span className="italic opacity-50">{t('userProfile.notSpecifiedFem')}</span>)}
-                    </span>
-                    <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded border shrink-0 flex items-center gap-1 ${
-                      formData.afficherVille
-                        ? 'bg-emerald-100 text-emerald-900 border-emerald-400'
-                        : 'bg-amber-100 text-amber-900 border-amber-400'
-                    }`}>
-                      {formData.afficherVille 
-                        ? <><XiloPin size={10} /> {t('userProfile.cityVisible')} ({profileData?.adresseVille || formData.adresseVille || ''})</> 
-                        : <><XiloEyeOff size={10} /> {t('userProfile.addressHidden')}</>
-                      }
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-          </CordelCard>
-
-          {/* CARTE 3 : LOGISTIQUE, PLACEMENT SCÉNIQUE & SANTÉ */}
-          <CordelCard variant="default" useExtremeBorder={true} className="flex flex-col gap-3">
-            <div className="bg-sky-50/90 dark:bg-sky-950/30 border-2 border-dashed border-sky-500/40 p-3 rounded-[6px] text-left">
-              <div className="flex items-center gap-2.5">
-                <XiloShield size={22} className="text-sky-700 dark:text-sky-400 shrink-0" />
-                <div>
-                  <h4 className="font-black text-xs uppercase text-sky-900 dark:text-sky-300 flex items-center gap-1.5">
-                    {t('userProfile.cardConfidentialTitle')}
-                  </h4>
-                  <p className="text-[10px] text-sky-800 dark:text-sky-200 opacity-90 font-medium">
-                    {t('userProfile.cardConfidentialDesc')}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3 text-xs text-encre-noire font-semibold text-left">
-              {isFieldVisible('lateralite') && (
-                <div>
-                  <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 flex items-center gap-1">
-                    <XiloHand size={12} /> {t('userProfile.lateraliteMestre')}
-                  </span>
-                  <span className="capitalize font-extrabold text-cordel-wood">{formData.lateralite === 'droitier' ? t('onboarding.handRight') : t('onboarding.handLeft')}</span>
-                </div>
-              )}
-
-              {isCostumerieEnabled && (isFieldVisible('tailleTshirt') || isFieldVisible('taillePantalon')) && (
-                <div className="col-span-1 md:col-span-2 border-t border-dashed border-cordel-master-dark/15 pt-2 mt-1">
-                  <span className="text-[10px] uppercase font-black text-cordel-wood flex items-center gap-1 mb-1">
-                    <XiloShirt size={12} /> {t('userProfile.costumeSizes')}
-                  </span>
-                  <div className="grid grid-cols-2 gap-4">
-                    {isFieldVisible('tailleTshirt') && (
-                      <div>
-                        <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
-                          {t('userProfile.tshirt')}
-                        </span>
-                        <span className="font-extrabold text-sm">{formData.tailleTshirt}</span>
-                      </div>
-                    )}
-                    {isFieldVisible('taillePantalon') && (
-                      <div>
-                        <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
-                          {t('userProfile.pantalon')}
-                        </span>
-                        <span className="font-extrabold text-sm">{formData.taillePantalon}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {demanderDroitImage && (
-                <div>
-                  <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
-                    {t('userProfile.imageRights')}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <span>{formData.droitImage ? `✅ ${t('userProfile.granted')}` : `❌ ${t('userProfile.refused')}`}</span>
-                    {formData.droitImage && (
-                      <button 
-                        type="button" 
-                        onClick={() => generateImageCharterPDF(profileData, associationName)}
-                        className="text-[9px] font-bold text-cordel-wood hover:underline ml-1 flex items-center gap-1"
-                      >
-                        <XiloDocument size={12} /> {t('userProfile.downloadPdf')}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {demanderAttestationSante && (
-                <div>
-                  <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 block">
-                    {t('userProfile.medicalAttestation')}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <span>{formData.aptitudeMedicale ? `✅ ${t('userProfile.declaredFit')}` : `❌ ${t('userProfile.notSpecified')}`}</span>
-                    {formData.aptitudeMedicale && (
-                      <button 
-                        type="button" 
-                        onClick={() => generateMedicalAttestationPDF(profileData, associationName)}
-                        className="text-[9px] font-bold text-cordel-wood hover:underline ml-1 flex items-center gap-1"
-                      >
-                        <XiloDocument size={12} /> {t('userProfile.downloadPdf')}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )}
-
-            </div>
-          </CordelCard>
-
-          {/* CARTE : PRÉFÉRENCES ALIMENTAIRES & ALLERGIES */}
-          <CordelCard variant="default" useExtremeBorder={true} className="flex flex-col gap-3 text-left">
-            <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/15 pb-2">
-              <h4 className="font-black text-xs uppercase text-cordel-wood flex items-center gap-2">
-                <span>🍽️</span>
-                <span>{t('userProfile.dietSectionTitle')}</span>
-              </h4>
-            </div>
-
-            <div className="flex flex-col gap-2 text-xs">
-              <div>
-                <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 inline-block mr-1">
-                  {t('userProfile.dietLabel')}
-                </span>
-                {formData.dietaryRestrictions && formData.dietaryRestrictions.length > 0 ? (
-                  <span className="font-extrabold text-cordel-wood bg-cordel-bg-light px-2 py-0.5 rounded border border-dashed border-cordel-master-dark/20">
-                    {formData.dietaryRestrictions.map(diet => translateDiet(diet)).join(', ')}
-                  </span>
-                ) : (
-                  <span className="italic opacity-50">{t('userProfile.noDietSpecific')}</span>
-                )}
-              </div>
-              <div className="mt-0.5">
-                <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70 inline-block mr-1">
-                  {t('userProfile.allergiesLabel')}
-                </span>
-                {formData.allergies && formData.allergies.trim() ? (
-                  <span className="font-bold text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/30 px-2 py-0.5 rounded border border-red-200 dark:border-red-900/40">
-                    ⚠️ {formData.allergies.trim()}
-                  </span>
-                ) : (
-                  <span className="italic opacity-50">{t('userProfile.noAllergiesReported')}</span>
-                )}
-              </div>
-            </div>
-          </CordelCard>
-
-          {/* CARTE : VÉHICULE & DÉPLACEMENTS (si motorisé) */}
-          {profileData?.hasVehicle && (
-            <CordelCard variant="default" useExtremeBorder={true} className="flex flex-col gap-3 text-left">
-              <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/15 pb-2">
-                <h4 className="font-black text-xs uppercase text-cordel-wood flex items-center gap-2">
-                  <span>🚗</span>
-                  <span>{t('userProfile.vehicleSectionTitle')}</span>
-                </h4>
-                <span className="theme-stamp-badge theme-stamp-badge-wood text-[9px] px-2 py-0.5 font-black uppercase">
-                  {t('userProfile.vehicleConvoyBadge')}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
-                <div className="bg-cordel-bg-light/60 p-2 rounded border border-encre-noire/10 flex flex-col">
-                  <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70">{t('userProfile.vehicleCategory')}</span>
-                  <span className="font-extrabold text-encre-noire mt-0.5">{profileData.vehicleType || 'Berline'}</span>
-                </div>
-
-                <div className="bg-cordel-bg-light/60 p-2 rounded border border-encre-noire/10 flex flex-col">
-                  <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70">{t('userProfile.vehiclePassengerSeats')}</span>
-                  <span className="font-extrabold text-encre-noire mt-0.5">
-                    {t('userProfile.vehiclePassengerSeatsCount', { count: profileData.defaultPassengerSeats !== undefined ? profileData.defaultPassengerSeats : 3 })}
-                  </span>
-                </div>
-
-                <div className="bg-cordel-bg-light/60 p-2 rounded border border-encre-noire/10 flex flex-col">
-                  <span className="text-[9px] uppercase font-bold text-cordel-master-dark/70">
-                    {getCarpoolBulkyTerminology(universe).trunkLabel || t('userProfile.vehicleTrunkAlfaias')}
-                  </span>
-                  <span className="font-extrabold text-cordel-wood mt-0.5">
-                    {t('userProfile.vehicleTrunkAlfaiasCount', { count: profileData.defaultTrunkBulkyCapacity !== undefined ? profileData.defaultTrunkBulkyCapacity : (profileData.defaultTrunkCapacity !== undefined ? profileData.defaultTrunkCapacity : 1) })}
-                  </span>
-                </div>
-              </div>
-
-              {(profileData?.hasRoofBars || profileData?.hasTowHitch) && (
-                <div className="flex flex-wrap gap-2 pt-1 border-t border-dashed border-cordel-master-dark/15 text-[10px] font-bold">
-                  {profileData.hasRoofBars && (
-                    <span className="bg-white/80 px-2 py-0.5 rounded border border-encre-noire/15 flex items-center gap-1 text-encre-noire">
-                      📦 Barres de toit / Galerie
-                    </span>
-                  )}
-                  {profileData.hasTowHitch && (
-                    <span className="bg-white/80 px-2 py-0.5 rounded border border-encre-noire/15 flex items-center gap-1 text-encre-noire">
-                      🔗 {t('userProfile.vehicleTowHitch')}
-                    </span>
-                  )}
-                </div>
-              )}
-            </CordelCard>
-          )}
-
-          {/* Edit Button */}
-          <CordelButton 
-            type="button" 
-            variant="ocre" 
-            useExtremeBorder={true}
-            onClick={handleStartEdit}
-            className="w-full py-3.5 font-black uppercase tracking-wider text-xs shadow-[3px_3px_0px_0px_#181716]"
-          >
-            ✏️ {translate('userProfile.editBtn', "Modifier mon profil")}
-          </CordelButton>
+        <div className="flex flex-col gap-3">
+          <ProfilePublicCard profileData={profileData} t={t} translate={translate} />
+          <ProfileContactAndStageAccordions
+            profileData={profileData}
+            formData={formData}
+            associationName={associationName}
+            locale={locale}
+            t={t}
+            isFieldVisible={isFieldVisible}
+            isCostumerieEnabled={isCostumerieEnabled}
+            demanderDroitImage={demanderDroitImage}
+            demanderAttestationSante={demanderAttestationSante}
+            openSections={openSections}
+            toggleSection={toggleSection}
+          />
+          <ProfileDietAndVehicleAccordions
+            profileData={profileData}
+            formData={formData}
+            universe={universe}
+            t={t}
+            translateDiet={translateDiet}
+            openSections={openSections}
+            toggleSection={toggleSection}
+          />
         </div>
       ) : (
         <ProfileEditForm
@@ -692,21 +360,19 @@ export default function UserProfile({ user, profileData, associationName, onBack
         />
       )}
 
-      {/* Section des Remboursements de frais */}
+      {/* 3 blocs utilitaires du bas (repliés par défaut) */}
       <MemberExpenseSection
         groupId={profileData?.groupId}
         currentUser={user}
         profileData={profileData}
       />
 
-      {/* Notification Diagnostic Section */}
-      <NotificationDiagnostic 
+      <NotificationDiagnostic
         notificationPermission={notificationPermission}
         isSubscribingPush={isSubscribingPush}
         onEnableNotifications={handleEnableNotifications}
       />
 
-      {/* Family / Dependent Members Section */}
       <FamilyMembersManager
         user={user}
         profileData={profileData}
@@ -714,9 +380,9 @@ export default function UserProfile({ user, profileData, associationName, onBack
         t={t}
       />
 
-      {/* Disconnect & QR Scanner Buttons */}
-      <div className="mt-4 pt-4 border-t border-dashed border-cordel-master-dark/20 flex flex-col sm:flex-row gap-3 items-center">
-        <CordelButton 
+      {/* Boutons Connexion PC & Déconnexion */}
+      <div className="mt-2 pt-3 border-t border-dashed border-cordel-master-dark/20 flex flex-col sm:flex-row gap-3 items-center">
+        <CordelButton
           type="button"
           variant="ocre"
           onClick={() => setShowQrScanner(true)}
@@ -726,7 +392,7 @@ export default function UserProfile({ user, profileData, associationName, onBack
           📸 {t('userProfile.btnConnectPc')}
         </CordelButton>
 
-        <CordelButton 
+        <CordelButton
           type="button"
           variant="default"
           onClick={handleDisconnect}
@@ -737,25 +403,22 @@ export default function UserProfile({ user, profileData, associationName, onBack
         </CordelButton>
       </div>
 
-      {/* QR Code Scanner Modal */}
-      <QRScannerModal 
-        isOpen={showQrScanner}
-        onClose={() => setShowQrScanner(false)}
-      />
+      <QRScannerModal isOpen={showQrScanner} onClose={() => setShowQrScanner(false)} />
 
-      {/* Modale Éditeur Photo Cordel / Xylogravure */}
       {showEditor && (
         <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="max-w-md w-full max-h-[95vh] overflow-y-auto">
-            <React.Suspense fallback={
-              <CordelCard variant="default" useExtremeBorder={true} className="p-8 flex flex-col items-center justify-center bg-cordel-bg">
-                <div className="animate-spin text-4xl mb-4 select-none">⏳</div>
-                <span className="font-bold text-xs uppercase tracking-widest text-cordel-master-dark opacity-75">
-                  Chargement de l'éditeur...
-                </span>
-              </CordelCard>
-            }>
-              <CordelImageEditor 
+            <React.Suspense
+              fallback={
+                <CordelCard variant="default" useExtremeBorder={true} className="p-8 flex flex-col items-center justify-center bg-cordel-bg">
+                  <div className="animate-spin text-4xl mb-4 select-none">⏳</div>
+                  <span className="font-bold text-xs uppercase tracking-widest text-cordel-master-dark opacity-75">
+                    Chargement de l'éditeur...
+                  </span>
+                </CordelCard>
+              }
+            >
+              <CordelImageEditor
                 imageSrc={selectedImage}
                 lang={locale}
                 onComplete={handleEditorComplete}
@@ -768,8 +431,8 @@ export default function UserProfile({ user, profileData, associationName, onBack
           </div>
         </div>
       )}
-      {/* Lightbox Photo Modal */}
-      <ImageLightboxModal 
+
+      <ImageLightboxModal
         isOpen={lightboxOpen}
         photoURL={profileData?.photoURL || user?.photoURL}
         name={fullName}

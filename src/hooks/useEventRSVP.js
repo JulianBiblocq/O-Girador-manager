@@ -10,6 +10,7 @@ import {
   buildDriverDepartureWarningMessage,
   applyCarpoolAbsenceCascade
 } from '../utils/carpoolCascadeUtils';
+import { getMemberPrimaryPupitre } from '../utils/pollAllocationUtils';
 
 /**
  * Vérifie si les inscriptions sont closes pour un événement.
@@ -220,6 +221,21 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
       alert("🔒 Inscription restreinte. Rendez-vous dans la section 'Discussions et questions logistiques' en bas de page pour échanger avec l'organisation.");
       setSaving(false);
       return;
+    }
+
+    // Restriction d'inscription libre au(x) pupitre(s) assigné(s) lors d'un atelier issu d'un sondage en entonnoir
+    if (
+      !isAuthorized &&
+      targetStatus !== 'absent' &&
+      Array.isArray(event?.pollAssignedPupitres) &&
+      event.pollAssignedPupitres.length > 0
+    ) {
+      const matchedPupitre = getMemberPrimaryPupitre(profileData, event.pollAssignedPupitres);
+      if (!matchedPupitre || !event.pollAssignedPupitres.includes(matchedPupitre)) {
+        alert(`🔒 Cet atelier est réservé au(x) pupitre(s) : ${event.pollAssignedPupitres.join(', ')}.`);
+        setSaving(false);
+        return;
+      }
     }
 
     const defaultInstrument = profileData?.instrument || profileData?.instrumentsJoues?.[0] || 'Autre';

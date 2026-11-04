@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { collection, query, where, onSnapshot, addDoc, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import CordelCard from './CordelCard';
-import CordelButton from './CordelButton';
 import EmptyState from './EmptyState';
 import { XiloBox } from './XiloIcons';
 import { useTerminologie } from '../hooks/useTerminologie';
@@ -10,6 +8,7 @@ import { useTranslation } from './LanguageContext';
 import { fr } from '../locales/fr';
 import MemberOrdersPaymentAlert from './orders/MemberOrdersPaymentAlert';
 import WidgetUserOrderRequestsList from './orders/WidgetUserOrderRequestsList';
+import CampaignOrderForm from './orders/CampaignOrderForm';
 import WidgetGroupOrders from './WidgetGroupOrders';
 
 export default function WidgetCommandes({ groupId, user, profileData }) {
@@ -181,9 +180,6 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
     }
   };
 
-  const isTshirtSelected = article === "T-shirt Homme" || article === "T-shirt Femme";
-  const isAlfaiaSkinSelected = article === "Peau d'Alfaia (18\", 20\" ou 22\")" || article === "Housse de protection Alfaia (18\", 20\" ou 22\")";
-
   const isAdmin = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin === true;
 
   if (!loading && !isAdmin && !openCampaign) {
@@ -214,172 +210,45 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
         />
       )}
 
-      {/* Accordéon repliable / dépliable de la campagne ouverte */}
+      {/* Accordéon repliable / dépliable de la campagne ouverte fusionné dans une seule CordelCard */}
       {!loading && openCampaign && (
-        <WidgetGroupOrders campaign={openCampaign}>
-          <CordelCard variant="ocre" useExtremeBorder={true} className="py-4 px-5">
-            <h4 className="font-extrabold text-sm text-encre-noire leading-snug mb-1">
-              {t('widgetCommandes.campaignTitle') || "Campagne :"} {openCampaign.titre || openCampaign.title}
-            </h4>
-            <p className="text-[8px] uppercase tracking-wider font-extrabold text-cordel-master-dark/70 border-b border-dashed border-cordel-master-dark/20 pb-2 mb-3">
-              {t('widgetCommandes.subTitle') || "Vos besoins :"}
-            </p>
-
-            <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-              {/* Liste déroulante des articles */}
-              <div className="flex flex-col gap-1">
-                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">{t('widgetCommandes.articleLabel') || "Article"}</label>
-                <select
-                  value={article}
-                  onChange={(e) => setArticle(e.target.value)}
-                  disabled={saving}
-                  className="theme-input text-xs font-bold py-1.5 px-2 bg-cordel-bg-light"
-                >
-                  {catalog.map((item) => (
-                    <option key={item.nom} value={item.nom}>
-                      {getArticleLabel(item.nom)} {item.prix > 0 ? `(${item.prix}€)` : ''}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Aperçu image de l'article sélectionné */}
-              {(() => {
-                const artObj = catalog.find(item => item.nom === article);
-                if (artObj && artObj.imageUrl) {
-                  return (
-                    <div className="mt-2 mb-1 w-full max-w-[200px] aspect-square rounded border-2 border-encre-noire overflow-hidden bg-white shadow-md mx-auto flex items-center justify-center">
-                      <img src={artObj.imageUrl} alt={artObj.nom} className="w-full h-full object-cover" />
-                    </div>
-                  );
-                }
-                return null;
-              })()}
-
-              {/* Déclinaisons / Tailles */}
-              {(() => {
-                const artObj = catalog.find(item => item.nom === article);
-                if (artObj && artObj.tailles && artObj.tailles.length > 0) {
-                  return (
-                    <div className="flex flex-col gap-1 mt-0.5 text-left">
-                      <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">Taille / Déclinaison</label>
-                      <select
-                        value={selectedTaille}
-                        onChange={(e) => setSelectedTaille(e.target.value)}
-                        disabled={saving}
-                        className="theme-input text-xs font-bold py-1.5 px-2 bg-cordel-bg-light w-full"
-                      >
-                        {artObj.tailles.map((sz) => (
-                          <option key={sz} value={sz}>{sz}</option>
-                        ))}
-                      </select>
-                    </div>
-                  );
-                }
-                return null;
-              })()}
-
-              {isTshirtSelected && !selectedTaille && (
-                <div className="text-[9px] font-bold text-green-700 dark:text-green-400 bg-white/40 dark:bg-black/20 p-1.5 rounded border border-dashed border-green-300/50 leading-relaxed mt-0.5">
-                  {t('widgetCommandes.tshirtNotice') ? t('widgetCommandes.tshirtNotice').replace('{{size}}', profileData?.tailleTshirt || 'M') : `Taille T-shirt : ${profileData?.tailleTshirt || 'M'}`}
-                </div>
-              )}
-
-              {isAlfaiaSkinSelected && !selectedTaille && (
-                <div className="text-[9px] font-bold text-cordel-wood bg-white/40 dark:bg-black/20 p-1.5 rounded border border-dashed border-cordel-wood/40 leading-relaxed mt-0.5 animate-pulse">
-                  {t('widgetCommandes.alfaiaNotice') || "Précisez la taille en pouces dans les notes."}
-                </div>
-              )}
-
-              {/* Quantité & Notes */}
-              <div className="grid grid-cols-3 gap-2">
-                <div className="flex flex-col gap-1 col-span-1">
-                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">{t('widgetCommandes.qtyLabel') || "Quantité"}</label>
-                  <input
-                    type="number"
-                    min="1"
-                    required
-                    value={quantite}
-                    onChange={(e) => setQuantite(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                    disabled={saving}
-                    className="theme-input text-xs py-1 px-2 font-bold"
-                  />
-                </div>
-                <div className="flex flex-col gap-1 col-span-2">
-                  <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">{t('widgetCommandes.notesLabel') || "Notes"}</label>
-                  <input
-                    type="text"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    disabled={saving}
-                    placeholder={isAlfaiaSkinSelected ? "Ex : 22 pouces..." : "Précisions..."}
-                    className="theme-input text-xs py-1 px-2 font-semibold"
-                  />
-                </div>
-              </div>
-
-              {/* Suggestion ou demande spéciale */}
-              <div className="flex flex-col gap-1 mt-1">
-                <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  Suggérer un autre article ou demande spéciale (Optionnel)
-                </label>
-                <textarea
-                  value={suggestion}
-                  onChange={(e) => setSuggestion(e.target.value)}
-                  disabled={saving}
-                  placeholder="Ex : J'aimerais suggérer un autre article ou préciser une demande spéciale..."
-                  className="theme-input text-xs py-1.5 px-2 min-h-[50px] resize-y font-semibold"
-                />
-              </div>
-
-              {/* Case à cocher commande personnelle */}
-              <div className="flex flex-col gap-0.5 mt-1">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="isPersonalOrder"
-                    checked={isPersonalOrder}
-                    onChange={(e) => setIsPersonalOrder(e.target.checked)}
-                    disabled={saving}
-                    className="accent-cordel-wood scale-105 cursor-pointer"
-                  />
-                  <label htmlFor="isPersonalOrder" className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark cursor-pointer select-none">
-                    {t('widgetCommandes.personalOrderLabel') || "Ceci est une commande personnelle"}
-                  </label>
-                </div>
-                <span className="text-[8px] font-bold text-cordel-master-dark/65 pl-5">
-                  {isPersonalOrder
-                    ? (t('widgetCommandes.personalOrderDesc') || "Achat à vos frais personnels.")
-                    : (t('widgetCommandes.suggestionOrderDesc') || "Suggestion d'achat pour le parc de l'association.")
-                  }
-                </span>
-              </div>
-
-              <CordelButton
-                type="submit"
-                variant="ocre"
-                useExtremeBorder={true}
-                disabled={saving || !article}
-                className="w-full py-2 font-bold uppercase tracking-widest text-[10px] mt-1"
-              >
-                {saving ? (t('widgetCommandes.adding') || "Envoi...") : (t('widgetCommandes.addBtn') || "Commander")}
-              </CordelButton>
-            </form>
-          </CordelCard>
-
-          {/* Alertes de paiement pour commandes de matériel */}
-          <MemberOrdersPaymentAlert
-            groupId={groupId}
-            currentUser={user}
-            profileData={profileData}
-          />
-
-          {/* Liste des demandes enregistrées par l'utilisateur */}
-          <WidgetUserOrderRequestsList
-            userRequests={userRequests}
+        <WidgetGroupOrders
+          campaign={openCampaign}
+          footer={
+            <>
+              <MemberOrdersPaymentAlert
+                groupId={groupId}
+                currentUser={user}
+                profileData={profileData}
+              />
+              <WidgetUserOrderRequestsList
+                userRequests={userRequests}
+                catalog={catalog}
+                getArticleLabel={getArticleLabel}
+                onDeleteRequest={handleDeleteRequest}
+              />
+            </>
+          }
+        >
+          <CampaignOrderForm
             catalog={catalog}
+            article={article}
+            setArticle={setArticle}
+            selectedTaille={selectedTaille}
+            setSelectedTaille={setSelectedTaille}
+            quantite={quantite}
+            setQuantite={setQuantite}
+            notes={notes}
+            setNotes={setNotes}
+            suggestion={suggestion}
+            setSuggestion={setSuggestion}
+            isPersonalOrder={isPersonalOrder}
+            setIsPersonalOrder={setIsPersonalOrder}
+            saving={saving}
+            handleSubmit={handleSubmit}
             getArticleLabel={getArticleLabel}
-            onDeleteRequest={handleDeleteRequest}
+            profileData={profileData}
+            t={t}
           />
         </WidgetGroupOrders>
       )}

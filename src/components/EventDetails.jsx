@@ -4,6 +4,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { httpsCallable } from 'firebase/functions';
 import { db, storage, functions } from '../firebase';
 import { fetchPollSiblingsForEdit, syncPollGroupOnSave } from '../utils/pollEditSyncUtils';
+import { resolveSlotRegistrationDeadline } from '../utils/eventScheduleUtils';
 import CordelButton from './CordelButton';
 import { XiloMegaphone } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
@@ -122,12 +123,15 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
     distanceAllerRetourKm: evt?.distanceAllerRetourKm || '',
     lienSocial: evt?.lienSocial || '',
     imageUrl: evt?.imageUrl || '',
+    stampIcon: evt?.stampIcon || 'auto',
     requiresValidation: evt?.requiresValidation || false,
     montantRecette: evt?.montantRecette !== undefined ? evt.montantRecette.toString() : '',
     montantDepense: evt?.montantDepense !== undefined ? evt.montantDepense.toString() : '',
     budgetRecettes: evt?.budgetRecettes || [],
     budgetDepenses: evt?.budgetDepenses || [],
     dateLimiteInscription: evt?.dateLimiteInscription || '',
+    registrationDeadlineMode: evt?.registrationDeadlineMode || (evt?.dateLimiteInscription ? 'fixed' : 'none'),
+    registrationDeadlineDaysBefore: Number(evt?.registrationDeadlineDaysBefore) || 7,
     tenueRequise: evt?.tenueRequise || '',
     dressCodePercussion: evt?.dressCodePercussion || '',
     dressCodeDanse: evt?.dressCodeDanse || '',
@@ -1108,11 +1112,14 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
         imageUrl: editConfig.agendaEnableImage ? editForm.imageUrl || '' : '',
         requiresValidation: editConfig.agendaEnableInscriptions ? (editForm.requiresValidation || false) : false,
         isPublic: editForm.isPublic || false,
+        stampIcon: editForm.stampIcon || 'auto',
         montantRecette: editConfig.agendaEnableFinance ? (parseFloat(editForm.montantRecette) || 0) : 0,
         montantDepense: editConfig.agendaEnableFinance ? ((editForm.budgetDepenses || []).reduce((sum, item) => sum + (parseFloat(item.montant) || 0), 0)) : 0,
         budgetRecettes: [], // Obsolète dans le nouveau modèle unifié
         budgetDepenses: editConfig.agendaEnableFinance ? (editForm.budgetDepenses || []) : [],
-        dateLimiteInscription: editConfig.agendaEnableInscriptions ? editForm.dateLimiteInscription || '' : '',
+        dateLimiteInscription: editConfig.agendaEnableInscriptions ? resolveSlotRegistrationDeadline(editForm.date, editForm) : '',
+        registrationDeadlineMode: editForm.registrationDeadlineMode || (editForm.dateLimiteInscription ? 'fixed' : 'none'),
+        registrationDeadlineDaysBefore: Number(editForm.registrationDeadlineDaysBefore) || 7,
         dressCodePercussion: editForm.dressCodePercussion || '',
         dressCodeDanse: editForm.dressCodeDanse || '',
         tenueRequise: editForm.tenueRequise || (

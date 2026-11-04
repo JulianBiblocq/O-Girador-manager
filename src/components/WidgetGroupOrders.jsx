@@ -2,32 +2,35 @@ import React, { useState, useEffect } from 'react';
 import CordelCard from './CordelCard';
 
 /**
- * Accordéon repliable / dépliable pour le panneau « Commande Groupée de Matériel » sur l'accueil.
- * Mémorise l'état replié dans localStorage par campagne (`ogirador_order_collapsed_${campaign.id}`).
+ * Accordéon repliable / dépliable pour le panneau « Commande Groupée » sur l'accueil.
+ * Encapsule l'en-tête et le formulaire dans une seule et unique CordelCard asymétrique,
+ * et mémorise l'état plié/déplié dans localStorage via `grouped_order_collapsed_${campaignId}`.
  */
-export default function WidgetGroupOrders({ campaign, children }) {
+export default function WidgetGroupOrders({ campaign, children, footer }) {
   const campaignId = campaign?.id || 'default';
-  const storageKey = `ogirador_order_collapsed_${campaignId}`;
+  const storageKey = `grouped_order_collapsed_${campaignId}`;
+  const legacyStorageKey = `ogirador_order_collapsed_${campaignId}`;
   const campaignTitle = campaign?.title || campaign?.titre || 'Matériel';
 
-  const [isCollapsed, setIsCollapsed] = useState(() => {
+  const readStoredCollapsed = (key, legacyKey) => {
     if (typeof window === 'undefined') return false;
     try {
-      return window.localStorage.getItem(storageKey) === 'true';
+      const val = window.localStorage.getItem(key);
+      if (val !== null) return val === 'true';
+      return window.localStorage.getItem(legacyKey) === 'true';
     } catch {
       return false;
     }
-  });
+  };
+
+  const [isCollapsed, setIsCollapsed] = useState(() =>
+    readStoredCollapsed(storageKey, legacyStorageKey)
+  );
 
   // Synchronise l'état lorsque la campagne active change
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    try {
-      setIsCollapsed(window.localStorage.getItem(storageKey) === 'true');
-    } catch {
-      // Ignorer les erreurs d'accès au localStorage (navigation privée)
-    }
-  }, [storageKey]);
+    setIsCollapsed(readStoredCollapsed(storageKey, legacyStorageKey));
+  }, [storageKey, legacyStorageKey]);
 
   const handleToggleCollapse = () => {
     setIsCollapsed((prev) => {
@@ -36,7 +39,7 @@ export default function WidgetGroupOrders({ campaign, children }) {
         try {
           window.localStorage.setItem(storageKey, String(next));
         } catch {
-          // Ignorer les erreurs d'écriture localStorage
+          // Ignorer les erreurs d'écriture localStorage (navigation privée)
         }
       }
       return next;
@@ -44,13 +47,13 @@ export default function WidgetGroupOrders({ campaign, children }) {
   };
 
   return (
-    <div className="flex flex-col gap-2.5 text-left select-none">
-      {/* Barre d'en-tête compacte sur une seule ligne */}
+    <div className="flex flex-col gap-3 text-left select-none">
       <CordelCard
         variant="ocre"
-        useExtremeBorder={false}
-        className="py-2.5 px-3.5 cursor-pointer hover:brightness-98 transition-all"
+        useExtremeBorder={true}
+        className="py-3 px-3.5 sm:px-5 transition-all"
       >
+        {/* En-tête cliquable de l'accordéon dans la même CordelCard */}
         <div
           onClick={handleToggleCollapse}
           role="button"
@@ -61,9 +64,10 @@ export default function WidgetGroupOrders({ campaign, children }) {
               handleToggleCollapse();
             }
           }}
-          className="flex items-center justify-between gap-2 w-full"
+          className={`flex items-center justify-between gap-2 w-full cursor-pointer ${!isCollapsed ? 'border-b border-dashed border-cordel-master-dark/25 pb-2.5 mb-3' : ''
+            }`}
         >
-          <span className="text-xs font-black uppercase tracking-wider text-encre-noire truncate flex-1 min-w-0">
+          <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-encre-noire truncate flex-1 min-w-0">
             📦 COMMANDE GROUPÉE : {campaignTitle}
           </span>
           <button
@@ -77,12 +81,19 @@ export default function WidgetGroupOrders({ campaign, children }) {
             {isCollapsed ? 'Déplier ▾' : 'Replier ▴'}
           </button>
         </div>
+
+        {/* Formulaire interne affiché directement dans la même CordelCard une fois dépliée */}
+        {!isCollapsed && (
+          <div className="flex flex-col gap-3 animate-fadeIn">
+            {children}
+          </div>
+        )}
       </CordelCard>
 
-      {/* Contenu détaillé de la campagne lorsqu'il est déplié */}
-      {!isCollapsed && (
+      {/* Blocs complémentaires sous la carte (alertes de paiement, demandes enregistrées) */}
+      {!isCollapsed && footer && (
         <div className="flex flex-col gap-3 animate-fadeIn">
-          {children}
+          {footer}
         </div>
       )}
     </div>

@@ -64,13 +64,6 @@ const PERMISSION_POLES = [
         descKey: "settings.security.tabSecurity.accesALaListeDes"
       },
       {
-        id: "secretariat-reports",
-        label: "Rapports & Bilan AG",
-        labelKey: "settings.security.tabSecurity.rapportsBilanAg",
-        desc: "Bilan d'activité AG et extraction CSV des présences",
-        descKey: "settings.security.tabSecurity.bilanDActiviteAgEt"
-      },
-      {
         id: "studio-events",
         label: "Registre des dates",
         labelKey: "settings.security.tabSecurity.registreDesDates",

@@ -1,9 +1,10 @@
 import React from 'react';
+import { extractDayPart, extractTimePart, resolveDefaultTimesForForm } from '../../utils/eventScheduleUtils';
 
 const FALLBACK_POLL_PUPITRES = ['Alfaias', 'Caixas', 'Gonguê', 'Agbê', 'Mineiro', 'Timbal', 'Chant', 'Danse'];
 
 /** Sous-composant dédié à la configuration et à l'édition d'un sondage de dates (< 140 lignes) */
-export default function EventPollFormSection({ formData = {}, setFormData, pupitresList = [], isEdit = false, tr }) {
+export default function EventPollFormSection({ formData = {}, setFormData, pupitresList = [], eventTypeConfigs = {}, isEdit = false, tr }) {
   const translate = (k, fb) => (typeof tr === 'function' && tr(k) !== k ? tr(k) : fb);
   const availablePupitres = Array.isArray(pupitresList) && pupitresList.length > 0 ? pupitresList : FALLBACK_POLL_PUPITRES;
   const isPollActive = Boolean(formData.isPoll || formData.status === 'sondage' || formData.pollGroupId);
@@ -44,8 +45,14 @@ export default function EventPollFormSection({ formData = {}, setFormData, pupit
     setFormData((prev) => {
       const curDates = Array.isArray(prev.pollDates) && prev.pollDates.length >= 2 ? [...prev.pollDates] : [prev.date || '', ''];
       const curIds = Array.isArray(prev.pollOptionIds) ? [...prev.pollOptionIds] : curDates.map(() => null);
-      curDates[idx] = value;
-      return { ...prev, pollDates: curDates, pollOptionIds: curIds, date: idx === 0 ? value : prev.date };
+      let finalVal = value;
+      if (value && !curDates[idx] && (!extractTimePart(value) || extractTimePart(value) === '00:00')) {
+        const { startTime } = resolveDefaultTimesForForm(prev, eventTypeConfigs);
+        const refTime = extractTimePart(curDates[0]) || extractTimePart(prev.date) || startTime;
+        finalVal = `${extractDayPart(value)}T${refTime}`;
+      }
+      curDates[idx] = finalVal;
+      return { ...prev, pollDates: curDates, pollOptionIds: curIds, date: idx === 0 ? finalVal : prev.date };
     });
   };
 
@@ -88,7 +95,7 @@ export default function EventPollFormSection({ formData = {}, setFormData, pupit
           </div>
         </div>
         {!isEdit && (
-          <input type="checkbox" checked={isPollActive} onChange={(e) => setFormData((prev) => ({ ...prev, isPoll: e.target.checked, pollMode: prev.pollMode || 'single_winner', pollTargetPupitres: Array.isArray(prev.pollTargetPupitres) ? prev.pollTargetPupitres : [], pollDates: prev.pollDates || [prev.date || '', ''] }))} className="w-4 h-4 accent-amber-600 cursor-pointer" />
+          <input type="checkbox" checked={isPollActive} onChange={(e) => setFormData((prev) => ({ ...prev, isPoll: e.target.checked, pollMode: prev.pollMode || 'single_winner', pollTargetPupitres: Array.isArray(prev.pollTargetPupitres) ? prev.pollTargetPupitres : [], pollDates: prev.pollDates || [prev.date || '', ''], registrationDeadlineMode: e.target.checked && (!prev.registrationDeadlineMode || prev.registrationDeadlineMode === 'none') ? 'relative' : prev.registrationDeadlineMode, registrationDeadlineDaysBefore: prev.registrationDeadlineDaysBefore || 7 }))} className="w-4 h-4 accent-amber-600 cursor-pointer" />
         )}
       </div>
 
@@ -107,12 +114,9 @@ export default function EventPollFormSection({ formData = {}, setFormData, pupit
             <div className="flex flex-col gap-1.5 p-2 bg-white/70 dark:bg-black/20 rounded border border-amber-400/40">
               <span className="text-[9px] uppercase font-black text-cordel-wood">{translate('agenda.pollTargetPupitresLabel', 'Pupitres à répartir sur les créneaux :')}</span>
               <div className="flex flex-wrap gap-1.5">
-                {availablePupitres.map((p) => {
-                  const checked = selectedPupitres.includes(p);
-                  return (
-                    <button key={p} type="button" onClick={(e) => handleTogglePupitre(e, p)} className={`text-[9.5px] font-black px-2 py-1 rounded border cursor-pointer transition-all ${checked ? 'bg-[var(--color-cordel-vert,#2d6a4f)] text-white border-encre-noire shadow-xs' : 'bg-cordel-bg-light text-encre-noire/75 border-encre-noire/25 hover:bg-amber-100/50'}`}>{checked ? '✓ ' : '+ '}{p}</button>
-                  );
-                })}
+                {availablePupitres.map((p) => (
+                  <button key={p} type="button" onClick={(e) => handleTogglePupitre(e, p)} className={`text-[9.5px] font-black px-2 py-1 rounded border cursor-pointer transition-all ${selectedPupitres.includes(p) ? 'bg-[var(--color-cordel-vert,#2d6a4f)] text-white border-encre-noire shadow-xs' : 'bg-cordel-bg-light text-encre-noire/75 border-encre-noire/25 hover:bg-amber-100/50'}`}>{selectedPupitres.includes(p) ? '✓ ' : '+ '}{p}</button>
+                ))}
               </div>
             </div>
           )}
