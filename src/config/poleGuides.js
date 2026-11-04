@@ -1822,8 +1822,8 @@ export const POLE_GUIDES = {
     ]
   },
   'studio-communication': {
-    titre: "📢 Campagnes & Stratégie de Communication",
-    title: "📢 Campagnes & Stratégie de Communication",
+    titre: "Campagnes & Stratégie de Communication",
+    title: "Campagnes & Stratégie de Communication",
     description: "Coordination des plans de communication, relations presse et diffusion des annonces de la troupe.",
     etapes: [
       "Planifiez le calendrier éditorial des campagnes promotionnelles.",

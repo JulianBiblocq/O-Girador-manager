@@ -6649,7 +6649,7 @@ export const fr = {
         creerAutomatiquementSurFramaspace: "⚡ Créer automatiquement sur Framaspace"
       },
       memberDashboardLayoutAccordion: {
-        leMegaphoneAnnoncesOfficielles: "📢 Le Mégaphone (Annonces officielles)",
+        leMegaphoneAnnoncesOfficielles: "Le Mégaphone (Annonces officielles)",
         videoALaUneYoutube: "🎬 Vidéo à la une (YouTube)",
         leMotDuMestre: "📝 Le Mot du Mestre",
         datesAVenirAgenda: "📅 Dates à Venir (Agenda)",
@@ -7062,7 +7062,7 @@ export const fr = {
     captionPlaceholder: "Ajoute un mot pour le groupe...",
     sendToGroupBtn: "💬 Envoyer dans Tout le groupe",
     hangOnVaralBtn: "🪢 Accrocher sur le Varal",
-    publishMegaphoneBtn: "📢 Publier dans le Mégaphone",
+    publishMegaphoneBtn: "Publier dans le Mégaphone",
     openLinkBtn: "Ouvrir le lien"
   }
 };

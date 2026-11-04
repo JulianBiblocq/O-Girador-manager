@@ -28,12 +28,12 @@ export default function BankDetailsAccordion({ formData = {}, handleChange, savi
       {/* Bandeau d'en-tête compact avec IBAN masqué */}
       <div 
         onClick={() => setIsOpen(prev => !prev)}
-        className="py-3 px-4 flex items-center justify-between cursor-pointer bg-cordel-bg-light/60 hover:bg-cordel-bg-light transition-colors select-none"
+        className="py-3 px-4 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 w-full cursor-pointer bg-cordel-bg-light/60 hover:bg-cordel-bg-light transition-colors select-none"
       >
-        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2.5 text-left">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2.5 text-left flex-1 min-w-0 break-words">
           <div className="flex items-center gap-1.5">
             <span className="text-sm">🏦</span>
-            <span className="text-xs font-black uppercase tracking-wider text-cordel-wood">
+            <span className="text-xs font-black uppercase tracking-wider text-cordel-wood break-words">
               {t('settings.identity.bankDetailsAccordion.coordonneesBancairesRib')}
             </span>
           </div>

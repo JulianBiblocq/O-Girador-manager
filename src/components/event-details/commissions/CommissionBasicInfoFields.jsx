@@ -1,6 +1,6 @@
 import React from 'react';
 
-const ICON_SUGGESTIONS = ['📋', '👗', '🎸', '🍽️', '🎪', '📢', '🛠️', '🚗', '🎨', '📸'];
+const ICON_SUGGESTIONS = ['📋', '👗', '🎸', '🍽️', '🎪', '🎺', '🛠️', '🚗', '🎨', '📸'];
 
 /**
  * Sous-composant pour les informations de base d'une commission (Titre, Icône, Référents, Description)

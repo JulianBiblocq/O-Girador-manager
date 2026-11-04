@@ -38,11 +38,11 @@ export default function MestriaAccordion({ directionArtistique = [], afficherMes
     <CordelCard variant="default" useExtremeBorder={true} className="p-0 overflow-hidden mb-4">
       <div 
         onClick={() => setIsOpen(prev => !prev)}
-        className="py-3 px-4 flex items-center justify-between cursor-pointer bg-cordel-bg-light/60 hover:bg-cordel-bg-light transition-colors select-none"
+        className="py-3 px-4 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 w-full cursor-pointer bg-cordel-bg-light/60 hover:bg-cordel-bg-light transition-colors select-none"
       >
-        <div className="flex items-center gap-2 text-left">
+        <div className="flex items-center gap-2 text-left flex-1 min-w-0 break-words">
           <span className="text-sm">🥁</span>
-          <span className="text-xs font-black uppercase tracking-wider text-cordel-wood">
+          <span className="text-xs font-black uppercase tracking-wider text-cordel-wood break-words">
             {t('settings.identity.mestriaAccordion.directionArtistique')}{directionArtistique.length}) {isOpen ? '▲' : '▾'}
           </span>
           <span className="text-[9px] text-cordel-master-dark/60 font-semibold hidden sm:inline">
@@ -52,7 +52,7 @@ export default function MestriaAccordion({ directionArtistique = [], afficherMes
 
         <button
           type="button"
-          className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded border border-encre-noire/30 bg-white hover:bg-stone-50 text-encre-noire transition-all cursor-pointer shadow-2xs"
+          className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded border border-encre-noire/30 bg-white hover:bg-stone-50 text-encre-noire transition-all cursor-pointer shadow-2xs shrink-0"
         >
           {isOpen ? t('settings.identity.mestriaAccordion.fermer') : t('settings.identity.mestriaAccordion.gerer')}
         </button>

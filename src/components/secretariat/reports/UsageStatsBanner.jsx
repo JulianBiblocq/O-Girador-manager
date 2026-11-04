@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { computeAssociationUsageStats, syncUsageStatsToOrquestrador } from '../../../utils/usageStatsUtils';
 import { dispatchBulkInAppAndPushNotification } from '../../../utils/inAppNotificationService';
 import { useTranslation } from '../../LanguageContext';
+import TerracottaMegaphoneIcon from '../../TerracottaMegaphoneIcon';
 
 /**
  * Bandeau de statistiques d'usage numérique de l'association (Bureau & CA).
@@ -118,7 +119,7 @@ export default function UsageStatsBanner({
         <div className="p-3 bg-[var(--cordel-bg,#f4ecd8)]/80 border border-[var(--theme-border-color,#181716)]/20 rounded-[var(--theme-border-radius,6px)] flex flex-col justify-between gap-2">
           <div>
             <span className="text-[9px] font-black uppercase opacity-60 block">3. Lectures Mégaphone</span>
-            <div className="text-base font-black text-[var(--color-cordel-ocre,#c05621)] mt-0.5">📢 {stats.avgMegaphoneReadRate}% <span className="text-[10px] font-bold opacity-70">de lecture moy.</span></div>
+            <div className="text-base font-black text-[var(--color-cordel-ocre,#c05621)] mt-0.5 flex items-center gap-1"><TerracottaMegaphoneIcon size={15} /> {stats.avgMegaphoneReadRate}% <span className="text-[10px] font-bold opacity-70">de lecture moy.</span></div>
             <p className="text-[9px] opacity-70 font-semibold">Sur les {stats.recentAnnouncementsCount} dernière(s) annonce(s)</p>
           </div>
           {stats.recentAnnouncementsStats.length > 0 && (

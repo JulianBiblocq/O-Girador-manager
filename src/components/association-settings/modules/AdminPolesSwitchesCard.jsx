@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from '../../LanguageContext';
 import CordelCard from '../../CordelCard';
+import TerracottaMegaphoneIcon from '../../TerracottaMegaphoneIcon';
 import { DEFAULT_ENABLED_MODULES } from '../../../hooks/useAssociationSettings';
 
 const ADMIN_POLES_CONFIG = [
@@ -12,7 +13,7 @@ const ADMIN_POLES_CONFIG = [
   { key: 'costumerie', icon: '👗', titleKey: 'settings.modules.modulesSwitchesTable.costumerieConfection', descKey: 'settings.modules.modulesSwitchesTable.costumerieDesc', title: 'Costumerie & Confection', desc: 'Suivi des costumes, métrages et patrons' },
   { key: 'diffusion', icon: '🎷', titleKey: 'settings.modules.modulesSwitchesTable.diffusionPipelinePrestations', descKey: 'settings.modules.modulesSwitchesTable.prestationsDemarchageEtOpportunitesDe', title: 'Diffusion & Prestations', desc: 'Prestations, démarchage et concerts' },
   { key: 'pedagogie', icon: '🥁', titleKey: 'settings.modules.modulesSwitchesTable.pedagogieMestria', descKey: 'settings.modules.modulesSwitchesTable.pedagogieDesc', title: 'Mestria & Pédagogie', desc: 'Espace Mestre, plan de scène et parcours' },
-  { key: 'studioSocial', icon: '📢', titleKey: 'settings.modules.modulesSwitchesTable.studioSocialMedias', descKey: 'settings.modules.modulesSwitchesTable.photothequeDiffusionExterneEtVaral', title: 'Studio Social & Médias', desc: 'Photothèque, diffusion externe et Varal' },
+  { key: 'studioSocial', icon: <TerracottaMegaphoneIcon size={16} />, titleKey: 'settings.modules.modulesSwitchesTable.studioSocialMedias', descKey: 'settings.modules.modulesSwitchesTable.photothequeDiffusionExterneEtVaral', title: 'Studio Social & Médias', desc: 'Photothèque, diffusion externe et Varal' },
   { key: 'commandes', icon: '🛒', titleKey: 'settings.modules.modulesSwitchesTable.boutiqueCommandes', descKey: 'settings.modules.modulesSwitchesTable.commandesGroupeesDeConsommablesPour', title: 'Boutique & Commandes', desc: 'Commandes groupées pour la troupe' },
   { key: 'covoiturage', icon: '🚗', titleKey: 'settings.modules.modulesSwitchesTable.covoiturageEvenements', descKey: 'settings.modules.modulesSwitchesTable.organisationDesTrajetsPartagesSur', title: 'Covoiturage Événements', desc: 'Trajets partagés sur l\'agenda' },
   { key: 'forum', icon: '💬', titleKey: 'settings.modules.modulesSwitchesTable.porteVoixDiscussions', descKey: 'settings.modules.modulesSwitchesTable.messagerieCommunautaireEtCanauxDe', title: 'Porte-voix (Discussions)', desc: 'Messagerie communautaire et canaux' },
@@ -54,8 +55,8 @@ export default function AdminPolesSwitchesCard({ formData = {}, handleChange, sa
   return (
     <CordelCard variant="default" useExtremeBorder={true} className="p-4 mb-4">
       {/* En-tête de la carte */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 pb-2 border-b border-dashed border-cordel-master-dark/20 text-left">
-        <div>
+      <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 w-full mb-3 pb-2 border-b border-dashed border-cordel-master-dark/20 text-left">
+        <div className="flex-1 min-w-0 break-words">
           <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood flex items-center gap-1.5">
             {t('settings.modules.modulesSwitchesTable.adminPolesTitle') || '🏛️ Pôles Métiers & Back-Office de l\'Association'}
           </h3>
@@ -64,12 +65,12 @@ export default function AdminPolesSwitchesCard({ formData = {}, handleChange, sa
           </p>
         </div>
 
-        <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           <button
             type="button"
             onClick={handleActivateAll}
             disabled={saving}
-            className="text-[9px] font-black uppercase text-emerald-800 hover:underline cursor-pointer"
+            className="text-[9px] font-black uppercase text-emerald-800 hover:underline cursor-pointer shrink-0"
           >
             {t('settings.modules.modulesSwitchesTable.toutActiver') || '✓ Tout activer'}
           </button>
@@ -78,7 +79,7 @@ export default function AdminPolesSwitchesCard({ formData = {}, handleChange, sa
             type="button"
             onClick={handleDeactivateAll}
             disabled={saving}
-            className="text-[9px] font-black uppercase text-stone-600 hover:underline cursor-pointer"
+            className="text-[9px] font-black uppercase text-stone-600 hover:underline cursor-pointer shrink-0"
           >
             {t('settings.modules.modulesSwitchesTable.toutDesactiver') || '✕ Tout désactiver'}
           </button>
@@ -92,17 +93,17 @@ export default function AdminPolesSwitchesCard({ formData = {}, handleChange, sa
           return (
             <div 
               key={m.key} 
-              className={`p-2.5 rounded border transition-all flex items-center justify-between ${
+              className={`p-2.5 rounded border transition-all flex items-center justify-between gap-2 w-full ${
                 isActive ? 'bg-white border-encre-noire/30 shadow-2xs' : 'bg-stone-100 border-stone-200 opacity-60'
               }`}
             >
-              <div className="flex items-center gap-2 pr-2">
-                <span className="text-base">{m.icon}</span>
-                <div className="flex flex-col">
-                  <span className="text-[11px] font-black text-encre-noire leading-tight">
+              <div className="flex items-center gap-2 pr-2 flex-1 min-w-0">
+                <span className="text-base shrink-0 flex items-center">{m.icon}</span>
+                <div className="flex flex-col flex-1 min-w-0 break-words">
+                  <span className="text-[11px] font-black text-encre-noire leading-tight break-words">
                     {m.titleKey ? (t(m.titleKey) || m.title) : m.title}
                   </span>
-                  <span className="text-[8.5px] text-stone-500 font-medium leading-tight mt-0.5">
+                  <span className="text-[8.5px] text-stone-500 font-medium leading-tight mt-0.5 break-words">
                     {m.descKey ? (t(m.descKey) || m.desc) : m.desc}
                   </span>
                 </div>

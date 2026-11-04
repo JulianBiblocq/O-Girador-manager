@@ -110,7 +110,7 @@ export default function TabLieux({ formData, handleChange, saving: _saving, t: p
         <div className="flex items-start gap-2.5">
           <span className="text-xl shrink-0 mt-0.5">🏛️</span>
           <div className="flex flex-col text-left flex-1 min-w-0">
-            <h3 className="text-xs font-black uppercase tracking-wider text-cordel-wood">
+            <h3 className="text-xs font-black uppercase tracking-wider text-cordel-wood break-words">
               {/* Local Associatif & Référence Kilométrique */}
               {t('settings.agenda.tabLieux.localAssociatifReferenceKilometrique')}
             </h3>
@@ -165,7 +165,7 @@ export default function TabLieux({ formData, handleChange, saving: _saving, t: p
       <CordelCard variant="default" useExtremeBorder={true} className="p-5 flex flex-col gap-4">
         <div className="flex justify-between items-center border-b border-dashed border-cordel-master-dark/20 pb-3 flex-wrap gap-2">
           <div>
-            <h3 className="text-xs font-black uppercase tracking-wider text-cordel-wood">
+            <h3 className="text-xs font-black uppercase tracking-wider text-cordel-wood break-words">
               {t('settings.agenda.tabLieux.lieuxClesSallesCleEn')}
             </h3>
             <p className="text-[10px] opacity-75 mt-0.5 leading-relaxed">
@@ -366,7 +366,7 @@ export default function TabLieux({ formData, handleChange, saving: _saving, t: p
       <CordelCard variant="default" useExtremeBorder={true} className="p-0 overflow-hidden">
         <div
           onClick={() => setIsDefaultLocationsOpen(prev => !prev)}
-          className="py-3 px-4 flex items-center justify-between cursor-pointer bg-cordel-bg-light/60 hover:bg-cordel-bg-light transition-colors select-none"
+          className="py-3 px-4 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 w-full cursor-pointer bg-cordel-bg-light/60 hover:bg-cordel-bg-light transition-colors select-none"
           role="button"
           tabIndex={0}
           onKeyDown={(e) => {
@@ -376,9 +376,9 @@ export default function TabLieux({ formData, handleChange, saving: _saving, t: p
             }
           }}
         >
-          <div className="flex items-center gap-2 text-left">
+          <div className="flex items-center gap-2 text-left flex-1 min-w-0 break-words">
             <span className="text-sm">📍</span>
-            <span className="text-xs font-black uppercase tracking-wider text-cordel-wood">
+            <span className="text-xs font-black uppercase tracking-wider text-cordel-wood break-words">
               {t('settings.agenda.tabLieux.lieuxParDefautParType')} {isDefaultLocationsOpen ? '▲' : '▾'}
             </span>
             <span className="text-[9px] text-cordel-master-dark/60 font-semibold hidden sm:inline">
@@ -388,7 +388,7 @@ export default function TabLieux({ formData, handleChange, saving: _saving, t: p
 
           <button
             type="button"
-            className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded border border-encre-noire/30 bg-white hover:bg-stone-50 text-encre-noire transition-all cursor-pointer shadow-2xs"
+            className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded border border-encre-noire/30 bg-white hover:bg-stone-50 text-encre-noire transition-all cursor-pointer shadow-2xs shrink-0"
           >
             {isDefaultLocationsOpen ? t('settings.agenda.tabLieux.fermer') : t('settings.agenda.tabLieux.deplierLesLieux')}
           </button>

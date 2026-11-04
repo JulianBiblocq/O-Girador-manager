@@ -2,8 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { doc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
-// CordelButton retiré (non utilisé)
 import { isMemberCaOrBureau, getEffectiveMemberTags } from '../../utils/memberUtils';
+import EventEmargementFooter from './EventEmargementFooter';
 
 /**
  * Sous-composant dédié à l'émargement manuel des participants lors des réunions.
@@ -101,12 +101,10 @@ export default function EventEmargementSection({
   // Filtrage des membres selon recherche textuelle et restriction CA éventuelle
   const filteredMembers = useMemo(() => {
     return members.filter((m) => {
-      // Filtrage CA/Bureau si demandé
       if (caOnlyFilter && !isMemberCaOrBureau(m)) {
         return false;
       }
 
-      // Recherche textuelle
       if (searchQuery.trim()) {
         const queryClean = searchQuery.toLowerCase().trim();
         const fullName = `${m.prenom || ''} ${m.nom || ''}`.toLowerCase();
@@ -132,18 +130,15 @@ export default function EventEmargementSection({
 
     if (existingIndex >= 0) {
       if (isCurrentlyPresent) {
-        // Décocher : marquer absent
         updatedInscriptions = currentInscriptions.map((ins, idx) =>
           idx === existingIndex ? { ...ins, status: 'absent' } : ins
         );
       } else {
-        // Cocher : marquer présent
         updatedInscriptions = currentInscriptions.map((ins, idx) =>
           idx === existingIndex ? { ...ins, status: 'present', userName: memberName } : ins
         );
       }
     } else {
-      // Nouvelle entrée
       updatedInscriptions = [
         ...currentInscriptions,
         {
@@ -155,7 +150,6 @@ export default function EventEmargementSection({
       ];
     }
 
-    // Mise à jour optimiste locale sans mutation directe de la prop event
     setOptimisticInscriptions(updatedInscriptions);
     if (onInscriptionsChanged) {
       onInscriptionsChanged(updatedInscriptions);
@@ -380,63 +374,13 @@ export default function EventEmargementSection({
             </div>
           )}
 
-          {/* Décompte optionnel des participants externes / public non adhérent */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 bg-amber-50/70 rounded border border-dashed border-amber-300 text-xs">
-            <div className="flex flex-col">
-              <span className="font-extrabold text-cordel-wood uppercase text-[10px]">
-                📢 Participants invités ou public non-adhérent
-              </span>
-              <span className="text-[10px] text-stone-600 italic">
-                Utile pour les réunions publiques ou assemblées ouvertes aux sympathisants
-              </span>
-            </div>
-
-            <div className="flex items-center gap-1.5 self-end sm:self-center">
-              {isAdmin && (
-                <button
-                  type="button"
-                  onClick={() => handleInvitesChange(invitesCount - 1)}
-                  disabled={invitesCount <= 0}
-                  className="w-6 h-6 flex items-center justify-center font-black bg-white rounded border border-neutral-300 hover:bg-neutral-100 disabled:opacity-30 cursor-pointer select-none"
-                >
-                  −
-                </button>
-              )}
-              <input
-                type="number"
-                min="0"
-                value={invitesCount}
-                disabled={!isAdmin}
-                onChange={(e) => handleInvitesChange(e.target.value)}
-                className="theme-input text-xs w-16 text-center font-bold py-1 bg-white"
-              />
-              {isAdmin && (
-                <button
-                  type="button"
-                  onClick={() => handleInvitesChange(invitesCount + 1)}
-                  className="w-6 h-6 flex items-center justify-center font-black bg-white rounded border border-neutral-300 hover:bg-neutral-100 cursor-pointer select-none"
-                >
-                  +
-                </button>
-              )}
-              <span className="text-[10px] font-bold text-stone-700 ml-1">personne(s)</span>
-            </div>
-          </div>
-
-          {/* Résumé d'émargement */}
-          <div className="flex items-center justify-between text-[10px] text-stone-600 border-t border-dashed border-neutral-300 pt-2 px-1">
-            <span>
-              ✓ <strong>{presentsCount}</strong> adhérent(s) émargé(s)
-            </span>
-            {invitesCount > 0 && (
-              <span>
-                + <strong>{invitesCount}</strong> non-adhérent(s)
-              </span>
-            )}
-            <span className="font-black text-cordel-wood uppercase tracking-wider">
-              = {totalParticipants} au total
-            </span>
-          </div>
+          <EventEmargementFooter
+            isAdmin={isAdmin}
+            invitesCount={invitesCount}
+            presentsCount={presentsCount}
+            totalParticipants={totalParticipants}
+            handleInvitesChange={handleInvitesChange}
+          />
         </div>
       )}
     </CordelCard>

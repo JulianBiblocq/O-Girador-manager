@@ -30,7 +30,7 @@ import { usePendingMembersNotification } from '../hooks/usePendingMembersNotific
 import { resolveEffectiveUserTags } from '../utils/tagUtils'; // Utilitaire de résolution des étiquettes effectives
 import { isMemberArchived } from '../utils/memberUtils';
 import ArchivedAccountScreen from './auth/ArchivedAccountScreen';
-import InfoPoleBanner, { InfoPoleHelpButton } from './InfoPoleBanner';
+import InfoPoleBanner from './InfoPoleBanner';
 import PageAccessBadgeIndicator from './common/PageAccessBadgeIndicator';
 import FeedbackModal from './FeedbackModal';
 import CommandPaletteModal from './common/CommandPaletteModal';
@@ -46,7 +46,7 @@ import { canonicalizeGroupId } from '../utils/tenantUtils';
 import HeaderSealLogo from './common/HeaderSealLogo';
 import NotificationCenter from './notifications/NotificationCenter';
 import EcosystemAppLauncher from './navigation/EcosystemAppLauncher';
-import { HorizontalRibbonContainer } from './navigation/HorizontalTabRibbon';
+import PoleStickyHeaderBar from './navigation/PoleStickyHeaderBar';
 import LanguageToggle from './common/LanguageToggle';
 import { useActiveGameRoom } from '../hooks/useActiveGameRoom';
 import { useGameRepertoire } from '../hooks/useGameRepertoire';
@@ -992,7 +992,7 @@ export default function LayoutShell({
         </div>
 
         {/* Zone de contenu principale (balise sémantique main avec espacement mobile strict pt-3 px-2.5) */}
-        <main id="main-content" className="flex-1 overflow-y-auto overflow-x-hidden w-full max-w-full min-w-0 overscroll-contain touch-pan-y cordel-bg px-2.5 sm:px-7 md:px-9 pt-3 pb-4 sm:py-6 md:py-8 flex flex-col justify-between">
+        <main id="main-content" className={`flex-1 overflow-y-auto overflow-x-hidden w-full max-w-full min-w-0 overscroll-contain touch-pan-y cordel-bg px-2.5 sm:px-7 md:px-9 ${isAccueil ? 'pt-3 sm:pt-6 md:pt-8' : 'pt-0'} pb-4 sm:pb-6 md:pb-8 flex flex-col justify-between`}>
           <div className="flex flex-col gap-5 w-full max-w-full flex-1 min-w-0">
             
             {/* Break-Glass Active Warning Banner */}
@@ -1079,142 +1079,34 @@ export default function LayoutShell({
                 </div>
               </div>
             ) : (
-              /* En-tête pour les autres pôles : découplage en deux étages sur Desktop (Utilitaires en haut à droite, Onglets en dessous sur toute la largeur) */
-              <div className="flex flex-col w-full select-none shrink-0 sticky top-0 z-20 bg-cordel-bg/95 backdrop-blur-xs">
-                
-                {/* ÉTAGE 1 : Top Utility Bar Desktop (invisible sur mobile) */}
-                <div className="hidden lg:flex items-center justify-between w-full py-1.5 px-0 mb-0.5">
-                  {/* Gauche : Lanceur d'applications de l'écosystème (le gaufrier) */}
-                  <div className="flex items-center justify-start shrink-0">
-                    <EcosystemAppLauncher urls={urls} associationData={associationData} currentGroupId={currentGroupId} />
-                  </div>
-
-                  {/* Droite : Composants de session regroupés */}
-                  <div className="ml-auto flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setIsCommandPaletteOpen(true)}
-                      className="px-2.5 py-1 min-h-[34px] border-2 border-encre-noire bg-cordel-bg-light hover:bg-white text-encre-noire rounded-[6px_9px_7px_8px] shadow-[1.5px_1.5px_0px_0px_#181716] hover:scale-[1.03] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1.5 transition-all text-xs font-black select-none"
-                      title="Recherche rapide (Ctrl + K)"
-                      aria-label="Palette de commande"
-                    >
-                      <span>🔍</span>
-                      <span className="text-[9.5px] font-mono opacity-60 bg-encre-noire/10 px-1 py-0.5 rounded hidden xl:inline">Ctrl K</span>
-                    </button>
-
-                    {isDefisAuthorized && activeLobbyRoom && (
-                      <button
-                        type="button"
-                        onClick={() => setActiveGameRoomId(activeLobbyRoom.id)}
-                        className="animate-bounce inline-flex items-center gap-1.5 px-2.5 py-1 min-h-[34px] bg-[var(--color-cordel-vert)] text-white border-2 border-encre-noire rounded-[6px_9px_7px_8px] shadow-[1.5px_1.5px_0px_0px_#181716] text-[10px] font-black uppercase tracking-wider cursor-pointer select-none hover:scale-105 active:scale-95 transition-all"
-                        title="Défi ouvert ! Cliquer pour rejoindre la table"
-                      >
-                        <span className="text-xs">🏆</span>
-                        <span>Défi ouvert</span>
-                        <span className="bg-white/20 text-white text-[9px] px-1.5 py-0.2 rounded-full font-mono">
-                          {Object.keys(activeLobbyRoom.players || {}).length}/4
-                        </span>
-                      </button>
-                    )}
-
-                    <OnlineStatusWidget 
-                      onlineMembers={onlineMembers} 
-                      onlineCount={onlineCount} 
-                      isPresenceEnabled={isPresenceEnabled} 
-                      currentUserId={currentUserId}
-                      currentUserProfile={currentProfile}
-                      onStartDirectChat={onStartDirectChat}
-                      activeLobbyRoom={activeLobbyRoom}
-                      onOpenLobby={(roomId) => setActiveGameRoomId(roomId)}
-                      onCreateRoom={handleCreateGameRoom}
-                      onJoinRoom={handleJoinGameRoom}
-                      isDefisAuthorized={isDefisAuthorized}
-                    />
-
-                    <NotificationCenter 
-                      currentUser={profileData || currentProfile}
-                      groupId={currentGroupId}
-                      onNavigateToUrl={onNotificationNavigate}
-                      unreadPrivateMessagesCount={unreadPrivateMessagesCount}
-                    />
-
-                    {canUseViewSimulator && (
-                      <ViewSimulatorSelector />
-                    )}
-
-                    <InfoPoleHelpButton 
-                      key={`help_btn_${activePoleObj?.id || currentPole}_${currentTab || 'default'}`}
-                      currentPole={activePoleObj?.id || currentPole} 
-                      currentTab={currentTab} 
-                    />
-                  </div>
-                </div>
-
-                {/* ÉTAGE 2 : Barre de navigation métier (Sous-onglets horizontaux sur toute la largeur disponible) */}
-                {visibleTabs.length > 0 && (
-                  <div className="flex items-center justify-between gap-2 border-b border-dashed border-cordel-master-dark/20 pb-2 mb-1 w-full max-w-full min-w-0 lg:flex-wrap">
-                    {/* Menu d'onglets horizontaux principaux du pôle courant sous forme de ruban défilant */}
-                    <div className="flex items-center min-w-0 flex-1 max-w-full overflow-hidden lg:overflow-visible">
-                      <HorizontalRibbonContainer activeTabId={currentTab} className="flex-1">
-                        {visibleTabs.map((tab) => {
-                          const isUnlocked = checkTabAccess(tab.id, activePoleObj?.id);
-                          const isActive = currentTab === tab.id;
-                          const isRestrictedTitle = t('common.accessRestricted') || "Accès restreint";
-
-                          const translatedLabel = tab.labelKey ? (tab.labelKey.startsWith('poles.') ? t(tab.labelKey) : t(`poles.${tab.labelKey}`)) : null;
-                          let displayLabel = (translatedLabel && !translatedLabel.startsWith('poles.')) ? translatedLabel : tab.label;
-                          if (tab.id === 'vestiaire' && activePoleObj?.id === 'mon-espace' && associationData?.wardrobeMemberMode === 'collective_workshop') {
-                            displayLabel = "Atelier Costumes";
-                          }
-
-                          if (!isUnlocked) {
-                            return (
-                              <button
-                                key={tab.id}
-                                type="button"
-                                data-tab-id={tab.id}
-                                data-tab-active="false"
-                                disabled={true}
-                                title={isRestrictedTitle}
-                                className="shrink-0 whitespace-nowrap min-h-[40px] px-3.5 py-1.5 text-sm lg:min-h-0 lg:px-2.5 lg:py-1 lg:text-xs font-black uppercase tracking-wider lg:tracking-wide rounded-[4px_6px_3px_5px] border-2 transition-all opacity-50 grayscale cursor-not-allowed bg-cordel-bg/50 text-encre-noire/50 border-encre-noire/20 select-none shadow-none flex items-center justify-center gap-1.5"
-                              >
-                                <span className="text-[11px] opacity-75">🔒</span>
-                                <span>{displayLabel}</span>
-                              </button>
-                            );
-                          }
-
-                          return (
-                            <button
-                              key={tab.id}
-                              type="button"
-                              data-tab-id={tab.id}
-                              data-tab-active={isActive ? "true" : "false"}
-                              onClick={() => onNavigateToTab && onNavigateToTab(tab.id)}
-                              className={`shrink-0 whitespace-nowrap min-h-[40px] px-3.5 py-1.5 text-sm lg:min-h-0 lg:px-2.5 lg:py-1 lg:text-xs font-black uppercase tracking-wider lg:tracking-wide rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer flex items-center justify-center ${
-                                isActive
-                                  ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
-                                  : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
-                              }`}
-                            >
-                              {displayLabel}
-                            </button>
-                          );
-                        })}
-                      </HorizontalRibbonContainer>
-                    </div>
-
-                    {/* Sur mobile uniquement : bouton d'aide contextuelle à droite du ruban défilant */}
-                    <div className="lg:hidden flex items-center gap-1.5 shrink-0 ml-auto self-start pt-2">
-                      <InfoPoleHelpButton 
-                        key={`help_btn_mob_${activePoleObj?.id || currentPole}_${currentTab || 'default'}`}
-                        currentPole={activePoleObj?.id || currentPole} 
-                        currentTab={currentTab} 
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
+              <PoleStickyHeaderBar
+                urls={urls}
+                associationData={associationData}
+                currentGroupId={currentGroupId}
+                setIsCommandPaletteOpen={setIsCommandPaletteOpen}
+                isDefisAuthorized={isDefisAuthorized}
+                activeLobbyRoom={activeLobbyRoom}
+                setActiveGameRoomId={setActiveGameRoomId}
+                onlineMembers={onlineMembers}
+                onlineCount={onlineCount}
+                isPresenceEnabled={isPresenceEnabled}
+                currentUserId={currentUserId}
+                currentProfile={currentProfile}
+                profileData={profileData}
+                onStartDirectChat={onStartDirectChat}
+                handleCreateGameRoom={handleCreateGameRoom}
+                handleJoinGameRoom={handleJoinGameRoom}
+                onNotificationNavigate={onNotificationNavigate}
+                unreadPrivateMessagesCount={unreadPrivateMessagesCount}
+                canUseViewSimulator={canUseViewSimulator}
+                activePoleObj={activePoleObj}
+                currentPole={currentPole}
+                currentTab={currentTab}
+                visibleTabs={visibleTabs}
+                checkTabAccess={checkTabAccess}
+                onNavigateToTab={onNavigateToTab}
+                t={t}
+              />
             )}
 
             <div className="w-full max-w-full flex-1 min-w-0">

@@ -4,11 +4,13 @@ import { db } from '../firebase';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import EmptyState from './EmptyState';
-import { XiloClose, XiloBox } from './XiloIcons';
+import { XiloBox } from './XiloIcons';
 import { useTerminologie } from '../hooks/useTerminologie';
 import { useTranslation } from './LanguageContext';
 import { fr } from '../locales/fr';
 import MemberOrdersPaymentAlert from './orders/MemberOrdersPaymentAlert';
+import WidgetUserOrderRequestsList from './orders/WidgetUserOrderRequestsList';
+import WidgetGroupOrders from './WidgetGroupOrders';
 
 export default function WidgetCommandes({ groupId, user, profileData }) {
   const { t } = useTranslation();
@@ -19,20 +21,20 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
     if (trans && trans !== `widgetCommandes.articles.${articleKey}`) {
       return trans;
     }
-    // Try to find by matching value in french dict
     const frArticles = fr.widgetCommandes?.articles || {};
     const matchingKey = Object.keys(frArticles).find(k => frArticles[k] === articleKey);
     if (matchingKey) {
       return t(`widgetCommandes.articles.${matchingKey}`);
     }
-    return articleKey; // fallback
+    return articleKey;
   };
+
   const [openCampaign, setOpenCampaign] = useState(null);
   const [userRequests, setUserRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Form states
+  // États du formulaire de commande
   const catalog = useMemo(() => openCampaign?.articles || [], [openCampaign?.articles]);
   const [suggestion, setSuggestion] = useState('');
   const [article, setArticle] = useState('');
@@ -41,14 +43,14 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
   const [notes, setNotes] = useState('');
   const [isPersonalOrder, setIsPersonalOrder] = useState(false);
 
-  // Réinitialiser selected article when catalog loads
+  // Réinitialiser l'article sélectionné au chargement du catalogue
   useEffect(() => {
     if (catalog.length > 0 && !catalog.some(c => c.nom === article)) {
       setArticle(catalog[0].nom);
     }
   }, [catalog, article]);
 
-  // Réinitialiser selected size when selected article changes
+  // Réinitialiser la taille sélectionnée au changement d'article
   useEffect(() => {
     const artObj = catalog.find(item => item.nom === article);
     if (artObj && artObj.tailles && artObj.tailles.length > 0) {
@@ -72,10 +74,9 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       if (!querySnapshot.empty) {
-        // Prendre la campagne ouverte la plus récente
         const list = [];
-        querySnapshot.forEach((doc) => {
-          list.push({ id: doc.id, ...doc.data() });
+        querySnapshot.forEach((docSnap) => {
+          list.push({ id: docSnap.id, ...docSnap.data() });
         });
         list.sort((a, b) => new Date(b.dateCreation) - new Date(a.dateCreation));
         setOpenCampaign(list[0]);
@@ -100,17 +101,17 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
 
     const requestsRef = collection(db, 'campaignRequests');
     const q = query(
-      requestsRef, 
-      where('campaignId', '==', openCampaign.id), 
+      requestsRef,
+      where('campaignId', '==', openCampaign.id),
       where('userId', '==', user.uid)
     );
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const fetched = [];
-      querySnapshot.forEach((doc) => {
+      querySnapshot.forEach((docSnap) => {
         fetched.push({
-          id: doc.id,
-          ...doc.data()
+          id: docSnap.id,
+          ...docSnap.data()
         });
       });
       setUserRequests(fetched);
@@ -130,7 +131,6 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
       let finalNotes = notes.trim();
       const artObj = catalog.find(item => item.nom === article);
 
-      // Prepend selected size/variation to notes for full backward-compatibility and visual affichage de
       if (selectedTaille) {
         if (finalNotes) {
           finalNotes = `Taille : ${selectedTaille} - ${finalNotes}`;
@@ -159,8 +159,7 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
       };
 
       await addDoc(collection(db, 'campaignRequests'), payload);
-      
-      // Réinitialiser inputs
+
       setQuantite(1);
       setNotes('');
       setSuggestion('');
@@ -182,7 +181,6 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
     }
   };
 
-  // Determine utilitaire text based on chosen article
   const isTshirtSelected = article === "T-shirt Homme" || article === "T-shirt Femme";
   const isAlfaiaSkinSelected = article === "Peau d'Alfaia (18\", 20\" ou 22\")" || article === "Housse de protection Alfaia (18\", 20\" ou 22\")";
 
@@ -194,10 +192,12 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
 
   return (
     <div className="flex flex-col gap-3 text-left select-none">
-      {/* Title */}
-      <h3 className="text-xs font-extrabold tracking-wider text-cordel-master-dark opacity-75 uppercase pl-1 flex items-center gap-1">
-        <XiloBox size={14} /> {t('widgetCommandes.title') || "Commande Groupée"}
-      </h3>
+      {/* Titre affiché uniquement hors campagne active (chargement ou état vide admin) */}
+      {!openCampaign && (
+        <h3 className="text-xs font-extrabold tracking-wider text-cordel-master-dark opacity-75 uppercase pl-1 flex items-center gap-1">
+          <XiloBox size={14} /> {t('widgetCommandes.title') || "Commande Groupée"}
+        </h3>
+      )}
 
       {loading && (
         <div className="flex justify-center items-center py-6">
@@ -205,7 +205,7 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
         </div>
       )}
 
-      {/* No open campaigns */}
+      {/* Aucune campagne ouverte */}
       {!loading && !openCampaign && (
         <EmptyState
           icon="🛍️"
@@ -214,19 +214,19 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
         />
       )}
 
-      {/* Campaign open form */}
+      {/* Accordéon repliable / dépliable de la campagne ouverte */}
       {!loading && openCampaign && (
-        <div className="flex flex-col gap-3">
+        <WidgetGroupOrders campaign={openCampaign}>
           <CordelCard variant="ocre" useExtremeBorder={true} className="py-4 px-5">
             <h4 className="font-extrabold text-sm text-encre-noire leading-snug mb-1">
-              {t('widgetCommandes.campaignTitle') || "Campagne :"} {openCampaign.titre}
+              {t('widgetCommandes.campaignTitle') || "Campagne :"} {openCampaign.titre || openCampaign.title}
             </h4>
             <p className="text-[8px] uppercase tracking-wider font-extrabold text-cordel-master-dark/70 border-b border-dashed border-cordel-master-dark/20 pb-2 mb-3">
               {t('widgetCommandes.subTitle') || "Vos besoins :"}
             </p>
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-              {/* Dropdown list of articles */}
+              {/* Liste déroulante des articles */}
               <div className="flex flex-col gap-1">
                 <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">{t('widgetCommandes.articleLabel') || "Article"}</label>
                 <select
@@ -243,7 +243,7 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
                 </select>
               </div>
 
-              {/* Selected Article Image Preview */}
+              {/* Aperçu image de l'article sélectionné */}
               {(() => {
                 const artObj = catalog.find(item => item.nom === article);
                 if (artObj && artObj.imageUrl) {
@@ -256,7 +256,7 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
                 return null;
               })()}
 
-              {/* Dropdown for sizes/variations if configured */}
+              {/* Déclinaisons / Tailles */}
               {(() => {
                 const artObj = catalog.find(item => item.nom === article);
                 if (artObj && artObj.tailles && artObj.tailles.length > 0) {
@@ -279,7 +279,6 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
                 return null;
               })()}
 
-              {/* Utilitaire notice fallbacks for legacy/default articles */}
               {isTshirtSelected && !selectedTaille && (
                 <div className="text-[9px] font-bold text-green-700 dark:text-green-400 bg-white/40 dark:bg-black/20 p-1.5 rounded border border-dashed border-green-300/50 leading-relaxed mt-0.5">
                   {t('widgetCommandes.tshirtNotice') ? t('widgetCommandes.tshirtNotice').replace('{{size}}', profileData?.tailleTshirt || 'M') : `Taille T-shirt : ${profileData?.tailleTshirt || 'M'}`}
@@ -292,7 +291,7 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
                 </div>
               )}
 
-              {/* Quantité & Notes row */}
+              {/* Quantité & Notes */}
               <div className="grid grid-cols-3 gap-2">
                 <div className="flex flex-col gap-1 col-span-1">
                   <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">{t('widgetCommandes.qtyLabel') || "Quantité"}</label>
@@ -333,7 +332,7 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
                 />
               </div>
 
-              {/* Personal order checkbox */}
+              {/* Case à cocher commande personnelle */}
               <div className="flex flex-col gap-0.5 mt-1">
                 <div className="flex items-center gap-2">
                   <input
@@ -349,16 +348,16 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
                   </label>
                 </div>
                 <span className="text-[8px] font-bold text-cordel-master-dark/65 pl-5">
-                  {isPersonalOrder 
-                    ? (t('widgetCommandes.personalOrderDesc') || "Achat à vos frais personnels.") 
+                  {isPersonalOrder
+                    ? (t('widgetCommandes.personalOrderDesc') || "Achat à vos frais personnels.")
                     : (t('widgetCommandes.suggestionOrderDesc') || "Suggestion d'achat pour le parc de l'association.")
                   }
                 </span>
               </div>
 
-              <CordelButton 
-                type="submit" 
-                variant="ocre" 
+              <CordelButton
+                type="submit"
+                variant="ocre"
                 useExtremeBorder={true}
                 disabled={saving || !article}
                 className="w-full py-2 font-bold uppercase tracking-widest text-[10px] mt-1"
@@ -375,75 +374,14 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
             profileData={profileData}
           />
 
-          {/* User's existing requests list */}
-          {userRequests.length > 0 && (
-            <CordelCard variant="default" useExtremeBorder={false} className="py-3 px-4">
-              <h5 className="text-[9px] font-extrabold tracking-wider text-cordel-wood uppercase border-b border-dashed border-cordel-master-dark/15 pb-1 mb-2 flex items-center gap-1">
-                <XiloBox size={12} /> {t('widgetCommandes.myRequests') || "Ma commande"}
-              </h5>
-              <div className="flex flex-col gap-2 max-h-40 overflow-y-auto">
-                {userRequests.map((req) => (
-                  <div key={req.id} className="text-xs flex justify-between items-center py-1 border-b border-dashed border-encre-noire/5 last:border-0 last:pb-0 gap-2">
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      {(() => {
-                        const artObj = catalog.find(item => item.nom === req.article);
-                        if (artObj && artObj.imageUrl) {
-                          return (
-                            <div className="w-8 h-8 rounded border border-encre-noire/15 overflow-hidden bg-white shrink-0 shadow-[1px_1px_0px_0px_rgba(26,26,26,0.1)] flex items-center justify-center">
-                              <img src={artObj.imageUrl} alt={req.article} className="w-full h-full object-cover" />
-                            </div>
-                          );
-                        }
-                        return null;
-                      })()}
-                      <div className="flex-1 min-w-0">
-                        <span className="font-extrabold text-encre-noire flex items-center gap-1.5 flex-wrap">
-                        {req.quantite} {t('widgetCommandes.unit') || "u"} {getArticleLabel(req.article)}
-                        {req.isPersonalOrder ? (
-                          <span className="theme-stamp-badge theme-stamp-badge-dark text-[7px] px-1 py-0.5 border-dashed">
-                            {t('widgetCommandes.personalBadge') || "Personnel"}
-                          </span>
-                        ) : (
-                          <span className="theme-stamp-badge theme-stamp-badge-wood text-[7px] px-1 py-0.5 border-dashed">
-                            {t('widgetCommandes.suggestionBadge') || "Suggestion"}
-                          </span>
-                        )}
-                        {req.status === 'validated' ? (
-                          <span className="theme-stamp-badge border-green-600 text-green-600 dark:border-green-400 dark:text-green-400 text-[7px] px-1 py-0.5 border-dashed">
-                            {t('ordersManager.statusValidated') || "Validé"}
-                          </span>
-                        ) : (
-                          <span className="theme-stamp-badge theme-stamp-badge-wood opacity-75 text-[7px] px-1 py-0.5 border-dashed">
-                            {t('ordersManager.statusPending') || "En attente"}
-                          </span>
-                        )}
-                      </span>
-                      {req.notes && (
-                        <p className="text-[9px] text-cordel-master-dark/70 font-semibold truncate">
-                          {t('widgetCommandes.notesLabel') || "Note"} : {req.notes}
-                        </p>
-                      )}
-                      {req.suggestion && (
-                        <p className="text-[9px] text-cordel-wood font-extrabold truncate">
-                          💡 Suggestion : {req.suggestion}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <button
-                      type="button"
-                      onClick={() => handleDeleteRequest(req.id)}
-                      className="p-1 border border-dashed border-red-400 hover:border-red-600 text-red-500 rounded cursor-pointer shrink-0 ml-2 flex items-center justify-center"
-                      title="Retirer"
-                    >
-                      <XiloClose size={8} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </CordelCard>
-          )}
-        </div>
+          {/* Liste des demandes enregistrées par l'utilisateur */}
+          <WidgetUserOrderRequestsList
+            userRequests={userRequests}
+            catalog={catalog}
+            getArticleLabel={getArticleLabel}
+            onDeleteRequest={handleDeleteRequest}
+          />
+        </WidgetGroupOrders>
       )}
     </div>
   );

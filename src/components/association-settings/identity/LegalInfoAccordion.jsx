@@ -31,12 +31,12 @@ export default function LegalInfoAccordion({ formData = {}, handleChange, saving
       {/* Bandeau d'en-tête compact avec résumé visible */}
       <div 
         onClick={() => setIsOpen(prev => !prev)}
-        className="py-3 px-4 flex items-center justify-between cursor-pointer bg-cordel-bg-light/60 hover:bg-cordel-bg-light transition-colors select-none"
+        className="py-3 px-4 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 w-full cursor-pointer bg-cordel-bg-light/60 hover:bg-cordel-bg-light transition-colors select-none"
       >
-        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2.5 text-left">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2.5 text-left flex-1 min-w-0 break-words">
           <div className="flex items-center gap-1.5">
             <span className="text-sm">📜</span>
-            <span className="text-xs font-black uppercase tracking-wider text-cordel-wood">
+            <span className="text-xs font-black uppercase tracking-wider text-cordel-wood break-words">
               {t('settings.identity.legalInfoAccordion.informationsLegalesCoordonnees')}
             </span>
           </div>
@@ -54,7 +54,7 @@ export default function LegalInfoAccordion({ formData = {}, handleChange, saving
         <div className="flex items-center gap-2 shrink-0">
           <button
             type="button"
-            className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded border border-encre-noire/30 bg-white hover:bg-stone-50 text-encre-noire transition-all cursor-pointer shadow-2xs"
+            className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded border border-encre-noire/30 bg-white hover:bg-stone-50 text-encre-noire transition-all cursor-pointer shadow-2xs shrink-0"
           >
             {isOpen ? t('settings.identity.legalInfoAccordion.fermer') : t('settings.identity.legalInfoAccordion.editer')}
           </button>

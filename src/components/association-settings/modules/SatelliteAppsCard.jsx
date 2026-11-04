@@ -4,10 +4,10 @@ import CordelCard from '../../CordelCard';
 import { DEFAULT_ECOSYSTEM_ACCESS } from '../../../hooks/useAssociationSettings';
 
 const APPS_CONFIG = [
-  { key: 'sequenciador', name: "Séquenceur", icon: '🎛️', desc: "Séquenceur rythmique & métronome interactif" },
-  { key: 'dancador', name: "Dançad'Or", icon: '💃', desc: "Simulateur de chorégraphies & pas de danse" },
-  { key: 'cantador', name: "Cantad'Or", icon: '🎤', desc: "Carnet de chants & prompteur de toadas" },
-  { key: 'vitrine', name: "Mostrad'Or", icon: '🌐', desc: "Site vitrine public de l'association" }
+  { key: 'sequenciador', name: "Sequenciador", icon: '🎛️', desc: "Séquenceur rythmique & métronome interactif" },
+  { key: 'dancador', name: "Dançador", icon: '💃', desc: "Simulateur de chorégraphies & pas de danse" },
+  { key: 'cantador', name: "Cantador", icon: '🎤', desc: "Carnet de chants & prompteur de toadas" },
+  { key: 'vitrine', name: "Mostrador", icon: '🌐', desc: "Site vitrine public de l'association" }
 ];
 
 /**
@@ -39,13 +39,13 @@ export default function SatelliteAppsCard({ formData = {}, handleChange, saving 
           return (
             <div 
               key={app.key}
-              className={`p-2.5 rounded border transition-all flex items-center justify-between ${
+              className={`p-2.5 rounded border transition-all flex items-center justify-between gap-2 w-full ${
                 isEnabled ? 'bg-white border-encre-noire/30 shadow-2xs' : 'bg-stone-100 border-stone-200 opacity-60'
               }`}
             >
-              <div className="flex items-center gap-2 pr-1">
-                <span className="text-lg">{app.icon}</span>
-                <div className="flex flex-col">
+              <div className="flex items-center gap-2 pr-1 flex-1 min-w-0">
+                <span className="text-lg shrink-0">{app.icon}</span>
+                <div className="flex flex-col flex-1 min-w-0 break-words">
                   <span className="text-[11px] font-black text-encre-noire">{app.name}</span>
                   <span className="text-[8px] text-stone-500 font-medium leading-tight">{app.desc}</span>
                 </div>
@@ -64,9 +64,9 @@ export default function SatelliteAppsCard({ formData = {}, handleChange, saving 
 
       {/* Option transversale : Statut de présence en ligne */}
       <div className="pt-2 border-t border-dashed border-cordel-master-dark/15 text-left">
-        <label className="flex items-center justify-between p-2 rounded bg-white border border-stone-200 cursor-pointer">
-          <div className="flex items-center gap-2">
-            <span>🟢</span>
+        <label className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 w-full p-2 rounded bg-white border border-stone-200 cursor-pointer">
+          <div className="flex items-center gap-2 flex-1 min-w-0 break-words">
+            <span className="shrink-0">🟢</span>
             <span className="text-[10.5px] font-bold text-stone-700">
               {t('settings.modules.modulesSwitchesTable.pastillesDeStatutEnLigne') || 'Pastilles de statut en ligne (visibilité des membres connectés)'}
             </span>
@@ -76,7 +76,7 @@ export default function SatelliteAppsCard({ formData = {}, handleChange, saving 
             checked={formData.activerPresenceEnLigne !== false}
             onChange={(e) => handleChange('activerPresenceEnLigne', e.target.checked)}
             disabled={saving}
-            className="w-4 h-4 cursor-pointer accent-[var(--color-cordel-vert,#2d6a4f)]"
+            className="w-4 h-4 cursor-pointer accent-[var(--color-cordel-vert,#2d6a4f)] shrink-0"
           />
         </label>
       </div>

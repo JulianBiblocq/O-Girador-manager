@@ -54,12 +54,12 @@ export default function AnnualCyclesAccordion({ formData = {}, handleChange, sav
       {/* Bandeau d'en-tête compact */}
       <div 
         onClick={() => setIsOpen(prev => !prev)}
-        className="py-3 px-4 flex items-center justify-between cursor-pointer bg-cordel-bg-light/60 hover:bg-cordel-bg-light transition-colors select-none"
+        className="py-3 px-4 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 w-full cursor-pointer bg-cordel-bg-light/60 hover:bg-cordel-bg-light transition-colors select-none"
       >
-        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-left">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-left flex-1 min-w-0 break-words">
           <div className="flex items-center gap-1.5">
             <span className="text-sm">📅</span>
-            <span className="text-xs font-black uppercase tracking-wider text-cordel-wood">
+            <span className="text-xs font-black uppercase tracking-wider text-cordel-wood break-words">
               {t('settings.organization.annualCyclesAccordion.cyclesAnnuels')}
             </span>
           </div>

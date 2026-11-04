@@ -6649,7 +6649,7 @@ export const pt = {
         creerAutomatiquementSurFramaspace: "⚡ Criar automaticamente no Framaspace"
       },
       memberDashboardLayoutAccordion: {
-        leMegaphoneAnnoncesOfficielles: "📢 O Megafone (Avisos oficiais)",
+        leMegaphoneAnnoncesOfficielles: "O Megafone (Avisos oficiais)",
         videoALaUneYoutube: "🎬 Vídeo em destaque (YouTube)",
         leMotDuMestre: "📝 Palavra do Mestre",
         datesAVenirAgenda: "📅 Próximos Eventos (Agenda)",
@@ -7062,7 +7062,7 @@ export const pt = {
     captionPlaceholder: "Adicione uma mensagem para o grupo...",
     sendToGroupBtn: "💬 Enviar para Todo o grupo",
     hangOnVaralBtn: "🪢 Pendurar no Varal",
-    publishMegaphoneBtn: "📢 Publicar no Megafone",
+    publishMegaphoneBtn: "Publicar no Megafone",
     openLinkBtn: "Abrir o link"
   }
 };

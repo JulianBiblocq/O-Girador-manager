@@ -5,6 +5,7 @@ import { formatTagGender, getTagId, computePupitresList } from '../../utils/tagU
 import { getMigratedRoleAndTags, VALID_SYSTEM_ROLES } from '../../utils/roleMigration';
 import { DEFAULT_CUSTOM_CATEGORIES } from '../../utils/categoryUtils';
 import MemberProfileEditModal from './MemberProfileEditModal';
+import UserAppRightsToggles from './UserAppRightsToggles';
 import CordelAccordion, { CordelAccordionGroup } from '../CordelAccordion';
 import { isMemberArchived } from '../../utils/memberUtils';
 
@@ -587,72 +588,22 @@ export default function SystemUserList({
                 </div>
               )}
 
-              {/* External App Rights */}
+              {/* Droits d'écriture sur les applications satellites */}
               {!isArchived && (
-                <div className="flex flex-col gap-1.5 border-t border-dashed border-cordel-master-dark/10 pt-3">
-                  <label className="text-[8px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                    Accès Autres Applications (Écriture)
-                  </label>
-                  <div className="flex flex-wrap gap-x-4 gap-y-2 mt-0.5">
-                    <label 
-                      title={seqZero && !activeAppRights.sequenciador ? "Aucun badge disponible dans le forfait de l'association" : (seqReached && !activeAppRights.sequenciador ? "Quota maximum atteint pour l'association" : undefined)}
-                      className={`flex items-center gap-1.5 cursor-pointer text-[9px] font-bold select-none hover:opacity-80 ${(seqReached || seqZero) && !activeAppRights.sequenciador ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={activeAppRights.sequenciador}
-                        onChange={(e) => handleAppRightToggle(userItem.id, 'sequenciador', e.target.checked)}
-                        disabled={savingId === userItem.id || ((seqReached || seqZero) && !activeAppRights.sequenciador)}
-                        title={seqZero && !activeAppRights.sequenciador ? "Aucun badge disponible dans le forfait de l'association" : (seqReached && !activeAppRights.sequenciador ? "Quota maximum atteint pour l'association" : undefined)}
-                        className="w-3 h-3 cursor-pointer"
-                      />
-                      <span>
-                        Séquenciador (Mestre)
-                        {quotas.sequenciador !== undefined && quotas.sequenciador !== null && (
-                          <span className="text-[7px] text-cordel-master-dark ml-1">({appRightsUsage.sequenciador}/{quotas.sequenciador})</span>
-                        )}
-                      </span>
-                    </label>
-                    <label 
-                      title={danZero && !activeAppRights.dansador ? "Aucun badge disponible dans le forfait de l'association" : (danReached && !activeAppRights.dansador ? "Quota maximum atteint pour l'association" : undefined)}
-                      className={`flex items-center gap-1.5 cursor-pointer text-[9px] font-bold select-none hover:opacity-80 ${(danReached || danZero) && !activeAppRights.dansador ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={activeAppRights.dansador}
-                        onChange={(e) => handleAppRightToggle(userItem.id, 'dansador', e.target.checked)}
-                        disabled={savingId === userItem.id || ((danReached || danZero) && !activeAppRights.dansador)}
-                        title={danZero && !activeAppRights.dansador ? "Aucun badge disponible dans le forfait de l'association" : (danReached && !activeAppRights.dansador ? "Quota maximum atteint pour l'association" : undefined)}
-                        className="w-3 h-3 cursor-pointer"
-                      />
-                      <span>
-                        Dançador (Mestre)
-                        {quotas.dansador !== undefined && quotas.dansador !== null && (
-                          <span className="text-[7px] text-cordel-master-dark ml-1">({appRightsUsage.dansador}/{quotas.dansador})</span>
-                        )}
-                      </span>
-                    </label>
-                    <label 
-                      title={orchZero && !activeAppRights.orchestrador ? "Aucun badge disponible dans le forfait de l'association" : (orchReached && !activeAppRights.orchestrador ? "Quota maximum atteint pour l'association" : undefined)}
-                      className={`flex items-center gap-1.5 cursor-pointer text-[9px] font-bold select-none hover:opacity-80 ${(orchReached || orchZero) && !activeAppRights.orchestrador ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={activeAppRights.orchestrador}
-                        onChange={(e) => handleAppRightToggle(userItem.id, 'orchestrador', e.target.checked)}
-                        disabled={savingId === userItem.id || ((orchReached || orchZero) && !activeAppRights.orchestrador)}
-                        title={orchZero && !activeAppRights.orchestrador ? "Aucun badge disponible dans le forfait de l'association" : (orchReached && !activeAppRights.orchestrador ? "Quota maximum atteint pour l'association" : undefined)}
-                        className="w-3 h-3 cursor-pointer"
-                      />
-                      <span>
-                        Orchestrador (Mestre)
-                        {quotas.orchestrador !== undefined && quotas.orchestrador !== null && (
-                          <span className="text-[7px] text-cordel-master-dark ml-1">({appRightsUsage.orchestrador}/{quotas.orchestrador})</span>
-                        )}
-                      </span>
-                    </label>
-                  </div>
-                </div>
+                <UserAppRightsToggles
+                  userId={userItem.id}
+                  savingId={savingId}
+                  activeAppRights={activeAppRights}
+                  quotas={quotas}
+                  appRightsUsage={appRightsUsage}
+                  seqReached={seqReached}
+                  seqZero={seqZero}
+                  danReached={danReached}
+                  danZero={danZero}
+                  orchReached={orchReached}
+                  orchZero={orchZero}
+                  onToggle={handleAppRightToggle}
+                />
               )}
 
               {/* Custom info fields (if enabled in organization settings) */}

@@ -14,7 +14,7 @@ import { useTabRibbonAutoScroll } from '../../hooks/useTabRibbonAutoScroll';
  * @param {boolean} [props.showFade=true] Active le dégradé indicateur sur le bord droit
  * @param {boolean} [props.isSticky=false] Active le positionnement collant (sticky)
  * @param {string} [props.stickyOffset="top-0"] Décalage vertical si collant
- * @param {string} [props.stickyZIndex="z-20"] Indice de superposition (z-index)
+ * @param {string} [props.stickyZIndex="z-30"] Indice de superposition (z-index)
  */
 export function HorizontalRibbonContainer({
   activeTabId,
@@ -25,20 +25,20 @@ export function HorizontalRibbonContainer({
   showFade = true,
   isSticky = false,
   stickyOffset = 'top-0',
-  stickyZIndex = 'z-20'
+  stickyZIndex = 'z-30'
 }) {
   const containerRef = useTabRibbonAutoScroll(activeTabId);
 
   return (
     <div
       className={`relative w-full max-w-full min-w-0 ${
-        isSticky ? `sticky ${stickyOffset} ${stickyZIndex} bg-cordel-bg/95 backdrop-blur-xs` : ''
+        isSticky ? `sticky ${stickyOffset} ${stickyZIndex} bg-[var(--cordel-bg,#F4ECD8)]` : ''
       } ${className}`}
     >
       <nav
         ref={containerRef}
         aria-label={ariaLabel}
-        className={`w-full max-w-full overflow-x-auto flex flex-nowrap lg:flex-wrap lg:overflow-visible items-center gap-x-2 gap-y-2 px-3 py-2 lg:py-1 pr-8 lg:pr-2 scroll-smooth scrollbar-none no-scrollbar ${navClassName}`}
+        className={`w-full max-w-full overflow-x-auto flex flex-nowrap lg:flex-wrap lg:overflow-visible items-center gap-x-2 gap-y-2 px-2 py-2 lg:py-1 pr-12 lg:pr-2 scroll-smooth scrollbar-none no-scrollbar ${navClassName}`}
       >
         {children}
       </nav>
@@ -47,7 +47,7 @@ export function HorizontalRibbonContainer({
       {showFade && (
         <div
           aria-hidden="true"
-          className="absolute right-0 top-0 bottom-0 w-8 pointer-events-none bg-gradient-to-l from-[var(--cordel-bg,#faf6ed)] to-transparent select-none z-10 lg:hidden"
+          className="absolute right-0 top-0 bottom-0 w-6 pointer-events-none bg-gradient-to-l from-[var(--cordel-bg,#F4ECD8)] to-transparent select-none z-10 lg:hidden"
         />
       )}
     </div>
@@ -57,20 +57,6 @@ export function HorizontalRibbonContainer({
 /**
  * Bouton d'onglet standardisé pour ruban horizontal défilant.
  * Respecte les standards d'ergonomie mobile : touch-target >= 40px, non-écrasement, typographie claire.
- *
- * @param {Object} props
- * @param {string|number} props.id Identifiant unique de l'onglet
- * @param {boolean} props.isActive Indique si l'onglet est actuellement actif
- * @param {Function} props.onClick Gestionnaire de clic
- * @param {boolean} [props.disabled=false] Désactive le bouton (accès restreint)
- * @param {string} [props.title] Infobulle / titre accessible
- * @param {React.ReactNode} [props.icon] Icône ou emoji préfixe
- * @param {React.ReactNode} props.label Libellé textuel de l'onglet
- * @param {React.ReactNode} [props.badge] Badge indicateur (compteur ou pastille)
- * @param {string} [props.className] Classes CSS d'ajustement
- * @param {string} [props.activeClassName] Classes CSS de l'état actif (défaut : thème ocre Cordel)
- * @param {string} [props.inactiveClassName] Classes CSS de l'état inactif (défaut : carte Cordel neutre)
- * @param {string} [props.disabledClassName] Classes CSS de l'état verrouillé/désactivé
  */
 export function RibbonTabButton({
   id,
@@ -123,7 +109,7 @@ export default function HorizontalTabRibbon({
   showFade = true,
   isSticky = false,
   stickyOffset = 'top-0',
-  stickyZIndex = 'z-20'
+  stickyZIndex = 'z-30'
 }) {
   return (
     <HorizontalRibbonContainer

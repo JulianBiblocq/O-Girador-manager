@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
+import TerracottaMegaphoneIcon from '../TerracottaMegaphoneIcon';
 import { XiloClose } from '../XiloIcons';
 import { useTranslation } from '../LanguageContext';
 import { shareToGeneralGroupChat } from '../../utils/shareTargetDispatchUtils';
@@ -118,8 +119,9 @@ export default function ShareTargetModal({
             {t('shareTarget.hangOnVaralBtn') || '🪢 Accrocher sur le Varal'}
           </CordelButton>
           {canPublishAnnonce && (
-            <CordelButton type="button" variant="ocre" disabled={sending} onClick={handleOpenMegaphone} className="w-full py-2 text-xs font-bold uppercase tracking-wider">
-              {t('shareTarget.publishMegaphoneBtn') || '📢 Publier dans le Mégaphone'}
+            <CordelButton type="button" variant="ocre" disabled={sending} onClick={handleOpenMegaphone} className="w-full py-2 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5">
+              <TerracottaMegaphoneIcon size={14} />
+              <span>{t('shareTarget.publishMegaphoneBtn') || 'Publier dans le Mégaphone'}</span>
             </CordelButton>
           )}
         </div>
