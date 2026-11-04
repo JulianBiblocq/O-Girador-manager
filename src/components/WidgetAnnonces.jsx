@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { collection, addDoc, doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db, messaging } from '../firebase';
 import { getToken } from 'firebase/messaging';
+import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import TerracottaMegaphoneIcon from './annonces/TerracottaMegaphoneIcon';
 import { useTranslation } from './LanguageContext';
@@ -201,12 +202,28 @@ export default function WidgetAnnonces({
         />
       )}
 
-      {!loading && !isAdding && (
-        <div className="flex flex-col gap-3">
-          {visibleAnnouncements.map((ann) => (
-            <AnnonceCardItem key={ann.id} ann={ann} user={user} profileData={profileData} canPublish={canPublish} handleCtaClick={handleCtaClick} handleDelete={handleDeleteAnnouncement} allMembers={allMembers} t={t} />
-          ))}
-        </div>
+      {!loading && !isAdding && visibleAnnouncements.length > 0 && (
+        <CordelCard
+          variant="default"
+          useExtremeBorder={true}
+          className="!py-1 !px-2.5 sm:!px-3.5 relative overflow-hidden"
+        >
+          <div className="flex flex-col divide-y divide-dashed divide-[#181716]/20">
+            {visibleAnnouncements.map((ann) => (
+              <AnnonceCardItem
+                key={ann.id}
+                ann={ann}
+                user={user}
+                profileData={profileData}
+                canPublish={canPublish}
+                handleCtaClick={handleCtaClick}
+                handleDelete={handleDeleteAnnouncement}
+                allMembers={allMembers}
+                t={t}
+              />
+            ))}
+          </div>
+        </CordelCard>
       )}
     </div>
   );
