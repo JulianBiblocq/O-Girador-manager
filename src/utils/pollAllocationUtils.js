@@ -1,5 +1,6 @@
 import { resolvePupitreForInstrument } from './tagUtils.js';
 import { isMemberArchived } from './memberUtils.js';
+import { getEffectiveEventVotes } from './pollVoteUtils.js';
 
 /** Résout le pupitre principal et les pupitres secondaires d'un adhérent */
 export function resolveMemberPollPupitres(user, targetPupitres = [], linkedInstruments = []) {
@@ -58,7 +59,7 @@ export function buildPollPupitreMatrix({ pollEvents = [], allUsers = [], targetP
   const matrix = {};
   (pollEvents || []).forEach((ev) => {
     if (!ev?.id) return;
-    const votes = ev.votes || {};
+    const votes = getEffectiveEventVotes(ev);
     matrix[ev.id] = {};
     (targetPupitres || []).forEach((p) => {
       const availableMembers = activeMembers.filter((m) => m.primaryPupitre === p && votes[m.uid] === 'dispo');

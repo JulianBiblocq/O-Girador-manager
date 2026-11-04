@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { collection, query, where, onSnapshot, doc, updateDoc, writeBatch, getDocs } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, writeBatch, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import useConfirm from '../../hooks/useConfirm';
-import XiloAvatar from '../XiloAvatar';
 import { isMemberArchived } from '../../utils/memberUtils';
 import PollPupitreDispatchPanel from './PollPupitreDispatchPanel';
+import EventPollOptionCard from './EventPollOptionCard';
+import { getEffectiveEventVotes, submitPollVote } from '../../utils/pollVoteUtils';
 
 export default function EventPollSection({
   event,
@@ -145,22 +146,19 @@ export default function EventPollSection({
   const { eligible, message: restrictionMessage } = checkEligibility();
 
   // Enregistrement ou bascule d'un vote pour une option spécifique
-  const handleVote = async (optionEventId, currentVotesObj, choice) => {
-    if (!user?.uid || !eligible || isProcessing) return;
-
-    const newVotes = { ...(currentVotesObj || {}) };
-    if (newVotes[user.uid] === choice) {
-      delete newVotes[user.uid];
-    } else {
-      newVotes[user.uid] = choice;
-    }
+  const handleVote = async (optionEvent, choice) => {
+    if (!user?.uid || !eligible || isProcessing || !optionEvent?.id) return;
 
     try {
-      const eventRef = doc(db, 'events', optionEventId);
-      await updateDoc(eventRef, { votes: newVotes });
+      await submitPollVote({
+        optionEvent,
+        user,
+        profileData,
+        choice
+      });
     } catch (err) {
       console.error("EventPollSection - Erreur update votes :", err);
-      alert("Erreur lors de l'enregistrement de votre vote.");
+      alert(`Erreur lors de l'enregistrement de votre réponse (${err?.code || err?.message || 'inconnu'}).`);
     }
   };
 
@@ -182,7 +180,7 @@ export default function EventPollSection({
     setIsProcessing(true);
     try {
       const batch = writeBatch(db);
-      const votes = winningOptionEvent.votes || {};
+      const votes = getEffectiveEventVotes(winningOptionEvent);
       const dispoUserIds = Object.keys(votes).filter((uid) => votes[uid] === 'dispo');
 
       const existingInscriptions = winningOptionEvent.inscriptions || [];
@@ -278,9 +276,9 @@ export default function EventPollSection({
               const idx = updatedInscriptions.findIndex((i) => i.userId === m.uid);
               const entry = {
                 userId: m.uid,
-                userName: m.name,
+                userName: m.name || 'Membre',
                 status: 'present',
-                instrumentChoisi: m.instrumentChoisi || p,
+                instrumentChoisi: m.instrumentChoisi || p || 'Autre',
                 timestamp: nowIso
               };
               if (idx >= 0) {
@@ -391,115 +389,23 @@ export default function EventPollSection({
         {loading ? (
           <p className="text-[10px] italic text-center opacity-60">Chargement des créneaux...</p>
         ) : (
-          pollEvents.map((optionEv) => {
-            const isCurrentPageOption = optionEv.id === event.id;
-            const votes = optionEv.votes || {};
-            const userVote = votes[user?.uid];
-
-            const dispoUserIds = Object.keys(votes).filter((uid) => votes[uid] === 'dispo');
-            const indispoUserIds = Object.keys(votes).filter((uid) => votes[uid] === 'indispo');
-
-            return (
-              <div
-                key={optionEv.id}
-                className={`p-3 rounded-lg border flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all ${
-                  isCurrentPageOption
-                    ? 'bg-white dark:bg-black/30 border-amber-600 shadow-[2px_2px_0px_0px_#d97706]'
-                    : 'bg-white/60 dark:bg-black/10 border-encre-noire/20 hover:bg-white'
-                }`}
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className={`w-6 h-6 rounded-full border-2 border-encre-noire flex items-center justify-center text-[10px] font-black shrink-0 ${
-                    isCurrentPageOption ? 'bg-amber-500 text-white' : 'bg-cordel-bg text-encre-noire'
-                  }`}>
-                    {optionEv.optionIndex || '?'}
-                  </span>
-
-                  <div className="flex flex-col">
-                    <div className="flex items-center gap-2">
-                      <span className="font-extrabold text-xs text-encre-noire">
-                        📅 {formatDate(optionEv.date)}
-                      </span>
-                      {isCurrentPageOption && (
-                        <span className="text-[8px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-300 px-1.5 py-0.2 rounded">
-                          Fiche ouverte
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-3 mt-1 text-[9px] font-bold text-cordel-master-dark">
-                      <div className="flex items-center gap-1">
-                        <span className="text-emerald-700 font-extrabold">✅ {dispoUserIds.length} dispo</span>
-                        {dispoUserIds.length > 0 && (
-                          <div className="flex -space-x-1 ml-1">
-                            {dispoUserIds.slice(0, 4).map((uid) => (
-                              <XiloAvatar key={uid} src={allUsersMap[uid]?.photoURL} name={allUsersMap[uid]?.name} size={14} />
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-1 opacity-75">
-                        <span className="text-red-700">❌ {indispoUserIds.length} indispo</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto flex-wrap">
-                  {!isCurrentPageOption && onNavigateToEventId && (
-                    <button
-                      type="button"
-                      onClick={() => onNavigateToEventId(optionEv.id)}
-                      className="text-[9px] font-black uppercase px-2.5 py-1 border border-encre-noire/30 bg-cordel-bg hover:bg-neutral-200 text-encre-noire rounded shadow-[1px_1px_0px_0px_#181716] active:shadow-none cursor-pointer"
-                    >
-                      👁️ Voir fiche
-                    </button>
-                  )}
-
-                  {eligible && (
-                    <div className="flex gap-1">
-                      <button
-                        type="button"
-                        onClick={() => handleVote(optionEv.id, votes, 'dispo')}
-                        className={`text-[9px] font-extrabold uppercase px-2.5 py-1 rounded border transition-all cursor-pointer flex items-center gap-1 ${
-                          userVote === 'dispo'
-                            ? 'bg-emerald-600 text-white border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
-                            : 'bg-white text-emerald-800 border-emerald-300 hover:bg-emerald-50'
-                        }`}
-                      >
-                        ✅ {userVote === 'dispo' ? 'Dispo !' : 'Dispo'}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleVote(optionEv.id, votes, 'indispo')}
-                        className={`text-[9px] font-extrabold uppercase px-2.5 py-1 rounded border transition-all cursor-pointer flex items-center gap-1 ${
-                          userVote === 'indispo'
-                            ? 'bg-red-600 text-white border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
-                            : 'bg-white text-red-800 border-red-300 hover:bg-red-50'
-                        }`}
-                      >
-                        ❌ {userVote === 'indispo' ? 'Indispo !' : 'Indispo'}
-                      </button>
-                    </div>
-                  )}
-
-                  {isSuperAdminOrMestre && !isPupitreDispatch && (
-                    <CordelButton
-                      variant="vert"
-                      onClick={() => handleConfirmWinningOption(optionEv)}
-                      disabled={isProcessing}
-                      className="text-[9px] font-black uppercase py-1 px-2.5 ml-1"
-                      title="Valider définitivement cette date et supprimer les autres créneaux"
-                    >
-                      🌟 Retenir cette date
-                    </CordelButton>
-                  )}
-                </div>
-              </div>
-            );
-          })
+          pollEvents.map((optionEv) => (
+            <EventPollOptionCard
+              key={optionEv.id}
+              optionEv={optionEv}
+              currentEventId={event.id}
+              userUid={user?.uid}
+              allUsersMap={allUsersMap}
+              eligible={eligible}
+              isSuperAdminOrMestre={isSuperAdminOrMestre}
+              isPupitreDispatch={isPupitreDispatch}
+              isProcessing={isProcessing}
+              formatDate={formatDate}
+              onNavigateToEventId={onNavigateToEventId}
+              onVote={handleVote}
+              onConfirmWinningOption={handleConfirmWinningOption}
+            />
+          ))
         )}
       </div>
 

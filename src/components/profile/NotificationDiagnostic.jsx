@@ -3,30 +3,21 @@ import CordelButton from '../CordelButton';
 import CordelCard from '../CordelCard';
 import { XiloSparkles, XiloShield, XiloEyeOff } from '../XiloIcons';
 import { useTranslation } from '../LanguageContext';
+import PushTutorialModal, {
+  detectPushTutorialDevice,
+  openPushTutorialModal
+} from '../dashboard/PushTutorialModal';
 
-export default function NotificationDiagnostic({ 
-  notificationPermission, 
-  isSubscribingPush, 
-  onEnableNotifications 
+export default function NotificationDiagnostic({
+  notificationPermission,
+  isSubscribingPush,
+  onEnableNotifications
 }) {
   const { t } = useTranslation();
-  const [isIOS, setIsIOS] = useState(false);
-  const [isStandalone, setIsStandalone] = useState(false);
   const [livePermission, setLivePermission] = useState(notificationPermission || 'default');
+  const env = detectPushTutorialDevice();
 
   useEffect(() => {
-    // Detect iOS
-    const userAgent = window.navigator.userAgent.toLowerCase();
-    const isIOSDevice = /iphone|ipad|ipod/.test(userAgent) || (userAgent.includes("mac") && "ontouchend" in document);
-    setIsIOS(isIOSDevice);
-
-    // Detect Standalone (PWA)
-    const isStandaloneMode = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
-    setIsStandalone(isStandaloneMode);
-  }, []);
-
-  useEffect(() => {
-    // Keep internal permission state in sync, but also re-evaluate just in case
     if (typeof window !== 'undefined' && 'Notification' in window) {
       setLivePermission(Notification.permission);
     }
@@ -63,9 +54,22 @@ export default function NotificationDiagnostic({
 
   const status = getStatusDisplay();
 
-  const handleManualCheck = () => {
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      setLivePermission(Notification.permission);
+  const handleActivateClick = async () => {
+    const currentEnv = detectPushTutorialDevice();
+    if (
+      currentEnv.isInAppBrowser ||
+      currentEnv.isIosNotStandalone ||
+      currentEnv.isPermissionDenied ||
+      livePermission === 'denied'
+    ) {
+      openPushTutorialModal(currentEnv.mode);
+      return;
+    }
+    if (onEnableNotifications) {
+      await onEnableNotifications();
+      if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission !== 'granted') {
+        openPushTutorialModal(currentEnv.mode);
+      }
     }
   };
 
@@ -89,67 +93,34 @@ export default function NotificationDiagnostic({
       </div>
 
       <div className="text-xs text-encre-noire font-medium text-left flex flex-col gap-3">
-        {/* Dynamic Tutorials / Warnings */}
-        
-        {isIOS && !isStandalone && (
-          <div className="bg-sky-50 dark:bg-sky-950/30 border border-sky-300 dark:border-sky-800 p-2.5 rounded text-sky-900 dark:text-sky-300">
-            <p className="font-bold mb-1">🍎 Utilisateur iPhone / iPad détecté :</p>
-            <p className="text-[10px] leading-relaxed">
-              Sur iPhone/iPad, vous devez impérativement ajouter l'application à votre écran d'accueil avant d'activer les alertes.
-              <br/><br/>
-              <strong>Action requise :</strong> Appuyez sur le bouton de partage (le carré avec une flèche) dans Safari, puis choisissez <em>"Sur l'écran d'accueil"</em>. Ouvrez ensuite l'application depuis votre écran d'accueil.
-            </p>
-          </div>
-        )}
-
-        {livePermission === 'denied' && (
-          <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800 p-2.5 rounded text-amber-900 dark:text-amber-300">
-            <p className="font-bold mb-1">🔒 Notifications bloquées par le navigateur :</p>
-            <p className="text-[10px] leading-relaxed">
-              Il semblerait que vous ayez précédemment refusé les notifications, ou que votre navigateur les bloque automatiquement.
-              <br/><br/>
-              <strong>Comment débloquer :</strong> 
-              <br/>1. Cliquez sur le petit cadenas (ou l'icône de paramètres) dans la barre d'adresse de votre navigateur (en haut).
-              <br/>2. Allez dans "Paramètres des sites" ou cherchez "Notifications".
-              <br/>3. Changez l'option sur <strong>Autoriser</strong>.
-              <br/>4. Rechargez la page.
-            </p>
-            <button 
-              onClick={handleManualCheck}
-              className="mt-2 text-[10px] font-bold underline text-amber-700 dark:text-amber-400 hover:text-amber-900"
-            >
-              🔄 Re-vérifier le statut après modification
-            </button>
-          </div>
-        )}
-
-        {livePermission === 'granted' && (
+        {livePermission === 'granted' ? (
           <p className="text-[11px] text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 p-2 rounded">
             {t('userProfile.diagnosticConfiguredSuccess')}
           </p>
-        )}
-
-        {/* Action Button */}
-        {livePermission !== 'granted' && (!isIOS || isStandalone) && (
-          <div className="flex flex-col gap-2 mt-1">
-            <CordelButton 
-              type="button" 
-              variant="vert" 
+        ) : (
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mt-1">
+            <CordelButton
+              type="button"
+              variant="danger"
               useExtremeBorder={true}
-              onClick={onEnableNotifications}
-              disabled={isSubscribingPush || livePermission === 'denied'}
-              className="w-full py-2.5 font-black uppercase tracking-wider text-[11px] shadow-[3px_3px_0px_0px_#181716] disabled:opacity-50"
+              onClick={handleActivateClick}
+              disabled={isSubscribingPush}
+              className="flex-1 py-2.5 font-black uppercase tracking-wider text-[11px] shadow-[3px_3px_0px_0px_#181716] disabled:opacity-50"
             >
-              {isSubscribingPush ? "⏳ Activation en cours..." : "🔔 Forcer l'activation manuelle"}
+              {isSubscribingPush ? "⏳ Activation en cours..." : "🔔 Activer les alertes"}
             </CordelButton>
-            {livePermission === 'denied' && (
-              <p className="text-[9px] text-center text-cordel-master-dark opacity-80">
-                Le bouton est désactivé car votre navigateur bloque la demande. Suivez les instructions ci-dessus pour débloquer.
-              </p>
-            )}
+            <button
+              type="button"
+              onClick={() => openPushTutorialModal(env.mode)}
+              className="text-[11px] font-black underline text-[var(--color-cordel-rouge,#8b2a1a)] hover:opacity-80 cursor-pointer py-1.5 px-2 text-center"
+            >
+              ❓ Comment débloquer sur mon téléphone ?
+            </button>
           </div>
         )}
       </div>
+
+      <PushTutorialModal />
     </CordelCard>
   );
 }

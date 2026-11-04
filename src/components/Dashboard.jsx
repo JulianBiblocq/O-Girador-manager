@@ -19,6 +19,7 @@ import { useTranslation } from './LanguageContext';
 import { useTerminologie } from '../hooks/useTerminologie';
 import InstrumentReminderBanner from './dashboard/InstrumentReminderBanner';
 import PushActivationModal from './dashboard/PushActivationModal';
+import PushTutorialModal from './dashboard/PushTutorialModal';
 import { usePresenceContext } from '../context/PresenceContext';
 import { canPublishAnnonces } from '../utils/permissionUtils';
 import { resolveEffectiveUserTags } from '../utils/tagUtils';
@@ -573,8 +574,9 @@ export default function Dashboard({
         })}
       </div>
 
-      {/* Modale d'activation des notifications Push en 1 clic */}
+      {/* Modale d'activation des notifications Push en 1 clic et tutoriel guidé */}
       <PushActivationModal user={user} profileData={profileData} />
+      <PushTutorialModal />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import { db } from '../../firebase';
+import { db, auth } from '../../firebase';
 import CordelButton from '../CordelButton';
 import { getGeneralConversationId } from '../../utils/generalGroupChatUtils';
 import { extractFirstYouTubeIdFromText } from './ChatYouTubePreview';
@@ -16,31 +16,35 @@ export default function WidgetGeneralChatLiveBox({ groupId, onOpenGeneralChat, t
 
   useEffect(() => {
     if (!generalConvId) return;
+    let fallbackUnsub = null;
+
+    const applySnapshot = (snap) => {
+      const list = [];
+      snap.forEach((docSnap) => list.push({ id: docSnap.id, ...docSnap.data() }));
+      list.sort((a, b) => new Date(a.timestamp || 0).getTime() - new Date(b.timestamp || 0).getTime());
+      setRecentMessages(list.slice(-3));
+    };
 
     const q = query(
       collection(db, 'conversation_messages'),
       where('conversationId', '==', generalConvId)
     );
 
-    const unsub = onSnapshot(
-      q,
-      (snap) => {
-        const list = [];
-        snap.forEach((docSnap) => {
-          list.push({ id: docSnap.id, ...docSnap.data() });
-        });
-        list.sort(
-          (a, b) =>
-            new Date(a.timestamp || 0).getTime() - new Date(b.timestamp || 0).getTime()
-        );
-        setRecentMessages(list.slice(-3));
-      },
-      () => {
-        // Ignorer silencieusement si la collection est en attente d'initialisation
-      }
-    );
+    const unsub = onSnapshot(q, applySnapshot, () => {
+      const uid = auth?.currentUser?.uid;
+      if (!uid) return;
+      const qFallback = query(
+        collection(db, 'conversation_messages'),
+        where('conversationId', '==', generalConvId),
+        where('participantIds', 'array-contains', uid)
+      );
+      fallbackUnsub = onSnapshot(qFallback, applySnapshot, () => {});
+    });
 
-    return () => unsub();
+    return () => {
+      unsub();
+      if (fallbackUnsub) fallbackUnsub();
+    };
   }, [generalConvId]);
 
   if (!generalConvId) return null;
@@ -127,4 +131,3 @@ export default function WidgetGeneralChatLiveBox({ groupId, onOpenGeneralChat, t
     </div>
   );
 }
-

@@ -16,6 +16,7 @@ import { useAutoSyncPushToken } from '../hooks/useAutoSyncPushToken';
 import AnnonceCardItem from './annonces/AnnonceCardItem';
 import AnnonceForm from './annonces/AnnonceForm';
 import AnnoncePushBanner from './annonces/AnnoncePushBanner';
+import { detectPushTutorialDevice, openPushTutorialModal } from './dashboard/PushTutorialModal';
 
 /**
  * WidgetAnnonces : Gestionnaire et affichage des pancartes du tableau de bord.
@@ -69,10 +70,19 @@ export default function WidgetAnnonces({
 
   const handleEnableNotifications = async () => {
     if (!user?.uid) return;
-    if (!messaging || typeof window === 'undefined' || !('Notification' in window)) {
-      if (onTriggerInstall && installPromptAvailable) return onTriggerInstall();
-      return alert(t('widgetAnnonces.pushIosInstallHint') || "Sur iPhone/iPad, touche Partager ⬆️ dans Safari puis « Sur l'écran d'accueil ➕ » pour installer l'application et activer les notifications.");
+    const env = detectPushTutorialDevice();
+    if (
+      env.isInAppBrowser ||
+      env.isIosNotStandalone ||
+      env.isPermissionDenied ||
+      !messaging ||
+      typeof window === 'undefined' ||
+      !('Notification' in window)
+    ) {
+      openPushTutorialModal(env.mode);
+      return;
     }
+
     setIsSubscribingPush(true);
     try {
       const permission = await Notification.requestPermission();
@@ -83,10 +93,15 @@ export default function WidgetAnnonces({
           await updateDoc(doc(db, 'users', user.uid), { fcmTokens: arrayUnion(token) });
           await showPushActivationConfirmation(reg);
           setHasLocalToken(true);
+        } else {
+          openPushTutorialModal(env.mode);
         }
+      } else {
+        openPushTutorialModal(env.mode);
       }
     } catch (err) {
       console.error('WidgetAnnonces - Erreur push :', err);
+      openPushTutorialModal(env.mode);
     } finally {
       setIsSubscribingPush(false);
     }

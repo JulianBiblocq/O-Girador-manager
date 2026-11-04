@@ -1,15 +1,13 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { 
-  collection, 
-  query, 
-  where, 
-  onSnapshot, 
-  doc, 
-  addDoc, 
-  updateDoc, 
-  getDocs,
-  arrayUnion, 
-  arrayRemove 
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  doc,
+  addDoc,
+  updateDoc,
+  arrayRemove
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import {
@@ -17,57 +15,57 @@ import {
   isGeneralGroupConversation,
   ensureGeneralGroupConversation
 } from '../utils/generalGroupChatUtils';
+import {
+  createOrOpenDirectConversation,
+  addConversationParticipants,
+  removeConversationParticipant
+} from '../utils/conversationActionsUtils';
 
 /**
  * Hook personnalisé useConversations
- * Gère la synchronisation en temps réel des discussions directes et des groupes privés multi-membres.
- * Garantit une stricte isolation multi-tenant par groupId.
- *
- * @param {Object} user - Objet utilisateur authentifié Firebase Auth
- * @param {string} groupId - Identifiant de l'association courante
- * @param {Object} profileData - Profil complet de l'utilisateur
+ * Synchronise en temps réel les discussions directes et de groupes multi-membres.
+ * Garantit que le canal général `general_${groupId}` est toujours présent en tête de liste.
  */
 export function useConversations(user, groupId, profileData) {
   const [conversations, setConversations] = useState([]);
+  const [generalConvDoc, setGeneralConvDoc] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const normalizedGroupId = useMemo(
+    () => String(groupId || profileData?.groupId || 'samambaia').trim().toLowerCase() || 'samambaia',
+    [groupId, profileData?.groupId]
+  );
 
   // 1. Synchronisation temps réel des conversations de l'utilisateur au sein du groupe
   useEffect(() => {
-    if (!user?.uid || !groupId) {
+    if (!user?.uid) {
       setConversations([]);
+      setGeneralConvDoc(null);
       setLoading(false);
       return;
     }
 
-    // Garantir l'existence et le rattachement au canal général « 💬 Tout le groupe »
-    ensureGeneralGroupConversation({ userId: user.uid, groupId });
+    const generalId = getGeneralConversationId(normalizedGroupId);
+    ensureGeneralGroupConversation({ userId: user.uid, groupId: normalizedGroupId });
 
     const convRef = collection(db, 'conversations');
-    // Requête par participantIds (index simple natif Firestore sans index composé requis)
-    const q = query(
-      convRef,
-      where('participantIds', 'array-contains', user.uid)
-    );
+    const q = query(convRef, where('participantIds', 'array-contains', user.uid));
 
-    const unsubscribe = onSnapshot(
+    const unsubscribeList = onSnapshot(
       q,
       (snapshot) => {
         const list = [];
         snapshot.forEach((docSnap) => {
           const data = docSnap.data();
-          // Filtrage souple multi-tenant insensible à la casse
-          const matchesGroup = !groupId || !data.groupId || 
-            String(data.groupId).toLowerCase() === String(groupId).toLowerCase();
-
-          if (matchesGroup) {
+          const docGroup = String(data.groupId || 'samambaia').trim().toLowerCase();
+          if (docGroup === normalizedGroupId || docSnap.id.toLowerCase() === generalId) {
             list.push({ id: docSnap.id, ...data });
           }
         });
 
-        // Toujours placer la discussion générale en 1re position, puis trier par activité décroissante
         list.sort((a, b) => {
-          const isGenA = isGeneralGroupConversation(a, groupId);
-          const isGenB = isGeneralGroupConversation(b, groupId);
+          const isGenA = isGeneralGroupConversation(a, normalizedGroupId);
+          const isGenB = isGeneralGroupConversation(b, normalizedGroupId);
           if (isGenA && !isGenB) return -1;
           if (!isGenA && isGenB) return 1;
           const timeA = new Date(a.updatedAt || a.lastMessage?.timestamp || a.createdAt || 0).getTime();
@@ -79,17 +77,33 @@ export function useConversations(user, groupId, profileData) {
         setLoading(false);
       },
       (err) => {
-        console.warn('useConversations - Écoute conversations non disponible ou restreinte (repli messages legacy actif) :', err?.message || err);
+        console.warn('useConversations - Écoute conversations restreinte :', err?.message || err);
         setLoading(false);
       }
     );
 
-    return () => unsubscribe();
-  }, [user?.uid, groupId]);
+    // Écoute directe du document general_${groupId} pour les membres dont participantIds est en cours de synchro
+    const unsubscribeGeneral = onSnapshot(
+      doc(db, 'conversations', generalId),
+      (snap) => {
+        if (snap.exists()) {
+          setGeneralConvDoc({ id: snap.id, ...snap.data() });
+        }
+      },
+      () => {
+        // Ignorer silencieusement si la lecture directe attend encore participantIds
+      }
+    );
 
-  // 2. Calcul des statuts de lecture et ventilation des compteurs de non-lus
+    return () => {
+      unsubscribeList();
+      unsubscribeGeneral();
+    };
+  }, [user?.uid, normalizedGroupId]);
+
+  // 2. Calcul des statuts de lecture et garantie de présence du canal général en 1re position
   const { conversationsWithUnread, totalUnreadCount, unreadDirectCount, unreadGroupsCount } = useMemo(() => {
-    if (!user?.uid || !conversations || !Array.isArray(conversations)) {
+    if (!user?.uid) {
       return {
         conversationsWithUnread: [],
         totalUnreadCount: 0,
@@ -98,40 +112,37 @@ export function useConversations(user, groupId, profileData) {
       };
     }
 
+    const generalId = getGeneralConversationId(normalizedGroupId);
+    const mergedRaw = Array.isArray(conversations) ? [...conversations] : [];
+    if (generalConvDoc && !mergedRaw.some((c) => c.id === generalConvDoc.id || isGeneralGroupConversation(c, normalizedGroupId))) {
+      mergedRaw.unshift(generalConvDoc);
+    }
+
     let totalUnread = 0;
     let directUnread = 0;
     let groupsUnread = 0;
 
-    const list = conversations.map((conv) => {
+    const list = mergedRaw.map((conv) => {
       const lastMsg = conv.lastMessage;
       const lastReadIso = conv.readStatus?.[user.uid];
-
-      // Une conversation a un message non lu si le dernier message existe,
-      // n'a pas été envoyé par l'utilisateur connecté, et est postérieur au dernier acquittement
       let isUnread = false;
       if (lastMsg && lastMsg.senderId !== user.uid) {
-        if (!lastReadIso) {
-          isUnread = true;
-        } else {
-          isUnread = new Date(lastMsg.timestamp) > new Date(lastReadIso);
-        }
+        isUnread = !lastReadIso || new Date(lastMsg.timestamp) > new Date(lastReadIso);
       }
 
-      // Règle de rétrocompatibilité : toute conversation sans type 'group' est considérée comme 'direct'
-      const isGen = isGeneralGroupConversation(conv, groupId);
+      const isGen = isGeneralGroupConversation(conv, normalizedGroupId);
       const normalizedType = conv.type === 'group' || isGen ? 'group' : 'direct';
 
       if (isUnread) {
         totalUnread += 1;
-        if (normalizedType === 'group') {
-          groupsUnread += 1;
-        } else {
-          directUnread += 1;
-        }
+        if (normalizedType === 'group') groupsUnread += 1;
+        else directUnread += 1;
       }
 
       return {
         ...conv,
+        id: isGen ? generalId : conv.id,
+        groupId: normalizedGroupId,
         type: normalizedType,
         isGeneralGroup: isGen,
         name: isGen ? (conv.name || '💬 Tout le groupe') : conv.name,
@@ -139,17 +150,22 @@ export function useConversations(user, groupId, profileData) {
       };
     });
 
-    // Garantir la présence immédiate du canal général en tête de liste même pendant l'initialisation
-    const generalId = getGeneralConversationId(groupId);
+    // Toujours garantir l'affichage du salon général en tête du Porte-Voix pour 100 % des membres connectés
     if (generalId && !list.some((c) => c.id === generalId || c.isGeneralGroup)) {
       list.unshift({
         id: generalId,
-        groupId,
+        groupId: normalizedGroupId,
         type: 'group',
         isGeneralGroup: true,
         name: '💬 Tout le groupe',
         participantIds: [user.uid],
         isUnread: false
+      });
+    } else {
+      list.sort((a, b) => {
+        if (a.isGeneralGroup && !b.isGeneralGroup) return -1;
+        if (!a.isGeneralGroup && b.isGeneralGroup) return 1;
+        return 0;
       });
     }
 
@@ -159,143 +175,24 @@ export function useConversations(user, groupId, profileData) {
       unreadDirectCount: directUnread,
       unreadGroupsCount: groupsUnread
     };
-  }, [conversations, user?.uid, groupId]);
+  }, [conversations, generalConvDoc, user?.uid, normalizedGroupId]);
 
-  // 3. Créer ou retrouver une discussion directe 1-à-1
   const createDirectConversation = useCallback(
-    async (targetUserId, initialMessage = '') => {
-      if (!user?.uid || !groupId || !targetUserId) return null;
-
-      try {
-        // Vérifier si une discussion directe existe déjà entre ces deux membres dans ce groupe
-        const existing = conversations.find(
-          (c) =>
-            c.type === 'direct' &&
-            Array.isArray(c.participantIds) &&
-            c.participantIds.length === 2 &&
-            c.participantIds.includes(user.uid) &&
-            c.participantIds.includes(targetUserId)
-        );
-
-        if (existing) {
-          // Si un message initial est fourni, l'envoyer dans la conversation existante
-          if (initialMessage && initialMessage.trim()) {
-            const nowIso = new Date().toISOString();
-            const senderFullName = profileData?.prenom
-              ? `${profileData.prenom} ${profileData.nom || ''}`.trim()
-              : user.displayName || 'Membre';
-
-            await addDoc(collection(db, 'conversation_messages'), {
-              conversationId: existing.id,
-              groupId,
-              participantIds: existing.participantIds,
-              senderId: user.uid,
-              senderName: senderFullName,
-              senderAvatar: profileData?.photoURL || user?.photoURL || '',
-              content: initialMessage.trim(),
-              timestamp: nowIso,
-              reactions: {}
-            });
-
-            await updateDoc(doc(db, 'conversations', existing.id), {
-              updatedAt: nowIso,
-              lastMessage: {
-                content: initialMessage.trim(),
-                senderId: user.uid,
-                senderName: senderFullName,
-                timestamp: nowIso
-              },
-              [`readStatus.${user.uid}`]: nowIso
-            });
-          }
-          return existing.id;
-        }
-
-        // Sinon, créer un nouveau document de conversation directe
-        const nowIso = new Date().toISOString();
-        const senderFullName = profileData?.prenom
-          ? `${profileData.prenom} ${profileData.nom || ''}`.trim()
-          : user.displayName || 'Membre';
-
-        const participants = [user.uid, targetUserId];
-
-        const newConvData = {
-          groupId,
-          type: 'direct',
-          name: null,
-          participantIds: participants,
-          adminIds: participants,
-          createdBy: user.uid,
-          createdAt: nowIso,
-          updatedAt: nowIso,
-          readStatus: {
-            [user.uid]: nowIso
-          }
-        };
-
-        if (initialMessage && initialMessage.trim()) {
-          newConvData.lastMessage = {
-            content: initialMessage.trim(),
-            senderId: user.uid,
-            senderName: senderFullName,
-            timestamp: nowIso
-          };
-        } else {
-          // Récupérer le dernier message historique pour initialiser l'aperçu de la conversation
-          try {
-            const pmRef = collection(db, 'private_messages');
-            const [snapSent, snapRecv] = await Promise.all([
-              getDocs(query(pmRef, where('senderId', '==', user.uid), where('recipientId', '==', targetUserId))),
-              getDocs(query(pmRef, where('recipientId', '==', user.uid), where('senderId', '==', targetUserId)))
-            ]);
-            const allPms = [];
-            snapSent.forEach((d) => allPms.push(d.data()));
-            snapRecv.forEach((d) => allPms.push(d.data()));
-            if (allPms.length > 0) {
-              allPms.sort((a, b) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime());
-              const latest = allPms[0];
-              newConvData.lastMessage = {
-                content: latest.content || '',
-                senderId: latest.senderId,
-                timestamp: latest.timestamp || nowIso
-              };
-              newConvData.updatedAt = latest.timestamp || nowIso;
-            }
-          } catch (e) {
-            console.warn("useConversations - Impossible de charger le dernier message historique :", e);
-          }
-        }
-
-        const convRef = await addDoc(collection(db, 'conversations'), newConvData);
-
-        if (initialMessage && initialMessage.trim()) {
-          await addDoc(collection(db, 'conversation_messages'), {
-            conversationId: convRef.id,
-            groupId,
-            participantIds: participants,
-            senderId: user.uid,
-            senderName: senderFullName,
-            senderAvatar: profileData?.photoURL || user?.photoURL || '',
-            content: initialMessage.trim(),
-            timestamp: nowIso,
-            reactions: {}
-          });
-        }
-
-        return convRef.id;
-      } catch (err) {
-        console.warn('useConversations - Impossible de créer/ouvrir la conversation dans Firestore (repli legacy actif) :', err?.message || err);
-        return null;
-      }
-    },
-    [user?.uid, groupId, profileData, conversations]
+    (targetUserId, initialMessage = '') =>
+      createOrOpenDirectConversation({
+        user,
+        groupId: normalizedGroupId,
+        profileData,
+        conversations: conversationsWithUnread,
+        targetUserId,
+        initialMessage
+      }),
+    [user, normalizedGroupId, profileData, conversationsWithUnread]
   );
 
-  // 4. Créer une boucle de discussion de groupe privée
   const createGroupConversation = useCallback(
     async ({ name, participantIds = [], initialMessage = '' }) => {
-      if (!user?.uid || !groupId || !name?.trim()) return null;
-
+      if (!user?.uid || !name?.trim()) return null;
       const trimmedName = name.trim();
       const allParticipants = Array.from(new Set([user.uid, ...participantIds]));
       const nowIso = new Date().toISOString();
@@ -304,17 +201,15 @@ export function useConversations(user, groupId, profileData) {
         : user.displayName || 'Membre';
 
       const groupData = {
-        groupId,
+        groupId: normalizedGroupId,
         type: 'group',
         name: trimmedName,
         participantIds: allParticipants,
-        adminIds: [user.uid], // Le créateur est automatiquement administrateur du groupe
+        adminIds: [user.uid],
         createdBy: user.uid,
         createdAt: nowIso,
         updatedAt: nowIso,
-        readStatus: {
-          [user.uid]: nowIso
-        }
+        readStatus: { [user.uid]: nowIso }
       };
 
       if (initialMessage && initialMessage.trim()) {
@@ -327,11 +222,10 @@ export function useConversations(user, groupId, profileData) {
       }
 
       const convRef = await addDoc(collection(db, 'conversations'), groupData);
-
       if (initialMessage && initialMessage.trim()) {
         await addDoc(collection(db, 'conversation_messages'), {
           conversationId: convRef.id,
-          groupId,
+          groupId: normalizedGroupId,
           participantIds: allParticipants,
           senderId: user.uid,
           senderName: senderFullName,
@@ -341,104 +235,52 @@ export function useConversations(user, groupId, profileData) {
           reactions: {}
         });
       }
-
       return convRef.id;
     },
-    [user?.uid, groupId, profileData]
+    [user, normalizedGroupId, profileData]
   );
 
-  // 5. Acquitter la lecture d'une conversation
   const markConversationAsRead = useCallback(
     async (conversationId) => {
       if (!user?.uid || !conversationId) return;
-
-      const nowIso = new Date().toISOString();
       try {
         await updateDoc(doc(db, 'conversations', conversationId), {
-          [`readStatus.${user.uid}`]: nowIso
+          [`readStatus.${user.uid}`]: new Date().toISOString()
         });
-      } catch (err) {
-        console.error('useConversations - Erreur marquage comme lu :', err);
-      }
+      } catch {}
     },
     [user?.uid]
   );
 
-  // 6. Ajouter un ou plusieurs participants à un groupe
   const addParticipantsToGroup = useCallback(
-    async (conversationId, newMemberIds = []) => {
-      if (!conversationId || !Array.isArray(newMemberIds) || newMemberIds.length === 0) return;
-
-      try {
-        const convRef = doc(db, 'conversations', conversationId);
-        await updateDoc(convRef, {
-          participantIds: arrayUnion(...newMemberIds),
-          updatedAt: new Date().toISOString()
-        });
-      } catch (err) {
-        console.error('useConversations - Erreur ajout de participants :', err);
-        throw err;
-      }
-    },
+    (conversationId, newMemberIds = []) => addConversationParticipants(conversationId, newMemberIds),
     []
   );
 
-  // 7. Retirer un participant d'un groupe (réservé admin ou modérateur)
   const removeParticipantFromGroup = useCallback(
-    async (conversationId, memberId) => {
-      if (!conversationId || !memberId) return;
-
-      try {
-        const convRef = doc(db, 'conversations', conversationId);
-        await updateDoc(convRef, {
-          participantIds: arrayRemove(memberId),
-          adminIds: arrayRemove(memberId),
-          updatedAt: new Date().toISOString()
-        });
-      } catch (err) {
-        console.error('useConversations - Erreur retrait de participant :', err);
-        throw err;
-      }
-    },
+    (conversationId, memberId) => removeConversationParticipant(conversationId, memberId),
     []
   );
 
-  // 8. Quitter volontairement un groupe (interdit pour la discussion générale)
   const leaveGroup = useCallback(
     async (conversationId) => {
-      if (!user?.uid || !conversationId) return;
-      if (String(conversationId).startsWith('general_')) return;
-
-      try {
-        const convRef = doc(db, 'conversations', conversationId);
-        await updateDoc(convRef, {
-          participantIds: arrayRemove(user.uid),
-          adminIds: arrayRemove(user.uid),
-          updatedAt: new Date().toISOString()
-        });
-      } catch (err) {
-        console.error('useConversations - Erreur lors de la sortie du groupe :', err);
-        throw err;
-      }
+      if (!user?.uid || !conversationId || String(conversationId).toLowerCase().startsWith('general_')) return;
+      await updateDoc(doc(db, 'conversations', conversationId), {
+        participantIds: arrayRemove(user.uid),
+        adminIds: arrayRemove(user.uid),
+        updatedAt: new Date().toISOString()
+      });
     },
     [user?.uid]
   );
 
-  // 9. Renommer un groupe de discussion
   const renameGroup = useCallback(
     async (conversationId, newName) => {
       if (!conversationId || !newName?.trim()) return;
-
-      try {
-        const convRef = doc(db, 'conversations', conversationId);
-        await updateDoc(convRef, {
-          name: newName.trim(),
-          updatedAt: new Date().toISOString()
-        });
-      } catch (err) {
-        console.error('useConversations - Erreur renommage du groupe :', err);
-        throw err;
-      }
+      await updateDoc(doc(db, 'conversations', conversationId), {
+        name: newName.trim(),
+        updatedAt: new Date().toISOString()
+      });
     },
     []
   );
