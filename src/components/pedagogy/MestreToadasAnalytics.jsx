@@ -159,7 +159,7 @@ export default function MestreToadasAnalytics({
   if (loading) return <div className="p-8 text-center text-xs font-bold animate-pulse">{t('pedagogy.progress.calculDeLaMatriceNacao')}</div>;
 
   return (
-    <div className="flex flex-col gap-8 w-full max-w-6xl mx-auto p-4 select-none">
+    <div className="flex flex-col gap-8 w-full max-w-none py-4 select-none">
       <div className="flex flex-col gap-2 border-b-2 border-dashed border-cordel-master-dark/30 pb-4">
         <h2 className="text-xl md:text-2xl font-black uppercase tracking-wider text-cordel-wood flex items-center gap-2">
           <span>📊</span>{t('pedagogy.progress.analyseDuRepertoireToadas')}</h2>

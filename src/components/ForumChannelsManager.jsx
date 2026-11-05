@@ -359,7 +359,7 @@ export default function ForumChannelsManager({ groupId, role: _role, isSystemAdm
   const rootChannels = channels.filter(c => !c.parentId);
 
   return (
-    <div className="flex flex-col gap-4 text-left max-w-3xl mx-auto w-full select-none">
+    <div className="flex flex-col gap-4 text-left w-full max-w-none select-none">
       {/* Header bar */}
       <div className="flex justify-between items-center border-b-2 border-dashed border-cordel-master-dark/30 pb-2">
         <CordelButton variant="default" onClick={onBack} className="px-3 py-1 text-xs font-bold uppercase">

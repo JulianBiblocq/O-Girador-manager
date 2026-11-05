@@ -1,11 +1,10 @@
 import React, { useState, useCallback } from 'react';
 import { useUserProfile } from '../hooks/useUserProfile';
-import XiloAvatar from './XiloAvatar';
-import { resolveCategory } from '../utils/categoryUtils';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { useTerminologie } from '../hooks/useTerminologie';
 import { useTranslation } from './LanguageContext';
+import ProfileIdentityHeaderCard from './profile/ProfileIdentityHeaderCard';
 import ProfileEditForm from './profile/ProfileEditForm';
 import ProfilePublicCard from './profile/ProfilePublicCard';
 import ProfileContactAndStageAccordions from './profile/ProfileContactAndStageAccordions';
@@ -18,7 +17,6 @@ import QRScannerModal from './auth/QRScannerModal';
 const CordelImageEditor = React.lazy(() => import('./CordelImageEditor'));
 
 import { formatTagGender, filterUserAssignedTags } from '../utils/tagUtils';
-import { getInstrumentIconPath } from '../utils/instrumentUtils';
 import { useViewSimulator } from '../context/ViewSimulatorContext';
 
 const ACCORDION_STORAGE_KEY = 'organizador_profile_accordions_v1';
@@ -159,7 +157,7 @@ export default function UserProfile({ user, profileData, associationName, enable
   const currentNiveau = profileData?.niveauMusique || profileData?.niveau;
 
   return (
-    <div className="flex flex-col gap-3.5 text-left max-w-3xl mx-auto w-full">
+    <div className="flex flex-col gap-4 text-left w-full max-w-none">
       {/* Bannière d'alerte en cas de champs obligatoires manquants */}
       {missingKeys.length > 0 && (
         <div className="bg-amber-100 dark:bg-amber-950/40 border-2 border-dashed border-amber-600 text-amber-900 dark:text-amber-200 p-3 rounded flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs text-left shadow-sm animate-fade-in select-none">
@@ -184,136 +182,30 @@ export default function UserProfile({ user, profileData, associationName, enable
         </div>
       )}
 
-      {/* Carte 1 : En-tête du Profil (Avatar, Nom, Surnom, Rôle unique, Photo et bouton Modifier) */}
-      <CordelCard variant="default" useExtremeBorder={true} className="flex flex-col items-center gap-2.5 pt-5 pb-4 px-4 select-none w-full relative">
-        <div
-          className="relative inline-block cursor-pointer group hover:scale-105 transition-transform"
-          onClick={() => hasCustomPhoto && setLightboxOpen(true)}
-          title={t('userProfile.photoEnlargeTitle')}
-        >
-          <XiloAvatar src={profileData?.photoURL || user?.photoURL} name={fullName} size={100} />
-          {/* Sceaux de niveau uniquement (pas de doublon du rôle sur l'avatar) */}
-          <div className="absolute bottom-0 -right-2 z-10 flex flex-col gap-1 items-end pointer-events-none select-none max-w-[130px]">
-            {currentNiveau && currentNiveau !== 'aucun' && (
-              <span className="theme-stamp-badge theme-stamp-badge-ocre text-[7.5px] font-black uppercase tracking-wider -rotate-[4deg] shadow-xs">
-                🎵 {resolveCategory(currentNiveau)}
-              </span>
-            )}
-            {profileData?.niveauDanse && profileData.niveauDanse !== 'aucun' && (
-              <span className="theme-stamp-badge theme-stamp-badge-ocre text-[7.5px] font-black uppercase tracking-wider rotate-[2deg] shadow-xs">
-                💃 {resolveCategory(profileData.niveauDanse)}
-              </span>
-            )}
-          </div>
-        </div>
+      {/* Carte 1 : En-tête du Profil en pleine largeur */}
+      <ProfileIdentityHeaderCard
+        user={user}
+        profileData={profileData}
+        formData={formData}
+        fullName={fullName}
+        roleLabel={roleLabel}
+        currentNiveau={currentNiveau}
+        hasCustomPhoto={hasCustomPhoto}
+        deduplicatedTags={deduplicatedTags}
+        uploadingPhoto={uploadingPhoto}
+        saving={saving}
+        isEditing={isEditing}
+        isFieldVisible={isFieldVisible}
+        handlePhotoSelected={handlePhotoSelected}
+        handleStartEdit={handleStartEdit}
+        onOpenLightbox={() => setLightboxOpen(true)}
+        t={t}
+        translate={translate}
+      />
 
-        {/* Nom complet, surnom intégré et rôle unique */}
-        <div className="flex flex-col items-center gap-0.5 w-full text-center mt-1">
-          <h2 className="font-heading font-black text-xl sm:text-2xl uppercase tracking-wider text-encre-noire leading-tight">
-            {fullName}
-          </h2>
-          {isFieldVisible('surnom') && formData.surnom && (
-            <span className="text-xs font-extrabold italic text-cordel-master-dark/80">
-              « {formData.surnom} »
-            </span>
-          )}
-          <span className="text-[11px] font-black uppercase tracking-widest text-cordel-wood mt-0.5">
-            {roleLabel}
-          </span>
-        </div>
-
-        {/* Badges de fonctions (dédupliqués) et d'instruments */}
-        {(deduplicatedTags.length > 0 || (profileData?.instrumentsJoues && profileData.instrumentsJoues.length > 0) || profileData?.instrument) && (
-          <div className="flex flex-wrap gap-2 justify-center items-center w-full px-2 max-w-2xl border-b border-dashed border-cordel-master-dark/10 pb-3">
-            {deduplicatedTags.map(({ raw, formatted }, idx) => {
-              const tagStr = typeof raw === 'string' ? raw : raw.id || idx;
-              const rotation = ((String(tagStr).charCodeAt(0) + idx) % 5) - 2;
-              return (
-                <span
-                  key={`tag-${tagStr}`}
-                  className="theme-stamp-badge theme-stamp-badge-wood text-[9px] px-2 py-0.5 bg-white/40"
-                  style={{ transform: `rotate(${rotation}deg)` }}
-                >
-                  👤 {formatted}
-                </span>
-              );
-            })}
-
-            {((profileData?.instrumentsJoues && profileData.instrumentsJoues.length > 0) || profileData?.instrument) &&
-              (profileData.instrumentsJoues && profileData.instrumentsJoues.length > 0
-                ? profileData.instrumentsJoues
-                : [profileData.instrument].filter(Boolean)
-              ).map((inst, idx) => {
-                const rotation = ((inst.charCodeAt(0) + idx) % 5) - 2;
-                return (
-                  <span
-                    key={`inst-${inst}`}
-                    className="theme-stamp-badge theme-stamp-badge-dark text-[9px] px-2 py-0.5 bg-cordel-bg-light/80 border-dashed inline-flex items-center gap-1"
-                    style={{ transform: `rotate(${rotation}deg)` }}
-                  >
-                    <img src={getInstrumentIconPath(inst)} alt={inst} className="w-3.5 h-3.5 object-contain dark:invert" />
-                    <span>{inst}</span>
-                  </span>
-                );
-              })}
-          </div>
-        )}
-
-        {/* Boutons photo, email et bouton principal Modifier mon profil */}
-        <div className="flex flex-col items-center gap-2 w-full max-w-md">
-          {!hasCustomPhoto && (
-            <div className="bg-cordel-bg-light/90 border border-dashed border-cordel-master-dark/25 p-2 rounded-[6px] text-center w-full shadow-sm">
-              <p className="text-[10px] text-cordel-master-dark font-semibold leading-relaxed">
-                💡 <span className="font-extrabold text-cordel-wood">{t('userProfile.photoTipTitle')}</span> {t('userProfile.photoTipDesc')}
-              </p>
-            </div>
-          )}
-
-          <div className="flex flex-wrap justify-center gap-2">
-            <label className="relative overflow-hidden text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1.5 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1 select-none">
-              📸 {uploadingPhoto ? '⏳ ' + t('userProfile.uploading') : t('userProfile.changePhoto')}
-              <input
-                type="file"
-                accept="image/*"
-                disabled={uploadingPhoto || saving}
-                onChange={handlePhotoSelected}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              />
-            </label>
-            <label className="relative overflow-hidden text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1.5 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1 select-none">
-              📷 {t('userProfile.takePhoto')}
-              <input
-                type="file"
-                accept="image/*"
-                capture="user"
-                disabled={uploadingPhoto || saving}
-                onChange={handlePhotoSelected}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              />
-            </label>
-          </div>
-
-          <span className="text-[9px] font-bold tracking-widest text-cordel-master-dark opacity-60 break-all px-4 text-center">
-            {user?.email}
-          </span>
-
-          {!isEditing && (
-            <CordelButton
-              type="button"
-              variant="ocre"
-              useExtremeBorder={true}
-              onClick={handleStartEdit}
-              className="w-full mt-1 py-2.5 font-black uppercase tracking-wider text-xs shadow-[2.5px_2.5px_0px_0px_#181716]"
-            >
-              ✏️ {translate('userProfile.editBtn', 'Modifier mon profil')}
-            </CordelButton>
-          )}
-        </div>
-      </CordelCard>
-
-      {/* Détails du profil en lecture (Carte publique + Accordéons) ou Formulaire d'édition */}
+      {/* Détails du profil en lecture (Grille 2 colonnes sur PC / 1 colonne sur mobile) ou Formulaire d'édition */}
       {!isEditing ? (
-        <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 xl:gap-6 items-start w-full">
           <ProfilePublicCard profileData={profileData} t={t} translate={translate} />
           <ProfileContactAndStageAccordions
             profileData={profileData}
@@ -337,51 +229,67 @@ export default function UserProfile({ user, profileData, associationName, enable
             openSections={openSections}
             toggleSection={toggleSection}
           />
+          <MemberExpenseSection
+            groupId={profileData?.groupId}
+            currentUser={user}
+            profileData={profileData}
+          />
+          <NotificationDiagnostic
+            notificationPermission={notificationPermission}
+            isSubscribingPush={isSubscribingPush}
+            onEnableNotifications={handleEnableNotifications}
+          />
+          <FamilyMembersManager
+            user={user}
+            profileData={profileData}
+            instrumentsDisponibles={instrumentsDisponibles}
+            t={t}
+          />
         </div>
       ) : (
-        <ProfileEditForm
-          formData={formData}
-          setFormData={setFormData}
-          handleChange={handleChange}
-          handleSave={handleSave}
-          setIsEditing={setIsEditing}
-          saving={saving}
-          isCostumerieEnabled={isCostumerieEnabled}
-          isFieldVisible={isFieldVisible}
-          isFieldRequired={isFieldRequired}
-          validationError={validationError}
-          isInstrumentsValid={isInstrumentsValid}
-          demanderDroitImage={demanderDroitImage}
-          demanderAttestationSante={demanderAttestationSante}
-          instrumentsDisponibles={instrumentsDisponibles}
-          linkedInstruments={linkedInstruments}
-          universeId={universe}
-          t={t}
-        />
+        <>
+          <ProfileEditForm
+            formData={formData}
+            setFormData={setFormData}
+            handleChange={handleChange}
+            handleSave={handleSave}
+            setIsEditing={setIsEditing}
+            saving={saving}
+            isCostumerieEnabled={isCostumerieEnabled}
+            isFieldVisible={isFieldVisible}
+            isFieldRequired={isFieldRequired}
+            validationError={validationError}
+            isInstrumentsValid={isInstrumentsValid}
+            demanderDroitImage={demanderDroitImage}
+            demanderAttestationSante={demanderAttestationSante}
+            instrumentsDisponibles={instrumentsDisponibles}
+            linkedInstruments={linkedInstruments}
+            universeId={universe}
+            t={t}
+          />
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 xl:gap-6 items-start w-full">
+            <MemberExpenseSection
+              groupId={profileData?.groupId}
+              currentUser={user}
+              profileData={profileData}
+            />
+            <NotificationDiagnostic
+              notificationPermission={notificationPermission}
+              isSubscribingPush={isSubscribingPush}
+              onEnableNotifications={handleEnableNotifications}
+            />
+            <FamilyMembersManager
+              user={user}
+              profileData={profileData}
+              instrumentsDisponibles={instrumentsDisponibles}
+              t={t}
+            />
+          </div>
+        </>
       )}
 
-      {/* 3 blocs utilitaires du bas (repliés par défaut) */}
-      <MemberExpenseSection
-        groupId={profileData?.groupId}
-        currentUser={user}
-        profileData={profileData}
-      />
-
-      <NotificationDiagnostic
-        notificationPermission={notificationPermission}
-        isSubscribingPush={isSubscribingPush}
-        onEnableNotifications={handleEnableNotifications}
-      />
-
-      <FamilyMembersManager
-        user={user}
-        profileData={profileData}
-        instrumentsDisponibles={instrumentsDisponibles}
-        t={t}
-      />
-
       {/* Boutons Connexion PC & Déconnexion */}
-      <div className="mt-2 pt-3 border-t border-dashed border-cordel-master-dark/20 flex flex-col sm:flex-row gap-3 items-center">
+      <div className="mt-2 pt-3 border-t border-dashed border-cordel-master-dark/20 flex flex-col sm:flex-row gap-3 items-center w-full">
         <CordelButton
           type="button"
           variant="ocre"
@@ -413,7 +321,7 @@ export default function UserProfile({ user, profileData, associationName, enable
                 <CordelCard variant="default" useExtremeBorder={true} className="p-8 flex flex-col items-center justify-center bg-cordel-bg">
                   <div className="animate-spin text-4xl mb-4 select-none">⏳</div>
                   <span className="font-bold text-xs uppercase tracking-widest text-cordel-master-dark opacity-75">
-                    Chargement de l'éditeur...
+                    Chargement de l&apos;éditeur...
                   </span>
                 </CordelCard>
               }

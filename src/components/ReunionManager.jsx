@@ -2,20 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot, addDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelCard from './CordelCard';
-import CordelButton from './CordelButton';
 import EventReportSection from './event-details/EventReportSection';
 import ImportAgendaModal from './agenda/ImportAgendaModal';
-import LocationSelector from './LocationSelector';
+import ReunionCreationFormCard from './agenda/ReunionCreationFormCard';
 import { useTranslation } from './LanguageContext';
 import { XiloCalendar } from './XiloIcons';
 import { checkAndExecuteAutoValidation } from '../utils/reportPublicationUtils';
 import { getEffectiveMemberTags, isMemberCaOrBureau } from '../utils/memberUtils';
 import { canManageReunions } from '../utils/permissionUtils';
 import { notifyNewAgendaEventOrPoll } from '../utils/agendaNotificationUtils';
-import ReunionPollSlotsEditor from './agenda/ReunionPollSlotsEditor';
 
 /**
- * Composant de gestion des Réunions dans le Studio.
+ * Composant de gestion des Réunions dans le Studio / Gouvernance.
  * Permet de planifier des réunions à date fixe ou des sondages de dates multi-créneaux,
  * de préparer l'Ordre du Jour (saisie directe ou import de modèle) et de gérer le compte-rendu.
  */
@@ -343,9 +341,9 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
   const selectedEvent = events.find(e => e.id === selectedEventId);
 
   return (
-    <div className="flex flex-col gap-6 text-left select-none max-w-5xl mx-auto w-full">
+    <div className="flex flex-col gap-4 text-left select-none w-full max-w-none">
       {/* Header Navigation */}
-      <div className="flex justify-between items-center pb-2 border-b-2 border-dashed border-cordel-master-dark/30">
+      <div className="flex justify-between items-center pb-2 border-b-2 border-dashed border-cordel-master-dark/30 flex-wrap gap-2 w-full">
         <button 
           type="button" 
           onClick={selectedEventId ? () => setSelectedEventId('') : onBack} 
@@ -354,7 +352,7 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
           ⬅️ {selectedEventId ? "Liste des réunions" : t('common.back') || "Retour"}
         </button>
         
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase flex items-center gap-2">
             <XiloCalendar size={16} /> {t('governance.studioTitle')}
           </h2>
@@ -389,7 +387,7 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
 
       {selectedEventId && selectedEvent ? (
         /* Vue détaillée / Éditeur de compte-rendu */
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 w-full">
           <CordelCard variant="default" useExtremeBorder={false} className="p-4 bg-cordel-bg-light/30">
             <h3 className="text-sm font-black text-encre-noire">
               📅 {selectedEvent.titre}
@@ -406,262 +404,55 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
           />
         </div>
       ) : (
-        /* Vue Liste + Formulaire de Création */
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+        /* Vue Liste + Formulaire de Création (40% gauche / 60% droite sur Desktop) */
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full">
           
-          {/* Formulaire de création avancée */}
+          {/* Formulaire de création avancée compacté (40% = 5/12 colonnes) */}
           {isAdmin && (
-            <div className="md:col-span-5" id="meeting-form-section">
-              <CordelCard variant="default" useExtremeBorder={true} className="p-5 flex flex-col gap-4 bg-cordel-bg">
-                <h3 className="text-xs font-black uppercase tracking-wider text-cordel-wood border-b border-dashed border-encre-noire/15 pb-2">
-                  ➕ {t('governance.formCreateMeetingTitle')}
-                </h3>
-                
-                {/* Switch Mode : Date Fixe vs Sondage */}
-                <div className="flex gap-1.5 p-1 bg-white/60 rounded border border-cordel-master-dark/20">
-                  <button
-                    type="button"
-                    onClick={() => setCreationMode('date')}
-                    className={`flex-1 py-1.5 text-[9.5px] font-extrabold uppercase rounded transition-all cursor-pointer ${
-                      creationMode === 'date'
-                        ? 'bg-cordel-wood text-white shadow-sm'
-                        : 'text-cordel-master-dark opacity-75 hover:opacity-100'
-                    }`}
-                  >
-                    📅 {t('governance.tabFixedDate')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCreationMode('poll')}
-                    className={`flex-1 py-1.5 text-[9.5px] font-extrabold uppercase rounded transition-all cursor-pointer ${
-                      creationMode === 'poll'
-                        ? 'bg-cordel-wood text-white shadow-sm'
-                        : 'text-cordel-master-dark opacity-75 hover:opacity-100'
-                    }`}
-                  >
-                    📊 {t('governance.tabMultiDatePoll')}
-                  </button>
-                </div>
-
-                <form onSubmit={handleCreateReunion} className="flex flex-col gap-3.5 text-xs">
-                  {/* Titre */}
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                      {t('common.title') || "Titre de la réunion"} *
-                    </label>
-                    <input 
-                      type="text" 
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      required
-                      placeholder={t('governance.placeholderMeetingTitle')}
-                      className="theme-input bg-white w-full py-1.5 text-xs font-bold"
-                    />
-                  </div>
-
-                  {/* Portée de la réunion : Publique vs CA / Bureau */}
-                  <div className="flex flex-col gap-1.5 p-2.5 bg-white/70 rounded border border-cordel-master-dark/15">
-                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                      Portée de la réunion
-                    </label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setAudience('publique')}
-                        className={`py-1.5 px-2 text-[10px] font-black uppercase rounded border transition-all cursor-pointer ${
-                          audience === 'publique'
-                            ? 'bg-[var(--color-cordel-vert)] text-white border-encre-noire shadow-2xs'
-                            : 'bg-white text-stone-700 border-neutral-300 hover:bg-neutral-50'
-                        }`}
-                      >
-                        👥 Publique / Toute l'asso
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setAudience('ca');
-                          if (creationMode === 'poll' && pollRestrictionType === 'aucun') {
-                            setPollRestrictionType('tag');
-                            setPollTarget('CA');
-                          }
-                        }}
-                        className={`py-1.5 px-2 text-[10px] font-black uppercase rounded border transition-all cursor-pointer ${
-                          audience === 'ca'
-                            ? 'bg-cordel-wood text-white border-encre-noire shadow-2xs'
-                            : 'bg-white text-stone-700 border-neutral-300 hover:bg-neutral-50'
-                        }`}
-                      >
-                        🔒 CA / Bureau (Restreinte)
-                      </button>
-                    </div>
-                    <p className="text-[9.5px] italic text-stone-600 leading-snug">
-                      {audience === 'ca'
-                        ? "🔒 Réservé : visible uniquement par les membres du CA et du Bureau, archivage Varal restreint."
-                        : "👥 Ouverte : visible par l'ensemble des adhérents, archivage au Varal général (Administratif)."}
-                    </p>
-                  </div>
-
-                  {/* Lieu de la réunion avec sélecteur intelligent */}
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                      {t('governance.meetingLocationLabel')}
-                    </label>
-                    <LocationSelector
-                      value={lieu}
-                      lieuxImportants={lieuxImportants}
-                      onChange={(val, foundPreset) => {
-                        setLieu(val);
-                        setLieuId(foundPreset ? foundPreset.id : null);
-                      }}
-                      placeholder={t('governance.locationPlaceholder')}
-                    />
-                  </div>
-
-                  {/* Mode Date Fixe */}
-                  {creationMode === 'date' ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <div className="flex flex-col gap-1 sm:col-span-2">
-                        <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                          {t('governance.fieldDayRequired')}
-                        </label>
-                        <input 
-                          type="date" 
-                          value={date}
-                          onChange={(e) => setDate(e.target.value)}
-                          required
-                          className="theme-input bg-white w-full py-1.5"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                          {t('governance.startTime')} *
-                        </label>
-                        <input 
-                          type="time" 
-                          value={time}
-                          onChange={(e) => setTime(e.target.value)}
-                          required
-                          className="theme-input bg-white w-full py-1.5"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                          {t('governance.endTime')}
-                        </label>
-                        <input 
-                          type="time" 
-                          value={timeEnd}
-                          onChange={(e) => setTimeEnd(e.target.value)}
-                          className="theme-input bg-white w-full py-1.5"
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    /* Mode Sondage Multi-Créneaux */
-                    <ReunionPollSlotsEditor
-                      pollSlots={pollSlots}
-                      onAddSlot={handleAddPollSlot}
-                      onRemoveSlot={handleRemovePollSlot}
-                      onSlotChange={handlePollSlotChange}
-                      pollRestrictionType={pollRestrictionType}
-                      setPollRestrictionType={setPollRestrictionType}
-                      pollTarget={pollTarget}
-                      setPollTarget={setPollTarget}
-                    />
-                  )}
-
-                  {/* Section Rédactrice de l'Ordre du Jour */}
-                  <div className="border-t border-dashed border-cordel-master-dark/20 pt-3 flex flex-col gap-2">
-                    <div className="flex items-center justify-between flex-wrap gap-1">
-                      <label className="text-[9.5px] uppercase font-black text-cordel-wood">
-                        📋 {t('governance.agendaSectionTitle')}
-                      </label>
-                      <CordelButton
-                        type="button"
-                        variant="vert"
-                        useExtremeBorder={true}
-                        onClick={() => setIsImportModalOpen(true)}
-                        className="text-[8.5px] font-extrabold uppercase px-2 py-0.5"
-                      >
-                        📥 {t('governance.btnImportTemplate')}
-                      </CordelButton>
-                    </div>
-
-                    {/* Saisie rapide d'un point */}
-                    <div className="flex gap-1.5">
-                      <input
-                        type="text"
-                        value={newPointTitle}
-                        onChange={(e) => setNewPointTitle(e.target.value)}
-                        placeholder={t('governance.agendaPointPlaceholder')}
-                        className="theme-input text-xs flex-1 bg-white py-1"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleAddAgendaPoint}
-                        title={t('governance.btnAddAgendaPoint')}
-                        className="text-xs font-extrabold px-2.5 py-1 bg-cordel-wood text-white rounded hover:brightness-95 cursor-pointer"
-                      >
-                        ＋
-                      </button>
-                    </div>
-
-                    {/* Aperçu des points ajoutés */}
-                    {pointsOrdreDuJour.length > 0 && (
-                      <div className="flex flex-col gap-1 max-h-32 overflow-y-auto bg-white/70 p-2 rounded border border-cordel-master-dark/15">
-                        {pointsOrdreDuJour.map((pt, idx) => (
-                          <div key={pt.id || idx} className="flex justify-between items-center text-[11px] pl-1.5 border-l-2 border-cordel-wood font-medium">
-                            <span>{idx + 1}. {pt.titre}</span>
-                            <button
-                              type="button"
-                              onClick={() => setPointsOrdreDuJour(prev => prev.filter((_, i) => i !== idx))}
-                              className="text-red-600 font-bold px-1 text-[10px]"
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Lien du document externe */}
-                    <input
-                      type="url"
-                      value={lienDocument}
-                      onChange={(e) => setLienDocument(e.target.value)}
-                      placeholder={t('governance.optionalDocLink')}
-                      className="theme-input text-[11px] w-full py-1 bg-white"
-                    />
-                  </div>
-
-                  {/* Case à cocher d'alerte Push (cochée par défaut) */}
-                  <label className="flex items-center gap-2 pt-2 border-t border-dashed border-cordel-master-dark/15 text-xs font-bold text-cordel-wood cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={sendPushNotification}
-                      onChange={(e) => setSendPushNotification(e.target.checked)}
-                      disabled={isSubmitting}
-                      className="w-4 h-4 rounded accent-cordel-wood cursor-pointer"
-                    />
-                    <span>🔔 Envoyer une notification Push aux membres</span>
-                  </label>
-
-                  <CordelButton 
-                    variant="ocre" 
-                    type="submit" 
-                    disabled={isSubmitting}
-                    useExtremeBorder={true}
-                    className="text-xs py-2.5 mt-2 font-extrabold uppercase tracking-wider w-full"
-                  >
-                    {isSubmitting ? "Création en cours..." : (creationMode === 'poll' ? "🚀 Lancer le Sondage" : `📅 ${t('governance.btnScheduleMeeting')}`)}
-                  </CordelButton>
-                </form>
-              </CordelCard>
+            <div className="lg:col-span-5 min-w-0 w-full" id="meeting-form-section">
+              <ReunionCreationFormCard
+                creationMode={creationMode}
+                setCreationMode={setCreationMode}
+                title={title}
+                setTitle={setTitle}
+                audience={audience}
+                setAudience={setAudience}
+                lieu={lieu}
+                setLieu={setLieu}
+                setLieuId={setLieuId}
+                lieuxImportants={lieuxImportants}
+                date={date}
+                setDate={setDate}
+                time={time}
+                setTime={setTime}
+                timeEnd={timeEnd}
+                setTimeEnd={setTimeEnd}
+                pollSlots={pollSlots}
+                handleAddPollSlot={handleAddPollSlot}
+                handleRemovePollSlot={handleRemovePollSlot}
+                handlePollSlotChange={handlePollSlotChange}
+                pollRestrictionType={pollRestrictionType}
+                setPollRestrictionType={setPollRestrictionType}
+                pollTarget={pollTarget}
+                setPollTarget={setPollTarget}
+                pointsOrdreDuJour={pointsOrdreDuJour}
+                setPointsOrdreDuJour={setPointsOrdreDuJour}
+                newPointTitle={newPointTitle}
+                setNewPointTitle={setNewPointTitle}
+                handleAddAgendaPoint={handleAddAgendaPoint}
+                lienDocument={lienDocument}
+                setLienDocument={setLienDocument}
+                sendPushNotification={sendPushNotification}
+                setSendPushNotification={setSendPushNotification}
+                isSubmitting={isSubmitting}
+                onOpenImportModal={() => setIsImportModalOpen(true)}
+                onSubmit={handleCreateReunion}
+              />
             </div>
           )}
 
-          {/* Colonne Droite: Tableau des réunions et sondages */}
-          <div id="meetings-studio-table" className={isAdmin ? "md:col-span-7 flex flex-col gap-4" : "col-span-12 flex flex-col gap-4"}>
+          {/* Colonne Droite: Tableau des réunions et sondages (60% = 7/12 colonnes) */}
+          <div id="meetings-studio-table" className={isAdmin ? "lg:col-span-7 flex flex-col gap-3 min-w-0 w-full" : "col-span-12 flex flex-col gap-3 min-w-0 w-full"}>
             <p className="text-xs opacity-75 leading-relaxed">
               {t('governance.studioSubtitle')}
             </p>
@@ -698,7 +489,7 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
                             key={ev.id} 
                             className="border-b border-dashed border-encre-noire/15 hover:bg-cordel-hover/50 transition-colors"
                           >
-                            <td className="py-3 px-3 font-bold text-encre-noire">
+                            <td className="py-2.5 px-3 font-bold text-encre-noire">
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 <span>{ev.titre}</span>
                                 <span className={`text-[7.5px] font-black uppercase px-1.5 py-0.2 rounded border ${
@@ -710,10 +501,10 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
                                 </span>
                               </div>
                             </td>
-                            <td className="py-3 px-3 font-semibold opacity-85">
+                            <td className="py-2.5 px-3 font-semibold opacity-85">
                               {formatDate(ev.date)}
                             </td>
-                            <td className="py-3 px-3">
+                            <td className="py-2.5 px-3">
                               {pointsCount > 0 ? (
                                 <span className="text-[10px] font-bold text-cordel-wood bg-amber-50 px-2 py-0.5 rounded border border-amber-300">
                                   📋 {pointsCount} point(s)
@@ -726,7 +517,7 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
                                 <span className="text-[10px] italic opacity-50">Non rédigé</span>
                               )}
                             </td>
-                            <td className="py-3 px-3">
+                            <td className="py-2.5 px-3">
                               <div className="flex flex-col gap-1">
                                 {getStatusBadge(ev)}
                                 {ev.status === 'sondage' && (
@@ -736,7 +527,7 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
                                 )}
                               </div>
                             </td>
-                            <td className="py-3 px-3 text-right">
+                            <td className="py-2.5 px-3 text-right">
                               <button
                                 type="button"
                                 onClick={() => setSelectedEventId(ev.id)}

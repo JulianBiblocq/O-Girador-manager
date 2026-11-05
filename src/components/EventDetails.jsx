@@ -1604,7 +1604,7 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
   );
 
   return (
-    <div className="flex flex-col gap-3 text-left max-w-3xl mx-auto w-full relative">
+    <div className="flex flex-col gap-3 text-left w-full max-w-none relative">
       {toastMessage && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] bg-[#84967a] text-encre-noire border-2 border-encre-noire px-5 py-3 rounded-[8px_12px_9px_11px] shadow-[4px_4px_0px_0px_#181716] font-bold text-xs uppercase tracking-wider animate-bounce select-none">
           {toastMessage}

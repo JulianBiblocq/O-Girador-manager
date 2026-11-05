@@ -50,7 +50,7 @@ export default function CostumerieDocumentsTable({
   };
 
   return (
-    <div className="flex flex-col gap-4 text-left select-none w-full max-w-4xl mx-auto">
+    <div className="flex flex-col gap-4 text-left select-none w-full max-w-none">
       {/* En-tête du tableau et barre d'actions */}
       <div className="flex items-center justify-between gap-3 border-b-2 border-dashed border-cordel-master-dark/30 pb-2 flex-wrap">
         <div>

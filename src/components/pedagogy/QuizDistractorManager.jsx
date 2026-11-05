@@ -142,7 +142,7 @@ export default function QuizDistractorManager({ profileData }) {
         </div>
       </div>
 
-      <div className="p-4 sm:p-6 space-y-6 max-w-5xl mx-auto">
+      <div className="py-4 space-y-6 w-full max-w-none">
         {categories.map(cat => {
           const list = distractors[cat.key] || [];
           return (

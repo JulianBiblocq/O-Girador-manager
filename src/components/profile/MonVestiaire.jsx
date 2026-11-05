@@ -175,7 +175,7 @@ export default function MonVestiaire({
   }
 
   return (
-    <div className="flex flex-col gap-4 text-left select-none w-full max-w-4xl mx-auto">
+    <div className="flex flex-col gap-4 text-left select-none w-full max-w-none">
       {/* Header Bar */}
       <div className="flex justify-between items-center pb-2 border-b-2 border-dashed border-cordel-master-dark/30 gap-3">
         <div>

@@ -3016,7 +3016,7 @@ export default function App() {
                     onNavigateToView={handleNavigateToView}
                   />
                 ) : (currentTab === 'instrument-models' && hasAccessLutherie) ? (
-                  <div className="max-w-4xl mx-auto w-full">
+                  <div className="w-full max-w-none">
                     <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement des modèles...</div>}>
                       <InstrumentModelsManager 
                         groupId={profileData?.groupId}
@@ -3062,7 +3062,7 @@ export default function App() {
                     onBack={() => handleNavigateToPole('accueil')} 
                   />
                 ) : (currentTab === 'varal-lutherie' && hasAccessLutherie) ? (
-                  <div className="max-w-4xl mx-auto w-full">
+                  <div className="w-full max-w-none">
                     <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement du Varal Lutherie...</div>}>
                       <WidgetDocuments 
                         role={profileData?.role} 
@@ -3089,7 +3089,7 @@ export default function App() {
                     onBack={() => handleNavigateToPole('accueil')}
                   />
                 ) : (currentTab === 'wardrobe-models' && hasAccessCostumerie) ? (
-                  <div className="max-w-5xl mx-auto w-full">
+                  <div className="w-full max-w-none">
                     <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement des modèles de costumes...</div>}>
                       <CostumesAdminManager groupId={profileData?.groupId} />
                     </React.Suspense>
@@ -3139,7 +3139,7 @@ export default function App() {
                     onBack={() => handleNavigateToPole('accueil')}
                   />
                 ) : (currentTab === 'varal-costumerie' && hasAccessCostumerie) ? (
-                  <div className="max-w-4xl mx-auto w-full">
+                  <div className="w-full max-w-none">
                     <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement du Varal Costumerie...</div>}>
                       <WidgetDocuments 
                         role={profileData?.role} 
@@ -3195,7 +3195,7 @@ export default function App() {
                     groupId={profileData?.groupId} 
                   />
                 ) : (currentTab === 'ca-documents' && hasAccessGouvernance) ? (
-                  <div className="max-w-4xl mx-auto w-full">
+                  <div className="w-full max-w-none">
                     <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement du Registre & Statuts...</div>}>
                       <WidgetDocuments 
                         role={profileData?.role} 
@@ -3243,7 +3243,7 @@ export default function App() {
                     onBack={() => handleNavigateToPole('accueil')} 
                   />
                 ) : (currentTab === 'varal-secretariat' && (hasAccessSecretariat || hasAccessStudio)) ? (
-                  <div className="max-w-4xl mx-auto w-full">
+                  <div className="w-full max-w-none">
                     <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement du Varal Secrétariat...</div>}>
                       <WidgetDocuments 
                         role={profileData?.role} 
@@ -3259,7 +3259,7 @@ export default function App() {
                     </React.Suspense>
                   </div>
                 ) : (currentTab === 'varal-photos' && hasAccessStudio) ? (
-                  <div className="max-w-5xl mx-auto w-full">
+                  <div className="w-full max-w-none">
                     <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement du Studio Photos...</div>}>
                       <StudioPhotosView 
                         groupId={profileData?.groupId} 
@@ -3284,7 +3284,7 @@ export default function App() {
                     profileData={profileData}
                   />
                 ) : (['varal-manager', 'varal-pedagogy'].includes(currentTab) && hasAccessPedagogie) ? (
-                  <div className="max-w-4xl mx-auto w-full">
+                  <div className="w-full max-w-none">
                     <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement du Varal Pédagogique...</div>}>
                       <WidgetDocuments 
                         role={profileData?.role} 
@@ -3429,7 +3429,7 @@ export default function App() {
                     onBack={() => handleNavigateToPole('accueil')} 
                   />
                 ) : currentTab === 'agenda' ? (
-                  <div className="max-w-4xl mx-auto w-full">
+                  <div className="w-full max-w-none">
                     <WidgetAgenda 
                       role={profileData?.role} 
                       isSystemAdmin={profileData?.isSystemAdmin} 
@@ -3444,7 +3444,7 @@ export default function App() {
                     />
                   </div>
                 ) : currentTab === 'varal' ? (
-                  <div className="max-w-4xl mx-auto w-full">
+                  <div className="w-full max-w-none">
                     <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement du Varal...</div>}>
                       <WidgetDocuments 
                         role={profileData?.role} 

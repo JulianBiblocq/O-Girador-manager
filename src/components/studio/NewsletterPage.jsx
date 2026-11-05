@@ -61,7 +61,7 @@ export default function NewsletterPage({ groupId, onBack }) {
   }
 
   return (
-    <div className="w-full max-w-5xl mx-auto px-4 py-6 space-y-6">
+    <div className="w-full max-w-none py-4 space-y-6">
       {/* En-tête de la page avec fil d'ariane et bouton retour */}
       <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-stone-200 dark:border-stone-800">
         <div>

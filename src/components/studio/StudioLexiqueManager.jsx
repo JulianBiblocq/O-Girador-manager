@@ -172,7 +172,7 @@ export default function StudioLexiqueManager({
   }
 
   return (
-    <div className="flex flex-col gap-5 text-left max-w-5xl mx-auto w-full pb-10">
+    <div className="flex flex-col gap-5 text-left w-full max-w-none pb-10">
       {/* En-tête Cordel avec fil d'ariane et actions */}
       <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-dashed border-cordel-master-dark/30">
         <div>

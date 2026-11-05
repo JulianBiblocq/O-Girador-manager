@@ -377,7 +377,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
   };
 
   return (
-    <div className="flex flex-col gap-5 text-left select-none w-full max-w-5xl mx-auto">
+    <div className="flex flex-col gap-5 text-left select-none w-full max-w-none">
       {/* Toast de confirmation */}
       {toastMsg && (
         <div className="fixed bottom-5 right-5 z-50 p-3 bg-emerald-800 text-white text-xs font-black uppercase tracking-wider rounded shadow-[2px_2px_0px_0px_#181716] border border-emerald-900 animate-bounce">

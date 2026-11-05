@@ -388,7 +388,7 @@ const startQuiz = (theme, specificToadaId = null) => {
 
   if (step === 'HOME') {
     return (
-      <div className="flex flex-col gap-8 w-full max-w-4xl mx-auto p-4 select-none relative">
+      <div className="flex flex-col gap-8 w-full max-w-none p-4 select-none relative">
         {onExit && (
            <button 
              onClick={() => onExit(null)} 
@@ -495,7 +495,7 @@ const startQuiz = (theme, specificToadaId = null) => {
     const choices = q.choices || q.options?.map(o => ({ text: o, isCorrect: o === q.correctAnswer })) || [];
 
     return (
-      <div className="flex flex-col gap-6 w-full max-w-2xl mx-auto p-4 select-none">
+      <div className="flex flex-col gap-6 w-full max-w-none p-4 select-none">
         {onExit && (
           <button
             type="button"
@@ -610,7 +610,7 @@ const startQuiz = (theme, specificToadaId = null) => {
     const finalScoreDisplay = score + (selectedChoice?.isCorrect && !showFeedback ? 1 : 0);
 
     return (
-      <div className="flex flex-col gap-6 w-full max-w-2xl mx-auto p-4 select-none">
+      <div className="flex flex-col gap-6 w-full max-w-none p-4 select-none">
         <CordelCard className="p-8 flex flex-col gap-6 items-center text-center">
           <div className="text-5xl">{emoji}</div>
           <h2 className="text-3xl font-heading uppercase text-cordel-wood tracking-widest">

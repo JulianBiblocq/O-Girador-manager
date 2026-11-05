@@ -2,44 +2,28 @@ import React, { useState } from 'react';
 import CordelCard from '../CordelCard';
 import LiteYouTubeEmbed, { extractYouTubeVideoId } from '../common/LiteYouTubeEmbed';
 import ModalVideoALaUne from './ModalVideoALaUne';
+import CinemaVideoModal from './CinemaVideoModal';
 
 /**
  * Composant : WidgetVideoALaUne
- * 
+ *
  * Widget d'accueil présentant la vidéo à la une sélectionnée par l'équipe administrative.
- * Intègre un mode d'édition directe pour les Mestres et Administrateurs avec ModalVideoALaUne.
- * 
+ * Intègre un mode d'édition directe pour les Mestres et Administrateurs avec ModalVideoALaUne
+ * ainsi qu'une modale plein écran « Mode Cinéma » adaptée aux vidéos portrait et paysage.
+ *
  * @param {Object} videoALaUne - Données de la vidéo : { url: string, titre: string, active: boolean }
  * @param {string} [groupId] - Identifiant de l'association courante
  * @param {boolean} [isAuthorized=false] - Indique si l'utilisateur peut administrer la vidéo
  * @param {string} [className] - Classes CSS optionnelles pour adapter la disposition
  */
-export default function WidgetVideoALaUne({ 
-  videoALaUne, 
-  groupId, 
-  isAuthorized = false, 
-  className = "" 
+export default function WidgetVideoALaUne({
+  videoALaUne,
+  groupId,
+  isAuthorized = false,
+  className = ''
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
-  // Mémorisation de la préférence d'affichage (compact par défaut pour éviter la démesure sur PC)
-  const [isCinemaMode, setIsCinemaMode] = useState(() => {
-    try {
-      return localStorage.getItem('ogirador_video_cinema_mode') === 'true';
-    } catch {
-      return false;
-    }
-  });
-
-  const toggleCinemaMode = () => {
-    setIsCinemaMode((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem('ogirador_video_cinema_mode', String(next));
-      } catch {}
-      return next;
-    });
-  };
+  const [isCinemaModalOpen, setIsCinemaModalOpen] = useState(false);
 
   const videoId = extractYouTubeVideoId(videoALaUne?.url);
   const isVideoActive = videoALaUne?.active === true && Boolean(videoId);
@@ -62,7 +46,7 @@ export default function WidgetVideoALaUne({
                   Vidéo à la une (Accueil)
                 </h4>
                 <p className="text-[10px] text-cordel-master-dark/75 font-semibold mt-0.5">
-                  Aucune vidéo n'est actuellement diffusée sur l'Accueil. Partagez un concert ou un tutoriel vidéo.
+                  Aucune vidéo n&apos;est actuellement diffusée sur l&apos;Accueil. Partagez un concert ou un tutoriel vidéo.
                 </p>
               </div>
             </div>
@@ -91,7 +75,7 @@ export default function WidgetVideoALaUne({
   }
 
   // 2. Cas où la vidéo est active et valide
-  const titreVideo = (videoALaUne?.titre || '').trim() || "Vidéo à la une";
+  const titreVideo = (videoALaUne?.titre || '').trim() || 'Vidéo à la une';
 
   return (
     <>
@@ -107,9 +91,6 @@ export default function WidgetVideoALaUne({
               <span className="text-[9px] font-black uppercase tracking-widest text-cordel-wood bg-white/70 px-2 py-0.5 rounded border border-cordel-wood/30 shrink-0">
                 🎬 À LA UNE
               </span>
-              <span className="text-[9px] font-bold text-stone-600 dark:text-stone-300 opacity-75">
-                {isCinemaMode ? "Format Grand Écran (Cinéma)" : "Format Compact"}
-              </span>
             </div>
             <h3 className="font-sans font-black text-sm sm:text-base text-encre-noire tracking-wide uppercase mt-1 truncate">
               {titreVideo}
@@ -117,20 +98,16 @@ export default function WidgetVideoALaUne({
           </div>
 
           <div className="flex items-center gap-2.5 shrink-0 self-start sm:self-center flex-wrap">
-            {/* Bouton bascule Mode Cinéma / Format compact */}
+            {/* Bouton d'ouverture de la modale plein écran Mode Cinéma */}
             <button
               type="button"
-              onClick={toggleCinemaMode}
-              className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 border rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1.5 transition-all ${
-                isCinemaMode 
-                  ? 'bg-amber-200 text-stone-900 border-encre-noire' 
-                  : 'bg-white hover:bg-neutral-50 text-encre-noire border-encre-noire'
-              }`}
-              title={isCinemaMode ? "Revenir à la taille compacte équilibrée" : "Agrandir le lecteur (Mode Cinéma)"}
-              aria-label="Basculer la taille du lecteur"
+              onClick={() => setIsCinemaModalOpen(true)}
+              className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 bg-white hover:bg-amber-100 text-encre-noire border border-encre-noire rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1.5 transition-all"
+              title="Ouvrir la vidéo en modale plein écran (Mode Cinéma)"
+              aria-label="Ouvrir le Mode Cinéma plein écran"
             >
-              <span className="text-xs">{isCinemaMode ? '🗗' : '⛶'}</span>
-              <span>{isCinemaMode ? 'Format standard' : 'Mode Cinéma'}</span>
+              <span className="text-xs">⛶</span>
+              <span>Mode Cinéma</span>
             </button>
 
             {/* Bouton d'administration réservé aux Mestres et Administrateurs */}
@@ -162,22 +139,37 @@ export default function WidgetVideoALaUne({
           </div>
         </div>
 
-        {/* Lecteur vidéo Lite YouTube Embed avec largeur contrôlée et transition fluide */}
+        {/* Lecteur vidéo standard (démonté pendant l'ouverture du Mode Cinéma pour éviter la double lecture) */}
         <div className="w-full flex justify-center items-center py-1">
-          <div className={`w-full transition-all duration-300 ${
-            isCinemaMode 
-              ? 'max-w-5xl' 
-              : 'max-w-xl lg:max-w-2xl'
-          }`}>
-            <LiteYouTubeEmbed
-              videoId={videoId}
-              url={videoALaUne.url}
-              title={titreVideo}
-            />
+          <div className="w-full max-w-xl lg:max-w-2xl">
+            {!isCinemaModalOpen ? (
+              <LiteYouTubeEmbed
+                videoId={videoId}
+                url={videoALaUne.url}
+                title={titreVideo}
+              />
+            ) : (
+              <div className="aspect-video w-full rounded-[8px_6px_10px_7px] border-2 border-encre-noire bg-black/90 text-[#f4ecd8] flex flex-col items-center justify-center gap-2 p-4 text-center">
+                <span className="text-2xl">🎬</span>
+                <span className="text-xs font-bold uppercase tracking-wider">
+                  Lecture en cours en Mode Cinéma plein écran…
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </CordelCard>
 
+      {/* Modale plein écran Mode Cinéma */}
+      <CinemaVideoModal
+        isOpen={isCinemaModalOpen}
+        onClose={() => setIsCinemaModalOpen(false)}
+        videoId={videoId}
+        url={videoALaUne.url}
+        title={titreVideo}
+      />
+
+      {/* Modale d'administration de la vidéo à la une */}
       <ModalVideoALaUne
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -187,4 +179,3 @@ export default function WidgetVideoALaUne({
     </>
   );
 }
-

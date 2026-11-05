@@ -12,6 +12,7 @@ import { useTranslation } from '../LanguageContext';
  * Vue Secrétariat avec 2 tableaux étanches :
  * - TABLEAU A : Documents administratifs permanents (Statuts, RI, RIB, Assurance).
  * - TABLEAU B : Comptes-rendus & Procès-Verbaux de réunions.
+ * Sur Desktop (xl:), lorsque les 2 tableaux sont affichés simultanément, ils sont placés côte à côte en grille 2 colonnes.
  */
 export default function SecretariatDocumentsView({
   groupId,
@@ -97,9 +98,9 @@ export default function SecretariatDocumentsView({
   }
 
   return (
-    <div className="flex flex-col gap-6 text-left select-none w-full max-w-4xl mx-auto">
+    <div className="flex flex-col gap-6 text-left select-none w-full max-w-none">
       {/* Barre de navigation et filtre rapide entre les 2 tableaux */}
-      <div className="flex items-center justify-between gap-3 border-b-2 border-dashed border-cordel-master-dark/30 pb-2 flex-wrap">
+      <div className="flex items-center justify-between gap-3 border-b-2 border-dashed border-cordel-master-dark/30 pb-2 flex-wrap w-full">
         <div className="flex items-center gap-1.5 flex-wrap">
           <button
             type="button"
@@ -150,7 +151,7 @@ export default function SecretariatDocumentsView({
 
       {/* Formulaire de versement */}
       {isAdding && (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 w-full">
           <div className="flex justify-start">
             <button
               type="button"
@@ -171,44 +172,55 @@ export default function SecretariatDocumentsView({
         </div>
       )}
 
-      {/* TABLEAU A : Documents administratifs permanents */}
-      {!isAdding && (activeFilter === 'both' || activeFilter === 'statuts') && (
-        <div data-tour="sec-docs-permanent-table" className="flex flex-col gap-2">
-          <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-1">
-            <h3 className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
-              <span>🏛️</span>
-              <span>{t('secretariatDocs.tableATitle', { count: statutDocs.length })}</span>
-            </h3>
-            <span className="text-[9.5px] italic text-encre-noire/60">{t('secretariatDocs.tableASubtitle')}</span>
-          </div>
-          <StatutDocumentsTable
-            docs={statutDocs}
-            canWrite={canWrite}
-            onViewDoc={(doc) => setSelectedDocumentView(doc)}
-            onEditDoc={(doc) => { setDocumentToEdit(doc); setIsAdding(true); }}
-            onDeleteDoc={(doc) => handleDelete(doc)}
-          />
-        </div>
-      )}
+      {/* Grille 2 colonnes sur Desktop lorsque les deux tableaux sont affichés */}
+      {!isAdding && (
+        <div
+          className={
+            activeFilter === 'both'
+              ? 'grid grid-cols-1 xl:grid-cols-2 gap-6 items-start w-full'
+              : 'flex flex-col gap-6 w-full'
+          }
+        >
+          {/* TABLEAU A : Documents administratifs permanents */}
+          {(activeFilter === 'both' || activeFilter === 'statuts') && (
+            <div data-tour="sec-docs-permanent-table" className="flex flex-col gap-2 min-w-0 w-full">
+              <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-1 gap-2 flex-wrap">
+                <h3 className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
+                  <span>🏛️</span>
+                  <span>{t('secretariatDocs.tableATitle', { count: statutDocs.length })}</span>
+                </h3>
+                <span className="text-[9.5px] italic text-encre-noire/60">{t('secretariatDocs.tableASubtitle')}</span>
+              </div>
+              <StatutDocumentsTable
+                docs={statutDocs}
+                canWrite={canWrite}
+                onViewDoc={(doc) => setSelectedDocumentView(doc)}
+                onEditDoc={(doc) => { setDocumentToEdit(doc); setIsAdding(true); }}
+                onDeleteDoc={(doc) => handleDelete(doc)}
+              />
+            </div>
+          )}
 
-      {/* TABLEAU B : Comptes-rendus & Procès-Verbaux de réunions */}
-      {!isAdding && (activeFilter === 'both' || activeFilter === 'reunions') && (
-        <div data-tour="sec-docs-reunions-table" className="flex flex-col gap-2">
-          <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-1">
-            <h3 className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
-              <span>📜</span>
-              <span>{t('secretariatDocs.tableBTitle', { count: sortedReunions.length })}</span>
-            </h3>
-            <span className="text-[9.5px] italic text-encre-noire/60">{t('secretariatDocs.tableBSubtitle')}</span>
-          </div>
-          <ReunionsPvTable
-            reunions={sortedReunions}
-            canDelete={canWrite}
-            onOpenPv={(reunion) => setSelectedReunion(reunion.rawReunion || reunion)}
-            onDeleteReunion={(reunion) => {
-              if (reunion.rawDoc) handleDelete(reunion.rawDoc);
-            }}
-          />
+          {/* TABLEAU B : Comptes-rendus & Procès-Verbaux de réunions */}
+          {(activeFilter === 'both' || activeFilter === 'reunions') && (
+            <div data-tour="sec-docs-reunions-table" className="flex flex-col gap-2 min-w-0 w-full">
+              <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-1 gap-2 flex-wrap">
+                <h3 className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
+                  <span>📜</span>
+                  <span>{t('secretariatDocs.tableBTitle', { count: sortedReunions.length })}</span>
+                </h3>
+                <span className="text-[9.5px] italic text-encre-noire/60">{t('secretariatDocs.tableBSubtitle')}</span>
+              </div>
+              <ReunionsPvTable
+                reunions={sortedReunions}
+                canDelete={canWrite}
+                onOpenPv={(reunion) => setSelectedReunion(reunion.rawReunion || reunion)}
+                onDeleteReunion={(reunion) => {
+                  if (reunion.rawDoc) handleDelete(reunion.rawDoc);
+                }}
+              />
+            </div>
+          )}
         </div>
       )}
 

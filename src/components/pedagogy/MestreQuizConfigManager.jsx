@@ -73,7 +73,7 @@ export default function MestreQuizConfigManager({ groupId, onTestQuiz }) {
   if (loading) return <div className="p-4 text-xs font-bold text-center">{t('pedagogy.progress.chargementDeLaConfiguration')}</div>;
 
   return (
-    <CordelCard variant="default" className="p-6 flex flex-col gap-6 max-w-2xl">
+    <CordelCard variant="default" className="p-6 flex flex-col gap-6 w-full max-w-none">
       <div>
         <h3 className="text-lg font-black uppercase tracking-wider text-cordel-wood flex items-center gap-2">
           <span>⚙️</span>{t('pedagogy.progress.configurationGlobaleDesQcm')}</h3>

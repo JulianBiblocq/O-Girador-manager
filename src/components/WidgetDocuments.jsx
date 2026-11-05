@@ -300,7 +300,7 @@ function VaralWidgetContent({
   };
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3 w-full max-w-none">
       {/* Barre de titre et bouton d'ajout global */}
       <div className="flex justify-between items-center pl-1 pr-1">
         <h3 className="text-xs font-extrabold tracking-wider text-cordel-master-dark opacity-75 uppercase text-left">
@@ -331,7 +331,7 @@ function VaralWidgetContent({
 
       {/* Formulaire modulaire de dépôt ou de modification d'un livret */}
       {!loading && (isAdding || documentToEdit) && (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 w-full max-w-none">
           <div className="flex justify-start select-none">
             <button
               type="button"

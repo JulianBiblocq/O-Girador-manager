@@ -142,7 +142,7 @@ export default function MemberRepertoireView({ groupId, user, profileData, seque
   };
 
   return (
-    <div className="flex flex-col gap-4 text-left select-none w-full max-w-5xl mx-auto pb-8">
+    <div className="flex flex-col gap-4 text-left select-none w-full max-w-none pb-8">
       {/* En-tête & Barre de recherche avec bascule Tout déplier / replier */}
       <MemberRepertoireHeader
         searchQuery={searchQuery}

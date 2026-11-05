@@ -38,7 +38,7 @@ export default function MonAtelier({ user, profileData, onBack, initialSubTab = 
   }, [isLutherieActive, isCostumerieActive]);
 
   return (
-    <div className="flex flex-col gap-5 p-4 max-w-6xl mx-auto">
+    <div className="flex flex-col gap-5 w-full max-w-none">
       {/* En-tête de l'Atelier Cordel */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b-2 border-dashed border-cordel-master-dark/30 pb-3">
         <div className="text-left">

@@ -992,7 +992,7 @@ export default function LayoutShell({
         </div>
 
         {/* Zone de contenu principale (balise sémantique main avec espacement mobile strict pt-3 px-2.5) */}
-        <main id="main-content" className={`flex-1 overflow-y-auto overflow-x-hidden max-md:no-scrollbar w-full max-w-full min-w-0 overscroll-contain touch-pan-y cordel-bg px-2.5 sm:px-7 md:px-9 ${isAccueil ? 'pt-4 sm:pt-6 md:pt-8' : 'pt-0'} pb-4 sm:pb-6 md:pb-8 flex flex-col justify-between`}>
+        <main id="main-content" className={`flex-1 overflow-y-auto overflow-x-hidden max-md:no-scrollbar w-full max-w-none min-w-0 overscroll-contain touch-pan-y cordel-bg px-2.5 sm:px-4 lg:px-8 ${isAccueil ? 'pt-4 sm:pt-6 md:pt-8' : 'pt-0'} pb-4 sm:pb-6 md:pb-8 flex flex-col justify-between`}>
           <div className="flex flex-col gap-5 w-full max-w-full flex-1 min-w-0">
             
             {/* Break-Glass Active Warning Banner */}

@@ -37,7 +37,7 @@ export default function StudioPhotosView({
   const [activeSubTab, setActiveSubTab] = useState('recolte'); // 'recolte' | 'varal'
 
   return (
-    <div className="w-full flex flex-col gap-5 text-left select-none max-w-5xl mx-auto animate-fade-in">
+    <div className="w-full max-w-none flex flex-col gap-5 text-left select-none animate-fade-in">
       
       {/* 1. En-tête : Passerelle Cloud racine de l'association */}
       <StudioCloudHeader groupId={groupId} canWrite={canWrite} />

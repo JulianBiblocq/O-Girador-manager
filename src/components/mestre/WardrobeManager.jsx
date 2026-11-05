@@ -273,7 +273,7 @@ export default function WardrobeManager({
   }
 
   return (
-    <div className="flex flex-col gap-5 text-left w-full max-w-5xl mx-auto select-none">
+    <div className="flex flex-col gap-5 text-left w-full max-w-none select-none">
       {/* Top Header Bar */}
       <div className="flex justify-between items-center border-b-2 border-dashed border-cordel-master-dark/30 pb-2">
         <CordelButton variant="default" onClick={onBack} className="px-3 py-1 text-xs">

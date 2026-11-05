@@ -39,7 +39,7 @@ export default function SecretariatDocuments({ groupId, onBack, initialSubTab = 
   }
 
   return (
-    <div className="flex flex-col gap-4 text-left select-none max-w-4xl mx-auto w-full">
+    <div className="flex flex-col gap-4 text-left select-none w-full max-w-none">
       {/* En-tête avec fil d'ariane et bouton retour */}
       <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-dashed border-cordel-master-dark/30">
         <div>

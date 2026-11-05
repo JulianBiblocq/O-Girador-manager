@@ -9,6 +9,7 @@ import { useTranslation } from '../LanguageContext';
  * Vue Pédagogie avec 2 tableaux étanches :
  * - TABLEAU A : Toadas (Chants & Paroles)
  * - TABLEAU B : Fiches Culture & Histoire
+ * Sur Desktop (xl:), lorsque les 2 tableaux sont affichés simultanément, ils sont placés côte à côte en grille 2 colonnes.
  */
 export default function PedagogyDocumentsView({
   documents = [],
@@ -42,9 +43,9 @@ export default function PedagogyDocumentsView({
   const handleCloseForm = () => { setIsAdding(false); setDocUnderEdit(null); };
 
   return (
-    <div className="flex flex-col gap-6 text-left select-none w-full max-w-4xl mx-auto">
+    <div className="flex flex-col gap-6 text-left select-none w-full max-w-none">
       {/* Barre d'actions et sélecteur de tableaux */}
-      <div className="flex items-center justify-between gap-3 border-b-2 border-dashed border-cordel-master-dark/30 pb-2 flex-wrap">
+      <div className="flex items-center justify-between gap-3 border-b-2 border-dashed border-cordel-master-dark/30 pb-2 flex-wrap w-full">
         <div className="flex items-center gap-1.5 flex-wrap">
           <button
             type="button"
@@ -109,7 +110,7 @@ export default function PedagogyDocumentsView({
 
       {/* Formulaire d'ajout / modification */}
       {isAdding && (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 w-full">
           <div className="flex justify-start">
             <button
               type="button"
@@ -128,45 +129,55 @@ export default function PedagogyDocumentsView({
         </div>
       )}
 
-      {/* TABLEAU A : Toadas (Chants & Paroles) */}
-      {!isAdding && (activeFilter === 'both' || activeFilter === 'toadas') && (
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-1">
-            <h3 className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
-              <span>🎵</span>
-              <span>{t('pedagogy.cards.tableauAToadasChantsParoles')}</span>
-              <span className="text-[10px] font-bold text-encre-noire/60">({toadasDocs.length})</span>
-            </h3>
-            <span className="text-[9.5px] italic text-encre-noire/60">{t('pedagogy.cards.repertoireMusicalEtLivretsDe')}</span>
-          </div>
-          <ToadasTable
-            toadas={toadasDocs}
-            canWrite={canWrite}
-            onSelectDoc={onSelectDoc}
-            onEditDoc={handleStartEdit}
-            onDeleteDoc={onDeleteDoc}
-          />
-        </div>
-      )}
+      {/* Grille 2 colonnes sur Desktop lorsque les deux tableaux sont affichés */}
+      {!isAdding && (
+        <div
+          className={
+            activeFilter === 'both'
+              ? 'grid grid-cols-1 xl:grid-cols-2 gap-6 items-start w-full'
+              : 'flex flex-col gap-6 w-full'
+          }
+        >
+          {/* TABLEAU A : Toadas (Chants & Paroles) */}
+          {(activeFilter === 'both' || activeFilter === 'toadas') && (
+            <div className="flex flex-col gap-2 min-w-0 w-full">
+              <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-1 gap-2 flex-wrap">
+                <h3 className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
+                  <span>🎵</span>
+                  <span>{t('pedagogy.cards.tableauAToadasChantsParoles')}</span>
+                  <span className="text-[10px] font-bold text-encre-noire/60">({toadasDocs.length})</span>
+                </h3>
+                <span className="text-[9.5px] italic text-encre-noire/60">{t('pedagogy.cards.repertoireMusicalEtLivretsDe')}</span>
+              </div>
+              <ToadasTable
+                toadas={toadasDocs}
+                canWrite={canWrite}
+                onSelectDoc={onSelectDoc}
+                onEditDoc={handleStartEdit}
+                onDeleteDoc={onDeleteDoc}
+              />
+            </div>
+          )}
 
-      {/* TABLEAU B : Fiches Culture & Histoire */}
-      {!isAdding && (activeFilter === 'both' || activeFilter === 'culture') && (
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-1">
-            <h3 className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
-              <span>📖</span>
-              <span>{t('documents.tableBCultureTitle', { count: cultureDocs.length })}</span>
-              {null}
-            </h3>
-            <span className="text-[9.5px] italic text-encre-noire/60">{t('documents.tableBCultureSubtitle')}</span>
-          </div>
-          <CultureFichesTable
-            fiches={cultureDocs}
-            canWrite={canWrite}
-            onSelectDoc={onSelectDoc}
-            onEditDoc={handleStartEdit}
-            onDeleteDoc={onDeleteDoc}
-          />
+          {/* TABLEAU B : Fiches Culture & Histoire */}
+          {(activeFilter === 'both' || activeFilter === 'culture') && (
+            <div className="flex flex-col gap-2 min-w-0 w-full">
+              <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-1 gap-2 flex-wrap">
+                <h3 className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
+                  <span>📖</span>
+                  <span>{t('documents.tableBCultureTitle', { count: cultureDocs.length })}</span>
+                </h3>
+                <span className="text-[9.5px] italic text-encre-noire/60">{t('documents.tableBCultureSubtitle')}</span>
+              </div>
+              <CultureFichesTable
+                fiches={cultureDocs}
+                canWrite={canWrite}
+                onSelectDoc={onSelectDoc}
+                onEditDoc={handleStartEdit}
+                onDeleteDoc={onDeleteDoc}
+              />
+            </div>
+          )}
         </div>
       )}
     </div>

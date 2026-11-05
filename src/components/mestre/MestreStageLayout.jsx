@@ -245,7 +245,7 @@ export default function MestreStageLayout({
   };
 
   return (
-    <div className="flex flex-col gap-5 text-left select-none w-full max-w-5xl mx-auto">
+    <div className="flex flex-col gap-5 text-left select-none w-full max-w-none">
       {/* VUE 1 : ÉDITEUR GRAPHIQUE DU PLAN DE SCÈNE ACTIF */}
       {activeEvent ? (
         <div className="flex flex-col gap-4 animate-fadeIn">

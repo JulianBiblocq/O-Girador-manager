@@ -224,7 +224,7 @@ export default function UserMateriel({ user, profileData }) {
   };
 
   return (
-    <div className="flex flex-col gap-3.5 text-left max-w-3xl mx-auto w-full select-none">
+    <div className="flex flex-col gap-3.5 text-left w-full max-w-none select-none">
       {/* Notice d'introduction (sans bouton Retour redondant) */}
       <p className="text-xs text-cordel-master-dark opacity-75 text-left leading-relaxed">
         {t('logistics.myInstrumentsNotice')}

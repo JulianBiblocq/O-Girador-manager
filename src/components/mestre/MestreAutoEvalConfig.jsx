@@ -271,7 +271,7 @@ export default function MestreAutoEvalConfig({ profileData, isEmbedded }) {
   ];
 
   return (
-    <div className="flex flex-col gap-6 w-full max-w-6xl mx-auto text-left select-none p-4 md:p-8 force-light-theme relative">
+    <div className="flex flex-col gap-6 w-full max-w-none text-left select-none py-4 force-light-theme relative">
       {!isEmbedded && (
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
           <div>

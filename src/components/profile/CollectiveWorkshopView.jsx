@@ -133,7 +133,7 @@ export default function CollectiveWorkshopView({
   const allTutorials = workshops && workshops.length > 0 ? workshops : DEFAULT_COUTURE_TUTOS;
 
   return (
-    <div className="flex flex-col gap-4 text-left select-none w-full max-w-4xl mx-auto">
+    <div className="flex flex-col gap-4 text-left select-none w-full max-w-none">
       {/* 1. En-tête Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2 border-b-2 border-dashed border-cordel-master-dark/30 gap-3">
         <div>

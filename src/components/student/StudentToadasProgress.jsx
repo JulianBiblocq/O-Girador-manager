@@ -31,7 +31,7 @@ export default function StudentToadasProgress({ profileData, allSongs = [], allS
   const globalColor = getProgressColor(globalScore);
 
   return (
-    <div className="flex flex-col gap-8 w-full max-w-4xl mx-auto p-4 select-none">
+    <div className="flex flex-col gap-8 w-full max-w-none py-4 select-none">
       
       {/* HEADER & JAUGE GLOBALE */}
       <CordelCard className="p-6 md:p-8 flex flex-col gap-6 text-center border-2 border-dashed border-cordel-wood/30">

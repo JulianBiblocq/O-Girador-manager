@@ -690,7 +690,7 @@ export default function MestrePedagogyDashboard({ profileData }) {
   const isLoading = loadingData || loadingSequencer;
 
   return (
-    <div className="flex flex-col gap-6 w-full max-w-6xl mx-auto text-left select-none p-4 md:p-8 force-light-theme relative">
+    <div className="flex flex-col gap-6 w-full max-w-none text-left select-none py-4 force-light-theme relative">
       
       {/* ========================================================================= */}
       {/* EN-TÊTE DU COCKPIT                                                        */}

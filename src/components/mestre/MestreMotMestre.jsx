@@ -71,7 +71,7 @@ export default function MestreMotMestre({ groupId, profileData }) {
   }
 
   return (
-    <div className="w-full flex flex-col gap-4 text-left max-w-2xl mx-auto">
+    <div className="w-full max-w-none flex flex-col gap-4 text-left">
       <h3 className="text-base font-extrabold tracking-wider text-cordel-wood uppercase flex items-center gap-2">
         <XiloMegaphone size={16} className="text-cordel-wood" /> {t('mestre.editorial.manageHeading')}
       </h3>

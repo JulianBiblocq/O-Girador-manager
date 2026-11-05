@@ -957,7 +957,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
   };
 
   return (
-    <div className="flex flex-col gap-4 w-full text-left font-sans max-w-5xl mx-auto px-2 md:px-4 py-3">
+    <div className="flex flex-col gap-4 w-full max-w-none text-left font-sans py-3">
       {/* Header bar */}
       <div className="flex justify-between items-center border-b-2 border-dashed border-cordel-master-dark/30 pb-2 select-none">
         <CordelButton variant="default" onClick={handleBack} className="px-3 py-1 text-xs">

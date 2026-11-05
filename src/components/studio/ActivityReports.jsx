@@ -157,7 +157,7 @@ export default function ActivityReports({
   };
 
   return (
-    <div className={`flex flex-col text-left select-none w-full ${isEmbedded ? 'gap-4' : 'gap-6 max-w-4xl mx-auto'}`}>
+    <div className={`flex flex-col text-left select-none w-full max-w-none ${isEmbedded ? 'gap-4' : 'gap-6'}`}>
       {/* Header */}
       {!isEmbedded && (
         <div className="flex justify-between items-center pb-2 border-b-2 border-dashed border-cordel-master-dark/30">

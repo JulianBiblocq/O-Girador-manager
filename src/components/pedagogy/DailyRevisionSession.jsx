@@ -76,7 +76,7 @@ export default function DailyRevisionSession({ profileData, allSongs = [], allSh
 
   if (!isStarted) {
     return (
-      <div className="w-full max-w-2xl mx-auto">
+      <div className="w-full max-w-none">
         <CordelCard className="p-8 flex flex-col items-center text-center gap-6 bg-[#fdfaf2] border-2 border-dashed border-cordel-wood/30">
           
           <h2 className="text-3xl font-black uppercase font-heading text-cordel-wood tracking-widest mt-4">

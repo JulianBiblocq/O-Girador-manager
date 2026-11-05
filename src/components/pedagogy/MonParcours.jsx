@@ -179,7 +179,7 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
   };
 
   return (
-    <div className="flex flex-col gap-6 text-left select-none w-full max-w-5xl mx-auto p-4 md:p-8 force-light-theme">
+    <div className="flex flex-col gap-6 text-left select-none w-full max-w-none py-2 md:py-4 force-light-theme">
       {/* En-tête */}
       <div className="flex flex-col items-center gap-2 mb-4">
         <h1 className="text-3xl md:text-4xl font-heading tracking-widest text-cordel-wood uppercase flex items-center gap-3">
@@ -195,12 +195,12 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
       <RodaQuizStatsBanner profileData={profileData} />
 
       {/* Switch Vues Principales */}
-      <div className="flex justify-center gap-4 border-b-2 border-dashed border-cordel-master-dark/30 pb-6 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full border-b-2 border-dashed border-cordel-master-dark/30 pb-6 mb-4">
         <button
           onClick={() => setMainView('CARNET')}
-          className={`px-6 py-3 text-sm md:text-base font-black uppercase tracking-widest rounded-lg transition-all border-2 ${
+          className={`w-full px-6 py-3 text-sm md:text-base font-black uppercase tracking-widest rounded-lg transition-all border-2 cursor-pointer ${
             mainView === 'CARNET'
-              ? 'border-cordel-wood bg-cordel-wood text-[#fdfaf2] shadow-[4px_4px_0px_0px_#181716] scale-105' 
+              ? 'border-cordel-wood bg-cordel-wood text-[#fdfaf2] shadow-[4px_4px_0px_0px_#181716] -translate-y-0.5' 
               : 'border-encre-noire/20 text-encre-noire/60 bg-white hover:border-encre-noire/50 hover:text-encre-noire'
           }`}
         >
@@ -210,9 +210,9 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
 
         <button
           onClick={() => setMainView('ATELIER')}
-          className={`px-6 py-3 text-sm md:text-base font-black uppercase tracking-widest rounded-lg transition-all border-2 ${
+          className={`w-full px-6 py-3 text-sm md:text-base font-black uppercase tracking-widest rounded-lg transition-all border-2 cursor-pointer ${
             mainView === 'ATELIER'
-              ? 'border-[var(--theme-primary)] bg-[var(--theme-primary)] text-[#fdfaf2] shadow-[4px_4px_0px_0px_#181716] scale-105' 
+              ? 'border-[var(--theme-primary)] bg-[var(--theme-primary)] text-[#fdfaf2] shadow-[4px_4px_0px_0px_#181716] -translate-y-0.5' 
               : 'border-encre-noire/20 text-encre-noire/60 bg-white hover:border-encre-noire/50 hover:text-encre-noire'
           }`}
         >

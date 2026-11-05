@@ -209,7 +209,7 @@ export default function QcmSignaux({ onExit, rhythms = [], rhythmsMetadata = {},
 
   return (
     <div className="flex flex-col gap-6 mt-8">
-      <div className="w-full flex justify-between items-center px-4 max-w-2xl mx-auto">
+      <div className="w-full max-w-none flex justify-between items-center px-4">
         <button 
           onClick={onExit} 
           className="text-sm font-bold text-cordel-master-dark hover:text-cordel-wood underline underline-offset-4"
@@ -219,7 +219,7 @@ export default function QcmSignaux({ onExit, rhythms = [], rhythmsMetadata = {},
         </div>
       </div>
 
-      <CordelCard variant="default" className="w-full max-w-2xl p-6 flex flex-col gap-6 mx-auto bg-[var(--cordel-bg)] shadow-xl select-none">
+      <CordelCard variant="default" className="w-full max-w-none p-6 flex flex-col gap-6 bg-[var(--cordel-bg)] shadow-xl select-none">
         
         {currentQ.type === 'GUESS_NAME' ? (
           <>

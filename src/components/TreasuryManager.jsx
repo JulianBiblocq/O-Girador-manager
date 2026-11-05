@@ -150,7 +150,7 @@ export default function TreasuryManager({ groupId, onBack, role, isSystemAdmin, 
   };
 
   return (
-    <div className="flex flex-col gap-6 text-left select-none max-w-4xl mx-auto w-full">
+    <div className="flex flex-col gap-6 text-left select-none w-full max-w-none">
 
 
       {loading ? (

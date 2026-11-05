@@ -63,7 +63,7 @@ export default function CostumeSizesTable({ allUsers = [], profileData = {} }) {
   });
 
   return (
-    <div className="flex flex-col gap-5 text-left w-full max-w-5xl mx-auto select-none">
+    <div className="flex flex-col gap-5 text-left w-full max-w-none select-none">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center pb-2 border-b-2 border-dashed border-cordel-master-dark/30 gap-2">
         <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase">

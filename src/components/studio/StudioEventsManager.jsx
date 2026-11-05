@@ -143,7 +143,7 @@ export default function StudioEventsManager({ groupId, onBack }) {
   const countValidation = events.filter((e) => e.requiresValidation).length;
 
   return (
-    <div className="flex flex-col gap-6 max-w-7xl mx-auto w-full px-2 sm:px-4 py-4">
+    <div className="flex flex-col gap-6 w-full max-w-none py-4">
       {/* Header card */}
       <CordelCard variant="default" useExtremeBorder={true} className="py-5 px-6 text-left">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
