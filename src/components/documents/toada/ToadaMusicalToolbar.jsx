@@ -4,7 +4,7 @@ import ToadaStampBadgeSelector from './ToadaStampBadgeSelector';
 
 export default function ToadaMusicalToolbar({
   signature = '4/4', onChangeSignature, totalMeasures = 0, activeStamp, onSelectStamp,
-  mode = 'time', onChangeMode, hasSelectedCell = false, onAddPauseBaque, onImportTxt, onExportTxt,
+  mode = 'time', onChangeMode, hasSelectedCell = false, onAddPauseBaque, onOpenBulkPasteModal, onImportTxt, onExportTxt,
   onPullFromTab1, onOpenPrintStylo, onOpenScanModal, onOpenLegendModal, disabled = false
 }) {
   const { t, language } = useTranslation();
@@ -46,6 +46,13 @@ export default function ToadaMusicalToolbar({
               className="px-2 py-1 rounded text-[10px] font-black uppercase bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 shadow-2xs cursor-pointer flex items-center gap-1 transition-all"
               title="Insérer une carte [PAUSE 1M] (Le Baque joue seul)">
               + 🔇 {language === 'pt' ? 'Pausa do Baque' : (t('toada.pauseBaqueBtn') || 'Pause Baque')}
+            </button>
+          )}
+          {onOpenBulkPasteModal && (
+            <button type="button" disabled={disabled} onClick={onOpenBulkPasteModal}
+              className="px-2 py-1 rounded text-[10px] font-black uppercase bg-amber-50 hover:bg-amber-100 text-amber-950 border border-amber-300 shadow-2xs cursor-pointer flex items-center gap-1 transition-all"
+              title={language === 'pt' ? 'Colar ou editar todas as linhas da Toada de uma só vez' : 'Coller ou éditer toutes les lignes du chant d’un seul coup'}>
+              📋 {language === 'pt' ? 'Colar / Editar tudo' : (t('toada.bulkPasteBtn') || 'Coller / Éditer tout le texte')}
             </button>
           )}
         </div>

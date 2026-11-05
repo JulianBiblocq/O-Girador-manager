@@ -92,7 +92,14 @@ export function parseStructureTxt(rawText = '') {
     } else {
       const trimmed = cur.trim();
       if (trimmed) {
-        result.push(trimmed);
+        const pauseM = trimmed.match(/^(\[sig:(?:2\/4|3\/4|4\/4|6\/8|12\/8)\]\s*)?\*?\s*\[\s*(?:PAUSE|SILENCE)(?:\s+(?:BAQUE|[A-Z]+))?\s+(\d+)\s*M(?:ESURES?)?\s*\]\s*\*?$/i);
+        if (pauseM) {
+          const sigPrefix = pauseM[1] ? `${pauseM[1].trim()} ` : '';
+          const mCount = Math.max(1, Math.min(8, parseInt(pauseM[2], 10) || 1));
+          result.push(`${sigPrefix}[PAUSE ${mCount}M]`);
+        } else {
+          result.push(trimmed);
+        }
       }
       i++;
     }

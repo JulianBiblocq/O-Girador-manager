@@ -2,11 +2,9 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useTranslation } from '../../LanguageContext';
 import { parseStructureTxt, exportStructureAsTxt, groupLyricsByRole } from '../../../utils/toadaTwoLineConverter';
 import { computeSongStructure, generateEmptySilenceMeasure, rebuildLineFromCharAnchors } from '../../../utils/toadaLineEditorHelper';
-import ToadaMusicalToolbar from './ToadaMusicalToolbar';
-import ToadaMusicalLineRow from './ToadaMusicalLineRow';
-import ToadaPrintStyloView from './ToadaPrintStyloView';
-import ToadaScanPromptModal from './ToadaScanPromptModal';
-import ToadaLegendModal from './ToadaLegendModal';
+import ToadaMusicalToolbar from './ToadaMusicalToolbar'; import ToadaMusicalLineRow from './ToadaMusicalLineRow';
+import ToadaPrintStyloView from './ToadaPrintStyloView'; import ToadaScanPromptModal from './ToadaScanPromptModal';
+import ToadaLegendModal from './ToadaLegendModal'; import ToadaBulkPasteModal from './ToadaBulkPasteModal';
 import { extractVaralLyricsFromScanned } from '../../../utils/toadaManuscriptScannerService';
 
 export default function ToadaMusicalStructureEditor({
@@ -16,17 +14,13 @@ export default function ToadaMusicalStructureEditor({
   const { t, language } = useTranslation();
   const [mode, setMode] = useState('time'), [activeStamp, setActiveStamp] = useState(null);
   const [selectedCell, setSelectedCell] = useState(null);
-  const [showPrintStylo, setShowPrintStylo] = useState(false);
+  const [showPrintStylo, setShowPrintStylo] = useState(false), [showBulkPasteModal, setShowBulkPasteModal] = useState(false);
   const [showScanModal, setShowScanModal] = useState(false), [showLegendModal, setShowLegendModal] = useState(false);
   const lastCommittedRef = useRef('');
-  const [lines, setLines] = useState(() => {
-    const p = parseStructureTxt(value); return p.length > 0 ? p : [''];
-  });
+  const [lines, setLines] = useState(() => { const p = parseStructureTxt(value); return p.length > 0 ? p : ['']; });
 
   useEffect(() => {
-    if (value !== lastCommittedRef.current) {
-      const p = parseStructureTxt(value); setLines(p.length > 0 ? p : ['']);
-    }
+    if (value !== lastCommittedRef.current) { const p = parseStructureTxt(value); setLines(p.length > 0 ? p : ['']); }
   }, [value]);
 
   const { totalMeasures, lineDetails } = useMemo(() => computeSongStructure(lines, signature), [lines, signature]);
@@ -40,8 +34,9 @@ export default function ToadaMusicalStructureEditor({
   }, [selectedCell, lineDetails, signature]);
 
   const commitLines = (next) => {
-    setLines(next);
-    const txt = exportStructureAsTxt(next.length > 0 ? next : [''], 'brackets');
+    const clean = next.length > 0 ? next : [''];
+    setLines(clean);
+    const txt = exportStructureAsTxt(clean, 'brackets');
     lastCommittedRef.current = txt;
     if (onChange) onChange(txt);
   };
@@ -70,10 +65,16 @@ export default function ToadaMusicalStructureEditor({
   };
 
   const handleAddLineAfter = (idx) => { const next = [...lines]; next.splice(idx + 1, 0, ''); commitLines(next); };
-  const handleAddSilenceMeasure = (idx = lines.length - 1) => {
-    const next = [...lines]; next.splice(idx + 1, 0, generateEmptySilenceMeasure(1)); commitLines(next);
+  const handleAddSilenceMeasure = (idx = lines.length - 1) => { const next = [...lines]; next.splice(idx + 1, 0, generateEmptySilenceMeasure(1)); commitLines(next); };
+  const handleDeleteLine = (idx) => { commitLines(lines.length <= 1 ? [''] : lines.filter((_, i) => i !== idx)); };
+  const handleMoveLine = (fromIdx, toIdx) => {
+    if (fromIdx < 0 || toIdx < 0 || fromIdx >= lines.length || toIdx >= lines.length || fromIdx === toIdx) return;
+    const next = [...lines], [moved] = next.splice(fromIdx, 1); next.splice(toIdx, 0, moved); commitLines(next);
   };
-  const handleDeleteLine = (idx) => { if (lines.length <= 1) { commitLines(['']); return; } commitLines(lines.filter((_, i) => i !== idx)); };
+  const handlePasteMultiLines = (idx, pastedLines = []) => {
+    if (!pastedLines.length) return;
+    const next = [...lines]; next.splice(idx, 1, ...pastedLines); commitLines(next);
+  };
   const handleSplitLine = (idx, l, r) => {
     const isPux = lines[idx]?.startsWith('*') && lines[idx]?.endsWith('*');
     let left = l.trim(), right = r.trim();
@@ -111,30 +112,29 @@ export default function ToadaMusicalStructureEditor({
         signature={activeToolbarSig} onChangeSignature={handleChangeMetric} totalMeasures={totalMeasures}
         activeStamp={activeStamp} onSelectStamp={handleSelectStamp} mode={mode} onChangeMode={setMode} hasSelectedCell={Boolean(selectedCell)}
         onAddPauseBaque={() => handleAddSilenceMeasure(selectedCell?.lineIdx ?? lines.length - 1)}
+        onOpenBulkPasteModal={() => setShowBulkPasteModal(true)}
         onImportTxt={(c) => { const p = parseStructureTxt(c); if (p.length) commitLines(p); }} onExportTxt={handleExportTxt} onPullFromTab1={handlePullFromTab1}
         onOpenPrintStylo={() => setShowPrintStylo(true)} onOpenScanModal={() => setShowScanModal(true)} onOpenLegendModal={() => setShowLegendModal(true)} disabled={disabled}
       />
       <div className="bg-[#fefdfa] dark:bg-stone-900 border border-stone-300 dark:border-stone-700 rounded-md shadow-xs p-2 md:p-3 flex flex-col divide-y divide-stone-200/60 dark:divide-stone-800 w-full">
         {lines.map((line, idx) => (
           <ToadaMusicalLineRow
-            key={idx} index={idx} lineText={line} parsedLine={lineDetails[idx]} mode={mode} activeStamp={activeStamp}
+            key={idx} index={idx} totalLines={lines.length} lineText={line} parsedLine={lineDetails[idx]} mode={mode} activeStamp={activeStamp}
             selectedCharIdx={selectedCell?.lineIdx === idx ? selectedCell.charIdx : null}
             onSelectCharIdx={(cIdx) => setSelectedCell(cIdx === null ? null : { lineIdx: idx, charIdx: cIdx })}
-            onChangeLine={(t) => handleUpdateLine(idx, t)} onDeleteLine={() => handleDeleteLine(idx)} onAddLineAfter={() => handleAddLineAfter(idx)}
+            onChangeLine={(t) => handleUpdateLine(idx, t)} onDeleteLine={() => handleDeleteLine(idx)}
+            onAddLineAfter={() => handleAddLineAfter(idx)} onAddPauseAfter={() => handleAddSilenceMeasure(idx)}
+            onMoveLine={handleMoveLine} onPasteMultiLines={handlePasteMultiLines}
             onSplitLine={handleSplitLine} onMergeWithPrevious={handleMergeWithPrev} disabled={disabled}
           />
         ))}
       </div>
       <div className="flex items-center gap-2 w-full pt-1">
-        <button type="button" onClick={() => handleAddLineAfter(lines.length - 1)} disabled={disabled}
-          className="flex-1 py-1.5 text-[9.5px] font-black uppercase text-cordel-wood bg-white hover:bg-amber-50 border border-dashed border-cordel-master-dark/40 rounded cursor-pointer transition-colors shadow-2xs">
-          + {t('toada.addMeasureBtn') || "Ajouter une ligne de chant"}
-        </button>
-        <button type="button" onClick={() => handleAddSilenceMeasure(lines.length - 1)} disabled={disabled}
-          className="px-3 py-1.5 text-[9.5px] font-black uppercase text-stone-700 bg-stone-100 hover:bg-stone-200 border border-stone-300 rounded cursor-pointer transition-colors shadow-2xs">
-          + 🔇 {language === 'pt' ? 'Pausa do Baque' : (t('toada.pauseBaqueBtn') || 'Pause Baque')}
-        </button>
+        <button type="button" onClick={() => handleAddLineAfter(lines.length - 1)} disabled={disabled} className="flex-1 py-1.5 text-[9.5px] font-black uppercase text-cordel-wood bg-white hover:bg-amber-50 border border-dashed border-cordel-master-dark/40 rounded cursor-pointer transition-colors shadow-2xs">+ {t('toada.addMeasureBtn') || "Ajouter une ligne de chant"}</button>
+        <button type="button" onClick={() => handleAddSilenceMeasure(lines.length - 1)} disabled={disabled} className="px-3 py-1.5 text-[9.5px] font-black uppercase text-stone-700 bg-stone-100 hover:bg-stone-200 border border-stone-300 rounded cursor-pointer transition-colors shadow-2xs">+ 🔇 {language === 'pt' ? 'Pausa do Baque' : (t('toada.pauseBaqueBtn') || 'Pause Baque')}</button>
       </div>
+      <ToadaBulkPasteModal isOpen={showBulkPasteModal} onClose={() => setShowBulkPasteModal(false)} lines={lines}
+        onApplyLines={(next, applyMode) => commitLines(applyMode === 'append' ? [...lines.filter((l) => l.trim()), ...next] : next)} />
       <ToadaPrintStyloView isOpen={showPrintStylo} onClose={() => setShowPrintStylo(false)} lines={lines} metadata={{ titre, signature, bpmDefaut, tonaliteDefaut, rythme }} />
       <ToadaScanPromptModal isOpen={showScanModal} onClose={() => setShowScanModal(false)} onApplyResult={handleApplyScanResult} tab1Lyrics={tab1Lyrics} signature={signature} />
       <ToadaLegendModal isOpen={showLegendModal} onClose={() => setShowLegendModal(false)} />
