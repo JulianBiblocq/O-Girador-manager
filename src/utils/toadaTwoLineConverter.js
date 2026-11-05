@@ -43,7 +43,7 @@ export function convertTwoLineToBrackets(anchorLine = '', lyricsLine = '') {
 }
 
 export function convertBracketsToTwoLine(bracketedLine = '') {
-  const regex = /\[([1-9]|1[0-2])\]/g;
+  const regex = /\[(?:M\d+[•·.])?([1-9]|1[0-2])\]/gi;
   const parts = [];
   let lastIndex = 0;
   let m;
@@ -109,7 +109,7 @@ export function groupLyricsByRole(lyricsText = '') {
   if (!lyricsText || typeof lyricsText !== 'string') return [];
   let text = lyricsText;
   if (/<[a-z][\s\S]*>/i.test(text)) {
-    text = text.replace(/<(?:strong|b)\b[^>]*>(.*?)<\/(?:strong|b)>/gi, '*$1*').replace(/<\/(?:p|div)>/gi, '\n').replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '');
+    text = text.replace(/<(?:strong|b)\b[^>]*>(.*?)<\/(?:strong|b)>/gi, '*$1*').replace(/<\/(?:p|div)>/gi, '\n').replace(/<br\s*\/?>/gi, '\n').replace(/<(?!\/?u\b)[^>]+>/gi, '');
   }
   const rawLines = text.split(/\r?\n/).map((l) => l.trim()), grouped = [];
   let cur = null;

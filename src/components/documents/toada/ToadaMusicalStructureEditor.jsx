@@ -13,7 +13,7 @@ export default function ToadaMusicalStructureEditor({
   value = '', onChange, tab1Lyrics = '', onUpdateTab1Lyrics, signature = '4/4', onChangeSignature,
   bpmDefaut = '', tonaliteDefaut = '', rythme = '', titre = '', disabled = false
 }) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [mode, setMode] = useState('time'), [activeStamp, setActiveStamp] = useState(null);
   const [selectedCell, setSelectedCell] = useState(null);
   const [showPrintStylo, setShowPrintStylo] = useState(false);
@@ -51,9 +51,11 @@ export default function ToadaMusicalStructureEditor({
   const handleSelectStamp = (beat) => {
     if (selectedCell && selectedCell.lineIdx < lines.length) {
       const { lineIdx, charIdx } = selectedCell, ld = lineDetails[lineIdx];
-      const nextA = charIdx >= 0 ? { ...ld.charAnchors, [charIdx]: beat } : ld.charAnchors;
-      const leadBeat = charIdx === -1 ? beat : ld.leadingRestBeat, hasLead = charIdx === -1 ? true : ld.hasLeadingRest;
-      handleUpdateLine(lineIdx, rebuildLineFromCharAnchors(ld.rawCleanChars, nextA, hasLead, leadBeat, ld.isPuxador, ld.lineSignature, ld.charSignatures));
+      if (!ld?.isPauseBaque) {
+        const nextA = charIdx >= 0 ? { ...ld.charAnchors, [charIdx]: beat } : ld.charAnchors;
+        const leadBeat = charIdx === -1 ? beat : ld.leadingRestBeat, hasLead = charIdx === -1 ? true : ld.hasLeadingRest;
+        handleUpdateLine(lineIdx, rebuildLineFromCharAnchors(ld.rawCleanChars, nextA, hasLead, leadBeat, ld.isPuxador, ld.lineSignature, ld.charSignatures, ld.charUnderlineFlags));
+      }
     }
     setActiveStamp(activeStamp === beat ? null : beat);
   };
@@ -61,13 +63,15 @@ export default function ToadaMusicalStructureEditor({
   const handleChangeMetric = (newSig) => {
     if (selectedCell && selectedCell.lineIdx < lines.length && selectedCell.charIdx >= 0) {
       const { lineIdx, charIdx } = selectedCell, ld = lineDetails[lineIdx];
-      handleUpdateLine(lineIdx, rebuildLineFromCharAnchors(ld.rawCleanChars, ld.charAnchors, ld.hasLeadingRest, ld.leadingRestBeat, ld.isPuxador, ld.lineSignature, { ...ld.charSignatures, [charIdx]: newSig }));
+      if (!ld?.isPauseBaque) {
+        handleUpdateLine(lineIdx, rebuildLineFromCharAnchors(ld.rawCleanChars, ld.charAnchors, ld.hasLeadingRest, ld.leadingRestBeat, ld.isPuxador, ld.lineSignature, { ...ld.charSignatures, [charIdx]: newSig }, ld.charUnderlineFlags));
+      }
     } else if (onChangeSignature) onChangeSignature(newSig);
   };
 
   const handleAddLineAfter = (idx) => { const next = [...lines]; next.splice(idx + 1, 0, ''); commitLines(next); };
   const handleAddSilenceMeasure = (idx = lines.length - 1) => {
-    const next = [...lines]; next.splice(idx + 1, 0, generateEmptySilenceMeasure(lineDetails[idx]?.lineStartSig || signature)); commitLines(next);
+    const next = [...lines]; next.splice(idx + 1, 0, generateEmptySilenceMeasure(1)); commitLines(next);
   };
   const handleDeleteLine = (idx) => { if (lines.length <= 1) { commitLines(['']); return; } commitLines(lines.filter((_, i) => i !== idx)); };
   const handleSplitLine = (idx, l, r) => {
@@ -106,6 +110,7 @@ export default function ToadaMusicalStructureEditor({
       <ToadaMusicalToolbar
         signature={activeToolbarSig} onChangeSignature={handleChangeMetric} totalMeasures={totalMeasures}
         activeStamp={activeStamp} onSelectStamp={handleSelectStamp} mode={mode} onChangeMode={setMode} hasSelectedCell={Boolean(selectedCell)}
+        onAddPauseBaque={() => handleAddSilenceMeasure(selectedCell?.lineIdx ?? lines.length - 1)}
         onImportTxt={(c) => { const p = parseStructureTxt(c); if (p.length) commitLines(p); }} onExportTxt={handleExportTxt} onPullFromTab1={handlePullFromTab1}
         onOpenPrintStylo={() => setShowPrintStylo(true)} onOpenScanModal={() => setShowScanModal(true)} onOpenLegendModal={() => setShowLegendModal(true)} disabled={disabled}
       />
@@ -127,7 +132,7 @@ export default function ToadaMusicalStructureEditor({
         </button>
         <button type="button" onClick={() => handleAddSilenceMeasure(lines.length - 1)} disabled={disabled}
           className="px-3 py-1.5 text-[9.5px] font-black uppercase text-stone-700 bg-stone-100 hover:bg-stone-200 border border-stone-300 rounded cursor-pointer transition-colors shadow-2xs">
-          🔇 + {t('toada.addSilenceBtn') || "Mesure vide"}
+          + 🔇 {language === 'pt' ? 'Pausa do Baque' : (t('toada.pauseBaqueBtn') || 'Pause Baque')}
         </button>
       </div>
       <ToadaPrintStyloView isOpen={showPrintStylo} onClose={() => setShowPrintStylo(false)} lines={lines} metadata={{ titre, signature, bpmDefaut, tonaliteDefaut, rythme }} />

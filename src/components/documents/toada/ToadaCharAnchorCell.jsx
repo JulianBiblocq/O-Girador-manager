@@ -9,6 +9,7 @@ export default function ToadaCharAnchorCell({
   sigChange = null,
   isSelected = false,
   isCharPuxador = false,
+  isCharUnderlined = false,
   isHovered = false,
   onMouseEnter,
   onMouseLeave,
@@ -73,7 +74,7 @@ export default function ToadaCharAnchorCell({
         ) : isSpace ? (
           <span className="text-stone-300 font-sans min-w-[8px] text-center">␣</span>
         ) : (
-          <span className={isCharPuxador ? 'font-bold text-stone-900' : 'font-normal italic text-stone-600'}>
+          <span className={`${isCharPuxador ? 'font-bold text-stone-900' : 'font-normal italic text-stone-600'} ${isCharUnderlined ? 'underline decoration-2 underline-offset-2 decoration-amber-700' : ''}`}>
             {char}
           </span>
         )}
