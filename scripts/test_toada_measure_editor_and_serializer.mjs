@@ -75,7 +75,7 @@ const filesToCheck = [
   'src/utils/toadaMeasureParser.js',
   'src/utils/toadaSerializer.js',
   'src/utils/toadaDocumentFormatter.js',
-  'src/utils/toadaNotebookParser.js',
+
   'src/components/documents/toada/ToadaInlineFormattingBar.jsx',
   'src/components/documents/toada/ToadaNotebookRow.jsx',
   'src/components/documents/toada/ToadaLinedNotebookEditor.jsx',

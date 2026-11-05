@@ -417,7 +417,7 @@ export function useDocumentUploadPipeline({
           updateData.nacao = songData.nacao || '';
           updateData.rythme = songData.rythme || '';
           if (songData.signature) updateData.signature = songData.signature;
-          if (songData.bpmDefaut) updateData.bpmDefaut = songData.bpmDefaut;
+          if (songData.bpmDefaut) updateData.bpmDefaut = Number(songData.bpmDefaut);
           if (songData.tonaliteDefaut) updateData.tonaliteDefaut = songData.tonaliteDefaut;
           // Étanchéité absolue : parolesOriginales (Varal) et rawTxtCode (Cantador) sont strictement indépendants
           updateData.parolesOriginales = songData.parolesOriginales || '';
@@ -556,7 +556,7 @@ export function useDocumentUploadPipeline({
         newDoc.nacao = songData.nacao || '';
         newDoc.rythme = songData.rythme || '';
         if (songData.signature) newDoc.signature = songData.signature;
-        if (songData.bpmDefaut) newDoc.bpmDefaut = songData.bpmDefaut;
+        if (songData.bpmDefaut) newDoc.bpmDefaut = Number(songData.bpmDefaut);
         if (songData.tonaliteDefaut) newDoc.tonaliteDefaut = songData.tonaliteDefaut;
         // Étanchéité absolue : parolesOriginales (Varal) et rawTxtCode (Cantador) sont strictement indépendants
         newDoc.parolesOriginales = songData.parolesOriginales || '';
