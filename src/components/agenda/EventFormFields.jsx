@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
-import CordelAccordion from '../CordelAccordion';
 import { XiloMegaphone } from '../XiloIcons';
-import EventBudgetEditor from '../event-details/EventBudgetEditor';
 import { calculateRoadDistance } from '../../utils/googleMaps';
 import ManualMapMarkerModal from './ManualMapMarkerModal';
 import LocationSelector from '../LocationSelector';
@@ -10,12 +8,12 @@ import EventRepertoireProgramSelector from './EventRepertoireProgramSelector';
 import { DEFAULT_CUSTOM_CATEGORIES } from '../../utils/categoryUtils';
 import EventMediaFields from './EventMediaFields';
 import EventStampSelector from './EventStampSelector';
+import EventCoverImageEditor from '../event-details/EventCoverImageEditor';
 import EventDisciplineDressCodeFields from './EventDisciplineDressCodeFields';
 import EventPupitresQuotasFields from './EventPupitresQuotasFields';
 import EventPollFormSection from './EventPollFormSection';
-import EventVolunteerShiftsEditor from './EventVolunteerShiftsEditor';
 import EventQuickTogglesGrid from './EventQuickTogglesGrid';
-import EventDeadlineModeField from './EventDeadlineModeField';
+import EventFormAdvancedDrawer from './EventFormAdvancedDrawer';
 import ReunionPrivacySelector from './ReunionPrivacySelector';
 import { resolveReunionPrivacyConfig } from '../../utils/reunionPrivacyUtils';
 import {
@@ -569,13 +567,24 @@ export default function EventFormFields({
             groupId={groupId}
           />
 
-          {/* Sélecteur de Tampon Cordel (Création) */}
+          {/* Sélecteur d'Affiche complète (Upload, Varal, URL + Tampon Cordel) dès la création */}
           {!isEdit && (
-            <EventStampSelector
-              formData={formData}
-              setFormData={setFormData}
-              disabled={saving}
-            />
+            createConfig.agendaEnableImage !== false ? (
+              <EventCoverImageEditor
+                editForm={formData}
+                setEditForm={setFormData}
+                groupId={groupId || formData?.groupId}
+                savingEvent={saving}
+                translate={translate}
+                tr={tr}
+              />
+            ) : (
+              <EventStampSelector
+                formData={formData}
+                setFormData={setFormData}
+                disabled={saving}
+              />
+            )
           )}
 
           {/* Notification Push (Création uniquement) */}
@@ -603,93 +612,20 @@ export default function EventFormFields({
       {/* =========================================================================
           ÉTAGE 3 : TIROIR AVANCÉ (Replié par défaut)
           ========================================================================= */}
-      <CordelAccordion
-        title={tr('agenda.advancedOptionsTitle')}
-        subtitle={tr('agenda.advancedOptionsDesc') || "Date limite, créneaux bénévoles, budget prévisionnel et sondage de dates"}
-        icon="⚙️"
-        isOpen={isAdvancedOpen}
-        onToggle={setIsAdvancedOpen}
-      >
-        <div className="flex flex-col gap-4 pt-1">
-          {/* Date limite d'inscription (Aucune / Délai relatif J-N / Date fixe) */}
-          <EventDeadlineModeField
-            formData={formData}
-            setFormData={setFormData}
-            handleChange={handleChange}
-            saving={saving}
-            tr={tr}
-          />
-
-          {/* Horaires de passages (prestation) */}
-          {formData.type === 'prestation' && (
-            <div className="flex flex-col gap-1">
-              <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                {tr('agenda.detailedSchedule')}
-              </label>
-              <input
-                type="text"
-                name="horairesPassages"
-                value={formData.horairesPassages || ''}
-                onChange={handleChange}
-                disabled={saving}
-                placeholder={tr('agenda.schedulePlaceholder')}
-                className="theme-input w-full text-xs"
-              />
-            </div>
-          )}
-
-          {/* Lien externe / social */}
-          <div className="flex flex-col gap-1">
-            <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              {translate('widgetAgenda.socialLinkLabel', "Lien externe / Réseaux sociaux")}
-            </label>
-            <input
-              type="url"
-              name="lienSocial"
-              value={formData.lienSocial || ''}
-              onChange={handleChange}
-              disabled={saving}
-              placeholder="https://facebook.com/events/..."
-              className="theme-input w-full text-xs"
-            />
-          </div>
-
-          {/* Finances / Budget Prévisionnel */}
-          {createConfig.agendaEnableFinance !== false && (
-            <div className="border-t border-dashed border-cordel-master-dark/15 pt-3 flex flex-col gap-2">
-              <h5 className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood flex items-center gap-1">
-                💰 {tr('agenda.budgetTitle')}
-              </h5>
-              <EventBudgetEditor
-                budgetDepenses={formData.budgetDepenses || []}
-                onChangeDepenses={(updated) => setFormData(prev => ({ ...prev, budgetDepenses: updated }))}
-                disabled={saving}
-              />
-            </div>
-          )}
-
-          {/* Créneaux Bénévoles */}
-          {createConfig.agendaEnableVolunteerShifts !== false && (
-            <EventVolunteerShiftsEditor
-              formData={formData}
-              setFormData={setFormData}
-              saving={saving}
-              tr={tr}
-            />
-          )}
-
-          {/* Sondage multi-dates (Création uniquement) */}
-          {!isEdit && (
-            <EventPollFormSection
-              formData={formData}
-              setFormData={setFormData}
-              pupitresList={pupitresList}
-              eventTypeConfigs={eventTypeConfigs}
-              tr={tr}
-            />
-          )}
-        </div>
-      </CordelAccordion>
+      <EventFormAdvancedDrawer
+        formData={formData}
+        setFormData={setFormData}
+        handleChange={handleChange}
+        saving={saving}
+        isEdit={isEdit}
+        createConfig={createConfig}
+        pupitresList={pupitresList}
+        eventTypeConfigs={eventTypeConfigs}
+        isAdvancedOpen={isAdvancedOpen}
+        setIsAdvancedOpen={setIsAdvancedOpen}
+        translate={translate}
+        tr={tr}
+      />
     </div>
   );
 }

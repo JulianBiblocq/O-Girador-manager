@@ -87,34 +87,34 @@ export default function ReunionPrivacySelector({
   const isCustomSelected = !['all', 'ca', 'bureau'].includes(normalizedTarget);
 
   return (
-    <div className="p-3 bg-cordel-bg-light/85 border-2 border-dashed border-[var(--cordel-border)] rounded-[6px_10px_5px_8px] flex flex-col gap-3 text-left select-none">
-      <div className="flex items-center justify-between gap-2 border-b border-dashed border-encre-noire/15 pb-1.5">
-        <span className="text-[10.5px] font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
-          <span>🎯</span>
-          <span>Participants & Confidentialité</span>
+    <div className="w-full max-w-full min-w-0 overflow-hidden p-3 bg-cordel-bg-light/85 border-2 border-dashed border-[var(--cordel-border)] rounded-[6px_10px_5px_8px] flex flex-col gap-3 text-left select-none">
+      <div className="flex items-center justify-between gap-2 border-b border-dashed border-encre-noire/15 pb-1.5 w-full min-w-0">
+        <span className="text-[10.5px] font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5 min-w-0 truncate">
+          <span className="shrink-0">🎯</span>
+          <span className="truncate">Participants & Confidentialité</span>
         </span>
-        <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded bg-white/80 border border-encre-noire/20 text-encre-noire">
+        <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded bg-white/80 border border-encre-noire/20 text-encre-noire shrink-0">
           {getTargetGroupDisplayName(normalizedTarget, tagsDisponibles, false)}
         </span>
       </div>
 
       {/* Étape 1 — Groupe convoqué */}
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-1.5 w-full min-w-0">
         <label className="text-[9.5px] font-extrabold uppercase tracking-wider text-cordel-master-dark">
           1. Groupe convoqué :
         </label>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 w-full min-w-0">
           <button
             type="button"
             disabled={disabled}
             onClick={() => handleSelectTargetGroup('all')}
-            className={`py-2 px-2.5 text-[10px] font-black uppercase rounded border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+            className={`py-2 px-2.5 text-[10px] font-black uppercase rounded border transition-all cursor-pointer flex items-center justify-center gap-1.5 min-w-0 ${
               normalizedTarget === 'all'
                 ? 'bg-[var(--color-cordel-vert)] text-white border-encre-noire shadow-[2px_2px_0px_0px_#181716]'
                 : 'bg-white text-encre-noire border-encre-noire/30 hover:bg-neutral-50'
             }`}
           >
-            <span>👥</span>
+            <span className="shrink-0">👥</span>
             <span className="truncate">Toute l&apos;association</span>
           </button>
 
@@ -122,13 +122,13 @@ export default function ReunionPrivacySelector({
             type="button"
             disabled={disabled}
             onClick={() => handleSelectTargetGroup('ca')}
-            className={`py-2 px-2.5 text-[10px] font-black uppercase rounded border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+            className={`py-2 px-2.5 text-[10px] font-black uppercase rounded border transition-all cursor-pointer flex items-center justify-center gap-1.5 min-w-0 ${
               normalizedTarget === 'ca'
                 ? 'bg-[var(--color-cordel-ocre)] text-white border-encre-noire shadow-[2px_2px_0px_0px_#181716]'
                 : 'bg-white text-encre-noire border-encre-noire/30 hover:bg-neutral-50'
             }`}
           >
-            <span>🏛️</span>
+            <span className="shrink-0">🏛️</span>
             <span className="truncate">Conseil d&apos;Administration</span>
           </button>
 
@@ -136,19 +136,19 @@ export default function ReunionPrivacySelector({
             type="button"
             disabled={disabled}
             onClick={() => handleSelectTargetGroup('bureau')}
-            className={`py-2 px-2.5 text-[10px] font-black uppercase rounded border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+            className={`py-2 px-2.5 text-[10px] font-black uppercase rounded border transition-all cursor-pointer flex items-center justify-center gap-1.5 min-w-0 ${
               normalizedTarget === 'bureau'
                 ? 'bg-cordel-wood text-white border-encre-noire shadow-[2px_2px_0px_0px_#181716]'
                 : 'bg-white text-encre-noire border-encre-noire/30 hover:bg-neutral-50'
             }`}
           >
-            <span>🔒</span>
+            <span className="shrink-0">🔒</span>
             <span className="truncate">Bureau uniquement</span>
           </button>
         </div>
 
         {customBadges.length > 0 && (
-          <div className="flex items-center gap-2 mt-0.5">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 w-full min-w-0 mt-0.5">
             <span className="text-[9px] font-bold text-encre-noire/70 shrink-0">Autre badge :</span>
             <select
               value={isCustomSelected ? normalizedTarget : ''}
@@ -156,7 +156,7 @@ export default function ReunionPrivacySelector({
               onChange={(e) => {
                 if (e.target.value) handleSelectTargetGroup(e.target.value);
               }}
-              className="theme-input text-[10px] py-1 px-2 bg-white flex-1"
+              className="theme-input w-full sm:flex-1 min-w-0 max-w-full truncate text-sm px-3 py-2 bg-white"
             >
               <option value="">— Choisir une commission / étiquette spécifique —</option>
               {customBadges.map((b) => (

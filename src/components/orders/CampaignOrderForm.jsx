@@ -27,6 +27,8 @@ export default function CampaignOrderForm({
   t
 }) {
   const [zoomImageUrl, setZoomImageUrl] = useState(null);
+  const FREE_REQUEST_VALUE = 'Hors catalogue / Demande libre';
+  const isFreeRequest = article === FREE_REQUEST_VALUE;
   const artObj = catalog.find((item) => item.nom === article);
   const isTshirtSelected = article === 'T-shirt Homme' || article === 'T-shirt Femme';
   const isAlfaiaSkinSelected =
@@ -53,6 +55,9 @@ export default function CampaignOrderForm({
                   {getArticleLabel(item.nom)} {item.prix > 0 ? `(${item.prix}€)` : ''}
                 </option>
               ))}
+              <option value="Hors catalogue / Demande libre">
+                {t('widgetCommandes.freeRequestOption') || '✨ Demande libre / Hors catalogue'}
+              </option>
             </select>
           </div>
 
@@ -138,16 +143,23 @@ export default function CampaignOrderForm({
           </div>
         </div>
 
-        {/* Suggestion optionnelle */}
+        {/* Suggestion ou description obligatoire en cas de demande hors catalogue */}
         <div className="flex flex-col gap-1">
           <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-            Suggérer un autre article ou demande spéciale (Optionnel)
+            {isFreeRequest
+              ? (t('widgetCommandes.freeRequestDescLabel') || "Description précise de l'article souhaité (Obligatoire) *")
+              : (t('widgetCommandes.suggestionLabel') || 'Suggérer un autre article ou demande spéciale (Optionnel)')}
           </label>
           <textarea
             value={suggestion}
             onChange={(e) => setSuggestion(e.target.value)}
+            required={isFreeRequest}
             disabled={saving}
-            placeholder="Ex : J'aimerais suggérer un autre article..."
+            placeholder={
+              isFreeRequest
+                ? (t('widgetCommandes.freeRequestPlaceholder') || "Décrivez précisément l'article hors catalogue souhaité (modèle, taille, référence, usage)...")
+                : "Ex : J'aimerais suggérer un autre article..."
+            }
             className="theme-input text-xs py-1 px-2 min-h-[42px] resize-y font-semibold"
           />
         </div>
@@ -178,7 +190,7 @@ export default function CampaignOrderForm({
           type="submit"
           variant="ocre"
           useExtremeBorder={true}
-          disabled={saving || !article}
+          disabled={saving || !article || (isFreeRequest && !suggestion.trim())}
           className="w-full py-2 font-bold uppercase tracking-widest text-[10px] mt-0.5"
         >
           {saving ? (t('widgetCommandes.adding') || 'Envoi...') : (t('widgetCommandes.addBtn') || 'Commander')}

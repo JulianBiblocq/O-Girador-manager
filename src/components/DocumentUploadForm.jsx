@@ -610,6 +610,9 @@ export default function DocumentUploadForm({
                 setBpmDefaut={setBpmDefaut}
                 tonaliteDefaut={tonaliteDefaut}
                 setTonaliteDefaut={setTonaliteDefaut}
+                tonaliteChanteeOrigine={documentToEdit?.tonaliteChanteeOrigine || ''}
+                transpositionSemitones={documentToEdit?.transpositionSemitones}
+                cantadorToadaId={documentToEdit?.cantadorToadaId || ''}
                 audioUploadType={audioUploadType}
                 setAudioUploadType={setAudioUploadType}
                 audioFile={audioFile}

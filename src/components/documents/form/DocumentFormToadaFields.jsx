@@ -4,42 +4,28 @@ import ToadaHeaderMetadataForm from '../toada/ToadaHeaderMetadataForm';
 import ToadaMusicalStructureEditor from '../toada/ToadaMusicalStructureEditor';
 import ToadaChantTabFields from './ToadaChantTabFields';
 
+export function formatCantadorLockedTonalite(tonaliteDefaut = '', tonaliteChanteeOrigine = '', transpositionSemitones = undefined) {
+  if (!tonaliteDefaut) return '';
+  const hasShift = transpositionSemitones !== undefined && transpositionSemitones !== null && Number(transpositionSemitones) !== 0;
+  const stBadge = hasShift ? `${Number(transpositionSemitones) > 0 ? '+' : ''}${Number(transpositionSemitones)} st` : '0 st';
+  if (tonaliteChanteeOrigine) {
+    const shortOrig = String(tonaliteChanteeOrigine).split(/\s+/)[0] || tonaliteChanteeOrigine;
+    return `🔒 ${tonaliteDefaut} (prise chantée en ${shortOrig} • ${stBadge})`;
+  }
+  if (hasShift) return `🔒 ${tonaliteDefaut} (${stBadge})`;
+  return `🔒 ${tonaliteDefaut}`;
+}
+
 export default function DocumentFormToadaFields({
-  category = 'Toadas',
-  titre = '',
-  activeTab: propActiveTab,
-  setActiveTab: propSetActiveTab,
-  nacao = '',
-  setNacao,
-  rythme = '',
-  setRythme,
-  signature = '4/4',
-  setSignature,
-  bpmDefaut = '',
-  setBpmDefaut,
-  tonaliteDefaut = '',
-  setTonaliteDefaut,
-  audioUploadType = 'file',
-  setAudioUploadType,
-  audioFile = null,
-  setAudioFile,
-  audioUrl = '',
-  setAudioUrl,
-  videoUrl = '',
-  setVideoUrl,
-  cantadorValidated = false,
-  setCantadorValidated,
-  parolesOriginales = '',
-  setParolesOriginales,
-  rawTxtCode = '',
-  setRawTxtCode,
-  parolesPhonetiques = '',
-  setParolesPhonetiques,
-  traduction = '',
-  setTraduction,
-  anecdote = '',
-  setAnecdote,
-  isSubmitting = false
+  category = 'Toadas', titre = '', activeTab: propActiveTab, setActiveTab: propSetActiveTab,
+  nacao = '', setNacao, rythme = '', setRythme, signature = '4/4', setSignature,
+  bpmDefaut = '', setBpmDefaut, tonaliteDefaut = '', setTonaliteDefaut,
+  tonaliteChanteeOrigine = '', transpositionSemitones = undefined, cantadorToadaId = '',
+  audioUploadType = 'file', setAudioUploadType, audioFile = null, setAudioFile,
+  audioUrl = '', setAudioUrl, videoUrl = '', setVideoUrl,
+  cantadorValidated = false, setCantadorValidated, parolesOriginales = '', setParolesOriginales,
+  rawTxtCode = '', setRawTxtCode, parolesPhonetiques = '', setParolesPhonetiques,
+  traduction = '', setTraduction, anecdote = '', setAnecdote, isSubmitting = false
 }) {
   const [localActiveTab, setLocalActiveTab] = useState('chant');
   const activeTab = propActiveTab !== undefined ? propActiveTab : localActiveTab;
@@ -59,7 +45,17 @@ export default function DocumentFormToadaFields({
       </div>
 
       {category === 'Toadas' && (
-        <ToadaHeaderMetadataForm signature={signature} onChangeSignature={setSignature} bpmDefaut={bpmDefaut} onChangeBpm={setBpmDefaut} tonaliteDefaut={tonaliteDefaut} onChangeTonalite={setTonaliteDefaut} disabled={isSubmitting} />
+        <ToadaHeaderMetadataForm
+          signature={signature} onChangeSignature={setSignature}
+          bpmDefaut={bpmDefaut} onChangeBpm={setBpmDefaut}
+          tonaliteDefaut={tonaliteDefaut} onChangeTonalite={setTonaliteDefaut}
+          tonaliteChanteeOrigine={tonaliteChanteeOrigine}
+          transpositionSemitones={transpositionSemitones}
+          cantadorToadaId={cantadorToadaId}
+          cantadorValidated={cantadorValidated}
+          lockedTonaliteDisplay={formatCantadorLockedTonalite(tonaliteDefaut, tonaliteChanteeOrigine, transpositionSemitones)}
+          disabled={isSubmitting}
+        />
       )}
 
       <ToadaAudioWitnessField

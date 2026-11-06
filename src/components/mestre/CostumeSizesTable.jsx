@@ -3,6 +3,7 @@ import { useTranslation } from '../LanguageContext';
 import CordelCard from '../CordelCard';
 import XiloAvatar from '../XiloAvatar';
 import { isActiveMember } from '../../utils/memberUtils';
+import { exportCostumeSizesToCsv } from '../../utils/wardrobeCsvExportUtils';
 
 export default function CostumeSizesTable({ allUsers = [], profileData = {} }) {
   const { t } = useTranslation();
@@ -69,9 +70,19 @@ export default function CostumeSizesTable({ allUsers = [], profileData = {} }) {
         <h2 className="text-sm font-extrabold tracking-widest text-cordel-wood uppercase">
           {t('costumerie.tableauDesTaillesVestiaire')}
         </h2>
-        <span className="text-[10px] uppercase font-black text-cordel-master-dark bg-cordel-bg border border-encre-noire px-2 py-0.5 rounded">
-          {associationUsers.length} {t('costumerie.membre')}{associationUsers.length > 1 ? 's' : ''} {t('costumerie.auTotal')}
-        </span>
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={() => exportCostumeSizesToCsv(filteredUsers)}
+            disabled={filteredUsers.length === 0}
+            className="text-[10px] uppercase font-black text-encre-noire bg-cordel-bg hover:bg-white border border-encre-noire px-2.5 py-1 rounded shadow-[1.5px_1.5px_0px_0px_#181716] disabled:opacity-40 cursor-pointer"
+          >
+            📥 {t('costumerie.exportCsvBtn') || 'Exporter CSV'}
+          </button>
+          <span className="text-[10px] uppercase font-black text-cordel-master-dark bg-cordel-bg border border-encre-noire px-2 py-0.5 rounded">
+            {associationUsers.length} {t('costumerie.membre')}{associationUsers.length > 1 ? 's' : ''} {t('costumerie.auTotal')}
+          </span>
+        </div>
       </div>
 
       {/* Summary statistics panels */}

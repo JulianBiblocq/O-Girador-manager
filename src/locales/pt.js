@@ -967,6 +967,10 @@ export const pt = {
     myRequests: "Meu pedido atual",
     unit: "un",
     errorAdd: "Erro ao registrar o seu pedido.",
+    freeRequestOption: "✨ Pedido livre / Fora do catálogo",
+    freeRequestDescLabel: "Descrição detalhada do item desejado (Obrigatório) *",
+    freeRequestPlaceholder: "Descreva detalhadamente o item fora do catálogo desejado (modelo, tamanho, referência, uso)...",
+    suggestionLabel: "Sugerir outro item ou pedido especial (Opcional)",
     articles: {
       "Baguettes d'Alfaia (Grosses, Petites ou Bacalhau)": "Baquetas de Alfaia (Grossas, Pequenas ou Bacalhau)",
       "Baguettes de Caixa": "Baquetas de Caixa",
@@ -4609,6 +4613,7 @@ export const pt = {
     tissusMercerie: "Tecidos & Aviamentos",
     outillage: "Ferramentas",
     mensurations: "Medidas",
+    exportCsvBtn: "Exportar CSV",
     stockPhysiqueEmpruntsDePieces: "📦 Estoque físico & Empréstimo de peças",
     total: "Total:",
     piece: "peça",

@@ -58,9 +58,9 @@ export default function ReunionCreationFormCard({
   const { t } = useTranslation();
 
   return (
-    <CordelCard variant="default" useExtremeBorder={true} className="p-3.5 sm:p-4 flex flex-col gap-2.5 bg-cordel-bg">
+    <CordelCard variant="default" useExtremeBorder={true} className="w-full max-w-full min-w-0 overflow-hidden p-3.5 sm:p-4 flex flex-col gap-2.5 bg-cordel-bg">
       {/* En-tête + Sélecteur Date Fixe vs Sondage sur la même zone compacte */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-dashed border-encre-noire/15 pb-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-dashed border-encre-noire/15 pb-2 w-full min-w-0">
         <h3 className="text-xs font-black uppercase tracking-wider text-cordel-wood">
           ➕ {t('governance.formCreateMeetingTitle')}
         </h3>
@@ -86,7 +86,7 @@ export default function ReunionCreationFormCard({
         </div>
       </div>
 
-      <form onSubmit={onSubmit} className="flex flex-col gap-2.5 text-xs">
+      <form onSubmit={onSubmit} className="flex flex-col gap-2.5 text-xs w-full max-w-full min-w-0">
         {/* Titre de la réunion */}
         <div className="flex flex-col gap-0.5">
           <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">

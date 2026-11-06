@@ -42,10 +42,14 @@ export default function WidgetCommandes({ groupId, user, profileData }) {
   const [notes, setNotes] = useState('');
   const [isPersonalOrder, setIsPersonalOrder] = useState(false);
 
-  // Réinitialiser l'article sélectionné au chargement du catalogue
+  // Initialiser l'article sélectionné au chargement du catalogue tout en autorisant l'option hors catalogue
   useEffect(() => {
+    const FREE_REQUEST_VALUE = 'Hors catalogue / Demande libre';
+    if (article === FREE_REQUEST_VALUE) return;
     if (catalog.length > 0 && !catalog.some(c => c.nom === article)) {
       setArticle(catalog[0].nom);
+    } else if (catalog.length === 0 && !article) {
+      setArticle(FREE_REQUEST_VALUE);
     }
   }, [catalog, article]);
 

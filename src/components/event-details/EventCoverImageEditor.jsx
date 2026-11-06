@@ -1,135 +1,166 @@
 import React from 'react';
 import EventStampSelector from '../agenda/EventStampSelector';
+import { useEventCoverImage } from '../../hooks/useEventCoverImage';
 
 /**
  * Éditeur de visuel de couverture d'un événement (Upload, Varal, URL + Tampon Cordel)
- * extrait de EventEditForm.jsx (Règle du Boy Scout).
+ * utilisable aussi bien à la création (EventFormFields / EventCreateForm) qu'à l'édition (EventEditForm).
  */
 export default function EventCoverImageEditor({
   editForm,
   setEditForm,
-  imageMode = 'upload',
+  imageMode,
   setImageMode,
-  uploadingImage = false,
+  uploadingImage,
   handleImageUpload,
-  varalPhotos = [],
+  varalPhotos,
+  groupId,
   savingEvent = false,
   translate,
   tr
 }) {
+  const {
+    internalImageMode,
+    setInternalImageMode,
+    internalUploadingImage,
+    internalHandleImageUpload,
+    internalVaralPhotos
+  } = useEventCoverImage({
+    groupId: groupId || editForm?.groupId,
+    setEditForm,
+    translate,
+    externalVaralPhotos: varalPhotos
+  });
+
+  const activeImageMode = setImageMode ? (imageMode || 'upload') : internalImageMode;
+  const activeSetImageMode = setImageMode || setInternalImageMode;
+  const activeUploadingImage = handleImageUpload ? Boolean(uploadingImage) : internalUploadingImage;
+  const activeHandleImageUpload = handleImageUpload || internalHandleImageUpload;
+  const activeVaralPhotos = Array.isArray(varalPhotos) ? varalPhotos : internalVaralPhotos;
+  const currentImageUrl = editForm?.imageUrl || editForm?.coverImage || '';
+
+  const updateImageUrl = (newUrl) => {
+    if (!setEditForm) return;
+    setEditForm((prev) => ({
+      ...prev,
+      imageUrl: newUrl,
+      coverImage: newUrl
+    }));
+  };
+
   return (
     <div className="flex flex-col gap-2.5 pt-4 mt-2 border-t border-dashed border-cordel-master-dark/20 text-left">
       <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-        {translate('widgetAgenda.imageUrlLabel', "Image de l'événement / Affiche & Tampon Cordel")}
+        {translate ? translate('widgetAgenda.imageUrlLabel', "Image de l'événement / Affiche & Tampon Cordel") : "Image de l'événement / Affiche & Tampon Cordel"}
       </label>
 
       <div className="flex gap-2 mb-0.5 flex-wrap">
         <button
           type="button"
-          onClick={() => setImageMode && setImageMode('upload')}
+          onClick={() => activeSetImageMode('upload')}
           className={`text-[9px] uppercase font-black px-2.5 py-1.5 rounded border transition-all cursor-pointer ${
-            imageMode === 'upload'
+            activeImageMode === 'upload'
               ? 'bg-cordel-wood text-white border-encre-noire shadow-xs'
               : 'bg-white/50 border-dashed border-stone-300 text-stone-700'
           }`}
         >
-          📸 {tr('agenda.uploadClassicTab') || 'Upload classique'}
+          📸 {tr ? (tr('agenda.uploadClassicTab') || 'Upload classique') : 'Upload classique'}
         </button>
         <button
           type="button"
-          onClick={() => setImageMode && setImageMode('varal')}
+          onClick={() => activeSetImageMode('varal')}
           className={`text-[9px] uppercase font-black px-2.5 py-1.5 rounded border transition-all cursor-pointer ${
-            imageMode === 'varal'
+            activeImageMode === 'varal'
               ? 'bg-cordel-wood text-white border-encre-noire shadow-xs'
               : 'bg-white/50 border-dashed border-stone-300 text-stone-700'
           }`}
         >
-          🪢 {tr('agenda.fromVaralTab', { count: varalPhotos.length }) || `Depuis le Varal (${varalPhotos.length})`}
+          🪢 {tr ? (tr('agenda.fromVaralTab', { count: activeVaralPhotos.length }) || `Depuis le Varal (${activeVaralPhotos.length})`) : `Depuis le Varal (${activeVaralPhotos.length})`}
         </button>
         <button
           type="button"
-          onClick={() => setImageMode && setImageMode('url')}
+          onClick={() => activeSetImageMode('url')}
           className={`text-[9px] uppercase font-black px-2.5 py-1.5 rounded border transition-all cursor-pointer ${
-            imageMode === 'url'
+            activeImageMode === 'url'
               ? 'bg-cordel-wood text-white border-encre-noire shadow-xs'
               : 'bg-white/50 border-dashed border-stone-300 text-stone-700'
           }`}
         >
-          🔗 {tr('agenda.externalUrlTab') || 'Lien URL externe'}
+          🔗 {tr ? (tr('agenda.externalUrlTab') || 'Lien URL externe') : 'Lien URL externe'}
         </button>
       </div>
 
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-3">
-          {editForm.imageUrl && (
+          {currentImageUrl && (
             <div className="w-14 h-14 border border-encre-noire rounded-[4px] overflow-hidden bg-white shrink-0 shadow-xs">
-              <img src={editForm.imageUrl} alt="Affiche preview" className="w-full h-full object-cover" />
+              <img src={currentImageUrl} alt="Affiche preview" className="w-full h-full object-cover" />
             </div>
           )}
 
-          {imageMode === 'upload' && (
+          {activeImageMode === 'upload' && (
             <label className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-2 rounded shadow-xs hover:brightness-95 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5 shrink-0 select-none">
-              {uploadingImage ? '⏳ Téléversement...' : '📸 Choisir un fichier'}
+              {activeUploadingImage ? '⏳ Téléversement...' : '📸 Choisir un fichier'}
               <input
                 type="file"
                 accept="image/*"
-                disabled={savingEvent || uploadingImage}
-                onChange={handleImageUpload}
+                disabled={savingEvent || activeUploadingImage}
+                onChange={activeHandleImageUpload}
                 className="hidden"
               />
             </label>
           )}
 
-          {imageMode === 'url' && (
+          {activeImageMode === 'url' && (
             <input
               type="url"
-              value={editForm.imageUrl || ''}
-              onChange={(e) => setEditForm((prev) => ({ ...prev, imageUrl: e.target.value }))}
+              value={currentImageUrl}
+              onChange={(e) => updateImageUrl(e.target.value)}
               disabled={savingEvent}
               placeholder="https://..."
               className="theme-input text-xs py-1.5 px-2 flex-1"
             />
           )}
 
-          {editForm.imageUrl && (
+          {currentImageUrl && (
             <button
               type="button"
-              onClick={() => setEditForm((prev) => ({ ...prev, imageUrl: '' }))}
+              onClick={() => updateImageUrl('')}
               className="text-[10px] font-bold text-red-700 hover:underline select-none cursor-pointer"
             >
-              {tr('agenda.btnRemoveImage') || "Supprimer l'image"}
+              {(tr && tr('agenda.btnRemoveImage')) || "Supprimer l'image"}
             </button>
           )}
         </div>
 
-        {imageMode === 'varal' && (
+        {activeImageMode === 'varal' && (
           <div className="flex flex-col gap-2 p-2 bg-cordel-bg/70 border border-dashed border-cordel-master-dark/30 rounded">
-            {varalPhotos.length === 0 ? (
+            {activeVaralPhotos.length === 0 ? (
               <span className="text-[10px] italic opacity-60">
                 Aucune photo trouvée dans la médiathèque du Varal.
               </span>
             ) : (
               <>
                 <select
-                  value={editForm.imageUrl || ''}
-                  onChange={(e) => setEditForm((prev) => ({ ...prev, imageUrl: e.target.value }))}
+                  value={currentImageUrl}
+                  onChange={(e) => updateImageUrl(e.target.value)}
                   className="theme-input w-full text-xs font-bold py-1.5 bg-white"
                 >
                   <option value="">-- Choisir une photo du Varal --</option>
-                  {varalPhotos.map((p) => (
+                  {activeVaralPhotos.map((p) => (
                     <option key={p.id} value={p.fileUrl}>
                       {p.titre} ({p.categorie})
                     </option>
                   ))}
                 </select>
                 <div className="flex items-center gap-1.5 overflow-x-auto py-1">
-                  {varalPhotos.slice(0, 10).map((p) => {
-                    const isSelected = editForm.imageUrl === p.fileUrl;
+                  {activeVaralPhotos.slice(0, 10).map((p) => {
+                    const isSelected = currentImageUrl === p.fileUrl;
                     return (
                       <button
                         key={p.id}
                         type="button"
-                        onClick={() => setEditForm((prev) => ({ ...prev, imageUrl: p.fileUrl }))}
+                        onClick={() => updateImageUrl(p.fileUrl)}
                         className={`w-12 h-12 rounded border-2 shrink-0 overflow-hidden cursor-pointer transition-all ${
                           isSelected
                             ? 'border-encre-noire ring-2 ring-cordel-wood scale-105 shadow-md'

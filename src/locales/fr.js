@@ -967,6 +967,10 @@ export const fr = {
     myRequests: "Ma commande actuelle",
     unit: "u",
     errorAdd: "Erreur lors de l'enregistrement de votre commande.",
+    freeRequestOption: "✨ Demande libre / Hors catalogue",
+    freeRequestDescLabel: "Description précise de l'article souhaité (Obligatoire) *",
+    freeRequestPlaceholder: "Décrivez précisément l'article hors catalogue souhaité (modèle, taille, référence, usage)...",
+    suggestionLabel: "Suggérer un autre article ou demande spéciale (Optionnel)",
     articles: {
       "Baguettes d'Alfaia (Grosses, Petites ou Bacalhau)": "Baguettes d'Alfaia (Grosses, Petites ou Bacalhau)",
       "Baguettes de Caixa": "Baguettes de Caixa",
@@ -4609,6 +4613,7 @@ export const fr = {
     tissusMercerie: "Tissus & Mercerie",
     outillage: "Outillage",
     mensurations: "Mensurations",
+    exportCsvBtn: "Exporter CSV",
     stockPhysiqueEmpruntsDePieces: "📦 Stock physique & Emprunts de pièces",
     total: "Total :",
     piece: "pièce",

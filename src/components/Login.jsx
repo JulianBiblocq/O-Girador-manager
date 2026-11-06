@@ -12,6 +12,7 @@ import { canonicalizeGroupId } from '../utils/tenantUtils';
 import GroupSelectorStep from './auth/GroupSelectorStep';
 import RegisterForm from './auth/RegisterForm';
 import { InAppBrowserHelpBanner, AuthAssistanceBannerCard } from './auth/LoginAssistanceBanners';
+import { formatFirebaseAuthError } from '../utils/authErrorUtils';
 
 const syncAuthLocale = (authInstance, lang) => {
   if (authInstance) {
@@ -61,12 +62,13 @@ export default function Login({ branding, onSuccess }) {
     );
   }, [searchParams]);
 
-  // Détection des navigateurs intégrés d'applications (Gmail, Yahoo, Mail iOS, Facebook, etc.)
+  // Détection des navigateurs intégrés d'applications (WhatsApp, Facebook, Instagram, Gmail, etc.)
   const isInAppBrowser = useMemo(() => {
     if (typeof window === 'undefined') return false;
     const ua = navigator.userAgent || navigator.vendor || window.opera || '';
+    const inAppRegex = /(WhatsApp|FBAN|FBAV|Instagram|Line|Twitter|MicroMessenger|Snapchat|Pinterest)/i;
     return (
-      /FBAN|FBAV|Instagram|Line|Twitter|MicroMessenger|Snapchat|Pinterest/i.test(ua) ||
+      inAppRegex.test(ua) ||
       /GSA\/|Gmail/i.test(ua) ||
       (/Android/i.test(ua) && /wv/i.test(ua)) ||
       (/iPhone|iPod|iPad/i.test(ua) && !/Safari/i.test(ua))
@@ -150,35 +152,7 @@ export default function Login({ branding, onSuccess }) {
     }
   };
 
-  const getAuthErrorMessage = (error) => {
-    switch (error.code) {
-      case 'auth/popup-closed-by-user':
-      case 'auth/cancelled-popup-request':
-        // Fermeture ou annulation normale de la fenêtre par l'utilisateur : pas d'alerte bloquante
-        return null;
-      case 'auth/popup-blocked':
-        return t('login.errorPopupBlocked') || "La fenêtre de connexion Google a été bloquée par votre navigateur. Veuillez autoriser les fenêtres pop-up ou utiliser l'inscription par e-mail ci-dessous.";
-      case 'auth/operation-not-allowed':
-        return t('login.errorOperationNotAllowed') || "L'inscription par e-mail et mot de passe n'est pas activée. Veuillez l'activer dans la console Firebase.";
-      case 'auth/email-already-in-use':
-        return t('login.errorEmailAlreadyInUse') || "Cette adresse e-mail est déjà utilisée. Si vous avez déjà un compte, connectez-vous ou réinitialisez votre mot de passe.";
-      case 'auth/invalid-email':
-        return t('login.errorInvalidEmail') || "Adresse e-mail invalide.";
-      case 'auth/weak-password':
-        return t('login.errorWeakPassword') || "Le mot de passe doit comporter au moins 6 caractères.";
-      case 'auth/user-not-found':
-        return t('login.errorUserNotFound') || "Aucun compte ne correspond à cette adresse e-mail. Cliquez sur 'Créer un compte' pour vous inscrire.";
-      case 'auth/wrong-password':
-      case 'auth/invalid-credential':
-        return isSignUpMode 
-          ? "Impossible de créer le compte. Vérifiez l'adresse e-mail ou essayez un mot de passe d'au moins 6 caractères."
-          : (t('login.errorInvalidCredential') || "Identifiants incorrects. Si vous êtes nouveau, cliquez sur l'onglet 'Créer un compte'.");
-      case 'auth/user-disabled':
-        return t('login.errorUserDisabled') || "Ce compte a été désactivé.";
-      default:
-        return (t('login.errorDefault') || "Une erreur est survenue : ") + error.message;
-    }
-  };
+  const getAuthErrorMessage = (error) => formatFirebaseAuthError(error, t, isSignUpMode);
 
   const handleLogin = async () => {
     setAuthLoading(true);

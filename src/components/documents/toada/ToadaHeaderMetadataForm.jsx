@@ -3,7 +3,8 @@ import { useTranslation } from '../../LanguageContext';
 
 /**
  * Sous-formulaire des métadonnées musicales d'en-tête pour une Toada :
- * Signature rythmique, Tempo par défaut (BPM) et Tonalité / Gamme (Cantador).
+ * Signature rythmique, Tempo par défaut (BPM) et TONALITÉ DE LA TROUPE (GAMME)
+ * verrouillée en lecture seule lorsqu'elle provient de Cantador / Sequenciador (< 95 lignes).
  */
 export default function ToadaHeaderMetadataForm({
   signature = '4/4',
@@ -11,19 +12,26 @@ export default function ToadaHeaderMetadataForm({
   bpmDefaut = '',
   onChangeBpm,
   tonaliteDefaut = '',
-  onChangeTonalite,
+  onChangeTonalite: _onChangeTonalite,
+  tonaliteChanteeOrigine = '',
+  transpositionSemitones = undefined,
+  cantadorToadaId = '',
+  cantadorValidated = false,
+  lockedTonaliteDisplay = '',
   disabled = false
 }) {
   const { t } = useTranslation();
-
   const SIGNATURES = ['4/4', '2/4', '3/4', '6/8', '12/8'];
-  const TONALITES = [
-    '',
-    'La Mineur', 'La Majeur', 'Ré Mineur', 'Ré Majeur', 'Mi Mineur', 'Mi Majeur',
-    'Fa# Mineur', 'Fa# Majeur', 'Sol Majeur', 'Sol Mineur', 'Sol Mixolydien',
-    'Do Majeur', 'Do Mineur', 'Si Mineur', 'Fa Majeur', 'Fa Mineur',
-    'C', 'Cm', 'D', 'Dm', 'E', 'Em', 'F', 'Fm', 'F#', 'F#m', 'G', 'Gm', 'A', 'Am', 'B', 'Bm',
-  ];
+
+  const hasShift = transpositionSemitones !== undefined && transpositionSemitones !== null && Number(transpositionSemitones) !== 0;
+  const stBadge = hasShift ? `${Number(transpositionSemitones) > 0 ? '+' : ''}${Number(transpositionSemitones)} st` : '0 st';
+  const shortOrig = tonaliteChanteeOrigine ? (String(tonaliteChanteeOrigine).split(/\s+/)[0] || tonaliteChanteeOrigine) : '';
+  const computedDisplay = lockedTonaliteDisplay || (
+    tonaliteDefaut
+      ? (shortOrig ? `🔒 ${tonaliteDefaut} (prise chantée en ${shortOrig} • ${stBadge})` : `🔒 ${tonaliteDefaut}`)
+      : ''
+  );
+  const isSyncedFromCantador = Boolean(cantadorToadaId || cantadorValidated || tonaliteChanteeOrigine || tonaliteDefaut);
 
   return (
     <div className="p-3 bg-cordel-bg-light/60 border border-encre-noire/20 rounded-[4px_6px_3px_5px] flex flex-col gap-2">
@@ -67,25 +75,25 @@ export default function ToadaHeaderMetadataForm({
           />
         </div>
 
-        {/* Tonalité / Gamme (Cantador) */}
+        {/* TONALITÉ DE LA TROUPE (GAMME) — Verrouillée en lecture seule depuis Cantador / Sequenciador */}
         <div className="flex flex-col gap-1">
-          <label className="text-[9px] font-bold uppercase tracking-wider text-cordel-master-dark">
-            {t('toada.tonalite') || "Tonalité / Gamme (Cantador)"}
+          <label className="text-[9px] font-bold uppercase tracking-wider text-cordel-master-dark flex items-center justify-between gap-1">
+            <span>TONALITÉ DE LA TROUPE (GAMME)</span>
+            <span className="text-[8.5px] text-amber-800 font-mono">Lecture seule (Cantador)</span>
           </label>
           <input
             type="text"
-            list="tonalites-list"
-            value={tonaliteDefaut || ''}
-            onChange={(e) => onChangeTonalite && onChangeTonalite(e.target.value)}
-            disabled={disabled}
-            placeholder="Ex: La Mineur, Fa# Majeur..."
-            className="theme-input text-xs font-bold py-1 bg-white"
+            readOnly
+            disabled
+            value={computedDisplay}
+            placeholder="🔒 À définir à l'oreille dans Cantador ou Sequenciador"
+            title={
+              isSyncedFromCantador
+                ? "Tonalité de la troupe synchronisée et verrouillée par Cantador (modifiable uniquement en écoutant dans Cantador ou Sequenciador)"
+                : "La tonalité de la troupe se choisit à l'oreille dans Cantador ou Sequenciador"
+            }
+            className="theme-input text-xs font-bold py-1 bg-stone-100/90 text-cordel-wood border-cordel-wood/40 cursor-not-allowed select-none"
           />
-          <datalist id="tonalites-list">
-            {TONALITES.map((ton) => (
-              <option key={ton} value={ton} />
-            ))}
-          </datalist>
         </div>
       </div>
     </div>

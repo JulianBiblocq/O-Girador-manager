@@ -31,12 +31,9 @@ import { useViewSimulator } from '../context/ViewSimulatorContext';
 import { calculateRoadDistance } from '../utils/googleMaps';
 import {
   getTodayLocalDayString,
-  buildDefaultScheduleForDay,
-  extractDayPart,
-  extractTimePart,
-  resolveDefaultTimesForForm,
-  resolveSlotRegistrationDeadline
+  buildDefaultScheduleForDay
 } from '../utils/eventScheduleUtils';
+import { buildEventCreationPayload } from '../utils/eventCreationUtils';
 import { notifyNewAgendaEventOrPoll, triggerFramaspaceEventProvisioning } from '../utils/agendaNotificationUtils';
 import { canUserSeeReunionInAgenda, resolveReunionPrivacyConfig } from '../utils/reunionPrivacyUtils';
 import ReunionPrivacyBadge from './agenda/ReunionPrivacyBadge';
@@ -413,6 +410,7 @@ export default function WidgetAgenda({
     distanceAllerRetourKm: '',
     lienSocial: '',
     imageUrl: '',
+    coverImage: '',
     stampIcon: 'auto',
     requiresValidation: false,
     dateLimiteInscription: '',
@@ -621,6 +619,8 @@ export default function WidgetAgenda({
       distanceAllerRetourKm: '',
       lienSocial: '',
       imageUrl: '',
+      coverImage: '',
+      stampIcon: 'auto',
       requiresValidation: false,
       montantRecette: '',
       montantDepense: '',
@@ -705,118 +705,22 @@ export default function WidgetAgenda({
         const isRecolteActiveForDoc = formData.activerRecolteMedias !== undefined 
           ? Boolean(formData.activerRecolteMedias) 
           : Boolean(activeConfig.activerRecolteMedias);
-        const { endTime } = resolveDefaultTimesForForm(formData, eventTypeConfigs);
-        const slotEndDate = isPollMode && dateVal
-          ? `${extractDayPart(dateVal)}T${extractTimePart(formData.dateFin) || endTime}`
-          : (formData.dateFin || '');
-        const slotDeadline = activeConfig.agendaEnableInscriptions
-          ? resolveSlotRegistrationDeadline(dateVal, formData)
-          : '';
 
-        const reunionPrivacy = formData.type === 'reunion'
-          ? resolveReunionPrivacyConfig(formData)
-          : null;
-
-        const newDocRef = await addDoc(collection(db, 'events'), {
-          titre: formData.titre,
-          type: formData.type,
-          date: dateVal,
-          dateDebut: dateVal,
-          dateFin: slotEndDate,
-          groupId: groupId,
-          inscriptions: [],
-          lieu: activeConfig.agendaEnableAdresse ? formData.lieu || '' : '',
-          ...(reunionPrivacy ? {
-            targetGroup: reunionPrivacy.targetGroup,
-            reunionPrivacyMode: reunionPrivacy.reunionPrivacyMode,
-            hideAgendaFromNonTarget: reunionPrivacy.hideAgendaFromNonTarget,
-            audience: reunionPrivacy.audience,
-            portee: reunionPrivacy.portee
-          } : {}),
-          horairesPassages: formData.type === 'prestation' ? formData.horairesPassages || '' : '',
-          horaireCovoiturage: activeConfig.agendaEnableCarpool ? formData.horaireCovoiturage || '' : '',
-          niveauRequis: formData.type === 'prestation' ? formData.niveauRequis || 'tous' : 'tous',
-          niveauDanseRequis: (formData.type === 'prestation' || formData.type === 'stage' || formData.type === 'repetition' || formData.type === 'atelier') ? formData.niveauDanseRequis || 'aucun' : 'aucun',
-          lienDocument: activeConfig.agendaEnableOrdreDuJour ? formData.lienDocument || '' : '',
-          lienDepotMedias: (formData.dropUrl || formData.lienDepotMedias || '').trim(),
-          dropUrl: (formData.dropUrl || formData.lienDepotMedias || '').trim(),
-          videoUrl: (formData.videoUrl || '').trim(),
-          enableVideoDrop: formData.enableVideoDrop !== undefined
-            ? Boolean(formData.enableVideoDrop)
-            : (activeConfig.enableVideoDrop !== undefined
-                ? Boolean(activeConfig.enableVideoDrop)
-                : ['atelier', 'repetition', 'stage'].includes(formData.type)),
-          distanceAllerRetourKm: activeConfig.agendaEnableCarpool ? (parseFloat(formData.distanceAllerRetourKm) || 0) : 0,
-          status: isPollMode ? 'sondage' : 'confirme',
-          ...(isPollMode ? {
-            isPoll: true,
-            pollGroupId: pollGroupId,
-            optionIndex: optionIndex,
-            totalOptions: totalOptions,
-            pollMode: formData.pollMode || 'single_winner',
-            pollTargetPupitres: Array.isArray(formData.pollTargetPupitres) ? formData.pollTargetPupitres : [],
-            pollRestrictionType: formData.pollRestrictionType || 'aucun',
-            pollTarget: formData.pollTarget || '',
-            votes: {}
-          } : {}),
-          lienSocial: activeConfig.agendaEnableUrl ? formData.lienSocial || '' : '',
-          imageUrl: activeConfig.agendaEnableImage ? formData.imageUrl || '' : '',
-          stampIcon: formData.stampIcon || 'auto',
-          requiresValidation: activeConfig.agendaEnableInscriptions ? (formData.requiresValidation || false) : false,
-          montantRecette: activeConfig.agendaEnableFinance ? (parseFloat(formData.montantRecette) || 0) : 0,
-          montantDepense: activeConfig.agendaEnableFinance ? ((formData.budgetDepenses || []).reduce((sum, item) => sum + (parseFloat(item.montant) || 0), 0)) : 0,
-          budgetRecettes: [], // Obsolète dans le nouveau modèle unifié
-          budgetDepenses: activeConfig.agendaEnableFinance ? (formData.budgetDepenses || []) : [],
-          dateLimiteInscription: slotDeadline,
-          registrationDeadlineMode: formData.registrationDeadlineMode || (slotDeadline ? 'fixed' : 'none'),
-          registrationDeadlineDaysBefore: Number(formData.registrationDeadlineDaysBefore) || 7,
-          dressCodePercussion: formData.dressCodePercussion || '',
-          dressCodeDanse: formData.dressCodeDanse || '',
-          tenueRequise: formData.tenueRequise || (
-            formData.dressCodePercussion && formData.dressCodeDanse
-              ? `🥁 Percussion: ${formData.dressCodePercussion} | 💃 Danse: ${formData.dressCodeDanse}`
-              : (formData.dressCodePercussion || formData.dressCodeDanse || '')
-          ),
-          volunteerShifts: formData.volunteerShifts || [],
-          includesPercussion: formData.includesPercussion !== false,
-          includesDance: formData.includesDance !== false,
-          enableCarpool: formData.enableCarpool !== false,
-          enableRoadbook: formData.enableRoadbook !== undefined
-            ? Boolean(formData.enableRoadbook)
-            : (rawConfig.enableRoadbook !== undefined
-                ? Boolean(rawConfig.enableRoadbook)
-                : ['prestation', 'stage'].includes(formData.type)),
-          isPublic: Boolean(formData.isPublic),
-          enableInscriptions: formData.enableInscriptions !== false,
-          hasCommissions: Boolean(formData.hasCommissions),
-          activerRecolteMedias: isRecolteActiveForDoc,
-          publierSurVaral: formData.publierSurVaral !== undefined ? Boolean(formData.publierSurVaral) : (isRecolteActiveForDoc !== false),
-          sendPushNotification: formData.sendPushNotification !== false,
-          description: formData.description || '',
-          latitude: formData.latitude ? Number(formData.latitude) : null,
-          longitude: formData.longitude ? Number(formData.longitude) : null,
-          linkedPatterns: formData.linkedPatterns || [],
-          setlist: (formData.setlist || []).map((item) => ({
-            id: item.id || item.pieceId,
-            pieceId: item.pieceId || item.id,
-            repertoireId: item.repertoireId || item.pieceId || item.id,
-            titre: (item.titre || '').trim(),
-            notes: (item.notes || '').trim(),
-            sequenceurId: item.sequenceurId || null,
-            sequenceurType: item.sequenceurType || null,
-            sequenceurFileUrl: item.sequenceurFileUrl || item.jsonUrl || null,
-            jsonUrl: item.jsonUrl || item.sequenceurFileUrl || null,
-            audioUrl: item.audioUrl || null,
-            toadaDocId: item.toadaDocId || null,
-            cultureDocId: item.cultureDocId || null,
-            cultureDocIds: Array.isArray(item.cultureDocIds) ? item.cultureDocIds : (item.cultureDocId ? [item.cultureDocId] : []),
-            dancadorChoreoId: item.dancadorChoreoId || null,
-            videos: Array.isArray(item.videos) ? item.videos : [],
-            signalIds: Array.isArray(item.signalIds) ? item.signalIds : []
-          })),
-          specialiteAtelier: (formData.type === 'atelier' || formData.type === 'stage') ? (formData.specialiteAtelier || 'general') : null,
-          programmeFabrication: (formData.type === 'atelier' || formData.type === 'stage') && formData.specialiteAtelier === 'fabrication' ? (formData.programmeFabrication || null) : null
+        const payload = buildEventCreationPayload({
+          formData,
+          activeConfig,
+          rawConfig,
+          eventTypeConfigs,
+          groupId,
+          dateVal,
+          isPollMode,
+          pollGroupId,
+          optionIndex,
+          totalOptions,
+          isRecolteActiveForDoc
         });
+
+        const newDocRef = await addDoc(collection(db, 'events'), payload);
 
         if (isRecolteActiveForDoc && newDocRef?.id && groupId) {
           triggerFramaspaceEventProvisioning({
