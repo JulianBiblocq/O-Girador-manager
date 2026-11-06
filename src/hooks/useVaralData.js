@@ -168,6 +168,7 @@ export default function useVaralData({
   const [eventsWithMedia, setEventsWithMedia] = useState([]);
   const [reunions, setReunions] = useState([]);
   const [instrumentModels, setInstrumentModels] = useState([]);
+  const [allEventsMap, setAllEventsMap] = useState({});
 
   // Consommation réactive du Simulateur de Vue
   const { isSimulating, effectiveProfile, effectiveUserTags, breakGlassActive } = useViewSimulator();
@@ -280,8 +281,6 @@ export default function useVaralData({
 
     return () => unsubscribeModels();
   }, [groupId]);
-
-  const [allEventsMap, setAllEventsMap] = useState({});
 
   // 3. Écouteur Firestore pour les événements (médias et réunions)
   useEffect(() => {
