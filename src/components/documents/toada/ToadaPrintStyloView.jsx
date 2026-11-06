@@ -66,7 +66,7 @@ export default function ToadaPrintStyloView({ isOpen, onClose, lines = [], metad
 
           <div className="flex flex-col gap-5 pt-2">
             {lines.map((line, idx) => {
-              const cleanLine = line.replace(/\[\d+\]/g, '').replace(/_/g, ' ').replace(/\s{2,}/g, ' ').trim();
+              const cleanLine = line.replace(/\[[^\]]+\]/g, '').replace(/<\/?u\b[^>]*>/gi, '').replace(/_/g, ' ').replace(/\s{2,}/g, ' ').trim();
               const isPuxador = /\*[^*]+\*/.test(line);
               const displayText = cleanLine.replace(/\*([^*]+)\*/g, '$1');
 

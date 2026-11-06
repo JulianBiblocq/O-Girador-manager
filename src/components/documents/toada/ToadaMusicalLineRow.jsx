@@ -98,7 +98,7 @@ export default function ToadaMusicalLineRow({
 
       <div className="flex-1 min-w-0 pt-0.5">
         {mode === 'text' ? (
-          <input type="text" value={lineText} onChange={(e) => onChangeLine(e.target.value)} onKeyDown={handleTextKeyDown} onPaste={handleTextPaste} disabled={disabled}
+          <input type="text" value={lineText.replace(/<\/?u\b[^>]*>/gi, '')} onChange={(e) => onChangeLine(e.target.value)} onKeyDown={handleTextKeyDown} onPaste={handleTextPaste} disabled={disabled}
             placeholder="[1] _ [2]Vovó falou [3]e'o... (*Puxador*) ou [PAUSE 2M] (Collez plusieurs lignes d'un coup)"
             className="w-full text-xs font-mono py-1 px-1.5 bg-transparent border-0 border-b border-stone-200 focus:border-cordel-wood focus:bg-white/80 outline-hidden transition-colors" />
         ) : isPauseBaque ? (

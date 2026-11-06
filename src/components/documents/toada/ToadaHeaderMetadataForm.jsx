@@ -3,7 +3,7 @@ import { useTranslation } from '../../LanguageContext';
 
 /**
  * Sous-formulaire des métadonnées musicales d'en-tête pour une Toada :
- * Signature rythmique, Tempo par défaut (BPM) et Tonalité musicale.
+ * Signature rythmique, Tempo par défaut (BPM) et Tonalité / Gamme (Cantador).
  */
 export default function ToadaHeaderMetadataForm({
   signature = '4/4',
@@ -17,7 +17,13 @@ export default function ToadaHeaderMetadataForm({
   const { t } = useTranslation();
 
   const SIGNATURES = ['4/4', '2/4', '3/4', '6/8', '12/8'];
-  const TONALITES = ['', 'C', 'Cm', 'D', 'Dm', 'E', 'Em', 'F', 'Fm', 'G', 'Gm', 'A', 'Am', 'B', 'Bm', 'Bb', 'Eb', 'Ab'];
+  const TONALITES = [
+    '',
+    'La Mineur', 'La Majeur', 'Ré Mineur', 'Ré Majeur', 'Mi Mineur', 'Mi Majeur',
+    'Fa# Mineur', 'Fa# Majeur', 'Sol Majeur', 'Sol Mineur', 'Sol Mixolydien',
+    'Do Majeur', 'Do Mineur', 'Si Mineur', 'Fa Majeur', 'Fa Mineur',
+    'C', 'Cm', 'D', 'Dm', 'E', 'Em', 'F', 'Fm', 'F#', 'F#m', 'G', 'Gm', 'A', 'Am', 'B', 'Bm',
+  ];
 
   return (
     <div className="p-3 bg-cordel-bg-light/60 border border-encre-noire/20 rounded-[4px_6px_3px_5px] flex flex-col gap-2">
@@ -56,24 +62,24 @@ export default function ToadaHeaderMetadataForm({
             value={bpmDefaut || ''}
             onChange={(e) => onChangeBpm && onChangeBpm(e.target.value ? parseInt(e.target.value, 10) : '')}
             disabled={disabled}
-            placeholder="Ex: 110"
+            placeholder="Ex: 85"
             className="theme-input text-xs font-bold py-1 bg-white"
           />
         </div>
 
-        {/* Tonalité musicale */}
+        {/* Tonalité / Gamme (Cantador) */}
         <div className="flex flex-col gap-1">
           <label className="text-[9px] font-bold uppercase tracking-wider text-cordel-master-dark">
-            {t('toada.tonalite') || "Tonalité"}
+            {t('toada.tonalite') || "Tonalité / Gamme (Cantador)"}
           </label>
           <input
             type="text"
             list="tonalites-list"
             value={tonaliteDefaut || ''}
-            onChange={(e) => onChangeTonalite && onChangeTonalite(e.target.value.toUpperCase())}
+            onChange={(e) => onChangeTonalite && onChangeTonalite(e.target.value)}
             disabled={disabled}
-            placeholder="Ex: Dm ou G"
-            className="theme-input text-xs font-bold py-1 bg-white uppercase"
+            placeholder="Ex: La Mineur, Fa# Majeur..."
+            className="theme-input text-xs font-bold py-1 bg-white"
           />
           <datalist id="tonalites-list">
             {TONALITES.map((ton) => (

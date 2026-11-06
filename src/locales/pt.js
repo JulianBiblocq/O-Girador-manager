@@ -6987,7 +6987,7 @@ export const pt = {
     headerMetadataTitle: "Cabeçalho Musical da Toada",
     signature: "Fórmula de compasso",
     bpm: "Andamento (BPM)",
-    tonalite: "Tonalidade",
+    tonalite: "Tonalidade / Escala (Cantador)",
     showChords: "Exibir acordes",
     tooltipAnacrusis: "Adicionar uma Anacruse (+) no compasso atual",
     tooltipLinked: "Ligar este compasso ao anterior (/)",

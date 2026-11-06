@@ -6987,7 +6987,7 @@ export const fr = {
     headerMetadataTitle: "En-tête Musical de la Toada",
     signature: "Signature",
     bpm: "Tempo (BPM)",
-    tonalite: "Tonalité",
+    tonalite: "Tonalité / Gamme (Cantador)",
     showChords: "Afficher les accords",
     tooltipAnacrusis: "Ajouter une Anacrouse (+) sur la mesure courante",
     tooltipLinked: "Lier cette mesure à la précédente (/)",
