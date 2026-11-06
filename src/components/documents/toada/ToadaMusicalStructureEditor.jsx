@@ -49,7 +49,7 @@ export default function ToadaMusicalStructureEditor({
       if (!ld?.isPauseBaque) {
         const nextA = charIdx >= 0 ? { ...ld.charAnchors, [charIdx]: beat } : ld.charAnchors;
         const leadBeat = charIdx === -1 ? beat : ld.leadingRestBeat, hasLead = charIdx === -1 ? true : ld.hasLeadingRest;
-        handleUpdateLine(lineIdx, rebuildLineFromCharAnchors(ld.rawCleanChars, nextA, hasLead, leadBeat, ld.isPuxador, ld.lineSignature, ld.charSignatures, ld.charUnderlineFlags));
+        handleUpdateLine(lineIdx, rebuildLineFromCharAnchors(ld.rawCleanChars, nextA, hasLead, leadBeat, ld.isPuxador, ld.lineSignature, ld.charSignatures, ld.charUnderlineFlags, ld.isTutti));
       }
     }
     setActiveStamp(activeStamp === beat ? null : beat);
@@ -59,7 +59,7 @@ export default function ToadaMusicalStructureEditor({
     if (selectedCell && selectedCell.lineIdx < lines.length && selectedCell.charIdx >= 0) {
       const { lineIdx, charIdx } = selectedCell, ld = lineDetails[lineIdx];
       if (!ld?.isPauseBaque) {
-        handleUpdateLine(lineIdx, rebuildLineFromCharAnchors(ld.rawCleanChars, ld.charAnchors, ld.hasLeadingRest, ld.leadingRestBeat, ld.isPuxador, ld.lineSignature, { ...ld.charSignatures, [charIdx]: newSig }, ld.charUnderlineFlags));
+        handleUpdateLine(lineIdx, rebuildLineFromCharAnchors(ld.rawCleanChars, ld.charAnchors, ld.hasLeadingRest, ld.leadingRestBeat, ld.isPuxador, ld.lineSignature, { ...ld.charSignatures, [charIdx]: newSig }, ld.charUnderlineFlags, ld.isTutti));
       }
     } else if (onChangeSignature) onChangeSignature(newSig);
   };

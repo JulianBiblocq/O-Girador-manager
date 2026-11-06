@@ -12,15 +12,21 @@ const UnderlineMark = Mark.create({
 function markdownToInitialHtml(input = '') {
   if (!input || typeof input !== 'string') return '<p></p>';
 
-  // Si la chaîne contient déjà du HTML TipTap, nettoyer uniquement les *...* résiduels et les <p><br></p> parasites
   if (/<(p|div|br|strong|b|em|i|u|h[1-6])\b/i.test(input)) {
     return input
+      .replace(/\*\*\*([^*]+)\*\*\*/g, '<strong><em>$1</em></strong>')
       .replace(/\*([^*]+)\*/g, '<strong>$1</strong>')
       .replace(/(?:<p>\s*<br\s*\/?>\s*<\/p>\s*)+/gi, '');
   }
 
-  // Conversion du gras Markdown (*...*), y compris lorsqu'il s'étend sur plusieurs lignes
-  const withBold = input.replace(/\*([^*]+)\*/g, (_, inner) =>
+  const withTutti = input.replace(/\*\*\*([^*]+)\*\*\*/g, (_, inner) =>
+    inner
+      .split(/\r?\n/)
+      .map((part) => (part.trim() ? `<strong><em>${part}</em></strong>` : ''))
+      .join('\n')
+  );
+
+  const withBold = withTutti.replace(/\*([^*]+)\*/g, (_, inner) =>
     inner
       .split(/\r?\n/)
       .map((part) => (part.trim() ? `<strong>${part}</strong>` : ''))
@@ -78,21 +84,34 @@ export default function ToadaLyricsWysiwygEditor({
 
   if (!editor) return null;
 
+  const isTuttiActive = editor.isActive('bold') && editor.isActive('italic');
+  const isPuxOnlyActive = editor.isActive('bold') && !editor.isActive('italic');
+
+  const handleTogglePuxador = () => {
+    if (isPuxOnlyActive) editor.chain().focus().unsetBold().run();
+    else editor.chain().focus().setBold().unsetItalic().run();
+  };
+
+  const handleToggleEnsemble = () => {
+    if (isTuttiActive) editor.chain().focus().unsetBold().unsetItalic().run();
+    else editor.chain().focus().setBold().setItalic().run();
+  };
+
   return (
     <div className="flex flex-col rounded border border-stone-300 bg-white shadow-2xs overflow-hidden focus-within:border-cordel-wood text-left">
-      <div className="flex items-center gap-1 p-1 bg-stone-100 border-b border-stone-200 select-none">
-        <button type="button" disabled={disabled} onClick={() => editor.chain().focus().toggleBold().run()}
+      <div className="flex flex-wrap items-center gap-1 p-1 bg-stone-100 border-b border-stone-200 select-none">
+        <button type="button" disabled={disabled} onClick={handleTogglePuxador}
           className={`px-2 py-0.5 rounded text-[10px] font-black uppercase cursor-pointer transition-all ${
-            editor.isActive('bold') ? 'bg-cordel-wood text-white shadow-2xs' : 'bg-white text-stone-700 hover:bg-stone-200 border border-stone-300'
+            isPuxOnlyActive ? 'bg-cordel-wood text-white shadow-2xs' : 'bg-white text-stone-700 hover:bg-stone-200 border border-stone-300'
           }`} title="Mettre en gras (Ctrl+B) - Soliste / Puxador">
           <span className="font-black">B</span> Gras (Puxador)
         </button>
 
-        <button type="button" disabled={disabled} onClick={() => editor.chain().focus().toggleItalic().run()}
+        <button type="button" disabled={disabled} onClick={handleToggleEnsemble}
           className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase cursor-pointer transition-all ${
-            editor.isActive('italic') ? 'bg-cordel-wood text-white shadow-2xs' : 'bg-white text-stone-700 hover:bg-stone-200 border border-stone-300'
-          }`} title="Mettre en italique (Ctrl+I)">
-          <span className="italic font-serif">I</span> Italique
+            isTuttiActive ? 'bg-purple-800 text-white shadow-2xs' : 'bg-white text-stone-700 hover:bg-stone-200 border border-stone-300'
+          }`} title="Gras + Italique (***...***) - Chanté simultanément par le Puxador et le Coro">
+          👥 Ensemble (Pux + Coro)
         </button>
 
         <button type="button" disabled={disabled} onClick={() => editor.chain().focus().toggleMark('underline').run()}
@@ -109,8 +128,8 @@ export default function ToadaLyricsWysiwygEditor({
         <button type="button" disabled={disabled || !editor.can().redo()} onClick={() => editor.chain().focus().redo().run()}
           className="p-1 rounded text-stone-600 hover:bg-stone-200 disabled:opacity-30 cursor-pointer text-xs" title="Rétablir (Ctrl+Y)">↷</button>
 
-        <span className="ml-auto text-[9px] text-stone-400 italic pr-1">
-          Gras = Puxador • Normal = Coro
+        <span className="ml-auto text-[9px] text-stone-500 italic pr-1">
+          Gras = Puxador • Normal = Coro • Gras+Italique = Pux + Coro simultanés
         </span>
       </div>
 

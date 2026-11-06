@@ -14,12 +14,19 @@ export default function ToadaMusicalLineRow({
   const lastKeyTimeRef = useRef({ key: '', time: 0 });
   const p = parsedLine || parseLineToCharAnchors(lineText);
   const phraseInfo = p.phraseInfo || computePhraseMeasures(lineText, p);
-  const { isPuxador, isPauseBaque, pauseMeasures, hasLeadingRest, leadingRestBeat, rawCleanChars, charAnchors, charSignatures, charPuxadorFlags, charUnderlineFlags, lineSignature, charMeasureNums, charEffectiveSigs } = p;
+  const { isPuxador, isTutti, isPauseBaque, pauseMeasures, hasLeadingRest, leadingRestBeat, rawCleanChars, charAnchors, charSignatures, charPuxadorFlags, charUnderlineFlags, lineSignature, charMeasureNums, charEffectiveSigs } = p;
   const pauseLabel = language === 'pt' ? '🔇 Pausa do Baque' : (t('toada.pauseBaqueCardTitle') || '🔇 Pause Baque');
   const badgeText = isPauseBaque ? `${pauseLabel} • ${pauseMeasures} M` : phraseInfo.badgeLabel;
 
-  const handleCommit = (anchors, withRest = hasLeadingRest, restBeat = leadingRestBeat, sigs = charSignatures) => {
-    onChangeLine(rebuildLineFromCharAnchors(rawCleanChars, anchors, withRest, restBeat, isPuxador, lineSignature, sigs, charUnderlineFlags));
+  const handleCommit = (anchors, withRest = hasLeadingRest, restBeat = leadingRestBeat, sigs = charSignatures, nextPux = isPuxador, nextTutti = isTutti) => {
+    onChangeLine(rebuildLineFromCharAnchors(rawCleanChars, anchors, withRest, restBeat, nextPux, lineSignature, sigs, charUnderlineFlags, nextTutti));
+  };
+
+  const handleCycleRole = () => {
+    if (disabled || isPauseBaque) return;
+    if (!isPuxador && !isTutti) handleCommit(charAnchors, hasLeadingRest, leadingRestBeat, charSignatures, true, false);
+    else if (isPuxador && !isTutti) handleCommit(charAnchors, hasLeadingRest, leadingRestBeat, charSignatures, true, true);
+    else handleCommit(charAnchors, hasLeadingRest, leadingRestBeat, charSignatures, false, false);
   };
 
   const handleCharClick = (cIdx) => {
@@ -59,8 +66,7 @@ export default function ToadaMusicalLineRow({
     if (e.key === 'Enter') { e.preventDefault(); if (onSplitLine) onSplitLine(index, val.slice(0, s), val.slice(end)); }
     else if (e.key === 'Backspace' && s === 0 && end === 0 && index > 0) { e.preventDefault(); if (onMergeWithPrevious) onMergeWithPrevious(index); }
     else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b' && s !== end) {
-      e.preventDefault();
-      const sel = val.slice(s, end), w = sel.startsWith('*') && sel.endsWith('*') ? sel.slice(1, -1) : `*${sel}*`;
+      e.preventDefault(); const sel = val.slice(s, end), w = sel.startsWith('*') && sel.endsWith('*') ? sel.slice(1, -1) : `*${sel}*`;
       onChangeLine(val.slice(0, s) + w + val.slice(end));
     }
   };
@@ -68,11 +74,7 @@ export default function ToadaMusicalLineRow({
   const handleTextPaste = (e) => {
     if (disabled || !onPasteMultiLines) return;
     const clip = e.clipboardData?.getData('text') || '';
-    if (/\r?\n/.test(clip)) {
-      e.preventDefault();
-      const parsed = parseStructureTxt(clip);
-      if (parsed.length > 0) onPasteMultiLines(index, parsed);
-    }
+    if (/\r?\n/.test(clip)) { e.preventDefault(); const parsed = parseStructureTxt(clip); if (parsed.length > 0) onPasteMultiLines(index, parsed); }
   };
 
   return (
@@ -91,7 +93,7 @@ export default function ToadaMusicalLineRow({
             </div>
           )}
         </div>
-        <span className={`text-[9.5px] font-mono font-bold px-1.5 py-0.5 rounded border shadow-2xs truncate max-w-full ${isPauseBaque ? 'bg-stone-200 text-stone-800 border-stone-400' : isPuxador ? 'bg-amber-100 text-amber-950 border-amber-300' : 'bg-stone-100 text-stone-700 border-stone-300'}`}>{badgeText}</span>
+        <span onClick={handleCycleRole} title={!isPauseBaque ? 'Cliquer pour basculer : Coro → Puxador (*) → Ensemble Pux+Coro (***)' : undefined} className={`text-[9.5px] font-mono font-bold px-1.5 py-0.5 rounded border shadow-2xs truncate max-w-full ${!isPauseBaque && !disabled ? 'cursor-pointer hover:brightness-95' : ''} ${isPauseBaque ? 'bg-stone-200 text-stone-800 border-stone-400' : isTutti ? 'bg-purple-100 text-purple-950 border-purple-300' : isPuxador ? 'bg-amber-100 text-amber-950 border-amber-300' : 'bg-stone-100 text-stone-700 border-stone-300'}`}>{badgeText}</span>
       </div>
 
       <div className="flex-1 min-w-0 pt-0.5">

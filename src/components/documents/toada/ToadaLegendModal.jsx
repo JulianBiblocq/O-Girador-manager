@@ -12,9 +12,9 @@ export default function ToadaLegendModal({ isOpen, onClose }) {
   const rules = [
     {
       num: 1,
-      badge: "Gras / Normal",
+      badge: "Gras / Normal / 👥",
       color: "bg-stone-800 text-white",
-      desc: "Gras = Puxador (Soliste) • Normal / Italique = Coro (Chœur). Utilisez Ctrl+B en mode texte pour marquer le soliste."
+      desc: "Gras = Puxador • Normal = Coro • Gras+Italique (***...***) = Pux + Coro simultanés (Ensemble). Cliquez sur le badge d'une ligne pour basculer son rôle."
     },
     {
       num: 2,

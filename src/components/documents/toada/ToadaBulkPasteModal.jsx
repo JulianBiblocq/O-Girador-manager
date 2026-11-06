@@ -96,3 +96,4 @@ export default function ToadaBulkPasteModal({ isOpen = false, onClose, lines = [
     </div>
   );
 }
+

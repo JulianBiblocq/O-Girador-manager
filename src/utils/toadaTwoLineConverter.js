@@ -1,13 +1,12 @@
 /**
  * toadaTwoLineConverter.js
  * Conversion bidirectionnelle entre format à crochets ([1] _ [2]...)
- * et format manuscrit sur 2 lignes (chiffres 1..12 surplombant les paroles) (< 120 lignes).
+ * et format manuscrit sur 2 lignes (chiffres 1..12 surplombant les paroles) (< 140 lignes).
  */
 
 export function isAnchorOnlyLine(line = '') {
   const trimmed = line.trim();
-  if (!trimmed) return false;
-  if (!/^[\d\s_]+$/.test(line)) return false;
+  if (!trimmed || !/^[\d\s_]+$/.test(line)) return false;
   return /\b([1-9]|1[0-2])\b/.test(line);
 }
 
@@ -31,12 +30,7 @@ export function convertTwoLineToBrackets(anchorLine = '', lyricsLine = '') {
     const cur = matches[k];
     const nextCol = matches[k + 1] ? matches[k + 1].col : lyricsLine.length;
     const slice = lyricsLine.slice(cur.col, nextCol);
-
-    if (!slice.trim()) {
-      result += `[${cur.beat}] _ `;
-    } else {
-      result += `[${cur.beat}]${slice.trimStart()}`;
-    }
+    result += !slice.trim() ? `[${cur.beat}] _ ` : `[${cur.beat}]${slice.trimStart()}`;
   }
 
   return result.trim().replace(/\s{2,}/g, ' ');
@@ -45,8 +39,7 @@ export function convertTwoLineToBrackets(anchorLine = '', lyricsLine = '') {
 export function convertBracketsToTwoLine(bracketedLine = '') {
   const regex = /\[(?:M\d+[•·.])?([1-9]|1[0-2])\]/gi;
   const parts = [];
-  let lastIndex = 0;
-  let m;
+  let lastIndex = 0, m;
 
   while ((m = regex.exec(bracketedLine)) !== null) {
     const preText = bracketedLine.slice(lastIndex, m.index);
@@ -83,8 +76,7 @@ export function parseStructureTxt(rawText = '') {
   let i = 0;
 
   while (i < lines.length) {
-    const cur = lines[i];
-    const next = lines[i + 1];
+    const cur = lines[i], next = lines[i + 1];
     if (isAnchorOnlyLine(cur) && next !== undefined && !isAnchorOnlyLine(next) && next.trim()) {
       result.push(convertTwoLineToBrackets(cur, next));
       i += 2;
@@ -112,29 +104,39 @@ export function exportStructureAsTxt(lines = [], mode = 'brackets') {
   return lines.join('\n');
 }
 
+function wrapByRole(text, role) {
+  if (role === 'tutti') return `***${text}***`;
+  return role === 'puxador' ? `*${text}*` : text;
+}
+
 export function groupLyricsByRole(lyricsText = '') {
   if (!lyricsText || typeof lyricsText !== 'string') return [];
   let text = lyricsText;
   if (/<[a-z][\s\S]*>/i.test(text)) {
-    text = text.replace(/<(?:strong|b)\b[^>]*>(.*?)<\/(?:strong|b)>/gi, '*$1*').replace(/<\/(?:p|div)>/gi, '\n').replace(/<br\s*\/?>/gi, '\n').replace(/<(?!\/?u\b)[^>]+>/gi, '');
+    text = text
+      .replace(/<(?:strong|b)\b[^>]*>\s*<(?:em|i)\b[^>]*>([\s\S]*?)<\/(?:em|i)>\s*<\/(?:strong|b)>/gi, '***$1***')
+      .replace(/<(?:em|i)\b[^>]*>\s*<(?:strong|b)\b[^>]*>([\s\S]*?)<\/(?:strong|b)>\s*<\/(?:em|i)>/gi, '***$1***')
+      .replace(/<(?:strong|b)\b[^>]*>([\s\S]*?)<\/(?:strong|b)>/gi, '*$1*')
+      .replace(/<\/(?:p|div)>/gi, '\n')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<(?!\/?u\b)[^>]+>/gi, '');
   }
   const rawLines = text.split(/\r?\n/).map((l) => l.trim()), grouped = [];
   let cur = null;
   for (const line of rawLines) {
     if (!line) {
-      if (cur?.words.length) { grouped.push(cur.isPuxador ? `*${cur.words.join(' ')}*` : cur.words.join(' ')); cur = null; }
+      if (cur?.words.length) { grouped.push(wrapByRole(cur.words.join(' '), cur.role)); cur = null; }
       continue;
     }
-    const isPux = (line.startsWith('*') && line.endsWith('*')) || /^\*[^*]+\*$/.test(line);
+    const isTutti = /^\*{3}[\s\S]+\*{3}$/.test(line);
+    const isPux = !isTutti && ((line.startsWith('*') && line.endsWith('*')) || /^\*[^*]+\*$/.test(line));
+    const role = isTutti ? 'tutti' : (isPux ? 'puxador' : 'coro');
     const content = line.replace(/^\*+|\*+$/g, '').trim();
     if (!content) continue;
-    if (!cur) cur = { isPuxador: isPux, words: [content] };
-    else if (cur.isPuxador === isPux) cur.words.push(content);
-    else {
-      grouped.push(cur.isPuxador ? `*${cur.words.join(' ')}*` : cur.words.join(' '));
-      cur = { isPuxador: isPux, words: [content] };
-    }
+    if (!cur) cur = { role, words: [content] };
+    else if (cur.role === role) cur.words.push(content);
+    else { grouped.push(wrapByRole(cur.words.join(' '), cur.role)); cur = { role, words: [content] }; }
   }
-  if (cur?.words.length) grouped.push(cur.isPuxador ? `*${cur.words.join(' ')}*` : cur.words.join(' '));
+  if (cur?.words.length) grouped.push(wrapByRole(cur.words.join(' '), cur.role));
   return grouped;
 }

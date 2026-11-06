@@ -1,6 +1,6 @@
 /**
  * toadaLineEditorHelper.js
- * Utilitaires d'extraction, reconstruction de pastilles, pauses [PAUSE XM], chutes +1T et balises <u> (< 138 lignes).
+ * Utilitaires d'extraction, reconstruction de pastilles, pauses [PAUSE XM], Tutti (***...***) et balises <u> (< 142 lignes).
  */
 export const BEAT_1_CLASS = 'bg-[#b91c1c] text-[#f4ecd8] border-red-900 shadow-xs';
 export const BEAT_OTHER_CLASS = 'bg-[#334155] text-white border-slate-900 shadow-xs';
@@ -30,20 +30,21 @@ export function parseLineToCharAnchors(lineText = '') {
   const pauseCheck = parsePauseBaqueLine(withSigRemoved);
   if (pauseCheck.isPauseBaque) {
     return {
-      isPuxador: false, isPauseBaque: true, pauseMeasures: pauseCheck.pauseMeasures, hasLeadingRest: false, leadingRestBeat: null,
+      isPuxador: false, isTutti: false, isPauseBaque: true, pauseMeasures: pauseCheck.pauseMeasures, hasLeadingRest: false, leadingRestBeat: null,
       rawCleanChars: '', charAnchors: {}, charSignatures: {}, charPuxadorFlags: [], charUnderlineFlags: [], lineSignature,
     };
   }
-  const leadingRestMatch = withSigRemoved.match(/^\*?\s*\[(?:M\d+[•\.:\u00b7])?([1-9]|1[0-2])\]\s*_\s*/i);
+  const isTutti = /\*{3}[^*]+\*{3}/.test(withSigRemoved) || (/^\*{3}/.test(withSigRemoved.trim()) && /\*{3}$/.test(withSigRemoved.trim()));
+  const leadingRestMatch = withSigRemoved.match(/^\*{0,3}\s*\[(?:M\d+[•\.:\u00b7])?([1-9]|1[0-2])\]\s*_\s*/i);
   const hasLeadingRest = Boolean(leadingRestMatch), leadingRestBeat = leadingRestMatch ? parseInt(leadingRestMatch[1], 10) : null;
-  const withoutRest = withSigRemoved.replace(/^\*?\s*\[(?:M\d+[•\.:\u00b7])?\d+\]\s*_\s*/i, '');
+  const withoutRest = withSigRemoved.replace(/^\*{0,3}\s*\[(?:M\d+[•\.:\u00b7])?\d+\]\s*_\s*/i, '');
   const charAnchors = {}, charSignatures = {}, charPuxadorFlags = [], charUnderlineFlags = [];
-  let rawCleanChars = '', curIndex = 0, pendingBeat = null, pendingSig = null, inBold = false, inUnderline = false;
-  const parts = withoutRest.split(/(\[(?:(?:sig:)?(?:\d+\/\d+)|(?:M\d+[•\.:\u00b7])?\d+)\]|\*|<\/?u>)/i);
+  let rawCleanChars = '', curIndex = 0, pendingBeat = null, pendingSig = null, inBold = isTutti, inUnderline = false;
+  const parts = withoutRest.split(/(\[(?:(?:sig:)?(?:\d+\/\d+)|(?:M\d+[•\.:\u00b7])?\d+)\]|\*{1,3}|<\/?u>)/i);
 
   for (const part of parts) {
     if (!part) continue;
-    if (part === '*') { inBold = !inBold; continue; }
+    if (/^\*{1,3}$/.test(part)) { inBold = !inBold; continue; }
     if (/^<u>$/i.test(part)) { inUnderline = true; continue; }
     if (/^<\/u>$/i.test(part)) { inUnderline = false; continue; }
     const sigM = part.match(/^\[(?:sig:)?(2\/4|3\/4|4\/4|5\/4|6\/8|7\/8|9\/8|12\/8)\]$/i);
@@ -53,16 +54,16 @@ export function parseLineToCharAnchors(lineText = '') {
     for (let i = 0; i < part.length; i++) {
       if (pendingSig) { charSignatures[curIndex] = pendingSig; pendingSig = null; }
       if (pendingBeat !== null) { charAnchors[curIndex] = pendingBeat; pendingBeat = null; }
-      charPuxadorFlags[curIndex] = inBold; charUnderlineFlags[curIndex] = inUnderline;
+      charPuxadorFlags[curIndex] = isTutti || inBold; charUnderlineFlags[curIndex] = inUnderline;
       rawCleanChars += part[i]; curIndex++;
     }
   }
   if (pendingBeat !== null) charAnchors[curIndex] = pendingBeat;
-  const isPuxador = inBold || charPuxadorFlags.some(Boolean) || /\*[^*]+\*/.test(withSigRemoved);
-  return { isPuxador, isPauseBaque: false, pauseMeasures: 0, hasLeadingRest, leadingRestBeat, rawCleanChars, charAnchors, charSignatures, charPuxadorFlags, charUnderlineFlags, lineSignature };
+  const isPuxador = isTutti || inBold || charPuxadorFlags.some(Boolean) || /\*[^*]+\*/.test(withSigRemoved);
+  return { isPuxador, isTutti, isPauseBaque: false, pauseMeasures: 0, hasLeadingRest, leadingRestBeat, rawCleanChars, charAnchors, charSignatures, charPuxadorFlags, charUnderlineFlags, lineSignature };
 }
 
-export function rebuildLineFromCharAnchors(rawCleanChars, anchors, withRest, restBeat, isPuxador, lineSignature = null, charSignatures = {}, charUnderlineFlags = []) {
+export function rebuildLineFromCharAnchors(rawCleanChars, anchors, withRest, restBeat, isPuxador, lineSignature = null, charSignatures = {}, charUnderlineFlags = [], isTutti = false) {
   let res = withRest ? `[${restBeat || 1}] _ ` : '', inU = false;
   for (let c = 0; c < rawCleanChars.length; c++) {
     const wantU = Boolean(charUnderlineFlags?.[c]);
@@ -75,17 +76,17 @@ export function rebuildLineFromCharAnchors(rawCleanChars, anchors, withRest, res
   if (inU) res += '</u>';
   if (charSignatures?.[rawCleanChars.length]) res += `[${charSignatures[rawCleanChars.length]}]`;
   if (anchors?.[rawCleanChars.length]) res += `[${anchors[rawCleanChars.length]}]`;
-  const trimmed = res.trim();
-  const withPuxador = isPuxador ? `*${trimmed.replace(/^\*+|\*+$/g, '')}*` : trimmed.replace(/^\*+|\*+$/g, '');
-  return lineSignature ? `[sig:${lineSignature}] ${withPuxador}` : withPuxador;
+  const cleanCore = res.trim().replace(/^\*+|\*+$/g, '');
+  const withRole = isTutti ? `***${cleanCore}***` : (isPuxador ? `*${cleanCore}*` : cleanCore);
+  return lineSignature ? `[sig:${lineSignature}] ${withRole}` : withRole;
 }
 
 export function computePhraseMeasures(lineText = '', parsed = null) {
   const p = parsed || parseLineToCharAnchors(lineText);
   if (p.isPauseBaque) {
-    return { isPuxador: false, isPauseBaque: true, pauseMeasures: p.pauseMeasures, measuresCount: p.pauseMeasures, hasAnacrusis: false, hasExitOnNextBeat1: false, exitBeat1Pos: null, badgeLabel: `🔇 Pause Baque • ${p.pauseMeasures} M` };
+    return { isPuxador: false, isTutti: false, isPauseBaque: true, pauseMeasures: p.pauseMeasures, measuresCount: p.pauseMeasures, hasAnacrusis: false, hasExitOnNextBeat1: false, exitBeat1Pos: null, badgeLabel: `🔇 Pause Baque • ${p.pauseMeasures} M` };
   }
-  const { isPuxador, hasLeadingRest, leadingRestBeat, rawCleanChars, charAnchors } = p;
+  const { isPuxador, isTutti, hasLeadingRest, leadingRestBeat, rawCleanChars, charAnchors } = p;
   const ordered = [];
   if (hasLeadingRest && leadingRestBeat) ordered.push({ pos: -1, beat: leadingRestBeat });
   for (let c = 0; c <= rawCleanChars.length; c++) { if (charAnchors?.[c]) ordered.push({ pos: c, beat: charAnchors[c] }); }
@@ -96,9 +97,9 @@ export function computePhraseMeasures(lineText = '', parsed = null) {
   const hasExitOnNextBeat1 = Boolean(beat1s.length >= 2 && lastA?.beat === 1 && prevA && prevA.beat > 1 && tailSlice.length <= 5 && !/\s/.test(rawCleanChars.slice(Math.max(0, lastA.pos)).replace(/_/g, '').trim()));
   const exitBeat1Pos = hasExitOnNextBeat1 ? lastA.pos : null, count1 = hasExitOnNextBeat1 ? beat1s.length - 1 : beat1s.length;
   const hasAnacrusis = firstOnePos === null ? (ordered.length > 0 || hasLeadingRest) : (firstOnePos > 0 && (rawCleanChars.slice(0, firstOnePos).trim().length > 0 || ordered.some((a) => a.pos < firstOnePos)));
-  const role = isPuxador ? 'Puxador' : 'Coro', anaSuffix = hasAnacrusis ? ' + Ana' : '', exitSuffix = hasExitOnNextBeat1 ? ' + Fin 1' : '';
+  const role = isTutti ? '👥 Pux+Coro' : (isPuxador ? 'Puxador' : 'Coro'), anaSuffix = hasAnacrusis ? ' + Ana' : '', exitSuffix = hasExitOnNextBeat1 ? ' + Fin 1' : '';
   const badgeLabel = count1 > 0 ? `${role} • ${count1} M${anaSuffix}${exitSuffix}` : (hasAnacrusis ? `${role} • Ana` : role);
-  return { isPuxador, isPauseBaque: false, measuresCount: count1, hasAnacrusis, hasExitOnNextBeat1, exitBeat1Pos, badgeLabel };
+  return { isPuxador, isTutti: Boolean(isTutti), isPauseBaque: false, measuresCount: count1, hasAnacrusis, hasExitOnNextBeat1, exitBeat1Pos, badgeLabel };
 }
 
 export function computeSongStructure(lines = [], defaultSig = '4/4') {
