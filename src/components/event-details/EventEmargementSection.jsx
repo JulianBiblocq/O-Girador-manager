@@ -2,7 +2,12 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { doc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
-import { isMemberCaOrBureau, getEffectiveMemberTags } from '../../utils/memberUtils';
+import { isMemberCaOrBureau } from '../../utils/memberUtils';
+import {
+  resolveReunionPrivacyConfig,
+  isUserInReunionTargetGroup,
+  getTargetGroupDisplayName
+} from '../../utils/reunionPrivacyUtils';
 import EventEmargementFooter from './EventEmargementFooter';
 
 /**
@@ -16,9 +21,13 @@ export default function EventEmargementSection({
   isAdmin = false,
   onInscriptionsChanged
 }) {
+  const privacyCfg = useMemo(() => resolveReunionPrivacyConfig(event), [event]);
+  const isRestrictedTarget = privacyCfg.targetGroup !== 'all' && privacyCfg.reunionPrivacyMode !== 'public';
+  const targetGroupLabel = getTargetGroupDisplayName(privacyCfg.targetGroup, [], false);
+
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [caOnlyFilter, setCaOnlyFilter] = useState(event?.audience === 'ca');
+  const [caOnlyFilter, setCaOnlyFilter] = useState(isRestrictedTarget || event?.audience === 'ca');
   const [members, setMembers] = useState([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [invitesCount, setInvitesCount] = useState(event?.invitesOuPublicCount || 0);
@@ -33,12 +42,12 @@ export default function EventEmargementSection({
     setOptimisticInscriptions(null);
   }, [event?.inscriptions]);
 
-  // Si l'audience de la réunion change en CA, activer le filtre CA par défaut
+  // Si la réunion cible un groupe spécifique (CA, Bureau, badge), activer le filtre correspondant par défaut
   useEffect(() => {
-    if (event?.audience === 'ca') {
+    if (isRestrictedTarget || event?.audience === 'ca') {
       setCaOnlyFilter(true);
     }
-  }, [event?.audience]);
+  }, [isRestrictedTarget, event?.audience]);
 
   // Récupération de la liste des membres de l'association
   useEffect(() => {
@@ -98,11 +107,15 @@ export default function EventEmargementSection({
   const presentsCount = presentUserIds.size;
   const totalParticipants = presentsCount + (invitesCount || 0);
 
-  // Filtrage des membres selon recherche textuelle et restriction CA éventuelle
+  // Filtrage des membres selon recherche textuelle et restriction de groupe convoqué
   const filteredMembers = useMemo(() => {
     return members.filter((m) => {
-      if (caOnlyFilter && !isMemberCaOrBureau(m)) {
-        return false;
+      if (caOnlyFilter) {
+        if (privacyCfg.targetGroup !== 'all') {
+          if (!isUserInReunionTargetGroup(privacyCfg, m)) return false;
+        } else if (!isMemberCaOrBureau(m)) {
+          return false;
+        }
       }
 
       if (searchQuery.trim()) {
@@ -115,7 +128,7 @@ export default function EventEmargementSection({
 
       return true;
     });
-  }, [members, caOnlyFilter, searchQuery]);
+  }, [members, caOnlyFilter, privacyCfg, searchQuery]);
 
   // Bascule du statut d'émargement d'un membre (présent <-> absent)
   const handleToggleMember = async (member) => {
@@ -284,7 +297,7 @@ export default function EventEmargementSection({
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
-              {/* Filtre CA/Bureau */}
+              {/* Filtre Groupe convoqué (CA / Bureau / Badge) */}
               <button
                 type="button"
                 onClick={() => setCaOnlyFilter(!caOnlyFilter)}
@@ -293,9 +306,9 @@ export default function EventEmargementSection({
                     ? 'bg-cordel-wood text-white border-encre-noire shadow-2xs'
                     : 'bg-white text-stone-700 border-neutral-300 hover:bg-neutral-50'
                 }`}
-                title="Filtrer uniquement les membres du Conseil d'Administration et du Bureau"
+                title="Filtrer uniquement les membres du groupe convoqué"
               >
-                🔒 Membres CA / Bureau
+                🔒 Membres {privacyCfg.targetGroup !== 'all' ? targetGroupLabel : 'CA / Bureau'}
               </button>
 
               {isAdmin && (

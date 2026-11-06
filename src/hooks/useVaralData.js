@@ -9,6 +9,10 @@ import { useTranslation } from '../components/LanguageContext';
 import useConfirm from './useConfirm';
 import { useViewSimulator } from '../context/ViewSimulatorContext';
 import { isMemberCaOrBureau } from '../utils/memberUtils';
+import {
+  resolveReunionPrivacyConfig,
+  canUserSeeReunionReportAndAgenda
+} from '../utils/reunionPrivacyUtils';
 
 /**
  * Catégories par défaut suspendues sur le Varal de documents.
@@ -166,7 +170,7 @@ export default function useVaralData({
   const [instrumentModels, setInstrumentModels] = useState([]);
 
   // Consommation réactive du Simulateur de Vue
-  const { isSimulating, effectiveProfile, effectiveUserTags } = useViewSimulator();
+  const { isSimulating, effectiveProfile, effectiveUserTags, breakGlassActive } = useViewSimulator();
   const activeProfile = isSimulating && effectiveProfile ? effectiveProfile : profileData;
   const activeRole = isSimulating && effectiveProfile ? (effectiveProfile.role || 'membre') : role;
   const activeIsSystemAdmin = isSimulating && effectiveProfile ? Boolean(effectiveProfile.isSystemAdmin) : isSystemAdmin;
@@ -185,6 +189,40 @@ export default function useVaralData({
 
   // Détection des droits d'accès aux documents et réunions restreints au Conseil d'Administration / Bureau
   const canAccessCa = isAuthorized || isMemberCaOrBureau(activeProfile, activeUserTags);
+
+  // Vérifie si un document ou une réunion est accessible selon sa confidentialité (Huis clos / Demi-huis clos / Groupe cible)
+  const canAccessReunionOrDocItem = useMemo(() => {
+    return (item) => {
+      if (!item) return false;
+      const linkedReunion = (item.eventId && allEventsMap[item.eventId]) || item.reunionData || null;
+      const isReunionRelated = item.type === 'reunion' || isReportDoc(item) || Boolean(linkedReunion) || item.visibility === 'restricted';
+
+      if (isReunionRelated) {
+        const source = linkedReunion ? { ...item, ...linkedReunion } : item;
+        const privacyCfg = resolveReunionPrivacyConfig(source);
+        const isStrictlyRestricted =
+          item.visibility === 'restricted' ||
+          privacyCfg.reunionPrivacyMode === 'huis_clos' ||
+          privacyCfg.hideAgendaFromNonTarget === true;
+
+        if (isStrictlyRestricted) {
+          // Ne jamais afficher sur le Varal public de l'accueil des adhérents, uniquement dans le Varal Secrétariat
+          if (!isManagementView) return false;
+          // Et uniquement pour les porteurs du badge concerné (targetGroup)
+          return canUserSeeReunionReportAndAgenda(source, activeProfile, activeUserTags, {
+            isSimulating,
+            breakGlassActive
+          });
+        }
+      }
+
+      const isDocCa = (item.audience === 'ca' || item.portee === 'ca') && item.reunionPrivacyMode !== 'transparent';
+      if (isDocCa && !canAccessCa) {
+        return false;
+      }
+      return true;
+    };
+  }, [allEventsMap, isManagementView, activeProfile, activeUserTags, isSimulating, breakGlassActive, canAccessCa]);
 
   // 1. Écouteur Firestore pour tous les documents réels de l'association (sans troncature)
   useEffect(() => {
@@ -439,10 +477,8 @@ export default function useVaralData({
         catId = 'TutosFabrication';
       }
 
-      // Règle d'audience CA vs Publique :
-      // Les documents à portée 'ca' sont strictement réservés aux membres porteurs du badge CA/Bureau et encadrants
-      const isDocCa = (docItem.audience === 'ca' || docItem.portee === 'ca');
-      if (isDocCa && !canAccessCa) {
+      // Règle d'audience et de confidentialité (Huis clos / Demi-huis clos / CA vs Publique)
+      if (!canAccessReunionOrDocItem(docItem)) {
         return;
       }
 
@@ -508,9 +544,8 @@ export default function useVaralData({
         groups['ComptesRendus'] = [];
       }
       reunions.forEach(reunion => {
-        // Filtrage de portée CA vs Publique pour les réunions
-        const isReunionCa = (reunion.audience === 'ca' || reunion.portee === 'ca');
-        if (isReunionCa && !canAccessCa) {
+        // Filtrage de confidentialité (Huis clos / Demi-huis clos / Groupe cible)
+        if (!canAccessReunionOrDocItem(reunion)) {
           return;
         }
 
@@ -639,7 +674,17 @@ export default function useVaralData({
     }
 
     return groups;
-  }, [documents, instrumentModels, allVaralCategories, eventsWithMedia, reunions, canSeeHidden]);
+  }, [documents, instrumentModels, allVaralCategories, eventsWithMedia, reunions, canSeeHidden, canAccessReunionOrDocItem]);
+
+  const accessibleDocuments = useMemo(
+    () => documents.filter((d) => canAccessReunionOrDocItem(d)),
+    [documents, canAccessReunionOrDocItem]
+  );
+
+  const accessibleReunions = useMemo(
+    () => reunions.filter((r) => canAccessReunionOrDocItem(r)),
+    [reunions, canAccessReunionOrDocItem]
+  );
 
   // 7. Résolution des étiquettes / badges effectifs de l'utilisateur
   const profileTags = activeProfile?.tags;
@@ -895,11 +940,11 @@ export default function useVaralData({
   };
 
   return {
-    documents,
+    documents: accessibleDocuments,
     varalCategories: allVaralCategories,
     loading,
     eventsWithMedia,
-    reunions,
+    reunions: accessibleReunions,
     instrumentModels,
     isAuthorized,
     isManagementView,

@@ -1,6 +1,7 @@
 import React from 'react';
 import { XiloMegaphone } from '../XiloIcons';
 import EventDisciplineBadges from './EventDisciplineBadges';
+import ReunionPrivacyBadge from './ReunionPrivacyBadge';
 import EventThumbnail from './EventThumbnail';
 import { formatLocationShort } from '../../utils/locationUtils';
 import { getSeasonFromDate } from '../../utils/seasonUtils';
@@ -127,6 +128,7 @@ export default function AgendaEventTicketCard({
               <div className="flex items-center gap-1.5 flex-wrap">
                 <span className={`text-[8px] uppercase tracking-widest font-black ${isDarkGreenTicket ? 'text-[#F5EFE6]/85' : 'opacity-65'}`}>{event.type}</span>
                 <EventDisciplineBadges event={event} />
+                <ReunionPrivacyBadge event={event} />
                 {effectiveTemporalTab === 'past' && (
                   <span className="text-[8px] font-black uppercase tracking-wider bg-cordel-master-dark/10 text-encre-noire px-1.5 py-0.5 rounded-[4px_6px_3px_5px] border border-encre-noire/20 select-none inline-flex items-center gap-0.5">
                     <span>🏛️</span>

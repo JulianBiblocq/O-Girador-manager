@@ -1,7 +1,14 @@
 import React from 'react';
 import CordelCard from '../../CordelCard';
 import EventRSVPSection from '../EventRSVPSection';
+import EventReportSection from '../EventReportSection';
 import { useTranslation } from '../../LanguageContext';
+import {
+  resolveReunionPrivacyConfig,
+  canUserParticipateInReunion,
+  canUserSeeReunionReportAndAgenda,
+  getTargetGroupDisplayName
+} from '../../../utils/reunionPrivacyUtils';
 
 /**
  * Onglet 1 : Mon RSVP & Consignes (TabRsvp)
@@ -70,15 +77,47 @@ export default function TabRsvp({
   handleAddToGoogleCalendar,
   handleDownloadIcs,
   onOpenQrCodeModal,
-  hasQrCode
+  hasQrCode,
+  effectiveUserTags = [],
+  tagsDisponibles = []
 }) {
   const { t: contextT } = useTranslation();
   const tr = typeof t === 'function' ? t : contextT;
+
+  const isReunion = event?.type === 'reunion';
+  const privacyCfg = isReunion ? resolveReunionPrivacyConfig(event) : null;
+  const canParticipateReunion = isReunion
+    ? canUserParticipateInReunion(event, profileData, effectiveUserTags)
+    : true;
+  const canSeeReunionReport = isReunion
+    ? canUserSeeReunionReportAndAgenda(event, profileData, effectiveUserTags)
+    : true;
+  const targetGroupLabel = isReunion
+    ? getTargetGroupDisplayName(privacyCfg?.targetGroup, tagsDisponibles, true)
+    : '';
+
+  // Cas Demi-huis clos (Transparente + hideAgendaFromNonTarget) pour un membre hors du groupe convoqué
+  if (isReunion && !canSeeReunionReport) {
+    return (
+      <CordelCard variant="default" useExtremeBorder={true} className="py-5 px-5 bg-amber-50/80 border-dashed text-center">
+        <p className="text-xs font-bold text-amber-950 leading-relaxed">
+          🔒 L&apos;ordre du jour et le compte-rendu de cette réunion sont réservés aux membres du {targetGroupLabel}.
+        </p>
+      </CordelCard>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-4 text-left">
       {/* 1. Vote Individuel de Présence & Inscription (masqué si sondage actif) */}
       {currentConfig?.agendaEnableInscriptions !== false && event?.status !== 'sondage' && !event?.isPoll && (
+        isReunion && !canParticipateReunion ? (
+          <CordelCard variant="default" useExtremeBorder={true} className="py-3.5 px-5 bg-amber-50/75 border-dashed">
+            <p className="text-xs font-bold text-amber-950">
+              👁️ Réunion transparente : tous les adhérents peuvent consulter l&apos;ordre du jour et le compte-rendu ci-dessous, mais seuls les membres du <strong>{targetGroupLabel}</strong> peuvent émarger.
+            </p>
+          </CordelCard>
+        ) : (
         <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
           <div className="flex items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-2 mb-3">
             <h4 className="font-bold text-xs uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
@@ -168,6 +207,18 @@ export default function TabRsvp({
             handleAddToGoogleCalendar={handleAddToGoogleCalendar}
             handleDownloadIcs={handleDownloadIcs}
             mode="rsvp"
+          />
+        </CordelCard>
+        )
+      )}
+
+      {/* Section Ordre du Jour, Boîte à idées & Compte-Rendu pour les réunions autorisées */}
+      {isReunion && canSeeReunionReport && (
+        <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
+          <EventReportSection
+            event={event}
+            user={user}
+            profileData={profileData}
           />
         </CordelCard>
       )}

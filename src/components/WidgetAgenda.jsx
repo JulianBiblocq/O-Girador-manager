@@ -38,6 +38,8 @@ import {
   resolveSlotRegistrationDeadline
 } from '../utils/eventScheduleUtils';
 import { notifyNewAgendaEventOrPoll, triggerFramaspaceEventProvisioning } from '../utils/agendaNotificationUtils';
+import { canUserSeeReunionInAgenda, resolveReunionPrivacyConfig } from '../utils/reunionPrivacyUtils';
+import ReunionPrivacyBadge from './agenda/ReunionPrivacyBadge';
 
 const formatDateWithDay = (dateStr, includeYear = true, locale = 'fr') => {
   const date = new Date(dateStr);
@@ -317,10 +319,34 @@ export default function WidgetAgenda({
   const currentSeason = useMemo(() => getCurrentSeason(saisonDebutMois), [saisonDebutMois]);
   const previousSeason = useMemo(() => getPreviousSeason(currentSeason), [currentSeason]);
 
+  // Consommation du simulateur de vue (positionné en amont pour le filtrage Huis Clos)
+  const { isSimulating, effectiveProfile, effectiveUserTags: simTags } = useViewSimulator();
+  const currentProfile = isSimulating && effectiveProfile ? effectiveProfile : (profileData || { role, isSystemAdmin, groupId });
+  const breakGlassActive = Boolean(currentProfile?.breakGlassActive || profileData?.breakGlassActive);
+
+  const effectiveUserTags = useMemo(() => {
+    if (isSimulating && simTags && simTags.length > 0) return simTags;
+    return resolveEffectiveUserTags(currentProfile?.tags || [], tagsDisponibles);
+  }, [isSimulating, simTags, currentProfile?.tags, tagsDisponibles]);
+
+  const isAuthorized = useMemo(() => {
+    return canManageEvents(currentProfile, permissionsMatrice, effectiveUserTags);
+  }, [currentProfile, permissionsMatrice, effectiveUserTags]);
+
+  // Filtrage strict Huis Clos : exclure les réunions et sondages à guichet fermé pour les membres hors groupe cible
+  const privacyFilteredEvents = useMemo(() => {
+    return (Array.isArray(events) ? events : []).filter((ev) =>
+      canUserSeeReunionInAgenda(ev, currentProfile, effectiveUserTags, { isSimulating, breakGlassActive })
+    );
+  }, [events, currentProfile, effectiveUserTags, isSimulating, breakGlassActive]);
+
   // Séparation étanche et tri chronologique différencié :
   // - Mode « À venir » : Tri chronologique croissant (ASC) — l'échéance la plus proche en tête
   // - Mode « Passés » : Tri antéchronologique décroissant (DESC) — l'événement le plus récent en tête
-  const { upcomingEvents, pastEvents } = useMemo(() => splitEventsByTime(events), [events]);
+  const { upcomingEvents, pastEvents } = useMemo(
+    () => splitEventsByTime(privacyFilteredEvents),
+    [privacyFilteredEvents]
+  );
 
   const filterFn = (e) => {
     // Filtre de discipline (percussion vs danse)
@@ -403,21 +429,13 @@ export default function WidgetAgenda({
     description: '',
     latitude: null,
     longitude: null,
-    linkedPatterns: []
+    linkedPatterns: [],
+    targetGroup: 'all',
+    reunionPrivacyMode: 'public',
+    hideAgendaFromNonTarget: false,
+    audience: 'publique',
+    portee: 'publique'
   });
-
-  // Consommation du simulateur de vue
-  const { isSimulating, effectiveProfile, effectiveUserTags: simTags } = useViewSimulator();
-  const currentProfile = isSimulating && effectiveProfile ? effectiveProfile : (profileData || { role, isSystemAdmin, groupId });
-
-  const effectiveUserTags = useMemo(() => {
-    if (isSimulating && simTags && simTags.length > 0) return simTags;
-    return resolveEffectiveUserTags(currentProfile?.tags || [], tagsDisponibles);
-  }, [isSimulating, simTags, currentProfile?.tags, tagsDisponibles]);
-
-  const isAuthorized = useMemo(() => {
-    return canManageEvents(currentProfile, permissionsMatrice, effectiveUserTags);
-  }, [currentProfile, permissionsMatrice, effectiveUserTags]);
 
   // Écoute de la passerelle Établi -> Agenda pour pré-remplir la création d'un atelier
   useEffect(() => {
@@ -501,8 +519,8 @@ export default function WidgetAgenda({
       }
       
       if (targetEventId) {
-        if (events.length > 0) {
-          const matchedEvent = events.find(e => e.id === targetEventId);
+        if (privacyFilteredEvents.length > 0) {
+          const matchedEvent = privacyFilteredEvents.find(e => e.id === targetEventId);
           if (matchedEvent) {
             setSelectedEvent(matchedEvent);
             if (onFocusModeChange) {
@@ -535,7 +553,7 @@ export default function WidgetAgenda({
     handlePopState();
 
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [events, loading, setSelectedEvent, onFocusModeChange]);
+  }, [privacyFilteredEvents, loading, setSelectedEvent, onFocusModeChange]);
 
   const handleChange = async (e) => {
     const { name, value } = e.target;
@@ -629,7 +647,12 @@ export default function WidgetAgenda({
       setlist: [],
       linkedPatterns: [],
       specialiteAtelier: 'general',
-      programmeFabrication: null
+      programmeFabrication: null,
+      targetGroup: 'all',
+      reunionPrivacyMode: 'public',
+      hideAgendaFromNonTarget: false,
+      audience: 'publique',
+      portee: 'publique'
     });
     setIsAdding(true);
   };
@@ -690,6 +713,10 @@ export default function WidgetAgenda({
           ? resolveSlotRegistrationDeadline(dateVal, formData)
           : '';
 
+        const reunionPrivacy = formData.type === 'reunion'
+          ? resolveReunionPrivacyConfig(formData)
+          : null;
+
         const newDocRef = await addDoc(collection(db, 'events'), {
           titre: formData.titre,
           type: formData.type,
@@ -699,6 +726,13 @@ export default function WidgetAgenda({
           groupId: groupId,
           inscriptions: [],
           lieu: activeConfig.agendaEnableAdresse ? formData.lieu || '' : '',
+          ...(reunionPrivacy ? {
+            targetGroup: reunionPrivacy.targetGroup,
+            reunionPrivacyMode: reunionPrivacy.reunionPrivacyMode,
+            hideAgendaFromNonTarget: reunionPrivacy.hideAgendaFromNonTarget,
+            audience: reunionPrivacy.audience,
+            portee: reunionPrivacy.portee
+          } : {}),
           horairesPassages: formData.type === 'prestation' ? formData.horairesPassages || '' : '',
           horaireCovoiturage: activeConfig.agendaEnableCarpool ? formData.horaireCovoiturage || '' : '',
           niveauRequis: formData.type === 'prestation' ? formData.niveauRequis || 'tous' : 'tous',
@@ -806,6 +840,7 @@ export default function WidgetAgenda({
           if (i === 0) firstCreatedEventId = createdId;
         }
         if (formData.sendPushNotification !== false && firstCreatedEventId) {
+          const reunionPrivacy = formData.type === 'reunion' ? resolveReunionPrivacyConfig(formData) : null;
           await notifyNewAgendaEventOrPoll({
             groupId,
             creatorId: user?.uid,
@@ -814,6 +849,10 @@ export default function WidgetAgenda({
             isPoll: true,
             validDatesCount: validDates.length,
             firstCreatedEventId,
+            audience: reunionPrivacy?.audience,
+            targetGroup: reunionPrivacy?.targetGroup,
+            reunionPrivacyMode: reunionPrivacy?.reunionPrivacyMode,
+            hideAgendaFromNonTarget: reunionPrivacy?.hideAgendaFromNonTarget,
             pollRestrictionType: formData.pollRestrictionType,
             pollTarget: formData.pollTarget
           });
@@ -821,6 +860,7 @@ export default function WidgetAgenda({
       } else {
         const createdEventId = await createSingleDoc(formData.date, false);
         if (formData.sendPushNotification !== false && createdEventId) {
+          const reunionPrivacy = formData.type === 'reunion' ? resolveReunionPrivacyConfig(formData) : null;
           await notifyNewAgendaEventOrPoll({
             groupId,
             creatorId: user?.uid,
@@ -828,7 +868,11 @@ export default function WidgetAgenda({
             description: formData.description,
             isPoll: false,
             dateStr: formData.date,
-            firstCreatedEventId: createdEventId
+            firstCreatedEventId: createdEventId,
+            audience: reunionPrivacy?.audience,
+            targetGroup: reunionPrivacy?.targetGroup,
+            reunionPrivacyMode: reunionPrivacy?.reunionPrivacyMode,
+            hideAgendaFromNonTarget: reunionPrivacy?.hideAgendaFromNonTarget
           });
         }
       }
@@ -852,7 +896,7 @@ export default function WidgetAgenda({
 
   // Find the currently selected event inside the synchronized events state 
   // to feed the child component with real-time Firestore updates
-  const safeEvents = Array.isArray(events) ? events : [];
+  const safeEvents = Array.isArray(privacyFilteredEvents) ? privacyFilteredEvents : [];
   const activeEvent = selectedEvent 
     ? safeEvents.find(e => e.id === selectedEvent.id) || selectedEvent 
     : null;
@@ -1166,6 +1210,7 @@ export default function WidgetAgenda({
                         <div className="flex items-center gap-2 flex-wrap">
                           <span>{event.titre}</span>
                           <EventDisciplineBadges event={event} compact={true} />
+                          <ReunionPrivacyBadge event={event} tagsDisponibles={tagsDisponibles} />
                           {effectiveTemporalTab === 'past' && (
                             <span 
                               className="text-[8px] font-black uppercase tracking-wider bg-cordel-master-dark/10 text-encre-noire px-1.5 py-0.5 rounded-[4px_6px_3px_5px] border border-encre-noire/20 select-none inline-flex items-center gap-0.5" 

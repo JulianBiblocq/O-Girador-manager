@@ -9,6 +9,7 @@ import useConfirm from '../hooks/useConfirm';
 import { notifyMembersByTag } from '../utils/inAppNotificationService';
 import { getEffectiveMemberTags, isMemberCaOrBureau } from '../utils/memberUtils';
 import { canManageReunions } from '../utils/permissionUtils';
+import { canUserSeeReunionReportAndAgenda } from '../utils/reunionPrivacyUtils';
 
 export default function ReunionAgendaManager({ event, user, profileData }) {
   const { confirm } = useConfirm();
@@ -214,6 +215,10 @@ export default function ReunionAgendaManager({ event, user, profileData }) {
   const validatedTopics = allSujets.filter(s => s.status === 'valide');
   const pendingTopics = allSujets.filter(s => isAdmin ? s.status === 'attente' : (s.status === 'attente' && s.auteurId === user.uid));
   const rejectedTopics = allSujets.filter(s => isAdmin ? s.status === 'refuse' : (s.status === 'refuse' && s.auteurId === user.uid));
+
+  if (!canUserSeeReunionReportAndAgenda(event, profileData, getEffectiveMemberTags(profileData))) {
+    return null;
+  }
 
   return (
     <div className="flex flex-col gap-4 text-left select-none">

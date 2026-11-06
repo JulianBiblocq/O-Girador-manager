@@ -39,6 +39,11 @@ import { canonicalizeGroupId } from '../utils/tenantUtils';
 import { parseDateLinear, formatGoogleCalendarDate, openGoogleCalendar } from '../utils/calendarUtils';
 import { isMemberArchived, getEffectiveMemberTags } from '../utils/memberUtils';
 import { isPastEvent } from '../utils/dateUtils';
+import {
+  resolveReunionPrivacyConfig,
+  canUserSeeReunionReportAndAgenda
+} from '../utils/reunionPrivacyUtils';
+import ReunionPrivacyBadge from './agenda/ReunionPrivacyBadge';
 
 export default function EventDetails({ event, user, profileData, groupId: propGroupId, onNavigateToView, onClose, onPrev, onNext, viewMode: _viewMode, setViewMode: _setViewMode, onGoToStageLayoutEditor }) {
   const { t } = useTranslation();
@@ -103,9 +108,18 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
   const [allUsers, setAllUsers] = useState([]);
 
   // Construction standardisée de l'état du formulaire à partir d'un événement
-  const buildEditFormFromEvent = useCallback((evt) => ({
+  const buildEditFormFromEvent = useCallback((evt) => {
+    const reunionPrivacy = evt?.type === 'reunion' ? resolveReunionPrivacyConfig(evt) : null;
+    return {
     titre: evt?.titre || '',
     type: evt?.type || 'repetition',
+    targetGroup: reunionPrivacy ? reunionPrivacy.targetGroup : (evt?.targetGroup || 'all'),
+    reunionPrivacyMode: reunionPrivacy ? reunionPrivacy.reunionPrivacyMode : (evt?.reunionPrivacyMode || 'public'),
+    hideAgendaFromNonTarget: reunionPrivacy ? reunionPrivacy.hideAgendaFromNonTarget : Boolean(evt?.hideAgendaFromNonTarget),
+    audience: reunionPrivacy ? reunionPrivacy.audience : (evt?.audience || 'publique'),
+    portee: reunionPrivacy ? reunionPrivacy.portee : (evt?.portee || 'publique'),
+    pollRestrictionType: evt?.pollRestrictionType || (reunionPrivacy && reunionPrivacy.targetGroup !== 'all' ? 'tag' : 'aucun'),
+    pollTarget: evt?.pollTarget || (reunionPrivacy && reunionPrivacy.targetGroup !== 'all' ? (reunionPrivacy.targetGroup === 'ca' ? 'CA' : (reunionPrivacy.targetGroup === 'bureau' ? 'Bureau' : reunionPrivacy.targetGroup)) : ''),
     date: evt?.date || '',
     dateFin: evt?.dateFin || '',
     lieu: evt?.lieu || '',
@@ -191,7 +205,8 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
       referentGroupeId: '',
       referentsPupitres: []
     }
-  }), []);
+    };
+  }, []);
 
   const [editForm, setEditForm] = useState(() => buildEditFormFromEvent(activeEvent));
   const hasInitializedPollDatesRef = useRef(false);
@@ -864,6 +879,8 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
   }, [isAuthorized, profileData?.role, permissionsMatrice, effectiveUserTags, tagsDisponibles]);
 
   const canAccessAdminTab = isAuthorized || hasFinanceAccess;
+  const canSeeReunionDetails = (activeEvent || event)?.type !== 'reunion' ||
+    canUserSeeReunionReportAndAgenda(activeEvent || event, profileData, effectiveUserTags);
 
   const getPupitreName = (inst) => {
     if (!inst) return null;
@@ -1090,6 +1107,9 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
             : ['atelier', 'repetition', 'stage'].includes(editForm.type));
       const savedDropUrl = (editForm.dropUrl || editForm.lienDepotMedias || '').trim();
       const savedVideoUrl = (editForm.videoUrl || '').trim();
+      const savedReunionPrivacy = editForm.type === 'reunion'
+        ? resolveReunionPrivacyConfig(editForm)
+        : null;
 
       const sharedUpdates = {
         titre: editForm.titre,
@@ -1098,6 +1118,17 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
         lieu: updatedLieu,
         lieuSimple: updatedLieu,
         lieuId: updatedLieuId,
+        ...(savedReunionPrivacy ? {
+          targetGroup: savedReunionPrivacy.targetGroup,
+          reunionPrivacyMode: savedReunionPrivacy.reunionPrivacyMode,
+          hideAgendaFromNonTarget: savedReunionPrivacy.hideAgendaFromNonTarget,
+          audience: savedReunionPrivacy.audience,
+          portee: savedReunionPrivacy.portee,
+          pollRestrictionType: savedReunionPrivacy.targetGroup === 'all' ? 'aucun' : 'tag',
+          pollTarget: savedReunionPrivacy.targetGroup === 'all'
+            ? ''
+            : (savedReunionPrivacy.targetGroup === 'ca' ? 'CA' : (savedReunionPrivacy.targetGroup === 'bureau' ? 'Bureau' : savedReunionPrivacy.targetGroup))
+        } : {}),
         horairesPassages: (editForm.type === 'prestation') ? editForm.horairesPassages || '' : '',
         horaireCovoiturage: editConfig.agendaEnableCarpool ? editForm.horaireCovoiturage || '' : '',
         niveauRequis: (editForm.type === 'prestation' || editForm.type === 'stage' || editForm.type === 'repetition' || editForm.type === 'atelier') ? editForm.niveauRequis || 'tous' : 'tous',
@@ -1901,6 +1932,8 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
               allUsers={effectiveAllUsers}
               pupitresList={pupitresList}
               linkedInstruments={linkedInstruments}
+              effectiveUserTags={effectiveUserTags}
+              tagsDisponibles={tagsDisponibles}
               onNavigateToEventId={(targetId) => {
                 if (typeof window !== 'undefined' && targetId) {
                   const searchParams = new URLSearchParams(window.location.search);
@@ -1927,6 +1960,9 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
 
               {/* Badges Disciplines (Percu / Danse) */}
               <EventDisciplineBadges includesPercussion={event.includesPercussion} includesDance={event.includesDance} size="normal" />
+
+              {/* Badge de confidentialité pour les réunions */}
+              <ReunionPrivacyBadge event={activeEvent || event} tagsDisponibles={tagsDisponibles} />
 
               {/* Badges de Statut */}
               {event.status === 'a_confirmer' && (
@@ -1972,30 +2008,34 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
           </div>
 
           {/* Section Médias & Captations (Dépôt Vidéo Adhérent & Restitution YouTube) */}
-          <EventMediaCaptureSection
-            event={activeEvent || event}
-            defaultDropUrl={defaultDropUrl}
-          />
+          {canSeeReunionDetails && (
+            <EventMediaCaptureSection
+              event={activeEvent || event}
+              defaultDropUrl={defaultDropUrl}
+            />
+          )}
 
           {/* Navigation par Onglets Thématiques Cordel */}
-          <EventTabsNav
-            activeTab={activeTab}
-            setActiveTab={handleSelectTab}
-            canAccessAdminTab={canAccessAdminTab}
-            attendeesCount={((sanitizedEvent.inscriptions || []).filter(ins => ins.status === 'present').length) + ((sanitizedEvent.invitesExternes || []).length)}
-            carsCount={(event.covoiturage?.voitures || []).length}
-            hasProgram={Boolean(
-              (event.linkedPatterns && event.linkedPatterns.length > 0) ||
-              (setlist && setlist.length > 0) ||
-              event.isStageLayoutPublished ||
-              (event.volunteerShifts && event.volunteerShifts.length > 0) ||
-              ((event.type === 'atelier' || event.type === 'stage') && event.specialiteAtelier === 'fabrication')
-            )}
-          />
+          {canSeeReunionDetails && (
+            <EventTabsNav
+              activeTab={activeTab}
+              setActiveTab={handleSelectTab}
+              canAccessAdminTab={canAccessAdminTab}
+              attendeesCount={((sanitizedEvent.inscriptions || []).filter(ins => ins.status === 'present').length) + ((sanitizedEvent.invitesExternes || []).length)}
+              carsCount={(event.covoiturage?.voitures || []).length}
+              hasProgram={Boolean(
+                (event.linkedPatterns && event.linkedPatterns.length > 0) ||
+                (setlist && setlist.length > 0) ||
+                event.isStageLayoutPublished ||
+                (event.volunteerShifts && event.volunteerShifts.length > 0) ||
+                ((event.type === 'atelier' || event.type === 'stage') && event.specialiteAtelier === 'fabrication')
+              )}
+            />
+          )}
 
           {/* Contenu de l'Onglet Actif */}
           <div className="mt-2">
-            {activeTab === 'rsvp' && event.status !== 'sondage' && (
+            {((activeTab === 'rsvp' && (event.status !== 'sondage' || event.type === 'reunion')) || !canSeeReunionDetails) && (
               <TabRsvp
                 event={sanitizedEvent}
                 user={user}
@@ -2057,6 +2097,8 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
                 handleDownloadIcs={handleDownloadIcs}
                 onOpenQrCodeModal={handleOpenQrCodeModal}
                 hasQrCode={hasQrCode}
+                effectiveUserTags={effectiveUserTags}
+                tagsDisponibles={tagsDisponibles}
               />
             )}
 
@@ -2199,7 +2241,7 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
               />
             )}
 
-            {activeTab === 'discussion' && (
+            {canSeeReunionDetails && activeTab === 'discussion' && (
               <div id="event-tab-discussion" className="mt-2">
                 <EventCommentsSection
                   event={activeEvent || event}
@@ -2214,7 +2256,7 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
     )}
 
       {/* SECTION : Discussion & Questions Logistiques (affichée en pied de fiche si un autre onglet est actif) */}
-      {activeTab !== 'discussion' && (
+      {canSeeReunionDetails && activeTab !== 'discussion' && (
         <div className="mt-6">
           <EventCommentsSection
             event={activeEvent || event}

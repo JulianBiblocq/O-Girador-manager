@@ -3,6 +3,7 @@ import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import LocationSelector from '../LocationSelector';
 import ReunionPollSlotsEditor from './ReunionPollSlotsEditor';
+import ReunionPrivacySelector from './ReunionPrivacySelector';
 import { useTranslation } from '../LanguageContext';
 
 /**
@@ -16,6 +17,13 @@ export default function ReunionCreationFormCard({
   setTitle,
   audience,
   setAudience,
+  targetGroup = 'all',
+  setTargetGroup,
+  reunionPrivacyMode = 'public',
+  setReunionPrivacyMode,
+  hideAgendaFromNonTarget = false,
+  setHideAgendaFromNonTarget,
+  tagsDisponibles = [],
   lieu,
   setLieu,
   setLieuId,
@@ -79,60 +87,41 @@ export default function ReunionCreationFormCard({
       </div>
 
       <form onSubmit={onSubmit} className="flex flex-col gap-2.5 text-xs">
-        {/* Ligne compacte Titre + Portée */}
-        <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end">
-          <div className="flex flex-col gap-0.5 sm:col-span-7">
-            <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              {t('common.title') || "Titre de la réunion"} *
-            </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
-              placeholder={t('governance.placeholderMeetingTitle')}
-              className="theme-input bg-white w-full py-1 text-xs font-bold"
-            />
-          </div>
-
-          <div className="flex flex-col gap-0.5 sm:col-span-5">
-            <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              Portée ({audience === 'ca' ? 'Restreinte CA' : 'Publique'})
-            </label>
-            <div className="grid grid-cols-2 gap-1">
-              <button
-                type="button"
-                onClick={() => setAudience('publique')}
-                title="Visible par l'ensemble des adhérents"
-                className={`py-1 px-1.5 text-[9.5px] font-black uppercase rounded border transition-all cursor-pointer truncate ${
-                  audience === 'publique'
-                    ? 'bg-[var(--color-cordel-vert)] text-white border-encre-noire shadow-2xs'
-                    : 'bg-white text-stone-700 border-neutral-300 hover:bg-neutral-50'
-                }`}
-              >
-                👥 Publique
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setAudience('ca');
-                  if (creationMode === 'poll' && pollRestrictionType === 'aucun') {
-                    setPollRestrictionType('tag');
-                    setPollTarget('CA');
-                  }
-                }}
-                title="Visible uniquement par les membres du CA et du Bureau"
-                className={`py-1 px-1.5 text-[9.5px] font-black uppercase rounded border transition-all cursor-pointer truncate ${
-                  audience === 'ca'
-                    ? 'bg-cordel-wood text-white border-encre-noire shadow-2xs'
-                    : 'bg-white text-stone-700 border-neutral-300 hover:bg-neutral-50'
-                }`}
-              >
-                🔒 CA / Bureau
-              </button>
-            </div>
-          </div>
+        {/* Titre de la réunion */}
+        <div className="flex flex-col gap-0.5">
+          <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
+            {t('common.title') || "Titre de la réunion"} *
+          </label>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+            placeholder={t('governance.placeholderMeetingTitle')}
+            className="theme-input bg-white w-full py-1 text-xs font-bold"
+          />
         </div>
+
+        {/* Sélecteur Participants & Confidentialité avec pré-sélection automatique */}
+        <ReunionPrivacySelector
+          targetGroup={targetGroup || (audience === 'ca' ? 'ca' : 'all')}
+          reunionPrivacyMode={reunionPrivacyMode}
+          hideAgendaFromNonTarget={hideAgendaFromNonTarget}
+          tagsDisponibles={tagsDisponibles}
+          disabled={isSubmitting}
+          onChange={(updates) => {
+            if (setTargetGroup) setTargetGroup(updates.targetGroup);
+            if (setReunionPrivacyMode) setReunionPrivacyMode(updates.reunionPrivacyMode);
+            if (setHideAgendaFromNonTarget) setHideAgendaFromNonTarget(Boolean(updates.hideAgendaFromNonTarget));
+            if (setAudience) setAudience(updates.audience || 'publique');
+            if (setPollRestrictionType && updates.pollRestrictionType !== undefined) {
+              setPollRestrictionType(updates.pollRestrictionType);
+            }
+            if (setPollTarget && updates.pollTarget !== undefined) {
+              setPollTarget(updates.pollTarget);
+            }
+          }}
+        />
 
         {/* Lieu de la réunion */}
         <div className="flex flex-col gap-0.5">

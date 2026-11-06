@@ -1,8 +1,13 @@
 import { collection, query, where, getDocs, addDoc, doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase.js';
 import { resolveCategory, isUserCategoryMatchingEvent } from './categoryUtils.js';
-import { isMemberCaOrBureau } from './memberUtils.js';
 import { evaluateDeadlineSummaryForEvent } from './deadlineSummaryAutomationUtils.js';
+import {
+  resolveReunionPrivacyConfig,
+  canUserSeeReunionInAgenda,
+  canUserSeeReunionReportAndAgenda,
+  isUserInReunionTargetGroup
+} from './reunionPrivacyUtils.js';
 
 /**
  * Helper: Vérifie si un membre est éligible pour recevoir la relance d'une règle spécifique
@@ -10,6 +15,15 @@ import { evaluateDeadlineSummaryForEvent } from './deadlineSummaryAutomationUtil
  */
 function isUserEligibleForRule(uData, rulePublicCible, event, customCategories, eventInscriptions = []) {
   if (uData.statutActuel === 'archived') return false;
+
+  // 0. Confidentialité des réunions (Huis clos et groupe convoqué)
+  if (event?.type === 'reunion') {
+    if (!canUserSeeReunionInAgenda(event, uData, uData.tags)) return false;
+    const privacyCfg = resolveReunionPrivacyConfig(event);
+    if (privacyCfg.targetGroup !== 'all' && !isUserInReunionTargetGroup(event, uData, uData.tags)) {
+      return false;
+    }
+  }
 
   // 1. Filtrage "present_only" (strictement les inscrits ayant le statut "present")
   if (rulePublicCible === 'present_only') {
@@ -366,15 +380,19 @@ export async function triggerEventStatusAutomation(groupId, event, triggerType) 
           const isPresent = eventInscriptions.some(ins => ins.userId === docSnap.id && ins.status === 'present');
           if (isPresent) interestedUsersForRule.push({ id: docSnap.id, ...uData });
         } else if (triggerType === 'on_report_published') {
-          // Filtrage strict selon l'audience de la réunion :
-          // Si réunion CA / Bureau : strictement les membres du CA ou du Bureau
-          const isCA = (event.audience === 'ca' || event.portee === 'ca');
-          if (isCA) {
-            if (isMemberCaOrBureau(uData, uData.tags)) {
+          // Filtrage strict selon la confidentialité de la réunion et du compte-rendu :
+          // Si réunion en huis_clos ou hideAgendaFromNonTarget : uniquement les membres du targetGroup
+          const privacyCfg = resolveReunionPrivacyConfig(event);
+          const isReportRestricted =
+            privacyCfg.reunionPrivacyMode === 'huis_clos' ||
+            privacyCfg.hideAgendaFromNonTarget === true ||
+            (!event.reunionPrivacyMode && (event.audience === 'ca' || event.portee === 'ca'));
+          if (isReportRestricted) {
+            if (canUserSeeReunionReportAndAgenda(event, uData, uData.tags)) {
               interestedUsersForRule.push({ id: docSnap.id, ...uData });
             }
           } else {
-            // Réunion publique : selon le publicCible de la règle
+            // Réunion publique ou transparente avec CR ouvert : selon le publicCible de la règle
             if (isUserEligibleForRule(uData, rulePublicCible, event, customCategories, eventInscriptions)) {
               interestedUsersForRule.push({ id: docSnap.id, ...uData });
             }

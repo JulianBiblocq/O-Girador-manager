@@ -14,6 +14,13 @@ import EventEmargementSection from './EventEmargementSection';
 import ReportValidatorsSelector from './ReportValidatorsSelector';
 import { getEffectiveMemberTags, getCanonicalTagKey, isMemberCaOrBureau } from '../../utils/memberUtils';
 import { canManageReunions } from '../../utils/permissionUtils';
+import {
+  resolveReunionPrivacyConfig,
+  canUserSeeReunionReportAndAgenda,
+  getTargetGroupDisplayName,
+  getDefaultPrivacyForTargetGroup
+} from '../../utils/reunionPrivacyUtils';
+import ReunionPrivacyBadge from '../agenda/ReunionPrivacyBadge';
 
 export default function EventReportSection({ event, user, profileData, associationSettings }) {
   const { t } = useTranslation();
@@ -387,15 +394,33 @@ export default function EventReportSection({ event, user, profileData, associati
     }
   };
 
-  // Modifier la portée de la réunion (CA vs Publique)
-  const handleUpdateAudience = async (newAudience) => {
-    setLocalAudience(newAudience);
+  // Modifier la portée / le groupe cible de la réunion (et propager aux créneaux du sondage le cas échéant)
+  const handleUpdateAudience = async (newTargetOrAudience) => {
+    const preset = getDefaultPrivacyForTargetGroup(newTargetOrAudience);
+    setLocalAudience(preset.audience);
     try {
+      const updates = {
+        audience: preset.audience,
+        portee: preset.portee,
+        targetGroup: preset.targetGroup,
+        reunionPrivacyMode: preset.reunionPrivacyMode,
+        hideAgendaFromNonTarget: preset.hideAgendaFromNonTarget
+      };
       const eventRef = doc(db, 'events', event.id);
-      await updateDoc(eventRef, {
-        audience: newAudience,
-        portee: newAudience
-      });
+      await updateDoc(eventRef, updates);
+
+      if (event.pollGroupId) {
+        const pollConstraints = [where('pollGroupId', '==', event.pollGroupId)];
+        if (event.groupId) pollConstraints.push(where('groupId', '==', event.groupId));
+        const pollSnap = await getDocs(query(collection(db, 'events'), ...pollConstraints));
+        if (!pollSnap.empty) {
+          const batch = writeBatch(db);
+          pollSnap.forEach((dSnap) => {
+            if (dSnap.id !== event.id) batch.update(dSnap.ref, updates);
+          });
+          await batch.commit();
+        }
+      }
     } catch (err) {
       console.error("EventReportSection - Erreur mise à jour portée réunion :", err);
     }
@@ -866,6 +891,22 @@ export default function EventReportSection({ event, user, profileData, associati
   const isUserPresent = presents.some(ins => ins.userId === user.uid);
   const userVote = approvals[user.uid];
 
+  const privacyCfg = resolveReunionPrivacyConfig(event);
+  const canSeeReportAndAgenda =
+    isRedacteur ||
+    canUserSeeReunionReportAndAgenda(event, profileData, effectiveMemberTags);
+
+  if (!canSeeReportAndAgenda) {
+    const groupLabel = getTargetGroupDisplayName(privacyCfg.targetGroup, availableTags, true);
+    return (
+      <CordelCard variant="default" useExtremeBorder={false} className="p-4 bg-amber-50/75 border-dashed text-center">
+        <p className="text-xs font-bold text-amber-950">
+          🔒 L&apos;ordre du jour et le compte-rendu de cette réunion sont réservés aux membres du {groupLabel}.
+        </p>
+      </CordelCard>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-5 text-left">
       
@@ -929,8 +970,8 @@ export default function EventReportSection({ event, user, profileData, associati
             <span className="italic text-neutral-400">Aucun rédacteur désigné</span>
           )}
 
-          {/* Sélecteur de Portée : CA vs Publique */}
-          <div className="flex items-center gap-1.5">
+          {/* Sélecteur de Portée : Publique vs CA vs Bureau */}
+          <div className="flex items-center gap-1.5 flex-wrap">
             <span className="font-extrabold uppercase text-[9px] text-cordel-master-dark opacity-75">
               Portée :
             </span>
@@ -938,9 +979,9 @@ export default function EventReportSection({ event, user, profileData, associati
               <div className="flex p-0.5 bg-white rounded border border-cordel-master-dark/20">
                 <button
                   type="button"
-                  onClick={() => handleUpdateAudience('publique')}
+                  onClick={() => handleUpdateAudience('all')}
                   className={`px-2 py-0.5 text-[9px] font-extrabold uppercase rounded transition-all cursor-pointer ${
-                    localAudience !== 'ca'
+                    privacyCfg.targetGroup === 'all' && privacyCfg.reunionPrivacyMode === 'public'
                       ? 'bg-[var(--color-cordel-vert)] text-white shadow-2xs'
                       : 'text-stone-600 hover:text-stone-900'
                   }`}
@@ -952,23 +993,29 @@ export default function EventReportSection({ event, user, profileData, associati
                   type="button"
                   onClick={() => handleUpdateAudience('ca')}
                   className={`px-2 py-0.5 text-[9px] font-extrabold uppercase rounded transition-all cursor-pointer ${
-                    localAudience === 'ca'
+                    privacyCfg.targetGroup === 'ca'
+                      ? 'bg-[var(--color-cordel-ocre)] text-white shadow-2xs'
+                      : 'text-stone-600 hover:text-stone-900'
+                  }`}
+                  title="Conseil d'Administration (Transparente par défaut)"
+                >
+                  🏛️ CA
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleUpdateAudience('bureau')}
+                  className={`px-2 py-0.5 text-[9px] font-extrabold uppercase rounded transition-all cursor-pointer ${
+                    privacyCfg.targetGroup === 'bureau'
                       ? 'bg-cordel-wood text-white shadow-2xs'
                       : 'text-stone-600 hover:text-stone-900'
                   }`}
-                  title="Visible uniquement par les membres porteurs du badge CA/Bureau, archivage restreint"
+                  title="Bureau uniquement (Huis clos par défaut)"
                 >
-                  🔒 CA / Bureau
+                  🔒 Bureau (Huis clos)
                 </button>
               </div>
             ) : (
-              <span className={`theme-stamp-badge text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${
-                localAudience === 'ca'
-                  ? 'bg-amber-100 text-amber-900 border-amber-500'
-                  : 'bg-[var(--color-cordel-vert)]/10 text-[var(--color-cordel-vert)] border-[var(--color-cordel-vert)]/40'
-              }`}>
-                {localAudience === 'ca' ? '🔒 Réunion de CA / Bureau' : '👥 Réunion Publique'}
-              </span>
+              <ReunionPrivacyBadge event={event} tagsDisponibles={availableTags} showPublic={true} />
             )}
           </div>
         </div>

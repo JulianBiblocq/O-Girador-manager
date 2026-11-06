@@ -11,6 +11,8 @@ import { checkAndExecuteAutoValidation } from '../utils/reportPublicationUtils';
 import { getEffectiveMemberTags, isMemberCaOrBureau } from '../utils/memberUtils';
 import { canManageReunions } from '../utils/permissionUtils';
 import { notifyNewAgendaEventOrPoll } from '../utils/agendaNotificationUtils';
+import { canUserSeeReunionInAgenda } from '../utils/reunionPrivacyUtils';
+import ReunionPrivacyBadge from './agenda/ReunionPrivacyBadge';
 
 /**
  * Composant de gestion des Réunions dans le Studio / Gouvernance.
@@ -26,8 +28,12 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
   // Mode de création : 'date' (date fixe) ou 'poll' (sondage multi-dates)
   const [creationMode, setCreationMode] = useState('date');
   
-  // Portée de la réunion : 'publique' (toute l'asso) ou 'ca' (CA / Bureau restreint)
+  // Portée & Confidentialité de la réunion (Groupe convoqué, Mode de visibilité, Masquage ODJ/CR)
   const [audience, setAudience] = useState('publique');
+  const [targetGroup, setTargetGroup] = useState('all');
+  const [reunionPrivacyMode, setReunionPrivacyMode] = useState('public');
+  const [hideAgendaFromNonTarget, setHideAgendaFromNonTarget] = useState(false);
+  const [tagsDisponibles, setTagsDisponibles] = useState([]);
 
   // Champs généraux de création
   const [title, setTitle] = useState('');
@@ -99,6 +105,7 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
         const data = docSnap.data();
         const lieux = Array.isArray(data.lieuxImportants) ? data.lieuxImportants : [];
         setLieuxImportants(lieux);
+        setTagsDisponibles(Array.isArray(data.tagsDisponibles) ? data.tagsDisponibles : []);
 
         // Pré-remplissage automatique du lieu par défaut pour les réunions si configuré
         const defaultLieuId = data.defaultLocationsByEventType?.reunion;
@@ -195,6 +202,9 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
             groupId: groupId,
             audience: audience,
             portee: audience,
+            targetGroup: targetGroup || 'all',
+            reunionPrivacyMode: reunionPrivacyMode || 'public',
+            hideAgendaFromNonTarget: Boolean(hideAgendaFromNonTarget),
             pointsOrdreDuJour: pointsOrdreDuJour,
             lienDocument: (lienDocument || '').trim(),
             sendPushNotification: sendPushNotification !== false,
@@ -223,6 +233,9 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
             validDatesCount: validSlots.length,
             firstCreatedEventId,
             audience,
+            targetGroup,
+            reunionPrivacyMode,
+            hideAgendaFromNonTarget,
             pollRestrictionType: pollRestrictionType === 'tag' ? 'badge' : pollRestrictionType,
             pollTarget
           });
@@ -240,6 +253,9 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
           groupId: groupId,
           audience: audience,
           portee: audience,
+          targetGroup: targetGroup || 'all',
+          reunionPrivacyMode: reunionPrivacyMode || 'public',
+          hideAgendaFromNonTarget: Boolean(hideAgendaFromNonTarget),
           pointsOrdreDuJour: pointsOrdreDuJour,
           lienDocument: (lienDocument || '').trim(),
           sendPushNotification: sendPushNotification !== false,
@@ -265,7 +281,10 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
             isPoll: false,
             dateStr: dateTimeStartStr,
             firstCreatedEventId: docRef.id,
-            audience
+            audience,
+            targetGroup,
+            reunionPrivacyMode,
+            hideAgendaFromNonTarget
           });
         }
         setSelectedEventId(docRef.id);
@@ -278,6 +297,9 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
       setTime('');
       setTimeEnd('');
       setAudience('publique');
+      setTargetGroup('all');
+      setReunionPrivacyMode('public');
+      setHideAgendaFromNonTarget(false);
       setPointsOrdreDuJour([]);
       setLienDocument('');
       setSendPushNotification(true);
@@ -338,7 +360,10 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
     return `${formattedDate} à ${hours}h${minutes}`;
   };
 
-  const selectedEvent = events.find(e => e.id === selectedEventId);
+  const visibleEvents = events.filter((ev) =>
+    canUserSeeReunionInAgenda(ev, profileData, getEffectiveMemberTags(profileData))
+  );
+  const selectedEvent = visibleEvents.find(e => e.id === selectedEventId);
 
   return (
     <div className="flex flex-col gap-4 text-left select-none w-full max-w-none">
@@ -388,13 +413,16 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
       {selectedEventId && selectedEvent ? (
         /* Vue détaillée / Éditeur de compte-rendu */
         <div className="flex flex-col gap-4 w-full">
-          <CordelCard variant="default" useExtremeBorder={false} className="p-4 bg-cordel-bg-light/30">
-            <h3 className="text-sm font-black text-encre-noire">
-              📅 {selectedEvent.titre}
-            </h3>
-            <p className="text-[10px] font-bold text-cordel-wood uppercase mt-1">
-              {formatDate(selectedEvent.date)}
-            </p>
+          <CordelCard variant="default" useExtremeBorder={false} className="p-4 bg-cordel-bg-light/30 flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <h3 className="text-sm font-black text-encre-noire">
+                📅 {selectedEvent.titre}
+              </h3>
+              <p className="text-[10px] font-bold text-cordel-wood uppercase mt-1">
+                {formatDate(selectedEvent.date)}
+              </p>
+            </div>
+            <ReunionPrivacyBadge event={selectedEvent} tagsDisponibles={tagsDisponibles} showPublic={true} />
           </CordelCard>
           
           <EventReportSection 
@@ -417,6 +445,13 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
                 setTitle={setTitle}
                 audience={audience}
                 setAudience={setAudience}
+                targetGroup={targetGroup}
+                setTargetGroup={setTargetGroup}
+                reunionPrivacyMode={reunionPrivacyMode}
+                setReunionPrivacyMode={setReunionPrivacyMode}
+                hideAgendaFromNonTarget={hideAgendaFromNonTarget}
+                setHideAgendaFromNonTarget={setHideAgendaFromNonTarget}
+                tagsDisponibles={tagsDisponibles}
                 lieu={lieu}
                 setLieu={setLieu}
                 setLieuId={setLieuId}
@@ -463,7 +498,7 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
                   Chargement des réunions...
                 </span>
               </div>
-            ) : events.length === 0 ? (
+            ) : visibleEvents.length === 0 ? (
               <CordelCard className="p-8 text-center bg-white/50 border-dashed">
                 <p className="text-xs italic opacity-60">Aucune réunion ni sondage répertorié pour le moment.</p>
               </CordelCard>
@@ -481,7 +516,7 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
                       </tr>
                     </thead>
                     <tbody>
-                      {events.map((ev) => {
+                      {visibleEvents.map((ev) => {
                         const pointsCount = (ev.pointsOrdreDuJour || []).length;
                         const presentCount = (ev.inscriptions || []).filter(ins => ins.status === 'present').length;
                         return (
@@ -492,13 +527,7 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
                             <td className="py-2.5 px-3 font-bold text-encre-noire">
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 <span>{ev.titre}</span>
-                                <span className={`text-[7.5px] font-black uppercase px-1.5 py-0.2 rounded border ${
-                                  (ev.audience === 'ca' || ev.portee === 'ca')
-                                    ? 'bg-amber-100 text-amber-900 border-amber-400'
-                                    : 'bg-green-50 text-green-800 border-green-300'
-                                }`}>
-                                  {(ev.audience === 'ca' || ev.portee === 'ca') ? '🔒 CA' : '👥 Publique'}
-                                </span>
+                                <ReunionPrivacyBadge event={ev} tagsDisponibles={tagsDisponibles} showPublic={true} />
                               </div>
                             </td>
                             <td className="py-2.5 px-3 font-semibold opacity-85">

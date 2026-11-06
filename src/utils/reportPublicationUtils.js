@@ -2,6 +2,7 @@ import { doc, updateDoc, collection, addDoc, query, where, getDocs } from 'fireb
 import { db } from '../firebase.js';
 import { generateCompteRenduPDF } from './pdfGenerator.js';
 import { triggerEventStatusAutomation } from './automationEngine.js';
+import { resolveReunionPrivacyConfig, getTargetGroupDisplayName } from './reunionPrivacyUtils.js';
 
 /**
  * Utilitaires pour la publication et l'auto-validation des comptes-rendus de réunion.
@@ -59,8 +60,12 @@ export async function publishReportDefinitive({
   const invites = Math.max(0, parseInt(event.invitesOuPublicCount, 10) || 0);
   const totalParticipants = presentsNames.length + invites;
 
-  const isCA = (event.audience === 'ca' || event.portee === 'ca');
-  const audienceLabel = isCA ? "Réunion de CA / Bureau" : "Réunion Publique / Assemblée";
+  const privacyCfg = resolveReunionPrivacyConfig(event);
+  const isReportRestricted = privacyCfg.reunionPrivacyMode === 'huis_clos' || privacyCfg.hideAgendaFromNonTarget === true;
+  const isCAOrRestricted = privacyCfg.targetGroup !== 'all' || isReportRestricted;
+  const audienceLabel = privacyCfg.targetGroup === 'all'
+    ? "Réunion Publique / Assemblée"
+    : `Réunion (${getTargetGroupDisplayName(privacyCfg.targetGroup)})`;
   const presentsSummary = invites > 0
     ? `${presentsNames.length} adhérent(s) + ${invites} invité(s)`
     : `${presentsNames.length} présent(s)`;
@@ -88,12 +93,20 @@ export async function publishReportDefinitive({
     }
   }
 
+  const allowedTagsList = !isReportRestricted
+    ? []
+    : privacyCfg.targetGroup === 'bureau'
+      ? ['Bureau']
+      : privacyCfg.targetGroup === 'ca'
+        ? ['CA', 'Bureau', 'C.A', 'C.A.', "Conseil d'Administration"]
+        : [privacyCfg.targetGroup];
+
   const docPayload = {
     titre: docTitle,
     sousTitre: docSousTitre,
     categoryId: 'Administratif',
     categorie: 'ComptesRendus',
-    sousCategorie: isCA ? 'Comptes Rendus CA' : 'Comptes Rendus Publics',
+    sousCategorie: isCAOrRestricted ? 'Comptes Rendus CA' : 'Comptes Rendus Publics',
     annee: eventYear,
     type: 'report',
     texte: compiledMarkdown,
@@ -101,9 +114,13 @@ export async function publishReportDefinitive({
     dateAjout: new Date().toISOString(),
     groupId: event.groupId,
     eventId: event.id,
-    audience: isCA ? 'ca' : 'publique',
-    portee: isCA ? 'ca' : 'publique',
-    allowedTags: isCA ? ['CA', 'Bureau', 'C.A', 'C.A.', 'Conseil d\'Administration'] : [],
+    visibility: isReportRestricted ? 'restricted' : 'public',
+    targetGroup: privacyCfg.targetGroup,
+    reunionPrivacyMode: privacyCfg.reunionPrivacyMode,
+    hideAgendaFromNonTarget: privacyCfg.hideAgendaFromNonTarget,
+    audience: isReportRestricted ? 'ca' : 'publique',
+    portee: isReportRestricted ? 'ca' : 'publique',
+    allowedTags: allowedTagsList,
     presents: presentsNames,
     invitesOuPublicCount: invites,
     totalParticipants: totalParticipants,
@@ -123,8 +140,11 @@ export async function publishReportDefinitive({
   const eventUpdates = {
     compteRenduStatus: 'publie',
     compteRenduVaralId: docRefId,
-    audience: isCA ? 'ca' : 'publique',
-    portee: isCA ? 'ca' : 'publique',
+    targetGroup: privacyCfg.targetGroup,
+    reunionPrivacyMode: privacyCfg.reunionPrivacyMode,
+    hideAgendaFromNonTarget: privacyCfg.hideAgendaFromNonTarget,
+    audience: privacyCfg.audience,
+    portee: privacyCfg.portee,
     pointsOrdreDuJour: pointsToPublish
   };
 
@@ -155,11 +175,11 @@ export async function publishReportDefinitive({
     try {
       const enrichedEvent = {
         ...event,
-        audience: isCA ? 'ca' : 'publique',
+        audience: isCAOrRestricted ? 'ca' : 'publique',
         invitesOuPublicCount: invites
       };
       const pdfDoc = generateCompteRenduPDF(enrichedEvent, pointsToPublish, presentsNames, associationSettings || event.associationSettings || "O Girador");
-      pdfDoc.save(`Compte_Rendu_${isCA ? 'CA_' : 'Public_'}${event.titre ? event.titre.replace(/[^a-zA-Z0-9]/g, '_') : 'Reunion'}.pdf`);
+      pdfDoc.save(`Compte_Rendu_${isCAOrRestricted ? 'CA_' : 'Public_'}${event.titre ? event.titre.replace(/[^a-zA-Z0-9]/g, '_') : 'Reunion'}.pdf`);
     } catch (pdfErr) {
       console.error("publishReportDefinitive - Erreur génération PDF automatique :", pdfErr);
     }

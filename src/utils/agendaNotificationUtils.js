@@ -8,6 +8,7 @@ import { httpsCallable } from 'firebase/functions';
 import { db, functions } from '../firebase';
 import { isMemberArchived, isMemberCaOrBureau, getEffectiveMemberTags } from './memberUtils';
 import { dispatchBulkInAppAndPushNotification, NOTIFICATION_TYPES } from './inAppNotificationService';
+import { resolveReunionPrivacyConfig, isUserInReunionTargetGroup } from './reunionPrivacyUtils';
 
 /**
  * Formate une date ISO d'événement de manière lisible pour le corps d'une notification.
@@ -32,11 +33,24 @@ function formatEventDateForNotif(dateStr) {
  */
 export async function notifyNewAgendaEventOrPoll({
   groupId, creatorId, titre, description = '', isPoll = false, validDatesCount = 0,
-  dateStr = '', firstCreatedEventId, audience = 'publique', pollRestrictionType = 'aucun', pollTarget = ''
+  dateStr = '', firstCreatedEventId, audience = 'publique', pollRestrictionType = 'aucun', pollTarget = '',
+  targetGroup = null, reunionPrivacyMode = null, hideAgendaFromNonTarget = false
 }) {
   if (!groupId || !firstCreatedEventId || !titre) return;
 
   try {
+    const privacyCfg = resolveReunionPrivacyConfig({
+      targetGroup,
+      reunionPrivacyMode,
+      hideAgendaFromNonTarget,
+      audience,
+      pollRestrictionType,
+      pollTarget
+    });
+    const isTargetRestricted =
+      privacyCfg.reunionPrivacyMode === 'huis_clos' ||
+      privacyCfg.targetGroup !== 'all';
+
     const groupVariants = Array.from(new Set([groupId, groupId.toLowerCase()].filter(Boolean)));
     const snap = await getDocs(query(collection(db, 'users'), where('groupId', 'in', groupVariants)));
     const canonicalLower = groupId.trim().toLowerCase();
@@ -51,7 +65,11 @@ export async function notifyNewAgendaEventOrPoll({
       const roleLower = String(u.role || '').toLowerCase();
       const isPrivileged = ['mestre', 'super-admin', 'admin'].includes(roleLower) || u.isSystemAdmin === true;
 
-      if (audience === 'ca' && !isPrivileged && !isMemberCaOrBureau(u)) {
+      if (isTargetRestricted) {
+        if (!isUserInReunionTargetGroup(privacyCfg, u, u.tags)) {
+          return;
+        }
+      } else if (audience === 'ca' && !isPrivileged && !isMemberCaOrBureau(u)) {
         return;
       }
 

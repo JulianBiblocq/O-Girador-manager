@@ -14,6 +14,12 @@ import {
   executeSingleWinningPollOption
 } from '../../utils/pollFunnelValidationUtils';
 import { checkAndNotifyFullPupitreParticipation } from '../../utils/pollPupitreAlertUtils';
+import {
+  canUserParticipateInReunion,
+  resolveReunionPrivacyConfig,
+  getTargetGroupDisplayName
+} from '../../utils/reunionPrivacyUtils';
+import ReunionPrivacyBadge from '../agenda/ReunionPrivacyBadge';
 
 export default function EventPollSection({
   event,
@@ -22,7 +28,9 @@ export default function EventPollSection({
   onNavigateToEventId,
   allUsers: propAllUsers,
   pupitresList = [],
-  linkedInstruments = []
+  linkedInstruments = [],
+  effectiveUserTags = [],
+  tagsDisponibles = []
 }) {
   const { confirm } = useConfirm();
   const [pollEvents, setPollEvents] = useState([]);
@@ -153,8 +161,20 @@ export default function EventPollSection({
     return baseList.filter((p) => !validatedPupitresSet.has(p));
   }, [event?.pollTargetPupitres, openPollEvents, pupitresList, validatedHistory]);
 
-  // Calcul d'éligibilité basé sur le type de restriction du sondage
+  // Calcul d'éligibilité basé sur le groupe convoqué (réunion) ou le type de restriction du sondage
   const checkEligibility = () => {
+    if (event?.type === 'reunion') {
+      const canVote = canUserParticipateInReunion(event, profileData, effectiveUserTags);
+      if (!canVote) {
+        const cfg = resolveReunionPrivacyConfig(event);
+        const groupLabel = getTargetGroupDisplayName(cfg.targetGroup, tagsDisponibles, true);
+        return {
+          eligible: false,
+          message: `🔒 Ce sondage de dates est réservé aux membres du groupe : ${groupLabel}.`
+        };
+      }
+    }
+
     const resType = event.pollRestrictionType;
     const target = event.pollTarget;
 
@@ -163,8 +183,9 @@ export default function EventPollSection({
     }
 
     if (resType === 'tag') {
-      const userTags = profileData?.tags || [];
-      const hasTag = userTags.includes(target);
+      const userTags = Array.from(new Set([...(profileData?.tags || []), ...(effectiveUserTags || [])]));
+      const targetLower = String(target || '').toLowerCase();
+      const hasTag = userTags.some((t) => String(typeof t === 'object' ? (t.id || t.nomM || t.nom || '') : t).toLowerCase() === targetLower);
       return {
         eligible: hasTag,
         message: hasTag ? null : `🔒 Sondage réservé aux membres de l'étiquette "${target}"`
@@ -364,11 +385,16 @@ export default function EventPollSection({
           </div>
         </div>
 
-        {event.pollRestrictionType && event.pollRestrictionType !== 'aucun' && (
-          <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] px-2 py-0.5">
-            {event.pollRestrictionType === 'tag' ? `🏷️ Étiquette : ${event.pollTarget}` : `🥁 Pupitre : ${event.pollTarget}`}
-          </span>
-        )}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {event?.type === 'reunion' && (
+            <ReunionPrivacyBadge event={event} tagsDisponibles={tagsDisponibles} />
+          )}
+          {event.pollRestrictionType && event.pollRestrictionType !== 'aucun' && event?.type !== 'reunion' && (
+            <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] px-2 py-0.5">
+              {event.pollRestrictionType === 'tag' ? `🏷️ Étiquette : ${event.pollTarget}` : `🥁 Pupitre : ${event.pollTarget}`}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Message de restriction si l'utilisateur n'est pas éligible */}

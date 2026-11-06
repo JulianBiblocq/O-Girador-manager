@@ -16,6 +16,8 @@ import EventPollFormSection from './EventPollFormSection';
 import EventVolunteerShiftsEditor from './EventVolunteerShiftsEditor';
 import EventQuickTogglesGrid from './EventQuickTogglesGrid';
 import EventDeadlineModeField from './EventDeadlineModeField';
+import ReunionPrivacySelector from './ReunionPrivacySelector';
+import { resolveReunionPrivacyConfig } from '../../utils/reunionPrivacyUtils';
 import {
   extractDayPart,
   extractTimePart,
@@ -298,6 +300,25 @@ export default function EventFormFields({
             ))}
           </select>
         </div>
+
+        {/* Sélecteur simplifié Participants & Confidentialité pour les Réunions */}
+        {formData.type === 'reunion' && (() => {
+          const privacyCfg = resolveReunionPrivacyConfig(formData);
+          return (
+            <ReunionPrivacySelector
+              targetGroup={privacyCfg.targetGroup}
+              reunionPrivacyMode={privacyCfg.reunionPrivacyMode}
+              hideAgendaFromNonTarget={privacyCfg.hideAgendaFromNonTarget}
+              disabled={saving}
+              onChange={(updates) => {
+                setFormData((prev) => ({
+                  ...prev,
+                  ...updates
+                }));
+              }}
+            />
+          );
+        })()}
 
         {/* Dates & Horaires (Début & Fin) ou Sondage en mode édition */}
         {!(formData.isPoll || formData.status === 'sondage' || formData.pollGroupId) ? (

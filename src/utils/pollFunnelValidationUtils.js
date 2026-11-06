@@ -108,8 +108,19 @@ export async function executeSingleWinningPollOption({ db, winningOptionEvent, a
     else updatedInscriptions.push({ userId: uid, userName: uInfo?.name || 'Membre', status: 'present', timestamp: new Date().toISOString() });
   });
 
+  const preservedPrivacyFields = {};
+  if (winningOptionEvent.targetGroup !== undefined) preservedPrivacyFields.targetGroup = winningOptionEvent.targetGroup;
+  if (winningOptionEvent.reunionPrivacyMode !== undefined) preservedPrivacyFields.reunionPrivacyMode = winningOptionEvent.reunionPrivacyMode;
+  if (winningOptionEvent.hideAgendaFromNonTarget !== undefined) preservedPrivacyFields.hideAgendaFromNonTarget = winningOptionEvent.hideAgendaFromNonTarget;
+  if (winningOptionEvent.audience !== undefined) preservedPrivacyFields.audience = winningOptionEvent.audience;
+  if (winningOptionEvent.portee !== undefined) preservedPrivacyFields.portee = winningOptionEvent.portee;
+
   batch.update(doc(db, 'events', winningOptionEvent.id), {
-    status: 'confirme', isPoll: false, inscriptions: updatedInscriptions, requiresValidation: false
+    status: 'confirme',
+    isPoll: false,
+    inscriptions: updatedInscriptions,
+    requiresValidation: false,
+    ...preservedPrivacyFields
   });
   if (winningOptionEvent.pollGroupId && groupId) {
     const snap = await getDocs(query(collection(db, 'events'), where('pollGroupId', '==', winningOptionEvent.pollGroupId), where('groupId', '==', groupId)));
