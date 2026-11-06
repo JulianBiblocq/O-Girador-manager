@@ -44,8 +44,8 @@ export default function ToadaMusicalToolbar({
           {onAddPauseBaque && (
             <button type="button" disabled={disabled} onClick={onAddPauseBaque}
               className="px-2 py-1 rounded text-[10px] font-black uppercase bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 shadow-2xs cursor-pointer flex items-center gap-1 transition-all"
-              title="Insérer une carte [PAUSE 1M] (Le Baque joue seul)">
-              + 🔇 {language === 'pt' ? 'Pausa do Baque' : (t('toada.pauseBaqueBtn') || 'Pause Baque')}
+              title="Insérer une carte [PAUSE 1M] (Le Batuque joue seul)">
+              + 🔇 {language === 'pt' ? 'Pausa do Batuque' : (t('toada.pauseBaqueBtn') || 'Pause Batuque')}
             </button>
           )}
           {onOpenBulkPasteModal && (

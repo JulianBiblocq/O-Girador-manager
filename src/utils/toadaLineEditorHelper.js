@@ -1,18 +1,31 @@
 /**
  * toadaLineEditorHelper.js
- * Utilitaires d'extraction, reconstruction de pastilles, pauses [PAUSE XM], Tutti (***...***) et balises <u> (< 142 lignes).
+ * Utilitaires d'extraction, reconstruction de pastilles, pauses [PAUSE XM], Tutti (***...***),
+ * superposition simultanée Puxador/Coro (#N bis) et balises <u> (< 130 lignes).
  */
+import { buildSongStructure, toggleSimultaneousFlagOnLine } from './toadaSimultaneousHelper.js';
+
 export const BEAT_1_CLASS = 'bg-[#b91c1c] text-[#f4ecd8] border-red-900 shadow-xs';
 export const BEAT_OTHER_CLASS = 'bg-[#334155] text-white border-slate-900 shadow-xs';
 
 export function extractLineSignature(line = '') {
-  const m = line.match(/^\[sig:(2\/4|3\/4|4\/4|6\/8|12\/8)\]\s*/i);
-  return m ? { lineSignature: m[1], cleanLine: line.slice(m[0].length) } : { lineSignature: null, cleanLine: line };
+  let rest = line, lineSignature = null, simDirective = null;
+  for (let i = 0; i < 2; i++) {
+    const sigM = rest.match(/^\[sig:(2\/4|3\/4|4\/4|6\/8|12\/8)\]\s*/i);
+    if (sigM) { lineSignature = sigM[1]; rest = rest.slice(sigM[0].length); continue; }
+    const simM = rest.match(/^\[(sim|nosim)\]\s*/i);
+    if (simM) { simDirective = simM[1].toLowerCase(); rest = rest.slice(simM[0].length); continue; }
+  }
+  return { lineSignature, simDirective, cleanLine: rest };
+}
+
+export function toggleLineSimultaneous(lineText = '', currentlySimultaneous = false, isAutoSimultaneous = false) {
+  return toggleSimultaneousFlagOnLine(lineText, currentlySimultaneous, isAutoSimultaneous, extractLineSignature);
 }
 
 export function parsePauseBaqueLine(lineText = '') {
   const { cleanLine } = extractLineSignature(lineText);
-  const m = cleanLine.trim().match(/^\*?\s*\[\s*(?:PAUSE|SILENCE)(?:\s+(?:BAQUE|[A-Z]+))?\s+(\d+)\s*M(?:ESURES?)?\s*\]\s*\*?$/i);
+  const m = cleanLine.trim().match(/^\*?\s*\[\s*(?:PAUSE|SILENCE)(?:\s+(?:BATUQUE|BAQUE|[A-Z]+))?\s+(\d+)\s*M(?:ESURES?)?\s*\]\s*\*?$/i);
   return m ? { isPauseBaque: true, pauseMeasures: Math.max(1, Math.min(8, parseInt(m[1], 10) || 1)) } : { isPauseBaque: false, pauseMeasures: 0 };
 }
 
@@ -26,12 +39,12 @@ export function computeEffectiveSignatures(lines = [], defaultSig = '4/4') {
 }
 
 export function parseLineToCharAnchors(lineText = '') {
-  const { lineSignature, cleanLine: withSigRemoved } = extractLineSignature(lineText);
+  const { lineSignature, simDirective, cleanLine: withSigRemoved } = extractLineSignature(lineText);
   const pauseCheck = parsePauseBaqueLine(withSigRemoved);
   if (pauseCheck.isPauseBaque) {
     return {
       isPuxador: false, isTutti: false, isPauseBaque: true, pauseMeasures: pauseCheck.pauseMeasures, hasLeadingRest: false, leadingRestBeat: null,
-      rawCleanChars: '', charAnchors: {}, charSignatures: {}, charPuxadorFlags: [], charUnderlineFlags: [], lineSignature,
+      rawCleanChars: '', charAnchors: {}, charSignatures: {}, charPuxadorFlags: [], charUnderlineFlags: [], lineSignature, simDirective,
     };
   }
   const isTutti = /\*{3}[^*]+\*{3}/.test(withSigRemoved) || (/^\*{3}/.test(withSigRemoved.trim()) && /\*{3}$/.test(withSigRemoved.trim()));
@@ -60,10 +73,10 @@ export function parseLineToCharAnchors(lineText = '') {
   }
   if (pendingBeat !== null) charAnchors[curIndex] = pendingBeat;
   const isPuxador = isTutti || inBold || charPuxadorFlags.some(Boolean) || /\*[^*]+\*/.test(withSigRemoved);
-  return { isPuxador, isTutti, isPauseBaque: false, pauseMeasures: 0, hasLeadingRest, leadingRestBeat, rawCleanChars, charAnchors, charSignatures, charPuxadorFlags, charUnderlineFlags, lineSignature };
+  return { isPuxador, isTutti, isPauseBaque: false, pauseMeasures: 0, hasLeadingRest, leadingRestBeat, rawCleanChars, charAnchors, charSignatures, charPuxadorFlags, charUnderlineFlags, lineSignature, simDirective };
 }
 
-export function rebuildLineFromCharAnchors(rawCleanChars, anchors, withRest, restBeat, isPuxador, lineSignature = null, charSignatures = {}, charUnderlineFlags = [], isTutti = false) {
+export function rebuildLineFromCharAnchors(rawCleanChars, anchors, withRest, restBeat, isPuxador, lineSignature = null, charSignatures = {}, charUnderlineFlags = [], isTutti = false, simDirective = null) {
   let res = withRest ? `[${restBeat || 1}] _ ` : '', inU = false;
   for (let c = 0; c < rawCleanChars.length; c++) {
     const wantU = Boolean(charUnderlineFlags?.[c]);
@@ -78,13 +91,14 @@ export function rebuildLineFromCharAnchors(rawCleanChars, anchors, withRest, res
   if (anchors?.[rawCleanChars.length]) res += `[${anchors[rawCleanChars.length]}]`;
   const cleanCore = res.trim().replace(/^\*+|\*+$/g, '');
   const withRole = isTutti ? `***${cleanCore}***` : (isPuxador ? `*${cleanCore}*` : cleanCore);
-  return lineSignature ? `[sig:${lineSignature}] ${withRole}` : withRole;
+  const simPrefix = simDirective ? `[${simDirective}] ` : '';
+  return `${lineSignature ? `[sig:${lineSignature}] ` : ''}${simPrefix}${withRole}`;
 }
 
 export function computePhraseMeasures(lineText = '', parsed = null) {
   const p = parsed || parseLineToCharAnchors(lineText);
   if (p.isPauseBaque) {
-    return { isPuxador: false, isTutti: false, isPauseBaque: true, pauseMeasures: p.pauseMeasures, measuresCount: p.pauseMeasures, hasAnacrusis: false, hasExitOnNextBeat1: false, exitBeat1Pos: null, badgeLabel: `🔇 Pause Baque • ${p.pauseMeasures} M` };
+    return { isPuxador: false, isTutti: false, isPauseBaque: true, pauseMeasures: p.pauseMeasures, measuresCount: p.pauseMeasures, hasAnacrusis: false, hasExitOnNextBeat1: false, exitBeat1Pos: null, badgeLabel: `🔇 Pause Batuque • ${p.pauseMeasures} M` };
   }
   const { isPuxador, isTutti, hasLeadingRest, leadingRestBeat, rawCleanChars, charAnchors } = p;
   const ordered = [];
@@ -102,40 +116,8 @@ export function computePhraseMeasures(lineText = '', parsed = null) {
   return { isPuxador, isTutti: Boolean(isTutti), isPauseBaque: false, measuresCount: count1, hasAnacrusis, hasExitOnNextBeat1, exitBeat1Pos, badgeLabel };
 }
 
-export function computeSongStructure(lines = [], defaultSig = '4/4') {
-  let globalCount1 = 0, runningSig = defaultSig;
-  const lineDetails = lines.map((line) => {
-    const parsed = parseLineToCharAnchors(line);
-    if (parsed.lineSignature) runningSig = parsed.lineSignature;
-    const phraseInfo = computePhraseMeasures(line, parsed), charMeasureNums = {}, charEffectiveSigs = {};
-    if (parsed.isPauseBaque) { globalCount1 += parsed.pauseMeasures; return { ...parsed, charMeasureNums, charEffectiveSigs, lineStartSig: runningSig, phraseInfo }; }
-    if (parsed.hasLeadingRest && parsed.leadingRestBeat === 1) { globalCount1++; charMeasureNums[-1] = globalCount1; }
-    for (let c = 0; c <= parsed.rawCleanChars.length; c++) {
-      if (parsed.charSignatures?.[c]) runningSig = parsed.charSignatures[c];
-      charEffectiveSigs[c] = runningSig;
-      if (parsed.charAnchors?.[c] === 1) {
-        if (phraseInfo.exitBeat1Pos === c) charMeasureNums[c] = globalCount1 + 1;
-        else { globalCount1++; charMeasureNums[c] = globalCount1; }
-      }
-    }
-    return { ...parsed, charMeasureNums, charEffectiveSigs, lineStartSig: runningSig, phraseInfo };
-  });
-  return { totalMeasures: globalCount1, lineDetails };
-}
-
-export function isSilenceMeasure(lineText = '') {
-  if (!lineText || !lineText.trim()) return false;
-  if (parsePauseBaqueLine(lineText).isPauseBaque) return true;
-  const { cleanLine } = extractLineSignature(lineText);
-  return cleanLine.replace(/\[(?:M\d+[•\.:\u00b7])?\d+\]/gi, '').replace(/[*_]/g, '').trim().length === 0;
-}
-
+export const computeSongStructure = (lines = [], defaultSig = '4/4') => buildSongStructure(lines, defaultSig, parseLineToCharAnchors, computePhraseMeasures);
+export const isSilenceMeasure = (l = '') => Boolean(l?.trim()) && (parsePauseBaqueLine(l).isPauseBaque || extractLineSignature(l).cleanLine.replace(/\[(?:M\d+[•\.:\u00b7])?\d+\]/gi, '').replace(/[*_]/g, '').trim().length === 0);
 export const generateEmptySilenceMeasure = (measures = 1) => `[PAUSE ${Math.max(1, Math.min(8, Number(measures) || 1))}M]`;
 export const countBeat1InLine = (line = '') => computePhraseMeasures(line).measuresCount;
-export function computeLineMeasureNumbers(lines = []) {
-  let g = 0;
-  return lines.map((l) => {
-    const c = countBeat1InLine(l);
-    return { label: c === 0 ? (g === 0 ? 'Ana.' : '—') : c === 1 ? `M${++g}` : `M${g + 1}–M${(g += c)}`, isSilence: isSilenceMeasure(l) };
-  });
-}
+export const computeLineMeasureNumbers = (lines = []) => computeSongStructure(lines).lineDetails.map((d) => ({ label: d.phraseInfo.measuresCount === 0 ? 'Ana.' : `M${Object.values(d.charMeasureNums)[0] || 1}`, isSilence: d.isPauseBaque }));

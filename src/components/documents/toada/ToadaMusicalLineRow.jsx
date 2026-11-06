@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useTranslation } from '../../LanguageContext';
-import { parseLineToCharAnchors, rebuildLineFromCharAnchors, computePhraseMeasures } from '../../../utils/toadaLineEditorHelper';
+import { parseLineToCharAnchors, rebuildLineFromCharAnchors, computePhraseMeasures, toggleLineSimultaneous } from '../../../utils/toadaLineEditorHelper';
 import { parseStructureTxt } from '../../../utils/toadaTwoLineConverter';
 import ToadaCharAnchorCell from './ToadaCharAnchorCell';
 
@@ -12,14 +12,13 @@ export default function ToadaMusicalLineRow({
   const { t, language } = useTranslation();
   const [hoverIdx, setHoverIdx] = useState(null);
   const lastKeyTimeRef = useRef({ key: '', time: 0 });
-  const p = parsedLine || parseLineToCharAnchors(lineText);
-  const phraseInfo = p.phraseInfo || computePhraseMeasures(lineText, p);
-  const { isPuxador, isTutti, isPauseBaque, pauseMeasures, hasLeadingRest, leadingRestBeat, rawCleanChars, charAnchors, charSignatures, charPuxadorFlags, charUnderlineFlags, lineSignature, charMeasureNums, charEffectiveSigs } = p;
-  const pauseLabel = language === 'pt' ? '🔇 Pausa do Baque' : (t('toada.pauseBaqueCardTitle') || '🔇 Pause Baque');
+  const p = parsedLine || parseLineToCharAnchors(lineText), phraseInfo = p.phraseInfo || computePhraseMeasures(lineText, p);
+  const { isPuxador, isTutti, isPauseBaque, pauseMeasures, hasLeadingRest, leadingRestBeat, rawCleanChars, charAnchors, charSignatures, charPuxadorFlags, charUnderlineFlags, lineSignature, simDirective, charMeasureNums, charEffectiveSigs, isSimultaneous, isAutoSimultaneous, displayCardLabel, simultaneousMeasureLabel } = p;
+  const pauseLabel = language === 'pt' ? '🔇 Pausa do Batuque' : (t('toada.pauseBaqueCardTitle') || '🔇 Pause Batuque');
   const badgeText = isPauseBaque ? `${pauseLabel} • ${pauseMeasures} M` : phraseInfo.badgeLabel;
 
   const handleCommit = (anchors, withRest = hasLeadingRest, restBeat = leadingRestBeat, sigs = charSignatures, nextPux = isPuxador, nextTutti = isTutti) => {
-    onChangeLine(rebuildLineFromCharAnchors(rawCleanChars, anchors, withRest, restBeat, nextPux, lineSignature, sigs, charUnderlineFlags, nextTutti));
+    onChangeLine(rebuildLineFromCharAnchors(rawCleanChars, anchors, withRest, restBeat, nextPux, lineSignature, sigs, charUnderlineFlags, nextTutti, simDirective));
   };
 
   const handleCycleRole = () => {
@@ -28,7 +27,7 @@ export default function ToadaMusicalLineRow({
     else if (isPuxador && !isTutti) handleCommit(charAnchors, hasLeadingRest, leadingRestBeat, charSignatures, true, true);
     else handleCommit(charAnchors, hasLeadingRest, leadingRestBeat, charSignatures, false, false);
   };
-
+  const handleToggleSim = () => { if (!disabled && !isPauseBaque && index > 0) onChangeLine(toggleLineSimultaneous(lineText, Boolean(isSimultaneous), Boolean(isAutoSimultaneous))); };
   const handleCharClick = (cIdx) => {
     if (disabled || mode !== 'time') return;
     if (activeStamp) {
@@ -36,12 +35,10 @@ export default function ToadaMusicalLineRow({
       else { const next = { ...charAnchors }; if (next[cIdx] === activeStamp) delete next[cIdx]; else next[cIdx] = activeStamp; handleCommit(next); }
     } else if (onSelectCharIdx) onSelectCharIdx(cIdx);
   };
-
   const handleDeleteAnchorAt = (cIdx) => {
     if (cIdx === -1) { handleCommit(charAnchors, false, null); return; }
     const next = { ...charAnchors }, nextSigs = { ...charSignatures };
-    delete next[cIdx]; delete nextSigs[cIdx];
-    handleCommit(next, hasLeadingRest, leadingRestBeat, nextSigs);
+    delete next[cIdx]; delete nextSigs[cIdx]; handleCommit(next, hasLeadingRest, leadingRestBeat, nextSigs);
   };
 
   const handleKeyDownChar = (e, cIdx) => {
@@ -76,16 +73,16 @@ export default function ToadaMusicalLineRow({
     const clip = e.clipboardData?.getData('text') || '';
     if (/\r?\n/.test(clip)) { e.preventDefault(); const parsed = parseStructureTxt(clip); if (parsed.length > 0) onPasteMultiLines(index, parsed); }
   };
-
   return (
     <div draggable={!disabled && Boolean(onMoveLine)} onDragStart={(e) => e.dataTransfer.setData('text/plain', String(index))}
       onDragOver={(e) => { if (!disabled && onMoveLine) e.preventDefault(); }}
       onDrop={(e) => { e.preventDefault(); const from = parseInt(e.dataTransfer.getData('text/plain'), 10); if (!Number.isNaN(from) && from !== index && onMoveLine) onMoveLine(from, index); }}
-      className={`group relative flex items-start gap-2 py-1.5 px-2 rounded transition-colors text-left w-full ${isPauseBaque ? 'bg-stone-100/80 dark:bg-stone-800/60 border border-dashed border-stone-300 dark:border-stone-700 my-0.5' : 'hover:bg-amber-50/40'}`}>
-      <div className="flex flex-col items-start gap-0.5 shrink-0 pt-1 select-none w-32 md:w-36">
+      className={`group relative flex items-start gap-2 py-1.5 px-2 rounded transition-colors text-left w-full ${isPauseBaque ? 'bg-stone-100/80 dark:bg-stone-800/60 border border-dashed border-stone-300 dark:border-stone-700 my-0.5' : isSimultaneous ? 'bg-purple-50/35 dark:bg-purple-950/20 border-l-2 border-purple-400 hover:bg-purple-50/60' : 'hover:bg-amber-50/40'}`}>
+      <div className="flex flex-col items-start gap-0.5 shrink-0 pt-1 select-none w-36 md:w-44">
         <div className="flex items-center gap-1 w-full">
           <span className="cursor-grab text-[10px] text-stone-400 hover:text-stone-700" title="Glisser pour déplacer">⠿</span>
-          <span className="text-[9px] font-mono font-bold text-stone-400">#{index + 1}</span>
+          <span className={`text-[9px] font-mono font-bold ${isSimultaneous ? 'text-purple-800 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/50 px-1 rounded border border-purple-300' : 'text-stone-400'}`}>{displayCardLabel || `#${index + 1}`}</span>
+          {index > 0 && !isPauseBaque && <button type="button" disabled={disabled} onClick={handleToggleSim} title={language === 'pt' ? 'Simultâneo com o compasso anterior (Puxador + Coro juntos)' : 'Simultané avec la mesure précédente (Puxador + Coro ensemble)'} className={`px-1 py-0 text-[9px] font-bold rounded border cursor-pointer transition-colors ${isSimultaneous ? 'bg-purple-700 text-white border-purple-800 shadow-2xs' : 'text-stone-400 border-transparent hover:text-purple-700 hover:bg-purple-50 hover:border-purple-200'}`}>👥</button>}
           {onMoveLine && (
             <div className="flex items-center gap-0.5 ml-auto">
               <button type="button" disabled={disabled || index === 0} onClick={() => onMoveLine(index, index - 1)} className="px-1 py-0 text-[9px] font-bold rounded text-stone-500 hover:text-cordel-wood hover:bg-stone-200/70 disabled:opacity-25 cursor-pointer" title="Monter cette carte">▲</button>
@@ -93,7 +90,10 @@ export default function ToadaMusicalLineRow({
             </div>
           )}
         </div>
-        <span onClick={handleCycleRole} title={!isPauseBaque ? 'Cliquer pour basculer : Coro → Puxador (*) → Ensemble Pux+Coro (***)' : undefined} className={`text-[9.5px] font-mono font-bold px-1.5 py-0.5 rounded border shadow-2xs truncate max-w-full ${!isPauseBaque && !disabled ? 'cursor-pointer hover:brightness-95' : ''} ${isPauseBaque ? 'bg-stone-200 text-stone-800 border-stone-400' : isTutti ? 'bg-purple-100 text-purple-950 border-purple-300' : isPuxador ? 'bg-amber-100 text-amber-950 border-amber-300' : 'bg-stone-100 text-stone-700 border-stone-300'}`}>{badgeText}</span>
+        <div className="flex flex-wrap items-center gap-1 max-w-full">
+          <span onClick={handleCycleRole} title={!isPauseBaque ? 'Cliquer pour basculer : Coro → Puxador (*) → Ensemble Pux+Coro (***)' : undefined} className={`text-[9.5px] font-mono font-bold px-1.5 py-0.5 rounded border shadow-2xs truncate max-w-full ${!isPauseBaque && !disabled ? 'cursor-pointer hover:brightness-95' : ''} ${isPauseBaque ? 'bg-stone-200 text-stone-800 border-stone-400' : isTutti ? 'bg-purple-100 text-purple-950 border-purple-300' : isPuxador ? 'bg-amber-100 text-amber-950 border-amber-300' : 'bg-stone-100 text-stone-700 border-stone-300'}`}>{badgeText}</span>
+          {isSimultaneous && <span onClick={handleToggleSim} title="Cliquer pour désactiver la superposition simultanée" className="text-[8.5px] font-mono font-black px-1.5 py-0.5 rounded bg-purple-100 text-purple-900 border border-purple-300 shadow-2xs cursor-pointer hover:bg-purple-200">👥 {language === 'pt' ? 'Simultâneo' : 'Simultané'}{simultaneousMeasureLabel ? ` ${simultaneousMeasureLabel}` : ''}</span>}
+        </div>
       </div>
 
       <div className="flex-1 min-w-0 pt-0.5">
@@ -103,7 +103,7 @@ export default function ToadaMusicalLineRow({
             className="w-full text-xs font-mono py-1 px-1.5 bg-transparent border-0 border-b border-stone-200 focus:border-cordel-wood focus:bg-white/80 outline-hidden transition-colors" />
         ) : isPauseBaque ? (
           <div className="flex flex-wrap items-center gap-2 py-1">
-            <span className="text-xs font-bold text-stone-700 dark:text-stone-200">🥁 {language === 'pt' ? 'O Baque toca sozinho :' : (t('toada.pauseBaqueSolo') || 'Le Baque joue seul :')}</span>
+            <span className="text-xs font-bold text-stone-700 dark:text-stone-200">🥁 {language === 'pt' ? 'O Batuque toca sozinho :' : (t('toada.pauseBaqueSolo') || 'Le Batuque joue seul :')}</span>
             <div className="flex items-center gap-1">
               {[1, 2, 3, 4, 5, 6, 7, 8].map((m) => (
                 <button key={m} type="button" disabled={disabled} onClick={() => onChangeLine(`${lineSignature ? `[sig:${lineSignature}] ` : ''}[PAUSE ${m}M]`)}
@@ -131,12 +131,8 @@ export default function ToadaMusicalLineRow({
       </div>
 
       <div className="opacity-75 group-hover:opacity-100 flex items-center gap-1 shrink-0 pt-2 transition-opacity">
-        {index > 0 && !isPauseBaque && (
-          <button type="button" onClick={() => onMergeWithPrevious?.(index)} disabled={disabled} className="p-1 rounded text-stone-400 hover:text-cordel-wood hover:bg-stone-100 cursor-pointer" title="Fusionner avec la ligne précédente (Backspace)">⬆️</button>
-        )}
-        {onAddPauseAfter && (
-          <button type="button" onClick={onAddPauseAfter} disabled={disabled} className="px-1 py-0.5 rounded text-[10px] font-bold text-stone-600 hover:text-cordel-wood hover:bg-stone-200/80 cursor-pointer" title="Insérer une Pause Baque juste en dessous">+🔇</button>
-        )}
+        {index > 0 && !isPauseBaque && <button type="button" onClick={() => onMergeWithPrevious?.(index)} disabled={disabled} className="p-1 rounded text-stone-400 hover:text-cordel-wood hover:bg-stone-100 cursor-pointer" title="Fusionner avec la ligne précédente (Backspace)">⬆️</button>}
+        {onAddPauseAfter && <button type="button" onClick={onAddPauseAfter} disabled={disabled} className="px-1 py-0.5 rounded text-[10px] font-bold text-stone-600 hover:text-cordel-wood hover:bg-stone-200/80 cursor-pointer" title="Insérer une Pause Batuque juste en dessous">+🔇</button>}
         <button type="button" onClick={onAddLineAfter} disabled={disabled} className="p-1 rounded text-stone-400 hover:text-cordel-wood hover:bg-stone-100 cursor-pointer" title="Insérer une ligne juste en dessous">➕</button>
         <button type="button" onClick={onDeleteLine} disabled={disabled} className="p-1 rounded text-stone-400 hover:text-red-600 hover:bg-red-50 cursor-pointer" title="Supprimer cette ligne">🗑️</button>
       </div>

@@ -49,7 +49,7 @@ export default function ToadaMusicalStructureEditor({
       if (!ld?.isPauseBaque) {
         const nextA = charIdx >= 0 ? { ...ld.charAnchors, [charIdx]: beat } : ld.charAnchors;
         const leadBeat = charIdx === -1 ? beat : ld.leadingRestBeat, hasLead = charIdx === -1 ? true : ld.hasLeadingRest;
-        handleUpdateLine(lineIdx, rebuildLineFromCharAnchors(ld.rawCleanChars, nextA, hasLead, leadBeat, ld.isPuxador, ld.lineSignature, ld.charSignatures, ld.charUnderlineFlags, ld.isTutti));
+        handleUpdateLine(lineIdx, rebuildLineFromCharAnchors(ld.rawCleanChars, nextA, hasLead, leadBeat, ld.isPuxador, ld.lineSignature, ld.charSignatures, ld.charUnderlineFlags, ld.isTutti, ld.simDirective));
       }
     }
     setActiveStamp(activeStamp === beat ? null : beat);
@@ -59,7 +59,7 @@ export default function ToadaMusicalStructureEditor({
     if (selectedCell && selectedCell.lineIdx < lines.length && selectedCell.charIdx >= 0) {
       const { lineIdx, charIdx } = selectedCell, ld = lineDetails[lineIdx];
       if (!ld?.isPauseBaque) {
-        handleUpdateLine(lineIdx, rebuildLineFromCharAnchors(ld.rawCleanChars, ld.charAnchors, ld.hasLeadingRest, ld.leadingRestBeat, ld.isPuxador, ld.lineSignature, { ...ld.charSignatures, [charIdx]: newSig }, ld.charUnderlineFlags, ld.isTutti));
+        handleUpdateLine(lineIdx, rebuildLineFromCharAnchors(ld.rawCleanChars, ld.charAnchors, ld.hasLeadingRest, ld.leadingRestBeat, ld.isPuxador, ld.lineSignature, { ...ld.charSignatures, [charIdx]: newSig }, ld.charUnderlineFlags, ld.isTutti, ld.simDirective));
       }
     } else if (onChangeSignature) onChangeSignature(newSig);
   };
@@ -131,7 +131,7 @@ export default function ToadaMusicalStructureEditor({
       </div>
       <div className="flex items-center gap-2 w-full pt-1">
         <button type="button" onClick={() => handleAddLineAfter(lines.length - 1)} disabled={disabled} className="flex-1 py-1.5 text-[9.5px] font-black uppercase text-cordel-wood bg-white hover:bg-amber-50 border border-dashed border-cordel-master-dark/40 rounded cursor-pointer transition-colors shadow-2xs">+ {t('toada.addMeasureBtn') || "Ajouter une ligne de chant"}</button>
-        <button type="button" onClick={() => handleAddSilenceMeasure(lines.length - 1)} disabled={disabled} className="px-3 py-1.5 text-[9.5px] font-black uppercase text-stone-700 bg-stone-100 hover:bg-stone-200 border border-stone-300 rounded cursor-pointer transition-colors shadow-2xs">+ 🔇 {language === 'pt' ? 'Pausa do Baque' : (t('toada.pauseBaqueBtn') || 'Pause Baque')}</button>
+        <button type="button" onClick={() => handleAddSilenceMeasure(lines.length - 1)} disabled={disabled} className="px-3 py-1.5 text-[9.5px] font-black uppercase text-stone-700 bg-stone-100 hover:bg-stone-200 border border-stone-300 rounded cursor-pointer transition-colors shadow-2xs">+ 🔇 {language === 'pt' ? 'Pausa do Batuque' : (t('toada.pauseBaqueBtn') || 'Pause Batuque')}</button>
       </div>
       <ToadaBulkPasteModal isOpen={showBulkPasteModal} onClose={() => setShowBulkPasteModal(false)} lines={lines}
         onApplyLines={(next, applyMode) => commitLines(applyMode === 'append' ? [...lines.filter((l) => l.trim()), ...next] : next)} />

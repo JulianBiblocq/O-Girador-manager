@@ -40,8 +40,8 @@ export default function ToadaBulkPasteModal({ isOpen = false, onClose, lines = [
             </h3>
             <p className="text-[11px] text-stone-600 dark:text-stone-400">
               {isPt
-                ? '1 linha = 1 cartão • *Texto* para Puxador • [PAUSE 1M] para Pausa do Baque'
-                : '1 ligne = 1 carte • *Texte* pour Puxador • [PAUSE 1M] pour Pause Baque'}
+                ? '1 linha = 1 cartão • *Texto* para Puxador • [PAUSE 1M] para Pausa do Batuque'
+                : '1 ligne = 1 carte • *Texte* pour Puxador • [PAUSE 1M] pour Pause Batuque'}
             </p>
           </div>
           <button type="button" onClick={onClose} className="px-2 py-1 text-xs font-bold text-stone-500 hover:text-stone-900 cursor-pointer">✕</button>
