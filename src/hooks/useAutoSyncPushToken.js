@@ -4,29 +4,53 @@ import { getToken } from 'firebase/messaging';
 import { db, messaging } from '../firebase';
 import { resolveActiveMessagingSwRegistration } from '../utils/pushNotificationHelper';
 
+/** Délai anti-rebond en mémoire entre deux vérifications au retour au premier plan (5 minutes). */
+const FOREGROUND_SYNC_THROTTLE_MS = 5 * 60 * 1000;
+
 /**
- * Hook léger d'auto-synchronisation du jeton FCM à chaque démarrage de session.
- * Dès que `Notification.permission === 'granted'`, attend `navigator.serviceWorker.ready`,
- * appelle systématiquement `getToken()` (même si `profileData.fcmTokens` n'est pas vide)
- * et met à jour `users/{uid}.fcmTokens` si le jeton de l'appareil est absent ou a été renouvelé.
+ * Hook d'auto-synchronisation silencieuse du jeton FCM :
+ * - S'exécute dès l'ouverture de session si `Notification.permission === 'granted'`.
+ * - Se ré-exécute automatiquement au retour au premier plan (`visibilitychange` visible et `focus`)
+ *   avec un anti-rebond de 5 minutes en mémoire, permettant aux membres gardant la PWA ouverte
+ *   en tâche de fond de récupérer leur `fcmToken` dans `users/{uid}.fcmTokens` sans aucun clic.
  */
 export function useAutoSyncPushToken(user, profileData, onTokenSynced) {
-  const syncedUidRef = useRef(null);
+  const lastSyncTimeByUidRef = useRef({});
+  const isSyncingRef = useRef(false);
+  const latestProfileRef = useRef(profileData);
+  const onTokenSyncedRef = useRef(onTokenSynced);
 
   useEffect(() => {
-    const uid = user?.uid || profileData?.uid || profileData?.id;
-    if (!uid || !profileData) return;
-    if (typeof window === 'undefined' || !('Notification' in window)) return;
-    if (Notification.permission !== 'granted' || !messaging) return;
+    latestProfileRef.current = profileData;
+    onTokenSyncedRef.current = onTokenSynced;
+  }, [profileData, onTokenSynced]);
 
-    // Exécuter la resynchronisation une fois par démarrage de session pour l'utilisateur connecté
-    if (syncedUidRef.current === uid) return;
-    syncedUidRef.current = uid;
+  const uid = user?.uid || profileData?.uid || profileData?.id;
+  const hasProfile = Boolean(profileData);
 
-    const existingTokens = Array.isArray(profileData.fcmTokens) ? profileData.fcmTokens : [];
+  useEffect(() => {
+    if (!uid || !hasProfile) return;
+    if (typeof window === 'undefined' || !('Notification' in window) || !messaging) return;
+
     const state = { cancelled: false };
 
-    const syncToken = async () => {
+    const syncTokenIfPermitted = async () => {
+      if (state.cancelled || isSyncingRef.current) return;
+      if (Notification.permission !== 'granted') return;
+
+      const currentProfile = latestProfileRef.current;
+      const existingTokens = Array.isArray(currentProfile?.fcmTokens) ? currentProfile.fcmTokens : [];
+      const now = Date.now();
+      const lastSyncAt = lastSyncTimeByUidRef.current[uid] || 0;
+
+      // Respecter le délai anti-rebond de 5 minutes (sauf si la liste Firestore est vide)
+      if (existingTokens.length > 0 && now - lastSyncAt < FOREGROUND_SYNC_THROTTLE_MS) {
+        return;
+      }
+
+      isSyncingRef.current = true;
+      lastSyncTimeByUidRef.current[uid] = now;
+
       try {
         const swReg = await resolveActiveMessagingSwRegistration();
         const currentToken = await getToken(messaging, {
@@ -35,6 +59,10 @@ export function useAutoSyncPushToken(user, profileData, onTokenSynced) {
         });
         if (state.cancelled || !currentToken) return;
 
+        const latestTokens = Array.isArray(latestProfileRef.current?.fcmTokens)
+          ? latestProfileRef.current.fcmTokens
+          : existingTokens;
+
         const localTokenKey = `girador_device_fcm_token_${uid}`;
         let prevLocalToken = null;
         try {
@@ -42,13 +70,13 @@ export function useAutoSyncPushToken(user, profileData, onTokenSynced) {
         } catch {}
 
         // Si l'ancien jeton de cet appareil a tourné, on le retire avant d'ajouter le nouveau
-        if (prevLocalToken && prevLocalToken !== currentToken && existingTokens.includes(prevLocalToken)) {
+        if (prevLocalToken && prevLocalToken !== currentToken && latestTokens.includes(prevLocalToken)) {
           await updateDoc(doc(db, 'users', uid), {
             fcmTokens: arrayRemove(prevLocalToken)
           });
         }
 
-        if (!existingTokens.includes(currentToken)) {
+        if (!latestTokens.includes(currentToken)) {
           await updateDoc(doc(db, 'users', uid), {
             fcmTokens: arrayUnion(currentToken)
           });
@@ -58,17 +86,43 @@ export function useAutoSyncPushToken(user, profileData, onTokenSynced) {
           localStorage.setItem(localTokenKey, currentToken);
         } catch {}
 
-        if (onTokenSynced) onTokenSynced(currentToken);
+        if (onTokenSyncedRef.current) {
+          onTokenSyncedRef.current(currentToken);
+        }
       } catch (err) {
-        // Ignorer silencieusement en arrière-plan (ex: mode navigation privée ou réseau hors-ligne)
+        // En cas d'échec réseau temporaire, réinitialiser le timestamp pour permettre un nouvel essai au prochain focus
+        lastSyncTimeByUidRef.current[uid] = 0;
         console.warn('AutoSyncPushToken - Synchronisation différée :', err?.message || err);
+      } finally {
+        isSyncingRef.current = false;
       }
     };
 
-    syncToken();
+    // 1. Synchronisation immédiate à l'ouverture de l'application
+    syncTokenIfPermitted();
+
+    // 2. Réactivation silencieuse au retour au premier plan (PWA en tâche de fond ou retour d'onglet)
+    const handleVisibilityChange = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        syncTokenIfPermitted();
+      }
+    };
+
+    const handleWindowFocus = () => {
+      syncTokenIfPermitted();
+    };
+
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+    }
+    window.addEventListener('focus', handleWindowFocus);
 
     return () => {
       state.cancelled = true;
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      }
+      window.removeEventListener('focus', handleWindowFocus);
     };
-  }, [user?.uid, profileData, onTokenSynced]);
+  }, [uid, hasProfile]);
 }
