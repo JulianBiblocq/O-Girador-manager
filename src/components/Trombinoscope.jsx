@@ -14,7 +14,7 @@ import { useAvatarUpload } from '../hooks/useAvatarUpload';
 const CordelImageEditor = React.lazy(() => import('./CordelImageEditor'));
 
 // Sous-composants modulaires du Trombinoscope (Planche de timbres et modale détaillée)
-import MemberStampCard from './trombinoscope/MemberStampCard';
+import TrombinoscopeSectionsGrid from './trombinoscope/TrombinoscopeSectionsGrid';
 import MemberDetailModal from './trombinoscope/MemberDetailModal';
 import {
   FIVE_PUPITRES,
@@ -24,7 +24,7 @@ import {
   extractMemberBadges,
   getEffectiveMemberTags,
   isDefaultMemberBadge
-} from './trombinoscope/trombinoscopeUtils';
+} from '../utils/trombinoscopeUtils';
 
 
 
@@ -315,6 +315,7 @@ export default function Trombinoscope({ user, profileData, groupId: propGroupId,
     const queryStr = searchQuery.trim().toLowerCase();
 
     const byPupitre = {
+      mestre: [],
       alfaias: [],
       caixas: [],
       gongue: [],
@@ -506,6 +507,7 @@ export default function Trombinoscope({ user, profileData, groupId: propGroupId,
               className="theme-input w-full md:w-auto text-xs font-bold py-1.5 px-2 bg-cordel-bg-light cursor-pointer"
             >
               <option value="all">{t('trombi.allPupitres')}</option>
+              <option value="mestre">👑 Mestre</option>
               {FIVE_PUPITRES.map((pupitre) => (
                 <option key={pupitre.id} value={pupitre.id}>{pupitre.label}</option>
               ))}
@@ -590,110 +592,18 @@ export default function Trombinoscope({ user, profileData, groupId: propGroupId,
               <p className="text-xs font-bold opacity-75">{t('trombinoscope.noMembers')}</p>
             </CordelCard>
           ) : (
-            <div className="flex flex-col gap-8">
-              {/* 5 Pupitres SaaS ordonnés */}
-              {FIVE_PUPITRES.map((sec) => {
-                const sectionMembers = regularByPupitre[sec.id] || [];
-                if (sectionMembers.length === 0) return null;
-
-                return (
-                  <div key={sec.id} className="flex flex-col gap-4">
-                    {/* En-tête du pupitre avec son tampon xylogravé */}
-                    <div className="border-b border-dashed border-cordel-master-dark/20 pb-2 text-left mt-2 flex items-center justify-between">
-                      <h3 className="text-xs font-black uppercase tracking-wider text-[var(--color-cordel-marron,#8b2a1a)] flex items-center gap-1.5 select-none">
-                        <img 
-                          src={sec.icon} 
-                          alt={sec.label} 
-                          loading="lazy" 
-                          decoding="async" 
-                          className="w-4 h-4 object-contain inline-block dark:invert" 
-                        />
-                        <span>{sec.label}</span>
-                        <span className="text-[11px] font-bold text-stone-500 font-sans tracking-normal ml-0.5">
-                          ({sectionMembers.length})
-                        </span>
-                      </h3>
-                    </div>
-
-                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-2 sm:gap-3 items-stretch">
-                      {sectionMembers.map((member) => (
-                        <MemberStampCard
-                          key={member.id}
-                          member={member}
-                          isOnline={member.isOnline === true}
-                          isCurrentUser={Boolean(user?.uid && member.id === user.uid)}
-                          canSeePushStatus={canSeePushStatus}
-                          pupitreColor={getColorForInstrument(sec.colorKey, 'solid') || '#181716'}
-                          onClick={(m) => setSelectedMember(m)}
-                          onEditPhoto={handleEditPhoto}
-                          t={t}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-
-              {/* Section isolée pour les renforts & musiciens extérieurs (masquage strict si aucun renfort) */}
-              {hasRenforts && renfortsList.length > 0 && (
-                <div className="flex flex-col gap-4 mt-2 pt-6 border-t-2 border-dashed border-cordel-master-dark/30">
-                  <div className="border-b border-dashed border-cordel-master-dark/20 pb-2 text-left flex items-center justify-between">
-                    <h3 className="text-xs font-black uppercase tracking-wider text-[var(--color-cordel-marron,#8b2a1a)] flex items-center gap-1.5 select-none">
-                      <span>🎪 Renforts & Musiciens extérieurs</span>
-                      <span className="text-[11px] font-bold text-stone-500 font-sans tracking-normal ml-0.5">
-                        ({renfortsList.length})
-                      </span>
-                    </h3>
-                  </div>
-
-                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-2 sm:gap-3 items-stretch">
-                    {renfortsList.map((member) => (
-                      <MemberStampCard
-                        key={member.id}
-                        member={member}
-                        isOnline={member.isOnline === true}
-                        isCurrentUser={Boolean(user?.uid && member.id === user.uid)}
-                        canSeePushStatus={canSeePushStatus}
-                        pupitreColor={getColorForInstrument(member.instrumentPrincipal || member.instrument || 'Renfort', 'solid') || '#181716'}
-                        onClick={(m) => setSelectedMember(m)}
-                        onEditPhoto={handleEditPhoto}
-                        t={t}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Section dédiée pour les membres en cours d'orientation (adhérents post-essai sans pupitre définitif) */}
-              {(regularByPupitre['en-orientation'] || []).length > 0 && (filterInstrument === 'all' || filterInstrument === 'en-orientation') && (
-                <div className="flex flex-col gap-4 mt-2 pt-6 border-t-2 border-dashed border-cordel-master-dark/30">
-                  <div className="border-b border-dashed border-cordel-master-dark/20 pb-2 text-left flex items-center justify-between">
-                    <h3 className="text-xs font-black uppercase tracking-wider text-[var(--color-cordel-marron,#8b2a1a)] flex items-center gap-1.5 select-none">
-                      <span>🌱 En cours d'orientation</span>
-                      <span className="text-[11px] font-bold text-stone-500 font-sans tracking-normal ml-0.5">
-                        ({regularByPupitre['en-orientation'].length})
-                      </span>
-                    </h3>
-                  </div>
-
-                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-2 sm:gap-3 items-stretch">
-                    {regularByPupitre['en-orientation'].map((member) => (
-                      <MemberStampCard
-                        key={member.id}
-                        member={member}
-                        isOnline={member.isOnline === true}
-                        isCurrentUser={Boolean(user?.uid && member.id === user.uid)}
-                        canSeePushStatus={canSeePushStatus}
-                        pupitreColor="var(--color-cordel-ocre, #c05621)"
-                        onClick={(m) => setSelectedMember(m)}
-                        onEditPhoto={handleEditPhoto}
-                        t={t}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            <TrombinoscopeSectionsGrid
+              regularByPupitre={regularByPupitre}
+              renfortsList={renfortsList}
+              hasRenforts={hasRenforts}
+              filterInstrument={filterInstrument}
+              user={user}
+              canSeePushStatus={canSeePushStatus}
+              getColorForInstrument={getColorForInstrument}
+              onSelectMember={(m) => setSelectedMember(m)}
+              onEditPhoto={handleEditPhoto}
+              t={t}
+            />
           )}
         </div>
       )}

@@ -5,6 +5,79 @@ import { collection, query, where, getDocs, writeBatch, doc } from 'firebase/fir
  */
 export const DEFAULT_CUSTOM_CATEGORIES = ['Débutant', 'Confirmé'];
 
+/** Niveaux officiels par défaut du Casting (sans doublon Débutant / Confirmé) */
+export const OFFICIAL_CASTING_CATEGORIES = ['La relève', 'La référence'];
+
+/**
+ * Normalise une chaîne pour comparaison insensible à la casse et aux accents.
+ */
+function normalizeCastingKey(str) {
+  return String(str || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+/**
+ * Nettoie et déduplique la liste des catégories de niveau afin qu'aucune option
+ * « Débutant » ou « Confirmé » ne coexiste à côté de « La relève » et « La référence ».
+ */
+export function sanitizeCastingCategories(customCategories = []) {
+  if (!Array.isArray(customCategories) || customCategories.length === 0) {
+    return OFFICIAL_CASTING_CATEGORIES;
+  }
+
+  const result = [];
+  const seenKeys = new Set();
+
+  customCategories.forEach((rawCat) => {
+    const rawName = getCategoryName(rawCat);
+    if (!rawName) return;
+    const norm = normalizeCastingKey(rawName);
+
+    let mappedName = rawName;
+    if (norm === 'debutant' || norm === 'releve' || norm === 'la releve' || norm === 'la_releve') {
+      mappedName = 'La relève';
+    } else if (norm === 'confirme' || norm === 'reference' || norm === 'la reference' || norm === 'la_reference') {
+      mappedName = 'La référence';
+    }
+
+    const mappedKey = normalizeCastingKey(mappedName);
+    if (mappedKey && !seenKeys.has(mappedKey)) {
+      seenKeys.add(mappedKey);
+      result.push(mappedName);
+    }
+  });
+
+  return result.length > 0 ? result : OFFICIAL_CASTING_CATEGORIES;
+}
+
+/**
+ * Convertit toute valeur brute historique ('debutant', 'Débutant', 'confirme', 'Confirmé')
+ * vers l'option officielle correspondante ('La relève' ou 'La référence').
+ */
+export function normalizeCastingLevelValue(rawValue, customCategories = [], defaultIfEnrolled = false) {
+  const categories = sanitizeCastingCategories(customCategories);
+  const firstCat = categories[0] || 'La relève';
+  const secondCat = categories[1] || 'La référence';
+
+  if (!rawValue || rawValue === 'aucun') {
+    return defaultIfEnrolled ? firstCat : 'aucun';
+  }
+
+  const norm = normalizeCastingKey(rawValue);
+  if (norm === 'debutant' || norm === 'releve' || norm === 'la releve' || norm === 'la_releve' || norm === '1') {
+    return firstCat;
+  }
+  if (norm === 'confirme' || norm === 'reference' || norm === 'la reference' || norm === 'la_reference' || norm === '2') {
+    return secondCat;
+  }
+
+  const exactMatch = categories.find((c) => normalizeCastingKey(c) === norm);
+  return exactMatch || firstCat;
+}
+
 /**
  * Récupère le nom lisible d'une catégorie (qu'elle soit une chaîne ou un objet { name }).
  * @param {string|Object} c - Entrée catégorie.

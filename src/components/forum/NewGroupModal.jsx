@@ -3,6 +3,8 @@ import XiloAvatar from '../XiloAvatar';
 import CordelButton from '../CordelButton';
 import { useTerminologie } from '../../hooks/useTerminologie';
 import useModalEscape from '../../hooks/useModalEscape';
+import { isMemberArchived } from '../../utils/memberUtils';
+import GroupQuickSelectPills from './GroupQuickSelectPills';
 
 /**
  * Composant : NewGroupModal
@@ -55,10 +57,26 @@ export default function NewGroupModal({
     return members.filter((m) => {
       if (!m || m.id === currentUserId) return false;
       // Restriction stricte : statutActuel actif et non archivé
-      if (m.statutActuel === 'inactive' || m.statutActuel === 'archived') return false;
+      if (isMemberArchived(m)) return false;
       return true;
     });
   }, [members, currentUserId]);
+
+  // Basculer la sélection en 1 clic d'un pupitre principal ou d'une étiquette complète
+  const handleToggleQuickGroup = (groupMemberIds, groupLabel) => {
+    if (!Array.isArray(groupMemberIds) || groupMemberIds.length === 0) return;
+
+    const areAllAlreadySelected = groupMemberIds.every((id) => selectedMemberIds.includes(id));
+
+    if (areAllAlreadySelected) {
+      setSelectedMemberIds((prev) => prev.filter((id) => !groupMemberIds.includes(id)));
+    } else {
+      setSelectedMemberIds((prev) => Array.from(new Set([...prev, ...groupMemberIds])));
+      if (!groupName.trim() && groupLabel) {
+        setGroupName(groupLabel);
+      }
+    }
+  };
 
   // Filtrer les membres selon la recherche saisie
   const filteredMembers = useMemo(() => {
@@ -177,6 +195,13 @@ export default function NewGroupModal({
                 className="w-full px-3 py-1.5 text-xs font-semibold bg-white border border-cordel-master-dark/30 rounded focus:outline-hidden focus:border-cordel-wood"
               />
             </div>
+
+            {/* Sélection rapide par Pupitres (Principal) et par Étiquettes */}
+            <GroupQuickSelectPills
+              activeMembers={activeMembers}
+              selectedMemberIds={selectedMemberIds}
+              onToggleGroupMembers={handleToggleQuickGroup}
+            />
 
             {/* Filtrage des membres */}
             <div className="pt-1">

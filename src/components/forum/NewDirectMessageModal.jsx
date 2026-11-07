@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import XiloAvatar from '../XiloAvatar';
 import { useTerminologie } from '../../hooks/useTerminologie';
 import useModalEscape from '../../hooks/useModalEscape';
@@ -27,9 +27,25 @@ export default function NewDirectMessageModal({
 }) {
   const { tRole } = useTerminologie();
   const [searchTerm, setSearchTerm] = useState('');
+  const [isOpening, setIsOpening] = useState(false);
+  const openingLockRef = useRef(false);
+
+  // Sélection sécurisée avec verrou anti-double-clic
+  const handleSelectMember = async (memberId) => {
+    if (!memberId || openingLockRef.current || isOpening) return;
+    openingLockRef.current = true;
+    setIsOpening(true);
+    try {
+      await onStartDirectChat(memberId);
+      onClose();
+    } finally {
+      openingLockRef.current = false;
+      setIsOpening(false);
+    }
+  };
 
   // Fermeture accessible avec touche Échap
-  useModalEscape(isOpen, onClose);
+  useModalEscape(isOpen, onClose, isOpening);
 
   // Filtrer les adhérents actifs de l'association (exclut inactifs, archivés et l'utilisateur lui-même)
   const activeMembers = useMemo(() => {
@@ -139,11 +155,10 @@ export default function NewDirectMessageModal({
               return (
                 <div
                   key={member.id}
-                  onClick={() => {
-                    onStartDirectChat(member.id);
-                    onClose();
-                  }}
-                  className="p-2.5 bg-white/80 hover:bg-amber-50 border border-cordel-master-dark/20 hover:border-cordel-wood rounded-[6px_8px_5px_7px] shadow-xs flex items-center justify-between gap-3 cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99]"
+                  onClick={() => handleSelectMember(member.id)}
+                  className={`p-2.5 bg-white/80 hover:bg-amber-50 border border-cordel-master-dark/20 hover:border-cordel-wood rounded-[6px_8px_5px_7px] shadow-xs flex items-center justify-between gap-3 transition-all ${
+                    isOpening ? 'opacity-60 pointer-events-none cursor-wait' : 'cursor-pointer hover:scale-[1.01] active:scale-[0.99]'
+                  }`}
                 >
                   <div className="flex items-center gap-3 min-w-0 flex-1">
                     <XiloAvatar src={member.photoURL} name={fullName} size={36} />

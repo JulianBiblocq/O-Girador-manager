@@ -10,7 +10,7 @@ import CordelButton from '../CordelButton';
 import XiloAvatar from '../XiloAvatar';
 import { XiloClose } from '../XiloIcons';
 import { useTranslation } from '../LanguageContext';
-import { resolveCategory, getCategoryName } from '../../utils/categoryUtils';
+import { sanitizeCastingCategories, normalizeCastingLevelValue } from '../../utils/categoryUtils';
 
 /**
  * CastingAssignmentModal
@@ -74,12 +74,14 @@ export default function CastingAssignmentModal({
   const [selectedSecLevel, setSelectedSecLevel] = useState('aucun');
   const [isDispoSecoursSec, setIsDispoSecoursSec] = useState(false);
 
+  const officialCategories = useMemo(() => sanitizeCastingCategories(customCategories), [customCategories]);
+
   // Synchronisation des valeurs initiales au montage / ouverture
   useEffect(() => {
     if (member && isOpen) {
       const initMain = resolvePupitreForInstrument(member.instrumentPrincipal || member.instrument) || '';
       setSelectedPupitre(initMain === 'En attente' ? '' : initMain);
-      setSelectedLevel(member.niveauMusique || member.niveau || 'aucun');
+      setSelectedLevel(normalizeCastingLevelValue(member.niveauMusique || member.niveau || 'aucun', officialCategories, false));
 
       const secoursList = member.dispoSecoursInstruments || [];
       const legacySecours = member.disponibleSecours && !member.dispoSecoursInstruments;
@@ -98,10 +100,10 @@ export default function CastingAssignmentModal({
       // Second instrument
       const initSec = resolvePupitreForInstrument(member.instrumentSecondaire) || '';
       setSelectedSecInst(initSec === 'En attente' ? '' : initSec);
-      setSelectedSecLevel(member.niveauxParInstrument?.[initSec] || 'aucun');
+      setSelectedSecLevel(normalizeCastingLevelValue(member.niveauxParInstrument?.[initSec] || 'aucun', officialCategories, false));
       setIsDispoSecoursSec(secoursList.includes(initSec));
     }
-  }, [member, isOpen, resolvePupitreForInstrument]);
+  }, [member, isOpen, resolvePupitreForInstrument, officialCategories]);
 
   if (!isOpen || !member) return null;
 
@@ -330,14 +332,11 @@ export default function CastingAssignmentModal({
                 className="theme-input text-xs py-1.5 bg-white dark:bg-black/50 border-encre-noire/40 w-full disabled:opacity-40"
               >
                 <option value="aucun">- Niveau -</option>
-                {customCategories.map(cat => {
-                  const catName = getCategoryName(cat);
-                  return (
-                    <option key={`modal-cat-${catName}`} value={catName}>
-                      {resolveCategory(catName, customCategories)}
-                    </option>
-                  );
-                })}
+                {officialCategories.map(catName => (
+                  <option key={`modal-cat-${catName}`} value={catName}>
+                    {catName}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -447,14 +446,11 @@ export default function CastingAssignmentModal({
                 className="theme-input text-xs py-1 bg-white dark:bg-black/50 border-encre-noire/30 w-full disabled:opacity-40"
               >
                 <option value="aucun">- Niveau -</option>
-                {customCategories.map(cat => {
-                  const catName = getCategoryName(cat);
-                  return (
-                    <option key={`modal-cat-sec-${catName}`} value={catName}>
-                      {resolveCategory(catName, customCategories)}
-                    </option>
-                  );
-                })}
+                {officialCategories.map(catName => (
+                  <option key={`modal-cat-sec-${catName}`} value={catName}>
+                    {catName}
+                  </option>
+                ))}
               </select>
             </div>
           </div>

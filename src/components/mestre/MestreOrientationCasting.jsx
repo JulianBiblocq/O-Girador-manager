@@ -7,10 +7,18 @@ import CordelButton from '../CordelButton';
 import XiloAvatar from '../XiloAvatar';
 import { useConfirm } from '../../context/ConfirmContext';
 import { filterPublicPercussionInstruments, computePupitresList, resolvePupitreForInstrument as resolvePupitreCanonical } from '../../utils/tagUtils';
-import { DEFAULT_CUSTOM_CATEGORIES, resolveCategory, getCustomCategories, getCategoryName } from '../../utils/categoryUtils';
+import {
+  getCustomCategories,
+  OFFICIAL_CASTING_CATEGORIES,
+  sanitizeCastingCategories
+} from '../../utils/categoryUtils';
 import { getVoiceLabel, normalizeGroupNomenclature } from '../../constants/nomenclature';
 import { getInstrumentIconPath } from '../../utils/instrumentUtils';
 import CastingAssignmentModal from './CastingAssignmentModal';
+import {
+  CastingInstrumentLevelSelect,
+  CastingDanceLevelSelect
+} from './CastingLevelSelects';
 import MestreVocalSynthesisPanel from './MestreVocalSynthesisPanel';
 import { isActiveMember } from '../../utils/memberUtils';
 
@@ -105,7 +113,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
   const [loading, setLoading] = useState(true);
   const [instrumentsDisponibles, setInstrumentsDisponibles] = useState(DEFAULT_INSTRUMENTS);
   const [linkedInstruments, setLinkedInstruments] = useState([]);
-  const [customCategories, setCustomCategories] = useState(DEFAULT_CUSTOM_CATEGORIES);
+  const [customCategories, setCustomCategories] = useState(OFFICIAL_CASTING_CATEGORIES);
   const [searchTerm, setSearchTerm] = useState('');
   const [showPendingOnly, setShowPendingOnly] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -169,7 +177,7 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
           setLinkedInstruments([]);
         }
 
-        setCustomCategories(getCustomCategories(data));
+        setCustomCategories(sanitizeCastingCategories(getCustomCategories(data)));
 
         if (data.groupNomenclature) {
           setGroupNomenclature(normalizeGroupNomenclature(data.groupNomenclature));
@@ -611,9 +619,10 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
         instrumentsJoues: Array.from(new Set([mainInst, newInstrument, saisonInst].filter(Boolean)))
       };
 
-      // Si c'est un instrument historique, on force le niveau à Confirmé (ou 2ème customCategory)
+      // Si c'est un instrument historique, on force le niveau à La référence (ou 2ème customCategory)
       if (newInstrument) {
-         const confirmeCategory = getCategoryName(customCategories.length > 1 ? customCategories[1] : (customCategories[0] || 'Confirmé'));
+         const officialCats = sanitizeCastingCategories(customCategories);
+         const confirmeCategory = officialCats.length > 1 ? officialCats[1] : (officialCats[0] || 'La référence');
          updatePayload[`niveauxParInstrument.${newInstrument}`] = confirmeCategory;
       }
 
@@ -1473,20 +1482,13 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                               })()}
                               
                               {(m.instrumentPrincipal || m.instrument) && (m.instrumentPrincipal || m.instrument) !== 'En attente' && (
-                                <select
+                                <CastingInstrumentLevelSelect
                                   value={m.niveauMusique || m.niveau || 'aucun'}
-                                  onChange={(e) => handleUpdateMainLevel(m.id, e.target.value)}
+                                  onChange={(val) => handleUpdateMainLevel(m.id, val)}
                                   disabled={saving}
-                                  className="theme-input text-[10px] py-1 bg-white max-w-[80px]"
-                                >
-                                  <option value="aucun">{t('mestre.casting.optionLevelShort')}</option>
-                                  {customCategories.map(cat => {
-                                    const catName = getCategoryName(cat);
-                                    return (
-                                      <option key={`cat-${catName}`} value={catName}>{resolveCategory(catName, customCategories)}</option>
-                                    );
-                                  })}
-                                </select>
+                                  customCategories={customCategories}
+                                  placeholderLabel={t('mestre.casting.optionLevelShort')}
+                                />
                               )}
                             </div>
                             
@@ -1536,20 +1538,13 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                                 );
                               })()}
                               {m.instrumentSecondaire && m.instrumentSecondaire !== 'En attente' && (
-                                <select
+                                <CastingInstrumentLevelSelect
                                   value={m.niveauxParInstrument?.[m.instrumentSecondaire] || 'aucun'}
-                                  onChange={(e) => handleUpdateSecondaryLevel(m.id, m.instrumentSecondaire, e.target.value)}
+                                  onChange={(val) => handleUpdateSecondaryLevel(m.id, m.instrumentSecondaire, val)}
                                   disabled={saving}
-                                  className="theme-input text-[10px] py-1 bg-white max-w-[80px]"
-                                >
-                                  <option value="aucun">{t('mestre.casting.optionLevelShort')}</option>
-                                  {customCategories.map(cat => {
-                                    const catName = getCategoryName(cat);
-                                    return (
-                                      <option key={`cat-sec-${catName}`} value={catName}>{resolveCategory(catName, customCategories)}</option>
-                                    );
-                                  })}
-                                </select>
+                                  customCategories={customCategories}
+                                  placeholderLabel={t('mestre.casting.optionLevelShort')}
+                                />
                               )}
                             </div>
 
@@ -1690,20 +1685,14 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
                               })()}
                               
                               {m.instrumentSaison && (
-                                <select
+                                <CastingInstrumentLevelSelect
                                   value={m.niveauxParInstrument?.[m.instrumentSaison] || 'aucun'}
-                                  onChange={(e) => handleUpdateSaisonLevel(m.id, m.instrumentSaison, e.target.value)}
+                                  onChange={(val) => handleUpdateSaisonLevel(m.id, m.instrumentSaison, val)}
                                   disabled={saving}
+                                  customCategories={customCategories}
+                                  placeholderLabel={t('mestre.casting.optionLevelFull')}
                                   className="theme-input text-[10px] py-0.5 bg-white w-full text-cordel-master-dark/80"
-                                >
-                                  <option value="aucun">{t('mestre.casting.optionLevelFull')}</option>
-                                  {customCategories.map(cat => {
-                                    const catName = getCategoryName(cat);
-                                    return (
-                                      <option key={`saison-cat-${catName}`} value={catName}>{resolveCategory(catName, customCategories)}</option>
-                                    );
-                                  })}
-                                </select>
+                                />
                               )}
 
                               {/* Secours Apprentissage */}
@@ -1734,26 +1723,13 @@ export default function MestreOrientationCasting({ user, profileData, _onNavigat
 
                       {/* 4. Danse & Niveau */}
                       <td className="py-2.5 px-2 text-right">
-                        <select
-                          value={(m.pratiqueDanse || (m.niveauDanse && m.niveauDanse !== 'aucun')) ? (m.niveauDanse && m.niveauDanse !== 'aucun' ? m.niveauDanse : 'debutant') : 'aucun'}
-                          onChange={(e) => handleUpdateDanseStatusAndLevel(m.id, e.target.value)}
+                        <CastingDanceLevelSelect
+                          member={m}
+                          onChange={(val) => handleUpdateDanseStatusAndLevel(m.id, val)}
                           disabled={saving}
-                          className={`theme-input text-[10px] py-1 bg-white font-bold ${(m.pratiqueDanse || (m.niveauDanse && m.niveauDanse !== 'aucun')) ? 'text-amber-900 border-amber-400 bg-amber-50/50' : 'text-cordel-master-dark/60 border-cordel-master-dark/20'}`}
-                        >
-                          <option value="aucun">{t('mestre.casting.danceNotEnrolled')}</option>
-                          <option value="debutant">{t('mestre.casting.danceBeginner')}</option>
-                          {customCategories
-                            .filter(cat => {
-                              const name = getCategoryName(cat);
-                              return name && name.toLowerCase().replace(/é|è|ê/g, 'e') !== 'debutant';
-                            })
-                            .map(cat => {
-                              const catName = getCategoryName(cat);
-                              return (
-                                <option key={`danse-${catName}`} value={catName}>💃 {resolveCategory(catName, customCategories)}</option>
-                              );
-                            })}
-                        </select>
+                          customCategories={customCategories}
+                          notEnrolledLabel={t('mestre.casting.danceNotEnrolled')}
+                        />
                       </td>
                     </tr>
                   );

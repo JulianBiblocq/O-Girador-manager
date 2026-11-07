@@ -123,16 +123,34 @@ export const FIVE_PUPITRES = [
 ];
 
 /**
- * Détection inclusive d'un membre pratiquant la danse
+ * Détection inclusive d'un membre pratiquant la danse à titre principal
  */
 export const isDanseMember = (m) => {
   if (!m) return false;
   if (m.pratiqueDanse === true) return true;
   if (m.niveauDanse && m.niveauDanse !== 'aucun') return true;
   const userInstruments = (Array.isArray(m.instrumentsJoues) && m.instrumentsJoues.length > 0)
-    ? m.instrumentsJoues
-    : [m.instrumentPrincipal || m.instrument || m.instrumentSecondaire].filter(Boolean);
+    ? m.instrumentsJoues.filter((i) => String(i).toLowerCase().trim() !== String(m.instrumentSecondaire || '').toLowerCase().trim())
+    : [m.instrumentPrincipal || m.instrument].filter(Boolean);
   return userInstruments.some((inst) => String(inst).toLowerCase().includes('danse'));
+};
+
+/**
+ * Détecte en priorité si un membre est Mestre (rôle, flag, instrument ou étiquette 'mestre')
+ */
+export const isMestreMember = (member) => {
+  if (!member) return false;
+  if (String(member.role || '').toLowerCase().trim() === 'mestre') return true;
+  if (member.isMestre === true) return true;
+  if (String(member.instrument || '').toLowerCase().trim() === 'mestre') return true;
+  if (String(member.instrumentPrincipal || '').toLowerCase().trim() === 'mestre') return true;
+  if (Array.isArray(member.tags)) {
+    return member.tags.some((t) => {
+      const clean = String(getTagId(t) || t).toLowerCase().trim();
+      return clean === 'mestre' || clean === 'mestre batucada' || clean === 'mestre de batucada';
+    });
+  }
+  return false;
 };
 
 /**
@@ -188,14 +206,28 @@ export const isChantReferent = (member) => {
 };
 
 /**
- * Résout le pupitre principal unique d'un membre parmi les 5 pupitres SaaS
+ * Résout le pupitre principal unique d'un membre parmi la ligne Mestre et les 5 pupitres SaaS
+ * (ignore strictement instrumentSecondaire et les instruments de secours).
  */
 export const resolveMemberPrimaryPupitre = (member) => {
   if (!member) return 'en-orientation';
 
+  // 0. Priorité absolue au Mestre afin qu'il ne tombe jamais dans 'en-orientation'
+  if (isMestreMember(member)) {
+    return 'mestre';
+  }
+
   const primary = String(member.instrumentPrincipal || member.instrument || '').toLowerCase().trim();
+  const secondaryLower = String(member.instrumentSecondaire || '').toLowerCase().trim();
+  const secoursSet = new Set(
+    (Array.isArray(member.dispoSecoursInstruments) ? member.dispoSecoursInstruments : [])
+      .map((i) => String(i).toLowerCase().trim())
+  );
   const rawInstruments = (Array.isArray(member.instrumentsJoues) && member.instrumentsJoues.length > 0)
-    ? member.instrumentsJoues
+    ? member.instrumentsJoues.filter((inst) => {
+        const clean = String(inst).toLowerCase().trim();
+        return clean && clean !== secondaryLower && (!secoursSet.has(clean) || clean === primary);
+      })
     : [];
 
   const isDancer = isDanseMember(member);
@@ -405,6 +437,7 @@ export const resolveMemberInstrumentSubtitle = (member) => {
   }
 
   const pupitreId = member.primaryPupitreId || resolveMemberPrimaryPupitre(member);
+  const isMestre = pupitreId === 'mestre' || isMestreMember(member);
   let pupitreLabel = '';
 
   if (pupitreId === 'en-orientation') pupitreLabel = "En cours d'orientation";
@@ -416,7 +449,7 @@ export const resolveMemberInstrumentSubtitle = (member) => {
   else {
     const raw = String(member.instrumentPrincipal || member.instrument || '').trim();
     const lower = raw.toLowerCase();
-    if (lower === 'en attente' || lower === 'en_attente') {
+    if (!isMestre && (lower === 'en attente' || lower === 'en_attente')) {
       pupitreLabel = "En cours d'orientation";
     } else if (lower.includes('agbe') || lower.includes('agbê') || lower.includes('mineiro') || lower.includes('semente')) {
       pupitreLabel = 'Sementes';
@@ -428,16 +461,17 @@ export const resolveMemberInstrumentSubtitle = (member) => {
       pupitreLabel = 'Gonguê';
     } else if (lower.includes('danse')) {
       pupitreLabel = 'Danse';
-    } else if (!isDefaultMemberBadge(raw) && !isPedagogicalTag(raw)) {
+    } else if (!isMestre && !isDefaultMemberBadge(raw) && !isPedagogicalTag(raw)) {
       pupitreLabel = raw;
     }
   }
 
-  // Mestre de Batucada : affichage du titre avec pupitre éventuel (ex: "Mestre • Caixas" ou "Mestre")
-  if (isMestreBatucada && pedagogicalTitle) {
-    return pupitreLabel && pupitreLabel.toLowerCase() !== 'mestre'
-      ? `${pedagogicalTitle} • ${pupitreLabel}`
-      : pedagogicalTitle;
+  // Si le membre est Mestre : retourner uniquement 'MESTRE' s'il n'a pas d'instrument de percussion/danse attribué
+  if (isMestre || (isMestreBatucada && pedagogicalTitle)) {
+    const titleLabel = pedagogicalTitle ? pedagogicalTitle.toUpperCase() : 'MESTRE';
+    return pupitreLabel && pupitreLabel.toLowerCase() !== 'mestre' && pupitreLabel !== "En cours d'orientation"
+      ? `${titleLabel} • ${pupitreLabel}`
+      : 'MESTRE';
   }
 
   return pupitreLabel || (!isDefaultMemberBadge(member.role) && member.role !== 'mestre' ? member.role : '');

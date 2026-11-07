@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   collection,
   query,
@@ -20,6 +20,7 @@ import {
   addConversationParticipants,
   removeConversationParticipant
 } from '../utils/conversationActionsUtils';
+import { deduplicateDirectConversations } from '../utils/directConversationDedupeUtils';
 
 /**
  * Hook personnalisé useConversations
@@ -30,6 +31,7 @@ export function useConversations(user, groupId, profileData) {
   const [conversations, setConversations] = useState([]);
   const [generalConvDoc, setGeneralConvDoc] = useState(null);
   const [loading, setLoading] = useState(true);
+  const deletedDuplicateIdsRef = useRef(new Set());
 
   const normalizedGroupId = useMemo(
     () => String(groupId || profileData?.groupId || 'samambaia').trim().toLowerCase() || 'samambaia',
@@ -63,7 +65,10 @@ export function useConversations(user, groupId, profileData) {
           }
         });
 
-        list.sort((a, b) => {
+        // Dédoublonnage strict des fils 1-à-1 par interlocuteur et suppression silencieuse des doublons vides
+        const deduplicatedList = deduplicateDirectConversations(list, user.uid, deletedDuplicateIdsRef.current);
+
+        deduplicatedList.sort((a, b) => {
           const isGenA = isGeneralGroupConversation(a, normalizedGroupId);
           const isGenB = isGeneralGroupConversation(b, normalizedGroupId);
           if (isGenA && !isGenB) return -1;
@@ -73,7 +78,7 @@ export function useConversations(user, groupId, profileData) {
           return timeB - timeA;
         });
 
-        setConversations(list);
+        setConversations(deduplicatedList);
         setLoading(false);
       },
       (err) => {
