@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import CordelCard from '../../CordelCard';
 import VaralRopeSVG from './VaralRopeSVG';
 import VaralBookletCover from './VaralBookletCover';
 import VaralEmptyRopeAdmin from './VaralEmptyRopeAdmin';
@@ -128,11 +127,9 @@ export default function VaralCategoryRope({
   }
 
   return (
-    <CordelCard
+    <div
       key={category.id}
-      variant="default"
-      useExtremeBorder={true}
-      className="pt-3 pb-4 relative overflow-hidden bg-[#FEF9E7] dark:bg-[#1A1712] border-2 border-cordel-master-dark/30 rounded-xl shadow-[4px_6px_16px_rgba(24,23,22,0.12)] w-full my-4 transition-all"
+      className="py-5 first:pt-0 last:pb-0 relative w-full transition-all"
     >
       {/* En-tête de la corde : titre, filtres et actions contextuelles */}
       <div className="flex flex-col md:flex-row md:justify-between items-start md:items-center gap-2 mb-2 pl-3 pr-3 select-none relative z-20">
@@ -311,6 +308,6 @@ export default function VaralCategoryRope({
           )}
         </div>
       </div>
-    </CordelCard>
+    </div>
   );
 }

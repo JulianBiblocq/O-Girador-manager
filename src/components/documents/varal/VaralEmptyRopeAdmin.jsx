@@ -1,5 +1,4 @@
 import React from 'react';
-import CordelCard from '../../CordelCard';
 import { useTranslation } from '../../LanguageContext';
 import { resolveVaralCategoryLabel, getCategoryLabel } from '../../../utils/documentCategories';
 
@@ -23,14 +22,10 @@ export default function VaralEmptyRopeAdmin({
   const categoryLabel = resolveVaralCategoryLabel(category, t, [], [], allEventsMap) || getCategoryLabel(category, allEventsMap?.[category?.id?.replace('projet_', '')]?.titre);
 
   return (
-    <CordelCard
-      variant="default"
-      useExtremeBorder={true}
-      className={`py-2 px-3 relative overflow-hidden bg-[#FEF9E7]/80 dark:bg-[#1A1712]/80 border border-dashed ${
-        isInactive
-          ? 'border-[var(--color-cordel-rouge,#8b2a1a)]/40 opacity-75'
-          : 'border-cordel-master-dark/30'
-      } rounded-lg shadow-xs w-full my-2 transition-all select-none`}
+    <div
+      className={`py-5 first:pt-0 last:pb-0 px-3 relative w-full transition-all select-none ${
+        isInactive ? 'opacity-75' : ''
+      }`}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2 flex-wrap">
@@ -99,6 +94,6 @@ export default function VaralEmptyRopeAdmin({
           )}
         </div>
       </div>
-    </CordelCard>
+    </div>
   );
 }

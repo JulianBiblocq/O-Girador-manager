@@ -199,10 +199,7 @@ async function sendPushToUsers(db, { groupId, recipientId, cibles, targetUserIds
             const errorCode = resp.error?.code || "";
             if (
               errorCode === "messaging/invalid-registration-token" ||
-              errorCode === "messaging/registration-token-not-registered" ||
-              errorCode === "messaging/mismatched-credential" ||
-              errorCode.includes("not-registered") ||
-              errorCode.includes("invalid-registration-token")
+              errorCode === "messaging/registration-token-not-registered"
             ) {
               tokensToRemove.push(batch[idx]);
             }

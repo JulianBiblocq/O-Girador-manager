@@ -164,7 +164,7 @@ export default function WidgetAgenda({
         }`}
       >
         <span>
-          {hasActiveFilter ? `🎯 Filtre actif (${activeFilterCount})` : '🎯 Filtrer'}
+          {hasActiveFilter ? `🌪️ Filtre actif (${activeFilterCount})` : '🌪️ Filtrer'}
         </span>
         <span>{isMobileFiltersOpen ? '▴' : '▾'}</span>
       </button>

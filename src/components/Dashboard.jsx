@@ -13,11 +13,11 @@ import WidgetVideoALaUne from './dashboard/WidgetVideoALaUne';
 import { extractYouTubeVideoId } from './common/LiteYouTubeEmbed';
 const WidgetDocuments = lazyWithRetry(() => import('./WidgetDocuments'));
 const WidgetTreasury = lazyWithRetry(() => import('./WidgetTreasury'));
-import CordelCard from './CordelCard';
-import { XiloMandacaru } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
 import { useTerminologie } from '../hooks/useTerminologie';
 import InstrumentReminderBanner from './dashboard/InstrumentReminderBanner';
+import NotificationBanner from './dashboard/NotificationBanner';
+import DashboardProfileHeader from './dashboard/DashboardProfileHeader';
 import PushActivationModal from './dashboard/PushActivationModal';
 import PushTutorialModal from './dashboard/PushTutorialModal';
 import { usePresenceContext } from '../context/PresenceContext';
@@ -259,39 +259,18 @@ export default function Dashboard({
         <HeaderBrandTitle titleSize="text-2xl sm:text-3xl" />
       </div>
 
+      {/* Bannière discrète d'activation Push en 1 clic et resynchronisation automatique du jeton */}
+      <NotificationBanner user={user} profileData={currentProfile} />
 
-      {/* Welcome & Tags Section */}
-      <div className="text-left select-none pb-1 mt-1 border-b border-dashed border-cordel-master-dark/15">
-        <h2 className="text-lg font-black text-cordel-wood flex items-center gap-1.5">
-          <XiloMandacaru size={20} className="text-cordel-wood shrink-0" />
-          <span>
-            {t('dashboard.welcome') || "Axé"}, {profileData?.prenom || tRole('batuqueiro', profileData?.genre)} !
-          </span>
-        </h2>
-        
-        <div className="flex flex-wrap gap-2 mt-2">
-          {/* Role badge */}
-          <span className="theme-stamp-badge theme-stamp-badge-wood rotate-[-1.5deg] text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 select-none">
-            🏆 {tRole(profileData?.role || 'membre', profileData?.genre)}
-          </span>
-          
-          {/* Instrument badges */}
-          {(() => {
-            const userInstruments = profileData?.instrumentsJoues && profileData.instrumentsJoues.length > 0
-              ? profileData.instrumentsJoues
-              : [profileData?.instrument].filter(Boolean);
-              
-            return userInstruments.map((inst) => (
-              <span 
-                key={inst} 
-                className="inline-block text-[9px] font-black uppercase tracking-wider bg-cordel-bg-light border border-encre-noire px-2 py-0.5 rounded-[4px_6px_3px_5px] shadow-[1px_1px_0px_0px_#181716] select-none"
-              >
-                🎵 {inst}
-              </span>
-            ));
-          })()}
-        </div>
-      </div>
+      {/* En-tête de bienvenue et carte de profil intégrant les badges dédupliqués */}
+      <DashboardProfileHeader
+        user={user}
+        profileData={profileData}
+        t={t}
+        tRole={tRole}
+        isPresenceEnabled={isPresenceEnabled}
+        onNavigateToView={onNavigateToView}
+      />
 
       {/* Bannière Cordel d'invitation aux vœux post-cours d'essai */}
       {Boolean(
@@ -302,59 +281,6 @@ export default function Dashboard({
       ) && (
         <InstrumentReminderBanner onNavigateToView={onNavigateToView} />
       )}
-
-      {/* Clickable User Information Card */}
-      <div 
-        onClick={() => onNavigateToView('profil')}
-        className="cursor-pointer hover:translate-x-[-1px] hover:translate-y-[-1px] active:translate-x-[0.5px] active:translate-y-[0.5px] transition-all"
-        title="Modifier mon profil / Paramètres"
-      >
-        <CordelCard variant="default" useExtremeBorder={true} className="py-3 px-4">
-          <div className="flex items-center gap-3 text-left">
-            <div className="relative shrink-0">
-              {(profileData?.photoURL || user?.photoURL) ? (
-                <img 
-                  src={profileData?.photoURL || user?.photoURL} 
-                  alt={`${profileData?.prenom || user?.displayName || ''} ${profileData?.nom || ''}`.trim() || 'Utilisateur'} 
-                  width={40}
-                  height={40}
-                  loading="eager"
-                  className="w-10 h-10 rounded-[8px_4px_7px_6px] border border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] object-cover grayscale contrast-[130%] sepia-[40%] mix-blend-multiply brightness-[95%] select-none pointer-events-none"
-                />
-              ) : (
-                <div className="w-10 h-10 rounded-[8px_4px_7px_6px] border border-encre-noire bg-cordel-bg flex items-center justify-center font-black text-xs text-cordel-wood">
-                  {profileData?.prenom ? profileData.prenom[0].toUpperCase() : '🥁'}
-                </div>
-              )}
-              {/* Online Green Indicator Dot */}
-              {isPresenceEnabled !== false && (
-                <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center" title="Vous êtes en ligne">
-                  <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
-                </span>
-              )}
-            </div>
-            
-            <div className="flex-1 min-w-0">
-              <h3 className="text-xs font-black text-encre-noire truncate flex items-center gap-1.5 flex-wrap">
-                <span>{profileData?.prenom} {profileData?.nom}</span>
-                {profileData?.paymentStatus === 'paid' && (
-                  <span className="theme-stamp-badge theme-stamp-badge-wood bg-green-100 text-green-800 dark:bg-green-950/20 dark:text-green-400 border-green-700/35 uppercase text-[7px] font-black tracking-wider px-1.5 py-0.2 shrink-0 scale-90 rotate-[-1deg]">
-                    Payé
-                  </span>
-                )}
-                {(profileData?.paymentStatus === 'exempted' || profileData?.paymentStatus === 'exempt' || profileData?.isCotisationExoneree === true || profileData?.cotisationStatus === 'exonere' || (Array.isArray(profileData?.tags) && profileData.tags.some(t => typeof t === 'string' && t.toLowerCase().includes('exon')))) && (
-                  <span className="theme-stamp-badge theme-stamp-badge-wood bg-blue-100 text-blue-800 dark:bg-blue-950/20 dark:text-blue-400 border-blue-700/35 uppercase text-[7px] font-black tracking-wider px-1.5 py-0.2 shrink-0 scale-90 rotate-[-1deg]">
-                    Exonéré
-                  </span>
-                )}
-              </h3>
-              <p className="text-[9px] font-semibold text-cordel-master-dark/70 break-all select-all">
-                {profileData?.email}
-              </p>
-            </div>
-          </div>
-        </CordelCard>
-      </div>
 
       {/* Bouton d'installation PWA si disponible */}
       {installPromptAvailable && (

@@ -58,6 +58,13 @@ if (typeof window !== 'undefined') {
     const storedVersion = localStorage.getItem('app_build_version');
 
     if (storedVersion && storedVersion !== CURRENT_VERSION) {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then((registrations) => {
+          registrations.forEach((registration) => {
+            registration.update().catch(() => {});
+          });
+        }).catch(() => {});
+      }
       if ('caches' in window) {
         caches.keys().then((names) => {
           names.forEach((name) => {

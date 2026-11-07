@@ -1,17 +1,17 @@
 /**
- * Utilitaire pour vider tous les caches du navigateur, désinscrire les service workers et forcer le rechargement.
- * Utilisé pour les mises à jour manuelles d'urgence et le nettoyage du cache par les membres.
+ * Utilitaire pour vider tous les caches du navigateur, mettre à jour les service workers (sans les désinscrire) et forcer le rechargement.
+ * Préserve l'abonnement Web Push actif de l'appareil tout en purgeant les fichiers mis en cache.
  */
 export const forceUpdateAndClearCache = async () => {
-  // 1. Désinscrire d'abord tous les Service Workers actifs pour stopper les requêtes en tâche de fond
+  // 1. Mettre à jour tous les Service Workers actifs sans jamais appeler unregister() afin de préserver les jetons Web Push
   if ('serviceWorker' in navigator) {
     try {
       const registrations = await navigator.serviceWorker.getRegistrations();
       await Promise.all(registrations.map(registration => {
-        return registration.unregister();
+        return registration.update();
       }));
     } catch (err) {
-      console.error("PWA Utils - Erreur lors de la désinscription des service workers :", err);
+      console.error("PWA Utils - Erreur lors de la mise à jour des service workers :", err);
     }
   }
 

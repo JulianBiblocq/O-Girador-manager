@@ -53,19 +53,19 @@ export default function HeaderSealLogo({
   }
 
   const dimensionClasses = size === 40 
-    ? 'w-10 h-10 landscape:w-8 landscape:h-8' 
-    : (size === 64 ? 'w-16 h-16' : 'w-20 h-20');
+    ? 'w-10 h-10 shrink-0 flex items-center justify-center' 
+    : (size === 64 ? 'w-16 h-16 shrink-0 flex items-center justify-center' : 'w-20 h-20 shrink-0 flex items-center justify-center');
 
   return (
     <div
       onClick={onClick}
-      className={`relative ${dimensionClasses} rounded-full overflow-hidden flex items-center justify-center select-none shrink-0 drop-shadow-md transition-all duration-300 ${
+      className={`relative ${dimensionClasses} select-none drop-shadow-md transition-all duration-300 ${
         onClick ? 'cursor-pointer hover:scale-[1.04] hover:rotate-[-4deg] active:translate-x-[0.5px] active:translate-y-[0.5px]' : ''
       } ${isLogoTilting ? 'animate-logo-tilt' : ''} ${className}`}
       title={associationName || 'O Girador'}
     >
       {useCompositeFallback ? (
-        <div className="relative w-full h-full flex items-center justify-center bg-[#f4ecd8]">
+        <div className="relative w-full h-full rounded-full flex items-center justify-center bg-[#f4ecd8]">
           {/* Anneau officiel O Girador en arrière-plan */}
           <img
             src="/og-girador-frame.svg"
@@ -87,7 +87,7 @@ export default function HeaderSealLogo({
           alt={associationName || 'Sceau O Girador'}
           width={size}
           height={size}
-          className="w-full h-full object-cover pointer-events-none"
+          className="w-full h-full object-contain pointer-events-none"
           onError={(e) => {
             // Repli gracieux en cas de problème de chargement d'image
             if (sealSrc !== '/og-girador-frame.svg') {

@@ -428,7 +428,7 @@ function VaralWidgetContent({
             </p>
           </CordelCard>
         ) : (
-          <div className="flex flex-col gap-4 w-full">
+          <div className="flex flex-col gap-3 w-full">
             {isWorkshopPole && (
               <div className="flex justify-end">
                 <button
@@ -441,31 +441,40 @@ function VaralWidgetContent({
                 </button>
               </div>
             )}
-            {displayedCategories.map((category) => (
-              <VaralCategoryRope
-                key={category.id}
-                category={category}
-                documents={groupedDocs[category.id] || []}
-                newestDocumentId={newestDocumentId}
-                weeklyCultureDocId={category.id === 'Culture' ? weeklyCultureDocId : null}
-                isWeeklyManuallyPinned={category.id === 'Culture' && isWeeklyManuallyPinned}
-                isAuthorized={isAuthorized}
-                canSeeHidden={canSeeHidden}
-                canWrite={canWrite}
-                canDeposit={canDepositOnCategory(category)}
-                allEventsMap={allEventsMap}
-                getDocType={getDocType}
-                onOpenAdd={handleOpenAddForCategory}
-                onNavigateToView={onNavigateToView}
-                onEditCategory={setEditingCategory}
-                onSelectDoc={handleSelectDoc}
-                onMoveLeft={handleMoveLeft}
-                onMoveRight={handleMoveRight}
-                onEditDoc={setDocumentToEdit}
-                onDeleteDoc={handleDelete}
-                onTogglePinWeekly={category.id === 'Culture' ? handleTogglePinWeeklyCultureDoc : null}
-              />
-            ))}
+            {/* Cadre CordelCard unique réunissant toutes les cordes actives du Varal */}
+            <CordelCard
+              variant="default"
+              useExtremeBorder={true}
+              className="p-4 sm:p-5 relative overflow-hidden bg-[#FEF9E7] dark:bg-[#1A1712] w-full transition-all"
+            >
+              <div className="flex flex-col divide-y-2 divide-dashed divide-stone-400/60 w-full">
+                {displayedCategories.map((category) => (
+                  <VaralCategoryRope
+                    key={category.id}
+                    category={category}
+                    documents={groupedDocs[category.id] || []}
+                    newestDocumentId={newestDocumentId}
+                    weeklyCultureDocId={category.id === 'Culture' ? weeklyCultureDocId : null}
+                    isWeeklyManuallyPinned={category.id === 'Culture' && isWeeklyManuallyPinned}
+                    isAuthorized={isAuthorized}
+                    canSeeHidden={canSeeHidden}
+                    canWrite={canWrite}
+                    canDeposit={canDepositOnCategory(category)}
+                    allEventsMap={allEventsMap}
+                    getDocType={getDocType}
+                    onOpenAdd={handleOpenAddForCategory}
+                    onNavigateToView={onNavigateToView}
+                    onEditCategory={setEditingCategory}
+                    onSelectDoc={handleSelectDoc}
+                    onMoveLeft={handleMoveLeft}
+                    onMoveRight={handleMoveRight}
+                    onEditDoc={setDocumentToEdit}
+                    onDeleteDoc={handleDelete}
+                    onTogglePinWeekly={category.id === 'Culture' ? handleTogglePinWeeklyCultureDoc : null}
+                  />
+                ))}
+              </div>
+            </CordelCard>
           </div>
         )
       )}
