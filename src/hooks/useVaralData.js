@@ -13,136 +13,23 @@ import {
   resolveReunionPrivacyConfig,
   canUserSeeReunionReportAndAgenda
 } from '../utils/reunionPrivacyUtils';
+import {
+  DEFAULT_VARAL_CATEGORIES,
+  DEFAULT_POLE_ROPES,
+  hasReportTag,
+  isReportDoc,
+  isAdministrativeDoc,
+  getDocType
+} from '../utils/varalClassificationUtils';
+import { resolveWeeklyCultureDocId } from '../utils/weeklyCultureDocUtils';
 
-/**
- * Catégories par défaut suspendues sur le Varal de documents.
- */
-export const DEFAULT_VARAL_CATEGORIES = [
-  { id: 'Toadas', nom: 'Toadas', actif: true, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
-  { id: 'Culture', nom: 'Culture', actif: true, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
-  { id: 'TutosFabrication', nom: 'Tutos Fabrication', actif: true, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
-  { id: 'PhotosPrestations', nom: 'Photos Prestations', actif: true, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
-  { id: 'ComptesRendus', nom: 'Documents administratifs', actif: true, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: true },
-  { id: 'TutorielsVideo', nom: 'Tutoriels Vidéo', actif: false, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
-  { id: 'Administratif', nom: 'Administratif', actif: false, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false },
-  { id: 'Costumerie', nom: 'Costumerie & Patrons', actif: false, activerUploadPublic: false, lienUploadPublic: '', activerOpaciteArchive: false }
-];
-
-/**
- * Table de correspondance par défaut reliant chaque pôle métier à ses cordes natives du Varal.
- */
-export const DEFAULT_POLE_ROPES = {
-  pedagogie: ['Toadas', 'Culture'],
-  secretariat: ['ComptesRendus', 'Administratif'],
-  studio: ['PhotosPrestations'],
-  lutherie: ['TutosFabrication'],
-  costumerie: ['TutosFabrication', 'Costumerie', 'TutosCostumes', 'PatronsCostumes']
-};
-
-/**
- * Détermine si un document porte un tag ou une métadonnée explicite de compte-rendu ou PV.
- */
-export const hasReportTag = (docItem) => {
-  if (!docItem) return false;
-  const sousCat = (docItem.sousCategorie || docItem.sousCategorieFiche || '').toLowerCase();
-  if (sousCat.includes('compte') || sousCat.includes('rendu') || sousCat.includes('pv') || sousCat.includes('procès') || sousCat.includes('proces')) {
-    return true;
-  }
-  if (Array.isArray(docItem.tags)) {
-    return docItem.tags.some((t) => {
-      const val = (typeof t === 'string' ? t : (t?.label || t?.nom || t?.name || '')).toLowerCase().trim();
-      return val === 'cr' || val === 'pv' || val.includes('compte-rendu') || val.includes('compte rendu') || val.includes('procès-verbal') || val.includes('proces-verbal');
-    });
-  }
-  return false;
-};
-
-/**
- * Détermine si un document relève STRICTEMENT des comptes-rendus de réunion (Livret ROUGE).
- * Condition : doc.type === 'report' || doc.type === 'reunion_pv' || doc.categoryId === 'ComptesRendus'
- * (ou type reunion / métadonnées de compte-rendu associées).
- */
-export const isReportDoc = (docItem) => {
-  if (!docItem) return false;
-  if (docItem.type === 'report' || docItem.typeDoc === 'report') return true;
-  if (docItem.type === 'reunion_pv' || docItem.typeDoc === 'reunion_pv') return true;
-  if (docItem.type === 'reunion' || docItem.typeDoc === 'reunion' || docItem.reunionData) return true;
-  if (docItem.categoryId === 'ComptesRendus' || docItem.categorie === 'ComptesRendus') return true;
-  if (hasReportTag(docItem)) return true;
-  return false;
-};
-
-/**
- * Détermine si un document relève STRICTEMENT des documents administratifs statutaires fixes (Livret BLEU).
- * (statuts, règlement intérieur, RIB, attestation d'assurance, composition CA)
- * par opposition aux comptes-rendus de réunions périodiques.
- * 
- * Condition : doc.categoryId === 'Administratif' && doc.type !== 'report' && doc.type !== 'reunion_pv'
- * (et exclusion stricte de tout compte-rendu ou tag associé).
- */
-export const isAdministrativeDoc = (docItem) => {
-  if (!docItem) return false;
-  // Cloisonnement strict mutuellement exclusif : un compte-rendu ne peut JAMAIS être un document statutaire
-  if (
-    docItem.type === 'report' || 
-    docItem.typeDoc === 'report' || 
-    docItem.type === 'reunion_pv' || 
-    docItem.typeDoc === 'reunion_pv' || 
-    docItem.type === 'reunion' || 
-    docItem.typeDoc === 'reunion' || 
-    docItem.reunionData || 
-    docItem.categoryId === 'ComptesRendus' || 
-    docItem.categorie === 'ComptesRendus'
-  ) {
-    return false;
-  }
-  const sousCat = (docItem.sousCategorie || docItem.sousCategorieFiche || '').toLowerCase();
-  if (sousCat.includes('compte') || sousCat.includes('rendu') || sousCat.includes('pv') || sousCat.includes('procès') || sousCat.includes('proces')) {
-    return false;
-  }
-  if (Array.isArray(docItem.tags)) {
-    const hasTag = docItem.tags.some((t) => {
-      const val = (typeof t === 'string' ? t : (t?.label || t?.nom || t?.name || '')).toLowerCase().trim();
-      return val === 'cr' || val === 'pv' || val.includes('compte-rendu') || val.includes('compte rendu') || val.includes('procès-verbal') || val.includes('proces-verbal');
-    });
-    if (hasTag) return false;
-  }
-
-  if (docItem.typeDoc === 'statuts' || docItem.type === 'statuts') return true;
-  if (docItem.categoryId === 'Administratif' || docItem.categorie === 'Administratif') return true;
-  const titre = (docItem.titre || '').toLowerCase();
-  return titre.includes('statut') || 
-         titre.includes('règlement') || 
-         titre.includes('reglement') || 
-         titre.includes('rib') || 
-         titre.includes('assurance') || 
-         titre.includes('conseil d\'administration') || 
-         titre.includes('bureau') || 
-         titre.includes('compo ca') || 
-         titre.includes('ca ') || 
-         titre.includes('administratif');
-};
-
-/**
- * Détermine le type fonctionnel d'un document selon ses propriétés ou son extension.
- */
-export const getDocType = (docItem) => {
-  if (!docItem) return 'pdf';
-  if (docItem.type === 'cordel_commission' || docItem.typeDoc === 'cordel_commission') return 'cordel_commission';
-  if (docItem.type) return docItem.type;
-  if (docItem.typeDoc) return docItem.typeDoc;
-  const cat = (docItem.categorie || docItem.categoryId || '').toLowerCase();
-  if (cat.startsWith('projet_')) return 'cordel_commission';
-  if (cat.includes('toada')) return 'song';
-  if (cat.includes('culture') || cat.includes('fiche')) return 'culture_fiche';
-
-  const url = docItem.fileUrl || '';
-  if (url.includes('drive.google.com/drive/folders') || url.includes('dropbox.com') || url.includes('onedrive')) return 'dossier_externe';
-  if (url.includes('.mp3') || url.includes('.wav') || url.includes('.ogg') || url.includes('.m4a')) return 'audio';
-  if (url.includes('.mp4') || url.includes('.webm') || url.includes('youtube.com') || url.includes('youtu.be') || url.includes('vimeo.com')) return 'video';
-  if (url.includes('.jpg') || url.includes('.jpeg') || url.includes('.png') || url.includes('.svg') || url.includes('.webp')) return 'image';
-  if (url.startsWith('http') && !url.includes('.pdf')) return 'web';
-  return 'pdf'; // repli par défaut
+export {
+  DEFAULT_VARAL_CATEGORIES,
+  DEFAULT_POLE_ROPES,
+  hasReportTag,
+  isReportDoc,
+  isAdministrativeDoc,
+  getDocType
 };
 
 /**
@@ -169,6 +56,7 @@ export default function useVaralData({
   const [reunions, setReunions] = useState([]);
   const [instrumentModels, setInstrumentModels] = useState([]);
   const [allEventsMap, setAllEventsMap] = useState({});
+  const [pinnedWeeklyDocId, setPinnedWeeklyDocId] = useState(null);
 
   // Consommation réactive du Simulateur de Vue
   const { isSimulating, effectiveProfile, effectiveUserTags, breakGlassActive } = useViewSimulator();
@@ -322,6 +210,7 @@ export default function useVaralData({
     const unsubscribe = onSnapshot(assocRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
+        setPinnedWeeklyDocId(data.pinnedWeeklyDocId || null);
         if (Array.isArray(data.varalCategories)) {
           const rawCats = data.varalCategories;
           const defaultMerged = DEFAULT_VARAL_CATEGORIES.map((defaultCat) => {
@@ -938,6 +827,24 @@ export default function useVaralData({
     await handleSetDocStatus(docItem, nextStatus);
   };
 
+  // 16. Résolution de la « Fiche de la semaine » exclusivement pour la corde Culture (Auto + Épinglage)
+  const { weeklyCultureDocId, isWeeklyManuallyPinned } = useMemo(() => {
+    const cultureList = groupedDocs?.Culture || [];
+    return resolveWeeklyCultureDocId(cultureList, pinnedWeeklyDocId, newestDocumentId);
+  }, [groupedDocs, pinnedWeeklyDocId, newestDocumentId]);
+
+  // 17. Épinglage / désépinglage manuel de la Fiche de la semaine (réservé Mestre / Admin sur la corde Culture)
+  const handleTogglePinWeeklyCultureDoc = async (docItem) => {
+    if (!groupId || !isAuthorized || !docItem?.id) return;
+    try {
+      const assocRef = doc(db, 'associations', groupId);
+      const nextPinnedId = pinnedWeeklyDocId === docItem.id ? null : docItem.id;
+      await updateDoc(assocRef, { pinnedWeeklyDocId: nextPinnedId });
+    } catch (err) {
+      console.error('useVaralData - Erreur lors de l\'épinglage de la Fiche de la semaine :', err);
+    }
+  };
+
   return {
     documents: accessibleDocuments,
     varalCategories: allVaralCategories,
@@ -949,6 +856,9 @@ export default function useVaralData({
     isManagementView,
     canSeeHidden,
     newestDocumentId,
+    pinnedWeeklyDocId,
+    weeklyCultureDocId,
+    isWeeklyManuallyPinned,
     groupedDocs,
     effectiveTags,
     visibleCategories,
@@ -958,6 +868,7 @@ export default function useVaralData({
     handleMoveRight,
     handleToggleHidden,
     handleSetDocStatus,
+    handleTogglePinWeeklyCultureDoc,
     updateDocumentsOrder,
     saveCategory,
     deleteCategory,
