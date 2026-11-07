@@ -62,7 +62,7 @@ export default function MestreToadasAnalytics({
         const pupitres = [...new Set(
           usersList
             .map(u => normalizePupitreName(u.instrumentPrincipal || u.instrument || u.pupitre))
-            .filter(p => Boolean(p) && p !== 'Non défini')
+            .filter(p => Boolean(p) && p !== 'Non défini' && p !== 'En attente')
         )];
         setPupitresList(pupitres);
 

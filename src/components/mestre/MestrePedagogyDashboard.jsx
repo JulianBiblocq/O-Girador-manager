@@ -308,7 +308,7 @@ export default function MestrePedagogyDashboard({ profileData }) {
     // 2. Pupitres déclarés par les membres
     percuUsers.forEach(u => {
       const declared = normalizePupitreName(u.instrumentPrincipal || u.instrument || u.pupitre);
-      if (declared && declared !== 'Non défini' && declared.toLowerCase() !== 'danse') {
+      if (declared && declared !== 'Non défini' && declared !== 'En attente' && declared.toLowerCase() !== 'danse') {
         set.add(declared);
       }
     });

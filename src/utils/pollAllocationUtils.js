@@ -38,7 +38,7 @@ export function getMemberPrimaryPupitre(user, targetPupitres = [], linkedInstrum
   return primaryPupitre || primaryInstrument || '';
 }
 
-/** Construit la matrice croisée (Dates x Pupitres) pour un sondage de répartition */
+/** Construit la matrice croisée (Dates x Pupitres) avec détails Indispo / Sans réponse */
 export function buildPollPupitreMatrix({ pollEvents = [], allUsers = [], targetPupitres = [], linkedInstruments = [] }) {
   const activeMembers = (allUsers || [])
     .filter((u) => u && !isMemberArchived(u))
@@ -46,8 +46,7 @@ export function buildPollPupitreMatrix({ pollEvents = [], allUsers = [], targetP
       const uid = u.id || u.uid;
       const { primaryPupitre, primaryInstrument, secondaryPupitres } = resolveMemberPollPupitres(u, targetPupitres, linkedInstruments);
       return {
-        id: uid,
-        uid,
+        id: uid, uid,
         name: `${u.prenom || ''} ${u.nom || ''}`.trim() || u.displayName || 'Membre',
         prenom: (u.prenom || u.displayName || 'Membre').trim(),
         photoURL: u.photoURL || '',
@@ -57,23 +56,38 @@ export function buildPollPupitreMatrix({ pollEvents = [], allUsers = [], targetP
       };
     });
 
-  const totalByPupitre = {};
+  const validEvents = (pollEvents || []).filter((ev) => ev?.id);
+  const votesByEvent = Object.fromEntries(validEvents.map((ev) => [ev.id, getEffectiveEventVotes(ev)]));
+  const pupitreStats = {};
   (targetPupitres || []).forEach((p) => {
-    totalByPupitre[p] = activeMembers.filter((m) => m.primaryPupitre === p).length;
+    const members = activeMembers.filter((m) => m.primaryPupitre === p);
+    const totallyUnansweredMembers = members.filter(
+      (m) => !validEvents.some((ev) => ['dispo', 'indispo'].includes(votesByEvent[ev.id]?.[m.uid]))
+    );
+    pupitreStats[p] = {
+      members,
+      totalPupitre: members.length,
+      respondedCount: members.length - totallyUnansweredMembers.length,
+      totallyUnansweredMembers
+    };
   });
 
-  const matrix = {};
-  (pollEvents || []).forEach((ev) => {
-    if (!ev?.id) return;
-    const votes = getEffectiveEventVotes(ev);
+  const matrix = { pupitreStats };
+  validEvents.forEach((ev) => {
+    const votes = votesByEvent[ev.id] || {};
     matrix[ev.id] = {};
     (targetPupitres || []).forEach((p) => {
-      const availableMembers = activeMembers.filter((m) => m.primaryPupitre === p && votes[m.uid] === 'dispo');
+      const { members = [], totalPupitre = 0, respondedCount = 0, totallyUnansweredMembers = [] } = pupitreStats[p] || {};
+      const availableMembers = members.filter((m) => votes[m.uid] === 'dispo');
+      const unavailableMembers = members.filter((m) => votes[m.uid] === 'indispo');
+      const unansweredMembers = members.filter((m) => !votes[m.uid]);
       const secondaryAvailableMembers = activeMembers.filter((m) => m.secondaryPupitres.includes(p) && votes[m.uid] === 'dispo');
       const count = availableMembers.length;
-      const totalPupitre = totalByPupitre[p] || 0;
       const percentage = Math.round((count / Math.max(1, totalPupitre)) * 100);
-      matrix[ev.id][p] = { availableMembers, secondaryAvailableMembers, count, totalPupitre, percentage };
+      matrix[ev.id][p] = {
+        availableMembers, unavailableMembers, unansweredMembers, secondaryAvailableMembers,
+        count, totalPupitre, percentage, respondedCount, totallyUnansweredMembers
+      };
     });
   });
   return matrix;
@@ -87,19 +101,12 @@ export function computeOptimalPupitreAllocation(matrix = {}, pollEvents = [], ta
     return { allocation: {}, byEventId: {}, totalPresents: 0, score: 0 };
   }
 
-  let bestScore = -1;
-  let bestPresents = 0;
-  let bestAllocation = {};
-  const currentAlloc = {};
-  const usedDates = new Set();
+  let bestScore = -1, bestPresents = 0, bestAllocation = {};
+  const currentAlloc = {}, usedDates = new Set();
 
   const backtrack = (idx, accScore, accPresents) => {
     if (idx === pupitres.length) {
-      if (accScore > bestScore) {
-        bestScore = accScore;
-        bestPresents = accPresents;
-        bestAllocation = { ...currentAlloc };
-      }
+      if (accScore > bestScore) { bestScore = accScore; bestPresents = accPresents; bestAllocation = { ...currentAlloc }; }
       return;
     }
     const p = pupitres[idx];
@@ -108,9 +115,7 @@ export function computeOptimalPupitreAllocation(matrix = {}, pollEvents = [], ta
       const evId = eventIds[i];
       if (!allowReuse && usedDates.has(evId)) continue;
       const cell = matrix?.[evId]?.[p] || { count: 0, totalPupitre: 0 };
-      const c = cell.count || 0;
-      const t = Math.max(1, cell.totalPupitre || 0);
-      const wasUsed = usedDates.has(evId);
+      const c = cell.count || 0, t = Math.max(1, cell.totalPupitre || 0), wasUsed = usedDates.has(evId);
       usedDates.add(evId);
       currentAlloc[p] = evId;
       backtrack(idx + 1, accScore + c + 0.01 * (c / t), accPresents + c);
@@ -120,12 +125,10 @@ export function computeOptimalPupitreAllocation(matrix = {}, pollEvents = [], ta
   };
 
   backtrack(0, 0, 0);
-  const byEventId = {};
-  eventIds.forEach((id) => { byEventId[id] = []; });
+  const byEventId = Object.fromEntries(eventIds.map((id) => [id, []]));
   Object.entries(bestAllocation).forEach(([p, evId]) => {
     if (!byEventId[evId]) byEventId[evId] = [];
     byEventId[evId].push(p);
   });
-
   return { allocation: bestAllocation, byEventId, totalPresents: bestPresents, score: Number(bestScore.toFixed(4)) };
 }

@@ -22,38 +22,11 @@ export const normalizeString = (str) => {
     .trim();
 };
 
-/**
- * Harmonise et normalise le nom d'un pupitre ou instrument pour les rapports et bilans consolidés.
- * Prévient les scissions et doublons dus aux écarts de casse (ex: "caixa" vs "Caixa") ou aux variantes orthographiques.
- * 
- * @param {string} rawName Nom brut du pupitre ou instrument
- * @returns {string} Nom canonique normalisé
- */
-export const normalizePupitreName = (rawName) => {
-  if (!rawName || typeof rawName !== 'string') return 'Non défini';
-  const trimmed = rawName.trim();
-  if (!trimmed) return 'Non défini';
-
-  const lower = trimmed.toLowerCase();
-  if (lower === 'non défini' || lower === 'non defini' || lower === 'aucun' || lower === 'undefined') {
-    return 'Non défini';
-  }
-
-  // Correspondances canoniques Maracatu / O-Girador
-  if (lower === 'caixa' || lower === 'caixas' || lower === 'caisse' || lower === 'caisse claire') return 'Caixa';
-  if (lower === 'alfaia' || lower === 'alfaias') return 'Alfaia';
-  if (lower === 'agbe' || lower === 'agbê' || lower === 'agbes' || lower === 'agbês') return 'Agbê';
-  if (lower === 'gongue' || lower === 'gonguê' || lower === 'gongues' || lower === 'gonguês') return 'Gonguê';
-  if (lower === 'tarol' || lower === 'tarols') return 'Tarol';
-  if (lower === 'mineiro' || lower === 'mineiros') return 'Mineiro';
-  if (lower === 'timbal' || lower === 'timbau' || lower === 'timbals') return 'Timbal';
-  if (lower === 'chant' || lower === 'chants' || lower === 'voix') return 'Chant';
-  if (lower === 'danse' || lower === 'danses') return 'Danse';
-  if (lower === 'mestre') return 'Mestre';
-
-  // Capitalisation standard de la première lettre
-  return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
-};
+export {
+  normalizePupitreName,
+  isMemberPracticingDance,
+  resolveMemberReportPupitre
+} from './pupitreReportUtils';
 
 /**
  * Extrait le code postal et le nom présumé de la commune depuis une adresse textuelle.

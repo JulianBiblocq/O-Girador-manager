@@ -8,11 +8,7 @@ import { isMemberArchived } from '../../utils/memberUtils';
 import PollPupitreDispatchPanel from './PollPupitreDispatchPanel';
 import EventPollOptionCard from './EventPollOptionCard';
 import { submitPollVote } from '../../utils/pollVoteUtils';
-import {
-  confirmSinglePupitrePollSlot,
-  executeBatchPupitreDispatch,
-  executeSingleWinningPollOption
-} from '../../utils/pollFunnelValidationUtils';
+import usePollDispatchActions from '../../hooks/usePollDispatchActions';
 import { checkAndNotifyFullPupitreParticipation } from '../../utils/pollPupitreAlertUtils';
 import {
   canUserParticipateInReunion,
@@ -47,7 +43,6 @@ export default function EventPollSection({
   // Synchronisation en temps réel de tous les créneaux partageant le même pollGroupId
   useEffect(() => {
     if (!event?.groupId || !event?.pollGroupId) return;
-    setLoading(true);
 
     const eventsRef = collection(db, 'events');
     const q = query(
@@ -149,17 +144,18 @@ export default function EventPollSection({
     return Array.from(map.values());
   }, [event, pollEvents]);
 
+  const pollTargetPupitres = event?.pollTargetPupitres;
   const effectiveTargetPupitres = useMemo(() => {
     const validatedPupitresSet = new Set(validatedHistory.map((h) => h.pupitre));
     let baseList = pupitresList;
-    if (Array.isArray(event?.pollTargetPupitres) && event.pollTargetPupitres.length > 0) {
-      baseList = event.pollTargetPupitres;
+    if (Array.isArray(pollTargetPupitres) && pollTargetPupitres.length > 0) {
+      baseList = pollTargetPupitres;
     } else {
       const fromSibling = openPollEvents.find((ev) => Array.isArray(ev.pollTargetPupitres) && ev.pollTargetPupitres.length > 0);
       if (fromSibling) baseList = fromSibling.pollTargetPupitres;
     }
     return baseList.filter((p) => !validatedPupitresSet.has(p));
-  }, [event?.pollTargetPupitres, openPollEvents, pupitresList, validatedHistory]);
+  }, [pollTargetPupitres, openPollEvents, pupitresList, validatedHistory]);
 
   // Calcul d'éligibilité basé sur le groupe convoqué (réunion) ou le type de restriction du sondage
   const checkEligibility = () => {
@@ -238,119 +234,6 @@ export default function EventPollSection({
     }
   };
 
-  // Validation définitive du créneau gagnant unique (mode single_winner)
-  const handleConfirmWinningOption = async (winningOptionEvent = event) => {
-    if (!isSuperAdminOrMestre || isProcessing) return;
-
-    const dateFormatted = formatDate(winningOptionEvent.date);
-    const isOk = await confirm({
-      title: "🌟 Valider définitivement cette date ?",
-      message: `Voulez-vous valider la date du ${dateFormatted} ?\n\n• Cet événement deviendra une vraie réunion officielle dans l'agenda.\n• Les membres ayant voté "Disponible" seront inscrits automatiquement dans la liste des présents (RSVP).\n• Les autres créneaux de ce sondage seront supprimés de la base de données.`,
-      confirmText: "Oui, valider cette date",
-      cancelText: "Annuler",
-      variant: "vert"
-    });
-
-    if (!isOk) return;
-
-    setIsProcessing(true);
-    try {
-      await executeSingleWinningPollOption({
-        db,
-        winningOptionEvent,
-        allUsersMap,
-        groupId: event?.groupId
-      });
-      alert(`La date du ${dateFormatted} a été validée avec succès ! L'agenda a été nettoyé.`);
-    } catch (err) {
-      console.error("EventPollSection - Erreur confirmation option :", err);
-      alert("Erreur lors de la validation du créneau.");
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  // Validation unitaire d'un seul créneau pour un pupitre ("En entonnoir")
-  const handleConfirmSinglePupitreSlot = async (pupitre, targetEventId, allowLatecomers, matrix) => {
-    if (!isSuperAdminOrMestre || isProcessing) return;
-    const targetEv = openPollEvents.find((ev) => ev.id === targetEventId);
-    if (!targetEv) return;
-
-    const dateLabel = formatDate(targetEv.date);
-    const count = matrix?.[targetEventId]?.[pupitre]?.count || 0;
-    const isOk = await confirm({
-      title: `📌 Valider le créneau ${pupitre} ?`,
-      message: `Voulez-vous fixer l'atelier ${pupitre} sur le créneau du ${dateLabel} (${count} disponible(s)) ?\n\n• Ce créneau deviendra l'atelier officiel pour ${pupitre}.\n• Les autres pupitres continueront de voter sur les créneaux restants du sondage.${allowLatecomers ? `\n• Les inscriptions resteront ouvertes aux retardataires du pupitre ${pupitre} jusqu'au jour de l'atelier.` : ''}`,
-      confirmText: `Oui, valider ${pupitre}`,
-      cancelText: "Annuler",
-      variant: "vert"
-    });
-    if (!isOk) return;
-
-    setIsProcessing(true);
-    try {
-      await confirmSinglePupitrePollSlot({
-        db,
-        pupitre,
-        targetEventId,
-        allowLatecomers,
-        matrix,
-        pollOptions: pollEvents,
-        event
-      });
-      alert(`Créneau validé pour ${pupitre} (${dateLabel}) !`);
-    } catch (err) {
-      console.error("EventPollSection - Erreur validation unitaire pupitre :", err);
-      alert("Erreur lors de la validation du créneau pour ce pupitre.");
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  // Validation groupée par pupitre (mode pupitre_dispatch) via writeBatch atomique
-  const handleConfirmPupitreDispatch = async (allocation, matrix, targetPupitres, allowLatecomers = true) => {
-    if (!isSuperAdminOrMestre || isProcessing) return;
-
-    const baseTitre = String(event?.titre || 'Atelier').split(' — ')[0].trim();
-    const summaryLines = [];
-    openPollEvents.forEach((ev) => {
-      const assigned = (targetPupitres || []).filter((p) => allocation[p] === ev.id);
-      if (assigned.length > 0) {
-        const count = assigned.reduce((s, p) => s + (matrix?.[ev.id]?.[p]?.count || 0), 0);
-        summaryLines.push(`• ${formatDate(ev.date)} ➔ ${assigned.join(' & ')} (${count} présent(s))`);
-      }
-    });
-
-    const isOk = await confirm({
-      title: "✅ Valider la répartition par pupitre ?",
-      message: `Voulez-vous confirmer simultanément les ateliers suivants ?\n\n${summaryLines.join('\n')}\n\n• Chaque créneau retenu sera renommé et confirmé avec les membres disponibles du pupitre attribué.\n• Les créneaux sans pupitre attribué seront supprimés.`,
-      confirmText: "Oui, valider la répartition",
-      cancelText: "Annuler",
-      variant: "vert"
-    });
-
-    if (!isOk) return;
-
-    setIsProcessing(true);
-    try {
-      await executeBatchPupitreDispatch({
-        db,
-        pollEvents: openPollEvents,
-        allocation,
-        matrix,
-        targetPupitres,
-        allowLatecomers,
-        baseTitre
-      });
-      alert("La répartition des ateliers par pupitre a été validée avec succès !");
-    } catch (err) {
-      console.error("EventPollSection - Erreur validation répartition pupitres :", err);
-      alert("Erreur lors de la validation de la répartition.");
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
   const formatDate = (dateStr) => {
     if (!dateStr) return 'Date non spécifiée';
     const d = new Date(dateStr);
@@ -360,6 +243,24 @@ export default function EventPollSection({
     const minutes = String(d.getMinutes()).padStart(2, '0');
     return `${formatted} à ${hours}h${minutes}`;
   };
+
+  // Hook dédié aux actions de validation et aux notifications automatiques In-App + Push FCM
+  const {
+    handleConfirmWinningOption,
+    handleConfirmSinglePupitreSlot,
+    handleConfirmPupitreDispatch
+  } = usePollDispatchActions({
+    db,
+    event,
+    pollEvents,
+    openPollEvents,
+    allUsersMap,
+    isSuperAdminOrMestre,
+    isProcessing,
+    setIsProcessing,
+    confirm,
+    formatDate
+  });
 
   if (!event?.isPoll && event?.status !== 'sondage') return null;
 

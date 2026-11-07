@@ -2,7 +2,7 @@ import {
   computeTerritorialStats,
   computeVolunteeringAndActivity,
   computeAudienceAndDiffusion,
-  normalizePupitreName
+  resolveMemberReportPupitre
 } from './secretariatMetrics';
 
 /** Calcule les indicateurs consolidés du rapport d'AG sur la période sélectionnée. */
@@ -19,8 +19,7 @@ export function computeAgReportIndicators({
   rawUsers.forEach((u) => {
     if (u.paymentStatus === 'paid' || u.cotisationPaid === true) cotisationsUpToDate++;
     else cotisationsPending++;
-    const rawPupitre = u.instrumentPrincipal || u.instrument || u.pupitre || u.section || 'Non défini';
-    const cleanPupitre = normalizePupitreName(rawPupitre);
+    const cleanPupitre = resolveMemberReportPupitre(u);
     pupitresCount[cleanPupitre] = (pupitresCount[cleanPupitre] || 0) + 1;
   });
 
