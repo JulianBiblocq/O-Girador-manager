@@ -3,6 +3,8 @@ import EcosystemAppLauncher from './EcosystemAppLauncher';
 import OnlineStatusWidget from '../OnlineStatusWidget';
 import NotificationCenter from '../notifications/NotificationCenter';
 import ViewSimulatorSelector from './ViewSimulatorSelector';
+import FeedbackButton from '../common/FeedbackButton';
+import LanguageToggle from '../common/LanguageToggle';
 import { InfoPoleHelpButton } from '../InfoPoleBanner';
 import { HorizontalRibbonContainer } from './HorizontalTabRibbon';
 
@@ -16,7 +18,7 @@ export default function PoleStickyHeaderBar({
   activeLobbyRoom, setActiveGameRoomId, onlineMembers, onlineCount, isPresenceEnabled,
   currentUserId, currentProfile, profileData, onStartDirectChat, handleCreateGameRoom,
   handleJoinGameRoom, onNotificationNavigate, unreadPrivateMessagesCount,
-  canUseViewSimulator, activePoleObj, currentPole, currentTab, visibleTabs = [],
+  canUseViewSimulator, canSendFeedback, onOpenFeedback, activePoleObj, currentPole, currentTab, visibleTabs = [],
   checkTabAccess, onNavigateToTab, t
 }) {
   const poleId = activePoleObj?.id || currentPole;
@@ -69,6 +71,12 @@ export default function PoleStickyHeaderBar({
           />
 
           {canUseViewSimulator && <ViewSimulatorSelector />}
+
+          {canSendFeedback && onOpenFeedback && (
+            <FeedbackButton onClick={onOpenFeedback} />
+          )}
+
+          <LanguageToggle className="min-h-[34px] px-2.5 border-2 border-encre-noire bg-cordel-bg-light hover:bg-white rounded-[6px_9px_7px_8px] shadow-[1.5px_1.5px_0px_0px_#181716]" />
 
           <InfoPoleHelpButton key={`help_btn_${poleId}_${currentTab || 'default'}`} currentPole={poleId} currentTab={currentTab} />
         </div>

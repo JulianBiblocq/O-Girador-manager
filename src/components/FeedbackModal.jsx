@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import CordelButton from './CordelButton';
-import { XiloClose, XiloMegaphone } from './XiloIcons';
+import { XiloClose, XiloFeedback } from './XiloIcons';
 import useModalEscape from '../hooks/useModalEscape';
 
 export default function FeedbackModal({
@@ -110,7 +110,7 @@ export default function FeedbackModal({
         <div className="shrink-0 p-4 border-b border-dashed border-cordel-master-dark/20 flex items-start justify-between gap-3 bg-[#fcf8f2] dark:bg-[#1a1918]">
           <div className="flex-1 min-w-0 pr-2 flex items-start gap-2.5">
             <span className="p-2 rounded border shadow-xs shrink-0 bg-blue-100 dark:bg-blue-950/70 text-blue-800 dark:text-blue-300 border-blue-300 dark:border-blue-800">
-              <XiloMegaphone size={22} />
+              <XiloFeedback size={22} />
             </span>
             <div className="flex flex-col min-w-0">
               <span className="text-[9px] font-black uppercase tracking-widest text-cordel-wood opacity-80">

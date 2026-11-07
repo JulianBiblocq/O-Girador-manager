@@ -5,9 +5,8 @@ import { lazyWithRetry } from '../utils/pwaUtils';
 import WidgetMotMestre from './WidgetMotMestre';
 import WidgetAnnonces from './WidgetAnnonces';
 const WidgetAgenda = lazyWithRetry(() => import('./WidgetAgenda'));
-import WidgetCommandes from './WidgetCommandes';
 import WidgetForum from './WidgetForum';
-import WidgetAnniversaires from './WidgetAnniversaires';
+import DashboardBirthdaysOrdersDuo from './dashboard/DashboardBirthdaysOrdersDuo';
 import WidgetValidations from './dashboard/WidgetValidations';
 import WidgetVideoALaUne from './dashboard/WidgetVideoALaUne';
 import { extractYouTubeVideoId } from './common/LiteYouTubeEmbed';
@@ -91,6 +90,7 @@ export default function Dashboard({
       case 'agenda':
       case 'forum':
       case 'anniversaires':
+      case 'commandes':
         return 'col-span-1 md:col-span-2 lg:col-span-3 w-full max-w-full';
       default:
         return 'col-span-1 w-full max-w-full';
@@ -378,12 +378,18 @@ export default function Dashboard({
               );
               break;
             case 'commandes':
+              if (layout.includes('anniversaires')) return null;
               if (!hasOpenCampaign) break;
               widgetContent = (
-                <WidgetCommandes 
-                  groupId={currentProfile?.groupId} 
-                  user={user} 
-                  profileData={currentProfile} 
+                <DashboardBirthdaysOrdersDuo
+                  groupId={profileData?.groupId}
+                  user={user}
+                  profileData={profileData}
+                  currentProfile={currentProfile}
+                  hasOpenCampaign={hasOpenCampaign}
+                  showBirthdaysInLayout={false}
+                  showOrdersInLayout={true}
+                  onNavigateToView={onNavigateToView}
                 />
               );
               break;
@@ -441,15 +447,15 @@ export default function Dashboard({
               break;
             case 'anniversaires':
               widgetContent = (
-                <WidgetAnniversaires 
-                  groupId={profileData?.groupId} 
-                  currentUser={user}
+                <DashboardBirthdaysOrdersDuo
+                  groupId={profileData?.groupId}
+                  user={user}
                   profileData={profileData}
-                  onContactUser={(userId, message) => {
-                    if (onNavigateToView) {
-                      onNavigateToView('forum', { userId, message });
-                    }
-                  }}
+                  currentProfile={currentProfile}
+                  hasOpenCampaign={hasOpenCampaign}
+                  showBirthdaysInLayout={true}
+                  showOrdersInLayout={layout.includes('commandes')}
+                  onNavigateToView={onNavigateToView}
                 />
               );
               break;

@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import CordelCard from './CordelCard';
-import CordelButton from './CordelButton';
 import DocumentUploadForm from './DocumentUploadForm';
 import SongCard from './SongCard';
 import CultureCard from './CultureCard';
@@ -12,6 +11,8 @@ import ReunionViewModal from './ReunionViewModal';
 import DocumentViewerModal from './documents/DocumentViewerModal';
 import VaralCategoryRope from './documents/varal/VaralCategoryRope';
 import VaralCategoryEditModal from './documents/varal/VaralCategoryEditModal';
+import VaralHeaderBar from './documents/varal/VaralHeaderBar';
+import { filterVaralCategoriesWithHiddenToggle } from '../utils/varalVisibilityUtils';
 import DocStatusSelector from './documents/varal/DocStatusSelector';
 import SecretariatDocumentsView from './secretariat/SecretariatDocumentsView';
 import WorkshopDocumentsTable from './documents/WorkshopDocumentsTable';
@@ -20,7 +21,6 @@ import LutherieDocumentsTable from './documents/LutherieDocumentsTable';
 import CostumerieDocumentsTable from './documents/CostumerieDocumentsTable';
 import useVaralData, { DEFAULT_VARAL_CATEGORIES, DEFAULT_POLE_ROPES } from '../hooks/useVaralData';
 import { isWorkshopVirtualDoc } from '../utils/workshopProjectionUtils';
-import { isProjectRopeActive } from '../utils/commissionVaralAdapter';
 import { useTranslation } from './LanguageContext';
 import useHardwareBack from '../hooks/useHardwareBack';
 import { useViewSimulator } from '../context/ViewSimulatorContext';
@@ -135,49 +135,21 @@ function VaralWidgetContent({
     canWrite: activeCanWrite
   });
 
-  // Filtrage intelligent des cordes avant le rendu selon les règles de visibilité et cycle de vie
-  const displayedCategories = useMemo(() => {
-    const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-    const urlEventId = searchParams?.get('eventId');
-    const effectiveTargetEventId = targetEventId || (searchParams?.get('ropeId')?.replace(/^projet_/, '') || searchParams?.get('varalCat')?.replace(/^projet_/, '') || urlEventId);
+  const [showHiddenCords, setShowHiddenCords] = useState(false);
 
-    return visibleCategories.filter((category) => {
-      // Règle spécifique aux cordes de projet (Passerelle Commissions ➔ Varal) :
-      // Cycle de vie : affichage tant que l'événement est actif ou récent (<= 30 jours), masquage si clos ou archivé.
-      // Si l'utilisateur accède spécifiquement aux documents depuis la fiche événement, la corde reste accessible.
-      if (category.id.startsWith('projet_')) {
-        const docs = groupedDocs[category.id] || [];
-        if (docs.length === 0) return false;
-
-        const eventId = category.id.replace(/^projet_/, '');
-        if (effectiveTargetEventId && (effectiveTargetEventId === eventId || effectiveTargetEventId === category.id)) {
-          return true;
-        }
-
-        const ev = allEventsMap?.[eventId];
-        return isProjectRopeActive({ category, docs, event: ev });
-      }
-
-      // Pour les administrateurs, toutes les cordes du pôle restent affichées (les cordes vides ou inactives apparaîtront en mode compact)
-      if (isAuthorized) return true;
-
-      // Règle 1 : Désactivation manuelle côté adhérent
-      if (category.actif === false) return false;
-
-      // Règle 2 : Masquage si vide pour les adhérents (si 0 doc ET pas d'upload public avec lien valide)
-      const docs = groupedDocs[category.id] || [];
-      const hasValidPublicUpload = Boolean(
-        category.activerUploadPublic && 
-        category.lienUploadPublic && 
-        category.lienUploadPublic.trim() !== ''
-      );
-      if (docs.length === 0 && !hasValidPublicUpload) {
-        return false;
-      }
-
-      return true;
-    });
-  }, [visibleCategories, isAuthorized, groupedDocs, allEventsMap, targetEventId]);
+  // Filtrage des cordes : masque par défaut les cordes vides ou désactivées même pour l'admin
+  const { displayedCategories, hiddenCordsCount } = useMemo(
+    () =>
+      filterVaralCategoriesWithHiddenToggle({
+        visibleCategories,
+        groupedDocs,
+        allEventsMap,
+        targetEventId,
+        isAuthorized,
+        showHiddenCords
+      }),
+    [visibleCategories, groupedDocs, allEventsMap, targetEventId, isAuthorized, showHiddenCords]
+  );
 
   // États locaux de navigation et formulaires d'ajout / édition
   const isWorkshopPole = ['lutherie', 'costumerie', 'pedagogie'].includes(poleId);
@@ -305,26 +277,25 @@ function VaralWidgetContent({
 
   return (
     <div className="flex flex-col gap-3 w-full max-w-none">
-      {/* Barre de titre et bouton d'ajout global */}
-      <div className="flex justify-between items-center pl-1 pr-1">
-        <h3 className="text-xs font-extrabold tracking-wider text-cordel-master-dark opacity-75 uppercase text-left">
-          {t('widgetDocuments.title')}
-        </h3>
-        {!loading && (isAuthorized || canWrite) && !isAdding && poleId !== 'secretariat' && poleId !== 'pedagogie' && (
-          <CordelButton
-            variant="default"
-            onClick={() => {
-              setSelectedCategoryForAdd(null);
-              setInitialSharedData(null);
-              setDocumentToEdit(null);
-              setIsAdding(true);
-            }}
-            className="text-[10px] px-2 py-1 uppercase tracking-widest font-black"
-          >
-            {t('widgetDocuments.uploadBtn')}
-          </CordelButton>
-        )}
-      </div>
+      {/* Barre de titre, bouton discret de cordes masquées (Admin/Mestre) et bouton d'ajout global */}
+      <VaralHeaderBar
+        title={t('widgetDocuments.title')}
+        loading={loading}
+        isAuthorized={isAuthorized}
+        canWrite={canWrite}
+        isAdding={isAdding}
+        poleId={poleId}
+        hiddenCordsCount={hiddenCordsCount}
+        showHiddenCords={showHiddenCords}
+        onToggleHiddenCords={() => setShowHiddenCords((prev) => !prev)}
+        onOpenGlobalAdd={() => {
+          setSelectedCategoryForAdd(null);
+          setInitialSharedData(null);
+          setDocumentToEdit(null);
+          setIsAdding(true);
+        }}
+        uploadBtnLabel={t('widgetDocuments.uploadBtn')}
+      />
 
       {/* Indicateur de chargement initial */}
       {loading && (

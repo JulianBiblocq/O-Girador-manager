@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import ErrorBoundary from './ErrorBoundary';
@@ -148,6 +148,14 @@ export default function DocumentUploadForm({
   const [signature, setSignature] = useState(documentToEdit ? documentToEdit.signature || '4/4' : '4/4');
   const [bpmDefaut, setBpmDefaut] = useState(documentToEdit ? documentToEdit.bpmDefaut || documentToEdit.bpm || '' : '');
   const [tonaliteDefaut, setTonaliteDefaut] = useState(documentToEdit ? documentToEdit.tonaliteDefaut || documentToEdit.tonalite || '' : '');
+
+  useEffect(() => {
+    if (!documentToEdit) return;
+    const nextTon = documentToEdit.tonaliteDefaut || documentToEdit.tonalite;
+    if (nextTon !== undefined) setTonaliteDefaut(nextTon);
+    const nextBpm = documentToEdit.bpmDefaut || documentToEdit.bpm;
+    if (nextBpm !== undefined) setBpmDefaut(nextBpm);
+  }, [documentToEdit?.tonaliteDefaut, documentToEdit?.tonalite, documentToEdit?.bpmDefaut, documentToEdit?.bpm]);
   const [parolesOriginales, setParolesOriginales] = useState(() => {
     if (!documentToEdit) return '';
     const orig = documentToEdit.parolesOriginales || documentToEdit.paroles || '';

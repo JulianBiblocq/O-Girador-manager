@@ -47,7 +47,9 @@ import HeaderSealLogo from './common/HeaderSealLogo';
 import NotificationCenter from './notifications/NotificationCenter';
 import EcosystemAppLauncher from './navigation/EcosystemAppLauncher';
 import PoleStickyHeaderBar from './navigation/PoleStickyHeaderBar';
+import DesktopSidebarFooter from './navigation/DesktopSidebarFooter';
 import LanguageToggle from './common/LanguageToggle';
+import FeedbackButton from './common/FeedbackButton';
 import { useActiveGameRoom } from '../hooks/useActiveGameRoom';
 import { useGameRepertoire } from '../hooks/useGameRepertoire';
 import { isDefisEnLigneEnabled } from '../utils/gameUtils';
@@ -752,8 +754,8 @@ export default function LayoutShell({
         </div>
 
         {/* Left Sidebar for Desktop (hidden on Mobile & Tablet) */}
-        <div className="hidden lg:flex w-56 border-r-4 border-cordel-master-dark bg-cordel-bg-light flex-col items-center justify-between py-6 px-3 shrink-0 select-none">
-          <div className="flex flex-col items-center gap-3 w-full flex-grow min-h-0">
+        <div className="hidden lg:flex w-56 border-r-4 border-cordel-master-dark bg-cordel-bg-light flex-col items-center justify-between py-3.5 px-3 shrink-0 select-none">
+          <div className="flex flex-col items-center gap-1.5 w-full flex-grow min-h-0">
             <HeaderSealLogo
               associationData={associationData}
               associationName={effectiveAssocName}
@@ -762,9 +764,9 @@ export default function LayoutShell({
               combinedLogoUrl={combinedLogoUrl}
               isLogoTilting={isLogoTilting}
               onClick={handleLogoClick}
-              size={80}
+              size={68}
             />
-            <div className="flex flex-col items-center justify-center text-center px-1 shrink-0 mt-1">
+            <div className="flex flex-col items-center justify-center text-center px-1 shrink-0 mt-0.5">
               <div className="flex items-center gap-2 justify-center">
                 <span 
                   onClick={handleLogoClick}
@@ -775,16 +777,16 @@ export default function LayoutShell({
               </div>
 
               {effectiveAssocName && (
-                <span className="font-black text-xs uppercase tracking-wider text-cordel-wood mt-1 leading-tight text-center break-words max-w-[160px]">
+                <span className="font-black text-xs uppercase tracking-wider text-cordel-wood mt-0.5 leading-tight text-center break-words max-w-[160px]">
                   {effectiveAssocName}
                 </span>
               )}
             </div>
             
-            <div className="w-full border-t border-dashed border-cordel-master-dark/20 my-2 shrink-0" />
+            <div className="w-full border-t border-dashed border-cordel-master-dark/20 my-1.5 shrink-0" />
             
             {/* Desktop Poles Navigation */}
-            <div className="w-full flex-grow overflow-y-auto flex flex-col gap-2 pr-1 max-h-[calc(100vh-220px)] scrollbar-thin">
+            <div className="w-full flex-grow overflow-y-auto flex flex-col gap-1.5 pr-0.5 scrollbar-thin">
               {showAdminPoles ? (
                 visiblePoles.map((pole) => {
                   const isUnlocked = isPoleUnlocked(pole.id);
@@ -801,7 +803,7 @@ export default function LayoutShell({
                         type="button"
                         disabled={true}
                         title={isRestrictedTitle}
-                        className="theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-2.5 text-left rounded-[4px_6px_3px_5px] flex items-center justify-between opacity-50 grayscale cursor-not-allowed bg-cordel-bg/50 text-encre-noire/50 border-encre-noire/20 select-none shadow-none"
+                        className="theme-btn text-[10px] font-black uppercase tracking-wider py-1.5 px-2.5 text-left rounded-[4px_6px_3px_5px] flex items-center justify-between opacity-50 grayscale cursor-not-allowed bg-cordel-bg/50 text-encre-noire/50 border-encre-noire/20 select-none shadow-none"
                       >
                         <span className="flex items-center gap-2">
                           {getPoleIcon(pole.id, 12)} 
@@ -818,7 +820,7 @@ export default function LayoutShell({
                     <button
                       key={pole.id}
                       onClick={() => onNavigateToPole && onNavigateToPole(pole.id)}
-                      className={`theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-2.5 text-left rounded-[4px_6px_3px_5px] flex items-center justify-between hover:bg-cordel-hover cursor-pointer border-2 transition-all ${
+                      className={`theme-btn text-[10px] font-black uppercase tracking-wider py-1.5 px-2.5 text-left rounded-[4px_6px_3px_5px] flex items-center justify-between hover:bg-cordel-hover cursor-pointer border-2 transition-all ${
                         isActive 
                           ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
                           : 'bg-cordel-bg text-encre-noire border-encre-noire/30 shadow-[1.5px_1.5px_0px_0px_#181716]'
@@ -864,7 +866,7 @@ export default function LayoutShell({
                     <button
                       key={item.id}
                       onClick={item.onClick}
-                      className={`theme-btn text-[10px] font-black uppercase tracking-wider py-2 px-2.5 text-left rounded-[4px_6px_3px_5px] flex items-center justify-between hover:bg-cordel-hover cursor-pointer border-2 transition-all ${
+                      className={`theme-btn text-[10px] font-black uppercase tracking-wider py-1.5 px-2.5 text-left rounded-[4px_6px_3px_5px] flex items-center justify-between hover:bg-cordel-hover cursor-pointer border-2 transition-all ${
                         isActive 
                           ? 'theme-bg-ocre text-encre-noire border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
                           : 'bg-cordel-bg text-encre-noire border-encre-noire/30 shadow-[1.5px_1.5px_0px_0px_#181716]'
@@ -906,89 +908,20 @@ export default function LayoutShell({
             </div>
           </div>
 
-          {/* Desktop Footer */}
-          <div className="flex flex-col items-center gap-2 w-full mt-4 shrink-0">
-            {isSystemOrSuperAdminOrMestre && (
-              <button
-                type="button"
-                onClick={() => {
-                  if (onNavigateToPole) onNavigateToPole(null);
-                  if (onNavigateToTab) onNavigateToTab('system-admin');
-                }}
-                className={`relative w-full py-1.5 px-2 font-black uppercase tracking-widest text-center text-[8px] border-2 border-encre-noire rounded-[8px_12px_9px_11px] shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:scale-[1.01] transition-all cursor-pointer flex items-center justify-center gap-1 ${
-                  currentTab === 'system-admin' 
-                    ? 'theme-bg-ocre text-encre-noire' 
-                    : hasPendingMembers
-                    ? 'bg-amber-100 text-encre-noire border-amber-600 animate-pulse'
-                    : 'bg-neutral-850 text-encre-noire hover:bg-neutral-100 bg-white'
-                }`}
-                title={hasPendingMembers ? `${pendingCount} nouveau(x) membre(s) à valider` : undefined}
-              >
-                <XiloConsole size={10} className="inline mr-1" />
-                <span>{t('poles.tabSystemAdmin') || "Système"}</span>
-                {hasPendingMembers && (
-                  <span className="relative flex h-2 w-2 ml-1 shrink-0">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
-                  </span>
-                )}
-              </button>
-            )}
-
-
-            
-            {isSuperAdmin && (
-              <button
-                type="button"
-                onClick={onToggleBreakGlass}
-                className={`w-full py-1.5 px-2 rounded-[6px_9px_5px_8px] text-[8.5px] font-black uppercase tracking-wider border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-[1.5px_1.5px_0px_0px_#181716] ${
-                  breakGlassActive
-                    ? 'bg-amber-400 text-encre-noire border-encre-noire animate-pulse'
-                    : 'bg-cordel-bg text-cordel-master-dark/75 border-cordel-master-dark/30 hover:border-encre-noire'
-                }`}
-                title={t('breakGlass.switchTooltip') || "Basculez pour déverrouiller les salons et modules restreints"}
-              >
-                <span>{breakGlassActive ? (t('breakGlass.switchActive') || '🔓 Mode Intervention') : (t('breakGlass.switchInactive') || '🔒 Mode Standard')}</span>
-              </button>
-            )}
-
-            {onSignOut && (
-              <button
-                type="button"
-                onClick={onSignOut}
-                className="w-full py-1.5 text-center text-[8px] font-black uppercase tracking-widest bg-red-800 text-white border-2 border-encre-noire rounded-[8px_12px_9px_11px] shadow-[2px_2px_0px_0px_#181716] hover:brightness-110 active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all cursor-pointer flex items-center justify-center gap-1"
-              >
-                <XiloSignOut size={10} /> {t('common.signOut') || "Déconnexion"}
-              </button>
-            )}
-
-            {canSendFeedback && (
-              <button
-                type="button"
-                onClick={() => setIsFeedbackModalOpen(true)}
-                className="w-full py-1.5 text-center text-[8px] font-black uppercase tracking-widest bg-[var(--color-cordel-vert)] text-white border-2 border-encre-noire rounded-[8px_12px_9px_11px] shadow-[2px_2px_0px_0px_#181716] hover:brightness-110 active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all cursor-pointer flex items-center justify-center gap-1 mt-1"
-                title="Signaler un bug ou soumettre une idée"
-              >
-                💡 Feedback
-              </button>
-            )}
-            
-            <div className="w-full flex items-center justify-center mt-2">
-              <LanguageToggle className="w-full" />
-            </div>
-
-            <div className="w-full flex items-center justify-between text-[7.5px] font-black opacity-40 tracking-widest uppercase select-none mt-1 px-1">
-              <span>{import.meta.env.VITE_APP_VERSION || 'v1.0.1'}</span>
-              <button
-                type="button"
-                onClick={() => forceUpdateAndClearCache()}
-                className="hover:opacity-100 hover:text-cordel-wood cursor-pointer underline flex items-center gap-0.5"
-                title="Vider les caches et actualiser l'application"
-              >
-                🔄 {t('menu.refreshApp')}
-              </button>
-            </div>
-          </div>
+          {/* Desktop Footer compact */}
+          <DesktopSidebarFooter
+            isSystemOrSuperAdminOrMestre={isSystemOrSuperAdminOrMestre}
+            isSuperAdmin={isSuperAdmin}
+            currentTab={currentTab}
+            hasPendingMembers={hasPendingMembers}
+            pendingCount={pendingCount}
+            breakGlassActive={breakGlassActive}
+            onToggleBreakGlass={onToggleBreakGlass}
+            onNavigateToPole={onNavigateToPole}
+            onNavigateToTab={onNavigateToTab}
+            onSignOut={onSignOut}
+            t={t}
+          />
         </div>
 
         {/* Zone de contenu principale (balise sémantique main avec espacement mobile strict pt-3 px-2.5) */}
@@ -1076,6 +1009,12 @@ export default function LayoutShell({
                   {canUseViewSimulator && (
                     <ViewSimulatorSelector />
                   )}
+
+                  {canSendFeedback && (
+                    <FeedbackButton onClick={() => setIsFeedbackModalOpen(true)} />
+                  )}
+
+                  <LanguageToggle className="min-h-[34px] px-2.5 border-2 border-encre-noire bg-cordel-bg-light hover:bg-white rounded-[6px_9px_7px_8px] shadow-[1.5px_1.5px_0px_0px_#181716]" />
                 </div>
               </div>
             ) : (
@@ -1099,6 +1038,8 @@ export default function LayoutShell({
                 onNotificationNavigate={onNotificationNavigate}
                 unreadPrivateMessagesCount={unreadPrivateMessagesCount}
                 canUseViewSimulator={canUseViewSimulator}
+                canSendFeedback={canSendFeedback}
+                onOpenFeedback={() => setIsFeedbackModalOpen(true)}
                 activePoleObj={activePoleObj}
                 currentPole={currentPole}
                 currentTab={currentTab}
@@ -1406,16 +1347,14 @@ export default function LayoutShell({
                 )}
 
                 {canSendFeedback && (
-                  <button
-                    type="button"
+                  <FeedbackButton
+                    variant="drawer"
                     onClick={() => {
                       setIsFeedbackModalOpen(true);
                       setIsDrawerOpen(false);
                     }}
-                    className="w-full py-1.5 text-center text-[9px] font-black uppercase tracking-widest bg-[var(--color-cordel-vert)] text-white border border-encre-noire rounded-[6px_9px_7px_8px] shadow-[1.5px_1.5px_0px_0px_#181716] hover:brightness-110 active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all cursor-pointer flex items-center justify-center gap-1.5 mt-1"
-                  >
-                    💡 Feedback
-                  </button>
+                    className="mt-1"
+                  />
                 )}
 
                 <div className="w-full flex items-center justify-center mt-2">

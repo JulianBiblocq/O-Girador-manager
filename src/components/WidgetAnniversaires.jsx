@@ -20,7 +20,7 @@ const getGenderTitlePT = (genreStr) => {
   return { title: 'estrela do mês', article: 'a' };
 };
 
-export default function WidgetAnniversaires({ groupId, currentUser, profileData, onContactUser }) {
+export default function WidgetAnniversaires({ groupId, currentUser, profileData, onContactUser, onHasBirthdaysChange }) {
   const { t } = useTranslation();
   const [birthdayMembers, setBirthdayMembers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -31,7 +31,7 @@ export default function WidgetAnniversaires({ groupId, currentUser, profileData,
   });
   const handleToggleBirthdays = () => setIsCollapsed(prev => {
     const next = !prev;
-    try { window.localStorage.setItem(birthdaysStorageKey, String(next)); } catch { /* Ignorer localStorage */ }
+    try { window.localStorage.getItem(birthdaysStorageKey, String(next)); } catch { /* Ignorer localStorage */ }
     return next;
   });
 
@@ -41,6 +41,7 @@ export default function WidgetAnniversaires({ groupId, currentUser, profileData,
     if (!groupId) {
       setBirthdayMembers([]);
       setLoading(false);
+      if (onHasBirthdaysChange) onHasBirthdaysChange(false);
       return;
     }
 
@@ -97,18 +98,20 @@ export default function WidgetAnniversaires({ groupId, currentUser, profileData,
       const sorted = activeMembers.sort((a, b) => a.day - b.day);
       setBirthdayMembers(sorted);
       setLoading(false);
+      if (onHasBirthdaysChange) onHasBirthdaysChange(sorted.length > 0);
     }, (error) => {
       console.error("WidgetAnniversaires - Error fetching members:", error);
       setLoading(false);
+      if (onHasBirthdaysChange) onHasBirthdaysChange(false);
     });
 
     return () => unsubscribe();
-  }, [groupId]);
+  }, [groupId, onHasBirthdaysChange]);
 
   if (loading) return null;
   if (birthdayMembers.length === 0) return null;
 
-  // Déterminer si l'utilisateur connecté fâte son anniversaire ce mois-ci
+  // Déterminer si l'utilisateur connecté fête son anniversaire ce mois-ci
   const currentUserBirthday = birthdayMembers.find(m => m.id === currentUserId);
   const selfTitleInfo = currentUserBirthday ? getGenderTitlePT(profileData?.genre || currentUserBirthday.genre) : null;
 
@@ -151,8 +154,16 @@ export default function WidgetAnniversaires({ groupId, currentUser, profileData,
               </div>
             )}
 
-            {/* Grille responsive : 1 col sur mobile, 2 cols sur tablette, 3 cols sur PC */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 max-h-[360px] overflow-y-auto pr-1">
+            {/* Grille responsive adaptée au nombre d'anniversaires du mois */}
+            <div
+              className={`grid gap-2.5 max-h-[360px] overflow-y-auto pr-1 ${
+                birthdayMembers.length === 1
+                  ? 'grid-cols-1'
+                  : birthdayMembers.length === 2
+                  ? 'grid-cols-1 sm:grid-cols-2'
+                  : 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-3'
+              }`}
+            >
               {birthdayMembers.map((member) => {
                 const fullName = `${member.prenom} ${member.nom}`.trim() || "Membre";
                 const { title, article } = getGenderTitlePT(member.genre);

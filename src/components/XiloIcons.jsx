@@ -1139,8 +1139,31 @@ export const XiloScale = ({ size = 16, className = '', ...props }) => (
   </svg>
 );
 
-
-
-
-
+// 💬 Bulle de retour / Feedback (MessageSquarePlus) - Style Xilogravura Cordel
+export const XiloFeedback = ({ size = 16, className = '', ...props }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.3"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={`xilo-icon ${className}`}
+    {...props}
+  >
+    {/* Contour asymétrique de bulle gravée sur bois avec pointe de phylactère */}
+    <path
+      d="M3.2 4.5 C7.5 3.8 16.5 3.8 20.8 4.6 C21.6 8.2 21.5 13.2 20.6 16.5 C17.2 17.1 12.8 17.0 9.5 16.8 L4.8 21.0 L5.4 16.4 C3.8 16.1 3.1 14.8 2.8 12.5 C2.6 9.5 2.7 6.5 3.2 4.5 Z"
+      fill="currentColor"
+      fillOpacity="0.12"
+    />
+    {/* Signe '+' gravé au centre de la bulle */}
+    <path d="M12 7.5 L12 13.5" strokeWidth="2.5" />
+    <path d="M9 10.5 L15 10.5" strokeWidth="2.5" />
+    {/* Petites hachures de xylogravure dans les angles */}
+    <path d="M5.2 6.8 L6.8 6.2 M17.5 14.5 L19.0 13.8" strokeWidth="1.4" />
+  </svg>
+);
 
