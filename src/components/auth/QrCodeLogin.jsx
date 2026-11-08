@@ -12,7 +12,7 @@ import { useTranslation } from '../LanguageContext';
  * affiche le QR Code et écoute en temps réel les changements jusqu'à approbation
  * par l'application mobile de l'utilisateur.
  */
-export default function QrCodeLogin() {
+export default function QrCodeLogin({ onSuccess }) {
   const { t } = useTranslation();
   const [sessionId, setSessionId] = useState(null);
   const [status, setStatus] = useState('loading'); // 'chargement de' | 'pending' | 'approved' | 'expired' | 'error'
@@ -88,7 +88,9 @@ export default function QrCodeLogin() {
               await signInWithCustomToken(auth, data.customToken);
 
               // Nettoyage du document Firestore de session
-              await deleteDoc(doc(db, 'qr_sessions', newSessionId));
+              await deleteDoc(doc(db, 'qr_sessions', newSessionId)).catch(() => {});
+
+              if (onSuccess) onSuccess();
             } catch (err) {
               console.error("Erreur lors de la connexion par Custom Token :", err);
               setErrorMessage("Erreur d'authentification par QR Code.");

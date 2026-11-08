@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
+import { signInWithPopup, signInWithRedirect, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
 import LayoutShell from './LayoutShell';
 import CordelCard from './CordelCard';
@@ -12,6 +12,7 @@ import { canonicalizeGroupId } from '../utils/tenantUtils';
 import GroupSelectorStep from './auth/GroupSelectorStep';
 import RegisterForm from './auth/RegisterForm';
 import { InAppBrowserHelpBanner, AuthAssistanceBannerCard } from './auth/LoginAssistanceBanners';
+import { LoginModeToggleTabs, LoginGoogleSection, LoginQrCodeActionButton } from './auth/LoginModeHeaderAndActions';
 import { formatFirebaseAuthError } from '../utils/authErrorUtils';
 
 const syncAuthLocale = (authInstance, lang) => {
@@ -154,6 +155,16 @@ export default function Login({ branding, onSuccess }) {
 
   const getAuthErrorMessage = (error) => formatFirebaseAuthError(error, t, isSignUpMode);
 
+  const handleGoogleRedirectLogin = async () => {
+    setAuthLoading(true);
+    try {
+      await signInWithRedirect(auth, googleProvider);
+    } catch (err) {
+      console.warn("Login - Erreur signInWithRedirect Google :", err);
+      setAuthLoading(false);
+    }
+  };
+
   const handleLogin = async () => {
     setAuthLoading(true);
     setGoogleNotice(null);
@@ -291,9 +302,31 @@ export default function Login({ branding, onSuccess }) {
             <h2 className="panel-title text-2xl font-bold tracking-wider text-cordel-wood mb-2">
               {isResetPasswordMode ? t('login.resetPasswordTitle') : t('login.title')}
             </h2>
-            <p className="text-xs uppercase font-extrabold tracking-widest text-cordel-master-dark/65 mb-6">
+            <p className="text-xs uppercase font-extrabold tracking-widest text-cordel-master-dark/65 mb-4">
               {t('login.gateway')}
             </p>
+
+            {/* Bascule permanente ultra-visible en haut de la carte : Se connecter (Déjà membre) / Créer mon compte */}
+            <LoginModeToggleTabs
+              isSignUpMode={isSignUpMode}
+              isQrLoginMode={isQrLoginMode}
+              onSelectSignIn={() => {
+                setIsSignUpMode(false);
+                setIsQrLoginMode(false);
+                setIsResetPasswordMode(false);
+                setGoogleNotice(null);
+                setAuthAssistanceBanner(null);
+                setResetConfirmationEmail(null);
+              }}
+              onSelectSignUp={() => {
+                setIsSignUpMode(true);
+                setIsQrLoginMode(false);
+                setIsResetPasswordMode(false);
+                setGoogleNotice(null);
+                setAuthAssistanceBanner(null);
+                setResetConfirmationEmail(null);
+              }}
+            />
 
             {isResetPasswordMode ? (
               <div className="flex flex-col gap-4 text-left">
@@ -348,7 +381,7 @@ export default function Login({ branding, onSuccess }) {
               </div>
             ) : isQrLoginMode ? (
               <div className="flex flex-col items-center">
-                <QrCodeLogin />
+                <QrCodeLogin onSuccess={onSuccess} />
                 <div className="text-center mt-4">
                   <button
                     type="button"
@@ -366,44 +399,6 @@ export default function Login({ branding, onSuccess }) {
                   <InAppBrowserHelpBanner onDismiss={() => setInAppDismissed(true)} />
                 )}
 
-                {/* Onglets segmentés Cordel : Se connecter / Créer un compte */}
-                <div className="flex w-full mb-5 border-2 border-encre-noire rounded-[8px_5px_9px_6px] p-1 bg-amber-100/40 shadow-[2px_2px_0px_0px_#181716]">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsSignUpMode(false);
-                      setGoogleNotice(null);
-                      setAuthAssistanceBanner(null);
-                      setResetConfirmationEmail(null);
-                    }}
-                    className={`flex-1 py-2 px-2 text-xs font-black uppercase tracking-wider rounded transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                      !isSignUpMode
-                        ? 'bg-cordel-wood text-white shadow-[1px_1px_0px_0px_#181716]'
-                        : 'text-cordel-wood/80 hover:text-cordel-wood hover:bg-amber-100/50'
-                    }`}
-                  >
-                    <span>🔑</span>
-                    <span>{t('login.tabSignIn') || "Se connecter"}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsSignUpMode(true);
-                      setGoogleNotice(null);
-                      setAuthAssistanceBanner(null);
-                      setResetConfirmationEmail(null);
-                    }}
-                    className={`flex-1 py-2 px-2 text-xs font-black uppercase tracking-wider rounded transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                      isSignUpMode
-                        ? 'bg-[var(--color-cordel-vert,#2d6a4f)] text-white shadow-[1px_1px_0px_0px_#181716]'
-                        : 'text-cordel-wood/80 hover:text-cordel-wood hover:bg-amber-100/50'
-                    }`}
-                  >
-                    <span>✍️</span>
-                    <span>{t('login.tabSignUp') || "Créer un compte"}</span>
-                  </button>
-                </div>
-
                 <p className="text-xs leading-relaxed mb-4 text-cordel-master-dark/80 px-1 text-center">
                   {isSignUpMode 
                     ? "Inscrivez-vous pour rejoindre l'association et compléter votre fiche d'adhérent."
@@ -412,41 +407,20 @@ export default function Login({ branding, onSuccess }) {
 
                 {/* Si aucun groupe n'est détecté en mode inscription, afficher l'étape bienveillante */}
                 {isSignUpMode && needsGroupSelection ? (
-                  <GroupSelectorStep onSelectGroup={(g) => setManualGroupId(g)} />
+                  <>
+                    <GroupSelectorStep onSelectGroup={(g) => setManualGroupId(g)} />
+                    <LoginQrCodeActionButton onOpenQrLogin={() => setIsQrLoginMode(true)} />
+                  </>
                 ) : (
                   <>
                     {/* Connexion / Inscription Google */}
-                    <CordelButton 
-                      variant="ocre" 
-                      useExtremeBorder={true} 
-                      onClick={handleLogin} 
-                      disabled={authLoading}
-                      className="w-full py-2.5 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2"
-                    >
-                      <span>🌐</span>
-                      <span>{isSignUpMode ? "S'inscrire avec Google" : (t('login.loginGoogle') || "Se connecter avec Google")}</span>
-                    </CordelButton>
-
-                    {/* Information douce en cas de fenêtre Google fermée ou bloquée */}
-                    {googleNotice && (
-                      <div className={`p-3 my-2.5 rounded-[6px_8px_5px_7px] text-left text-xs border-2 shadow-2xs animate-fadeIn ${
-                        googleNotice.type === 'warning'
-                          ? 'bg-red-50/95 border-red-400 text-red-900'
-                          : 'bg-amber-50/95 border-amber-400 text-amber-900'
-                      }`}>
-                        <div className="flex items-start gap-2">
-                          <span className="text-base select-none">{googleNotice.type === 'warning' ? '🚫' : '💡'}</span>
-                          <div className="space-y-0.5">
-                            <p className="font-extrabold text-[11px] uppercase tracking-wide">
-                              {googleNotice.title}
-                            </p>
-                            <p className="text-[10px] leading-relaxed opacity-90">
-                              {googleNotice.message}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                    <LoginGoogleSection
+                      isSignUpMode={isSignUpMode}
+                      authLoading={authLoading}
+                      googleNotice={googleNotice}
+                      onGooglePopupLogin={handleLogin}
+                      onGoogleRedirectLogin={handleGoogleRedirectLogin}
+                    />
 
                     {/* Divider */}
                     <div className="flex items-center gap-2 my-4 opacity-40">
@@ -459,12 +433,20 @@ export default function Login({ branding, onSuccess }) {
 
                     {isSignUpMode ? (
                       /* Formulaire d'inscription garanti : Email + Mot de passe + Confirmation */
-                      <RegisterForm
-                        onSuccess={onSuccess}
-                        onSwitchToLogin={handleSwitchToLogin}
-                        initialEmail={email}
-                        onEmailChange={(val) => setEmail(val)}
-                      />
+                      <>
+                        <RegisterForm
+                          onSuccess={onSuccess}
+                          onSwitchToLogin={handleSwitchToLogin}
+                          initialEmail={email}
+                          onEmailChange={(val) => setEmail(val)}
+                        />
+                        <LoginQrCodeActionButton
+                          onOpenQrLogin={() => {
+                            setIsSignUpMode(false);
+                            setIsQrLoginMode(true);
+                          }}
+                        />
+                      </>
                     ) : (
                       /* Formulaire de connexion classique */
                       <form onSubmit={handleEmailAuth} className="flex flex-col gap-3 text-left">
@@ -552,17 +534,8 @@ export default function Login({ branding, onSuccess }) {
                             : (t('login.loginBtn') || "🔑 SE CONNECTER")}
                         </CordelButton>
 
-                        {/* Switch Login Method Tab - QR Code */}
-                        <div className="flex justify-center mt-3 pt-3 border-t border-dashed border-cordel-master-dark/20">
-                          <button
-                            type="button"
-                            onClick={() => setIsQrLoginMode(true)}
-                            className="text-[10px] font-bold text-cordel-master-dark/70 hover:text-cordel-wood hover:underline cursor-pointer flex items-center gap-1.5"
-                          >
-                            <span>📱</span>
-                            <span>Se connecter avec un QR Code</span>
-                          </button>
-                        </div>
+                        {/* Accès permanent en 1 clic à la connexion par QR Code */}
+                        <LoginQrCodeActionButton onOpenQrLogin={() => setIsQrLoginMode(true)} />
                       </form>
                     )}
                   </>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { onAuthStateChanged, signOut, signInWithCustomToken } from 'firebase/auth';
-import { doc, onSnapshot, updateDoc, collection, query, where } from 'firebase/firestore';
+import { doc, getDoc, getDocFromServer, onSnapshot, updateDoc, collection, query, where } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
@@ -1261,6 +1261,7 @@ export default function App() {
 
         if (currentUser) {
           setCheckingProfile(true);
+          setProfileExists(prev => (prev === true ? true : null));
           const profileRef = doc(db, 'users', currentUser.uid);
           unsubscribeProfile = onSnapshot(profileRef, (docSnap) => {
             try {
@@ -1415,35 +1416,57 @@ export default function App() {
                   return;
                 }
 
-                // Réconciliation automatique : vérifier si une fiche membre pré-existante créée par le Bureau correspond à cet e-mail
-                if (currentUser?.email) {
-                  reconcilePreExistingMember(currentUser).then((reconciled) => {
-                    if (reconciled) {
-                      console.info("App - Fiche pré-existante Bureau réconciliée pour l'UID :", currentUser.uid);
-                    } else {
-                      const knownComplete = hasKnownCompletedProfile(currentUser.uid);
-                      setProfileData(null);
-                      setProfileExists(knownComplete ? null : false);
-                      setProfileNetworkWaiting(knownComplete);
+                // Vérification serveur prioritaire (sur nouvel appareil au cache vierge) + réconciliation par e-mail
+                getDocFromServer(profileRef)
+                  .then(async (serverSnap) => {
+                    if (serverSnap.exists()) {
+                      const sData = serverSnap.data();
+                      const canonicalGroup = canonicalizeGroupId(sData.groupId);
+                      const resolvedServerProfile = {
+                        uid: serverSnap.id,
+                        id: serverSnap.id,
+                        ...sData,
+                        groupId: canonicalGroup || sData.groupId || null
+                      };
+                      setProfileData(resolvedServerProfile);
+                      setProfileExists(true);
+                      setProfileNetworkWaiting(false);
+                      if (checkIsProfileComplete(resolvedServerProfile, false, currentUser.uid)) {
+                        markKnownCompletedProfile(currentUser.uid);
+                      }
                       setCheckingProfile(false);
                       setLoading(false);
+                      return;
                     }
-                  }).catch((err) => {
-                    console.warn("App - Erreur réconciliation automatique (attente réseau maintenue) :", err);
+
+                    if (currentUser?.email) {
+                      const reconciled = await reconcilePreExistingMember(currentUser);
+                      if (reconciled) {
+                        console.info("App - Fiche pré-existante Bureau réconciliée pour l'UID :", currentUser.uid);
+                        setProfileData(reconciled);
+                        setProfileExists(true);
+                        setProfileNetworkWaiting(false);
+                        setCheckingProfile(false);
+                        setLoading(false);
+                        return;
+                      }
+                    }
+
+                    const knownComplete = hasKnownCompletedProfile(currentUser.uid);
+                    setProfileData(null);
+                    setProfileExists(knownComplete ? null : false);
+                    setProfileNetworkWaiting(knownComplete);
+                    setCheckingProfile(false);
+                    setLoading(false);
+                  })
+                  .catch((err) => {
+                    console.warn("App - Vérification serveur différée (attente réseau maintenue) :", err?.message || err);
                     setProfileExists(prev => (prev === true ? true : null));
                     setProfileNetworkWaiting(true);
                     setCheckingProfile(false);
                     setLoading(false);
                   });
-                  return;
-                } else {
-                  const knownComplete = hasKnownCompletedProfile(currentUser.uid);
-                  setProfileData(null);
-                  setProfileExists(knownComplete ? null : false);
-                  setProfileNetworkWaiting(knownComplete);
-                  setCheckingProfile(false);
-                  setLoading(false);
-                }
+                return;
               }
             } catch (snapErr) {
               console.error("App - Erreur traitement onSnapshot profil :", snapErr);
@@ -2014,8 +2037,8 @@ export default function App() {
     );
   }
 
-  // 3. Utilisateur non connecté sur une route privée ou accès explicite à /login (invitation / inscription)
-  if (!user || isLoginPath) {
+  // 3. Utilisateur non connecté : affichage de l'écran de connexion (Login.jsx)
+  if (!user) {
     return (
       <>
         <Login branding={branding} onSuccess={() => navigateToRoute('/app')} />
@@ -2068,11 +2091,23 @@ export default function App() {
       );
     }
 
-    if (!profileExists || !profileData || !isProfileComplete) {
+    if (!checkingProfile && profileExists !== null && (!profileExists || !profileData || !isProfileComplete)) {
       return (
         <div style={brandingStyle} className="min-h-screen flex flex-col w-full force-light-theme">
           <React.Suspense fallback={<div className="flex-1 flex justify-center items-center py-12 animate-pulse text-xs font-bold select-none">⏳ Initialisation...</div>}>
-            <Onboarding user={user} branding={branding} onComplete={handleOnboardingComplete} profileData={profileData} />
+            <Onboarding
+              user={user}
+              branding={branding}
+              onComplete={handleOnboardingComplete}
+              profileData={profileData}
+              onProfileRecovered={(recoveredData) => {
+                setProfileData(recoveredData);
+                setProfileExists(true);
+                setProfileNetworkWaiting(false);
+                handleOnboardingComplete();
+              }}
+              onSignOut={handleSignOut}
+            />
           </React.Suspense>
           <ReloadPrompt />
         </div>

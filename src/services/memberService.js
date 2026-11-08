@@ -137,7 +137,11 @@ export async function reconcilePreExistingMember(authUser, groupId = null) {
     await setDoc(targetRef, unifiedPayload, { merge: true });
 
     // Suppression de l'ancienne fiche temporaire pour éradiquer tout doublon dans l'annuaire
-    await deleteDoc(preExistingDoc.ref);
+    try {
+      await deleteDoc(preExistingDoc.ref);
+    } catch (delErr) {
+      console.warn("memberService - Nettoyage ancien doc différé (droits non-admin) :", delErr?.message || delErr);
+    }
 
     console.info(`memberService - Réconciliation réussie avec succès pour ${cleanEmail}`);
     return unifiedPayload;

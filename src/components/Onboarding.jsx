@@ -9,6 +9,7 @@ import OnboardingPublicBlock from './onboarding/OnboardingPublicBlock';
 import OnboardingVisibilityBlock from './onboarding/OnboardingVisibilityBlock';
 import OnboardingPrivateBlock from './onboarding/OnboardingPrivateBlock';
 import OnboardingMissingFieldsAlert from './onboarding/OnboardingMissingFieldsAlert';
+import OnboardingExistingMemberRescueBanner from './onboarding/OnboardingExistingMemberRescueBanner';
 import WelcomeTourModal from './guided-tour/WelcomeTourModal';
 import { notifyMembersByTag } from '../utils/inAppNotificationService';
 import { sanitizeUserDocPayload } from '../utils/firestoreUtils';
@@ -32,7 +33,7 @@ const DEFAULT_FIELDS_CONFIG = {
   niveaux: { key: "niveaux", label: "Affichage des niveaux dans le trombinoscope", enabled: true, filledBy: "admin", isRequired: false }
 };
 
-export default function Onboarding({ user, branding, onComplete, profileData }) {
+export default function Onboarding({ user, branding, onComplete, profileData, onProfileRecovered, onSignOut }) {
   const { t } = useTranslation();
   // Séparation du nom d'affichage en prénom et nom de famille
   const nameParts = user?.displayName ? user.displayName.split(' ') : [];
@@ -476,6 +477,20 @@ export default function Onboarding({ user, branding, onComplete, profileData }) 
 
         <div className="max-w-2xl mx-auto w-full my-4 px-2">
           <CordelCard variant="default" useExtremeBorder={true}>
+            {/* Bandeau de secours en 1 clic pour les membres existants sur nouvel appareil */}
+            <OnboardingExistingMemberRescueBanner
+              user={user}
+              groupId={targetGroupId}
+              onProfileRecovered={(recoveredData) => {
+                if (onProfileRecovered) {
+                  onProfileRecovered(recoveredData);
+                } else if (onComplete) {
+                  onComplete();
+                }
+              }}
+              onSignOut={onSignOut}
+            />
+
             <h2 className="panel-title text-lg font-bold mb-1">
               {t('onboarding.welcome') || "Bienvenue dans l'association !"}
             </h2>
