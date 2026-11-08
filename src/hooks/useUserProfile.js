@@ -1,14 +1,13 @@
 import { useState, useEffect } from 'react';
-import { doc, setDoc, updateDoc, collection, query, where, onSnapshot, arrayUnion } from 'firebase/firestore';
+import { doc, setDoc, collection, query, where, onSnapshot } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
-import { db, auth, messaging } from '../firebase';
+import { db, auth } from '../firebase';
 import { useAvatarUpload } from './useAvatarUpload';
-import { getToken } from 'firebase/messaging';
 import { forceUpdateAndClearCache } from '../utils/pwaUtils';
-import { showPushActivationConfirmation } from '../utils/pushNotificationHelper';
 import useConfirm from './useConfirm';
 import { notifyMembersByTag } from '../utils/inAppNotificationService';
 import { sanitizeUserDocPayload } from '../utils/firestoreUtils';
+import { useProfilePushActions } from './useProfilePushActions';
 
 export const DEFAULT_FIELDS_CONFIG = {
   telephone: { key: "telephone", label: "Téléphone", enabled: true, filledBy: "member", isRequired: false },
@@ -101,8 +100,12 @@ export function useUserProfile(user, profileData, t) {
   const [selectedImage, setSelectedImage] = useState(null);
   const [showEditor, setShowEditor] = useState(false);
 
-  const [notificationPermission, setNotificationPermission] = useState(typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'default');
-  const [isSubscribingPush, setIsSubscribingPush] = useState(false);
+  const {
+    notificationPermission,
+    isSubscribingPush,
+    handleEnableNotifications,
+    handleDisableNotifications
+  } = useProfilePushActions(user, profileData);
 
   const handleStartEdit = () => {
     setFormData({
@@ -155,53 +158,6 @@ export function useUserProfile(user, profileData, t) {
       iban: profileData?.iban || profileData?.ribIban || ''
     });
     setIsEditing(true);
-  };
-
-  const handleEnableNotifications = async () => {
-    if (!messaging) {
-      alert("Les notifications Push ne sont pas prises en charge par ce navigateur.");
-      return;
-    }
-    setIsSubscribingPush(true);
-    try {
-      const permission = await Notification.requestPermission();
-      setNotificationPermission(permission);
-      if (permission === 'granted') {
-        let registration = undefined;
-        if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-          try {
-            registration = await navigator.serviceWorker.ready;
-          } catch (swErr) {
-            console.error("Could not get ready service worker:", swErr);
-          }
-        }
-        const token = await getToken(messaging, { 
-          vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY || undefined,
-          serviceWorkerRegistration: registration
-        });
-        if (token) {
-          const userRef = doc(db, 'users', user.uid);
-          await updateDoc(userRef, {
-            fcmTokens: arrayUnion(token)
-          });
-          
-          // Déclencher immédiatement la notification de confirmation via le Service Worker
-          await showPushActivationConfirmation(registration);
-
-          alert("Notifications activées avec succès !");
-        } else {
-          console.error("FCM Token not generated.");
-          alert("Impossible de générer le jeton de notification.");
-        }
-      } else {
-        alert("La permission d'envoi de notifications a été refusée.");
-      }
-    } catch (err) {
-      console.error("Error enabling notifications - Detailed error info:", err);
-      alert("Erreur lors de l'activation des notifications.");
-    } finally {
-      setIsSubscribingPush(false);
-    }
   };
 
   // Synchronisation de la configuration des champs pour l'association du membre
@@ -285,44 +241,6 @@ export function useUserProfile(user, profileData, t) {
 
     return () => unsubscribe();
   }, [profileData?.groupId, user?.uid]);
-
-  // Auto-inscription aux notifications push si l'autorisation a déjà été accordée
-  useEffect(() => {
-    if (!messaging || !user?.uid) return;
-
-    const checkAndAutoSubscribe = async () => {
-      if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-        setNotificationPermission('granted');
-        try {
-          let registration = undefined;
-          if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-            try {
-              registration = await navigator.serviceWorker.ready;
-            } catch (swErr) {
-              console.error("Impossible de récupérer le service worker pour l'auto-inscription :", swErr);
-            }
-          }
-          const token = await getToken(messaging, {
-            vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY || undefined,
-            serviceWorkerRegistration: registration
-          });
-          if (token) {
-            const currentTokens = profileData?.fcmTokens || [];
-            if (!currentTokens.includes(token)) {
-              const userRef = doc(db, 'users', user.uid);
-              await updateDoc(userRef, {
-                fcmTokens: arrayUnion(token)
-              });
-            }
-          }
-        } catch (err) {
-          console.error("Échec de l'auto-inscription au jeton FCM :", err);
-        }
-      }
-    };
-
-    checkAndAutoSubscribe();
-  }, [user?.uid, profileData?.fcmTokens]);
 
   const [validationError, setValidationError] = useState('');
 
@@ -642,6 +560,7 @@ export function useUserProfile(user, profileData, t) {
     isSubscribingPush,
     handleStartEdit,
     handleEnableNotifications,
+    handleDisableNotifications,
     isFieldVisible,
     isFieldRequired,
     getMissingRequiredFields,

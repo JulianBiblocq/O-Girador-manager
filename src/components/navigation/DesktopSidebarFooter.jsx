@@ -65,7 +65,7 @@ export default function DesktopSidebarFooter({
               title={t('breakGlass.switchTooltip') || 'Basculez pour déverrouiller les salons et modules restreints'}
             >
               <span className="truncate">
-                {breakGlassActive ? '🔓 Interv.' : '🔒 Standard'}
+                {breakGlassActive ? `🔓 ${t('menu.btnIntervention')}` : `🔒 ${t('menu.btnIntervention')}`}
               </span>
             </button>
           )}

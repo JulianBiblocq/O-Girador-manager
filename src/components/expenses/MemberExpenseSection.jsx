@@ -100,11 +100,11 @@ export default function MemberExpenseSection({ groupId, currentUser, profileData
       <div className="flex flex-wrap items-center justify-between gap-2 bg-cordel-bg-light/70 px-2.5 py-2 rounded border border-dashed border-cordel-master-dark/20 text-[11px]">
         <div className="flex flex-wrap items-center gap-2 font-bold">
           <span className="text-[var(--color-cordel-vert)]">
-            Remboursé : <strong>{totalRembourseSaison.toFixed(2)} €</strong>
+            {t('userProfile.reimbursedPrefix')} <strong>{totalRembourseSaison.toFixed(2)} €</strong>
           </span>
           <span className="opacity-30">|</span>
           <span className="text-[var(--color-cordel-ocre)]">
-            En attente : <strong>{totalEnAttente.toFixed(2)} €</strong>
+            {t('userProfile.pendingPrefix')} <strong>{totalEnAttente.toFixed(2)} €</strong>
           </span>
         </div>
         <button
@@ -112,7 +112,7 @@ export default function MemberExpenseSection({ groupId, currentUser, profileData
           onClick={() => setIsHistoryOpen((prev) => !prev)}
           className="text-[10px] font-black uppercase tracking-wider text-cordel-wood hover:underline cursor-pointer shrink-0"
         >
-          Voir l'historique ({notesFiltrees.length}) {isHistoryOpen ? '▴' : '▾'}
+          {t('userProfile.btnViewHistoryCount', { count: notesFiltrees.length })} {isHistoryOpen ? '▴' : '▾'}
         </button>
       </div>
 

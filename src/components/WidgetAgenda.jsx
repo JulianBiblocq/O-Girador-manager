@@ -7,7 +7,7 @@ const EventDetails = React.lazy(() => import('./EventDetails'));
 import CalendarGrid from './CalendarGrid';
 import EventCreateForm from './agenda/EventCreateForm';
 import EmptyState from './EmptyState';
-import AgendaFilterBar, { getActiveAgendaFilterSummary } from './agenda/AgendaFilterBar';
+import AgendaFilterBar, { getActiveAgendaFilterSummary, AgendaMobileFilterTrigger } from './agenda/AgendaFilterBar';
 import AgendaEventTicketCard from './agenda/AgendaEventTicketCard';
 import EventDisciplineBadges from './agenda/EventDisciplineBadges';
 import { useTranslation } from './LanguageContext';
@@ -153,33 +153,14 @@ export default function WidgetAgenda({
   };
 
   const mobileFilterTriggerNode = !loading && !isAdding ? (
-    <div className="flex md:hidden items-center gap-1.5">
-      <button
-        type="button"
-        onClick={() => setIsMobileFiltersOpen((prev) => !prev)}
-        className={`px-2.5 py-1 rounded-[4px_6px_3px_5px] text-[9.5px] font-black uppercase tracking-wider border cursor-pointer flex items-center gap-1 transition-all ${
-          hasActiveFilter
-            ? 'bg-cordel-wood text-white border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
-            : 'bg-cordel-bg-light text-encre-noire border-encre-noire/35 hover:bg-white'
-        }`}
-      >
-        <span>
-          {hasActiveFilter ? `🌪️ Filtre actif (${activeFilterCount})` : '🌪️ Filtrer'}
-        </span>
-        <span>{isMobileFiltersOpen ? '▴' : '▾'}</span>
-      </button>
-
-      {hasActiveFilter && (
-        <button
-          type="button"
-          onClick={handleResetFilters}
-          className="px-2 py-1 rounded-[4px_6px_3px_5px] text-[9px] font-black uppercase tracking-wider bg-amber-100 hover:bg-amber-200 text-cordel-wood border border-cordel-wood/50 cursor-pointer transition-colors"
-          title="Réinitialiser tous les filtres"
-        >
-          ✕
-        </button>
-      )}
-    </div>
+    <AgendaMobileFilterTrigger
+      hasActiveFilter={hasActiveFilter}
+      activeFilterCount={activeFilterCount}
+      isMobileFiltersOpen={isMobileFiltersOpen}
+      onToggle={() => setIsMobileFiltersOpen((prev) => !prev)}
+      onReset={handleResetFilters}
+      t={t}
+    />
   ) : null;
   
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);

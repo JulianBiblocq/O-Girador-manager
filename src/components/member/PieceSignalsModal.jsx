@@ -1,27 +1,30 @@
-import React, { useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import useMestreSignals from '../../hooks/useMestreSignals';
+import PieceReflexConfigModal from '../mestre/PieceReflexConfigModal';
 import { useTranslation } from '../LanguageContext';
 
 /**
- * Modale Cordel d'aide-mémoire des Signes du Mestre pour un morceau du Répertoire (< 120 lignes).
- * Galerie en lecture directe épurée : affiche les signaux réels (visuel, nom de l'appel, consigne).
- * Sans quiz, sans QCM, sans masquage et sans données factices.
+ * Modale Cordel d'aide-mémoire des Signes du Mestre pour un morceau du Répertoire (< 135 lignes).
+ * Inclut pour le Mestre l'accès direct à l'Inspecteur d'Arbitrage (PieceReflexConfigModal).
  */
 export default function PieceSignalsModal({
   isOpen,
   onClose,
   piece,
-  groupId = null
+  groupId = null,
+  profileData = null
 }) {
   const { t } = useTranslation();
   const { signals: catalogSignals = [] } = useMestreSignals(groupId);
+  const [isReflexConfigOpen, setIsReflexConfigOpen] = useState(false);
 
   const isSequenced = Boolean(piece?.hasSequencer || piece?.sequenceurId || piece?.sequenceurFileUrl || piece?.activeSequencerUrl);
+  const isMestre = Boolean(
+    profileData?.role === 'mestre' || profileData?.role === 'admin' || profileData?.isSuperAdmin || !profileData
+  );
 
-  // Résolution rigoureuse des signaux réels du morceau (interdiction des signaux factices ou bruts)
   const resolvedSignals = useMemo(() => {
     if (!piece) return [];
-
     const signalsList = [];
     const seenIds = new Set();
     const seenNames = new Set();
@@ -29,11 +32,9 @@ export default function PieceSignalsModal({
     const addSignal = (sig, barNumber = null) => {
       if (!sig || !sig.id) return;
       const nom = (sig.name || sig.nom || '').trim();
-      // Interdiction formelle des signaux sans nom réel ou factices
       if (!nom || /^[a-zA-Z0-9_-]{16,}$/.test(nom) || nom.toLowerCase().startsWith('signe ')) return;
       const normName = nom.toLowerCase();
       if (seenIds.has(sig.id) || seenNames.has(normName)) return;
-
       seenIds.add(sig.id);
       seenNames.add(normName);
       signalsList.push({
@@ -45,7 +46,6 @@ export default function PieceSignalsModal({
       });
     };
 
-    // 1. Depuis sinaisDoMestre / activeSinaisDoMestre (prioritaire)
     const rawSinais = (Array.isArray(piece.sinaisDoMestre) && piece.sinaisDoMestre.length > 0)
       ? piece.sinaisDoMestre
       : (Array.isArray(piece.activeSinaisDoMestre) ? piece.activeSinaisDoMestre : []);
@@ -56,43 +56,23 @@ export default function PieceSignalsModal({
       const match = catalogSignals.find((cs) =>
         (sid && cs.id === sid) ||
         (sig.name && cs.name && cs.name.toLowerCase() === sig.name.toLowerCase()) ||
-        (sig.nom && cs.nom && cs.nom.toLowerCase() === sig.nom.toLowerCase()) ||
-        (sig.nom && cs.name && cs.name.toLowerCase() === sig.nom.toLowerCase()) ||
-        (sig.name && cs.nom && cs.name.toLowerCase() === sig.nom.toLowerCase())
+        (sig.nom && cs.nom && cs.nom.toLowerCase() === sig.nom.toLowerCase())
       );
-      if (match) {
-        addSignal(match, m);
-      } else if (typeof sig === 'object' && sig !== null && (sig.name || sig.nom)) {
-        const nameVal = (sig.name || sig.nom || '').trim();
-        // Vérification contre les IDs bruts Firestore non résolus
-        const isLikelyRawId = /^[a-zA-Z0-9_-]{16,}$/.test(nameVal);
-        if (!isLikelyRawId && !nameVal.toLowerCase().startsWith('signe ')) {
-          addSignal({
-            id: sig.id || `custom_${idx}`,
-            name: nameVal,
-            consigne: sig.consigne || sig.action || sig.description || '',
-            imageUrl: sig.imageUrl || null
-          }, m);
-        }
+      if (match) addSignal(match, m);
+      else if (typeof sig === 'object' && sig !== null && (sig.name || sig.nom)) {
+        addSignal({ id: sig.id || `custom_${idx}`, name: sig.name || sig.nom, consigne: sig.consigne || sig.action || '', imageUrl: sig.imageUrl || null }, m);
       }
     });
 
-    // 2. Rétrocompatibilité : depuis piece.signalIds UNIQUEMENT si rawSinais était vide
     if (rawSinais.length === 0 && Array.isArray(piece.signalIds)) {
       piece.signalIds.forEach((sigId) => {
         const match = catalogSignals.find((cs) => cs.id === sigId);
-        if (match) {
-          addSignal(match, null);
-        }
+        if (match) addSignal(match, null);
       });
     }
 
     return signalsList.sort((a, b) => {
-      if (isSequenced) {
-        if (a.mesure && b.mesure) return a.mesure - b.mesure;
-        if (a.mesure) return -1;
-        if (b.mesure) return 1;
-      }
+      if (isSequenced && (a.mesure || b.mesure)) return (a.mesure || 999) - (b.mesure || 999);
       return a.nom.localeCompare(b.nom);
     });
   }, [piece, catalogSignals, isSequenced]);
@@ -101,86 +81,51 @@ export default function PieceSignalsModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/60 backdrop-blur-xs">
-      <div className="relative w-full max-w-2xl max-h-[90vh] flex flex-col bg-[#fdfaf2] rounded-lg shadow-2xl overflow-hidden border-2 border-encre-noire text-left mt-2 sm:mt-0">
-        {/* En-tête Cordel épuré */}
-        <div className="w-full flex justify-between items-start gap-3 p-4 bg-stone-100/90 border-b-2 border-dashed border-cordel-master-dark/20 shrink-0">
-          <div className="flex-1 min-w-0 pr-2">
-            <span className="text-xs sm:text-sm font-black uppercase text-cordel-wood tracking-wider break-words block">
+      <div className="relative w-full max-w-2xl max-h-[90vh] flex flex-col bg-[#fdfaf2] rounded-lg shadow-2xl overflow-hidden border-2 border-encre-noire text-left">
+        <div className="w-full flex justify-between items-center gap-3 p-4 bg-stone-100/90 border-b-2 border-dashed border-cordel-master-dark/20 shrink-0">
+          <span className="text-xs sm:text-sm font-black uppercase text-cordel-wood tracking-wider truncate">
             🖐️ {t('repertoire.signalsTitle') || t('pedagogy.modals.signesConventionsDuMestre')} — {piece.titre}
-            </span>
+          </span>
+          <div className="flex items-center gap-2 shrink-0">
+            {isMestre && isSequenced && (
+              <button
+                type="button"
+                onClick={() => setIsReflexConfigOpen(true)}
+                className="px-2.5 py-1 rounded text-[10px] font-black uppercase bg-cordel-wood text-white border border-encre-noire cursor-pointer"
+              >
+                🎯 {t('pedagogy.reflex.mestreReflexConfigBtn')}
+              </button>
+            )}
+            <button type="button" onClick={onClose} className="w-8 h-8 rounded-full bg-encre-noire text-white font-black text-sm flex items-center justify-center hover:bg-red-700 cursor-pointer">✕</button>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="min-w-[44px] min-h-[44px] flex items-center justify-center -mr-2 -mt-2 rounded-lg text-white hover:bg-black/5 active:bg-black/10 transition-colors cursor-pointer shrink-0 select-none touch-manipulation"
-            title={t('repertoire.closeModal') || "Fermer"}
-          >
-              <span className="w-8 h-8 rounded-full bg-encre-noire text-white font-black text-sm flex items-center justify-center border-2 border-white hover:bg-red-700 transition-colors shadow-2xs pointer-events-none">
-                ✕
-              </span>
-          </button>
         </div>
 
-        {/* Corps : Galerie d'aide-mémoire en lecture directe */}
         <div className="flex-1 min-h-0 overflow-y-auto p-4 bg-cordel-bg-light">
           {resolvedSignals.length === 0 ? (
             <div className="p-8 text-center text-xs font-bold text-stone-500 bg-white/60 border border-dashed border-encre-noire/20 rounded">
               {t('repertoire.emptySignals') || t('pedagogy.modals.aucunAppelOuSignal')}
             </div>
           ) : (
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between p-2 rounded bg-white/80 border border-encre-noire/15">
-                <span className="text-xs font-bold text-stone-700">
-                  {resolvedSignals.length} {t('pedagogy.modals.convention')}{resolvedSignals.length > 1 ? 's' : ''} {t('pedagogy.modals.etGeste')}{resolvedSignals.length > 1 ? 's' : ''} {t('pedagogy.modals.duMestre')}
-                </span>
-                <span className="text-[10px] text-stone-500 italic">{t('pedagogy.modals.aideMemoireDeJeu')}</span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {resolvedSignals.map((sig) => (
-                  <div
-                    key={sig.id}
-                    className="p-3 rounded bg-white border-2 border-encre-noire/20 flex gap-3 items-center shadow-2xs hover:border-encre-noire/40 transition-colors"
-                  >
-                    {/* Vignette visuelle */}
-                    <div className="shrink-0 w-16 h-16 sm:w-18 sm:h-18 rounded border border-encre-noire/15 overflow-hidden flex items-center justify-center bg-stone-50">
-                      {sig.imageUrl ? (
-                        <img
-                          src={sig.imageUrl}
-                          alt={sig.nom}
-                          className="w-full h-full object-contain p-1"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="flex flex-col items-center justify-center text-center p-1 text-cordel-wood select-none">
-                          <span className="text-2xl">✋</span>
-                          <span className="text-[8px] font-bold uppercase text-stone-500 mt-0.5">{t('pedagogy.modals.geste')}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Informations du geste */}
-                    <div className="flex-1 min-w-0 flex flex-col gap-0.5 text-left">
-                      {isSequenced && sig.mesure && (
-                        <span className="inline-block px-1.5 py-0.5 rounded text-[9.5px] font-extrabold uppercase bg-amber-100 text-amber-950 w-fit border border-amber-300">
-                          {t('pedagogy.modals.mesure')} {sig.mesure}
-                        </span>
-                      )}
-                      <h4 className="text-xs sm:text-sm font-black text-encre-noire truncate uppercase mt-0.5">
-                        {sig.nom}
-                      </h4>
-                      {sig.consigne && (
-                        <p className="text-[11px] text-stone-600 italic line-clamp-3 leading-tight mt-0.5">
-                          {sig.consigne}
-                        </p>
-                      )}
-                    </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {resolvedSignals.map((sig) => (
+                <div key={sig.id} className="p-3 rounded bg-white border-2 border-encre-noire/20 flex gap-3 items-center shadow-2xs">
+                  <div className="shrink-0 w-16 h-16 rounded border border-encre-noire/15 overflow-hidden flex items-center justify-center bg-stone-50">
+                    {sig.imageUrl ? <img src={sig.imageUrl} alt={sig.nom} className="w-full h-full object-contain p-1" loading="lazy" /> : <span className="text-2xl">✋</span>}
                   </div>
-                ))}
-              </div>
+                  <div className="flex-1 min-w-0 flex flex-col gap-0.5 text-left">
+                    {isSequenced && sig.mesure && <span className="inline-block px-1.5 py-0.5 rounded text-[9.5px] font-extrabold uppercase bg-amber-100 text-amber-950 w-fit border border-amber-300">{t('pedagogy.modals.mesure')} {sig.mesure}</span>}
+                    <h4 className="text-xs sm:text-sm font-black text-encre-noire truncate uppercase">{sig.nom}</h4>
+                    {sig.consigne && <p className="text-[11px] text-stone-600 italic line-clamp-3 leading-tight">{sig.consigne}</p>}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
+
+        {isReflexConfigOpen && (
+          <PieceReflexConfigModal isOpen={isReflexConfigOpen} onClose={() => setIsReflexConfigOpen(false)} piece={piece} groupId={groupId} />
+        )}
       </div>
     </div>
   );

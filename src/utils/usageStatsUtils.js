@@ -3,10 +3,11 @@ import { db } from '../firebase';
 import { isMemberArchived } from './memberUtils';
 import { resolveTargetRecipientIds } from './announcementUtils';
 import { getTimestampMs } from './readReceiptUtils';
+import { getMemberPushDiagnosticBadge } from './pushDiagnosticsUtils';
 
 /**
  * Calcule les 4 indicateurs d'usage et d'engagement de l'association :
- * 1. Couverture Notifications Push (membres actifs joignables + liste des non-joignables)
+ * 1. Couverture Notifications Push (membres actifs joignables + liste des non-joignables avec diagnostic)
  * 2. Fréquentation de l'application (actifs 7j, 30j, inactifs > 30j via `lastActive`)
  * 3. Lectures du Mégaphone (taux de lecture moyen des 5 dernières annonces)
  * 4. Consultations du Varal (Top 5 des documents les plus consultés + documents à 0 vue)
@@ -17,19 +18,21 @@ export function computeAssociationUsageStats({ rawUsers = [], rawAnnouncements =
   );
   const totalActiveMembers = activeMembers.length;
 
-  // 1. Couverture Notifications Push
   const reachableMembers = [];
   const unreachableMembers = [];
   activeMembers.forEach((m) => {
     const label = `${m.prenom || ''} ${m.nom || ''}`.trim() || m.email || 'Membre';
+    const diagnosticBadge = getMemberPushDiagnosticBadge(m);
     if (Array.isArray(m.fcmTokens) && m.fcmTokens.length > 0) {
-      reachableMembers.push({ id: m.id, label });
+      reachableMembers.push({ id: m.id, label, diagnosticBadge });
     } else {
-      unreachableMembers.push({ id: m.id, label, email: m.email || '' });
+      unreachableMembers.push({
+        id: m.id, label, email: m.email || '', diagnosticBadge,
+        pushDiagnostics: m.pushDiagnostics || null, pushOptInContract: m.pushOptInContract
+      });
     }
   });
 
-  // 2. Fréquentation de l'application (7j, 30j, > 30j)
   const nowMs = Date.now();
   const ms7d = 7 * 24 * 60 * 60 * 1000;
   const ms30d = 30 * 24 * 60 * 60 * 1000;
@@ -49,7 +52,6 @@ export function computeAssociationUsageStats({ rawUsers = [], rawAnnouncements =
     }
   });
 
-  // 3. Taux de lecture moyen des 5 dernières annonces du Mégaphone
   const sortedAnnouncements = [...(Array.isArray(rawAnnouncements) ? rawAnnouncements : [])]
     .sort((a, b) => getTimestampMs(b.dateCreation) - getTimestampMs(a.dateCreation))
     .slice(0, 5);
@@ -70,7 +72,6 @@ export function computeAssociationUsageStats({ rawUsers = [], rawAnnouncements =
   });
   const avgMegaphoneReadRate = sortedAnnouncements.length > 0 ? Math.round(sumReadRates / sortedAnnouncements.length) : 0;
 
-  // 4. Consultations du Varal (Top 5 + documents à 0 vue)
   const validDocs = (Array.isArray(rawDocuments) ? rawDocuments : []).filter(
     (d) => d && d.id && !d.isWorkshopVirtualDoc && !d.isVirtualEventMedia
   );
@@ -95,17 +96,10 @@ export function computeAssociationUsageStats({ rawUsers = [], rawAnnouncements =
     totalActiveMembers,
     pushReachableCount: reachableMembers.length,
     pushReachablePercent: totalActiveMembers > 0 ? Math.round((reachableMembers.length / totalActiveMembers) * 100) : 0,
-    unreachableMembers,
-    activeMembers7d,
-    activeMembers30d,
-    inactiveOver30d,
-    avgMegaphoneReadRate,
-    recentAnnouncementsCount: sortedAnnouncements.length,
-    recentAnnouncementsStats,
-    varalTotalDocs: validDocs.length,
-    varalTotalViews,
-    top5VaralDocs,
-    zeroViewVaralDocs
+    unreachableMembers, activeMembers7d, activeMembers30d, inactiveOver30d,
+    avgMegaphoneReadRate, recentAnnouncementsCount: sortedAnnouncements.length,
+    recentAnnouncementsStats, varalTotalDocs: validDocs.length, varalTotalViews,
+    top5VaralDocs, zeroViewVaralDocs
   };
 }
 

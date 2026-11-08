@@ -104,7 +104,10 @@ export const pt = {
     poleVitrine: "Polo Vitrine",
     tabVitrine: "Vitrine",
     vitrine: "Mostrador",
-    refreshApp: "Atualizar"
+    refreshApp: "Atualizar",
+    techAdminTitle: "Administração técnica",
+    btnIntervention: "Intervenção",
+    quickSearchBtn: "Pesquisa rápida (Ctrl + K)"
   },
   login: {
     title: "O Girador",
@@ -219,7 +222,16 @@ export const pt = {
     loadingPage: "Carregando a página...",
     systemAdmin: "Admin do Sistema",
     birthdaysMonth: "Aniversariantes do mês",
-    birthdayOn: "Aniversário no dia {day}"
+    birthdayOn: "Aniversário no dia {day}",
+    featuredBadge: "Em destaque",
+    btnCinemaMode: "Modo cinema",
+    btnExitCinemaMode: "Sair do modo cinema",
+    btnEditFeatured: "Editar",
+    hiddenStringsCount: "Cordas ocultas ({{count}})",
+    groupOrderPrefix: "Compra coletiva:",
+    btnExpand: "Expandir",
+    btnCollapse: "Recolher",
+    btnFilter: "Filtrar"
   },
   trombinoscope: {
     title: "TROMBINOSCÓPIO",
@@ -411,7 +423,25 @@ export const pt = {
 
     // Boutons d'action bas de page
     btnConnectPc: "Conectar um computador",
-    btnSignOut: "Sair / Desconectar"
+    btnSignOut: "Sair / Desconectar",
+    accordionContactTitle: "Contatos & Diretório",
+    statusVisible: "Visível",
+    statusHidden: "Oculto",
+    cityHidden: "Cidade oculta",
+    accordionStageHealthTitle: "Palco, Figurinos & Saúde",
+    tshirtLabel: "Camiseta",
+    statusFit: "Apto",
+    statusUnfit: "Inapto",
+    accordionDietPrefix: "Dieta:",
+    accordionVehiclePrefix: "Veículo:",
+    vehicleTypeBreak: "Perua / Utilitário",
+    seatsCount: "{{count}} lugares",
+    barrelsCount: "~{{count}} alfaias",
+    reimbursedPrefix: "Reembolsado:",
+    pendingPrefix: "Pendente:",
+    btnViewHistoryCount: "Ver histórico ({{count}})",
+    notificationsStatusLabel: "Notificações: Status:",
+    btnDiagnostic: "Diagnóstico"
   },
   widgetMotMestre: {
     title: "A Palavra do Mestre",
@@ -1542,7 +1572,11 @@ export const pt = {
     tabPrivateMessages: "Mensagens privadas",
     tabGroups: "Grupos",
     btnChannels: "Canais",
-    defaultChannelGeneral: "Geral"
+    defaultChannelGeneral: "Geral",
+    tabPrivateShort: "Privados",
+    generalDiscussionTitle: "Discussão Geral – Todo o grupo",
+    wholeAssociationBadge: "Toda a associação",
+    btnOpenGeneralThread: "Abrir o tópico geral →"
   },
   studioSocial: {
     title: "Estúdio Redes Sociais",
@@ -2862,10 +2896,12 @@ export const pt = {
     equilibre: "Equilibrado",
     printHeaderTitle: "Relatório de Atividades & Balanço Moral",
     printSeasonLabel: "Período de referência",
-    emptyData: "Nenhum dado registrado para este período."
+    emptyData: "Nenhum dado registrado para este período.",
+    usageBannerTitle: "Adoção digital & Ferramentas conectadas"
   },
   export: {
     catIdentity: "Identidade & Contato",
+    pushReachable: "Notificações Push ativas",
     catArtistic: "Perfil Artístico",
     catRoles: "Papéis & Estatutos",
     catTreasury: "Tesouraria & Inscrições",
@@ -3270,6 +3306,13 @@ export const pt = {
     challengeExquisiteCorpseTitle: "Desafio em Cadeia (Cooperação)",
     challengeExquisiteCorpseDesc: "Revezamento polirrítmico em cadeia e deliberação no Conselho de Bateria",
     btnCancelChallenge: "Cancelar",
+    pieceRevisionBannerTitle: "Revisar uma peça do Repertório",
+    pieceRevisionBannerSubtitle: "Selecione uma peça para revisar sua Toada, características musicais e fichas de Cultura.",
+    pieceRevisionSelectPlaceholder: "Escolher uma peça do Repertório...",
+    nextRehearsalBadge: "Próximo ensaio",
+    btnReviseSelectedPiece: "Revisar esta peça 🎯",
+    btnPracticeCantador: "🎙️ Praticar o canto no Cantador",
+    btnPracticeSequenciador: "🥁 Praticar meu naipe no Sequenciador",
 
             // --- Pôle Pédagogie : Lot 1 (Espace Élève & Suivi Adhérent) ---
     student: {
@@ -3531,6 +3574,29 @@ export const pt = {
       paliersFermante: "níveis)",
       bpmSeparateur: "BPM •",
       evalueTonAisanceChoregraphique: "Avalie sua fluência coreográfica em cada um dos ritmos (toadas, passos básicos, variações). Os passos do Dançador serão integrados em breve aqui para o treino visual.",
+      nextRehearsalBannerTitle: "No programa do próximo ensaio",
+      nextRehearsalDefaultName: "Próximo ensaio",
+      btnFocusPieceAisance: "Expandir esta música no caderno",
+      btnReviseThisPiece: "Revisar esta música",
+      btnReviseShort: "Revisar",
+      badgeRhythm: "Ritmo",
+      badgeToada: "Toada",
+      badgeDance: "Dança",
+      badgeTraining: "Treino",
+      btnPracticeCantadorDirect: "Praticar no Cantador",
+      btnSeeChoreography: "Ver a coreografia",
+      toastAutoPromotedPratique: "Parabéns! Sua fluência nesta música passa automaticamente para «Em prática».",
+      toastAutoPromotedAlaise: "Parabéns! Todos os níveis validados: sua fluência passa automaticamente para «À vontade».",
+    },
+
+    vocal: {
+      sectionTitle: "Acompanhamento Vocal & Polivalência",
+      stageCoro: "1. Sustento o Coro",
+      stageSimultane: "2. Canto tocando / dançando",
+      stagePuxador: "3. Solista (Puxador)",
+      colCoro: "Coro",
+      colSimultane: "Cantar tocando/dançando",
+      colPuxadores: "Solistas (Puxadores)",
     },
 
     reflex: {
@@ -3539,6 +3605,19 @@ export const pt = {
       conducteurValideSansFauteStructure: "Condução validada sem erros! Estrutura perfeitamente memorizada.",
       reinitialiser: "Reiniciar",
       validerLeConducteur: "Validar a condução",
+      signalTrayTitle: "Bandeja de Sinais",
+      signalTrayHint: "Toque em um espaço [ ? ] e depois em um sinal da bandeja (ou arraste no PC). Clique em um compasso para ouvir novamente.",
+      btnReflexChallenge: "Desafio Reflexo Tempo 1",
+      btnSignalTimeline: "Condutor de Sinais",
+      reflexCounterLabel: "Reflexos Tempo 1 :",
+      timelineValidatedBadge: "Condutor validado",
+      mestreReflexConfigTitle: "Arbitragem de Sinais & Iscas — Desafio Reflexo",
+      mestreReflexConfigBtn: "Arbitrar Desafio Reflexo",
+      compactBarBlindTests: "Blind Tests",
+      compactBarReflexes: "Reflexos Tempo 1",
+      compactBarTimeline: "Condutor de Sinais",
+      compactBarTestBtn: "Testar",
+      noTimedSignals: "Nenhum sinal temporizado detectado nesta música no Sequenciador.",
       chargementDesSignaux: "Carregando sinais...",
       attention: "Atenção",
       ilNYAPas: "Não há sinais suficientes configurados com imagem.\n            São necessários pelo menos 4 para gerar um quiz.",
@@ -5045,6 +5124,10 @@ export const pt = {
     kpiPerc: "Perc: {{count}}",
     kpiDanse: "Dança: {{count}}",
     kpiValidation: "Validação: {{count}}",
+    pushFilterReachable: "Notificações Push ativas",
+    pushFilterUnreachable: "Sem notificação Push",
+    pushReachableBadgeTitle: "Notificações Push ativas",
+    pushUnreachableBadgeTitle: "Notificações Push inativas",
 
     // Types d'événements
     eventTypeRepetition: "Ensaio",
@@ -5078,6 +5161,23 @@ export const pt = {
     thInstruments: "Instrumentos",
     badgeMemberMasc: "Associado",
     badgeMemberFem: "Associada",
+    rolePresident: "Presidente",
+    roleSecretary: "Secretário(a)",
+    reachableActiveMembers: "{{reachable}} / {{total}} integrantes ativos alcançáveis",
+    btnRegisterMember: "Inscrever um integrante",
+    tabActive: "Ativos",
+    tabArchived: "Arquivados",
+    tabAll: "Todos",
+    filterAllPush: "Todos (Push)",
+    breadcrumbSecretariat: "Secretaria",
+    breadcrumbResourcesLinks: "Recursos & Links",
+    resourcesSharedTitle: "Recursos & Links Compartilhados",
+    resourcesSharedDesc: "Gerencie os termos de adesão, atestados médicos e seus espaços de armazenamento compartilhados (Drive, Dropbox, Framaspace).",
+    btnBack: "Voltar",
+    tabChartersHealth: "Termos & Saúde",
+    tabSharedStorageLinks: "Armazenamentos & Links",
+    btnChooseFile: "Escolher arquivo",
+    noFileChosen: "Nenhum arquivo selecionado",
   },
 
   workshopMember: {
@@ -6777,6 +6877,7 @@ export const pt = {
         sectionDanse: "💃 Seção de Dança",
         activerLesCommissionsParDefaut: "🎪 Ativar comissões por padrão",
         inscriptionsDelais: "Inscrições & Prazos",
+        reglesDInscriptionDePresence: "Regras de inscrição & presença",
         validationObligatoireParUnAdministrateur: "🔒 Confirmação obrigatória por um administrador",
         lesInscriptionsDesMembresSont: "As inscrições dos membros ficam « Em espera » até que um administrador as confirme.",
         delaiLimiteDInscriptionAvant: "Prazo limite de inscrição (antes do evento)",
@@ -7054,7 +7155,11 @@ export const pt = {
     scanApplyBtn: "🔍 Ler e aplicar os tempos",
     scanningInProgress: "Leitura óptica em andamento...",
     alsoFillVaralLabel: "Preencher também o texto em Português da Ficha Varal (sem os tempos)",
-    manualModeAccordion: "Modo manual sem conexão (.txt)"
+    manualModeAccordion: "Modo manual sem conexão (.txt)",
+    pauseBaqueCardTitle: "Pausa do Baque (Canto solo)",
+    pauseBaqueSolo: "Solo sem percussão",
+    pauseBaqueBtn: "Pausa Baque",
+    bulkPasteBtn: "Colar em lote"
   },
   navigation: {
     mostradorSubtitle: "Site vitrine público",

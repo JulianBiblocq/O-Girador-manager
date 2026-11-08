@@ -44,15 +44,17 @@ export default function SecretariatDocuments({ groupId, onBack, initialSubTab = 
       <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-dashed border-cordel-master-dark/30">
         <div>
           <div className="flex items-center gap-2 text-[10px] font-bold text-cordel-master-dark uppercase tracking-wider mb-1">
-            <span>Secrétariat</span>
+            <span>{t('secretariat.breadcrumbSecretariat')}</span>
             <span>›</span>
-            <span className="text-[var(--color-cordel-vert)] dark:text-emerald-400">Ressources & Liens</span>
+            <span className="text-[var(--color-cordel-vert)] dark:text-emerald-400">
+              {t('secretariat.breadcrumbResourcesLinks')}
+            </span>
           </div>
           <h2 className="text-xl font-black text-cordel-wood uppercase flex items-center gap-2">
-            <span>📁</span> Ressources & Liens Partagés
+            <span>📁</span> {t('secretariat.resourcesSharedTitle')}
           </h2>
           <p className="text-xs text-cordel-master-dark/75 mt-0.5">
-            Gérez les chartes d'adhésion, attestations de santé, ainsi que vos espaces de stockage partagés (Drive, Dropbox, Framaspace).
+            {t('secretariat.resourcesSharedDesc')}
           </p>
         </div>
 
@@ -62,7 +64,7 @@ export default function SecretariatDocuments({ groupId, onBack, initialSubTab = 
             onClick={onBack}
             className="text-xs font-bold"
           >
-            ⬅️ Retour
+            ⬅️ {t('secretariat.btnBack')}
           </CordelButton>
         )}
       </div>
@@ -78,7 +80,7 @@ export default function SecretariatDocuments({ groupId, onBack, initialSubTab = 
               : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
           }`}
         >
-          📋 Chartes & Santé
+          📋 {t('secretariat.tabChartersHealth')}
         </button>
         <button
           type="button"
@@ -89,7 +91,7 @@ export default function SecretariatDocuments({ groupId, onBack, initialSubTab = 
               : 'bg-cordel-bg text-encre-noire border-encre-noire/30 hover:border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
           }`}
         >
-          🔗 Stockages & Liens Partagés
+          🔗 {t('secretariat.tabSharedStorageLinks')}
         </button>
       </div>
 

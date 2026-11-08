@@ -83,6 +83,7 @@ export default function UserProfile({ user, profileData, associationName, enable
     notificationPermission,
     isSubscribingPush,
     handleEnableNotifications,
+    handleDisableNotifications,
     handleStartEdit,
     isFieldVisible,
     isFieldRequired,
@@ -238,6 +239,8 @@ export default function UserProfile({ user, profileData, associationName, enable
             notificationPermission={notificationPermission}
             isSubscribingPush={isSubscribingPush}
             onEnableNotifications={handleEnableNotifications}
+            onDisableNotifications={handleDisableNotifications}
+            pushOptInContract={profileData?.pushOptInContract}
           />
           <FamilyMembersManager
             user={user}
@@ -277,6 +280,8 @@ export default function UserProfile({ user, profileData, associationName, enable
               notificationPermission={notificationPermission}
               isSubscribingPush={isSubscribingPush}
               onEnableNotifications={handleEnableNotifications}
+              onDisableNotifications={handleDisableNotifications}
+              pushOptInContract={profileData?.pushOptInContract}
             />
             <FamilyMembersManager
               user={user}

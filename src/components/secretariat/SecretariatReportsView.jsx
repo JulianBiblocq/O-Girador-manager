@@ -66,31 +66,27 @@ export default function SecretariatReportsView({ groupId }) {
         </p>
       </div>
 
-      <AgReportsHeaderBar
-        loading={loading}
-        onOpenSlideshow={() => setIsSlideshowOpen(true)}
-        onExportSummaryCSV={() => exportAgSummaryCSV({ assocInfo, startDate, endDate, indicators })}
-        onExportAttendanceCSV={() => exportAgAttendanceCSV({ assocInfo, startDate, endDate, rawEvents, isWithinRange })}
-        onPrint={() => window.print()}
-        onRefresh={loadReportsData}
-      />
+      <div data-tour="reports-export-actions">
+        <AgReportsHeaderBar
+          loading={loading}
+          onOpenSlideshow={() => setIsSlideshowOpen(true)}
+          onExportSummaryCSV={() => exportAgSummaryCSV({ assocInfo, startDate, endDate, indicators })}
+          onExportAttendanceCSV={() => exportAgAttendanceCSV({ assocInfo, startDate, endDate, rawEvents, isWithinRange })}
+          onPrint={() => window.print()}
+          onRefresh={loadReportsData}
+        />
+      </div>
 
-      <AgPeriodSelectorBar
-        periodPreset={periodPreset}
-        onSelectPreset={handleSelectPreset}
-        startDate={startDate}
-        endDate={endDate}
-        onChangeStartDate={(val) => { setStartDate(val); setPeriodPreset('custom'); }}
-        onChangeEndDate={(val) => { setEndDate(val); setPeriodPreset('custom'); }}
-        currentSeason={currentSeason}
-        previousSeason={previousSeason}
-        currentSeasonRange={currentSeasonRange}
-        previousSeasonRange={previousSeasonRange}
-        currentFiscalRange={currentFiscalRange}
-        previousFiscalRange={previousFiscalRange}
-        allExpanded={allExpanded}
-        onToggleAllAccordions={handleToggleAllAccordions}
-      />
+      <div data-tour="reports-period-selector">
+        <AgPeriodSelectorBar
+          periodPreset={periodPreset} onSelectPreset={handleSelectPreset} startDate={startDate} endDate={endDate}
+          onChangeStartDate={(val) => { setStartDate(val); setPeriodPreset('custom'); }}
+          onChangeEndDate={(val) => { setEndDate(val); setPeriodPreset('custom'); }}
+          currentSeason={currentSeason} previousSeason={previousSeason} currentSeasonRange={currentSeasonRange}
+          previousSeasonRange={previousSeasonRange} currentFiscalRange={currentFiscalRange} previousFiscalRange={previousFiscalRange}
+          allExpanded={allExpanded} onToggleAllAccordions={handleToggleAllAccordions}
+        />
+      </div>
 
       {loading && (
         <div className="py-12 flex flex-col items-center justify-center gap-2 bg-cordel-card-bg border-2 border-dashed border-encre-noire/30 rounded-[6px_10px_7px_8px] no-print">

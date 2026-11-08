@@ -39,10 +39,26 @@ export function serializeToadaMeasures(sections = []) {
   return blocks.join('\n\n');
 }
 
+export function stripToadaTechnicalMarkers(text = '') {
+  if (!text || typeof text !== 'string') return '';
+  return text
+    .replace(/^\s*[+/!]+\s*/gm, '')
+    .replace(/(^|\n)\s*\/+(?=\*|[A-Za-zÀ-ÿ[])/g, '$1')
+    .replace(/(^|\n)\s*!+(?=\*|[A-Za-zÀ-ÿ[])/g, '$1')
+    .replace(CHORD_REGEX, '')
+    .replace(/\[(?:M\d+[•.:\u00b7])?\d+\]/gi, '')
+    .replace(/\[sig:[^\]]+\]/gi, '')
+    .replace(/(^|\s|\*)\+\s+/g, '$1')
+    .replace(/_/g, '')
+    .replace(/!/g, '')
+    .replace(/[ \t]{2,}/g, ' ')
+    .trim();
+}
+
 export function toadaToCleanHtml(rawTxtCode = '') {
   if (!rawTxtCode || typeof rawTxtCode !== 'string') return '';
   if (/<[a-z][\s\S]*>/i.test(rawTxtCode)) {
-    return rawTxtCode.replace(/\*([^*]+)\*/g, '<strong>$1</strong>');
+    return stripToadaTechnicalMarkers(rawTxtCode).replace(/\*([^*]+)\*/g, '<strong>$1</strong>');
   }
 
   // Normalisation préalable des blocs *...* multi-lignes
@@ -66,15 +82,7 @@ export function toadaToCleanHtml(rawTxtCode = '') {
     }
 
     const cleanLines = lines.map((line) => {
-      let clean = line
-        .replace(/^\s*[+/]\s*/, '')
-        .replace(CHORD_REGEX, '')
-        .replace(/\[\d+\]/g, '')
-        .replace(/\[sig:[^\]]+\]/gi, '')
-        .replace(/(^|\s|\*)\+\s+/g, '$1')
-        .replace(/_/g, '')
-        .replace(/\s{2,}/g, ' ')
-        .trim();
+      let clean = stripToadaTechnicalMarkers(line);
       // Remplace *gras* par <strong>
       clean = clean.replace(/\*([^*]+)\*/g, '<strong>$1</strong>');
       return clean;

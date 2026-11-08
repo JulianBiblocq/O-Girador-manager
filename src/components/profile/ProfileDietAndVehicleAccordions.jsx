@@ -31,7 +31,8 @@ export default function ProfileDietAndVehicleAccordions({
       : profileData?.defaultTrunkCapacity !== undefined
         ? profileData.defaultTrunkCapacity
         : 1;
-  const vehicleType = profileData?.vehicleType || 'Berline';
+  const rawVehicleType = profileData?.vehicleType || 'Berline';
+  const vehicleType = rawVehicleType === 'Break / Ludospace' ? t('userProfile.vehicleTypeBreak') : rawVehicleType;
 
   return (
     <>
@@ -43,7 +44,7 @@ export default function ProfileDietAndVehicleAccordions({
           className="w-full flex items-center justify-between gap-2 text-left cursor-pointer select-none"
         >
           <span className="text-[11px] sm:text-xs font-black text-encre-noire truncate">
-            🥗 Régime : <span className="font-bold text-cordel-wood">{dietSummary}</span> •{' '}
+            🥗 {t('userProfile.accordionDietPrefix')} <span className="font-bold text-cordel-wood">{dietSummary}</span> •{' '}
             <span className={formData.allergies?.trim() ? 'text-[var(--color-cordel-rouge)] font-extrabold' : 'opacity-75 font-semibold'}>
               {allergySummary}
             </span>
@@ -85,7 +86,10 @@ export default function ProfileDietAndVehicleAccordions({
             className="w-full flex items-center justify-between gap-2 text-left cursor-pointer select-none"
           >
             <span className="text-[11px] sm:text-xs font-black text-encre-noire truncate">
-              🚗 Véhicule : <span className="font-bold text-cordel-wood">{vehicleType} • {passengerSeats} places • ~{trunkCapacity} fûts</span>
+              🚗 {t('userProfile.accordionVehiclePrefix')}{' '}
+              <span className="font-bold text-cordel-wood">
+                {vehicleType} • {t('userProfile.seatsCount', { count: passengerSeats })} • {t('userProfile.barrelsCount', { count: trunkCapacity })}
+              </span>
             </span>
             <span className="text-xs font-black text-cordel-wood shrink-0">{openSections.vehicle ? '▴' : '▾'}</span>
           </button>

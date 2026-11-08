@@ -49,10 +49,10 @@ export default function GeneralGroupBanner({ conversation, onOpenGeneralChat, t 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 flex-wrap">
             <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-encre-noire truncate">
-              {t?.('forum.generalBannerTitle') || '💬 Discussion Générale — Tout le groupe'}
+              💬 {t?.('forum.generalDiscussionTitle') || 'Discussion Générale – Tout le groupe'}
             </h3>
             <span className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--color-cordel-vert,#2d6a4f)]/15 text-[var(--color-cordel-vert,#2d6a4f)] border border-[var(--color-cordel-vert,#2d6a4f)]/40">
-              {t?.('forum.generalGroupBadge') || "🌐 Toute l'association"}
+              🌐 {t?.('forum.wholeAssociationBadge') || "Toute l'association"}
             </span>
             {isUnread && (
               <span className="text-[8px] font-black uppercase px-1.5 py-0.5 rounded-full bg-red-600 text-white animate-pulse">
@@ -89,7 +89,7 @@ export default function GeneralGroupBanner({ conversation, onOpenGeneralChat, t 
         }}
         className="text-[10px] px-3 py-1.5 font-black uppercase tracking-wider shrink-0 w-full sm:w-auto justify-center"
       >
-        {t?.('forum.openGeneralChatBtn') || '💬 Ouvrir le fil général ➔'}
+        💬 {t?.('forum.btnOpenGeneralThread') || 'Ouvrir le fil général →'}
       </CordelButton>
     </div>
   );

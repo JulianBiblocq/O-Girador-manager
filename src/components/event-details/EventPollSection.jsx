@@ -42,12 +42,13 @@ export default function EventPollSection({
 
   // Synchronisation en temps réel de tous les créneaux partageant le même pollGroupId
   useEffect(() => {
-    if (!event?.groupId || !event?.pollGroupId) return;
+    const targetGroupId = event?.groupId;
+    if (!targetGroupId || !event?.pollGroupId) return;
 
     const eventsRef = collection(db, 'events');
     const q = query(
       eventsRef,
-      where('groupId', '==', event.groupId),
+      where('groupId', '==', targetGroupId),
       where('pollGroupId', '==', event.pollGroupId)
     );
 

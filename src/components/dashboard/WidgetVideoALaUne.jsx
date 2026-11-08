@@ -3,6 +3,7 @@ import CordelCard from '../CordelCard';
 import LiteYouTubeEmbed, { extractYouTubeVideoId } from '../common/LiteYouTubeEmbed';
 import ModalVideoALaUne from './ModalVideoALaUne';
 import CinemaVideoModal from './CinemaVideoModal';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Composant : WidgetVideoALaUne
@@ -22,6 +23,7 @@ export default function WidgetVideoALaUne({
   isAuthorized = false,
   className = ''
 }) {
+  const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCinemaModalOpen, setIsCinemaModalOpen] = useState(false);
 
@@ -89,7 +91,7 @@ export default function WidgetVideoALaUne({
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-[9px] font-black uppercase tracking-widest text-cordel-wood bg-white/70 px-2 py-0.5 rounded border border-cordel-wood/30 shrink-0">
-                🎬 À LA UNE
+                🎬 {t('dashboard.featuredBadge')}
               </span>
             </div>
             <h3 className="font-sans font-black text-sm sm:text-base text-encre-noire tracking-wide uppercase mt-1 truncate">
@@ -103,11 +105,11 @@ export default function WidgetVideoALaUne({
               type="button"
               onClick={() => setIsCinemaModalOpen(true)}
               className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 bg-white hover:bg-amber-100 text-encre-noire border border-encre-noire rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1.5 transition-all"
-              title="Ouvrir la vidéo en modale plein écran (Mode Cinéma)"
-              aria-label="Ouvrir le Mode Cinéma plein écran"
+              title={t('dashboard.btnCinemaMode')}
+              aria-label={t('dashboard.btnCinemaMode')}
             >
               <span className="text-xs">⛶</span>
-              <span>Mode Cinéma</span>
+              <span>{t('dashboard.btnCinemaMode')}</span>
             </button>
 
             {/* Bouton d'administration réservé aux Mestres et Administrateurs */}
@@ -116,10 +118,10 @@ export default function WidgetVideoALaUne({
                 type="button"
                 onClick={() => setIsModalOpen(true)}
                 className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 bg-white border border-encre-noire rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_#181716] hover:bg-neutral-50 active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1 transition-all"
-                title="Modifier ou retirer la vidéo à la une"
+                title={t('dashboard.btnEditFeatured')}
               >
                 <span>✏️</span>
-                <span>Modifier</span>
+                <span>{t('dashboard.btnEditFeatured')}</span>
               </button>
             )}
 

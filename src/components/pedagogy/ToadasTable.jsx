@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
+import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import { useTranslation } from '../LanguageContext';
+import { syncSixToadasPresetsToDocs } from '../../utils/toadaSixPresetsSync';
 
 /**
- * Tableau A du Pôle Pédagogie : Toadas (Chants & Paroles)
- * Colonnes : Titre, Rythme / Baque, Nation / École, Actions (Éditer les 8 points, Supprimer, Consulter).
+ * Tableau A du Pôle Pédagogie : Toadas (Chants & Paroles) (< 120 lignes).
+ * Vérifie et synchronise silencieusement les 6 structures musicales de Toadas si rawTxtCode est vide.
  */
 export default function ToadasTable({
   toadas = [],
@@ -14,6 +16,15 @@ export default function ToadasTable({
   onDeleteDoc
 }) {
   const { t } = useTranslation();
+  const hasAutoSyncedRef = useRef(false);
+
+  // Vérification silencieuse automatique au chargement des Toadas du Varal
+  useEffect(() => {
+    if (!canWrite || toadas.length === 0 || hasAutoSyncedRef.current) return;
+    hasAutoSyncedRef.current = true;
+    syncSixToadasPresetsToDocs({ db, documents: toadas }).catch(() => {});
+  }, [canWrite, toadas]);
+
   return (
     <CordelCard variant="default" useExtremeBorder={false} className="p-4 flex flex-col gap-3">
       {toadas.length === 0 ? (
@@ -31,8 +42,8 @@ export default function ToadasTable({
             </thead>
             <tbody className="divide-y divide-cordel-master-dark/10 font-semibold">
               {toadas.map((song) => {
-                const rythme = song.rythme || song.baque || song.toadaData?.rythme || "—";
-                const nation = song.nation || song.ecole || song.toadaData?.nation || "Traditionnel";
+                const rythme = song.rythme || song.baque || song.toadaData?.rythme || '—';
+                const nation = song.nation || song.ecole || song.toadaData?.nation || 'Traditionnel';
 
                 return (
                   <tr key={song.id} className="hover:bg-cordel-bg/40 transition-colors">

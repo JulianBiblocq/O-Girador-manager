@@ -51,5 +51,11 @@ export function cleanFirestorePayload(obj, { removeNull = false } = {}) {
  */
 export function sanitizeUserDocPayload(userDoc) {
   if (!userDoc || typeof userDoc !== 'object') return {};
-  return cleanFirestorePayload(userDoc, { removeNull: true }) || {};
+  const cleaned = cleanFirestorePayload(userDoc, { removeNull: true }) || {};
+  // Blindage anti-écrasement : interdire toute écriture directe de tableau sur fcmTokens
+  // (seuls arrayUnion / arrayRemove sont autorisés à modifier fcmTokens).
+  if (Array.isArray(cleaned.fcmTokens)) {
+    delete cleaned.fcmTokens;
+  }
+  return cleaned;
 }

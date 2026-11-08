@@ -1,6 +1,7 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { useModalEscape } from '../../hooks/useModalEscape';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Composant : CinemaVideoModal
@@ -22,6 +23,7 @@ export default function CinemaVideoModal({
   url,
   title = 'Vidéo à la une'
 }) {
+  const { t } = useTranslation();
   // Fermeture au clavier via la touche Échap
   useModalEscape(onClose, isOpen);
 
@@ -48,7 +50,7 @@ export default function CinemaVideoModal({
         {/* Gauche : Badge Mode Cinéma + Titre de la vidéo */}
         <div className="flex items-center gap-2.5 min-w-0 flex-1">
           <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest px-2.5 py-1 rounded bg-[var(--color-cordel-ocre,#c05621)] text-white border border-amber-300/60 shadow-sm shrink-0">
-            🎬 MODE CINÉMA
+            🎬 {t('dashboard.btnCinemaMode')}
           </span>
           <h2
             className="text-[#f4ecd8] font-bold text-xs sm:text-base uppercase tracking-wide truncate"
@@ -75,10 +77,10 @@ export default function CinemaVideoModal({
             type="button"
             onClick={onClose}
             className="text-[11px] sm:text-xs font-black uppercase tracking-wider px-3 py-1.5 bg-amber-300 hover:bg-amber-200 text-[#181716] border-2 border-[#181716] rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_rgba(255,255,255,0.35)] active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer flex items-center gap-1.5 transition-all"
-            title="Fermer le Mode Cinéma (Échap)"
+            title={t('dashboard.btnExitCinemaMode')}
           >
             <span>✕</span>
-            <span>FERMER</span>
+            <span>{t('dashboard.btnExitCinemaMode')}</span>
           </button>
         </div>
       </div>

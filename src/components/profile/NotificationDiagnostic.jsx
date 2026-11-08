@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import CordelButton from '../CordelButton';
 import CordelCard from '../CordelCard';
 import { XiloShield, XiloEyeOff } from '../XiloIcons';
@@ -10,23 +10,24 @@ import PushTutorialModal, {
 
 /**
  * Bloc de diagnostic des notifications Push sur la fiche profil.
- * Lorsque le statut est ACTIVÉ, s'affiche sur une seule ligne compacte dépliable au clic.
+ * Permet d'activer en 1 clic le Contrat Permanent ou de désactiver explicitement les notifications.
  */
 export default function NotificationDiagnostic({
   notificationPermission,
   isSubscribingPush,
-  onEnableNotifications
+  onEnableNotifications,
+  onDisableNotifications,
+  pushOptInContract
 }) {
   const { t } = useTranslation();
-  const [livePermission, setLivePermission] = useState(notificationPermission || 'default');
+  const [, setRefreshTick] = useState(0);
   const [isExpanded, setIsExpanded] = useState(false);
   const env = detectPushTutorialDevice();
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      setLivePermission(Notification.permission);
-    }
-  }, [notificationPermission]);
+  const isExplicitlyOptedOut = pushOptInContract === false;
+  const livePermission =
+    (typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : null) ||
+    notificationPermission ||
+    'default';
 
   const handleActivateClick = async () => {
     const currentEnv = detectPushTutorialDevice();
@@ -41,13 +42,14 @@ export default function NotificationDiagnostic({
     }
     if (onEnableNotifications) {
       await onEnableNotifications();
+      setRefreshTick((n) => n + 1);
       if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission !== 'granted') {
         openPushTutorialModal(currentEnv.mode);
       }
     }
   };
 
-  if (livePermission === 'granted') {
+  if (livePermission === 'granted' && !isExplicitlyOptedOut) {
     return (
       <CordelCard variant="default" useExtremeBorder={true} className="p-3 flex flex-col gap-2 text-left">
         <button
@@ -56,18 +58,31 @@ export default function NotificationDiagnostic({
           className="w-full flex items-center justify-between gap-2 text-left cursor-pointer select-none"
         >
           <span className="text-[11px] sm:text-xs font-black uppercase text-[var(--color-cordel-vert)] truncate">
-            ✨ Notifications : STATUT {t('userProfile.statusActive')} ✅
+            ✨ {t('userProfile.notificationsStatusLabel')}{' '}
+            {String(t('userProfile.statusActive') || '').replace(/^statu[st]\s*:\s*/i, '')} ✅
           </span>
           <span className="text-[10px] font-black uppercase text-cordel-wood shrink-0">
-            Diagnostic {isExpanded ? '▴' : '▾'}
+            {t('userProfile.btnDiagnostic')} {isExpanded ? '▴' : '▾'}
           </span>
         </button>
         {isExpanded && (
-          <div className="pt-2 border-t border-dashed border-emerald-500/30 text-[11px] text-emerald-800 dark:text-emerald-300 flex flex-col gap-1">
+          <div className="pt-2 border-t border-dashed border-emerald-500/30 text-[11px] text-emerald-800 dark:text-emerald-300 flex flex-col gap-2">
             <p className="font-semibold">{t('userProfile.diagnosticSubtitle')}</p>
             <p className="bg-emerald-50 dark:bg-emerald-950/30 p-2 rounded">
               {t('userProfile.diagnosticConfiguredSuccess')}
             </p>
+            {onDisableNotifications && (
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  disabled={isSubscribingPush}
+                  onClick={onDisableNotifications}
+                  className="text-[10px] font-black uppercase underline text-[var(--color-cordel-rouge,#8b2a1a)] hover:opacity-80 cursor-pointer py-0.5"
+                >
+                  🔕 Désactiver les notifications
+                </button>
+              </div>
+            )}
           </div>
         )}
         <PushTutorialModal />

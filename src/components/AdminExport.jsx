@@ -5,14 +5,17 @@ import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
 import { useTranslation } from './LanguageContext';
 import { useTerminologie } from '../hooks/useTerminologie';
-import { XiloScroll, XiloPeople } from './XiloIcons';
+import { XiloScroll } from './XiloIcons';
 import AdminExportModal from './admin/AdminExportModal';
+import AdminDirectoryFilterBar from './admin/AdminDirectoryFilterBar';
+import AdminDirectoryMemberRow from './admin/AdminDirectoryMemberRow';
 import ManualMemberModal from './directory/ManualMemberModal';
 import { formatPratiques, getPratiquesList } from '../utils/instrumentUtils';
 import { useAssociationMembers } from '../hooks/useAssociationMembers';
 import useConfirm from '../hooks/useConfirm';
 import { isMemberArchived } from '../utils/memberUtils';
 import { archiveMember, unarchiveMember } from '../services/memberArchiveService';
+import { getMemberPushDiagnosticBadge } from '../utils/pushDiagnosticsUtils';
 
 export default function AdminExport({ user: _user, profileData, groupId: propGroupId, onBack }) {
   const { t } = useTranslation();
@@ -270,7 +273,10 @@ export default function AdminExport({ user: _user, profileData, groupId: propGro
         
         // Custom formatting based on field key
         if (field.key === 'pushReachable') {
-          return Array.isArray(member.fcmTokens) && member.fcmTokens.length > 0 ? 'Joignable (Oui)' : 'Non joignable (Non)';
+          const diag = getMemberPushDiagnosticBadge(member);
+          return diag.isReachable
+            ? 'Joignable (Oui)'
+            : `Non joignable (${diag.label})`;
         }
         if (field.key === 'instrumentsJoues') {
           return formatPratiques(member);
@@ -373,132 +379,25 @@ export default function AdminExport({ user: _user, profileData, groupId: propGro
 
       {/* Annuaire preview card (Annuaire des membres en premier) */}
       <CordelCard variant="default" useExtremeBorder={false} className="p-5 flex flex-col gap-4">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="text-sm font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
-              <XiloPeople size={16} className="inline" /> {t('secretariat.membersDirectoryTitle', { count: filteredMembers.length })}
-            </h3>
-            <span
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded border border-[var(--color-cordel-vert,#2d6a4f)]/40 bg-[var(--color-cordel-vert,#2d6a4f)]/10 text-[var(--color-cordel-vert,#2d6a4f)] text-[10px] font-black uppercase tracking-wider"
-              title="Nombre de membres actifs ayant activé les notifications Push sur au moins un appareil"
-            >
-              🔔 {reachableActiveCount} / {activeCount} {t('secretariat.pushReachableCounter') || 'membres actifs joignables'}
-            </span>
-            <CordelButton
-              type="button"
-              variant="ocre"
-              useExtremeBorder={true}
-              onClick={() => setIsExportModalOpen(true)}
-              className="px-3 py-1 text-xs font-black uppercase tracking-wider shadow-xs flex items-center gap-1.5 ml-2 cursor-pointer"
-            >
-              📥 {t('secretariat.btnExportData') || "Exporter les données"}
-            </CordelButton>
-
-            {canCreateMember && (
-              <CordelButton
-                type="button"
-                variant="vert"
-                useExtremeBorder={true}
-                onClick={() => setIsManualModalOpen(true)}
-                className="px-3 py-1 text-xs font-black uppercase tracking-wider shadow-xs flex items-center gap-1.5 ml-1 cursor-pointer"
-                title="Inscrire manuellement un membre dans l'application sans qu'il ait besoin de créer son compte"
-              >
-                ➕ Inscrire un membre
-              </CordelButton>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2 w-full md:w-auto flex-wrap">
-            {/* Barre d'onglets de statut : Actifs / Archivés / Tous */}
-            <div className="flex items-center gap-1.5 bg-cordel-master-dark/5 p-1 rounded border border-cordel-master-dark/15">
-              <button
-                type="button"
-                onClick={() => setStatusFilter('active')}
-                className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1 ${
-                  statusFilter === 'active'
-                    ? 'bg-[var(--color-cordel-vert)] text-white shadow-xs'
-                    : 'text-cordel-master-dark hover:bg-black/5'
-                }`}
-              >
-                <span>Actifs</span>
-                <span className={`text-[8.5px] px-1 py-0.2 rounded-full font-black ${
-                  statusFilter === 'active' ? 'bg-white/20 text-white' : 'bg-black/10'
-                }`}>
-                  {activeCount}
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setStatusFilter('archived')}
-                className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1 ${
-                  statusFilter === 'archived'
-                    ? 'bg-cordel-wood text-white shadow-xs'
-                    : 'text-cordel-master-dark hover:bg-black/5'
-                }`}
-              >
-                <span>Archivés</span>
-                <span className={`text-[8.5px] px-1 py-0.2 rounded-full font-black ${
-                  statusFilter === 'archived' ? 'bg-white/20 text-white' : 'bg-black/10'
-                }`}>
-                  {archivedCount}
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setStatusFilter('all')}
-                className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1 ${
-                  statusFilter === 'all'
-                    ? 'bg-cordel-master-dark text-white shadow-xs'
-                    : 'text-cordel-master-dark hover:bg-black/5'
-                }`}
-              >
-                <span>Tous</span>
-                <span className={`text-[8.5px] px-1 py-0.2 rounded-full font-black ${
-                  statusFilter === 'all' ? 'bg-white/20 text-white' : 'bg-black/10'
-                }`}>
-                  {members.length}
-                </span>
-              </button>
-            </div>
-
-            {/* Filtre rapide Notifications Push */}
-            <select
-              value={pushFilter}
-              onChange={(e) => setPushFilter(e.target.value)}
-              className="theme-input text-xs font-bold py-1 px-2 bg-white"
-              title="Filtrer par réception des notifications Push"
-            >
-              <option value="all">{t('secretariat.pushFilterAll') || '🔔 Tous (Push)'}</option>
-              <option value="reachable">{t('secretariat.pushFilterReachable') || '🔔 Joignables'}</option>
-              <option value="unreachable">{t('secretariat.pushFilterUnreachable') || '🔕 Non joignables'}</option>
-            </select>
-
-            {/* Filtre de rôle */}
-            <select
-              value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value)}
-              className="theme-input text-xs font-bold py-1 px-2 bg-white"
-            >
-              <option value="all">{t('secretariat.allRoles') || "Tous les rôles"}</option>
-              <option value="mestre">Mestre</option>
-              <option value="admin">Administrateur</option>
-              <option value="bureau">Bureau</option>
-              <option value="ca">Conseil d'Administration</option>
-              <option value="membre">{t('secretariat.badgeMemberMasc') || "Adhérent"}</option>
-            </select>
-
-            {/* Barre de recherche textuelle */}
-            <input
-              type="text"
-              placeholder={t('secretariat.searchMemberDirectoryPlaceholder') || "Rechercher nom, email, instrument..."}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="theme-input text-xs w-full md:w-56"
-            />
-          </div>
-        </div>
+        <AdminDirectoryFilterBar
+          filteredCount={filteredMembers.length}
+          reachableActiveCount={reachableActiveCount}
+          activeCount={activeCount}
+          archivedCount={archivedCount}
+          totalCount={members.length}
+          canCreateMember={canCreateMember}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+          pushFilter={pushFilter}
+          setPushFilter={setPushFilter}
+          roleFilter={roleFilter}
+          setRoleFilter={setRoleFilter}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          onOpenExportModal={() => setIsExportModalOpen(true)}
+          onOpenManualModal={() => setIsManualModalOpen(true)}
+          t={t}
+        />
 
         {loading ? (
           <div className="text-center py-12">
@@ -523,113 +422,16 @@ export default function AdminExport({ user: _user, profileData, groupId: propGro
               </thead>
               <tbody className="divide-y divide-cordel-master-dark/5 text-xs font-semibold text-encre-noire">
                 {filteredMembers.map(member => (
-                  <tr key={member.id} className="hover:bg-cordel-bg/40 transition-colors">
-                    <td className="px-2 py-2 md:px-4 md:py-2.5 font-bold truncate max-w-[150px]">
-                      {member.prenom} {member.nom}
-                    </td>
-                    <td className="px-2 py-2 md:px-4 md:py-2.5 truncate max-w-[200px]">
-                      {member.email}
-                    </td>
-                    <td className="px-2 py-2 md:px-4 md:py-2.5 whitespace-nowrap">
-                      {member.telephone || "-"}
-                    </td>
-                    <td className="px-2 py-2 md:px-4 md:py-2.5 whitespace-nowrap">
-                      <span className="theme-stamp-badge theme-stamp-badge-wood text-[7.5px] border-dashed">
-                        {member.role === 'membre' || !member.role
-                          ? (member.genre === 'femme' ? t('secretariat.badgeMemberFem') : t('secretariat.badgeMemberMasc'))
-                          : tRole(member.role, member.genre)}
-                      </span>
-                    </td>
-                    <td className="px-2 py-2 md:px-4 md:py-2.5 max-w-[240px]">
-                      {(() => {
-                        const pratiques = getPratiquesList(member);
-                        if (pratiques.length === 0) {
-                          return (
-                            <span className="opacity-50 text-[11px]">
-                              {member.statutActuel === 'en_attente' ? 'En attente' : '-'}
-                            </span>
-                          );
-                        }
-                        return (
-                          <div className="flex flex-wrap gap-1 items-center">
-                            {pratiques.map((pratique, pIdx) => {
-                              const isDanse = typeof pratique === 'string' && pratique.toLowerCase().includes('danse');
-                              return (
-                                <span
-                                  key={`${member.id}-prat-${pIdx}`}
-                                  className={`theme-stamp-badge ${
-                                    isDanse 
-                                      ? 'theme-stamp-badge-ocre text-[8px] bg-amber-500/15 border-amber-800/40 text-amber-950 font-black' 
-                                      : 'theme-stamp-badge-wood text-[8px]'
-                                  } px-1.5 py-0.5 normal-case font-bold inline-flex items-center gap-1 shadow-none`}
-                                >
-                                  {isDanse ? '💃' : '🥁'} {pratique}
-                                </span>
-                              );
-                            })}
-                          </div>
-                        );
-                      })()}
-                    </td>
-                    <td className="px-2 py-2 md:px-4 md:py-2.5 whitespace-nowrap text-right">
-                      {(() => {
-                        const isArchived = isMemberArchived(member);
-                        const isLoading = actionLoadingId === member.id;
-                        const isPushReachable = Array.isArray(member.fcmTokens) && member.fcmTokens.length > 0;
-                        return (
-                          <div className="flex items-center justify-end gap-1.5 flex-wrap">
-                            <span
-                              className={`theme-stamp-badge text-[7.5px] font-black px-1.5 py-0.5 ${
-                                isPushReachable
-                                  ? 'bg-[var(--color-cordel-vert,#2d6a4f)]/15 border-[#2d6a4f]/40 text-[var(--color-cordel-vert,#2d6a4f)]'
-                                  : 'bg-stone-200/80 border-stone-400/50 text-stone-600'
-                              }`}
-                              title={
-                                isPushReachable
-                                  ? (t('secretariat.pushReachableBadgeTitle') || 'Notifications Push activées sur au moins un appareil')
-                                  : (t('secretariat.pushUnreachableBadgeTitle') || 'Aucun appareil inscrit aux notifications Push')
-                              }
-                            >
-                              {isPushReachable ? '🔔 Push' : '🔕 Muet'}
-                            </span>
-                            {isArchived ? (
-                              <span className="theme-stamp-badge text-[7.5px] bg-red-600/15 border-red-700/40 text-red-900 dark:text-red-300 font-black px-1.5 py-0.5">
-                                🗄️ Archivé
-                              </span>
-                            ) : (
-                              <span className="theme-stamp-badge text-[7.5px] bg-[var(--color-cordel-vert)]/15 border-[#2d6a4f]/40 text-[var(--color-cordel-vert)] font-black px-1.5 py-0.5">
-                                Actif
-                              </span>
-                            )}
-
-                            {canCreateMember && (
-                              isArchived ? (
-                                <button
-                                  type="button"
-                                  onClick={() => handleToggleArchiveMember(member)}
-                                  disabled={isLoading}
-                                  className="text-[9px] font-black uppercase bg-[var(--color-cordel-vert)]/10 hover:bg-[var(--color-cordel-vert)] text-[var(--color-cordel-vert)] hover:text-white border border-[#2d6a4f]/40 px-2 py-0.5 rounded shadow-xs active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer transition-colors"
-                                  title="Réintégrer ce membre dans l'association"
-                                >
-                                  {isLoading ? "..." : "Désarchiver"}
-                                </button>
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={() => handleToggleArchiveMember(member)}
-                                  disabled={isLoading}
-                                  className="text-[9px] font-black uppercase bg-cordel-wood/10 hover:bg-cordel-wood text-cordel-wood hover:text-white border border-cordel-wood/30 px-2 py-0.5 rounded shadow-xs active:translate-x-[0.5px] active:translate-y-[0.5px] cursor-pointer transition-colors"
-                                  title="Archiver ce membre et suspendre son accès"
-                                >
-                                  {isLoading ? "..." : "Archiver"}
-                                </button>
-                              )
-                            )}
-                          </div>
-                        );
-                      })()}
-                    </td>
-                  </tr>
+                  <AdminDirectoryMemberRow
+                    key={member.id}
+                    member={member}
+                    getPratiquesList={getPratiquesList}
+                    tRole={tRole}
+                    t={t}
+                    actionLoadingId={actionLoadingId}
+                    canCreateMember={canCreateMember}
+                    onToggleArchive={handleToggleArchiveMember}
+                  />
                 ))}
               </tbody>
             </table>

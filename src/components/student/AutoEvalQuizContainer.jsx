@@ -9,6 +9,7 @@ import { generateQuizFromSong, generateQuizFromSheet, generateQuizFromDancador }
 import { generateTranslationQuiz } from '../../utils/translationQuizEngine';
 import { calculateNextReview } from '../../utils/spacedRepetitionEngine';
 import StudentToadasProgress from './StudentToadasProgress';
+import QuizResultSummaryCard, { QuizAnswerFeedbackBox } from './QuizResultSummaryCard';
 import { useDancadorSteps } from '../../hooks/useDancadorData';
 import { useTranslation } from '../LanguageContext';
 
@@ -101,7 +102,7 @@ const startQuiz = (theme, specificToadaId = null) => {
   if (theme === 'daily_revision' && preGeneratedQuestions) {
     generated = [...preGeneratedQuestions];
   } else if (theme === 'traduction') {
-    generated = generateTranslationQuiz({ count: targetCount, direction: 'MIXED', difficulty: selectedDifficulty, customDistractors });
+    generated = generateTranslationQuiz({ count: targetCount, direction: 'MIXED', difficulty: selectedDifficulty, customDistractors, songs: allSongs, sheets: allSheets });
   } else if (theme === 'toadas') {
     if (specificToadaId) {
       const song = allSongs.find(s => s.id === specificToadaId);
@@ -141,7 +142,7 @@ const startQuiz = (theme, specificToadaId = null) => {
         generated.push(...generateQuizFromDancador(dancadorSteps, { questionCount: 3, t }));
       }
       if (globalConfig.themes.traduction) {
-        generated.push(...generateTranslationQuiz({ count: targetCount, direction: 'MIXED', difficulty: selectedDifficulty, customDistractors }));
+        generated.push(...generateTranslationQuiz({ count: targetCount, direction: 'MIXED', difficulty: selectedDifficulty, customDistractors, songs: allSongs, sheets: allSheets }));
       }
       if (globalConfig.themes.toadas && allSongs.length > 0) {
         const songsCopy = [...allSongs].sort(() => Math.random() - 0.5);
@@ -582,17 +583,7 @@ const startQuiz = (theme, specificToadaId = null) => {
           </div>
           
           {showFeedback && (
-            <div className={`mt-4 p-4 rounded-lg border-2 flex flex-col gap-2 w-full animate-fadeIn text-left ${selectedChoice?.isCorrect ? 'bg-cordel-vert/10 border-cordel-vert' : 'bg-cordel-ocre/10 border-cordel-ocre'}`}>
-              <h4 className={`text-sm font-black uppercase tracking-wider ${selectedChoice?.isCorrect ? 'text-cordel-vert' : 'text-cordel-ocre'}`}>
-                {selectedChoice?.isCorrect ? t('pedagogy.student.bienJoue') : t('pedagogy.student.presque')}
-              </h4>
-              {!selectedChoice?.isCorrect && (
-                <p className="text-xs font-bold text-encre-noire/80">
-                  {t('pedagogy.student.laBonneReponseEtait')} <span className="font-black">{q.choices ? q.choices.find(c => c.isCorrect)?.text : q.correctAnswer}</span>
-                  {q.correctAnswerExplanation ? ` - ${q.correctAnswerExplanation}` : ''}
-                </p>
-              )}
-            </div>
+            <QuizAnswerFeedbackBox question={q} selectedChoice={selectedChoice} />
           )}
         </CordelCard>
       </div>
@@ -600,52 +591,17 @@ const startQuiz = (theme, specificToadaId = null) => {
   }
 
   if (step === 'RESULT') {
-    const percentage = questions.length > 0 ? score / questions.length : 0;
-    let message = "Bel effort !";
-    let emoji = "💪";
-    if (percentage >= 0.8) { message = "Excellent ! Quel talent !"; emoji = "🏆"; }
-    else if (percentage >= 0.5) { message = "Pas mal du tout !"; emoji = "🥁"; }
-    else { message = "Encore un peu d'entraînement !"; emoji = "🌱"; }
-
-    const finalScoreDisplay = score + (selectedChoice?.isCorrect && !showFeedback ? 1 : 0);
-
     return (
-      <div className="flex flex-col gap-6 w-full max-w-none p-4 select-none">
-        <CordelCard className="p-8 flex flex-col gap-6 items-center text-center">
-          <div className="text-5xl">{emoji}</div>
-          <h2 className="text-3xl font-heading uppercase text-cordel-wood tracking-widest">
-            {t('pedagogy.student.bilanDuQuiz')}
-          </h2>
-          <p className="text-xl font-bold text-encre-noire">
-            {finalScoreDisplay} / {questions.length}
-          </p>
-          <p className="text-sm font-black text-[var(--color-cordel-vert)] uppercase tracking-wider">
-            {message}
-          </p>
-
-          {savingScore && <span className="text-[10px] animate-pulse">{t('pedagogy.student.enregistrementDuScore')}</span>}
-
-          {wrongAnswers.length > 0 && (
-            <div className="w-full mt-4 flex flex-col gap-3 text-left bg-cordel-rouge/5 border border-cordel-rouge/20 p-4 rounded-xl">
-              <span className="text-[10px] font-black uppercase tracking-widest text-cordel-rouge">
-                {t('pedagogy.student.aReviser')}
-              </span>
-              {wrongAnswers.map((w, i) => (
-                <div key={i} className="text-xs border-b border-cordel-rouge/10 pb-2 last:border-0 last:pb-0">
-                  <p className="font-bold text-encre-noire/80 mb-1">{w.prompt}</p>
-                  <p className="text-[var(--color-cordel-vert)] font-black">➔ {w.correct}</p>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div className="mt-4">
-            <CordelButton variant="primary" onClick={() => onExit ? onExit() : setStep('HOME')} className="px-8 py-3 text-sm">
-              {onExit ? t('pedagogy.student.terminer') : t('pedagogy.student.retourALAccueil')}
-            </CordelButton>
-          </div>
-        </CordelCard>
-      </div>
+      <QuizResultSummaryCard
+        score={score}
+        total={questions.length}
+        selectedChoice={selectedChoice}
+        showFeedback={showFeedback}
+        savingScore={savingScore}
+        wrongAnswers={wrongAnswers}
+        onExit={onExit}
+        onRestartHome={() => setStep('HOME')}
+      />
     );
   }
 

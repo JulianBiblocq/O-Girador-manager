@@ -258,18 +258,20 @@ export default function GigsPipelineManager({ groupId, associationSettings: prop
           </div>
 
           {/* Contenu Principal (Kanban ou Tableau) */}
-          <GigsPipelineBoardView
-            gigs={gigs}
-            filteredGigs={filteredGigs}
-            loading={loading}
-            error={error}
-            saving={saving}
-            viewMode={viewMode}
-            filterStatus={filterStatus}
-            onOpenDetails={handleOpenDetails}
-            onOpenEdit={handleOpenEdit}
-            onDelete={handleDelete}
-          />
+          <div data-tour="gigs-kanban-board" className="w-full">
+            <GigsPipelineBoardView
+              gigs={gigs}
+              filteredGigs={filteredGigs}
+              loading={loading}
+              error={error}
+              saving={saving}
+              viewMode={viewMode}
+              filterStatus={filterStatus}
+              onOpenDetails={handleOpenDetails}
+              onOpenEdit={handleOpenEdit}
+              onDelete={handleDelete}
+            />
+          </div>
         </>
       )}
 

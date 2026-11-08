@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import CordelCard from './CordelCard';
+import { useTranslation } from './LanguageContext';
 
 /**
  * Accordéon repliable / dépliable pour le panneau « Commande Groupée » sur l'accueil.
@@ -7,6 +8,7 @@ import CordelCard from './CordelCard';
  * et mémorise l'état plié/déplié dans localStorage via `grouped_order_collapsed_${campaignId}`.
  */
 export default function WidgetGroupOrders({ campaign, children, footer }) {
+  const { t } = useTranslation();
   const campaignId = campaign?.id || 'default';
   const storageKey = `grouped_order_collapsed_${campaignId}`;
   const legacyStorageKey = `ogirador_order_collapsed_${campaignId}`;
@@ -68,7 +70,7 @@ export default function WidgetGroupOrders({ campaign, children, footer }) {
             }`}
         >
           <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-encre-noire truncate flex-1 min-w-0">
-            📦 COMMANDE GROUPÉE : {campaignTitle}
+            📦 {t('dashboard.groupOrderPrefix')} {campaignTitle}
           </span>
           <button
             type="button"
@@ -78,7 +80,7 @@ export default function WidgetGroupOrders({ campaign, children, footer }) {
             }}
             className="px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded border border-encre-noire/30 bg-cordel-bg-light hover:bg-white text-cordel-wood shrink-0 cursor-pointer transition-colors"
           >
-            {isCollapsed ? 'Déplier ▾' : 'Replier ▴'}
+            {isCollapsed ? `${t('dashboard.btnExpand')} ▾` : `${t('dashboard.btnCollapse')} ▴`}
           </button>
         </div>
 

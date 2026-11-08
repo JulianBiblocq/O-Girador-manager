@@ -382,24 +382,28 @@ export default function WardrobeManager({
           </div>
 
           {/* Section 1: Costumes & Pièces Management */}
-          <CostumesAdminManager groupId={groupId} />
+          <div data-tour="costumerie-pieces-assign">
+            <CostumesAdminManager groupId={groupId} />
+          </div>
 
           {/* Section 2: Physical Items Inventory & CSV Export */}
-          <WardrobePhysicalStockSection
-            costumes={costumes}
-            allUsers={allUsers}
-            showCostumeForm={showCostumeForm}
-            setShowCostumeForm={setShowCostumeForm}
-            editingCostume={editingCostume}
-            setEditingCostume={setEditingCostume}
-            costumeForm={costumeForm}
-            setCostumeForm={setCostumeForm}
-            saving={saving}
-            handleCostumeSubmit={handleCostumeSubmit}
-            handleEditCostume={handleEditCostume}
-            handleDeleteCostume={handleDeleteCostume}
-            t={t}
-          />
+          <div data-tour="costumerie-pieces-table">
+            <WardrobePhysicalStockSection
+              costumes={costumes}
+              allUsers={allUsers}
+              showCostumeForm={showCostumeForm}
+              setShowCostumeForm={setShowCostumeForm}
+              editingCostume={editingCostume}
+              setEditingCostume={setEditingCostume}
+              costumeForm={costumeForm}
+              setCostumeForm={setCostumeForm}
+              saving={saving}
+              handleCostumeSubmit={handleCostumeSubmit}
+              handleEditCostume={handleEditCostume}
+              handleDeleteCostume={handleDeleteCostume}
+              t={t}
+            />
+          </div>
         </div>
       )}
 

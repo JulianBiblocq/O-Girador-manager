@@ -1,24 +1,24 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { collection, query, where, getDocs, doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
-import { db } from '../../firebase';
-import CordelCard from '../CordelCard';
+import React, { useState, useMemo } from 'react';
 import MestrePedagogyNotepad from './MestrePedagogyNotepad';
 import MestreToadasAnalytics from '../pedagogy/MestreToadasAnalytics';
+import MestreSeasonAdminTab from './MestreSeasonAdminTab';
 import ProgramRehearsalModal from './ProgramRehearsalModal';
-import useConfirm from '../../hooks/useConfirm';
-import { useSequencerFirestoreData, isTestOrE2ESequence } from '../../hooks/useSequencerFirestoreData';
-import { calculateToadaScore } from '../../utils/toadaProgressEngine';
-import { normalizePupitreName } from '../../utils/secretariatMetrics';
-import { subscribeGroupTrainings, computeTrainingStages } from '../../services/aisanceService';
-import { normalizeString } from '../../utils/repertoireMatcher';
-import DefisSummaryCard from '../pedagogy/DefisSummaryCard';
+import MestreHotPointsBanner from './MestreHotPointsBanner';
+import MestreChallengesCompactBar from './MestreChallengesCompactBar';
 import PercussionRepertoireAnalytics from '../pedagogy/PercussionRepertoireAnalytics';
 import DanseChoregraphieAnalytics from '../pedagogy/DanseChoregraphieAnalytics';
 import EntrainementMacroAnalytics from '../pedagogy/EntrainementMacroAnalytics';
-import { computeTroupeChallengeMetrics } from '../../utils/pedagogyDashboardCalculations';
-import { useDancadorSteps, useDancadorChoreographies } from '../../hooks/useDancadorData';
+import useConfirm from '../../hooks/useConfirm';
+import { useMestrePedagogyData } from '../../hooks/useMestrePedagogyData';
+import { isDanseMember, isPercuMember, buildPupitresList, buildUnifiedRhythms, computeTopHotPoints } from '../../utils/mestreHotPointsUtils';
+import { pinPedagogyNote, resetAllGroupEvaluations, detectE2EArtifacts, purgeE2ETestData } from '../../utils/mestrePedagogyActions';
 import { useTranslation } from '../LanguageContext';
 
+/**
+ * Cockpit Pédagogique Mestre épuré (< 135 lignes).
+ * Conserve en tête le ⚠️ Top 3 des Points Chauds et remplace le bloc massif de simulation (userAisanceMap)
+ * par la barre synthétique d'une seule ligne MestreChallengesCompactBar.
+ */
 export default function MestrePedagogyDashboard({ profileData }) {
   const { t } = useTranslation();
   const { confirm } = useConfirm();
@@ -26,1031 +26,113 @@ export default function MestrePedagogyDashboard({ profileData }) {
   const isAuthorized = profileData?.role === 'mestre' || profileData?.role === 'super-admin' || profileData?.isSystemAdmin;
 
   const [activeAnalyseTab, setActiveAnalyseTab] = useState('percussion');
-  const [loadingData, setLoadingData] = useState(true);
   const [pinnedSuccessItem, setPinnedSuccessItem] = useState(null);
   const [itemToProgramDirect, setItemToProgramDirect] = useState(null);
   const [programDirectSuccess, setProgramDirectSuccess] = useState(null);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [purgingE2E, setPurgingE2E] = useState(false);
-  const [purgeSuccessMessage, setPurgeSuccessMessage] = useState(null);
 
-  // 1. Branchement sur le catalogue complet du Séquenceur officiel
-  const { rhythms: sequencerRhythms, loading: loadingSequencer } = useSequencerFirestoreData(groupId);
+  const {
+    isLoading, setLoadingData, setRefreshTrigger, sequencerRhythms, dancadorSteps, dancadorChoreos,
+    usersData, evaluationsMap, setEvaluationsMap, piecesProgressMap, revisionsDemandeesMap,
+    assocInstruments, songs, fiches, rhythmMetaList, repertoire, userAisanceMap, resolvedTrainings, troupeChallengeMetrics
+  } = useMestrePedagogyData({ groupId, isAuthorized });
 
-  // 1.bis Branchement sur les pas et chorégraphies réels Dançador
-  const { steps: dancadorSteps } = useDancadorSteps(groupId);
-  const { choreographies: dancadorChoreos } = useDancadorChoreographies(groupId);
-
-  const [usersData, setUsersData] = useState([]);
-  const [evaluationsMap, setEvaluationsMap] = useState({}); // { uid: { [itemId]: 'level' } }
-  const [revisionsDemandeesMap, setRevisionsDemandeesMap] = useState({}); // { uid: { [itemId]: boolean } }
-  const [assocInstruments, setAssocInstruments] = useState([]);
-  
-  // Documents du Varal et métadonnées
-  const [songs, setSongs] = useState([]);
-  const [fiches, setFiches] = useState([]);
-  const [rhythmMetaList, setRhythmMetaList] = useState([]);
-
-  // Entraînements et état d'aisance des membres
-  const [groupTrainings, setGroupTrainings] = useState([]);
-  const [userAisanceMap, setUserAisanceMap] = useState({}); // { [uid]: { [trainingId]: stagesCompleted[] } }
-  const [userReflexesMap, setUserReflexesMap] = useState({}); // { [uid]: { [key]: { score, totalSignals } } }
-  const [repertoire, setRepertoire] = useState([]);
-
-  useEffect(() => {
-    if (!groupId || !isAuthorized) return;
-
-    const fetchData = async () => {
-      setLoadingData(true);
-      try {
-        // 1. Récupérer les utilisateurs actifs du groupe (exclure uniquement archivés et inactifs)
-        const qUsers = query(collection(db, 'users'), where('groupId', '==', groupId));
-        const usersSnap = await getDocs(qUsers);
-        const users = [];
-        usersSnap.forEach(d => {
-          const uData = d.data();
-          const isActif = uData.statutActuel !== 'archived' && uData.statutActuel !== 'inactive' && uData.status !== 'archived' && uData.status !== 'inactive';
-          if (isActif) {
-            users.push({ id: d.id, ...uData });
-          }
-        });
-        setUsersData(users);
-
-        // 2. Récupérer toutes les évaluations de parcours et demandes de révision pour ces utilisateurs
-        const evals = {};
-        const revs = {};
-        await Promise.all(users.map(async (u) => {
-          try {
-            const docRef = doc(db, 'users', u.id, 'parcours', groupId);
-            const snap = await getDoc(docRef);
-            if (snap.exists()) {
-              const pData = snap.data();
-              evals[u.id] = pData.evaluations || {};
-              revs[u.id] = pData.revisionsDemandees || {};
-            } else {
-              evals[u.id] = {};
-              revs[u.id] = {};
-            }
-          } catch {
-            evals[u.id] = {};
-            revs[u.id] = {};
-          }
-        }));
-        setEvaluationsMap(evals);
-        setRevisionsDemandeesMap(revs);
-
-        // 3. Récupérer la configuration des instruments de l'association
-        try {
-          const assocRef = doc(db, 'associations', groupId);
-          const assocSnap = await getDoc(assocRef);
-          if (assocSnap.exists()) {
-            const aData = assocSnap.data();
-            setAssocInstruments(aData.instrumentsDisponibles || aData.instrumentsActifs || []);
-          }
-        } catch (e) {
-          console.error("Erreur récupération instruments association :", e);
-        }
-
-        // 4. Récupérer les documents du Varal (Chants & Fiches Culture)
-        const qDocs = query(collection(db, 'documents'), where('groupId', '==', groupId));
-        const docsSnap = await getDocs(qDocs);
-        const fetchedSongs = [];
-        const fetchedFiches = [];
-        docsSnap.forEach(d => {
-          const data = d.data();
-          if (data.type === 'song') fetchedSongs.push({ id: d.id, ...data });
-          if (data.type === 'fiche_pedagogique' || data.type === 'culture_fiche') fetchedFiches.push({ id: d.id, ...data });
-        });
-        setSongs(fetchedSongs);
-        setFiches(fetchedFiches);
-
-        // 5. Récupérer les métadonnées de rythmes personnalisées par le Mestre
-        const qMeta = collection(db, 'associations', groupId, 'rhythmMetadata');
-        const metaSnap = await getDocs(qMeta);
-        const fetchedMeta = [];
-        metaSnap.forEach(d => {
-          fetchedMeta.push({ id: d.id, titre: d.data().titre || d.data().title || d.id, ...d.data() });
-        });
-        setRhythmMetaList(fetchedMeta);
-
-        // 6. Récupérer les morceaux du Répertoire
-        try {
-          const qRep = collection(db, 'associations', groupId, 'repertoire');
-          const repSnap = await getDocs(qRep);
-          const fetchedRep = [];
-          repSnap.forEach(d => fetchedRep.push({ id: d.id, ...d.data() }));
-          setRepertoire(fetchedRep);
-        } catch (e) {
-          console.error("Erreur récupération répertoire :", e);
-        }
-
-        // 7. Récupérer l'état des paliers d'entraînement et des défis de chaque membre
-        const aisance = {};
-        const reflexes = {};
-        await Promise.all(users.map(async (u) => {
-          try {
-            const aSnap = await getDocs(collection(db, 'users', u.id, 'aisance'));
-            const uAisance = {};
-            aSnap.forEach(ad => {
-              if (ad.id === 'reflexes') {
-                reflexes[u.id] = ad.data();
-              } else if (ad.id !== 'conducteurs') {
-                uAisance[ad.id] = ad.data().stagesCompleted || [];
-              }
-            });
-            aisance[u.id] = uAisance;
-          } catch {
-            aisance[u.id] = {};
-          }
-        }));
-        setUserAisanceMap(aisance);
-        setUserReflexesMap(reflexes);
-
-      } catch (err) {
-        console.error("Erreur lors de la récupération des données pédagogiques :", err);
-      } finally {
-        setLoadingData(false);
-      }
-    };
-
-    fetchData();
-  }, [groupId, isAuthorized, refreshTrigger]);
-
-  // Écoute en temps réel des entraînements du groupe
-  useEffect(() => {
-    if (!groupId || !isAuthorized) return;
-    const unsub = subscribeGroupTrainings(groupId, setGroupTrainings);
-    return () => unsub();
-  }, [groupId, isAuthorized]);
-
-  // Résolution vivante des entraînements avec les morceaux du Répertoire
-  const resolvedTrainings = useMemo(() => {
-    return (groupTrainings || []).map((t) => {
-      const matchedPiece = (repertoire || []).find(
-        (p) =>
-          (p.sequenceurId && p.sequenceurId === t.presetId) ||
-          (p.presetId && p.presetId === t.presetId) ||
-          (t.presetId && p.id === t.presetId) ||
-          (normalizeString(p.titre) && normalizeString(p.titre) === normalizeString(t.title || t.titre || t.name))
-      );
-      const stages = computeTrainingStages(t);
-      const repertoireTitle = matchedPiece?.titre || t.title || t.titre || 'Morceau';
-      return {
-        ...t,
-        matchedPiece,
-        repertoireTitle,
-        stages
-      };
-    });
-  }, [groupTrainings, repertoire]);
-
-  // Calcul synthétique des indicateurs clés des 3 défis pour la troupe
-  const troupeChallengeMetrics = useMemo(() => {
-    return computeTroupeChallengeMetrics(usersData, userReflexesMap);
-  }, [usersData, userReflexesMap]);
-
-  // Construction unifiée et saine du catalogue de rythmes (Percussion et Danse)
-  const unifiedRhythms = useMemo(() => {
-    const map = new Map();
-
-    // 1. Morceaux issus du Séquenceur officiel (exclusion stricte des artefacts de tests E2E)
-    (sequencerRhythms || []).forEach(r => {
-      const cleanTitle = r.title || r.titre || r.name || r.id;
-      if (isTestOrE2ESequence(r) || isTestOrE2ESequence({ id: r.id, title: cleanTitle })) return;
-      map.set(r.id, {
-        id: r.id,
-        titre: cleanTitle,
-        jsonUrl: r.jsonUrl || null,
-        source: 'sequencer'
-      });
-    });
-
-    // 2. Métadonnées personnalisées du Mestre (exclusion stricte des tests E2E)
-    (rhythmMetaList || []).forEach(m => {
-      const existing = map.get(m.id);
-      const cleanTitle = m.titre || m.title || existing?.titre || m.id;
-      if (isTestOrE2ESequence({ id: m.id, title: cleanTitle })) return;
-      map.set(m.id, {
-        id: m.id,
-        titre: cleanTitle,
-        jsonUrl: m.jsonUrl || existing?.jsonUrl || null,
-        source: 'metadata',
-        ...m
-      });
-    });
-
-    // 3. Détection des clés existantes dans les évaluations (Dépollution stricte et exclusion des clés E2E)
-    Object.values(evaluationsMap).forEach(userEvals => {
-      Object.keys(userEvals).forEach(key => {
-        if (isTestOrE2ESequence({ id: key, title: key })) return;
-        // Exclure formellement les chants, fiches, clés administratives et le préfixe danse_
-        if (
-          !songs.find(s => s.id === key) &&
-          !fiches.find(f => f.id === key) &&
-          key !== 'entretien_global' &&
-          !key.endsWith('_chant') &&
-          !key.startsWith('danse_')
-        ) {
-          if (!map.has(key)) {
-            map.set(key, {
-              id: key,
-              titre: key.replace(/_/g, ' '),
-              source: 'evaluations'
-            });
-          }
-        }
-      });
-    });
-
-    const list = Array.from(map.values());
-    list.sort((a, b) => a.titre.localeCompare(b.titre));
-    return list;
-  }, [sequencerRhythms, rhythmMetaList, evaluationsMap, songs, fiches]);
-
-  // Détection exhaustive des membres Danse (pratiqueDanse, niveauDanse ou instrument danse ou voeu danse)
-  const isDanseMember = (u) => {
-    if (!u) return false;
-    if (u.pratiqueDanse === true) return true;
-    if (u.niveauDanse && u.niveauDanse !== 'aucun') return true;
-    const inst = (u.instrument || u.instrumentPrincipal || u.pupitre || '').toLowerCase().trim();
-    const secInst = (u.instrumentSecondaire || '').toLowerCase().trim();
-    if (inst.includes('danse') || secInst.includes('danse')) return true;
-    if (Array.isArray(u.instrumentsJoues) && u.instrumentsJoues.some(i => typeof i === 'string' && i.toLowerCase().includes('danse'))) return true;
-    if (Array.isArray(u.voeuxInstruments) && u.voeuxInstruments.some(w => typeof w === 'string' && w.toLowerCase().includes('danse'))) return true;
-    return false;
-  };
-
-  // Détection des membres Percussionnistes (exclut uniquement les danseurs 100% sans percussion)
-  const isPercuMember = (u) => {
-    if (!u) return false;
-    if (u.pratiquePercussion === false) return false;
-    if (u.pratiqueDanse === true && !u.instrument && !u.instrumentPrincipal && !u.pupitre && (!Array.isArray(u.voeuxInstruments) || u.voeuxInstruments.length === 0)) {
-      return false;
-    }
-    const inst = (u.instrument || u.instrumentPrincipal || u.pupitre || '').toLowerCase().trim();
-    if (inst === 'danse' && u.pratiquePercussion !== true) return false;
-    return true;
-  };
-
-  // Répartition des utilisateurs par pupitre
   const percuUsers = useMemo(() => usersData.filter(isPercuMember), [usersData]);
   const danseUsers = useMemo(() => usersData.filter(isDanseMember), [usersData]);
+  const pupitres = useMemo(() => buildPupitresList(assocInstruments, percuUsers), [assocInstruments, percuUsers]);
+  const unifiedRhythms = useMemo(() => buildUnifiedRhythms({ sequencerRhythms, rhythmMetaList, evaluationsMap, songs, fiches }), [sequencerRhythms, rhythmMetaList, evaluationsMap, songs, fiches]);
 
-  // Construction robuste des pupitres de percussion de l'association
-  const pupitres = useMemo(() => {
-    const set = new Set();
-    // 1. Instruments configurés de l'association
-    (assocInstruments || []).forEach(inst => {
-      const clean = (inst || '').trim();
-      if (clean && clean.toLowerCase() !== 'danse') set.add(clean);
-    });
-
-    // 2. Pupitres déclarés par les membres
-    percuUsers.forEach(u => {
-      const declared = normalizePupitreName(u.instrumentPrincipal || u.instrument || u.pupitre);
-      if (declared && declared !== 'Non défini' && declared !== 'En attente' && declared.toLowerCase() !== 'danse') {
-        set.add(declared);
-      }
-    });
-
-    // 3. Fallback standard de Nação
-    if (set.size === 0) {
-      ["Alfaia", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro"].forEach(i => set.add(i));
-    }
-
-    return Array.from(set);
-  }, [assocInstruments, percuUsers]);
-
-  // Fonction utilitaire pour trouver les percussionnistes affectés à un pupitre
-  const getPupitreUsers = (pupitreName) => {
-    const target = pupitreName.toLowerCase().trim();
-    const matches = percuUsers.filter(u => {
-      const uInst = (u.instrument || u.instrumentPrincipal || u.pupitre || '').toLowerCase().trim();
-      const uSec = (u.instrumentSecondaire || '').toLowerCase().trim();
-      const uVoeu = (u.voeuPrincipal || '').toLowerCase().trim();
-      const wishes = Array.isArray(u.voeuxInstruments) ? u.voeuxInstruments.map(w => String(w).toLowerCase().trim()) : [];
-      return uInst.includes(target) || target.includes(uInst) ||
-             uSec.includes(target) ||
-             uVoeu.includes(target) ||
-             wishes.some(w => w.includes(target));
-    });
-
-    // Si aucun membre n'a encore d'affectation spécifique pour ce pupitre, et que la majorité est sans affectation
-    const hasAnyPupitreAssigned = percuUsers.some(u => Boolean((u.instrument || u.instrumentPrincipal || u.pupitre || '').trim()));
-    if (!hasAnyPupitreAssigned && percuUsers.length > 0) {
-      return percuUsers;
-    }
-
-    return matches;
-  };
-
-  // Calcul réactif des demandes de révision par item (chant, rythme, danse)
   const revisionsCountMap = useMemo(() => {
     const counts = {};
-    Object.values(revisionsDemandeesMap).forEach(userRevs => {
-      if (!userRevs) return;
-      Object.entries(userRevs).forEach(([itemId, isRequested]) => {
-        if (isRequested === true) {
-          counts[itemId] = (counts[itemId] || 0) + 1;
-        }
-      });
+    Object.values(revisionsDemandeesMap).forEach((userRevs) => {
+      Object.entries(userRevs || {}).forEach(([itemId, isReq]) => { if (isReq === true) counts[itemId] = (counts[itemId] || 0) + 1; });
     });
     return counts;
   }, [revisionsDemandeesMap]);
 
-  // Calcul du taux de maîtrise pour un item et un ensemble d'utilisateurs
-  const getStatsForItem = (rhythmId, filteredUsers, isDanse = false) => {
-    let total = 0;
-    let okCount = 0; // 'alaise', 'referent' ou 'oui'
+  const hotPoints = useMemo(
+    () => computeTopHotPoints({ pupitres, percuUsers, danseUsers, unifiedRhythms, songs, usersData, evaluationsMap, revisionsCountMap, t }),
+    [pupitres, percuUsers, danseUsers, unifiedRhythms, songs, usersData, evaluationsMap, revisionsCountMap, t]
+  );
 
-    filteredUsers.forEach(u => {
-      let e = null;
-      if (isDanse) {
-        // Pour la danse : chercher en priorité la clé préfixée 'danse_', avec repli sur le rhythmId brut
-        e = evaluationsMap[u.id]?.[`danse_${rhythmId}`] || evaluationsMap[u.id]?.[rhythmId];
-      } else {
-        e = evaluationsMap[u.id]?.[rhythmId];
-      }
+  const detectedE2EItems = useMemo(() => detectE2EArtifacts({ sequencerRhythms, rhythmMetaList, evaluationsMap }), [sequencerRhythms, rhythmMetaList, evaluationsMap]);
 
-      if (e) {
-        total++;
-        if (e === 'alaise' || e === 'referent' || e === 'oui') okCount++;
-      }
-    });
-
-    if (total === 0) {
-      return { pct: 0, total: 0, okCount: 0, color: 'text-neutral-400', bg: 'bg-neutral-100', text: 'Aucune donnée' };
-    }
-
-    const pct = Math.round((okCount / total) * 100);
-    let color = 'text-[var(--theme-primary)]';
-    let bg = 'bg-[var(--theme-primary)]/10';
-    if (pct >= 75) {
-      color = 'text-[var(--color-cordel-vert)]';
-      bg = 'bg-[var(--color-cordel-vert)]/20';
-    } else if (pct >= 50) {
-      color = 'text-[var(--color-cordel-ocre)]';
-      bg = 'bg-[var(--color-cordel-ocre)]/20';
-    }
-
-    return { pct, total, okCount, color, bg, text: `${pct}% (${okCount}/${total})` };
-  };
-
-  // Calcul des Points Chauds pour le bandeau d'alerte en Zone 1 (Priorisation des demandes d'élèves)
-  const hotPoints = useMemo(() => {
-    const list = [];
-    const seenKeys = new Set();
-
-    // 1. Percussions par pupitre
-    pupitres.forEach(pupitre => {
-      const pUsers = getPupitreUsers(pupitre);
-      if (pUsers.length === 0) return;
-      unifiedRhythms.forEach(r => {
-        const stats = getStatsForItem(r.id, pUsers, false);
-        const reqCount = revisionsCountMap[r.id] || 0;
-        if ((stats.total > 0 && stats.pct < 60) || reqCount > 0) {
-          const itemKey = `percu_${pupitre}_${r.id}`;
-          if (!seenKeys.has(itemKey)) {
-            seenKeys.add(itemKey);
-            const urgencyScore = (reqCount * 30) + (100 - (stats.total > 0 ? stats.pct : 0));
-            list.push({
-              id: itemKey,
-              titre: r.titre,
-              discipline: `🥁 Percussion [${pupitre}]`,
-              pupitre: pupitre,
-              pct: stats.pct,
-              requestCount: reqCount,
-              urgencyScore: urgencyScore,
-              detail: reqCount > 0 
-                ? `🙋 ${reqCount === 1 ? t('pedagogy.studentRequestsCount', { count: reqCount }) : t('pedagogy.studentRequestsCountPlural', { count: reqCount })} • ${stats.total > 0 ? t('pedagogy.masteryRate', { rate: stats.pct }) : 'Non évalué'}`
-                : (stats.total > 0 ? t('pedagogy.masteryRate', { rate: stats.pct }) : 'Non évalué'),
-              rawItem: r,
-              type: 'percussion',
-              itemId: r.id
-            });
-          }
-        }
-      });
-    });
-
-    // 2. Danse
-    if (danseUsers.length > 0) {
-      unifiedRhythms.forEach(r => {
-        const stats = getStatsForItem(r.id, danseUsers, true);
-        const reqCount = revisionsCountMap[`danse_${r.id}`] || 0;
-        if ((stats.total > 0 && stats.pct < 60) || reqCount > 0) {
-          const urgencyScore = (reqCount * 30) + (100 - (stats.total > 0 ? stats.pct : 0));
-          list.push({
-            id: `danse_${r.id}`,
-            titre: r.titre,
-            discipline: '💃 Danse',
-            pupitre: 'Danse',
-            pct: stats.pct,
-            requestCount: reqCount,
-            urgencyScore: urgencyScore,
-            detail: reqCount > 0 
-              ? `🙋 ${reqCount === 1 ? t('pedagogy.studentRequestsCount', { count: reqCount }) : t('pedagogy.studentRequestsCountPlural', { count: reqCount })} • ${stats.total > 0 ? t('pedagogy.masteryRate', { rate: stats.pct }) : 'Non évalué'}`
-              : (stats.total > 0 ? t('pedagogy.masteryRate', { rate: stats.pct }) : 'Non évalué'),
-            rawItem: r,
-            type: 'danse',
-            itemId: `danse_${r.id}`
-          });
-        }
-      });
-    }
-
-    // 3. Toadas
-    const activeSongs = (songs || []).filter(s => !s.isArchived);
-    activeSongs.forEach(song => {
-      let totalScore = 0;
-      let evaluatedCount = 0;
-      usersData.forEach(u => {
-        const toadaSessions = (u.quizHistory || []).filter(e => e.toadaId === song.id);
-        if (toadaSessions.length > 0) {
-          const res = calculateToadaScore(song.id, u.quizHistory || []);
-          totalScore += res.score;
-          evaluatedCount++;
-        } else {
-          const manual = evaluationsMap[u.id]?.[song.id];
-          if (manual) {
-            evaluatedCount++;
-            if (manual === 'referent') totalScore += 100;
-            else if (manual === 'alaise' || manual === 'oui') totalScore += 75;
-            else if (manual === 'pratique') totalScore += 50;
-            else if (manual === 'decouverte') totalScore += 25;
-          }
-        }
-      });
-
-      const avg = evaluatedCount > 0 ? Math.round(totalScore / evaluatedCount) : 0;
-      const reqCount = revisionsCountMap[song.id] || 0;
-
-      if ((evaluatedCount > 0 && avg < 60) || reqCount > 0) {
-        const urgencyScore = (reqCount * 30) + (100 - avg);
-        list.push({
-          id: `song_${song.id}`,
-          titre: song.titre,
-          discipline: '📜 Chant & Toada',
-          pupitre: 'Chœur & Pupitres',
-          pct: avg,
-          requestCount: reqCount,
-          urgencyScore: urgencyScore,
-          detail: reqCount > 0
-            ? `🙋 ${reqCount} demande${reqCount > 1 ? 's' : ''} d'élèves • ${avg}% maîtrise (${evaluatedCount} avis/quiz)`
-            : `${avg}% (${evaluatedCount} avis/quiz)`,
-          rawItem: song,
-          type: 'song',
-          itemId: song.id
-        });
-      }
-    });
-
-    // Tri par urgence : les demandes d'élèves en tête, puis les scores les plus bas
-    list.sort((a, b) => b.urgencyScore - a.urgencyScore);
-    return list.slice(0, 3);
-  }, [pupitres, percuUsers, danseUsers, unifiedRhythms, songs, usersData, evaluationsMap, revisionsCountMap]);
-
-  // Épinglage instantané d'une faiblesse dans le bloc-notes Firestore (avec mention des demandes)
   const handlePinNote = async (itemTitre, categoryInfo, requestCount = 0) => {
     try {
-      const mentionDemandes = requestCount > 0 
-        ? ` (${requestCount} demande${requestCount > 1 ? 's' : ''} d'élèves)` 
-        : '';
-      const newNote = {
-        id: `note_${Date.now()}`,
-        titre: `🛠️ À travailler${categoryInfo ? ` [${categoryInfo}]` : ''} : ${itemTitre}${mentionDemandes}`,
-        contenu: `Point de répétition prioritaire : ${itemTitre}.${requestCount > 0 ? `\n🙋 Signalé par ${requestCount} élève${requestCount > 1 ? 's' : ''} en demande de révision.` : ''}`,
-        createdBy: profileData?.displayName || 'Mestre',
-        createdAt: new Date().toISOString()
-      };
-      const noteRef = doc(db, 'associations', groupId, 'blocNotes', newNote.id);
-      await setDoc(noteRef, newNote);
-      setPinnedSuccessItem(`${itemTitre}${mentionDemandes}`);
-      setTimeout(() => setPinnedSuccessItem(null), 3000);
-    } catch (e) {
-      console.error("Erreur lors de l'épinglage dans le bloc-notes :", e);
-    }
+      const label = await pinPedagogyNote({ groupId, itemTitre, categoryInfo, requestCount, authorName: profileData?.displayName || 'Mestre' });
+      if (label) { setPinnedSuccessItem(label); setTimeout(() => setPinnedSuccessItem(null), 3000); }
+    } catch (e) { console.error('Erreur épinglage :', e); }
   };
 
-  // Remise à zéro annuelle
   const handleResetAllEvaluations = async () => {
-    const isOk = await confirm({
-      title: "Remise à zéro annuelle",
-      message: "⚠️ Êtes-vous sûr de vouloir remettre à zéro TOUTES les évaluations de tous les membres ?\nCette action est irréversible et recommandée uniquement pour démarrer une nouvelle saison (remise à zéro des compteurs).",
-      confirmText: "Oui, réinitialiser les compteurs",
-      cancelText: "Annuler",
-      variant: "danger"
-    });
-    if (!isOk) return;
-    
-    setLoadingData(true);
-    try {
-      const batchEvals = usersData.map(async (u) => {
-        const docRef = doc(db, 'users', u.id, 'parcours', groupId);
-        await setDoc(docRef, { evaluations: {} }, { merge: true });
-      });
-      await Promise.all(batchEvals);
-      
-      const emptyEvals = {};
-      usersData.forEach(u => emptyEvals[u.id] = {});
-      setEvaluationsMap(emptyEvals);
-      
-      alert(t('mestre.pedagogy.allEvalsResetSuccess'));
-    } catch (e) {
-      console.error(e);
-      alert(t('mestre.pedagogy.errResettingEvals'));
-    } finally {
-      setLoadingData(false);
-    }
-  };
-
-  // Détecter combien d'éléments de test E2E subsistent encore dans la base de données
-  const detectedE2EItems = useMemo(() => {
-    const list = [];
-    (sequencerRhythms || []).forEach(r => {
-      if (isTestOrE2ESequence(r)) list.push({ ...r, source: 'sequencer' });
-    });
-    (rhythmMetaList || []).forEach(m => {
-      if (isTestOrE2ESequence(m)) list.push({ ...m, source: 'rhythmMetadata' });
-    });
-    Object.entries(evaluationsMap).forEach(([uid, uEvals]) => {
-      Object.keys(uEvals || {}).forEach(k => {
-        if (isTestOrE2ESequence({ id: k, title: k })) {
-          list.push({ id: k, titre: k, uid, source: 'parcours' });
-        }
-      });
-    });
-    return list;
-  }, [sequencerRhythms, rhythmMetaList, evaluationsMap]);
-
-  // Purge complète et définitive des séquences, motifs, presets et évaluations de test E2E
-  const handlePurgeE2ETests = async () => {
-    const ok = await confirm({
-      title: "Purger les données de test E2E ?",
-      message: "Cette action va supprimer définitivement de Firestore tous les motifs, sections, presets et évaluations créés lors des tests automatisés (E2E). Les vrais morceaux et adhérents resteront intacts.",
-      confirmText: "Purger définitivement",
-      cancelText: "Annuler",
-      variant: "danger"
-    });
+    const ok = await confirm({ title: 'Remise à zéro annuelle', message: '⚠️ Remettre à zéro toutes les évaluations des membres ?', confirmText: 'Oui, réinitialiser', cancelText: 'Annuler', variant: 'danger' });
     if (!ok) return;
-
-    setPurgingE2E(true);
-    let deletedCount = 0;
-
-    try {
-      // 1. Suppression dans les collections du séquenceur (patterns, sections, presets, audio_masters)
-      const seqCollections = ['patterns', 'sections', 'presets', 'audio_masters'];
-      for (const colName of seqCollections) {
-        try {
-          const snap = await getDocs(collection(db, colName));
-          for (const d of snap.docs) {
-            const data = d.data();
-            if (isTestOrE2ESequence({ id: d.id, ...data })) {
-              await deleteDoc(d.ref);
-              deletedCount++;
-            }
-          }
-        } catch (e) {
-          console.warn(`Purge E2E non critique sur ${colName}:`, e);
-        }
-      }
-
-      // 2. Suppression dans rhythmMetadata de l'association
-      try {
-        const metaSnap = await getDocs(collection(db, 'associations', groupId, 'rhythmMetadata'));
-        for (const d of metaSnap.docs) {
-          const data = d.data();
-          if (isTestOrE2ESequence({ id: d.id, ...data })) {
-            await deleteDoc(d.ref);
-            deletedCount++;
-          }
-        }
-      } catch (e) {
-        console.warn("Purge E2E sur rhythmMetadata:", e);
-      }
-
-      // 3. Nettoyage des évaluations et révisions de test chez les adhérents
-      for (const u of usersData) {
-        try {
-          const parcoursRef = doc(db, 'users', u.id, 'parcours', groupId);
-          const pSnap = await getDoc(parcoursRef);
-          if (pSnap.exists()) {
-            const pData = pSnap.data();
-            let changed = false;
-            const newEvals = { ...(pData.evaluations || {}) };
-            const newRevs = { ...(pData.revisionsDemandees || {}) };
-
-            Object.keys(newEvals).forEach(k => {
-              if (isTestOrE2ESequence({ id: k, title: k })) {
-                delete newEvals[k];
-                changed = true;
-                deletedCount++;
-              }
-            });
-
-            Object.keys(newRevs).forEach(k => {
-              if (isTestOrE2ESequence({ id: k, title: k })) {
-                delete newRevs[k];
-                changed = true;
-              }
-            });
-
-            if (changed) {
-              await setDoc(parcoursRef, {
-                ...pData,
-                evaluations: newEvals,
-                revisionsDemandees: newRevs
-              });
-            }
-          }
-        } catch (e) {
-          console.warn(`Purge E2E sur parcours utilisateur ${u.id}:`, e);
-        }
-      }
-
-      setPurgeSuccessMessage(`${deletedCount} élément(s) de test E2E supprimé(s) définitivement de la base !`);
-      setTimeout(() => setPurgeSuccessMessage(null), 6000);
-      setRefreshTrigger(v => v + 1);
-    } catch (err) {
-      console.error("Erreur lors de la purge E2E :", err);
-      alert(t('mestre.pedagogy.errDeletingTestData'));
-    } finally {
-      setPurgingE2E(false);
-    }
+    setLoadingData(true);
+    try { setEvaluationsMap(await resetAllGroupEvaluations({ groupId, usersData })); } finally { setLoadingData(false); }
   };
 
-  if (!isAuthorized) {
-    return (
-      <div className="p-8 text-center text-xs font-black uppercase text-cordel-rouge">
-        {t('mestre.pedagogy.accessRestrictedMestrePedagogy')}
-      </div>
-    );
-  }
+  const handlePurgeE2ETests = async () => {
+    const ok = await confirm({ title: 'Purger les données E2E ?', message: 'Supprimer définitivement les séquences et évaluations de test E2E ?', confirmText: 'Purger', cancelText: 'Annuler', variant: 'danger' });
+    if (!ok) return;
+    setPurgingE2E(true);
+    try { await purgeE2ETestData({ groupId, usersData }); setRefreshTrigger((v) => v + 1); } finally { setPurgingE2E(false); }
+  };
 
-  const isLoading = loadingData || loadingSequencer;
+  if (!isAuthorized) return <div className="p-8 text-center text-xs font-black uppercase text-cordel-rouge">{t('mestre.pedagogy.accessRestrictedMestrePedagogy')}</div>;
+
+  const tabs = [
+    { id: 'percussion', icon: '🥁', label: t('mestre.pedagogy.disciplinePercussion') },
+    { id: 'danse', icon: '💃', label: t('pedagogy.tabDanse') },
+    { id: 'toadas', icon: '📜', label: t('mestre.pedagogy.disciplineChantsToadas') },
+    { id: 'entrainement', icon: '⚡', label: `${t('mestre.pedagogy.disciplineTrainingsCount')}${resolvedTrainings.length})` }
+  ];
 
   return (
-    <div className="flex flex-col gap-6 w-full max-w-none text-left select-none py-4 force-light-theme relative">
-      
-      {/* ========================================================================= */}
-      {/* EN-TÊTE DU COCKPIT                                                        */}
-      {/* ========================================================================= */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b-2 border-dashed border-cordel-master-dark/20 pb-3">
+    <div className="flex flex-col gap-5 w-full max-w-none text-left select-none py-4 force-light-theme relative">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 border-b-2 border-dashed border-cordel-master-dark/20 pb-3">
         <div>
-          <h1 className="text-3xl md:text-4xl font-heading tracking-widest text-cordel-wood uppercase">
-            📊 {t('pedagogy.dashboardTitle')}
-          </h1>
-          <p className="text-xs md:text-sm text-cordel-master-dark opacity-80 mt-1">
-            {t('pedagogy.hotPointsNotice')}
-          </p>
+          <h1 className="text-3xl md:text-4xl font-heading tracking-widest text-cordel-wood uppercase">📊 {t('pedagogy.dashboardTitle')}</h1>
+          <p className="text-xs md:text-sm text-cordel-master-dark opacity-80 mt-1">{t('pedagogy.hotPointsNotice')}</p>
         </div>
-        {pinnedSuccessItem && (
-          <div className="animate-fadeIn bg-[var(--color-cordel-vert,#2d6a4f)] text-white text-[11px] font-black uppercase px-3 py-1.5 rounded-[4px_6px_3px_5px] border border-encre-noire shadow-xs flex items-center gap-1.5">
-            <span>✓</span>
-            <span>{t('mestre.pedagogy.pinnedColon')} {pinnedSuccessItem}</span>
-          </div>
-        )}
-        {programDirectSuccess && (
-          <div className="animate-fadeIn bg-[var(--color-cordel-vert,#2d6a4f)] text-white text-[11px] font-black uppercase px-3 py-1.5 rounded-[4px_6px_3px_5px] border border-encre-noire shadow-xs flex items-center gap-1.5">
-            <span>⚡</span>
-            <span>{programDirectSuccess}</span>
+        {(pinnedSuccessItem || programDirectSuccess) && (
+          <div className="bg-[var(--color-cordel-vert)] text-white text-[11px] font-black uppercase px-3 py-1.5 rounded border border-encre-noire">
+            ✓ {pinnedSuccessItem ? `${t('mestre.pedagogy.pinnedColon')} ${pinnedSuccessItem}` : programDirectSuccess}
           </div>
         )}
       </div>
 
-      {/* Alerte et action de nettoyage des données de test E2E */}
-      {detectedE2EItems.length > 0 && (
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 bg-[var(--color-cordel-ocre,#c05621)]/10 border-2 border-dashed border-[var(--color-cordel-ocre,#c05621)]/50 rounded-[4px_6px_3px_5px] text-xs font-bold text-[var(--color-cordel-ocre,#c05621)] shadow-xs">
-          <div className="flex items-center gap-2">
-            <span className="text-base">🧹</span>
-            <span>
-              <strong>{detectedE2EItems.length} {t('mestre.pedagogy.e2eElementsDetected')}</strong> {t('mestre.pedagogy.e2eSequencesHiddenNotice')}
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={handlePurgeE2ETests}
-            disabled={purgingE2E}
-            className="shrink-0 px-3.5 py-1.5 bg-[var(--color-cordel-rouge,#8b2a1a)] text-white text-[10px] font-black uppercase tracking-wider rounded border border-encre-noire shadow-xs hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
-            title={t('mestre.pedagogy.deleteE2eArtifactsTitle')}
-          >
-            <span>{purgingE2E ? t('pedagogy.admin.purgeEnCours') : t('pedagogy.admin.purgerDeLaBase')}</span>
-          </button>
-        </div>
-      )}
+      {/* Zone 1 : ⚠️ Top 3 des Points Chauds */}
+      <MestreHotPointsBanner hotPoints={hotPoints} isLoading={isLoading} onProgramDirect={setItemToProgramDirect} onPinNote={handlePinNote} />
 
-      {purgeSuccessMessage && (
-        <div className="animate-fadeIn bg-[var(--color-cordel-vert,#2d6a4f)] text-white text-xs font-black uppercase px-4 py-2.5 rounded-[4px_6px_3px_5px] border border-encre-noire shadow-xs flex items-center gap-2">
-          <span>✓</span>
-          <span>{purgeSuccessMessage}</span>
-        </div>
-      )}
+      {/* Barre synthétique d'une seule ligne pour les 3 défis */}
+      <MestreChallengesCompactBar metrics={troupeChallengeMetrics} pieces={repertoire} profileData={profileData} groupId={groupId} />
 
-      {/* ========================================================================= */}
-      {/* ZONE 1 : BANDEAU SYNTHÈSE DES POINTS CHAUDS (< 60%)                       */}
-      {/* ========================================================================= */}
-      <section aria-label={t('mestre.pedagogy.hotspotsAriaLabel')}>
-        <CordelCard variant="default" className="p-4 bg-[#fdfaf2] border-2 border-encre-noire shadow-[2px_3px_0px_0px_#181716]">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-3 pb-2 border-b border-dashed border-cordel-master-dark/20">
-            <h2 className="text-xs md:text-sm font-black uppercase tracking-wider text-cordel-wood flex items-center gap-2">
-              <span>⚠️</span>
-              <span>{t('pedagogy.hotPointsTitle')}</span>
-            </h2>
-            <span className="text-[10px] text-encre-noire/60 font-semibold">
-              {t('pedagogy.suggestedForNextRehearsal')}
-            </span>
-          </div>
-
-          {isLoading ? (
-            <div className="text-center py-4 text-xs font-bold text-cordel-master-dark/50 animate-pulse">
-              {t('mestre.pedagogy.analyzingHotspots')}
-            </div>
-          ) : hotPoints.length === 0 ? (
-            <div className="p-3 bg-[var(--color-cordel-vert,#2d6a4f)]/10 border border-[var(--color-cordel-vert,#2d6a4f)]/30 rounded text-center text-xs font-black text-[var(--color-cordel-vert,#2d6a4f)]">
-              {t('mestre.pedagogy.noCriticalHotspotsNotice')}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {hotPoints.map((item, idx) => (
-                <div 
-                  key={item.id} 
-                  className="p-3 rounded bg-[var(--color-cordel-rouge,#8b2a1a)]/5 border-l-4 border-l-[var(--color-cordel-rouge,#8b2a1a)] border border-encre-noire/15 flex flex-col justify-between gap-2 shadow-xs"
-                >
-                  <div className="flex flex-col gap-1">
-                    <div className="flex justify-between items-center">
-                      <span className="text-[9px] font-black uppercase tracking-wider text-[var(--color-cordel-rouge,#8b2a1a)]">
-                        {t('mestre.pedagogy.priorityPrefix')}{idx + 1}
-                      </span>
-                      <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-[var(--color-cordel-rouge,#8b2a1a)]/15 text-[var(--color-cordel-rouge,#8b2a1a)]">
-                        {item.pct}%
-                      </span>
-                    </div>
-                    <h3 className="font-extrabold text-xs text-encre-noire leading-tight">
-                      {item.titre}
-                    </h3>
-                    <span className="text-[10px] font-bold text-encre-noire/70">
-                      {item.discipline}
-                    </span>
-                    <span className="text-[9px] text-encre-noire/50">
-                      {item.detail}
-                    </span>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-1.5 mt-2 pt-2 border-t border-dashed border-encre-noire/15">
-                    <button
-                      type="button"
-                      onClick={() => setItemToProgramDirect(item)}
-                      className="text-[9px] font-black uppercase tracking-wider px-2 py-1 bg-[var(--color-cordel-vert,#2d6a4f)] text-white border border-[#1b4332] rounded hover:brightness-110 active:scale-95 transition-all flex items-center gap-1 cursor-pointer shadow-xs"
-                      title={t('mestre.pedagogy.programInNextRehearsalTitle')}
-                    >
-                      <span>⚡</span>
-                      <span>{t('pedagogy.btnProgramRehearsal')}</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handlePinNote(item.titre, item.discipline, item.requestCount || 0)}
-                      className="text-[9px] font-black uppercase tracking-wider px-2 py-1 bg-white text-encre-noire border border-encre-noire/30 rounded hover:bg-neutral-100 active:scale-95 transition-all flex items-center gap-1 cursor-pointer shadow-xs"
-                      title={t('mestre.pedagogy.pinInNotepadTitle')}
-                    >
-                      <span>📌</span>
-                      <span>{t('pedagogy.btnPinToNotepad')}</span>
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CordelCard>
-      </section>
-
-      {/* ========================================================================= */}
-      {/* ENCART COMPACT : RÉSULTATS AUX DÉFIS DE LA TROUPE                          */}
-      {/* ========================================================================= */}
-      <section aria-label={t('mestre.pedagogy.challengesResultsAriaLabel')}>
-        <DefisSummaryCard
-          metrics={troupeChallengeMetrics}
-          pieces={repertoire}
-          profileData={profileData}
-          groupId={groupId}
-        />
-      </section>
-
-      {/* ========================================================================= */}
-      {/* ZONE 2 : SÉLECTEUR DE DISCIPLINE & MATRICES                               */}
-      {/* ========================================================================= */}
+      {/* Zone 2 : Sélecteur de discipline & Matrices */}
       <section aria-label={t('mestre.pedagogy.fluencyMatricesAriaLabel')} className="flex flex-col gap-4">
-        
-        {/* Barre de navigation des 3 matrices */}
-        <div className="flex border-b-2 border-dashed border-cordel-master-dark/30 gap-2 overflow-x-auto select-none pt-2">
-          <button
-            type="button"
-            onClick={() => setActiveAnalyseTab('percussion')}
-            className={`px-5 py-2.5 text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all cursor-pointer flex items-center gap-2 ${
-              activeAnalyseTab === 'percussion' 
-                ? 'text-cordel-wood border-b-4 border-cordel-wood bg-cordel-wood/5' 
-                : 'text-cordel-master-dark/60 hover:text-cordel-master-dark hover:bg-encre-noire/5'
-            }`}
-          >
-            <span>🥁</span>
-            <span>{t('mestre.pedagogy.disciplinePercussion')}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveAnalyseTab('danse')}
-            className={`px-5 py-2.5 text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all cursor-pointer flex items-center gap-2 ${
-              activeAnalyseTab === 'danse' 
-                ? 'text-cordel-wood border-b-4 border-cordel-wood bg-cordel-wood/5' 
-                : 'text-cordel-master-dark/60 hover:text-cordel-master-dark hover:bg-encre-noire/5'
-            }`}
-          >
-            <span>💃</span>
-            <span>{t('pedagogy.tabDanse')}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveAnalyseTab('toadas')}
-            className={`px-5 py-2.5 text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all cursor-pointer flex items-center gap-2 ${
-              activeAnalyseTab === 'toadas' 
-                ? 'text-cordel-wood border-b-4 border-cordel-wood bg-cordel-wood/5' 
-                : 'text-cordel-master-dark/60 hover:text-cordel-master-dark hover:bg-encre-noire/5'
-            }`}
-          >
-            <span>📜</span>
-            <span>{t('mestre.pedagogy.disciplineChantsToadas')}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveAnalyseTab('entrainement')}
-            className={`px-5 py-2.5 text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all cursor-pointer flex items-center gap-2 ${
-              activeAnalyseTab === 'entrainement' 
-                ? 'text-cordel-wood border-b-4 border-cordel-wood bg-cordel-wood/5' 
-                : 'text-cordel-master-dark/60 hover:text-cordel-master-dark hover:bg-encre-noire/5'
-            }`}
-          >
-            <span>⚡</span>
-            <span>{t('mestre.pedagogy.disciplineTrainingsCount')}{resolvedTrainings.length})</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveAnalyseTab('admin')}
-            className={`px-4 py-2.5 text-xs font-extrabold uppercase tracking-widest whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ml-auto ${
-              activeAnalyseTab === 'admin' 
-                ? 'text-cordel-rouge border-b-4 border-cordel-rouge bg-cordel-rouge/5' 
-                : 'text-cordel-master-dark/40 hover:text-cordel-rouge'
-            }`}
-            title={t('mestre.pedagogy.annualAdminTitle')}
-          >
-            <span>⚙️</span>
-            <span>{t('mestre.pedagogy.seasonWord')}</span>
+        <div className="flex border-b-2 border-dashed border-cordel-master-dark/30 gap-2 overflow-x-auto select-none pt-1">
+          {tabs.map((tb) => (
+            <button key={tb.id} type="button" onClick={() => setActiveAnalyseTab(tb.id)} className={`px-4 py-2 text-xs font-black uppercase tracking-widest whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${activeAnalyseTab === tb.id ? 'text-cordel-wood border-b-4 border-cordel-wood bg-cordel-wood/5' : 'text-cordel-master-dark/60 hover:text-cordel-master-dark'}`}>
+              <span>{tb.icon}</span><span>{tb.label}</span>
+            </button>
+          ))}
+          <button type="button" onClick={() => setActiveAnalyseTab('admin')} className={`px-4 py-2 text-xs font-extrabold uppercase tracking-widest whitespace-nowrap cursor-pointer flex items-center gap-1.5 ml-auto ${activeAnalyseTab === 'admin' ? 'text-cordel-rouge border-b-4 border-cordel-rouge' : 'text-cordel-master-dark/40'}`}>
+            <span>⚙️</span><span>{t('mestre.pedagogy.seasonWord')}</span>
           </button>
         </div>
 
-        {isLoading ? (
-          <div className="text-center p-12 opacity-50 animate-pulse font-black uppercase text-xs">
-            {t('mestre.pedagogy.calculatingMatrices')}
-          </div>
-        ) : (
+        {!isLoading && (
           <div className="flex flex-col gap-6 w-full">
-
-            {/* VUE 1 : SYNTHÈSE PERCUSSION PAR MORCEAU DE SAISON */}
-            {activeAnalyseTab === 'percussion' && (
-              <PercussionRepertoireAnalytics
-                repertoire={repertoire}
-                percuUsers={percuUsers}
-                evaluationsMap={evaluationsMap}
-                userAisanceMap={userAisanceMap}
-                resolvedTrainings={resolvedTrainings}
-                revisionsCountMap={revisionsCountMap}
-                onProgramDirect={(piece) => setItemToProgramDirect({ titre: piece.titre, discipline: '🥁 Percussion', id: piece.id })}
-                onPinNote={handlePinNote}
-              />
-            )}
-
-            {/* VUE 2 : SYNTHÈSE DANSE BRANCHÉE STRICTEMENT SUR LES ÉLÉMENTS RÉELS */}
-            {activeAnalyseTab === 'danse' && (
-              <DanseChoregraphieAnalytics
-                danseUsers={danseUsers}
-                repertoire={repertoire}
-                steps={dancadorSteps}
-                choreographies={dancadorChoreos}
-                evaluationsMap={evaluationsMap}
-                revisionsCountMap={revisionsCountMap}
-                onProgramDirect={setItemToProgramDirect}
-                onPinNote={handlePinNote}
-              />
-            )}
-
-            {/* VUE 3 : CHANTS & TOADAS (AVEC CALCUL HYBRIDE ET ALERTES) */}
-            {activeAnalyseTab === 'toadas' && (
-              <MestreToadasAnalytics 
-                profileData={profileData} 
-                allSongs={songs} 
-                usersData={usersData}
-                evaluationsMap={evaluationsMap}
-                revisionsCountMap={revisionsCountMap}
-                onPinNote={handlePinNote}
-              />
-            )}
-
-            {/* VUE : SUIVI DES PALIERS D'ENTRAÎNEMENT (DYNAMIQUE MACRO TROUPE) */}
-            {activeAnalyseTab === 'entrainement' && (
-              <EntrainementMacroAnalytics
-                usersData={usersData}
-                resolvedTrainings={resolvedTrainings}
-                userAisanceMap={userAisanceMap}
-                evaluationsMap={evaluationsMap}
-                pupitres={pupitres}
-              />
-            )}
-
-            {/* VUE 4 : ADMINISTRATION SAISON */}
-            {activeAnalyseTab === 'admin' && (
-              <div className="flex flex-col gap-6">
-                <CordelCard variant="default" className="p-8 border-cordel-rouge/30 bg-cordel-rouge/5">
-                  <h3 className="text-lg font-black uppercase tracking-wider text-cordel-rouge mb-3 flex items-center gap-2">
-                    <span>⚠️</span>
-                    <span>{t('mestre.pedagogy.annualResetHeading')}</span>
-                  </h3>
-                  <p className="text-xs md:text-sm font-bold text-encre-noire/80 mb-6 leading-relaxed">
-                    {t('mestre.pedagogy.annualResetDesc')}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={handleResetAllEvaluations}
-                    className="px-6 py-3 bg-[var(--color-cordel-rouge,#8b2a1a)] text-white font-black uppercase tracking-widest rounded shadow hover:brightness-110 active:scale-95 transition-all cursor-pointer"
-                  >
-                    {t('mestre.pedagogy.btnResetCounters')}
-                  </button>
-                </CordelCard>
-
-                <CordelCard variant="default" className="p-8 border-[var(--color-cordel-ocre,#c05621)]/30 bg-[var(--color-cordel-ocre,#c05621)]/5">
-                  <h3 className="text-lg font-black uppercase tracking-wider text-[var(--color-cordel-ocre,#c05621)] mb-3 flex items-center gap-2">
-                    <span>🧹</span>
-                    <span>{t('mestre.pedagogy.cleanupE2eHeading')}</span>
-                  </h3>
-                  <p className="text-xs md:text-sm font-bold text-encre-noire/80 mb-6 leading-relaxed">
-                    {t('mestre.pedagogy.cleanupE2eDesc')}
-                  </p>
-                  <div className="flex items-center gap-4">
-                    <button
-                      type="button"
-                      onClick={handlePurgeE2ETests}
-                      disabled={purgingE2E}
-                      className="px-6 py-3 bg-[var(--color-cordel-rouge,#8b2a1a)] text-white font-black uppercase tracking-widest rounded shadow hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center gap-2"
-                    >
-                      <span>{purgingE2E ? t('pedagogy.admin.purgeEnCours') : t('pedagogy.admin.purgerLesArtefactsE2e')}</span>
-                    </button>
-                    <span className="text-xs font-bold text-encre-noire/60">
-                      {detectedE2EItems.length} {t('mestre.pedagogy.testElementsCountLabel')}
-                    </span>
-                  </div>
-                </CordelCard>
-              </div>
-            )}
-
+            {activeAnalyseTab === 'percussion' && <PercussionRepertoireAnalytics repertoire={repertoire} percuUsers={percuUsers} evaluationsMap={evaluationsMap} userAisanceMap={userAisanceMap} resolvedTrainings={resolvedTrainings} revisionsCountMap={revisionsCountMap} onProgramDirect={(p) => setItemToProgramDirect({ titre: p.titre, discipline: '🥁 Percussion', id: p.id })} onPinNote={handlePinNote} />}
+            {activeAnalyseTab === 'danse' && <DanseChoregraphieAnalytics danseUsers={danseUsers} repertoire={repertoire} steps={dancadorSteps} choreographies={dancadorChoreos} evaluationsMap={evaluationsMap} revisionsCountMap={revisionsCountMap} onProgramDirect={setItemToProgramDirect} onPinNote={handlePinNote} />}
+            {activeAnalyseTab === 'toadas' && <MestreToadasAnalytics profileData={profileData} allSongs={songs} repertoire={repertoire} usersData={usersData} evaluationsMap={evaluationsMap} piecesProgressMap={piecesProgressMap} revisionsCountMap={revisionsCountMap} onPinNote={handlePinNote} />}
+            {activeAnalyseTab === 'entrainement' && <EntrainementMacroAnalytics usersData={usersData} resolvedTrainings={resolvedTrainings} userAisanceMap={userAisanceMap} evaluationsMap={evaluationsMap} pupitres={pupitres} />}
+            {activeAnalyseTab === 'admin' && <MestreSeasonAdminTab onResetAllEvaluations={handleResetAllEvaluations} onPurgeE2ETests={handlePurgeE2ETests} purgingE2E={purgingE2E} detectedE2ECount={detectedE2EItems.length} />}
           </div>
         )}
       </section>
 
-      {/* ========================================================================= */}
-      {/* ZONE 3 : BLOC-NOTES PERSISTANT & PROGRAMMATION VERS L'AGENDA               */}
-      {/* ========================================================================= */}
-      <section aria-label={t('mestre.pedagogy.notepadAriaLabel')} className="w-full mt-4">
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between pb-1">
-            <h2 className="text-sm font-black uppercase tracking-widest text-cordel-wood flex items-center gap-2">
-              <span>📓</span>
-              <span>{t('mestre.pedagogy.notepadHeading')}</span>
-            </h2>
-            <span className="text-[10px] text-encre-noire/60 font-semibold">
-              {t('mestre.pedagogy.notepadSubtitle')}
-            </span>
-          </div>
-
-          <MestrePedagogyNotepad groupId={groupId} />
-        </div>
-      </section>
-
-      {/* Modale d'action rapide : programmer directement un point chaud en répétition */}
-      {itemToProgramDirect && (
-        <ProgramRehearsalModal
-          isOpen={Boolean(itemToProgramDirect)}
-          onClose={() => setItemToProgramDirect(null)}
-          groupId={groupId}
-          item={itemToProgramDirect}
-          onSuccess={(setlistItem, ev) => {
-            const evName = ev ? (ev.titre || ev.title || 'la répétition') : 'la répétition';
-            setProgramDirectSuccess(`« ${setlistItem.titre} » ajouté au fil conducteur de ${evName} !`);
-            setTimeout(() => setProgramDirectSuccess(null), 4000);
-          }}
-        />
-      )}
-
+      <MestrePedagogyNotepad groupId={groupId} />
+      {itemToProgramDirect && <ProgramRehearsalModal isOpen onClose={() => setItemToProgramDirect(null)} groupId={groupId} item={itemToProgramDirect} onSuccess={(setlistItem) => { setProgramDirectSuccess(`« ${setlistItem.titre} » programmé !`); setTimeout(() => setProgramDirectSuccess(null), 4000); }} />}
     </div>
   );
 }

@@ -160,7 +160,9 @@ const testScripts = [
   'scripts/test_report_validators_college.mjs',
   'scripts/test_mobile_viewport_audit.mjs',
   'scripts/test_mestre_vocal_synthesis.mjs',
-  'scripts/test_toada_measure_editor_and_serializer.mjs'
+  'scripts/test_toada_measure_editor_and_serializer.mjs',
+  'scripts/test_mission5_cadavre_dancador_overrides.mjs',
+  'scripts/test_push_contract_and_diagnostics.mjs'
 ];
 
 console.log("===============================================================");

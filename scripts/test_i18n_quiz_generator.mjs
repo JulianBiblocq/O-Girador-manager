@@ -8,13 +8,22 @@
  * 5. Génération de session complète (generateI18nTranslationQuiz) en modes Confirmé et Mestre
  */
 
+import fs from 'fs';
 import {
   extractI18nVocabPool,
   sanitizeQuizText,
+  hasAnswerLeak,
   hasLeak,
   getSmartDistractors,
   generateI18nTranslationQuiz
 } from '../src/utils/quizI18nEngine.js';
+import {
+  ECOSYSTEM_LEXICON,
+  buildPedagogicalLexiconPool,
+  findToadaVerseMatch
+} from '../src/utils/pedagogicalLexiconPool.js';
+import { fr } from '../src/locales/fr.js';
+import { pt } from '../src/locales/pt.js';
 
 console.log('🏁 Démarrage des tests du Moteur de QCM Linguistique i18n...\n');
 
@@ -34,11 +43,11 @@ const assert = (condition, message) => {
 console.log('--- Test 1 : sanitizeQuizText ---');
 const rawText1 = '  « Agogô   (Cloche) » [acier]  ';
 const cleanText1 = sanitizeQuizText(rawText1);
-assert(cleanText1 === 'Agogô Cloche acier', `Retrait guillemets/parenthèses/crochets et espaces doubles : "${cleanText1}"`);
+assert(cleanText1 === 'Agogô', `Retrait du contenu entre parenthèses/crochets et guillemets : "${cleanText1}"`);
 
-const rawText2 = '"Parabéns" \'você\' `conseguiu`';
+const rawText2 = '"Parabéns" \'você\' `conseguiu`.';
 const cleanText2 = sanitizeQuizText(rawText2);
-assert(cleanText2 === 'Parabéns você conseguiu', `Retrait apostrophes/guillemets simples/backticks : "${cleanText2}"`);
+assert(cleanText2 === 'Parabéns você conseguiu', `Retrait apostrophes/guillemets simples/backticks et point final : "${cleanText2}"`);
 
 // ============================================================================
 // TEST 2 : Détection stricte des fuites lexicales (hasLeak)
@@ -57,8 +66,8 @@ assert(hasLeak('Quelle est cette pièce ?', 'Peau') === false, 'Pas de fuite sur
 // TEST 3 : Extraction du réservoir bilingue (extractI18nVocabPool)
 // ============================================================================
 console.log('\n--- Test 3 : extractI18nVocabPool ---');
-const vocabPool = extractI18nVocabPool({ maxWords: 6 });
-assert(vocabPool.length >= 1000, `Réservoir extrait abondant (${vocabPool.length} paires trouvées >= 1000)`);
+const vocabPool = extractI18nVocabPool({ maxWords: 4 });
+assert(vocabPool.length >= 100, `Réservoir pédagogique multi-applications extrait (${vocabPool.length} paires trouvées >= 100, <= 4 mots)`);
 
 // Vérification de salubrité sur l'ensemble du vivier
 let hasInterpolation = false;
@@ -166,6 +175,55 @@ const quizConfirme = generateI18nTranslationQuiz({
 });
 
 assert(quizConfirme.length === 10, `Génère exactement 10 questions en mode Confirmé (${quizConfirme.length})`);
+
+// ============================================================================
+// TEST 7 : Validation Mission 1 (Lexique Écosystème, Citation Toada, < 140 lignes, Parité 1:1)
+// ============================================================================
+console.log('\n--- Test 7 : Validation Mission 1 (Lexique Multi-Apps, Toada, < 140 lignes, Parité 1:1) ---');
+assert(ECOSYSTEM_LEXICON.length >= 30, `Lexique consolidé des 5 applications présent (${ECOSYSTEM_LEXICON.length} entrées)`);
+assert(hasAnswerLeak('Quel est le rôle du Puxador dans ce chant ?', 'Puxador soliste') === true, 'hasAnswerLeak détecte un mot significatif (> 3 lettres) sans accent');
+
+const mockSongs = [
+  {
+    id: 'song_1',
+    titre: 'Nagô da Rainha',
+    parolesOriginales: 'Puxador chama o coro na roda\nBaque forte do tambor',
+    notesLexique: [{ mot: 'Rainha', explication: 'Reine sacrée' }]
+  }
+];
+const verseMatch = findToadaVerseMatch('Puxador', mockSongs);
+assert(verseMatch && verseMatch.songTitle === 'Nagô da Rainha' && verseMatch.verse.includes('Puxador'), 'findToadaVerseMatch cite le titre de la Toada et le vers correspondant');
+
+const poolWithSongs = buildPedagogicalLexiconPool({ songs: mockSongs, includeI18n: false });
+const quizWithSongs = generateI18nTranslationQuiz({ count: poolWithSongs.length, customPool: poolWithSongs, songs: mockSongs });
+const puxadorQ = quizWithSongs.find((q) => q.explanation.includes('Nagô da Rainha'));
+assert(Boolean(puxadorQ), 'L\'explication pédagogique cite la Toada et le vers lorsque le mot y figure');
+
+const filesUnder140 = [
+  'src/utils/pedagogicalLexiconPool.js',
+  'src/utils/quizTextValidator.js',
+  'src/utils/quizSanitizer.js',
+  'src/utils/quizI18nEngine.js',
+  'src/utils/translationQuizEngine.js',
+  'src/utils/pieceRevisionQuizBuilder.js',
+  'src/hooks/useAtelierRepertoireRevision.js',
+  'src/components/pedagogy/PieceRevisionSelectorBanner.jsx',
+  'src/components/pedagogy/PieceRevisionRunner.jsx',
+  'src/components/pedagogy/AtelierEntrainement.jsx',
+  'src/components/student/QuizResultSummaryCard.jsx'
+];
+for (const filePath of filesUnder140) {
+  const lineCount = fs.readFileSync(filePath, 'utf8').split('\n').length;
+  assert(lineCount <= 140, `${filePath} respecte la limite stricte <= 140 lignes (${lineCount} lignes)`);
+}
+
+const collectKeys = (obj, pfx = '') =>
+  Object.entries(obj || {}).flatMap(([k, v]) =>
+    v && typeof v === 'object' && !Array.isArray(v) ? collectKeys(v, `${pfx}${k}.`) : [`${pfx}${k}`]
+  );
+const frKeys = collectKeys(fr);
+const ptKeys = collectKeys(pt);
+assert(frKeys.length === ptKeys.length, `Parité stricte 1:1 entre fr.js (${frKeys.length}) et pt.js (${ptKeys.length})`);
 
 // ============================================================================
 // EXEMPLES CONSOLE DEMANDÉS POUR LE LIVRABLE

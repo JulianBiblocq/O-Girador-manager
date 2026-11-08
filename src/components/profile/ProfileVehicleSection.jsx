@@ -97,7 +97,7 @@ export default function ProfileVehicleSection({ formData, handleChange, disabled
             >
               {VEHICLE_TYPES.map((type) => (
                 <option key={type} value={type}>
-                  {type}
+                  {type === 'Break / Ludospace' ? t('userProfile.vehicleTypeBreak') : type}
                 </option>
               ))}
             </select>

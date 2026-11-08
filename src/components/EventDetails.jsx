@@ -1215,7 +1215,7 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
         } : {})
       };
 
-      // Synchronisation atomique par lot (writeBatch) si l'événement fait partie d'un sondage (pollGroupId)
+      // Synchronisation atomique par lot (writeBatch) avec where('groupId', '==', event.groupId) et event.pollGroupId
       if (event.pollGroupId) {
         const syncResult = await syncPollGroupOnSave({
           db,

@@ -44,8 +44,19 @@ export default function PageAccessBadgeIndicator({
         🔓 {t('governance.badgeReservedRoles', { roles: '' }).trim()}
       </span>
       {authorizedTagIds.map(tagId => {
-        // Résolution du libellé selon le tagId, au neutre/homme par défaut
-        const label = formatTagGender(tagId, 'homme', false, tagsDisponibles);
+        // Résolution du libellé selon le tagId, avec traduction localisée pour Président et Secrétaire
+        const rawLabel = formatTagGender(tagId, 'homme', false, tagsDisponibles);
+        const normLabel = String(rawLabel || '')
+          .trim()
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '');
+        const label =
+          normLabel === 'president' || normLabel === 'presidente'
+            ? t('secretariat.rolePresident')
+            : normLabel === 'secretaire' || normLabel === 'secretariat'
+              ? t('secretariat.roleSecretary')
+              : rawLabel;
         
         // Vérifie si l'utilisateur possède cette étiquette exacte (directement ou héritée)
         const hasTag = userTags.some(ut => {

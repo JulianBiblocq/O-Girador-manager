@@ -1,5 +1,6 @@
 import React from 'react';
 import CordelButton from '../../CordelButton';
+import { useTranslation } from '../../LanguageContext';
 
 /**
  * En-tête du Varal de documents affichant le titre de section,
@@ -19,6 +20,8 @@ export default function VaralHeaderBar({
   onOpenGlobalAdd,
   uploadBtnLabel
 }) {
+  const { t } = useTranslation();
+
   return (
     <div className="flex flex-wrap justify-between items-center gap-2 pl-1 pr-1">
       <h3 className="text-xs font-extrabold tracking-wider text-cordel-master-dark opacity-75 uppercase text-left">
@@ -37,7 +40,7 @@ export default function VaralHeaderBar({
             title={showHiddenCords ? "Masquer les cordes vides ou désactivées" : "Afficher les cordes vides ou désactivées pour les éditer ou y déposer un document"}
           >
             <span>👁️</span>
-            <span>Cordes masquées ({hiddenCordsCount})</span>
+            <span>{t('dashboard.hiddenStringsCount', { count: hiddenCordsCount })}</span>
           </button>
         )}
         {!loading && (isAuthorized || canWrite) && !isAdding && poleId !== 'secretariat' && poleId !== 'pedagogie' && (

@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ToadaAudioWitnessField from './ToadaAudioWitnessField';
 import ToadaHeaderMetadataForm from '../toada/ToadaHeaderMetadataForm';
 import ToadaMusicalStructureEditor from '../toada/ToadaMusicalStructureEditor';
 import ToadaChantTabFields from './ToadaChantTabFields';
+import { findSixPresetForTitle } from '../../../utils/toadaSixPresetsSync';
 
 export function formatCantadorLockedTonalite(tonaliteDefaut = '', tonaliteChanteeOrigine = '', transpositionSemitones = undefined) {
   if (!tonaliteDefaut) return '';
@@ -30,6 +31,16 @@ export default function DocumentFormToadaFields({
   const [localActiveTab, setLocalActiveTab] = useState('chant');
   const activeTab = propActiveTab !== undefined ? propActiveTab : localActiveTab;
   const setActiveTab = propSetActiveTab || setLocalActiveTab;
+
+  // Pré-remplissage silencieux des 6 Toadas de référence si rawTxtCode est encore vide
+  useEffect(() => {
+    if (category !== 'Toadas' || (rawTxtCode && String(rawTxtCode).trim())) return;
+    const preset = findSixPresetForTitle(titre);
+    if (!preset) return;
+    if (setRawTxtCode) setRawTxtCode(preset.rawTxtCode);
+    if (setBpmDefaut && !bpmDefaut) setBpmDefaut(preset.bpm);
+    if (setSignature && (!signature || signature === '4/4')) setSignature(preset.signatureRythmique);
+  }, [category, titre, rawTxtCode, bpmDefaut, signature, setRawTxtCode, setBpmDefaut, setSignature]);
 
   return (
     <div className="flex flex-col gap-3 mt-2 border-t-2 border-dashed border-cordel-master-dark/20 pt-4 text-left w-full">

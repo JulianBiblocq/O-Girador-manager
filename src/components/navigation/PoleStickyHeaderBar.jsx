@@ -36,7 +36,7 @@ export default function PoleStickyHeaderBar({
             type="button"
             onClick={() => setIsCommandPaletteOpen(true)}
             className="px-2.5 py-1 min-h-[34px] border-2 border-encre-noire bg-cordel-bg-light hover:bg-white text-encre-noire rounded-[6px_9px_7px_8px] shadow-[1.5px_1.5px_0px_0px_#181716] hover:scale-[1.03] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1.5 transition-all text-xs font-black select-none"
-            title="Recherche rapide (Ctrl + K)"
+            title={t('menu.quickSearchBtn')}
             aria-label="Palette de commande"
           >
             <span>🔍</span>

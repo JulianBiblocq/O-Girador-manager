@@ -104,7 +104,10 @@ export const fr = {
     poleVitrine: "Vitrine",
     tabVitrine: "Vitrine",
     vitrine: "Vitrine",
-    refreshApp: "Actualiser"
+    refreshApp: "Actualiser",
+    techAdminTitle: "Administration technique",
+    btnIntervention: "Intervention",
+    quickSearchBtn: "Recherche rapide (Ctrl + K)"
   },
   login: {
     title: "O Girador",
@@ -219,7 +222,16 @@ export const fr = {
     loadingPage: "Chargement de la page...",
     systemAdmin: "Admin Système",
     birthdaysMonth: "Anniversaires du mois",
-    birthdayOn: "Anniversaire le {day}"
+    birthdayOn: "Anniversaire le {day}",
+    featuredBadge: "À la une",
+    btnCinemaMode: "Mode cinéma",
+    btnExitCinemaMode: "Quitter le mode cinéma",
+    btnEditFeatured: "Modifier",
+    hiddenStringsCount: "Cordes masquées ({{count}})",
+    groupOrderPrefix: "Commande groupée :",
+    btnExpand: "Déplier",
+    btnCollapse: "Replier",
+    btnFilter: "Filtrer"
   },
   trombinoscope: {
     title: "TROMBINOSCOPE",
@@ -411,7 +423,25 @@ export const fr = {
 
     // Boutons d'action bas de page
     btnConnectPc: "Connecter un PC",
-    btnSignOut: "Se déconnecter"
+    btnSignOut: "Se déconnecter",
+    accordionContactTitle: "Coordonnées & Annuaire",
+    statusVisible: "Visible",
+    statusHidden: "Masqué",
+    cityHidden: "Ville masquée",
+    accordionStageHealthTitle: "Scène, Costumes & Santé",
+    tshirtLabel: "T-shirt",
+    statusFit: "Apte",
+    statusUnfit: "Non apte",
+    accordionDietPrefix: "Régime :",
+    accordionVehiclePrefix: "Véhicule :",
+    vehicleTypeBreak: "Break / Ludospace",
+    seatsCount: "{{count}} places",
+    barrelsCount: "~{{count}} fûts",
+    reimbursedPrefix: "Remboursé :",
+    pendingPrefix: "En attente :",
+    btnViewHistoryCount: "Voir l'historique ({{count}})",
+    notificationsStatusLabel: "Notifications : Statut :",
+    btnDiagnostic: "Diagnostic"
   },
   widgetMotMestre: {
     title: "Le Mot du Mestre",
@@ -1542,7 +1572,11 @@ export const fr = {
     tabPrivateMessages: "Messages privés",
     tabGroups: "Groupes",
     btnChannels: "Salons",
-    defaultChannelGeneral: "Général"
+    defaultChannelGeneral: "Général",
+    tabPrivateShort: "Privés",
+    generalDiscussionTitle: "Discussion générale – Tout le groupe",
+    wholeAssociationBadge: "Toute l'association",
+    btnOpenGeneralThread: "Ouvrir le fil général →"
   },
   studioSocial: {
     title: "Studio Réseaux Sociaux",
@@ -2862,10 +2896,12 @@ export const fr = {
     equilibre: "À l'équilibre",
     printHeaderTitle: "Bilan d'Activité & Rapport Moral",
     printSeasonLabel: "Période de référence",
-    emptyData: "Aucune donnée enregistrée sur cette période."
+    emptyData: "Aucune donnée enregistrée sur cette période.",
+    usageBannerTitle: "Adoption numérique & Outils connectés"
   },
   export: {
     catIdentity: "Identité & Contact",
+    pushReachable: "Notifications Push actives",
     catArtistic: "Profil Artistique",
     catRoles: "Rôles & Statuts",
     catTreasury: "Trésorerie & Cotisations",
@@ -3270,6 +3306,13 @@ export const fr = {
     challengeExquisiteCorpseTitle: "Cadavre exquis (Coopération)",
     challengeExquisiteCorpseDesc: "Relais polyrythmique en chaîne et délibération au Conseil de Batterie",
     btnCancelChallenge: "Annuler",
+    pieceRevisionBannerTitle: "Réviser un morceau du Répertoire",
+    pieceRevisionBannerSubtitle: "Sélectionnez un morceau pour réviser sa Toada, ses caractéristiques musicales et ses fiches Culture.",
+    pieceRevisionSelectPlaceholder: "Choisir un morceau du Répertoire...",
+    nextRehearsalBadge: "Prochaine répétition",
+    btnReviseSelectedPiece: "Réviser ce morceau 🎯",
+    btnPracticeCantador: "🎙️ Pratiquer le chant dans Cantador",
+    btnPracticeSequenciador: "🥁 Pratiquer mon pupitre dans Sequenciador",
 
     // --- Pôle Pédagogie : Lot 1 (Espace Élève & Suivi Adhérent) ---
     student: {
@@ -3531,6 +3574,29 @@ export const fr = {
       paliersFermante: "paliers)",
       bpmSeparateur: "BPM •",
       evalueTonAisanceChoregraphique: "Évalue ton aisance chorégraphique sur chacun des rythmes (toadas, pas de base, variations). Les pas du Dançador seront bientôt intégrés ici pour t'entraîner visuellement.",
+      nextRehearsalBannerTitle: "Au programme de la prochaine répétition",
+      nextRehearsalDefaultName: "Prochaine répétition",
+      btnFocusPieceAisance: "Déplier ce morceau dans le carnet",
+      btnReviseThisPiece: "Réviser ce morceau",
+      btnReviseShort: "Réviser",
+      badgeRhythm: "Rythme",
+      badgeToada: "Toada",
+      badgeDance: "Danse",
+      badgeTraining: "Entraînement",
+      btnPracticeCantadorDirect: "Pratiquer dans Cantador",
+      btnSeeChoreography: "Voir la chorégraphie",
+      toastAutoPromotedPratique: "Bravo ! Ton confort sur ce morceau passe automatiquement à « En pratique ».",
+      toastAutoPromotedAlaise: "Bravo ! Tous les paliers validés : ton confort passe automatiquement à « À l'aise ».",
+    },
+
+    vocal: {
+      sectionTitle: "Suivi Vocal & Polyvalence",
+      stageCoro: "1. Je tiens le Chœur (Coro)",
+      stageSimultane: "2. Je chante en jouant / dansant",
+      stagePuxador: "3. Soliste (Puxador)",
+      colCoro: "Chœur (Coro)",
+      colSimultane: "Chanter en jouant/dansant",
+      colPuxadores: "Solistes (Puxadores)",
     },
 
     reflex: {
@@ -3539,6 +3605,19 @@ export const fr = {
       conducteurValideSansFauteStructure: "Conducteur validé sans faute ! Structure parfaitement mémorisée.",
       reinitialiser: "Réinitialiser",
       validerLeConducteur: "Valider le conducteur",
+      signalTrayTitle: "Bac à Signaux",
+      signalTrayHint: "Touchez une case [ ? ] puis un signal du bac (ou glissez-déposez sur PC). Cliquez sur une mesure pour réécouter.",
+      btnReflexChallenge: "Défi Réflexe Temps 1",
+      btnSignalTimeline: "Conducteur des Signaux",
+      reflexCounterLabel: "Réflexes Temps 1 :",
+      timelineValidatedBadge: "Conducteur validé",
+      mestreReflexConfigTitle: "Arbitrage des Signaux & Leurres — Défi Réflexe",
+      mestreReflexConfigBtn: "Arbitrer Défi Réflexe",
+      compactBarBlindTests: "Blind Tests",
+      compactBarReflexes: "Réflexes Temps 1",
+      compactBarTimeline: "Conducteur Signaux",
+      compactBarTestBtn: "Tester",
+      noTimedSignals: "Aucun signal horodaté détecté sur ce morceau dans le Sequenciador.",
       chargementDesSignaux: "Chargement des signaux...",
       attention: "Attention",
       ilNYAPas: "Il n'y a pas assez de signaux configurés avec une image. \n            Il en faut au minimum 4 pour générer un quiz.",
@@ -5045,6 +5124,10 @@ export const fr = {
     kpiPerc: "Perc: {{count}}",
     kpiDanse: "Danse: {{count}}",
     kpiValidation: "Validation: {{count}}",
+    pushFilterReachable: "Notifications Push actives",
+    pushFilterUnreachable: "Sans notification Push",
+    pushReachableBadgeTitle: "Notifications Push actives",
+    pushUnreachableBadgeTitle: "Notifications Push inactives",
 
     // Types d'événements
     eventTypeRepetition: "Répétition",
@@ -5078,6 +5161,23 @@ export const fr = {
     thInstruments: "Instruments",
     badgeMemberMasc: "Adhérent",
     badgeMemberFem: "Adhérente",
+    rolePresident: "Président",
+    roleSecretary: "Secrétaire",
+    reachableActiveMembers: "{{reachable}} / {{total}} membres actifs joignables",
+    btnRegisterMember: "Inscrire un membre",
+    tabActive: "Actifs",
+    tabArchived: "Archivés",
+    tabAll: "Tous",
+    filterAllPush: "Tous (Push)",
+    breadcrumbSecretariat: "Secrétariat",
+    breadcrumbResourcesLinks: "Ressources & Liens",
+    resourcesSharedTitle: "Ressources & Liens partagés",
+    resourcesSharedDesc: "Gérez les chartes d'adhésion, attestations de santé, ainsi que vos espaces de stockage partagés (Drive, Dropbox, Framaspace).",
+    btnBack: "Retour",
+    tabChartersHealth: "Chartes & Santé",
+    tabSharedStorageLinks: "Stockages & Liens partagés",
+    btnChooseFile: "Choisir un fichier",
+    noFileChosen: "Aucun fichier choisi",
   },
 
   workshopMember: {
@@ -6777,6 +6877,7 @@ export const fr = {
         sectionDanse: "💃 Section Danse",
         activerLesCommissionsParDefaut: "🎪 Activer les commissions par défaut",
         inscriptionsDelais: "Inscriptions & Délais",
+        reglesDInscriptionDePresence: "Règles d'inscription & de présence",
         validationObligatoireParUnAdministrateur: "🔒 Validation obligatoire par un administrateur",
         lesInscriptionsDesMembresSont: "Les inscriptions des membres sont placées « En attente » tant qu'un admin ne les a pas confirmées.",
         delaiLimiteDInscriptionAvant: "Délai limite d'inscription (avant l'événement)",
@@ -7054,7 +7155,11 @@ export const fr = {
     scanApplyBtn: "🔍 Lire et appliquer les temps",
     scanningInProgress: "Lecture optique en cours...",
     alsoFillVaralLabel: "Remplir aussi le texte Portugais de la Fiche Varal (sans les temps)",
-    manualModeAccordion: "Mode manuel sans connexion (.txt)"
+    manualModeAccordion: "Mode manuel sans connexion (.txt)",
+    pauseBaqueCardTitle: "Pause du Baque (Chant solo)",
+    pauseBaqueSolo: "Solo sans percussion",
+    pauseBaqueBtn: "Pause Baque",
+    bulkPasteBtn: "Coller par lot"
   },
   navigation: {
     mostradorSubtitle: "Site vitrine public",

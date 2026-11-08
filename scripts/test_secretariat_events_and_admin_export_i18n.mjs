@@ -75,7 +75,11 @@ const adminExportPath = path.join(rootDir, 'src/components/AdminExport.jsx');
 const studioEventsContent = fs.readFileSync(studioEventsPath, 'utf8');
 const eventsDataGridContent = fs.readFileSync(eventsDataGridPath, 'utf8');
 const eventsDataGridRowContent = fs.readFileSync(eventsDataGridRowPath, 'utf8');
-const adminExportContent = fs.readFileSync(adminExportPath, 'utf8');
+const adminExportContent =
+  fs.readFileSync(adminExportPath, 'utf8') +
+  (fs.existsSync(path.join(rootDir, 'src/components/admin/AdminDirectoryFilterBar.jsx'))
+    ? fs.readFileSync(path.join(rootDir, 'src/components/admin/AdminDirectoryFilterBar.jsx'), 'utf8')
+    : '');
 
 // Assertions sur StudioEventsManager.jsx
 assert(studioEventsContent.includes("t('secretariat.eventsManagementTitle')"), 'StudioEventsManager doit utiliser secretariat.eventsManagementTitle');

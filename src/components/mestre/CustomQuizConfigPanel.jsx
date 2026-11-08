@@ -1,63 +1,32 @@
-import React, { useState } from 'react';
-import { useTranslation } from '../LanguageContext';
+// Panneau Mestre de configuration des QCM et surcharges déterministes quizOverrides (<= 140 lignes)
+import React from 'react';
 import { doc, setDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
-import CordelButton from '../CordelButton';
+import CustomQuizQuestionForm from './CustomQuizQuestionForm';
+import { useTranslation } from '../LanguageContext';
+import { buildDeterministicQuizQuestionId } from '../../utils/quizOverrideKeyHelper';
 
 export default function CustomQuizConfigPanel({
-  groupId,
-  selectedItem,          // Object: { id, titre, ... }
-  itemType,              // String: 'rhythm', 'song', 'fiche'
-  isQuizPublished,       // Boolean
-  customQuestions = [],  // Array of questions
-  availableMedia = [],   // Array of { url, fileName, isAudio } for this item
-  onUpdateMetadata,      // Function to trigger a local state refresh in parent
-  allItems = [],         // Array of all items of this type
-  associatedSignalId,    // String: id of the linked signal
-  mestreSignals = []     // Array of available signals
+  groupId, selectedItem, itemType, isQuizPublished, customQuestions = [],
+  availableMedia = [], onUpdateMetadata, allItems = [], associatedSignalId, mestreSignals = [],
 }) {
   const { t } = useTranslation();
-  const [newQuestionText, setNewQuestionText] = useState('');
-  const [newQuestionCorrect, setNewQuestionCorrect] = useState('');
-  const [newQuestionBad1, setNewQuestionBad1] = useState('');
-  const [newQuestionBad2, setNewQuestionBad2] = useState('');
-  const [newQuestionBad3, setNewQuestionBad3] = useState('');
-  const [selectedMediaUrl, setSelectedMediaUrl] = useState('');
-  const [showValidation, setShowValidation] = useState(false);
 
-  const handleGenerateAutoQuestion = () => {
-    let questionText = "Quel est le nom de cet élément ?";
-    if (itemType === 'rhythm') questionText = "Quel est le nom de ce rythme ?";
-    else if (itemType === 'song') questionText = "Quel est le titre de ce chant ?";
-    else if (itemType === 'fiche') questionText = "Quel est le sujet de cette fiche ?";
-
-    const correctAnswer = selectedItem.titre || selectedItem.name || selectedItem.id;
-
-    const otherItems = allItems.filter(item => item.id !== selectedItem.id);
-    const shuffled = [...otherItems].sort(() => 0.5 - Math.random());
-    const bad1 = shuffled[0] ? (shuffled[0].titre || shuffled[0].name || shuffled[0].id) : "Fausse réponse 1";
-    const bad2 = shuffled[1] ? (shuffled[1].titre || shuffled[1].name || shuffled[1].id) : "Fausse réponse 2";
-    const bad3 = shuffled[2] ? (shuffled[2].titre || shuffled[2].name || shuffled[2].id) : "Fausse réponse 3";
-
-    setNewQuestionText(questionText);
-    setNewQuestionCorrect(correctAnswer);
-    setNewQuestionBad1(bad1);
-    setNewQuestionBad2(bad2);
-    setNewQuestionBad3(bad3);
-    if (availableMedia && availableMedia.length > 0) {
-      setSelectedMediaUrl(availableMedia[0].url);
-    }
-  };
+  if (!selectedItem) {
+    return (
+      <div className="text-center p-8 bg-[#fdfaf2] border-2 border-dashed border-encre-noire/20 rounded opacity-60">
+        <p className="text-sm font-bold">{t('mestre.pedagogy.selectItemToConfigureNotice')}</p>
+      </div>
+    );
+  }
 
   const handleTogglePublishQuiz = async () => {
     try {
       if (itemType === 'rhythm') {
-        const metaRef = doc(db, 'associations', groupId, 'rhythmMetadata', selectedItem.id);
-        await setDoc(metaRef, { isQuizPublished: !isQuizPublished }, { merge: true });
+        await setDoc(doc(db, 'associations', groupId, 'rhythmMetadata', selectedItem.id), { isQuizPublished: !isQuizPublished }, { merge: true });
       } else {
-        const docRef = doc(db, 'documents', selectedItem.id);
-        await updateDoc(docRef, { isQuizPublished: !isQuizPublished });
+        await updateDoc(doc(db, 'documents', selectedItem.id), { isQuizPublished: !isQuizPublished });
       }
       onUpdateMetadata(selectedItem.id, 'isQuizPublished', !isQuizPublished);
     } catch (err) {
@@ -69,8 +38,7 @@ export default function CustomQuizConfigPanel({
     const newSignalId = e.target.value;
     try {
       if (itemType === 'rhythm') {
-        const metaRef = doc(db, 'associations', groupId, 'rhythmMetadata', selectedItem.id);
-        await setDoc(metaRef, { associatedSignalId: newSignalId }, { merge: true });
+        await setDoc(doc(db, 'associations', groupId, 'rhythmMetadata', selectedItem.id), { associatedSignalId: newSignalId }, { merge: true });
         onUpdateMetadata(selectedItem.id, 'associatedSignalId', newSignalId);
       }
     } catch (err) {
@@ -78,38 +46,24 @@ export default function CustomQuizConfigPanel({
     }
   };
 
-  const handleAddQuestion = async (e) => {
-    e.preventDefault();
-    if (!newQuestionText.trim() || !newQuestionCorrect.trim() || !newQuestionBad1.trim()) return;
-
-    const newQ = {
-      id: Date.now().toString(),
-      texte: newQuestionText.trim(),
-      bonneReponse: newQuestionCorrect.trim(),
-      mauvaisesReponses: [newQuestionBad1.trim(), newQuestionBad2.trim(), newQuestionBad3.trim()].filter(Boolean),
-      audioUrl: selectedMediaUrl || null
-    };
-
+  const handleAddQuestion = async (newQ, detId) => {
+    const resolvedId = detId || buildDeterministicQuizQuestionId({
+      sourceId: selectedItem.id,
+      category: itemType === 'song' ? 'toada' : (itemType === 'fiche' ? 'culture' : 'repertoire'),
+      targetField: newQ.targetField || 'custom',
+    });
+    const isFieldOverride = newQ.targetField && newQ.targetField !== 'custom';
     try {
       if (itemType === 'rhythm') {
-        const metaRef = doc(db, 'associations', groupId, 'rhythmMetadata', selectedItem.id);
-        await setDoc(metaRef, { customQuestions: arrayUnion(newQ) }, { merge: true });
+        const payload = { customQuestions: arrayUnion(newQ) };
+        if (isFieldOverride) payload[`quizOverrides.${resolvedId}`] = newQ;
+        await setDoc(doc(db, 'associations', groupId, 'rhythmMetadata', selectedItem.id), payload, { merge: true });
       } else {
-        const docRef = doc(db, 'documents', selectedItem.id);
-        await updateDoc(docRef, { customQuestions: arrayUnion(newQ) });
+        const updates = { customQuestions: arrayUnion(newQ) };
+        if (isFieldOverride) updates[`quizOverrides.${resolvedId}`] = newQ;
+        await updateDoc(doc(db, 'documents', selectedItem.id), updates);
       }
-
       onUpdateMetadata(selectedItem.id, 'addQuestion', newQ);
-      
-      setNewQuestionText('');
-      setNewQuestionCorrect('');
-      setNewQuestionBad1('');
-      setNewQuestionBad2('');
-      setNewQuestionBad3('');
-      setSelectedMediaUrl('');
-      
-      setShowValidation(true);
-      setTimeout(() => setShowValidation(false), 3000);
     } catch (err) {
       console.error(err);
     }
@@ -118,11 +72,9 @@ export default function CustomQuizConfigPanel({
   const handleRemoveQuestion = async (question) => {
     try {
       if (itemType === 'rhythm') {
-        const metaRef = doc(db, 'associations', groupId, 'rhythmMetadata', selectedItem.id);
-        await updateDoc(metaRef, { customQuestions: arrayRemove(question) });
+        await updateDoc(doc(db, 'associations', groupId, 'rhythmMetadata', selectedItem.id), { customQuestions: arrayRemove(question) });
       } else {
-        const docRef = doc(db, 'documents', selectedItem.id);
-        await updateDoc(docRef, { customQuestions: arrayRemove(question) });
+        await updateDoc(doc(db, 'documents', selectedItem.id), { customQuestions: arrayRemove(question) });
       }
       onUpdateMetadata(selectedItem.id, 'removeQuestion', question);
     } catch (err) {
@@ -130,28 +82,13 @@ export default function CustomQuizConfigPanel({
     }
   };
 
-  if (!selectedItem) {
-    return (
-      <div className="text-center p-8 bg-[#fdfaf2] border-2 border-dashed border-encre-noire/20 rounded opacity-60">
-        <p className="text-sm font-bold">{t('mestre.pedagogy.selectItemToConfigureNotice')}</p>
-      </div>
-    );
-  }
-
   return (
     <CordelCard variant="default" className="p-5 flex flex-col gap-6 w-full">
       <div className="flex flex-col gap-3">
         <div className="flex justify-between items-center bg-[#fdfaf2] p-3 border-2 border-dashed border-cordel-wood/30 rounded">
-          <span className="text-[10px] font-black uppercase tracking-widest text-cordel-master-dark/80">
-            {t('mestre.pedagogy.studentVisibilityLabel')}
-          </span>
+          <span className="text-[10px] font-black uppercase tracking-widest text-cordel-master-dark/80">{t('mestre.pedagogy.studentVisibilityLabel')}</span>
           <label className="flex items-center gap-2 cursor-pointer">
-            <input 
-              type="checkbox"
-              checked={isQuizPublished || false}
-              onChange={handleTogglePublishQuiz}
-              className="accent-cordel-wood w-4 h-4"
-            />
+            <input type="checkbox" checked={isQuizPublished || false} onChange={handleTogglePublishQuiz} className="accent-cordel-wood w-4 h-4" />
             <span className={`text-xs font-bold ${isQuizPublished ? 'text-[var(--color-cordel-vert)]' : 'text-encre-noire'}`}>
               {isQuizPublished ? t('pedagogy.admin.publie') : t('pedagogy.admin.brouillon')}
             </span>
@@ -160,145 +97,40 @@ export default function CustomQuizConfigPanel({
 
         {itemType === 'rhythm' && (
           <div className="flex justify-between items-center bg-[#fdfaf2] p-3 border-2 border-dashed border-[var(--theme-primary)]/30 rounded mt-1">
-            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--theme-primary)]">
-              {t('mestre.pedagogy.associatedMestreSignalLabel')}
-            </span>
-            <select
-              value={associatedSignalId || ''}
-              onChange={handleUpdateSignal}
-              className="p-1 border-2 border-encre-noire/30 rounded text-xs font-bold bg-white text-encre-noire max-w-[200px]"
-            >
+            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--theme-primary)]">{t('mestre.pedagogy.associatedMestreSignalLabel')}</span>
+            <select value={associatedSignalId || ''} onChange={handleUpdateSignal} className="p-1 border-2 border-encre-noire/30 rounded text-xs font-bold bg-white text-encre-noire max-w-[200px]">
               <option value="">{t('mestre.pedagogy.noSignalOption')}</option>
-              {mestreSignals.map(s => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
+              {mestreSignals.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
           </div>
         )}
-        
+
         <span className="text-[10px] font-black uppercase tracking-widest text-cordel-master-dark/60 mt-2">
           {t('mestre.pedagogy.activeQuestionsForColon')} {selectedItem.titre || selectedItem.name || selectedItem.id}
         </span>
-        
+
         {!(customQuestions?.length > 0) ? (
           <div className="text-center p-6 bg-[#fdfaf2] border border-dashed border-encre-noire/20 rounded">
             <p className="text-xs font-medium opacity-60">{t('mestre.pedagogy.noCustomQuestionsNotice')}</p>
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            {customQuestions.map(q => (
+            {customQuestions.map((q) => (
               <div key={q.id} className="flex flex-col p-3 bg-white border-2 border-encre-noire/15 rounded shadow-sm relative">
                 <span className="text-xs font-bold text-encre-noire mb-1">{q.texte}</span>
-                {q.audioUrl && (
-                  <div className="flex items-center gap-2 mb-2 text-[10px] text-cordel-wood bg-cordel-wood/10 p-1.5 rounded w-fit">
-                    <span>🎵</span> {t('mestre.pedagogy.audioAttachedBadge')}
-                  </div>
-                )}
+                {q.audioUrl && <div className="flex items-center gap-2 mb-2 text-[10px] text-cordel-wood bg-cordel-wood/10 p-1.5 rounded w-fit"><span>🎵</span> {t('mestre.pedagogy.audioAttachedBadge')}</div>}
                 <span className="text-[10px] text-[var(--color-cordel-vert)] font-bold">✓ {q.bonneReponse}</span>
                 <div className="flex flex-wrap gap-1 mt-1">
-                  {q.mauvaisesReponses?.map((mr, i) => (
-                    <span key={i} className="text-[9px] bg-neutral-100 text-encre-noire/60 px-1.5 py-0.5 rounded line-through">
-                      {mr}
-                    </span>
-                  ))}
+                  {q.mauvaisesReponses?.map((mr, i) => <span key={i} className="text-[9px] bg-neutral-100 text-encre-noire/60 px-1.5 py-0.5 rounded line-through">{mr}</span>)}
                 </div>
-                <button 
-                  onClick={() => handleRemoveQuestion(q)}
-                  className="absolute top-2 right-2 text-cordel-master-dark/40 hover:text-cordel-rouge font-black px-2"
-                  title={t('mestre.pedagogy.deleteQuestionTitle')}
-                  type="button"
-                >
-                  ✕
-                </button>
+                <button onClick={() => handleRemoveQuestion(q)} className="absolute top-2 right-2 text-cordel-master-dark/40 hover:text-cordel-rouge font-black px-2" title={t('mestre.pedagogy.deleteQuestionTitle')} type="button">✕</button>
               </div>
             ))}
           </div>
         )}
       </div>
 
-      <form onSubmit={handleAddQuestion} className="flex flex-col gap-3 bg-[#fdfaf2] p-4 rounded border-2 border-encre-noire/10 relative">
-        {showValidation && (
-          <div className="absolute -top-3 right-4 bg-[var(--color-cordel-vert)] text-white text-[10px] font-bold px-3 py-1 rounded shadow-md animate-fadeIn z-10">
-            {t('mestre.pedagogy.questionAddedToast')}
-          </div>
-        )}
-        <div className="flex justify-between items-center mb-1">
-          <span className="text-[10px] font-black uppercase tracking-widest text-cordel-wood">
-            {t('mestre.pedagogy.newQuestionHeading')}
-          </span>
-          {allItems.length > 1 && (
-            <button 
-              type="button" 
-              onClick={handleGenerateAutoQuestion}
-              className="text-[9px] font-bold text-[var(--color-cordel-vert)] bg-[var(--color-cordel-vert)]/10 px-2 py-1 rounded hover:bg-[var(--color-cordel-vert)]/20 transition-colors"
-            >
-              {t('mestre.pedagogy.generateAutoBtn')}
-            </button>
-          )}
-        </div>
-        <input
-          type="text"
-          value={newQuestionText}
-          onChange={(e) => setNewQuestionText(e.target.value)}
-          placeholder={t('mestre.pedagogy.questionPlaceholder')}
-          className="p-2 border-2 border-encre-noire/30 rounded text-xs font-bold"
-          required
-        />
-        
-        {availableMedia && availableMedia.length > 0 && (
-          <div className="flex flex-col gap-1 mt-2">
-            <label className="text-[9px] font-black uppercase text-encre-noire/60">{t('mestre.pedagogy.audioMediaLinkedLabel')}</label>
-            <select
-              value={selectedMediaUrl}
-              onChange={(e) => setSelectedMediaUrl(e.target.value)}
-              className="p-2 border-2 border-encre-noire/30 rounded text-xs font-medium bg-white"
-            >
-              <option value="">{t('mestre.pedagogy.noMediaTextOnlyOption')}</option>
-              {availableMedia.map(m => (
-                <option key={m.url} value={m.url}>
-                  {m.isAudio ? '🎧' : '📄'} {m.fileName}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        <input
-          type="text"
-          value={newQuestionCorrect}
-          onChange={(e) => setNewQuestionCorrect(e.target.value)}
-          placeholder={t('mestre.pedagogy.correctAnswerPlaceholder')}
-          className="p-2 border-2 border-[#2d6a4f]/50 bg-[var(--color-cordel-vert)]/5 rounded text-xs font-bold text-[var(--color-cordel-vert)] mt-2"
-          required
-        />
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          <input
-            type="text"
-            value={newQuestionBad1}
-            onChange={(e) => setNewQuestionBad1(e.target.value)}
-            placeholder={t('mestre.pedagogy.distractor1Placeholder')}
-            className="p-2 border-2 border-encre-noire/20 rounded text-xs font-medium"
-            required
-          />
-          <input
-            type="text"
-            value={newQuestionBad2}
-            onChange={(e) => setNewQuestionBad2(e.target.value)}
-            placeholder={t('mestre.pedagogy.distractor2Placeholder')}
-            className="p-2 border-2 border-encre-noire/20 rounded text-xs font-medium"
-          />
-          <input
-            type="text"
-            value={newQuestionBad3}
-            onChange={(e) => setNewQuestionBad3(e.target.value)}
-            placeholder={t('mestre.pedagogy.distractor3Placeholder')}
-            className="p-2 border-2 border-encre-noire/20 rounded text-xs font-medium"
-          />
-        </div>
-        <CordelButton variant="primary" type="submit" disabled={!newQuestionText.trim() || !newQuestionCorrect.trim() || !newQuestionBad1.trim()} className="text-[10px] self-end mt-2">
-          {t('mestre.pedagogy.addToQuizBtn')}
-        </CordelButton>
-      </form>
+      <CustomQuizQuestionForm selectedItem={selectedItem} itemType={itemType} allItems={allItems} availableMedia={availableMedia} onSubmitQuestion={handleAddQuestion} />
     </CordelCard>
   );
 }

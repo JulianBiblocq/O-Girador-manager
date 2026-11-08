@@ -34,6 +34,50 @@ export function getActiveAgendaFilterSummary({ disciplineFilter, selectedTypeFil
 }
 
 /**
+ * Bouton déclencheur du tiroir de filtres sur Mobile (< 768px) avec bouton de réinitialisation.
+ */
+export function AgendaMobileFilterTrigger({
+  hasActiveFilter,
+  activeFilterCount,
+  isMobileFiltersOpen,
+  onToggle,
+  onReset,
+  t
+}) {
+  return (
+    <div className="flex md:hidden items-center gap-1.5">
+      <button
+        type="button"
+        onClick={onToggle}
+        className={`px-2.5 py-1 rounded-[4px_6px_3px_5px] text-[9.5px] font-black uppercase tracking-wider border cursor-pointer flex items-center gap-1 transition-all ${
+          hasActiveFilter
+            ? 'bg-cordel-wood text-white border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]'
+            : 'bg-cordel-bg-light text-encre-noire border-encre-noire/35 hover:bg-white'
+        }`}
+      >
+        <span>
+          {hasActiveFilter
+            ? `🌪️ ${t ? t('dashboard.btnFilter') : 'Filtrer'} (${activeFilterCount})`
+            : `🌪️ ${t ? t('dashboard.btnFilter') : 'Filtrer'}`}
+        </span>
+        <span>{isMobileFiltersOpen ? '▴' : '▾'}</span>
+      </button>
+
+      {hasActiveFilter && (
+        <button
+          type="button"
+          onClick={onReset}
+          className="px-2 py-1 rounded-[4px_6px_3px_5px] text-[9px] font-black uppercase tracking-wider bg-amber-100 hover:bg-amber-200 text-cordel-wood border border-cordel-wood/50 cursor-pointer transition-colors"
+          title="Réinitialiser tous les filtres"
+        >
+          ✕
+        </button>
+      )}
+    </div>
+  );
+}
+
+/**
  * Barre de filtrage à 2 étages pour l'Agenda (Discipline + Type d'événement).
  * Sur PC/Tablette (>= 768px), affichée directement en ligne.
  * Sur Mobile (< 768px), affichée dans un tiroir replié par défaut commandé depuis l'en-tête.

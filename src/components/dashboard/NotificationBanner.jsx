@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
-import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
-import { getToken } from 'firebase/messaging';
-import { db, messaging } from '../../firebase';
-import { resolveActiveMessagingSwRegistration } from '../../utils/pushNotificationHelper';
+import { messaging } from '../../firebase';
+import { activateAndPersistPushToken } from '../../utils/pushNotificationHelper';
 import { useAutoSyncPushToken } from '../../hooks/useAutoSyncPushToken';
 
 /**
@@ -18,7 +16,7 @@ function isIosOutsideStandalone() {
 
 /**
  * Bannière Cordel compacte d'activation des notifications Push en 1 clic sur l'Accueil.
- * Assure également la resynchronisation automatique du jeton FCM à chaque démarrage de session.
+ * Assure également la resynchronisation automatique du jeton FCM et de `pushDiagnostics` à chaque session.
  */
 export default function NotificationBanner({ user, profileData }) {
   const uid = user?.uid || profileData?.uid || profileData?.id;
@@ -35,12 +33,19 @@ export default function NotificationBanner({ user, profileData }) {
   const [syncedInSession, setSyncedInSession] = useState(false);
   const [showHelpBox, setShowHelpBox] = useState(false);
 
-  // Resynchronisation systématique du jeton dès que Notification.permission === 'granted'
+  // Resynchronisation systématique du jeton et du télé-diagnostic dès l'ouverture
   useAutoSyncPushToken(user, profileData, () => {
     setSyncedInSession(true);
   });
 
-  if (typeof window === 'undefined' || !uid || !profileData || dismissed || syncedInSession) {
+  if (
+    typeof window === 'undefined' ||
+    !uid ||
+    !profileData ||
+    profileData.pushOptInContract === false ||
+    dismissed ||
+    syncedInSession
+  ) {
     return null;
   }
 
@@ -57,7 +62,7 @@ export default function NotificationBanner({ user, profileData }) {
     setDismissed(true);
     try {
       sessionStorage.setItem(dismissKey, 'true');
-    } catch {}
+    } catch { /* Ignorer */ }
   };
 
   const handleOneClickActivate = async () => {
@@ -67,28 +72,12 @@ export default function NotificationBanner({ user, profileData }) {
     }
     setLoading(true);
     try {
-      const perm = await Notification.requestPermission();
-      if (perm !== 'granted') {
-        setShowHelpBox(true);
-        return;
-      }
-      const swReg = await resolveActiveMessagingSwRegistration();
-      const token = await getToken(messaging, {
-        vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
-        serviceWorkerRegistration: swReg
-      });
-      if (token) {
-        await updateDoc(doc(db, 'users', uid), {
-          fcmTokens: arrayUnion(token)
-        });
-        try {
-          localStorage.setItem(`girador_device_fcm_token_${uid}`, token);
-        } catch {}
+      const result = await activateAndPersistPushToken(uid);
+      if (result.ok) {
         setSyncedInSession(true);
+      } else {
+        setShowHelpBox(true);
       }
-    } catch (err) {
-      console.warn('NotificationBanner - Activation interrompue :', err?.message || err);
-      setShowHelpBox(true);
     } finally {
       setLoading(false);
     }

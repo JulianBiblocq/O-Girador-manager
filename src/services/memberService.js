@@ -1,4 +1,4 @@
-import { collection, doc, setDoc, deleteDoc, query, where, getDocs } from 'firebase/firestore';
+import { collection, doc, setDoc, deleteDoc, query, where, getDocs, arrayUnion } from 'firebase/firestore';
 import { db } from '../firebase';
 import { canonicalizeGroupId } from '../utils/tenantUtils';
 
@@ -110,6 +110,9 @@ export async function reconcilePreExistingMember(authUser, groupId = null) {
     const canonicalGroup = canonicalizeGroupId(preExistingData.groupId || groupId) || 'Samambaia';
 
     // Préparation de la fiche unifiée sur l'UID Auth officiel
+    const preTokens = Array.isArray(preExistingData.fcmTokens)
+      ? preExistingData.fcmTokens.filter(Boolean)
+      : [];
     const unifiedPayload = {
       ...preExistingData,
       uid: authUser.uid,
@@ -122,6 +125,12 @@ export async function reconcilePreExistingMember(authUser, groupId = null) {
       reconciledAt: new Date().toISOString(),
       reconciledFromDocId: preExistingDoc.id
     };
+    // Blindage : ne jamais écraser fcmTokens par un tableau brut lors d'un setDoc merge
+    delete unifiedPayload.fcmTokens;
+    if (preTokens.length > 0) {
+      unifiedPayload.fcmTokens = arrayUnion(...preTokens);
+      unifiedPayload.pushOptInContract = true;
+    }
 
     // Enregistrement sur users/${authUser.uid}
     const targetRef = doc(db, 'users', authUser.uid);

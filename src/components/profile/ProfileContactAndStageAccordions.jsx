@@ -30,17 +30,23 @@ export default function ProfileContactAndStageAccordions({
   toggleSection
 }) {
   const isPhoneVisible = formData.afficherTelephone !== false && formData.publierTelephone !== false;
-  const phoneSummary = formData.telephone ? (isPhoneVisible ? '📱 Visible' : '📱 Masqué') : '📱 Non renseigné';
-  const citySummary = formData.afficherVille ? '📍 Ville visible' : '📍 Adresse masquée';
+  const phoneSummary = formData.telephone
+    ? isPhoneVisible
+      ? `📱 ${t('userProfile.statusVisible')}`
+      : `📱 ${t('userProfile.statusHidden')}`
+    : `📱 ${t('userProfile.notSpecified')}`;
+  const citySummary = formData.afficherVille
+    ? `📍 ${t('userProfile.cityVisible')}`
+    : `📍 ${t('userProfile.cityHidden')}`;
 
   const lateraliteLabel = formData.lateralite === 'gaucher' ? t('onboarding.handLeft') : t('onboarding.handRight');
   const costumeParts = [
-    formData.tailleTshirt ? `T-shirt ${formData.tailleTshirt}` : null,
+    formData.tailleTshirt ? `${t('userProfile.tshirtLabel')} ${formData.tailleTshirt}` : null,
     formData.taillePantalon ? formData.taillePantalon : null
   ].filter(Boolean);
   const costumeSummary = isCostumerieEnabled && costumeParts.length > 0 ? ` • ${costumeParts.join(' / ')}` : '';
   const santeSummary = demanderAttestationSante
-    ? ` • ${formData.aptitudeMedicale ? '✅ Apte' : '⚠️ Santé à valider'}`
+    ? ` • ${formData.aptitudeMedicale ? `✅ ${t('userProfile.statusFit')}` : `⚠️ ${t('userProfile.statusUnfit')}`}`
     : '';
 
   return (
@@ -53,7 +59,7 @@ export default function ProfileContactAndStageAccordions({
           className="w-full flex items-center justify-between gap-2 text-left cursor-pointer select-none"
         >
           <span className="text-[11px] sm:text-xs font-black text-encre-noire truncate">
-            🔒 Coordonnées & Annuaire • <span className="font-bold text-cordel-wood">{phoneSummary} • {citySummary}</span>
+            🔒 {t('userProfile.accordionContactTitle')} • <span className="font-bold text-cordel-wood">{phoneSummary} • {citySummary}</span>
           </span>
           <span className="text-xs font-black text-cordel-wood shrink-0">{openSections.contact ? '▴' : '▾'}</span>
         </button>
@@ -100,7 +106,7 @@ export default function ProfileContactAndStageAccordions({
           className="w-full flex items-center justify-between gap-2 text-left cursor-pointer select-none"
         >
           <span className="text-[11px] sm:text-xs font-black text-encre-noire truncate">
-            🛡️ Scène, Costumes & Santé • <span className="font-bold text-cordel-wood">{lateraliteLabel}{costumeSummary}{santeSummary}</span>
+            🛡️ {t('userProfile.accordionStageHealthTitle')} • <span className="font-bold text-cordel-wood">{lateraliteLabel}{costumeSummary}{santeSummary}</span>
           </span>
           <span className="text-xs font-black text-cordel-wood shrink-0">{openSections.stage ? '▴' : '▾'}</span>
         </button>

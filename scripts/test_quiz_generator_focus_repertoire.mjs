@@ -16,12 +16,12 @@ console.log("===============================================================\n")
 // --- Module 1 : Nettoyage typographique sanitizeQuizText ---
 console.log("▶️ Module 1 : Assainissement typographique (sanitizeQuizText)");
 assert.strictEqual(sanitizeQuizText('« Grand Tambour »'), 'Grand Tambour');
-assert.strictEqual(sanitizeQuizText('"Rythme" (Baque Luanda) [Gonguê]'), 'Rythme Baque Luanda Gonguê');
-assert.strictEqual(sanitizeQuizText("‘Maracatu’ et “Caboclo”"), 'Maracatu et Caboclo');
-assert.strictEqual(sanitizeQuizText("  Texte   avec   espaces   multiples  "), 'Texte avec espaces multiples');
+assert.strictEqual(sanitizeQuizText('"Rythme" (Baque Luanda) [Gonguê]'), 'Rythme');
+assert.strictEqual(sanitizeQuizText("‘Maracatu’ et “Caboclo”."), 'Maracatu et Caboclo');
+assert.strictEqual(sanitizeQuizText(" +  texte   avec   espaces   multiples * {{count}} "), 'Texte avec espaces multiples');
 assert.strictEqual(sanitizeQuizText(null), '');
 assert.strictEqual(sanitizeQuizText(undefined), '');
-console.log("  ✅ [PASS] sanitizeQuizText retire rigoureusement guillemets, crochets, parenthèses et normalise les espaces.");
+console.log("  ✅ [PASS] sanitizeQuizText retire rigoureusement le contenu entre parenthèses/crochets, guillemets, astérisques, variables et normalise la casse.");
 
 // --- Module 2 : Règle anti-fuite hasLeak ---
 console.log("\n▶️ Module 2 : Détection de fuite (hasLeak)");

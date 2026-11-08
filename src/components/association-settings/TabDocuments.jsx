@@ -3,6 +3,7 @@ import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import useConfirm from '../../hooks/useConfirm';
 import { useTranslation } from '../LanguageContext';
+import RgpdAndHealthDocumentsCard from './RgpdAndHealthDocumentsCard';
 
 export default function TabDocuments({
   formData,
@@ -70,115 +71,19 @@ export default function TabDocuments({
 
   return (
     <>
-      <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
-        <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">
-          {t('settings.communication.tabDocuments.documentsDeLAssociationRgpd')}
-        </h3>
-
-        {/* Image Rights Basculer */}
-        <div className="flex flex-col gap-1 pb-3 border-b border-dashed border-cordel-master-dark/15 text-left mb-3">
-          <label className="flex items-start gap-2.5 cursor-pointer select-none">
-            <input 
-              type="checkbox"
-              checked={demanderDroitImage}
-              onChange={(e) => handleChange('demanderDroitImage', e.target.checked)}
-              disabled={saving}
-              className="w-4 h-4 cursor-pointer mt-0.5 shrink-0"
-            />
-            <div className="flex flex-col">
-              <span className="text-xs font-bold text-encre-noire">
-                {t('settings.communication.tabDocuments.activerLaDemandeDeDroit')}
-              </span>
-              <span className="text-[9px] text-cordel-master-dark/70 font-semibold mt-0.5 leading-relaxed">
-                {t('settings.communication.tabDocuments.siActiveLesAdherentsVerront')}
-              </span>
-            </div>
-          </label>
-        </div>
-
-        {/* Droit à l'image Doc */}
-        <div className="flex flex-col gap-2 pb-3 border-b border-dashed border-cordel-master-dark/15 text-left">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-cordel-master-dark">
-            {t('settings.communication.tabDocuments.charteDeDroitAL')}
-          </span>
-          <div className="flex flex-col gap-1.5">
-            <input 
-              type="file" 
-              accept="application/pdf"
-              onChange={(e) => setDroitImageFile(e.target.files?.[0] || null)}
-              disabled={saving}
-              className="text-[9px] font-bold"
-            />
-            {droitImageFile && (
-              <span className="text-[9px] text-green-600 font-bold">
-                {t('settings.communication.tabDocuments.selectionne')} {droitImageFile.name}
-              </span>
-            )}
-            {droitImageDocUrl && (
-              <a 
-                href={droitImageDocUrl} 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="text-[9px] text-cordel-wood hover:underline font-bold"
-              >
-                {t('settings.communication.tabDocuments.voirLeDocumentEnLigne')}
-              </a>
-            )}
-          </div>
-        </div>
-
-        {/* Medical Aptitude Basculer */}
-        <div className="flex flex-col gap-1 pb-3 border-b border-dashed border-cordel-master-dark/15 text-left mb-3 mt-3">
-          <label className="flex items-start gap-2.5 cursor-pointer select-none">
-            <input 
-              type="checkbox"
-              checked={demanderAttestationSante}
-              onChange={(e) => handleChange('demanderAttestationSante', e.target.checked)}
-              disabled={saving}
-              className="w-4 h-4 cursor-pointer mt-0.5 shrink-0"
-            />
-            <div className="flex flex-col">
-              <span className="text-xs font-bold text-encre-noire">
-                {t('settings.communication.tabDocuments.activerLaDemandeDAptitude')}
-              </span>
-              <span className="text-[9px] text-cordel-master-dark/70 font-semibold mt-0.5 leading-relaxed">
-                {t('settings.communication.tabDocuments.siActiveLesAdherentsDevront')}
-              </span>
-            </div>
-          </label>
-        </div>
-
-        {/* Aptitude médicale Doc */}
-        <div className="flex flex-col gap-2 mt-3 text-left">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-cordel-master-dark mb-1">
-            {t('settings.communication.tabDocuments.modeleDeCertificatMedicalReglement')}
-          </span>
-          <div className="flex flex-col gap-1.5">
-            <input 
-              type="file" 
-              accept="application/pdf"
-              onChange={(e) => setAptitudeMedicaleFile(e.target.files?.[0] || null)}
-              disabled={saving}
-              className="text-[9px] font-bold"
-            />
-            {aptitudeMedicaleFile && (
-              <span className="text-[9px] text-green-600 font-bold">
-                {t('settings.communication.tabDocuments.selectionne')} {aptitudeMedicaleFile.name}
-              </span>
-            )}
-            {aptitudeMedicaleDocUrl && (
-              <a 
-                href={aptitudeMedicaleDocUrl} 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="text-[9px] text-cordel-wood hover:underline font-bold"
-              >
-                {t('settings.communication.tabDocuments.voirLeDocumentEnLigne')}
-              </a>
-            )}
-          </div>
-        </div>
-      </CordelCard>
+      <RgpdAndHealthDocumentsCard
+        demanderDroitImage={demanderDroitImage}
+        droitImageDocUrl={droitImageDocUrl}
+        droitImageFile={droitImageFile}
+        setDroitImageFile={setDroitImageFile}
+        demanderAttestationSante={demanderAttestationSante}
+        aptitudeMedicaleDocUrl={aptitudeMedicaleDocUrl}
+        aptitudeMedicaleFile={aptitudeMedicaleFile}
+        setAptitudeMedicaleFile={setAptitudeMedicaleFile}
+        handleChange={handleChange}
+        saving={saving}
+        t={t}
+      />
 
       <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5 mt-4">
         <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-3">

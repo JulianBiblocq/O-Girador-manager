@@ -1,54 +1,48 @@
 /**
- * Passerelle de Génération de Quiz de Traduction
- * Raccorde les appels existants vers le moteur calibré i18n (quizI18nEngine.js).
+ * Passerelle de Génération de Quiz de Traduction (< 140 lignes).
+ * Raccorde les appels existants vers le moteur multi-applications (quizI18nEngine.js).
  */
 
 import { generateI18nTranslationQuiz } from './quizI18nEngine.js';
 
 /**
- * Génère une série de questions de QCM de traduction bilingue (FR ↔ PT)
- * en exploitant le moteur i18n haute fidélité (distracteurs calibrés et anti-fuite).
- *
- * @param {Object} [config={}] - Paramètres de configuration du quiz
- * @param {number} [config.count=10] - Nombre de questions souhaitées
- * @param {string} [config.direction='MIXED'] - Direction linguistique ('MIXED', 'FR_PT', 'PT_FR')
- * @param {Array<string>} [config.categories=[]] - Filtrage optionnel par catégories
- * @param {string} [config.difficulty='medium'] - Difficulté ('easy', 'medium', 'expert', 'mestre', 'confirme')
- * @param {Object} [config.customDistractors={}] - Distracteurs personnalisés éventuels
- * @returns {Array<Object>} Questions de QCM prêtes pour l'évaluation
+ * Génère une série de questions de QCM de traduction bilingue (FR ⇄ PT-BR)
+ * en croisant le lexique de l'écosystème, les Toadas/Fiches Culture et les namespaces musicaux.
  */
 export const generateTranslationQuiz = (config = {}) => {
   const {
     count = 10,
     direction = 'MIXED',
-    categories = [],
     difficulty = 'medium',
-    customDistractors = {}
+    songs = [],
+    sheets = [],
+    customPool = null
   } = config;
 
-  // Normalisation de la direction linguistique
-  let dir = 'mixed';
-  if (direction === 'FR_PT' || direction === 'fr_to_pt') {
-    dir = 'fr_to_pt';
-  } else if (direction === 'PT_FR' || direction === 'pt_to_fr') {
-    dir = 'pt_to_fr';
+  let mappedDir = 'mixed';
+  const upperDir = String(direction || 'MIXED').toUpperCase();
+  if (upperDir === 'FR_PT' || upperDir === 'FR_TO_PT') {
+    mappedDir = 'fr_to_pt';
+  } else if (upperDir === 'PT_FR' || upperDir === 'PT_TO_FR') {
+    mappedDir = 'pt_to_fr';
   }
 
-  // Normalisation du niveau de difficulté
-  let diff = 'confirme';
-  const rawDiff = String(difficulty || '').toLowerCase();
-  if (rawDiff === 'expert' || rawDiff === 'mestre' || rawDiff === 'hard') {
-    diff = 'mestre';
-  } else if (rawDiff === 'easy' || rawDiff === 'découverte' || rawDiff === 'decouverte') {
-    diff = 'decouverte';
+  let mappedDiff = 'confirme';
+  const lowerDiff = String(difficulty || 'medium').toLowerCase();
+  if (lowerDiff === 'expert' || lowerDiff === 'mestre') {
+    mappedDiff = 'mestre';
   }
 
   return generateI18nTranslationQuiz({
     count,
-    direction: dir,
-    difficulty: diff,
-    categories,
-    category: categories?.[0] || null,
-    customDistractors
+    direction: mappedDir,
+    difficulty: mappedDiff,
+    songs,
+    sheets,
+    customPool
   });
+};
+
+export default {
+  generateTranslationQuiz
 };

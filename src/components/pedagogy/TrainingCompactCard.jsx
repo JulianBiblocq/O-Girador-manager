@@ -3,20 +3,8 @@ import { useTranslation } from '../LanguageContext';
 import { usePracticeLauncher } from '../../hooks/usePracticeLauncher';
 
 /**
- * Carte compacte d'entraînement réutilisable.
- * Conçue selon la charte graphique Cordel (papier kraft, contrastes encre noire, vert validation).
- *
- * Utilisée dans :
- * 1. Le Répertoire (MestreRepertoireView) au sein du bloc repliable des défis.
- * 2. Le Fil Conducteur de Répétition (EventRevisionProgram) sous les notes du Mestre.
- *
- * @param {Object} props
- * @param {Object} [props.training] - Objet défi unique résolu
- * @param {Array<Object>} [props.trainings] - Liste de défis résolus
- * @param {string} [props.sequenceurUrl] - URL de base du Séquenceur
- * @param {Object} [props.profileData] - Données de profil pour résolution du rôle de pratique
- * @param {'repertoire'|'rehearsal'} [props.mode='repertoire'] - Contexte d'affichage
- * @param {string} [props.className] - Classes CSS personnalisées
+ * Carte compacte d'entraînement réutilisable (<= 140 lignes).
+ * Utilisée dans le Répertoire (mode='repertoire') et le Fil Conducteur de Répétition (mode='rehearsal').
  */
 export default function TrainingCompactCard({
   training,
@@ -29,28 +17,17 @@ export default function TrainingCompactCard({
   const { t } = useTranslation();
   const { startPractice } = usePracticeLauncher(profileData, sequenceurUrl);
 
-  const items = Array.isArray(trainings)
-    ? trainings
-    : training
-    ? [training]
-    : [];
-
+  const items = Array.isArray(trainings) ? trainings : training ? [training] : [];
   if (items.length === 0) return null;
 
-  // ---------------------------------------------------------------------------
   // MODE 1 : Répétition / Fil Conducteur (Encart compact sous les notes)
-  // ---------------------------------------------------------------------------
   if (mode === 'rehearsal') {
     return (
       <div className={`flex flex-col gap-2 ${className}`}>
         {items.map((item) => {
           const stages = Array.isArray(item.stages) ? item.stages : [];
           return (
-            <div
-              key={item.id}
-              className="p-2.5 rounded bg-amber-50/85 border border-dashed border-amber-300 flex flex-col gap-2 shadow-2xs text-left"
-            >
-              {/* En-tête de recommandation de séance */}
+            <div key={item.id} className="p-2.5 rounded bg-amber-50/85 border border-dashed border-amber-300 flex flex-col gap-2 shadow-2xs text-left">
               <div className="flex items-center justify-between gap-2 border-b border-dashed border-amber-300/60 pb-1 flex-wrap">
                 <span className="text-[10px] font-black uppercase tracking-wider text-amber-950 flex items-center gap-1.5">
                   <span>⚡</span>
@@ -61,12 +38,9 @@ export default function TrainingCompactCard({
                 </span>
               </div>
 
-              {/* Titre du défi, plage de tempo et bouton de lancement direct */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div className="flex items-baseline gap-2 flex-wrap">
-                  <span className="text-xs font-black text-encre-noire uppercase">
-                    {item.title}
-                  </span>
+                  <span className="text-xs font-black text-encre-noire uppercase">{item.title}</span>
                   <span className="text-[10px] text-encre-noire/70 font-bold">
                     ({t('pedagogy.targetBpmRange', { start: item.startBpm, end: item.targetBpm })})
                   </span>
@@ -83,7 +57,6 @@ export default function TrainingCompactCard({
                 </button>
               </div>
 
-              {/* Découpage des paliers cliquables */}
               {stages.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 pt-0.5">
                   {stages.map((stage) => (
@@ -95,9 +68,7 @@ export default function TrainingCompactCard({
                       title={t('pedagogy.tooltipPracticeTocarJunto')}
                     >
                       <span className="text-amber-800 font-black">P{stage.index + 1}</span>
-                      <span>
-                        {stage.startBpm} ➔ {stage.targetBpm} BPM
-                      </span>
+                      <span>{stage.startBpm} ➔ {stage.targetBpm} BPM</span>
                     </button>
                   ))}
                 </div>
@@ -105,28 +76,19 @@ export default function TrainingCompactCard({
             </div>
           );
         })}
-
       </div>
     );
   }
 
-  // ---------------------------------------------------------------------------
   // MODE 2 : Répertoire (Fiche Morceau / Volet déplié)
-  // ---------------------------------------------------------------------------
   return (
     <div className={`flex flex-col gap-2 ${className}`}>
       {items.map((item) => {
         const stages = Array.isArray(item.stages) ? item.stages : [];
         return (
-          <div
-            key={item.id}
-            className="p-2.5 bg-white/95 border border-amber-200 rounded flex flex-col gap-2 shadow-2xs text-left"
-          >
-            {/* Titre et badges BPM / Paliers */}
+          <div key={item.id} className="p-2.5 bg-white/95 border border-amber-200 rounded flex flex-col gap-2 shadow-2xs text-left">
             <div className="flex items-center justify-between gap-2 flex-wrap">
-              <span className="text-[10px] font-black text-encre-noire uppercase">
-                {item.title}
-              </span>
+              <span className="text-[10px] font-black text-encre-noire uppercase">{item.title}</span>
               <span className="text-[8.5px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300">
                 {item.startBpm} ➔ {item.targetBpm} {t('pedagogy.carnet.bpmSeparateur')}{' '}
                 {item.stagesCount || stages.length} {t('pedagogy.carnet.palier')}
@@ -134,21 +96,14 @@ export default function TrainingCompactCard({
               </span>
             </div>
 
-            {/* Description facultative */}
             {item.description && (
-              <p className="text-[9px] text-encre-noire/70 italic">
-                {item.description}
-              </p>
+              <p className="text-[9px] text-encre-noire/70 italic">{item.description}</p>
             )}
 
-            {/* Grille des paliers avec bouton de pratique Tocar Junto */}
             {stages.length > 0 && (
               <div className="flex flex-wrap gap-1.5 pt-1">
                 {stages.map((stage) => (
-                  <div
-                    key={stage.index}
-                    className="flex items-center gap-1.5 px-2 py-1 rounded bg-[#fdfaf2] border border-encre-noire/20 text-[9px]"
-                  >
+                  <div key={stage.index} className="flex items-center gap-1.5 px-2 py-1 rounded bg-[#fdfaf2] border border-encre-noire/20 text-[9px]">
                     <span className="font-extrabold text-encre-noire">{stage.label}</span>
                     <button
                       type="button"
@@ -166,7 +121,6 @@ export default function TrainingCompactCard({
           </div>
         );
       })}
-
     </div>
   );
 }

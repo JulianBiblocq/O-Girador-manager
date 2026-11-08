@@ -1,163 +1,130 @@
-// Atelier d'Entraînement recentré sur la révision, les quiz culture et les défis en direct
-// Fichier conforme à la règle anti-monolithe (< 200 lignes)
+/**
+ * Atelier d'Entraînement pédagogique relié au Répertoire, Cantador, Sequenciador et Dançador (< 135 lignes).
+ * Inclut en tête le sélecteur rapide « Réviser un Morceau du Répertoire » et la barre de défis des Signaux (ReflexGameModal & SignalTimelineModal).
+ */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import AutoEvalQuizContainer from '../student/AutoEvalQuizContainer';
 import GameStatsCard from '../games/GameStatsCard';
 import GameThemeSelectorModal from '../games/GameThemeSelectorModal';
+import PieceRevisionSelectorBanner from './PieceRevisionSelectorBanner';
+import PieceRevisionRunner from './PieceRevisionRunner';
+import PieceDirectionChallengesBar from './PieceDirectionChallengesBar';
+import { useAtelierRepertoireRevision } from '../../hooks/useAtelierRepertoireRevision';
 import { useTranslation } from '../LanguageContext';
 
 export default function AtelierEntrainement({
-  profileData,
-  songs = [],
-  educationalSheets = []
+  profileData, songs = [], educationalSheets = [],
+  rhythms = [], rhythmsJsonData = {}, repertoire = [], sequenceurUrl
 }) {
   const { t } = useTranslation();
-  const [activeQuizType, setActiveQuizType] = useState(null); // 'PAROLES' | 'CULTURE' | 'RODA_QUIZ'
-  const [activeTheme, setActiveTheme] = useState(null); // 'traduction' | 'culture'
+  const [activeQuizType, setActiveQuizType] = useState(null);
+  const [activeTheme, setActiveTheme] = useState(null);
+  const [selectedRevisionPiece, setSelectedRevisionPiece] = useState(null);
+  const [focusedPieceId, setFocusedPieceId] = useState('');
   const [isGameSelectorOpen, setIsGameSelectorOpen] = useState(false);
 
-  const handleStartParoles = () => {
-    setActiveTheme('traduction');
-    setActiveQuizType('PAROLES');
-  };
+  const { repertoirePieces, scheduledPieces, nextRehearsalTitle, mestreSignals } = useAtelierRepertoireRevision({
+    groupId: profileData?.groupId, externalRepertoire: repertoire
+  });
 
-  const handleStartCulture = () => {
-    setActiveTheme('culture');
-    setActiveQuizType('CULTURE');
-  };
+  const activeDirectionPiece = useMemo(() => {
+    if (focusedPieceId) {
+      const found = repertoirePieces.find((p) => p.id === focusedPieceId);
+      if (found) return found;
+    }
+    return scheduledPieces.find((p) => p.sinaisDoMestre?.length > 0 || p.activeSinaisDoMestre?.length > 0)
+      || repertoirePieces.find((p) => p.sinaisDoMestre?.length > 0 || p.activeSinaisDoMestre?.length > 0)
+      || scheduledPieces[0] || repertoirePieces[0] || null;
+  }, [focusedPieceId, repertoirePieces, scheduledPieces]);
 
-  const handleStartRodaQuiz = () => {
-    setIsGameSelectorOpen(true);
-  };
+  const hasSignals = Boolean(
+    activeDirectionPiece?.sinaisDoMestre?.length > 0 || activeDirectionPiece?.activeSinaisDoMestre?.length > 0
+  );
 
-  const handleExitQuiz = () => {
-    setActiveQuizType(null);
-    setActiveTheme(null);
-  };
+  const handleStartParoles = () => { setActiveTheme('traduction'); setActiveQuizType('PAROLES'); };
+  const handleStartCulture = () => { setActiveTheme('culture'); setActiveQuizType('CULTURE'); };
+  const handleStartPieceRevision = (piece) => { if (!piece) return; setSelectedRevisionPiece(piece); setActiveQuizType('PIECE_REVISION'); };
+  const handleExitQuiz = () => { setActiveQuizType(null); setActiveTheme(null); setSelectedRevisionPiece(null); };
 
-  // 1. Vue active : Révision des Chants ou Quiz Culture
+  if (activeQuizType === 'PIECE_REVISION' && selectedRevisionPiece) {
+    return (
+      <PieceRevisionRunner
+        piece={selectedRevisionPiece} profileData={profileData} songs={songs}
+        educationalSheets={educationalSheets} rhythms={rhythms} rhythmsJsonData={rhythmsJsonData}
+        mestreSignals={mestreSignals} sequenceurUrl={sequenceurUrl} onExit={handleExitQuiz}
+      />
+    );
+  }
+
   if (activeQuizType === 'PAROLES' || activeQuizType === 'CULTURE') {
     return (
       <div className="relative">
-        <button
-          type="button"
-          onClick={handleExitQuiz}
-          className="absolute -top-12 left-0 text-sm font-bold text-cordel-master-dark hover:text-cordel-wood underline underline-offset-4 cursor-pointer"
-        >
+        <button type="button" onClick={handleExitQuiz} className="absolute -top-12 left-0 text-sm font-bold text-cordel-master-dark hover:text-cordel-wood underline underline-offset-4 cursor-pointer">
           {t('pedagogy.backToWorkshop')}
         </button>
-        <AutoEvalQuizContainer
-          profileData={profileData}
-          allSongs={songs}
-          allSheets={educationalSheets}
-          initialTheme={activeTheme}
-          onExit={handleExitQuiz}
-        />
+        <AutoEvalQuizContainer profileData={profileData} allSongs={songs} allSheets={educationalSheets} initialTheme={activeTheme} onExit={handleExitQuiz} />
       </div>
     );
   }
 
-  // 2. Vue d'accueil de l'Atelier : les 3 formats pertinents
   return (
     <div className="flex flex-col gap-6">
-      <div className="text-center mb-2">
-        <h2 className="text-2xl md:text-3xl font-heading text-cordel-wood uppercase">
-          🎯 {t('pedagogy.trainingHubTitle')}
-        </h2>
-        <p className="text-xs md:text-sm font-bold text-cordel-master-dark opacity-80 max-w-xl mx-auto mt-1.5">
-          {t('pedagogy.trainingHubSubtitle')}
-        </p>
+      <div className="text-center mb-1">
+        <h2 className="text-2xl md:text-3xl font-heading text-cordel-wood uppercase">🎯 {t('pedagogy.trainingHubTitle')}</h2>
+        <p className="text-xs md:text-sm font-bold text-cordel-master-dark opacity-80 max-w-xl mx-auto mt-1.5">{t('pedagogy.trainingHubSubtitle')}</p>
       </div>
 
-      {/* Encart Statistiques des Défis Multijoueurs */}
-      {profileData?.uid && (
-        <GameStatsCard
-          userId={profileData.uid}
-          groupId={profileData.groupId}
+      <PieceRevisionSelectorBanner
+        repertoirePieces={repertoirePieces} scheduledPieces={scheduledPieces}
+        nextRehearsalTitle={nextRehearsalTitle} onSelectPiece={handleStartPieceRevision}
+        onFocusPiece={(piece) => setFocusedPieceId(piece?.id || '')}
+      />
+
+      {hasSignals && (
+        <PieceDirectionChallengesBar
+          piece={activeDirectionPiece} userId={profileData?.uid} groupId={profileData?.groupId}
+          profileData={profileData} mestreSignals={mestreSignals}
         />
       )}
 
-      {/* Les 3 grands formats de pratique */}
+      {profileData?.uid && <GameStatsCard userId={profileData.uid} groupId={profileData.groupId} />}
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        
-        {/* Format 1 : Révision des Chants & Paroles */}
         <CordelCard className="p-6 flex flex-col items-center text-center gap-4 bg-[#fdfaf2] border-2 border-encre-noire shadow-[2px_3px_0px_0px_#181716] group">
           <div className="text-6xl group-hover:scale-110 transition-transform">🙈</div>
-          <h3 className="text-base font-black uppercase text-encre-noire tracking-wider">
-            {t('pedagogy.cardSongsTitle')}
-          </h3>
-          <p className="text-xs font-bold text-encre-noire/70 leading-relaxed">
-            {t('pedagogy.cardSongsDesc')}
-          </p>
+          <h3 className="text-base font-black uppercase text-encre-noire tracking-wider">{t('pedagogy.cardSongsTitle')}</h3>
+          <p className="text-xs font-bold text-encre-noire/70 leading-relaxed">{t('pedagogy.cardSongsDesc')}</p>
           <div className="mt-auto pt-4 w-full">
-            <CordelButton
-              variant="wood"
-              onClick={handleStartParoles}
-              className="w-full text-xs py-2 uppercase tracking-widest font-black shadow-xs"
-            >
-              {t('pedagogy.btnLaunchRevision')}
-            </CordelButton>
+            <CordelButton variant="wood" onClick={handleStartParoles} className="w-full text-xs py-2 uppercase tracking-widest font-black shadow-xs">{t('pedagogy.btnLaunchRevision')}</CordelButton>
           </div>
         </CordelCard>
 
-        {/* Format 2 : Roda Quiz & Défis en direct */}
         <CordelCard className="p-6 flex flex-col items-center text-center gap-4 bg-[#fdfaf2] border-2 border-encre-noire shadow-[2px_3px_0px_0px_#181716] group">
           <div className="text-6xl group-hover:scale-110 transition-transform">🎲</div>
-          <h3 className="text-base font-black uppercase text-encre-noire tracking-wider">
-            {t('pedagogy.cardLiveQuizTitle')}
-          </h3>
-          <p className="text-xs font-bold text-encre-noire/70 leading-relaxed">
-            {t('pedagogy.cardLiveQuizDesc')}
-          </p>
+          <h3 className="text-base font-black uppercase text-encre-noire tracking-wider">{t('pedagogy.cardLiveQuizTitle')}</h3>
+          <p className="text-xs font-bold text-encre-noire/70 leading-relaxed">{t('pedagogy.cardLiveQuizDesc')}</p>
           <div className="mt-auto pt-4 w-full">
-            <CordelButton
-              variant="primary"
-              onClick={handleStartRodaQuiz}
-              className="w-full text-xs py-2 uppercase tracking-widest font-black shadow-xs bg-[var(--color-cordel-vert)] text-white hover:brightness-110"
-            >
-              {t('pedagogy.btnLaunchChallenge')}
-            </CordelButton>
+            <CordelButton variant="primary" onClick={() => setIsGameSelectorOpen(true)} className="w-full text-xs py-2 uppercase tracking-widest font-black shadow-xs bg-[var(--color-cordel-vert)] text-white hover:brightness-110">{t('pedagogy.btnLaunchChallenge')}</CordelButton>
           </div>
         </CordelCard>
 
-        {/* Format 3 : Quiz Culture & Traditions */}
         <CordelCard className="p-6 flex flex-col items-center text-center gap-4 bg-[#fdfaf2] border-2 border-encre-noire shadow-[2px_3px_0px_0px_#181716] group">
           <div className="text-6xl group-hover:scale-110 transition-transform">📜</div>
-          <h3 className="text-base font-black uppercase text-encre-noire tracking-wider">
-            {t('pedagogy.cardCultureQuizTitle')}
-          </h3>
-          <p className="text-xs font-bold text-encre-noire/70 leading-relaxed">
-            {t('pedagogy.cardCultureQuizDesc')}
-          </p>
+          <h3 className="text-base font-black uppercase text-encre-noire tracking-wider">{t('pedagogy.cardCultureQuizTitle')}</h3>
+          <p className="text-xs font-bold text-encre-noire/70 leading-relaxed">{t('pedagogy.cardCultureQuizDesc')}</p>
           <div className="mt-auto pt-4 w-full">
-            <CordelButton
-              variant="ocre"
-              onClick={handleStartCulture}
-              className="w-full text-xs py-2 uppercase tracking-widest font-black shadow-xs"
-            >
-              {t('pedagogy.btnLaunchQuiz')}
-            </CordelButton>
+            <CordelButton variant="ocre" onClick={handleStartCulture} className="w-full text-xs py-2 uppercase tracking-widest font-black shadow-xs">{t('pedagogy.btnLaunchQuiz')}</CordelButton>
           </div>
         </CordelCard>
-
       </div>
 
-      {/* Sélecteur de thème pour le défi en direct */}
       {isGameSelectorOpen && (
         <GameThemeSelectorModal
-          isOpen={isGameSelectorOpen}
-          onClose={() => setIsGameSelectorOpen(false)}
-          onSelectTheme={(themeId) => {
-            setIsGameSelectorOpen(false);
-            if (themeId === 'culture') {
-              handleStartCulture();
-            } else {
-              handleStartParoles();
-            }
-          }}
+          isOpen={isGameSelectorOpen} onClose={() => setIsGameSelectorOpen(false)}
+          onSelectTheme={(themeId) => { setIsGameSelectorOpen(false); if (themeId === 'culture') handleStartCulture(); else handleStartParoles(); }}
         />
       )}
     </div>

@@ -221,9 +221,10 @@ async function sendPushToUsers(db, { groupId, recipientId, cibles, targetUserIds
     for (const [userId, invalidTokens] of Object.entries(tokensByUser)) {
       try {
         await db.collection("users").doc(userId).update({
-          fcmTokens: FieldValue.arrayRemove(...invalidTokens)
+          fcmTokens: FieldValue.arrayRemove(...invalidTokens),
+          pushOptInContract: true
         });
-        console.log(`sendPushToUsers - Nettoyage automatique : ${invalidTokens.length} token(s) obsolète(s) retiré(s) pour l'utilisateur ${userId}`);
+        console.log(`sendPushToUsers - Nettoyage automatique : ${invalidTokens.length} token(s) obsolète(s) retiré(s) pour l'utilisateur ${userId} (pushOptInContract préservé)`);
       } catch (err) {
         console.error(`sendPushToUsers - Erreur nettoyage tokens pour ${userId}:`, err);
       }
