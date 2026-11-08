@@ -3,7 +3,7 @@ import { useTranslation } from '../../LanguageContext';
 import { parseStructureTxt, exportStructureAsTxt, groupLyricsByRole } from '../../../utils/toadaTwoLineConverter';
 import { computeSongStructure, generateEmptySilenceMeasure, rebuildLineFromCharAnchors } from '../../../utils/toadaLineEditorHelper';
 import ToadaMusicalToolbar from './ToadaMusicalToolbar'; import ToadaMusicalLineRow from './ToadaMusicalLineRow';
-import ToadaPrintStyloView from './ToadaPrintStyloView'; import ToadaScanPromptModal from './ToadaScanPromptModal';
+import ToadaPrintStyloView from './ToadaPrintStyloView'; import VocalPaperOrganizadorModal from './VocalPaperOrganizadorModal';
 import ToadaLegendModal from './ToadaLegendModal'; import ToadaBulkPasteModal from './ToadaBulkPasteModal';
 import { extractVaralLyricsFromScanned } from '../../../utils/toadaManuscriptScannerService';
 
@@ -15,7 +15,7 @@ export default function ToadaMusicalStructureEditor({
   const [mode, setMode] = useState('time'), [activeStamp, setActiveStamp] = useState(null);
   const [selectedCell, setSelectedCell] = useState(null);
   const [showPrintStylo, setShowPrintStylo] = useState(false), [showBulkPasteModal, setShowBulkPasteModal] = useState(false);
-  const [showScanModal, setShowScanModal] = useState(false), [showLegendModal, setShowLegendModal] = useState(false);
+  const [paperModalTab, setPaperModalTab] = useState(null), [showLegendModal, setShowLegendModal] = useState(false);
   const lastCommittedRef = useRef('');
   const [lines, setLines] = useState(() => { const p = parseStructureTxt(value); return p.length > 0 ? p : ['']; });
 
@@ -100,10 +100,10 @@ export default function ToadaMusicalStructureEditor({
     a.href = url; a.download = `${titre ? titre.toLowerCase().replace(/\s+/g, '_') : 'toada'}_structure.txt`;
     document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
   };
-  const handleApplyScanResult = (txt, alsoFill) => {
+  const handleApplyScanResult = (txt, alsoFill, htmlLyrics) => {
     if (!txt) return;
     const p = parseStructureTxt(txt); commitLines(p.length > 0 ? p : ['']);
-    if (alsoFill && onUpdateTab1Lyrics) onUpdateTab1Lyrics(extractVaralLyricsFromScanned(txt));
+    if (alsoFill && onUpdateTab1Lyrics) onUpdateTab1Lyrics(htmlLyrics || extractVaralLyricsFromScanned(txt));
   };
 
   return (
@@ -114,7 +114,7 @@ export default function ToadaMusicalStructureEditor({
         onAddPauseBaque={() => handleAddSilenceMeasure(selectedCell?.lineIdx ?? lines.length - 1)}
         onOpenBulkPasteModal={() => setShowBulkPasteModal(true)}
         onImportTxt={(c) => { const p = parseStructureTxt(c); if (p.length) commitLines(p); }} onExportTxt={handleExportTxt} onPullFromTab1={handlePullFromTab1}
-        onOpenPrintStylo={() => setShowPrintStylo(true)} onOpenScanModal={() => setShowScanModal(true)} onOpenLegendModal={() => setShowLegendModal(true)} disabled={disabled}
+        onOpenPrintStylo={() => setPaperModalTab('print')} onOpenScanModal={() => setPaperModalTab('scan')} onOpenLegendModal={() => setShowLegendModal(true)} disabled={disabled}
       />
       <div className="bg-[#fefdfa] dark:bg-stone-900 border border-stone-300 dark:border-stone-700 rounded-md shadow-xs p-2 md:p-3 flex flex-col divide-y divide-stone-200/60 dark:divide-stone-800 w-full">
         {lines.map((line, idx) => (
@@ -131,12 +131,12 @@ export default function ToadaMusicalStructureEditor({
       </div>
       <div className="flex items-center gap-2 w-full pt-1">
         <button type="button" onClick={() => handleAddLineAfter(lines.length - 1)} disabled={disabled} className="flex-1 py-1.5 text-[9.5px] font-black uppercase text-cordel-wood bg-white hover:bg-amber-50 border border-dashed border-cordel-master-dark/40 rounded cursor-pointer transition-colors shadow-2xs">+ {t('toada.addMeasureBtn') || "Ajouter une ligne de chant"}</button>
-        <button type="button" onClick={() => handleAddSilenceMeasure(lines.length - 1)} disabled={disabled} className="px-3 py-1.5 text-[9.5px] font-black uppercase text-stone-700 bg-stone-100 hover:bg-stone-200 border border-stone-300 rounded cursor-pointer transition-colors shadow-2xs">+ 🔇 {language === 'pt' ? 'Pausa do Batuque' : (t('toada.pauseBaqueBtn') || 'Pause Batuque')}</button>
+        <button type="button" onClick={() => handleAddSilenceMeasure(lines.length - 1)} disabled={disabled} className="px-3 py-1.5 text-[9.5px] font-black uppercase text-stone-700 bg-stone-100 hover:bg-stone-200 border border-stone-300 rounded cursor-pointer transition-colors shadow-2xs">+ {language === 'pt' ? 'Pausa do Batuque' : (t('toada.pauseBaqueBtn') || 'Pause Batuque')}</button>
       </div>
       <ToadaBulkPasteModal isOpen={showBulkPasteModal} onClose={() => setShowBulkPasteModal(false)} lines={lines}
         onApplyLines={(next, applyMode) => commitLines(applyMode === 'append' ? [...lines.filter((l) => l.trim()), ...next] : next)} />
       <ToadaPrintStyloView isOpen={showPrintStylo} onClose={() => setShowPrintStylo(false)} lines={lines} metadata={{ titre, signature, bpmDefaut, tonaliteDefaut, rythme }} />
-      <ToadaScanPromptModal isOpen={showScanModal} onClose={() => setShowScanModal(false)} onApplyResult={handleApplyScanResult} tab1Lyrics={tab1Lyrics} signature={signature} />
+      <VocalPaperOrganizadorModal isOpen={Boolean(paperModalTab)} onClose={() => setPaperModalTab(null)} initialTab={paperModalTab || 'print'} onApplyResult={handleApplyScanResult} tab1Lyrics={tab1Lyrics} signature={signature} metadata={{ titre, signature, bpmDefaut, tonaliteDefaut, rythme }} onOpenLegacyStylo={() => setShowPrintStylo(true)} />
       <ToadaLegendModal isOpen={showLegendModal} onClose={() => setShowLegendModal(false)} />
     </div>
   );
