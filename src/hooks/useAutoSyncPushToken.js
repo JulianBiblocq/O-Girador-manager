@@ -8,8 +8,8 @@ import { collectClientPushDiagnostics, syncPushDiagnosticsToFirestore } from '..
 const FOREGROUND_SYNC_THROTTLE_MS = 5 * 60 * 1000;
 
 /**
- * Hook d'auto-synchronisation silencieuse du jeton FCM et du télé-diagnostic Push :
- * - Ne bloque jamais la resynchronisation par un verrou sessionStorage si `fcmTokens` est vide.
+ * Hook d'auto-synchronisation silencieuse du jeton FCM et d'enregistrement inconditionnel de `pushDiagnostics` :
+ * - Calcule et enregistre `pushDiagnostics` AVANT tout `return` lié à `!messaging` ou `!('Notification' in window)`.
  * - S'exécute à l'ouverture de session et au retour au premier plan (`visibilitychange` visible & `focus`).
  */
 export function useAutoSyncPushToken(user, profileData, onTokenSynced) {
@@ -34,26 +34,33 @@ export function useAutoSyncPushToken(user, profileData, onTokenSynced) {
     const syncTokenAndDiagnostics = async () => {
       if (state.cancelled || isSyncingRef.current) return;
       const currentProfile = latestProfileRef.current;
+      const existingTokens = Array.isArray(currentProfile?.fcmTokens) ? currentProfile.fcmTokens : [];
 
-      if (currentProfile?.pushOptInContract === false) {
-        await syncPushDiagnosticsToFirestore(uid, currentProfile);
-        return;
-      }
+      // 1. Calcul inconditionnel du diagnostic AVANT tout return sur !messaging ou !('Notification' in window)
+      const preDiag = collectClientPushDiagnostics({
+        hasActiveTokenInDb: existingTokens.length > 0,
+        isMessagingSupported: Boolean(messaging)
+      });
 
       const permission = 'Notification' in window ? Notification.permission : 'unsupported';
-      if (permission !== 'granted' || !messaging) {
+      if (
+        preDiag.status === 'webview_blocked' ||
+        preDiag.status === 'ios_not_installed' ||
+        preDiag.status === 'unsupported' ||
+        permission !== 'granted' ||
+        !messaging ||
+        currentProfile?.pushOptInContract === false
+      ) {
         await syncPushDiagnosticsToFirestore(uid, currentProfile);
         return;
       }
 
-      const existingTokens = Array.isArray(currentProfile?.fcmTokens) ? currentProfile.fcmTokens : [];
       const now = Date.now();
       const lastSyncAt = lastSyncTimeByUidRef.current[uid] || 0;
-
       if (
         existingTokens.length > 0 &&
         currentProfile?.pushOptInContract === true &&
-        currentProfile?.pushDiagnostics?.blockerReason === 'OK' &&
+        currentProfile?.pushDiagnostics?.status === 'active' &&
         now - lastSyncAt < FOREGROUND_SYNC_THROTTLE_MS
       ) {
         return;
@@ -72,8 +79,7 @@ export function useAutoSyncPushToken(user, profileData, onTokenSynced) {
 
         if (!currentToken) {
           await syncPushDiagnosticsToFirestore(uid, latestProfileRef.current, {
-            lastError: 'empty_token_from_fcm',
-            hasActiveTokenOverride: existingTokens.length > 0
+            lastError: 'Jeton vide retourné par FCM', force: true, hasActiveTokenOverride: false
           });
           return;
         }
@@ -88,12 +94,10 @@ export function useAutoSyncPushToken(user, profileData, onTokenSynced) {
           await updateDoc(doc(db, 'users', uid), { fcmTokens: arrayRemove(prevLocalToken) });
         }
 
-        if (!latestTokens.includes(currentToken) || latestProfile?.pushOptInContract !== true || latestProfile?.pushDiagnostics?.blockerReason !== 'OK') {
-          const diagnostics = collectClientPushDiagnostics({ hasActiveTokenInDb: true });
+        if (!latestTokens.includes(currentToken) || latestProfile?.pushOptInContract !== true || latestProfile?.pushDiagnostics?.status !== 'active') {
+          const activeDiag = collectClientPushDiagnostics({ hasActiveTokenInDb: true, isMessagingSupported: true });
           await updateDoc(doc(db, 'users', uid), {
-            fcmTokens: arrayUnion(currentToken),
-            pushOptInContract: true,
-            pushDiagnostics: diagnostics
+            fcmTokens: arrayUnion(currentToken), pushOptInContract: true, pushDiagnostics: activeDiag
           });
         }
 
@@ -106,8 +110,7 @@ export function useAutoSyncPushToken(user, profileData, onTokenSynced) {
       } catch (err) {
         lastSyncTimeByUidRef.current[uid] = 0;
         await syncPushDiagnosticsToFirestore(uid, latestProfileRef.current, {
-          lastError: err?.message || 'sync_error',
-          hasActiveTokenOverride: existingTokens.length > 0
+          lastError: err?.message || 'Erreur getToken SW', force: true, hasActiveTokenOverride: false
         });
       } finally {
         isSyncingRef.current = false;
@@ -120,7 +123,6 @@ export function useAutoSyncPushToken(user, profileData, onTokenSynced) {
     };
     if (typeof document !== 'undefined') document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('focus', syncTokenAndDiagnostics);
-
     return () => {
       state.cancelled = true;
       if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', handleVisibilityChange);

@@ -126,6 +126,8 @@ async function sendPushToUsers(db, { groupId, recipientId, cibles, targetUserIds
   const truncatedBody = body && body.length > 200 ? body.substring(0, 197) + "..." : (body || "");
   const BATCH_SIZE = 500;
   const tokensToRemove = [];
+  const deliveryStatsByUser = {};
+  const sentAtIso = new Date().toISOString();
 
   for (let i = 0; i < allTokens.length; i += BATCH_SIZE) {
     const batch = allTokens.slice(i, i + BATCH_SIZE);
@@ -143,6 +145,23 @@ async function sendPushToUsers(db, { groupId, recipientId, cibles, targetUserIds
       // Tag déterministe pour que le navigateur et l'OS fusionnent tout doublon
       const notifTag = resolvedData.tag || (resolvedData.eventId ? `event-${resolvedData.eventId}` : (resolvedData.announcementId ? `annonce-${resolvedData.announcementId}` : (resolvedData.threadId ? `forum-${resolvedData.threadId}` : undefined)));
 
+      // Conversion stricte en chaînes de caractères de toutes les entrées data (exigence FCM)
+      const fcmStringData = {};
+      Object.entries({
+        ...resolvedData,
+        title: finalTitle,
+        body: truncatedBody,
+        url: eventUrl,
+        click_action: eventUrl,
+        groupId: effectiveGroupId || "",
+        icon: assoIcon,
+        ...(notifTag ? { tag: notifTag } : {})
+      }).forEach(([k, v]) => {
+        if (v !== undefined && v !== null) {
+          fcmStringData[k] = typeof v === "string" ? v : String(v);
+        }
+      });
+
       const multicastMessage = {
         notification: {
           title: finalTitle,
@@ -152,82 +171,102 @@ async function sendPushToUsers(db, { groupId, recipientId, cibles, targetUserIds
         android: {
           priority: 'high',
           notification: {
+            channelId: 'default',
+            sound: 'default',
             ...(notifTag ? { tag: notifTag } : {})
           }
         },
         apns: {
           headers: {
             'apns-priority': '10'
+          },
+          payload: {
+            aps: {
+              sound: 'default',
+              'content-available': 1
+            }
           }
         },
         webpush: {
+          headers: {
+            Urgency: 'high'
+          },
           notification: {
             title: finalTitle,
             body: truncatedBody,
-            icon: assoIcon, // URL Storage dynamique du logo de l'association
-            badge: '/badge-72x72.png', // Symbole monochrome pour la barre d'état Android
+            icon: assoIcon,
+            badge: '/badge-72x72.png',
             ...(notifTag ? { tag: notifTag } : {}),
-            // Données injectées dans l'objet notification pour le handler notificationclick du SW
-            data: {
-              ...resolvedData,
-              url: eventUrl,
-              groupId: effectiveGroupId || "",
-              icon: assoIcon,
-              ...(notifTag ? { tag: notifTag } : {})
-            }
+            data: fcmStringData
           },
           fcmOptions: {
             link: eventUrl
           }
         },
-        data: {
-          ...resolvedData,
-          url: eventUrl,
-          groupId: effectiveGroupId || "",
-          icon: assoIcon,
-          ...(notifTag ? { tag: notifTag } : {})
-        },
+        data: fcmStringData,
         tokens: batchTokenStrings
       };
 
       const response = await getMessaging().sendEachForMulticast(multicastMessage);
       console.log(`sendPushToUsers - Lot ${Math.floor(i / BATCH_SIZE) + 1} : ${response.successCount} succès, ${response.failureCount} échecs.`);
 
-      if (response.failureCount > 0) {
-        response.responses.forEach((resp, idx) => {
-          if (!resp.success) {
-            const errorCode = resp.error?.code || "";
-            if (
-              errorCode === "messaging/invalid-registration-token" ||
-              errorCode === "messaging/registration-token-not-registered"
-            ) {
-              tokensToRemove.push(batch[idx]);
-            }
+      response.responses.forEach((resp, idx) => {
+        const { token, userId } = batch[idx];
+        if (!deliveryStatsByUser[userId]) {
+          deliveryStatsByUser[userId] = {
+            sentAt: sentAtIso,
+            successCount: 0,
+            failureCount: 0,
+            lastErrorCode: null
+          };
+        }
+        if (resp.success) {
+          deliveryStatsByUser[userId].successCount += 1;
+        } else {
+          const errorCode = resp.error?.code || resp.error?.message || "unknown_error";
+          deliveryStatsByUser[userId].failureCount += 1;
+          deliveryStatsByUser[userId].lastErrorCode = errorCode;
+          if (
+            errorCode === "messaging/invalid-registration-token" ||
+            errorCode === "messaging/registration-token-not-registered"
+          ) {
+            tokensToRemove.push({ token, userId });
           }
-        });
-      }
+        }
+      });
     } catch (err) {
       console.error("sendPushToUsers - Erreur lors de l'envoi du lot :", err);
     }
   }
 
-  if (tokensToRemove.length > 0) {
-    const tokensByUser = {};
-    tokensToRemove.forEach(({ token, userId }) => {
-      if (!tokensByUser[userId]) tokensByUser[userId] = [];
-      tokensByUser[userId].push(token);
-    });
+  const tokensByUser = {};
+  tokensToRemove.forEach(({ token, userId }) => {
+    if (!tokensByUser[userId]) tokensByUser[userId] = [];
+    tokensByUser[userId].push(token);
+  });
 
-    for (const [userId, invalidTokens] of Object.entries(tokensByUser)) {
-      try {
-        await db.collection("users").doc(userId).update({
-          fcmTokens: FieldValue.arrayRemove(...invalidTokens),
-          pushOptInContract: true
-        });
-        console.log(`sendPushToUsers - Nettoyage automatique : ${invalidTokens.length} token(s) obsolète(s) retiré(s) pour l'utilisateur ${userId} (pushOptInContract préservé)`);
-      } catch (err) {
-        console.error(`sendPushToUsers - Erreur nettoyage tokens pour ${userId}:`, err);
+  const affectedUserIds = new Set([
+    ...Object.keys(deliveryStatsByUser),
+    ...Object.keys(tokensByUser)
+  ]);
+
+  for (const userId of affectedUserIds) {
+    try {
+      const updatePayload = {};
+      if (deliveryStatsByUser[userId]) {
+        updatePayload.lastPushDelivery = deliveryStatsByUser[userId];
       }
+      const invalidTokens = tokensByUser[userId];
+      if (Array.isArray(invalidTokens) && invalidTokens.length > 0) {
+        updatePayload.fcmTokens = FieldValue.arrayRemove(...invalidTokens);
+        updatePayload.pushOptInContract = true;
+        console.log(`sendPushToUsers - Nettoyage automatique : ${invalidTokens.length} token(s) obsolète(s) retiré(s) pour l'utilisateur ${userId} (pushOptInContract préservé)`);
+      }
+      if (Object.keys(updatePayload).length > 0) {
+        await db.collection("users").doc(userId).update(updatePayload);
+      }
+    } catch (err) {
+      console.error(`sendPushToUsers - Erreur mise à jour statut Push pour ${userId}:`, err);
     }
   }
 
@@ -311,14 +350,17 @@ exports.onNotificationQueued = onDocumentCreated(
       targetUrl = `/app/forum/${data.threadId}`;
     }
 
-    const cibles = data.targetTag ? [data.targetTag] : ["Tous"];
+    const cibles = data.targetTag ? [data.targetTag] : (Array.isArray(data.cibles) ? data.cibles : ["Tous"]);
+    const targetUserIds = Array.isArray(data.targetUserIds) ? data.targetUserIds : [];
+    const recipientId = data.recipientId || data.userId || null;
     
     const sent = await sendPushToUsers(db, {
       groupId: data.groupId,
-      recipientId: data.recipientId,
+      recipientId,
       cibles: cibles,
-      title: data.title || "Notification O Girador",
-      body: data.body || "",
+      targetUserIds,
+      title: data.title || data.titre || "Notification O Girador",
+      body: data.body || data.message || "",
       dataPayload: { url: targetUrl, click_action: targetUrl, notifId, tag: `queue-${notifId}` }
     });
 

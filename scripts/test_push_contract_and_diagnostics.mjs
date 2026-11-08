@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { sanitizeUserDocPayload } from '../src/utils/firestoreUtils.js';
 
-// Vérification unitaire de l'assainisseur anti-écrasement fcmTokens
+// 1. Vérification unitaire de l'assainisseur anti-écrasement fcmTokens
 const samplePayload = {
   prenom: 'Camille',
   nom: 'Silva',
@@ -14,7 +14,7 @@ const cleaned = sanitizeUserDocPayload(samplePayload);
 assert.equal(cleaned.fcmTokens, undefined, 'sanitizeUserDocPayload doit supprimer tout tableau brut fcmTokens');
 assert.equal(cleaned.pushOptInContract, true, 'sanitizeUserDocPayload doit conserver pushOptInContract');
 
-// Vérification statique de la taille des modules créés / refondus (<= 140 lignes)
+// 2. Vérification statique de la taille des modules créés / refondus (<= 140 lignes)
 const checkedFiles = [
   'src/utils/pushDiagnosticsUtils.js',
   'src/utils/pushNotificationHelper.js',
@@ -37,18 +37,26 @@ for (const rel of checkedFiles) {
   assert.ok(lines <= 140, `${rel} dépasse 140 lignes (${lines} lignes)`);
 }
 
-// Vérification du contenu fonctionnel clé dans pushDiagnosticsUtils.js
+// 3. Vérification des statuts et labels dans pushDiagnosticsUtils.js
 const diagSource = fs.readFileSync(path.resolve(process.cwd(), 'src/utils/pushDiagnosticsUtils.js'), 'utf8');
 for (const code of [
-  'IOS_NOT_INSTALLED',
-  'IN_APP_BROWSER',
-  'PERMISSION_DENIED',
-  'TOKEN_SYNC_ERROR',
-  'NEVER_ANSWERED',
-  'pushOptInContract'
+  'webview_blocked',
+  'ios_not_installed',
+  'unsupported',
+  'browser_denied',
+  'prompt_pending',
+  'token_error',
+  'active',
+  'lastActive',
+  'lastPushDelivery'
 ]) {
   assert.ok(diagSource.includes(code), `pushDiagnosticsUtils.js doit gérer ${code}`);
 }
 
-console.log('✅ Tous les contrôles du Contrat Push Permanent & Télé-diagnostic Admin sont validés.');
+// 4. Vérification du payload FCM et de lastPushDelivery dans functions/index.js
+const fnSource = fs.readFileSync(path.resolve(process.cwd(), 'functions/index.js'), 'utf8');
+for (const token of ['channelId', 'apns-priority', 'lastPushDelivery', 'sendEachForMulticast']) {
+  assert.ok(fnSource.includes(token), `functions/index.js doit contenir ${token}`);
+}
 
+console.log('✅ Tous les contrôles du Télé-diagnostic Push, lastActive & lastPushDelivery FCM sont validés.');

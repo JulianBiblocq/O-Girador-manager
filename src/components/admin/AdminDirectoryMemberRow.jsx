@@ -74,9 +74,9 @@ export default function AdminDirectoryMemberRow({
                 ? 'bg-[var(--color-cordel-vert,#2d6a4f)]/15 border-[#2d6a4f]/40 text-[var(--color-cordel-vert,#2d6a4f)]'
                 : 'bg-stone-200/80 border-stone-400/50 text-stone-700'
             }`}
-            title={pushDiag.label}
+            title={pushDiag.tooltip || pushDiag.label}
           >
-            {isPushReachable ? '🔔 Push' : `🔕 Muet · ${pushDiag.shortLabel}`}
+            {isPushReachable ? '🔔 PUSH' : `🔕 MUET · ${pushDiag.shortLabel}`}
           </span>
           {isArchived ? (
             <span className="theme-stamp-badge text-[7.5px] bg-red-600/15 border-red-700/40 text-red-900 dark:text-red-300 font-black px-1.5 py-0.5">

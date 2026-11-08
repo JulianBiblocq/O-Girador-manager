@@ -57,6 +57,7 @@ import { isDefisEnLigneEnabled } from '../utils/gameUtils';
 import GameLobbyModal from './games/GameLobbyModal';
 import HeaderBrandTitle from './common/HeaderBrandTitle';
 import { forceUpdateAndClearCache } from '../utils/pwaUtils';
+import { useAutoSyncPushToken } from '../hooks/useAutoSyncPushToken';
 
 export default function LayoutShell({ 
   logoUrl, 
@@ -88,6 +89,8 @@ export default function LayoutShell({
 }) {
   const { urls } = useTenantContext();
   const { t } = useTranslation();
+  // Synchronisation globale et inconditionnelle du télé-diagnostic Push et du jeton FCM sur toutes les vues
+  useAutoSyncPushToken(null, profileData);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isLogoTilting, setIsLogoTilting] = useState(false);
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
