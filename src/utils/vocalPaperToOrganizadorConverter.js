@@ -117,8 +117,11 @@ export function convertScannedVocalBatchToOrganizador(scanResult) {
 export async function scanVocalPaperMultiPhotos(photoDataUrls = [], options = {}) {
   const apiKey = options.apiKey || getScanApiKey();
   if (!apiKey) return { success: false, error: "Clé d'accès requise pour la lecture optique", needsApiKey: true };
-  const prompt = `Tu es le moteur de lecture optique de l'Atelier Papier du Chant (O Girador). Analyse ces photos (CHANT-SEQ, CHANT-NOTES-1M/2M, CHANT-RYTHME).
-Règles: 1) Sur CHANT-SEQ, lis sequenceColumns:[{measureNumber,puxCode,corCode}]. 2) Sur les feuilles Patterns, lis patterns:[{code:"P1",measuresCount,hasAnacrusis,hasTailBeat,rhythmOnlyMode,anacrusisCells:[{stepIndex,syllable,isTie,pitchKey,octaveShift}],mainCells:[...],tailCells:[...]}]. Préserve les tirets "-" de fin de syllabe (ex: "VO-") et les apostrophes d'élision (ex: "E'O"). Réponds UNIQUEMENT en JSON valide.`;
+  const refBlock = options.referenceLyrics?.trim()
+    ? `\nTEXTE OFFICIEL DE RÉFÉRENCE :\n"""\n${options.referenceLyrics.trim()}\n"""\n« Les paroles officielles de ce chant sont déjà connues ci-dessus. L'écriture manuscrite sur la grille peut être rapide, abrégée ou sans accents. Utilise obligatoirement les mots et syllabes du texte officiel fourni pour identifier chaque syllabe manuscrite, tout en respectant à 100 % les cases de temps/subdivisions où elles sont inscrites sur la grille. »`
+    : '';
+  const prompt = `Tu es le moteur de lecture optique de l'Atelier Papier du Chant (O Girador). Analyse ces photos (CHANT-SEQ, CHANT-NOTES-1M/2M, CHANT-RYTHME).${refBlock}
+Règles: 1) Sur CHANT-SEQ, lis sequenceColumns:[{measureNumber,puxCode,corCode}]. 2) Sur les feuilles Patterns, lis patterns:[{code:"P1",measuresCount,hasAnacrusis,hasTailBeat,rhythmOnlyMode,anacrusisCells:[{stepIndex,syllable,isTie,pitchKey,octaveShift}],mainCells:[...],tailCells:[...]}]. Préserve les tirets "-" de fin de syllabe (ex: "VO-") et les apostrophes d'élision (ex: "E'O", "XE'O"). Réponds UNIQUEMENT en JSON valide.`;
   const parts = [{ text: prompt }];
   for (const rawUrl of photoDataUrls) {
     const comp = await compressImageForScan(rawUrl);

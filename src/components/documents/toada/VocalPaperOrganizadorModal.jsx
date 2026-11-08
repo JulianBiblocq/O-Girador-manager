@@ -46,7 +46,7 @@ export default function VocalPaperOrganizadorModal({ isOpen, onClose, onApplyRes
       if (onApplyResult) onApplyResult(res.text, alsoFillVaral, null);
       onClose(); return;
     }
-    const res = await scanVocalPaperMultiPhotos(photos.map((p) => p.dataUrl), { apiKey: keyDraft.trim(), signature });
+    const res = await scanVocalPaperMultiPhotos(photos.map((p) => p.dataUrl), { apiKey: keyDraft.trim(), signature, referenceLyrics: tab1Lyrics });
     setIsScanning(false);
     if (!res.success) { setErrorMsg(res.error); if (res.needsApiKey) setShowKey(true); return; }
     if (onApplyResult) onApplyResult(res.rawTxtCode, alsoFillVaral, res.parolesOriginales);
