@@ -14,11 +14,41 @@ export const PUSH_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
 
 /**
  * Vérifie si un Push a déjà été envoyé dans ce fil il y a moins de 5 minutes.
+ * Accepte soit un horodatage ISO direct, soit l'objet thread complet (auquel cas
+ * il inspecte la dernière réponse dans `thread.reponses` ou `thread.lastPushSentAt`).
  */
-export function isPushCooldownActive(lastPushSentAt, cooldownMs = PUSH_COOLDOWN_MS) {
-  if (!lastPushSentAt) return false;
-  const lastMs = toTimestamp(lastPushSentAt);
+export function isPushCooldownActive(threadOrTimestamp, cooldownMs = PUSH_COOLDOWN_MS) {
+  if (!threadOrTimestamp) return false;
+  let refTimestamp = threadOrTimestamp;
+  if (typeof threadOrTimestamp === 'object') {
+    const replies = Array.isArray(threadOrTimestamp.reponses) ? threadOrTimestamp.reponses : [];
+    const lastReplyDate = replies.length > 0 ? replies[replies.length - 1]?.dateCreation : null;
+    refTimestamp = lastReplyDate || threadOrTimestamp.lastPushSentAt || null;
+  }
+  if (!refTimestamp) return false;
+  const lastMs = toTimestamp(refTimestamp);
   return lastMs > 0 && Date.now() - lastMs < cooldownMs;
+}
+
+/**
+ * Nettoie récursivement un objet ou tableau pour éliminer toute valeur `undefined`
+ * (formellement rejetée par Firestore à l'intérieur d'un `arrayUnion`).
+ */
+export function sanitizeFirestoreObject(input) {
+  if (input === undefined) return null;
+  if (input === null || typeof input !== 'object') return input;
+  if (Array.isArray(input)) {
+    return input
+      .filter((item) => item !== undefined)
+      .map((item) => sanitizeFirestoreObject(item));
+  }
+  const cleaned = {};
+  Object.entries(input).forEach(([key, val]) => {
+    if (val !== undefined) {
+      cleaned[key] = sanitizeFirestoreObject(val);
+    }
+  });
+  return cleaned;
 }
 
 /**

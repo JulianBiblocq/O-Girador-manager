@@ -101,6 +101,10 @@ export default function CordelConfirmModal({
               <span className="text-[9px] font-black uppercase tracking-widest text-cordel-wood opacity-85">
                 {isSuccess
                   ? '✨ Confirmation'
+                  : isAlert
+                  ? isDanger
+                    ? '⚠️ Erreur'
+                    : '⚠️ Information'
                   : isDanger
                   ? '⚠️ Action irréversible'
                   : isWarning

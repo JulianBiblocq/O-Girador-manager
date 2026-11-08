@@ -14,6 +14,7 @@ import { extractMentionedUserIds } from '../components/forum/MentionAutocomplete
 import {
   syncThreadReadStatus,
   isPushCooldownActive,
+  sanitizeFirestoreObject,
   dispatchThreadReplyNotifications
 } from '../utils/forumThreadSyncUtils';
 
@@ -348,24 +349,37 @@ export function useThreadData({
         : '';
       const finalMessage = `${quoteHeader}${replyText.trim()}`;
 
-      const newReply = {
+      const rawReply = {
         message: finalMessage,
         auteurId: user?.uid || 'anonyme',
         authorId: user?.uid || 'anonyme',
         auteurNom: `${profileData?.prenom || ''} ${profileData?.nom || ''}`.trim() || user?.email || 'Membre',
         authorName: `${profileData?.prenom || ''} ${profileData?.nom || ''}`.trim() || user?.email || 'Membre',
+        authorAvatar: profileData?.photoURL || profileData?.avatarUrl || user?.photoURL || null,
         dateCreation: now,
         targetTag: selectedTarget || null,
+        replyTo: replyingTo
+          ? {
+              authorName: replyingTo.authorName || 'Membre',
+              snippet: replyingTo.snippet || '',
+              replyId: replyingTo.replyId || null
+            }
+          : null,
         reactions: {},
-        mentionedUserIds: detectedMentionIds
+        mentionedUserIds: Array.isArray(detectedMentionIds) ? detectedMentionIds.filter(Boolean) : []
       };
 
-      const allowChannelPush = !isPushCooldownActive(thread?.lastPushSentAt);
+      // Assainissement récursif strict : zéro propriété undefined dans arrayUnion
+      const newReply = sanitizeFirestoreObject(rawReply);
 
+      // Cooldown Push de 5 minutes calculé à partir de la dernière réponse du fil
+      const allowChannelPush = !isPushCooldownActive(thread);
+
+      // Seules les clés autorisées par affectedKeys().hasOnly(...) dans firestore.rules
+      // pour un membre standard ('reponses' et 'derniereModification') sont modifiées.
       await updateDoc(threadRef, {
         reponses: arrayUnion(newReply),
-        derniereModification: now,
-        ...(allowChannelPush ? { lastPushSentAt: now } : {})
+        derniereModification: now
       });
 
       setReplyingTo(null);
@@ -393,7 +407,7 @@ export function useThreadData({
       setSelectedTarget('');
       scrollToBottom();
     } catch (err) {
-      console.error("useThreadData - Erreur envoi réponse forum :", err);
+      console.error("useThreadData - Erreur envoi réponse forum :", err?.code || 'unknown', err?.message || err, err);
       alert((t && t('forum.errorSending')) || "Erreur lors de l'envoi de la réponse");
     } finally {
       setSending(false);
