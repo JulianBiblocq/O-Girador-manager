@@ -104,6 +104,7 @@ export function buildEventCreationPayload({
     activerRecolteMedias: isRecolteActiveForDoc,
     publierSurVaral: formData.publierSurVaral !== undefined ? Boolean(formData.publierSurVaral) : (isRecolteActiveForDoc !== false),
     sendPushNotification: formData.sendPushNotification !== false,
+    clientNotified: true,
     description: formData.description || '',
     latitude: formData.latitude ? Number(formData.latitude) : null,
     longitude: formData.longitude ? Number(formData.longitude) : null,

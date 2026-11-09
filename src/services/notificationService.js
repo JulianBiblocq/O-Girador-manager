@@ -1,148 +1,152 @@
 /**
- * Service de gestion des notifications in-app et de diffusion pour les discussions d'événements.
- * Conforme aux règles d'architecture et de gouvernance du projet O-Girador-manager.
+ * Service de notifications temps réel :
+ * - Diffusion des notifications internes (Cloche 🔔) et Push FCM lors d'un nouveau message
+ *   dans la discussion d'un événement.
+ * - Écoute temps réel et marquage comme lu.
  */
 
 import {
   collection,
   doc,
-  writeBatch,
+  query,
+  where,
+  orderBy,
+  limit,
+  onSnapshot,
   updateDoc,
-  serverTimestamp
+  writeBatch
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import {
-  formatMessageExcerpt,
   getEventDiscussionRecipients,
   buildEventDiscussionNotificationPayload
 } from '../utils/eventDiscussionNotificationUtils';
+import {
+  dispatchBulkInAppAndPushNotification,
+  getActiveGroupMembers,
+  NOTIFICATION_TYPES
+} from '../utils/inAppNotificationService';
+import { canUserSeeReunionInAgenda } from '../utils/reunionPrivacyUtils';
+import { getEffectiveMemberTags } from '../utils/memberUtils';
 
-export {
-  formatMessageExcerpt,
-  getEventDiscussionRecipients,
-  buildEventDiscussionNotificationPayload
-};
+export { getEventDiscussionRecipients, buildEventDiscussionNotificationPayload };
 
 /**
- * Diffuse par lot (writeBatch Firestore) les notifications in-app aux participants d'un événement.
- * Écrit à la fois dans la collection racine 'notifications' et dans 'users/{userId}/in_app_notifications'
- * pour assurer une compatibilité totale avec le centre de notifications (cloche) et les règles de sécurité.
- *
- * @param {Object} params Paramètres de la notification
- * @param {Object} params.event Objet événement complet
- * @param {string} params.authorName Nom de l'auteur du message
- * @param {string} params.text Texte du message
- * @param {string} params.currentUserId UID de l'auteur (exclu des notifications)
- * @param {string} [params.groupId] Identifiant du groupe/association
- * @returns {Promise<{ success: boolean, count: number, recipientIds: string[] }>}
+ * Envoie les notifications internes (users/{uid}/in_app_notifications) ET Push (notifications_queue)
+ * à l'ensemble des membres actifs concernés par l'événement (hors auteur du message).
  */
 export async function sendEventDiscussionNotifications({
   event,
-  authorName = 'Un membre',
-  text = '',
+  authorName,
+  text,
   currentUserId,
-  groupId = ''
+  groupId
 }) {
-  if (!event || !event.id) {
-    return { success: false, count: 0, recipientIds: [] };
+  if (!event?.id || !text || !currentUserId) return [];
+
+  const resolvedGroupId = groupId || event.groupId || null;
+  const recipientSet = new Set(getEventDiscussionRecipients(event, currentUserId));
+
+  // Ajout de 100 % des membres actifs du groupe ayant visibilité sur l'événement
+  if (resolvedGroupId) {
+    const activeMembers = await getActiveGroupMembers(resolvedGroupId, currentUserId);
+    activeMembers.forEach((member) => {
+      const memberTags = getEffectiveMemberTags(member);
+      if (canUserSeeReunionInAgenda(event, member, memberTags)) {
+        recipientSet.add(member.id);
+      }
+    });
   }
 
-  const cleanText = (text || '').trim();
-  if (!cleanText) {
-    return { success: false, count: 0, recipientIds: [] };
-  }
+  const recipientIds = Array.from(recipientSet).filter((uid) => uid && uid !== currentUserId);
+  if (recipientIds.length === 0) return [];
 
-  const recipientIds = getEventDiscussionRecipients(event, currentUserId);
-  if (recipientIds.length === 0) {
-    return { success: true, count: 0, recipientIds: [] };
-  }
-
-  const effectiveGroupId = groupId || event.groupId || '';
-  const nowIso = new Date().toISOString();
+  const eventTitle = event.titre || event.nom || 'Événement';
+  const cleanText = String(text || '').trim();
+  const excerpt = cleanText.length > 90 ? `${cleanText.slice(0, 87)}...` : cleanText;
+  const senderLabel = authorName || 'Un membre';
+  const targetUrl = `/app?eventId=${event.id}&tab=discussion`;
 
   try {
-    // Découpage en blocs de 200 destinataires maximum (Firestore limite les batchs à 500 opérations au total)
-    const chunkSize = 200;
-    for (let i = 0; i < recipientIds.length; i += chunkSize) {
-      const chunk = recipientIds.slice(i, i + chunkSize);
-      const batch = writeBatch(db);
-
-      chunk.forEach((recipientUid) => {
-        const payload = buildEventDiscussionNotificationPayload({
-          recipientUid,
-          event,
-          authorName,
-          text: cleanText,
-          groupId: effectiveGroupId,
-          createdAtIso: nowIso
-        });
-
-        // 1. Écriture dans la collection racine 'notifications'
-        const rootNotifRef = doc(collection(db, 'notifications'));
-        const notifId = rootNotifRef.id;
-
-        batch.set(rootNotifRef, {
-          ...payload,
-          id: notifId,
-          notifId: notifId
-        });
-
-        // 2. Écriture synchrone dans la sous-collection 'users/{recipientUid}/in_app_notifications'
-        // garantissant la réception immédiate par le centre de notifications (cloche)
-        const userNotifRef = doc(db, 'users', recipientUid, 'in_app_notifications', notifId);
-        batch.set(userNotifRef, {
-          ...payload,
-          id: notifId,
-          notifId: notifId,
-          icon: '💬',
-          priority: 'normal',
-          createdAt: serverTimestamp()
-        });
-      });
-
-      await batch.commit();
-    }
-
-    return {
-      success: true,
-      count: recipientIds.length,
-      recipientIds
-    };
-  } catch (err) {
-    console.error("sendEventDiscussionNotifications - Erreur lors de l'envoi groupé :", err);
-    return {
-      success: false,
-      count: 0,
+    await dispatchBulkInAppAndPushNotification({
       recipientIds,
-      error: err.message || err
-    };
+      groupId: resolvedGroupId,
+      type: NOTIFICATION_TYPES.FORUM_MESSAGE,
+      titre: `💬 ${senderLabel} dans "${eventTitle}"`,
+      message: `"${excerpt}"`,
+      targetUrl,
+      icon: '💬',
+      sendPush: true
+    });
+    return recipientIds;
+  } catch (err) {
+    console.warn('notificationService - Erreur envoi notifications discussion :', err);
+    return [];
   }
 }
 
 /**
- * Marque une notification comme lue de manière idempotente dans les collections concernées.
- *
- * @param {string} notifId Identifiant de la notification
- * @param {string} userId Identifiant de l'utilisateur
+ * Souscrit en temps réel aux notifications non-lues d'un utilisateur dans `users/{userId}/in_app_notifications`.
  */
-export async function markNotificationAsRead(notifId, userId) {
-  if (!notifId) return;
+export function subscribeToUserNotifications(userId, callback, options = {}) {
+  if (!userId || typeof callback !== 'function') return () => {};
+  const dbRef = options.dbInstance || db;
+  const maxItems = options.maxItems || 30;
 
-  // 1. Mise à jour dans la sous-collection de l'utilisateur
-  if (userId) {
-    try {
-      const userNotifRef = doc(db, 'users', userId, 'in_app_notifications', notifId);
-      await updateDoc(userNotifRef, { read: true, isRead: true });
-    } catch {
-      // Ignorer si déjà lu ou document inexistant
+  const q = query(
+    collection(dbRef, 'users', userId, 'in_app_notifications'),
+    where('isRead', '==', false),
+    orderBy('createdAt', 'desc'),
+    limit(maxItems)
+  );
+
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const items = [];
+      snapshot.forEach((docSnap) => {
+        items.push({ id: docSnap.id, ...docSnap.data() });
+      });
+      callback(items);
+    },
+    (error) => {
+      console.warn('notificationService - Erreur écoute notifications :', error);
     }
-  }
+  );
+}
 
-  // 2. Mise à jour dans la collection racine 'notifications' si applicable
+/**
+ * Marque une notification comme lue (`isRead: true` et `read: true`).
+ */
+export async function markNotificationAsRead(notificationId, userId = null, dbInstance = db) {
+  if (!notificationId || !userId) return;
   try {
-    const rootNotifRef = doc(db, 'notifications', notifId);
-    await updateDoc(rootNotifRef, { read: true, isRead: true });
-  } catch {
-    // Ignorer si les règles interdisent l'écriture directe ou si le document n'existe pas
+    await updateDoc(doc(dbInstance, 'users', userId, 'in_app_notifications', notificationId), {
+      isRead: true,
+      read: true
+    });
+  } catch (err) {
+    console.warn('notificationService - Erreur markNotificationAsRead :', err);
+  }
+}
+
+/**
+ * Marque un lot de notifications comme lues.
+ */
+export async function markMultipleNotificationsAsRead(notificationIds = [], userId = null, dbInstance = db) {
+  if (!Array.isArray(notificationIds) || notificationIds.length === 0 || !userId) return;
+  try {
+    const batch = writeBatch(dbInstance);
+    notificationIds.forEach((id) => {
+      if (id) {
+        batch.update(doc(dbInstance, 'users', userId, 'in_app_notifications', id), {
+          isRead: true,
+          read: true
+        });
+      }
+    });
+    await batch.commit();
+  } catch (err) {
+    console.warn('notificationService - Erreur markMultipleNotificationsAsRead :', err);
   }
 }

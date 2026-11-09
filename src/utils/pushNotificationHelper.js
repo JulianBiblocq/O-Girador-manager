@@ -29,7 +29,37 @@ export async function resolveActiveMessagingSwRegistration() {
 }
 
 /**
- * Demande la permission Push en 1 clic, obtient le jeton FCM sur le SW actif,
+ * Obtient le jeton FCM sur le Service Worker actif.
+ * En cas d'erreur `Subscription failed` ou `AbortError` sur `PushManager`,
+ * purge automatiquement l'abonnement corrompu (`unsubscribe()`), patiente 300 ms et réessaie une seconde fois.
+ */
+export async function getTokenWithPushManagerAutoRepair(swReg) {
+  const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
+  try {
+    return await getToken(messaging, {
+      vapidKey,
+      serviceWorkerRegistration: swReg
+    });
+  } catch {
+    try {
+      const existingSub = await swReg?.pushManager?.getSubscription();
+      if (existingSub) {
+        await existingSub.unsubscribe();
+      }
+    } catch (unsubErr) {
+      console.warn('getTokenWithPushManagerAutoRepair - Nettoyage abonnement SW :', unsubErr?.message || unsubErr);
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    return await getToken(messaging, {
+      vapidKey,
+      serviceWorkerRegistration: swReg
+    });
+  }
+}
+
+/**
+ * Demande la permission Push en 1 clic, obtient le jeton FCM sur le SW actif (avec auto-réparation PushManager),
  * l'enregistre dans `users/{uid}.fcmTokens`, signe `pushOptInContract: true` et met à jour `pushDiagnostics`.
  */
 export async function activateAndPersistPushToken(uid) {
@@ -45,10 +75,7 @@ export async function activateAndPersistPushToken(uid) {
       return { ok: false, reason: permission };
     }
     const swReg = await resolveActiveMessagingSwRegistration();
-    const token = await getToken(messaging, {
-      vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
-      serviceWorkerRegistration: swReg
-    });
+    const token = await getTokenWithPushManagerAutoRepair(swReg);
     if (!token) {
       await syncPushDiagnosticsToFirestore(uid, null, { lastError: 'empty_token', force: true, hasActiveTokenOverride: false });
       return { ok: false, reason: 'empty_token' };

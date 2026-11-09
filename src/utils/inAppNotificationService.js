@@ -1,169 +1,224 @@
 /**
- * Service de notifications internes (In-App) et de diffusion ciblée par badges/étiquettes.
+ * Service de notifications internes (Cloche 🔔) dans `users/{uid}/in_app_notifications`
+ * et résolution unifiée des membres actifs du groupe (`getActiveGroupMemberUids`).
  */
 
-import {
-  collection,
-  doc,
-  setDoc,
-  getDocs,
-  query,
-  where,
-  writeBatch,
-  serverTimestamp,
-  Timestamp
-} from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, where, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
+import { isMemberArchived } from './memberUtils';
+import { queuePushNotification, queueBulkPushNotification } from './pushQueueService';
 
-export {
-  dispatchInAppAndPushNotification,
-  dispatchBulkInAppAndPushNotification
-} from './pushQueueService';
+export { queuePushNotification, queueBulkPushNotification };
 
+/**
+ * Constantes de types de notifications et icônes par défaut.
+ */
 export const NOTIFICATION_TYPES = {
-  FORUM_MENTION: 'forum_mention',
-  FORUM_REPLY: 'forum_reply',
-  FORUM_NEW_THREAD: 'forum_new_thread',
   FORUM_MESSAGE: 'forum_message',
+  FORUM_MENTION: 'forum_mention',
+  FORUM_NEW_THREAD: 'forum_new_thread',
+  PRIVATE_MESSAGE: 'private_message',
   CHAT_DIRECT: 'chat_direct',
   CHAT_GROUP: 'chat_group',
-  EVENT_NEW: 'event_new',
-  EVENT_ROADMAP: 'event_roadmap',
-  EXPENSE_STATUS: 'expense_status',
-  ANNOUNCEMENT: 'announcement'
+  CARPOOL_PROPOSAL: 'carpool_proposal',
+  CARPOOL_PASSENGER: 'carpool_passenger',
+  ROLE_VALIDATION: 'role_validation',
+  EXPENSE_REPORT: 'expense_report',
+  AGENDA_NEW_EVENT: 'agenda_new_event',
+  AGENDA_NEW_POLL: 'agenda_new_poll',
+  SYSTEM: 'system'
+};
+
+const DEFAULT_ICONS = {
+  [NOTIFICATION_TYPES.FORUM_MESSAGE]: '💬',
+  [NOTIFICATION_TYPES.FORUM_MENTION]: '🗣️',
+  [NOTIFICATION_TYPES.FORUM_NEW_THREAD]: '📢',
+  [NOTIFICATION_TYPES.PRIVATE_MESSAGE]: '✉️',
+  [NOTIFICATION_TYPES.CHAT_DIRECT]: '✉️',
+  [NOTIFICATION_TYPES.CHAT_GROUP]: '👥',
+  [NOTIFICATION_TYPES.CARPOOL_PROPOSAL]: '🚗',
+  [NOTIFICATION_TYPES.CARPOOL_PASSENGER]: '🙋',
+  [NOTIFICATION_TYPES.ROLE_VALIDATION]: '✅',
+  [NOTIFICATION_TYPES.EXPENSE_REPORT]: '🧾',
+  [NOTIFICATION_TYPES.AGENDA_NEW_EVENT]: '📅',
+  [NOTIFICATION_TYPES.AGENDA_NEW_POLL]: '📊',
+  [NOTIFICATION_TYPES.SYSTEM]: '🔔'
 };
 
 /**
- * Crée un document de notification dans users/{userId}/in_app_notifications.
+ * Construit les variantes de casse d'un `groupId` (`['Samambaia', 'samambaia']`).
+ */
+export function buildGroupIdCaseVariants(groupId) {
+  const raw = String(groupId || '').trim();
+  if (!raw) return [];
+  const lower = raw.toLowerCase();
+  const cap = lower.charAt(0).toUpperCase() + lower.slice(1);
+  return Array.from(new Set([raw, lower, cap])).filter(Boolean);
+}
+
+/**
+ * Résout 100 % des profils des membres actifs d'une association (insensible à la casse de `groupId`).
+ */
+export async function getActiveGroupMembers(groupId, excludeUid = null) {
+  const variants = buildGroupIdCaseVariants(groupId);
+  if (variants.length === 0) return [];
+  try {
+    const q = query(collection(db, 'users'), where('groupId', 'in', variants));
+    const snap = await getDocs(q);
+    const members = [];
+    snap.forEach((docSnap) => {
+      if (excludeUid && docSnap.id === excludeUid) return;
+      const u = docSnap.data();
+      if (isMemberArchived(u) || u.isDependent) return;
+      members.push({ id: docSnap.id, ...u });
+    });
+    return members;
+  } catch (err) {
+    console.warn('getActiveGroupMembers - Erreur résolution membres :', err);
+    return [];
+  }
+}
+
+/**
+ * Résout 100 % des UIDs des membres actifs d'une association (hors expéditeur éventuel).
+ */
+export async function getActiveGroupMemberUids(groupId, excludeUid = null) {
+  const members = await getActiveGroupMembers(groupId, excludeUid);
+  return members.map((m) => m.id);
+}
+
+/**
+ * Crée une notification interne dans `users/{recipientId}/in_app_notifications`
+ * avec les deux champs `isRead: false` et `read: false` pour une compatibilité totale.
  */
 export async function createInAppNotification({
-  userId,
-  groupId = '',
-  type = NOTIFICATION_TYPES.ANNOUNCEMENT,
+  recipientId,
+  groupId,
+  type = NOTIFICATION_TYPES.SYSTEM,
   titre,
   title,
   message = '',
   targetUrl = '/app',
-  icon = '🔔',
-  priority = 'normal',
-  isRead = false,
-  read = false,
-  createdAt = null
+  icon
 }) {
-  if (!userId) return null;
+  if (!recipientId) return null;
+
+  const resolvedTitle = titre || title || 'Notification';
+  const resolvedIcon = icon || DEFAULT_ICONS[type] || '🔔';
+
   try {
-    const notifsCol = collection(db, 'users', userId, 'in_app_notifications');
-    const newDocRef = doc(notifsCol);
-    const resolvedTimestamp = createdAt instanceof Timestamp
-      ? createdAt
-      : (createdAt instanceof Date ? Timestamp.fromDate(createdAt) : serverTimestamp());
-
-    const displayTitle = title || titre || 'Notification';
-    const resolvedUrl = (!targetUrl.startsWith('http') && !targetUrl.startsWith('/app'))
-      ? (targetUrl.startsWith('/') ? `/app${targetUrl}` : `/app/${targetUrl}`)
-      : targetUrl;
-
-    await setDoc(newDocRef, {
-      id: newDocRef.id,
-      notifId: newDocRef.id,
-      groupId,
+    const notifRef = collection(db, 'users', recipientId, 'in_app_notifications');
+    const docRef = await addDoc(notifRef, {
+      groupId: groupId || null,
       type,
-      title: displayTitle,
-      titre: displayTitle,
+      titre: resolvedTitle,
+      title: resolvedTitle,
       message,
-      targetUrl: resolvedUrl,
-      icon,
-      priority,
-      read: Boolean(read || isRead),
-      isRead: Boolean(read || isRead),
-      createdAt: resolvedTimestamp
+      targetUrl,
+      icon: resolvedIcon,
+      read: false,
+      isRead: false,
+      dateCreation: new Date().toISOString(),
+      createdAt: serverTimestamp()
     });
-    return newDocRef.id;
+    return docRef.id;
   } catch (err) {
-    console.error(`Erreur création notification in-app (${userId}) :`, err);
+    console.warn('createInAppNotification - Erreur création notification interne :', err);
     return null;
   }
 }
 
 /**
- * Diffuse une notification in-app ciblée aux membres possédant au moins l'un des tags/rôles spécifiés.
+ * Pipeline unifié : Crée la notification interne (cloche 🔔) ET déclenche le Push FCM.
  */
-export async function notifyMembersByTag({
+export async function dispatchInAppAndPushNotification({
+  recipientId,
   groupId,
-  tags = [],
+  type = NOTIFICATION_TYPES.SYSTEM,
+  titre,
   title,
-  message,
+  message = '',
   targetUrl = '/app',
-  icon = '🔔',
-  priority = 'normal'
+  icon,
+  sendPush = true
 }) {
-  if (!groupId || !Array.isArray(tags) || tags.length === 0) {
-    return { success: false, count: 0, recipientIds: [] };
-  }
+  if (!recipientId) return null;
+  const resolvedTitle = titre || title || 'Notification';
 
-  const normalizedTargets = tags.map((t) => String(t || '').trim().toLowerCase()).filter(Boolean);
-  if (normalizedTargets.length === 0) return { success: false, count: 0, recipientIds: [] };
+  const [inAppId] = await Promise.allSettled([
+    createInAppNotification({
+      recipientId, groupId, type, titre: resolvedTitle, title: resolvedTitle, message, targetUrl, icon
+    }),
+    sendPush
+      ? queuePushNotification({
+          recipientId, groupId, title: resolvedTitle, body: message, url: targetUrl
+        })
+      : Promise.resolve(null)
+  ]);
 
-  const resolvedTargetUrl = (!targetUrl.startsWith('http') && !targetUrl.startsWith('/app'))
-    ? (targetUrl.startsWith('/') ? `/app${targetUrl}` : `/app/${targetUrl}`)
-    : targetUrl;
+  return inAppId.status === 'fulfilled' ? inAppId.value : null;
+}
 
+/**
+ * Pipeline groupé : Envoie la cloche 🔔 à tous les destinataires ET met en file le Push FCM.
+ */
+export async function dispatchBulkInAppAndPushNotification({
+  recipientIds = [],
+  groupId,
+  type = NOTIFICATION_TYPES.SYSTEM,
+  titre,
+  title,
+  message = '',
+  targetUrl = '/app',
+  icon,
+  sendPush = true
+}) {
+  const uniqueIds = Array.from(new Set((recipientIds || []).filter(Boolean)));
+  if (uniqueIds.length === 0) return [];
+  const resolvedTitle = titre || title || 'Notification';
+
+  const inAppPromises = uniqueIds.map((uid) =>
+    createInAppNotification({
+      recipientId: uid, groupId, type, titre: resolvedTitle, title: resolvedTitle, message, targetUrl, icon
+    })
+  );
+
+  await Promise.allSettled([
+    ...inAppPromises,
+    sendPush
+      ? queueBulkPushNotification({
+          recipientIds: uniqueIds, groupId, title: resolvedTitle, body: message, url: targetUrl
+        })
+      : Promise.resolve(null)
+  ]);
+
+  return uniqueIds;
+}
+
+/**
+ * Envoie une notification interne à tous les membres possédant l'une des étiquettes ou rôles ciblés.
+ */
+export async function notifyMembersByTag({ groupId, tags = [], title, titre, message = '', targetUrl = '/app', icon = '🔔' }) {
+  if (!groupId || !Array.isArray(tags) || tags.length === 0) return;
   try {
-    const usersRef = collection(db, 'users');
-    let snapshot = await getDocs(query(usersRef, where('groupId', '==', groupId)));
-    if (snapshot.empty && groupId !== groupId.toLowerCase()) {
-      snapshot = await getDocs(query(usersRef, where('groupId', '==', groupId.toLowerCase())));
-    }
+    const members = await getActiveGroupMembers(groupId);
+    const normalizedTargets = tags.map((t) => t.toLowerCase().trim());
+    const promises = [];
 
-    const recipientIds = [];
-    snapshot.forEach((docSnap) => {
-      const data = docSnap.data();
-      if (data.statutActuel === 'archived') return;
+    members.forEach((u) => {
+      const userTags = [
+        ...(Array.isArray(u.userTags) ? u.userTags : []),
+        ...(Array.isArray(u.tags) ? u.tags : []),
+        ...(u.role ? [u.role] : [])
+      ].map((t) => (typeof t === 'string' ? t.toLowerCase().trim() : (t?.nom || t?.name || t?.id || '').toLowerCase().trim()));
 
-      const userTagList = [
-        ...(Array.isArray(data.userTags) ? data.userTags : []),
-        ...(Array.isArray(data.tags) ? data.tags : []),
-        ...(data.role ? [data.role] : []),
-        ...(data.profilRole ? [data.profilRole] : [])
-      ]
-        .map((t) => (typeof t === 'string' ? t.trim().toLowerCase() : (t?.nom || t?.name || t?.label || t?.id || '').trim().toLowerCase()))
-        .filter(Boolean);
-
-      if (normalizedTargets.some((target) => userTagList.includes(target))) {
-        recipientIds.push(docSnap.id);
+      if (normalizedTargets.some((target) => userTags.includes(target))) {
+        promises.push(createInAppNotification({ recipientId: u.id, groupId, titre: titre || title, message, targetUrl, icon }));
       }
     });
 
-    if (recipientIds.length > 0) {
-      const batchSize = 400;
-      for (let i = 0; i < recipientIds.length; i += batchSize) {
-        const chunk = recipientIds.slice(i, i + batchSize);
-        const batch = writeBatch(db);
-        chunk.forEach((userId) => {
-          const notifCol = collection(db, 'users', userId, 'in_app_notifications');
-          const newDocRef = doc(notifCol);
-          batch.set(newDocRef, {
-            id: newDocRef.id,
-            notifId: newDocRef.id,
-            title: title || '',
-            titre: title || '',
-            message: message || '',
-            targetUrl: resolvedTargetUrl,
-            icon: icon || '🔔',
-            priority,
-            read: false,
-            isRead: false,
-            groupId,
-            createdAt: serverTimestamp()
-          });
-        });
-        await batch.commit();
-      }
-    }
-
-    return { success: true, count: recipientIds.length, recipientIds };
+    await Promise.allSettled(promises);
   } catch (err) {
-    console.error('notifyMembersByTag - Erreur lors de la diffusion :', err);
-    return { success: false, count: 0, recipientIds: [], error: err.message };
+    console.warn('notifyMembersByTag - Erreur notification par tag :', err);
   }
 }

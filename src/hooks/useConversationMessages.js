@@ -6,30 +6,48 @@ import {
   onSnapshot,
   addDoc,
   doc,
-  updateDoc,
-  deleteDoc
+  updateDoc
 } from 'firebase/firestore';
 import { db } from '../firebase';
-import { dispatchBulkInAppAndPushNotification, NOTIFICATION_TYPES } from '../utils/inAppNotificationService';
+import {
+  dispatchBulkInAppAndPushNotification,
+  getActiveGroupMemberUids,
+  NOTIFICATION_TYPES
+} from '../utils/inAppNotificationService';
 import {
   getGeneralConversationId,
   isGeneralGroupConversation,
   ensureGeneralGroupConversation
 } from '../utils/generalGroupChatUtils';
 import { isPushCooldownActive } from '../utils/forumThreadSyncUtils';
+import {
+  toggleConversationReaction,
+  editConversationMessage,
+  deleteConversationMessage
+} from '../utils/conversationMessageActions';
 
 /**
  * Hook personnalisé useConversationMessages
  * Synchronise les messages d'une discussion active (directe ou de groupe) en temps réel.
- * Normalise systématiquement `general_${groupId}` en minuscules et assure le repli
- * sur `participantIds` pour éviter tout blocage de permission sur les anciens messages.
+ * Pour « 💬 Tout le groupe », résout systématiquement 100 % des membres actifs afin que
+ * chaque membre reçoive la cloche interne (🔔) et la notification Push.
  */
-export function useConversationMessages(conversationId, groupId, user, profileData, participantIds = [], conversation = null) {
+export function useConversationMessages(
+  conversationId,
+  groupId,
+  user,
+  profileData,
+  participantIds = [],
+  conversation = null
+) {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const normalizedGroupId = useMemo(
-    () => String(groupId || profileData?.groupId || conversation?.groupId || 'samambaia').trim().toLowerCase() || 'samambaia',
+    () =>
+      String(groupId || profileData?.groupId || conversation?.groupId || 'samambaia')
+        .trim()
+        .toLowerCase() || 'samambaia',
     [groupId, profileData?.groupId, conversation?.groupId]
   );
 
@@ -45,11 +63,8 @@ export function useConversationMessages(conversationId, groupId, user, profileDa
     return isGeneralGroup ? getGeneralConversationId(normalizedGroupId) : conversationId;
   }, [conversationId, isGeneralGroup, normalizedGroupId]);
 
-  // 1. Synchronisation temps réel des messages de la conversation
   useEffect(() => {
     if (!effectiveConversationId || !user?.uid) {
-      setMessages([]);
-      setLoading(false);
       return;
     }
 
@@ -72,29 +87,17 @@ export function useConversationMessages(conversationId, groupId, user, profileDa
         where('conversationId', '==', effectiveConversationId),
         where('participantIds', 'array-contains', user.uid)
       );
-      fallbackUnsub = onSnapshot(
-        qFallback,
-        applySnapshot,
-        (err) => {
-          console.warn('useConversationMessages - Repli lecture messages :', err?.message || err);
-          setLoading(false);
-        }
-      );
+      fallbackUnsub = onSnapshot(qFallback, applySnapshot, (err) => {
+        console.warn('useConversationMessages - Repli lecture messages :', err?.message || err);
+        setLoading(false);
+      });
     };
 
     if (isGeneralGroup) {
-      const qGeneral = query(
-        messagesRef,
-        where('conversationId', '==', effectiveConversationId)
-      );
-      const unsubPrimary = onSnapshot(
-        qGeneral,
-        applySnapshot,
-        () => {
-          // Si les règles Firestore exigent `user.uid in participantIds`, basculer instantanément
-          subscribeWithParticipantFilter();
-        }
-      );
+      const qGeneral = query(messagesRef, where('conversationId', '==', effectiveConversationId));
+      const unsubPrimary = onSnapshot(qGeneral, applySnapshot, () => {
+        subscribeWithParticipantFilter();
+      });
       return () => {
         unsubPrimary();
         if (fallbackUnsub) fallbackUnsub();
@@ -107,33 +110,51 @@ export function useConversationMessages(conversationId, groupId, user, profileDa
     };
   }, [effectiveConversationId, isGeneralGroup, user?.uid]);
 
-  // 2. Envoyer un nouveau message (texte, image et/ou fichier joint)
   const sendMessage = useCallback(
-    async ({ content, replyTo = null, imageUrl = null, thumbnailUrl = null, mediaName = null, fileUrl = null, fileName = null }) => {
+    async ({
+      content,
+      replyTo = null,
+      imageUrl = null,
+      thumbnailUrl = null,
+      mediaName = null,
+      fileUrl = null,
+      fileName = null
+    }) => {
       const trimmed = (content || '').trim();
       const hasImage = Boolean(imageUrl);
       const hasFile = Boolean(fileUrl);
       if ((!trimmed && !hasImage && !hasFile) || !effectiveConversationId || !user?.uid) return null;
 
-      const effectiveContent = trimmed || (hasImage ? '📷 Photo' : (hasFile ? `📎 ${fileName || 'Fichier joint'}` : ''));
+      const effectiveContent =
+        trimmed || (hasImage ? '📷 Photo' : hasFile ? `📎 ${fileName || 'Fichier joint'}` : '');
       const nowIso = new Date().toISOString();
       const senderFullName = profileData?.prenom
         ? `${profileData.prenom} ${profileData.nom || ''}`.trim()
         : user.displayName || 'Membre';
 
-      let effectiveParticipants = Array.isArray(participantIds) && participantIds.length > 0
-        ? Array.from(new Set([user.uid, ...participantIds]))
-        : [user.uid];
+      let effectiveParticipants =
+        Array.isArray(participantIds) && participantIds.length > 0
+          ? Array.from(new Set([user.uid, ...participantIds]))
+          : [user.uid];
 
-      if (isGeneralGroup && effectiveParticipants.length <= 1) {
-        const resolvedParticipants = await ensureGeneralGroupConversation({
-          userId: user.uid,
-          groupId: normalizedGroupId,
-          returnParticipants: true
-        });
-        if (Array.isArray(resolvedParticipants) && resolvedParticipants.length > 0) {
-          effectiveParticipants = Array.from(new Set([user.uid, ...resolvedParticipants]));
-        }
+      // Pour « 💬 Tout le groupe », toujours fusionner avec 100 % des membres actifs du groupe
+      if (isGeneralGroup) {
+        const [ensuredParticipants, allActiveUids] = await Promise.all([
+          ensureGeneralGroupConversation({
+            userId: user.uid,
+            groupId: normalizedGroupId,
+            returnParticipants: true
+          }),
+          getActiveGroupMemberUids(normalizedGroupId, null)
+        ]);
+        effectiveParticipants = Array.from(
+          new Set([
+            user.uid,
+            ...effectiveParticipants,
+            ...(Array.isArray(ensuredParticipants) ? ensuredParticipants : []),
+            ...(Array.isArray(allActiveUids) ? allActiveUids : [])
+          ].filter(Boolean))
+        );
       }
 
       const isGroup = conversation?.type === 'group' || isGeneralGroup;
@@ -156,11 +177,13 @@ export function useConversationMessages(conversationId, groupId, user, profileDa
         fileUrl: fileUrl || null,
         fileName: fileName || null,
         timestamp: nowIso,
-        replyTo: replyTo ? {
-          id: replyTo.id,
-          senderName: replyTo.senderName || 'Membre',
-          content: (replyTo.content || '').slice(0, 120)
-        } : null,
+        replyTo: replyTo
+          ? {
+              id: replyTo.id,
+              senderName: replyTo.senderName || 'Membre',
+              content: (replyTo.content || '').slice(0, 120)
+            }
+          : null,
         reactions: {}
       };
 
@@ -169,6 +192,7 @@ export function useConversationMessages(conversationId, groupId, user, profileDa
       const convRef = doc(db, 'conversations', effectiveConversationId);
       await updateDoc(convRef, {
         updatedAt: nowIso,
+        ...(isGeneralGroup ? { participantIds: effectiveParticipants } : {}),
         lastMessage: {
           content: effectiveContent,
           imageUrl: imageUrl || null,
@@ -183,18 +207,17 @@ export function useConversationMessages(conversationId, groupId, user, profileDa
       }).catch(() => {});
 
       try {
-        const otherParticipants = effectiveParticipants.filter((uid) => uid !== user.uid);
+        const otherParticipants = effectiveParticipants.filter((uid) => uid && uid !== user.uid);
         if (otherParticipants.length > 0) {
-          const cleanSnippet = effectiveContent.length > 80
-            ? `${effectiveContent.slice(0, 80)}...`
-            : effectiveContent;
+          const cleanSnippet =
+            effectiveContent.length > 80 ? `${effectiveContent.slice(0, 80)}...` : effectiveContent;
           const notifType = isGroup ? NOTIFICATION_TYPES.CHAT_GROUP : NOTIFICATION_TYPES.CHAT_DIRECT;
           const notifTitle = isGroup
             ? `👥 ${conversation?.name || (isGeneralGroup ? '💬 Tout le groupe' : 'Groupe')} : ${senderFullName}`
             : `✉️ ${senderFullName}`;
           const targetUrl = isGroup
-            ? `/forum?tab=groups&conversationId=${effectiveConversationId}`
-            : `/forum?tab=inbox&conversationId=${effectiveConversationId}`;
+            ? `/app/forum?tab=groups&conversationId=${effectiveConversationId}`
+            : `/app/forum?tab=inbox&conversationId=${effectiveConversationId}`;
 
           await dispatchBulkInAppAndPushNotification({
             recipientIds: otherParticipants,
@@ -215,89 +238,30 @@ export function useConversationMessages(conversationId, groupId, user, profileDa
     [effectiveConversationId, normalizedGroupId, isGeneralGroup, user, profileData, participantIds, conversation]
   );
 
-  // 3. Basculer une réaction emoji sur un message
   const toggleReaction = useCallback(
-    async (messageId, emoji) => {
-      if (!messageId || !emoji || !user?.uid) return;
-      const targetMsg = messages.find((m) => m.id === messageId);
-      if (!targetMsg) return;
-
-      const currentReactions = { ...(targetMsg.reactions || {}) };
-      const userList = Array.isArray(currentReactions[emoji]) ? [...currentReactions[emoji]] : [];
-      const userIndex = userList.indexOf(user.uid);
-      if (userIndex > -1) userList.splice(userIndex, 1);
-      else userList.push(user.uid);
-
-      if (userList.length === 0) delete currentReactions[emoji];
-      else currentReactions[emoji] = userList;
-
-      try {
-        await updateDoc(doc(db, 'conversation_messages', messageId), { reactions: currentReactions });
-      } catch (err) {
-        console.error('useConversationMessages - Erreur bascule réaction emoji :', err);
-      }
-    },
+    (messageId, emoji) => toggleConversationReaction({ messageId, emoji, uid: user?.uid, messages }),
     [messages, user?.uid]
   );
 
-  // 4. Modifier un message existant (auteur uniquement)
   const editMessage = useCallback(
-    async (messageId, newContent) => {
-      const trimmed = (newContent || '').trim();
-      if (!messageId || !user?.uid || !trimmed) return;
-      const targetMsg = messages.find((m) => m.id === messageId);
-      const isAuthor = targetMsg && (
-        targetMsg.senderId === user.uid ||
-        targetMsg.authorId === user.uid ||
-        targetMsg.userId === user.uid ||
-        targetMsg.auteurId === user.uid
-      );
-      if (!isAuthor) throw new Error("Action non autorisée : vous ne pouvez modifier que vos propres messages.");
-
-      await updateDoc(doc(db, 'conversation_messages', messageId), {
-        content: trimmed,
-        isEdited: true,
-        editedAt: new Date().toISOString()
-      });
-
-      if (effectiveConversationId && messages.length > 0 && messages[messages.length - 1]?.id === messageId) {
-        await updateDoc(doc(db, 'conversations', effectiveConversationId), {
-          'lastMessage.content': trimmed
-        }).catch(() => {});
-      }
-    },
+    (messageId, newContent) =>
+      editConversationMessage({ messageId, newContent, uid: user?.uid, messages, effectiveConversationId }),
     [effectiveConversationId, messages, user?.uid]
   );
 
-  // 5. Supprimer un message (auteur uniquement)
   const deleteMessage = useCallback(
-    async (messageId) => {
-      if (!messageId || !user?.uid) return;
-      const targetMsg = messages.find((m) => m.id === messageId);
-      const isAuthor = targetMsg && (
-        targetMsg.senderId === user.uid ||
-        targetMsg.authorId === user.uid ||
-        targetMsg.userId === user.uid ||
-        targetMsg.auteurId === user.uid
-      );
-      if (!isAuthor) throw new Error("Action non autorisée : vous ne pouvez supprimer que vos propres messages.");
-
-      await deleteDoc(doc(db, 'conversation_messages', messageId));
-      if (effectiveConversationId && messages.length > 0 && messages[messages.length - 1]?.id === messageId) {
-        const remaining = messages.filter((m) => m.id !== messageId);
-        const prevMsg = remaining.length > 0 ? remaining[remaining.length - 1] : null;
-        await updateDoc(doc(db, 'conversations', effectiveConversationId), {
-          lastMessage: prevMsg ? {
-            content: prevMsg.content || (prevMsg.imageUrl ? '📷 Photo' : (prevMsg.fileUrl ? `📎 ${prevMsg.fileName || 'Fichier'}` : '')),
-            senderId: prevMsg.senderId,
-            senderName: prevMsg.senderName,
-            timestamp: prevMsg.timestamp
-          } : null
-        }).catch(() => {});
-      }
-    },
+    (messageId) =>
+      deleteConversationMessage({ messageId, uid: user?.uid, messages, effectiveConversationId }),
     [effectiveConversationId, messages, user?.uid]
   );
 
-  return { messages, loading, sendMessage, toggleReaction, deleteMessage, editMessage };
+  const isReady = Boolean(effectiveConversationId && user?.uid);
+  return {
+    messages: isReady ? messages : [],
+    loading: isReady ? loading : false,
+    sendMessage,
+    toggleReaction,
+    deleteMessage,
+    editMessage
+  };
 }

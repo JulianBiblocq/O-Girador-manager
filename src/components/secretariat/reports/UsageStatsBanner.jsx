@@ -75,9 +75,9 @@ export default function UsageStatsBanner({
               {showUnreachable && (
                 <ul className="max-h-28 overflow-y-auto text-[8.5px] font-semibold space-y-1 pr-1">
                   {stats.unreachableMembers.map((m) => (
-                    <li key={m.id} className="leading-tight border-b border-black/5 pb-0.5">
+                    <li key={m.id} className="leading-tight border-b border-black/5 pb-0.5" title={m.diagnosticBadge?.tooltip}>
                       <span className="font-black block truncate">{m.label}</span>
-                      <span className="opacity-80 block truncate">{m.diagnosticBadge?.label}</span>
+                      <span className="opacity-80 block truncate max-w-[220px]">{m.diagnosticBadge?.label}</span>
                     </li>
                   ))}
                 </ul>

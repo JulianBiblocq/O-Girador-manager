@@ -724,7 +724,7 @@ export default function WidgetAgenda({
           const createdId = await createSingleDoc(validDates[i], true, pollGroupId, i + 1, validDates.length);
           if (i === 0) firstCreatedEventId = createdId;
         }
-        if (formData.sendPushNotification !== false && firstCreatedEventId) {
+        if (firstCreatedEventId) {
           const reunionPrivacy = formData.type === 'reunion' ? resolveReunionPrivacyConfig(formData) : null;
           await notifyNewAgendaEventOrPoll({
             groupId,
@@ -739,12 +739,13 @@ export default function WidgetAgenda({
             reunionPrivacyMode: reunionPrivacy?.reunionPrivacyMode,
             hideAgendaFromNonTarget: reunionPrivacy?.hideAgendaFromNonTarget,
             pollRestrictionType: formData.pollRestrictionType,
-            pollTarget: formData.pollTarget
+            pollTarget: formData.pollTarget,
+            sendPush: formData.sendPushNotification !== false
           });
         }
       } else {
         const createdEventId = await createSingleDoc(formData.date, false);
-        if (formData.sendPushNotification !== false && createdEventId) {
+        if (createdEventId) {
           const reunionPrivacy = formData.type === 'reunion' ? resolveReunionPrivacyConfig(formData) : null;
           await notifyNewAgendaEventOrPoll({
             groupId,
@@ -757,7 +758,8 @@ export default function WidgetAgenda({
             audience: reunionPrivacy?.audience,
             targetGroup: reunionPrivacy?.targetGroup,
             reunionPrivacyMode: reunionPrivacy?.reunionPrivacyMode,
-            hideAgendaFromNonTarget: reunionPrivacy?.hideAgendaFromNonTarget
+            hideAgendaFromNonTarget: reunionPrivacy?.hideAgendaFromNonTarget,
+            sendPush: formData.sendPushNotification !== false
           });
         }
       }

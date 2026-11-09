@@ -1,148 +1,183 @@
-/**
- * Utilitaires de notification automatique (In-App + Push FCM) et de provisionnement
- * lors de la création d'un événement ou d'un sondage de dates dans l'Agenda / Réunions.
- */
-
-import { collection, query, where, getDocs } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
-import { db, functions } from '../firebase';
-import { isMemberArchived, isMemberCaOrBureau, getEffectiveMemberTags } from './memberUtils';
-import { dispatchBulkInAppAndPushNotification, NOTIFICATION_TYPES } from './inAppNotificationService';
-import { resolveReunionPrivacyConfig, isUserInReunionTargetGroup } from './reunionPrivacyUtils';
+import { functions } from '../firebase';
+import {
+  dispatchBulkInAppAndPushNotification,
+  getActiveGroupMembers,
+  NOTIFICATION_TYPES
+} from './inAppNotificationService';
+import { getEffectiveMemberTags } from './memberUtils';
+import { canUserSeeReunionInAgenda } from './reunionPrivacyUtils';
 
 /**
- * Formate une date ISO d'événement de manière lisible pour le corps d'une notification.
- */
-function formatEventDateForNotif(dateStr) {
-  if (!dateStr) return '';
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return '';
-  return d.toLocaleDateString('fr-FR', {
-    weekday: 'short',
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-}
-
-/**
- * Résout les destinataires actifs de l'association concernés par un nouvel événement ou sondage
- * (hors créateur) et déclenche `dispatchBulkInAppAndPushNotification`.
+ * Notifie les membres actifs éligibles lors de la création d'un événement ou d'un sondage multi-dates.
+ * Crée 100 % du temps la notification dans la cloche interne (`in_app_notifications`)
+ * et déclenche l'envoi Push FCM si `sendPush !== false`.
  */
 export async function notifyNewAgendaEventOrPoll({
-  groupId, creatorId, titre, description = '', isPoll = false, validDatesCount = 0,
-  dateStr = '', firstCreatedEventId, audience = 'publique', pollRestrictionType = 'aucun', pollTarget = '',
-  targetGroup = null, reunionPrivacyMode = null, hideAgendaFromNonTarget = false
+  groupId,
+  creatorId,
+  titre,
+  description = '',
+  isPoll = false,
+  validDatesCount = 0,
+  dateStr = '',
+  firstCreatedEventId = null,
+  audience = 'publique',
+  targetGroup = 'all',
+  reunionPrivacyMode = 'public',
+  hideAgendaFromNonTarget = false,
+  pollRestrictionType = 'aucun',
+  pollTarget = '',
+  sendPush = true
 }) {
-  if (!groupId || !firstCreatedEventId || !titre) return;
-
+  if (!groupId || !firstCreatedEventId) return;
   try {
-    const privacyCfg = resolveReunionPrivacyConfig({
-      targetGroup,
-      reunionPrivacyMode,
-      hideAgendaFromNonTarget,
-      audience,
-      pollRestrictionType,
-      pollTarget
-    });
-    const isTargetRestricted =
-      privacyCfg.reunionPrivacyMode === 'huis_clos' ||
-      privacyCfg.targetGroup !== 'all';
-
-    const groupVariants = Array.from(new Set([groupId, groupId.toLowerCase()].filter(Boolean)));
-    const snap = await getDocs(query(collection(db, 'users'), where('groupId', 'in', groupVariants)));
-    const canonicalLower = groupId.trim().toLowerCase();
+    const activeMembers = await getActiveGroupMembers(groupId, creatorId);
     const recipientIds = [];
 
-    snap.forEach((docSnap) => {
-      if (docSnap.id === creatorId) return;
-      const u = { id: docSnap.id, ...docSnap.data() };
-      if (String(u.groupId || '').trim().toLowerCase() !== canonicalLower) return;
-      if (isMemberArchived(u) || u.isDependent) return;
+    activeMembers.forEach((u) => {
+      const userTags = getEffectiveMemberTags(u);
+      const canSeeReunion = canUserSeeReunionInAgenda(
+        { audience, portee: audience, targetGroup, reunionPrivacyMode, hideAgendaFromNonTarget },
+        u,
+        userTags
+      );
+      if (!canSeeReunion) return;
 
-      const roleLower = String(u.role || '').toLowerCase();
-      const isPrivileged = ['mestre', 'super-admin', 'admin'].includes(roleLower) || u.isSystemAdmin === true;
+      if (isPoll && pollRestrictionType === 'badge' && pollTarget) {
+        const targetNorm = pollTarget.toLowerCase().trim();
+        const hasBadge = userTags.some((t) => String(t).toLowerCase().trim() === targetNorm);
+        const isHighRole =
+          u.role === 'mestre' || u.role === 'super-admin' || u.isSystemAdmin === true;
+        if (!hasBadge && !isHighRole) return;
+      }
 
-      if (isTargetRestricted) {
-        if (!isUserInReunionTargetGroup(privacyCfg, u, u.tags)) {
+      if (isPoll && pollRestrictionType === 'instrument' && pollTarget) {
+        const targetNorm = pollTarget.toLowerCase().trim();
+        const userInsts = [
+          ...(Array.isArray(u.instrumentsJoues) ? u.instrumentsJoues : []),
+          ...(Array.isArray(u.instruments) ? u.instruments : []),
+          ...(u.instrument ? [u.instrument] : [])
+        ].map((inst) =>
+          (typeof inst === 'string' ? inst : inst?.nom || inst?.id || '').toLowerCase().trim()
+        );
+        const isHighRole =
+          u.role === 'mestre' || u.role === 'super-admin' || u.isSystemAdmin === true;
+        if (!userInsts.some((i) => i.includes(targetNorm) || targetNorm.includes(i)) && !isHighRole) {
           return;
         }
-      } else if (audience === 'ca' && !isPrivileged && !isMemberCaOrBureau(u)) {
-        return;
       }
 
-      if (isPoll && pollRestrictionType === 'badge' && pollTarget && !isPrivileged) {
-        const targetLower = pollTarget.trim().toLowerCase();
-        const memberTags = getEffectiveMemberTags(u).map((t) => String(t).toLowerCase());
-        if (!memberTags.includes(targetLower)) return;
-      }
-
-      recipientIds.push(docSnap.id);
+      recipientIds.push(u.id);
     });
 
     if (recipientIds.length === 0) return;
-
-    const cleanTitle = titre.trim();
-    const cleanDesc = (description || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-    const targetUrl = `/app/agenda?eventId=${firstCreatedEventId}`;
 
     if (isPoll) {
       await dispatchBulkInAppAndPushNotification({
         recipientIds,
         groupId,
-        type: NOTIFICATION_TYPES.EVENT_NEW,
-        titre: `📊 Nouveau sondage : ${cleanTitle} (${validDatesCount} dates proposées)`,
-        message: cleanDesc ? cleanDesc.slice(0, 110) : "Indiquez vos disponibilités dans l'Agenda.",
-        targetUrl,
-        sendPush: true
+        type: NOTIFICATION_TYPES.AGENDA_NEW_POLL,
+        titre: `📊 Sondage : ${titre}`,
+        message: `${validDatesCount} créneaux proposés — Votez pour vos disponibilités !`,
+        targetUrl: `/app?eventId=${firstCreatedEventId}`,
+        icon: '📊',
+        sendPush: Boolean(sendPush)
       });
     } else {
-      const formattedDate = formatEventDateForNotif(dateStr);
-      const bodyMsg = formattedDate
-        ? `📅 ${formattedDate}${cleanDesc ? ` — ${cleanDesc.slice(0, 80)}` : ''}`
-        : cleanDesc.slice(0, 110) || "Un nouvel événement a été ajouté à l'agenda.";
-
+      const formattedDate = dateStr
+        ? new Date(dateStr).toLocaleDateString('fr-FR', {
+            weekday: 'short',
+            day: '2-digit',
+            month: 'short',
+            hour: '2-digit',
+            minute: '2-digit'
+          })
+        : '';
       await dispatchBulkInAppAndPushNotification({
         recipientIds,
         groupId,
-        type: NOTIFICATION_TYPES.EVENT_NEW,
-        titre: `📅 Nouvel événement : ${cleanTitle}`,
-        message: bodyMsg,
-        targetUrl,
-        sendPush: true
+        type: NOTIFICATION_TYPES.AGENDA_NEW_EVENT,
+        titre: `📅 Nouvel événement : ${titre}`,
+        message: formattedDate || description || "Consultez l'agenda pour vous inscrire.",
+        targetUrl: `/app?eventId=${firstCreatedEventId}`,
+        icon: '📅',
+        sendPush: Boolean(sendPush)
       });
     }
-  } catch (err) {
-    console.warn('agendaNotificationUtils - Erreur notification création événement :', err);
+  } catch (notifErr) {
+    console.warn('agendaNotificationUtils - Erreur envoi notifications Agenda :', notifErr);
   }
 }
 
 /**
- * Déclenche en arrière-plan le provisionnement Framaspace d'un événement créé.
+ * Notifie l'ensemble des membres actifs lors de la création d'une série de répétitions en lot.
  */
-export function triggerFramaspaceEventProvisioning({ eventId, groupId, titre, type, dateVal, publierSurVaral }) {
+export async function notifyBatchRehearsalsCreated({
+  groupId,
+  creatorId = null,
+  titre = 'Répétition',
+  count = 1,
+  firstDateStr = '',
+  firstCreatedEventId = null,
+  sendPush = true
+}) {
+  if (!groupId || count <= 0) return;
+  try {
+    const activeMembers = await getActiveGroupMembers(groupId, creatorId);
+    const recipientIds = activeMembers.map((m) => m.id);
+    if (recipientIds.length === 0) return;
+
+    const firstDateLabel = firstDateStr
+      ? new Date(`${firstDateStr}T12:00:00`).toLocaleDateString('fr-FR', {
+          day: '2-digit',
+          month: 'short'
+        })
+      : '';
+    const targetUrl = firstCreatedEventId ? `/app?eventId=${firstCreatedEventId}` : '/app/agenda';
+
+    await dispatchBulkInAppAndPushNotification({
+      recipientIds,
+      groupId,
+      type: NOTIFICATION_TYPES.AGENDA_NEW_EVENT,
+      titre: `📅 ${count} ${count > 1 ? 'dates ajoutées' : 'date ajoutée'} : ${titre}`,
+      message: firstDateLabel
+        ? `À partir du ${firstDateLabel} — Indiquez vos présences dans l'Agenda !`
+        : "Consultez l'Agenda pour indiquer vos présences.",
+      targetUrl,
+      icon: '📅',
+      sendPush: Boolean(sendPush)
+    });
+  } catch (err) {
+    console.warn('notifyBatchRehearsalsCreated - Erreur notification lot répétitions :', err);
+  }
+}
+
+/**
+ * Provisionne de manière non-bloquante le dossier Framaspace (Nextcloud) d'un événement.
+ */
+export function triggerFramaspaceEventProvisioning({
+  eventId,
+  groupId,
+  titre,
+  type,
+  dateVal,
+  publierSurVaral
+}) {
   if (!eventId || !groupId) return;
   try {
-    const provisionFn = httpsCallable(functions, 'provisionFramaspaceEventFolders');
-    provisionFn({
+    const createFramaspaceFn = httpsCallable(functions, 'createFramaspaceEventFolder');
+    createFramaspaceFn({
       eventId,
       groupId,
-      eventData: {
-        id: eventId,
-        titre,
-        type,
-        date: dateVal,
-        dateDebut: dateVal,
-        groupId,
-        activerRecolteMedias: true,
-        publierSurVaral: publierSurVaral !== false
-      }
-    }).catch((provErr) => {
-      console.warn('agendaNotificationUtils - Auto-provision Framaspace différé :', provErr?.message);
+      eventTitle: titre,
+      eventType: type || 'prestation',
+      eventDate: dateVal || new Date().toISOString(),
+      publierSurVaral: publierSurVaral !== undefined ? Boolean(publierSurVaral) : true
+    }).catch((framaErr) => {
+      console.warn('Avertissement : Provisioning Framaspace différé ou non configuré :', framaErr?.message);
     });
-  } catch (fnErr) {
-    console.warn('agendaNotificationUtils - Exception provisionFramaspaceEventFolders :', fnErr?.message);
+  } catch (callErr) {
+    console.warn("Impossible d'appeler createFramaspaceEventFolder :", callErr);
   }
 }

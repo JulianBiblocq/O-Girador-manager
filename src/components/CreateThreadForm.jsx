@@ -7,7 +7,11 @@ import { XiloMegaphone } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
 import RichTextEditor from './RichTextEditor';
 import { canUserReadForumChannel } from '../utils/permissionUtils';
-import { dispatchBulkInAppAndPushNotification, NOTIFICATION_TYPES } from '../utils/inAppNotificationService';
+import {
+  dispatchBulkInAppAndPushNotification,
+  getActiveGroupMembers,
+  NOTIFICATION_TYPES
+} from '../utils/inAppNotificationService';
 import { getEffectiveMemberTags } from '../utils/memberUtils';
 import CreateThreadPollSection from './forum/CreateThreadPollSection';
 
@@ -156,12 +160,20 @@ export default function CreateThreadForm({ groupId, channelId, channels = [], us
         return regex.test(cleanMessage);
       });
 
-      // Notifications automatiques pour tous les membres ayant accès au salon de discussion
+      // Notifications automatiques pour 100 % des membres actifs ayant accès au salon de discussion
       try {
         const notifRecipientIds = new Set();
         const targetChannel = (channels || []).find((c) => c.id === targetChannelId);
-
+        const fetchedMembers = await getActiveGroupMembers(groupId, user.uid);
+        const membersMap = new Map();
         (allUsers || []).forEach((u) => {
+          if (u?.id && u.id !== user.uid && u.statut !== 'archive') membersMap.set(u.id, u);
+        });
+        fetchedMembers.forEach((u) => {
+          if (u?.id && u.id !== user.uid) membersMap.set(u.id, u);
+        });
+
+        Array.from(membersMap.values()).forEach((u) => {
           if (!u.id || u.id === user.uid || u.statut === 'archive') return;
           if (targetChannel && !canUserReadForumChannel(targetChannel, u, tagsDisponibles, getEffectiveMemberTags(u))) {
             return;

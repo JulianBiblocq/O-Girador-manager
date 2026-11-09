@@ -67,9 +67,9 @@ export default function AdminDirectoryMemberRow({
         )}
       </td>
       <td className="px-2 py-2 md:px-4 md:py-2.5 whitespace-nowrap text-right">
-        <div className="flex items-center justify-end gap-1.5 flex-wrap">
+        <div className="inline-flex items-center justify-end gap-1.5 flex-nowrap">
           <span
-            className={`theme-stamp-badge text-[7.5px] font-black px-1.5 py-0.5 ${
+            className={`theme-stamp-badge text-[7.5px] font-black px-1.5 py-0.5 max-w-[220px] truncate inline-block align-middle ${
               isPushReachable
                 ? 'bg-[var(--color-cordel-vert,#2d6a4f)]/15 border-[#2d6a4f]/40 text-[var(--color-cordel-vert,#2d6a4f)]'
                 : 'bg-stone-200/80 border-stone-400/50 text-stone-700'

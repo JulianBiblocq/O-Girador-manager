@@ -71,7 +71,7 @@ export function collectClientPushDiagnostics({
     status = 'prompt_pending'; label = '⏳ Connecté · N’a pas encore cliqué sur Activer'; blockerReason = 'NEVER_ANSWERED';
   } else if (permission === 'granted' && !hasActiveTokenInDb) {
     status = 'token_error';
-    label = `⚠️ Autorisé mais erreur de jeton (SW)${lastError ? ` (${String(lastError).slice(0, 70)})` : ''}`;
+    label = '⚠️ ERREUR NAVIGATEUR (SW)';
     blockerReason = 'TOKEN_SYNC_ERROR';
   } else if (permission === 'granted' && hasActiveTokenInDb) {
     status = 'active'; label = '🔔 PUSH'; blockerReason = 'OK';
@@ -80,7 +80,7 @@ export function collectClientPushDiagnostics({
   const diagnostics = {
     status, label, permission, platform, isStandalonePwa, isInAppBrowser, blockerReason, userAgentSummary, updatedAt
   };
-  if (lastError) diagnostics.lastError = String(lastError).slice(0, 180);
+  if (lastError) diagnostics.lastError = String(lastError).slice(0, 220);
   return diagnostics;
 }
 
@@ -97,8 +97,8 @@ export async function syncPushDiagnosticsToFirestore(
 
   const diagnostics = collectClientPushDiagnostics({ hasActiveTokenInDb, lastError, isMessagingSupported: Boolean(messaging) });
   const existingDiag = profileData?.pushDiagnostics;
-  const isMissingOrChanged = !existingDiag?.status || !existingDiag?.label || existingDiag.status !== diagnostics.status || existingDiag.label !== diagnostics.label;
-  const sig = `${diagnostics.status}|${diagnostics.label}|${hasActiveTokenInDb}`;
+  const isMissingOrChanged = !existingDiag?.status || !existingDiag?.label || existingDiag.status !== diagnostics.status || existingDiag.label !== diagnostics.label || (lastError && existingDiag.lastError !== diagnostics.lastError);
+  const sig = `${diagnostics.status}|${diagnostics.label}|${diagnostics.lastError || ''}|${hasActiveTokenInDb}`;
   if (!force && !isMissingOrChanged && sessionDiagnosticsCache.get(uid) === sig) return diagnostics;
   sessionDiagnosticsCache.set(uid, sig);
 
@@ -128,7 +128,25 @@ export function getMemberPushDiagnosticBadge(member) {
   }
   const diag = member?.pushDiagnostics;
   if (diag?.label) {
-    return { code: diag.status || 'DIAG', status: diag.status || 'diag', icon: '🔕', shortLabel: diag.label, label: diag.label, tooltip: diag.label, isReachable: false };
+    const isSwTokenError =
+      diag.status === 'token_error' ||
+      /erreur de jeton|failed to execute|pushmanager|erreur navigateur|aborterror/i.test(diag.label || '');
+    if (isSwTokenError) {
+      const fullTooltip = diag.lastError
+        ? `⚠️ Erreur navigateur (SW) — ${diag.lastError} (${diag.platform || 'Appareil'})`
+        : diag.label;
+      return {
+        code: 'TOKEN_ERROR',
+        status: 'token_error',
+        icon: '🔕',
+        shortLabel: '⚠️ ERREUR NAVIGATEUR (SW)',
+        label: '🔕 MUET · ⚠️ ERREUR NAVIGATEUR (SW)',
+        tooltip: fullTooltip,
+        isReachable: false
+      };
+    }
+    const fullTooltip = diag.lastError ? `${diag.label} — ${diag.lastError}` : diag.label;
+    return { code: diag.status || 'DIAG', status: diag.status || 'diag', icon: '🔕', shortLabel: diag.label, label: diag.label, tooltip: fullTooltip, isReachable: false };
   }
   const lastActiveMs = getTimestampMs(member?.lastActive || member?.lastLoginAt || member?.derniereConnexion || member?.updatedAt);
   if (lastActiveMs && Date.now() - lastActiveMs <= SEVEN_DAYS_MS) {

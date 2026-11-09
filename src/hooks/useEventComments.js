@@ -1,85 +1,84 @@
 import { useState, useEffect } from 'react';
 import { collection, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { notifyMembersByTag } from '../utils/inAppNotificationService';
 import { sendEventDiscussionNotifications } from '../services/notificationService';
 
 /**
  * Hook useEventComments
  * Gère la sous-collection Firestore events/{eventId}/comments en temps réel,
- * l'ajout de nouveaux commentaires et le déclenchement des notifications d'événements.
- * 
- * @param {string} eventId ID de l'événement
- * @param {Object} user Utilisateur connecté (Firebase Auth)
- * @param {Object} profileData Profil Firestore de l'utilisateur
- * @param {Object} event Données complètes de l'événement
- * @returns {Object} { comments, loading, sending, addComment, deleteComment }
+ * l'ajout de nouveaux commentaires et le déclenchement des notifications (Cloche 🔔 + Push).
  */
 export function useEventComments(eventId, user, profileData, event) {
   const [comments, setComments] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(Boolean(eventId));
   const [sending, setSending] = useState(false);
 
-  // Synchronisation en temps réel de la sous-collection events/{eventId}/comments
   useEffect(() => {
     if (!eventId) {
-      setComments([]);
-      setLoading(false);
       return;
     }
 
-    setLoading(true);
     const commentsRef = collection(db, 'events', eventId, 'comments');
-    
-    // Écoute de la sous-collection en temps réel (sans orderBy restrictif pour inclure les pending writes et les documents sans timestamp serveur immédiat)
-    const unsubscribe = onSnapshot(commentsRef, (snapshot) => {
-      const fetchedComments = [];
-      snapshot.forEach((docSnap) => {
-        fetchedComments.push({
-          id: docSnap.id,
-          ...docSnap.data()
+
+    const unsubscribe = onSnapshot(
+      commentsRef,
+      (snapshot) => {
+        const fetchedComments = [];
+        snapshot.forEach((docSnap) => {
+          fetchedComments.push({
+            id: docSnap.id,
+            ...docSnap.data()
+          });
         });
-      });
 
-      // Tri côté client résilient : prend en compte dateCreation (Timestamp), dateCreationIso (ISO string) ou 0
-      fetchedComments.sort((a, b) => {
-        const timeA = a.dateCreation?.toDate ? a.dateCreation.toDate().getTime() : (a.dateCreationIso ? new Date(a.dateCreationIso).getTime() : 0);
-        const timeB = b.dateCreation?.toDate ? b.dateCreation.toDate().getTime() : (b.dateCreationIso ? new Date(b.dateCreationIso).getTime() : 0);
-        return timeA - timeB;
-      });
+        fetchedComments.sort((a, b) => {
+          const timeA = a.dateCreation?.toDate
+            ? a.dateCreation.toDate().getTime()
+            : a.dateCreationIso
+              ? new Date(a.dateCreationIso).getTime()
+              : 0;
+          const timeB = b.dateCreation?.toDate
+            ? b.dateCreation.toDate().getTime()
+            : b.dateCreationIso
+              ? new Date(b.dateCreationIso).getTime()
+              : 0;
+          return timeA - timeB;
+        });
 
-      setComments(fetchedComments);
-      setLoading(false);
-    }, (error) => {
-      console.error("useEventComments - Erreur lors de l'écoute des commentaires :", error);
-      setLoading(false);
-    });
+        setComments(fetchedComments);
+        setLoading(false);
+      },
+      (error) => {
+        console.error("useEventComments - Erreur lors de l'écoute des commentaires :", error);
+        setLoading(false);
+      }
+    );
 
     return () => unsubscribe();
   }, [eventId]);
 
-  // Envoi d'un nouveau commentaire et notification des destinataires
   const addComment = async (texte) => {
     if (!eventId || !texte || !texte.trim() || !user) return;
 
     setSending(true);
     const cleanText = texte.trim();
-    const authorName = `${profileData?.prenom || ''} ${profileData?.nom || ''}`.trim() || profileData?.surnom || 'Membre';
+    const authorName =
+      `${profileData?.prenom || ''} ${profileData?.nom || ''}`.trim() ||
+      profileData?.surnom ||
+      'Membre';
     const authorPhoto = profileData?.photoURL || user.photoURL || null;
     const nowIso = new Date().toISOString();
 
     try {
-      // 1. Validation stricte et résolution canonique du groupId
       const rawGroupId = profileData?.groupId || user?.groupId || event?.groupId;
       if (!rawGroupId || typeof rawGroupId !== 'string' || !rawGroupId.trim()) {
         throw new Error("Impossible d'ajouter un commentaire : groupId introuvable dans le profil utilisateur.");
       }
       const effectiveGroupId = rawGroupId.trim().toLowerCase();
 
-      // 2. Écriture du commentaire dans la sous-collection events/{eventId}/comments
       const commentsRef = collection(db, 'events', eventId, 'comments');
       const commentPayload = {
-        eventId: eventId,
+        eventId,
         groupId: effectiveGroupId,
         auteurId: user.uid,
         auteurNom: authorName,
@@ -91,13 +90,12 @@ export function useEventComments(eventId, user, profileData, event) {
 
       const docRef = await addDoc(commentsRef, commentPayload);
 
-      // Injection dans l'état optimiste local du hook
       setComments((prev) => {
         if (prev.some((c) => c.id === docRef.id)) return prev;
         return [...prev, { id: docRef.id, ...commentPayload, dateCreation: new Date() }];
       });
 
-      // 3. Diffusion groupée des notifications in-app aux participants confirmés et organisateurs
+      // Diffusion groupée (Cloche 🔔 + Push FCM) à tous les membres actifs concernés par l'événement
       try {
         let fullEvent = event;
         if (!fullEvent || !fullEvent.inscriptions) {
@@ -114,73 +112,8 @@ export function useEventComments(eventId, user, profileData, event) {
           groupId: effectiveGroupId
         });
       } catch (notifErr) {
-        console.warn("useEventComments - Erreur envoi notifications discussion :", notifErr);
+        console.warn('useEventComments - Erreur envoi notifications discussion :', notifErr);
       }
-
-      // 4. Récupération des paramètres de l'association pour l'étiquette de notification
-      let tagConfigured = '';
-      try {
-        const assocRef = doc(db, 'associations', effectiveGroupId);
-        const assocSnap = await getDoc(assocRef);
-        if (assocSnap.exists()) {
-          tagConfigured = assocSnap.data().tagNotificationCommentairesEvenement || '';
-        }
-      } catch (assocErr) {
-        console.warn("useEventComments - Erreur lecture paramètres association :", assocErr);
-      }
-
-      const eventTitle = event?.titre || event?.nom || 'Événement';
-      const excerpt = cleanText.length > 80 ? cleanText.slice(0, 77) + '...' : cleanText;
-
-      // 5. Notification interne pour le Conseil d'Administration et le Bureau
-      try {
-        notifyMembersByTag({
-          groupId: effectiveGroupId,
-          tags: ['CA', 'ca', 'bureau', 'Bureau'],
-          title: `💬 Question sur l'événement ${eventTitle}`,
-          message: `${authorName} : ${excerpt}`,
-          targetUrl: `/app/events/${eventId}`,
-          icon: "💬"
-        }).catch((err) => console.warn("useEventComments - Notification CA ignorée :", err));
-      } catch (notifErr) {
-        console.warn("useEventComments - Erreur notification CA :", notifErr);
-      }
-
-      // 6. Notification pour l'étiquette configurée (si différente)
-      if (tagConfigured) {
-        try {
-          await addDoc(collection(db, 'notifications_queue'), {
-            groupId: effectiveGroupId,
-            title: `💬 Question / Commentaire : ${eventTitle}`,
-            body: `${authorName} : "${excerpt}"`,
-            targetTag: tagConfigured,
-            senderId: user.uid,
-            eventId: eventId,
-            createdAt: nowIso
-          });
-        } catch (notifErr) {
-          console.warn("useEventComments - Erreur envoi notification tag :", notifErr);
-        }
-      }
-
-      // 7. Notification pour le créateur de l'événement (s'il n'est pas le commenteur lui-même)
-      const eventCreatorId = event?.createdBy || event?.auteurId;
-      if (eventCreatorId && eventCreatorId !== user.uid) {
-        try {
-          await addDoc(collection(db, 'notifications_queue'), {
-            groupId: effectiveGroupId,
-            title: `💬 Nouveau commentaire sur votre événement : ${eventTitle}`,
-            body: `${authorName} : "${excerpt}"`,
-            recipientId: eventCreatorId,
-            senderId: user.uid,
-            eventId: eventId,
-            createdAt: nowIso
-          });
-        } catch (notifErr) {
-          console.warn("useEventComments - Erreur envoi notification créateur :", notifErr);
-        }
-      }
-
     } catch (error) {
       console.error("useEventComments - Erreur lors de l'ajout du commentaire :", error);
       throw error;
@@ -189,22 +122,20 @@ export function useEventComments(eventId, user, profileData, event) {
     }
   };
 
-  // Suppression d'un commentaire
   const deleteComment = async (commentId) => {
     if (!eventId || !commentId) return;
-
     try {
       const commentRef = doc(db, 'events', eventId, 'comments', commentId);
       await deleteDoc(commentRef);
     } catch (error) {
-      console.error("useEventComments - Erreur lors de la suppression du commentaire :", error);
+      console.error('useEventComments - Erreur lors de la suppression du commentaire :', error);
       throw error;
     }
   };
 
   return {
-    comments,
-    loading,
+    comments: eventId ? comments : [],
+    loading: eventId ? loading : false,
     sending,
     addComment,
     deleteComment

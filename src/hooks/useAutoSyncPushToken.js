@@ -1,8 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
-import { getToken } from 'firebase/messaging';
 import { db, messaging } from '../firebase';
-import { resolveActiveMessagingSwRegistration } from '../utils/pushNotificationHelper';
+import {
+  resolveActiveMessagingSwRegistration,
+  getTokenWithPushManagerAutoRepair
+} from '../utils/pushNotificationHelper';
 import { collectClientPushDiagnostics, syncPushDiagnosticsToFirestore } from '../utils/pushDiagnosticsUtils';
 
 const FOREGROUND_SYNC_THROTTLE_MS = 5 * 60 * 1000;
@@ -10,18 +12,21 @@ const FOREGROUND_SYNC_THROTTLE_MS = 5 * 60 * 1000;
 /**
  * Hook d'auto-synchronisation silencieuse du jeton FCM et d'enregistrement inconditionnel de `pushDiagnostics` :
  * - Calcule et enregistre `pushDiagnostics` AVANT tout `return` lié à `!messaging` ou `!('Notification' in window)`.
+ * - Tente une auto-réparation `PushManager` (`unsubscribe()` + nouvel essai à +300 ms) en cas d'erreur d'abonnement.
  * - S'exécute à l'ouverture de session et au retour au premier plan (`visibilitychange` visible & `focus`).
  */
-export function useAutoSyncPushToken(user, profileData, onTokenSynced) {
+export function useAutoSyncPushToken(user, profileData, onTokenSynced, onTokenError) {
   const lastSyncTimeByUidRef = useRef({});
   const isSyncingRef = useRef(false);
   const latestProfileRef = useRef(profileData);
   const onTokenSyncedRef = useRef(onTokenSynced);
+  const onTokenErrorRef = useRef(onTokenError);
 
   useEffect(() => {
     latestProfileRef.current = profileData;
     onTokenSyncedRef.current = onTokenSynced;
-  }, [profileData, onTokenSynced]);
+    onTokenErrorRef.current = onTokenError;
+  }, [profileData, onTokenSynced, onTokenError]);
 
   const uid = user?.uid || profileData?.uid || profileData?.id;
   const hasProfile = Boolean(profileData);
@@ -71,16 +76,14 @@ export function useAutoSyncPushToken(user, profileData, onTokenSynced) {
 
       try {
         const swReg = await resolveActiveMessagingSwRegistration();
-        const currentToken = await getToken(messaging, {
-          vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
-          serviceWorkerRegistration: swReg
-        });
+        const currentToken = await getTokenWithPushManagerAutoRepair(swReg);
         if (state.cancelled) return;
 
         if (!currentToken) {
           await syncPushDiagnosticsToFirestore(uid, latestProfileRef.current, {
             lastError: 'Jeton vide retourné par FCM', force: true, hasActiveTokenOverride: false
           });
+          if (onTokenErrorRef.current) onTokenErrorRef.current('Jeton vide retourné par FCM');
           return;
         }
 
@@ -108,10 +111,12 @@ export function useAutoSyncPushToken(user, profileData, onTokenSynced) {
 
         if (onTokenSyncedRef.current) onTokenSyncedRef.current(currentToken);
       } catch (err) {
+        const errMsg = err?.message || 'Erreur getToken SW';
         lastSyncTimeByUidRef.current[uid] = 0;
         await syncPushDiagnosticsToFirestore(uid, latestProfileRef.current, {
-          lastError: err?.message || 'Erreur getToken SW', force: true, hasActiveTokenOverride: false
+          lastError: errMsg, force: true, hasActiveTokenOverride: false
         });
+        if (onTokenErrorRef.current) onTokenErrorRef.current(errMsg);
       } finally {
         isSyncingRef.current = false;
       }

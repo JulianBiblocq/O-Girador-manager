@@ -208,6 +208,7 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
             pointsOrdreDuJour: pointsOrdreDuJour,
             lienDocument: (lienDocument || '').trim(),
             sendPushNotification: sendPushNotification !== false,
+            clientNotified: true,
             compteRenduStatus: 'brouillon',
             compteRenduApprovals: {},
             autoValidateAfter7Days: false,
@@ -224,7 +225,7 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
           const createdRef = await addDoc(collection(db, 'events'), newEventDoc);
           if (i === 0) firstCreatedEventId = createdRef.id;
         }
-        if (sendPushNotification !== false && firstCreatedEventId) {
+        if (firstCreatedEventId) {
           await notifyNewAgendaEventOrPoll({
             groupId,
             creatorId: user?.uid,
@@ -237,7 +238,8 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
             reunionPrivacyMode,
             hideAgendaFromNonTarget,
             pollRestrictionType: pollRestrictionType === 'tag' ? 'badge' : pollRestrictionType,
-            pollTarget
+            pollTarget,
+            sendPush: sendPushNotification !== false
           });
         }
         alert(`Sondage de réunion créé avec succès ! (${validSlots.length} créneaux générés dans l'Agenda)`);
@@ -259,6 +261,7 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
           pointsOrdreDuJour: pointsOrdreDuJour,
           lienDocument: (lienDocument || '').trim(),
           sendPushNotification: sendPushNotification !== false,
+          clientNotified: true,
           compteRenduStatus: 'brouillon',
           compteRenduApprovals: {},
           autoValidateAfter7Days: false,
@@ -273,7 +276,7 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
           lieuId: lieuId || null
         };
         const docRef = await addDoc(collection(db, 'events'), newEventDoc);
-        if (sendPushNotification !== false && docRef?.id) {
+        if (docRef?.id) {
           await notifyNewAgendaEventOrPoll({
             groupId,
             creatorId: user?.uid,
@@ -284,7 +287,8 @@ export default function ReunionManager({ groupId, user, profileData, onBack }) {
             audience,
             targetGroup,
             reunionPrivacyMode,
-            hideAgendaFromNonTarget
+            hideAgendaFromNonTarget,
+            sendPush: sendPushNotification !== false
           });
         }
         setSelectedEventId(docRef.id);

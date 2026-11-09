@@ -1,16 +1,17 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { collection, doc, writeBatch } from 'firebase/firestore';
-import { db } from '../../firebase';
+import { db, auth } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { getCurrentSeason, getSeasonDateRange, DEFAULT_SEASON_START_MONTH } from '../../utils/seasonUtils';
+import { notifyBatchRehearsalsCreated } from '../../utils/agendaNotificationUtils';
 import BatchRehearsalTemplateForm from './BatchRehearsalTemplateForm';
 import BatchRehearsalDateSelector from './BatchRehearsalDateSelector';
 
 /**
  * Modale Cordel : Générateur de répétitions groupées dans l'agenda
- * Conforme à la règle anti-monolithe (< 200 lignes).
+ * Conforme à la règle anti-monolithe (< 200 lignes) et notifiant 100 % des membres (Cloche 🔔 + Push).
  */
 export default function BatchRehearsalModal({
   isOpen,
@@ -24,9 +25,9 @@ export default function BatchRehearsalModal({
 }) {
   const [selectedDay, setSelectedDay] = useState(4); // 4 = Jeudi par défaut
   const [saving, setSaving] = useState(false);
+  const [sendPushNotification, setSendPushNotification] = useState(true);
   const [toastMsg, setToastMsg] = useState(null);
 
-  // Plage de dates par défaut (de la date du jour jusqu'à la fin de la saison courante)
   const [dateRange, setDateRange] = useState(() => {
     const today = new Date();
     const todayStr = today.toISOString().split('T')[0];
@@ -38,7 +39,6 @@ export default function BatchRehearsalModal({
     };
   });
 
-  // Gabarit initial pré-rempli
   const [template, setTemplate] = useState(() => {
     const defaultLieuId = defaultLocationsByEventType?.repetition;
     let initialLieu = adresseLocal || '';
@@ -47,9 +47,9 @@ export default function BatchRehearsalModal({
     let initialLng = null;
 
     if (defaultLieuId) {
-      const found = lieuxImportants.find(l => l.id === defaultLieuId);
+      const found = lieuxImportants.find((l) => l.id === defaultLieuId);
       if (found) {
-        initialLieu = found.nom && found.adresse ? `${found.nom} - ${found.adresse}` : (found.adresse || found.nom);
+        initialLieu = found.nom && found.adresse ? `${found.nom} - ${found.adresse}` : found.adresse || found.nom;
         initialLieuId = found.id;
         initialLat = found.latitude || null;
         initialLng = found.longitude || null;
@@ -72,13 +72,11 @@ export default function BatchRehearsalModal({
     };
   });
 
-  // Calcul dynamique de toutes les occurrences correspondant au jour choisi dans la plage
   const occurrences = useMemo(() => {
     if (!dateRange.start || !dateRange.end) return [];
     const list = [];
     const current = new Date(dateRange.start + 'T00:00:00');
     const end = new Date(dateRange.end + 'T23:59:59');
-
     if (isNaN(current.getTime()) || isNaN(end.getTime()) || current > end) return [];
 
     while (current <= end) {
@@ -93,32 +91,39 @@ export default function BatchRehearsalModal({
     return list;
   }, [dateRange.start, dateRange.end, selectedDay]);
 
-  // Toutes les occurrences sont cochées par défaut à chaque modification de la liste d'occurrences
-  const [selectedDates, setSelectedDates] = useState([]);
-  useEffect(() => {
-    setSelectedDates(occurrences);
-  }, [occurrences]);
+  const [excludedDates, setExcludedDates] = useState([]);
+  const selectedDates = useMemo(
+    () => occurrences.filter((d) => !excludedDates.includes(d)),
+    [occurrences, excludedDates]
+  );
+  const setSelectedDates = (next) => {
+    const resolved = typeof next === 'function' ? next(selectedDates) : next;
+    const nextSet = new Set(Array.isArray(resolved) ? resolved : []);
+    setExcludedDates(occurrences.filter((d) => !nextSet.has(d)));
+  };
 
   if (!isOpen) return null;
 
-  // Création groupée avec Firestore writeBatch
   const handleBatchCreate = async () => {
     if (!groupId) return;
     if (selectedDates.length === 0) {
-      alert("Veuillez cocher au moins une date de répétition.");
+      alert('Veuillez cocher au moins une date de répétition.');
       return;
     }
 
     setSaving(true);
     try {
-      const CHUNK_SIZE = 400; // Limite de 500 opérations Firestore
+      const CHUNK_SIZE = 400;
+      const createdIds = [];
+
       for (let i = 0; i < selectedDates.length; i += CHUNK_SIZE) {
         const chunk = selectedDates.slice(i, i + CHUNK_SIZE);
         const batch = writeBatch(db);
 
         chunk.forEach((dateStr) => {
           const newDocRef = doc(collection(db, 'events'));
-          const eventData = {
+          createdIds.push(newDocRef.id);
+          batch.set(newDocRef, {
             groupId: String(groupId),
             type: 'repetition',
             titre: (template.titre || 'Répétition').trim(),
@@ -144,25 +149,32 @@ export default function BatchRehearsalModal({
             montantDepense: 0,
             budgetDepenses: [],
             activerRecolteMedias: false,
-            publierSurVaral: false
-          };
-          batch.set(newDocRef, eventData);
+            publierSurVaral: false,
+            sendPushNotification: Boolean(sendPushNotification),
+            clientNotified: true
+          });
         });
 
         await batch.commit();
       }
 
       const count = selectedDates.length;
+      await notifyBatchRehearsalsCreated({
+        groupId,
+        creatorId: auth?.currentUser?.uid || null,
+        titre: (template.titre || 'Répétition').trim(),
+        count,
+        firstDateStr: selectedDates[0] || '',
+        firstCreatedEventId: createdIds[0] || null,
+        sendPush: Boolean(sendPushNotification)
+      });
+
       setToastMsg(`✓ ${count} répétition${count > 1 ? 's' : ''} ajoutée${count > 1 ? 's' : ''} à l'agenda avec succès !`);
-
       if (onSuccess) onSuccess();
-
-      setTimeout(() => {
-        onClose();
-      }, 1500);
+      setTimeout(() => onClose(), 1500);
     } catch (err) {
-      console.error("Erreur lors de la création en lot des répétitions :", err);
-      alert("Une erreur est survenue lors de la création des répétitions. Veuillez réessayer.");
+      console.error('Erreur lors de la création en lot des répétitions :', err);
+      alert('Une erreur est survenue lors de la création des répétitions. Veuillez réessayer.');
     } finally {
       setSaving(false);
     }
@@ -175,7 +187,6 @@ export default function BatchRehearsalModal({
         useExtremeBorder={true}
         className="w-full max-w-3xl max-h-[92vh] flex flex-col p-4 sm:p-6 bg-cordel-card-bg border-2 border-encre-noire shadow-[4px_6px_0px_0px_#181716] overflow-hidden"
       >
-        {/* En-tête de la modale */}
         <div className="flex items-center justify-between border-b-2 border-dashed border-cordel-master-dark/25 pb-3 mb-4 shrink-0">
           <div className="flex items-center gap-2.5">
             <span className="text-2xl">⚡</span>
@@ -199,14 +210,8 @@ export default function BatchRehearsalModal({
           </button>
         </div>
 
-        {/* Corps défilable */}
         <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-4 scrollbar-thin">
-          <BatchRehearsalTemplateForm
-            template={template}
-            setTemplate={setTemplate}
-            lieuxImportants={lieuxImportants}
-          />
-
+          <BatchRehearsalTemplateForm template={template} setTemplate={setTemplate} lieuxImportants={lieuxImportants} />
           <BatchRehearsalDateSelector
             selectedDay={selectedDay}
             setSelectedDay={setSelectedDay}
@@ -216,26 +221,28 @@ export default function BatchRehearsalModal({
             selectedDates={selectedDates}
             setSelectedDates={setSelectedDates}
           />
+          <label className="flex items-center gap-2 text-xs font-bold cursor-pointer text-cordel-wood pt-1">
+            <input
+              type="checkbox"
+              checked={sendPushNotification}
+              onChange={(e) => setSendPushNotification(e.target.checked)}
+              disabled={saving}
+              className="w-4 h-4 border border-encre-noire rounded accent-cordel-wood cursor-pointer"
+            />
+            <span>🔔 Alerter les membres par notification Push et dans la cloche interne</span>
+          </label>
         </div>
 
-        {/* Pied d'action */}
         <div className="mt-4 pt-3 border-t-2 border-dashed border-cordel-master-dark/20 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
           <span className="text-xs font-bold text-cordel-master-dark/80">
             {selectedDates.length > 0
               ? `${selectedDates.length} document(s) événement seront créés dans l'agenda.`
               : 'Aucune date sélectionnée.'}
           </span>
-
           <div className="flex items-center gap-2.5 w-full sm:w-auto">
-            <CordelButton
-              variant="outline"
-              onClick={onClose}
-              disabled={saving}
-              className="flex-1 sm:flex-none text-xs px-4 py-2 font-bold uppercase tracking-wider"
-            >
+            <CordelButton variant="outline" onClick={onClose} disabled={saving} className="flex-1 sm:flex-none text-xs px-4 py-2 font-bold uppercase tracking-wider">
               Annuler
             </CordelButton>
-
             <button
               type="button"
               onClick={handleBatchCreate}
@@ -246,22 +253,11 @@ export default function BatchRehearsalModal({
                   : 'bg-[var(--color-cordel-vert)] text-white hover:brightness-110'
               }`}
             >
-              {saving ? (
-                <>
-                  <span className="animate-spin text-sm">⏳</span>
-                  <span>Création en cours...</span>
-                </>
-              ) : (
-                <>
-                  <span>⚡</span>
-                  <span>Créer les {selectedDates.length} répétitions</span>
-                </>
-              )}
+              {saving ? '⏳ Création en cours...' : `⚡ Créer les ${selectedDates.length} répétitions`}
             </button>
           </div>
         </div>
 
-        {/* Toast confirmation discret */}
         {toastMsg && (
           <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 bg-[var(--color-cordel-vert)] text-white text-xs font-black uppercase tracking-wider rounded-lg border-2 border-encre-noire shadow-[3px_3px_0px_0px_#181716] animate-bounce">
             {toastMsg}

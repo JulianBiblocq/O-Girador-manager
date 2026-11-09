@@ -8,7 +8,11 @@ import { db, auth } from '../firebase';
 import { toTimestamp, getLocalReadThreads, saveLocalReadThread } from './forumUnreadUtils';
 import { canUserReadForumChannel, checkUserAccessToList } from './permissionUtils';
 import { canonicalizeGroupId } from './tenantUtils';
-import { dispatchInAppAndPushNotification, NOTIFICATION_TYPES } from './inAppNotificationService';
+import {
+  dispatchInAppAndPushNotification,
+  getActiveGroupMembers,
+  NOTIFICATION_TYPES
+} from './inAppNotificationService';
 
 export const PUSH_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
 
@@ -114,8 +118,19 @@ export async function dispatchThreadReplyNotifications({
   allUsers = [], activeTagsDisponibles = [], replyText = '',
   selectedTarget = '', detectedMentionIds = [], allowChannelPush = true
 }) {
-  const notifRecipientIds = new Set();
+  const effectiveGroupId = canonicalizeGroupId(profileData?.groupId || thread?.groupId);
+  const fetchedMembers = await getActiveGroupMembers(effectiveGroupId, user?.uid);
+  const membersMap = new Map();
   (allUsers || []).forEach((u) => {
+    if (u?.id && u.id !== user?.uid && u.statut !== 'archive') membersMap.set(u.id, u);
+  });
+  fetchedMembers.forEach((u) => {
+    if (u?.id && u.id !== user?.uid) membersMap.set(u.id, u);
+  });
+  const mergedUsers = Array.from(membersMap.values());
+
+  const notifRecipientIds = new Set();
+  mergedUsers.forEach((u) => {
     if (!u.id || u.id === user?.uid) return;
     if (threadChannel && !canUserReadForumChannel(threadChannel, u, activeTagsDisponibles, u.tags || [], false)) return;
     notifRecipientIds.add(u.id);
@@ -126,7 +141,7 @@ export async function dispatchThreadReplyNotifications({
   });
 
   if (selectedTarget) {
-    (allUsers || []).forEach((u) => {
+    mergedUsers.forEach((u) => {
       if (u.id === user?.uid) return;
       const playsInst = (u.instrumentsJoues && u.instrumentsJoues.includes(selectedTarget)) || u.instrument === selectedTarget;
       const hasTag = checkUserAccessToList([selectedTarget], u, u.tags || []);
@@ -137,7 +152,6 @@ export async function dispatchThreadReplyNotifications({
   const senderName = `${profileData?.prenom || ''} ${profileData?.nom || ''}`.trim() || 'Un membre';
   const cleanMsg = (replyText || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
   const snippet = cleanMsg.length > 80 ? `${cleanMsg.slice(0, 80)}...` : cleanMsg;
-  const effectiveGroupId = canonicalizeGroupId(profileData?.groupId || thread?.groupId);
 
   const notifPromises = Array.from(notifRecipientIds).map((recipientId) => {
     const isMentioned = detectedMentionIds.includes(recipientId);

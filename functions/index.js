@@ -44,7 +44,11 @@ async function sendPushToUsers(db, { groupId, recipientId, cibles, targetUserIds
     const userDoc = await db.collection("users").doc(recipientId).get();
     usersSnap = { docs: userDoc.exists ? [userDoc] : [], empty: !userDoc.exists };
   } else {
-    usersSnap = await db.collection("users").where("groupId", "==", groupId).get();
+    const rawGroup = String(groupId || "").trim();
+    const lowerGroup = rawGroup.toLowerCase();
+    const capGroup = lowerGroup ? lowerGroup.charAt(0).toUpperCase() + lowerGroup.slice(1) : "";
+    const groupVariants = Array.from(new Set([rawGroup, lowerGroup, capGroup])).filter(Boolean);
+    usersSnap = await db.collection("users").where("groupId", "in", groupVariants).get();
   }
 
   if (usersSnap.empty) {
@@ -302,12 +306,46 @@ exports.onAnnouncementCreated = onDocumentCreated(
 );
 
 /**
- * Trigger : onEventCreated (Neutralisé : le pipeline unifié dispatchBulkInAppAndPushNotification
- * alimente déjà in_app_notifications et notifications_queue sans doublon)
+ * Trigger : onEventCreated (Filet de sécurité Backend sur "events/{eventId}").
+ * Si le client a déjà diffusé la notification (`clientNotified: true`), ignore pour éviter tout doublon.
  */
 exports.onEventCreated = onDocumentCreated(
-  "evenements/{eventId}",
-  async () => {
+  "events/{eventId}",
+  async (event) => {
+    const snap = event.data;
+    if (!snap) return null;
+    const data = snap.data() || {};
+    if (
+      data.clientNotified === true ||
+      data.sendPushNotification === false ||
+      !data.groupId ||
+      (data.status === "sondage" && Number(data.optionIndex) > 1)
+    ) {
+      return null;
+    }
+
+    const db = getFirestore();
+    const eventId = event.params.eventId;
+    const isPoll = data.status === "sondage" || data.isPoll === true;
+    const title = isPoll
+      ? `📊 Sondage : ${data.titre || "Nouvelle date"}`
+      : `📅 Nouvel événement : ${data.titre || "Agenda"}`;
+    const body = isPoll
+      ? "Votez pour vos disponibilités dans l'Agenda !"
+      : data.description || "Consultez l'Agenda pour vous inscrire.";
+
+    await sendPushToUsers(db, {
+      groupId: data.groupId,
+      cibles: ["Tous"],
+      title,
+      body,
+      dataPayload: {
+        url: `/app?eventId=${eventId}`,
+        click_action: `/app?eventId=${eventId}`,
+        eventId,
+        tag: `event-${eventId}`
+      }
+    });
     return null;
   }
 );
