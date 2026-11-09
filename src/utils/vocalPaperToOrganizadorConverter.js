@@ -32,7 +32,7 @@ export function convertScannedPatternToOrganizadorLine(block, role = 'puxador', 
     return Boolean(s && s !== '───' && s !== '---' && s !== '───►' && s !== '_');
   };
 
-  if (block.hasAnacrusis && Array.isArray(block.anacrusisCells) && block.anacrusisCells.some(isAttack)) {
+  if (Array.isArray(block.anacrusisCells) && block.anacrusisCells.some(isAttack)) {
     const ana = mapToSteps(block.anacrusisCells, 8), firstActiveBeat = ana.slice(0, 4).some(isAttack) ? 0 : 1;
     for (let b = firstActiveBeat; b < 2; b++) beatGroups.push({ beatNum: 3 + b, cells: ana.slice(b * 4, (b + 1) * 4), attacks: [] });
   }
@@ -40,7 +40,7 @@ export function convertScannedPatternToOrganizadorLine(block, role = 'puxador', 
   for (let bIdx = 0; bIdx < totalMainBeats; bIdx++) {
     beatGroups.push({ beatNum: (bIdx % 4) + 1, cells: mainArr.slice(bIdx * 4, (bIdx + 1) * 4), attacks: [] });
   }
-  if (block.hasTailBeat && Array.isArray(block.tailCells) && block.tailCells.some(isAttack)) {
+  if (Array.isArray(block.tailCells) && block.tailCells.some(isAttack)) {
     beatGroups.push({ beatNum: 1, cells: mapToSteps(block.tailCells, 4), attacks: [] });
   }
 
@@ -121,7 +121,7 @@ export async function scanVocalPaperMultiPhotos(photoDataUrls = [], options = {}
     ? `\nTEXTE OFFICIEL DE RÉFÉRENCE :\n"""\n${options.referenceLyrics.trim()}\n"""\n« Les paroles officielles de ce chant sont déjà connues ci-dessus. L'écriture manuscrite sur la grille peut être rapide, abrégée ou sans accents. Utilise obligatoirement les mots et syllabes du texte officiel fourni pour identifier chaque syllabe manuscrite, tout en respectant à 100 % les cases de temps/subdivisions où elles sont inscrites sur la grille. »`
     : '';
   const prompt = `Tu es le moteur de lecture optique de l'Atelier Papier du Chant (O Girador). Analyse ces photos (CHANT-SEQ, CHANT-NOTES-1M/2M, CHANT-RYTHME).${refBlock}
-Règles: 1) Sur CHANT-SEQ, lis sequenceColumns:[{measureNumber,puxCode,corCode}]. 2) Sur les feuilles Patterns, lis patterns:[{code:"P1",measuresCount,hasAnacrusis,hasTailBeat,rhythmOnlyMode,anacrusisCells:[{stepIndex,syllable,isTie,pitchKey,octaveShift}],mainCells:[...],tailCells:[...]}]. Préserve les tirets "-" de fin de syllabe (ex: "VO-") et les apostrophes d'élision (ex: "E'O", "XE'O"). Réponds UNIQUEMENT en JSON valide.`;
+Règles: 1) Sur CHANT-SEQ, lis sequenceColumns:[{measureNumber,puxCode,corCode}]. 2) Sur les feuilles Patterns (5 blocs Portrait 1M, 4 blocs Paysage 2M, 6 blocs Rythme), les notes sont tracées sous forme de traits horizontaux (───) dans le clavier La..Sol# ou la piste RYTHME / DURÉE, la bande OCTAVE (3/4/5 • OCT/±) est au-dessus, et la bande SYLLABES en dessous est ouverte (chaque syllabe s'attache au stepIndex du début du trait juste au-dessus). Détecte automatiquement hasAnacrusis (si Ana T3-T4 non vide) et hasTailBeat (si +T1 non vide). Préserve les tirets "-" de fin de syllabe (ex: "VO-") et les apostrophes d'élision (ex: "E'O", "XE'O"). Réponds UNIQUEMENT en JSON valide.`;
   const parts = [{ text: prompt }];
   for (const rawUrl of photoDataUrls) {
     const comp = await compressImageForScan(rawUrl);
