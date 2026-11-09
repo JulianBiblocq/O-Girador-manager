@@ -1,7 +1,7 @@
 /**
  * VocalPaperOrganizadorModal.jsx
  * Modale « Atelier Papier du Chant (A4 100 % N&B) » dans Organizador (< 135 lignes).
- * Impression des 4 feuilles A4 N&B (avec repères ■) et lecture optique multi-photos vers rawTxtCode & parolesOriginales (<u>).
+ * Impression des feuilles A4 N&B (Grille Paysage 8 Temps Libres sur Feuilles 2 & 3) et lecture optique multi-photos.
  */
 import React, { useState, useRef } from 'react';
 import { printOrganizadorVocalSheet } from '../../../utils/vocalPaperSheetPrinter';
@@ -10,10 +10,9 @@ import { scanManuscriptSheet, saveScanApiKey, getScanApiKey } from '../../../uti
 
 const SHEETS = [
   { id: 'sequence', code: 'CHANT-SEQ', title: 'Feuille 1 — Séquence & Paroles (Pux / Cor)', desc: 'Grille M1..M32 sur 2 lignes (Pux / Cor) pour attribuer P1..Pn, X (Pause) et Unisson.' },
-  { id: 'notes_1m', code: 'CHANT-NOTES-1M', title: 'Feuille 2A — Patterns & Clavier 1 Octave (1 Mesure)', desc: '5 blocs neutres [Pattern : P__] Portrait • Clavier La ➔ Sol#, OCTAVE (3/4/5) et bande SYLLABES ouverte.' },
-  { id: 'notes_2m', code: 'CHANT-NOTES-2M', title: 'Feuille 2B — Patterns & Clavier 1 Octave (2 Mesures)', desc: '4 blocs neutres [Pattern : P__] Paysage • Clavier La ➔ Sol#, 2 mesures / ligne et SYLLABES ouverte.' },
-  { id: 'rhythm_only', code: 'CHANT-RYTHME', title: 'Feuille 3 — Paroles & Rythme Seul (Paysage Grand Confort)', desc: '7 lignes P1..P7 A4 Paysage (13mm à gauche, ~38mm/temps) : bande RYTHME (5.5mm, 4 sous-cases) + bande SYLLABES ouverte (11mm).' },
-  { id: 'instructions', code: 'CHANT-GUIDE', title: "Feuille 4 — Guide & Conventions d'écriture", desc: 'Mémo illustré : séparation Pux/Cor, tirets "-" intra-mots, élisions "E\'O" et tenues "───►".' },
+  { id: 'notes_1m', code: 'CHANT-NOTES-1M', title: 'Feuille 2 — Patterns & Clavier 1 Octave (Paysage • 8 Temps Libres)', desc: '4 systèmes [ P__ ] A4 Paysage (32 subdivisions de 8.4mm) : TEMPS libre (1M+Ana ou 2M), OCTAVE (3/4/5), Clavier La➔Sol# & SYLLABES ouverte.' },
+  { id: 'rhythm_only', code: 'CHANT-RYTHME', title: 'Feuille 3 — Paroles & Rythme Seul (Paysage • 8 Temps Libres)', desc: '6 systèmes [ P__ ] A4 Paysage (32 subdivisions de 8.4mm) : bande TEMPS libre, bande RYTHME (5.5mm) + bande SYLLABES ouverte (11mm).' },
+  { id: 'instructions', code: 'CHANT-GUIDE', title: "Feuille 4 — Guide & Conventions d'écriture", desc: 'Mémo illustré : grille 8 temps libres (2|3|4|1|2|3|4|1 ou 2M), tirets "-" intra-mots, élisions "E\'O" et traits (───).' },
 ];
 
 const PrintSvg = () => <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z" /></svg>;
