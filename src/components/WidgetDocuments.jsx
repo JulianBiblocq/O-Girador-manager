@@ -13,6 +13,7 @@ import VaralCategoryRope from './documents/varal/VaralCategoryRope';
 import VaralCategoryEditModal from './documents/varal/VaralCategoryEditModal';
 import VaralHeaderBar from './documents/varal/VaralHeaderBar';
 import { filterVaralCategoriesWithHiddenToggle } from '../utils/varalVisibilityUtils';
+import { sortProjectRopeDocuments } from '../utils/projectVaralUtils';
 import DocStatusSelector from './documents/varal/DocStatusSelector';
 import SecretariatDocumentsView from './secretariat/SecretariatDocumentsView';
 import WorkshopDocumentsTable from './documents/WorkshopDocumentsTable';
@@ -114,6 +115,7 @@ function VaralWidgetContent({
     groupedDocs,
     visibleCategories,
     canDepositOnCategory,
+    canManageDoc,
     handleDelete,
     handleMoveLeft,
     handleMoveRight,
@@ -132,7 +134,8 @@ function VaralWidgetContent({
     profileData: activeProfile,
     role: activeRole,
     isSystemAdmin: activeIsSystemAdmin,
-    canWrite: activeCanWrite
+    canWrite: activeCanWrite,
+    user
   });
 
   const [showHiddenCords, setShowHiddenCords] = useState(false);
@@ -156,12 +159,19 @@ function VaralWidgetContent({
   const [workshopViewMode, setWorkshopViewMode] = useState('table'); // 'table' | 'rope'
   const [isAdding, setIsAdding] = useState(false);
   const [initialSharedData, setInitialSharedData] = useState(null);
+  const [selectedCategoryForAdd, setSelectedCategoryForAdd] = useState(null);
+  const [documentToEdit, setDocumentToEdit] = useState(null);
+  const [editingCategory, setEditingCategory] = useState(null);
 
   useEffect(() => {
     const consumePendingVaral = (payload) => {
       if (!payload) return;
       setInitialSharedData(payload);
-      setSelectedCategoryForAdd(null);
+      if (payload.categoryId) {
+        setSelectedCategoryForAdd({ id: payload.categoryId, nom: payload.categoryNom || payload.categoryId });
+      } else {
+        setSelectedCategoryForAdd(null);
+      }
       setDocumentToEdit(null);
       setIsAdding(true);
       if (typeof window !== 'undefined') delete window.__ogPendingVaralShare;
@@ -173,9 +183,6 @@ function VaralWidgetContent({
     window.addEventListener('open-shared-varal', handleEvent);
     return () => window.removeEventListener('open-shared-varal', handleEvent);
   }, []);
-  const [selectedCategoryForAdd, setSelectedCategoryForAdd] = useState(null);
-  const [documentToEdit, setDocumentToEdit] = useState(null);
-  const [editingCategory, setEditingCategory] = useState(null);
 
   // États locaux des modales de consultation spécialisées
   const [selectedReport, setSelectedReport] = useState(null);
@@ -246,8 +253,15 @@ function VaralWidgetContent({
         ...(docItem.modelData || docItem),
         focusedPartId: docItem.partId || null
       });
-    } else if (docType === 'cordel_commission') {
+    } else if (docType === 'projet_presentation' || docType === 'cordel_commission' || docType === 'pdf' || docType === 'image') {
       setSelectedDocumentView(docItem);
+    } else if (docType === 'dossier_externe' && !docItem.isVirtualEventMedia && (docItem.categoryId || docItem.categorie || '').startsWith('projet_')) {
+      const targetUrl = docItem.fileUrl || docItem.url || '';
+      if (typeof window !== 'undefined' && targetUrl) {
+        window.open(targetUrl, '_blank', 'noopener,noreferrer');
+      } else {
+        setSelectedDocumentView(docItem);
+      }
     } else if (docType === 'report' || docType === 'compte_rendu' || docType === 'reunion_pv') {
       // Si le compte-rendu est un fichier PDF sans points structurés rédigés, l'ouvrir dans le lecteur universel
       if (docItem.fileUrl && (!docItem.points || docItem.points.length === 0) && !docItem.texte) {
@@ -423,7 +437,11 @@ function VaralWidgetContent({
                   <VaralCategoryRope
                     key={category.id}
                     category={category}
-                    documents={groupedDocs[category.id] || []}
+                    documents={
+                      category.id?.startsWith('projet_')
+                        ? sortProjectRopeDocuments(groupedDocs[category.id] || [])
+                        : (groupedDocs[category.id] || [])
+                    }
                     newestDocumentId={newestDocumentId}
                     weeklyCultureDocId={category.id === 'Culture' ? weeklyCultureDocId : null}
                     isWeeklyManuallyPinned={category.id === 'Culture' && isWeeklyManuallyPinned}
@@ -431,6 +449,7 @@ function VaralWidgetContent({
                     canSeeHidden={canSeeHidden}
                     canWrite={canWrite}
                     canDeposit={canDepositOnCategory(category)}
+                    canManageDoc={canManageDoc}
                     allEventsMap={allEventsMap}
                     getDocType={getDocType}
                     onOpenAdd={handleOpenAddForCategory}

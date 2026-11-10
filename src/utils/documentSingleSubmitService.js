@@ -1,14 +1,30 @@
 /**
- * Service de soumission unitaire (création / modification) d'un document du Varal (< 140 lignes).
+ * Service de soumission unitaire (création / modification) d'un document du Varal (< 170 lignes).
+ * Prend en charge les livrets Projet (`projet_presentation`), PDF/Photos compressées et Albums Cloud.
  */
 
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import imageCompression from 'browser-image-compression';
 import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
+import { auth } from '../firebase.js';
 import { cleanFirestorePayload } from './firestoreUtils.js';
 import { applyCultureDocumentFields, processEtapesImages } from './documentCulturePayloadHelper.js';
 import { buildToadaStructure } from './toadaSixPresetsSync.js';
 import { stripToadaTechnicalMarkers } from './toadaSerializer.js';
+
+/**
+ * Compresse automatiquement un fichier image (hors GIF/SVG) avant envoi vers Firebase Storage.
+ */
+export async function compressImageIfNeeded(fileObj, maxWidthOrHeight = 1280) {
+  if (!fileObj || !fileObj.type?.startsWith('image/') || fileObj.type === 'image/gif' || fileObj.type === 'image/svg+xml') {
+    return fileObj;
+  }
+  try {
+    return await imageCompression(fileObj, { maxSizeMB: 1, maxWidthOrHeight, useWebWorker: true });
+  } catch {
+    return fileObj;
+  }
+}
 
 function applySongDocumentFields(targetObj, songData, finalVideoUrlSong, finalAudioUrl, documentToEdit, isEditMode) {
   targetObj.nacao = songData.nacao || '';
@@ -45,12 +61,13 @@ function applySongDocumentFields(targetObj, songData, finalVideoUrlSong, finalAu
 
 export async function submitSingleDocument({ db, storage, groupId, varalCategories, documentToEdit, formData, t, onClose }) {
   const isEditMode = Boolean(documentToEdit);
-  const { title, category, computedType, annee, isArchived, isHidden, excludeFromPedagogy, lienSequenceurId, file, externalUrl, songData = {}, cultureData = {}, fabricationData = {}, quizData = {} } = formData;
+  const { title, category, computedType, annee, isArchived, isHidden, excludeFromPedagogy, lienSequenceurId, file, externalUrl, songData = {}, cultureData = {}, fabricationData = {}, quizData = {}, projectData = {} } = formData;
   if (!title) return;
 
   const isLinkType = computedType === 'video' || computedType === 'web' || computedType === 'dossier_externe';
   const isSongType = computedType === 'song', isFabricationType = computedType === 'fabrication';
-  const isManualType = isSongType || isFabricationType || computedType === 'culture_fiche';
+  const isProjectPresentation = computedType === 'projet_presentation';
+  const isManualType = isSongType || isFabricationType || computedType === 'culture_fiche' || isProjectPresentation;
 
   if (!isEditMode) {
     if (!isLinkType && !isManualType && !file) { alert('Veuillez sélectionner un fichier.'); return; }
@@ -63,8 +80,7 @@ export async function submitSingleDocument({ db, storage, groupId, varalCategori
   let finalVisuelAnimeUrl = fabricationData.visuelAnimeUrl || '';
   if (isFabricationType && fabricationData.visuelAnimeType === 'file' && fabricationData.visuelAnimeFile) {
     try {
-      const isVideoOrGif = fabricationData.visuelAnimeFile.type.startsWith('video/') || fabricationData.visuelAnimeFile.type === 'image/gif';
-      const fileToUpload = isVideoOrGif ? fabricationData.visuelAnimeFile : await imageCompression(fabricationData.visuelAnimeFile, { maxSizeMB: 1, maxWidthOrHeight: 1024, useWebWorker: true });
+      const fileToUpload = await compressImageIfNeeded(fabricationData.visuelAnimeFile, 1024);
       const snap = await uploadBytes(ref(storage, `documents/${groupId}/fabrication_visuel_${Date.now()}_${fileToUpload.name}`), fileToUpload);
       finalVisuelAnimeUrl = await getDownloadURL(snap.ref);
     } catch (err) { console.error("Erreur lors de l'upload du visuel d'atelier :", err); }
@@ -91,9 +107,10 @@ export async function submitSingleDocument({ db, storage, groupId, varalCategori
 
   const categoryObj = varalCategories.find((c) => c.id === category);
   const categoryName = categoryObj ? categoryObj.nom : category;
-  let finalUrl = isLinkType ? externalUrl : '';
-  if (!isEditMode && !isLinkType && !isManualType && file) {
-    const snap = await uploadBytes(ref(storage, `documents/${groupId}/${Date.now()}_${file.name}`), file);
+  let finalUrl = isLinkType ? externalUrl : (isEditMode ? (documentToEdit?.fileUrl || '') : '');
+  if (!isLinkType && !isManualType && file) {
+    const fileToUpload = await compressImageIfNeeded(file, 1600);
+    const snap = await uploadBytes(ref(storage, `documents/${groupId}/${Date.now()}_${fileToUpload.name || file.name}`), fileToUpload);
     finalUrl = await getDownloadURL(snap.ref);
   }
 
@@ -102,8 +119,36 @@ export async function submitSingleDocument({ db, storage, groupId, varalCategori
     annee: parseInt(annee, 10) || new Date().getFullYear(),
     isArchived: Boolean(isArchived), isHidden: Boolean(isHidden), excludeFromPedagogy: Boolean(excludeFromPedagogy),
     type: computedType, lienSequenceurId: lienSequenceurId || '',
-    ...(isEditMode ? (isLinkType ? { fileUrl: externalUrl } : {}) : { fileUrl: finalUrl, groupId, dateAjout: new Date().toISOString(), order: 0 })
+    ...(isEditMode ? ((isLinkType || file) ? { fileUrl: finalUrl } : {}) : { fileUrl: finalUrl, groupId, dateAjout: new Date().toISOString(), order: 0 })
   };
+
+  if (isProjectPresentation) {
+    let finalIllustrationUrl = (projectData.illustrationUrl || '').trim();
+    if (projectData.illustrationUploadType === 'file' && projectData.illustrationFile) {
+      try {
+        const imgToUpload = await compressImageIfNeeded(projectData.illustrationFile, 1280);
+        const snap = await uploadBytes(ref(storage, `documents/${groupId}/projet_visuel_${Date.now()}_${imgToUpload.name || 'visuel.jpg'}`), imgToUpload);
+        finalIllustrationUrl = await getDownloadURL(snap.ref);
+      } catch (err) { console.error("Erreur lors de l'upload du visuel projet :", err); }
+    }
+    payload.typeDoc = 'projet_presentation';
+    payload.texte = projectData.texte || '';
+    payload.contenu = projectData.texte || '';
+    payload.description = projectData.description || '';
+    payload.imageUrl = finalIllustrationUrl;
+    payload.illustrationUrl = finalIllustrationUrl;
+    payload.fileUrl = finalIllustrationUrl;
+    payload.isPinnedFirst = projectData.isPinnedFirst !== false;
+  } else if (String(category || '').startsWith('projet_')) {
+    if (projectData.description !== undefined) payload.description = projectData.description || '';
+    payload.isPinnedFirst = Boolean(projectData.isPinnedFirst);
+  }
+
+  if (String(category || '').startsWith('projet_') && !isEditMode) {
+    const currentUser = auth?.currentUser;
+    if (currentUser?.uid) payload.authorId = currentUser.uid;
+    if (currentUser?.displayName) payload.auteur = currentUser.displayName;
+  }
 
   if (isSongType) applySongDocumentFields(payload, songData, finalVideoUrlSong, finalAudioUrl, documentToEdit, isEditMode);
   if (isFabricationType) {

@@ -4,6 +4,7 @@ import CommissionCard from './CommissionCard';
 import CommissionEditModal from './CommissionEditModal';
 import EventForumChannelLink from './EventForumChannelLink';
 import { useEventCommissions } from '../../../hooks/useEventCommissions';
+import { ensureProjectVaralRope } from '../../../utils/commissionVaralAdapter';
 
 /**
  * Tour de Contrôle des Commissions d'un Événement (Bloc 1)
@@ -26,8 +27,17 @@ export default function EventCommissionsHub({
   const [isCreatingCommission, setIsCreatingCommission] = useState(false);
   const backdropMouseDownRef = useRef(false);
 
-  // Droits globaux (création & arbitrage budgétaire)
+  // Droits globaux (création & arbitrage budgétaire) et droit de dépôt Varal (incluant les référents)
   const canCreate = isAdmin || isMestre;
+  const canDepositVaral = canCreate || commissions.some((c) => (c.referentsIds || []).includes(currentUserId));
+  const handleOpenVaralDeposit = async () => {
+    if (!eventId) return;
+    if (event?.groupId) await ensureProjectVaralRope(event.groupId, event);
+    const payload = { categoryId: `projet_${eventId}`, categoryNom: `🎪 Projet : ${event?.title || event?.titre || 'Événement'}`, lockCategory: true };
+    if (typeof window !== 'undefined') { window.__ogPendingVaralShare = payload; window.dispatchEvent(new CustomEvent('open-shared-varal', { detail: payload })); }
+    if (onNavigateToView) onNavigateToView('documents', { ropeId: `projet_${eventId}` });
+    if (onClose) onClose();
+  };
 
   // Calcul du compte à rebours
   const countdownText = useMemo(() => {
@@ -100,22 +110,18 @@ export default function EventCommissionsHub({
             >✕</button>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0 justify-end w-full sm:w-auto">
+          <div className="flex items-center gap-2 shrink-0 justify-end w-full sm:w-auto flex-wrap">
+            {canDepositVaral && (
+              <button type="button" onClick={handleOpenVaralDeposit} className="flex-1 sm:flex-initial px-3 py-1.5 font-black text-xs rounded border border-encre-noire bg-[var(--color-cordel-ocre)] text-white hover:opacity-90 shadow-xs flex items-center justify-center gap-1 cursor-pointer" title="Déposer une présentation globale, un PDF ou un album sur la corde Varal de ce projet">
+                <span>📜 Présenter / Ajouter au Varal</span>
+              </button>
+            )}
             {canCreate && (
-              <button
-                type="button"
-                onClick={handleOpenCreate}
-                className="flex-1 sm:flex-initial px-3 py-1.5 font-black text-xs rounded border border-encre-noire bg-[var(--color-cordel-vert)] text-white hover:opacity-90 shadow-xs flex items-center justify-center gap-1 cursor-pointer"
-              >
+              <button type="button" onClick={handleOpenCreate} className="flex-1 sm:flex-initial px-3 py-1.5 font-black text-xs rounded border border-encre-noire bg-[var(--color-cordel-vert)] text-white hover:opacity-90 shadow-xs flex items-center justify-center gap-1 cursor-pointer">
                 <span>+</span><span>Nouvelle commission</span>
               </button>
             )}
-            <button
-              type="button"
-              onClick={() => { console.trace("⚠️ FERMETURE MODALE : Bouton ✕ EventCommissionsHub"); onClose(); }}
-              className="hidden sm:flex w-8 h-8 rounded border border-encre-noire bg-white items-center justify-center font-black text-sm hover:bg-stone-100 shrink-0 cursor-pointer"
-              title="Fermer la Tour de Contrôle"
-            >✕</button>
+            <button type="button" onClick={() => { console.trace("⚠️ FERMETURE MODALE : Bouton ✕ EventCommissionsHub"); onClose(); }} className="hidden sm:flex w-8 h-8 rounded border border-encre-noire bg-white items-center justify-center font-black text-sm hover:bg-stone-100 shrink-0 cursor-pointer" title="Fermer la Tour de Contrôle">✕</button>
           </div>
         </div>
 

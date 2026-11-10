@@ -1,12 +1,12 @@
 /**
  * Centre de Notifications Internes (In-App) avec indicateur dynamique et tiroir interactif.
- * Conforme à la charte visuelle Cordel et aux directives d'accessibilité mobile/desktop.
- * Intègre un positionnement adaptatif via Portal garantissant qu'aucune partie du panneau ne sorte de l'écran.
+ * Raccordé au routeur interne unifié (handleNotificationNavigate) d'Organizad'Or.
  */
 
-import React, { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useInAppNotifications } from '../../hooks/useInAppNotifications';
+import { useNotificationPanelPosition } from '../../hooks/useNotificationPanelPosition';
 import useConfirm from '../../hooks/useConfirm';
 import NotificationItem from './NotificationItem';
 
@@ -14,6 +14,7 @@ export default function NotificationCenter({
   currentUser,
   groupId,
   onNavigateToUrl,
+  onNotificationNavigate,
   unreadPrivateMessagesCount = 0,
   className = ''
 }) {
@@ -40,158 +41,56 @@ export default function NotificationCenter({
   }, [unreadCount, unreadPrivateMessagesCount]);
 
   const confirm = useConfirm();
-
   const [isOpen, setIsOpen] = useState(false);
-  const [panelStyle, setPanelStyle] = useState({});
-  const [isDesktop, setIsDesktop] = useState(
-    typeof window !== 'undefined' ? window.innerWidth >= 768 : true
-  );
-
   const buttonRef = useRef(null);
   const panelRef = useRef(null);
 
-  // Recalcul précis de la géométrie et du positionnement du panneau
-  const updatePosition = useCallback(() => {
-    if (typeof window === 'undefined') return;
-    const desktop = window.innerWidth >= 768;
-    setIsDesktop(desktop);
-
-    if (!desktop || !buttonRef.current) {
-      setPanelStyle({});
-      return;
-    }
-
-    const rect = buttonRef.current.getBoundingClientRect();
-    // Largeur du panneau adaptée aux écrans moyens et grands (384px max)
-    const panelWidth = Math.min(384, window.innerWidth - 24);
-
-    // Positionnement horizontal avec marge de sécurité de 12px
-    let left;
-    if (rect.left + panelWidth <= window.innerWidth - 12) {
-      // Aligné sur le bord gauche du bouton (très adapté à la barre latérale gauche)
-      left = Math.max(12, rect.left);
-    } else {
-      // Aligné sur le bord droit du bouton (très adapté aux barres supérieures droites)
-      left = Math.max(12, rect.right - panelWidth);
-    }
-    // Clamping strict dans les limites du viewport horizontal
-    left = Math.max(12, Math.min(left, window.innerWidth - panelWidth - 12));
-
-    // Positionnement vertical intelligent (évite le débordement bas/haut)
-    const spaceBelow = window.innerHeight - rect.bottom - 16;
-    const spaceAbove = rect.top - 16;
-    let top;
-    let maxHeight;
-
-    if (spaceBelow < 280 && spaceAbove > spaceBelow) {
-      // Espace insuffisant en bas : affichage au-dessus du bouton
-      maxHeight = Math.min(560, spaceAbove);
-      top = Math.max(12, rect.top - 8 - maxHeight);
-    } else {
-      // Affichage par défaut sous le bouton déclencheur
-      top = rect.bottom + 8;
-      maxHeight = Math.min(560, spaceBelow);
-    }
-
-    setPanelStyle({
-      position: 'fixed',
-      left: `${Math.round(left)}px`,
-      top: `${Math.round(top)}px`,
-      width: `${Math.round(panelWidth)}px`,
-      maxHeight: `${Math.round(maxHeight)}px`,
-    });
-  }, []);
+  const { panelStyle, isDesktop, updatePosition } = useNotificationPanelPosition({
+    isOpen,
+    setIsOpen,
+    buttonRef,
+    panelRef
+  });
 
   // Bascule d'ouverture avec recalcul immédiat des coordonnées
   const handleToggle = () => {
-    if (!isOpen) {
-      updatePosition();
-    }
+    if (!isOpen) updatePosition();
     setIsOpen((prev) => !prev);
   };
 
-  // Mise à jour de la position lors de l'ouverture et lors du redimensionnement / défilement
-  useLayoutEffect(() => {
-    if (!isOpen) return;
+  // Clic sur une notification : marquer comme lue sur sa référence exacte, fermer et naviguer
+  const handleSelectNotification = useCallback((notif) => {
+    if (!notif) return;
 
-    updatePosition();
-
-    const handleUpdate = () => {
-      updatePosition();
-    };
-
-    window.addEventListener('resize', handleUpdate);
-    window.addEventListener('scroll', handleUpdate, true);
-
-    return () => {
-      window.removeEventListener('resize', handleUpdate);
-      window.removeEventListener('scroll', handleUpdate, true);
-    };
-  }, [isOpen, updatePosition]);
-
-  // Fermeture lors d'un clic en dehors du panneau ou de l'appui sur Echap
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleClickOutside = (event) => {
-      if (!event || !event.target || !event.target.isConnected) return;
-      if (buttonRef.current && buttonRef.current.contains(event.target)) {
-        return;
-      }
-      if (panelRef.current && panelRef.current.contains(event.target)) {
-        return;
-      }
-      setIsOpen(false);
-    };
-
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('touchstart', handleClickOutside);
-    document.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('touchstart', handleClickOutside);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [isOpen]);
-
-  // Clic sur une notification : marquer comme lu, fermer et naviguer
-  const handleSelectNotification = useCallback((notification) => {
-    if (!notification) return;
-
-    // 1. Marquer immédiatement comme lue (supporte read et isRead)
-    const isUnread = notification.read !== undefined ? !notification.read : !notification.isRead;
-    if (isUnread) {
-      markAsRead(notification.notifId || notification.id);
+    // 1. Marquer immédiatement comme lue sur la référence exacte docId (supporte read et isRead)
+    const isUnread = notif.isRead !== true && notif.read !== true;
+    const exactDocId = notif.docId || notif.notifId || notif.id;
+    if (isUnread && exactDocId) {
+      markAsRead(exactDocId);
     }
 
     // 2. Fermer le panneau interactif
     setIsOpen(false);
 
-    // 3. Déclencher la navigation SPA
-    const destinationUrl = notification.targetUrl || notification.link;
-    if (onNavigateToUrl && destinationUrl) {
-      onNavigateToUrl(destinationUrl, notification);
+    // 3. Déclencher la navigation SPA vers la cible interne ou externe
+    const target = notif.targetUrl || notif.link;
+    const navigateHandler = onNotificationNavigate || onNavigateToUrl;
+    if (navigateHandler && target) {
+      navigateHandler(target, notif);
     }
-  }, [markAsRead, onNavigateToUrl]);
+  }, [markAsRead, onNotificationNavigate, onNavigateToUrl]);
 
   // Purge collective de l'historique après confirmation
   const handleClearAll = useCallback(async () => {
     if (notifications.length === 0) return;
     const confirmed = await confirm({
-      title: "Effacer les notifications ?",
+      title: 'Effacer les notifications ?',
       message: "Voulez-vous vraiment effacer tout l'historique de vos notifications internes ?",
-      confirmLabel: "Tout effacer",
-      cancelLabel: "Annuler",
-      variant: "danger"
+      confirmLabel: 'Tout effacer',
+      cancelLabel: 'Annuler',
+      variant: 'danger'
     });
-    if (confirmed) {
+    if (confirmed && clearAllNotifications) {
       clearAllNotifications();
     }
   }, [notifications.length, confirm, clearAllNotifications]);
@@ -210,7 +109,7 @@ export default function NotificationCenter({
             ? 'bg-white hover:bg-amber-50 text-encre-noire'
             : 'bg-cordel-bg hover:bg-white text-encre-noire/80'
         }`}
-        title={unreadCount > 0 ? `${unreadCount} notification(s) non lue(s)` : "Notifications"}
+        title={unreadCount > 0 ? `${unreadCount} notification(s) non lue(s)` : 'Notifications'}
         aria-label="Centre de notifications"
         aria-expanded={isOpen}
       >
@@ -218,7 +117,6 @@ export default function NotificationCenter({
           🔔
         </span>
 
-        {/* Badge numérique des alertes non lues */}
         {unreadCount > 0 && (
           <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 bg-[var(--color-cordel-rouge,#8b2a1a)] text-white text-[9px] font-black rounded-full flex items-center justify-center border border-white shadow-xs animate-pulse select-none">
             {unreadCount > 99 ? '99+' : unreadCount}
@@ -229,9 +127,8 @@ export default function NotificationCenter({
       {/* Tiroir Mobile / Popover Desktop rendu dans document.body via Portal */}
       {isOpen && typeof document !== 'undefined' && document.body && createPortal(
         <>
-          {/* Backdrop mobile pour fermeture tactile */}
           {!isDesktop && (
-            <div 
+            <div
               className="fixed inset-0 bg-black/40 backdrop-blur-xs z-[9998] md:hidden animate-fade-in"
               onClick={() => setIsOpen(false)}
               aria-hidden="true"
@@ -303,16 +200,12 @@ export default function NotificationCenter({
               {loading ? (
                 <div className="py-12 flex flex-col items-center justify-center text-center">
                   <div className="w-5 h-5 border-2 border-[var(--color-cordel-ocre,#c05621)] border-t-transparent rounded-full animate-spin mb-2" />
-                  <span className="text-xs font-bold text-encre-noire/60">
-                    Chargement des alertes...
-                  </span>
+                  <span className="text-xs font-bold text-encre-noire/60">Chargement des alertes...</span>
                 </div>
               ) : notifications.length === 0 ? (
                 <div className="py-12 px-4 text-center flex flex-col items-center justify-center">
                   <span className="text-3xl mb-2 opacity-50">📭</span>
-                  <p className="text-xs font-bold text-encre-noire/75">
-                    Aucune notification pour le moment.
-                  </p>
+                  <p className="text-xs font-bold text-encre-noire/75">Aucune notification pour le moment.</p>
                   <p className="text-[10px] text-encre-noire/50 mt-1">
                     Les convocations, mentions et statuts financiers apparaîtront ici.
                   </p>
@@ -320,7 +213,7 @@ export default function NotificationCenter({
               ) : (
                 notifications.map((notif) => (
                   <NotificationItem
-                    key={notif.notifId || notif.id}
+                    key={notif.docId || notif.notifId || notif.id}
                     notification={notif}
                     onSelect={handleSelectNotification}
                     onDelete={deleteNotification}
@@ -329,7 +222,6 @@ export default function NotificationCenter({
               )}
             </div>
 
-            {/* Pied de panneau discret */}
             {notifications.length > 0 && (
               <div className="p-2 pb-safe border-t border-dashed border-encre-noire/15 bg-cordel-bg text-center shrink-0">
                 <span className="text-[9px] font-extrabold text-encre-noire/50 uppercase tracking-wider">

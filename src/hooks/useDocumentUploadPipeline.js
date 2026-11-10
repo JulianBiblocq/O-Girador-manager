@@ -4,11 +4,13 @@ import { useTranslation } from '../components/LanguageContext';
 import { executeSmartBatchImport, parseTagsList } from '../utils/toadaBatchUpsertService';
 import { syncSixToadasPresetsToDocs } from '../utils/toadaSixPresetsSync';
 import { getNonFabricationTemplate } from '../utils/documentCulturePayloadHelper';
-import { submitSingleDocument } from '../utils/documentSingleSubmitService';
+import { submitSingleDocument, compressImageIfNeeded } from '../utils/documentSingleSubmitService';
+
+export { compressImageIfNeeded };
 
 /**
- * Hook personnalisé gérant le pipeline de soumission, d'upload Firebase Storage,
- * de fusion intelligente (Upsert JSON) et de pré-intégration des 6 Toadas (< 140 lignes).
+ * Hook personnalisé gérant le pipeline de soumission, d'upload Firebase Storage (avec compression d'image),
+ * la prise en charge du type 'projet_presentation', la fusion JSON et la synchro des 6 Toadas (< 150 lignes).
  */
 export function useDocumentUploadPipeline({ groupId, varalCategories = [], documentToEdit = null, onClose }) {
   const { t } = useTranslation();
@@ -118,7 +120,18 @@ export function useDocumentUploadPipeline({ groupId, varalCategories = [], docum
     if (!groupId) return;
     setIsSubmitting(true);
     try {
-      await submitSingleDocument({ db, storage, groupId, varalCategories, documentToEdit, formData, t, onClose });
+      const normalizedFormData = formData?.computedType === 'projet_presentation'
+        ? {
+            ...formData,
+            projectData: {
+              ...formData.projectData,
+              isPinnedFirst: formData.projectData?.isPinnedFirst !== false
+            }
+          }
+        : formData;
+      await submitSingleDocument({
+        db, storage, groupId, varalCategories, documentToEdit, formData: normalizedFormData, t, onClose
+      });
     } catch (error) {
       console.error("DocumentUploadForm - Erreur d'enregistrement :", error);
       alert(t('common.saveError') || "Une erreur est survenue lors de l'enregistrement.");
@@ -127,5 +140,5 @@ export function useDocumentUploadPipeline({ groupId, varalCategories = [], docum
     }
   };
 
-  return { isSubmitting, submitDocument, executeBatchImport, downloadTemplate, syncSixToadasPresets };
+  return { isSubmitting, submitDocument, executeBatchImport, downloadTemplate, syncSixToadasPresets, compressImageIfNeeded };
 }

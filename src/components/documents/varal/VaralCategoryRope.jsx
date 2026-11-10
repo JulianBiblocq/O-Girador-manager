@@ -4,6 +4,7 @@ import VaralBookletCover from './VaralBookletCover';
 import VaralEmptyRopeAdmin from './VaralEmptyRopeAdmin';
 import { CULTURE_THEMES, filterCultureDocsByTheme } from './varalCultureThemes';
 import { buildCultureDisplayList } from '../../../utils/weeklyCultureDocUtils';
+import { sortProjectRopeDocuments } from '../../../utils/projectVaralUtils';
 import { resolveVaralCategoryLabel, getCategoryLabel as getCategoryLabelUtil } from '../../../utils/documentCategories';
 import { useTranslation } from '../../LanguageContext';
 
@@ -46,6 +47,7 @@ export default function VaralCategoryRope({
   isAuthorized = false,
   canWrite = false,
   canDeposit = false,
+  canManageDoc = null,
   allEventsMap = {},
   getDocType,
   onOpenAdd,
@@ -89,7 +91,9 @@ export default function VaralCategoryRope({
   // tout en conservant `docList` intact pour le réordonnancement et le retour à la place d'origine.
   const displayDocList = category.id === 'Culture'
     ? buildCultureDisplayList(docList, weeklyCultureDocId, newestDocumentId)
-    : docList;
+    : category.id?.startsWith('projet_')
+      ? sortProjectRopeDocuments(docList)
+      : docList;
 
   // Évaluation de l'état d'activité et de vacuité de la corde
   const isInactive = category.actif === false;
@@ -296,6 +300,7 @@ export default function VaralCategoryRope({
                 isWeeklyCultureDoc={category.id === 'Culture' && docItem.id === weeklyCultureDocId}
                 isWeeklyManuallyPinned={category.id === 'Culture' && isWeeklyManuallyPinned}
                 isAuthorized={isAuthorized}
+                canManageDoc={canManageDoc ? canManageDoc(docItem, category) : false}
                 docType={getDocType ? getDocType(docItem) : 'pdf'}
                 onSelect={onSelectDoc}
                 onMoveLeft={onMoveLeft}

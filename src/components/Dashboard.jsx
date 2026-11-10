@@ -37,6 +37,8 @@ export default function Dashboard({
   profileData, 
   onNavigateToTrombi: _onNavigateToTrombi, 
   onNavigateToView, 
+  onNotificationNavigate = null,
+  onNavigateToPole = null,
   onSignOut: _onSignOut, 
   installPromptAvailable, 
   onTriggerInstall, 
@@ -328,6 +330,8 @@ export default function Dashboard({
                   isSystemAdmin={currentProfile?.isSystemAdmin} 
                   user={user}
                   onNavigateToView={onNavigateToView}
+                  onNotificationNavigate={onNotificationNavigate}
+                  onNavigateToPole={onNavigateToPole}
                   permissionsMatrice={_permissionsMatrice}
                   canPublish={canUserPublishAnnonces}
                   breakGlassActive={breakGlassActive}

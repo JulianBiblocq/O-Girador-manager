@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import FramaspaceGalleryViewer from '../studio/FramaspaceGalleryViewer';
 import CommissionDocReader from './varal/CommissionDocReader';
+import ProjectPresentationReader from './varal/ProjectPresentationReader';
 import { recordVaralDocumentView } from '../../utils/varalViewTracker';
 
 /**
@@ -135,13 +136,14 @@ export default function DocumentViewerModal({ document: docItem, onClose }) {
 
   const docType = docItem.type || docItem.typeDoc || mediaInfo?.type || 'pdf';
   const isCommission = docType === 'cordel_commission';
-  const isPdf = !isDropOnly && !isFramaspaceShare && !isCommission && (docType === 'pdf' || (mediaInfo && mediaInfo.type === 'pdf') || targetUrl.toLowerCase().includes('.pdf'));
-  const isVideo = !isDropOnly && !isFramaspaceShare && !isCommission && (docType === 'video' || (mediaInfo && ['youtube-playlist', 'youtube-video', 'vimeo', 'video-file'].includes(mediaInfo.type)));
-  const isAudio = !isDropOnly && !isFramaspaceShare && !isCommission && (docType === 'audio' || (mediaInfo && mediaInfo.type === 'audio-file'));
-  const isImage = !isDropOnly && !isFramaspaceShare && !isCommission && (docType === 'image' || (mediaInfo && mediaInfo.type === 'image'));
-  const isCloudDrive = !isDropOnly && !isFramaspaceShare && !isCommission && (docType === 'dossier_externe' || docType === 'drive' || (mediaInfo && mediaInfo.type === 'cloud-drive'));
-  const isReport = !isCommission && (docType === 'report' || docType === 'compte_rendu');
-  const isStatuts = !isCommission && (docType === 'statuts' || (docItem.categorie || '').toLowerCase().includes('officiel') || (docItem.titre || '').toLowerCase().includes('statut'));
+  const isProjectPresentation = docType === 'projet_presentation';
+  const isPdf = !isDropOnly && !isFramaspaceShare && !isCommission && !isProjectPresentation && (docType === 'pdf' || (mediaInfo && mediaInfo.type === 'pdf') || targetUrl.toLowerCase().includes('.pdf'));
+  const isVideo = !isDropOnly && !isFramaspaceShare && !isCommission && !isProjectPresentation && (docType === 'video' || (mediaInfo && ['youtube-playlist', 'youtube-video', 'vimeo', 'video-file'].includes(mediaInfo.type)));
+  const isAudio = !isDropOnly && !isFramaspaceShare && !isCommission && !isProjectPresentation && (docType === 'audio' || (mediaInfo && mediaInfo.type === 'audio-file'));
+  const isImage = !isDropOnly && !isFramaspaceShare && !isCommission && !isProjectPresentation && (docType === 'image' || (mediaInfo && mediaInfo.type === 'image'));
+  const isCloudDrive = !isDropOnly && !isFramaspaceShare && !isCommission && !isProjectPresentation && (docType === 'dossier_externe' || docType === 'drive' || (mediaInfo && mediaInfo.type === 'cloud-drive'));
+  const isReport = !isCommission && !isProjectPresentation && (docType === 'report' || docType === 'compte_rendu');
+  const isStatuts = !isCommission && !isProjectPresentation && (docType === 'statuts' || (docItem.categorie || '').toLowerCase().includes('officiel') || (docItem.titre || '').toLowerCase().includes('statut'));
 
   // Formatage de la date
   const displayDate = docItem.dateModification || docItem.dateAjout || docItem.date || docItem.createdAt;
@@ -172,10 +174,10 @@ export default function DocumentViewerModal({ document: docItem, onClose }) {
           <div className="flex flex-col gap-1 min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-sm select-none">
-                {isDropOnly ? '📥' : isFramaspaceShare ? '📸' : isCommission ? '🎪' : isVideo ? '🎥' : isPdf ? '📄' : isAudio ? '🎵' : isImage ? '📷' : isCloudDrive ? '📂' : '📜'}
+                {isDropOnly ? '📥' : isFramaspaceShare ? '📸' : isProjectPresentation ? '🌟' : isCommission ? '🎪' : isVideo ? '🎥' : isPdf ? '📄' : isAudio ? '🎵' : isImage ? '📷' : isCloudDrive ? '📂' : '📜'}
               </span>
               <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-[var(--color-cordel-ocre,#c05621)] text-[#FEF9E7] border border-encre-noire shadow-[1px_1px_0px_0px_#181716]">
-                {isDropOnly ? "Collecte Médias" : isFramaspaceShare ? "Galerie Photos & Vidéos" : isCommission ? "Livret de Commission" : docItem.categorie || docItem.categoryId || (isPdf ? "Document PDF" : isVideo ? "Vidéo / Tutoriel" : "Document")}
+                {isDropOnly ? "Collecte Médias" : isFramaspaceShare ? "Galerie Photos & Vidéos" : isProjectPresentation ? "🌟 Présentation" : isCommission ? "Livret de Commission" : docItem.categorie || docItem.categoryId || (isPdf ? "Document PDF" : isVideo ? "Vidéo / Tutoriel" : "Document")}
               </span>
               {docItem.annee && (
                 <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-encre-noire/10 text-encre-noire">
@@ -213,7 +215,7 @@ export default function DocumentViewerModal({ document: docItem, onClose }) {
         <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 sm:p-5 flex flex-col gap-4 bg-[var(--cordel-bg)] varal-scrollbar">
           
           {/* Description ou notes contextuelles si présentes */}
-          {docItem.description && (
+          {docItem.description && !isProjectPresentation && (
             <div className="p-3 bg-white/70 border border-dashed border-encre-noire/20 rounded text-xs text-stone-700 leading-relaxed italic">
               {docItem.description}
             </div>
@@ -313,7 +315,7 @@ export default function DocumentViewerModal({ document: docItem, onClose }) {
               />
             </div>
           ) : (
-            (isCloudDrive || (!isVideo && !isPdf && !isAudio && !isImage && targetUrl)) && (
+            (isCloudDrive || (!isProjectPresentation && !isCommission && !isReport && !isStatuts && !isVideo && !isPdf && !isAudio && !isImage && targetUrl)) && (
               <div className="p-6 sm:p-8 bg-amber-50/70 border-2 border-dashed border-cordel-master-dark/30 rounded-[6px_10px_4px_8px] text-center flex flex-col items-center gap-4 my-auto">
                 <span className="text-5xl">📂</span>
                 <div className="max-w-md">
@@ -564,6 +566,11 @@ export default function DocumentViewerModal({ document: docItem, onClose }) {
 
               <CommissionDocReader docItem={docItem} />
             </div>
+          )}
+
+          {/* 9. CAS PRÉSENTATION GLOBALE DU PROJET (Livret Éditorial Projet) */}
+          {isProjectPresentation && (
+            <ProjectPresentationReader docItem={docItem} />
           )}
         </div>
 

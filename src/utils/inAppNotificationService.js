@@ -115,6 +115,7 @@ export async function createInAppNotification({
       title: resolvedTitle,
       message,
       targetUrl,
+      link: targetUrl,
       icon: resolvedIcon,
       read: false,
       isRead: false,

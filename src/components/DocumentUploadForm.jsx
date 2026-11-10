@@ -10,6 +10,7 @@ import DocumentFormToadaFields from './documents/form/DocumentFormToadaFields';
 import DocumentFormCultureFields from './documents/form/DocumentFormCultureFields';
 import DocumentFormFabricationFields from './documents/form/DocumentFormFabricationFields';
 import DocumentFormQuizBuilder from './documents/form/DocumentFormQuizBuilder';
+import DocumentFormProjectFields from './documents/form/DocumentFormProjectFields';
 
 /**
  * Utilitaire de normalisation des listes de tags / mots-clés.
@@ -85,8 +86,45 @@ export default function DocumentUploadForm({
   const [tutoFabType, setTutoFabType] = useState(documentToEdit && documentToEdit.type === 'web' ? 'web' : 'fabrication');
   const [cultureType, setCultureType] = useState(documentToEdit && documentToEdit.type === 'web' ? 'web' : 'culture_fiche');
 
+  // 2b. Sous-états dédiés aux cordes de Projet (projet_${eventId})
+  const isProjectCategory = Boolean(category && String(category).startsWith('projet_'));
+  const [projectMode, setProjectMode] = useState(() => {
+    if (documentToEdit) {
+      if (documentToEdit.type === 'projet_presentation' || documentToEdit.typeDoc === 'projet_presentation') return 'projet_presentation';
+      if (documentToEdit.type === 'dossier_externe' || documentToEdit.typeDoc === 'dossier_externe') return 'dossier_externe';
+      return 'file';
+    }
+    if (initialSharedData?.file) return 'file';
+    if (initialSharedData?.externalUrl) return 'dossier_externe';
+    return 'projet_presentation';
+  });
+  const [projectText, setProjectText] = useState(() => (documentToEdit ? (documentToEdit.texte || documentToEdit.contenu || '') : ''));
+  const [projectNotes, setProjectNotes] = useState(() => (documentToEdit ? (documentToEdit.description || '') : ''));
+  const [illustrationUploadType, setIllustrationUploadType] = useState(() => (documentToEdit?.imageUrl || documentToEdit?.illustrationUrl ? 'url' : 'file'));
+  const [illustrationFile, setIllustrationFile] = useState(null);
+  const [illustrationUrl, setIllustrationUrl] = useState(() => (documentToEdit ? (documentToEdit.imageUrl || documentToEdit.illustrationUrl || '') : ''));
+  const [isPinnedFirst, setIsPinnedFirst] = useState(() => {
+    if (documentToEdit && documentToEdit.isPinnedFirst !== undefined) return Boolean(documentToEdit.isPinnedFirst);
+    if (documentToEdit) return documentToEdit.type === 'projet_presentation' || documentToEdit.typeDoc === 'projet_presentation';
+    return true;
+  });
+
+  const [file, setFile] = useState(() => initialSharedData?.file || null);
+  const [externalUrl, setExternalUrl] = useState(() => {
+    if (documentToEdit) return documentToEdit.fileUrl || '';
+    return initialSharedData?.externalUrl || '';
+  });
+  const [lienSequenceurId, setLienSequenceurId] = useState(documentToEdit ? documentToEdit.lienSequenceurId || '' : '');
+
   // Type final déduit
   const computedType = (() => {
+    if (category && String(category).startsWith('projet_')) {
+      if (projectMode === 'projet_presentation') return 'projet_presentation';
+      if (projectMode === 'dossier_externe') return 'dossier_externe';
+      const isImgFile = Boolean(file && (file.type?.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(file.name || '')));
+      if (isImgFile || (!file && documentToEdit?.type === 'image')) return 'image';
+      return 'pdf';
+    }
     const catLower = (category || '').toLowerCase();
     if (category === 'Toadas' || catLower.includes('toada') || catLower.includes('chant') || catLower.includes('parole')) {
       return 'song';
@@ -111,13 +149,6 @@ export default function DocumentUploadForm({
     }
     return 'pdf';
   })();
-
-  const [file, setFile] = useState(() => initialSharedData?.file || null);
-  const [externalUrl, setExternalUrl] = useState(() => {
-    if (documentToEdit) return documentToEdit.fileUrl || '';
-    return initialSharedData?.externalUrl || '';
-  });
-  const [lienSequenceurId, setLienSequenceurId] = useState(documentToEdit ? documentToEdit.lienSequenceurId || '' : '');
 
   // 3. Mode Saisie manuelle vs Import par lot
   const [importMode, setImportMode] = useState('manual');
@@ -371,6 +402,15 @@ export default function DocumentUploadForm({
       quizData: {
         notesLexique,
         questionsQcm
+      },
+      projectData: {
+        projectMode,
+        texte: projectText,
+        description: projectNotes,
+        illustrationUploadType,
+        illustrationFile,
+        illustrationUrl,
+        isPinnedFirst
       }
     });
   };
@@ -464,6 +504,33 @@ export default function DocumentUploadForm({
         ) : (
           /* MODE SAISIE MANUELLE */
           <>
+            {isProjectCategory ? (
+              <DocumentFormProjectFields
+                projectMode={projectMode}
+                setProjectMode={setProjectMode}
+                title={title}
+                setTitle={setTitle}
+                projectText={projectText}
+                setProjectText={setProjectText}
+                projectNotes={projectNotes}
+                setProjectNotes={setProjectNotes}
+                illustrationUploadType={illustrationUploadType}
+                setIllustrationUploadType={setIllustrationUploadType}
+                illustrationFile={illustrationFile}
+                setIllustrationFile={setIllustrationFile}
+                illustrationUrl={illustrationUrl}
+                setIllustrationUrl={setIllustrationUrl}
+                isPinnedFirst={isPinnedFirst}
+                setIsPinnedFirst={setIsPinnedFirst}
+                file={file}
+                onFileChange={handleFileChange}
+                externalUrl={externalUrl}
+                setExternalUrl={setExternalUrl}
+                isEditMode={isEditMode}
+                isSubmitting={isSubmitting}
+              />
+            ) : (
+              <>
             {/* Titre */}
             <div className="flex flex-col gap-1">
               <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
@@ -599,6 +666,8 @@ export default function DocumentUploadForm({
                   className="theme-input w-full disabled:opacity-50 text-xs py-2 file:mr-4 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-cordel-master-light file:text-encre-noire file:cursor-pointer"
                 />
               </div>
+            )}
+              </>
             )}
 
             {/* SECTION 1 : Chants & Toadas */}

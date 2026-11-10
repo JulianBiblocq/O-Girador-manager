@@ -70,10 +70,11 @@ function getNotificationIcon(type) {
 }
 
 export default function NotificationItem({ notification, onSelect, onDelete }) {
-  const isUnread = notification.read !== undefined ? !notification.read : !notification.isRead;
+  const isUnread = notification.isRead !== true && notification.read !== true;
   const dateFormatted = formatRelativeDate(notification.createdAt);
   const icon = notification.icon || getNotificationIcon(notification.type);
   const displayTitle = notification.title || notification.titre || 'Notification';
+  const exactDocId = notification.docId || notification.notifId || notification.id;
 
   return (
     <div
@@ -115,7 +116,7 @@ export default function NotificationItem({ notification, onSelect, onDelete }) {
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onDelete(notification.notifId || notification.id);
+                  onDelete(exactDocId);
                 }}
                 className="p-1 -mr-1 text-encre-noire/40 hover:text-[var(--color-cordel-rouge,#8b2a1a)] hover:bg-black/5 rounded cursor-pointer transition-colors text-xs leading-none"
                 title="Supprimer cette notification"

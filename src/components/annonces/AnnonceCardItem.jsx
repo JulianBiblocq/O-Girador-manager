@@ -129,7 +129,13 @@ export default function AnnonceCardItem({
       {ann.actionText && ann.actionLink && (
         <div className="mt-2.5 pt-2 border-t border-dashed border-cordel-master-dark/20 flex justify-start select-none">
           <CordelButton
-            type="button" variant="ocre" useExtremeBorder={true} onClick={() => handleCtaClick(ann.actionLink)}
+            type="button"
+            variant="ocre"
+            useExtremeBorder={true}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCtaClick(ann.actionLink, e);
+            }}
             className="text-xs py-1.5 px-3 font-black uppercase tracking-wider flex items-center gap-2 shadow-sm hover:scale-[1.02] transition-transform"
           >
             <span>🚀 {ann.actionText}</span>

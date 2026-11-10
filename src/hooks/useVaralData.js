@@ -22,6 +22,11 @@ import {
   getDocType
 } from '../utils/varalClassificationUtils';
 import { resolveWeeklyCultureDocId } from '../utils/weeklyCultureDocUtils';
+import {
+  sortProjectRopeDocuments,
+  canUserDepositOnProjectRope,
+  canUserManageProjectDoc
+} from '../utils/projectVaralUtils';
 
 export {
   DEFAULT_VARAL_CATEGORIES,
@@ -44,7 +49,8 @@ export default function useVaralData({
   profileData = null,
   role = null,
   isSystemAdmin = false,
-  canWrite = false
+  canWrite = false,
+  user = null
 }) {
   const { t } = useTranslation();
   const { confirm } = useConfirm();
@@ -561,6 +567,13 @@ export default function useVaralData({
       });
     }
 
+    // Tri sur le fil des cordes Projet : livrets épinglés (isPinnedFirst / projet_presentation) tout à gauche
+    Object.keys(groups).forEach((catKey) => {
+      if (catKey.startsWith('projet_')) {
+        groups[catKey] = sortProjectRopeDocuments(groups[catKey]);
+      }
+    });
+
     return groups;
   }, [documents, instrumentModels, allVaralCategories, eventsWithMedia, reunions, canSeeHidden, canAccessReunionOrDocItem]);
 
@@ -622,9 +635,20 @@ export default function useVaralData({
   // 9. Vérification des droits de dépôt sur une catégorie donnée
   const canDepositOnCategory = (category) => {
     if (!category) return false;
-    // Sur une corde de projet, seuls les encadrants et administrateurs peuvent déposer directement
+    // Sur une corde de projet : autorisé pour Admin, Mestre, Super-Admin, Bureau/CA ou Référent d'une commission de l'événement
     if (category.id?.startsWith('projet_')) {
-      return isAuthorized;
+      const eventId = category.id.replace(/^projet_/, '');
+      return canUserDepositOnProjectRope({
+        isAuthorized,
+        canAccessCa,
+        role: activeRole,
+        isSystemAdmin: activeIsSystemAdmin,
+        profileData: activeProfile,
+        userTags: effectiveTags,
+        user,
+        docsOnRope: groupedDocs[category.id] || [],
+        event: allEventsMap?.[eventId]
+      });
     }
     if (category.activerUploadPublic) return true;
     if (isAuthorized) return true;
@@ -650,6 +674,18 @@ export default function useVaralData({
 
     return false;
   };
+
+  // 9b. Vérification des droits d'édition / suppression d'un document manuel sur une corde
+  const canManageDoc = (docItem, category) =>
+    canUserManageProjectDoc({
+      docItem,
+      category,
+      isAuthorized,
+      canAccessCa,
+      profileData: activeProfile,
+      userTags: effectiveTags,
+      user
+    });
 
   // 10. Actions de réordonnancement par lot (writeBatch)
   const updateDocumentsOrder = async (newOrderedList) => {
@@ -700,19 +736,26 @@ export default function useVaralData({
     if (!isOk) return;
 
     try {
-      // Nettoyage Storage si fichier hébergé sur Firebase Storage
-      if (docItem.fileUrl && docItem.fileUrl.includes('firebasestorage.googleapis.com')) {
+      // Nettoyage Storage si fichier ou visuel d'illustration hébergé sur Firebase Storage
+      const storageUrls = [docItem.fileUrl, docItem.imageUrl, docItem.illustrationUrl].filter(
+        (u, idx, arr) => typeof u === 'string' && u.includes('firebasestorage.googleapis.com') && arr.indexOf(u) === idx
+      );
+      for (const sUrl of storageUrls) {
         try {
-          const fileRef = ref(storage, docItem.fileUrl);
-          await deleteObject(fileRef);
+          await deleteObject(ref(storage, sUrl));
         } catch (storageError) {
           console.error("useVaralData - Erreur de suppression Storage :", storageError);
         }
       }
 
-      // Si le document provient d'un événement ou est relié à un événement :
+      // Si le document est un album média virtuel de PhotosPrestations relié à un événement :
       // retirer la publication Varal et réinitialiser les liens Cloud sur l'événement
-      if (docItem.eventId) {
+      const isEventMediaItem = Boolean(
+        docItem.isVirtualEventMedia ||
+        docItem.id?.startsWith('event-media-') ||
+        (docItem.categoryId || docItem.categorie) === 'PhotosPrestations'
+      );
+      if (docItem.eventId && isEventMediaItem) {
         try {
           const eventRef = doc(db, 'events', docItem.eventId);
           await updateDoc(eventRef, {
@@ -863,6 +906,7 @@ export default function useVaralData({
     effectiveTags,
     visibleCategories,
     canDepositOnCategory,
+    canManageDoc,
     handleDelete,
     handleMoveLeft,
     handleMoveRight,

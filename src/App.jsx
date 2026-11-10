@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { onAuthStateChanged, signOut, signInWithCustomToken } from 'firebase/auth';
 import { doc, getDoc, getDocFromServer, onSnapshot, updateDoc, collection, query, where } from 'firebase/firestore';
 import { auth, db } from './firebase';
@@ -41,6 +41,12 @@ import { reconcilePreExistingMember } from './services/memberService';
 import { isDemoMode, initDemoSession, getDemoAuthUser, getDemoProfileData } from './demo/demoManager';
 import { DEMO_GROUP_ID } from './data/demoData';
 import DemoTopBanner from './components/demo/DemoTopBanner';
+import {
+  resolveInternalDestination,
+  extractDeepLinkTarget,
+  INTERNAL_APP_ROUTE_PREFIXES,
+  isExternalActionLink
+} from './utils/megaphoneNavigationUtils';
 
 const Onboarding = lazyWithRetry(() => import('./components/Onboarding'));
 const OnboardingWizard = lazyWithRetry(() => import('./components/onboarding/OnboardingWizard'));
@@ -79,6 +85,7 @@ const MestreRepertoireView = lazyWithRetry(() => import('./components/mestre/Mes
 const MestreAutoEvalConfig = lazyWithRetry(() => import('./components/mestre/MestreAutoEvalConfig'));
 const WidgetAgenda = lazyWithRetry(() => import('./components/WidgetAgenda'));
 const WidgetDocuments = lazyWithRetry(() => import('./components/WidgetDocuments'));
+const WidgetTreasury = lazyWithRetry(() => import('./components/WidgetTreasury'));
 const InstrumentModelsManager = lazyWithRetry(() => import('./components/varal/InstrumentModelsManager'));
 const MonParcours = lazyWithRetry(() => import('./components/pedagogy/MonParcours'));
 const MonAtelier = lazyWithRetry(() => import('./components/profile/MonAtelier'));
@@ -418,8 +425,21 @@ export default function App() {
     }
   };
 
-  const [currentPole, setCurrentPole] = useState('accueil');
-  const [currentTab, setCurrentTab] = useState('dashboard');
+  // Capture de la cible Deep Link initiale au montage (avant tout nettoyage d'URL)
+  const initialDeepLinkRef = useRef(
+    typeof window !== 'undefined' ? (window.location.pathname || '') + (window.location.search || '') : ''
+  );
+
+  const [currentPole, setCurrentPole] = useState(() => {
+    if (typeof window === 'undefined') return 'accueil';
+    const dest = resolveInternalDestination((window.location.pathname || '') + (window.location.search || ''));
+    return dest?.poleId || 'accueil';
+  });
+  const [currentTab, setCurrentTab] = useState(() => {
+    if (typeof window === 'undefined') return 'dashboard';
+    const dest = resolveInternalDestination((window.location.pathname || '') + (window.location.search || ''));
+    return dest?.tabId || 'dashboard';
+  });
   const [selectedMestreEventId, setSelectedMestreEventId] = useState(null);
   const [activeMestreEventDetails, setActiveMestreEventDetails] = useState(null);
 
@@ -501,7 +521,12 @@ export default function App() {
     if (appMode === 'mostrador') return true;
 
     // Si la route est explicitement une page interne d'administration ou setup/login
-    if (path.startsWith('/app') || path.startsWith('/events') || path.startsWith('/agenda') || path.startsWith('/forum')) return false;
+    if (
+      path.startsWith('/app') ||
+      INTERNAL_APP_ROUTE_PREFIXES.some((prefix) => path === prefix || path.startsWith(`${prefix}/`) || path.startsWith(`${prefix}?`))
+    ) {
+      return false;
+    }
     if (['/setup', '/login'].includes(path)) return false;
 
     // 1. Sous-domaine Mostrador (ex: mostrador.o-girador.com)
@@ -933,142 +958,105 @@ export default function App() {
         const canonicalUrlGroupId = canonicalizeGroupId(rawUrlGroupId);
         const currentCanonicalGroupId = canonicalizeGroupId(profileData.groupId);
 
+        const cleanGroupParamsFromUrl = () => {
+          searchParams.delete('groupe');
+          searchParams.delete('tenant');
+          searchParams.delete('assoc');
+          const remaining = searchParams.toString();
+          const newUrl = window.location.pathname + (remaining ? `?${remaining}` : '');
+          window.history.replaceState(window.history.state || {}, document.title, newUrl);
+        };
+
         // N'écraser le groupe que si l'invitation cible un groupe RÉELLEMENT distinct (insensible à la casse)
         if (canonicalUrlGroupId && !isSameGroupCaseInsensitive(canonicalUrlGroupId, currentCanonicalGroupId)) {
           const userRef = doc(db, 'users', user.uid);
           updateDoc(userRef, { groupId: canonicalUrlGroupId })
             .then(() => {
-              // Clean up the URL to hide the query parameter
-              const newUrl = window.location.pathname;
-              window.history.replaceState({}, document.title, newUrl);
+              cleanGroupParamsFromUrl();
             })
             .catch((err) => {
               console.error("App - Erreur association groupe automatique :", err);
             });
         } else {
-          // Si l'utilisateur est déjà dans ce groupe (ex: URL contenant samambaia en minuscules), nettoyer immédiatement l'URL
-          const newUrl = window.location.pathname;
-          window.history.replaceState({}, document.title, newUrl);
+          cleanGroupParamsFromUrl();
         }
       }
     }
   }, [user, profileData]);
 
-  // Gestion du Deep Linking automatique pour la navigation via les notifications Push FCM
+  // Gestion du Deep Linking automatique pour la navigation via les notifications Push FCM et Mégaphone
   useEffect(() => {
     if (!user || !profileData) return;
 
-    // Fonction de navigation interne déclenchée par un deep link (notification push ou lien direct)
+    const canUserAccessTresorerie = Boolean(
+      isSystemOrSuperAdminOrMestre ||
+      isMasterKeyActive ||
+      canAccessPole('tresorerie', profileData, permissionsMatrice, resolveEffectiveUserTags(profileData?.tags || [], tagsDisponibles)) ||
+      canAccessTabPermission('dashboard-finance', 'tresorerie', profileData, permissionsMatrice, resolveEffectiveUserTags(profileData?.tags || [], tagsDisponibles))
+    );
+
     const handleDeepLinkNavigation = (overridePath) => {
-      let rawPath = overridePath || (typeof window !== 'undefined' ? (window.location.pathname + window.location.search) : '');
+      const currentBrowserUrl = typeof window !== 'undefined' ? (window.location.pathname + window.location.search) : '';
+      const rawPath = overridePath || initialDeepLinkRef.current || currentBrowserUrl;
       if (!rawPath) return;
 
-      let pathname = rawPath;
-      let queryStr = '';
-      if (rawPath.includes('?')) {
-        const parts = rawPath.split('?');
-        pathname = parts[0];
-        queryStr = parts[1];
-      }
-      const searchParams = new URLSearchParams(queryStr || (typeof window !== 'undefined' ? window.location.search : ''));
-
-      // Extraction de l'identifiant d'événement (soit paramètre URL, soit fragment de chemin /events/...)
-      let eventId = searchParams.get('eventId');
-      const eventMatch = pathname.match(/\/events\/([^/?#]+)/);
-      if (!eventId && eventMatch) {
-        eventId = eventMatch[1];
+      if (!overridePath && initialDeepLinkRef.current) {
+        initialDeepLinkRef.current = '';
       }
 
-      // Extraction de l'identifiant de discussion (soit paramètre URL, soit fragment de chemin /threads/... ou /forum/...)
-      let threadId = searchParams.get('threadId');
-      const threadMatch = pathname.match(/\/threads\/([^/?#]+)/) || pathname.match(/\/forum\/([^/?#]+)/);
-      if (!threadId && threadMatch) {
-        threadId = threadMatch[1];
+      const { searchParams, targetFromQuery } = extractDeepLinkTarget(rawPath);
+      if (targetFromQuery) {
+        searchParams.delete('target');
+        searchParams.delete('redirect');
+        searchParams.delete('url');
+        searchParams.delete('destination');
       }
 
-      const isAgendaRoute = pathname.includes('/agenda') || pathname.includes('/events');
-      const isForumRoute = pathname.includes('/forum') || pathname.includes('/threads');
+      const resolved = resolveInternalDestination(rawPath, { hasAccessTresorerie: canUserAccessTresorerie });
+      const eventId = resolved?.eventId || null;
+      const threadId = resolved?.threadId || null;
 
-      if (eventId || isAgendaRoute) {
-        setCurrentPole('accueil');
-        setCurrentTab('agenda');
-        if (eventId) {
-          searchParams.set('eventId', eventId);
-        }
-      } else if (threadId || isForumRoute) {
-        setCurrentPole('mon-espace');
-        setCurrentTab('forum');
-        const tabParam = searchParams.get('tab');
-        const convIdParam = searchParams.get('conversationId');
-        const chatUserIdParam = searchParams.get('chatUserId');
-        if (threadId) {
-          setForumInitialTab('discussions');
-        } else if (tabParam) {
-          setForumInitialTab(tabParam === 'direct' ? 'inbox' : tabParam);
-        }
-        if (convIdParam) setActiveConversationId(convIdParam);
-        if (chatUserIdParam) setActivePrivateChatUserId(chatUserIdParam);
-        if (threadId) searchParams.set('threadId', threadId);
-      } else if (pathname.includes('/profil') || pathname.includes('/profile')) {
-        setCurrentPole('mon-espace');
-        setCurrentTab('profil');
-        setTimeout(() => {
-          const fraisEl = document.getElementById('member-expense-section');
-          if (fraisEl) fraisEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 150);
-      } else if (pathname.includes('/treasury') || pathname.includes('/frais-km')) {
-        setCurrentPole('tresorerie');
-        const tab = searchParams.get('tab') || (pathname.includes('/frais-km') ? 'frais-km' : 'dashboard-finance');
-        if (tab === 'frais-km') {
-          setCurrentTab('frais-km');
-        } else if (['cotisations', 'events-finances', 'operations-diverses', 'reports-exports', 'commandes'].includes(tab)) {
-          setCurrentTab(tab);
-        } else {
-          setCurrentTab('dashboard-finance');
-        }
-      } else if (pathname.includes('/mon-vestiaire') || pathname.includes('/vestiaire')) {
-        setCurrentPole('mon-espace');
-        setCurrentTab('mon-vestiaire');
-      } else if (pathname.includes('/diffusion')) {
-        setCurrentPole('diffusion');
-        setCurrentTab(searchParams.get('tab') || 'gigs-pipeline');
-      } else if (pathname.includes('/logistics') || pathname.includes('/logistique') || pathname.includes('/inventory')) {
-        setCurrentPole('logistique');
-        setCurrentTab(searchParams.get('tab') || 'inventory');
-      } else if (pathname.includes('/mestre')) {
-        setCurrentPole('mestre');
-        const tab = searchParams.get('tab');
-        if (tab === 'casting') {
-          setCurrentTab('mestre-orientation');
-        } else if (tab) {
-          setCurrentTab(tab.startsWith('mestre-') ? tab : `mestre-${tab}`);
-        } else {
-          setCurrentTab('mestre-repertoire');
+      if (resolved) {
+        setCurrentPole(resolved.poleId);
+        setCurrentTab(resolved.tabId);
+
+        if (resolved.tabId === 'agenda') {
+          if (eventId) searchParams.set('eventId', eventId);
+          if (resolved.eventTab) searchParams.set('tab', resolved.eventTab);
+        } else if (resolved.tabId === 'forum') {
+          if (resolved.forumInitialTab) setForumInitialTab(resolved.forumInitialTab);
+          if (resolved.conversationId) setActiveConversationId(resolved.conversationId);
+          if (resolved.chatUserId) setActivePrivateChatUserId(resolved.chatUserId);
+          if (threadId) searchParams.set('threadId', threadId);
+        } else if (resolved.scrollToId) {
+          setTimeout(() => {
+            document.getElementById(resolved.scrollToId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 150);
         }
       }
 
-      // Normalisation impérative : dans Organizador, l'espace membre est toujours /app
-      // Cela évite que /events/... ne soit interprété à tort comme une vitrine d'association inconnue
       setCurrentRoute('/app');
       const finalQuery = searchParams.toString();
       const finalUrl = '/app' + (finalQuery ? `?${finalQuery}` : '');
       if (typeof window !== 'undefined') {
-        window.history.replaceState({ ...window.history.state, eventId, threadId }, '', finalUrl);
+        const nextHistoryState = {
+          ...(window.history.state || {}),
+          ...(resolved ? { currentPole: resolved.poleId, currentTab: resolved.tabId } : {}),
+          eventId,
+          threadId
+        };
+        window.history.replaceState(nextHistoryState, '', finalUrl);
         if (eventId) {
-          // Notification immédiate pour que WidgetAgenda charge l'événement
-          window.dispatchEvent(new PopStateEvent('popstate'));
+          window.dispatchEvent(new PopStateEvent('popstate', { state: nextHistoryState }));
         }
       }
     };
 
     handleDeepLinkNavigation();
 
-    // Écoute des événements de navigation (ex: retour arrière navigateur)
     const handlePopState = () => handleDeepLinkNavigation();
     window.addEventListener('popstate', handlePopState);
 
-    // Écoute des messages du service worker (clic notification quand l'app est déjà ouverte)
-    // Le SW envoie un postMessage au lieu de client.navigate pour éviter un rechargement complet
     const handleSWMessage = (event) => {
       if (event.data && event.data.type === 'NOTIFICATION_CLICK' && event.data.url) {
         handleDeepLinkNavigation(event.data.url);
@@ -1080,7 +1068,7 @@ export default function App() {
       window.removeEventListener('popstate', handlePopState);
       navigator.serviceWorker?.removeEventListener('message', handleSWMessage);
     };
-  }, [user, profileData]);
+  }, [user, profileData, isSystemOrSuperAdminOrMestre, isMasterKeyActive, permissionsMatrice, tagsDisponibles]);
 
   // Synchroniser le compteur de messages non lus (conversations modernes et messages directs historiques)
   useEffect(() => {
@@ -1919,13 +1907,7 @@ export default function App() {
   const isLoginPath = (currentRoute === '/login' || currentRoute === '/login/') && !isDemoPath && !isVitrineMode;
 
   // Préfixes des routes internes d'Organizador pour ne jamais les confondre avec une vitrine publique
-  const INTERNAL_APP_PREFIXES = [
-    '/events', '/agenda', '/forum', '/threads', '/profil', '/profile',
-    '/treasury', '/frais-km', '/diffusion', '/mestre', '/logistique', '/logistics',
-    '/mon-vestiaire', '/vestiaire', '/newsletter', '/varal', '/trombinoscope',
-    '/adhesions', '/cotisations', '/repertoire', '/pedagogie', '/inventaire',
-    '/orders', '/commandes', '/documents', '/reunions', '/studio'
-  ];
+  const INTERNAL_APP_PREFIXES = INTERNAL_APP_ROUTE_PREFIXES;
   const isInternalPath = INTERNAL_APP_PREFIXES.some(prefix => currentRoute === prefix || currentRoute.startsWith(prefix + '/') || currentRoute.startsWith(prefix + '?'));
   const isAppPath = !isVitrineMode && (currentRoute.startsWith('/app') || isInternalPath || isDemoPath || (Boolean(user) && !isLoginPath && !isSetupPath));
   
@@ -2289,12 +2271,14 @@ export default function App() {
         setCurrentTab('trombinoscope');
         break;
       case 'forum':
+      case 'porte-voix':
         setCurrentPole('mon-espace');
         setCurrentTab('forum');
         break;
       case 'varal':
-        if (extraOptions?.categoryKey || extraOptions?.category) {
-          const cat = extraOptions.categoryKey || extraOptions.category;
+      case 'documents':
+        if (extraOptions?.categoryKey || extraOptions?.category || extraOptions?.ropeId) {
+          const cat = extraOptions.categoryKey || extraOptions.category || extraOptions.ropeId;
           const searchParams = new URLSearchParams(window.location.search);
           searchParams.set('varalCat', cat);
           window.history.pushState({ ...window.history.state, varalCat: cat }, '', window.location.pathname + '?' + searchParams.toString());
@@ -2339,6 +2323,9 @@ export default function App() {
         setCurrentTab('tag-manager');
         break;
       case 'materiel':
+        setCurrentPole('mon-espace');
+        setCurrentTab('materiel');
+        break;
       case 'inventory':
         setCurrentPole('logistique');
         setCurrentTab('inventory');
@@ -2352,6 +2339,10 @@ export default function App() {
         setCurrentTab('logistics-kits');
         break;
       case 'vestiaire':
+      case 'mon-vestiaire':
+        setCurrentPole('mon-espace');
+        setCurrentTab('vestiaire');
+        break;
       case 'wardrobe':
       case 'wardrobe-pieces':
       case 'wardrobe-inventory':
@@ -2413,8 +2404,17 @@ export default function App() {
         setCurrentTab('varal-lutherie');
         break;
       case 'treasury':
-        setCurrentPole('tresorerie');
-        setCurrentTab('dashboard-finance');
+      case 'tresorerie':
+      case 'cotisations':
+      case 'cotisation':
+      case 'adhesions':
+        if (hasAccessTresorerie) {
+          setCurrentPole('tresorerie');
+          setCurrentTab('dashboard-finance');
+        } else {
+          setCurrentPole('mon-espace');
+          setCurrentTab('cotisation');
+        }
         break;
       case 'kilometric-reimbursement':
         setCurrentPole('tresorerie');
@@ -2468,7 +2468,7 @@ export default function App() {
           );
           window.dispatchEvent(new PopStateEvent('popstate'));
         }
-        setCurrentPole('accueil');
+        setCurrentPole('mon-espace');
         setCurrentTab('agenda');
         break;
       case 'mestre-categories':
@@ -2538,20 +2538,20 @@ export default function App() {
   };
 
   /**
-   * Gestionnaire central de navigation interne déclenchée par le Centre de Notifications
-   * et le Deep Linking SPA sans rechargement de page.
+   * Gestionnaire central de navigation interne déclenchée par le Centre de Notifications,
+   * le Mégaphone et le Deep Linking SPA sans rechargement de page.
    */
   const handleNotificationNavigate = (targetUrl, notification = null) => {
     if ((!targetUrl || typeof targetUrl !== 'string') && notification?.type !== 'push_reminder') return;
 
-    let path = targetUrl || '/app';
-    let queryStr = '';
-    if (path.includes('?')) {
-      const parts = path.split('?');
-      path = parts[0];
-      queryStr = parts[1];
+    if (targetUrl && isExternalActionLink(targetUrl)) {
+      if (typeof window !== 'undefined') {
+        window.open(targetUrl.trim(), '_blank', 'noopener,noreferrer');
+      }
+      return;
     }
-    const params = new URLSearchParams(queryStr);
+
+    const { pathname: path, searchParams: params } = extractDeepLinkTarget(targetUrl || '/app');
     const basePath = '/app';
 
     // 0. Relance d'activation des notifications Push en 1 clic (?setup-push=1 ou type === 'push_reminder')
@@ -2566,154 +2566,82 @@ export default function App() {
       return;
     }
 
-    // 1. Forum / Discussions / Messages Privés / Groupes
-    if (path.includes('/forum') || path.includes('/threads')) {
-      let threadId = params.get('threadId');
-      if (!threadId && path.match(/\/threads\/([^/?#]+)/)) {
-        threadId = path.match(/\/threads\/([^/?#]+)/)[1];
-      }
-      const tabParam = params.get('tab');
-      const convIdParam = params.get('conversationId');
-      const chatUserIdParam = params.get('chatUserId');
-
-      setCurrentPole('mon-espace');
-      setCurrentTab('forum');
-      cleanUrlParams(['eventId']);
-
-      if (threadId) {
-        setForumInitialTab('discussions');
-      } else if (tabParam) {
-        setForumInitialTab(tabParam === 'direct' ? 'inbox' : tabParam);
-      }
-      if (convIdParam) {
-        setActiveConversationId(convIdParam);
-      }
-      if (chatUserIdParam) {
-        setActivePrivateChatUserId(chatUserIdParam);
-      }
-
-      const newSearchParams = new URLSearchParams(window.location.search);
-      if (threadId) newSearchParams.set('threadId', threadId);
-      if (tabParam) newSearchParams.set('tab', tabParam);
-      if (convIdParam) newSearchParams.set('conversationId', convIdParam);
-      if (chatUserIdParam) newSearchParams.set('chatUserId', chatUserIdParam);
-
+    // 1. Résolution unifiée via la table de correspondance (Mégaphone + Cloche + Badges + Discussions)
+    const resolved = resolveInternalDestination(targetUrl, { hasAccessTresorerie });
+    if (resolved) {
+      setCurrentPole(resolved.poleId);
+      setCurrentTab(resolved.tabId);
       setCurrentRoute(basePath);
-      const newUrl = basePath + (newSearchParams.toString() ? '?' + newSearchParams.toString() : '');
-      window.history.pushState({ ...window.history.state, threadId, tab: tabParam, conversationId: convIdParam, chatUserId: chatUserIdParam }, '', newUrl);
-      return;
-    }
 
-    // 2. Agenda / Événements (ex: /events/abc ou /agenda?eventId=abc)
-    if (path.includes('/events') || path.includes('/agenda')) {
-      let eventId = params.get('eventId');
-      if (!eventId && path.match(/\/events\/([^/?#]+)/)) {
-        eventId = path.match(/\/events\/([^/?#]+)/)[1];
-      }
-      const tabParam = params.get('tab');
-      setCurrentPole('accueil');
-      setCurrentTab('agenda');
-      cleanUrlParams(['threadId']);
-
-      const newSearchParams = new URLSearchParams(window.location.search);
-      if (eventId) {
-        newSearchParams.set('eventId', eventId);
-      }
-      if (tabParam) {
-        newSearchParams.set('tab', tabParam);
-      }
-      setCurrentRoute(basePath);
-      const newUrl = basePath + (newSearchParams.toString() ? '?' + newSearchParams.toString() : '');
-      window.history.pushState({ ...window.history.state, eventId, tab: tabParam }, '', newUrl);
-
-      // Notification immédiate pour WidgetAgenda
-      window.dispatchEvent(new PopStateEvent('popstate'));
-      return;
-    }
-
-    // 3. Profil / Notes de frais (ex: /profil ou /profil?tab=frais)
-    if (path.includes('/profil') || path.includes('/profile')) {
-      setCurrentPole('mon-espace');
-      setCurrentTab('profil');
-      cleanUrlParams(['eventId', 'threadId']);
-
-      setCurrentRoute(basePath);
-      window.history.pushState({}, '', basePath);
-
-      // Défilement automatique vers la section de remboursement des frais
-      setTimeout(() => {
-        const fraisEl = document.getElementById('member-expense-section');
-        if (fraisEl) {
-          fraisEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (resolved.tabId === 'agenda') {
+        cleanUrlParams(['threadId']);
+        const newSearchParams = new URLSearchParams(window.location.search);
+        if (resolved.eventId) newSearchParams.set('eventId', resolved.eventId);
+        if (resolved.eventTab) newSearchParams.set('tab', resolved.eventTab);
+        if (params.get('focus')) newSearchParams.set('focus', params.get('focus'));
+        if (params.get('hub')) newSearchParams.set('hub', params.get('hub'));
+        const newUrl = basePath + (newSearchParams.toString() ? `?${newSearchParams.toString()}` : '');
+        window.history.pushState(
+          {
+            ...window.history.state,
+            currentPole: resolved.poleId,
+            currentTab: resolved.tabId,
+            eventId: resolved.eventId,
+            tab: resolved.eventTab
+          },
+          '',
+          newUrl
+        );
+        window.dispatchEvent(new PopStateEvent('popstate'));
+        if (resolved.focusComments) {
+          setTimeout(() => {
+            document.getElementById('event-tab-discussion')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 250);
         }
-      }, 150);
-      return;
-    }
+        return;
+      }
 
-    // 4. Trésorerie (ex: /treasury?tab=frais-km ou /frais-km)
-    if (path.includes('/treasury') || path.includes('/frais-km')) {
-      const tab = params.get('tab') || (path.includes('/frais-km') ? 'frais-km' : 'dashboard-finance');
-      setCurrentPole('tresorerie');
+      if (resolved.tabId === 'forum') {
+        cleanUrlParams(['eventId']);
+        if (resolved.forumInitialTab) setForumInitialTab(resolved.forumInitialTab);
+        if (resolved.conversationId) setActiveConversationId(resolved.conversationId);
+        if (resolved.chatUserId) setActivePrivateChatUserId(resolved.chatUserId);
+
+        const newSearchParams = new URLSearchParams(window.location.search);
+        if (resolved.threadId) newSearchParams.set('threadId', resolved.threadId);
+        if (params.get('tab')) newSearchParams.set('tab', params.get('tab'));
+        if (resolved.conversationId) newSearchParams.set('conversationId', resolved.conversationId);
+        if (resolved.chatUserId) newSearchParams.set('chatUserId', resolved.chatUserId);
+
+        const newUrl = basePath + (newSearchParams.toString() ? `?${newSearchParams.toString()}` : '');
+        window.history.pushState(
+          {
+            ...window.history.state,
+            currentPole: resolved.poleId,
+            currentTab: resolved.tabId,
+            threadId: resolved.threadId,
+            tab: params.get('tab'),
+            conversationId: resolved.conversationId,
+            chatUserId: resolved.chatUserId
+          },
+          '',
+          newUrl
+        );
+        return;
+      }
+
       cleanUrlParams(['eventId', 'threadId']);
+      window.history.pushState({ currentPole: resolved.poleId, currentTab: resolved.tabId }, '', basePath);
 
-      if (tab === 'frais-km') {
-        setCurrentTab('frais-km');
-      } else if (['cotisations', 'events-finances', 'operations-diverses', 'reports-exports', 'commandes'].includes(tab)) {
-        setCurrentTab(tab);
-      } else {
-        setCurrentTab('dashboard-finance');
+      if (resolved.scrollToId) {
+        setTimeout(() => {
+          document.getElementById(resolved.scrollToId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 150);
       }
-
-      setCurrentRoute(basePath);
-      window.history.pushState({}, '', basePath);
       return;
     }
 
-    // 5. Mon Vestiaire / Mes tenues
-    if (path.includes('/mon-vestiaire') || path.includes('/vestiaire')) {
-      setCurrentPole('mon-espace');
-      setCurrentTab('mon-vestiaire');
-      cleanUrlParams(['threadId']);
-      setCurrentRoute(basePath);
-      window.history.pushState({}, '', basePath);
-      return;
-    }
-
-    // 6. Diffusion / Prestations
-    if (path.includes('/diffusion')) {
-      setCurrentPole('diffusion');
-      setCurrentTab(params.get('tab') || 'gigs-pipeline');
-      setCurrentRoute(basePath);
-      window.history.pushState({}, '', basePath);
-      return;
-    }
-
-    // 7. Logistique / Matériel
-    if (path.includes('/logistics') || path.includes('/logistique')) {
-      setCurrentPole('logistique');
-      setCurrentTab(params.get('tab') || 'inventory');
-      setCurrentRoute(basePath);
-      window.history.pushState({}, '', basePath);
-      return;
-    }
-
-    // 8. Espace Mestre
-    if (path.includes('/mestre')) {
-      setCurrentPole('mestre');
-      const tab = params.get('tab');
-      if (tab === 'casting') {
-        setCurrentTab('mestre-orientation');
-      } else if (tab) {
-        setCurrentTab(tab.startsWith('mestre-') ? tab : `mestre-${tab}`);
-      } else {
-        setCurrentTab('mestre-repertoire');
-      }
-      setCurrentRoute(basePath);
-      window.history.pushState({}, '', basePath);
-      return;
-    }
-
-    // 9. Repli sur le gestionnaire de vues génériques SPA
+    // 2. Repli sur le gestionnaire de vues génériques SPA
     const cleanViewName = path.replace(/^\/(app\/)?/, '').split('?')[0];
     if (cleanViewName) {
       setCurrentRoute(basePath);
@@ -3029,12 +2957,12 @@ export default function App() {
                     hideSubTabs={true}
                     onBack={() => handleNavigateToPole('accueil')} 
                   />
-                ) : (['orders', 'orders-manager'].includes(currentTab) && hasAccessLogistique) ? (
+                ) : (['orders', 'orders-manager', 'commandes'].includes(currentTab) && (hasAccessLogistique || hasAccessTresorerie)) ? (
                   <OrdersManager 
                     groupId={profileData?.groupId}
                     role={profileData?.role}
                     isSystemAdmin={profileData?.isSystemAdmin}
-                    hasAccessLogistique={hasAccessLogistique}
+                    hasAccessLogistique={hasAccessLogistique || hasAccessTresorerie}
                     onBack={() => handleNavigateToPole('accueil')} 
                   />
                 ) : (currentTab === 'inventory-projects' && hasAccessLutherie) ? (
@@ -3493,6 +3421,24 @@ export default function App() {
                       />
                     </React.Suspense>
                   </div>
+                ) : (currentTab === 'cotisation' || (currentTab === 'dashboard-finance' && !hasAccessTresorerie)) ? (
+                  <div className="flex flex-col gap-3 w-full max-w-3xl mx-auto">
+                    <div className="flex justify-start select-none">
+                      <button
+                        type="button"
+                        onClick={() => handleNavigateToPole('accueil')}
+                        className="text-[10px] font-black uppercase tracking-widest bg-cordel-bg border border-encre-noire px-3 py-1.5 rounded-[4px_6px_3px_5px] shadow-[2px_2px_0px_0px_#181716] cursor-pointer flex items-center gap-1.5"
+                      >
+                        <span>⬅️</span>
+                        <span>{t('common.back') || "Retour à l'accueil"}</span>
+                      </button>
+                    </div>
+                    <WidgetTreasury
+                      groupId={profileData?.groupId}
+                      profileData={profileData}
+                      user={user}
+                    />
+                  </div>
                 ) : (
                   <Dashboard 
                     key={dashboardKey}
@@ -3500,6 +3446,8 @@ export default function App() {
                     profileData={effectiveProfileData || profileData} 
                     onNavigateToTrombi={() => handleNavigateToView('trombinoscope')} 
                     onNavigateToView={handleNavigateToView}
+                    onNotificationNavigate={handleNotificationNavigate}
+                    onNavigateToPole={handleNavigateToPole}
                     onSignOut={handleSignOut} 
                     installPromptAvailable={installPromptAvailable}
                     onTriggerInstall={triggerInstallPrompt}

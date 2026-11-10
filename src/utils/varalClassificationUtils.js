@@ -97,6 +97,7 @@ export const isAdministrativeDoc = (docItem) => {
  */
 export const getDocType = (docItem) => {
   if (!docItem) return 'pdf';
+  if (docItem.type === 'projet_presentation' || docItem.typeDoc === 'projet_presentation') return 'projet_presentation';
   if (docItem.type === 'cordel_commission' || docItem.typeDoc === 'cordel_commission') return 'cordel_commission';
   if (docItem.type) return docItem.type;
   if (docItem.typeDoc) return docItem.typeDoc;

@@ -18,13 +18,15 @@ import AnnonceCardItem from './annonces/AnnonceCardItem';
 import AnnonceForm from './annonces/AnnonceForm';
 import AnnoncePushBanner from './annonces/AnnoncePushBanner';
 import { detectPushTutorialDevice, openPushTutorialModal } from './dashboard/PushTutorialModal';
+import { triggerMegaphoneCtaNavigation } from '../utils/megaphoneNavigationUtils';
 
 /**
  * WidgetAnnonces : Gestionnaire et affichage des pancartes du tableau de bord.
  * Respecte strictement la règle Anti-Monolithe par délégation modulaire.
  */
 export default function WidgetAnnonces({
-  groupId, profileData, role, isSystemAdmin, user, onNavigateToView,
+  groupId, profileData, role, isSystemAdmin, user,
+  onNavigateToView, onNotificationNavigate = null, onNavigateToPole = null,
   permissionsMatrice, canPublish: canPublishProp, breakGlassActive = false,
   userTags: userTagsProp, installPromptAvailable = false, onTriggerInstall = null
 }) {
@@ -108,14 +110,13 @@ export default function WidgetAnnonces({
     }
   };
 
-  const handleCtaClick = (link) => {
-    if (!link) return;
-    const trimmed = link.trim();
-    if (trimmed.startsWith('http')) return window.open(trimmed, '_blank', 'noopener,noreferrer');
-    const cleanRoute = trimmed.startsWith('/') ? trimmed.slice(1) : trimmed;
-    const map = { profile: 'profil', materiel: 'inventory', vestiaire: 'wardrobe-inventory' };
-    if (onNavigateToView) onNavigateToView(map[cleanRoute] || cleanRoute);
-    else window.location.href = trimmed;
+  // Gestionnaire du clic sur le bouton d'action (CTA) d'une annonce
+  const handleCtaClick = (link, event = null) => {
+    triggerMegaphoneCtaNavigation(
+      link,
+      { onNotificationNavigate, onNavigateToView, onNavigateToPole },
+      event
+    );
   };
 
   const handleSubmitForm = async (formData) => {
@@ -134,8 +135,9 @@ export default function WidgetAnnonces({
       if (formData.sendPushNotification) {
         const recipientIds = resolveTargetRecipientIds({ announcement: payload, allMembers, authorId: user?.uid });
         if (recipientIds.length > 0) {
+          const targetUrl = payload.actionLink && payload.actionLink.trim() ? payload.actionLink.trim() : '/app';
           await dispatchBulkInAppAndPushNotification({
-            recipientIds, groupId, titre: payload.titre, message: payload.message, targetUrl: '/app', sendPush: true
+            recipientIds, groupId, titre: payload.titre, message: payload.message, targetUrl, sendPush: true
           });
         }
       }

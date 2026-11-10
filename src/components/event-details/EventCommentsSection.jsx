@@ -39,14 +39,18 @@ export default function EventCommentsSection({ event, user, profileData, autoFoc
     }
   }, []);
 
-  // Défilement automatique vers le dernier message lorsque l'onglet discussion est actif
+  // Défilement automatique vers le dernier message lorsque l'onglet discussion ou focus=comments est actif
   useEffect(() => {
     if (loading) return;
-    const isDiscussionTarget = typeof window !== 'undefined' && (
-      new URLSearchParams(window.location.search).get('tab') === 'discussion'
+    const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const isDiscussionTarget = Boolean(
+      searchParams && (searchParams.get('tab') === 'discussion' || searchParams.get('focus') === 'comments')
     );
     if (isDiscussionTarget || autoFocus) {
       const timer = setTimeout(() => {
+        if (commentsContainerRef.current) {
+          commentsContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
         scrollToBottom(true);
       }, 250);
       return () => clearTimeout(timer);

@@ -74,11 +74,11 @@ export function convertCommissionToVaralDoc(event, commission, referentsNames = 
     titre: `${commission.icone || '📌'} ${commission.titre}`,
     auteur, type: 'cordel_commission', typeDoc: 'cordel_commission',
     commissionSourceId: commission.id, eventId, eventTitle, projetTitre: eventTitle,
-    eventDate, eventDateFin, isEventClosed, eventStatut,
+    referentsIds: Array.isArray(commission.referentsIds) ? commission.referentsIds : [], eventDate, eventDateFin, isEventClosed, eventStatut,
     dateModification: nowIso, dateMiseAJour: nowIso,
     contenu: md, texte: md, order: 50,
     commissionData: {
-      id: commission.id, titre: commission.titre, icone: commission.icone,
+      id: commission.id, titre: commission.titre, icone: commission.icone, referentsIds: Array.isArray(commission.referentsIds) ? commission.referentsIds : [],
       description: commission.description, jalons: commission.jalons || []
     }
   };

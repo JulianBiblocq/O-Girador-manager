@@ -293,13 +293,16 @@ exports.onAnnouncementCreated = onDocumentCreated(
     const targetUserIds = Array.isArray(data.targetUserIds) ? data.targetUserIds : [];
     
     const announcementId = event.params.announcementId;
+    const actionUrl = data.actionLink && typeof data.actionLink === "string" && data.actionLink.trim()
+      ? data.actionLink.trim()
+      : "/app";
     await sendPushToUsers(db, {
       groupId: data.groupId,
       cibles: cibles,
       targetUserIds: targetUserIds,
       title: data.titre || "Nouvelle annonce",
       body: data.message || "",
-      dataPayload: { url: "/app", click_action: "/app", announcementId, tag: `annonce-${announcementId}` }
+      dataPayload: { url: actionUrl, click_action: actionUrl, announcementId, tag: `annonce-${announcementId}` }
     });
     return null;
   }

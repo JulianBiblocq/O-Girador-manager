@@ -33,6 +33,7 @@ export default function VaralBookletCover({
   isWeeklyCultureDoc = false,
   isWeeklyManuallyPinned = false,
   isAuthorized = false,
+  canManageDoc = false,
   docType = 'pdf',
   onSelect,
   onMoveLeft,
@@ -44,6 +45,9 @@ export default function VaralBookletCover({
   const { t } = useTranslation();
   const isCultureRope = category?.id === 'Culture';
   const isWeeklyHighlight = isCultureRope && isWeeklyCultureDoc;
+  const isProjectPresentation = docType === 'projet_presentation' || docItem.type === 'projet_presentation' || docItem.typeDoc === 'projet_presentation';
+  const isProjectHighlight = isProjectPresentation || Boolean(docItem.isPinnedFirst && (category?.id?.startsWith('projet_') || category?.isProjectRope));
+  const canManage = isAuthorized || canManageDoc;
   const realIndex = Array.isArray(docList)
     ? docList.findIndex((d) => d && d.id === docItem.id)
     : index;
@@ -110,6 +114,7 @@ export default function VaralBookletCover({
     report: '📜',
     compte_rendu: '📜',
     cordel_commission: '🎪',
+    projet_presentation: '🌟',
     statuts: '⚖️',
     culture_fiche: '📖',
     instrument_model: '🛠️',
@@ -163,10 +168,17 @@ export default function VaralBookletCover({
         </span>
       )}
 
-      {/* Pince à linge 3D en bois naturel ou dorée/cuivrée pour la Fiche de la semaine */}
+      {/* Macaron Cordel « 🌟 Présentation » pour le livret éditorial épinglé en tête de la corde Projet */}
+      {isProjectPresentation && !isLatestDoc && (
+        <span className="absolute -top-2.5 -left-3 z-40 bg-[var(--color-cordel-ocre,#c05621)] text-[#FEF9E7] border-2 border-encre-noire rounded-[4px_6px_3px_5px] px-2 py-0.5 text-[8.5px] font-black uppercase tracking-wider shadow-[2px_2px_0px_0px_#181716] select-none flex items-center gap-1">
+          <span>🌟 Présentation</span>
+        </span>
+      )}
+
+      {/* Pince à linge 3D en bois naturel ou dorée/cuivrée pour la Fiche de la semaine ou Présentation Projet */}
       <VaralClothespinSVG
-        variant={isWeeklyHighlight ? 'gold' : 'wood'}
-        className={`absolute -top-[16px] z-30 pointer-events-none ${isWeeklyHighlight ? 'bg-amber-500/0 border-amber-900' : ''}`}
+        variant={isWeeklyHighlight || isProjectHighlight ? 'gold' : 'wood'}
+        className={`absolute -top-[16px] z-30 pointer-events-none ${isWeeklyHighlight || isProjectHighlight ? 'bg-amber-500/0 border-amber-900' : ''}`}
       />
 
       {/* Couverture du livret Cordel (Booklet Cover) */}
@@ -177,7 +189,7 @@ export default function VaralBookletCover({
           rounded-[4px_10px_3px_8px]
           border-l-4 border-l-double
           theme-bg-${colorClass}
-          ${isWeeklyHighlight ? 'ring-2 ring-amber-500/80 ring-offset-2 ring-offset-[#F4ECD8]' : ''}
+          ${isWeeklyHighlight || isProjectHighlight ? 'ring-2 ring-amber-500/80 ring-offset-2 ring-offset-[#F4ECD8]' : ''}
           overflow-hidden
         `}
       >
@@ -235,8 +247,8 @@ export default function VaralBookletCover({
           isDarkBg={isDarkBg}
         />
 
-        {/* Boutons d'action au survol (épingler Culture, réordonner, modifier, supprimer) pour les administrateurs */}
-        {isAuthorized && !docItem.isVirtualEventMedia && !isWorkshopVirtualDoc(docItem) && (
+        {/* Boutons d'action au survol (épingler Culture, réordonner, modifier, supprimer) pour les administrateurs ou auteurs */}
+        {canManage && !docItem.isVirtualEventMedia && !isWorkshopVirtualDoc(docItem) && (
           <div className="absolute top-1.5 right-1.5 flex gap-1 z-40 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
             {isCultureRope && onTogglePinWeekly && (
               <button
