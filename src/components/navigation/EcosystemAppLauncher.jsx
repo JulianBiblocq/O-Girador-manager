@@ -58,58 +58,20 @@ export default function EcosystemAppLauncher({ urls, associationData, currentGro
     (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
   const ecosystemAccess = associationData?.ecosystemAccess || {
-    vitrine: true,
-    sequenciador: true,
-    dancador: true,
-    hub: true,
-    cantador: true
+    vitrine: true, sequenciador: true, dancador: true, hub: true, cantador: true, afinador: false
   };
 
   const isDemo = isDemoMode();
-  const effectiveGroupId = currentGroupId || associationData?.id || associationData?.groupId || 'Samambaia';
+  const effectiveGroupId = currentGroupId || associationData?.id || associationData?.groupId || '';
 
   const apps = [
-    {
-      key: 'vitrine',
-      url: getVitrineUrl(urls, associationData, effectiveGroupId),
-      img: '/ecosystem/logo-mostrador.png',
-      label: 'Mostrador',
-      subtitle: t('navigation.mostradorSubtitle') || 'Site vitrine public',
-      isPublic: true
-    },
-    {
-      key: 'sequenciador',
-      url: getEcosystemUrl('sequenciador'),
-      img: '/ecosystem/sequenciador.png',
-      label: 'Sequenciador',
-      subtitle: t('navigation.sequenciadorSubtitle') || 'Partitions & Rythmes',
-      isPublic: false
-    },
-    {
-      key: 'dancador',
-      url: getEcosystemUrl('dancador'),
-      img: '/ecosystem/dancador-logo.png',
-      label: 'Dançador',
-      subtitle: t('navigation.dancadorSubtitle') || 'Atelier chorégraphique',
-      isPublic: false
-    },
-    {
-      key: 'cantador',
-      url: getEcosystemUrl('cantador'),
-      img: '/ecosystem/cantador-logo.svg',
-      label: 'Cantador',
-      subtitle: t('navigation.cantadorSubtitle') || 'Atelier vocal & Toadas',
-      isPublic: false
-    },
-    {
-      key: 'hub',
-      url: getEcosystemUrl('hub'),
-      img: '/ecosystem/hub-logo.png',
-      label: 'Orquestrador',
-      subtitle: t('navigation.orquestradorSubtitle') || 'Portail central O Girador',
-      isPublic: false
-    }
-  ];
+    { key: 'vitrine', url: getVitrineUrl(urls, associationData, effectiveGroupId), img: '/ecosystem/logo-mostrador.png', label: 'Mostrador', subtitle: t('navigation.mostradorSubtitle') || 'Site vitrine public', isPublic: true, enabled: true },
+    { key: 'sequenciador', url: getEcosystemUrl('sequenciador'), img: '/ecosystem/sequenciador.png', label: 'Sequenciador', subtitle: t('navigation.sequenciadorSubtitle') || 'Partitions & Rythmes', isPublic: false, enabled: true },
+    { key: 'dancador', url: getEcosystemUrl('dancador'), img: '/ecosystem/dancador-logo.png', label: 'Dançador', subtitle: t('navigation.dancadorSubtitle') || 'Atelier chorégraphique', isPublic: false, enabled: true },
+    { key: 'cantador', url: getEcosystemUrl('cantador'), img: '/ecosystem/cantador-logo.svg', label: 'Cantador', subtitle: t('navigation.cantadorSubtitle') || 'Atelier vocal & Toadas', isPublic: false, enabled: true },
+    { key: 'afinador', url: getEcosystemUrl('afinador'), img: '', label: 'Afinador', subtitle: 'Accordeur acoustique', isPublic: false, enabled: false, comingSoon: true },
+    { key: 'hub', url: getEcosystemUrl('hub'), img: '/ecosystem/hub-logo.png', label: 'Orquestrador', subtitle: t('navigation.orquestradorSubtitle') || 'Portail central O Girador', isPublic: false, enabled: true }
+  ].filter(app => app.enabled !== false);
 
   // Recalcul géométrique précis et clamping strict dans le viewport
   const updatePosition = useCallback(() => {

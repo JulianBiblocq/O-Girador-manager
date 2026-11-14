@@ -4,10 +4,14 @@ import { canonicalizeGroupId } from '../utils/tenantUtils';
 const STORAGE_GROUP_KEY = 'girador_saved_group_id';
 const LEGACY_STORAGE_KEYS = ['girador_group_id', 'o_girador_tenant', 'savedGroupId'];
 
+export const RESERVED_SUBDOMAINS = Object.freeze([
+  'orquestrador', 'organizador', 'sequenciador', 'cantador', 'dancador',
+  'mostrador', 'afinador', 'www', 'app', 'admin', 'api',
+  'manager', 'dansador', 'o-girador-organizador', 'o-girador-7828c', 'o-girador-mostrador', 'web'
+]);
+
 /**
- * Récupère le code de groupe mémorisé dans le localStorage (vérifie la clé actuelle puis les clés historiques).
- *
- * @returns {string|null} Le code groupe ou null
+ * Récupère le code de groupe mémorisé dans le localStorage.
  */
 export function getStoredGroupId() {
   if (typeof window === 'undefined') return null;
@@ -59,17 +63,10 @@ export function extractGroupIdFromHost() {
       return null;
     }
 
-    // Domaines réservés de l'application
-    const reservedSubdomains = [
-      'www', 'app', 'mostrador', 'organizador', 'manager', 
-      'sequenciador', 'dancador', 'dansador', 'orchestrador', 
-      'o-girador-organizador', 'web'
-    ];
-
     const parts = hostname.split('.');
     if (parts.length > 2) {
       const candidate = parts[0];
-      if (!reservedSubdomains.includes(candidate)) {
+      if (!RESERVED_SUBDOMAINS.includes(candidate)) {
         return canonicalizeGroupId(candidate);
       }
     }

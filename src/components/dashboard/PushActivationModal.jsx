@@ -103,7 +103,7 @@ export default function PushActivationModal({ user, profileData }) {
             <span className="text-2xl select-none">🔔</span>
             <h3 className="text-sm font-black uppercase tracking-wider">
               {isContractRecovery
-                ? "🔔 Votre appareil a besoin d'un clic pour rétablir vos alertes Samambaia"
+                ? `🔔 Votre appareil a besoin d'un clic pour rétablir vos alertes ${profileData?.groupName || 'du groupe'}`
                 : 'Ne manque aucune info du groupe !'}
             </h3>
           </div>

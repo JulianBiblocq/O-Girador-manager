@@ -21,7 +21,7 @@ export const MEGAPHONE_INTERNAL_DESTINATIONS = [
 ];
 
 /**
- * Préfixes de routes internes d'Organizad'Or (ne doivent jamais être confondus avec une vitrine publique).
+ * Préfixes de routes internes d'Organizador (ne doivent jamais être confondus avec une vitrine publique).
  */
 export const INTERNAL_APP_ROUTE_PREFIXES = [
   '/events', '/agenda', '/forum', '/porte-voix', '/threads', '/profil', '/profile',
@@ -71,7 +71,7 @@ export function extractDeepLinkTarget(rawUrlOrPath) {
 
 /**
  * Table de correspondance unifiée des destinations internes (Mégaphone, Cloche NotificationCenter et Deep Linking)
- * vers les identifiants réels de Pôles, d'Onglets et de paramètres contextuels React d'Organizad'Or.
+ * vers les identifiants réels de Pôles, d'Onglets et de paramètres contextuels React d'Organizador.
  */
 export function resolveInternalDestination(rawInput, { hasAccessTresorerie = true } = {}) {
   if (!rawInput || typeof rawInput !== 'string' || isExternalActionLink(rawInput)) return null;

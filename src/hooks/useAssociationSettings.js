@@ -81,11 +81,7 @@ export const DEFAULT_MEMBER_TABS_VISIBILITY = {
 };
 
 export const DEFAULT_ECOSYSTEM_ACCESS = {
-  vitrine: true,
-  sequenciador: true,
-  dancador: true,
-  hub: true,
-  cantador: true
+  vitrine: true, sequenciador: true, dancador: true, hub: true, cantador: true, afinador: false
 };
 
 export const DEFAULT_INSTRUMENTS = UNIVERSE_DEFAULT_INSTRUMENTS.maracatu;

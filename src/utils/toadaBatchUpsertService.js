@@ -10,6 +10,7 @@ import { normalizeString } from './repertoireMatcher.js';
 import { stripToadaTechnicalMarkers, toadaToCleanHtml } from './toadaSerializer.js';
 import { buildToadaStructure, findSixPresetForTitle, isToadaDocument } from './toadaSixPresetsSync.js';
 import { cleanFirestorePayload } from './firestoreUtils.js';
+import { VOCAL_GRAMMAR_VERSION, normalizeToadaTextV1ToV2 } from './vocalGrammarV2.js';
 
 export const parseTagsList = (val) => {
   if (!val) return [];
@@ -35,7 +36,8 @@ export function buildBatchImportItemPayload(item, { groupId, category, categoryN
   const titre = (item.titre || item.title || existingDoc?.titre || '').trim();
   const isToada = category === 'Toadas' || computedType === 'song' || isToadaDocument(item) || isToadaDocument(existingDoc);
   const preset = isToada ? findSixPresetForTitle(titre) : null;
-  const rawTxtCode = item.rawTxtCode !== undefined ? String(item.rawTxtCode) : (item.codeTxt || item.structureTxt || preset?.rawTxtCode || existingDoc?.rawTxtCode || '');
+  const rawTxtInput = item.rawTxtCode !== undefined ? String(item.rawTxtCode) : (item.codeTxt || item.structureTxt || preset?.rawTxtCode || existingDoc?.rawTxtCode || '');
+  const rawTxtCode = isToada && rawTxtInput ? normalizeToadaTextV1ToV2(rawTxtInput, { grammarVersion: item.grammarVersion ?? existingDoc?.grammarVersion ?? 1 }) : rawTxtInput;
   const rawBpm = item.bpm ?? item.bpmDefaut ?? preset?.bpm ?? existingDoc?.bpm ?? existingDoc?.bpmDefaut;
   const bpm = rawBpm !== undefined && rawBpm !== null && rawBpm !== '' ? Number(rawBpm) : null;
   const signatureRythmique = item.signatureRythmique || item.signature || preset?.signatureRythmique || existingDoc?.signatureRythmique || existingDoc?.signature || '4/4';
@@ -60,6 +62,7 @@ export function buildBatchImportItemPayload(item, { groupId, category, categoryN
     isHidden: item.isHidden !== undefined ? Boolean(item.isHidden) : Boolean(existingDoc?.isHidden),
     excludeFromPedagogy: item.excludeFromPedagogy !== undefined ? Boolean(item.excludeFromPedagogy) : Boolean(existingDoc?.excludeFromPedagogy),
     nacao: pick(item.nacao, existingDoc?.nacao, ''), rythme: pick(item.rythme, existingDoc?.rythme, ''),
+    ...(isToada ? { grammarVersion: VOCAL_GRAMMAR_VERSION } : {}),
     rawTxtCode, toadaStructure, bpm, bpmDefaut: bpm, signatureRythmique, signature: signatureRythmique,
     parolesOriginales,
     parolesPhonetiques: item.parolesPhonetiques ? formatAndCleanVaralLyrics(item.parolesPhonetiques) : (existingDoc?.parolesPhonetiques || ''),

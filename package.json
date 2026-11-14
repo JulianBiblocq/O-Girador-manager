@@ -8,6 +8,7 @@
     "dev": "vite",
     "build": "node scripts/pre_build_sync_version.mjs && vite build && node scripts/post_build_prepare_hosting.mjs",
     "lint": "oxlint",
+    "check:governance": "node .agents/hooks/check_governance.mjs",
     "test": "node scripts/run_all_tests.mjs",
     "preview": "vite preview",
     "audit-deps": "npx npm-check-updates",

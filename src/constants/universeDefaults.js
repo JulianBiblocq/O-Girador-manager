@@ -158,11 +158,8 @@ export const UNIVERSE_TERMINOLOGY = {
  */
 export function normalizeUniverseId(universeId) {
   if (!universeId || typeof universeId !== 'string') return 'maracatu';
-  const clean = universeId.trim().toLowerCase();
-  if (UNIVERSE_DEFAULT_INSTRUMENTS[clean]) {
-    return clean;
-  }
-  return 'maracatu';
+  const clean = universeId.trim().toLowerCase().replace(/[\s_-]+/g, '');
+  return UNIVERSE_DEFAULT_INSTRUMENTS[clean] ? clean : 'maracatu';
 }
 
 /**

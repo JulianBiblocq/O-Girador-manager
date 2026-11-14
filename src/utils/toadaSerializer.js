@@ -1,20 +1,22 @@
 /**
- * Utilitaire de sérialisation, conversion HTML et export/import des Toadas (.txt) (< 140 lignes).
- * Conforme aux standards d'interopérabilité Organizador <-> Cantador.
+ * Utilitaire de sérialisation, conversion HTML et export/import des Toadas (.txt) (< 145 lignes).
+ * Conforme à la Grammaire Vocale v2 (préservation stricte de `<u>` et filtrage de `0`, `𝄽`, `_`, `───`, `/`, `+`).
  */
 import { CHORD_REGEX, isSectionHeader } from './toadaMeasureParser.js';
+import { normalizeElisionApostrophes } from './vocalGrammarV2.js';
 
 export const TOADA_TXT_LEGEND = `
 # ==========================================
-# LÉGENDE DU FORMAT TOADA (.txt) O-GIRADOR :
+# LÉGENDE DU FORMAT TOADA (.txt) O GIRADOR :
 # ------------------------------------------
 # +     : Anacrouse (mesure d'élan)
 # /     : Mesure liée à la précédente
+# 0 / 𝄽 : Silence vocal explicite
+# _     : Tenue de voyelle ou mélisme legato
 # *mot* : Puxador / Soliste (Gras)
 # texte : Chœur / Coro (Normal)
-# [Dm7] : Accord harmonique
-# Espace au début d'une ligne : Retour visuel dans la même mesure (Shift + Entrée)
-# Double saut de ligne : Nouvelle mesure (Entrée)
+# [Dm7] : Accord harmonique ([G/B] renversé)
+# [sig:4/4] : Signature rythmique explicite
 # [Intro], [Refrain] : En-têtes de section
 # ==========================================
 `.trim();
@@ -22,17 +24,12 @@ export const TOADA_TXT_LEGEND = `
 export function serializeToadaMeasures(sections = []) {
   if (!Array.isArray(sections) || sections.length === 0) return '';
   const blocks = [];
-
   for (const sec of sections) {
     if (sec.name && sec.name.trim()) blocks.push(`[${sec.name.trim()}]`);
     for (const m of sec.measures || []) {
       const prefix = m.hasAnacrusis ? '+ ' : m.isLinked ? '/ ' : '';
-      let content = (m.rawContent || '').trim();
-      // Gestion des lignes multiples dans la même mesure (retour visuel avec espace)
-      const lines = content.split(/\r?\n/).map((l, idx) => {
-        if (idx === 0) return l.trim();
-        return ` ${l.trim()}`;
-      });
+      const content = (m.rawContent || '').trim();
+      const lines = content.split(/\r?\n/).map((l, idx) => (idx === 0 ? l.trim() : ` ${l.trim()}`));
       blocks.push(`${prefix}${lines.join('\n')}`);
     }
   }
@@ -41,32 +38,39 @@ export function serializeToadaMeasures(sections = []) {
 
 export function stripToadaTechnicalMarkers(text = '') {
   if (!text || typeof text !== 'string') return '';
-  return text
-    .replace(/^\s*[+/!]+\s*/gm, '')
-    .replace(/(^|\n)\s*\/+(?=\*|[A-Za-zÀ-ÿ[])/g, '$1')
-    .replace(/(^|\n)\s*!+(?=\*|[A-Za-zÀ-ÿ[])/g, '$1')
-    .replace(CHORD_REGEX, '')
-    .replace(/\[(?:M\d+[•.:\u00b7])?\d+\]/gi, '')
+  return normalizeElisionApostrophes(text)
+    .replace(/<u\b[^>]*>/gi, '\uE000')
+    .replace(/<\/u>/gi, '\uE001')
+    .replace(/<([a-z][a-z0-9]*)\b[^>]*>/gi, '\uE002$1\uE003')
+    .replace(/<\/([a-z][a-z0-9]*)>/gi, '\uE004$1\uE003')
     .replace(/\[sig:[^\]]+\]/gi, '')
+    .replace(/\[(?:sim|nosim)\]/gi, '')
+    .replace(/\[\s*(?:PAUSE|SILENCE)[^\]]*\]/gi, '')
+    .replace(CHORD_REGEX, '')
+    .replace(/^\s*(\*{0,3}\s*)[+/!]+\s*/gm, '$1')
+    .replace(/(^|\n)\s*[\/!]+(?=\*|[\p{L}[\uE000])/gu, '$1')
+    .replace(/(?:^|(?<=[\s*\]\uE003]))0(?=$|[\s*\[\uE000\uE002\uE004])/gu, '')
+    .replace(/\[(?:M\d+[•.:\u00b7])?(?:\d+(?:\.\d+)?|\+)\]/gi, '')
+    .replace(/(?<![\p{L}\d])0(?![\p{L}\d])/gu, '')
+    .replace(/[𝄽_!]/gu, '')
+    .replace(/───/g, '')
     .replace(/(^|\s|\*)\+\s+/g, '$1')
-    .replace(/_/g, '')
-    .replace(/!/g, '')
     .replace(/[ \t]{2,}/g, ' ')
-    .trim();
+    .trim()
+    .replace(/\uE002([a-z][a-z0-9]*)\uE003/gi, '<$1>')
+    .replace(/\uE004([a-z][a-z0-9]*)\uE003/gi, '</$1>')
+    .replace(/\uE000/g, '<u>')
+    .replace(/\uE001/g, '</u>');
 }
 
 export function toadaToCleanHtml(rawTxtCode = '') {
   if (!rawTxtCode || typeof rawTxtCode !== 'string') return '';
-  if (/<[a-z][\s\S]*>/i.test(rawTxtCode)) {
+  if (/<(?!\/?u\b)[a-z][\s\S]*>/i.test(rawTxtCode)) {
     return stripToadaTechnicalMarkers(rawTxtCode).replace(/\*([^*]+)\*/g, '<strong>$1</strong>');
   }
 
-  // Normalisation préalable des blocs *...* multi-lignes
   const normalizedTxt = rawTxtCode.replace(/\*([^*]+)\*/g, (_, inner) =>
-    inner
-      .split(/\r?\n/)
-      .map((part) => (part.trim() ? `*${part.trim()}*` : ''))
-      .join('\n')
+    inner.split(/\r?\n/).map((part) => (part.trim() ? `*${part.trim()}*` : '')).join('\n')
   );
 
   const paragraphs = normalizedTxt.split(/\r?\n\s*\r?\n/).map((p) => p.trim()).filter(Boolean);
@@ -80,19 +84,11 @@ export function toadaToCleanHtml(rawTxtCode = '') {
       lines.shift();
       if (lines.length === 0) continue;
     }
-
-    const cleanLines = lines.map((line) => {
-      let clean = stripToadaTechnicalMarkers(line);
-      // Remplace *gras* par <strong>
-      clean = clean.replace(/\*([^*]+)\*/g, '<strong>$1</strong>');
-      return clean;
-    }).filter(Boolean);
-
-    if (cleanLines.length > 0) {
-      htmlParas.push(`<p>${cleanLines.join('<br>')}</p>`);
-    }
+    const cleanLines = lines
+      .map((line) => stripToadaTechnicalMarkers(line).replace(/\*([^*]+)\*/g, '<strong>$1</strong>'))
+      .filter((c) => c.replace(/<[^>]+>/g, '').trim().length > 0);
+    if (cleanLines.length > 0) htmlParas.push(`<p>${cleanLines.join('<br>')}</p>`);
   }
-
   return htmlParas.join('\n');
 }
 
@@ -102,7 +98,6 @@ export function generateToadaTxtWithLegend(rawTxtCode, meta = {}) {
   if (meta.signature || meta.timeSignature) headerLines.push(`# Signature: ${meta.signature || meta.timeSignature}`);
   if (meta.bpm || meta.bpmDefaut) headerLines.push(`# BPM: ${meta.bpm || meta.bpmDefaut}`);
   if (meta.tonalite || meta.tonaliteDefaut) headerLines.push(`# Tonalite: ${meta.tonalite || meta.tonaliteDefaut}`);
-
   const header = headerLines.length > 0 ? `${headerLines.join('\n')}\n\n` : '';
   return `${header}${(rawTxtCode || '').trim()}\n\n${TOADA_TXT_LEGEND}\n`;
 }

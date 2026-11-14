@@ -15,8 +15,8 @@ export function TenantProvider({ children }) {
 
 const defaultTenantState = {
   appMode: 'organizador',
-  groupId: 'Samambaia',
-  tenantId: 'samambaia',
+  groupId: null,
+  tenantId: null,
   isLocalhost: false,
   isTenantLoading: false,
   tenantError: null,

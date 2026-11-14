@@ -3,7 +3,7 @@ import { collection, query, where, onSnapshot, getDocs } from 'firebase/firestor
 import { ref, listAll, getDownloadURL } from 'firebase/storage';
 import { db, storage, auth } from '../firebase';
 import LZString from 'lz-string';
-import { canonicalizeGroupId } from '../utils/tenantUtils';
+import { canonicalizeGroupId, buildGroupQueryVariants, isSameGroupCaseInsensitive } from '../utils/tenantUtils';
 
 /**
  * Vérifie si un morceau ou une séquence est un artefact issu de tests automatisés (E2E)
@@ -36,44 +36,35 @@ export function isTestOrE2ESequence(item) {
  * @returns {{ rhythms: Array, loading: boolean, error: any, refresh: Function }}
  */
 export function useSequencerFirestoreData(rawGroupId) {
-  const groupId = rawGroupId || 'Samambaia';
+  const groupId = typeof rawGroupId === 'string' ? rawGroupId.trim() : '';
   const [rhythms, setRhythms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Référence pour nettoyer les abonnements temps réel Firestore
   const unsubsRef = useRef([]);
 
   const cleanupListeners = useCallback(() => {
     unsubsRef.current.forEach((unsub) => {
       try {
         if (typeof unsub === 'function') unsub();
-      } catch {
-        // Tolérance aux désabonnements déjà effectués
-      }
+      } catch {}
     });
     unsubsRef.current = [];
   }, []);
 
   const fetchData = useCallback(async () => {
-    const targetGroupId = groupId || 'Samambaia';
     setLoading(true);
     setError(null);
     cleanupListeners();
+    if (!groupId) {
+      setRhythms([]);
+      setLoading(false);
+      return;
+    }
 
     try {
-      const canonicalGroup = canonicalizeGroupId(groupId) || (typeof groupId === 'string' ? groupId.trim().toLowerCase() : 'samambaia');
-      // Construction des variantes de groupId pour robustesse multi-casse
-      const groupVariants = Array.from(
-        new Set([
-          groupId,
-          canonicalGroup,
-          typeof targetGroupId === 'string' ? targetGroupId.toLowerCase() : null,
-          typeof canonicalGroup === 'string' ? canonicalGroup.toLowerCase() : null,
-          'Samambaia',
-          'samambaia'
-        ])
-      ).filter(Boolean);
+      const canonicalGroup = canonicalizeGroupId(groupId) || groupId.toLowerCase();
+      const groupVariants = buildGroupQueryVariants(groupId);
 
       // 1. Résolution exhaustive des identifiants membres de l'association
       const memberIdsSet = new Set();

@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useTranslation } from '../../LanguageContext';
-import { parseLineToCharAnchors, rebuildLineFromCharAnchors, computePhraseMeasures, toggleLineSimultaneous } from '../../../utils/toadaLineEditorHelper';
+import { parseLineToCharAnchors, rebuildLineFromCharAnchors, computePhraseMeasures, toggleLineSimultaneous, toggleSilenceAtCharIndex, preserveUnderlinesInTextEdit } from '../../../utils/toadaLineEditorHelper';
 import { parseStructureTxt } from '../../../utils/toadaTwoLineConverter';
 import ToadaCharAnchorCell from './ToadaCharAnchorCell';
 
@@ -13,14 +13,13 @@ export default function ToadaMusicalLineRow({
   const [hoverIdx, setHoverIdx] = useState(null);
   const lastKeyTimeRef = useRef({ key: '', time: 0 });
   const p = parsedLine || parseLineToCharAnchors(lineText), phraseInfo = p.phraseInfo || computePhraseMeasures(lineText, p);
-  const { isPuxador, isTutti, isPauseBaque, pauseMeasures, hasLeadingRest, leadingRestBeat, rawCleanChars, charAnchors, charSignatures, charPuxadorFlags, charUnderlineFlags, lineSignature, simDirective, charMeasureNums, charEffectiveSigs, isSimultaneous, isAutoSimultaneous, displayCardLabel, simultaneousMeasureLabel } = p;
+  const { isPuxador, isTutti, isPauseBaque, pauseMeasures, hasLeadingRest, leadingRestBeat, rawCleanChars, charAnchors, charSignatures, charPuxadorFlags, charUnderlineFlags, charRestFlags, lineSignature, simDirective, charMeasureNums, charEffectiveSigs, isSimultaneous, isAutoSimultaneous, displayCardLabel, simultaneousMeasureLabel } = p;
   const pauseLabel = language === 'pt' ? '🔇 Pausa do Batuque' : (t('toada.pauseBaqueCardTitle') || '🔇 Pause Batuque');
   const badgeText = isPauseBaque ? `${pauseLabel} • ${pauseMeasures} M` : phraseInfo.badgeLabel;
 
-  const handleCommit = (anchors, withRest = hasLeadingRest, restBeat = leadingRestBeat, sigs = charSignatures, nextPux = isPuxador, nextTutti = isTutti) => {
-    onChangeLine(rebuildLineFromCharAnchors(rawCleanChars, anchors, withRest, restBeat, nextPux, lineSignature, sigs, charUnderlineFlags, nextTutti, simDirective));
+  const handleCommit = (anchors, withRest = hasLeadingRest, restBeat = leadingRestBeat, sigs = charSignatures, nextPux = isPuxador, nextTutti = isTutti, chars = rawCleanChars, uFlags = charUnderlineFlags) => {
+    onChangeLine(rebuildLineFromCharAnchors(chars, anchors, withRest, restBeat, nextPux, lineSignature, sigs, uFlags, nextTutti, simDirective));
   };
-
   const handleCycleRole = () => {
     if (disabled || isPauseBaque) return;
     if (!isPuxador && !isTutti) handleCommit(charAnchors, hasLeadingRest, leadingRestBeat, charSignatures, true, false);
@@ -30,10 +29,9 @@ export default function ToadaMusicalLineRow({
   const handleToggleSim = () => { if (!disabled && !isPauseBaque && index > 0) onChangeLine(toggleLineSimultaneous(lineText, Boolean(isSimultaneous), Boolean(isAutoSimultaneous))); };
   const handleCharClick = (cIdx) => {
     if (disabled || mode !== 'time') return;
-    if (activeStamp) {
-      if (cIdx === -1) handleCommit(charAnchors, true, activeStamp);
-      else { const next = { ...charAnchors }; if (next[cIdx] === activeStamp) delete next[cIdx]; else next[cIdx] = activeStamp; handleCommit(next); }
-    } else if (onSelectCharIdx) onSelectCharIdx(cIdx);
+    if (!activeStamp) { onSelectCharIdx?.(cIdx); return; }
+    if (cIdx === -1) { handleCommit(charAnchors, true, activeStamp); return; }
+    const next = { ...charAnchors }; if (next[cIdx] === activeStamp) delete next[cIdx]; else next[cIdx] = activeStamp; handleCommit(next);
   };
   const handleDeleteAnchorAt = (cIdx) => {
     if (cIdx === -1) { handleCommit(charAnchors, false, null); return; }
@@ -44,9 +42,10 @@ export default function ToadaMusicalLineRow({
   const handleKeyDownChar = (e, cIdx) => {
     if (mode !== 'time' || disabled) return;
     const now = Date.now(), last = lastKeyTimeRef.current;
-    if (e.key === 'ArrowLeft') { e.preventDefault(); if (onSelectCharIdx) onSelectCharIdx(cIdx > 0 ? cIdx - 1 : (hasLeadingRest && cIdx === 0 ? -1 : null)); return; }
-    if (e.key === 'ArrowRight') { e.preventDefault(); if (onSelectCharIdx) onSelectCharIdx(cIdx === -1 ? 0 : (cIdx < rawCleanChars.length - 1 ? cIdx + 1 : null)); return; }
-    if (['Backspace', 'Delete', '0'].includes(e.key)) { e.preventDefault(); handleDeleteAnchorAt(cIdx); return; }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); onSelectCharIdx?.(cIdx > 0 ? cIdx - 1 : (hasLeadingRest && cIdx === 0 ? -1 : null)); return; }
+    if (e.key === 'ArrowRight') { e.preventDefault(); onSelectCharIdx?.(cIdx === -1 ? 0 : (cIdx < rawCleanChars.length - 1 ? cIdx + 1 : null)); return; }
+    if (e.key === 'Backspace' || e.key === 'Delete') { e.preventDefault(); handleDeleteAnchorAt(cIdx); return; }
+    if (e.key === '0') { e.preventDefault(); const tgl = toggleSilenceAtCharIndex(p, cIdx); handleCommit(tgl.anchors, tgl.withRest, tgl.restBeat, tgl.sigs, isPuxador, isTutti, tgl.chars, tgl.uFlags); return; }
     if (e.key >= '1' && e.key <= '9') {
       e.preventDefault();
       const currentSig = (cIdx >= 0 ? charEffectiveSigs?.[cIdx] : null) || '4/4';
@@ -60,19 +59,19 @@ export default function ToadaMusicalLineRow({
 
   const handleTextKeyDown = (e) => {
     const ta = e.currentTarget, s = ta.selectionStart, end = ta.selectionEnd, val = ta.value;
-    if (e.key === 'Enter') { e.preventDefault(); if (onSplitLine) onSplitLine(index, val.slice(0, s), val.slice(end)); }
-    else if (e.key === 'Backspace' && s === 0 && end === 0 && index > 0) { e.preventDefault(); if (onMergeWithPrevious) onMergeWithPrevious(index); }
+    if (e.key === 'Enter') { e.preventDefault(); onSplitLine?.(index, preserveUnderlinesInTextEdit(lineText, val.slice(0, s)), preserveUnderlinesInTextEdit(lineText, val.slice(end))); }
+    else if (e.key === 'Backspace' && s === 0 && end === 0 && index > 0) { e.preventDefault(); onMergeWithPrevious?.(index); }
     else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b' && s !== end) {
       e.preventDefault(); const sel = val.slice(s, end), w = sel.startsWith('*') && sel.endsWith('*') ? sel.slice(1, -1) : `*${sel}*`;
-      onChangeLine(val.slice(0, s) + w + val.slice(end));
+      onChangeLine(preserveUnderlinesInTextEdit(lineText, val.slice(0, s) + w + val.slice(end)));
     }
   };
-
   const handleTextPaste = (e) => {
     if (disabled || !onPasteMultiLines) return;
     const clip = e.clipboardData?.getData('text') || '';
     if (/\r?\n/.test(clip)) { e.preventDefault(); const parsed = parseStructureTxt(clip); if (parsed.length > 0) onPasteMultiLines(index, parsed); }
   };
+
   return (
     <div draggable={!disabled && Boolean(onMoveLine)} onDragStart={(e) => e.dataTransfer.setData('text/plain', String(index))}
       onDragOver={(e) => { if (!disabled && onMoveLine) e.preventDefault(); }}
@@ -98,8 +97,8 @@ export default function ToadaMusicalLineRow({
 
       <div className="flex-1 min-w-0 pt-0.5">
         {mode === 'text' ? (
-          <input type="text" value={lineText.replace(/<\/?u\b[^>]*>/gi, '')} onChange={(e) => onChangeLine(e.target.value)} onKeyDown={handleTextKeyDown} onPaste={handleTextPaste} disabled={disabled}
-            placeholder="[1] _ [2]Vovó falou [3]e'o... (*Puxador*) ou [PAUSE 2M] (Collez plusieurs lignes d'un coup)"
+          <input type="text" value={lineText.replace(/<\/?u\b[^>]*>/gi, '')} onChange={(e) => onChangeLine(preserveUnderlinesInTextEdit(lineText, e.target.value))} onKeyDown={handleTextKeyDown} onPaste={handleTextPaste} disabled={disabled}
+            placeholder="[1] 0 [2]Vovó falou [3]e'o... (*Puxador*) ou [PAUSE 2M] (Collez plusieurs lignes d'un coup)"
             className="w-full text-xs font-mono py-1 px-1.5 bg-transparent border-0 border-b border-stone-200 focus:border-cordel-wood focus:bg-white/80 outline-hidden transition-colors" />
         ) : isPauseBaque ? (
           <div className="flex flex-wrap items-center gap-2 py-1">
@@ -114,7 +113,7 @@ export default function ToadaMusicalLineRow({
         ) : (
           <div className="flex flex-wrap items-end gap-x-0.5 gap-y-1 py-0.5 font-mono text-xs">
             {hasLeadingRest && (
-              <ToadaCharAnchorCell key="leading-rest" char="_" cIdx={-1} anchor={leadingRestBeat || 1} measureNum={leadingRestBeat === 1 ? charMeasureNums?.[-1] : null} isSelected={selectedCharIdx === -1} isHovered={hoverIdx === -1}
+              <ToadaCharAnchorCell key="leading-rest" char="0" isRestChar cIdx={-1} anchor={leadingRestBeat || 1} measureNum={leadingRestBeat === 1 ? charMeasureNums?.[-1] : null} isSelected={selectedCharIdx === -1} isHovered={hoverIdx === -1}
                 onMouseEnter={() => setHoverIdx(-1)} onMouseLeave={() => setHoverIdx(null)} onClick={() => handleCharClick(-1)} onDeleteAnchor={() => handleDeleteAnchorAt(-1)} onKeyDown={(e) => handleKeyDownChar(e, -1)} />
             )}
             {rawCleanChars.length === 0 && !hasLeadingRest ? (
@@ -122,7 +121,7 @@ export default function ToadaMusicalLineRow({
             ) : (
               rawCleanChars.split('').map((char, cIdx) => (
                 <ToadaCharAnchorCell key={cIdx} char={char} cIdx={cIdx} anchor={charAnchors[cIdx]} measureNum={charMeasureNums?.[cIdx]} sigChange={charSignatures?.[cIdx]}
-                  isCharPuxador={charPuxadorFlags?.[cIdx]} isCharUnderlined={Boolean(charUnderlineFlags?.[cIdx])} isSelected={selectedCharIdx === cIdx} isHovered={hoverIdx === cIdx}
+                  isCharPuxador={charPuxadorFlags?.[cIdx]} isCharUnderlined={Boolean(charUnderlineFlags?.[cIdx])} isRestChar={Boolean(charRestFlags?.[cIdx])} isSelected={selectedCharIdx === cIdx} isHovered={hoverIdx === cIdx}
                   onMouseEnter={() => setHoverIdx(cIdx)} onMouseLeave={() => setHoverIdx(null)} onClick={() => handleCharClick(cIdx)} onDeleteAnchor={() => handleDeleteAnchorAt(cIdx)} onKeyDown={(e) => handleKeyDownChar(e, cIdx)} />
               ))
             )}

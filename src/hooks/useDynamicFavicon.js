@@ -1,14 +1,7 @@
 import { useEffect } from 'react';
-import { 
-  drawSealNeutralFrame, 
-  drawSealLogoCenter, 
-  drawSealInitialsCenter, 
-  updateDocumentOpenGraphTags 
-} from '../utils/shareUtils.js';
+import { drawSealNeutralFrame, drawSealLogoCenter, drawSealInitialsCenter, updateDocumentOpenGraphTags } from '../utils/shareUtils.js';
 
-/**
- * Dessine l'anneau officiel gravé O Girador (128x128).
- */
+/** Dessine l'anneau officiel gravé O Girador (128x128). */
 function drawNeutralFrame(ctx, bgCol = '#f4ecd8', primaryCol = '#8B2A1A', textCol = '#181716') {
   ctx.save();
   ctx.beginPath();
@@ -81,17 +74,21 @@ export default function useDynamicFavicon(associationData, options = {}) {
       return () => { isMounted = false; };
     }
 
-    // 2. Mode Manager (Organizador) : Sceau combiné persistant ou Samambaia
+    // 2. Mode Manager (Organizador) : Sceau combiné persistant, Samambaia ou neutre O Girador
     const rawGroup = associationData?.groupId || associationData?.id || '';
-    const isSamambaia = !rawGroup || String(rawGroup).trim().toLowerCase() === 'samambaia' || name.toLowerCase().includes('samambaia');
+    const isSamambaia = String(rawGroup).trim().toLowerCase() === 'samambaia' || name.toLowerCase().includes('samambaia');
 
+    if (!rawGroup && !name && !logoUrl && !combinedLogoUrl) {
+      updateFavicon('/og-girador-frame.svg');
+      updateDocumentOpenGraphTags({ image: '/og-girador-frame.png', title: 'O Girador' });
+      return () => { isMounted = false; };
+    }
     if (combinedLogoUrl) {
       updateFavicon(combinedLogoUrl);
       updateDocumentOpenGraphTags({ image: combinedLogoUrl, title: name ? `O Girador | ${name}` : undefined });
       window.dispatchEvent(new CustomEvent('combined-logo-ready', { detail: combinedLogoUrl }));
       return () => { isMounted = false; };
     }
-
     if (isSamambaia) {
       const sealUrl = '/brandings/logoOGSamambaia.png';
       updateFavicon(sealUrl);

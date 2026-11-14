@@ -15,7 +15,7 @@ import { useTranslation } from '../../LanguageContext';
 
 /**
  * Accordéon d'administration multi-univers pour la nomenclature des percussions (< 140 lignes).
- * Intègre BateriaNomenclatureSection pour une gestion claire et intuitive de la Bateria.
+ * Intègre PercussionNomenclatureSection pour une gestion claire et intuitive des pupitres et tambours.
  */
 export default function PupitresNomenclatureAccordion({
   formData = {},

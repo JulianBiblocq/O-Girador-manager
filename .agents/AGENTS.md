@@ -1,71 +1,41 @@
-# Project Rules - O-Girador-manager
+# Directives d'Agent — Organizador & Mostrador (`o-girador-organizador`)
 
-These are the core architectural and design system rules for the O-Girador-manager project.
+## 0. RÈGLE STRICTE DE NOMMAGE DES APPLICATIONS O GIRADOR
+Utiliser exclusivement l'orthographe brésilienne pure (zéro apostrophe, zéro accent parasite, zéro majuscule interne avant `-or`, zéro francisation `ch`, cédille obligatoire sur **Dançador**) :
+- **O Girador** | **Orquestrador** | **Organizador** | **Sequenciador** | **Cantador** | **Dançador** | **Mostrador** | **Afinador** *(en conception, réservé sous `enabled: false` — aucun lien actif dans les menus utilisateurs)*
 
-## 1. Règle Anti-Monolithe (Modularité absolue)
-- **Principe de Responsabilité Unique** : Ne créez jamais de gros fichiers monolithiques. Divisez le code en sous-composants réutilisables ou hooks personnalisés dès que la logique ou la taille du fichier grandit.
-- **Organisation** : Placez les composants réutilisables sous `src/components/` et les hooks sous `src/hooks/`.
+## 1. Règle Anti-Monolithe (`< 145 Lignes` & Mode Cliquet)
+- **Plafond strict `< 145 lignes` réelles** (`content.replace(/\r\n/g, '\n').replace(/\n$/, '').split('\n').length < 145`) pour tout nouveau fichier ou fichier déjà conforme dans `src/`.
+- **Mode Cliquet Strict (Ratchet)** sur les fichiers legacy `>= 145` lignes (hors purs dictionnaires `src/locales/*`) : toute modification doit respecter `newLines <= oldLines`.
+  1. **Étape A (Extraction chirurgicale)** : extraire d'abord la sous-brique concernée dans un sous-composant, custom hook ou utilitaire dédié `< 145` lignes (commenté en français).
+  2. **Étape B (Modification ciblée)** : appliquer l'évolution dans ce module isolé.
 
-## 2. Architecture Multi-Thèmes (Thème Isolable)
-- **Zéro style inline thématique** : Ne codez jamais de styles de présentation thématiques (couleurs, bordures asymétriques, ombres, polices) directement en dur dans le JSX.
-- **Variables CSS Sémantiques** : Toutes les propriétés visuelles doivent reposer sur des variables CSS déclarées globalement.
-  - Exemple : utilisez `border-[var(--theme-border-width)] border-[var(--theme-border-style)] border-[var(--theme-border-color)]` et `rounded-[var(--theme-border-radius)]` ou des classes utilitaires mappées sur des variables sémantiques.
-- **Isolation du thème** : Le design actuel "Cordel" (police Cactus, fonds de papier, cordes de suspension, bordures asymétriques) doit être remplaçable par un futur thème (ex. "Capoeira") en changeant uniquement les définitions dans la feuille de styles CSS (ex. `src/index.css`), sans avoir à modifier le code structurel des composants React.
+## 2. Architecture Multi-Thèmes & Lexique Métier
+- **Zéro style inline thématique** : reposer exclusivement sur les variables CSS sémantiques.
+- **Commentaires 100 % en français**.
+- **Lexique culturel** : Interdiction formelle du mot `Bateria` en contexte Maracatu ou générique (utiliser `Batuque` / `Baque` ou `terminology.instrumentGroup`). Interdiction du mot `IA` dans l'interface utilisateur (hors clauses légales TDM obligatoires).
 
-## 3. Francisation Absolue de la Base de Code (Commentaires)
-- **Directive pour l'IA** : Tout nouveau code généré, modifié ou commenté par l'IA doit comporter des commentaires 100% en français.
+## 3. Code Couleur Sémantique Cordel
+- **Vert Validation (`#2d6a4f` / `--color-cordel-vert`)** : validations, confirmations, statut « Présent ».
+- **Rouge Terre Cuite (`#8b2a1a` / `--color-cordel-rouge` / `--cordel-wood`)** : suppressions, refus, statut « Absent », actions destructives.
+- **Ocre Ambré (`#c05621` / `--color-cordel-ocre`)** : attente, statut « À confirmer », avertissements neutres.
 
-## 4. Code Couleur Sémantique Cordel (Validation, Suppression/Absence, Attente)
-- **Vert Validation (`#2d6a4f` / `--color-cordel-vert`)** : À utiliser impérativement pour toutes les validations, confirmations, succès, boutons positifs et statut "Présent".
-- **Rouge Terre Cuite (`#8b2a1a` / `--color-cordel-rouge` / `--cordel-wood`)** : À utiliser impérativement pour toutes les fonctions de suppression, désactivation, refus, statut "Absent" et actions destructives.
-- **Ocre Ambré (`#c05621` / `--color-cordel-ocre`)** : À utiliser impérativement pour tout ce qui est en attente, le statut "À confirmer", les avertissements neutres et la modération temporaire.
-
-## 5. Gouvernance Pédagogique & Passerelle Séquenciad'Or (Speed Trainer & Aisance)
-- **Collection racine partagée `/trainings` (Lecture seule dans Organizad'Or)** :
-  * Les entraînements sont créés et configurés exclusivement depuis Séquenciad'Or.
-  * Dans Organizad'Or, ils sont résolus dynamiquement via la fonction utilitaire `resolvePieceTrainings(piece.sequenceurId, trainingsList)` où `t.presetId === piece.sequenceurId`.
-  * Requêtes Firestore : filtrer impérativement avec `where('groupId', '==', groupId.trim().toLowerCase())`.
+## 4. Gouvernance Pédagogique & Passerelle Sequenciador (Speed Trainer & Aisance)
+- **Collection racine partagée `/trainings` (Lecture seule dans Organizador)** :
+  * Les entraînements sont créés et configurés exclusivement depuis **Sequenciador**.
+  * Dans **Organizador**, ils sont résolus via `resolvePieceTrainings(piece.sequenceurId, trainingsList)` où `t.presetId === piece.sequenceurId`, filtrés avec `where('groupId', '==', groupId.trim().toLowerCase())`.
 - **Sous-collection d'Aisance `/users/${userId}/aisance`** :
-  * Les paliers Speed Trainer sont enregistrés sous le document `${trainingId}` (`stagesCompleted: number[]`).
-  * Les scores du Défi Réflexe « Temps 1 » sont enregistrés sous le document réservé `reflexes` (clé `${pieceId}_${pupitre}`).
-  * Les validations du Conducteur à trous sont enregistrées sous le document réservé `conducteurs` (clé `${pieceId}_conductor`).
-  * **Règle d'exclusion impérative** : Lors de l'écoute des paliers d'aisance généraux dans `subscribeUserAisance`, ignorer systématiquement les documents techniques (`id === 'reflexes' || id === 'conducteurs'`).
-- **Passerelle SSO Transversale (`launchTrainingStage`)** :
-  * Tout lancement d'exercice pré-paramétré vers Séquenciad'Or doit transiter par `launchTrainingStage(presetId, trainingId, stageIndex, { baseUrl })`.
-  * Ne jamais utiliser de simple balise `<a href target="_blank">` non sécurisée pour les paliers afin d'éviter le blocage des pop-ups sur mobile.
-
-## 6. Standard d'Arbitrage & Surcharges Mestre (`signalOverrides`)
-- Pour les fonctionnalités pédagogiques interactives (Défi Réflexe, repères, leurres), les arbitrages du Mestre sont stockés dans le morceau sous `piece.signalOverrides = { [signalId]: { isInteractive: boolean, mode: 'pause' | 'repere', distractors: string[] } }`.
-- L'algorithme client (`reflexGameUtils.js`, `conductorGameUtils.js`) doit impérativement respecter la priorité des surcharges Mestre sur les réglages calculés par défaut.
-
-## 7. Composants d'Entraînement & Règle « Zéro Bloc Vide »
-- **Composant Réutilisable Unique** : Tout affichage d'un défi Speed Trainer (sur la fiche morceau du Répertoire ou dans le Fil Conducteur de l'Agenda) doit impérativement être encapsulé dans `TrainingCompactCard.jsx` (mode `'repertoire'` ou `'rehearsal'`).
-- **Règle Zéro Bloc Vide** : Si aucun entraînement n'est associé à un morceau (`resolvePieceTrainings(...)` vide), le composant doit impérativement retourner `null` sans aucun placeholder, contour ni encart fantôme.
+  * Paliers Speed Trainer sous `${trainingId}` (`stagesCompleted: number[]`), Défi Réflexe sous `reflexes`, Conducteur à trous sous `conducteurs` (exclure systématiquement `reflexes` et `conducteurs` dans `subscribeUserAisance`).
+- **Passerelle SSO (`launchTrainingStage`) & Composant `TrainingCompactCard.jsx`** :
+  * Toujours transiter par `launchTrainingStage(presetId, trainingId, stageIndex, { baseUrl })` et retourner `null` si aucun entraînement n'est associé (Règle « Zéro Bloc Vide »).
+- **Arbitrages Mestre** : respecter la priorité de `piece.signalOverrides` dans `reflexGameUtils.js` et `conductorGameUtils.js`.
 
 ---
 ### 🛡️ Gouvernance Centralisée des Règles Firebase & Sécurité (Strict)
-- **Autorité unique :** Les règles d'accès (`firestore.rules` et `storage.rules`) sont exclusivement pilotées, modifiées et déployées par le projet maître (**Orchestrad'Or** / backend commun).
-- **Interdiction formelle dans cette application :** 
-  * Ne jamais créer, modifier ou valider de fichier local `firestore.rules` ou `storage.rules`.
-  * Ne jamais exécuter de commande de déploiement de règles (`firebase deploy --only firestore:rules` ou `storage` formellement proscrits).
-- **Développement client :** Les requêtes Firestore et Storage doivent impérativement s'adapter aux modèles de permissions et collections existants sans exiger d'altération des règles de sécurité depuis ce dépôt.
+- **Autorité unique :** Les règles `firestore.rules` et `storage.rules` sont exclusivement pilotées et déployées par **Orquestrador** (`o-girador-orquestrador`).
+- **Interdiction formelle dans ce dépôt :** ne jamais créer, copier, modifier ou déployer de règles Firebase, et ne jamais lancer `firebase deploy --only functions` non qualifié.
 
 ---
-
 ## RÈGLE STRICTE DES PORTS LOCAUX (ÉCOSYSTÈME O GIRADOR)
-- Cet agent doit respecter la cartographie des ports :
-  * Orquestrad'Or : 5170
-  * Séquenciad'Or : 5174
-  * Organizad'Or : 5175
-  * Dançad'Or : 5176
-- Interdiction de modifier le port local sans instruction explicite.
-- `strictPort: true` est obligatoire : si le port est occupé, tuer les processus résiduels au lieu de changer de port.
-- Les tests E2E et les liens de navigation locale doivent pointer rigoureusement vers ces ports dédiés.
-
----
-
-### 🪶 Règle du "Boy Scout" (Amaigrissement progressif des anciens monolithes)
-- **Détection automatique (> 250 lignes) :** À chaque fois qu'une mission t'amène à modifier un fichier existant dépassant 250 lignes (ex: `App.jsx`, `EventFormFields.jsx`, `EventDetails.jsx`), il est interdit d'y empiler du nouveau code.
-- **Protocole obligatoire en 2 étapes (1 brique à la fois) :**
-  1. **Étape A (Extraction chirurgicale) :** Extraire uniquement la sous-section concernée par la mission (modale, sous-formulaire, bloc d'onglet ou groupe de hooks) dans un nouveau sous-composant ou Custom Hook dédié (< 150-200 lignes, commenté en français), à périmètre fonctionnel 100 % identique. Ne jamais tenter de découper tout le monolithe d'un coup.
-  2. **Étape B (Modification ciblée) :** Appliquer la nouveauté ou le correctif dans ce nouveau petit fichier isolé.
+- **Orquestrador** : `5170` | **Sequenciador** : `5174` | **Organizador** / **Mostrador** : `5175` | **Dançador** : `5176` | **Cantador** : `5177` | **Afinador** *(réservé, inactif)* : `5178`
+- Interdiction de modifier le port local sans instruction explicite (`strictPort: true` obligatoire).

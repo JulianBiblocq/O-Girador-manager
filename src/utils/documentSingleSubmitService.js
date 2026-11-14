@@ -11,27 +11,18 @@ import { cleanFirestorePayload } from './firestoreUtils.js';
 import { applyCultureDocumentFields, processEtapesImages } from './documentCulturePayloadHelper.js';
 import { buildToadaStructure } from './toadaSixPresetsSync.js';
 import { stripToadaTechnicalMarkers } from './toadaSerializer.js';
+import { VOCAL_GRAMMAR_VERSION, normalizeToadaTextV1ToV2 } from './vocalGrammarV2.js';
 
-/**
- * Compresse automatiquement un fichier image (hors GIF/SVG) avant envoi vers Firebase Storage.
- */
 export async function compressImageIfNeeded(fileObj, maxWidthOrHeight = 1280) {
-  if (!fileObj || !fileObj.type?.startsWith('image/') || fileObj.type === 'image/gif' || fileObj.type === 'image/svg+xml') {
-    return fileObj;
-  }
-  try {
-    return await imageCompression(fileObj, { maxSizeMB: 1, maxWidthOrHeight, useWebWorker: true });
-  } catch {
-    return fileObj;
-  }
+  if (!fileObj || !fileObj.type?.startsWith('image/') || fileObj.type === 'image/gif' || fileObj.type === 'image/svg+xml') return fileObj;
+  try { return await imageCompression(fileObj, { maxSizeMB: 1, maxWidthOrHeight, useWebWorker: true }); }
+  catch { return fileObj; }
 }
 
 function applySongDocumentFields(targetObj, songData, finalVideoUrlSong, finalAudioUrl, documentToEdit, isEditMode) {
-  targetObj.nacao = songData.nacao || '';
-  targetObj.rythme = songData.rythme || '';
+  targetObj.nacao = songData.nacao || ''; targetObj.rythme = songData.rythme || '';
   const sig = songData.signatureRythmique || songData.signature || '4/4';
-  targetObj.signature = sig;
-  targetObj.signatureRythmique = sig;
+  targetObj.signature = sig; targetObj.signatureRythmique = sig; targetObj.grammarVersion = VOCAL_GRAMMAR_VERSION;
   if (songData.bpmDefaut || songData.bpm) {
     const bpmNum = Number(songData.bpmDefaut || songData.bpm);
     targetObj.bpmDefaut = bpmNum; targetObj.bpm = bpmNum;
@@ -39,8 +30,8 @@ function applySongDocumentFields(targetObj, songData, finalVideoUrlSong, finalAu
   if (songData.tonaliteDefaut) targetObj.tonaliteDefaut = songData.tonaliteDefaut;
   targetObj.parolesOriginales = stripToadaTechnicalMarkers(songData.parolesOriginales || '');
   if (songData.rawTxtCode !== undefined) {
-    targetObj.rawTxtCode = songData.rawTxtCode;
-    targetObj.toadaStructure = songData.rawTxtCode ? buildToadaStructure(songData.rawTxtCode, sig) : null;
+    const normRaw = songData.rawTxtCode ? normalizeToadaTextV1ToV2(songData.rawTxtCode, { grammarVersion: songData.grammarVersion ?? 1 }) : '';
+    targetObj.rawTxtCode = normRaw; targetObj.toadaStructure = normRaw ? buildToadaStructure(normRaw, sig) : null;
   }
   targetObj.parolesPhonetiques = songData.parolesPhonetiques || '';
   targetObj.traduction = songData.traduction || '';
@@ -131,14 +122,9 @@ export async function submitSingleDocument({ db, storage, groupId, varalCategori
         finalIllustrationUrl = await getDownloadURL(snap.ref);
       } catch (err) { console.error("Erreur lors de l'upload du visuel projet :", err); }
     }
-    payload.typeDoc = 'projet_presentation';
-    payload.texte = projectData.texte || '';
-    payload.contenu = projectData.texte || '';
-    payload.description = projectData.description || '';
-    payload.imageUrl = finalIllustrationUrl;
-    payload.illustrationUrl = finalIllustrationUrl;
-    payload.fileUrl = finalIllustrationUrl;
-    payload.isPinnedFirst = projectData.isPinnedFirst !== false;
+    payload.typeDoc = 'projet_presentation'; payload.texte = projectData.texte || ''; payload.contenu = projectData.texte || '';
+    payload.description = projectData.description || ''; payload.imageUrl = finalIllustrationUrl;
+    payload.illustrationUrl = finalIllustrationUrl; payload.fileUrl = finalIllustrationUrl; payload.isPinnedFirst = projectData.isPinnedFirst !== false;
   } else if (String(category || '').startsWith('projet_')) {
     if (projectData.description !== undefined) payload.description = projectData.description || '';
     payload.isPinnedFirst = Boolean(projectData.isPinnedFirst);

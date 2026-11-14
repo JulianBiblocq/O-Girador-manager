@@ -10,6 +10,7 @@ export default function ToadaCharAnchorCell({
   isSelected = false,
   isCharPuxador = false,
   isCharUnderlined = false,
+  isRestChar = false,
   isHovered = false,
   onMouseEnter,
   onMouseLeave,
@@ -18,7 +19,8 @@ export default function ToadaCharAnchorCell({
   onKeyDown
 }) {
   const isSpace = char === ' ';
-  const isUnderScore = char === '_';
+  const isHoldChar = char === '_';
+  const isExplicitRest = isRestChar || char === '0' || char === '𝄽';
   const badgeClass = anchor === 1 ? BEAT_1_CLASS : BEAT_OTHER_CLASS;
 
   const handleBadgeClick = (e) => {
@@ -42,7 +44,15 @@ export default function ToadaCharAnchorCell({
           ? 'bg-amber-50/40'
           : 'hover:bg-stone-100'
       }`}
-      title={isUnderScore ? 'Porte-temps muet (_)' : isSpace ? 'Espace ␣' : `Caractère : ${char}`}
+      title={
+        isExplicitRest
+          ? 'Silence vocal explicite (0 / 𝄽)'
+          : isHoldChar
+          ? 'Tenue / Mélisme legato (_)'
+          : isSpace
+          ? 'Espace ␣'
+          : `Caractère : ${char}`
+      }
     >
       <div className="h-8 flex flex-col items-center justify-end">
         {sigChange && (
@@ -67,7 +77,11 @@ export default function ToadaCharAnchorCell({
       </div>
 
       <div className="mt-0.5 flex items-center justify-center text-xs">
-        {isUnderScore ? (
+        {isExplicitRest ? (
+          <span className="min-w-[16px] text-center font-mono font-black text-red-900 bg-red-100/90 px-1 py-0.2 rounded border border-red-300">
+            𝄽
+          </span>
+        ) : isHoldChar ? (
           <span className="min-w-[16px] text-center font-mono font-black text-stone-700 bg-stone-200/90 px-1 py-0.2 rounded border border-dashed border-stone-400">
             _
           </span>

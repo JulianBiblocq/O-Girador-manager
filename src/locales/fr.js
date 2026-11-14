@@ -5881,7 +5881,7 @@ export const fr = {
       termePrivilegieRecommande: "Terme privilégié (Recommandé) :",
       exBatuque: "Ex: Batuque",
       termeAEviterMoinsPertinent: "Terme à éviter (Moins pertinent) :",
-      exBateria: "Ex: Bateria",
+      exBateria: "Ex: Batucada",
       pourquoiContexteExplicatif: "Pourquoi / Contexte explicatif :",
       explicationHistoriqueSignificationDansLa: "Explication historique, signification dans la tradition du Maracatu...",
       activerEnPastilleDInsertion: "🏷️ Activer en pastille d'insertion rapide dans la barre du Studio Social",

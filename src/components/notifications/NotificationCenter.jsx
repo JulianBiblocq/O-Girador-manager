@@ -1,6 +1,6 @@
 /**
  * Centre de Notifications Internes (In-App) avec indicateur dynamique et tiroir interactif.
- * Raccordé au routeur interne unifié (handleNotificationNavigate) d'Organizad'Or.
+ * Raccordé au routeur interne unifié (handleNotificationNavigate) d'Organizador.
  */
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';

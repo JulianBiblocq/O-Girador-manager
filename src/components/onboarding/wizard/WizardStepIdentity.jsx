@@ -10,10 +10,10 @@ export default function WizardStepIdentity({ wizardData, updateWizardData, logoF
   const { nom = '', branding = {} } = wizardData;
   const colors = branding.colors || DEFAULT_BRANDING.colors;
 
-  // Palettes de couleurs prédéfinies thématiques Cordel & Samambaia (chaleureuses et artisanales)
+  // Palettes de couleurs prédéfinies thématiques Cordel (chaleureuses et artisanales)
   const colorPresets = [
     {
-      name: 'Samambaia (Terre cuite & Fougère sacrée)',
+      name: 'Terre Cuite & Fougère (Classique)',
       primary: '#8B2A1A',
       secondary: '#15803D',
       background: '#F4ECD8',

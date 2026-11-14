@@ -8,12 +8,21 @@ import {
   PRESET_NOMENCLATURES as MARACATU_PRESETS,
   MARACATU_ROLES_LIST
 } from './nomenclature.js';
+import {
+  DEFAULT_CAPOEIRA_NOMENCLATURE,
+  CAPOEIRA_PRESETS,
+  CAPOEIRA_ROLES_LIST
+} from './capoeiraNomenclaturePresets.js';
 
-export { DEFAULT_MARACATU_NOMENCLATURE, MARACATU_ROLES_LIST };
+export {
+  DEFAULT_MARACATU_NOMENCLATURE,
+  MARACATU_ROLES_LIST,
+  DEFAULT_CAPOEIRA_NOMENCLATURE,
+  CAPOEIRA_PRESETS,
+  CAPOEIRA_ROLES_LIST
+};
 
-/**
- * Nomenclature Batucada par défaut (Batucada Standard)
- */
+/** Nomenclature Batucada par défaut (Batucada Standard) */
 export const DEFAULT_BATUCADA_NOMENCLATURE = {
   surdo_1: 'Surdo 1',
   surdo_2: 'Surdo 2',
@@ -154,64 +163,46 @@ export const SAMBA_ENREDO_ROLES = [
   { key: 'direction', label: 'Mestre de Bateria', defaultLabel: 'Mestre de Bateria', category: 'Meneur' }
 ];
 
-/**
- * Pupitres liés par défaut selon l'univers
- */
+/** Pupitres liés par défaut selon l'univers */
 export const UNIVERSE_DEFAULT_LINKED_INSTRUMENTS = {
-  batucada: [
-    { name: 'Surdos', instruments: ['Surdo 1', 'Surdo 2', 'Surdo 3'] }
-  ],
-  samba: [
-    { name: 'Surdos', instruments: ['Surdo 1', 'Surdo 2', 'Surdo 3'] }
-  ],
-  sambareggae: [
-    { name: 'Surdos', instruments: ['Surdo Fundo', 'Surdo Dobra', 'Surdo Resposta'] }
-  ],
+  batucada: [{ name: 'Surdos', instruments: ['Surdo 1', 'Surdo 2', 'Surdo 3'] }],
+  samba: [{ name: 'Surdos', instruments: ['Surdo 1', 'Surdo 2', 'Surdo 3'] }],
+  sambareggae: [{ name: 'Surdos', instruments: ['Surdo Fundo', 'Surdo Dobra', 'Surdo Resposta'] }],
+  capoeira: [{ name: 'Berimbaus', instruments: ['Berimbau Gunga', 'Berimbau Médio', 'Berimbau Viola'] }],
   maracatu: []
 };
 
-/**
- * Résout les presets de nomenclature selon l'univers
- */
+function normUniverse(universeId) {
+  return String(universeId || 'maracatu').toLowerCase().trim().replace(/[\s_-]+/g, '');
+}
+
+/** Résout les presets de nomenclature selon l'univers */
 export function getUniverseNomenclaturePresets(universeId) {
-  const norm = (universeId || 'maracatu').toLowerCase().trim();
-  if (norm === 'batucada' || norm === 'sambareggae') {
-    return BATUCADA_PRESETS;
-  }
-  if (norm === 'samba') {
-    return SAMBA_PRESETS;
-  }
+  const norm = normUniverse(universeId);
+  if (norm === 'batucada' || norm === 'sambareggae') return BATUCADA_PRESETS;
+  if (norm === 'samba') return SAMBA_PRESETS;
+  if (norm === 'capoeira') return CAPOEIRA_PRESETS;
   return MARACATU_PRESETS;
 }
 
-/**
- * Résout la liste des rôles / voix selon l'univers et le preset sélectionné
- */
+/** Résout la liste des rôles / voix selon l'univers et le preset sélectionné */
 export function getUniverseRolesList(universeId, presetId) {
-  const norm = (universeId || 'maracatu').toLowerCase().trim();
+  const norm = normUniverse(universeId);
   if (norm === 'batucada' || norm === 'sambareggae') {
-    if (presetId === 'samba_reggae_bloco') {
-      return SAMBA_REGGAE_ROLES;
-    }
-    return BATUCADA_STANDARD_ROLES;
+    return presetId === 'samba_reggae_bloco' ? SAMBA_REGGAE_ROLES : BATUCADA_STANDARD_ROLES;
   }
   if (norm === 'samba') {
-    if (presetId === 'samba_enredo_escola') {
-      return SAMBA_ENREDO_ROLES;
-    }
-    return BATUCADA_STANDARD_ROLES;
+    return presetId === 'samba_enredo_escola' ? SAMBA_ENREDO_ROLES : BATUCADA_STANDARD_ROLES;
   }
+  if (norm === 'capoeira') return CAPOEIRA_ROLES_LIST;
   return MARACATU_ROLES_LIST;
 }
 
-/**
- * Résout la nomenclature par défaut selon l'univers
- */
+/** Résout la nomenclature par défaut selon l'univers */
 export function getDefaultUniverseNomenclature(universeId) {
-  const norm = (universeId || 'maracatu').toLowerCase().trim();
-  if (norm === 'batucada' || norm === 'samba' || norm === 'sambareggae') {
-    return DEFAULT_BATUCADA_NOMENCLATURE;
-  }
+  const norm = normUniverse(universeId);
+  if (norm === 'batucada' || norm === 'samba' || norm === 'sambareggae') return DEFAULT_BATUCADA_NOMENCLATURE;
+  if (norm === 'capoeira') return DEFAULT_CAPOEIRA_NOMENCLATURE;
   return DEFAULT_MARACATU_NOMENCLATURE;
 }
 

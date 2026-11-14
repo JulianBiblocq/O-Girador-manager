@@ -30,6 +30,22 @@ export function canonicalizeGroupId(groupId) {
  * @param {string|null|undefined} g2 
  * @returns {boolean}
  */
+export function isLegacySamambaiaGroup(groupId) {
+  return String(groupId || '').trim().toLowerCase() === 'samambaia';
+}
+
+export function buildGroupQueryVariants(rawGroupId) {
+  const trimmed = String(rawGroupId || '').trim();
+  if (!trimmed) return [];
+  const canonical = canonicalizeGroupId(trimmed);
+  const lower = trimmed.toLowerCase();
+  const variants = [trimmed, canonical, lower];
+  if (isLegacySamambaiaGroup(lower)) {
+    variants.push('Samambaia', 'samambaia', 'SAMAMBAIA');
+  }
+  return Array.from(new Set(variants)).filter(Boolean);
+}
+
 export function isSameGroupCaseInsensitive(g1, g2) {
   if (!g1 || !g2) return g1 === g2;
   return String(g1).trim().toLowerCase() === String(g2).trim().toLowerCase();

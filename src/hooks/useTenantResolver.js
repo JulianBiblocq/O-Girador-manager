@@ -4,7 +4,7 @@ import { db } from '../firebase';
 import { isDemoMode } from '../demo/demoManager';
 import { DEMO_GROUP_ID } from '../data/demoData';
 import { canonicalizeGroupId } from '../utils/tenantUtils';
-
+import { RESERVED_SUBDOMAINS } from './useGroupContext';
 export default function useTenantResolver() {
   const [tenantState, setTenantState] = useState(() => {
     let initialMode = 'organizador', initGroup = null, initTenantId = null;
@@ -104,20 +104,19 @@ export default function useTenantResolver() {
         // 2. Production
         else {
           if (hostname === 'o-girador.com' || hostname === 'www.o-girador.com') {
-            currentMode = 'orchestrador'; extractedGroupId = tenantParam || null;
+            currentMode = 'orquestrador'; extractedGroupId = tenantParam || null;
           } else if (hostname.includes('o-girador.com') || hostname.includes('web.app') || hostname.includes('firebaseapp.com')) {
             if (hostname.includes('mostrador')) {
               currentMode = 'mostrador';
-              if (isPathTenantValid) {
-                extractedGroupId = pathTenant.toLowerCase();
-              }
+              if (isPathTenantValid) extractedGroupId = pathTenant.toLowerCase();
             }
             else if (hostname.includes('organizador') || hostname.includes('manager')) currentMode = 'organizador';
             else if (hostname.includes('sequenciador')) currentMode = 'sequenciador';
             else if (hostname.includes('dancador')) currentMode = 'dancador';
+            else if (hostname.includes('cantador')) currentMode = 'cantador';
 
             const parts = hostname.split('.');
-            if (parts.length > 2 && !['mostrador', 'organizador', 'manager', 'sequenciador', 'dancador', 'www', 'o-girador-organizador', 'o-girador-7828c', 'o-girador-mostrador'].includes(parts[0])) {
+            if (parts.length > 2 && !RESERVED_SUBDOMAINS.includes(parts[0].toLowerCase())) {
               extractedGroupId = parts[0];
             }
             if (!extractedGroupId && tenantParam) {
@@ -206,11 +205,11 @@ export default function useTenantResolver() {
         });
       } catch (err) {
         console.error("useTenantResolver - Erreur critique inattendue lors de la résolution du tenant :", err);
-        // Filet de secours anti-blocage absolu : repli immédiat sur Samambaia et libération du chargement
+        // Filet de secours neutre multi-tenant : libération du chargement sans fuite inter-groupes
         setTenantState({
           appMode: 'organizador',
-          groupId: 'Samambaia',
-          tenantId: 'samambaia',
+          groupId: null,
+          tenantId: null,
           isLocalhost: isLocal,
           isTenantLoading: false,
           tenantError: null,
