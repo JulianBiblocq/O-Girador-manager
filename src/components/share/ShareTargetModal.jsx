@@ -113,7 +113,7 @@ export default function ShareTargetModal({
 
         <div className="flex flex-col gap-2">
           <CordelButton type="button" variant="vert" useExtremeBorder={true} disabled={sending} onClick={handleSendToGroupChat} className="w-full py-2.5 text-xs font-black uppercase tracking-wider">
-            {sending ? '⏳...' : (t('shareTarget.sendToGroupBtn') || '💬 Envoyer dans Tout le groupe')}
+            {sending ? '⏳...' : (t('shareTarget.sendToGroupBtn') || 'Envoyer sur 💬 Le Zap')}
           </CordelButton>
           <CordelButton type="button" variant="default" disabled={sending} onClick={handleOpenVaral} className="w-full py-2 text-xs font-bold uppercase tracking-wider">
             {t('shareTarget.hangOnVaralBtn') || '🪢 Accrocher sur le Varal'}

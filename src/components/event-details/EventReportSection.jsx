@@ -12,6 +12,7 @@ import { notifyMembersByTag } from '../../utils/inAppNotificationService';
 import { publishReportDefinitive } from '../../utils/reportPublicationUtils';
 import EventEmargementSection from './EventEmargementSection';
 import ReportValidatorsSelector from './ReportValidatorsSelector';
+import EventReportVoteSection from './EventReportVoteSection';
 import { getEffectiveMemberTags, getCanonicalTagKey, isMemberCaOrBureau } from '../../utils/memberUtils';
 import { canManageReunions } from '../../utils/permissionUtils';
 import {
@@ -89,8 +90,14 @@ export default function EventReportSection({ event, user, profileData, associati
   const isRedacteur = event.redacteurId === user.uid;
   const isAdmin = isGlobalAdmin || isRedacteur;
 
-  // Current report status: empty, 'brouillon', 'attente_relecture', 'publie'
-  const reportStatus = event.compteRenduStatus || '';
+  // État optimiste local pour le statut du CR et les approbations (compatibilité modales sans onSnapshot comme ReunionViewModal)
+  const [approvals, setApprovals] = useState(() => event?.compteRenduApprovals || {});
+  const [reportStatus, setReportStatus] = useState(() => event?.compteRenduStatus || '');
+
+  useEffect(() => {
+    setApprovals(event?.compteRenduApprovals || {});
+    setReportStatus(event?.compteRenduStatus || '');
+  }, [event?.id, event?.compteRenduApprovals, event?.compteRenduStatus]);
 
   // Synchronisation de l'audience avec les props de l'événement
   useEffect(() => {
@@ -105,7 +112,7 @@ export default function EventReportSection({ event, user, profileData, associati
   }, [event?.autoValidateAfter7Days]);
 
   // Publish report definitively
-  const handlePublishDefinitive = async (pointsToPublish = localPoints, approvals = event.compteRenduApprovals || {}, isAutomatic = false) => {
+  const handlePublishDefinitive = async (pointsToPublish = localPoints, approvalsToPublish = approvals, isAutomatic = false) => {
     setIsSaving(true);
     try {
       await publishReportDefinitive({
@@ -115,10 +122,12 @@ export default function EventReportSection({ event, user, profileData, associati
           portee: localAudience || event.portee || 'publique'
         },
         points: pointsToPublish,
-        approvals,
+        approvals: approvalsToPublish,
         isAutomatic,
         associationSettings: associationSettings || event.associationSettings || "O Girador"
       });
+      setApprovals(approvalsToPublish);
+      setReportStatus('publie');
 
       if (!isAutomatic) {
         alert("Le compte-rendu a été définitivement validé, publié au Varal et le PDF officiel a été généré !");
@@ -144,14 +153,14 @@ export default function EventReportSection({ event, user, profileData, associati
     ) {
       const now = new Date();
       const autoDate = new Date(event.compteRenduAutoValidateAt);
-      const hasRejection = Object.values(event.compteRenduApprovals || {}).some(v => v && v.approved === false);
+      const hasRejection = Object.values(approvals || {}).some(v => v && v.approved === false);
 
       if (!isNaN(autoDate.getTime()) && now >= autoDate && !hasRejection) {
         autoValidatedRef.current = true;
-        handlePublishDefinitive(localPoints, event.compteRenduApprovals || {}, true /* isAutomatic */);
+        handlePublishDefinitive(localPoints, approvals || {}, true /* isAutomatic */);
       }
     }
-  }, [reportStatus, event?.autoValidateAfter7Days, event?.compteRenduAutoValidateAt, event?.compteRenduApprovals, isSaving]);
+  }, [reportStatus, event?.autoValidateAfter7Days, event?.compteRenduAutoValidateAt, approvals, isSaving]);
 
   // Synchronize local points with Firestore pointsOrdreDuJour
   useEffect(() => {
@@ -596,6 +605,7 @@ export default function EventReportSection({ event, user, profileData, associati
         pointsOrdreDuJour: localPoints,
         compteRenduStatus: 'brouillon'
       });
+      setReportStatus('brouillon');
       alert(t('agenda.reportSaved') || "Compte-rendu enregistré avec succès !");
     } catch (err) {
       console.error("Error saving draft:", err);
@@ -640,6 +650,8 @@ export default function EventReportSection({ event, user, profileData, associati
         compteRenduValidationTags: validationMode === 'present_by_tags' ? selectedValidationTags : [],
         compteRenduValidators: resolvedValidators
       });
+      setApprovals({});
+      setReportStatus('attente_relecture');
       
       // Déclenchement de l'automatisation de notification de relecture
       try {
@@ -678,6 +690,8 @@ export default function EventReportSection({ event, user, profileData, associati
         compteRenduApprovals: {},
         compteRenduAutoValidateAt: null
       });
+      setApprovals({});
+      setReportStatus('brouillon');
       alert("Le compte-rendu a été réinitialisé en brouillon.");
     } catch (err) {
       console.error("Erreur lors de la remise en brouillon :", err);
@@ -705,18 +719,19 @@ export default function EventReportSection({ event, user, profileData, associati
 
   // Vote handler for present members
   const handleVote = async (approved, commentText = '') => {
-    const approvals = event.compteRenduApprovals || {};
+    const prevApprovals = approvals || {};
     const currentVote = {
       approved,
       date: new Date().toISOString(),
       commentaire: commentText,
-      userName: `${profileData.prenom || ''} ${profileData.nom || ''}`.trim()
+      userName: `${profileData?.prenom || ''} ${profileData?.nom || ''}`.trim() || user?.displayName || 'Membre'
     };
 
     const updatedApprovals = {
-      ...approvals,
+      ...prevApprovals,
       [user.uid]: currentVote
     };
+    setApprovals(updatedApprovals);
 
     try {
       const eventRef = doc(db, 'events', event.id);
@@ -739,8 +754,25 @@ export default function EventReportSection({ event, user, profileData, associati
         }
       }
     } catch (err) {
+      setApprovals(prevApprovals);
       console.error("Error submitting vote:", err);
       alert("Erreur lors du vote.");
+    }
+  };
+
+  // Réinitialisation sécurisée du vote individuel (« ✏️ Modifier mon vote »)
+  const handleResetMyVote = async () => {
+    const prevApprovals = approvals || {};
+    const updated = { ...prevApprovals };
+    delete updated[user.uid];
+    setApprovals(updated);
+    try {
+      const eventRef = doc(db, 'events', event.id);
+      await updateDoc(eventRef, { compteRenduApprovals: updated });
+    } catch (err) {
+      setApprovals(prevApprovals);
+      console.error("Erreur lors de la modification du vote :", err);
+      alert("Erreur réseau lors de la modification de votre vote.");
     }
   };
 
@@ -877,7 +909,6 @@ export default function EventReportSection({ event, user, profileData, associati
 
   // Calculer vote statistics sur le collège de validateurs désignés
   const totalValidators = effectiveValidators.length;
-  const approvals = event.compteRenduApprovals || {};
   
   const validatorsApproved = effectiveValidators.filter(val => approvals[val.uid]?.approved === true);
   const validatorsRejected = effectiveValidators.filter(val => approvals[val.uid]?.approved === false);
@@ -1565,230 +1596,31 @@ export default function EventReportSection({ event, user, profileData, associati
 
           {/* 4. Sondage / Vote pour les Présents et Validateurs désignés */}
           {reportStatus === 'attente_relecture' && (
-            <div className="flex flex-col gap-3">
-              {/* Vote Encart (Visible exclusively to designated validators or info for other presents) */}
-              {isUserValidator ? (
-                <CordelCard variant="default" useExtremeBorder={true} className="p-5 border-2 border-cordel-wood bg-cordel-bg-light shadow-md">
-                  <h4 className="text-xs font-extrabold uppercase text-cordel-wood tracking-wider mb-2.5 flex items-center gap-1.5">
-                    🗳️ Approbation du Compte-Rendu (Validateur désigné)
-                  </h4>
-                  
-                  {event.autoValidateAfter7Days && event.compteRenduAutoValidateAt && (
-                    <div className="mb-2.5 p-1.5 rounded bg-amber-50 text-[10px] text-amber-900 border border-amber-300 font-semibold flex items-center gap-1.5">
-                      <span>⏳</span>
-                      <span>Validation automatique prévue le <strong>{formatDate(event.compteRenduAutoValidateAt)}</strong> (sauf demande de modification).</span>
-                    </div>
-                  )}
-
-                  {userVote ? (
-                    <div className="flex flex-col gap-2.5">
-                      <p className="text-xs font-semibold leading-relaxed text-encre-noire">
-                        Vous avez voté : {userVote.approved ? (
-                          <span className="text-green-700 font-extrabold">✅ APPROUVÉ</span>
-                        ) : (
-                          <span className="text-red-700 font-extrabold">❌ MODIFICATION DEMANDÉE</span>
-                        )}
-                        {userVote.commentaire && (
-                          <span className="block mt-1 pl-3 border-l-2 border-dashed border-red-500 italic text-[11px] opacity-75">
-                            "{userVote.commentaire}"
-                          </span>
-                        )}
-                      </p>
-                      
-                      <div className="flex">
-                        <button 
-                          onClick={() => {
-                            // Réinitialiser vote so they can edit it
-                            const updated = { ...approvals };
-                            delete updated[user.uid];
-                            const eventRef = doc(db, 'events', event.id);
-                            updateDoc(eventRef, { compteRenduApprovals: updated });
-                          }}
-                          className="text-[9px] font-black uppercase tracking-wider text-blue-700 hover:underline bg-transparent border-0 cursor-pointer"
-                        >
-                          ✏️ Modifier mon vote
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col gap-3">
-                      <p className="text-[11px] leading-relaxed opacity-85">
-                        En tant que validateur désigné, veuillez confirmer si ce compte-rendu reflète fidèlement la réunion ou demander des modifications.
-                      </p>
-                      
-                      {/* Optional comments for modification */}
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[8px] uppercase font-bold tracking-wider opacity-65">
-                          Commentaire facultatif (requis si demande de modif)
-                        </label>
-                        <input 
-                          type="text" 
-                          value={comment}
-                          onChange={(e) => setComment(e.target.value)}
-                          placeholder="Ajoutez des précisions..."
-                          className="theme-input text-xs w-full py-1.5 bg-white"
-                        />
-                      </div>
-
-                      <div className="flex gap-2">
-                        <CordelButton
-                          variant="vert"
-                          onClick={() => handleVote(true)}
-                          className="text-xs py-2 px-3 flex-1 font-bold"
-                        >
-                          ✅ Approuver
-                        </CordelButton>
-                        <CordelButton
-                          variant="rouge"
-                          onClick={() => {
-                            if (!comment.trim()) {
-                              alert("Veuillez saisir un commentaire expliquant la modification demandée.");
-                              return;
-                            }
-                            handleVote(false, comment);
-                          }}
-                          className="text-xs py-2 px-3 flex-1 font-bold"
-                        >
-                          ❌ Demander une modification
-                        </CordelButton>
-                      </div>
-                    </div>
-                  )}
-                </CordelCard>
-              ) : isUserPresent ? (
-                /* Membre présent mais ne faisant pas partie du collège de relecteurs désignés */
-                <div className="p-4 bg-amber-50/80 border border-dashed border-amber-400 rounded text-amber-900 text-xs font-medium flex items-center justify-between flex-wrap gap-2">
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-xl">⏳</span>
-                    <div>
-                      <p className="font-bold text-amber-950">
-                        En cours de relecture par les validateurs désignés ({approvedCount}/{totalValidators} validations).
-                      </p>
-                      <p className="text-[10.5px] opacity-80 mt-0.5">
-                        Vous étiez présent à cette réunion. La validation de ce compte-rendu a été confiée aux relecteurs désignés avant publication officielle.
-                      </p>
-                    </div>
-                  </div>
-                  <span className="theme-stamp-badge text-[8px] font-black uppercase tracking-wider bg-white/70 text-amber-800 border-amber-300">
-                    👀 Relecture restreinte
-                  </span>
-                </div>
-              ) : (
-                <div className="p-3 bg-neutral-100 text-neutral-600 rounded text-center text-[10px] italic">
-                  🔒 Le vote d'approbation est réservé aux validateurs désignés pour cette réunion.
-                </div>
-              )}
-
-              {/* Vote Statistics (For all, especially Admin) */}
-              <div className="theme-inner-panel p-3.5 rounded-[4px_6px_3px_5px] flex flex-col gap-2">
-                <div className="flex justify-between items-center flex-wrap gap-2">
-                  <span className="text-[8px] uppercase font-black tracking-wider text-cordel-master-dark opacity-65">
-                    État des votes ({approvedCount + rejectedCount} / {totalValidators} validateur{totalValidators > 1 ? 's' : ''} désigné{totalValidators > 1 ? 's' : ''})
-                  </span>
-                  {event.compteRenduValidationMode && (
-                    <span className="text-[8px] uppercase font-extrabold px-1.5 py-0.5 rounded bg-stone-100 text-stone-700 border border-stone-300">
-                      Collège : {event.compteRenduValidationMode === 'present_by_tags' ? '🏷️ Par badge' : event.compteRenduValidationMode === 'custom_users' ? '👤 Nominatif' : '👥 Tous les présents'}
-                    </span>
-                  )}
-                </div>
-                
-                <div className="flex gap-4 text-xs font-semibold flex-wrap">
-                  <div className="text-green-700">✅ {approvedCount} Approbation{approvedCount > 1 ? 's' : ''}</div>
-                  <div className="text-red-700">❌ {rejectedCount} Demande{rejectedCount > 1 ? 's' : ''} de modification</div>
-                  <div className="text-neutral-500">⏳ {pendingCount} En attente</div>
-                </div>
-
-                <div className="mt-1">
-                  <button 
-                    onClick={() => setShowVoters(!showVoters)}
-                    className="text-[10px] text-[var(--color-cordel-ocre,#c05621)] font-extrabold hover:underline uppercase tracking-wider bg-transparent border-0 cursor-pointer"
-                  >
-                    👥 {showVoters ? "Masquer le détail des validateurs" : "Voir le détail des validateurs désignés"}
-                  </button>
-                </div>
-
-                {showVoters && (
-                  <div className="mt-1 mb-2 flex flex-col gap-3 p-3 bg-white/40 border border-dashed border-cordel-master-dark/15 rounded text-[10px]">
-                    {validatorsApproved.length > 0 && (
-                      <div className="flex flex-col gap-1">
-                        <span className="font-extrabold text-[var(--color-cordel-vert,#2d6a4f)]">✅ Ont approuvé :</span>
-                        <div className="flex flex-wrap gap-1">
-                          {validatorsApproved.map(val => (
-                            <span key={val.uid} className="px-1.5 py-0.5 bg-[var(--color-cordel-vert)]/10 text-[var(--color-cordel-vert,#2d6a4f)] rounded font-semibold">
-                              {val.displayName}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {validatorsRejected.length > 0 && (
-                      <div className="flex flex-col gap-1">
-                        <span className="font-extrabold text-[var(--color-cordel-rouge,#8b2a1a)]">❌ Ont demandé une modification :</span>
-                        <div className="flex flex-wrap gap-1">
-                          {validatorsRejected.map(val => (
-                            <span key={val.uid} className="px-1.5 py-0.5 bg-[var(--theme-primary)]/10 text-[var(--color-cordel-rouge,#8b2a1a)] rounded font-semibold">
-                              {val.displayName}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {validatorsPending.length > 0 && (
-                      <div className="flex flex-col gap-1">
-                        <span className="font-extrabold text-[var(--color-cordel-ocre,#c05621)]">⏳ En attente de vote :</span>
-                        <div className="flex flex-wrap gap-1">
-                          {validatorsPending.map(val => (
-                            <span key={val.uid} className="px-1.5 py-0.5 bg-[var(--color-cordel-ocre)]/10 text-[var(--color-cordel-ocre,#c05621)] rounded font-semibold">
-                              {val.displayName}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* List of comments/modifs */}
-                {Object.keys(approvals).some(uid => approvals[uid]?.commentaire) && (
-                  <div className="mt-2 border-t border-dashed border-encre-noire/10 pt-2 flex flex-col gap-1.5">
-                    <span className="text-[8px] uppercase font-bold tracking-wider text-cordel-wood">Modifications demandées :</span>
-                    {Object.keys(approvals).map(uid => {
-                      const vote = approvals[uid];
-                      if (!vote?.commentaire) return null;
-                      return (
-                        <div key={uid} className="text-[10px] leading-relaxed bg-red-50 text-red-800 p-2 rounded border border-red-200">
-                          <span className="font-bold">👤 {vote.userName || 'Membre'} :</span> "{vote.commentaire}"
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* Manual Publish & Revert Buttons (ADMIN ONLY - when status is review) */}
-                {isAdmin && (
-                  <div className="flex justify-between items-center border-t border-dashed border-encre-noire/10 pt-3 mt-1 flex-wrap gap-2">
-                    <CordelButton 
-                      variant="rouge" 
-                      onClick={handleRevertToDraft}
-                      disabled={isSaving}
-                      className="text-xs py-1.5 px-3 font-bold"
-                    >
-                      ✏️ Repasser en brouillon
-                    </CordelButton>
-                    <CordelButton 
-                      variant="vert" 
-                      useExtremeBorder={true}
-                      onClick={() => handlePublishDefinitive(localPoints, approvals)}
-                      disabled={isSaving}
-                      className="text-xs py-1.5 px-4 font-extrabold uppercase tracking-wider"
-                    >
-                      {isSaving ? "⏳ Validation..." : "⚡ Forcer la validation définitive (Override)"}
-                    </CordelButton>
-                  </div>
-                )}
-              </div>
-
-            </div>
+            <EventReportVoteSection
+              event={event}
+              isUserValidator={isUserValidator}
+              isUserPresent={isUserPresent}
+              isAdmin={isAdmin}
+              isSaving={isSaving}
+              userVote={userVote}
+              comment={comment}
+              setComment={setComment}
+              showVoters={showVoters}
+              setShowVoters={setShowVoters}
+              approvals={approvals}
+              totalValidators={totalValidators}
+              approvedCount={approvedCount}
+              rejectedCount={rejectedCount}
+              pendingCount={pendingCount}
+              validatorsApproved={validatorsApproved}
+              validatorsRejected={validatorsRejected}
+              validatorsPending={validatorsPending}
+              formatDate={formatDate}
+              onVote={handleVote}
+              onResetMyVote={handleResetMyVote}
+              onRevertToDraft={handleRevertToDraft}
+              onPublishDefinitive={() => handlePublishDefinitive(localPoints, approvals)}
+            />
           )}
 
           {/* 5. Message Published & PDF Download */}

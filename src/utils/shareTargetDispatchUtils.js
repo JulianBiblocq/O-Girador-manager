@@ -1,12 +1,16 @@
 import { collection, addDoc, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { getGeneralConversationId, ensureGeneralGroupConversation } from './generalGroupChatUtils';
+import {
+  getGeneralConversationId,
+  ensureGeneralGroupConversation,
+  resolveZapDisplayName
+} from './generalGroupChatUtils';
 import { uploadChatAttachment } from './attachmentUploadUtils';
 import { dispatchBulkInAppAndPushNotification, NOTIFICATION_TYPES } from './inAppNotificationService';
 
 /**
  * Expédie un contenu partagé (photo, PDF, texte ou lien YouTube/web) directement
- * dans la discussion générale « 💬 Tout le groupe » de l'association.
+ * dans la discussion « 💬 Le Zap » de l'association.
  */
 export async function shareToGeneralGroupChat({
   sharedPayload,
@@ -20,14 +24,14 @@ export async function shareToGeneralGroupChat({
     throw new Error('Utilisateur ou association non identifié.');
   }
 
-  // 1. Garantir l'existence du canal général et récupérer la liste des participants
+  // 1. Garantir l'existence du canal Le Zap et récupérer la liste des participants
   const conversationId =
     (await ensureGeneralGroupConversation({ userId: user.uid, groupId: effectiveGroupId })) ||
     getGeneralConversationId(effectiveGroupId);
 
   const convRef = doc(db, 'conversations', conversationId);
   let participantIds = [user.uid];
-  let convName = '💬 Tout le groupe';
+  let convName = '💬 Le Zap';
 
   try {
     const convSnap = await getDoc(convRef);
@@ -36,7 +40,7 @@ export async function shareToGeneralGroupChat({
       if (Array.isArray(cData.participantIds) && cData.participantIds.length > 0) {
         participantIds = cData.participantIds;
       }
-      if (cData.name) convName = cData.name;
+      if (cData.name) convName = resolveZapDisplayName(cData.name, '💬 Le Zap');
     }
   } catch (err) {
     console.warn('shareToGeneralGroupChat - Lecture participants :', err?.message || err);

@@ -1,6 +1,7 @@
 import React from 'react';
 import CordelCard from '../CordelCard';
 import XiloAvatar from '../XiloAvatar';
+import { resolveZapDisplayName } from '../../utils/generalGroupChatUtils';
 
 /**
  * Composant ConversationCard
@@ -13,10 +14,13 @@ export default function ConversationCard({
   usersMap = {},
   onClick
 }) {
-  const isGroup = conversation.type === 'group';
+  const isGeneralGroup = Boolean(conversation.isGeneralGroup);
+  const isGroup = conversation.type === 'group' || isGeneralGroup;
 
-  // Identification du partenaire pour les discussions directes
-  let title = conversation.name || 'Discussion de groupe';
+  // Identification du partenaire pour les discussions directes ou du nom unifié pour Le Zap
+  let title = isGeneralGroup
+    ? resolveZapDisplayName(conversation.name, '💬 Le Zap')
+    : (conversation.name || 'Discussion de groupe');
   let partner = null;
 
   if (!isGroup) {
@@ -58,8 +62,12 @@ export default function ConversationCard({
     >
       {/* Avatar ou icône de groupe */}
       {isGroup ? (
-        <div className="w-10 h-10 rounded-full bg-cordel-bg-light border-2 border-encre-noire flex items-center justify-center text-base shadow-xs shrink-0 select-none">
-          👥
+        <div
+          className={`w-10 h-10 rounded-full border-2 border-encre-noire flex items-center justify-center text-base shadow-xs shrink-0 select-none ${
+            isGeneralGroup ? 'bg-[var(--color-cordel-vert)] text-white' : 'bg-cordel-bg-light'
+          }`}
+        >
+          {isGeneralGroup ? '💬' : '👥'}
         </div>
       ) : (
         <XiloAvatar src={partner?.photoURL} name={title} size={40} />

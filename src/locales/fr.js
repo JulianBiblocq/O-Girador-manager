@@ -458,7 +458,8 @@ export const fr = {
     title: "Le Porte-Voix",
     subjectCountLabel: "sujet",
     subtitle: "Dernières discussions & sujets de la communauté",
-    openForum: "💬 Ouvrir le Porte-Voix",
+    openForum: "Ouvrir →",
+    openBtn: "Ouvrir →",
     noThreads: "Aucun sujet dans le Porte-Voix pour le moment.",
     startFirst: "+ Lancer la première discussion",
     pinned: "📌 Épinglé",
@@ -466,9 +467,15 @@ export const fr = {
     discussion: "💬 Discussion",
     viewDiscussion: "Voir la discussion ➔",
     replyCountSuffix: "rép.",
-    liveGeneralTitle: "💬 En direct — Tout le groupe",
-    participateGeneralBtn: "💬 Participer / Partager une photo ou un lien",
-    liveGeneralEmpty: "Lancez la conversation générale : partagez une info, une photo ou une vidéo YouTube avec tout le groupe !"
+    liveGeneralTitle: "💬 Le Zap",
+    participateGeneralBtn: "Ouvrir →",
+    liveGeneralEmpty: "Aucun message pour le moment. Écrivez le premier mot sur le Zap !",
+    zapTitle: "Le Zap",
+    zapSubtitle: "Le tchat de toute l'asso",
+    zapPlaceholder: "Écrire sur le Zap...",
+    porteVoixTab: "Porte-Voix",
+    sendPhotoTitle: "Envoyer une photo sur le Zap",
+    sendBtnTitle: "Envoyer"
   },
   agendaFilter: {
     disciplineLabel: "Discipline :",
@@ -1574,9 +1581,13 @@ export const fr = {
     btnChannels: "Salons",
     defaultChannelGeneral: "Général",
     tabPrivateShort: "Privés",
-    generalDiscussionTitle: "Discussion générale – Tout le groupe",
-    wholeAssociationBadge: "Toute l'association",
-    btnOpenGeneralThread: "Ouvrir le fil général →"
+    generalDiscussionTitle: "Le Zap — Le tchat de toute l'asso",
+    wholeAssociationBadge: "Le tchat de toute l'asso",
+    btnOpenGeneralThread: "Ouvrir Le Zap →",
+    zapTitle: "Le Zap",
+    zapSubtitle: "Le tchat de toute l'asso",
+    zapPlaceholder: "Écrire sur le Zap...",
+    generalBannerEmptyDesc: "Partagez un mot, une photo ou un lien avec toute l'asso sur le Zap !"
   },
   studioSocial: {
     title: "Studio Réseaux Sociaux",
@@ -7173,7 +7184,7 @@ export const fr = {
     subtitle: "Choisis où publier ce contenu reçu depuis ton appareil :",
     captionLabel: "Message ou légende (modifiable)",
     captionPlaceholder: "Ajoute un mot pour le groupe...",
-    sendToGroupBtn: "💬 Envoyer dans Tout le groupe",
+    sendToGroupBtn: "Envoyer sur 💬 Le Zap",
     hangOnVaralBtn: "🪢 Accrocher sur le Varal",
     publishMegaphoneBtn: "Publier dans le Mégaphone",
     openLinkBtn: "Ouvrir le lien"

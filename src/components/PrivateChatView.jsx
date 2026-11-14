@@ -5,11 +5,13 @@ import CordelButton from './CordelButton';
 import CordelCard from './CordelCard';
 import XiloAvatar from './XiloAvatar';
 import { useTerminologie } from '../hooks/useTerminologie';
+import { useTranslation } from './LanguageContext';
 import useConfirm from '../hooks/useConfirm';
 import useHardwareBack from '../hooks/useHardwareBack';
 import EmojiPickerPopover, { EmojiQuickRow } from './forum/EmojiPickerPopover';
 import GroupMembersModal from './forum/GroupMembersModal';
 import ChatFramaspaceImageModal from './forum/ChatFramaspaceImageModal';
+import PrivateChatHeader from './forum/PrivateChatHeader';
 import { useConversationMessages } from '../hooks/useConversationMessages';
 import { uploadChatAttachment } from '../utils/attachmentUploadUtils';
 import { dispatchInAppAndPushNotification, NOTIFICATION_TYPES } from '../utils/inAppNotificationService';
@@ -17,7 +19,7 @@ import VoiceDictationButton from './common/VoiceDictationButton';
 import MessageReadReceipt from './forum/MessageReadReceipt';
 import ChatYouTubePreview from './forum/ChatYouTubePreview';
 import { isMessageReadByAll, shouldMarkConversationAsRead, getTimestampMs } from '../utils/readReceiptUtils';
-import { isGeneralGroupConversation } from '../utils/generalGroupChatUtils';
+import { isGeneralGroupConversation, resolveZapDisplayName } from '../utils/generalGroupChatUtils';
 
 /**
  * Composant PrivateChatView
@@ -42,6 +44,7 @@ export default function PrivateChatView({
   isSystemAdmin = false
 }) {
   const { tRole } = useTerminologie();
+  const { t } = useTranslation();
   const { confirm } = useConfirm();
   const conversationId = conversation?.id;
   const groupId = profileData?.groupId || conversation?.groupId || '';
@@ -166,11 +169,15 @@ export default function PrivateChatView({
   }, [isGroup, otherUser, recipientId, usersMap, effectiveParticipantIds, user?.uid]);
 
   const headerTitle = useMemo(() => {
+    if (isGeneralGroup) {
+      const zapLabel = t?.('forum.zapTitle') && t('forum.zapTitle') !== 'forum.zapTitle' ? `💬 ${t('forum.zapTitle')}` : '💬 Le Zap';
+      return resolveZapDisplayName(effectiveConversation?.name, zapLabel);
+    }
     if (isGroup) {
       return effectiveConversation?.name || 'Groupe Privé';
     }
     return `${effectiveOtherUser?.prenom || ''} ${effectiveOtherUser?.nom || ''}`.trim() || effectiveOtherUser?.email || "Membre";
-  }, [isGroup, effectiveConversation?.name, effectiveOtherUser]);
+  }, [isGeneralGroup, isGroup, effectiveConversation?.name, effectiveOtherUser, t]);
 
   // 2. Gestion des messages via le hook useConversationMessages
   const { 
@@ -599,67 +606,18 @@ export default function PrivateChatView({
     <div className="fixed inset-0 z-50 flex flex-col h-[100dvh] max-h-[100dvh] overflow-hidden overscroll-contain w-full bg-cordel-bg text-left select-none">
       
       {/* 1. En-tête de la discussion (shrink-0) */}
-      <div className="shrink-0 flex items-center justify-between border-b-2 border-dashed border-encre-noire/20 p-3 bg-white/40 dark:bg-black/10">
-        <div className="flex items-center gap-3 min-w-0">
-          <button 
-            type="button" 
-            onClick={handleBackClick} 
-            className="text-xs font-black uppercase tracking-wider bg-cordel-bg border-2 border-encre-noire px-2.5 py-1 rounded-[4px_6px_3px_5px] shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer flex items-center justify-center shrink-0 gap-1.5"
-            title="Retour aux salons"
-            aria-label="Retour aux salons"
-          >
-            <span className="text-sm select-none" aria-hidden="true">⬅️</span>
-            <span className="inline font-black uppercase text-[11px] tracking-wide">
-              Salons
-            </span>
-          </button>
-          
-          <div className="flex items-center gap-2.5 min-w-0">
-            {isGroup ? (
-              <div className="w-9 h-9 rounded-full bg-cordel-bg-light border-2 border-encre-noire flex items-center justify-center text-sm shadow-xs shrink-0 select-none">
-                {isGeneralGroup ? '💬' : '👥'}
-              </div>
-            ) : (
-              <XiloAvatar src={effectiveOtherUser?.photoURL} name={headerTitle} size={36} />
-            )}
-            
-            <div className="flex flex-col min-w-0">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="font-extrabold text-xs text-encre-noire truncate">
-                  {headerTitle}
-                </span>
-                {isGeneralGroup && (
-                  <span className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--color-cordel-vert,#2d6a4f)] text-white border border-encre-noire shadow-xs">
-                    🌐 Toute l'association
-                  </span>
-                )}
-              </div>
-              {isGroup ? (
-                <span className="text-[9px] font-bold text-cordel-wood">
-                  {effectiveParticipantIds.length || Object.keys(usersMap).length || 0} participants
-                </span>
-              ) : (
-                <span className="theme-stamp-badge theme-stamp-badge-wood text-[7px] border-dashed mt-0.5 self-start scale-90 origin-left">
-                  {tRole(effectiveOtherUser?.role || 'membre', effectiveOtherUser?.genre)}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Action pour les groupes : Ouvrir la gestion des membres */}
-        {isGroup && (
-          <button
-            type="button"
-            onClick={() => setIsMembersModalOpen(true)}
-            className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider bg-cordel-bg hover:bg-white border border-encre-noire rounded shadow-xs flex items-center gap-1 cursor-pointer shrink-0"
-            title="Gérer les membres du groupe"
-          >
-            <span>⚙️</span>
-            <span className="hidden sm:inline">Membres</span>
-          </button>
-        )}
-      </div>
+      <PrivateChatHeader
+        isGroup={isGroup}
+        isGeneralGroup={isGeneralGroup}
+        headerTitle={headerTitle}
+        effectiveOtherUser={effectiveOtherUser}
+        effectiveParticipantIds={effectiveParticipantIds}
+        totalUsersCount={Object.keys(usersMap).length}
+        tRole={tRole}
+        t={t}
+        onBackClick={handleBackClick}
+        onOpenMembersModal={() => setIsMembersModalOpen(true)}
+      />
 
       {/* 2. Zone des messages : unique zone autorisée à défiler verticalement */}
       <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 py-2 pb-6 flex flex-col gap-3.5 bg-cordel-bg-light/40 scrollbar-thin">
@@ -1107,7 +1065,13 @@ export default function PrivateChatView({
                 }
               }
             }}
-            placeholder={isGroup ? `Message au groupe ${conversation?.name || ''}...` : "Rédiger un message..."}
+            placeholder={
+              isGeneralGroup
+                ? (t?.('forum.zapPlaceholder') && t('forum.zapPlaceholder') !== 'forum.zapPlaceholder' ? t('forum.zapPlaceholder') : 'Écrire sur le Zap...')
+                : isGroup
+                  ? `Message au groupe ${conversation?.name || ''}...`
+                  : (t?.('forum.writeMessagePlaceholder') || 'Rédiger un message...')
+            }
             disabled={sending}
             className="theme-input text-xs font-bold py-2 bg-cordel-bg-light flex-1 min-w-0 resize-none max-h-32 overflow-y-auto min-h-[38px] leading-relaxed"
           />

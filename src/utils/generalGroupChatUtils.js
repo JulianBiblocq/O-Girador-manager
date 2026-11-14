@@ -1,6 +1,6 @@
 /**
- * Utilitaires de gestion de la conversation générale de groupe (« 💬 Tout le groupe »).
- * Garantit l'existence d'un salon de discussion instantanée façon WhatsApp
+ * Utilitaires de gestion de la discussion générale de groupe (« 💬 Le Zap »).
+ * Garantit l'existence d'un salon de discussion instantanée façon messagerie
  * réunissant automatiquement tous les membres actifs de l'association.
  */
 
@@ -31,7 +31,7 @@ export function getGeneralConversationId(groupId) {
 }
 
 /**
- * Vérifie si une conversation correspond au fil général de l'association.
+ * Vérifie si une conversation correspond au Zap général de l'association.
  */
 export function isGeneralGroupConversation(convOrId, groupId = '') {
   if (!convOrId) return false;
@@ -43,6 +43,26 @@ export function isGeneralGroupConversation(convOrId, groupId = '') {
   const targetGenId = getGeneralConversationId(groupId || convOrId.groupId || 'samambaia');
   const docId = String(convOrId.id || '').trim().toLowerCase();
   return Boolean(convOrId.isGeneralGroup || docId === targetGenId || docId.startsWith('general_'));
+}
+
+/**
+ * Surcharge propre à l'affichage pour remplacer les anciens titres (« 💬 Tout le groupe », etc.)
+ * par « 💬 Le Zap » sans casser les documents existants en base.
+ */
+export function resolveZapDisplayName(rawName, fallback = '💬 Le Zap') {
+  if (!rawName || typeof rawName !== 'string') return fallback;
+  const lower = rawName.toLowerCase();
+  if (
+    lower.includes('tout le groupe') ||
+    lower.includes('todo o grupo') ||
+    lower.includes('discussion générale') ||
+    lower.includes('discussão geral') ||
+    lower.includes('fil général') ||
+    lower.includes('en direct')
+  ) {
+    return fallback;
+  }
+  return rawName;
 }
 
 /**
@@ -89,7 +109,7 @@ export async function ensureGeneralGroupConversation({ userId, groupId, returnPa
             groupId: normalizedGroupId,
             type: 'group',
             isGeneralGroup: true,
-            name: '💬 Tout le groupe',
+            name: '💬 Le Zap',
             participantIds: allParticipants,
             adminIds: [userId],
             createdBy: userId,
@@ -105,7 +125,7 @@ export async function ensureGeneralGroupConversation({ userId, groupId, returnPa
             await updateDoc(convRef, {
               groupId: normalizedGroupId,
               isGeneralGroup: true,
-              name: data.name || '💬 Tout le groupe',
+              name: resolveZapDisplayName(data.name, '💬 Le Zap'),
               participantIds: arrayUnion(...(missingIds.length > 0 ? missingIds : [userId]))
             });
           }

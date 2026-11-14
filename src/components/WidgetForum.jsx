@@ -1,254 +1,196 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { collection, query, where, onSnapshot, limit } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, auth } from '../firebase';
 import CordelCard from './CordelCard';
-import CordelButton from './CordelButton';
-import { XiloChat, XiloMegaphone } from './XiloIcons';
 import { useTranslation } from './LanguageContext';
 import { canUserReadForumChannel } from '../utils/permissionUtils';
 import { resolveEffectiveUserTags } from '../utils/tagUtils';
-import WidgetGeneralChatLiveBox from './forum/WidgetGeneralChatLiveBox';
+import { countThreadUnreadMessages, getEffectiveReadThreads } from '../utils/forumUnreadUtils';
+import WidgetZapPanel from './forum/WidgetZapPanel';
+import WidgetPorteVoixPanel from './forum/WidgetPorteVoixPanel';
+
+const HOME_COMM_TAB_STORAGE_KEY = 'organizador_home_comm_tab';
 
 /**
- * Widget Porte-Voix de l'Accueil :
- * Affiche l'encart de discussion en direct ainsi que les derniers sujets de la communauté,
- * avec en-tête et cartes d'aperçu compactés sur mobile (< 768px).
+ * Conteneur maître duo interactif « 💬 Le Zap / 📢 Porte-Voix » sur la page d'accueil.
+ * - Sur PC (`>= 1024px` / `lg:`): 2 colonnes équilibrées (`lg:grid-cols-2`) côte à côte.
+ * - Sur Mobile (`< 1024px`): une seule `CordelCard` avec bascule tactile segmentée, swipe et pastilles de non-lus.
  */
-export default function WidgetForum({ groupId, profileData, breakGlassActive = false, tagsDisponibles = [], onOpen }) {
+export default function WidgetForum({
+  groupId,
+  user,
+  profileData,
+  breakGlassActive = false,
+  tagsDisponibles = [],
+  onOpen
+}) {
   const { t } = useTranslation();
   const [threads, setThreads] = useState([]);
   const [channels, setChannels] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [unreadZapCount, setUnreadZapCount] = useState(0);
+  const [localReadOverrides, setLocalReadOverrides] = useState({});
+  const hasAppliedUnreadPriorityRef = useRef(false);
+  const touchStartRef = useRef({ x: 0, y: 0 });
 
-  // Synchronisation des salons du groupe pour vérifier les droits d'accès
-  useEffect(() => {
-    if (!groupId) {
-      setChannels([]);
-      return;
+  const [activeMobileTab, setActiveMobileTab] = useState(() => {
+    try {
+      return localStorage.getItem(HOME_COMM_TAB_STORAGE_KEY) === 'porte-voix' ? 'porte-voix' : 'zap';
+    } catch {
+      return 'zap';
     }
-    const channelsRef = collection(db, 'forum_channels');
-    const qChan = query(channelsRef, where('groupId', '==', groupId));
-    const unsub = onSnapshot(qChan, (snap) => {
-      const list = [];
-      snap.forEach(d => list.push({ id: d.id, ...d.data() }));
-      setChannels(list);
-    }, (err) => {
-      if (err.code === 'permission-denied') {
-        console.warn("WidgetForum - Accès aux salons non autorisé ou en attente d'initialisation.");
-      } else {
-        console.error("WidgetForum - Erreur chargement salons :", err);
+  });
+
+  const handleUnreadZapChange = (count) => {
+    setUnreadZapCount(count);
+    if (!hasAppliedUnreadPriorityRef.current && count > 0) {
+      hasAppliedUnreadPriorityRef.current = true;
+      setActiveMobileTab('zap');
+    }
+  };
+
+  const handleSelectMobileTab = (tab) => {
+    hasAppliedUnreadPriorityRef.current = true;
+    setActiveMobileTab(tab);
+    try { localStorage.setItem(HOME_COMM_TAB_STORAGE_KEY, tab); } catch {}
+  };
+
+  useEffect(() => {
+    const onSingleRead = (e) => {
+      const { threadId, timestamp } = e.detail || {};
+      if (threadId && timestamp) setLocalReadOverrides((prev) => ({ ...prev, [threadId]: timestamp }));
+    };
+    const onAllRead = (e) => {
+      const { threadIds, timestamp } = e.detail || {};
+      if (Array.isArray(threadIds) && timestamp) {
+        setLocalReadOverrides((prev) => {
+          const next = { ...prev };
+          threadIds.forEach((id) => { if (id) next[id] = timestamp; });
+          return next;
+        });
       }
-    });
-    return () => unsub();
+    };
+    window.addEventListener('forum_thread_read', onSingleRead);
+    window.addEventListener('forum_all_threads_read', onAllRead);
+    return () => {
+      window.removeEventListener('forum_thread_read', onSingleRead);
+      window.removeEventListener('forum_all_threads_read', onAllRead);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!groupId) return;
+    const qChan = query(collection(db, 'forum_channels'), where('groupId', '==', groupId));
+    return onSnapshot(qChan, (snap) => {
+      const list = [];
+      snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
+      setChannels(list);
+    }, () => {});
   }, [groupId]);
 
-  const effectiveUserTags = useMemo(() => {
-    return resolveEffectiveUserTags(profileData?.tags || [], tagsDisponibles);
-  }, [profileData?.tags, tagsDisponibles]);
+  useEffect(() => {
+    if (!groupId) return;
+    const qThreads = query(collection(db, 'forum'), where('groupId', '==', groupId), limit(150));
+    return onSnapshot(qThreads, (snap) => {
+      const fetched = [];
+      snap.forEach((d) => fetched.push({ id: d.id, ...d.data() }));
+      fetched.sort((a, b) => new Date(b.derniereModification || b.dateCreation || 0) - new Date(a.derniereModification || a.dateCreation || 0));
+      setThreads(fetched);
+      setLoading(false);
+    }, () => setLoading(false));
+  }, [groupId]);
+
+  const activeChannels = useMemo(() => (groupId ? channels : []), [groupId, channels]);
+  const activeThreads = useMemo(() => (groupId ? threads : []), [groupId, threads]);
+  const isLoading = Boolean(groupId) && loading;
+
+  const effectiveUserTags = useMemo(() => resolveEffectiveUserTags(profileData?.tags || [], tagsDisponibles), [profileData?.tags, tagsDisponibles]);
 
   const allowedChannelIds = useMemo(() => {
     if (breakGlassActive) return null;
     const ids = new Set();
-    channels.forEach(ch => {
-      if (canUserReadForumChannel(ch, profileData, tagsDisponibles, effectiveUserTags, breakGlassActive)) {
-        ids.add(ch.id);
-      }
+    activeChannels.forEach((ch) => {
+      if (canUserReadForumChannel(ch, profileData, tagsDisponibles, effectiveUserTags, breakGlassActive)) ids.add(ch.id);
     });
     return ids;
-  }, [channels, profileData, tagsDisponibles, effectiveUserTags, breakGlassActive]);
+  }, [activeChannels, profileData, tagsDisponibles, effectiveUserTags, breakGlassActive]);
 
-  useEffect(() => {
-    if (!groupId) {
-      setThreads([]);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    const forumRef = collection(db, 'forum');
-    const q = query(forumRef, where('groupId', '==', groupId), limit(150));
-
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const fetchedThreads = [];
-      querySnapshot.forEach((doc) => {
-        fetchedThreads.push({
-          id: doc.id,
-          ...doc.data()
-        });
-      });
-
-      if (fetchedThreads.length > 0) {
-        const sorted = fetchedThreads.sort((a, b) => new Date(b.derniereModification || b.dateCreation) - new Date(a.derniereModification || a.dateCreation));
-        setThreads(sorted);
-      } else {
-        setThreads([]);
-      }
-      setLoading(false);
-    }, (error) => {
-      const isPermissionErr = error?.code === 'permission-denied' || error?.message?.toLowerCase().includes('permission');
-      if (isPermissionErr) {
-        console.warn("WidgetForum - Accès aux fils de discussion restreint ou en attente d'initialisation.");
-      } else {
-        console.error("WidgetForum - Erreur onSnapshot :", error);
-      }
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [groupId]);
-
-  // Discussions filtrées selon les permissions de salon du membre
   const visibleThreads = useMemo(() => {
-    if (breakGlassActive || !allowedChannelIds) return threads;
-    return threads.filter(t => {
-      if (t.channelId) {
-        return allowedChannelIds.has(t.channelId);
-      }
-      const ch = channels.find(c => c.name === (t.categorie || 'Général'));
-      if (ch) {
-        return allowedChannelIds.has(ch.id);
-      }
-      const catLower = (t.categorie || '').toLowerCase();
-      if (catLower === 'bureau') return false;
-      return true;
+    if (breakGlassActive || !allowedChannelIds) return activeThreads;
+    return activeThreads.filter((th) => {
+      if (th.channelId) return allowedChannelIds.has(th.channelId);
+      const ch = activeChannels.find((c) => c.name === (th.categorie || 'Général'));
+      if (ch) return allowedChannelIds.has(ch.id);
+      return (th.categorie || '').toLowerCase() !== 'bureau';
     });
-  }, [threads, allowedChannelIds, channels, breakGlassActive]);
+  }, [activeThreads, allowedChannelIds, activeChannels, breakGlassActive]);
 
-  const recentThreads = visibleThreads.slice(0, 3);
-  const displayCount = visibleThreads.length;
+  const currentUserId = user?.uid || auth?.currentUser?.uid || profileData?.uid || profileData?.id || '';
+  const effectiveReadThreads = useMemo(
+    () => ({ ...getEffectiveReadThreads(currentUserId, profileData?.readThreads), ...localReadOverrides }),
+    [currentUserId, profileData?.readThreads, localReadOverrides]
+  );
 
-  const formatDateShort = (dateStr) => {
-    if (!dateStr) return '';
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return '';
-    return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  const unreadThreadsCount = useMemo(
+    () => visibleThreads.filter((th) => countThreadUnreadMessages(th, currentUserId, effectiveReadThreads[th.id]) > 0).length,
+    [visibleThreads, currentUserId, effectiveReadThreads]
+  );
+
+  const handleOpenZap = (generalConvId) => { if (onOpen) onOpen({ conversationId: generalConvId, tab: 'groups' }); };
+
+  const handleTouchStart = (e) => {
+    const t0 = e.touches?.[0];
+    if (t0) touchStartRef.current = { x: t0.clientX, y: t0.clientY };
+  };
+
+  const handleTouchEnd = (e) => {
+    const t1 = e.changedTouches?.[0];
+    if (!t1) return;
+    const dx = t1.clientX - touchStartRef.current.x;
+    const dy = t1.clientY - touchStartRef.current.y;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+      handleSelectMobileTab(dx < 0 ? 'porte-voix' : 'zap');
+    }
   };
 
   return (
-    <CordelCard 
-      variant="default" 
-      useExtremeBorder={true} 
-      className="relative p-3.5 sm:p-4 select-none w-full"
-    >
-      {/* Simulateur de filigrane décoratif en arrière-plan */}
-      <div className="absolute -right-4 -bottom-4 opacity-[0.08] select-none pointer-events-none transform -rotate-12">
-        <XiloMegaphone size={96} className="text-cordel-wood" />
+    <div className="w-full select-none">
+      {/* 1. Vue PC (>= 1024px) : 2 colonnes équilibrées côte à côte */}
+      <div className="hidden lg:grid lg:grid-cols-2 lg:gap-6 w-full items-stretch">
+        <CordelCard variant="default" useExtremeBorder={true} className="relative p-4 w-full h-full flex flex-col">
+          <WidgetZapPanel groupId={groupId} user={user} profileData={profileData} isMobile={false} onOpenZap={handleOpenZap} onUnreadCountChange={handleUnreadZapChange} t={t} />
+        </CordelCard>
+
+        <CordelCard variant="default" useExtremeBorder={true} className="relative p-4 w-full h-full flex flex-col">
+          <WidgetPorteVoixPanel threads={visibleThreads} channels={activeChannels} loading={isLoading} isMobile={false} currentUserId={currentUserId} effectiveReadThreads={effectiveReadThreads} unreadThreadsCount={unreadThreadsCount} onOpenForum={() => onOpen && onOpen()} onOpenThread={(id) => onOpen && onOpen(id)} t={t} />
+        </CordelCard>
       </div>
 
-      <div className="flex flex-col gap-3 text-left w-full">
-        {/* Barre d'en-tête sur une seule ligne sur mobile */}
-        <div className="flex items-center justify-between w-full pb-2 border-b border-dashed border-cordel-master-dark/20 gap-2">
-          <div className="flex items-center gap-2 min-w-0 flex-1">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-cordel-master-dark text-cordel-bg-light border border-encre-noire flex items-center justify-center rounded-[6px_4px_8px_5px] shrink-0 select-none shadow-[1px_1px_0px_0px_#181716]">
-              <XiloChat size={15} className="text-cordel-bg-light" />
+      {/* 2. Vue Mobile / Tablette portrait (< 1024px) : carte unifiée avec bascule segmentée et swipe */}
+      <div className="lg:hidden w-full">
+        <CordelCard variant="default" useExtremeBorder={true} className="relative p-3.5 sm:p-4 w-full">
+          <div className="grid grid-cols-2 gap-1.5 p-1 mb-3 rounded-[6px_8px_6px_8px] bg-cordel-bg-light border-2 border-encre-noire">
+            <button type="button" onClick={() => handleSelectMobileTab('zap')} className={`py-1.5 px-2 rounded-[4px_6px_4px_5px] text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer transition-all ${activeMobileTab === 'zap' ? 'bg-[var(--color-cordel-vert)] text-white border border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]' : 'text-cordel-master-dark hover:bg-cordel-hover'}`}>
+              <span>💬 {t('widgetForum.zapTitle') || 'Le Zap'}</span>
+              {unreadZapCount > 0 && <span className="px-1.5 py-0.5 text-[9px] font-black rounded-full bg-red-600 text-white border border-white animate-pulse">{unreadZapCount}</span>}
+            </button>
+
+            <button type="button" onClick={() => handleSelectMobileTab('porte-voix')} className={`py-1.5 px-2 rounded-[4px_6px_4px_5px] text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer transition-all ${activeMobileTab === 'porte-voix' ? 'bg-cordel-wood text-white border border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]' : 'text-cordel-master-dark hover:bg-cordel-hover'}`}>
+              <span>📢 {t('widgetForum.porteVoixTab') || 'Porte-Voix'}</span>
+              {unreadThreadsCount > 0 && <span className="px-1.5 py-0.5 text-[9px] font-black rounded-full bg-red-600 text-white border border-white animate-pulse">{unreadThreadsCount}</span>}
+            </button>
+          </div>
+
+          <div onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} className="w-full">
+            <div className={activeMobileTab === 'zap' ? 'block' : 'hidden'}>
+              <WidgetZapPanel groupId={groupId} user={user} profileData={profileData} isMobile={true} onOpenZap={handleOpenZap} onUnreadCountChange={handleUnreadZapChange} t={t} />
             </div>
-            <div className="min-w-0">
-              <h3 className="text-xs uppercase font-black tracking-wider text-cordel-wood flex items-center gap-1.5 truncate">
-                <span>{t('widgetForum.title') || "Le Porte-Voix"}</span>
-                <span className="opacity-70 text-[10px] font-bold shrink-0">
-                  ({displayCount}<span className="hidden sm:inline"> {t('widgetForum.subjectCountLabel') || 'sujet'}{displayCount > 1 ? 's' : ''}</span>)
-                </span>
-              </h3>
-              <p className="hidden md:block text-[9px] font-semibold text-cordel-master-dark/70">
-                {t('widgetForum.subtitle') || "Dernières discussions & sujets de la communauté"}
-              </p>
+            <div className={activeMobileTab === 'porte-voix' ? 'block' : 'hidden'}>
+              <WidgetPorteVoixPanel threads={visibleThreads} channels={activeChannels} loading={isLoading} isMobile={true} currentUserId={currentUserId} effectiveReadThreads={effectiveReadThreads} unreadThreadsCount={unreadThreadsCount} onOpenForum={() => onOpen && onOpen()} onOpenThread={(id) => onOpen && onOpen(id)} t={t} />
             </div>
           </div>
-
-          <CordelButton 
-            variant="default" 
-            onClick={() => onOpen()}
-            className="text-[10px] px-2.5 sm:px-3 py-1 font-bold uppercase tracking-wider flex items-center gap-1 shrink-0"
-          >
-            <span className="md:hidden">Ouvrir →</span>
-            <span className="hidden md:inline">{t('widgetForum.openForum') || "💬 Ouvrir le Porte-Voix →"}</span>
-          </CordelButton>
-        </div>
-
-        {/* Encart prioritaire : En direct — Tout le groupe */}
-        <WidgetGeneralChatLiveBox
-          groupId={groupId}
-          onOpenGeneralChat={(generalConvId) =>
-            onOpen({ conversationId: generalConvId, tab: 'groups' })
-          }
-          t={t}
-        />
-
-        {/* Grille responsive des discussions (1 col sur mobile, 2 cols sur tablette, 3 cols sur PC) */}
-        {loading ? (
-          <div className="flex justify-center items-center py-6">
-            <span className="text-xs uppercase tracking-widest font-black animate-pulse opacity-60">⏳</span>
-          </div>
-        ) : recentThreads.length === 0 ? (
-          <div 
-            onClick={() => onOpen()}
-            className="p-4 border-2 border-dashed border-cordel-master-dark/20 rounded-[6px_10px_6px_8px] bg-white/40 text-center cursor-pointer hover:bg-white/60 transition-colors"
-          >
-            <p className="text-xs font-bold text-cordel-master-dark/70">
-              {t('widgetForum.noThreads') || "Aucun sujet dans le Porte-Voix pour le moment."}
-            </p>
-            <span className="text-[10px] text-cordel-wood font-extrabold uppercase mt-1 inline-block">
-              {t('widgetForum.startFirst') || "+ Lancer la première discussion"}
-            </span>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 w-full mt-0.5 p-1 overflow-visible">
-            {recentThreads.map((thread, index) => {
-              const replyCount = Array.isArray(thread.reponses) ? thread.reponses.length : 0;
-              const dateFormatted = formatDateShort(thread.derniereModification || thread.dateCreation);
-
-              return (
-                <div
-                  key={thread.id}
-                  onClick={() => onOpen(thread.id)}
-                  className={`p-2.5 sm:p-3 border-2 border-encre-noire rounded-[6px_10px_6px_8px] bg-cordel-bg-light shadow-[2px_2px_0px_0px_#181716] cursor-pointer hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3.5px_3.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] hover:bg-cordel-hover transition-all flex flex-col justify-between gap-1.5 ${
-                    index >= 1 ? 'hidden md:flex' : ''
-                  } ${index >= 2 ? 'hidden lg:flex' : ''}`}
-                  title={`Ouvrir le sujet: ${thread.titre}`}
-                >
-                  <div>
-                    <div className="flex items-center justify-between gap-1 mb-1">
-                      {thread.isPinned ? (
-                        <span className="text-[8px] font-black uppercase tracking-wider text-red-800 bg-red-100 border border-red-700/30 px-1.5 py-0.5 rounded">
-                          {t('widgetForum.pinned') || "📌 Épinglé"}
-                        </span>
-                      ) : thread.poll ? (
-                        <span className="text-[8px] font-extrabold uppercase tracking-wider text-amber-900 bg-amber-100 border border-amber-600/30 px-1.5 py-0.5 rounded truncate max-w-[120px]">
-                          {t('widgetForum.poll') || "📊 Sondage"}
-                        </span>
-                      ) : (
-                        <span className="text-[8px] font-extrabold uppercase tracking-wider text-cordel-wood bg-cordel-wood/10 border border-cordel-wood/20 px-1.5 py-0.5 rounded truncate max-w-[120px]">
-                          {t('widgetForum.discussion') || "💬 Discussion"}
-                        </span>
-                      )}
-
-                      {dateFormatted && (
-                        <span className="text-[8px] font-bold text-cordel-master-dark/60">
-                          {dateFormatted}
-                        </span>
-                      )}
-                    </div>
-
-                    <h4 className="text-xs font-black text-encre-noire line-clamp-2 leading-tight">
-                      {thread.titre}
-                    </h4>
-                  </div>
-
-                  {/* Ligne de l'auteur fusionnée avec le badge de réponses */}
-                  <div className="flex items-center justify-between gap-2 pt-1">
-                    <span className="text-[9.5px] font-semibold text-cordel-master-dark/80 truncate">
-                      {thread.auteurNom ? `✍️ ${thread.auteurNom}` : ''}
-                    </span>
-                    <span className="bg-cordel-wood/15 text-cordel-wood text-[8.5px] font-black px-2 py-0.5 rounded-full border border-cordel-wood/30 shrink-0">
-                      {replyCount} {t('widgetForum.replyCountSuffix') || "rép."} →
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+        </CordelCard>
       </div>
-    </CordelCard>
+    </div>
   );
 }

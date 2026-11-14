@@ -490,7 +490,8 @@ export const pt = {
     title: "Porta-Voz",
     subjectCountLabel: "tópico",
     subtitle: "Últimas discussões & tópicos da comunidade",
-    openForum: "💬 Abrir o Fórum",
+    openForum: "Abrir →",
+    openBtn: "Abrir →",
     noThreads: "Nenhum tópico no Porta-Voz no momento.",
     startFirst: "+ Iniciar a primeira discussão",
     pinned: "📌 Fixado",
@@ -498,9 +499,15 @@ export const pt = {
     discussion: "💬 Discussão",
     viewDiscussion: "Ver a discussão ➔",
     replyCountSuffix: "res.",
-    liveGeneralTitle: "💬 Ao vivo — Todo o grupo",
-    participateGeneralBtn: "💬 Participar / Compartilhar foto ou link",
-    liveGeneralEmpty: "Inicie a conversa geral: compartilhe uma informação, foto ou vídeo do YouTube com todo o grupo!"
+    liveGeneralTitle: "💬 O Zap",
+    participateGeneralBtn: "Abrir →",
+    liveGeneralEmpty: "Nenhuma mensagem no momento. Escreva a primeira mensagem no Zap!",
+    zapTitle: "O Zap",
+    zapSubtitle: "O bate-papo do grupo",
+    zapPlaceholder: "Escrever no Zap...",
+    porteVoixTab: "Porta-Voz",
+    sendPhotoTitle: "Enviar uma foto no Zap",
+    sendBtnTitle: "Enviar"
   },
   agendaFilter: {
     disciplineLabel: "Disciplina:",
@@ -1574,9 +1581,13 @@ export const pt = {
     btnChannels: "Canais",
     defaultChannelGeneral: "Geral",
     tabPrivateShort: "Privados",
-    generalDiscussionTitle: "Discussão Geral – Todo o grupo",
-    wholeAssociationBadge: "Toda a associação",
-    btnOpenGeneralThread: "Abrir o tópico geral →"
+    generalDiscussionTitle: "O Zap — O bate-papo do grupo",
+    wholeAssociationBadge: "O bate-papo do grupo",
+    btnOpenGeneralThread: "Abrir O Zap →",
+    zapTitle: "O Zap",
+    zapSubtitle: "O bate-papo do grupo",
+    zapPlaceholder: "Escrever no Zap...",
+    generalBannerEmptyDesc: "Compartilhe uma mensagem, foto ou link no Zap!"
   },
   studioSocial: {
     title: "Estúdio Redes Sociais",
@@ -7173,7 +7184,7 @@ export const pt = {
     subtitle: "Escolha onde publicar este conteúdo recebido do seu aparelho:",
     captionLabel: "Mensagem ou legenda (editável)",
     captionPlaceholder: "Adicione uma mensagem para o grupo...",
-    sendToGroupBtn: "💬 Enviar para Todo o grupo",
+    sendToGroupBtn: "Enviar no 💬 O Zap",
     hangOnVaralBtn: "🪢 Pendurar no Varal",
     publishMegaphoneBtn: "Publicar no Megafone",
     openLinkBtn: "Abrir o link"

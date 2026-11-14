@@ -135,6 +135,60 @@ export async function createOrOpenDirectConversation({
   return taskPromise;
 }
 
+export async function createGroupConversationDoc({
+  user,
+  groupId,
+  profileData,
+  name,
+  participantIds = [],
+  initialMessage = ''
+}) {
+  if (!user?.uid || !name?.trim()) return null;
+  const trimmedName = name.trim();
+  const allParticipants = Array.from(new Set([user.uid, ...participantIds]));
+  const nowIso = new Date().toISOString();
+  const senderFullName = profileData?.prenom
+    ? `${profileData.prenom} ${profileData.nom || ''}`.trim()
+    : user.displayName || 'Membre';
+
+  const groupData = {
+    groupId,
+    type: 'group',
+    name: trimmedName,
+    participantIds: allParticipants,
+    adminIds: [user.uid],
+    createdBy: user.uid,
+    createdAt: nowIso,
+    updatedAt: nowIso,
+    readStatus: { [user.uid]: nowIso }
+  };
+
+  if (initialMessage && initialMessage.trim()) {
+    groupData.lastMessage = {
+      content: initialMessage.trim(),
+      senderId: user.uid,
+      senderName: senderFullName,
+      timestamp: nowIso
+    };
+  }
+
+  const convRef = await addDoc(collection(db, 'conversations'), groupData);
+  if (initialMessage && initialMessage.trim()) {
+    await addDoc(collection(db, 'conversation_messages'), {
+      conversationId: convRef.id,
+      groupId,
+      participantIds: allParticipants,
+      senderId: user.uid,
+      senderName: senderFullName,
+      senderAvatar: profileData?.photoURL || user?.photoURL || '',
+      content: initialMessage.trim(),
+      timestamp: nowIso,
+      reactions: {}
+    });
+  }
+  return convRef.id;
+}
+
 export const addConversationParticipants = (id, ids = []) =>
   id && ids.length > 0 ? updateDoc(doc(db, 'conversations', id), { participantIds: arrayUnion(...ids), updatedAt: new Date().toISOString() }) : undefined;
 

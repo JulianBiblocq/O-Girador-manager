@@ -2,8 +2,9 @@ import React from 'react';
 import CordelButton from '../CordelButton';
 
 /**
- * Bannière d'accès prioritaire à la discussion générale « 💬 Tout le groupe »
- * affichée en haut du Porte-Voix quel que soit l'onglet actif.
+ * Bannière d'accès prioritaire épinglée « 💬 Le Zap — Le tchat de toute l'asso »
+ * affichée en haut du Porte-Voix (`Forum.jsx`) avec l'aperçu du dernier message
+ * et son badge de non-lus dédié.
  */
 export default function GeneralGroupBanner({ conversation, onOpenGeneralChat, t }) {
   const lastMsg = conversation?.lastMessage;
@@ -21,6 +22,16 @@ export default function GeneralGroupBanner({ conversation, onOpenGeneralChat, t 
     });
   })();
 
+  const bannerTitle =
+    t?.('forum.generalDiscussionTitle') && t('forum.generalDiscussionTitle') !== 'forum.generalDiscussionTitle'
+      ? t('forum.generalDiscussionTitle')
+      : "Le Zap — Le tchat de toute l'asso";
+
+  const openBtnLabel =
+    t?.('forum.btnOpenGeneralThread') && t('forum.btnOpenGeneralThread') !== 'forum.btnOpenGeneralThread'
+      ? t('forum.btnOpenGeneralThread')
+      : 'Ouvrir Le Zap →';
+
   return (
     <div
       onClick={onOpenGeneralChat}
@@ -35,11 +46,11 @@ export default function GeneralGroupBanner({ conversation, onOpenGeneralChat, t 
       className={`w-full p-3 sm:p-3.5 rounded-[6px_10px_6px_8px] border-2 border-encre-noire shadow-[2.5px_2.5px_0px_0px_#181716] cursor-pointer transition-all hover:translate-x-[-0.5px] hover:translate-y-[-0.5px] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 select-none ${
         isUnread
           ? 'bg-amber-100/90 dark:bg-amber-950/40'
-          : 'bg-[var(--cordel-bg-light,#fffcf5)] hover:bg-amber-50/70'
+          : 'bg-cordel-bg-light hover:bg-cordel-hover'
       }`}
     >
       <div className="flex items-start sm:items-center gap-2.5 min-w-0 flex-1 text-left">
-        <div className="w-9 h-9 rounded-full bg-[var(--color-cordel-vert,#2d6a4f)] text-white border-2 border-encre-noire flex items-center justify-center text-base shrink-0 shadow-xs relative">
+        <div className="w-9 h-9 rounded-full bg-[var(--color-cordel-vert)] text-white border-2 border-encre-noire flex items-center justify-center text-base shrink-0 shadow-xs relative">
           <span>💬</span>
           {isUnread && (
             <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-600 border border-white animate-pulse" />
@@ -49,32 +60,31 @@ export default function GeneralGroupBanner({ conversation, onOpenGeneralChat, t 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 flex-wrap">
             <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-encre-noire truncate">
-              💬 {t?.('forum.generalDiscussionTitle') || 'Discussion Générale – Tout le groupe'}
+              💬 {bannerTitle}
             </h3>
-            <span className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--color-cordel-vert,#2d6a4f)]/15 text-[var(--color-cordel-vert,#2d6a4f)] border border-[var(--color-cordel-vert,#2d6a4f)]/40">
-              🌐 {t?.('forum.wholeAssociationBadge') || "Toute l'association"}
-            </span>
             {isUnread && (
               <span className="text-[8px] font-black uppercase px-1.5 py-0.5 rounded-full bg-red-600 text-white animate-pulse">
-                {t?.('forum.newBadge') || 'Nouveau'}
+                {t?.('forum.newBadge') && t('forum.newBadge') !== 'forum.newBadge' ? t('forum.newBadge') : 'Nouveau'}
               </span>
             )}
           </div>
 
-          {lastMsg?.content ? (
-            <p className="text-[11px] font-semibold text-stone-700 dark:text-stone-300 truncate mt-0.5">
+          {lastMsg?.content || lastMsg?.imageUrl ? (
+            <p className="text-[11px] font-semibold text-cordel-master-dark truncate mt-0.5">
               <strong className="text-cordel-wood">
-                {lastMsg.senderName || 'Membre'} :
+                {(lastMsg.senderName || 'Membre').split(' ')[0]} :
               </strong>{' '}
-              {lastMsg.content}
+              {lastMsg.imageUrl && !lastMsg.content?.includes('📷') ? '📷 ' : ''}
+              {lastMsg.content || 'Photo'}
               {formattedTime && (
                 <span className="text-[9px] opacity-65 ml-1.5">• {formattedTime}</span>
               )}
             </p>
           ) : (
-            <p className="text-[11px] font-semibold text-stone-600 dark:text-stone-400 truncate mt-0.5">
-              {t?.('forum.generalBannerEmptyDesc') ||
-                'Échangez en direct, partagez des photos ou des vidéos YouTube avec tout le groupe !'}
+            <p className="text-[11px] font-semibold text-cordel-master-dark/75 truncate mt-0.5">
+              {t?.('forum.generalBannerEmptyDesc') && t('forum.generalBannerEmptyDesc') !== 'forum.generalBannerEmptyDesc'
+                ? t('forum.generalBannerEmptyDesc')
+                : "Partagez un mot, une photo ou un lien avec toute l'asso sur le Zap !"}
             </p>
           )}
         </div>
@@ -89,9 +99,8 @@ export default function GeneralGroupBanner({ conversation, onOpenGeneralChat, t 
         }}
         className="text-[10px] px-3 py-1.5 font-black uppercase tracking-wider shrink-0 w-full sm:w-auto justify-center"
       >
-        💬 {t?.('forum.btnOpenGeneralThread') || 'Ouvrir le fil général →'}
+        💬 {openBtnLabel}
       </CordelButton>
     </div>
   );
 }
-

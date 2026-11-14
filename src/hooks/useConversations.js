@@ -5,7 +5,6 @@ import {
   where,
   onSnapshot,
   doc,
-  addDoc,
   updateDoc,
   arrayRemove
 } from 'firebase/firestore';
@@ -13,10 +12,12 @@ import { db } from '../firebase';
 import {
   getGeneralConversationId,
   isGeneralGroupConversation,
-  ensureGeneralGroupConversation
+  ensureGeneralGroupConversation,
+  resolveZapDisplayName
 } from '../utils/generalGroupChatUtils';
 import {
   createOrOpenDirectConversation,
+  createGroupConversationDoc,
   addConversationParticipants,
   removeConversationParticipant
 } from '../utils/conversationActionsUtils';
@@ -25,13 +26,14 @@ import { deduplicateDirectConversations } from '../utils/directConversationDedup
 /**
  * Hook personnalisé useConversations
  * Synchronise en temps réel les discussions directes et de groupes multi-membres.
- * Garantit que le canal général `general_${groupId}` est toujours présent en tête de liste.
+ * Garantit que le canal « 💬 Le Zap » (`general_${groupId}`) est toujours présent en tête de liste.
  */
 export function useConversations(user, groupId, profileData) {
   const [conversations, setConversations] = useState([]);
   const [generalConvDoc, setGeneralConvDoc] = useState(null);
   const [loading, setLoading] = useState(true);
   const deletedDuplicateIdsRef = useRef(new Set());
+  const userUid = user?.uid || '';
 
   const normalizedGroupId = useMemo(
     () => String(groupId || profileData?.groupId || 'samambaia').trim().toLowerCase() || 'samambaia',
@@ -40,18 +42,13 @@ export function useConversations(user, groupId, profileData) {
 
   // 1. Synchronisation temps réel des conversations de l'utilisateur au sein du groupe
   useEffect(() => {
-    if (!user?.uid) {
-      setConversations([]);
-      setGeneralConvDoc(null);
-      setLoading(false);
-      return;
-    }
+    if (!userUid) return;
 
     const generalId = getGeneralConversationId(normalizedGroupId);
-    ensureGeneralGroupConversation({ userId: user.uid, groupId: normalizedGroupId });
+    ensureGeneralGroupConversation({ userId: userUid, groupId: normalizedGroupId });
 
     const convRef = collection(db, 'conversations');
-    const q = query(convRef, where('participantIds', 'array-contains', user.uid));
+    const q = query(convRef, where('participantIds', 'array-contains', userUid));
 
     const unsubscribeList = onSnapshot(
       q,
@@ -66,7 +63,7 @@ export function useConversations(user, groupId, profileData) {
         });
 
         // Dédoublonnage strict des fils 1-à-1 par interlocuteur et suppression silencieuse des doublons vides
-        const deduplicatedList = deduplicateDirectConversations(list, user.uid, deletedDuplicateIdsRef.current);
+        const deduplicatedList = deduplicateDirectConversations(list, userUid, deletedDuplicateIdsRef.current);
 
         deduplicatedList.sort((a, b) => {
           const isGenA = isGeneralGroupConversation(a, normalizedGroupId);
@@ -104,11 +101,11 @@ export function useConversations(user, groupId, profileData) {
       unsubscribeList();
       unsubscribeGeneral();
     };
-  }, [user?.uid, normalizedGroupId]);
+  }, [userUid, normalizedGroupId]);
 
   // 2. Calcul des statuts de lecture et garantie de présence du canal général en 1re position
   const { conversationsWithUnread, totalUnreadCount, unreadDirectCount, unreadGroupsCount } = useMemo(() => {
-    if (!user?.uid) {
+    if (!userUid) {
       return {
         conversationsWithUnread: [],
         totalUnreadCount: 0,
@@ -129,9 +126,9 @@ export function useConversations(user, groupId, profileData) {
 
     const list = mergedRaw.map((conv) => {
       const lastMsg = conv.lastMessage;
-      const lastReadIso = conv.readStatus?.[user.uid];
+      const lastReadIso = conv.readStatus?.[userUid];
       let isUnread = false;
-      if (lastMsg && lastMsg.senderId !== user.uid) {
+      if (lastMsg && lastMsg.senderId !== userUid) {
         isUnread = !lastReadIso || new Date(lastMsg.timestamp) > new Date(lastReadIso);
       }
 
@@ -150,20 +147,20 @@ export function useConversations(user, groupId, profileData) {
         groupId: normalizedGroupId,
         type: normalizedType,
         isGeneralGroup: isGen,
-        name: isGen ? (conv.name || '💬 Tout le groupe') : conv.name,
+        name: isGen ? resolveZapDisplayName(conv.name, '💬 Le Zap') : conv.name,
         isUnread
       };
     });
 
-    // Toujours garantir l'affichage du salon général en tête du Porte-Voix pour 100 % des membres connectés
+    // Toujours garantir l'affichage du Zap en tête du Porte-Voix pour 100 % des membres connectés
     if (generalId && !list.some((c) => c.id === generalId || c.isGeneralGroup)) {
       list.unshift({
         id: generalId,
         groupId: normalizedGroupId,
         type: 'group',
         isGeneralGroup: true,
-        name: '💬 Tout le groupe',
-        participantIds: [user.uid],
+        name: '💬 Le Zap',
+        participantIds: [userUid],
         isUnread: false
       });
     } else {
@@ -180,7 +177,7 @@ export function useConversations(user, groupId, profileData) {
       unreadDirectCount: directUnread,
       unreadGroupsCount: groupsUnread
     };
-  }, [conversations, generalConvDoc, user?.uid, normalizedGroupId]);
+  }, [conversations, generalConvDoc, userUid, normalizedGroupId]);
 
   const createDirectConversation = useCallback(
     (targetUserId, initialMessage = '') =>
@@ -196,65 +193,28 @@ export function useConversations(user, groupId, profileData) {
   );
 
   const createGroupConversation = useCallback(
-    async ({ name, participantIds = [], initialMessage = '' }) => {
-      if (!user?.uid || !name?.trim()) return null;
-      const trimmedName = name.trim();
-      const allParticipants = Array.from(new Set([user.uid, ...participantIds]));
-      const nowIso = new Date().toISOString();
-      const senderFullName = profileData?.prenom
-        ? `${profileData.prenom} ${profileData.nom || ''}`.trim()
-        : user.displayName || 'Membre';
-
-      const groupData = {
+    ({ name, participantIds = [], initialMessage = '' }) =>
+      createGroupConversationDoc({
+        user,
         groupId: normalizedGroupId,
-        type: 'group',
-        name: trimmedName,
-        participantIds: allParticipants,
-        adminIds: [user.uid],
-        createdBy: user.uid,
-        createdAt: nowIso,
-        updatedAt: nowIso,
-        readStatus: { [user.uid]: nowIso }
-      };
-
-      if (initialMessage && initialMessage.trim()) {
-        groupData.lastMessage = {
-          content: initialMessage.trim(),
-          senderId: user.uid,
-          senderName: senderFullName,
-          timestamp: nowIso
-        };
-      }
-
-      const convRef = await addDoc(collection(db, 'conversations'), groupData);
-      if (initialMessage && initialMessage.trim()) {
-        await addDoc(collection(db, 'conversation_messages'), {
-          conversationId: convRef.id,
-          groupId: normalizedGroupId,
-          participantIds: allParticipants,
-          senderId: user.uid,
-          senderName: senderFullName,
-          senderAvatar: profileData?.photoURL || user?.photoURL || '',
-          content: initialMessage.trim(),
-          timestamp: nowIso,
-          reactions: {}
-        });
-      }
-      return convRef.id;
-    },
+        profileData,
+        name,
+        participantIds,
+        initialMessage
+      }),
     [user, normalizedGroupId, profileData]
   );
 
   const markConversationAsRead = useCallback(
     async (conversationId) => {
-      if (!user?.uid || !conversationId) return;
+      if (!userUid || !conversationId) return;
       try {
         await updateDoc(doc(db, 'conversations', conversationId), {
-          [`readStatus.${user.uid}`]: new Date().toISOString()
+          [`readStatus.${userUid}`]: new Date().toISOString()
         });
       } catch {}
     },
-    [user?.uid]
+    [userUid]
   );
 
   const addParticipantsToGroup = useCallback(
@@ -269,14 +229,14 @@ export function useConversations(user, groupId, profileData) {
 
   const leaveGroup = useCallback(
     async (conversationId) => {
-      if (!user?.uid || !conversationId || String(conversationId).toLowerCase().startsWith('general_')) return;
+      if (!userUid || !conversationId || String(conversationId).toLowerCase().startsWith('general_')) return;
       await updateDoc(doc(db, 'conversations', conversationId), {
-        participantIds: arrayRemove(user.uid),
-        adminIds: arrayRemove(user.uid),
+        participantIds: arrayRemove(userUid),
+        adminIds: arrayRemove(userUid),
         updatedAt: new Date().toISOString()
       });
     },
-    [user?.uid]
+    [userUid]
   );
 
   const renameGroup = useCallback(

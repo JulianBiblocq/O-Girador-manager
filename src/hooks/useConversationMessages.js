@@ -17,7 +17,8 @@ import {
 import {
   getGeneralConversationId,
   isGeneralGroupConversation,
-  ensureGeneralGroupConversation
+  ensureGeneralGroupConversation,
+  resolveZapDisplayName
 } from '../utils/generalGroupChatUtils';
 import { isPushCooldownActive } from '../utils/forumThreadSyncUtils';
 import {
@@ -29,7 +30,7 @@ import {
 /**
  * Hook personnalisé useConversationMessages
  * Synchronise les messages d'une discussion active (directe ou de groupe) en temps réel.
- * Pour « 💬 Tout le groupe », résout systématiquement 100 % des membres actifs afin que
+ * Pour « 💬 Le Zap », résout systématiquement 100 % des membres actifs afin que
  * chaque membre reçoive la cloche interne (🔔) et la notification Push.
  */
 export function useConversationMessages(
@@ -137,7 +138,7 @@ export function useConversationMessages(
           ? Array.from(new Set([user.uid, ...participantIds]))
           : [user.uid];
 
-      // Pour « 💬 Tout le groupe », toujours fusionner avec 100 % des membres actifs du groupe
+      // Pour « 💬 Le Zap », toujours fusionner avec 100 % des membres actifs du groupe
       if (isGeneralGroup) {
         const [ensuredParticipants, allActiveUids] = await Promise.all([
           ensureGeneralGroupConversation({
@@ -212,8 +213,11 @@ export function useConversationMessages(
           const cleanSnippet =
             effectiveContent.length > 80 ? `${effectiveContent.slice(0, 80)}...` : effectiveContent;
           const notifType = isGroup ? NOTIFICATION_TYPES.CHAT_GROUP : NOTIFICATION_TYPES.CHAT_DIRECT;
+          const groupDisplayName = isGeneralGroup
+            ? resolveZapDisplayName(conversation?.name, '💬 Le Zap')
+            : (conversation?.name || 'Groupe');
           const notifTitle = isGroup
-            ? `👥 ${conversation?.name || (isGeneralGroup ? '💬 Tout le groupe' : 'Groupe')} : ${senderFullName}`
+            ? `👥 ${groupDisplayName} : ${senderFullName}`
             : `✉️ ${senderFullName}`;
           const targetUrl = isGroup
             ? `/app/forum?tab=groups&conversationId=${effectiveConversationId}`
