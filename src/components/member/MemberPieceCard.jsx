@@ -6,9 +6,8 @@ import PieceLyricsModal from './PieceLyricsModal';
 import PieceCultureModal from './PieceCultureModal';
 import PieceQuizModal from './PieceQuizModal';
 import SequencerAccessButtons from '../repertoire/SequencerAccessButtons';
+import RepertoireVocalActionsBar from '../repertoire/RepertoireVocalActionsBar';
 import { useTranslation } from '../LanguageContext';
-import { launchCantador } from '../../utils/trainingLauncher';
-import { isCantadorValidated } from '../../utils/repertoireMatcher';
 
 const COMFORT_LEVELS = [
   { level: 1, labelKey: 'pedagogy.modals.decouverte', icon: '🌱' },
@@ -35,7 +34,6 @@ export default function MemberPieceCard({
   const [isRevisionModalOpen, setIsRevisionModalOpen] = useState(false);
 
   if (!piece) return null;
-  const canTrainInCantador = isCantadorValidated(piece, piece.activeCantadorPack);
 
   return (
     <CordelCard id={`piece-card-${piece.id}`} variant="default" useExtremeBorder={true} className="p-0 overflow-hidden flex flex-col text-left transition-all border-2 border-encre-noire">
@@ -67,16 +65,7 @@ export default function MemberPieceCard({
 
             <SequencerAccessButtons piece={piece} sequenceurUrl={sequenceurUrl} profileData={profileData} />
 
-            {canTrainInCantador && (
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); launchCantador({ songId: piece.toadaDocId || piece.id, toadaId: piece.cantadorToadaId, mode: 'eleve', groupId }); }}
-                className="px-2.5 py-1 text-xs font-black rounded border border-orange-300 bg-orange-50 text-orange-950 hover:bg-orange-100 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs select-none"
-                title="Ouvrir Cantador en ligne"
-              >
-                <span>🎙️</span><span>{t('pedagogy.carnet.btnPracticeCantadorDirect') || t('repertoire.btnTrainVocalDirect') || 'Pratiquer dans Cantador'}</span>
-              </button>
-            )}
+            <RepertoireVocalActionsBar piece={piece} groupId={groupId} />
 
             <button
               type="button"

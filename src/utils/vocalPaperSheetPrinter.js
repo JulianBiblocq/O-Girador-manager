@@ -1,8 +1,8 @@
 /**
  * vocalPaperSheetPrinter.js
- * Impression A4 Paysage 100 % Noir & Blanc et Panier Multi-Feuilles de l'Atelier Papier du Chant depuis Organizador (< 115 lignes).
- * Toutes les 4 feuilles (Séquence, Patterns & Notes, Paroles & Rythme, Guide) sont en A4 Paysage avec @page { size: A4 landscape; margin: 7mm; }.
+ * Impression A4 dynamique (Paysage grilles d'écriture 5 modèles vs Portrait partitions/tablatures remplies) 100 % N&B dans Organizador (< 120 lignes).
  */
+import { renderOrganizadorTab4EPageInner } from './vocalSheetTab4ETemplate.js';
 
 const KEYBOARD_ROWS = [
   { key: 'G#', label: 'G#', isBlack: true }, { key: 'G', label: 'G', isBlack: false }, { key: 'F#', label: 'F#', isBlack: true },
@@ -16,13 +16,14 @@ function renderCornersAndCode(code, title, subtitle) {
   return `
     <div style="${sq}top:1mm;left:1mm;">■</div><div style="${sq}top:1mm;right:1mm;">■</div>
     <div style="${sq}bottom:1mm;left:1mm;">■</div><div style="${sq}bottom:1mm;right:1mm;">■</div>
-    <div style="height:5.5mm;max-height:6mm;border-bottom:1.8px solid #000000;padding-bottom:0.5mm;display:flex;justify-content:space-between;align-items:center;">
-      <div style="display:flex;align-items:baseline;gap:6px;overflow:hidden;white-space:nowrap;"><span style="font-size:8.8pt;font-weight:900;text-transform:uppercase;">${title}</span><span style="font-size:6pt;font-weight:700;">• ${subtitle}</span></div>
-      <span style="border:1.8px solid #000000;padding:0.5px 5px;font-family:monospace;font-size:7.5pt;font-weight:900;">[CODE: ${code}]</span>
+    <div style="height:5.5mm;max-height:6mm;border-bottom:1.8px solid #000000;padding:0 3mm 0.5mm 3mm;display:flex;justify-content:space-between;align-items:center;gap:8px;">
+      <div style="min-width:0;flex:1;display:flex;align-items:baseline;gap:6px;overflow:hidden;white-space:nowrap;"><span style="font-size:8.6pt;font-weight:900;text-transform:uppercase;flex-shrink:0;">${title}</span><span style="font-size:5.8pt;font-weight:700;overflow:hidden;text-overflow:ellipsis;">• ${subtitle}</span></div>
+      <span style="display:inline-block;white-space:nowrap;flex-shrink:0;border:1.8px solid #000000;padding:0.5px 5px;font-family:monospace;font-size:7.5pt;font-weight:900;background:#ffffff;color:#000000;">[CODE: ${code}]</span>
     </div>`;
 }
 
 export function renderOrganizadorSingleVocalPageInner(sheetType = 'sequence', meta = {}, options = {}) {
+  if (sheetType === 'tab_4e') return renderOrganizadorTab4EPageInner(meta, options);
   const titre = (meta.titre || '______________________').toUpperCase(), bpm = meta.bpmDefaut || '____', sig = meta.signature || '4/4';
   const startP = Number(options.startPatternNumber ?? 1);
   const isBlank = Boolean(options.blankPatternLabels || options.patternNumberingMode === 'blank');
@@ -53,21 +54,24 @@ export function renderOrganizadorSingleVocalPageInner(sheetType = 'sequence', me
     const blocks = Array.from({ length: 6 }, (_, idx) => `<div class="vocal-pattern-block" style="border:2px solid #000000;page-break-inside:avoid;break-inside:avoid;"><table><tr style="border-bottom:1.5px solid #000000;"><th style="width:14mm;height:4.5mm;border-right:2px solid #000000;line-height:1;"><span style="font-size:7.2pt;font-weight:900;">${isBlank ? '[P__]' : `[ P${startP + idx} ]`}</span><span style="font-size:4.8pt;display:block;">TEMPS</span></th>${blankTemps45}</tr><tr style="border-bottom:2px solid #000000;"><td style="width:14mm;height:5.5mm;font-size:5.3pt;font-weight:900;border-right:2px solid #000000;">RYTHME<br/>(───)</td>${rhythmCells}</tr><tr><td style="width:14mm;height:11mm;font-size:5.6pt;font-weight:900;border-right:2px solid #000000;">SYLLABES</td>${openSyls}</tr></table></div>`).join('');
     return `<div class="page vocal-print-page">${renderCornersAndCode('CHANT-RYTHME', 'FEUILLE 3 — PAROLES & RYTHME (A4 PAYSAGE • 8 TEMPS LIBRES / 32 SUBDIVISIONS)', `TITRE : ${titre} • TEMPS (1..4) • Trait RYTHME (───) • SYLLABES ouverte`)}<div style="display:flex;flex-direction:column;justify-content:flex-start;gap:2.5mm;">${blocks}</div></div>`;
   }
-  return `<div class="page vocal-print-page">${renderCornersAndCode('CHANT-GUIDE', "FEUILLE 4 — GUIDE & CONVENTIONS D'ÉCRITURE MANUSCRITE (A4 PAYSAGE)", 'Atelier Papier du Chant — O Girador (100 % Noir & Blanc)')}<div style="font-size:8.6pt;line-height:1.38;display:flex;flex-direction:column;justify-content:flex-start;gap:2.5mm;flex:1;"><div style="border:2px solid #000000;padding:7px;"><b>1. Grille Universelle A4 Paysage à 8 Temps Libres (32 subdivisions) :</b> Sur les Feuilles 2 (3 systèmes/page) et 3 (6 systèmes/page), inscrivez les numéros de temps dans la bande <b>TEMPS</b> : soit <b>2|3|4|1|2|3|4|1</b> (anacrouse + 1M + chute +T1), soit <b>1|2|3|4|1|2|3|4</b> (2M complètes). Même code P__ sur 2 lignes = fusion multi-mesures !</div><div style="border:2px solid #000000;padding:7px;"><b>2. Traits Horizontaux (───) & Bande SYLLABES ouverte :</b> Tracer un trait horizontal dans la ligne de note (ou la bande RYTHME 5.5mm) et écrire la syllabe en MAJUSCULES BÂTONS juste sous le début du trait. Tiret <b>-</b> = même mot • Apostrophe = élision (<b>E'O</b>).</div><div style="border:2px solid #000000;padding:7px;"><b>3. Clavier Piano Roll 1 Octave (A en bas ➔ G# en haut) & Bande OCT (3/4/5) :</b> Les notes montent du grave en bas (<b>A</b>, juste au-dessus de SYLLABES) vers l'aigu en haut (<b>G#</b>, sous OCT). 12 lignes ultra-compactes (1.8mm), lettres A B C D E F G seules.</div></div></div>`;
+  return `<div class="page vocal-print-page">${renderCornersAndCode('CHANT-GUIDE', "FEUILLE 4 — GUIDE & CONVENTIONS D'ÉCRITURE MANUSCRITE (A4 PAYSAGE)", 'Atelier Papier du Chant — O Girador (100 % Noir & Blanc)')}<div style="font-size:8.6pt;line-height:1.38;display:flex;flex-direction:column;justify-content:flex-start;gap:2.5mm;flex:1;"><div style="border:2px solid #000000;padding:7px;"><b>1. Grille Universelle A4 Paysage à 8 Temps Libres (32 subdivisions) :</b> Sur les Feuilles 2, 3 et 5, inscrivez les numéros de temps dans la bande <b>TEMPS</b> (ex: <b>2|3|4|1|2|3|4|1</b> ou <b>1|2|3|4|1|2|3|4</b>). Même code P__ sur 2 lignes = fusion multi-mesures !</div><div style="border:2px solid #000000;padding:7px;"><b>2. Traits Horizontaux (───), Soudures (/) & Bande SYLLABES :</b> Sur Feuille 5 (CHANT-TAB-4E), inscrivez les durées en subdivisions (ex: <b>4/4</b> pour lier 2 temps), la note ou <b>0</b> (silence), et les syllabes (tiret <b>-</b> = même mot, <b>_</b> = mélisme/tenue).</div><div style="border:2px solid #000000;padding:7px;"><b>3. Clavier Piano Roll 1 Octave (A en bas ➔ G# en haut) & Bande OCT (3/4/5) :</b> Les notes montent du grave en bas (<b>A</b>) vers l'aigu en haut (<b>G#</b>).</div></div></div>`;
 }
 
-export function wrapOrganizadorPagesInA4Landscape(innerPagesHtml) {
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"/><style>@page{size:A4 landscape;margin:7mm;}@media print{html,body{width:283mm;margin:0!important;padding:0!important;background:#ffffff!important;color:#000000!important;filter:grayscale(100%) contrast(105%)!important;-webkit-filter:grayscale(100%) contrast(105%)!important;color-scheme:only light!important;}}*{box-sizing:border-box;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}body{margin:0;background:#ffffff;color:#000000;font-family:Arial,sans-serif;filter:grayscale(100%) contrast(105%);}.page,.vocal-print-page{position:relative;width:283mm;max-width:283mm;height:196mm;max-height:196mm;margin:0 auto;padding:3.5mm 4.5mm;border:2px solid #000000;background:#ffffff;color:#000000;display:flex;flex-direction:column;justify-content:flex-start;gap:2mm;overflow:hidden;page-break-inside:avoid;break-inside:avoid;page-break-after:always;break-after:page;}.vocal-print-page:last-child,.page:last-child{page-break-after:auto!important;break-after:auto!important;}.hatch-bw{background-image:repeating-linear-gradient(45deg,#000000 0,#000000 1px,#ffffff 1px,#ffffff 3.5px)!important;}table{width:100%;border-collapse:collapse;table-layout:fixed;}th,td{border:1px solid #000000;text-align:center;padding:0;line-height:1;}</style></head><body>${innerPagesHtml}</body></html>`;
+export function wrapOrganizadorPagesInA4Landscape(innerPagesHtml, orientation = 'landscape') {
+  const isPortrait = orientation === 'portrait';
+  const sz = isPortrait ? 'A4 portrait' : 'A4 landscape', mg = isPortrait ? '8mm' : '7mm';
+  const pw = isPortrait ? '194mm' : '283mm', ph = isPortrait ? '281mm' : '196mm';
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"/><style>@page{size:${sz};margin:${mg};}@media print{html,body{width:${pw};margin:0!important;padding:0!important;background:#ffffff!important;color:#000000!important;filter:grayscale(100%) contrast(105%)!important;-webkit-filter:grayscale(100%) contrast(105%)!important;color-scheme:only light!important;}}*{box-sizing:border-box;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}body{margin:0;background:#ffffff;color:#000000;font-family:Arial,sans-serif;filter:grayscale(100%) contrast(105%);}.page,.vocal-print-page{position:relative;width:${pw};max-width:${pw};height:${ph};max-height:${ph};margin:0 auto;padding:3.5mm 4.5mm;border:2px solid #000000;background:#ffffff;color:#000000;display:flex;flex-direction:column;justify-content:flex-start;gap:2mm;overflow:hidden;page-break-inside:avoid;break-inside:avoid;page-break-after:always;break-after:page;}.vocal-print-page:last-child,.page:last-child{page-break-after:auto!important;break-after:auto!important;}.hatch-bw{background-image:repeating-linear-gradient(45deg,#000000 0,#000000 1px,#ffffff 1px,#ffffff 3.5px)!important;}table{width:100%;border-collapse:collapse;table-layout:fixed;}th,td{border:1px solid #000000;text-align:center;padding:0;line-height:1;}</style></head><body>${innerPagesHtml}</body></html>`;
 }
 
 export function buildOrganizadorVocalSheetHTML(sheetType = 'sequence', meta = {}, options = {}) {
-  return wrapOrganizadorPagesInA4Landscape(renderOrganizadorSingleVocalPageInner(sheetType, meta, options));
+  return wrapOrganizadorPagesInA4Landscape(renderOrganizadorSingleVocalPageInner(sheetType, meta, options), options.orientation || 'landscape');
 }
 
 export function buildOrganizadorVocalCartBatchHTML(cart = {}, meta = {}, options = {}) {
   const opts = typeof options === 'string' ? { patternNumberingMode: options } : (options || {});
   const clamp = (v) => Math.max(0, Math.min(20, Number(v || 0)));
-  const seq = clamp(cart.sequence), notes = clamp(cart.notes), rhythm = clamp(cart.rhythm), guide = clamp(cart.instructions);
+  const seq = clamp(cart.sequence), notes = clamp(cart.notes), rhythm = clamp(cart.rhythm), guide = clamp(cart.instructions), tab4e = clamp(cart.tab4e);
   const mode = opts.patternNumberingMode || (opts.blankPatternLabels ? 'blank' : 'continuous');
   const pages = [];
   let nextP = Number(opts.startPatternNumber ?? 1);
@@ -81,7 +85,11 @@ export function buildOrganizadorVocalCartBatchHTML(cart = {}, meta = {}, options
     if (mode === 'continuous') nextP += 6;
   }
   for (let i = 0; i < guide; i++) pages.push(renderOrganizadorSingleVocalPageInner('instructions', meta, opts));
-  return wrapOrganizadorPagesInA4Landscape(pages.join('\n'));
+  for (let i = 0; i < tab4e; i++) {
+    pages.push(renderOrganizadorSingleVocalPageInner('tab_4e', meta, { ...opts, patternsCount: 5, startPatternNumber: mode === 'continuous' ? nextP : 1, patternNumberingMode: mode, blankPatternLabels: mode === 'blank' }));
+    if (mode === 'continuous') nextP += 5;
+  }
+  return wrapOrganizadorPagesInA4Landscape(pages.join('\n'), 'landscape');
 }
 
 export function printOrganizadorHtmlDocument(html) {
