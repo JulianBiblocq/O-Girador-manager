@@ -2,8 +2,8 @@ import React from 'react';
 import CordelCard from '../CordelCard';
 import PieceAisanceSection from '../member/PieceAisanceSection';
 import PieceDirectionChallengesBar from './PieceDirectionChallengesBar';
-import { isCantadorValidated, resolvePieceTrainings } from '../../utils/repertoireMatcher';
-import { launchCantador } from '../../utils/trainingLauncher';
+import RepertoireVocalActionsBar from '../repertoire/RepertoireVocalActionsBar';
+import { resolvePieceTrainings } from '../../utils/repertoireMatcher';
 import { launchDancador } from '../../utils/dancadorLauncher';
 import { useTranslation } from '../LanguageContext';
 
@@ -31,14 +31,6 @@ export default function AisancePieceAccordionRow({
   const hasDance = Boolean(piece.activeChoreography || piece.dancadorChoreoId || piece.hasChoreography);
   const hasTraining = resolvePieceTrainings(piece, trainings).length > 0;
   const hasSignals = Boolean(piece.sinaisDoMestre?.length > 0 || piece.activeSinaisDoMestre?.length > 0);
-  const canOpenCantador = isCantadorValidated(piece, piece.activeCantadorPack);
-
-  const handleOpenCantador = () => launchCantador({
-    mode: 'eleve',
-    songId: piece.toadaDocId || piece.activeToada?.id || piece.id,
-    toadaId: piece.cantadorToadaId || piece.activeToada?.cantadorToadaId || undefined,
-    groupId
-  });
 
   const handleOpenDancador = () => {
     const choreoId = piece.dancadorChoreoId || piece.activeChoreography?.id || '';
@@ -116,9 +108,9 @@ export default function AisancePieceAccordionRow({
           )}
 
           <div className="flex flex-wrap items-center gap-2">
-            {canOpenCantador && <button type="button" onClick={handleOpenCantador} className="px-3 py-1.5 rounded text-[10px] font-black uppercase bg-[var(--color-cordel-ocre)] text-white border border-encre-noire cursor-pointer">🎙️ {t('pedagogy.carnet.btnPracticeCantadorDirect')}</button>}
-            {hasDance && <button type="button" onClick={handleOpenDancador} className="px-3 py-1.5 rounded text-[10px] font-black uppercase bg-purple-800 text-white border border-encre-noire cursor-pointer">💃 {t('pedagogy.carnet.btnSeeChoreography')}</button>}
-            {onRevisePiece && <button type="button" onClick={() => onRevisePiece(piece)} className="px-3 py-1.5 rounded text-[10px] font-black uppercase bg-[var(--color-cordel-vert)] text-white border border-encre-noire cursor-pointer">🎯 {t('pedagogy.carnet.btnReviseThisPiece')}</button>}
+            <RepertoireVocalActionsBar piece={piece} groupId={groupId} />
+            {hasDance && <button type="button" onClick={handleOpenDancador} className="px-3 py-1.5 rounded text-[10px] font-black uppercase bg-purple-800 text-white border border-encre-noire cursor-pointer">{t('pedagogy.carnet.btnSeeChoreography')}</button>}
+            {onRevisePiece && <button type="button" onClick={() => onRevisePiece(piece)} className="px-3 py-1.5 rounded text-[10px] font-black uppercase bg-[var(--color-cordel-vert)] text-white border border-encre-noire cursor-pointer">{t('pedagogy.carnet.btnReviseThisPiece')}</button>}
           </div>
 
           <PieceAisanceSection piece={piece} trainings={trainings} aisanceMap={aisanceMap} userId={userId} groupId={groupId} sequenceurUrl={sequenceurUrl} profileData={profileData} currentComfort={currentComfort} onComfortPromoted={onComfortPromoted} />

@@ -21,10 +21,11 @@ import { useDancadorChoreographies } from '../../hooks/useDancadorData';
 import { useRepertoireVaralDocs } from '../../hooks/useRepertoireVaralDocs';
 import { useCantadorToadas } from '../../hooks/useCantadorToadas';
 // openSequencerWithCrossApp remplacé par launchCrossApp / launchTrainingStage
-import { launchGlobalSequencer, launchCantador } from '../../utils/trainingLauncher';
+import { launchGlobalSequencer } from '../../utils/trainingLauncher';
 import { getEcosystemUrl } from '../../constants/ecosystemUrls'; // dancador.ogirador.fr via getEcosystemUrl
 import { launchCrossApp } from '../../utils/crossAppAuth';
 import PieceVideoSection from '../repertoire/PieceVideoSection';
+import RepertoireVocalActionsBar from '../repertoire/RepertoireVocalActionsBar';
 import BatchAssignVideoModal from '../repertoire/BatchAssignVideoModal';
 import MestreRepertoireHeader from './MestreRepertoireHeader';
 import { cleanFirestorePayload } from '../../utils/firestoreUtils';
@@ -96,13 +97,6 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
   const showToast = (msg) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(null), 4000);
-  };
-
-  // Ouverture de Cantador pour un morceau de chant avec pré-ciblage du morceau dans le Studio
-  const handleOpenVocalLabForPiece = (p) => {
-    const songId = p?.toadaDocId || p?.id || '';
-    const toadaId = p?.cantadorToadaId || '';
-    launchCantador({ songId, toadaId, mode: 'studio', groupId });
   };
 
   // Commutateur interactif d'ouverture du répertoire aux adhérents
@@ -608,19 +602,8 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                       </button>
                     )}
 
-                    {/* Badge Atelier Vocal pour les chants */}
-                    {(piece.cantadorToadaId || piece.type === 'song' || piece.typeMorceau === 'song' || piece.hasToada || Boolean(piece.toadaDocId || piece.toadaId || piece.activeToada)) && (
-                      <button
-                        type="button"
-                        onClick={() => handleOpenVocalLabForPiece(piece)}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-orange-50 hover:bg-orange-100 text-orange-950 border border-orange-300 transition-colors shadow-2xs cursor-pointer select-none"
-                        title={t('repertoire.tooltipVocalLab') || "Ouvrir l'Atelier Vocal en ligne"}
-                      >
-                        <span>🎙️</span>
-                        <span>{t('repertoire.vocalLabBadge') || "Atelier Vocal"}</span>
-                        <span className="text-[8px] opacity-70">↗</span>
-                      </button>
-                    )}
+                    {/* Actions vocales Cantador & Partition A4 */}
+                    <RepertoireVocalActionsBar piece={piece} groupId={groupId} isMestreView={true} compact={true} />
 
                     {(piece.hasChoreography && piece.activeChoreography) || piece.dancadorChoreoId ? (
                       <button
@@ -962,20 +945,8 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                       </CordelButton>
                     )}
 
-                    {/* Bouton rapide Atelier Vocal si le morceau est un chant */}
-                    {(piece.cantadorToadaId || piece.type === 'song' || piece.typeMorceau === 'song' || piece.hasToada || Boolean(piece.toadaDocId || piece.toadaId || piece.activeToada)) && (
-                      <CordelButton
-                        type="button"
-                        variant="default"
-                        useExtremeBorder={false}
-                        onClick={() => handleOpenVocalLabForPiece(piece)}
-                        className="py-1 px-2 text-[9.5px] uppercase tracking-wider font-black bg-orange-50 hover:bg-orange-100 border border-orange-300 text-orange-950 flex items-center gap-1 shrink-0"
-                        title={t('repertoire.tooltipVocalLab') || "Ouvrir l'Atelier Vocal en ligne"}
-                      >
-                        <span>🎙️</span>
-                        <span>{t('repertoire.vocalLabBadge') || "Atelier Vocal"}</span>
-                      </CordelButton>
-                    )}
+                    {/* Actions rapides Cantador & Partition A4 */}
+                    <RepertoireVocalActionsBar piece={piece} groupId={groupId} isMestreView={true} compact={true} />
 
                     {/* Bouton consultation Fiche Varal Culture liée ou passerelle de création */}
                     {piece.hasCulture ? (

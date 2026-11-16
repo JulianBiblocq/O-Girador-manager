@@ -1,18 +1,19 @@
 /**
  * VocalPaperOrganizadorModal.jsx
- * Modale « Atelier Papier du Chant (A4 Paysage 100 % N&B) » dans Organizador (< 138 lignes).
- * Panier d'impression multi-feuilles (quantités 0..20, mode [P__]/continu/par feuille, aperçu) et lecture optique multi-photos.
+ * Modale « Atelier Papier du Chant (5 feuilles A4 Paysage 100 % N&B) » dans Organizador (< 132 lignes).
+ * Conserve les 4 feuilles existantes + ajoute Feuille 5 : Tablature 4 Étages ([CODE: CHANT-TAB-4E]).
  */
 import React, { useState, useRef } from 'react';
 import { buildOrganizadorVocalSheetHTML, buildOrganizadorVocalCartBatchHTML, printOrganizadorHtmlDocument } from '../../../utils/vocalPaperSheetPrinter';
 import { scanVocalPaperMultiPhotos } from '../../../utils/vocalPaperToOrganizadorConverter';
 import { scanManuscriptSheet, saveScanApiKey, getScanApiKey } from '../../../utils/toadaManuscriptScannerService';
 
-const SHEETS = [
+export const ORGANIZADOR_VOCAL_SHEETS = [
   { key: 'sequence', id: 'sequence', code: 'CHANT-SEQ', title: 'Feuille 1 — Séquence (Pux / Cor)', desc: 'Grille large M1..M32 A4 Paysage (Pux / Cor) + Aide-mémoire P1..P10.' },
   { key: 'notes', id: 'notes_1m', code: 'CHANT-NOTES-1M', title: 'Feuille 2 — Patterns & Notes (Clavier + Syllabes)', desc: '3 systèmes A4 Paysage (8 temps libres) : Piano Roll A (en bas) ➔ G# (en haut), OCT (3/4/5) & SYLLABES ouverte.' },
   { key: 'rhythm', id: 'rhythm_only', code: 'CHANT-RYTHME', title: 'Feuille 3 — Paroles & Rythme seul', desc: '6 systèmes A4 Paysage (32 subdivisions) : bande TEMPS libre, RYTHME (5.5mm) + SYLLABES ouverte (11mm).' },
   { key: 'instructions', id: 'instructions', code: 'CHANT-GUIDE', title: 'Feuille 4 — Guide & Instructions', desc: 'Mémo illustré A4 Paysage : grille 8 temps libres, traits (───), tirets "-" et élisions.' },
+  { key: 'tab4e', id: 'tab_4e', code: 'CHANT-TAB-4E', title: 'Feuille 5 — Tablature 4 Étages', desc: '4 systèmes A4 Paysage (4 bandes : TEMPS / SUBDIVISIONS soudées "/" / NOTES ou 0 / SYLLABES et _).' },
 ];
 
 const PrintSvg = () => <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z" /></svg>;
@@ -20,18 +21,22 @@ const CamSvg = () => <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" f
 
 export default function VocalPaperOrganizadorModal({ isOpen, onClose, onApplyResult, tab1Lyrics = '', signature = '4/4', metadata = {}, initialTab = 'print', onOpenLegacyStylo }) {
   const [tab, setTab] = useState(initialTab), [photos, setPhotos] = useState([]), [scanMode, setScanMode] = useState('grid');
-  const [cart, setCart] = useState({ sequence: 1, notes: 3, rhythm: 1, instructions: 0 });
-  const [numberingMode, setNumberingMode] = useState('blank'), [previewSheet, setPreviewSheet] = useState(null);
+  const [cart, setCart] = useState({ sequence: 1, notes: 3, rhythm: 1, instructions: 0, tab4e: 0 });
+  const [numberingMode, setNumberingMode] = useState('blank'), [prefillTab4E, setPrefillTab4E] = useState(false), [previewSheet, setPreviewSheet] = useState(null);
   const [alsoFillVaral, setAlsoFillVaral] = useState(true), [isScanning, setIsScanning] = useState(false), [errorMsg, setErrorMsg] = useState(null);
   const [showKey, setShowKey] = useState(() => !getScanApiKey()), [keyDraft, setKeyDraft] = useState(() => getScanApiKey() || '');
   const fileRef = useRef(null);
   if (!isOpen) return null;
 
   const setQty = (k, v) => setCart((prev) => ({ ...prev, [k]: Math.max(0, Math.min(20, v)) }));
-  const totalPages = cart.sequence + cart.notes + cart.rhythm + cart.instructions;
+  const totalPages = cart.sequence + cart.notes + cart.rhythm + cart.instructions + (cart.tab4e || 0);
+  const prefillPatterns = tab1Lyrics
+    ? String(tab1Lyrics).replace(/<[^>]+>/g, ' ').split(/\r?\n/).map((l) => l.trim()).filter(Boolean).map((l, i) => ({ code: `P${i + 1}`, lyricsText: l }))
+    : [];
+  const printOpts = { patternNumberingMode: numberingMode, blankPatternLabels: numberingMode === 'blank', prefillFromProject: prefillTab4E, prefillPatterns };
 
   const handlePrintBatch = () => {
-    if (totalPages > 0) printOrganizadorHtmlDocument(buildOrganizadorVocalCartBatchHTML(cart, metadata, { patternNumberingMode: numberingMode, blankPatternLabels: numberingMode === 'blank' }));
+    if (totalPages > 0) printOrganizadorHtmlDocument(buildOrganizadorVocalCartBatchHTML(cart, metadata, printOpts));
   };
 
   const handleAddFiles = (e) => {
@@ -65,7 +70,7 @@ export default function VocalPaperOrganizadorModal({ isOpen, onClose, onApplyRes
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-3 overflow-y-auto">
       <div className="bg-[#fdfbf7] dark:bg-stone-900 rounded-lg shadow-2xl border-2 border-cordel-wood max-w-3xl w-full p-4 flex flex-col gap-2.5 text-left font-mono text-xs">
         <div className="flex items-center justify-between border-b-2 border-cordel-wood pb-2">
-          <div className="flex items-center gap-2 text-cordel-wood"><PrintSvg /><div><h3 className="text-sm font-black uppercase text-stone-900 dark:text-stone-100">Atelier Papier du Chant (A4 Paysage 100 % N&B)</h3><p className="text-[10.5px] text-stone-600 dark:text-stone-400">Panier d'impression A4 Paysage monochrome & lecture optique multi-pages</p></div></div>
+          <div className="flex items-center gap-2 text-cordel-wood"><PrintSvg /><div><h3 className="text-sm font-black uppercase text-stone-900 dark:text-stone-100">Atelier Papier du Chant (5 feuilles A4 Paysage 100 % N&B)</h3><p className="text-[10.5px] text-stone-600 dark:text-stone-400">Panier d'impression A4 Paysage monochrome & lecture optique multi-pages</p></div></div>
           <button type="button" onClick={onClose} className="px-2 py-0.5 rounded border border-stone-300 hover:bg-stone-100 font-bold cursor-pointer">✕</button>
         </div>
         <div className="flex flex-wrap gap-1.5 border-b border-stone-300 pb-2">
@@ -76,13 +81,14 @@ export default function VocalPaperOrganizadorModal({ isOpen, onClose, onApplyRes
         {tab === 'print' ? (
           <div className="space-y-2">
             <div className="p-2 rounded bg-stone-100 border border-stone-300 flex flex-wrap items-center justify-between gap-2 text-[11px] font-bold">
-              {[['blank', 'Laisser [ P__ ] vierge (numérotation libre à la main)'], ['continuous', 'Numéroter en continu sur tout le lot (P1..Pn)'], ['per_sheet', 'Numéroter P1..P3 par feuille']].map(([m, label]) => (
+              {[['blank', '[ P__ ] vierge'], ['continuous', 'Continu (P1..Pn)'], ['per_sheet', 'Par feuille']].map(([m, label]) => (
                 <label key={m} className="inline-flex items-center gap-1 cursor-pointer"><input type="radio" name="orgPatNum" checked={numberingMode === m} onChange={() => setNumberingMode(m)} /><span>{label}</span></label>
               ))}
+              <label className="inline-flex items-center gap-1 cursor-pointer"><input type="checkbox" checked={prefillTab4E} onChange={(e) => setPrefillTab4E(e.target.checked)} /><span>Pré-remplir paroles sur Feuille 5</span></label>
             </div>
             <div className="space-y-1.5">
-              {SHEETS.map((sh) => {
-                const qty = cart[sh.key];
+              {ORGANIZADOR_VOCAL_SHEETS.map((sh) => {
+                const qty = cart[sh.key] || 0;
                 return (
                   <div key={sh.id} className={`p-2 rounded border flex flex-wrap items-center justify-between gap-2 ${qty > 0 ? 'border-cordel-wood bg-amber-50/40' : 'border-stone-300 bg-white opacity-80'}`}>
                     <div className="min-w-[200px] flex-1"><div className="flex items-center gap-2 font-bold text-stone-900"><span>{sh.title}</span><span className="text-[9.5px] px-1 border border-stone-800 rounded">[{sh.code}]</span></div><p className="text-[10px] text-stone-600 mt-0.5">{sh.desc}</p></div>
@@ -95,7 +101,7 @@ export default function VocalPaperOrganizadorModal({ isOpen, onClose, onApplyRes
                 );
               })}
             </div>
-            {previewSheet && <div className="p-2 rounded border-2 border-cordel-wood bg-white space-y-1"><div className="flex items-center justify-between font-bold text-[11px]"><span>Aperçu A4 Paysage — {previewSheet}</span><button type="button" onClick={() => setPreviewSheet(null)} className="px-1.5 py-0.5 border border-stone-400 rounded cursor-pointer">Fermer</button></div><iframe title="Aperçu A4 Paysage" srcDoc={buildOrganizadorVocalSheetHTML(previewSheet, metadata, { patternNumberingMode: numberingMode, blankPatternLabels: numberingMode === 'blank' })} className="w-full h-56 border border-stone-400 rounded bg-white" /></div>}
+            {previewSheet && <div className="p-2 rounded border-2 border-cordel-wood bg-white space-y-1"><div className="flex items-center justify-between font-bold text-[11px]"><span>Aperçu A4 Paysage — {previewSheet}</span><button type="button" onClick={() => setPreviewSheet(null)} className="px-1.5 py-0.5 border border-stone-400 rounded cursor-pointer">Fermer</button></div><iframe title="Aperçu A4 Paysage" srcDoc={buildOrganizadorVocalSheetHTML(previewSheet, metadata, printOpts)} className="w-full h-56 border border-stone-400 rounded bg-white" /></div>}
             <div className="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-stone-300">
               {onOpenLegacyStylo ? <button type="button" onClick={() => { onClose(); onOpenLegacyStylo(); }} className="px-2.5 py-1 rounded border border-stone-400 bg-white font-bold cursor-pointer">Feuille Stylo pré-remplie</button> : <span className="text-[10.5px] font-bold">Format A4 Paysage • Monochrome strict</span>}
               <button type="button" disabled={totalPages <= 0} onClick={handlePrintBatch} className="px-3.5 py-1.5 rounded bg-cordel-wood text-white font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-40"><PrintSvg /><span>Imprimer le lot sélectionné ({totalPages} feuille{totalPages > 1 ? 's' : ''} A4 Paysage)</span></button>

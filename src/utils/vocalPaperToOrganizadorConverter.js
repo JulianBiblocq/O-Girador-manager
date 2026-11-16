@@ -4,6 +4,7 @@
  * directement en rawTxtCode ([1]..[4], _, *...*, ***...***, [PAUSE kM]) et parolesOriginales (<u> sur chaque syllabe) (< 130 lignes).
  */
 import { SCAN_MODELS, getScanApiKey, compressImageForScan } from './toadaManuscriptScannerService';
+import { decodeChantTab4EBlockForOrganizador } from './vocalSheetTab4ETemplate';
 
 export function underlineFirstSyllableLetter(syl = '') {
   const chars = Array.from(syl), idx = chars.findIndex((c) => /[\p{L}\p{N}]/u.test(c));
@@ -21,8 +22,8 @@ const isCellActive = (c) => Boolean(c && (c.isTie || (c.pitchKey && String(c.pit
 
 function normalizeAndMergeBlocks(blocks = []) {
   const merged = new Map();
-  for (const raw of blocks) {
-    let b = raw;
+  for (const rawIn of blocks) {
+    const raw = decodeChantTab4EBlockForOrganizador(rawIn); let b = raw;
     if (Array.isArray(raw?.beatNumbers) || Array.isArray(raw?.cells)) {
       const digits = Array.from({ length: 8 }, (_, i) => { const m = String(raw.beatNumbers?.[i] ?? '').match(/[1-4]/); return m ? Number(m[0]) : null; });
       const anc = digits.findIndex((v) => v !== null), beats = anc < 0 ? [1, 2, 3, 4, 1, 2, 3, 4] : digits.map((ex, c) => ex ?? ((((digits[anc] - 1) + (c - anc)) % 4 + 4) % 4 + 1));
@@ -127,7 +128,7 @@ export async function scanVocalPaperMultiPhotos(photoDataUrls = [], options = {}
   const apiKey = options.apiKey || getScanApiKey();
   if (!apiKey) return { success: false, error: "Clé d'accès requise pour la lecture optique", needsApiKey: true };
   const refBlock = options.referenceLyrics?.trim() ? `\nTEXTE OFFICIEL :\n"""\n${options.referenceLyrics.trim()}\n"""\n« Utilise obligatoirement les mots et syllabes du texte officiel fourni pour identifier chaque syllabe manuscrite, tout en respectant à 100 % les cases de temps/subdivisions où elles sont inscrites sur la grille. »` : '';
-  const prompt = `Tu es le moteur de lecture optique de l'Atelier Papier du Chant (O Girador). Analyse ces photos (CHANT-SEQ, CHANT-NOTES-1M/2M à 3 blocs/page, CHANT-RYTHME Paysage à 8 temps libres / 32 subdivisions). Sur CHANT-NOTES, les 12 lignes de notes montent du grave en bas (A, au-dessus de SYLLABES) vers l'aigu en haut (G#, sous OCT) : de haut en bas ["G#","G","F#","F","E","D#","D","C#","C","B","A#","A"].${refBlock}\nLis sequenceColumns:[{measureNumber,puxCode,corCode}], beatNumbers (8 chiffres de la bande TEMPS) et cells (stepIndex 0..31, durationSteps, pitchKey, syllable). Réponds UNIQUEMENT en JSON valide.`;
+  const prompt = `Tu es le moteur de lecture optique de l'Atelier Papier du Chant (O Girador). Analyse ces photos (CHANT-SEQ, CHANT-NOTES-1M/2M à 3 blocs/page, CHANT-RYTHME Paysage à 6 blocs/page, CHANT-TAB-4E à 4 étages TEMPS/SUBDIVISIONS/NOTES-0/SYLLABES). Sur CHANT-NOTES, les 12 lignes montent du grave en bas (A) vers l'aigu en haut (G#) : ["G#","G","F#","F","E","D#","D","C#","C","B","A#","A"]. Sur CHANT-TAB-4E, lis subdivisionLine (ex: "4/4 2 2"), notesLine et syllablesLine.${refBlock}\nLis sequenceColumns:[{measureNumber,puxCode,corCode}], beatNumbers et cells (stepIndex 0..31, durationSteps, pitchKey, syllable). Réponds UNIQUEMENT en JSON valide.`;
   const parts = [{ text: prompt }];
   for (const rawUrl of photoDataUrls) { const comp = await compressImageForScan(rawUrl); parts.push({ inline_data: { mime_type: 'image/jpeg', data: comp.replace(/^data:image\/\w+;base64,/, '') } }); }
   for (const model of SCAN_MODELS) {

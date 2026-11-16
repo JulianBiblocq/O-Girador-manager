@@ -2,8 +2,7 @@ import React from 'react';
 import SongCard from '../SongCard';
 import ErrorBoundary from '../ErrorBoundary';
 import { useTranslation } from '../LanguageContext';
-import { launchCantador } from '../../utils/trainingLauncher';
-import { isCantadorValidated } from '../../utils/repertoireMatcher';
+import RepertoireVocalActionsBar from '../repertoire/RepertoireVocalActionsBar';
 
 /**
  * Modale de consultation intégrale des Paroles / Toadas (< 95 lignes).
@@ -37,14 +36,9 @@ export default function PieceLyricsModal({
   }
 
   const songTitle = song.titre || piece?.titre || 'Chant';
-  const canTrainInCantador =
-    isCantadorValidated(piece, piece?.activeCantadorPack) || isCantadorValidated(song);
-
-  const handleTrainInCantador = () => {
-    const songId = song?.id || piece?.toadaDocId || piece?.id;
-    const toadaId = piece?.cantadorToadaId || song?.cantadorToadaId || '';
-    launchCantador({ songId, toadaId, mode: 'eleve', groupId });
-  };
+  const isMestreRole = Boolean(
+    profileData?.canWriteCantador || ['mestre', 'admin', 'super-admin'].includes(profileData?.role)
+  );
 
   return (
     <ErrorBoundary compact title="Paroles du Morceau">
@@ -54,23 +48,11 @@ export default function PieceLyricsModal({
         <div className="w-full flex justify-between items-center gap-3 p-3 sm:p-4 bg-stone-100/90 border-b-2 border-dashed border-cordel-master-dark/20 shrink-0">
           <div className="flex-1 min-w-0 pr-2">
             <span className="text-xs sm:text-sm font-black uppercase text-cordel-wood tracking-wider break-words block">
-              🗣️ {t('repertoire.lyricsTitle') || t('pedagogy.modals.parolesDuMorceau')} — {songTitle}
+              {t('repertoire.lyricsTitle') || t('pedagogy.modals.parolesDuMorceau')} — {songTitle}
             </span>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            {canTrainInCantador && (
-              <button
-                type="button"
-                onClick={handleTrainInCantador}
-                className="px-2.5 py-1 text-xs font-black uppercase rounded bg-orange-50 hover:bg-orange-100 text-orange-950 border border-orange-300 shadow-2xs transition-colors cursor-pointer flex items-center gap-1.5 select-none"
-                title={t('repertoire.tooltipTrainInCantador') || "S'entraîner dans Cantador"}
-              >
-                <span>🎙️</span>
-                <span className="hidden sm:inline">{t('repertoire.trainInCantador') || "S'entraîner dans Cantador"}</span>
-                <span className="sm:hidden">Cantador</span>
-                <span className="text-[9px] opacity-70">↗</span>
-              </button>
-            )}
+            <RepertoireVocalActionsBar piece={piece} toadaDoc={song} groupId={groupId} isMestreView={isMestreRole} />
             <button
               type="button"
               onClick={onClose}
