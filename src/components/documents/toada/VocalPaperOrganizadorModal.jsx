@@ -13,7 +13,7 @@ export const ORGANIZADOR_VOCAL_SHEETS = [
   { key: 'notes', id: 'notes_1m', code: 'CHANT-NOTES-1M', title: 'Feuille 2 — Patterns & Notes (Clavier + Syllabes)', desc: '3 systèmes A4 Paysage (8 temps libres) : Piano Roll A (en bas) ➔ G# (en haut), OCT (3/4/5) & SYLLABES ouverte.' },
   { key: 'rhythm', id: 'rhythm_only', code: 'CHANT-RYTHME', title: 'Feuille 3 — Paroles & Rythme seul', desc: '6 systèmes A4 Paysage (32 subdivisions) : bande TEMPS libre, RYTHME (5.5mm) + SYLLABES ouverte (11mm).' },
   { key: 'instructions', id: 'instructions', code: 'CHANT-GUIDE', title: 'Feuille 4 — Guide & Instructions', desc: 'Mémo illustré A4 Paysage : grille 8 temps libres, traits (───), tirets "-" et élisions.' },
-  { key: 'tab4e', id: 'tab_4e', code: 'CHANT-TAB-4E', title: 'Feuille 5 — Tablature 4 Étages', desc: '4 systèmes A4 Paysage (4 bandes : TEMPS / SUBDIVISIONS soudées "/" / NOTES ou 0 / SYLLABES et _).' },
+  { key: 'tab4e', id: 'tab_4e', code: 'CHANT-TAB-4E', title: 'Feuille 5 — Tablature 4 Étages', desc: '5 systèmes A4 Paysage (4 bandes : TEMPS / SUBDIV. 4, 2+2, 4/4 / NOTES ou 0 / SYLLABES et _).' },
 ];
 
 const PrintSvg = () => <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z" /></svg>;
@@ -96,9 +96,9 @@ export default function VocalPaperOrganizadorModal({ isOpen, onClose, onApplyRes
                   <div key={sh.id} className={`p-2 rounded border-2 flex flex-wrap items-center justify-between gap-2 transition-colors ${cardCls}`}>
                     <div className="min-w-[200px] flex-1"><div className="flex items-center gap-2 font-bold"><span>{sh.title}</span><span className={`text-[9.5px] px-1 border rounded font-bold ${badgeCls}`}>[{sh.code}]</span></div><p className={`text-[10px] mt-0.5 ${active ? 'text-[#4a3b31] dark:text-[#cbbba0]' : 'text-[#5c4b3e] dark:text-[#9c8c76]'}`}>{sh.desc}</p></div>
                     <div className="flex items-center gap-1.5 select-none">
-                      <div className="inline-flex items-center border border-[#9a3412]/40 dark:border-[#5c4333] rounded overflow-hidden bg-[#faf5e8] dark:bg-[#16120e] text-[#1c1613] dark:text-[#f5ebd6]"><button type="button" onClick={() => setQty(sh.key, qty - 1)} className="px-2 py-0.5 font-black hover:bg-[#e5d5b5] dark:hover:bg-[#36281f] cursor-pointer">-</button><span className="w-7 text-center font-black">{qty}</span><button type="button" onClick={() => setQty(sh.key, qty + 1)} className="px-2 py-0.5 font-black hover:bg-[#e5d5b5] dark:hover:bg-[#36281f] cursor-pointer">+</button></div>
-                      {[0, 1, 3, 6].map((p) => <button key={p} type="button" onClick={() => setQty(sh.key, p)} className={`px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer ${qty === p ? BTN_ACT : BTN_IDLE}`}>{p}</button>)}
-                      <button type="button" onClick={() => setPreviewSheet(previewSheet === sh.id ? null : sh.id)} className={`px-2 py-0.5 rounded font-bold cursor-pointer ${BTN_IDLE}`}>Aperçu</button>
+                      <div className="inline-flex items-center border border-[#9a3412]/40 dark:border-[#5c4333] rounded overflow-hidden bg-[#faf5e8] dark:bg-[#16120e] text-[#1c1613] dark:text-[#f5ebd6]"><button type="button" onClick={() => setQty(sh.key, qty - 1)} className="select-none px-2 py-0.5 font-black hover:bg-[#e5d5b5] dark:hover:bg-[#36281f] cursor-pointer">-</button><span className="select-none w-7 text-center font-black">{qty}</span><button type="button" onClick={() => setQty(sh.key, qty + 1)} className="select-none px-2 py-0.5 font-black hover:bg-[#e5d5b5] dark:hover:bg-[#36281f] cursor-pointer">+</button></div>
+                      {[0, 1, 3, 6].map((p) => <button key={p} type="button" onClick={() => setQty(sh.key, p)} className={`select-none px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer ${qty === p ? BTN_ACT : BTN_IDLE}`}>{p}</button>)}
+                      <button type="button" onClick={() => setPreviewSheet(previewSheet === sh.id ? null : sh.id)} className={`select-none px-2 py-0.5 rounded font-bold cursor-pointer ${BTN_IDLE}`}>Aperçu</button>
                     </div>
                   </div>
                 );

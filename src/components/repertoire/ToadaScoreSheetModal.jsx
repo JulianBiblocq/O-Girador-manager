@@ -12,8 +12,8 @@ import { renderFilledVocalTabPortraitHTML } from '../../utils/vocal-score/filled
 import { exportTwoStaffMusicXml, triggerMusicXmlDownload } from '../../utils/vocal-score/musicXmlTwoStaffExporter';
 import { printOrganizadorHtmlDocument } from '../../utils/vocalPaperSheetPrinter';
 
-const PILL_IDLE = 'bg-[#faf5e8] dark:bg-[#16120e] text-[#1c1613] dark:text-[#cbbba0] border-[#bfa98a] dark:border-[#4a392d] hover:bg-[#e5d5b5] dark:hover:bg-[#2a1f18]';
-const PILL_ACT = 'bg-[#9a3412] dark:bg-[#c2410c] text-white border-[#9a3412] dark:border-[#c2410c]';
+const PILL_IDLE = 'select-none bg-[#faf5e8] dark:bg-[#16120e] text-[#1c1613] dark:text-[#cbbba0] border-[#bfa98a] dark:border-[#4a392d] hover:bg-[#e5d5b5] dark:hover:bg-[#2a1f18]';
+const PILL_ACT = 'select-none bg-[#9a3412] dark:bg-[#c2410c] text-white border-[#9a3412] dark:border-[#c2410c]';
 
 export default function ToadaScoreSheetModal({ isOpen, onClose, piece = null, toadaDoc = null, groupId = null }) {
   const { t, locale } = useTranslation();

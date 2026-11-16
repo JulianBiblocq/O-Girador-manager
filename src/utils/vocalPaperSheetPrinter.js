@@ -16,9 +16,9 @@ function renderCornersAndCode(code, title, subtitle) {
   return `
     <div style="${sq}top:1mm;left:1mm;">■</div><div style="${sq}top:1mm;right:1mm;">■</div>
     <div style="${sq}bottom:1mm;left:1mm;">■</div><div style="${sq}bottom:1mm;right:1mm;">■</div>
-    <div style="height:5.5mm;max-height:6mm;border-bottom:1.8px solid #000000;padding-bottom:0.5mm;display:flex;justify-content:space-between;align-items:center;">
-      <div style="display:flex;align-items:baseline;gap:6px;overflow:hidden;white-space:nowrap;"><span style="font-size:8.8pt;font-weight:900;text-transform:uppercase;">${title}</span><span style="font-size:6pt;font-weight:700;">• ${subtitle}</span></div>
-      <span style="border:1.8px solid #000000;padding:0.5px 5px;font-family:monospace;font-size:7.5pt;font-weight:900;">[CODE: ${code}]</span>
+    <div style="height:5.5mm;max-height:6mm;border-bottom:1.8px solid #000000;padding:0 3mm 0.5mm 3mm;display:flex;justify-content:space-between;align-items:center;gap:8px;">
+      <div style="min-width:0;flex:1;display:flex;align-items:baseline;gap:6px;overflow:hidden;white-space:nowrap;"><span style="font-size:8.6pt;font-weight:900;text-transform:uppercase;flex-shrink:0;">${title}</span><span style="font-size:5.8pt;font-weight:700;overflow:hidden;text-overflow:ellipsis;">• ${subtitle}</span></div>
+      <span style="display:inline-block;white-space:nowrap;flex-shrink:0;border:1.8px solid #000000;padding:0.5px 5px;font-family:monospace;font-size:7.5pt;font-weight:900;background:#ffffff;color:#000000;">[CODE: ${code}]</span>
     </div>`;
 }
 
@@ -86,8 +86,8 @@ export function buildOrganizadorVocalCartBatchHTML(cart = {}, meta = {}, options
   }
   for (let i = 0; i < guide; i++) pages.push(renderOrganizadorSingleVocalPageInner('instructions', meta, opts));
   for (let i = 0; i < tab4e; i++) {
-    pages.push(renderOrganizadorSingleVocalPageInner('tab_4e', meta, { ...opts, startPatternNumber: mode === 'continuous' ? nextP : 1, patternNumberingMode: mode, blankPatternLabels: mode === 'blank' }));
-    if (mode === 'continuous') nextP += 4;
+    pages.push(renderOrganizadorSingleVocalPageInner('tab_4e', meta, { ...opts, patternsCount: 5, startPatternNumber: mode === 'continuous' ? nextP : 1, patternNumberingMode: mode, blankPatternLabels: mode === 'blank' }));
+    if (mode === 'continuous') nextP += 5;
   }
   return wrapOrganizadorPagesInA4Landscape(pages.join('\n'), 'landscape');
 }
