@@ -17,7 +17,8 @@ async function generate() {
   const canvas = createCanvas(size, size);
   const ctx = canvas.getContext('2d');
   
-  drawSealNeutralFrame(ctx, size, '#f4ecd8', '#8B2A1A', '#c05621', '#181716');
+  const matrice = await loadImage(path.resolve('public/brandings/organizador-matrice.png'));
+  drawSealNeutralFrame(ctx, size, matrice);
   drawSealLogoCenter(ctx, size, img);
   
   const png = canvas.toBuffer('image/png');

@@ -65,12 +65,12 @@ export default function EcosystemAppLauncher({ urls, associationData, currentGro
   const effectiveGroupId = currentGroupId || associationData?.id || associationData?.groupId || '';
 
   const apps = [
-    { key: 'vitrine', url: getVitrineUrl(urls, associationData, effectiveGroupId), img: '/ecosystem/logo-mostrador.png', label: 'Mostrador', subtitle: t('navigation.mostradorSubtitle') || 'Site vitrine public', isPublic: true, enabled: true },
+    { key: 'vitrine', url: getVitrineUrl(urls, associationData, effectiveGroupId), img: '/ecosystem/mostrador.png', label: 'Mostrador', subtitle: t('navigation.mostradorSubtitle') || 'Site vitrine public', isPublic: true, enabled: true },
     { key: 'sequenciador', url: getEcosystemUrl('sequenciador'), img: '/ecosystem/sequenciador.png', label: 'Sequenciador', subtitle: t('navigation.sequenciadorSubtitle') || 'Partitions & Rythmes', isPublic: false, enabled: true },
-    { key: 'dancador', url: getEcosystemUrl('dancador'), img: '/ecosystem/dancador-logo.png', label: 'Dançador', subtitle: t('navigation.dancadorSubtitle') || 'Atelier chorégraphique', isPublic: false, enabled: true },
-    { key: 'cantador', url: getEcosystemUrl('cantador'), img: '/ecosystem/cantador-logo.svg', label: 'Cantador', subtitle: t('navigation.cantadorSubtitle') || 'Atelier vocal & Toadas', isPublic: false, enabled: true },
+    { key: 'dancador', url: getEcosystemUrl('dancador'), img: '/ecosystem/dancador.png', label: 'Dançador', subtitle: t('navigation.dancadorSubtitle') || 'Atelier chorégraphique', isPublic: false, enabled: true },
+    { key: 'cantador', url: getEcosystemUrl('cantador'), img: '/ecosystem/cantador.png', label: 'Cantador', subtitle: t('navigation.cantadorSubtitle') || 'Atelier vocal & Toadas', isPublic: false, enabled: true },
     { key: 'afinador', url: getEcosystemUrl('afinador'), img: '', label: 'Afinador', subtitle: 'Accordeur acoustique', isPublic: false, enabled: false, comingSoon: true },
-    { key: 'hub', url: getEcosystemUrl('hub'), img: '/ecosystem/hub-logo.png', label: 'Orquestrador', subtitle: t('navigation.orquestradorSubtitle') || 'Portail central O Girador', isPublic: false, enabled: true }
+    { key: 'hub', url: getEcosystemUrl('hub'), img: '/ecosystem/orquestrador.png', label: 'Orquestrador', subtitle: t('navigation.orquestradorSubtitle') || 'Portail central O Girador', isPublic: false, enabled: true }
   ].filter(app => app.enabled !== false);
 
   // Recalcul géométrique précis et clamping strict dans le viewport

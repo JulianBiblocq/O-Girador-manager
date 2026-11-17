@@ -18,7 +18,8 @@ console.log('✅ Contrainte Anti-Monolithe (< 200 lignes) : RESPECTÉE');
 // 2. Vérification des éléments fonctionnels clés du hook
 assert.ok(hookContent.includes("crossOrigin = 'anonymous'"), 'crossOrigin anonymous doit être présent');
 assert.ok(hookContent.includes('128'), 'Le canvas 128x128 doit être configuré');
-assert.ok(hookContent.includes('ctx.clip()'), 'Le masque de clip circulaire doit être utilisé');
+assert.ok(hookContent.includes('loadMatriceImage') && hookContent.includes('drawSealNeutralFrame'), 'Le fond Matrice organizador-matrice.png doit être utilisé (sans cercle procédural)');
+assert.ok(!hookContent.includes('ctx.arc('), 'Aucun cercle procédural dans le hook');
 assert.ok(hookContent.includes('toDataURL'), 'L\'export en dataURL doit être présent');
 assert.ok(hookContent.includes('isMounted'), 'Le drapeau isMounted de sécurisation asynchrone doit être présent');
 assert.ok(hookContent.includes('apple-touch-icon'), 'Le support de apple-touch-icon doit être présent');

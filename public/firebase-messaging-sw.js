@@ -99,7 +99,8 @@ messaging.onBackgroundMessage((payload) => {
                || payload.data?.icon 
                || '/icon-192x192.png';
 
-  const badgeUrl = '/badge-72x72.png';
+  // Badge monochrome (blanc + alpha) pour la barre d'état Android ; icon reste en couleur pour le volet déroulé
+  const badgeUrl = '/badge-notif.png';
 
   // Tag déterministe (`notif_${eventId || queueDocId}`) pour fusionner tout doublon éventuel
   const tag = payload.data?.tag || (payload.data?.eventId ? `notif_${payload.data.eventId}` : (payload.data?.notifId ? `notif_${payload.data.notifId}` : (payload.data?.announcementId ? `notif_${payload.data.announcementId}` : (payload.data?.threadId ? `notif_${payload.data.threadId}` : undefined))));

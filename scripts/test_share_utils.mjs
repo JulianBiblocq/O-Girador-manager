@@ -41,9 +41,11 @@ console.log('✅ Test 2 validé : Paramètres et texte d\'invitation corrects.')
 
 // 3. Test de génération du Canvas Sceau Combiné en Node
 const canvasFactory = (w, h) => createCanvas(w, h);
+const matriceImage = await loadImage(path.resolve('public/brandings/organizador-matrice.png'));
 const result = await generateCombinedSealCanvas(mockAssocSambabulles, {
   size: 512,
-  canvasFactory
+  canvasFactory,
+  matriceImage
 });
 
 assert.ok(result.canvas, 'Canvas présent');

@@ -7,6 +7,7 @@ import { canonicalizeGroupId } from './tenantUtils.js';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { doc, setDoc } from 'firebase/firestore';
 import { db, storage } from '../firebase.js';
+import { MATRICE_ZONE, loadMatriceImage, drawSealMatrice, drawSealLogoZone } from './sealMatrice.js';
 
 /**
  * Extrait les initiales d'un nom d'association (ex: "Samb'à Bulles" -> "SB", "Samambaia" -> "SA").
@@ -27,114 +28,18 @@ export function getAssociationInitials(name = '') {
 }
 
 /**
- * Dessine l'anneau officiel Cordel O Girador sur un contexte Canvas à n'importe quelle résolution (taille carrée).
+ * Peint le fond officiel « Matrice » O Girador (anneau ★ O GIRADOR ★ sur parchemin) sur un contexte Canvas.
+ * L'image doit être pré-chargée (voir loadMatriceImage) ; aucun tracé procédural n'est effectué.
  */
-export function drawSealNeutralFrame(
-  ctx,
-  size = 512,
-  bgCol = '#f4ecd8',
-  primaryCol = '#8B2A1A',
-  secondaryCol = '#c05621',
-  textCol = '#181716'
-) {
-  const cx = size / 2;
-  const cy = size / 2;
-  const scale = size / 512;
-
-  ctx.clearRect(0, 0, size, size);
-  ctx.save();
-
-  // 1. Découpe circulaire extérieure
-  ctx.beginPath();
-  ctx.arc(cx, cy, 248 * scale, 0, Math.PI * 2);
-  ctx.clip();
-
-  // 2. Fond parchemin
-  ctx.fillStyle = bgCol;
-  ctx.fillRect(0, 0, size, size);
-
-  // 3. Bordure extérieure rouge terre cuite
-  ctx.strokeStyle = primaryCol;
-  ctx.lineWidth = Math.max(1, 14 * scale);
-  ctx.beginPath();
-  ctx.arc(cx, cy, 248 * scale, 0, Math.PI * 2);
-  ctx.stroke();
-
-  // 4. Filet intermédiaire ocre ambré
-  ctx.strokeStyle = secondaryCol;
-  ctx.lineWidth = Math.max(1, 4 * scale);
-  ctx.beginPath();
-  ctx.arc(cx, cy, 232 * scale, 0, Math.PI * 2);
-  ctx.stroke();
-
-  // 5. Filet pointillé Cordel
-  ctx.strokeStyle = primaryCol;
-  ctx.lineWidth = Math.max(1, 3 * scale);
-  ctx.setLineDash([8 * scale, 6 * scale]);
-  ctx.beginPath();
-  ctx.arc(cx, cy, 220 * scale, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.setLineDash([]);
-
-  // 6. Gravure circulaire "★ O GIRADOR ★" sur l'arc inférieur
-  const label = '★ O GIRADOR ★';
-  const fontSize = Math.round(28 * scale);
-  ctx.font = `bold ${fontSize}px "Cinzel Decorative", "Courier New", Georgia, serif`;
-  ctx.fillStyle = textCol;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-
-  const textRadius = 194 * scale;
-  const stepAngle = 0.17;
-  const startAngle = Math.PI / 2 + ((label.length - 1) * stepAngle) / 2;
-
-  for (let i = 0; i < label.length; i++) {
-    const charAngle = startAngle - i * stepAngle;
-    ctx.save();
-    ctx.translate(cx + Math.cos(charAngle) * textRadius, cy + Math.sin(charAngle) * textRadius);
-    ctx.rotate(charAngle - Math.PI / 2);
-    ctx.fillText(label[i], 0, 0);
-    ctx.restore();
-  }
-
-  // 7. Disque central neutre d'accueil
-  const innerCy = 235 * scale;
-  const innerR = 155 * scale;
-  ctx.beginPath();
-  ctx.arc(cx, innerCy, innerR, 0, Math.PI * 2);
-  ctx.fillStyle = '#faf6ec';
-  ctx.fill();
-  ctx.lineWidth = Math.max(1, 2.5 * scale);
-  ctx.strokeStyle = 'rgba(139, 42, 26, 0.4)';
-  ctx.stroke();
-
-  ctx.restore();
+export function drawSealNeutralFrame(ctx, size = 512, matriceImg = null) {
+  drawSealMatrice(ctx, size, matriceImg);
 }
 
 /**
- * Dessine un logo centré et ajusté dans le disque central.
+ * Centre le logo de l'association dans la zone de parchemin libre de la Matrice.
  */
 export function drawSealLogoCenter(ctx, size = 512, img) {
-  const scale = size / 512;
-  const cx = size / 2;
-  const innerCy = 235 * scale;
-  const innerR = 150 * scale;
-
-  ctx.save();
-  ctx.beginPath();
-  ctx.arc(cx, innerCy, innerR, 0, Math.PI * 2);
-  ctx.clip();
-
-  const targetBox = innerR * 1.85;
-  const imgW = img.naturalWidth || img.width || targetBox;
-  const imgH = img.naturalHeight || img.height || targetBox;
-  const ratio = imgW / imgH;
-
-  const w = ratio >= 1 ? targetBox : targetBox * ratio;
-  const h = ratio >= 1 ? targetBox / ratio : targetBox;
-
-  ctx.drawImage(img, cx - w / 2, innerCy - h / 2, w, h);
-  ctx.restore();
+  drawSealLogoZone(ctx, size, img);
 }
 
 /**
@@ -143,7 +48,7 @@ export function drawSealLogoCenter(ctx, size = 512, img) {
 export function drawSealInitialsCenter(ctx, size = 512, name = '', primaryCol = '#8B2A1A') {
   const scale = size / 512;
   const cx = size / 2;
-  const innerCy = 235 * scale;
+  const innerCy = size * MATRICE_ZONE.cy;
   const initials = getAssociationInitials(name);
 
   ctx.save();
@@ -188,17 +93,14 @@ export async function generateCombinedSealCanvas(associationData = {}, options =
 
   const ctx = canvas.getContext('2d');
   const branding = associationData?.branding || {};
-  const colors = branding.colors || {};
-  const bgCol = colors.background || '#f4ecd8';
-  const primaryCol = colors.primary || '#8B2A1A';
-  const secondaryCol = colors.secondary || '#c05621';
-  const textCol = colors.text || '#181716';
+  const primaryCol = branding.colors?.primary || '#8B2A1A';
 
   const name = associationData?.nom || associationData?.name || associationData?.associationName || '';
   const logoUrl = branding.logoUrl || associationData?.logoUrl || null;
 
-  // 1. Trace le cadre Cordel neutre
-  drawSealNeutralFrame(ctx, size, bgCol, primaryCol, secondaryCol, textCol);
+  // 1. Fond Matrice officiel (image pré-chargée ; `options.matriceImage` pour Node.js)
+  const matriceImg = options.matriceImage || await loadMatriceImage();
+  drawSealNeutralFrame(ctx, size, matriceImg);
 
   // 2. Si un logo image est configuré, tenter de le charger
   if (logoUrl) {

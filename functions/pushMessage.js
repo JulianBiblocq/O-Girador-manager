@@ -2,6 +2,7 @@
  * Construction du message FCM multicast (module extrait de index.js).
  * - `tag` déterministe (`notif_${eventId || queueDocId}`) sur Android, Web et APNs pour fusionner tout doublon.
  * - Pastille Android Terracotta `#8B2A1A`.
+ * - Badge barre d'état Android : `/badge-notif.png` (silhouette Alfaia monochrome, canal alpha seul).
  */
 const crypto = require("crypto");
 
@@ -53,7 +54,7 @@ function buildMulticastMessage({ dataPayload, groupId, title, body, assoIcon, to
     },
     webpush: {
       headers: { Urgency: "high" },
-      notification: { title, body, icon: assoIcon, badge: "/badge-72x72.png", tag, data: fcmStringData },
+      notification: { title, body, icon: assoIcon, badge: "/badge-notif.png", tag, data: fcmStringData },
       fcmOptions: { link: url }
     },
     data: fcmStringData,

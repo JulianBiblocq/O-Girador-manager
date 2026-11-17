@@ -130,11 +130,12 @@ async function run() {
   console.log(`Logo chargé avec succès : ${logoImage.width}×${logoImage.height}`);
 
   // Génération du macaron combiné 512x512
-  console.log("Génération du Canvas 512×512 (Anneau Cordel + Logo centré)...");
+  console.log("Génération du Canvas 512×512 (Matrice O Girador + Logo centré)...");
   const size = 512;
   const canvas = createCanvas(size, size);
   const ctx = canvas.getContext('2d');
-  drawSealNeutralFrame(ctx, size);
+  const matrice = await loadImage(path.resolve('public/brandings/organizador-matrice.png'));
+  drawSealNeutralFrame(ctx, size, matrice);
   drawSealLogoCenter(ctx, size, logoImage);
   const sealPngBuffer = canvas.toBuffer('image/png');
   console.log(`Sceau PNG généré : ${sealPngBuffer.length} octets.`);

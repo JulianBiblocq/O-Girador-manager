@@ -68,9 +68,11 @@ assert.ok(details.shareTitle.includes("Samb'à Bulles"));
 
 // Génération du macaron combiné 512x512
 const canvasFactory = (w, h) => createCanvas(w, h);
+const matriceImage = await loadImage(path.resolve('public/brandings/organizador-matrice.png'));
 const sealResult = await generateCombinedSealCanvas(mockSambabulles, {
   size: 512,
-  canvasFactory
+  canvasFactory,
+  matriceImage
 });
 assert.ok(sealResult.canvas, 'Canvas 512x512 généré');
 assert.ok(sealResult.canvas.width === 512 && sealResult.canvas.height === 512, 'Dimensions 512x512 respectées');

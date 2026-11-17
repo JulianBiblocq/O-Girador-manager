@@ -1,15 +1,6 @@
 import { useEffect } from 'react';
 import { drawSealNeutralFrame, drawSealLogoCenter, drawSealInitialsCenter, updateDocumentOpenGraphTags } from '../utils/shareUtils.js';
-
-/** Dessine l'anneau officiel gravé O Girador (128x128). */
-function drawNeutralFrame(ctx, bgCol = '#f4ecd8', primaryCol = '#8B2A1A', textCol = '#181716') {
-  ctx.save();
-  ctx.beginPath();
-  ctx.arc(64, 64, 62, 0, Math.PI * 2);
-  ctx.clip();
-  drawSealNeutralFrame(ctx, 128, bgCol, primaryCol, '#c05621', textCol);
-  ctx.restore();
-}
+import { loadMatriceImage } from '../utils/sealMatrice.js';
 
 function drawLogoInCenter(ctx, img) {
   drawSealLogoCenter(ctx, 128, img);
@@ -46,7 +37,7 @@ function updateFavicon(rawUrl) {
 /**
  * Hook dynamique de gestion du favicon et des méta-tags de partage :
  * - Mode 'pure' (Mostrador) : logo direct sans anneau
- * - Mode 'composite' (Organizador) : sceau combiné officiel O Girador × Association
+ * - Mode 'composite' (Organizador) : Matrice O Girador + logo de l'association centré (sans cercle procédural)
  */
 export default function useDynamicFavicon(associationData, options = {}) {
   const isPureLogo = Boolean(options?.isPureLogo);
@@ -88,15 +79,18 @@ export default function useDynamicFavicon(associationData, options = {}) {
       return () => { isMounted = false; };
     }
 
-    const generateFavicon = () => {
+    const generateFavicon = async () => {
       try {
+        // Fond officiel « Matrice » (organizador-matrice.png) : anneau + gravure O Girador déjà dessinés
+        const matrice = await loadMatriceImage();
+        if (!isMounted) return;
         const canvas = document.createElement('canvas');
         canvas.width = 128;
         canvas.height = 128;
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        drawNeutralFrame(ctx, colors.background || '#f4ecd8', colors.primary || '#8B2A1A', colors.text || '#181716');
+        drawSealNeutralFrame(ctx, 128, matrice);
 
         if (logoUrl) {
           activeImg = new Image();
