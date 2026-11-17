@@ -5,7 +5,8 @@ import CordelButton from '../CordelButton';
 import XiloAvatar from '../XiloAvatar';
 import { getGeneralConversationId, ensureGeneralGroupConversation } from '../../utils/generalGroupChatUtils';
 import { useConversationMessages } from '../../hooks/useConversationMessages';
-import { uploadChatAttachment } from '../../utils/attachmentUploadUtils';
+import { useZapPhotoUpload } from '../../hooks/useZapPhotoUpload';
+import CordelPlusIcon from '../common/CordelPlusIcon';
 import { extractFirstYouTubeIdFromText } from './ChatYouTubePreview';
 
 /**
@@ -27,27 +28,31 @@ export default function WidgetZapPanel({
     [user, profileData]
   );
   const currentUserId = effectiveUser?.uid || profileData?.id || '';
-  const generalConvId = useMemo(() => getGeneralConversationId(groupId), [groupId]);
+  // groupId obligatoire : sans association résolue, aucun salon general_${groupId} n'est interrogé ni créé
+  const effectiveGroupId = (groupId || profileData?.groupId || '').trim();
+  const generalConvId = useMemo(() => getGeneralConversationId(effectiveGroupId), [effectiveGroupId]);
 
   const [convDoc, setConvDoc] = useState(null);
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
-  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const fileInputRef = useRef(null);
   const desktopListRef = useRef(null);
 
   useEffect(() => {
     if (!generalConvId || !currentUserId) return;
-    ensureGeneralGroupConversation({ userId: currentUserId, groupId });
+    ensureGeneralGroupConversation({ userId: currentUserId, groupId: effectiveGroupId });
     const unsub = onSnapshot(doc(db, 'conversations', generalConvId), (snap) => {
       if (snap.exists()) setConvDoc({ id: snap.id, ...snap.data() });
     }, () => {});
     return () => unsub();
-  }, [generalConvId, currentUserId, groupId]);
+  }, [generalConvId, currentUserId, effectiveGroupId]);
 
   const { messages, sendMessage } = useConversationMessages(
-    generalConvId, groupId, effectiveUser, profileData, convDoc?.participantIds || [], convDoc
+    generalConvId, effectiveGroupId, effectiveUser, profileData, convDoc?.participantIds || [], convDoc
   );
+  const { uploadingPhoto, photoError, clearPhotoError, handlePhotoChange } = useZapPhotoUpload({
+    groupId: effectiveGroupId, sendMessage, caption: inputText, onSent: () => setInputText('')
+  });
 
   const unreadZapCount = useMemo(() => {
     if (!currentUserId) return 0;
@@ -86,32 +91,6 @@ export default function WidgetZapPanel({
       await sendMessage({ content: trimmed });
     } finally {
       setSending(false);
-    }
-  };
-
-  const handlePhotoChange = async (e) => {
-    const file = e.target.files?.[0];
-    if (e.target) e.target.value = '';
-    if (!file || uploadingPhoto || sending) return;
-    setUploadingPhoto(true);
-    try {
-      const res = await uploadChatAttachment({ file, groupId: groupId || profileData?.groupId || 'Samambaia' });
-      if (res?.success && res?.url) {
-        const caption = inputText.trim();
-        setInputText('');
-        await sendMessage({
-          content: caption,
-          imageUrl: res.isImage ? res.url : null,
-          thumbnailUrl: res.isImage ? res.url : null,
-          mediaName: res.isImage ? res.fileName : null,
-          fileUrl: !res.isImage ? res.url : null,
-          fileName: !res.isImage ? res.fileName : null
-        });
-      }
-    } catch (err) {
-      console.error('WidgetZapPanel - Erreur envoi photo :', err);
-    } finally {
-      setUploadingPhoto(false);
     }
   };
 
@@ -179,10 +158,14 @@ export default function WidgetZapPanel({
         )}
       </div>
 
+      {photoError && (
+        <div role="alert" onClick={(e) => { e.stopPropagation(); clearPhotoError(); }} title="Fermer" className="flex items-center gap-1.5 px-2 py-1 text-[10px] font-bold rounded-[4px_6px_4px_6px] border border-[var(--color-cordel-rouge,#8b2a1a)] bg-[var(--color-cordel-rouge,#8b2a1a)]/10 text-[var(--color-cordel-rouge,#8b2a1a)] cursor-pointer">⚠️ {photoError}</div>
+      )}
+
       <form onSubmit={handleSendText} onClick={(e) => e.stopPropagation()} className="flex items-center gap-1.5 pt-1 w-full">
         <input ref={fileInputRef} type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" />
-        <button type="button" disabled={uploadingPhoto || sending} onClick={() => fileInputRef.current?.click()} title={t?.('widgetForum.sendPhotoTitle') || 'Envoyer une photo sur le Zap'} className="w-8 h-8 rounded-[5px_7px_4px_6px] border-2 border-encre-noire bg-cordel-bg-light hover:bg-cordel-hover flex items-center justify-center text-xs shadow-[1px_1px_0px_0px_#181716] cursor-pointer shrink-0 disabled:opacity-50">
-          {uploadingPhoto ? '⏳' : '📷'}
+        <button type="button" disabled={uploadingPhoto || sending || !effectiveGroupId} onClick={() => fileInputRef.current?.click()} title={t?.('widgetForum.sendPhotoTitle') || 'Envoyer une photo sur le Zap'} aria-label={t?.('widgetForum.sendPhotoTitle') || 'Envoyer une photo sur le Zap'} className="w-8 h-8 rounded-[5px_7px_4px_6px] border-2 border-encre-noire bg-cordel-wood text-cordel-bg-light hover:opacity-90 flex items-center justify-center text-xs shadow-[1px_1px_0px_0px_#181716] cursor-pointer shrink-0 disabled:opacity-50">
+          {uploadingPhoto ? '⏳' : <CordelPlusIcon size={16} />}
         </button>
         <input type="text" value={inputText} onChange={(e) => setInputText(e.target.value)} disabled={sending || uploadingPhoto} placeholder={t?.('widgetForum.zapPlaceholder') || 'Écrire sur le Zap...'} className="theme-input text-xs font-semibold py-1.5 px-2.5 flex-1 min-w-0 h-8 bg-cordel-bg-light" />
         <CordelButton type="submit" variant="vert" disabled={sending || uploadingPhoto || !inputText.trim()} title={t?.('widgetForum.sendBtnTitle') || 'Envoyer'} className="h-8 px-2.5 text-xs font-black flex items-center justify-center shrink-0">

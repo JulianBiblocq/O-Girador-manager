@@ -455,7 +455,7 @@ export default function ThreadReplyBar({
             onChange={setReplyText}
             disabled={sending}
             placeholder={t && t('forum.writeReplyPlaceholder')}
-            groupId={thread?.groupId || profileData?.groupId || user?.groupId || 'Samambaia'}
+            groupId={thread?.groupId || profileData?.groupId || user?.groupId || ''}
             lienDepotForum={lienDepotForum}
             allUsers={allUsers}
             minHeight="85px"

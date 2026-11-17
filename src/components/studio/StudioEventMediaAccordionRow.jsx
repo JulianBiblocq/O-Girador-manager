@@ -120,7 +120,7 @@ export default function StudioEventMediaAccordionRow({
                 </button>
               )}
 
-              {canWrite && (
+              {canWrite && handleProvisionFramaspace && (
                 <button
                   type="button"
                   onClick={() => handleProvisionFramaspace(ev)}
@@ -198,7 +198,7 @@ export default function StudioEventMediaAccordionRow({
                   value={rowState.lienDepotMedias || ''}
                   onChange={(e) => handleInputChange(ev.id, 'lienDepotMedias', e.target.value)}
                   disabled={!canWrite || rowState.savingDepot}
-                  placeholder="https://mon-asso.framaspace.org/s/..."
+                  placeholder="https://… (Framaspace, Drive, Dropbox…)"
                   className="theme-input flex-1 px-2 py-1 text-xs font-bold rounded border border-encre-noire bg-white"
                 />
                 {canWrite && (
@@ -255,7 +255,7 @@ export default function StudioEventMediaAccordionRow({
                   value={rowState.albumPhotosUrl || ''}
                   onChange={(e) => handleInputChange(ev.id, 'albumPhotosUrl', e.target.value)}
                   disabled={!canWrite || rowState.savingAlbum}
-                  placeholder="https://mon-asso.framaspace.org/s/..."
+                  placeholder="https://… (Framaspace, Drive, Dropbox…)"
                   className="theme-input flex-1 px-2 py-1 text-xs font-bold rounded border border-encre-noire bg-white"
                 />
                 {canWrite && (

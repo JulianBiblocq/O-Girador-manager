@@ -3,106 +3,9 @@ import FramaspaceGalleryViewer from '../studio/FramaspaceGalleryViewer';
 import CommissionDocReader from './varal/CommissionDocReader';
 import ProjectPresentationReader from './varal/ProjectPresentationReader';
 import { recordVaralDocumentView } from '../../utils/varalViewTracker';
-
-/**
- * Utilitaires pour analyser les URLs vidéo (YouTube, Vimeo, fichiers directs).
- */
-function getMediaEmbedInfo(url) {
-  if (!url || typeof url !== 'string') return null;
-
-  const cleanUrl = url.trim();
-
-  // 1. Playlist YouTube (ex: youtube.com/playlist?list=PLBaYhFEJG6Pw1i2dneM6Vkjsll9SSv3vH)
-  const playlistMatch = cleanUrl.match(/[?&]list=([a-zA-Z0-9_-]+)/i);
-  if (playlistMatch && cleanUrl.includes('youtube')) {
-    return {
-      type: 'youtube-playlist',
-      embedUrl: `https://www.youtube-nocookie.com/embed/videoseries?list=${playlistMatch[1]}`,
-      directUrl: cleanUrl
-    };
-  }
-
-  // 2. Vidéo YouTube standard (watch?v=...) ou courte (youtu.be/...)
-  const ytMatch = cleanUrl.match(/(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/i);
-  if (ytMatch) {
-    return {
-      type: 'youtube-video',
-      embedUrl: `https://www.youtube-nocookie.com/embed/${ytMatch[1]}?rel=0`,
-      directUrl: cleanUrl
-    };
-  }
-
-  // 3. Vidéo Vimeo (ex: vimeo.com/123456789)
-  const vimeoMatch = cleanUrl.match(/vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/([^/]*)\/videos\/|album\/(\d+)\/video\/|)(\d+)/i);
-  if (vimeoMatch) {
-    const vimeoId = vimeoMatch[3] || vimeoMatch[1];
-    return {
-      type: 'vimeo',
-      embedUrl: `https://player.vimeo.com/video/${vimeoId}`,
-      directUrl: cleanUrl
-    };
-  }
-
-  // 4. Fichier vidéo direct (MP4, WebM, Ogg)
-  if (cleanUrl.match(/\.(mp4|webm|ogg|m4v)(\?.*)?$/i)) {
-    return {
-      type: 'video-file',
-      embedUrl: cleanUrl,
-      directUrl: cleanUrl
-    };
-  }
-
-  // 5. Fichier audio direct (MP3, WAV, OGG, M4A)
-  if (cleanUrl.match(/\.(mp3|wav|ogg|m4a|aac)(\?.*)?$/i)) {
-    return {
-      type: 'audio-file',
-      embedUrl: cleanUrl,
-      directUrl: cleanUrl
-    };
-  }
-
-  // 6. Image directe
-  if (cleanUrl.match(/\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i)) {
-    return {
-      type: 'image',
-      embedUrl: cleanUrl,
-      directUrl: cleanUrl
-    };
-  }
-
-  // 7. Fichier PDF
-  if (cleanUrl.toLowerCase().includes('.pdf')) {
-    return {
-      type: 'pdf',
-      embedUrl: cleanUrl,
-      directUrl: cleanUrl
-    };
-  }
-
-  // 8. Dossier partagé Framaspace / Nextcloud (/s/TOKEN)
-  if (cleanUrl.includes('frama.space') || cleanUrl.includes('framaspace.org') || /\/s\/[a-zA-Z0-9_-]+/i.test(cleanUrl)) {
-    return {
-      type: 'framaspace-gallery',
-      embedUrl: null,
-      directUrl: cleanUrl
-    };
-  }
-
-  // 9. Dossier externe / Cloud Drive (Drive, Dropbox, OneDrive, etc.)
-  if (cleanUrl.includes('drive.google.com') || cleanUrl.includes('dropbox.com') || cleanUrl.includes('onedrive')) {
-    return {
-      type: 'cloud-drive',
-      embedUrl: null,
-      directUrl: cleanUrl
-    };
-  }
-
-  return {
-    type: 'web-link',
-    embedUrl: null,
-    directUrl: cleanUrl
-  };
-}
+import { getMediaEmbedInfo } from '../../utils/mediaEmbedUtils';
+import { isFramaspaceAlbumUrl } from '../../utils/cloudProviderUtils';
+import useAssociationCloudConfig from '../../hooks/useAssociationCloudConfig';
 
 /**
  * Modale universelle de lecture et prévisualisation pour tous les documents du Varal.
@@ -115,10 +18,13 @@ export default function DocumentViewerModal({ document: docItem, onClose }) {
     }
   }, [docItem]);
 
+  // Cloud racine de l'association : reconnaît une instance Nextcloud / Framaspace avant d'activer la galerie native
+  const { cloudRootUrl } = useAssociationCloudConfig(docItem?.groupId);
+
   if (!docItem) return null;
 
   const targetUrl = docItem.fileUrl || docItem.url || docItem.link || '';
-  const mediaInfo = getMediaEmbedInfo(targetUrl);
+  const mediaInfo = getMediaEmbedInfo(targetUrl, cloudRootUrl);
 
   const isDropOnly = Boolean(docItem.isDropOnly) || Boolean(
     (docItem.titre || '').includes('[Collecte') ||
@@ -126,13 +32,7 @@ export default function DocumentViewerModal({ document: docItem, onClose }) {
     (!docItem.hasAlbum && docItem.isVirtualEventMedia)
   );
 
-  const isFramaspaceShare = !isDropOnly && ((mediaInfo && mediaInfo.type === 'framaspace-gallery') || Boolean(
-    targetUrl && (
-      /\/s\/[a-zA-Z0-9_-]+/i.test(targetUrl) ||
-      targetUrl.includes('frama.space') ||
-      targetUrl.includes('framaspace.org')
-    )
-  ));
+  const isFramaspaceShare = !isDropOnly && isFramaspaceAlbumUrl(targetUrl, cloudRootUrl);
 
   const docType = docItem.type || docItem.typeDoc || mediaInfo?.type || 'pdf';
   const isCommission = docType === 'cordel_commission';

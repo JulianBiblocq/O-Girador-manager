@@ -716,7 +716,7 @@ export default function DocumentUploadForm({
 
             {/* SECTION 2 : Fiches Culturelles */}
             {computedType === 'culture_fiche' && (
-              <DocumentFormCultureFields
+              <DocumentFormCultureFields groupId={groupId}
                 categorieFiche={categorieFiche}
                 setCategorieFiche={setCategorieFiche}
                 setThemeCulture={setThemeCulture}
@@ -772,7 +772,7 @@ export default function DocumentUploadForm({
 
             {/* SECTION 3 : Tutoriels de Fabrication */}
             {computedType === 'fabrication' && (
-              <DocumentFormFabricationFields
+              <DocumentFormFabricationFields groupId={groupId}
                 thematiqueFabrication={thematiqueFabrication}
                 setThematiqueFabrication={setThematiqueFabrication}
                 patronUploadType={patronUploadType}

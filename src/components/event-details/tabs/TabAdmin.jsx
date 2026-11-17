@@ -398,7 +398,7 @@ export default function TabAdmin({
           <div className="flex flex-col gap-1 text-xs">
             <span className="font-extrabold text-encre-noire flex items-center gap-1.5">
               <span>{event.lienDepotMedias ? '📂' : '📁'}</span>
-              <span>{tr('agenda.publicDropFolder') || "Dossier de dépôt public (File drop)"}</span>
+              <span>{tr('agenda.publicDropFolder') || "Lien de dépôt Cloud (Framaspace, Drive, Dropbox…)"}</span>
             </span>
             <p className="text-[11px] text-encre-noire/70">
               {event.lienDepotMedias 

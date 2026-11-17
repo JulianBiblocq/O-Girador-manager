@@ -105,7 +105,7 @@ export default function EventTypeScheduleConfigSection({
         </h4>
         <input
           type="url"
-          placeholder="https://framaspace.org/... ou Google Drive spécifique à ce type"
+          placeholder="https://… (Framaspace, Drive, Dropbox…) spécifique à ce type"
           value={config.defaultDropUrl || ''}
           onChange={(e) => handleUrlChange(e.target.value)}
           disabled={saving}

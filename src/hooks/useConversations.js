@@ -33,13 +33,13 @@ export function useConversations(user, groupId, profileData) {
   const userUid = user?.uid || '';
 
   const normalizedGroupId = useMemo(
-    () => String(groupId || profileData?.groupId || 'samambaia').trim().toLowerCase() || 'samambaia',
+    () => String(groupId || profileData?.groupId || '').trim().toLowerCase(),
     [groupId, profileData?.groupId]
   );
 
   // 1. Synchronisation temps réel des conversations de l'utilisateur au sein du groupe
   useEffect(() => {
-    if (!userUid) return;
+    if (!userUid || !normalizedGroupId) return;
 
     const generalId = getGeneralConversationId(normalizedGroupId);
     ensureGeneralGroupConversation({ userId: userUid, groupId: normalizedGroupId });
@@ -53,7 +53,7 @@ export function useConversations(user, groupId, profileData) {
         const list = [];
         snapshot.forEach((docSnap) => {
           const data = docSnap.data();
-          const docGroup = String(data.groupId || 'samambaia').trim().toLowerCase();
+          const docGroup = String(data.groupId || '').trim().toLowerCase();
           if (docGroup === normalizedGroupId || docSnap.id.toLowerCase() === generalId) {
             list.push({ id: docSnap.id, ...data });
           }

@@ -63,9 +63,9 @@ export async function createOrOpenDirectConversation({
   initialMessage = ''
 }) {
   if (!user?.uid || !targetUserId) return null;
-  const normalizedGroupId = String(groupId || profileData?.groupId || 'samambaia').trim().toLowerCase() || 'samambaia';
+  const normalizedGroupId = String(groupId || profileData?.groupId || '').trim().toLowerCase();
   const deterministicId = getDeterministicDirectId(normalizedGroupId, user.uid, targetUserId);
-
+  if (!normalizedGroupId || !deterministicId) return null; // groupId obligatoire : aucune création inter-groupes
   if (inFlightDirectLocks.has(deterministicId)) {
     return inFlightDirectLocks.get(deterministicId);
   }
@@ -94,7 +94,7 @@ export async function createOrOpenDirectConversation({
       const firestoreMatches = [];
       convSnap.forEach((docSnap) => {
         const data = docSnap.data();
-        const docGroup = String(data.groupId || 'samambaia').trim().toLowerCase();
+        const docGroup = String(data.groupId || '').trim().toLowerCase();
         if (docGroup === normalizedGroupId && isDirectPairConversation(data, user.uid, targetUserId)) {
           firestoreMatches.push({ id: docSnap.id, ...data });
         }

@@ -6,7 +6,7 @@ import RichTextEditor from '../../RichTextEditor';
  * Typologie de fiche (Orixás, Territoire, Cour Royale, Histoire, Musique & Danse, Cuisine, Folklore),
  * champs contextuels conditionnels, chapitres dynamiques, dictionnaire bilingue et section danse/gestuelle.
  */
-export default function DocumentFormCultureFields({
+export default function DocumentFormCultureFields({ groupId,
   categorieFiche = 'Orixás',
   setCategorieFiche,
   setThemeCulture,
@@ -366,7 +366,7 @@ export default function DocumentFormCultureFields({
                         disabled={isSubmitting}
                         placeholder="Contenu du chapitre..."
                         minHeight="120px"
-                        showImage={true}
+                        showImage={true} groupId={groupId}
                         showLists={true}
                         showAlign={true}
                       />

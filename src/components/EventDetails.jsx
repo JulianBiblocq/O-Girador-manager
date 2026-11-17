@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { doc, updateDoc, collection, query, where, onSnapshot, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { httpsCallable } from 'firebase/functions';
-import { db, storage, functions } from '../firebase';
+import { db, storage } from '../firebase';
+import useQuickFramaspaceProvision from '../hooks/useQuickFramaspaceProvision';
 import { fetchPollSiblingsForEdit, syncPollGroupOnSave } from '../utils/pollEditSyncUtils';
 import { resolveSlotRegistrationDeadline } from '../utils/eventScheduleUtils';
 import CordelButton from './CordelButton';
@@ -1581,35 +1581,11 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
   const effectiveQrUrl = isRecolteActive ? (currentLienDepot || (lienGoogleFormRecoltePhotos || '').trim()) : '';
   const hasQrCode = isRecolteActive && Boolean(effectiveQrUrl);
 
-  const [provisioningFramaspace, setProvisioningFramaspace] = useState(false);
-
-  // Déclencheur rapide de création de dossier Framaspace pour cet événement
-  const handleQuickProvisionFramaspace = async () => {
-    if (!event?.groupId || !event?.id) return;
-    setProvisioningFramaspace(true);
-    try {
-      const provisionFn = httpsCallable(functions, 'provisionFramaspaceEventFolders');
-      const res = await provisionFn({
-        eventId: event.id,
-        groupId: event.groupId,
-        eventData: activeEvent || event
-      });
-      const data = res?.data;
-      if (data?.success && (data.dropUrl || data.lienDepotMedias)) {
-        if (setToastMessage) {
-          setToastMessage("Dossier Framaspace & QR Code créés avec succès !");
-          setTimeout(() => setToastMessage(null), 3500);
-        }
-        setShowQrCodeModal(false);
-        setShowMediaQrCodeModal(true);
-      }
-    } catch (err) {
-      console.error("EventDetails - Erreur provisionnement Framaspace :", err);
-      alert("Erreur lors de la création du dossier Framaspace : " + (err.message || err));
-    } finally {
-      setProvisioningFramaspace(false);
-    }
-  };
+  // Provisionnement rapide Framaspace : option bonus réservée aux associations équipées de Framaspace
+  const { provisioningFramaspace, handleQuickProvisionFramaspace, hasFramaspace } = useQuickFramaspaceProvision({
+    event, activeEvent, setToastMessage,
+    onProvisioned: () => { setShowQrCodeModal(false); setShowMediaQrCodeModal(true); }
+  });
 
   // Gestionnaire d'ouverture unifié de la modale QR Code avec priorité au dépôt Framaspace
   const handleOpenQrCodeModal = () => {
@@ -1710,7 +1686,7 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
             )}
 
             {/* Bouton rapide de provisionnement si récolte active mais pas de dossier Framaspace créé */}
-            {isRecolteActive && !currentLienDepot && isAuthorized && (
+            {hasFramaspace && isRecolteActive && !currentLienDepot && isAuthorized && (
               <button
                 type="button"
                 onClick={handleQuickProvisionFramaspace}
@@ -2270,7 +2246,7 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
           qrUrl={lienGoogleFormRecoltePhotos}
           eventTitle={(activeEvent || event).titre}
           isGeneralFallback={!currentLienDepot}
-          onProvisionSpecific={isAuthorized ? handleQuickProvisionFramaspace : undefined}
+          onProvisionSpecific={isAuthorized && hasFramaspace ? handleQuickProvisionFramaspace : undefined}
           onClose={() => setShowQrCodeModal(false)}
         />
       )}

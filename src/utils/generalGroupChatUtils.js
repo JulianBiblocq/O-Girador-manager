@@ -26,8 +26,8 @@ const initInFlightByGroup = new Map();
  * normalisé systématiquement en minuscules.
  */
 export function getGeneralConversationId(groupId) {
-  const clean = String(groupId || 'samambaia').trim().toLowerCase() || 'samambaia';
-  return `general_${clean}`;
+  const clean = String(groupId || '').trim().toLowerCase();
+  return clean ? `general_${clean}` : '';
 }
 
 /**
@@ -38,11 +38,11 @@ export function isGeneralGroupConversation(convOrId, groupId = '') {
   const generalId = getGeneralConversationId(groupId);
   if (typeof convOrId === 'string') {
     const cleanId = convOrId.trim().toLowerCase();
-    return cleanId === generalId || cleanId.startsWith('general_');
+    return Boolean(cleanId) && ((Boolean(generalId) && cleanId === generalId) || cleanId.startsWith('general_'));
   }
-  const targetGenId = getGeneralConversationId(groupId || convOrId.groupId || 'samambaia');
+  const targetGenId = getGeneralConversationId(groupId || convOrId.groupId || '');
   const docId = String(convOrId.id || '').trim().toLowerCase();
-  return Boolean(convOrId.isGeneralGroup || docId === targetGenId || docId.startsWith('general_'));
+  return Boolean(convOrId.isGeneralGroup || (targetGenId && docId === targetGenId) || docId.startsWith('general_'));
 }
 
 /**
@@ -67,14 +67,14 @@ export function resolveZapDisplayName(rawName, fallback = '💬 Le Zap') {
 
 /**
  * Récupère la liste des identifiants de tous les membres actifs de l'association
- * (insensible à la casse et incluant les profils historiques de Samambaia).
+ * (insensible à la casse ; renvoie uniquement l'utilisateur courant si le groupId est vide).
  */
 async function fetchGroupParticipantIds(groupId, currentUserId) {
-  const normalizedGroupId = String(groupId || 'samambaia').trim().toLowerCase() || 'samambaia';
+  const normalizedGroupId = String(groupId || '').trim().toLowerCase();
   const ids = new Set();
   if (currentUserId) ids.add(currentUserId);
   try {
-    const tenantMembers = await fetchAssociationMembersOnce(normalizedGroupId);
+    const tenantMembers = normalizedGroupId ? await fetchAssociationMembersOnce(normalizedGroupId) : [];
     tenantMembers.forEach((m) => {
       if (!isMemberArchived(m) && (m.id || m.uid)) ids.add(m.id || m.uid);
     });
@@ -89,8 +89,8 @@ async function fetchGroupParticipantIds(groupId, currentUserId) {
  * l'utilisateur courant ainsi que tous les membres du groupe figurent dans `participantIds`.
  */
 export async function ensureGeneralGroupConversation({ userId, groupId, returnParticipants = false }) {
-  if (!userId) return returnParticipants ? [] : null;
-  const normalizedGroupId = String(groupId || 'samambaia').trim().toLowerCase() || 'samambaia';
+  const normalizedGroupId = String(groupId || '').trim().toLowerCase();
+  if (!userId || !normalizedGroupId) return returnParticipants ? [] : null; // groupId obligatoire : aucun repli en dur
   const generalId = getGeneralConversationId(normalizedGroupId);
   const lockKey = `${generalId}_${userId}`;
   if (initInFlightByGroup.has(lockKey) && !returnParticipants) {

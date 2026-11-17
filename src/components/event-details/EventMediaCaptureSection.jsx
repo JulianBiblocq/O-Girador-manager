@@ -76,7 +76,7 @@ export default function EventMediaCaptureSection({ event, defaultDropUrl = '' })
               <span>📤</span> {t('agenda.mediaBoxSubtitle') || "Partagez vos photos et captations de la sortie"}
             </span>
             <span className="text-[10px] text-stone-600 font-medium leading-tight mt-0.5">
-              Déposez vos vidéos brutes directement dans le dossier sécurisé (sans compte Google ni YouTube).
+              {t('agenda.mediaBoxDropHint') || "Déposez vos vidéos brutes directement dans le dossier Cloud de l'association."}
             </span>
           </div>
 
@@ -92,7 +92,7 @@ export default function EventMediaCaptureSection({ event, defaultDropUrl = '' })
               }
             }}
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[var(--theme-bg-ocre,#c05621)] hover:brightness-110 text-white font-black text-xs uppercase tracking-wider rounded-[4px_6px_5px_7px] border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all cursor-pointer whitespace-nowrap"
-            title="Ouvrir le dossier Framaspace File Drop dans un nouvel onglet"
+            title={t('agenda.mediaBoxDropTitle') || 'Ouvrir le dossier de dépôt Cloud dans un nouvel onglet'}
           >
             <span>📹</span>
             <span>{t('agenda.mediaBoxBtnUpload') || "Déposer des médias"}</span>

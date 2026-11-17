@@ -10,8 +10,8 @@ import useConfirm from '../hooks/useConfirm';
 import useHardwareBack from '../hooks/useHardwareBack';
 import EmojiPickerPopover, { EmojiQuickRow } from './forum/EmojiPickerPopover';
 import GroupMembersModal from './forum/GroupMembersModal';
-import ChatFramaspaceImageModal from './forum/ChatFramaspaceImageModal';
 import PrivateChatHeader from './forum/PrivateChatHeader';
+import ChatComposerPlusMenu from './forum/ChatComposerPlusMenu';
 import { useConversationMessages } from '../hooks/useConversationMessages';
 import { uploadChatAttachment } from '../utils/attachmentUploadUtils';
 import { dispatchInAppAndPushNotification, NOTIFICATION_TYPES } from '../utils/inAppNotificationService';
@@ -24,7 +24,7 @@ import { isGeneralGroupConversation, resolveZapDisplayName } from '../utils/gene
 /**
  * Composant PrivateChatView
  * Vue complète pour les échanges de discussion privée (Tête-à-tête direct ou Boucle de groupe).
- * Intègre les citations de réponse, les réactions emojis, le partage de photos Framaspace et la gestion des participants pour les groupes.
+ * Intègre les citations de réponse, les réactions emojis, l'envoi direct de photos (WebP compressé) et la gestion des participants pour les groupes.
  */
 export default function PrivateChatView({ 
   user, 
@@ -52,9 +52,7 @@ export default function PrivateChatView({
   const [inputText, setInputText] = useState(initialText || '');
   const [sending, setSending] = useState(false);
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
-  const [isMobileToolsOpen, setIsMobileToolsOpen] = useState(false);
   const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
-  const [isFramaspaceModalOpen, setIsFramaspaceModalOpen] = useState(false);
   const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState(null);
   const [replyingTo, setReplyingTo] = useState(null);
@@ -64,7 +62,6 @@ export default function PrivateChatView({
   const messagesEndRef = useRef(null);
   const attachmentInputRef = useRef(null);
   const privateChatInputRef = useRef(null);
-  const mobileToolsRef = useRef(null);
 
   // Interception du bouton retour matériel (Android / navigateur)
   useHardwareBack(Boolean(conversationId || recipientId), () => {
@@ -88,24 +85,6 @@ export default function PrivateChatView({
       document.body.style.overscrollBehavior = originalBodyOverscroll;
     };
   }, []);
-
-  // Fermeture du tiroir popover mobile des outils lors d'un clic en dehors
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (!event || !event.target || !event.target.isConnected) return;
-      if (mobileToolsRef.current && !mobileToolsRef.current.contains(event.target)) {
-        setIsMobileToolsOpen(false);
-      }
-    }
-    if (isMobileToolsOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      document.addEventListener('touchstart', handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('touchstart', handleClickOutside);
-    };
-  }, [isMobileToolsOpen]);
 
   // Auto-resize dynamique du champ de saisie jusqu'à max-h-32 (128px)
   useEffect(() => {
@@ -475,44 +454,6 @@ export default function PrivateChatView({
     }
   };
 
-  // Envoi d'une photo issue du cloud externe Framaspace
-  const handleSendFramaspaceImage = async ({ imageUrl, thumbnailUrl, mediaName, caption }) => {
-    if (!imageUrl || sending) return;
-
-    setSending(true);
-    try {
-      if (conversationId) {
-        await sendConvMessage({
-          content: caption,
-          imageUrl,
-          thumbnailUrl,
-          mediaName,
-          replyTo: replyingTo
-        });
-      } else {
-        // Fallback envoi legacy 1-à-1
-        await addDoc(collection(db, 'private_messages'), {
-          senderId: user.uid,
-          recipientId: effectiveOtherUser.id,
-          content: caption || '📷 Photo',
-          imageUrl,
-          thumbnailUrl,
-          mediaName,
-          timestamp: new Date().toISOString(),
-          read: false,
-          groupId
-        });
-        await notifyLegacyRecipient(caption || '📷 Photo');
-      }
-      setReplyingTo(null);
-    } catch (err) {
-      console.error("PrivateChatView - Erreur lors du partage de l'image Framaspace :", err);
-      alert("Erreur lors du partage de l'image : " + (err.message || err));
-    } finally {
-      setSending(false);
-    }
-  };
-
   // Envoi d'une photo ou d'un document directement depuis l'appareil de l'utilisateur
   const handleDirectFileUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -525,7 +466,7 @@ export default function PrivateChatView({
 
     setIsUploadingAttachment(true);
     try {
-      const effectiveGroupId = groupId || profileData?.groupId || 'Samambaia';
+      const effectiveGroupId = groupId;
       const result = await uploadChatAttachment({
         file,
         groupId: effectiveGroupId
@@ -674,7 +615,7 @@ export default function PrivateChatView({
                       </div>
                     )}
 
-                    {/* Image partagée depuis Framaspace Cloud ou Firebase Storage */}
+                    {/* Image partagée depuis Firebase Storage */}
                     {msg.imageUrl && (
                       <div 
                         className="mt-1 mb-1 rounded-[6px_8px_6px_7px] overflow-hidden border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] cursor-pointer bg-black/10 group/img relative max-w-[240px] sm:max-w-[300px]"
@@ -907,150 +848,22 @@ export default function PrivateChatView({
             type="file"
             accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.mp3,.ogg,.wav"
             onChange={handleDirectFileUpload}
-            disabled={sending || isUploadingAttachment}
+            disabled={sending || isUploadingAttachment || !groupId}
             className="hidden"
           />
 
-          {/* 1. Mode mobile (< md) : Bouton d'action unique carré « + » rétractable */}
-          <div className="relative md:hidden shrink-0 mb-0.5" ref={mobileToolsRef}>
-            <button
-              type="button"
-              onClick={() => setIsMobileToolsOpen(prev => !prev)}
-              className={`w-9 h-[38px] flex items-center justify-center font-black text-lg rounded border-2 transition-all cursor-pointer select-none ${
-                isMobileToolsOpen
-                  ? 'bg-cordel-wood text-white border-encre-noire shadow-none scale-95'
-                  : 'bg-cordel-wood text-cordel-bg-light border-encre-noire hover:opacity-90 shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px]'
-              }`}
-              title="Outils et pièces jointes"
-              aria-expanded={isMobileToolsOpen}
-            >
-              <span className={`transition-transform duration-200 inline-block leading-none ${isMobileToolsOpen ? 'rotate-45' : ''}`}>＋</span>
-            </button>
-
-            {/* Mini-tiroir / popover flottant propre présentant les 4 actions */}
-            {isMobileToolsOpen && (
-              <div className="absolute bottom-12 left-0 z-40 bg-cordel-bg-light border-2 border-encre-noire p-2 rounded-[6px_8px_6px_8px] shadow-[3px_3px_0px_0px_#181716] flex flex-col gap-1.5 min-w-[200px] animate-fade-in text-left">
-                <div className="text-[8px] font-black uppercase tracking-wider text-cordel-wood border-b border-dashed border-encre-noire/20 pb-1 mb-0.5 select-none">
-                  Outils de discussion
-                </div>
-
-                {/* 1. Émojis */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsMobileToolsOpen(false);
-                    setIsEmojiPickerOpen(prev => !prev);
-                  }}
-                  className="flex items-center gap-2.5 p-1.5 rounded hover:bg-neutral-200/60 dark:hover:bg-neutral-800/60 transition-colors text-left w-full cursor-pointer text-xs font-bold text-encre-noire"
-                >
-                  <span className="text-base shrink-0">😀</span>
-                  <span className="truncate">Émojis</span>
-                </button>
-
-                {/* 2. Pièce jointe */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsMobileToolsOpen(false);
-                    attachmentInputRef.current?.click();
-                  }}
-                  disabled={sending || isUploadingAttachment}
-                  className="flex items-center gap-2.5 p-1.5 rounded hover:bg-neutral-200/60 dark:hover:bg-neutral-800/60 transition-colors text-left w-full cursor-pointer text-xs font-bold text-encre-noire disabled:opacity-50"
-                >
-                  <span className="text-base shrink-0">{isUploadingAttachment ? '⏳' : '📎'}</span>
-                  <span className="truncate">Pièce jointe / Fichier</span>
-                </button>
-
-                {/* 3. Photo / Média Framaspace */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsMobileToolsOpen(false);
-                    setIsFramaspaceModalOpen(true);
-                  }}
-                  disabled={sending || isUploadingAttachment}
-                  className="flex items-center gap-2.5 p-1.5 rounded hover:bg-neutral-200/60 dark:hover:bg-neutral-800/60 transition-colors text-left w-full cursor-pointer text-xs font-bold text-encre-noire disabled:opacity-50"
-                >
-                  <span className="text-base shrink-0">📸</span>
-                  <span className="truncate">Photo Framaspace</span>
-                </button>
-
-                {/* 4. Micro / Dictée vocale */}
-                <div className="flex items-center justify-between p-1.5 rounded hover:bg-neutral-200/60 dark:hover:bg-neutral-800/60 transition-colors">
-                  <span className="text-xs font-bold text-encre-noire flex items-center gap-2.5">
-                    <span className="text-base shrink-0">🎙️</span>
-                    <span>Dictée vocale</span>
-                  </span>
-                  <VoiceDictationButton
-                    size="sm"
-                    onTranscript={(spokenText) => {
-                      setInputText(prev => {
-                        const trimmed = (prev || '').trim();
-                        return trimmed ? `${trimmed} ${spokenText}` : spokenText;
-                      });
-                      setIsMobileToolsOpen(false);
-                    }}
-                    disabled={sending || isUploadingAttachment}
-                    title="Dicter votre message à la voix"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* 2. Mode grand écran (>= md) : Affichage déplié des 4 icônes en ligne */}
-          <div className="hidden md:flex items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={() => setIsEmojiPickerOpen(prev => !prev)}
-              className={`w-9 h-[38px] flex items-center justify-center text-sm rounded border-2 transition-all cursor-pointer shrink-0 mb-0.5 ${
-                isEmojiPickerOpen
-                  ? 'bg-cordel-wood text-white border-encre-noire'
-                  : 'bg-cordel-bg hover:bg-white border-encre-noire/40'
-              }`}
-              title="Choisir un émoticône"
-            >
-              😀
-            </button>
-
-            <button
-              type="button"
-              onClick={() => attachmentInputRef.current?.click()}
-              disabled={sending || isUploadingAttachment}
-              className="w-9 h-[38px] flex items-center justify-center text-sm rounded border-2 bg-cordel-bg hover:bg-white border-encre-noire/40 transition-all cursor-pointer shrink-0 disabled:opacity-50 mb-0.5"
-              title="Joindre une photo ou un fichier depuis votre appareil"
-            >
-              {isUploadingAttachment ? (
-                <span className="inline-block animate-spin text-xs">⏳</span>
-              ) : (
-                <span>📎</span>
-              )}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setIsFramaspaceModalOpen(true)}
-              disabled={sending || isUploadingAttachment}
-              className="w-9 h-[38px] flex items-center justify-center text-sm rounded border-2 bg-cordel-bg hover:bg-white border-encre-noire/40 transition-all cursor-pointer shrink-0 disabled:opacity-50 mb-0.5"
-              title="Partager une photo du Cloud Framaspace (0 Mo sur Firebase)"
-            >
-              📸
-            </button>
-
-            {/* Bouton de dictée vocale au microphone */}
-            <div className="mb-0.5">
-              <VoiceDictationButton
-                onTranscript={(spokenText) => {
-                  setInputText(prev => {
-                    const trimmed = (prev || '').trim();
-                    return trimmed ? `${trimmed} ${spokenText}` : spokenText;
-                  });
-                }}
-                disabled={sending || isUploadingAttachment}
-                title="Dicter votre message à la voix (microphone)"
-              />
-            </div>
-          </div>
+          {/* Bouton « + » unique (PC et smartphone) : photo ou fichier, émoji, dictée vocale */}
+          <ChatComposerPlusMenu
+            canAttach={Boolean(groupId)}
+            isUploading={isUploadingAttachment}
+            busy={sending}
+            onPickAttachment={() => attachmentInputRef.current?.click()}
+            onOpenEmoji={() => setIsEmojiPickerOpen(prev => !prev)}
+            onVoiceTranscript={(spokenText) => setInputText(prev => {
+              const trimmed = (prev || '').trim();
+              return trimmed ? `${trimmed} ${spokenText}` : spokenText;
+            })}
+          />
 
           <textarea 
             ref={privateChatInputRef}
@@ -1102,14 +915,6 @@ export default function PrivateChatView({
           onLeaveGroup={onLeaveGroup}
         />
       )}
-
-      {/* Modale de sélection de photos du Cloud Framaspace */}
-      <ChatFramaspaceImageModal
-        isOpen={isFramaspaceModalOpen}
-        onClose={() => setIsFramaspaceModalOpen(false)}
-        onSelectImage={handleSendFramaspaceImage}
-        groupId={groupId}
-      />
 
       {/* Lightbox d'agrandissement d'une photo partagée */}
       {lightboxUrl && (

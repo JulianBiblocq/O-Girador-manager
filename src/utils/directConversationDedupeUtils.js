@@ -5,7 +5,8 @@ import { db } from '../firebase';
  * Génère l'identifiant déterministe unique d'une conversation directe (1-à-1) entre deux membres.
  */
 export function getDeterministicDirectId(groupId, userIdA, userIdB) {
-  const cleanGroup = String(groupId || 'samambaia').trim().toLowerCase() || 'samambaia';
+  const cleanGroup = String(groupId || '').trim().toLowerCase();
+  if (!cleanGroup) return ''; // groupId obligatoire : aucun repli en dur
   const sortedPair = [String(userIdA || '').trim(), String(userIdB || '').trim()].sort().join('_');
   return `dm_${cleanGroup}_${sortedPair}`;
 }

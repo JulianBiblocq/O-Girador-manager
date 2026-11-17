@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import { httpsCallable } from 'firebase/functions';
-import { functions } from '../../firebase';
+import useAssociationCloudConfig from '../../hooks/useAssociationCloudConfig';
+import useEventMediaProvisioning from '../../hooks/useEventMediaProvisioning';
+import FramaspaceProvisionButton from './FramaspaceProvisionButton';
 import { parseYouTubeMedia, isValidHttpUrl } from '../../utils/mediaUrlUtils';
 import YouTubeVideoPickerModal from '../common/YouTubeVideoPickerModal';
 import { useTranslation } from '../LanguageContext';
@@ -20,8 +21,8 @@ export default function EventMediaFields({
   groupId
 }) {
   const { t } = useTranslation();
-  const [provisioning, setProvisioning] = useState(false);
-  const [provisionMsg, setProvisionMsg] = useState(null);
+  const { hasFramaspace } = useAssociationCloudConfig(groupId || formData.groupId);
+  const { provisioning, provisionMsg, handleAutoProvisionFramaspace } = useEventMediaProvisioning({ formData, setFormData, handleChange, groupId });
   const [isPickerOpen, setIsPickerOpen] = useState(false);
 
   // Remplissage automatique lors du choix d'une vidéo via la modale
@@ -53,49 +54,6 @@ export default function EventMediaFields({
     else if (handleChange) handleChange({ target: { name: 'enableVideoDrop', value: isChecked } });
   };
 
-  // Création automatique 1-clic du dossier Framaspace pour cet atelier
-  const handleAutoProvisionFramaspace = async () => {
-    setProvisioning(true);
-    setProvisionMsg(null);
-    try {
-      const provisionFn = httpsCallable(functions, 'provisionFramaspaceEventFolders');
-      const targetGroupId = groupId || formData.groupId;
-      const res = await provisionFn({
-        eventId: formData.id || null,
-        groupId: targetGroupId,
-        eventData: formData
-      });
-
-      const generatedUrl = res.data?.dropUrl || res.data?.lienDepotMedias;
-      const generatedAlbumUrl = res.data?.albumPhotosUrl;
-      const generatedFolder = res.data?.framaspaceFolder || res.data?.folderSlug;
-      if (generatedUrl) {
-        if (setFormData) {
-          setFormData(prev => ({
-            ...prev,
-            dropUrl: generatedUrl,
-            lienDepotMedias: generatedUrl,
-            ...(generatedAlbumUrl ? { albumPhotosUrl: generatedAlbumUrl } : {}),
-            ...(generatedFolder ? { framaspaceFolder: generatedFolder } : {})
-          }));
-        } else if (handleChange) {
-          handleChange({ target: { name: 'dropUrl', value: generatedUrl } });
-        }
-        setProvisionMsg({ type: 'success', text: "Dossier Framaspace créé avec succès pour cet événement !" });
-      } else {
-        throw new Error("L'adresse de dépôt n'a pas pu être récupérée.");
-      }
-    } catch (err) {
-      console.error("Erreur création automatique Framaspace :", err);
-      setProvisionMsg({
-        type: 'error',
-        text: err.message || "Impossible de créer le dossier automatiquement. Vérifiez la configuration Framaspace."
-      });
-    } finally {
-      setProvisioning(false);
-    }
-  };
-
   const isDropAllowed = Boolean(formData.enableVideoDrop);
   const rawVideoUrl = (formData.videoUrl || '').trim();
   const isVideoUrlInvalid = rawVideoUrl !== '' && (!isValidHttpUrl(rawVideoUrl) || !youtubeAnalysis);
@@ -121,7 +79,7 @@ export default function EventMediaFields({
           <span>{t('agenda.photoCaptationsTitle') || "Boîte à photos & captations"}</span>
         </h5>
         <span className="text-[9px] font-semibold text-cordel-master-dark/60 italic">
-          Framaspace & Varal
+          Cloud & Varal
         </span>
       </div>
 
@@ -139,7 +97,7 @@ export default function EventMediaFields({
           <span>📸 {t('agenda.enablePhotoBoxToggle') || "Activer la boîte à photos / QR Code spectateurs"}</span>
         </label>
         <span className="text-[9.5px] text-encre-noire/70 font-medium pl-6 leading-tight">
-          {t('agenda.photoBoxDesc') || "Génère le QR Code de dépôt spectateurs et provisionne automatiquement l'album sur Framaspace et le Varal Photos."}
+          {t('agenda.photoBoxDesc') || "Génère le QR Code de dépôt spectateurs vers votre Cloud (Framaspace, Drive, Dropbox…) et alimente le Varal Photos."}
         </span>
 
         {/* État du dossier Framaspace ou déclencheur rapide */}
@@ -148,18 +106,10 @@ export default function EventMediaFields({
             {formData.lienDepotMedias || formData.dropUrl ? (
               <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-400 flex items-center gap-1">
                 <span>✓</span>
-                <span>{t('agenda.framaspaceFolderReady') || "Dossier Framaspace prêt pour le QR-Code"}</span>
+                <span>{t('agenda.framaspaceFolderReady') || "Lien de dépôt prêt pour le QR-Code"}</span>
               </span>
-            ) : (
-              <button
-                type="button"
-                onClick={handleAutoProvisionFramaspace}
-                disabled={provisioning || saving}
-                className="px-2.5 py-1 bg-[var(--color-cordel-vert,#2d6a4f)] text-white text-[9px] font-black uppercase rounded hover:brightness-110 active:scale-95 transition-all flex items-center gap-1 cursor-pointer disabled:opacity-50 shadow-xs"
-                title="Créer immédiatement le dossier dédié sur Framaspace et insérer le lien de dépôt public"
-              >
-                {provisioning ? <><span className="animate-spin">⏳</span><span>Création en cours...</span></> : <><span>⚡</span><span>Créer le dossier Framaspace en 1 clic</span></>}
-              </button>
+            ) : hasFramaspace && (
+              <FramaspaceProvisionButton provisioning={provisioning} saving={saving} onClick={handleAutoProvisionFramaspace} />
             )}
 
             {formData.framaspaceFolder && (
@@ -191,18 +141,10 @@ export default function EventMediaFields({
         <div className="flex flex-col gap-2 pl-6 pt-1 border-l-2 border-dashed border-cordel-wood/30">
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-              <span>🔗 {t('agenda.framaspaceLinkField') || "Lien Framaspace File Drop (Dépôt public)"}</span>
+              <span>🔗 {t('agenda.framaspaceLinkField') || "Lien de dépôt Cloud (Framaspace, Drive, Dropbox…)"}</span>
             </label>
-            {!formData.dropUrl && !formData.lienDepotMedias && (
-              <button
-                type="button"
-                onClick={handleAutoProvisionFramaspace}
-                disabled={provisioning || saving}
-                className="px-2 py-0.5 bg-[var(--color-cordel-vert,#2d6a4f)] text-white text-[8.5px] font-black uppercase rounded hover:brightness-110 active:scale-95 transition-all flex items-center gap-1 cursor-pointer disabled:opacity-50 shadow-sm"
-                title="Créer automatiquement le dossier sur Framaspace et insérer le lien de dépôt public"
-              >
-                {provisioning ? <><span className="animate-spin">⏳</span><span>Création...</span></> : <><span>⚡</span><span>Créer sur Framaspace</span></>}
-              </button>
+            {hasFramaspace && !formData.dropUrl && !formData.lienDepotMedias && (
+              <FramaspaceProvisionButton compact provisioning={provisioning} saving={saving} onClick={handleAutoProvisionFramaspace} />
             )}
           </div>
 
@@ -227,13 +169,16 @@ export default function EventMediaFields({
             value={formData.dropUrl !== undefined ? formData.dropUrl : (formData.lienDepotMedias || '')}
             onChange={handleDropUrlChange}
             disabled={saving || provisioning}
-            placeholder={defaultDropUrl ? `Par défaut : ${defaultDropUrl}` : "https://o-girador.framaspace.org/s/..."}
+            placeholder={defaultDropUrl ? `Par défaut : ${defaultDropUrl}` : "https://… (Framaspace, Drive, Dropbox…)"}
             className="theme-input w-full text-xs bg-white"
           />
           <p className="text-[9px] text-cordel-master-dark/70 font-medium leading-tight">
             {defaultDropUrl 
-              ? (t('agenda.framaspaceLinkDesc') || "Laissez vide pour utiliser le dossier général de l'association, ou cliquez sur « ⚡ Créer le dossier Framaspace » pour isoler cette date.")
-              : "Cliquez sur « ⚡ Créer le dossier Framaspace » pour générer le lien automatiquement, ou collez une adresse existante."}
+              ? (t('agenda.framaspaceLinkDesc') || "Laissez vide pour utiliser le dossier général de l'association, ou collez un lien propre à cette date.")
+              : t('agenda.dropLinkDescEmpty') || "Collez l'adresse du dossier de dépôt de votre Cloud (Framaspace, Drive, Dropbox…)."}
+          </p>
+          <p className="text-[9px] text-cordel-master-dark/60 italic leading-tight">
+            💡 {t('agenda.dropLinkTip') || 'Astuce réglage : "Dépôt de fichiers uniquement" sur Framaspace • "Demande de fichiers" sur Dropbox • Accès "Éditeur" sur Google Drive.'}
           </p>
         </div>
       )}

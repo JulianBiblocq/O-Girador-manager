@@ -19,7 +19,7 @@ export async function shareToGeneralGroupChat({
   profileData,
   groupId
 }) {
-  const effectiveGroupId = groupId || profileData?.groupId || 'Samambaia';
+  const effectiveGroupId = groupId || profileData?.groupId || '';
   if (!user?.uid || !effectiveGroupId) {
     throw new Error('Utilisateur ou association non identifié.');
   }

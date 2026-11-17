@@ -109,7 +109,7 @@ export default function RichTextEditor({
         event.preventDefault();
         setIsUploadingPasteDrop(true);
 
-        uploadForumAttachment({ file, groupId: groupId || 'Samambaia' })
+        uploadForumAttachment({ file, groupId: groupId })
           .then((res) => {
             if (editorRef.current && res?.url) {
               if (res.isImage) {
@@ -142,7 +142,7 @@ export default function RichTextEditor({
         event.preventDefault();
         setIsUploadingPasteDrop(true);
 
-        uploadForumAttachment({ file, groupId: groupId || 'Samambaia' })
+        uploadForumAttachment({ file, groupId: groupId })
           .then((res) => {
             if (editorRef.current && res?.url) {
               if (res.isImage) {
@@ -519,13 +519,13 @@ export default function RichTextEditor({
         />
       </div>
 
-      {/* Modale d'insertion de pièce jointe (Photo ou Document - Framaspace ou Firebase) */}
+      {/* Modale d'insertion de pièce jointe (Photo ou Document - Firebase Storage) */}
       <ForumImageInsertModal
         isOpen={isImageModalOpen}
         onClose={() => setIsImageModalOpen(false)}
         lienDepotForum={lienDepotForum}
         consignesDepotForum={consignesDepotForum}
-        groupId={groupId || 'Samambaia'}
+        groupId={groupId}
         onInsertAttachment={({ url, type, name }) => {
           if (!editor || !url) return;
           if (type === 'image') {

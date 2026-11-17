@@ -6,7 +6,7 @@ import { useTranslation } from '../../LanguageContext';
  * Sous-formulaire pour les tutoriels de confection et fiches de lutherie :
  * Visuel animé, instrument concerné, liste des matières & outils, étapes illustrées pas-à-pas et conseils d'atelier.
  */
-export default function DocumentFormFabricationFields({
+export default function DocumentFormFabricationFields({ groupId,
   thematiqueFabrication = 'lutherie',
   setThematiqueFabrication,
   patronUploadType = 'url',
@@ -561,7 +561,7 @@ export default function DocumentFormFabricationFields({
             disabled={isSubmitting}
             placeholder="Introduction, précautions, contexte de fabrication..."
             minHeight="120px"
-            showImage={true}
+            showImage={true} groupId={groupId}
             showLists={true}
             showAlign={true}
           />

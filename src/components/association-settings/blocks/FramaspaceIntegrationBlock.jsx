@@ -112,13 +112,11 @@ export default function FramaspaceIntegrationBlock({
         framaspaceAppPassword: cleanPass
       }, { merge: true });
 
-      // Synchroniser également le champ cloudRootUrl de l'association pour la navigation rapide
-      if (cleanUrl) {
-        const assocRef = doc(db, 'associations', groupId);
-        await updateDoc(assocRef, {
-          cloudRootUrl: cleanUrl
-        });
-      }
+      // Synchroniser cloudRootUrl (navigation rapide) et le drapeau public non sensible hasFramaspaceApi
+      await updateDoc(doc(db, 'associations', groupId), {
+        ...(cleanUrl ? { cloudRootUrl: cleanUrl } : {}),
+        hasFramaspaceApi: Boolean(cleanUrl && cleanUser && cleanPass)
+      });
 
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2500);

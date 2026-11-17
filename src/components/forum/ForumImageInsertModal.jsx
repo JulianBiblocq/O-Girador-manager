@@ -4,9 +4,8 @@ import { uploadForumAttachment } from '../../utils/attachmentUploadUtils';
 
 /**
  * Modale d'insertion de pièce jointe (Photo ou Document) pour le Forum.
- * Téléversement résilient et transparent :
- * - Tente Framaspace Nextcloud si configuré pour les photos
- * - Bascule automatiquement sur Firebase Storage (documents/{groupId}/forum/...)
+ * Téléversement direct et transparent :
+ * - Compresse les photos en WebP puis les envoie sur Firebase Storage (documents/{groupId}/forum/...)
  * - Supporte images (avec compression client) et documents (PDF, etc.)
  * 
  * @param {Object} props
@@ -14,14 +13,14 @@ import { uploadForumAttachment } from '../../utils/attachmentUploadUtils';
  * @param {Function} props.onClose - Fermeture
  * @param {Function} [props.onInsertAttachment] - Callback ({ url, type, name })
  * @param {Function} [props.onInsertImage] - Callback historique (url)
- * @param {string} [props.groupId='Samambaia'] - Identifiant de l'association
+ * @param {string} props.groupId - Identifiant de l'association (obligatoire pour l'envoi)
  */
 export default function ForumImageInsertModal({ 
   isOpen, 
   onClose, 
   onInsertAttachment,
   onInsertImage, 
-  groupId = 'Samambaia' 
+  groupId 
 }) {
   const [selectedFile, setSelectedFile] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
@@ -63,7 +62,7 @@ export default function ForumImageInsertModal({
     onClose();
   };
 
-  // Téléversement résilient (Framaspace ou Firebase Storage)
+  // Téléversement vers Firebase Storage (compression WebP incluse)
   const handleUploadAndInsert = async (e) => {
     if (e) e.preventDefault();
     if (!selectedFile) {
@@ -77,7 +76,7 @@ export default function ForumImageInsertModal({
 
       const result = await uploadForumAttachment({
         file: selectedFile,
-        groupId: groupId || 'Samambaia'
+        groupId
       });
 
       if (result?.success && result?.url) {
@@ -227,7 +226,7 @@ export default function ForumImageInsertModal({
             onClick={handleUploadAndInsert}
             variant="vert"
             useExtremeBorder={true}
-            disabled={isUploading || !selectedFile}
+            disabled={isUploading || !selectedFile || !groupId}
             className="px-5 py-2 text-xs font-bold uppercase tracking-wider cursor-pointer flex items-center gap-2 disabled:opacity-50"
           >
             {isUploading ? (

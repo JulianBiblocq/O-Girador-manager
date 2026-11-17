@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { useTranslation } from '../../LanguageContext';
 import CordelCard from '../../CordelCard';
 import YouTubePlaylistsBlock from '../blocks/YouTubePlaylistsBlock';
-import { httpsCallable } from 'firebase/functions';
-import { functions } from '../../../firebase';
+import useGeneralDropProvisioning from '../../../hooks/useGeneralDropProvisioning';
+import { hasFramaspaceSetup } from '../../../utils/cloudProviderUtils';
 
 /**
  * Accordéon compact pour les médias vidéo et le stockage cloud des captations.
@@ -13,30 +13,12 @@ export default function MediaStorageAccordion({ formData = {}, handleChange, gro
   const { t } = useTranslation();
   const [isOpenPlaylists, setIsOpenPlaylists] = useState(false);
   const [isOpenCloud, setIsOpenCloud] = useState(false);
-  const [cloudLoading, setCloudLoading] = useState(false);
-  const [cloudMsg, setCloudMsg] = useState(null);
 
   const playlists = Array.isArray(formData.youtubePlaylists) ? formData.youtubePlaylists : [];
 
-  const handleProvisionGeneralDrop = async () => {
-    setCloudLoading(true);
-    setCloudMsg(null);
-    try {
-      const provisionFn = httpsCallable(functions, 'provisionFramaspaceGeneralDropFolder');
-      const res = await provisionFn({ groupId });
-      if (res.data?.defaultDropUrl) {
-        handleChange('defaultDropUrl', res.data.defaultDropUrl);
-        setCloudMsg({ type: 'success', text: "Dossier Framaspace configuré avec succès !" });
-      } else {
-        throw new Error(t('settings.modules.mediaStorageAccordion.lienNonGenere') || "Lien non généré.");
-      }
-    } catch (err) {
-      console.error("Erreur provision Framaspace :", err);
-      setCloudMsg({ type: 'error', text: err.message || "Erreur de création automatique." });
-    } finally {
-      setCloudLoading(false);
-    }
-  };
+  const { cloudLoading, cloudMsg, handleProvisionGeneralDrop } = useGeneralDropProvisioning({ groupId, handleChange, t });
+  // Provisionnement automatique proposé uniquement si Framaspace est configuré (identifiants saisis ou URL Framaspace)
+  const hasFramaspace = Boolean(formData.framaspaceUsername && formData.framaspaceAppPassword) || hasFramaspaceSetup(formData);
 
   return (
     <div className="flex flex-col gap-4 mb-4">
@@ -84,7 +66,7 @@ export default function MediaStorageAccordion({ formData = {}, handleChange, gro
           <div className="flex items-center gap-2 text-left flex-1 min-w-0 break-words">
             <span className="text-sm">📹</span>
             <span className="text-xs font-black uppercase tracking-wider text-cordel-wood break-words">
-              {t('settings.modules.mediaStorageAccordion.stockageCloudDesCaptationsFramaspace') || 'Stockage Cloud des Captations (Framaspace / Drive)'} {isOpenCloud ? '▲' : '▾'}
+              {t('settings.modules.mediaStorageAccordion.stockageCloudDesCaptationsFramaspace') || 'Stockage Cloud des Captations (Framaspace, Drive, Dropbox…)'} {isOpenCloud ? '▲' : '▾'}
             </span>
             <span className="text-[9px] text-cordel-master-dark/60 font-semibold hidden sm:inline">
               {formData.defaultDropUrl ? (t('settings.modules.mediaStorageAccordion.dossierConfigure') || '(Dossier configuré ✓)') : (t('settings.modules.mediaStorageAccordion.nonRenseigne') || '(Non renseigné)')}
@@ -108,16 +90,16 @@ export default function MediaStorageAccordion({ formData = {}, handleChange, gro
             <div className="flex flex-col gap-2">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <label className="text-[9px] uppercase font-black text-cordel-master-dark">
-                  {t('settings.modules.mediaStorageAccordion.lienDuDossierDeDepotLabel') || '🔗 Lien du dossier de dépôt (Framaspace File Drop / Nextcloud / Drive)'}
+                  {t('settings.modules.mediaStorageAccordion.lienDuDossierDeDepotLabel') || '🔗 Lien de dépôt Cloud (Framaspace, Drive, Dropbox…)'}
                 </label>
-                <button
+                {hasFramaspace && <button
                   type="button"
                   onClick={handleProvisionGeneralDrop}
                   disabled={cloudLoading || saving}
                   className="px-2.5 py-1 bg-[var(--color-cordel-vert,#2d6a4f)] text-white text-[9px] font-black uppercase rounded hover:brightness-110 cursor-pointer shadow-2xs self-start sm:self-auto disabled:opacity-50"
                 >
                   {cloudLoading ? (t('settings.modules.mediaStorageAccordion.creation') || "⏳ Création...") : (t('settings.modules.mediaStorageAccordion.creerAutomatiquementSurFramaspace') || "⚡ Créer automatiquement sur Framaspace")}
-                </button>
+                </button>}
               </div>
 
               {cloudMsg && (
@@ -133,9 +115,10 @@ export default function MediaStorageAccordion({ formData = {}, handleChange, gro
                 value={formData.defaultDropUrl || ''}
                 onChange={(e) => handleChange('defaultDropUrl', e.target.value)}
                 disabled={saving || cloudLoading}
-                placeholder="https://mon-instance.framaspace.org/s/..."
+                placeholder="https://… (Framaspace, Drive, Dropbox…)"
                 className="theme-input text-xs font-mono font-bold py-1.5 bg-white w-full"
               />
+              <p className="text-[9px] text-cordel-master-dark/60 italic leading-tight">💡 {t('agenda.dropLinkTip') || 'Astuce réglage : "Dépôt de fichiers uniquement" sur Framaspace • "Demande de fichiers" sur Dropbox • Accès "Éditeur" sur Google Drive.'}</p>
             </div>
           </div>
         )}

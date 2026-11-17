@@ -980,7 +980,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t, initial
         smtpUser: formData.smtpUser || '',
         smtpSecure: formData.smtpSecure || 'tls',
         customEmailDomain: formData.customEmailDomain || '',
-        defaultDropUrl: formData.defaultDropUrl ? formData.defaultDropUrl.trim() : '',
+        defaultDropUrl: formData.defaultDropUrl ? formData.defaultDropUrl.trim() : '', hasFramaspaceApi: Boolean((formData.framaspaceUrl || formData.cloudRootUrl || '').trim() && (formData.framaspaceUsername || '').trim() && (formData.framaspaceAppPassword || '').trim()),
         // Sauvegarde de la vidéo à la une du Dashboard
         videoALaUne: {
           url: formData.videoALaUne?.url || '',

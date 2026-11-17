@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { collection, query, where, onSnapshot, doc, updateDoc, getDocs, addDoc, deleteDoc } from 'firebase/firestore';
-import { httpsCallable } from 'firebase/functions';
-import { db, functions } from '../../firebase';
+import { db } from '../../firebase';
+import useStudioFramaspaceProvision from '../../hooks/useStudioFramaspaceProvision';
 import { useTranslation } from '../LanguageContext';
 import StudioPhotoQrPrintModal from './StudioPhotoQrPrintModal';
 import StudioEventMediaAccordionRow from './StudioEventMediaAccordionRow';
@@ -391,131 +391,8 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false, onSw
     }
   }, [groupId, canWrite]);
 
-  // 7. Provisionnement automatique Framaspace (Création dossiers WebDAV & Liens OCS)
-  const handleProvisionFramaspace = async (ev) => {
-    if (!groupId || !canWrite || !ev?.id) return;
-
-    setProvisioningMap((prev) => ({
-      ...prev,
-      [ev.id]: { loading: true, error: null, success: false }
-    }));
-
-    try {
-      const provisionFn = httpsCallable(functions, 'provisionFramaspaceEventFolders');
-      const res = await provisionFn({
-        eventId: ev.id,
-        groupId
-      });
-
-      const data = res?.data;
-      if (data && data.success) {
-        setProvisioningMap((prev) => ({
-          ...prev,
-          [ev.id]: { loading: false, error: null, success: true }
-        }));
-
-        const newLienDepot = data.lienDepotMedias || ev.lienDepotMedias || '';
-        const newAlbumUrl = data.albumPhotosUrl || ev.albumPhotosUrl || '';
-        const finalUrl = newAlbumUrl || newLienDepot;
-        const hasAlbum = Boolean(newAlbumUrl);
-
-        // Mise à jour immédiate de l'affichage local si nouveaux liens reçus
-        if (newLienDepot || newAlbumUrl) {
-          setRowStates((prev) => ({
-            ...prev,
-            [ev.id]: {
-              ...prev[ev.id],
-              lienDepotMedias: newLienDepot,
-              albumPhotosUrl: newAlbumUrl,
-              savedDepot: Boolean(newLienDepot),
-              savedAlbum: Boolean(newAlbumUrl)
-            }
-          }));
-        }
-
-        // Relier et synchroniser automatiquement le livret dans 'documents' (PhotosPrestations) au provisionnement
-        try {
-          const eventRef = doc(db, 'events', ev.id);
-          await updateDoc(eventRef, {
-            ...(newLienDepot ? { lienDepotMedias: newLienDepot } : {}),
-            ...(newAlbumUrl ? { albumPhotosUrl: newAlbumUrl } : {}),
-            publierSurVaral: true,
-            activerRecolteMedias: true,
-            ...(data.folderSlug ? { framaspaceFolder: data.folderSlug } : {}),
-            framaspaceProvisionedAt: new Date().toISOString()
-          });
-
-          if (finalUrl) {
-            const docsRef = collection(db, 'documents');
-            const qDoc = query(
-              docsRef,
-              where('groupId', '==', groupId),
-              where('eventId', '==', ev.id),
-              where('categoryId', '==', 'PhotosPrestations')
-            );
-            const existingSnap = await getDocs(qDoc);
-
-            if (!existingSnap.empty) {
-              const docItem = existingSnap.docs[0];
-              await updateDoc(doc(db, 'documents', docItem.id), {
-                titre: hasAlbum ? `[Album] ${ev.titre || 'Événement'}` : `[Collecte Photos] ${ev.titre || 'Événement'}`,
-                fileUrl: finalUrl,
-                dateAjout: ev.dateDebut || ev.date || new Date().toISOString(),
-                isDropOnly: !hasAlbum,
-                hasAlbum
-              });
-            } else {
-              await addDoc(docsRef, {
-                groupId,
-                eventId: ev.id,
-                titre: hasAlbum ? `[Album] ${ev.titre || 'Événement'}` : `[Collecte Photos] ${ev.titre || 'Événement'}`,
-                fileUrl: finalUrl,
-                categorie: 'PhotosPrestations',
-                categoryId: 'PhotosPrestations',
-                type: 'dossier_externe',
-                dateAjout: ev.dateDebut || ev.date || new Date().toISOString(),
-                description: hasAlbum
-                  ? `Album photos officiel de l'événement "${ev.titre || ''}" du ${new Date(ev.dateDebut || ev.date || Date.now()).toLocaleDateString('fr-FR')}.`
-                  : `Dossier partagé pour déposer et collecter des médias liés à l'événement "${ev.titre || ''}".`,
-                isDropOnly: !hasAlbum,
-                hasAlbum
-              });
-            }
-          }
-        } catch (syncErr) {
-          console.warn("StudioEventsMediaTable - Avertissement synchronisation Firestore côté client :", syncErr);
-        }
-
-        // Réinitialisation du statut de succès après 3.5 secondes
-        setTimeout(() => {
-          setProvisioningMap((prev) => ({
-            ...prev,
-            [ev.id]: { loading: false, error: null, success: false }
-          }));
-        }, 3500);
-      } else {
-        throw new Error(data?.error || "Échec du provisionnement Framaspace.");
-      }
-    } catch (err) {
-      console.error("Erreur lors du provisionnement Framaspace :", err);
-      const errMsg = err?.message || "Erreur de connexion avec Framaspace.";
-      setProvisioningMap((prev) => ({
-        ...prev,
-        [ev.id]: { loading: false, error: errMsg, success: false }
-      }));
-    } finally {
-      // Sécurité anti-spinner infini : garantir que le loading ne reste jamais bloqué
-      setProvisioningMap((prev) => {
-        if (prev[ev.id]?.loading) {
-          return {
-            ...prev,
-            [ev.id]: { ...prev[ev.id], loading: false }
-          };
-        }
-        return prev;
-      });
-    }
-  };
+  // 7. Provisionnement automatique Framaspace (option bonus, réservée aux associations équipées de Framaspace)
+  const { handleProvisionFramaspace, hasFramaspace } = useStudioFramaspaceProvision({ groupId, canWrite, setProvisioningMap, setRowStates });
 
   // 8. Filtrage des événements (Prestations & Récoltes actives par défaut)
   const filteredEvents = useMemo(() => {
@@ -659,7 +536,7 @@ export default function StudioEventsMediaTable({ groupId, canWrite = false, onSw
               handleSaveDepot={handleSaveDepot}
               handleSaveAlbum={handleSaveAlbum}
               handleAlignDepotToAlbum={handleAlignDepotToAlbum}
-              handleProvisionFramaspace={handleProvisionFramaspace}
+              handleProvisionFramaspace={hasFramaspace ? handleProvisionFramaspace : undefined}
               setActiveQrModal={setActiveQrModal}
               onSwitchToVaral={onSwitchToVaral}
             />

@@ -42,9 +42,9 @@ export function useConversationMessages(
 
   const normalizedGroupId = useMemo(
     () =>
-      String(groupId || profileData?.groupId || conversation?.groupId || 'samambaia')
+      String(groupId || profileData?.groupId || conversation?.groupId || '')
         .trim()
-        .toLowerCase() || 'samambaia',
+        .toLowerCase(),
     [groupId, profileData?.groupId, conversation?.groupId]
   );
 
