@@ -8,12 +8,12 @@ import { resolveEffectiveUserTags } from '../utils/tagUtils';
 import { countThreadUnreadMessages, getEffectiveReadThreads } from '../utils/forumUnreadUtils';
 import WidgetZapPanel from './forum/WidgetZapPanel';
 import WidgetPorteVoixPanel from './forum/WidgetPorteVoixPanel';
+import TerracottaMegaphoneIcon from './TerracottaMegaphoneIcon';
 
 const HOME_COMM_TAB_STORAGE_KEY = 'organizador_home_comm_tab';
 
 /**
- * Conteneur maître duo interactif « 💬 Le Zap / 📢 Porte-Voix » sur la page d'accueil.
- * - Sur PC (`>= 1024px` / `lg:`): 2 colonnes équilibrées (`lg:grid-cols-2`) côte à côte.
+ * Conteneur maître duo interactif « Le Zap / Porte-Voix » sur la page d'accueil.
  * - Sur Mobile (`< 1024px`): une seule `CordelCard` avec bascule tactile segmentée, swipe et pastilles de non-lus.
  */
 export default function WidgetForum({
@@ -176,7 +176,7 @@ export default function WidgetForum({
             </button>
 
             <button type="button" onClick={() => handleSelectMobileTab('porte-voix')} className={`py-1.5 px-2 rounded-[4px_6px_4px_5px] text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer transition-all ${activeMobileTab === 'porte-voix' ? 'bg-cordel-wood text-white border border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716]' : 'text-cordel-master-dark hover:bg-cordel-hover'}`}>
-              <span>📢 {t('widgetForum.porteVoixTab') || 'Porte-Voix'}</span>
+              <span className="inline-flex items-center gap-1.5"><TerracottaMegaphoneIcon className="w-4 h-4 inline-block shrink-0" /> {t('widgetForum.porteVoixTab') || 'Porte-Voix'}</span>
               {unreadThreadsCount > 0 && <span className="px-1.5 py-0.5 text-[9px] font-black rounded-full bg-red-600 text-white border border-white animate-pulse">{unreadThreadsCount}</span>}
             </button>
           </div>

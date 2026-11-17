@@ -28,7 +28,7 @@ self.addEventListener('notificationclick', (event) => {
   // Construction de l'URL cible complète à partir du chemin relatif
   const rawTargetPath = data.url || data.link || data.click_action || '/app';
   
-  // Normalisation : dans Organizad'Or, toutes les routes applicatives privées résident sous /app
+  // Normalisation : toutes les routes applicatives privées résident sous /app
   let targetPath = rawTargetPath;
   if (!targetPath.startsWith('http') && !targetPath.startsWith('/app') && targetPath !== '/' && !targetPath.startsWith('/login') && !targetPath.startsWith('/setup') && !targetPath.startsWith('/demo')) {
     targetPath = targetPath.startsWith('/') ? `/app${targetPath}` : `/app/${targetPath}`;
@@ -85,6 +85,13 @@ messaging.onBackgroundMessage((payload) => {
     self.navigator.setAppBadge().catch(() => {});
   }
 
+  // ANTI-DOUBLON : si le payload FCM contient déjà `notification: { title, body }` (cas de functions/),
+  // le SDK Firebase affiche nativement l'alerte en arrière-plan. Un second showNotification() créerait
+  // une seconde alerte : on ne l'affiche manuellement que pour un message « data-only ».
+  if (payload.notification) {
+    return;
+  }
+
   const notificationTitle = payload.notification?.title || payload.data?.title || "O Girador";
   
   // Priorité absolue à l'icône transmise dans le payload (logo dynamique d'association ou repli)
@@ -94,8 +101,8 @@ messaging.onBackgroundMessage((payload) => {
 
   const badgeUrl = '/badge-72x72.png';
 
-  // Tag stable et contextualisé pour regrouper proprement les alertes et écraser tout doublon éventuel
-  const tag = payload.data?.tag || (payload.data?.eventId ? `event-${payload.data.eventId}` : (payload.data?.announcementId ? `annonce-${payload.data.announcementId}` : (payload.data?.threadId ? `forum-${payload.data.threadId}` : undefined)));
+  // Tag déterministe (`notif_${eventId || queueDocId}`) pour fusionner tout doublon éventuel
+  const tag = payload.data?.tag || (payload.data?.eventId ? `notif_${payload.data.eventId}` : (payload.data?.notifId ? `notif_${payload.data.notifId}` : (payload.data?.announcementId ? `notif_${payload.data.announcementId}` : (payload.data?.threadId ? `notif_${payload.data.threadId}` : undefined))));
 
   const rawNotifUrl = payload.data?.url || payload.fcmOptions?.link || '/app';
   const resolvedNotifUrl = (!rawNotifUrl.startsWith('http') && !rawNotifUrl.startsWith('/app') && rawNotifUrl !== '/' && !rawNotifUrl.startsWith('/login') && !rawNotifUrl.startsWith('/setup') && !rawNotifUrl.startsWith('/demo'))

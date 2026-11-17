@@ -1,34 +1,25 @@
 import React from 'react';
 import CordelButton from '../CordelButton';
-import { XiloMegaphone } from '../XiloIcons';
+import TerracottaMegaphoneIcon from '../TerracottaMegaphoneIcon';
 import { countThreadUnreadMessages } from '../../utils/forumUnreadUtils';
+import { isForbiddenMegaphone, stripForbiddenMegaphones } from '../../utils/sanitizeIcons';
 
-/**
- * Sous-composant WidgetPorteVoixPanel (Accueil) :
- * Affiche les 3 ou 4 derniers sujets actifs des salons du Porte-Voix sous forme de cartes condensées
- * (badge du salon, titre en gras + pastille si non lu, dernier intervenant et compteur X rép. →).
- */
+/** Sous-composant WidgetPorteVoixPanel (Accueil) : derniers sujets actifs du Porte-Voix. */
 export default function WidgetPorteVoixPanel({
-  threads = [],
-  channels = [],
-  loading = false,
-  isMobile = false,
-  currentUserId = '',
-  effectiveReadThreads = {},
-  unreadThreadsCount = 0,
-  onOpenForum,
-  onOpenThread,
-  t
+  threads = [], channels = [], loading = false, isMobile = false,
+  currentUserId = '', effectiveReadThreads = {}, unreadThreadsCount = 0,
+  onOpenForum, onOpenThread, t
 }) {
   const recentThreads = threads.slice(0, isMobile ? 3 : 4);
   const displayCount = threads.length;
 
-  const resolveChannelBadgeName = (thread) => {
-    if (thread.channelId) {
-      const ch = channels.find((c) => c.id === thread.channelId);
-      if (ch?.name) return ch.name;
-    }
-    return thread.channelName || thread.categorie || (t?.('forum.defaultChannelGeneral') || 'Général');
+  const resolveChannelMeta = (thread) => {
+    const ch = thread.channelId ? channels.find((c) => c.id === thread.channelId) : null;
+    const rawName = ch?.name || thread.channelName || thread.categorie || (t?.('forum.defaultChannelGeneral') || 'Général');
+    return {
+      name: stripForbiddenMegaphones(rawName).trim() || rawName,
+      isMegaphone: isForbiddenMegaphone(ch?.icon) || isForbiddenMegaphone(rawName)
+    };
   };
 
   const resolveLastResponder = (thread) => {
@@ -52,8 +43,8 @@ export default function WidgetPorteVoixPanel({
       <div className="flex items-center justify-between gap-2 pb-2 border-b border-dashed border-cordel-master-dark/20">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           {!isMobile && (
-            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-cordel-master-dark text-cordel-bg-light border border-encre-noire flex items-center justify-center rounded-[6px_4px_8px_5px] shrink-0 shadow-[1px_1px_0px_0px_#181716]">
-              <XiloMegaphone size={15} className="text-cordel-bg-light" />
+            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-cordel-bg-light border border-encre-noire flex items-center justify-center rounded-[6px_4px_8px_5px] shrink-0 shadow-[1px_1px_0px_0px_#181716]">
+              <TerracottaMegaphoneIcon className="w-4 h-4 inline-block shrink-0" />
             </div>
           )}
           <div className="min-w-0">
@@ -109,7 +100,8 @@ export default function WidgetPorteVoixPanel({
         <div className="flex flex-col gap-2 w-full flex-1 justify-start">
           {recentThreads.map((thread) => {
             const replyCount = Array.isArray(thread.reponses) ? thread.reponses.length : 0;
-            const channelBadge = resolveChannelBadgeName(thread);
+            const channelMeta = resolveChannelMeta(thread);
+            const cleanTitle = stripForbiddenMegaphones(thread.titre).trim() || thread.titre;
             const lastResponder = resolveLastResponder(thread);
             const dateFormatted = formatDateShort(thread.derniereModification || thread.dateCreation);
             const unreadMsgs = countThreadUnreadMessages(thread, currentUserId, effectiveReadThreads?.[thread.id]);
@@ -117,22 +109,16 @@ export default function WidgetPorteVoixPanel({
 
             return (
               <div
-                key={thread.id}
-                onClick={() => onOpenThread && onOpenThread(thread.id)}
+                key={thread.id} onClick={() => onOpenThread && onOpenThread(thread.id)} title={cleanTitle}
                 className="p-2.5 border-2 border-encre-noire rounded-[6px_10px_6px_8px] bg-cordel-bg-light shadow-[1.5px_1.5px_0px_0px_#181716] cursor-pointer hover:translate-x-[-0.5px] hover:translate-y-[-0.5px] hover:bg-cordel-hover transition-all flex flex-col gap-1"
-                title={thread.titre}
               >
                 <div className="flex items-center justify-between gap-2 min-w-0">
                   <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                    <span className="text-[8px] font-extrabold uppercase tracking-wider text-cordel-wood bg-cordel-wood/10 border border-cordel-wood/25 px-1.5 py-0.5 rounded truncate max-w-[110px] shrink-0">
-                      📁 {channelBadge}
+                    <span className="text-[8px] font-extrabold uppercase tracking-wider text-cordel-wood bg-cordel-wood/10 border border-cordel-wood/25 px-1.5 py-0.5 rounded truncate max-w-[110px] shrink-0 inline-flex items-center gap-1">
+                      {channelMeta.isMegaphone ? <TerracottaMegaphoneIcon className="w-3.5 h-3.5 inline-block shrink-0" /> : '📁'} {channelMeta.name}
                     </span>
-                    {thread.isPinned && (
-                      <span className="text-[8px] font-black uppercase text-cordel-wood shrink-0">📌</span>
-                    )}
-                    <h4 className="text-xs font-black text-encre-noire truncate flex-1">
-                      {thread.titre}
-                    </h4>
+                    {thread.isPinned && <span className="text-[8px] font-black uppercase text-cordel-wood shrink-0">📌</span>}
+                    <h4 className="text-xs font-black text-encre-noire truncate flex-1">{cleanTitle}</h4>
                     {isUnread && (
                       <span
                         className="w-2.5 h-2.5 rounded-full bg-red-600 border border-white shrink-0 animate-pulse"

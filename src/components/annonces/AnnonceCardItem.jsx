@@ -5,11 +5,9 @@ import ReadReceiptBadge from '../common/ReadReceiptBadge';
 import { useReadReceipt } from '../../hooks/useReadReceipt';
 import { resolveTargetUserDisplayNames, resolveTargetRecipientIds } from '../../utils/announcementUtils';
 import { isMemberCaOrBureau } from '../../utils/memberUtils';
+import { stripForbiddenMegaphones } from '../../utils/sanitizeIcons';
 
-/**
- * Ligne d'annonce du Mégaphone intégrée dans la CordelCard parente unifiée.
- * Repliée par défaut si déjà lue ; dépliée en place (avec fond bg-amber-500/10 si non lue).
- */
+/** Ligne d'annonce du Mégaphone intégrée dans la CordelCard parente unifiée. */
 export default function AnnonceCardItem({
   ann, user, profileData, canPublish, handleCtaClick, handleDelete, allMembers = [], t
 }) {
@@ -51,8 +49,9 @@ export default function AnnonceCardItem({
   const canSeeReadDetails = Boolean(canPublish || isMemberCaOrBureau(profileData) || (ann.auteurId && user?.uid === ann.auteurId));
   const canDelete = Boolean(canPublish || (ann.auteurId && user?.uid && ann.auteurId === user.uid));
   const hasTargetUsers = Array.isArray(ann.targetUserIds) && ann.targetUserIds.length > 0;
+  const cleanTitle = stripForbiddenMegaphones(ann.titre).trim() || ann.titre;
+  const cleanMessage = stripForbiddenMegaphones(ann.message);
 
-  // État replié : simple ligne compacte sans cadre interne
   if (isCollapsed) {
     return (
       <div
@@ -62,20 +61,16 @@ export default function AnnonceCardItem({
       >
         <div className="flex items-center gap-1.5 min-w-0 flex-1">
           <TerracottaMegaphoneIcon size={15} className="shrink-0" />
-          <span className="font-extrabold text-xs text-encre-noire truncate">{ann.titre}</span>
+          <span className="font-extrabold text-xs text-encre-noire truncate">{cleanTitle}</span>
           {formattedDate && <span className="text-[9.5px] font-bold text-cordel-master-dark/65 shrink-0">• {formattedDate}</span>}
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           <ReadReceiptBadge
             lectures={ann.lectures || {}} luPar={ann.luPar || []} currentUserId={user?.uid}
             authorId={ann.auteurId} isAuthorOrBureau={canSeeReadDetails} allMembers={targetedMembers}
-            title={`Accusé de lecture - ${ann.titre}`} compact={true}
+            title={`Accusé de lecture - ${cleanTitle}`} compact={true}
           />
-          <button
-            type="button" onClick={(e) => { e.stopPropagation(); setIsCollapsed(false); }}
-            className="px-1.5 py-0.5 text-[10px] font-black text-cordel-wood hover:text-encre-noire bg-white/80 hover:bg-white rounded border border-encre-noire/25 cursor-pointer transition-colors"
-            title="Déplier l'annonce"
-          >▾</button>
+          <button type="button" onClick={(e) => { e.stopPropagation(); setIsCollapsed(false); }} title="Déplier l'annonce" className="px-1.5 py-0.5 text-[10px] font-black text-cordel-wood hover:text-encre-noire bg-white/80 hover:bg-white rounded border border-encre-noire/25 cursor-pointer transition-colors">▾</button>
         </div>
       </div>
     );
@@ -92,7 +87,7 @@ export default function AnnonceCardItem({
             {formattedDate && ann.auteurNom && <span>•</span>}
             {ann.auteurNom && <span>Par {ann.auteurNom}</span>}
           </div>
-          <h4 className="font-extrabold text-sm text-encre-noire mt-0.5 leading-snug">{ann.titre}</h4>
+          <h4 className="font-extrabold text-sm text-encre-noire mt-0.5 leading-snug">{cleanTitle}</h4>
         </div>
 
         <div className="flex flex-wrap items-center justify-end gap-1.5 select-none shrink-0">
@@ -107,11 +102,11 @@ export default function AnnonceCardItem({
           <ReadReceiptBadge
             lectures={ann.lectures || {}} luPar={ann.luPar || []} currentUserId={user?.uid}
             authorId={ann.auteurId} isAuthorOrBureau={canSeeReadDetails} allMembers={targetedMembers}
-            title={`Accusé de lecture - ${ann.titre}`} compact={true}
+            title={`Accusé de lecture - ${cleanTitle}`} compact={true}
           />
           {canDelete && (
             <button
-              type="button" onClick={(e) => { e.stopPropagation(); handleDelete(ann.id, ann.titre); }}
+              type="button" onClick={(e) => { e.stopPropagation(); handleDelete(ann.id, cleanTitle); }}
               className="px-1.5 py-0.5 text-[10px] border border-dashed border-red-500/60 hover:border-red-700 text-red-700 bg-white/60 hover:bg-red-50 rounded cursor-pointer flex items-center justify-center transition-colors"
               title={t('widgetAnnonces.deleteTitle') || "Supprimer définitivement l'annonce"}
             >🗑️</button>
@@ -124,7 +119,7 @@ export default function AnnonceCardItem({
         </div>
       </div>
 
-      <p className="text-xs font-semibold leading-relaxed mt-2 text-encre-noire/90 whitespace-pre-wrap">{ann.message}</p>
+      <p className="text-xs font-semibold leading-relaxed mt-2 text-encre-noire/90 whitespace-pre-wrap">{cleanMessage}</p>
 
       {ann.actionText && ann.actionLink && (
         <div className="mt-2.5 pt-2 border-t border-dashed border-cordel-master-dark/20 flex justify-start select-none">

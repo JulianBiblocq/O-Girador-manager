@@ -116,10 +116,10 @@ export async function syncPollGroupOnSave({ db, event, editForm, sharedUpdates, 
         totalOptions,
         pollRestrictionType: event.pollRestrictionType || 'aucun',
         pollTarget: event.pollTarget || '',
-        votes: {},
-        inscriptions: [],
+        votes: {}, inscriptions: [],
         covoiturage: { voitures: [], cherchePlace: [] },
-        createdAt: event.createdAt || new Date().toISOString()
+        createdAt: event.createdAt || new Date().toISOString(),
+        sendPushNotification: false, clientNotified: true // Nouveau créneau d'édition : jamais de Push parasite
       });
     }
   });

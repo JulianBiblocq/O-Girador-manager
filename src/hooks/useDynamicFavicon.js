@@ -58,10 +58,9 @@ export default function useDynamicFavicon(associationData, options = {}) {
 
     const logoUrl = associationData?.branding?.logoUrl || associationData?.logoUrl || null;
     const combinedLogoUrl = associationData?.branding?.combinedLogoUrl || null;
-    const name = associationData?.nom || associationData?.name || associationData?.associationName || '';
+    const name = (associationData?.nom || associationData?.name || associationData?.associationName || '').trim();
     const colors = associationData?.branding?.colors || {};
 
-    // 1. Mode Vitrine Publique (Mostrador) : logo pur de l'association
     if (isPureLogo) {
       if (logoUrl) {
         updateFavicon(logoUrl);
@@ -74,26 +73,18 @@ export default function useDynamicFavicon(associationData, options = {}) {
       return () => { isMounted = false; };
     }
 
-    // 2. Mode Manager (Organizador) : Sceau combiné persistant, Samambaia ou neutre O Girador
     const rawGroup = associationData?.groupId || associationData?.id || '';
-    const isSamambaia = String(rawGroup).trim().toLowerCase() === 'samambaia' || name.toLowerCase().includes('samambaia');
+    const ogTitle = name || 'O Girador';
 
     if (!rawGroup && !name && !logoUrl && !combinedLogoUrl) {
       updateFavicon('/og-girador-frame.svg');
-      updateDocumentOpenGraphTags({ image: '/og-girador-frame.png', title: 'O Girador' });
+      updateDocumentOpenGraphTags({ image: '/og-girador-frame.png', title: 'O Girador', updateDocumentTitle: false });
       return () => { isMounted = false; };
     }
     if (combinedLogoUrl) {
       updateFavicon(combinedLogoUrl);
-      updateDocumentOpenGraphTags({ image: combinedLogoUrl, title: name ? `O Girador | ${name}` : undefined });
+      updateDocumentOpenGraphTags({ image: combinedLogoUrl, title: ogTitle, updateDocumentTitle: false });
       window.dispatchEvent(new CustomEvent('combined-logo-ready', { detail: combinedLogoUrl }));
-      return () => { isMounted = false; };
-    }
-    if (isSamambaia) {
-      const sealUrl = '/brandings/logoOGSamambaia.png';
-      updateFavicon(sealUrl);
-      updateDocumentOpenGraphTags({ image: sealUrl, title: 'O Girador | Samambaia' });
-      window.dispatchEvent(new CustomEvent('combined-logo-ready', { detail: sealUrl }));
       return () => { isMounted = false; };
     }
 
@@ -116,13 +107,13 @@ export default function useDynamicFavicon(associationData, options = {}) {
               drawLogoInCenter(ctx, activeImg);
               const dataUrl = canvas.toDataURL('image/png');
               updateFavicon(dataUrl);
-              updateDocumentOpenGraphTags({ image: dataUrl, title: name ? `O Girador | ${name}` : undefined });
+              updateDocumentOpenGraphTags({ image: dataUrl, title: ogTitle, updateDocumentTitle: false });
               window.dispatchEvent(new CustomEvent('combined-logo-ready', { detail: dataUrl }));
             } catch {
               drawInitialsInCenter(ctx, name, colors.primary || '#8B2A1A');
               const fallbackUrl = canvas.toDataURL('image/png');
               updateFavicon(fallbackUrl);
-              updateDocumentOpenGraphTags({ image: fallbackUrl, title: name ? `O Girador | ${name}` : undefined });
+              updateDocumentOpenGraphTags({ image: fallbackUrl, title: ogTitle, updateDocumentTitle: false });
             }
           };
           activeImg.onerror = () => {
@@ -131,7 +122,7 @@ export default function useDynamicFavicon(associationData, options = {}) {
             try {
               const fallbackUrl = canvas.toDataURL('image/png');
               updateFavicon(fallbackUrl);
-              updateDocumentOpenGraphTags({ image: fallbackUrl, title: name ? `O Girador | ${name}` : undefined });
+              updateDocumentOpenGraphTags({ image: fallbackUrl, title: ogTitle, updateDocumentTitle: false });
             } catch {
               updateFavicon('/og-girador-frame.svg');
             }
@@ -141,7 +132,7 @@ export default function useDynamicFavicon(associationData, options = {}) {
           drawInitialsInCenter(ctx, name, colors.primary || '#8B2A1A');
           const dataUrl = canvas.toDataURL('image/png');
           updateFavicon(dataUrl);
-          updateDocumentOpenGraphTags({ image: dataUrl, title: name ? `O Girador | ${name}` : undefined });
+          updateDocumentOpenGraphTags({ image: dataUrl, title: ogTitle, updateDocumentTitle: false });
           window.dispatchEvent(new CustomEvent('combined-logo-ready', { detail: dataUrl }));
         }
       } catch {

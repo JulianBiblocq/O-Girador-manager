@@ -26,13 +26,9 @@ import {
   editConversationMessage,
   deleteConversationMessage
 } from '../utils/conversationMessageActions';
+import { stripForbiddenMegaphones } from '../utils/sanitizeIcons';
 
-/**
- * Hook personnalisé useConversationMessages
- * Synchronise les messages d'une discussion active (directe ou de groupe) en temps réel.
- * Pour « 💬 Le Zap », résout systématiquement 100 % des membres actifs afin que
- * chaque membre reçoive la cloche interne (🔔) et la notification Push.
- */
+/** Hook useConversationMessages : synchronise et envoie les messages (directs, groupes et Le Zap). */
 export function useConversationMessages(
   conversationId,
   groupId,
@@ -121,7 +117,7 @@ export function useConversationMessages(
       fileUrl = null,
       fileName = null
     }) => {
-      const trimmed = (content || '').trim();
+      const trimmed = stripForbiddenMegaphones(content || '').trim();
       const hasImage = Boolean(imageUrl);
       const hasFile = Boolean(fileUrl);
       if ((!trimmed && !hasImage && !hasFile) || !effectiveConversationId || !user?.uid) return null;

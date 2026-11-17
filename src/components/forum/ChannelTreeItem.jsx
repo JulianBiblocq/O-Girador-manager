@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { XiloMegaphone } from '../XiloIcons';
+import TerracottaMegaphoneIcon from '../TerracottaMegaphoneIcon';
 import { useTranslation } from '../LanguageContext';
 import { countThreadUnreadMessages } from '../../utils/forumUnreadUtils';
+import { isForbiddenMegaphone, stripForbiddenMegaphones } from '../../utils/sanitizeIcons';
 
 /**
  * Élément d'arborescence d'un salon du Porte-Voix (replié par défaut sur mobile < 768px).
@@ -36,8 +38,9 @@ export default function ChannelTreeItem(props) {
     if (hasActiveThread || (isDesktop && (isActive || hasUnread))) setIsOpen(true);
   }, [isActive, hasActiveThread, hasUnread]);
 
-  const channelDisplayName =
-    channel.name === 'Général' || channel.name === 'Geral' ? t('forum.defaultChannelGeneral') : channel.name;
+  const rawChannelName = channel.name === 'Général' || channel.name === 'Geral' ? t('forum.defaultChannelGeneral') : channel.name;
+  const channelDisplayName = stripForbiddenMegaphones(rawChannelName).trim() || rawChannelName;
+  const hasForbiddenIcon = isForbiddenMegaphone(channel.icon) || isForbiddenMegaphone(channel.name);
 
   const handleChannelClick = () => {
     if (typeof window !== 'undefined' && window.innerWidth < 768 && channelThreads.length > 0 && !isOpen) {
@@ -48,7 +51,11 @@ export default function ChannelTreeItem(props) {
   };
 
   const showSubChannels = isOpen || (level === 0 && children.length > 0);
-  const icon = channel.readOnlyForMembers ? (
+  const icon = hasForbiddenIcon ? (
+    <TerracottaMegaphoneIcon className="w-4 h-4 inline-block shrink-0" />
+  ) : channel.icon ? (
+    channel.icon
+  ) : channel.readOnlyForMembers ? (
     <XiloMegaphone size={12} className="text-cordel-wood inline" />
   ) : !channel.readRoles || channel.readRoles.includes('all') || channel.readRoles.length === 0 ? (
     level === 0 ? '📂' : '#'
@@ -59,17 +66,12 @@ export default function ChannelTreeItem(props) {
       <div className="flex items-center gap-1 w-full min-w-0">
         {hasChildren ? (
           <button
-            type="button"
-            onClick={() => setIsOpen((prev) => !prev)}
+            type="button" onClick={() => setIsOpen((prev) => !prev)} title={isOpen ? 'Réduire' : 'Déplier les sujets'}
             className="p-1 text-[10px] font-black text-cordel-wood hover:text-encre-noire cursor-pointer select-none shrink-0"
-            title={isOpen ? 'Réduire' : 'Déplier les sujets'}
-          >
-            {isOpen ? '▼' : '►'}
-          </button>
+          >{isOpen ? '▼' : '►'}</button>
         ) : <span className="w-3 shrink-0" />}
         <button
-          type="button"
-          onClick={handleChannelClick}
+          type="button" onClick={handleChannelClick} style={{ paddingLeft: `${Math.max(6, level * 10 + 6)}px` }}
           className={`flex-1 text-left px-2 py-1.5 text-xs rounded transition-all cursor-pointer border flex justify-between items-center min-w-0 ${
             isActive
               ? 'theme-bg-ocre text-encre-noire border-encre-noire font-black shadow-none translate-x-[0.5px] translate-y-[0.5px]'
@@ -77,7 +79,6 @@ export default function ChannelTreeItem(props) {
                 ? 'bg-transparent text-encre-noire font-black border-transparent hover:bg-white/40'
                 : 'bg-transparent text-cordel-master-dark font-semibold border-transparent hover:bg-white/40'
           }`}
-          style={{ paddingLeft: `${Math.max(6, level * 10 + 6)}px` }}
         >
           <span className="flex items-center gap-1.5 min-w-0 overflow-hidden flex-1 pr-1">
             <span className="shrink-0 font-bold text-cordel-wood opacity-75">{icon}</span>
@@ -105,11 +106,12 @@ export default function ChannelTreeItem(props) {
             const repliesCount = thread.reponses ? thread.reponses.length - 1 : 0;
             const unreadCount = countThreadUnreadMessages(thread, currentUserId, effectiveReadThreads[thread.id]);
             const isUnread = !isThreadActive && unreadCount > 0;
+            const cleanThreadTitle = stripForbiddenMegaphones(thread.titre).trim() || thread.titre;
             return (
               <button
-                key={thread.id}
-                type="button"
+                key={thread.id} type="button" title={cleanThreadTitle}
                 onClick={() => onSelectThread && onSelectThread(thread, activeChannelId)}
+                style={{ paddingLeft: `${Math.max(10, (level + 1) * 8 + 6)}px` }}
                 className={`w-full text-left py-1 px-2 text-[11px] rounded transition-all cursor-pointer flex items-center justify-between gap-1 min-w-0 border ${
                   isThreadActive
                     ? 'theme-bg-ocre text-encre-noire border-encre-noire font-extrabold shadow-none'
@@ -117,15 +119,13 @@ export default function ChannelTreeItem(props) {
                       ? 'bg-transparent text-encre-noire font-black hover:bg-white/60 border-transparent'
                       : 'bg-transparent text-cordel-master-dark font-semibold hover:bg-white/60 border-transparent'
                 }`}
-                style={{ paddingLeft: `${Math.max(10, (level + 1) * 8 + 6)}px` }}
-                title={thread.titre}
               >
                 <span className="flex items-center gap-1.5 min-w-0 overflow-hidden flex-1 pr-1">
                   <span className="shrink-0 text-[10px] relative">
-                    {thread.isPinned ? '📌' : '💬'}
+                    {isForbiddenMegaphone(thread.icon) || isForbiddenMegaphone(thread.titre) ? <TerracottaMegaphoneIcon className="w-3.5 h-3.5 inline-block shrink-0" /> : (thread.isPinned ? '📌' : '💬')}
                     {isUnread && <span className="absolute -top-1 -right-1 w-1.5 h-1.5 bg-red-600 rounded-full animate-pulse" />}
                   </span>
-                  <span className={`truncate ${isUnread ? 'font-black' : ''}`}>{thread.titre}</span>
+                  <span className={`truncate ${isUnread ? 'font-black' : ''}`}>{cleanThreadTitle}</span>
                 </span>
                 <div className="flex items-center gap-1 shrink-0">
                   {isUnread && <span className="text-[7.5px] font-black text-white bg-red-600 px-1 py-0.2 rounded-full">{unreadCount}</span>}

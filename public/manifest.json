@@ -1,6 +1,6 @@
 {
   "id": "/",
-  "name": "O Girador — Organizador",
+  "name": "O Girador",
   "short_name": "O Girador",
   "description": "Application de gestion associative et musicale O Girador",
   "start_url": "/app",
@@ -8,8 +8,8 @@
   "display": "standalone",
   "display_override": ["standalone", "window-controls-overlay"],
   "orientation": "any",
-  "background_color": "#f4ecd8",
-  "theme_color": "#d99f4d",
+  "background_color": "#F4ECD8",
+  "theme_color": "#8B2A1A",
   "prefer_related_applications": false,
   "categories": ["music", "management", "productivity"],
   "icons": [

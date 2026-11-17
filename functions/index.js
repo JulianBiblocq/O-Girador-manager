@@ -14,7 +14,6 @@ const { defineSecret } = require("firebase-functions/params");
 const { getApps, initializeApp } = require("firebase-admin/app");
 const crypto = require("crypto");
 const { getFirestore, FieldValue, Timestamp } = require("firebase-admin/firestore");
-const { getMessaging } = require("firebase-admin/messaging");
 const { getAuth } = require("firebase-admin/auth");
 const {
   detectHelloAssoOptions,
@@ -28,257 +27,13 @@ if (!getApps().length) {
   initializeApp();
 }
 
-/**
- * Fonction utilitaire pour envoyer des notifications push FCM.
- * @param {Object} db - Instance Firestore
- * @param {Object} params - Paramètres d'envoi
- */
-async function sendPushToUsers(db, { groupId, recipientId, cibles, targetUserIds, title, body, dataPayload }) {
-  if (!groupId && !recipientId) {
-    console.error("sendPushToUsers - groupId ou recipientId manquant.");
-    return false;
-  }
-
-  let usersSnap;
-  if (recipientId) {
-    const userDoc = await db.collection("users").doc(recipientId).get();
-    usersSnap = { docs: userDoc.exists ? [userDoc] : [], empty: !userDoc.exists };
-  } else {
-    const rawGroup = String(groupId || "").trim();
-    const lowerGroup = rawGroup.toLowerCase();
-    const capGroup = lowerGroup ? lowerGroup.charAt(0).toUpperCase() + lowerGroup.slice(1) : "";
-    const groupVariants = Array.from(new Set([rawGroup, lowerGroup, capGroup])).filter(Boolean);
-    usersSnap = await db.collection("users").where("groupId", "in", groupVariants).get();
-  }
-
-  if (usersSnap.empty) {
-    console.warn("sendPushToUsers - Aucun utilisateur trouvé.");
-    return false;
-  }
-
-  const allTokens = [];
-  const normalizedTargetUserIds = Array.isArray(targetUserIds) ? targetUserIds.filter(Boolean) : [];
-  const hasTargetUsers = normalizedTargetUserIds.length > 0;
-  const cibleTous = (!cibles || cibles.includes("Tous") || cibles.length === 0) && !hasTargetUsers;
-
-  usersSnap.docs.forEach((userDoc) => {
-    const userData = userDoc.data();
-    const userId = userDoc.id;
-    const userTokens = userData.fcmTokens;
-
-    if (!Array.isArray(userTokens) || userTokens.length === 0) return;
-
-    if (!recipientId && !cibleTous) {
-      const userTags = userData.tags || [];
-      const userRole = userData.role || "membre";
-      const isAdmin = userRole === "mestre" || userRole === "super-admin";
-
-      const isNominativeTarget = hasTargetUsers && normalizedTargetUserIds.includes(userId);
-      const matchesCible = cibles && cibles.some((c) => {
-        if (c === "Tous") return false;
-        if (c === "role:admin" && isAdmin) return true;
-        return userTags.includes(c);
-      });
-
-      if (!isNominativeTarget && !matchesCible) return;
-    }
-
-    // Dédoublonner les jetons de l'utilisateur pour éviter les envois multiples au même token
-    const uniqueUserTokens = Array.from(new Set((userTokens || []).filter(t => typeof t === "string" && t.trim()).map(t => t.trim())));
-    uniqueUserTokens.forEach((token) => {
-      // Dédoublonner globalement dans allTokens
-      if (!allTokens.some((item) => item.token === token)) {
-        allTokens.push({ token, userId });
-      }
-    });
-  });
-
-  if (allTokens.length === 0) {
-    console.warn("sendPushToUsers - Aucun token valide trouvé pour les cibles.");
-    return false;
-  }
-
-  // Résolution de l'identifiant effectif de groupe pour charger le logo d'association
-  let effectiveGroupId = groupId;
-  if (!effectiveGroupId && recipientId && usersSnap.docs.length > 0) {
-    effectiveGroupId = usersSnap.docs[0].data()?.groupId || "";
-  }
-
-  // Récupération du nom et du logo personnalisé de l'association (branding marque blanche)
-  let assoName = "";
-  let assoIcon = "/icon-192x192.png";
-  if (effectiveGroupId) {
-    try {
-      const assoDoc = await db.collection("associations").doc(effectiveGroupId).get();
-      if (assoDoc.exists) {
-        const assoData = assoDoc.data() || {};
-        assoName = assoData.nom || "";
-        // Priorité au logo téléversé dans le branding, sinon logo racine, sinon repli statique
-        if (assoData.branding && assoData.branding.logoUrl) {
-          assoIcon = assoData.branding.logoUrl;
-        } else if (assoData.logoUrl) {
-          assoIcon = assoData.logoUrl;
-        }
-      }
-    } catch (e) {
-      console.warn("sendPushToUsers - Erreur lors de la récupération de l'association", e);
-    }
-  }
-
-  const baseTitle = title || "O Girador";
-  const finalTitle = assoName ? `${assoName} | ${baseTitle}` : baseTitle;
-  const truncatedBody = body && body.length > 200 ? body.substring(0, 197) + "..." : (body || "");
-  const BATCH_SIZE = 500;
-  const tokensToRemove = [];
-  const deliveryStatsByUser = {};
-  const sentAtIso = new Date().toISOString();
-
-  for (let i = 0; i < allTokens.length; i += BATCH_SIZE) {
-    const batch = allTokens.slice(i, i + BATCH_SIZE);
-    const batchTokenStrings = batch.map((t) => t.token);
-
-    try {
-      // Données de navigation transmises au service worker pour le deep linking
-      const rawData = dataPayload || { url: "/app", click_action: "/app" };
-      let eventUrl = rawData.url || "/app";
-      if (!eventUrl.startsWith('http') && !eventUrl.startsWith('/app')) {
-        eventUrl = eventUrl.startsWith('/') ? `/app${eventUrl}` : `/app/${eventUrl}`;
-      }
-      const resolvedData = { ...rawData, url: eventUrl, click_action: eventUrl };
-
-      // Tag déterministe pour que le navigateur et l'OS fusionnent tout doublon
-      const notifTag = resolvedData.tag || (resolvedData.eventId ? `event-${resolvedData.eventId}` : (resolvedData.announcementId ? `annonce-${resolvedData.announcementId}` : (resolvedData.threadId ? `forum-${resolvedData.threadId}` : undefined)));
-
-      // Conversion stricte en chaînes de caractères de toutes les entrées data (exigence FCM)
-      const fcmStringData = {};
-      Object.entries({
-        ...resolvedData,
-        title: finalTitle,
-        body: truncatedBody,
-        url: eventUrl,
-        click_action: eventUrl,
-        groupId: effectiveGroupId || "",
-        icon: assoIcon,
-        ...(notifTag ? { tag: notifTag } : {})
-      }).forEach(([k, v]) => {
-        if (v !== undefined && v !== null) {
-          fcmStringData[k] = typeof v === "string" ? v : String(v);
-        }
-      });
-
-      const multicastMessage = {
-        notification: {
-          title: finalTitle,
-          body: truncatedBody,
-          ...(assoIcon.startsWith('http') ? { imageUrl: assoIcon } : {})
-        },
-        android: {
-          priority: 'high',
-          notification: {
-            channelId: 'default',
-            sound: 'default',
-            ...(notifTag ? { tag: notifTag } : {})
-          }
-        },
-        apns: {
-          headers: {
-            'apns-priority': '10'
-          },
-          payload: {
-            aps: {
-              sound: 'default',
-              'content-available': 1
-            }
-          }
-        },
-        webpush: {
-          headers: {
-            Urgency: 'high'
-          },
-          notification: {
-            title: finalTitle,
-            body: truncatedBody,
-            icon: assoIcon,
-            badge: '/badge-72x72.png',
-            ...(notifTag ? { tag: notifTag } : {}),
-            data: fcmStringData
-          },
-          fcmOptions: {
-            link: eventUrl
-          }
-        },
-        data: fcmStringData,
-        tokens: batchTokenStrings
-      };
-
-      const response = await getMessaging().sendEachForMulticast(multicastMessage);
-      console.log(`sendPushToUsers - Lot ${Math.floor(i / BATCH_SIZE) + 1} : ${response.successCount} succès, ${response.failureCount} échecs.`);
-
-      response.responses.forEach((resp, idx) => {
-        const { token, userId } = batch[idx];
-        if (!deliveryStatsByUser[userId]) {
-          deliveryStatsByUser[userId] = {
-            sentAt: sentAtIso,
-            successCount: 0,
-            failureCount: 0,
-            lastErrorCode: null
-          };
-        }
-        if (resp.success) {
-          deliveryStatsByUser[userId].successCount += 1;
-        } else {
-          const errorCode = resp.error?.code || resp.error?.message || "unknown_error";
-          deliveryStatsByUser[userId].failureCount += 1;
-          deliveryStatsByUser[userId].lastErrorCode = errorCode;
-          if (
-            errorCode === "messaging/invalid-registration-token" ||
-            errorCode === "messaging/registration-token-not-registered"
-          ) {
-            tokensToRemove.push({ token, userId });
-          }
-        }
-      });
-    } catch (err) {
-      console.error("sendPushToUsers - Erreur lors de l'envoi du lot :", err);
-    }
-  }
-
-  const tokensByUser = {};
-  tokensToRemove.forEach(({ token, userId }) => {
-    if (!tokensByUser[userId]) tokensByUser[userId] = [];
-    tokensByUser[userId].push(token);
-  });
-
-  const affectedUserIds = new Set([
-    ...Object.keys(deliveryStatsByUser),
-    ...Object.keys(tokensByUser)
-  ]);
-
-  for (const userId of affectedUserIds) {
-    try {
-      const updatePayload = {};
-      if (deliveryStatsByUser[userId]) {
-        updatePayload.lastPushDelivery = deliveryStatsByUser[userId];
-      }
-      const invalidTokens = tokensByUser[userId];
-      if (Array.isArray(invalidTokens) && invalidTokens.length > 0) {
-        updatePayload.fcmTokens = FieldValue.arrayRemove(...invalidTokens);
-        updatePayload.pushOptInContract = true;
-        console.log(`sendPushToUsers - Nettoyage automatique : ${invalidTokens.length} token(s) obsolète(s) retiré(s) pour l'utilisateur ${userId} (pushOptInContract préservé)`);
-      }
-      if (Object.keys(updatePayload).length > 0) {
-        await db.collection("users").doc(userId).update(updatePayload);
-      }
-    } catch (err) {
-      console.error(`sendPushToUsers - Erreur mise à jour statut Push pour ${userId}:`, err);
-    }
-  }
-
-  return true;
-}
+// Canal Push serveur unique (destinataires/jetons dédupliqués, tag déterministe, pastille Terracotta)
+const { sendPushToUsers, claimPushSend } = require("./pushDispatch");
 
 /**
  * Trigger : onAnnouncementCreated
+ * Si le client a déjà diffusé l'annonce via `notifications_queue` (`clientNotified: true`), ignore :
+ * un seul canal d'émission par action (aucun doublon Push).
  */
 exports.onAnnouncementCreated = onDocumentCreated(
   "announcements/{announcementId}",
@@ -286,9 +41,10 @@ exports.onAnnouncementCreated = onDocumentCreated(
     const snap = event.data;
     if (!snap) return null;
     const data = snap.data();
-    if (!data.sendPushNotification || !data.groupId) return null;
+    if (!data.sendPushNotification || !data.groupId || data.clientNotified === true) return null;
 
     const db = getFirestore();
+    if (!(await claimPushSend(db, snap.ref))) return null;
     const cibles = Array.isArray(data.cibles) ? data.cibles : ["Tous"];
     const targetUserIds = Array.isArray(data.targetUserIds) ? data.targetUserIds : [];
     
@@ -302,7 +58,7 @@ exports.onAnnouncementCreated = onDocumentCreated(
       targetUserIds: targetUserIds,
       title: data.titre || "Nouvelle annonce",
       body: data.message || "",
-      dataPayload: { url: actionUrl, click_action: actionUrl, announcementId, tag: `annonce-${announcementId}` }
+      dataPayload: { url: actionUrl, click_action: actionUrl, announcementId }
     });
     return null;
   }
@@ -328,6 +84,7 @@ exports.onEventCreated = onDocumentCreated(
     }
 
     const db = getFirestore();
+    if (!(await claimPushSend(db, snap.ref))) return null;
     const eventId = event.params.eventId;
     const isPoll = data.status === "sondage" || data.isPoll === true;
     const title = isPoll
@@ -345,8 +102,7 @@ exports.onEventCreated = onDocumentCreated(
       dataPayload: {
         url: `/app?eventId=${eventId}`,
         click_action: `/app?eventId=${eventId}`,
-        eventId,
-        tag: `event-${eventId}`
+        eventId
       }
     });
     return null;
@@ -379,6 +135,8 @@ exports.onNotificationQueued = onDocumentCreated(
 
     const db = getFirestore();
     const notifId = event.params.notifId;
+    // Idempotence : un retry/double livraison du trigger ne doit jamais produire un second Push
+    if (!(await claimPushSend(db, snap.ref, "pushClaimedAt"))) return null;
     
     let targetUrl = "/app";
     if (data.url) {
@@ -402,7 +160,7 @@ exports.onNotificationQueued = onDocumentCreated(
       targetUserIds,
       title: data.title || data.titre || "Notification O Girador",
       body: data.body || data.message || "",
-      dataPayload: { url: targetUrl, click_action: targetUrl, notifId, tag: `queue-${notifId}` }
+      dataPayload: { url: targetUrl, click_action: targetUrl, notifId, ...(data.eventId ? { eventId: data.eventId } : {}) }
     });
 
     // Optionnel : on peut supprimer la notification de la queue après l'envoi

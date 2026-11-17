@@ -5,6 +5,7 @@
 
 import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { isForbiddenMegaphone, stripForbiddenMegaphones } from './sanitizeIcons';
 
 function isMessageAuthor(msg, uid) {
   if (!msg || !uid) return false;
@@ -20,7 +21,7 @@ function isMessageAuthor(msg, uid) {
  * Bascule une réaction emoji sur un message de conversation.
  */
 export async function toggleConversationReaction({ messageId, emoji, uid, messages = [] }) {
-  if (!messageId || !emoji || !uid) return;
+  if (!messageId || !emoji || !uid || isForbiddenMegaphone(emoji)) return;
   const targetMsg = messages.find((m) => m.id === messageId);
   if (!targetMsg) return;
 
@@ -50,7 +51,7 @@ export async function editConversationMessage({
   messages = [],
   effectiveConversationId
 }) {
-  const trimmed = (newContent || '').trim();
+  const trimmed = stripForbiddenMegaphones(newContent || '').trim();
   if (!messageId || !uid || !trimmed) return;
   const targetMsg = messages.find((m) => m.id === messageId);
   if (!isMessageAuthor(targetMsg, uid)) {

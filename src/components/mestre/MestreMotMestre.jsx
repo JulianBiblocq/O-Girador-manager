@@ -5,6 +5,7 @@ import { useTranslation } from '../LanguageContext';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
 import { XiloMegaphone } from '../XiloIcons';
+import { stripForbiddenMegaphones } from '../../utils/sanitizeIcons';
 
 export default function MestreMotMestre({ groupId, profileData }) {
   const { t } = useTranslation();
@@ -47,10 +48,10 @@ export default function MestreMotMestre({ groupId, profileData }) {
     try {
       const docRef = doc(db, 'associations', groupId);
       await updateDoc(docRef, {
-        motDuMestre: text.trim(),
-        motDuMestreAuteur: auteur.trim() || profileData?.prenom || "L'équipe",
+        motDuMestre: stripForbiddenMegaphones(text).trim(),
+        motDuMestreAuteur: stripForbiddenMegaphones(auteur).trim() || profileData?.prenom || "L'équipe",
         motDuMestrePublie: publie,
-        motDuMestreActionText: actionText.trim(),
+        motDuMestreActionText: stripForbiddenMegaphones(actionText).trim(),
         motDuMestreActionLink: actionLink.trim()
       });
       alert(t('mestre.editorial.motMestreUpdateSuccess'));
@@ -98,11 +99,8 @@ export default function MestreMotMestre({ groupId, profileData }) {
               {t('mestre.editorial.editorLabel')}
             </label>
             <textarea
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              disabled={saving}
-              rows={6}
-              placeholder={t('mestre.editorial.editorPlaceholder')}
+              value={text} onChange={(e) => setText(stripForbiddenMegaphones(e.target.value))}
+              disabled={saving} rows={6} placeholder={t('mestre.editorial.editorPlaceholder')}
               className="theme-input w-full p-3 font-medium text-sm leading-relaxed border border-encre-noire bg-cordel-bg-light rounded"
               required
             />

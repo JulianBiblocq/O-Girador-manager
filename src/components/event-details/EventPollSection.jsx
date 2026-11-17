@@ -18,15 +18,9 @@ import {
 import ReunionPrivacyBadge from '../agenda/ReunionPrivacyBadge';
 
 export default function EventPollSection({
-  event,
-  user,
-  profileData,
-  onNavigateToEventId,
-  allUsers: propAllUsers,
-  pupitresList = [],
-  linkedInstruments = [],
-  effectiveUserTags = [],
-  tagsDisponibles = []
+  event, user, profileData, onNavigateToEventId, onDeletePoll,
+  allUsers: propAllUsers, pupitresList = [], linkedInstruments = [],
+  effectiveUserTags = [], tagsDisponibles = []
 }) {
   const { confirm } = useConfirm();
   const [pollEvents, setPollEvents] = useState([]);
@@ -288,23 +282,18 @@ export default function EventPollSection({
         </div>
 
         <div className="flex items-center gap-1.5 flex-wrap">
-          {event?.type === 'reunion' && (
-            <ReunionPrivacyBadge event={event} tagsDisponibles={tagsDisponibles} />
-          )}
+          {event?.type === 'reunion' && <ReunionPrivacyBadge event={event} tagsDisponibles={tagsDisponibles} />}
           {event.pollRestrictionType && event.pollRestrictionType !== 'aucun' && event?.type !== 'reunion' && (
-            <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] px-2 py-0.5">
-              {event.pollRestrictionType === 'tag' ? `🏷️ Étiquette : ${event.pollTarget}` : `🥁 Pupitre : ${event.pollTarget}`}
-            </span>
+            <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] px-2 py-0.5">{event.pollRestrictionType === 'tag' ? `🏷️ Étiquette : ${event.pollTarget}` : `🥁 Pupitre : ${event.pollTarget}`}</span>
+          )}
+          {onDeletePoll && (
+            <button type="button" onClick={onDeletePoll} disabled={isProcessing} title="Supprimer l'ensemble de ce sondage" className="text-[9.5px] font-black uppercase px-2.5 py-1 rounded bg-cordel-wood text-white border border-encre-noire shadow-[1.5px_1.5px_0px_0px_#181716] hover:brightness-110 cursor-pointer flex items-center gap-1">🗑️ Supprimer le sondage</button>
           )}
         </div>
       </div>
 
       {/* Message de restriction si l'utilisateur n'est pas éligible */}
-      {restrictionMessage && (
-        <div className="p-2.5 bg-amber-200/50 dark:bg-amber-900/40 border border-amber-500/30 rounded text-center text-xs font-bold text-amber-900 dark:text-amber-200">
-          {restrictionMessage}
-        </div>
-      )}
+      {restrictionMessage && <div className="p-2.5 bg-amber-200/50 dark:bg-amber-900/40 border border-amber-500/30 rounded text-center text-xs font-bold text-amber-900 dark:text-amber-200">{restrictionMessage}</div>}
 
       {/* Pavé d'action prioritaire (uniquement en mode Date unique) */}
       {isSuperAdminOrMestre && !isPupitreDispatch && (

@@ -17,23 +17,9 @@ import {
   sanitizeFirestoreObject,
   dispatchThreadReplyNotifications
 } from '../utils/forumThreadSyncUtils';
+import { stripForbiddenMegaphones } from '../utils/sanitizeIcons';
 
-/**
- * Hook personnalisé encapsulant toute la logique d'état, les écoutes temps réel,
- * la gestion du défilement et les mutations Firestore d'un sujet de discussion.
- *
- * @param {Object} params
- * @param {string} params.threadId Identifiant du sujet
- * @param {Object} params.user Utilisateur Firebase auth connecté
- * @param {Object} params.profileData Profil de l'utilisateur connecté
- * @param {Array} params.channels Liste des salons autorisés
- * @param {Array} params.allUsers Liste de tous les membres pour la détection de mentions
- * @param {boolean} params.breakGlassActive Mode passe-partout administratif
- * @param {Array} params.tagsDisponibles Liste des étiquettes configurées pour le groupe
- * @param {Array} params.effectiveUserTags Étiquettes effectives du membre
- * @param {Function} params.onClose Callback de fermeture (ex. lors d'une suppression)
- * @param {Function} params.t Fonction de traduction
- */
+/** Hook personnalisé encapsulant l'état, les écoutes et les mutations Firestore d'un sujet du Porte-Voix. */
 export function useThreadData({
   threadId,
   user,
@@ -344,10 +330,8 @@ export function useThreadData({
       const now = new Date().toISOString();
       const detectedMentionIds = extractMentionedUserIds(replyText, allUsers);
 
-      const quoteHeader = replyingTo 
-        ? `<blockquote><strong>@${replyingTo.authorName}</strong> a écrit :<br /><em>"${replyingTo.snippet}"</em></blockquote><p></p>`
-        : '';
-      const finalMessage = `${quoteHeader}${replyText.trim()}`;
+      const quoteHeader = replyingTo ? `<blockquote><strong>@${replyingTo.authorName}</strong> a écrit :<br /><em>"${stripForbiddenMegaphones(replyingTo.snippet)}"</em></blockquote><p></p>` : '';
+      const finalMessage = `${quoteHeader}${stripForbiddenMegaphones(replyText).trim()}`;
 
       const rawReply = {
         message: finalMessage,

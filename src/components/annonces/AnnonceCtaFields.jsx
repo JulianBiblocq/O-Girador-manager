@@ -4,6 +4,7 @@ import {
   MEGAPHONE_INTERNAL_DESTINATIONS,
   isExternalActionLink
 } from '../../utils/megaphoneNavigationUtils';
+import { stripForbiddenMegaphones } from '../../utils/sanitizeIcons';
 
 /**
  * Composant : AnnonceCtaFields
@@ -49,7 +50,7 @@ export default function AnnonceCtaFields({
           <input
             type="text"
             value={actionText}
-            onChange={(e) => setActionText(e.target.value)}
+            onChange={(e) => setActionText(stripForbiddenMegaphones(e.target.value))}
             disabled={disabled}
             placeholder="Ex: Mettre à jour mon profil"
             className="theme-input text-xs py-1 font-medium"

@@ -8,6 +8,7 @@ import {
 import { collectClientPushDiagnostics, syncPushDiagnosticsToFirestore } from '../utils/pushDiagnosticsUtils';
 
 const FOREGROUND_SYNC_THROTTLE_MS = 5 * 60 * 1000;
+const DEVICE_TOKEN_KEY = 'ogirador_device_fcm_token', DEVICE_UID_KEY = 'ogirador_device_fcm_uid'; // Jeton courant de cet appareil
 
 /**
  * Hook d'auto-synchronisation silencieuse du jeton FCM et d'enregistrement inconditionnel de `pushDiagnostics` :
@@ -89,12 +90,17 @@ export function useAutoSyncPushToken(user, profileData, onTokenSynced, onTokenEr
 
         const latestProfile = latestProfileRef.current;
         const latestTokens = Array.isArray(latestProfile?.fcmTokens) ? latestProfile.fcmTokens : existingTokens;
-        const localTokenKey = `girador_device_fcm_token_${uid}`;
         let prevLocalToken = null;
-        try { prevLocalToken = localStorage.getItem(localTokenKey); } catch { /* Ignorer */ }
+        let prevLocalUid = null;
+        try {
+          prevLocalToken = localStorage.getItem(DEVICE_TOKEN_KEY);
+          prevLocalUid = localStorage.getItem(DEVICE_UID_KEY);
+        } catch { /* Ignorer */ }
 
-        if (prevLocalToken && prevLocalToken !== currentToken && latestTokens.includes(prevLocalToken)) {
-          await updateDoc(doc(db, 'users', uid), { fcmTokens: arrayRemove(prevLocalToken) });
+        // Jeton renouvelé sur ce même navigateur : retirer l'ancien (arrayRemove idempotent) avant d'ajouter le nouveau
+        if (prevLocalToken && prevLocalToken !== currentToken) {
+          const ownerUid = prevLocalUid || uid;
+          await updateDoc(doc(db, 'users', ownerUid), { fcmTokens: arrayRemove(prevLocalToken) }).catch(() => {});
         }
 
         if (!latestTokens.includes(currentToken) || latestProfile?.pushOptInContract !== true || latestProfile?.pushDiagnostics?.status !== 'active') {
@@ -106,7 +112,8 @@ export function useAutoSyncPushToken(user, profileData, onTokenSynced, onTokenEr
 
         try {
           localStorage.setItem('push_contract_signed', 'true');
-          localStorage.setItem(localTokenKey, currentToken);
+          localStorage.setItem(DEVICE_TOKEN_KEY, currentToken);
+          localStorage.setItem(DEVICE_UID_KEY, uid);
         } catch { /* Ignorer */ }
 
         if (onTokenSyncedRef.current) onTokenSyncedRef.current(currentToken);

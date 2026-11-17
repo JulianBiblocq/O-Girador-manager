@@ -14,8 +14,8 @@ import {
 } from '../utils/inAppNotificationService';
 import { getEffectiveMemberTags } from '../utils/memberUtils';
 import CreateThreadPollSection from './forum/CreateThreadPollSection';
-
 import { getTagId } from '../utils/tagUtils';
+import { stripForbiddenMegaphones } from '../utils/sanitizeIcons';
 
 export default function CreateThreadForm({ groupId, channelId, channels = [], user, profileData, allUsers = [], onClose, inModal = false }) {
   const { t } = useTranslation();
@@ -29,7 +29,7 @@ export default function CreateThreadForm({ groupId, channelId, channels = [], us
   // Résolution du salon actif de destination
   const targetChannelId = channelId || `${groupId}_general`;
   const currentChannel = (channels || []).find((c) => c.id === targetChannelId);
-  const currentChannelName = currentChannel?.name || 'Général';
+  const currentChannelName = stripForbiddenMegaphones(currentChannel?.name || 'Général').trim() || 'Général';
 
   // État de notification Push FCM (coché par défaut)
   const [sendPushNotification, setSendPushNotification] = useState(true);
@@ -90,8 +90,8 @@ export default function CreateThreadForm({ groupId, channelId, channels = [], us
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const cleanTitle = title.trim();
-    const cleanMessage = message.trim();
+    const cleanTitle = stripForbiddenMegaphones(title).trim();
+    const cleanMessage = stripForbiddenMegaphones(message).trim();
     if (!groupId || !cleanTitle || !cleanMessage) return;
 
     setSaving(true);
@@ -217,11 +217,9 @@ export default function CreateThreadForm({ groupId, channelId, channels = [], us
             {t('forum.subjectLabel')}
           </label>
           <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-            disabled={saving}
+            type="text" value={title}
+            onChange={(e) => setTitle(stripForbiddenMegaphones(e.target.value))}
+            required disabled={saving}
             placeholder={t('forum.subjectPlaceholder')}
             className="theme-input w-full disabled:opacity-50"
           />

@@ -25,27 +25,19 @@ import { getGeneralConversationId, isGeneralGroupConversation } from '../utils/g
 import useHardwareBack from '../hooks/useHardwareBack';
 import ForumChannelsManager from './ForumChannelsManager';
 import ChannelTreeItem from './forum/ChannelTreeItem';
+import TerracottaMegaphoneIcon from './TerracottaMegaphoneIcon';
+import { isForbiddenMegaphone, stripForbiddenMegaphones } from '../utils/sanitizeIcons';
 
-export default function Forum({ 
-  user, 
-  profileData, 
-  activePrivateChatUserId, 
-  initialPrivateMessage = '', 
-  onClearActivePrivateChat, 
-  breakGlassActive = false,
-  initialTab = 'discussions',
-  initialThreadId = null,
-  initialConversationId = null,
-  onNavigateToView = null
+export default function Forum({
+  user, profileData, activePrivateChatUserId, initialPrivateMessage = '',
+  onClearActivePrivateChat, breakGlassActive = false, initialTab = 'discussions',
+  initialThreadId = null, initialConversationId = null, onNavigateToView = null
 }) {
   const { t } = useTranslation();
   const { confirm } = useConfirm();
   const { actionLoading, moveThread, togglePinThread, deleteThread } = useForumModeration(profileData?.groupId);
 
-  const translate = (key, fallback) => {
-    const val = t(key);
-    return val === key ? fallback : val;
-  };
+  const translate = (key, fallback) => { const val = t(key); return val === key ? fallback : val; };
 
 
   const [threads, setThreads] = useState([]);
@@ -109,19 +101,19 @@ export default function Forum({
 
   const handleCreateChannelSubmit = async (e) => {
     e.preventDefault();
-    if (!newChannelName.trim() || !profileData?.groupId) return;
+    const cleanChanName = stripForbiddenMegaphones(newChannelName).trim();
+    if (!cleanChanName || !profileData?.groupId) return;
 
     setSavingChannel(true);
     try {
       const channelData = {
         groupId: profileData.groupId,
-        name: newChannelName.trim(),
+        name: cleanChanName,
         parentId: newChannelParentId || null,
         readRoles: ['all'],
         writeRoles: ['all'],
         createdAt: new Date().toISOString()
       };
-
       const docRef = await addDoc(collection(db, 'forum_channels'), channelData);
       setActiveChannelId(docRef.id);
       setIsCreatingChannel(false);
@@ -1022,50 +1014,37 @@ export default function Forum({
                       <span className="text-encre-noire flex items-center gap-1">
                         <XiloMegaphone size={12} className="text-cordel-wood" /> {translate('forum.title', "Porte-voix")}
                       </span>
-                      {path.map((item, idx) => (
-                        <React.Fragment key={item.id}>
-                          <span className="opacity-40 text-encre-noire">/</span>
-                          <button
-                            type="button"
-                            onClick={() => handleSelectChannel(item.id)}
-                            className={`hover:underline ${idx === path.length - 1 ? 'text-encre-noire font-extrabold' : 'text-cordel-wood'}`}
-                          >
-                            {(item.name === 'Général' || item.name === 'Geral') ? t('forum.defaultChannelGeneral') : item.name}
-                          </button>
-                        </React.Fragment>
-                      ))}
+                      {path.map((item, idx) => {
+                        const rawItemName = (item.name === 'Général' || item.name === 'Geral') ? t('forum.defaultChannelGeneral') : item.name;
+                        return (
+                          <React.Fragment key={item.id}>
+                            <span className="opacity-40 text-encre-noire">/</span>
+                            <button type="button" onClick={() => handleSelectChannel(item.id)} className={`hover:underline inline-flex items-center gap-1 ${idx === path.length - 1 ? 'text-encre-noire font-extrabold' : 'text-cordel-wood'}`}>
+                              {isForbiddenMegaphone(item.icon) && <TerracottaMegaphoneIcon className="w-4 h-4 inline-block shrink-0" />}
+                              {stripForbiddenMegaphones(rawItemName).trim() || rawItemName}
+                            </button>
+                          </React.Fragment>
+                        );
+                      })}
                     </div>
                   );
                 })()}
 
                 <div className="flex justify-between items-center px-1 select-none flex-wrap gap-2">
-                  <h2 className="panel-title text-sm font-extrabold text-cordel-master-dark opacity-80 uppercase">
-                    {activeChannel ? `📂 ${(activeChannel.name === 'Général' || activeChannel.name === 'Geral') ? t('forum.defaultChannelGeneral') : activeChannel.name}` : t('forum.threadsList')}
+                  <h2 className="panel-title text-sm font-extrabold text-cordel-master-dark opacity-80 uppercase flex items-center gap-1.5">
+                    {activeChannel ? (
+                      <>{isForbiddenMegaphone(activeChannel.icon) || isForbiddenMegaphone(activeChannel.name) ? <TerracottaMegaphoneIcon className="w-4 h-4 inline-block shrink-0" /> : '📂'} <span>{stripForbiddenMegaphones((activeChannel.name === 'Général' || activeChannel.name === 'Geral') ? t('forum.defaultChannelGeneral') : activeChannel.name).trim()}</span></>
+                    ) : t('forum.threadsList')}
                   </h2>
-                  
+
                   <div className="flex items-center gap-2">
-                    <CordelButton 
-                      variant="default" 
-                      onClick={() => setIsCreatingChannel(true)} 
-                      className="text-xs px-2.5 py-1.5 font-bold uppercase tracking-wider"
-                      title="Créer une nouvelle catégorie ou un salon"
-                    >
+                    <CordelButton variant="default" onClick={() => setIsCreatingChannel(true)} className="text-xs px-2.5 py-1.5 font-bold uppercase tracking-wider" title="Créer une nouvelle catégorie ou un salon">
                       + {translate('forum.newChannelBtn', "Nouveau Salon / Dossier")}
                     </CordelButton>
-
                     {!hasWriteAccess(activeChannel) ? (
-                      <span className="text-[10px] font-black text-cordel-wood border-2 border-dashed border-cordel-wood/30 p-2 rounded bg-cordel-bg-light select-none">
-                        🔒 {translate('forum.readOnly', "Lecture seule")}
-                      </span>
+                      <span className="text-[10px] font-black text-cordel-wood border-2 border-dashed border-cordel-wood/30 p-2 rounded bg-cordel-bg-light select-none">🔒 {translate('forum.readOnly', "Lecture seule")}</span>
                     ) : (
-                      <CordelButton 
-                        variant="ocre" 
-                        useExtremeBorder={true}
-                        onClick={() => setIsAdding(true)} 
-                        className="text-xs px-3 py-1.5 font-bold uppercase tracking-widest"
-                      >
-                        + {t('forum.newSubject')}
-                      </CordelButton>
+                      <CordelButton variant="ocre" useExtremeBorder={true} onClick={() => setIsAdding(true)} className="text-xs px-3 py-1.5 font-bold uppercase tracking-widest">+ {t('forum.newSubject')}</CordelButton>
                     )}
                   </div>
                 </div>
@@ -1141,10 +1120,8 @@ export default function Forum({
                   {translate('forum.channelNameLabel', "Nom du salon ou du dossier")} *
                 </label>
                 <input
-                  type="text"
-                  required
-                  value={newChannelName}
-                  onChange={(e) => setNewChannelName(e.target.value)}
+                  type="text" required value={newChannelName}
+                  onChange={(e) => setNewChannelName(stripForbiddenMegaphones(e.target.value))}
                   placeholder="ex: Toadas 2026, Percussions, Commission Fêtes..."
                   className="w-full p-2.5 text-xs font-bold bg-white border-2 border-encre-noire rounded focus:outline-none focus:ring-2 focus:ring-cordel-wood"
                   autoFocus
@@ -1156,39 +1133,24 @@ export default function Forum({
                   {translate('forum.channelParentLabel', "Emplacement (Parent)")}
                 </label>
                 <select
-                  value={newChannelParentId}
-                  onChange={(e) => setNewChannelParentId(e.target.value)}
+                  value={newChannelParentId} onChange={(e) => setNewChannelParentId(e.target.value)}
                   className="w-full p-2.5 text-xs font-bold bg-white border-2 border-encre-noire rounded focus:outline-none focus:ring-2 focus:ring-cordel-wood cursor-pointer"
                 >
                   <option value="">📁 Racine (Nouvelle catégorie principale)</option>
                   {channels.filter(c => !c.parentId).map((ch) => (
-                    <option key={ch.id} value={ch.id}>
-                      📂 Sous-dossier de : {ch.name}
-                    </option>
+                    <option key={ch.id} value={ch.id}>📂 Sous-dossier de : {stripForbiddenMegaphones(ch.name).trim() || ch.name}</option>
                   ))}
                 </select>
                 <p className="text-[9px] italic opacity-60 mt-1">
-                  {newChannelParentId 
-                    ? "Le salon apparaîtra comme un sous-dossier dans la catégorie choisie." 
-                    : "Le salon sera créé comme une nouvelle rubrique principale."}
+                  {newChannelParentId ? "Le salon apparaîtra comme un sous-dossier dans la catégorie choisie." : "Le salon sera créé comme une nouvelle rubrique principale."}
                 </p>
               </div>
 
               <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-dashed border-cordel-master-dark/20">
-                <CordelButton
-                  type="button"
-                  variant="default"
-                  onClick={() => setIsCreatingChannel(false)}
-                  className="px-3 py-1.5 text-xs font-bold"
-                >
+                <CordelButton type="button" variant="default" onClick={() => setIsCreatingChannel(false)} className="px-3 py-1.5 text-xs font-bold">
                   {t('common.cancel')}
                 </CordelButton>
-                <CordelButton
-                  type="submit"
-                  variant="ocre"
-                  disabled={savingChannel || !newChannelName.trim()}
-                  className="px-4 py-1.5 text-xs font-black uppercase"
-                >
+                <CordelButton type="submit" variant="ocre" disabled={savingChannel || !newChannelName.trim()} className="px-4 py-1.5 text-xs font-black uppercase">
                   {savingChannel ? "Création..." : "Créer le salon"}
                 </CordelButton>
               </div>

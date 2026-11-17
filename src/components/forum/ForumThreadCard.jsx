@@ -1,34 +1,14 @@
 import React from 'react';
 import CordelCard from '../CordelCard';
+import TerracottaMegaphoneIcon from '../TerracottaMegaphoneIcon';
 import { usePresenceContext } from '../../context/PresenceContext';
 import { countThreadUnreadMessages, getLocalReadThreads } from '../../utils/forumUnreadUtils';
+import { isForbiddenMegaphone, stripForbiddenMegaphones } from '../../utils/sanitizeIcons';
 
-/**
- * Carte de prévisualisation d'un sujet dans le forum.
- *
- * @param {Object} props Propriétés du composant
- * @param {Object} props.thread Données du sujet
- * @param {Object} props.user Utilisateur connecté
- * @param {Object} props.profileData Profil du membre connecté
- * @param {Object} [props.effectiveReadThreads] Horodatages effectifs de lecture
- * @param {Function} props.onClick Action d'ouverture de la discussion
- * @param {boolean} props.isModeratorOrAdmin Indique si le membre dispose de droits de modération
- * @param {Function} props.onTogglePin Action d'épinglage
- * @param {Function} props.onMoveThread Action de déplacement de salon
- * @param {Function} props.onDeleteThread Action de suppression de sujet
- * @param {Function} props.t Fonction de traduction
- */
+/** Carte de prévisualisation d'un sujet dans le Porte-Voix. */
 const ForumThreadCard = React.memo(({
-  thread,
-  user,
-  profileData,
-  effectiveReadThreads,
-  onClick,
-  isModeratorOrAdmin,
-  onTogglePin,
-  onMoveThread,
-  onDeleteThread,
-  t
+  thread, user, profileData, effectiveReadThreads, onClick,
+  isModeratorOrAdmin, onTogglePin, onMoveThread, onDeleteThread, t
 }) => {
   const { onlineUserIds, isPresenceEnabled } = usePresenceContext();
   const isAuthorOnline = isPresenceEnabled !== false && thread.auteurId && onlineUserIds.has(thread.auteurId);
@@ -77,12 +57,15 @@ const ForumThreadCard = React.memo(({
             )}
             
             {thread.channelId ? (
-              <span className="text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-cordel-bg-light text-cordel-wood border border-cordel-wood/30">
-                📁 {thread.channelName || thread.categorie || 'Salon'}
+              <span className="text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-cordel-bg-light text-cordel-wood border border-cordel-wood/30 inline-flex items-center gap-1">
+                {isForbiddenMegaphone(thread.channelIcon) || isForbiddenMegaphone(thread.channelName || thread.categorie)
+                  ? <TerracottaMegaphoneIcon className="w-3.5 h-3.5 inline-block shrink-0" />
+                  : '📁'}{' '}
+                {stripForbiddenMegaphones(thread.channelName || thread.categorie || 'Salon').trim() || 'Salon'}
               </span>
             ) : thread.categorie && (
               <span className="text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-cordel-bg-light text-cordel-wood border border-cordel-wood/30">
-                {thread.categorie}
+                {stripForbiddenMegaphones(thread.categorie).trim() || thread.categorie}
               </span>
             )}
 
@@ -94,15 +77,13 @@ const ForumThreadCard = React.memo(({
 
             {isUnread && (
               <span className="text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-cordel-accent text-cordel-master-light animate-pulse">
-                {unreadCount > 1 
-                  ? `${unreadCount} ${t('forum.newRepliesBadge', "nouveaux messages")}`
-                  : t('forum.newReplyBadge', "Nouveau message")}
+                {unreadCount > 1 ? `${unreadCount} ${t('forum.newRepliesBadge', "nouveaux messages")}` : t('forum.newReplyBadge', "Nouveau message")}
               </span>
             )}
           </div>
 
           <h3 className={`text-sm tracking-tight truncate ${isUnread ? 'font-black text-cordel-master-dark' : 'font-bold text-cordel-wood'}`}>
-            {thread.titre}
+            {stripForbiddenMegaphones(thread.titre).trim() || thread.titre}
           </h3>
 
           <div className="flex items-center gap-3 mt-2 text-[11px] opacity-75">

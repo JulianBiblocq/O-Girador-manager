@@ -4,16 +4,31 @@
     <meta charset="UTF-8" />
     <meta name="google" content="notranslate" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
-    <meta name="theme-color" content="#d99f4d" />
+    <meta name="theme-color" content="#8B2A1A" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="O Girador" />
     
     <!-- Primary Meta Tags -->
-    <title>O Girador | Plateforme de Gestion Associative</title>
-    <meta name="title" content="O Girador | Plateforme de Gestion Associative" />
+    <title>O Girador</title>
+    <meta name="title" content="O Girador" />
     <meta name="description" content="Rejoignez notre association : agenda, répétitions, vestiaire, matériel et espace d'échange." />
+    <script>
+      // Titre d'onglet immédiat (avant React et Firestore) lu dans le cache local du groupe actif : zéro saut de nom au rechargement
+      (function () {
+        try {
+          var sp = new URLSearchParams(window.location.search);
+          var gid = (sp.get('groupe') || sp.get('tenant') || sp.get('assoc') || localStorage.getItem('ogirador_last_group_id') || '').trim().toLowerCase();
+          var name = gid ? localStorage.getItem('ogirador_asso_name_' + gid) : '';
+          if (name) {
+            document.title = name;
+            var apple = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+            if (apple) apple.setAttribute('content', name);
+          }
+        } catch (_) {}
+      })();
+    </script>
 
     <!-- Open Graph / Facebook / WhatsApp / SMS Social Sharing -->
     <meta property="og:type" content="website" />

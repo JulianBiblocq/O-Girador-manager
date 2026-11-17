@@ -2,7 +2,7 @@ import React from 'react';
 
 /**
  * Icône SVG de mégaphone style gravure sur bois Cordel en rouge brique / terracotta (#8b2a1a)
- * et crème (#eaddcf), remplaçant l'émoji système 📢.
+ * et crème (#eaddcf), remplaçant l'émoji mégaphone système.
  */
 export default function TerracottaMegaphoneIcon({ size = 18, className = '' }) {
   return (

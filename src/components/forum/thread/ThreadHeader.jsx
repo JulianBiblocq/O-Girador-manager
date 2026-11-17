@@ -1,30 +1,11 @@
 import React from 'react';
 import CordelCard from '../../CordelCard';
+import { stripForbiddenMegaphones } from '../../../utils/sanitizeIcons';
 
-/**
- * Carte de présentation du sujet de discussion avec badges et actions de modération.
- *
- * @param {Object} props
- * @param {Object} props.thread Document du sujet de discussion
- * @param {boolean} props.isModeratorOrAdmin Statut modérateur / admin
- * @param {boolean} props.isAuthor Indique si l'utilisateur connecté est l'auteur du sujet
- * @param {boolean} props.actionLoading Indique si une action de modération est en cours
- * @param {Function} props.onTogglePin Callback d'épinglage / désépinglage
- * @param {Function} props.onOpenMove Callback d'ouverture de la modale de déplacement
- * @param {Function} props.onDeleteThread Callback de suppression de la discussion
- * @param {Function} props.getCategoryLabel Fonction de libellé de catégorie
- * @param {Function} props.t Fonction de traduction
- */
+/** Carte de présentation du sujet de discussion avec badges et actions de modération. */
 export default function ThreadHeader({
-  thread,
-  isModeratorOrAdmin = false,
-  isAuthor = false,
-  actionLoading = false,
-  onTogglePin,
-  onOpenMove,
-  onDeleteThread,
-  getCategoryLabel,
-  t
+  thread, isModeratorOrAdmin = false, isAuthor = false, actionLoading = false,
+  onTogglePin, onOpenMove, onDeleteThread, getCategoryLabel, t
 }) {
   if (!thread) return null;
 
@@ -47,12 +28,12 @@ export default function ThreadHeader({
           </span>
         )}
         <span className="text-[7px] font-black uppercase tracking-widest opacity-60">
-          {getCategoryLabel ? getCategoryLabel(thread.categorie) : thread.categorie}
+          {stripForbiddenMegaphones(getCategoryLabel ? getCategoryLabel(thread.categorie) : thread.categorie).trim()}
         </span>
       </div>
 
       <h3 className="font-extrabold text-base text-encre-noire leading-tight mt-0.5 mb-2 pr-32">
-        {thread.titre}
+        {stripForbiddenMegaphones(thread.titre).trim() || thread.titre}
       </h3>
       <p className="text-[10px] font-bold tracking-wide opacity-75">
         {authorLabel.replace('{author}', thread.auteurNom || 'Inconnu')}

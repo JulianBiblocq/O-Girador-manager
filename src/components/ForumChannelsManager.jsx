@@ -10,11 +10,10 @@ import useConfirm from '../hooks/useConfirm';
 
 import { normalizeTag } from '../utils/tagUtils';
 import { telemetryService } from '../services/telemetryService';
+import TerracottaMegaphoneIcon from './TerracottaMegaphoneIcon';
+import { isForbiddenMegaphone, stripForbiddenMegaphones } from '../utils/sanitizeIcons';
 
-/**
- * Composant ForumChannelsManager
- * Outil d'administration pour gérer la hiérarchie des catégories du forum, les salons, sous-dossiers et la modération des messages.
- */
+/** Outil d'administration pour gérer la hiérarchie des salons et la modération du Porte-voix. */
 export default function ForumChannelsManager({ groupId, role: _role, isSystemAdmin: _isSystemAdmin, onBack }) {
   const { t } = useTranslation();
   const { confirm } = useConfirm();
@@ -161,17 +160,14 @@ export default function ForumChannelsManager({ groupId, role: _role, isSystemAdm
 
   const handleSave = async (e) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    const cleanName = stripForbiddenMegaphones(name).trim();
+    if (!cleanName) return;
 
     setSaving(true);
     try {
       const channelData = {
-        groupId,
-        name: name.trim(),
-        parentId: parentId || null,
-        readRoles,
-        writeRoles,
-        readOnlyForMembers: Boolean(readOnlyForMembers),
+        groupId, name: cleanName, parentId: parentId || null,
+        readRoles, writeRoles, readOnlyForMembers: Boolean(readOnlyForMembers),
         updatedAt: new Date().toISOString()
       };
 
@@ -305,7 +301,10 @@ export default function ForumChannelsManager({ groupId, role: _role, isSystemAdm
               </div>
 
               <span className="text-xs font-black text-encre-noire flex items-center gap-1.5">
-                {level === 0 ? '📂' : level === 1 ? '📁' : '📄'} {ch.name}
+                {isForbiddenMegaphone(ch.icon) || isForbiddenMegaphone(ch.name)
+                  ? <TerracottaMegaphoneIcon className="w-4 h-4 inline-block shrink-0" />
+                  : (ch.icon || (level === 0 ? '📂' : level === 1 ? '📁' : '📄'))}{' '}
+                {stripForbiddenMegaphones(ch.name).trim() || ch.name}
               </span>
               {ch.name === 'Général' && (
                 <span className="theme-stamp-badge theme-stamp-badge-wood text-[7px]">Par défaut</span>
@@ -453,7 +452,7 @@ export default function ForumChannelsManager({ groupId, role: _role, isSystemAdm
                         <option value="">📂 Racine (Catégorie principale)</option>
                         {channels.filter(c => c.id !== editingChannelId).map(ch => (
                           <option key={ch.id} value={ch.id}>
-                            {ch.parentId ? '  └─ ' : '📁 '} {ch.name}
+                            {ch.parentId ? '  └─ ' : '📁 '} {stripForbiddenMegaphones(ch.name).trim() || ch.name}
                           </option>
                         ))}
                       </select>
@@ -465,13 +464,10 @@ export default function ForumChannelsManager({ groupId, role: _role, isSystemAdm
                         Nom du Salon / Sous-dossier *
                       </label>
                       <input
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
+                        type="text" value={name}
+                        onChange={(e) => setName(stripForbiddenMegaphones(e.target.value))}
                         placeholder="Ex: Les 30 ans, Bénévoles, Concerts..."
-                        required
-                        disabled={saving}
-                        className="theme-input text-xs font-bold w-full"
+                        required disabled={saving} className="theme-input text-xs font-bold w-full"
                       />
                     </div>
 

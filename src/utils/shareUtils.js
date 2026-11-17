@@ -380,7 +380,7 @@ export async function shareGroupInvitation({ associationData = {}, groupId = nul
 /**
  * Met à jour dynamiquement les balises Meta Open Graph et Twitter du document HTML.
  */
-export function updateDocumentOpenGraphTags({ title, description, image, url }) {
+export function updateDocumentOpenGraphTags({ title, description, image, url, updateDocumentTitle = true }) {
   if (typeof document === 'undefined') return;
 
   const setMetaTag = (property, content, isName = false) => {
@@ -397,7 +397,7 @@ export function updateDocumentOpenGraphTags({ title, description, image, url }) 
   };
 
   if (title) {
-    document.title = title;
+    if (updateDocumentTitle) document.title = title;
     setMetaTag('og:title', title);
     setMetaTag('twitter:title', title, true);
   }

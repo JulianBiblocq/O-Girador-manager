@@ -1,24 +1,21 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { doc, onSnapshot, deleteDoc } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
-import useConfirm from './useConfirm';
+import { executeEventOrPollDeletion } from '../utils/eventDeletionUtils';
 
 /**
- * Hook personnalisé pour contrôler l'état, la synchronisation Firestore et les actions d'édition/suppression d'un événement.
- *
- * @param {Object} event Événement source
- * @param {Function} onClose Callback de fermeture de la fiche
- * @param {Function} t Fonction de traduction
+ * Hook personnalisé pour contrôler l'état, la synchronisation Firestore
+ * et la modale Cordel de suppression (silencieuse ou notifiée) d'un événement ou sondage.
  */
-export function useEventDetailsController(event, onClose, t) {
-  const { confirm } = useConfirm();
+export function useEventDetailsController(event, onClose, _t, currentUserId = null) {
   const [liveEventData, setLiveEventData] = useState(null);
   const [isEditingEvent, setIsEditingEvent] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
   const [savingEvent, setSavingEvent] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deletingEvent, setDeletingEvent] = useState(false);
   const toastTimerRef = useRef(null);
 
-  // Nettoyage du timer au démontage
   useEffect(() => {
     return () => {
       if (toastTimerRef.current) {
@@ -37,19 +34,15 @@ export function useEventDetailsController(event, onClose, t) {
         if (docSnap.exists()) {
           setLiveEventData({ id: docSnap.id, ...docSnap.data() });
         } else {
-          // Ne pas fermer la fiche si la vue a basculé sur un autre créneau du sondage
           if (typeof window !== 'undefined') {
             const urlEventId = new URLSearchParams(window.location.search).get('eventId');
             if (urlEventId && urlEventId !== event.id) return;
           }
-          // L'événement a été supprimé de la base de données (ex: lors de la résolution d'un sondage)
-          if (onClose) {
-            onClose();
-          }
+          if (onClose) onClose();
         }
       },
       (err) => {
-        console.error("useEventDetailsController - Erreur snapshot live document :", err);
+        console.error('useEventDetailsController - Erreur snapshot live document :', err);
       }
     );
     return () => unsubscribe();
@@ -57,42 +50,43 @@ export function useEventDetailsController(event, onClose, t) {
 
   const activeEvent = liveEventData ? { ...event, ...liveEventData } : event;
 
-  // Affichage sécurisé des notifications toast
   const showToast = useCallback((message) => {
-    if (toastTimerRef.current) {
-      clearTimeout(toastTimerRef.current);
-    }
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     setToastMessage(message);
-    toastTimerRef.current = setTimeout(() => {
-      setToastMessage(null);
-    }, 3000);
+    toastTimerRef.current = setTimeout(() => setToastMessage(null), 3000);
   }, []);
 
-  // Action de suppression d'événement
-  const handleDeleteEvent = useCallback(async () => {
-    if (!event?.id) return;
-    const ok = await confirm({
-      title: t('common.deleteConfirmTitle') || "Supprimer l'événement",
-      message: t('common.deleteConfirmMessage') || "Êtes-vous sûr de vouloir supprimer cet événement ? Cette action est irréversible.",
-      confirmText: t('common.delete') || "Supprimer",
-      cancelText: t('common.cancel') || "Annuler",
-      variant: "danger"
-    });
+  // Ouvre la modale Cordel à 3 choix (remplace l'ancienne confirmation générique)
+  const handleDeleteEvent = useCallback(() => {
+    if (!activeEvent?.id) return;
+    setIsDeleteModalOpen(true);
+  }, [activeEvent?.id]);
 
-    if (!ok) return;
+  // Exécute la suppression effective selon le choix ({ sendPush: false | true })
+  const handleConfirmDeleteEvent = useCallback(
+    async ({ sendPush = false } = {}) => {
+      if (!activeEvent?.id || deletingEvent) return;
+      setDeletingEvent(true);
+      try {
+        await executeEventOrPollDeletion({
+          db,
+          event: activeEvent,
+          actorUid: currentUserId,
+          sendPush: Boolean(sendPush)
+        });
+        setIsDeleteModalOpen(false);
+        if (onClose) onClose();
+      } catch (err) {
+        console.error('useEventDetailsController - Erreur lors de la suppression :', err);
+        alert("Erreur lors de la suppression de l'événement.");
+      } finally {
+        setDeletingEvent(false);
+      }
+    },
+    [activeEvent, currentUserId, deletingEvent, onClose]
+  );
 
-    try {
-      await deleteDoc(doc(db, 'events', event.id));
-      if (onClose) onClose();
-    } catch (err) {
-      console.error("useEventDetailsController - Erreur lors de la suppression :", err);
-      alert("Erreur lors de la suppression de l'événement.");
-    }
-  }, [event?.id, confirm, onClose, t]);
-
-  const toggleEditing = useCallback(() => {
-    setIsEditingEvent(prev => !prev);
-  }, []);
+  const toggleEditing = useCallback(() => setIsEditingEvent((prev) => !prev), []);
 
   return {
     activeEvent,
@@ -104,6 +98,10 @@ export function useEventDetailsController(event, onClose, t) {
     showToast,
     savingEvent,
     setSavingEvent,
-    handleDeleteEvent
+    handleDeleteEvent,
+    isDeleteModalOpen,
+    setIsDeleteModalOpen,
+    deletingEvent,
+    handleConfirmDeleteEvent
   };
 }

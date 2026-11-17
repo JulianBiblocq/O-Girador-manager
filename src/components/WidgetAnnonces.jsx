@@ -19,11 +19,9 @@ import AnnonceForm from './annonces/AnnonceForm';
 import AnnoncePushBanner from './annonces/AnnoncePushBanner';
 import { detectPushTutorialDevice, openPushTutorialModal } from './dashboard/PushTutorialModal';
 import { triggerMegaphoneCtaNavigation } from '../utils/megaphoneNavigationUtils';
+import { stripForbiddenMegaphones } from '../utils/sanitizeIcons';
 
-/**
- * WidgetAnnonces : Gestionnaire et affichage des pancartes du tableau de bord.
- * Respecte strictement la règle Anti-Monolithe par délégation modulaire.
- */
+/** WidgetAnnonces : Gestionnaire et affichage des pancartes du tableau de bord. */
 export default function WidgetAnnonces({
   groupId, profileData, role, isSystemAdmin, user,
   onNavigateToView, onNotificationNavigate = null, onNavigateToPole = null,
@@ -124,11 +122,11 @@ export default function WidgetAnnonces({
     setSaving(true);
     try {
       const payload = {
-        ...formData,
-        groupId,
-        auteurId: user?.uid || null,
-        auteurNom: `${profileData?.prenom || 'Admin'} ${profileData?.nom || ''}`.trim() || 'Association',
-        dateCreation: new Date().toISOString()
+        ...formData, groupId, auteurId: user?.uid || null, dateCreation: new Date().toISOString(), clientNotified: Boolean(formData.sendPushNotification),
+        titre: stripForbiddenMegaphones(formData.titre).trim(),
+        message: stripForbiddenMegaphones(formData.message).trim(),
+        actionText: stripForbiddenMegaphones(formData.actionText || '').trim(),
+        auteurNom: `${profileData?.prenom || 'Admin'} ${profileData?.nom || ''}`.trim() || 'Association'
       };
       await addDoc(collection(db, 'announcements'), payload);
 
@@ -192,15 +190,9 @@ export default function WidgetAnnonces({
       {!loading && isAdding && (
         <AnnonceForm
           onSubmit={handleSubmitForm}
-          onCancel={() => {
-            setIsAdding(false);
-            setInitialFormValues(null);
-          }}
-          saving={saving}
-          tagsDisponibles={tagsDisponibles}
-          allMembers={allMembers}
-          initialValues={initialFormValues}
-          t={t}
+          onCancel={() => { setIsAdding(false); setInitialFormValues(null); }}
+          saving={saving} tagsDisponibles={tagsDisponibles} allMembers={allMembers}
+          initialValues={initialFormValues} t={t}
         />
       )}
 

@@ -1,14 +1,13 @@
 import { useState, useCallback } from 'react';
 import { doc, updateDoc, deleteDoc, writeBatch, collection, addDoc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { stripForbiddenMegaphones } from '../utils/sanitizeIcons';
 
 export function useForumModeration(groupId) {
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  /**
-   * Déplace un sujet (thread) vers un autre salon (channelId) et/ou change sa catégorie
-   */
+  /** Déplace un sujet vers un autre salon et/ou change sa catégorie */
   const moveThread = useCallback(async (threadId, newChannelId, newCategory = null) => {
     if (!threadId || !newChannelId) return false;
     setActionLoading(true);
@@ -86,8 +85,8 @@ export function useForumModeration(groupId) {
     try {
       const threadRef = doc(db, 'forum', threadId);
       await updateDoc(threadRef, {
-        titre: newTitle.trim(),
-        categorie: newCategory,
+        titre: stripForbiddenMegaphones(newTitle).trim(),
+        categorie: stripForbiddenMegaphones(newCategory).trim() || newCategory,
         derniereModification: new Date().toISOString()
       });
       return true;
@@ -149,7 +148,7 @@ export function useForumModeration(groupId) {
       const updatedReplies = [...currentReplies];
       updatedReplies[replyIndex] = {
         ...updatedReplies[replyIndex],
-        message: newMessageText.trim(),
+        message: stripForbiddenMegaphones(newMessageText).trim(),
         isEdited: true,
         editedAt: new Date().toISOString()
       };
@@ -237,8 +236,8 @@ export function useForumModeration(groupId) {
       const newThreadRef = await addDoc(collection(db, 'forum'), {
         groupId: groupId || sourceData.groupId,
         channelId: newChannelId,
-        categorie: newCategory || 'Général',
-        titre: newThreadTitle.trim(),
+        categorie: stripForbiddenMegaphones(newCategory || 'Général').trim() || 'Général',
+        titre: stripForbiddenMegaphones(newThreadTitle).trim(),
         auteurId: replyToExtract.auteurId || userProfile?.uid || 'mod',
         auteurNom: replyToExtract.auteurNom || `${userProfile?.prenom || ''} ${userProfile?.nom || ''}`.trim() || 'Modérateur',
         dateCreation: replyToExtract.dateCreation || nowIso,

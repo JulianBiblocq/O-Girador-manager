@@ -1,9 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { isForbiddenMegaphone, stripForbiddenMegaphones } from '../../utils/sanitizeIcons';
 
-/**
- * Liste des émoticônes d'accès rapide (les plus fréquents dans les échanges et le contexte associatif/percussions).
- */
-export const QUICK_EMOJIS = ['👍', '❤️', '👏', '😂', '🔥', '🎉', '🥁', '🎶', '✨', '🙏', '💪', '👋'];
+/** Liste des émoticônes d'accès rapide (sans mégaphone système interdit). */
+export const QUICK_EMOJIS = ['👍', '❤️', '👏', '😂', '🔥', '🎉', '🥁', '🎶', '✨', '🙏', '💪', '👋'].filter((e) => !isForbiddenMegaphone(e));
 
 /**
  * Catégories complètes d'émoticônes légers (Unicode natif sans aucune dépendance lourde).
@@ -58,14 +57,10 @@ export function EmojiQuickRow({ onSelectEmoji, onOpenFullPicker = null, classNam
     <div className={`flex items-center gap-1 overflow-x-auto py-1 px-1 select-none scrollbar-none ${className}`}>
       {QUICK_EMOJIS.map((emoji) => (
         <button
-          key={emoji}
-          type="button"
-          onClick={() => onSelectEmoji(emoji)}
+          key={emoji} type="button" onClick={() => onSelectEmoji(stripForbiddenMegaphones(emoji))}
           className="text-base p-1 hover:scale-125 transition-transform cursor-pointer rounded hover:bg-black/5 active:scale-95 leading-none shrink-0"
           title={`Insérer ${emoji}`}
-        >
-          {emoji}
-        </button>
+        >{emoji}</button>
       ))}
 
       {onOpenFullPicker && (
@@ -158,18 +153,12 @@ export default function EmojiPickerPopover({ onSelectEmoji, onClose, title = "É
 
       {/* Grille des émoticônes de la catégorie active */}
       <div className="grid grid-cols-6 gap-1 p-1 max-h-36 overflow-y-auto bg-cordel-bg-light rounded border border-cordel-master-dark/20">
-        {currentCategory.emojis.map((emoji) => (
+        {currentCategory.emojis.filter((e) => !isForbiddenMegaphone(e)).map((emoji) => (
           <button
-            key={emoji}
-            type="button"
-            onClick={() => {
-              onSelectEmoji(emoji);
-            }}
+            key={emoji} type="button" onClick={() => onSelectEmoji(stripForbiddenMegaphones(emoji))}
             className="text-lg p-1 rounded hover:scale-125 transition-transform cursor-pointer hover:bg-white active:scale-95 flex items-center justify-center"
             title={`Insérer ${emoji}`}
-          >
-            {emoji}
-          </button>
+          >{emoji}</button>
         ))}
       </div>
 

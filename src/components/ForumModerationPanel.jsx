@@ -8,6 +8,8 @@ import MoveReplyModal from './MoveReplyModal';
 import { useForumModeration } from '../hooks/useForumModeration';
 import { useTranslation } from './LanguageContext';
 import useConfirm from '../hooks/useConfirm';
+import TerracottaMegaphoneIcon from './TerracottaMegaphoneIcon';
+import { isForbiddenMegaphone, stripForbiddenMegaphones } from '../utils/sanitizeIcons';
 
 export default function ForumModerationPanel({ groupId, channels = [] }) {
   const { t } = useTranslation();
@@ -80,11 +82,10 @@ export default function ForumModerationPanel({ groupId, channels = [] }) {
 
   const handleSaveEditThread = async (e) => {
     e.preventDefault();
-    if (!editingThread || !editTitleInput.trim()) return;
-    const ok = await editThreadDetails(editingThread.id, editTitleInput, editCategoryInput);
-    if (ok) {
-      setEditingThread(null);
-    }
+    const cleanTitle = stripForbiddenMegaphones(editTitleInput).trim();
+    if (!editingThread || !cleanTitle) return;
+    const ok = await editThreadDetails(editingThread.id, cleanTitle, editCategoryInput);
+    if (ok) setEditingThread(null);
   };
 
   const handleDeleteThreadConfirm = async (thread) => {
@@ -146,9 +147,7 @@ export default function ForumModerationPanel({ groupId, channels = [] }) {
           >
             <option value="all">Tous les salons ({threads.length})</option>
             {channels.map(ch => (
-              <option key={ch.id} value={ch.id}>
-                {ch.name}
-              </option>
+              <option key={ch.id} value={ch.id}>{stripForbiddenMegaphones(ch.name).trim() || ch.name}</option>
             ))}
           </select>
         </div>
@@ -169,27 +168,26 @@ export default function ForumModerationPanel({ groupId, channels = [] }) {
 
             return (
               <CordelCard
-                key={thread.id}
-                variant={thread.isPinned ? "jaune" : "default"}
-                useExtremeBorder={false}
+                key={thread.id} variant={thread.isPinned ? "jaune" : "default"} useExtremeBorder={false}
                 className="p-3.5 bg-cordel-bg flex flex-col gap-2 relative"
               >
                 {/* Header details */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-dashed border-cordel-master-dark/15 pb-2">
                   <div className="flex items-center gap-2 flex-wrap">
                     {thread.isPinned && (
-                      <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] flex items-center gap-1">
-                        📌 Épinglé
-                      </span>
+                      <span className="theme-stamp-badge theme-stamp-badge-wood text-[8px] flex items-center gap-1">📌 Épinglé</span>
                     )}
-                    <span className="theme-stamp-badge theme-stamp-badge-dark text-[7px]">
-                      📂 {channelObj?.name || 'Général'}
+                    <span className="theme-stamp-badge theme-stamp-badge-dark text-[7px] inline-flex items-center gap-1">
+                      {isForbiddenMegaphone(channelObj?.icon) || isForbiddenMegaphone(channelObj?.name)
+                        ? <TerracottaMegaphoneIcon className="w-3.5 h-3.5 inline-block shrink-0" />
+                        : '📂'}{' '}
+                      {stripForbiddenMegaphones(channelObj?.name || 'Général').trim() || 'Général'}
                     </span>
                     <span className="theme-stamp-badge theme-stamp-badge-ocre text-[7px]">
-                      {thread.categorie}
+                      {stripForbiddenMegaphones(thread.categorie).trim() || thread.categorie}
                     </span>
                     <h4 className="font-extrabold text-sm text-encre-noire leading-tight">
-                      {thread.titre}
+                      {stripForbiddenMegaphones(thread.titre).trim() || thread.titre}
                     </h4>
                   </div>
 
@@ -325,11 +323,9 @@ export default function ForumModerationPanel({ groupId, channels = [] }) {
                     Titre du sujet *
                   </label>
                   <input
-                    type="text"
-                    value={editTitleInput}
-                    onChange={(e) => setEditTitleInput(e.target.value)}
-                    required
-                    className="theme-input text-xs font-bold w-full"
+                    type="text" value={editTitleInput}
+                    onChange={(e) => setEditTitleInput(stripForbiddenMegaphones(e.target.value))}
+                    required className="theme-input text-xs font-bold w-full"
                   />
                 </div>
 

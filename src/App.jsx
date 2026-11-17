@@ -18,9 +18,9 @@ import { useAppUpdate } from './hooks/useAppUpdate';
 import { useConversations } from './hooks/useConversations';
 import { useShareTarget } from './hooks/useShareTarget';
 import useDynamicFavicon from './hooks/useDynamicFavicon';
+import useDynamicManifest, { getCachedAssoName, saveCachedAssoName } from './hooks/useDynamicManifest';
 import LoadingSeal from './components/common/LoadingSeal';
 import ShareTargetModal from './components/share/ShareTargetModal';
-
 import { lazyWithRetry } from './utils/pwaUtils';
 import { resolveEffectiveUserTags } from './utils/tagUtils';
 import { getMigratedRoleAndTags } from './utils/roleMigration';
@@ -289,7 +289,7 @@ function OrganizadorRedirector({ user, navigateToRoute, brandingStyle }) {
   );
 }
 
-function OrchestradorRedirector({ brandingStyle }) {
+function HubRootRedirector({ brandingStyle }) {
   useEffect(() => {
     window.location.href = 'https://www.o-girador.com';
   }, []);
@@ -574,17 +574,8 @@ export default function App() {
         };
       }
     }
-    // Repli immédiat Organizador : si on n'est pas en vitrine et sans groupe spécifié, présumer Samambaia
-    if (!isVitrineMode) {
-      return {
-        id: 'Samambaia',
-        groupId: 'Samambaia',
-        nom: 'SAMAMBAIA',
-        name: 'SAMAMBAIA'
-      };
-    }
     return null;
-  }, [associationData, associationName, branding, isVitrineMode, urlGroupId]);
+  }, [associationData, associationName, branding, urlGroupId]);
 
   useDynamicFavicon(effectiveFaviconAssociationData, { isPureLogo: isVitrineMode });
 
@@ -647,18 +638,7 @@ export default function App() {
       );
     }
 
-    // Repli canonique garanti vers Samambaia pour Julian ou en environnement standard Organizador
-    if (!activeGroupId && (
-      profileData?.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
-      profileData?.id === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
-      profileData?.email === 'julian.bzh@gmail.com' ||
-      user?.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
-      user?.email === 'julian.bzh@gmail.com' ||
-      (!isDemoMode() && appMode === 'organizador')
-    )) {
-      activeGroupId = 'Samambaia';
-    }
-
+    // En environnement SaaS multi-associations, ne résoudre un groupId qu'à partir du profil connecté ou des paramètres d'URL
     if (!activeGroupId) {
       setAssociationData(null);
       setBranding(null);
@@ -669,19 +649,20 @@ export default function App() {
       return;
     }
 
+    const cachedAssoForGroup = getCachedAssoName(activeGroupId);
+    setAssociationName(cachedAssoForGroup || '');
+
     const assocRef = doc(db, 'associations', activeGroupId);
     const unsubscribe = onSnapshot(assocRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
         setAssociationData({ id: docSnap.id, groupId: docSnap.id, ...data });
-        if (data.branding) {
-          setBranding(data.branding);
-        } else if (data.logoUrl) {
-          setBranding({ logoUrl: data.logoUrl });
-        } else {
-          setBranding(null);
-        }
-        setAssociationName(data.nom || data.name || (activeGroupId.toLowerCase() === 'samambaia' ? 'SAMAMBAIA' : ''));
+        if (data.branding) setBranding(data.branding);
+        else if (data.logoUrl) setBranding({ logoUrl: data.logoUrl });
+        else setBranding(null);
+        const resolvedAssoName = data.nom || data.name || cachedAssoForGroup || '';
+        setAssociationName(resolvedAssoName);
+        if (resolvedAssoName) saveCachedAssoName(activeGroupId, resolvedAssoName);
         setMajoriteFeminine(Boolean(data.majoriteFeminine ?? data.majorityFemale ?? false));
         setSequenceurUrl(data.sequenceurUrl || '');
         setPermissionsMatrice(data.permissionsMatrice || null);
@@ -727,7 +708,9 @@ export default function App() {
               setAssociationData({ id: altSnap.id, groupId: altSnap.id, ...altData });
               if (altData.branding) setBranding(altData.branding);
               else if (altData.logoUrl) setBranding({ logoUrl: altData.logoUrl });
-              setAssociationName(altData.nom || altData.name || (activeGroupId.toLowerCase() === 'samambaia' ? 'SAMAMBAIA' : ''));
+              const altResolvedName = altData.nom || altData.name || cachedAssoForGroup || '';
+              setAssociationName(altResolvedName);
+              if (altResolvedName) saveCachedAssoName(activeGroupId, altResolvedName);
               setMajoriteFeminine(Boolean(altData.majoriteFeminine ?? altData.majorityFemale ?? false));
               setSequenceurUrl(altData.sequenceurUrl || '');
               setPermissionsMatrice(altData.permissionsMatrice || null);
@@ -736,18 +719,11 @@ export default function App() {
               setActiverPresenceEnLigne(altData.activerPresenceEnLigne !== false);
               setFeatures(altData.features || null);
 
-              // Mise en cache locale du logo / sceau alternatif pour affichage instantané lors d'un F5
               if (typeof window !== 'undefined') {
                 const isSamambaiaGroup = activeGroupId.toLowerCase() === 'samambaia';
-                const logoToCache = altData.branding?.combinedLogoUrl || 
-                                    altData.branding?.logoUrl || 
-                                    altData.logoUrl || 
-                                    (isSamambaiaGroup ? '/brandings/logoOGSamambaia.png' : '');
+                const logoToCache = altData.branding?.combinedLogoUrl || altData.branding?.logoUrl || altData.logoUrl || (isSamambaiaGroup ? '/brandings/logoOGSamambaia.png' : '');
                 if (logoToCache) {
-                  try {
-                    localStorage.setItem('og_cached_loader_logo', logoToCache);
-                    localStorage.setItem('og_cached_loader_group', activeGroupId || '');
-                  } catch {}
+                  try { localStorage.setItem('og_cached_loader_logo', logoToCache); localStorage.setItem('og_cached_loader_group', activeGroupId || ''); } catch {}
                 }
               }
 
@@ -766,37 +742,27 @@ export default function App() {
           }).catch(() => {});
         }
 
-        // Si l'association est Samambaia, maintenir le nom et le branding par défaut
-        if (activeGroupId.toLowerCase() === 'samambaia') {
-          setAssociationName('SAMAMBAIA');
-          setAssociationData(prev => prev || { id: 'Samambaia', groupId: 'Samambaia', nom: 'SAMAMBAIA', name: 'SAMAMBAIA' });
-        } else {
-          setAssociationData(null);
-          setBranding(null);
-          setAssociationName('');
-          setMajoriteFeminine(false);
-          setSequenceurUrl('');
-          setPermissionsMatrice(null);
-          setEnabledModules(null);
-          setTagsDisponibles([]);
-          setActiverPresenceEnLigne(true);
-          setFeatures(null);
-        }
-      }
-    }, (error) => {
-      console.error("App - Erreur onSnapshot branding :", error);
-      if (activeGroupId.toLowerCase() === 'samambaia') {
-        setAssociationName('SAMAMBAIA');
-      } else {
         setAssociationData(null);
         setBranding(null);
-        setAssociationName('');
+        setAssociationName(cachedAssoForGroup || '');
         setMajoriteFeminine(false);
         setSequenceurUrl('');
         setPermissionsMatrice(null);
+        setEnabledModules(null);
         setTagsDisponibles([]);
+        setActiverPresenceEnLigne(true);
         setFeatures(null);
       }
+    }, (error) => {
+      console.error("App - Erreur onSnapshot branding :", error);
+      setAssociationData(null);
+      setBranding(null);
+      setAssociationName(cachedAssoForGroup || '');
+      setMajoriteFeminine(false);
+      setSequenceurUrl('');
+      setPermissionsMatrice(null);
+      setTagsDisponibles([]);
+      setFeatures(null);
     });
 
     return () => unsubscribe();
@@ -806,35 +772,23 @@ export default function App() {
   useEffect(() => {
     const isSamambaiaGroup = String(associationData?.groupId || associationData?.id || '').toLowerCase() === 'samambaia' ||
       String(associationData?.nom || associationData?.name || '').toLowerCase().includes('samambaia');
-
-    if (
-      user &&
-      isAdministrativeUser &&
-      associationData &&
-      associationData.onboardingCompleted === false &&
-      !isSamambaiaGroup &&
-      !hasTriggeredOnboardingAuto
-    ) {
+    if (user && isAdministrativeUser && associationData && associationData.onboardingCompleted === false && !isSamambaiaGroup && !hasTriggeredOnboardingAuto) {
       setShowOnboardingWizard(true);
       setHasTriggeredOnboardingAuto(true);
     }
   }, [user, isAdministrativeUser, associationData, hasTriggeredOnboardingAuto]);
 
-
-  // Personnalisation dynamique du titre du document HTML et de la PWA selon le nom de l'association
-  useEffect(() => {
-    const fullAppName = associationName ? `O Girador ${associationName}` : "O Girador Samambaia";
-    
-    // Ne forcer le titre "O Girador..." que sur l'espace d'administration (Organizador)
-    if (currentRoute !== '/') {
-      document.title = fullAppName;
+  // Titre dynamique multi-associations ("Organizador · [Asso]" ou "Organizador") et manifest statique neutre
+  const resolvedManifestGroupId = useMemo(() => {
+    const fromProfile = canonicalizeGroupId(profileData?.groupId || null);
+    if (fromProfile) return fromProfile;
+    if (typeof window !== 'undefined') {
+      const sp = new URLSearchParams(window.location.search);
+      return canonicalizeGroupId(sp.get('groupe') || sp.get('tenant') || sp.get('assoc') || urlGroupId || null) || '';
     }
-
-    const appleTitleMeta = document.querySelector('meta[name="apple-mobile-web-app-title"]');
-    if (appleTitleMeta) {
-      appleTitleMeta.setAttribute('content', fullAppName);
-    }
-  }, [associationName, currentRoute]);
+    return canonicalizeGroupId(urlGroupId || null) || '';
+  }, [profileData?.groupId, urlGroupId]);
+  useDynamicManifest({ groupId: resolvedManifestGroupId, associationName, currentRoute, isVitrineMode });
 
   const brandingStyle = branding?.colors ? {
     '--cordel-bg': branding.colors.background,
@@ -936,17 +890,6 @@ export default function App() {
     setDeferredPrompt(null);
     setInstallPromptAvailable(false);
   };
-
-  // Synchronisation dynamique du thème mobile PWA (sans écraser /manifest.json par un Blob pour préserver le WebAPK et share_target)
-  useEffect(() => {
-    if (typeof window === 'undefined' || typeof document === 'undefined') return;
-
-    const primaryCol = branding?.colors?.primary || '#8B2A1A';
-    const themeMeta = document.querySelector('meta[name="theme-color"]');
-    if (themeMeta && primaryCol) {
-      themeMeta.setAttribute('content', primaryCol);
-    }
-  }, [branding?.colors?.primary]);
 
   // Automatically associate or switch the user's group if they open the app via an invitation URL
   // containing a different groupId than their current profileData.groupId
@@ -1890,7 +1833,7 @@ export default function App() {
       return (
         <div style={brandingStyle} className="min-h-screen flex flex-col justify-center items-center py-12 bg-[#f4ecd8]">
           <div className="animate-spin text-4xl mb-4 select-none">⏳</div>
-          <span className="font-bold text-xs uppercase tracking-widest text-[#8b2a1a]">Redirection vers l'Espace Membre Organizador...</span>
+          <span className="font-bold text-xs uppercase tracking-widest text-[#8b2a1a]">Redirection vers l'Espace Membre...</span>
         </div>
       );
     }
@@ -1962,7 +1905,7 @@ export default function App() {
     }
 
     if (appMode === 'orchestrador' && isRootPath) {
-      return <OrchestradorRedirector brandingStyle={brandingStyle} />;
+      return <HubRootRedirector brandingStyle={brandingStyle} />;
     }
 
     if (appMode === 'organizador' && isRootPath && !isVitrineMode) {

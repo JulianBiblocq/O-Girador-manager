@@ -856,6 +856,11 @@ export const pt = {
     externalUrlTab: "Link URL externo",
     btnRemoveImage: "Remover imagem",
     btnDeleteEventAction: "Excluir evento",
+    deleteModalTitle: "Excluir definitivamente este evento?",
+    deleteModalMessage: "Esta data será apagada da agenda. Deseja enviar uma notificação aos membros ou excluir em silêncio (recomendado em caso de erro de digitação)?",
+    deleteModalSilentBtn: "🗑️ Excluir sem notificar",
+    deleteModalNotifyBtn: "🔔 Excluir e notificar os membros",
+    deleteModalCancelBtn: "Cancelar",
 
     // Botões de alternância dos módulos (TabAdmin)
     modulePercussion: "Percussão",

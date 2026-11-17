@@ -4,14 +4,10 @@
  */
 
 import React from 'react';
-import { XiloMegaphone } from '../XiloIcons';
+import TerracottaMegaphoneIcon from '../TerracottaMegaphoneIcon';
+import { isForbiddenMegaphone, stripForbiddenMegaphones } from '../../utils/sanitizeIcons';
 
-/**
- * Formate un horodatage Firestore ou Date en texte temporel relatif en français.
- * 
- * @param {object|Date|number} timestamp Date ou horodatage Firestore
- * @returns {string} Libellé relatif formaté
- */
+/** Formate un horodatage Firestore ou Date en texte temporel relatif en français. */
 function formatRelativeDate(timestamp) {
   if (!timestamp) return '';
 
@@ -54,7 +50,8 @@ function getNotificationIcon(type) {
     case 'forum_message':
       return '💬';
     case 'forum_new_thread':
-      return <XiloMegaphone size={16} className="text-cordel-wood" />;
+    case 'announcement':
+      return <TerracottaMegaphoneIcon className="w-4 h-4 inline-block shrink-0" />;
     case 'event_discussion':
       return '💬';
     case 'event_new':
@@ -62,8 +59,6 @@ function getNotificationIcon(type) {
       return '📅';
     case 'expense_status':
       return '💰';
-    case 'announcement':
-      return <XiloMegaphone size={16} className="text-cordel-wood" />;
     default:
       return '🔔';
   }
@@ -72,8 +67,11 @@ function getNotificationIcon(type) {
 export default function NotificationItem({ notification, onSelect, onDelete }) {
   const isUnread = notification.isRead !== true && notification.read !== true;
   const dateFormatted = formatRelativeDate(notification.createdAt);
-  const icon = notification.icon || getNotificationIcon(notification.type);
-  const displayTitle = notification.title || notification.titre || 'Notification';
+  const rawIcon = notification.icon;
+  const icon = isForbiddenMegaphone(rawIcon)
+    ? <TerracottaMegaphoneIcon className="w-4 h-4 inline-block shrink-0" />
+    : (rawIcon || getNotificationIcon(notification.type));
+  const displayTitle = stripForbiddenMegaphones(notification.title || notification.titre || 'Notification').trim() || 'Notification';
   const exactDocId = notification.docId || notification.notifId || notification.id;
 
   return (

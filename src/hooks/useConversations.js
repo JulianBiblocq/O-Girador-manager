@@ -22,12 +22,9 @@ import {
   removeConversationParticipant
 } from '../utils/conversationActionsUtils';
 import { deduplicateDirectConversations } from '../utils/directConversationDedupeUtils';
+import { stripForbiddenMegaphones } from '../utils/sanitizeIcons';
 
-/**
- * Hook personnalisé useConversations
- * Synchronise en temps réel les discussions directes et de groupes multi-membres.
- * Garantit que le canal « 💬 Le Zap » (`general_${groupId}`) est toujours présent en tête de liste.
- */
+/** Hook useConversations : synchronise les discussions directes et de groupes en temps réel. */
 export function useConversations(user, groupId, profileData) {
   const [conversations, setConversations] = useState([]);
   const [generalConvDoc, setGeneralConvDoc] = useState(null);
@@ -241,11 +238,9 @@ export function useConversations(user, groupId, profileData) {
 
   const renameGroup = useCallback(
     async (conversationId, newName) => {
-      if (!conversationId || !newName?.trim()) return;
-      await updateDoc(doc(db, 'conversations', conversationId), {
-        name: newName.trim(),
-        updatedAt: new Date().toISOString()
-      });
+      const clean = stripForbiddenMegaphones(newName || '').trim();
+      if (!conversationId || !clean) return;
+      await updateDoc(doc(db, 'conversations', conversationId), { name: clean, updatedAt: new Date().toISOString() });
     },
     []
   );

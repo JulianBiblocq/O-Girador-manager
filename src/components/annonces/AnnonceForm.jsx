@@ -4,22 +4,16 @@ import CordelButton from '../CordelButton';
 import { XiloMegaphone, XiloClose } from '../XiloIcons';
 import AnnonceTargetSelector from './AnnonceTargetSelector';
 import AnnonceCtaFields from './AnnonceCtaFields';
+import { stripForbiddenMegaphones } from '../../utils/sanitizeIcons';
 
-/**
- * Formulaire de publication d'une pancarte / annonce.
- */
+/** Formulaire de publication d'une pancarte / annonce Mégaphone. */
 export default function AnnonceForm({
-  onSubmit,
-  onCancel,
-  saving = false,
-  tagsDisponibles = [],
-  allMembers = [],
-  initialValues = null,
-  t
+  onSubmit, onCancel, saving = false, tagsDisponibles = [],
+  allMembers = [], initialValues = null, t
 }) {
-  const [titre, setTitre] = useState(initialValues?.titre || '');
-  const [message, setMessage] = useState(initialValues?.message || '');
-  const [actionText, setActionText] = useState(initialValues?.actionText || '');
+  const [titre, setTitre] = useState(() => stripForbiddenMegaphones(initialValues?.titre || ''));
+  const [message, setMessage] = useState(() => stripForbiddenMegaphones(initialValues?.message || ''));
+  const [actionText, setActionText] = useState(() => stripForbiddenMegaphones(initialValues?.actionText || ''));
   const [actionLink, setActionLink] = useState(initialValues?.actionLink || '');
   const [cibles, setCibles] = useState(['Tous']);
   const [targetUserIds, setTargetUserIds] = useState([]);
@@ -29,18 +23,14 @@ export default function AnnonceForm({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!titre.trim() || !message.trim() || saving) return;
+    const cleanTitle = stripForbiddenMegaphones(titre).trim();
+    const cleanMsg = stripForbiddenMegaphones(message).trim();
+    if (!cleanTitle || !cleanMsg || saving) return;
 
     onSubmit({
-      titre: titre.trim(),
-      message: message.trim(),
-      actionText: actionText.trim(),
-      actionLink: actionLink.trim(),
-      cibles,
-      targetUserIds,
-      publishOnApp,
-      sendViaEmail,
-      sendPushNotification
+      titre: cleanTitle, message: cleanMsg,
+      actionText: stripForbiddenMegaphones(actionText).trim(), actionLink: actionLink.trim(),
+      cibles, targetUserIds, publishOnApp, sendViaEmail, sendPushNotification
     });
   };
 
@@ -68,7 +58,7 @@ export default function AnnonceForm({
           <input
             type="text"
             value={titre}
-            onChange={(e) => setTitre(e.target.value)}
+            onChange={(e) => setTitre(stripForbiddenMegaphones(e.target.value))}
             required
             disabled={saving}
             placeholder={t('widgetAnnonces.annTitlePlaceholder')}
@@ -83,7 +73,7 @@ export default function AnnonceForm({
           </label>
           <textarea
             value={message}
-            onChange={(e) => setMessage(e.target.value)}
+            onChange={(e) => setMessage(stripForbiddenMegaphones(e.target.value))}
             required
             disabled={saving}
             rows="3"

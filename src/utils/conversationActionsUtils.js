@@ -16,16 +16,15 @@ import {
   isDirectPairConversation,
   pickBestDirectConversation
 } from './directConversationDedupeUtils';
+import { stripForbiddenMegaphones } from './sanitizeIcons';
 
 /** Verrou en mémoire pour éviter toute création concurrente en cas de double clic rapide */
 const inFlightDirectLocks = new Map();
 
-/**
- * Envoie un message initial optionnel sur une conversation directe existante et met à jour son en-tête.
- */
+/** Envoie un message initial optionnel sur une conversation directe existante et met à jour son en-tête. */
 async function appendInitialDirectMessage(convId, participantIds, groupId, user, senderFullName, profileData, initialMessage, nowIso) {
-  if (!initialMessage || !initialMessage.trim()) return;
-  const trimmed = initialMessage.trim();
+  const trimmed = stripForbiddenMegaphones(initialMessage || '').trim();
+  if (!trimmed) return;
   await addDoc(collection(db, 'conversation_messages'), {
     conversationId: convId,
     groupId,
@@ -143,8 +142,9 @@ export async function createGroupConversationDoc({
   participantIds = [],
   initialMessage = ''
 }) {
-  if (!user?.uid || !name?.trim()) return null;
-  const trimmedName = name.trim();
+  const trimmedName = stripForbiddenMegaphones(name || '').trim();
+  if (!user?.uid || !trimmedName) return null;
+  const cleanInitial = stripForbiddenMegaphones(initialMessage || '').trim();
   const allParticipants = Array.from(new Set([user.uid, ...participantIds]));
   const nowIso = new Date().toISOString();
   const senderFullName = profileData?.prenom
@@ -152,38 +152,22 @@ export async function createGroupConversationDoc({
     : user.displayName || 'Membre';
 
   const groupData = {
-    groupId,
-    type: 'group',
-    name: trimmedName,
-    participantIds: allParticipants,
-    adminIds: [user.uid],
-    createdBy: user.uid,
-    createdAt: nowIso,
-    updatedAt: nowIso,
+    groupId, type: 'group', name: trimmedName, participantIds: allParticipants,
+    adminIds: [user.uid], createdBy: user.uid, createdAt: nowIso, updatedAt: nowIso,
     readStatus: { [user.uid]: nowIso }
   };
 
-  if (initialMessage && initialMessage.trim()) {
-    groupData.lastMessage = {
-      content: initialMessage.trim(),
-      senderId: user.uid,
-      senderName: senderFullName,
-      timestamp: nowIso
-    };
+  if (cleanInitial) {
+    groupData.lastMessage = { content: cleanInitial, senderId: user.uid, senderName: senderFullName, timestamp: nowIso };
   }
 
   const convRef = await addDoc(collection(db, 'conversations'), groupData);
-  if (initialMessage && initialMessage.trim()) {
+  if (cleanInitial) {
     await addDoc(collection(db, 'conversation_messages'), {
-      conversationId: convRef.id,
-      groupId,
-      participantIds: allParticipants,
-      senderId: user.uid,
-      senderName: senderFullName,
+      conversationId: convRef.id, groupId, participantIds: allParticipants,
+      senderId: user.uid, senderName: senderFullName,
       senderAvatar: profileData?.photoURL || user?.photoURL || '',
-      content: initialMessage.trim(),
-      timestamp: nowIso,
-      reactions: {}
+      content: cleanInitial, timestamp: nowIso, reactions: {}
     });
   }
   return convRef.id;

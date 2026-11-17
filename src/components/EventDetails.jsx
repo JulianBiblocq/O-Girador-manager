@@ -26,6 +26,7 @@ import EventPublicQrCodeModal from './event-details/EventPublicQrCodeModal';
 import EventMediaQrCodeModal from './event-details/EventMediaQrCodeModal';
 import EventTabsNav from './event-details/EventTabsNav';
 import EventDisciplineBadges from './agenda/EventDisciplineBadges';
+import DeleteEventModal from './agenda/DeleteEventModal';
 import EventMediaCaptureSection from './event-details/EventMediaCaptureSection';
 import RoadbookModal from './event-details/RoadbookModal';
 import EventCommissionsHub from './event-details/commissions/EventCommissionsHub';
@@ -39,10 +40,7 @@ import { canonicalizeGroupId } from '../utils/tenantUtils';
 import { parseDateLinear, formatGoogleCalendarDate, openGoogleCalendar } from '../utils/calendarUtils';
 import { isMemberArchived, getEffectiveMemberTags } from '../utils/memberUtils';
 import { isPastEvent } from '../utils/dateUtils';
-import {
-  resolveReunionPrivacyConfig,
-  canUserSeeReunionReportAndAgenda
-} from '../utils/reunionPrivacyUtils';
+import { resolveReunionPrivacyConfig, canUserSeeReunionReportAndAgenda } from '../utils/reunionPrivacyUtils';
 import ReunionPrivacyBadge from './agenda/ReunionPrivacyBadge';
 
 export default function EventDetails({ event, user, profileData, groupId: propGroupId, onNavigateToView, onClose, onPrev, onNext, viewMode: _viewMode, setViewMode: _setViewMode, onGoToStageLayoutEditor }) {
@@ -91,16 +89,11 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
   };
 
   const {
-    activeEvent,
-    isEditingEvent,
-    setIsEditingEvent,
-    toggleEditing,
-    toastMessage,
-    setToastMessage,
-    savingEvent,
-    setSavingEvent,
-    handleDeleteEvent
-  } = useEventDetailsController(event, onClose, t);
+    activeEvent, isEditingEvent, setIsEditingEvent, toggleEditing,
+    toastMessage, setToastMessage, savingEvent, setSavingEvent,
+    handleDeleteEvent, isDeleteModalOpen, setIsDeleteModalOpen,
+    deletingEvent, handleConfirmDeleteEvent
+  } = useEventDetailsController(event, onClose, t, user?.uid);
 
   const targetEvent = activeEvent || event;
   const resolvedGroupId = propGroupId || targetEvent?.groupId || event?.groupId || profileData?.groupId || 'Samambaia';
@@ -1926,14 +1919,10 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
           {/* Section de Sondage de dates si l'événement est un sondage */}
           {(event.isPoll || event.status === 'sondage' || Boolean(event.pollGroupId)) && (
             <EventPollSection
-              event={event}
-              user={user}
-              profileData={profileData}
-              allUsers={effectiveAllUsers}
-              pupitresList={pupitresList}
-              linkedInstruments={linkedInstruments}
-              effectiveUserTags={effectiveUserTags}
-              tagsDisponibles={tagsDisponibles}
+              event={event} user={user} profileData={profileData} allUsers={effectiveAllUsers}
+              pupitresList={pupitresList} linkedInstruments={linkedInstruments}
+              effectiveUserTags={effectiveUserTags} tagsDisponibles={tagsDisponibles}
+              onDeletePoll={isAuthorized ? handleDeleteEvent : undefined}
               onNavigateToEventId={(targetId) => {
                 if (typeof window !== 'undefined' && targetId) {
                   const searchParams = new URLSearchParams(window.location.search);
@@ -1941,9 +1930,7 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
                   window.history.pushState({ ...window.history.state, eventId: targetId }, '', `${window.location.pathname}?${searchParams.toString()}`);
                   window.dispatchEvent(new PopStateEvent('popstate'));
                 }
-                if (onNavigateToView) {
-                  onNavigateToView('agenda', { eventId: targetId });
-                }
+                if (onNavigateToView) onNavigateToView('agenda', { eventId: targetId });
               }}
             />
           )}
@@ -2298,24 +2285,23 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
 
       {/* MODALE : Feuille de route (Roadbook complet & impression A4) */}
       <RoadbookModal
-        isOpen={showRoadbookModal}
-        onClose={() => setShowRoadbookModal(false)}
-        event={activeEvent || event}
-        allUsers={effectiveAllUsers || allUsers}
-        presentsByInstrument={presentsByInstrument || {}}
+        isOpen={showRoadbookModal} onClose={() => setShowRoadbookModal(false)}
+        event={activeEvent || event} allUsers={effectiveAllUsers || allUsers}
+        presentsByInstrument={presentsByInstrument || {}} t={t}
         onNavigateToStageLayout={() => {
           setShowRoadbookModal(false);
           setActiveTab('program');
-          // Attendre l'insertion du composant plan de scène dans le DOM
-          // puis déclencher le défilement fluide centré sur l'ancrage
-          setTimeout(() => {
-            const target = document.getElementById('event-stage-layout');
-            if (target) {
-              target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-          }, 150);
+          setTimeout(() => { document.getElementById('event-stage-layout')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 150);
         }}
-        t={t}
+      />
+
+      {/* MODALE : Suppression définitive Cordel (silencieuse vs notifiée) */}
+      <DeleteEventModal
+        isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)}
+        onConfirmDelete={handleConfirmDeleteEvent}
+        eventTitle={(activeEvent || event)?.titre || (activeEvent || event)?.title || ''}
+        isPoll={Boolean((activeEvent || event)?.isPoll || (activeEvent || event)?.status === 'sondage' || (activeEvent || event)?.pollGroupId)}
+        deleting={deletingEvent} t={t}
       />
 
       {/* MODALE : Tour de Contrôle des Commissions (Bloc 1) */}

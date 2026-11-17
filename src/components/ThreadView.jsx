@@ -14,11 +14,9 @@ import ThreadModerationModals from './forum/thread/ThreadModerationModals';
 import CreatePollModal from './forum/CreatePollModal';
 import EditPollModal from './forum/EditPollModal';
 import ThreadProjectContextBar from './forum/thread/ThreadProjectContextBar';
+import { stripForbiddenMegaphones } from '../utils/sanitizeIcons';
 
-/**
- * Vue principale d'un sujet de discussion (ThreadView).
- * Architecture Flexbox étanche avec flux de messages scrollable et barre de réponse ancrée.
- */
+/** Vue principale d'un sujet de discussion (ThreadView). */
 export default function ThreadView({ 
   threadId, user, profileData, channels = [], allThreads = [], allUsers = [], 
   onClose, breakGlassActive = false, tagsDisponibles = [], effectiveUserTags = [],
@@ -89,12 +87,12 @@ export default function ThreadView({
                 <span className="text-[11px] shrink-0" title="Sujet épinglé">📌</span>
               )}
               <h2 className="font-extrabold text-xs sm:text-sm text-encre-noire truncate leading-tight">
-                {threadData.thread?.titre || t('forum.discussionHeader')}
+                {stripForbiddenMegaphones(threadData.thread?.titre || '').trim() || t('forum.discussionHeader')}
               </h2>
             </div>
             {threadData.thread && (
               <span className="text-[9px] text-cordel-master-dark/70 font-bold truncate">
-                {threadData.getCategoryLabel ? threadData.getCategoryLabel(threadData.thread.categorie) : threadData.thread.categorie}
+                {stripForbiddenMegaphones(threadData.getCategoryLabel ? threadData.getCategoryLabel(threadData.thread.categorie) : threadData.thread.categorie).trim()}
                 {threadData.thread.auteurNom ? ` • ${threadData.thread.auteurNom}` : ''}
               </span>
             )}
