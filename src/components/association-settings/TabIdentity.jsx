@@ -53,7 +53,7 @@ export default function TabIdentity({
               value={formData.nom || ''}
               onChange={(e) => handleChange('nom', e.target.value)}
               disabled={saving}
-              placeholder={tFunc('settings.identity.tabIdentity.exAssociacaoCulturalSamambaia')}
+              placeholder={tFunc('settings.identity.tabIdentity.exAssociacaoCultural')}
               className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
             />
           </div>
@@ -69,7 +69,7 @@ export default function TabIdentity({
               value={formData.shortName || ''}
               onChange={(e) => handleChange('shortName', e.target.value)}
               disabled={saving}
-              placeholder={tFunc('settings.identity.tabIdentity.exSamambaia')}
+              placeholder={tFunc('settings.identity.tabIdentity.exShortGroupName')}
               className="theme-input text-xs font-bold py-1.5 bg-cordel-bg-light w-full"
             />
           </div>

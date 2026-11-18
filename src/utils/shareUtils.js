@@ -10,7 +10,7 @@ import { db, storage } from '../firebase.js';
 import { MATRICE_ZONE, loadMatriceImage, drawSealMatrice, drawSealLogoZone } from './sealMatrice.js';
 
 /**
- * Extrait les initiales d'un nom d'association (ex: "Samb'à Bulles" -> "SB", "Samambaia" -> "SA").
+ * Extrait les initiales d'un nom d'association (ex: "Samb'à Bulles" -> "SB", "Baque do Sol" -> "BS").
  */
 export function getAssociationInitials(name = '') {
   const cleanName = (name || '').trim();
@@ -198,8 +198,8 @@ export function getGroupInvitationDetails(associationData = {}, groupId = null) 
   );
   const baseUrl = isLocal ? window.location.origin : 'https://organizador.o-girador.com';
   const effectiveGroupId = groupId || associationData?.groupId || associationData?.id || '';
-  const canonicalId = canonicalizeGroupId(effectiveGroupId) || 'samambaia';
-  const invitationUrl = `${baseUrl}/?groupe=${encodeURIComponent(canonicalId)}&mode=signup`;
+  const canonicalId = canonicalizeGroupId(effectiveGroupId) || '';
+  const invitationUrl = canonicalId ? `${baseUrl}/?groupe=${encodeURIComponent(canonicalId)}&mode=signup` : `${baseUrl}/?mode=signup`;
   const groupName = associationData?.nom || associationData?.name || 'notre association';
   const shareTitle = `Rejoindre ${groupName} sur O Girador`;
   const shareText = `Rejoindre notre groupe sur ${groupName} : ${invitationUrl}`;
@@ -324,7 +324,7 @@ export function updateDocumentOpenGraphTags({ title, description, image, url, up
  * sous `brandings/{groupId}/combined-logo.png` puis enregistre son URL dans Firestore
  * sous `branding.combinedLogoUrl`.
  * 
- * @param {string} groupId - L'identifiant du groupe (ex: 'sambabulles' ou 'samambaia')
+ * @param {string} groupId - L'identifiant du groupe (ex: 'sambabulles' ou 'baque-do-sol')
  * @param {Object} associationData - Données de l'association (nom, branding.logoUrl, colors, etc.)
  * @param {Object} [options]
  * @param {number} [options.size=512]

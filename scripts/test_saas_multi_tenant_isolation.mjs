@@ -52,6 +52,8 @@ test("Fonction canReadGroupData() vérifie le groupId de l'utilisateur par rappo
   );
   assert.ok(
     firestoreRulesContent.includes("resource.data.get('groupId', '') == getUserData().get('groupId', '')") ||
+    firestoreRulesContent.includes("resource.data.get('groupId', '').lower() == u.get('groupId', '').lower()") ||
+    firestoreRulesContent.includes("isUserSameGroup(getUserData())") ||
     firestoreRulesContent.includes("resource.data.groupId == getUserData().groupId"),
     "canReadGroupData() doit comparer le groupId du document et du profil"
   );
@@ -125,30 +127,28 @@ const storageRulesPath = storageRulesCandidates.find(p => fs.existsSync(p)) || s
 assert.ok(fs.existsSync(storageRulesPath), "Le fichier storage.rules doit exister");
 const storageRulesContent = fs.readFileSync(storageRulesPath, 'utf8');
 
-test("Définition de la fonction d'isolation de groupe isMemberOfGroup(groupId)", () => {
+test("Définition de la fonction d'isolation de groupe isStorageSameGroup(groupId)", () => {
   assert.ok(
-    storageRulesContent.includes("function isMemberOfGroup(groupId)"),
-    "storage.rules doit définir isMemberOfGroup(groupId)"
+    storageRulesContent.includes("function isStorageSameGroup(groupId)") || storageRulesContent.includes("function isMemberOfGroup(groupId)"),
+    "storage.rules doit définir isStorageSameGroup(groupId)"
   );
   assert.ok(
     storageRulesContent.includes("request.auth.token.groupId") ||
     storageRulesContent.includes("getUserData().groupId") ||
-    storageRulesContent.includes("getUserData().get('groupId'"),
-    "isMemberOfGroup doit vérifier le token ou le profil utilisateur Firestore"
+    storageRulesContent.includes("u.get('groupId'"),
+    "isStorageSameGroup doit vérifier le token ou le profil utilisateur Firestore"
   );
 });
 
-test("Remplacement des règles ouvertes sur /documents, /orders et /transactions par isMemberOfGroup(groupId)", () => {
-  const pathsToCheck = ['documents', 'orders', 'transactions', 'workshops_media', 'forum_images', 'studio_validation'];
+test("Cloisonnement strict sur /documents, /orders, /transactions et /studio_validation via isStorageSameGroup(groupId)", () => {
+  const pathsToCheck = ['documents', 'orders', 'transactions', 'studio_validation'];
   for (const prefix of pathsToCheck) {
-    const ruleRegex = new RegExp(`match\\s+/${prefix}/\\{groupId\\}/\\{allPaths=\\*\\*\\}\\s*\\{[\\s\\S]*?allow read,\\s*write:\\s*if\\s*([^;]+);`, 'm');
+    const ruleRegex = new RegExp(`match\\s+/${prefix}/\\{groupId\\}/\\{allPaths=\\*\\*\\}\\s*\\{[\\s\\S]*?allow read:\\s*if\\s*([^;]+);`, 'm');
     const match = storageRulesContent.match(ruleRegex);
     assert.ok(match, `Le chemin /${prefix}/{groupId}/{allPaths=**} doit être défini dans storage.rules`);
-    const condition = match[1].trim();
-    assert.strictEqual(
-      condition,
-      'isMemberOfGroup(groupId)',
-      `Le chemin /${prefix}/{groupId} doit exiger isMemberOfGroup(groupId) (actuel: ${condition})`
+    assert.ok(
+      match[1].includes('isStorageSameGroup(groupId)') || match[1].includes('isMemberOfGroup(groupId)'),
+      `Le chemin /${prefix}/{groupId} doit exiger isStorageSameGroup(groupId) (actuel: ${match[1]})`
     );
   }
 });

@@ -3,24 +3,13 @@ import { isDemoMode } from '../../demo/demoManager';
 
 /**
  * Composant de blason circulaire officiel combiné O Girador × Association.
- * Affiche l'anneau gravé "★ O GIRADOR ★" entourant le logo de l'association.
- * Pour Samambaia, exploite en priorité l'asset d'orfèvrerie dédié /brandings/logoOGSamambaia.png.
- * 
- * @param {Object} props
- * @param {Object} [props.associationData] - Données de l'association courante
- * @param {string} [props.associationName] - Nom de l'association
- * @param {string} [props.currentGroupId] - Identifiant du tenant
- * @param {string} [props.logoUrl] - URL brute du logo de l'association
- * @param {string} [props.combinedLogoUrl] - DataURL du logo combiné généré via Canvas
- * @param {boolean} [props.isLogoTilting] - Animation de bascule au clic
- * @param {Function} [props.onClick] - Callback au clic
- * @param {number} [props.size=80] - Diamètre en pixels
- * @param {string} [props.className] - Classes CSS complémentaires
+ * Affiche en priorité `combinedLogoUrl` (sceau officiel fusionné), sinon superpose
+ * l'anneau gravé O Girador autour du logo de l'association, ou affiche le cadre neutre.
  */
 export default function HeaderSealLogo({
   associationData,
   associationName = '',
-  currentGroupId = null,
+  currentGroupId: _currentGroupId = null,
   logoUrl = null,
   combinedLogoUrl = null,
   isLogoTilting = false,
@@ -29,31 +18,30 @@ export default function HeaderSealLogo({
   className = ''
 }) {
   const isDemo = isDemoMode();
-  const rawGroup = currentGroupId || associationData?.groupId || associationData?.id || '';
-  const cleanGroup = String(rawGroup).trim().toLowerCase();
-  const name = (associationName || associationData?.nom || associationData?.name || '').toLowerCase();
-  const isSamambaia = cleanGroup === 'samambaia' || name.includes('samambaia');
+  const resolvedCombined = combinedLogoUrl
+    || associationData?.branding?.combinedLogoUrl
+    || associationData?.combinedLogoUrl
+    || null;
+  const resolvedInnerLogo = logoUrl
+    || associationData?.branding?.logoUrl
+    || associationData?.logoUrl
+    || null;
 
-  // 1. Détermination de la source d'image pour le sceau
   let sealSrc = null;
   let useCompositeFallback = false;
 
   if (isDemo) {
-    sealSrc = logoUrl || '/brandings/logo-nachuva-girador.svg';
-  } else if (isSamambaia) {
-    // Override sur-mesure d'orfèvrerie pour Samambaia (anneau O Girador gravé + fougère sacrée)
-    sealSrc = '/brandings/logoOGSamambaia.png';
-  } else if (combinedLogoUrl) {
-    sealSrc = combinedLogoUrl;
-  } else if (logoUrl) {
-    // Si aucun canvas n'est encore prêt, composition visuelle avec anneau en fond
+    sealSrc = resolvedInnerLogo || '/brandings/logo-nachuva-girador.svg';
+  } else if (resolvedCombined) {
+    sealSrc = resolvedCombined;
+  } else if (resolvedInnerLogo) {
     useCompositeFallback = true;
   } else {
     sealSrc = '/og-girador-frame.svg';
   }
 
-  const dimensionClasses = size === 40 
-    ? 'w-10 h-10 shrink-0 flex items-center justify-center' 
+  const dimensionClasses = size === 40
+    ? 'w-10 h-10 shrink-0 flex items-center justify-center'
     : (size === 64 ? 'w-16 h-16 shrink-0 flex items-center justify-center' : 'w-20 h-20 shrink-0 flex items-center justify-center');
 
   return (
@@ -66,16 +54,14 @@ export default function HeaderSealLogo({
     >
       {useCompositeFallback ? (
         <div className="relative w-full h-full rounded-full flex items-center justify-center bg-[#f4ecd8]">
-          {/* Anneau officiel O Girador en arrière-plan */}
           <img
             src="/og-girador-frame.svg"
             alt="Cadre O Girador"
             className="absolute inset-0 w-full h-full object-contain pointer-events-none"
           />
-          {/* Logo centré de l'association au cœur du disque */}
           <div className="absolute w-[62%] h-[62%] top-[14%] rounded-full overflow-hidden flex items-center justify-center pointer-events-none">
             <img
-              src={logoUrl}
+              src={resolvedInnerLogo}
               alt={associationName || 'Logo Association'}
               className="w-full h-full object-contain pointer-events-none"
             />
@@ -89,7 +75,6 @@ export default function HeaderSealLogo({
           height={size}
           className="w-full h-full object-contain pointer-events-none"
           onError={(e) => {
-            // Repli gracieux en cas de problème de chargement d'image
             if (sealSrc !== '/og-girador-frame.svg') {
               e.currentTarget.src = '/og-girador-frame.svg';
             }

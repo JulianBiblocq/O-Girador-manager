@@ -1,56 +1,37 @@
 /**
  * Hook et utilitaires unifiés de résolution et synchronisation des membres
- * d'une association (Multi-Tenant strict avec support des profils historiques Samambaia).
+ * d'une association (isolation SaaS Multi-Associations stricte).
  */
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { collection, query, where, onSnapshot, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
-import { canonicalizeGroupId } from '../utils/tenantUtils';
+import { canonicalizeGroupId, isValidTenantIdentifier, buildGroupVariants } from '../utils/tenantUtils';
 import { useTenantContext } from '../context/TenantContext';
 import useGroupContext from './useGroupContext';
 
-const INVALID_TECHNICAL_GROUP_IDS = new Set([
-  'o-girador-7828c', 'o-girador-organizador', 'o-girador-mostrador',
-  'organizador', 'mostrador', 'sequenciador', 'dancador', 'orquestrador', 'default', 'public'
-]);
-
-function isValidTenantId(val) {
-  if (!val || typeof val !== 'string') return false;
-  const trimmed = val.trim();
-  return Boolean(trimmed) && !INVALID_TECHNICAL_GROUP_IDS.has(trimmed.toLowerCase());
-}
-
 /**
- * Résout l'identifiant canonique de l'association active en priorisant le profil authentifié
- * (comme dans SecretariatReportsView), puis la prop explicite et les contextes de groupe.
+ * Résout l'identifiant canonique de l'association active sans aucun repli codé en dur.
  */
 export function resolveAssociationGroupId({ propGroupId, profileData, tenantGroupId, storedGroupId }) {
-  const candidates = [profileData?.groupId, propGroupId, tenantGroupId, storedGroupId, 'Samambaia'];
+  const candidates = [profileData?.groupId, propGroupId, tenantGroupId, storedGroupId];
   for (const candidate of candidates) {
-    if (isValidTenantId(candidate)) {
+    if (isValidTenantIdentifier(candidate)) {
       return canonicalizeGroupId(candidate.trim());
     }
   }
-  return 'Samambaia';
+  return null;
 }
 
 /**
- * Génère toutes les variantes de casse nécessaires à la requête Firestore `where('groupId', 'in', ...)`.
+ * Génère dynamiquement toutes les variantes de casse nécessaires à `where('groupId', 'in', ...)`.
  */
 export function getAssociationGroupVariants(rawGroupId) {
-  if (!rawGroupId || typeof rawGroupId !== 'string') return ['Samambaia', 'samambaia'];
-  const clean = rawGroupId.trim();
-  const canonical = canonicalizeGroupId(clean) || clean;
-  const lower = canonical.toLowerCase();
-  const upper = canonical.toUpperCase();
-  const capitalized = lower.charAt(0).toUpperCase() + lower.slice(1);
-  return Array.from(new Set([canonical, clean, lower, capitalized, upper].filter(Boolean)));
+  return buildGroupVariants(rawGroupId);
 }
 
 /**
- * Vérifie si un document utilisateur appartient à l'association cible, avec support
- * des profils historiques de Samambaia dépourvus de champ `groupId` et isolation stricte.
+ * Vérifie si un document utilisateur appartient strictement à l'association cible.
  */
 export function matchesAssociationTenant(userDoc, targetGroupId, docId = '') {
   if (!userDoc || !targetGroupId) return false;
@@ -59,19 +40,18 @@ export function matchesAssociationTenant(userDoc, targetGroupId, docId = '') {
 
   const targetLower = (canonicalizeGroupId(targetGroupId) || targetGroupId).trim().toLowerCase();
   const rawDocGroup = typeof userDoc.groupId === 'string' ? userDoc.groupId.trim() : '';
-  if (!rawDocGroup) {
-    return targetLower === 'samambaia';
-  }
+  if (!rawDocGroup || !targetLower) return false;
+
   const docCanonicalLower = (canonicalizeGroupId(rawDocGroup) || rawDocGroup).trim().toLowerCase();
   return docCanonicalLower === targetLower;
 }
 
 /**
- * Récupération ponctuelle (`getDocs`) des membres de l'association (source identique à Rapports & Bilan AG).
+ * Récupération ponctuelle (`getDocs`) des membres de l'association.
  */
 export async function fetchAssociationMembersOnce(targetGroupId, transformMember = null) {
-  if (!targetGroupId) return [];
   const variants = getAssociationGroupVariants(targetGroupId);
+  if (variants.length === 0) return [];
   const snap = await getDocs(query(collection(db, 'users'), where('groupId', 'in', variants)));
   const list = [];
   snap.forEach((docSnap) => {
@@ -101,7 +81,8 @@ export function useAssociationMembers({ groupId: propGroupId, profileData, enabl
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!currentGroupId || !enabled) {
+    const variants = getAssociationGroupVariants(currentGroupId);
+    if (!currentGroupId || !enabled || variants.length === 0) {
       setMembers([]);
       setLoading(false);
       return;
@@ -109,7 +90,6 @@ export function useAssociationMembers({ groupId: propGroupId, profileData, enabl
     let isMounted = true;
     setLoading(true);
 
-    // 1. Chargement immédiat via getDocs (fiabilité identique à SecretariatReportsView)
     fetchAssociationMembersOnce(currentGroupId, transformRef.current).then((initialList) => {
       if (isMounted) {
         if (initialList.length > 0) setMembers((prev) => (initialList.length >= prev.length ? initialList : prev));
@@ -117,8 +97,7 @@ export function useAssociationMembers({ groupId: propGroupId, profileData, enabl
       }
     }).catch(() => {});
 
-    // 2. Écoute temps réel via onSnapshot sur toutes les variantes de casse du tenant
-    const q = query(collection(db, 'users'), where('groupId', 'in', getAssociationGroupVariants(currentGroupId)));
+    const q = query(collection(db, 'users'), where('groupId', 'in', variants));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       if (!isMounted) return;
       const fetched = [];

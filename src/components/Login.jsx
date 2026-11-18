@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { signInWithPopup, signInWithRedirect, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
-import { auth, googleProvider } from '../firebase';
+import { auth, db, googleProvider } from '../firebase';
 import LayoutShell from './LayoutShell';
 import CordelCard from './CordelCard';
 import CordelButton from './CordelButton';
@@ -8,72 +8,72 @@ import { useTranslation } from './LanguageContext';
 import { XiloCaixa } from './XiloIcons';
 import QrCodeLogin from './auth/QrCodeLogin';
 import useGroupContext, { setStoredGroupId } from '../hooks/useGroupContext';
-import { canonicalizeGroupId } from '../utils/tenantUtils';
+import { canonicalizeGroupId, resolveCanonicalGroupFromFirestore } from '../utils/tenantUtils';
 import GroupSelectorStep from './auth/GroupSelectorStep';
+import LoginActiveTenantBadge from './auth/LoginActiveTenantBadge';
 import RegisterForm from './auth/RegisterForm';
 import { InAppBrowserHelpBanner, AuthAssistanceBannerCard } from './auth/LoginAssistanceBanners';
 import { LoginModeToggleTabs, LoginGoogleSection, LoginQrCodeActionButton } from './auth/LoginModeHeaderAndActions';
 import { formatFirebaseAuthError } from '../utils/authErrorUtils';
 
-const syncAuthLocale = (authInstance, lang) => {
-  if (authInstance) {
-    authInstance.languageCode = lang || 'fr';
-  }
-};
+const syncAuthLocale = (authInstance, lang) => { if (authInstance) authInstance.languageCode = lang || 'fr'; };
 
-export default function Login({ branding, onSuccess }) {
+export default function Login({ branding, associationName = '', onSuccess, onGroupChange }) {
   const { t, locale } = useTranslation();
-  const { groupId: _groupId, needsGroupSelection, setManualGroupId } = useGroupContext();
+  const { groupId: activeGroupId, needsGroupSelection, setManualGroupId, clearGroup } = useGroupContext();
+  const [isChangingGroup, setIsChangingGroup] = useState(false);
+  const [groupSelectError, setGroupSelectError] = useState('');
+  const [resolvingGroup, setResolvingGroup] = useState(false);
 
-  // 1. Persistance immédiate du groupId dès l'arrivée sur Login.jsx
+  const handleSelectLoginGroup = async (rawCode) => {
+    const clean = String(rawCode || '').trim();
+    if (!clean) return;
+    setResolvingGroup(true);
+    setGroupSelectError('');
+    try {
+      const res = await resolveCanonicalGroupFromFirestore(db, clean);
+      if (res.exists && res.canonicalId) {
+        setStoredGroupId(res.canonicalId);
+        if (setManualGroupId) setManualGroupId(res.canonicalId);
+        if (onGroupChange) onGroupChange(res.canonicalId);
+        setIsChangingGroup(false);
+      } else if (res.networkError) {
+        const fallback = canonicalizeGroupId(clean);
+        if (setManualGroupId) setManualGroupId(fallback);
+        setIsChangingGroup(false);
+      } else {
+        setGroupSelectError("Aucune association trouvée avec ce code. Vérifiez l'orthographe.");
+      }
+    } finally {
+      setResolvingGroup(false);
+    }
+  };
+
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const rawGroup = params.get('groupe') || params.get('group') || params.get('assoc') || params.get('tenant');
-      if (rawGroup && rawGroup.trim()) {
-        const canonical = canonicalizeGroupId(rawGroup.trim());
-        setStoredGroupId(canonical);
-        localStorage.setItem('selected_group_id', canonical);
-        localStorage.setItem('girador_group_id', canonical);
-        if (setManualGroupId) setManualGroupId(canonical);
-      }
-    } catch (err) {
-      console.warn("Login - Erreur capture groupId :", err);
+    const params = new URLSearchParams(window.location.search);
+    const rawGroup = params.get('groupe') || params.get('group') || params.get('assoc') || params.get('tenant');
+    if (rawGroup && rawGroup.trim()) {
+      resolveCanonicalGroupFromFirestore(db, rawGroup.trim()).then((res) => {
+        const target = res.canonicalId || canonicalizeGroupId(rawGroup.trim());
+        setStoredGroupId(target);
+        if (setManualGroupId) setManualGroupId(target);
+        if (onGroupChange) onGroupChange(target);
+      }).catch(() => {});
     }
-  }, [setManualGroupId]);
+  }, [setManualGroupId, onGroupChange]);
 
-  // Détection du mode initial : toujours « Se connecter » par défaut (même avec ?groupe= ou ?tenant=),
-  // sauf si l'URL demande explicitement l'inscription (?mode=signup ou ?signup=1).
-  const searchParams = useMemo(() => {
-    return typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
-  }, []);
-
+  const searchParams = useMemo(() => (typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams()), []);
   const initialSignUpMode = useMemo(() => {
-    const mode = searchParams.get('mode');
-    const signup = searchParams.get('signup');
-    const inscription = searchParams.get('inscription');
-    return (
-      mode === 'signup' ||
-      mode === 'register' ||
-      signup === '1' ||
-      signup === 'true' ||
-      inscription === '1' ||
-      inscription === 'true'
-    );
+    const m = searchParams.get('mode'), s = searchParams.get('signup'), i = searchParams.get('inscription');
+    return m === 'signup' || m === 'register' || s === '1' || s === 'true' || i === '1' || i === 'true';
   }, [searchParams]);
 
-  // Détection des navigateurs intégrés d'applications (WhatsApp, Facebook, Instagram, Gmail, etc.)
   const isInAppBrowser = useMemo(() => {
     if (typeof window === 'undefined') return false;
     const ua = navigator.userAgent || navigator.vendor || window.opera || '';
-    const inAppRegex = /(WhatsApp|FBAN|FBAV|Instagram|Line|Twitter|MicroMessenger|Snapchat|Pinterest)/i;
-    return (
-      inAppRegex.test(ua) ||
-      /GSA\/|Gmail/i.test(ua) ||
-      (/Android/i.test(ua) && /wv/i.test(ua)) ||
-      (/iPhone|iPod|iPad/i.test(ua) && !/Safari/i.test(ua))
-    );
+    return /(WhatsApp|FBAN|FBAV|Instagram|Line|Twitter|MicroMessenger|Snapchat|Pinterest)/i.test(ua)
+      || /GSA\/|Gmail/i.test(ua) || (/Android/i.test(ua) && /wv/i.test(ua)) || (/iPhone|iPod|iPad/i.test(ua) && !/Safari/i.test(ua));
   }, []);
 
   const [email, setEmail] = useState('');
@@ -90,15 +90,11 @@ export default function Login({ branding, onSuccess }) {
   const [resetConfirmationEmail, setResetConfirmationEmail] = useState(null);
 
   const handleSwitchToLogin = (targetEmail, assistanceData = null) => {
-    if (targetEmail) {
-      setEmail(targetEmail);
-    }
+    if (targetEmail) setEmail(targetEmail);
     setIsSignUpMode(false);
     setGoogleNotice(null);
     setResetConfirmationEmail(null);
-    if (assistanceData) {
-      setAuthAssistanceBanner(assistanceData);
-    }
+    if (assistanceData) setAuthAssistanceBanner(assistanceData);
   };
 
   const handleInstantPasswordReset = async (targetEmail) => {
@@ -302,30 +298,23 @@ export default function Login({ branding, onSuccess }) {
             <h2 className="panel-title text-2xl font-bold tracking-wider text-cordel-wood mb-2">
               {isResetPasswordMode ? t('login.resetPasswordTitle') : t('login.title')}
             </h2>
-            <p className="text-xs uppercase font-extrabold tracking-widest text-cordel-master-dark/65 mb-4">
+            <p className="text-xs uppercase font-extrabold tracking-widest text-cordel-master-dark/65 mb-3">
               {t('login.gateway')}
             </p>
 
-            {/* Bascule permanente ultra-visible en haut de la carte : Se connecter (Déjà membre) / Créer mon compte */}
+            {!isChangingGroup && (
+              <LoginActiveTenantBadge
+                groupId={activeGroupId}
+                associationName={associationName}
+                onChangeGroup={() => { clearGroup(); setGroupSelectError(''); setIsChangingGroup(true); }}
+              />
+            )}
+
             <LoginModeToggleTabs
               isSignUpMode={isSignUpMode}
               isQrLoginMode={isQrLoginMode}
-              onSelectSignIn={() => {
-                setIsSignUpMode(false);
-                setIsQrLoginMode(false);
-                setIsResetPasswordMode(false);
-                setGoogleNotice(null);
-                setAuthAssistanceBanner(null);
-                setResetConfirmationEmail(null);
-              }}
-              onSelectSignUp={() => {
-                setIsSignUpMode(true);
-                setIsQrLoginMode(false);
-                setIsResetPasswordMode(false);
-                setGoogleNotice(null);
-                setAuthAssistanceBanner(null);
-                setResetConfirmationEmail(null);
-              }}
+              onSelectSignIn={() => { setIsSignUpMode(false); setIsQrLoginMode(false); setIsResetPasswordMode(false); setGoogleNotice(null); setAuthAssistanceBanner(null); setResetConfirmationEmail(null); }}
+              onSelectSignUp={() => { setIsSignUpMode(true); setIsQrLoginMode(false); setIsResetPasswordMode(false); setGoogleNotice(null); setAuthAssistanceBanner(null); setResetConfirmationEmail(null); }}
             />
 
             {isResetPasswordMode ? (
@@ -405,10 +394,9 @@ export default function Login({ branding, onSuccess }) {
                     : (t('login.welcomeDesc') || "Connectez-vous pour accéder à votre espace membre.")}
                 </p>
 
-                {/* Si aucun groupe n'est détecté en mode inscription, afficher l'étape bienveillante */}
-                {isSignUpMode && needsGroupSelection ? (
+                {(isChangingGroup || (isSignUpMode && needsGroupSelection)) ? (
                   <>
-                    <GroupSelectorStep onSelectGroup={(g) => setManualGroupId(g)} />
+                    <GroupSelectorStep onSelectGroup={handleSelectLoginGroup} externalError={groupSelectError} loading={resolvingGroup} />
                     <LoginQrCodeActionButton onOpenQrLogin={() => setIsQrLoginMode(true)} />
                   </>
                 ) : (

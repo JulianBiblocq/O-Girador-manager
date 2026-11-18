@@ -2,7 +2,7 @@
  * Script exécuté immédiatement après `vite build` :
  * 1. Renomme dist/index.html en dist/app.html et supprime dist/index.html afin d'empêcher
  *    Firebase Hosting de court-circuiter les rewrites dynamiques avec un fichier statique figé.
- * 2. Copie les sceaux officiels Samambaia et Samb'à Bulles dans dist/brandings/ pour service CDN direct.
+ * 2. Copie les assets de public/brandings/ dans dist/brandings/ pour service CDN direct.
  */
 
 import fs from 'fs';
@@ -32,15 +32,16 @@ if (!fs.existsSync(distBrandingsDir)) {
   fs.mkdirSync(distBrandingsDir, { recursive: true });
 }
 
-const brandingsToSync = ['logoOGSamambaia.png', 'logoOGSambabulles.png'];
+const sourceBrandingsDir = path.resolve('public/brandings');
+const brandingsToSync = fs.existsSync(sourceBrandingsDir)
+  ? fs.readdirSync(sourceBrandingsDir).filter((f) => /\.(png|svg|webp|jpe?g)$/i.test(f))
+  : [];
 for (const file of brandingsToSync) {
-  const src = path.resolve('public/brandings', file);
+  const src = path.join(sourceBrandingsDir, file);
   const dst = path.join(distBrandingsDir, file);
-  if (fs.existsSync(src)) {
+  if (fs.existsSync(src) && fs.statSync(src).isFile()) {
     fs.copyFileSync(src, dst);
     console.log(`✅ Asset branding synchronisé dans dist : ${file}`);
-  } else {
-    console.warn(`⚠️ Asset branding source introuvable : ${src}`);
   }
 }
 

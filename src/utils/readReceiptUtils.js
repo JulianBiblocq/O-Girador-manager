@@ -7,7 +7,7 @@
  * avec la carte `readStatus` du document parent de la discussion.
  */
 
-import { isMemberArchived } from './memberUtils';
+import { isMemberArchived } from './memberUtils.js';
 
 /**
  * Convertit de manière sécurisée n'importe quel horodatage (ISO string, Timestamp Firestore, Date, number)

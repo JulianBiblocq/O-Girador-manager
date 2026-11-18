@@ -46,7 +46,7 @@ export default function HeroHeaderAccordion({
             value={formData.nom || ''}
             onChange={(e) => handleChange('nom', e.target.value)}
             disabled={saving}
-            placeholder={t('vitrine.admin.content.heroHeaderAccordion.exSamambaia')}
+            placeholder={t('vitrine.admin.content.heroHeaderAccordion.exGroupName')}
             className="text-xs font-bold px-3 py-2 border border-encre-noire/30 rounded bg-white"
           />
         </div>

@@ -29,61 +29,36 @@ const panelPath = path.join(rootDir, 'src', 'components', 'SystemAdminPanel.jsx'
 assert.ok(fs.existsSync(panelPath), "Le fichier src/components/SystemAdminPanel.jsx doit exister");
 const panelContent = fs.readFileSync(panelPath, 'utf8').replace(/\r\n/g, '\n');
 
-test("SystemAdminPanel importe useTenantContext et useGroupContext pour la résolution multi-tenant", () => {
-  assert.ok(panelContent.includes("useTenantContext"), "useTenantContext doit être importé dans SystemAdminPanel");
-  assert.ok(panelContent.includes("useGroupContext"), "useGroupContext doit être importé dans SystemAdminPanel");
+const hookPath = path.join(rootDir, 'src', 'hooks', 'useAssociationMembers.js');
+const hookContent = fs.readFileSync(hookPath, 'utf8').replace(/\r\n/g, '\n');
+
+test("SystemAdminPanel délègue à useAssociationMembers qui consomme useTenantContext et useGroupContext", () => {
+  assert.ok(panelContent.includes("useAssociationMembers"), "useAssociationMembers doit être importé dans SystemAdminPanel");
+  assert.ok(hookContent.includes("useTenantContext"), "useTenantContext doit être importé dans useAssociationMembers");
+  assert.ok(hookContent.includes("useGroupContext"), "useGroupContext doit être importé dans useAssociationMembers");
 });
 
-test("Suppression absolue de tout contournement Super-Admin dans la requête users", () => {
-  // Vérifier qu'il n'y a plus de condition isSystemAdmin pour bypasser le filtre de groupe
-  assert.ok(
-    !panelContent.includes("profileData.isSystemAdmin === true\n      ? query(usersRef)"),
-    "La clause profileData.isSystemAdmin === true ? query(usersRef) doit être bannie"
-  );
-  assert.ok(
-    !panelContent.includes("profileData?.isSystemAdmin ? query(usersRef)"),
-    "Aucun bypass super admin ne doit exécuter une requête globale non filtrée"
-  );
-  assert.ok(
-    !panelContent.includes("query(usersRef)"),
-    "La requête brute query(usersRef) sans filtre where ne doit jamais exister"
-  );
+test("Suppression absolue de tout contournement Super-Admin et de tout groupe en dur dans la requête users", () => {
+  assert.ok(!panelContent.includes("query(usersRef)"), "Aucune requête brute query(usersRef) dans SystemAdminPanel");
+  assert.ok(!hookContent.toLowerCase().includes("samambaia"), "Aucun groupe codé en dur dans useAssociationMembers");
 });
 
 test("Résolution prioritaire et résiliente de currentGroupId", () => {
-  assert.ok(
-    panelContent.includes("currentGroupId"),
-    "currentGroupId doit être utilisé comme référence de groupe actif"
-  );
-  assert.ok(
-    panelContent.includes("propGroupId || tenantCtx?.groupId || groupCtx?.groupId || profileData?.groupId"),
-    "currentGroupId doit combiner prop, tenantCtx, groupCtx et profileData"
-  );
+  assert.ok(panelContent.includes("currentGroupId"), "currentGroupId doit être utilisé comme référence de groupe actif");
+  assert.ok(hookContent.includes("candidates = [profileData?.groupId, propGroupId, tenantGroupId, storedGroupId]"), "resolveAssociationGroupId doit combiner les 4 sources sans repli en dur");
 });
 
-test("Requête Firestore insensible à la casse avec groupVariants", () => {
-  assert.ok(
-    panelContent.includes("where('groupId', 'in', groupVariants)"),
-    "La requête doit filtrer avec where('groupId', 'in', groupVariants)"
-  );
-  assert.ok(
-    panelContent.includes("groupVariants = Array.from(new Set([currentGroupId, currentGroupId.toLowerCase()].filter(Boolean)))"),
-    "groupVariants doit inclure l'identifiant et sa version minuscule"
-  );
+test("Requête Firestore insensible à la casse avec variants", () => {
+  assert.ok(hookContent.includes("where('groupId', 'in', variants)"), "La requête doit filtrer avec where('groupId', 'in', variants)");
+  assert.ok(hookContent.includes("buildGroupVariants(rawGroupId)"), "getAssociationGroupVariants doit déléguer à buildGroupVariants");
 });
 
 test("Garde-fou en cas de groupe non résolu : vider la liste sans requête", () => {
-  assert.ok(
-    panelContent.includes("if (!currentGroupId) {\n      setUsersList([]);\n      setLoading(false);\n      return;\n    }"),
-    "Si currentGroupId est absent, la liste doit être vidée immédiatement"
-  );
+  assert.ok(hookContent.includes("if (!currentGroupId || !enabled || variants.length === 0)"), "Si currentGroupId est absent, la liste doit être vidée immédiatement");
 });
 
 test("Garde-fou local en mémoire pour confirmer l'appartenance stricte au groupe", () => {
-  assert.ok(
-    panelContent.includes("docGroupId !== canonicalLower"),
-    "Le filtre mémoire doit rejeter tout utilisateur dont le groupId ne correspond pas"
-  );
+  assert.ok(hookContent.includes("return docCanonicalLower === targetLower;"), "matchesAssociationTenant doit vérifier l'égalité stricte insensible à la casse");
 });
 
 test("Le compteur 'Total des inscrits' est dérivé de usersList.length filtré", () => {
@@ -98,9 +73,9 @@ const appPath = path.join(rootDir, 'src', 'App.jsx');
 assert.ok(fs.existsSync(appPath), "Le fichier src/App.jsx doit exister");
 const appContent = fs.readFileSync(appPath, 'utf8').replace(/\r\n/g, '\n');
 
-test("App.jsx transmet groupId={urlGroupId || profileData?.groupId} à SystemAdminPanel", () => {
+test("App.jsx transmet groupId={profileData?.groupId || urlGroupId} à SystemAdminPanel", () => {
   assert.ok(
-    appContent.includes("<SystemAdminPanel \n                    user={user} \n                    profileData={profileData} \n                    groupId={urlGroupId || profileData?.groupId}"),
+    appContent.includes("groupId={profileData?.groupId || urlGroupId}") || appContent.includes("groupId={urlGroupId || profileData?.groupId}"),
     "App.jsx doit passer explicitement la prop groupId à SystemAdminPanel"
   );
 });
@@ -114,8 +89,8 @@ test("Simulation : isolation stricte sur le groupe 'sambabulles' (2 membres atte
   const mockFirestoreUsers = [
     { id: 'sb_1', nom: 'Dupont', prenom: 'Alice', groupId: 'sambabulles', statutActuel: 'active' },
     { id: 'sb_2', nom: 'Martin', prenom: 'Bob', groupId: 'Sambabulles', statutActuel: 'active' },
-    { id: 'sam_1', nom: 'Bernard', prenom: 'Claire', groupId: 'samambaia', statutActuel: 'active' },
-    { id: 'sam_2', nom: 'Dubois', prenom: 'David', groupId: 'samambaia', statutActuel: 'active' },
+    { id: 'sam_1', nom: 'Bernard', prenom: 'Claire', groupId: 'baque_sol', statutActuel: 'active' },
+    { id: 'sam_2', nom: 'Dubois', prenom: 'David', groupId: 'baque_sol', statutActuel: 'active' },
     { id: 'tech_1', nom: 'Admin', prenom: 'Super', groupId: 'system', statutActuel: 'active' }
   ];
 

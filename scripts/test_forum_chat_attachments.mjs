@@ -21,9 +21,10 @@ console.log("\n▶️ Test 2 : Contrôle de attachmentUploadUtils.js");
 const uploadUtilsContent = readFileSync('src/utils/attachmentUploadUtils.js', 'utf-8');
 assert.ok(uploadUtilsContent.includes('export const uploadForumAttachment'), "uploadForumAttachment exporté");
 assert.ok(uploadUtilsContent.includes('export const uploadChatAttachment'), "uploadChatAttachment exporté");
-assert.ok(uploadUtilsContent.includes('export const compressImageClientSide'), "compressImageClientSide exporté");
-assert.ok(uploadUtilsContent.includes('documents/${effectiveGroupId}/forum'), "Chemin Firebase Storage forum sécurisé");
-assert.ok(uploadUtilsContent.includes('documents/${effectiveGroupId}/chat'), "Chemin Firebase Storage chat sécurisé");
+const imgCompContent = readFileSync('src/utils/imageCompressionUtils.js', 'utf-8');
+assert.ok(imgCompContent.includes('export const compressImageClientSide') || imgCompContent.includes('export async function compressImageClientSide'), "compressImageClientSide exporté");
+assert.ok(uploadUtilsContent.includes('documents/${cleanGroupId}/${subFolder}'), "Chemin Firebase Storage groupId/subFolder sécurisé");
+assert.ok(uploadUtilsContent.includes("'forum'") && uploadUtilsContent.includes("'chat'"), "Sous-dossiers forum et chat définis");
 assert.ok(uploadUtilsContent.includes('uploadAttachmentToStorage'), "Repli Storage présent");
 console.log("  ✅ [PASS] attachmentUploadUtils.js intègre les pipelines résilients Forum & Chat.");
 
@@ -58,7 +59,7 @@ console.log("\n▶️ Test 6 : Contrôle de PrivateChatView.jsx et useConversati
 const chatViewContent = readFileSync('src/components/PrivateChatView.jsx', 'utf-8');
 const hookContent = readFileSync('src/hooks/useConversationMessages.js', 'utf-8');
 
-assert.ok(hookContent.includes('fileUrl = null, fileName = null'), "useConversationMessages accepte fileUrl et fileName");
+assert.ok(hookContent.includes('fileUrl = null') && hookContent.includes('fileName = null'), "useConversationMessages accepte fileUrl et fileName");
 assert.ok(hookContent.includes('fileUrl: fileUrl || null'), "useConversationMessages persiste fileUrl");
 assert.ok(chatViewContent.includes('uploadChatAttachment'), "uploadChatAttachment utilisé dans le chat");
 assert.ok(chatViewContent.includes('attachmentInputRef'), "Sélecteur de fichier d'appareil présent");

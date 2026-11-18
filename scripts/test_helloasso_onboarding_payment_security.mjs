@@ -5,13 +5,13 @@
  * 1. Absence totale de toute écriture cliente de 'paymentStatus' ou 'isSystemAdmin' dans Onboarding.jsx.
  * 2. Éradication des tentatives d'écriture / suppression directe sur 'pending_payments' et 'transactions'.
  * 3. Présence d'un affichage visuel informatif sécurisé (pendingPaymentInfo) sans réécriture dans users/{uid}.
- * 4. Validation de la résolution d'URL avec le paramètre de groupe '?groupe=Samambaia'.
+ * 4. Validation de la résolution canonique générique avec le paramètre '?groupe=baque_sol'.
  */
 
 import fs from 'fs';
 import path from 'path';
 import assert from 'assert';
-import { canonicalizeGroupId } from '../src/utils/tenantUtils.js';
+import { canonicalizeGroupId, registerCanonicalGroupId } from '../src/utils/tenantUtils.js';
 
 console.log('===============================================================');
 console.log('🧪 TEST DE SÉCURITÉ : ONBOARDING & PAIEMENTS HELLOASSO');
@@ -69,16 +69,19 @@ assert.ok(
 );
 console.log("  ✅ [PASS] Affichage visuel informatif et bienveillant Cordel présent pour les membres ayant déjà payé.");
 
-// 3. Validation de l'URL HelloAsso avec le paramètre de groupe Samambaia
-console.log('\n▶️ Module 3 : Validation du paramètre d\'URL ?groupe=Samambaia');
-const testUrl = 'https://organizador.o-girador.com/?groupe=Samambaia';
+// 3. Validation de l'URL HelloAsso et du garde-fou anti-compte orphelin
+console.log('\n▶️ Module 3 : Validation de la résolution canonique dynamique (?groupe=baquesol -> BaqueSol)');
+registerCanonicalGroupId('BaqueSol');
+const testUrl = 'https://organizador.o-girador.com/?groupe=baquesol';
 const parsedUrl = new URL(testUrl);
 const groupeParam = parsedUrl.searchParams.get('groupe');
 
-assert.equal(groupeParam, 'Samambaia', "Le paramètre groupe doit être égal à 'Samambaia'");
+assert.equal(groupeParam, 'baquesol', "Le paramètre groupe brut doit être 'baquesol'");
 const canonicalGroup = canonicalizeGroupId(groupeParam);
-assert.equal(canonicalGroup, 'Samambaia', "canonicalizeGroupId doit normaliser 'Samambaia' en 'Samambaia'");
-console.log(`  ✅ [PASS] L'URL ${testUrl} extrait et normalise rigoureusement le groupe : '${canonicalGroup}'.`);
+assert.equal(canonicalGroup, 'BaqueSol', "canonicalizeGroupId doit restituer la casse canonique 'BaqueSol'");
+assert.ok(onboardingSrc.includes('if (!verifiedGroupId)'), "Onboarding.jsx doit bloquer toute écriture sans verifiedGroupId");
+assert.ok(onboardingSrc.includes('<GroupSelectorStep'), "Onboarding.jsx doit forcer GroupSelectorStep si aucun groupe valide n'est résolu");
+console.log(`  ✅ [PASS] L'URL ${testUrl} normalise le groupe en '${canonicalGroup}' et bloque les profils orphelins.`);
 
 console.log('\n===============================================================');
 console.log('🏆 TOUS LES CONTRÔLES DE SÉCURITÉ ONBOARDING SONT VALIDÉS !');

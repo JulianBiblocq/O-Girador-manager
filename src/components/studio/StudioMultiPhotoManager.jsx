@@ -57,8 +57,8 @@ export default function StudioMultiPhotoManager({
         }
 
         const cleanName = item.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-        const targetGroup = groupId || 'Samambaia';
-        const storagePath = `documents/${targetGroup}/studio_social/${Date.now()}_${cleanName}`;
+        if (!groupId) throw new Error("Association introuvable.");
+        const storagePath = `documents/${groupId}/studio_social/${Date.now()}_${cleanName}`;
         const fileRef = ref(storage, storagePath);
         const snapshot = await uploadBytes(fileRef, fileToUpload);
         const downloadUrl = await getDownloadURL(snapshot.ref);

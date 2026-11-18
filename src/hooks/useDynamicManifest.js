@@ -66,7 +66,7 @@ export function getLastGroupId() {
 /**
  * Hook d'identité 100 % SaaS Multi-Associations :
  * - Garde `<link rel="manifest" href="/manifest.json">` strictement statique (zéro `blob:`).
- * - `document.title = assoName` (ex. « Samambaia », « Samb'à Bulles ») : nom lu depuis Firestore ou depuis le cache
+ * - `document.title = assoName` (ex. « Baque do Sol », « Samb'à Bulles ») : nom lu depuis Firestore ou depuis le cache
  *   `ogirador_asso_name_${groupId}`, avec repli sur le dernier groupe actif pour éviter tout saut au rechargement.
  * - Titre neutre « O Girador » uniquement si aucun groupe n'est connu.
  */

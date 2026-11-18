@@ -43,7 +43,7 @@ export default function TabProgram({
   // Props Plan de scène
   onGoToStageLayoutEditor
 }) {
-  const effectiveGroupId = groupId || event?.groupId || activeEvent?.groupId || profileData?.groupId || user?.groupId || 'Samambaia';
+  const effectiveGroupId = groupId || event?.groupId || activeEvent?.groupId || profileData?.groupId || user?.groupId || '';
   const showWorkshop = (event.type === 'atelier' || event.type === 'stage') && event.specialiteAtelier === 'fabrication';
   const showRevision = (event.includesPercussion !== false || (setlist && setlist.length > 0) || (event.linkedPatterns && event.linkedPatterns.length > 0)) && currentConfig?.agendaEnableRevisionProgram !== false;
   const showStageLayout = currentConfig?.agendaEnableStageLayout !== false && (event.isStageLayoutPublished || isAuthorized);

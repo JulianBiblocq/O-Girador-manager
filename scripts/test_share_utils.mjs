@@ -12,7 +12,7 @@ console.log('🧪 Début des tests pour shareUtils.js...');
 
 // 1. Test des initiales
 assert.equal(getAssociationInitials("Samb'à Bulles"), 'SB', 'Initiales pour Samb\'à Bulles');
-assert.equal(getAssociationInitials('Samambaia'), 'SA', 'Initiales pour Samambaia');
+assert.equal(getAssociationInitials('BaqueSol'), 'BA', 'Initiales pour un nom simple BaqueSol');
 assert.equal(getAssociationInitials('Maracatu O Girador'), 'MG', 'Initiales pour Maracatu O Girador');
 assert.equal(getAssociationInitials(''), 'OG', 'Initiales par défaut');
 console.log('✅ Test 1 validé : Calcul des initiales conforme.');
@@ -56,5 +56,6 @@ const testOutputPath = path.resolve('public/brandings/test-sambabulles-seal.png'
 fs.mkdirSync(path.dirname(testOutputPath), { recursive: true });
 fs.writeFileSync(testOutputPath, buf);
 console.log(`✅ Test 3 validé : Sceau combiné généré avec succès (${buf.length} octets) -> ${testOutputPath}`);
+if (fs.existsSync(testOutputPath)) fs.unlinkSync(testOutputPath);
 
 console.log('🎉 Tous les tests unitaires de shareUtils ont réussi !');

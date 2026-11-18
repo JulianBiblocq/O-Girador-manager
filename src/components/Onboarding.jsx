@@ -10,12 +10,12 @@ import OnboardingVisibilityBlock from './onboarding/OnboardingVisibilityBlock';
 import OnboardingPrivateBlock from './onboarding/OnboardingPrivateBlock';
 import OnboardingMissingFieldsAlert from './onboarding/OnboardingMissingFieldsAlert';
 import OnboardingExistingMemberRescueBanner from './onboarding/OnboardingExistingMemberRescueBanner';
+import GroupSelectorStep from './auth/GroupSelectorStep';
 import WelcomeTourModal from './guided-tour/WelcomeTourModal';
 import { notifyMembersByTag } from '../utils/inAppNotificationService';
 import { sanitizeUserDocPayload } from '../utils/firestoreUtils';
-import { canonicalizeGroupId } from '../utils/tenantUtils';
-import { resolveResilientGroupId } from '../hooks/useGroupContext';
 import { reconcilePreExistingMember } from '../services/memberService';
+import { useOnboardingGroupGuard } from '../hooks/useOnboardingGroupGuard';
 
 // Configuration par défaut des champs du formulaire d'inscription.
 // Les champs non essentiels sont isRequired: false pour éviter qu'un champ masqué
@@ -73,18 +73,25 @@ export default function Onboarding({ user, branding, onComplete, profileData, on
     publierDateNaissance: Boolean(profileData?.publierDateNaissance)
   });
 
-  const [fieldsConfig, setFieldsConfig] = useState(null);
-  const [nomAssociation, setNomAssociation] = useState(branding?.nomAssociation || branding?.nom || branding?.name || '');
-  const [instrumentsDisponibles, setInstrumentsDisponibles] = useState(["Alfaia", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant"]);
-  const [linkedInstruments, setLinkedInstruments] = useState([]);
   const [submitting, setSubmitting] = useState(false);
-  const [droitImageDocUrl, setDroitImageDocUrl] = useState('');
-  const [aptitudeMedicaleDocUrl, setAptitudeMedicaleDocUrl] = useState('');
-  const [demanderDroitImage, setDemanderDroitImage] = useState(false);
-  const [demanderAttestationSante, setDemanderAttestationSante] = useState(false);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
-  // Informations visuelles de paiement détecté depuis le sas HelloAsso (affichage uniquement)
   const [pendingPaymentInfo, setPendingPaymentInfo] = useState(null);
+
+  const {
+    verifiedGroupId,
+    isResolvingGroup,
+    groupError,
+    selectManualGroup,
+    fieldsConfig,
+    nomAssociation,
+    instrumentsDisponibles,
+    linkedInstruments,
+    droitImageDocUrl,
+    aptitudeMedicaleDocUrl,
+    demanderDroitImage,
+    demanderAttestationSante
+  } = useOnboardingGroupGuard({ profileData, branding, defaultFieldsConfig: DEFAULT_FIELDS_CONFIG });
+  const targetGroupId = verifiedGroupId;
 
   // Détection visuelle préalable du statut de paiement dans le sas HelloAsso (pending_payments).
   // Conformément aux règles de sécurité, cela reste un affichage purement informatif pour l'adhérent.
@@ -135,67 +142,16 @@ export default function Onboarding({ user, branding, onComplete, profileData, on
     }
   };
 
-  // Extraction résiliente et normalisation stricte du groupe (URL, localStorage, déduction d'hôte)
-  const resilient = resolveResilientGroupId();
-  const rawGroupId = resilient.groupId || profileData?.groupId || 'Samambaia';
-  const groupId = canonicalizeGroupId(rawGroupId);
-
-  // Vérification de réconciliation automatique : si une fiche pré-existante a été créée par le Bureau
+  // Vérification de réconciliation automatique uniquement lorsque le groupe canonique est validé
   useEffect(() => {
-    if (user?.email) {
-      reconcilePreExistingMember(user, groupId).then((reconciled) => {
-        if (reconciled && onComplete) {
-          console.info("Onboarding - Profil réconcilié automatiquement avec la fiche Bureau !");
-          onComplete();
-        }
+    if (user?.email && verifiedGroupId) {
+      reconcilePreExistingMember(user, verifiedGroupId).then((reconciled) => {
+        if (reconciled && onComplete) onComplete();
       }).catch((err) => {
         console.warn("Onboarding - Avertissement réconciliation automatique :", err);
       });
     }
-  }, [user?.email, groupId, onComplete]);
-
-  // Charger custom fields configuration and association details for Onboarding
-  useEffect(() => {
-    if (!groupId) {
-      setFieldsConfig(DEFAULT_FIELDS_CONFIG);
-      return;
-    }
-
-    const fetchConfig = async () => {
-      try {
-        const docRef = doc(db, 'associations', groupId);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          if (data.nomAssociation || data.nom || data.name) {
-            setNomAssociation(data.nomAssociation || data.nom || data.name);
-          }
-          setDemanderDroitImage(data.demanderDroitImage || false);
-          setDemanderAttestationSante(data.demanderAttestationSante || false);
-          if (Array.isArray(data.instrumentsDisponibles) && data.instrumentsDisponibles.length > 0) {
-            setInstrumentsDisponibles(data.instrumentsDisponibles);
-          }
-          if (Array.isArray(data.linkedInstruments)) {
-            setLinkedInstruments(data.linkedInstruments);
-          }
-          if (data.fieldsConfig) {
-            setFieldsConfig({ ...DEFAULT_FIELDS_CONFIG, ...data.fieldsConfig });
-          } else {
-            setFieldsConfig(DEFAULT_FIELDS_CONFIG);
-          }
-          setDroitImageDocUrl(data.droitImageDocUrl || '');
-          setAptitudeMedicaleDocUrl(data.aptitudeMedicaleDocUrl || '');
-        } else {
-          setFieldsConfig(DEFAULT_FIELDS_CONFIG);
-        }
-      } catch (err) {
-        console.error("Onboarding - Erreur de fetch config :", err);
-        setFieldsConfig(DEFAULT_FIELDS_CONFIG);
-      }
-    };
-
-    fetchConfig();
-  }, [groupId]);
+  }, [user?.email, verifiedGroupId, onComplete]);
 
   const [_validationError, setValidationError] = useState('');
   const [missingFieldsList, setMissingFieldsList] = useState([]);
@@ -322,6 +278,11 @@ export default function Onboarding({ user, branding, onComplete, profileData, on
       return;
     }
 
+    if (!verifiedGroupId) {
+      alert("Veuillez d'abord renseigner le code de votre association avant de finaliser votre inscription.");
+      return;
+    }
+
     setSubmitting(true);
 
     try {
@@ -329,30 +290,9 @@ export default function Onboarding({ user, branding, onComplete, profileData, on
         throw new Error("Identifiant utilisateur manquant. Veuillez vous reconnecter.");
       }
 
-      // Vérification préalable de l'existence du document pour distinguer création vs mise à jour
       const userRef = doc(db, 'users', user.uid);
-      const userSnap = await getDoc(userRef);
-      const _isNewDoc = !userSnap.exists();
-
-      // Réconciliation préalable avec le sas de paiement HelloAsso (pending_payments)
-      // La détection visuelle a déjà été réalisée au montage du composant via pendingPaymentInfo.
-      // Règle absolue de sécurité : AUCUNE clé de paiement (paymentStatus, cotisationAjour, etc.)
-      // ni clé d'administration (isSystemAdmin, role, etc.) ne doit être injectée depuis le client.
-      // Le rattachement du paiement HelloAsso est délégué au trigger Cloud Function onUserCreate.
       const cleanEmail = (user.email || '').trim().toLowerCase();
-
       const currentInstVal = isAncien ? (formData.instrumentPrincipal || "") : (isPercussion ? "En attente" : "");
-
-      // Construction de la fiche utilisateur Firestore
-      const _isExistingMember = Boolean(
-        isAncien ||
-        profileData?.estAncienMembre ||
-        profileData?.instrument ||
-        profileData?.instrumentPrincipal ||
-        (Array.isArray(profileData?.instrumentsJoues) && profileData.instrumentsJoues.length > 0) ||
-        (profileData?.role && profileData.role !== 'nouveau')
-      );
-
       const effectivePercussion = isPercussion || Boolean(pendingPaymentInfo?.pratiquePercussion);
       const effectiveDanse = isDanse || Boolean(pendingPaymentInfo?.pratiqueDanse);
 
@@ -390,7 +330,7 @@ export default function Onboarding({ user, branding, onComplete, profileData, on
         isNew: isAncien ? false : true,
         status: isAncien ? (profileData?.status || "active") : "pending",
         statutActuel: isAncien ? (profileData?.statutActuel || "active") : "pending",
-        groupId: (profileData?.groupId || groupId)?.toLowerCase() === 'samambaia' ? 'Samambaia' : (profileData?.groupId || groupId || 'Samambaia'),
+        groupId: verifiedGroupId,
         role: profileData?.role || 'membre',
         tags: Array.isArray(profileData?.tags) ? profileData.tags : [],
         afficherTelephone: Boolean(formData.afficherTelephone),
@@ -476,6 +416,15 @@ export default function Onboarding({ user, branding, onComplete, profileData, on
         </div>
 
         <div className="max-w-2xl mx-auto w-full my-4 px-2">
+          {!verifiedGroupId ? (
+            isResolvingGroup ? (
+              <CordelCard variant="default" useExtremeBorder={true} className="py-10 text-center text-xs font-bold text-cordel-wood">
+                ⏳ Vérification de l'association en cours...
+              </CordelCard>
+            ) : (
+              <GroupSelectorStep onSelectGroup={selectManualGroup} externalError={groupError} loading={isResolvingGroup} />
+            )
+          ) : (
           <CordelCard variant="default" useExtremeBorder={true}>
             {/* Bandeau de secours en 1 clic pour les membres existants sur nouvel appareil */}
             <OnboardingExistingMemberRescueBanner
@@ -585,6 +534,7 @@ export default function Onboarding({ user, branding, onComplete, profileData, on
               </CordelButton>
             </form>
           </CordelCard>
+          )}
         </div>
 
         {/* Modale de bienvenue & visite guidée interactive post-inscription */}

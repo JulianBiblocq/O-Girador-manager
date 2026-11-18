@@ -174,7 +174,7 @@ export default function LayoutShell({
     associationData?.name || 
     associationData?.branding?.name || 
     associationData?.branding?.nom || 
-    (currentGroupId ? canonicalizeGroupId(currentGroupId) : (isDemoMode() ? 'Maracatu Na Chuva' : 'Samambaia'));
+    (currentGroupId ? canonicalizeGroupId(currentGroupId) : (isDemoMode() ? 'Maracatu Na Chuva' : 'O Girador'));
 
   const afficherEnLigne = currentProfile?.afficherEnLigne !== false;
   const { onlineMembers, onlineCount } = usePresence(currentUserId, currentGroupId, isPresenceEnabled, afficherEnLigne, isSystemOrSuperAdminOrMestre);

@@ -25,7 +25,7 @@ export default function EventRepertoireProgramSelector({
 
   // 1. Écoute temps réel du Répertoire de l'association (avec normalisation de casse canonique)
   useEffect(() => {
-    const rawGroup = groupId || 'Samambaia';
+    const rawGroup = groupId || '';
     const targetGroupId = canonicalizeGroupId(rawGroup) || rawGroup;
     if (!targetGroupId) {
       setAllPieces([]);

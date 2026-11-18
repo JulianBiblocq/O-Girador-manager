@@ -149,7 +149,7 @@ assert.equal(handledInternal, true);
 assert.equal(propagationStopped, true);
 assert.equal(navigatedTarget.poleId, 'mon-espace');
 assert.equal(navigatedTarget.tabId, 'materiel');
-assert.equal(isExternalActionLink('https://www.helloasso.com/associations/samambaia'), true);
+assert.equal(isExternalActionLink('https://www.helloasso.com/associations/baque_sol'), true);
 assert.equal(extractDeepLinkTarget('/app?target=/profil').pathname, '/profil');
 console.log('  ✅ [PASS] stopPropagation(), ouverture externe (http/https) et bascule interne instantanée validés.');
 

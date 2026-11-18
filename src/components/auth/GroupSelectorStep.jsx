@@ -4,33 +4,29 @@ import CordelButton from '../CordelButton';
 import { XiloCaixa } from '../XiloIcons';
 
 /**
- * Étape bienveillante de sélection ou saisie du groupe
- * Affichée lorsqu'aucun paramètre ?groupe n'est présent dans l'URL ni dans le stockage local.
+ * Étape bienveillante de sélection ou saisie du groupe associatif.
+ * Affichée lorsqu'aucun identifiant d'association valide n'est résolu (URL, stockage local ou profil).
  *
  * @param {Object} props
- * @param {Function} props.onSelectGroup Callback appelé avec le code groupe choisi
+ * @param {Function} props.onSelectGroup Callback appelé avec le code groupe saisi
+ * @param {string} [props.externalError=''] Message d'erreur retourné si l'association est introuvable
+ * @param {boolean} [props.loading=false] Vérification Firestore en cours
  */
-export default function GroupSelectorStep({ onSelectGroup }) {
+export default function GroupSelectorStep({ onSelectGroup, externalError = '', loading = false }) {
   const [groupInput, setGroupInput] = useState('');
-  const [error, setError] = useState('');
+  const [localError, setLocalError] = useState('');
 
-  // Suggestions rapides d'associations partenaires
-  const popularGroups = ['Samambaia'];
+  const effectiveError = localError || externalError;
 
   const handleSubmit = (e) => {
     e.preventDefault();
     const clean = groupInput.trim();
     if (!clean) {
-      setError("Veuillez saisir le nom ou code de votre association.");
+      setLocalError('Veuillez saisir le code ou identifiant de votre association.');
       return;
     }
-    setError('');
+    setLocalError('');
     onSelectGroup(clean);
-  };
-
-  const handlePickPopular = (name) => {
-    setError('');
-    onSelectGroup(name);
   };
 
   return (
@@ -55,31 +51,32 @@ export default function GroupSelectorStep({ onSelectGroup }) {
         </div>
 
         <p className="text-xs leading-relaxed text-encre-noire">
-          Renseigne le nom ou le code d'invitation de ta troupe (ex. <strong>Samambaia</strong>) pour accéder au formulaire d'inscription adapté à ton groupe.
+          Renseigne le code d'invitation communiqué par ton groupe (ou ouvre directement le lien d'invitation reçu) pour accéder à ton espace membre.
         </p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <div className="flex flex-col gap-1">
             <label className="text-[10px] font-black uppercase tracking-wider text-cordel-master-dark">
-              Code ou Nom de l'association <span className="text-red-600">*</span>
+              Code ou identifiant de l'association <span className="text-red-600">*</span>
             </label>
             <input
               type="text"
               required
+              disabled={loading}
               value={groupInput}
               onChange={(e) => {
                 setGroupInput(e.target.value);
-                if (error) setError('');
+                if (localError) setLocalError('');
               }}
-              placeholder="Ex : Samambaia"
+              placeholder="Ex : baque-do-sol"
               className="theme-input text-xs font-bold py-2 px-3 bg-white"
               autoFocus
             />
           </div>
 
-          {error && (
+          {effectiveError && (
             <div className="text-[11px] font-bold text-red-700 bg-red-50 p-2 rounded border border-red-300">
-              ⚠️ {error}
+              ⚠️ {effectiveError}
             </div>
           )}
 
@@ -87,31 +84,12 @@ export default function GroupSelectorStep({ onSelectGroup }) {
             type="submit"
             variant="ocre"
             useExtremeBorder={true}
+            disabled={loading}
             className="w-full py-2.5 font-black uppercase text-xs tracking-wider shadow-sm mt-1"
           >
-            Continuer vers l'inscription →
+            {loading ? 'Vérification en cours...' : 'Valider cette association →'}
           </CordelButton>
         </form>
-
-        {popularGroups.length > 0 && (
-          <div className="pt-3 border-t border-dashed border-cordel-master-dark/20 flex flex-col gap-1.5">
-            <span className="text-[9px] font-extrabold uppercase tracking-wider text-cordel-master-dark opacity-60">
-              Ou clique sur ton groupe :
-            </span>
-            <div className="flex flex-wrap gap-2">
-              {popularGroups.map((g) => (
-                <button
-                  key={g}
-                  type="button"
-                  onClick={() => handlePickPopular(g)}
-                  className="text-xs font-black uppercase px-3 py-1 rounded bg-amber-100 hover:bg-amber-200 text-cordel-wood border border-cordel-wood/40 transition-colors cursor-pointer shadow-xs active:translate-y-[1px]"
-                >
-                  🌿 {g}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
       </CordelCard>
     </div>
   );

@@ -24,7 +24,7 @@ const dummyEvent = {
   id: 'evt_festival_2026',
   titre: 'Festival Maracatu 2026',
   dateDebut: '2026-06-21',
-  groupId: 'samambaia'
+  groupId: 'baque_sol'
 };
 
 const dummyCommission = {

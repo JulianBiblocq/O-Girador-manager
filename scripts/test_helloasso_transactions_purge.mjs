@@ -185,7 +185,7 @@ console.log("\n▶️ Test 5 : Idempotence absolue et identifiant ha_pay_${payme
 
   // Enregistrement initial de Marie de Fontaine (100 €)
   await simulateDeterministicRecord({
-    groupId: 'samambaia',
+    groupId: 'baque_sol',
     paymentId: 'PAY_MARIE_100',
     amountEuros: 100,
     payerName: 'Marie de Fontaine',
@@ -204,7 +204,7 @@ console.log("\n▶️ Test 5 : Idempotence absolue et identifiant ha_pay_${payme
   // Simuler 10 clics successifs sur « Synchroniser » ou « Assainir »
   for (let i = 0; i < 10; i++) {
     await simulateDeterministicRecord({
-      groupId: 'samambaia',
+      groupId: 'baque_sol',
       paymentId: 'PAY_MARIE_100',
       amountEuros: 100,
       payerName: 'Marie de Fontaine',
@@ -261,19 +261,19 @@ console.log("\n▶️ Test 7 : Purge chirurgicale d'un journal corrompu");
 {
   const corruptJournal = [
     // Dépenses réelles de l'association (À PRÉSERVER ABSOLUMENT)
-    { id: 'tx_frais_bancaires', groupId: 'samambaia', type: 'depense', categorie: 'Frais', montant: 15, libelle: 'Frais bancaires tenue compte', source: 'manuel' },
-    { id: 'tx_achat_cordes', groupId: 'samambaia', type: 'depense', categorie: 'Matériel', montant: 120, libelle: 'Achat peaux et cordes', source: 'manuel' },
-    { id: 'tx_guso', groupId: 'samambaia', type: 'depense', categorie: 'Salaires', montant: 500, libelle: 'Cachet GUSO maître de stage', source: 'manuel' },
-    { id: 'tx_remboursement', groupId: 'samambaia', type: 'depense', categorie: 'Frais', montant: 45, libelle: 'Remboursement train adhérent', source: 'manuel' },
+    { id: 'tx_frais_bancaires', groupId: 'baque_sol', type: 'depense', categorie: 'Frais', montant: 15, libelle: 'Frais bancaires tenue compte', source: 'manuel' },
+    { id: 'tx_achat_cordes', groupId: 'baque_sol', type: 'depense', categorie: 'Matériel', montant: 120, libelle: 'Achat peaux et cordes', source: 'manuel' },
+    { id: 'tx_guso', groupId: 'baque_sol', type: 'depense', categorie: 'Salaires', montant: 500, libelle: 'Cachet GUSO maître de stage', source: 'manuel' },
+    { id: 'tx_remboursement', groupId: 'baque_sol', type: 'depense', categorie: 'Frais', montant: 45, libelle: 'Remboursement train adhérent', source: 'manuel' },
     // Saisie manuelle de recette (À PRÉSERVER ABSOLUMENT)
-    { id: 'tx_cotis_especes', groupId: 'samambaia', type: 'recette', categorie: 'Cotisations', montant: 145, libelle: 'Cotisation espèces Jean', source: 'manuel' },
+    { id: 'tx_cotis_especes', groupId: 'baque_sol', type: 'recette', categorie: 'Cotisations', montant: 145, libelle: 'Cotisation espèces Jean', source: 'manuel' },
 
     // Doublons HelloAsso corrompus (À SUPPRIMER DÉFINITIVEMENT)
-    { id: 'tx_corrupt_jp1', groupId: 'samambaia', type: 'recette', categorie: 'Cotisations', montant: 145, libelle: 'Paiement HelloAsso - Jean-pierre (Adhésion)', source: 'helloasso' },
-    { id: 'tx_corrupt_jp2', groupId: 'samambaia', type: 'recette', categorie: 'Cotisations', montant: 145, libelle: 'Paiement HelloAsso - Jean pierre LE DEVEHAT', source: 'helloasso' },
-    { id: 'tx_corrupt_isa1', groupId: 'samambaia', type: 'recette', categorie: 'Cotisations', montant: 145, libelle: 'Paiement HelloAsso - Isabelle Touchefeu (Danse)', source: 'helloasso' },
-    { id: 'tx_corrupt_isa2', groupId: 'samambaia', type: 'recette', categorie: 'Cotisations', montant: 145, libelle: 'Paiement HelloAsso - Isabelle Touchefeu (Percussions + Danse)', source: 'helloasso' },
-    { id: 'helloasso_order_dupont', groupId: 'samambaia', type: 'recette', categorie: 'Cotisations', montant: 100, libelle: 'Paiement HelloAsso - Pierre Dupont', source: 'helloasso' }
+    { id: 'tx_corrupt_jp1', groupId: 'baque_sol', type: 'recette', categorie: 'Cotisations', montant: 145, libelle: 'Paiement HelloAsso - Jean-pierre (Adhésion)', source: 'helloasso' },
+    { id: 'tx_corrupt_jp2', groupId: 'baque_sol', type: 'recette', categorie: 'Cotisations', montant: 145, libelle: 'Paiement HelloAsso - Jean pierre LE DEVEHAT', source: 'helloasso' },
+    { id: 'tx_corrupt_isa1', groupId: 'baque_sol', type: 'recette', categorie: 'Cotisations', montant: 145, libelle: 'Paiement HelloAsso - Isabelle Touchefeu (Danse)', source: 'helloasso' },
+    { id: 'tx_corrupt_isa2', groupId: 'baque_sol', type: 'recette', categorie: 'Cotisations', montant: 145, libelle: 'Paiement HelloAsso - Isabelle Touchefeu (Percussions + Danse)', source: 'helloasso' },
+    { id: 'helloasso_order_dupont', groupId: 'baque_sol', type: 'recette', categorie: 'Cotisations', montant: 100, libelle: 'Paiement HelloAsso - Pierre Dupont', source: 'helloasso' }
   ];
 
   // Algorithme de purge chirurgicale
@@ -307,9 +307,9 @@ console.log("\n▶️ Test 7 : Purge chirurgicale d'un journal corrompu");
 
   // Ré-importation propre et unitaire
   const reimportedTxs = [
-    { id: 'ha_pay_jp', groupId: 'samambaia', type: 'recette', categorie: 'Cotisations', montant: 145, libelle: 'Paiement HelloAsso - Jean-Pierre LE DEVEHAT (Adhésion + Percussions)', source: 'helloasso' },
-    { id: 'ha_pay_isa', groupId: 'samambaia', type: 'recette', categorie: 'Cotisations', montant: 145, libelle: 'Paiement HelloAsso - Isabelle TOUCHEFEU (Adhésion + Percussions)', source: 'helloasso' },
-    { id: 'ha_pay_dupont_ech1', groupId: 'samambaia', type: 'recette', categorie: 'Cotisations', montant: 40, libelle: 'Paiement HelloAsso - Pierre DUPONT (Adhésion + Danse)', source: 'helloasso' }
+    { id: 'ha_pay_jp', groupId: 'baque_sol', type: 'recette', categorie: 'Cotisations', montant: 145, libelle: 'Paiement HelloAsso - Jean-Pierre LE DEVEHAT (Adhésion + Percussions)', source: 'helloasso' },
+    { id: 'ha_pay_isa', groupId: 'baque_sol', type: 'recette', categorie: 'Cotisations', montant: 145, libelle: 'Paiement HelloAsso - Isabelle TOUCHEFEU (Adhésion + Percussions)', source: 'helloasso' },
+    { id: 'ha_pay_dupont_ech1', groupId: 'baque_sol', type: 'recette', categorie: 'Cotisations', montant: 40, libelle: 'Paiement HelloAsso - Pierre DUPONT (Adhésion + Danse)', source: 'helloasso' }
   ];
 
   const cleanJournal = [...preservedTxs, ...reimportedTxs];

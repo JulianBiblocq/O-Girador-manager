@@ -1,45 +1,52 @@
 import { useState, useEffect } from 'react';
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import { isDemoMode } from '../demo/demoManager';
 import { DEMO_GROUP_ID } from '../data/demoData';
-import { canonicalizeGroupId } from '../utils/tenantUtils';
+import {
+  canonicalizeGroupId,
+  isCustomDomainHost,
+  registerCanonicalGroupId,
+  saveLastKnownTenantId,
+  saveCachedDomainGroupId,
+  getCachedDomainGroupId,
+  resolveCanonicalGroupFromFirestore
+} from '../utils/tenantUtils';
+import { getVitrineUrl } from '../utils/urlUtils';
 import { RESERVED_SUBDOMAINS } from './useGroupContext';
+
+const RESERVED_ROUTES = ['api', 'login', 'setup', 'app', 'vitrine', 'mostrador', 'demo', 'agenda', 'events'];
+
+/**
+ * Hook de résolution dynamique Multi-Associations (Organizador & Mostrador).
+ * Résout la casse canonique via Firestore (`Promise.allSettled`) et les domaines vitrines via `customDomains`.
+ */
 export default function useTenantResolver() {
   const [tenantState, setTenantState] = useState(() => {
     let initialMode = 'organizador', initGroup = null, initTenantId = null;
     if (typeof window !== 'undefined') {
       const h = window.location.hostname || '', p = window.location.pathname || '', s = new URLSearchParams(window.location.search || '');
       const pathTenant = p.split('/').filter(Boolean)[0];
-      const reservedRoutes = ['api', 'login', 'setup', 'app', 'vitrine', 'mostrador', 'demo', 'agenda', 'events'];
-      const isPathTenantValid = pathTenant && !reservedRoutes.includes(pathTenant.toLowerCase());
+      const isPathTenantValid = pathTenant && !RESERVED_ROUTES.includes(pathTenant.toLowerCase());
+      const urlTenant = s.get('tenant') || s.get('groupe') || s.get('groupId') || s.get('assoc');
 
-      const isDedicatedVitrine = h === 'samambaia-maracatu.fr' || h === 'www.samambaia-maracatu.fr';
-      const isOrganizadorHost = h.includes('organizador') || h.includes('manager') || h === 'localhost' || h === '127.0.0.1';
-
-      if (isDedicatedVitrine) {
-        initGroup = 'Samambaia';
-        initTenantId = 'samambaia';
+      if (isCustomDomainHost(h)) {
+        const cached = getCachedDomainGroupId(h);
+        initGroup = cached;
+        initTenantId = cached ? cached.toLowerCase() : null;
         initialMode = (p.startsWith('/app') || p.startsWith('/login') || p.startsWith('/events') || p.startsWith('/agenda')) ? 'organizador' : 'mostrador';
-      } else if (isOrganizadorHost) {
+      } else if (h.includes('organizador') || h.includes('manager') || h === 'localhost' || h === '127.0.0.1') {
         initialMode = (s.get('app') === 'mostrador' || p.startsWith('/vitrine') || p.startsWith('/mostrador')) ? 'mostrador' : 'organizador';
-        const urlTenant = s.get('tenant') || s.get('groupe') || s.get('groupId') || s.get('assoc');
         if (urlTenant) {
-          initTenantId = urlTenant.toLowerCase();
+          initTenantId = urlTenant.trim().toLowerCase();
           initGroup = canonicalizeGroupId(urlTenant);
-        } else if (h.includes('samambaia')) {
-          initTenantId = 'samambaia';
-          initGroup = 'Samambaia';
         }
       } else if (s.get('app') === 'mostrador' || p.startsWith('/vitrine') || p.startsWith('/mostrador') || h.includes('mostrador')) {
         initialMode = 'mostrador';
-        if (h.includes('mostrador') && isPathTenantValid) {
-          initTenantId = pathTenant.toLowerCase();
-          initGroup = canonicalizeGroupId(pathTenant);
-        } else if (s.get('tenant') || s.get('groupe') || s.get('groupId')) {
-          const legacy = (s.get('tenant') || s.get('groupe') || s.get('groupId')).trim();
-          initTenantId = legacy.toLowerCase();
-          initGroup = canonicalizeGroupId(legacy);
+        const raw = (h.includes('mostrador') && isPathTenantValid) ? pathTenant : (urlTenant || '');
+        if (raw.trim()) {
+          initTenantId = raw.trim().toLowerCase();
+          initGroup = canonicalizeGroupId(raw.trim());
         }
       }
     }
@@ -55,31 +62,13 @@ export default function useTenantResolver() {
       if (typeof window === 'undefined') return;
       const hostname = window.location.hostname, urlParams = new URLSearchParams(window.location.search);
       const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
-      const reservedRoutes = ['api', 'login', 'setup', 'app', 'vitrine', 'mostrador', 'demo', 'agenda', 'events'];
-      const pathTenant = (window.location.pathname || '').split('/').filter(Boolean)[0];
-      const isPathTenantValid = pathTenant && !reservedRoutes.includes(pathTenant.toLowerCase());
+      const pathname = window.location.pathname || '';
+      const pathTenant = pathname.split('/').filter(Boolean)[0];
+      const isPathTenantValid = pathTenant && !RESERVED_ROUTES.includes(pathTenant.toLowerCase());
 
       try {
-        // 0. Sécurisation inconditionnelle pour Samambaia sur son domaine vitrine dédié (samambaia-maracatu.fr)
-        if (hostname === 'samambaia-maracatu.fr' || hostname === 'www.samambaia-maracatu.fr') {
-          const p = window.location.pathname || '';
-          const isApp = p.startsWith('/app') || p.startsWith('/login') || p.startsWith('/events') || p.startsWith('/agenda');
-          const sMode = (urlParams.get('app') === 'mostrador' || p.startsWith('/vitrine') || !isApp) ? 'mostrador' : 'organizador';
-
-          setTenantState({
-            appMode: sMode, groupId: 'Samambaia', tenantId: 'samambaia', isLocalhost: isLocal,
-            isTenantLoading: false, tenantError: null, error: null, notFound: false,
-            urls: {
-              mostrador: 'https://samambaia-maracatu.fr',
-              organizador: isLocal ? '/login?app=organizador&tenant=Samambaia' : 'https://organizador.o-girador.com/?tenant=samambaia'
-            }
-          });
-          return;
-        }
-
-        // Mode Démo Maracatu Na Chuva
         if (isDemoMode()) {
-          const isMostrador = urlParams.get('app') === 'mostrador' || window.location.pathname.includes('/vitrine') || window.location.pathname.includes('/mostrador');
+          const isMostrador = urlParams.get('app') === 'mostrador' || pathname.includes('/vitrine') || pathname.includes('/mostrador');
           setTenantState({
             appMode: isMostrador ? 'mostrador' : 'organizador', groupId: DEMO_GROUP_ID, tenantId: DEMO_GROUP_ID,
             isLocalhost: isLocal, isTenantLoading: false, tenantError: null, error: null, notFound: false,
@@ -87,110 +76,90 @@ export default function useTenantResolver() {
           });
           return;
         }
-        
-        let currentMode = 'organizador', extractedGroupId = null, hasError = null;
+
+        let currentMode = 'organizador', extractedGroupId = null, resolvedAssocData = null, hasError = null;
         const tenantParam = urlParams.get('tenant') || urlParams.get('groupe') || urlParams.get('groupId') || urlParams.get('assoc');
 
-        // 1. Localhost
-        if (isLocal) {
-          const isPathVitrine = window.location.pathname.startsWith('/vitrine') || window.location.pathname.startsWith('/mostrador');
-          currentMode = (urlParams.get('app') === 'mostrador' || isPathVitrine) ? 'mostrador' : (urlParams.get('app') || import.meta.env.VITE_DEFAULT_APP || 'organizador');
-          if (currentMode === 'mostrador' && isPathTenantValid) {
-            extractedGroupId = pathTenant.toLowerCase();
-          } else {
-            extractedGroupId = tenantParam || import.meta.env.VITE_DEFAULT_TENANT || null;
-          }
-        } 
-        // 2. Production
-        else {
-          if (hostname === 'o-girador.com' || hostname === 'www.o-girador.com') {
-            currentMode = 'orquestrador'; extractedGroupId = tenantParam || null;
-          } else if (hostname.includes('o-girador.com') || hostname.includes('web.app') || hostname.includes('firebaseapp.com')) {
-            if (hostname.includes('mostrador')) {
-              currentMode = 'mostrador';
-              if (isPathTenantValid) extractedGroupId = pathTenant.toLowerCase();
-            }
-            else if (hostname.includes('organizador') || hostname.includes('manager')) currentMode = 'organizador';
-            else if (hostname.includes('sequenciador')) currentMode = 'sequenciador';
-            else if (hostname.includes('dancador')) currentMode = 'dancador';
-            else if (hostname.includes('cantador')) currentMode = 'cantador';
-
-            const parts = hostname.split('.');
-            if (parts.length > 2 && !RESERVED_SUBDOMAINS.includes(parts[0].toLowerCase())) {
-              extractedGroupId = parts[0];
-            }
-            if (!extractedGroupId && tenantParam) {
-              extractedGroupId = tenantParam;
-            }
-            if (urlParams.get('app') === 'mostrador' || window.location.pathname.startsWith('/vitrine') || window.location.pathname.startsWith('/mostrador')) {
-              currentMode = 'mostrador';
-            }
-          } else {
-            currentMode = 'mostrador';
-            if (tenantParam) {
-              extractedGroupId = tenantParam;
-            } else {
-              try {
-                const possibleHostnames = [hostname, hostname.startsWith('www.') ? hostname.replace(/^www\./, '') : `www.${hostname}`];
-                const q = query(collection(db, 'associations'), where('customDomains', 'array-contains-any', possibleHostnames));
-                const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 2500));
-                const snapshot = await Promise.race([getDocs(q), timeoutPromise]);
-                if (snapshot && !snapshot.empty) extractedGroupId = snapshot.docs[0].id;
-                else hasError = 'NOT_FOUND';
-              } catch (error) {
-                console.warn("Erreur ou timeout résolution domaine personnalisé :", error);
-                hasError = 'ERROR';
-              }
-            }
-          }
-        }
-
-        // 4. Validation directe Firestore de l'identifiant de groupe (chemin direct ou paramètre)
-        if (extractedGroupId) {
-          const canonicalId = canonicalizeGroupId(extractedGroupId);
-          if (canonicalId && canonicalId.toLowerCase() === 'samambaia') {
-            // Résolution statique instantanée pour Samambaia : zéro latence, zéro risque Firestore
-            extractedGroupId = 'Samambaia';
-            hasError = null;
-          } else if (canonicalId && canonicalId.toLowerCase() === 'sambabulles') {
-            // Résolution statique instantanée pour Samb'à Bulles : zéro latence, zéro risque Firestore
-            extractedGroupId = 'sambabulles';
-            hasError = null;
+        // 1. Domaine personnalisé d'association (résolution dynamique via customDomains)
+        if (isCustomDomainHost(hostname)) {
+          const isAppRoute = pathname.startsWith('/app') || pathname.startsWith('/login') || pathname.startsWith('/events') || pathname.startsWith('/agenda');
+          currentMode = (urlParams.get('app') === 'mostrador' || pathname.startsWith('/vitrine') || !isAppRoute) ? 'mostrador' : 'organizador';
+          if (tenantParam) {
+            extractedGroupId = tenantParam;
           } else {
             try {
-              const docPromise = getDoc(doc(db, 'associations', canonicalId));
-              const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 2500));
-              const assocSnap = await Promise.race([docPromise, timeoutPromise]);
-              if (assocSnap && assocSnap.exists()) {
-                extractedGroupId = assocSnap.id;
-                hasError = null;
+              const possibleHostnames = [hostname, hostname.startsWith('www.') ? hostname.replace(/^www\./, '') : `www.${hostname}`];
+              const q = query(collection(db, 'associations'), where('customDomains', 'array-contains-any', possibleHostnames));
+              const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 3500));
+              const snapshot = await Promise.race([getDocs(q), timeoutPromise]);
+              if (snapshot && !snapshot.empty) {
+                const matchedDoc = snapshot.docs[0];
+                extractedGroupId = matchedDoc.id;
+                resolvedAssocData = matchedDoc.data() || {};
+                registerCanonicalGroupId(matchedDoc.id);
+                saveCachedDomainGroupId(hostname, matchedDoc.id);
+                saveLastKnownTenantId(matchedDoc.id);
               } else {
-                extractedGroupId = null;
                 hasError = 'NOT_FOUND';
               }
             } catch (error) {
-              console.warn("useTenantResolver - Résolution Firestore différée ou timeout :", error);
-              extractedGroupId = canonicalId;
-              hasError = null;
+              console.warn('useTenantResolver - Timeout ou erreur résolution customDomains :', error);
+              extractedGroupId = getCachedDomainGroupId(hostname);
+              if (!extractedGroupId) hasError = 'ERROR';
             }
+          }
+        } else if (isLocal) {
+          const isPathVitrine = pathname.startsWith('/vitrine') || pathname.startsWith('/mostrador');
+          currentMode = (urlParams.get('app') === 'mostrador' || isPathVitrine) ? 'mostrador' : (urlParams.get('app') || import.meta.env.VITE_DEFAULT_APP || 'organizador');
+          extractedGroupId = (currentMode === 'mostrador' && isPathTenantValid)
+            ? pathTenant
+            : (tenantParam || import.meta.env.VITE_DEFAULT_TENANT || null);
+        } else if (hostname === 'o-girador.com' || hostname === 'www.o-girador.com') {
+          currentMode = 'orquestrador';
+          extractedGroupId = tenantParam || null;
+        } else {
+          if (hostname.includes('mostrador')) {
+            currentMode = 'mostrador';
+            if (isPathTenantValid) extractedGroupId = pathTenant;
+          } else if (hostname.includes('sequenciador')) currentMode = 'sequenciador';
+          else if (hostname.includes('dancador')) currentMode = 'dancador';
+          else if (hostname.includes('cantador')) currentMode = 'cantador';
+
+          const parts = hostname.split('.');
+          if (!extractedGroupId && parts.length > 2 && !RESERVED_SUBDOMAINS.includes(parts[0].toLowerCase())) {
+            extractedGroupId = parts[0];
+          }
+          if (!extractedGroupId && tenantParam) extractedGroupId = tenantParam;
+          if (urlParams.get('app') === 'mostrador' || pathname.startsWith('/vitrine') || pathname.startsWith('/mostrador')) {
+            currentMode = 'mostrador';
           }
         }
 
-        // Construction des URLs
-        const canonicalGroupId = canonicalizeGroupId(extractedGroupId);
-        let mostradorUrl = '', organizadorUrl = '';
-
-        if (isLocal) {
-          mostradorUrl = canonicalGroupId ? `/?app=mostrador&tenant=${encodeURIComponent(canonicalGroupId)}` : '/?app=mostrador';
-          organizadorUrl = `/login?app=organizador${canonicalGroupId ? `&tenant=${encodeURIComponent(canonicalGroupId)}` : ''}`;
-        } else {
-          const groupParam = canonicalGroupId ? `?tenant=${encodeURIComponent(canonicalGroupId.toLowerCase())}` : '';
-          const isSam = canonicalGroupId && canonicalGroupId.toLowerCase() === 'samambaia';
-          mostradorUrl = isSam
-            ? 'https://samambaia-maracatu.fr'
-            : (canonicalGroupId ? `https://mostrador.o-girador.com/${encodeURIComponent(canonicalGroupId.toLowerCase())}` : 'https://mostrador.o-girador.com');
-          organizadorUrl = `https://organizador.o-girador.com/${groupParam}`;
+        // 2. Résolution canonique sans race condition via Promise.allSettled sur associations/{id}
+        if (extractedGroupId && !resolvedAssocData) {
+          const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve({ timeout: true }), 3500));
+          const check = await Promise.race([resolveCanonicalGroupFromFirestore(db, extractedGroupId), timeoutPromise]);
+          if (check?.timeout || check?.networkError) {
+            extractedGroupId = canonicalizeGroupId(extractedGroupId);
+            hasError = null;
+          } else if (check?.exists && check.canonicalId) {
+            extractedGroupId = check.canonicalId;
+            resolvedAssocData = check.data;
+            hasError = null;
+          } else {
+            extractedGroupId = null;
+            hasError = 'NOT_FOUND';
+          }
         }
+
+        const canonicalGroupId = extractedGroupId ? canonicalizeGroupId(extractedGroupId) : null;
+        const groupParam = canonicalGroupId ? `?tenant=${encodeURIComponent(canonicalGroupId.toLowerCase())}` : '';
+        const mostradorUrl = isLocal
+          ? (canonicalGroupId ? `/?app=mostrador&tenant=${encodeURIComponent(canonicalGroupId)}` : '/?app=mostrador')
+          : getVitrineUrl(canonicalGroupId, resolvedAssocData || {});
+        const organizadorUrl = isLocal
+          ? `/login?app=organizador${canonicalGroupId ? `&tenant=${encodeURIComponent(canonicalGroupId)}` : ''}`
+          : `https://organizador.o-girador.com/${groupParam}`;
 
         setTenantState({
           appMode: currentMode,
@@ -204,17 +173,10 @@ export default function useTenantResolver() {
           urls: { mostrador: mostradorUrl, organizador: organizadorUrl }
         });
       } catch (err) {
-        console.error("useTenantResolver - Erreur critique inattendue lors de la résolution du tenant :", err);
-        // Filet de secours neutre multi-tenant : libération du chargement sans fuite inter-groupes
+        console.error('useTenantResolver - Erreur critique inattendue :', err);
         setTenantState({
-          appMode: 'organizador',
-          groupId: null,
-          tenantId: null,
-          isLocalhost: isLocal,
-          isTenantLoading: false,
-          tenantError: null,
-          error: null,
-          notFound: false,
+          appMode: 'organizador', groupId: null, tenantId: null, isLocalhost: isLocal,
+          isTenantLoading: false, tenantError: null, error: null, notFound: false,
           urls: { mostrador: '', organizador: '/login?app=organizador' }
         });
       }

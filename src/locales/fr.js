@@ -5703,7 +5703,7 @@ export const fr = {
       serviceCertifieOGirador: "✓ Service Certifié O Girador",
       serviceExterneActif: "⚡ Service Externe Actif",
       nomDExpediteurDynamique: "Nom d'expéditeur dynamique *",
-      exSamambaiaMaracatu: "Ex: Samambaia Maracatu",
+      exAssoMaracatu: "Ex: Maracatu Baque do Sol",
       adresseEMailDeReponse: "Adresse e-mail de réponse (Reply-To) *",
       exContactMonAssoFr: "Ex: contact@mon-asso.fr",
       modeDEnvoiDE: "Mode d'envoi d'e-mails & Canal d'infrastructures",
@@ -6052,7 +6052,7 @@ export const fr = {
           "enTeteAccrocheHero": "En-tête & Accroche (Hero)",
           "titrePhraseDAccrocheVisuel": "Titre, phrase d'accroche, visuel de couverture et bouton d'action principal",
           "titrePrincipalDuSiteNom": "🏷️ Titre Principal du Site / Nom de l'Association",
-          "exSamambaia": "Ex: Samambaia",
+          "exGroupName": "Ex: Baque do Sol",
           "phraseDAccrocheHeroSection": "Phrase d'Accroche (Hero Section)",
           "exLEnergiePercutanteEt": "Ex: L'énergie percutante et solaire du Maracatú brésilien !",
           "imageDeCouvertureHeroBanniere": "Image de Couverture Hero (Bannière / Fond)",
@@ -6257,9 +6257,9 @@ export const fr = {
       tabIdentity: {
         denominationSigleDeLAssociation: "Dénomination & Sigle de l'Association",
         nomOfficielCompletDeL: "Nom Officiel Complet de l'Association *",
-        exAssociacaoCulturalSamambaia: "ex: Associação Cultural Samambaia",
+        exAssociacaoCultural: "ex: Associação Cultural Baque do Sol",
         nomCourtSigle: "Nom court / Sigle *",
-        exSamambaia: "ex: Samambaia"
+        exShortGroupName: "ex: Baque do Sol"
       },
       subscriptionInvitationHeader: {
         impossibleDAccederAuPortail: "Impossible d'accéder au portail de paiement.",

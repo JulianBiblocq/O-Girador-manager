@@ -1,14 +1,17 @@
 import React from 'react';
+import { isCustomDomainHost, getCachedDomainGroupId, getLastKnownTenantId } from '../utils/tenantUtils';
 
+/**
+ * Écran affiché lorsqu'aucune association existante ne correspond à l'adresse demandée.
+ */
 export default function TenantNotFound() {
-  const isLocal = typeof window !== 'undefined' && 
+  const isLocal = typeof window !== 'undefined' &&
     (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
   const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
-  const isSamambaia = hostname.includes('samambaia-maracatu.fr') || hostname.includes('samambaia');
+  const fallbackTenant = (getCachedDomainGroupId(hostname) || getLastKnownTenantId() || '').toLowerCase();
 
-  // Sur le domaine vitrine ou en externe, rediriger vers l'URL officielle Organizador
-  const appHref = (!isLocal && isSamambaia) 
-    ? 'https://organizador.o-girador.com/?tenant=samambaia' 
+  const appHref = (!isLocal && isCustomDomainHost(hostname))
+    ? (fallbackTenant ? `https://organizador.o-girador.com/?tenant=${encodeURIComponent(fallbackTenant)}` : 'https://organizador.o-girador.com/')
     : '/app';
 
   return (
@@ -19,14 +22,14 @@ export default function TenantNotFound() {
         Nous n'avons pas pu trouver l'association correspondant à cette adresse. Vérifiez l'URL ou retournez à l'accueil.
       </p>
       <div className="flex gap-3 flex-wrap justify-center">
-        <a 
-          href={appHref} 
+        <a
+          href={appHref}
           className="px-6 py-3 bg-[var(--color-cordel-vert,#2d6a4f)] text-white font-bold rounded-md hover:brightness-110 transition-colors shadow-md"
         >
           Accéder à mon espace membre
         </a>
-        <a 
-          href="https://www.o-girador.com" 
+        <a
+          href="https://www.o-girador.com"
           className="px-6 py-3 bg-[var(--color-cordel-ocre,#c05621)] text-white font-bold rounded-md hover:brightness-110 transition-colors shadow-md"
         >
           Retour au Hub

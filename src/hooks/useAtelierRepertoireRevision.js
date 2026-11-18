@@ -18,7 +18,7 @@ export function useAtelierRepertoireRevision({ groupId, externalRepertoire = [] 
 
   useEffect(() => {
     if (Array.isArray(externalRepertoire) && externalRepertoire.length > 0) return;
-    const rawGroup = groupId || 'Samambaia';
+    const rawGroup = groupId || '';
     const targetGroup = canonicalizeGroupId(rawGroup) || rawGroup;
     if (!targetGroup) return;
 

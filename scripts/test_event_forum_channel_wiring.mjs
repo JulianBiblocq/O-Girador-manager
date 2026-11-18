@@ -104,7 +104,7 @@ console.log('▶️ Module 1 : Création et résolution du salon dédié dans fo
 const testEvent = {
   id: 'evt_30ans',
   titre: '30 ans de l\'asso',
-  groupId: 'Samambaia',
+  groupId: 'Baque_Sol',
   forumChannelId: null
 };
 inMemoryStore.events.set('evt_30ans', testEvent);

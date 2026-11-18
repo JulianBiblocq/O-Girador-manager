@@ -49,7 +49,7 @@ export function useEventRevisionData({ event, groupId, externalTrainingsList }) 
   const [loadingRepertoire, setLoadingRepertoire] = useState(true);
 
   useEffect(() => {
-    const rawGroup = groupId || 'Samambaia';
+    const rawGroup = groupId || '';
     const targetGroupId = canonicalizeGroupId(rawGroup) || rawGroup;
     if (!targetGroupId) return;
 

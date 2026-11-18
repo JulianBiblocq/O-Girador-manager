@@ -7,7 +7,7 @@ const PROJECT_TABS = [
 ];
 
 const TITLE_PLACEHOLDERS = {
-  projet_presentation: 'Ex : Les 30 ans de Samambaia — Le Grand Projet',
+  projet_presentation: 'Ex : Les 10 ans du groupe — Le Grand Projet',
   file: 'Ex : Plan du site, Affiche officielle, Rétro-planning...',
   dossier_externe: 'Ex : Photos repérage du site ou Archives 30 ans'
 };

@@ -36,17 +36,13 @@ import { isMemberArchived } from './utils/memberUtils';
 import { useTenantContext } from './context/TenantContext';
 import TenantNotFound from './components/TenantNotFound';
 import { DEFAULT_VARAL_CATEGORIES } from './hooks/useAssociationSettings';
-import { canonicalizeGroupId, isSameGroupCaseInsensitive } from './utils/tenantUtils';
+import { canonicalizeGroupId, isSameGroupCaseInsensitive, isCustomDomainHost, registerCanonicalGroupId, saveLastKnownTenantId, getLastKnownTenantId, getCachedDomainGroupId, resolveCanonicalGroupFromFirestore } from './utils/tenantUtils';
+import { buildFounderEmergencyProfile, resolveAdminFallbackGroupId } from './utils/founderFallbackUtils';
 import { reconcilePreExistingMember } from './services/memberService';
 import { isDemoMode, initDemoSession, getDemoAuthUser, getDemoProfileData } from './demo/demoManager';
 import { DEMO_GROUP_ID } from './data/demoData';
 import DemoTopBanner from './components/demo/DemoTopBanner';
-import {
-  resolveInternalDestination,
-  extractDeepLinkTarget,
-  INTERNAL_APP_ROUTE_PREFIXES,
-  isExternalActionLink
-} from './utils/megaphoneNavigationUtils';
+import { resolveInternalDestination, extractDeepLinkTarget, INTERNAL_APP_ROUTE_PREFIXES, isExternalActionLink } from './utils/megaphoneNavigationUtils';
 
 const Onboarding = lazyWithRetry(() => import('./components/Onboarding'));
 const OnboardingWizard = lazyWithRetry(() => import('./components/onboarding/OnboardingWizard'));
@@ -457,7 +453,7 @@ export default function App() {
   const [latestUnreadSenderId, setLatestUnreadSenderId] = useState(null);
   const [forumInitialTab, setForumInitialTab] = useState('discussions');
   const [initialPrivateMessage, setInitialPrivateMessage] = useState('');
-  const [dashboardKey, setDashboardKey] = useState(0);
+  const [dashboardKey, setDashboardKey] = useState(0); const [loginSelectedGroupId, setLoginSelectedGroupId] = useState('');
 
   // Hook centralisé de gestion des conversations et des compteurs de non-lus
   const {
@@ -532,11 +528,11 @@ export default function App() {
     // 1. Sous-domaine Mostrador (ex: mostrador.o-girador.com)
     if (hostname.includes('mostrador')) return true;
 
-    // 2. Domaine personnalisé de l'association (ex: samambaia-maracatu.fr)
+    // 2. Domaine personnalisé de l'association (résolu dynamiquement hors domaines O Girador)
+    if (isCustomDomainHost(hostname)) return true;
     const customDomainList = [];
     if (associationData?.customDomain) customDomainList.push(associationData.customDomain);
     if (Array.isArray(associationData?.customDomains)) customDomainList.push(...associationData.customDomains);
-    customDomainList.push('samambaia-maracatu.fr', 'www.samambaia-maracatu.fr');
     if (customDomainList.some(d => d && (hostname === d || hostname.replace(/^www\./, '') === d.replace(/^www\./, '')))) {
       return true;
     }
@@ -623,22 +619,22 @@ export default function App() {
     }
   }, [user, profileData]);
 
-  // Charger branding in real-time
+  // Charger branding en temps réel (profil connecté, URL, customDomains ou dernier groupe PWA mémorisé)
   useEffect(() => {
-    let activeGroupId = canonicalizeGroupId(profileData?.groupId || null);
-    
+    let activeGroupId = canonicalizeGroupId(profileData?.groupId || loginSelectedGroupId || null);
+
     if (!activeGroupId) {
       const searchParams = new URLSearchParams(window.location.search);
       activeGroupId = canonicalizeGroupId(
-        searchParams.get('groupe') || 
-        searchParams.get('tenant') || 
-        searchParams.get('assoc') || 
-        urlGroupId || 
+        searchParams.get('groupe') ||
+        searchParams.get('tenant') ||
+        searchParams.get('assoc') ||
+        urlGroupId ||
+        (!user && !isVitrineMode ? getLastKnownTenantId() : null) ||
         null
       );
     }
 
-    // En environnement SaaS multi-associations, ne résoudre un groupId qu'à partir du profil connecté ou des paramètres d'URL
     if (!activeGroupId) {
       setAssociationData(null);
       setBranding(null);
@@ -649,109 +645,63 @@ export default function App() {
       return;
     }
 
+    const applyAssociationPayload = (docId, data, cachedFallbackName) => {
+      registerCanonicalGroupId(docId);
+      saveLastKnownTenantId(docId);
+      setAssociationData({ id: docId, groupId: docId, ...data });
+      if (data.branding) setBranding({ ...data.branding, combinedLogoUrl: data.branding.combinedLogoUrl || data.combinedLogoUrl || '' });
+      else if (data.logoUrl || data.combinedLogoUrl) setBranding({ logoUrl: data.logoUrl || '', combinedLogoUrl: data.combinedLogoUrl || '' });
+      else setBranding(null);
+      const resolvedAssoName = data.nom || data.name || cachedFallbackName || '';
+      setAssociationName(resolvedAssoName);
+      if (resolvedAssoName) saveCachedAssoName(docId, resolvedAssoName);
+      setMajoriteFeminine(Boolean(data.majoriteFeminine ?? data.majorityFemale ?? false));
+      setSequenceurUrl(data.sequenceurUrl || '');
+      setPermissionsMatrice(data.permissionsMatrice || null);
+      setEnabledModules(data.enabledModules || null);
+      setTagsDisponibles(Array.isArray(data.tagsDisponibles) ? data.tagsDisponibles : []);
+      setActiverPresenceEnLigne(data.activerPresenceEnLigne !== false);
+      setFeatures(data.features || null);
+
+      if (typeof window !== 'undefined') {
+        const logoToCache = data.branding?.combinedLogoUrl || data.combinedLogoUrl || data.branding?.logoUrl || data.logoUrl || '';
+        if (logoToCache) {
+          try {
+            localStorage.setItem('og_cached_loader_logo', logoToCache);
+            localStorage.setItem('og_cached_loader_group', docId || '');
+          } catch {}
+        }
+      }
+    };
+
     const cachedAssoForGroup = getCachedAssoName(activeGroupId);
     setAssociationName(cachedAssoForGroup || '');
 
     const assocRef = doc(db, 'associations', activeGroupId);
     const unsubscribe = onSnapshot(assocRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setAssociationData({ id: docSnap.id, groupId: docSnap.id, ...data });
-        if (data.branding) setBranding(data.branding);
-        else if (data.logoUrl) setBranding({ logoUrl: data.logoUrl });
-        else setBranding(null);
-        const resolvedAssoName = data.nom || data.name || cachedAssoForGroup || '';
-        setAssociationName(resolvedAssoName);
-        if (resolvedAssoName) saveCachedAssoName(activeGroupId, resolvedAssoName);
-        setMajoriteFeminine(Boolean(data.majoriteFeminine ?? data.majorityFemale ?? false));
-        setSequenceurUrl(data.sequenceurUrl || '');
-        setPermissionsMatrice(data.permissionsMatrice || null);
-        setEnabledModules(data.enabledModules || null);
-        setTagsDisponibles(Array.isArray(data.tagsDisponibles) ? data.tagsDisponibles : []);
-        setActiverPresenceEnLigne(data.activerPresenceEnLigne !== false);
-        setFeatures(data.features || null);
-
-        // Mise en cache locale du logo / sceau pour affichage instantané lors d'un F5
-        if (typeof window !== 'undefined') {
-          const isSamambaiaGroup = activeGroupId.toLowerCase() === 'samambaia';
-          const logoToCache = data.branding?.combinedLogoUrl || 
-                              data.branding?.logoUrl || 
-                              data.logoUrl || 
-                              (isSamambaiaGroup ? '/brandings/logoOGSamambaia.png' : '');
-          if (logoToCache) {
-            try {
-              localStorage.setItem('og_cached_loader_logo', logoToCache);
-              localStorage.setItem('og_cached_loader_group', activeGroupId || '');
-            } catch {}
-          }
-        }
-
-        // Auto-guérison du champ customDomains pour Samambaia dans Firestore
-        if (activeGroupId.toLowerCase() === 'samambaia') {
-          const currentCustomDomains = Array.isArray(data.customDomains) ? data.customDomains : [];
-          const requiredDomains = ['samambaia-maracatu.fr', 'www.samambaia-maracatu.fr'];
-          const isMissing = requiredDomains.some(d => !currentCustomDomains.includes(d));
-          if (isMissing) {
-            const merged = Array.from(new Set([...currentCustomDomains, ...requiredDomains]));
-            updateDoc(docSnap.ref, { customDomains: merged }).catch(err => {
-              console.warn("App - Auto-guérison customDomains Samambaia différée :", err?.message);
-            });
-          }
-        }
+      if (docSnap.exists() && (docSnap.data()?.nom || docSnap.data()?.name || docSnap.data()?.ownerUid)) {
+        applyAssociationPayload(docSnap.id, docSnap.data(), cachedAssoForGroup);
       } else {
-        // Tenter la casse alternative dans Firestore (minuscules vs majuscule)
-        const altGroupId = activeGroupId.toLowerCase() === activeGroupId ? canonicalizeGroupId(activeGroupId) : activeGroupId.toLowerCase();
-        if (altGroupId && altGroupId !== activeGroupId) {
-          getDoc(doc(db, 'associations', altGroupId)).then((altSnap) => {
-            if (altSnap.exists()) {
-              const altData = altSnap.data();
-              setAssociationData({ id: altSnap.id, groupId: altSnap.id, ...altData });
-              if (altData.branding) setBranding(altData.branding);
-              else if (altData.logoUrl) setBranding({ logoUrl: altData.logoUrl });
-              const altResolvedName = altData.nom || altData.name || cachedAssoForGroup || '';
-              setAssociationName(altResolvedName);
-              if (altResolvedName) saveCachedAssoName(activeGroupId, altResolvedName);
-              setMajoriteFeminine(Boolean(altData.majoriteFeminine ?? altData.majorityFemale ?? false));
-              setSequenceurUrl(altData.sequenceurUrl || '');
-              setPermissionsMatrice(altData.permissionsMatrice || null);
-              setEnabledModules(altData.enabledModules || null);
-              setTagsDisponibles(Array.isArray(altData.tagsDisponibles) ? altData.tagsDisponibles : []);
-              setActiverPresenceEnLigne(altData.activerPresenceEnLigne !== false);
-              setFeatures(altData.features || null);
-
-              if (typeof window !== 'undefined') {
-                const isSamambaiaGroup = activeGroupId.toLowerCase() === 'samambaia';
-                const logoToCache = altData.branding?.combinedLogoUrl || altData.branding?.logoUrl || altData.logoUrl || (isSamambaiaGroup ? '/brandings/logoOGSamambaia.png' : '');
-                if (logoToCache) {
-                  try { localStorage.setItem('og_cached_loader_logo', logoToCache); localStorage.setItem('og_cached_loader_group', activeGroupId || ''); } catch {}
-                }
-              }
-
-              // Auto-guérison du champ customDomains alternatif
-              if (activeGroupId.toLowerCase() === 'samambaia') {
-                const currentCustomDomains = Array.isArray(altData.customDomains) ? altData.customDomains : [];
-                const requiredDomains = ['samambaia-maracatu.fr', 'www.samambaia-maracatu.fr'];
-                const isMissing = requiredDomains.some(d => !currentCustomDomains.includes(d));
-                if (isMissing) {
-                  const merged = Array.from(new Set([...currentCustomDomains, ...requiredDomains]));
-                  updateDoc(altSnap.ref, { customDomains: merged }).catch(() => {});
-                }
-              }
-              return;
-            }
-          }).catch(() => {});
-        }
-
-        setAssociationData(null);
-        setBranding(null);
-        setAssociationName(cachedAssoForGroup || '');
-        setMajoriteFeminine(false);
-        setSequenceurUrl('');
-        setPermissionsMatrice(null);
-        setEnabledModules(null);
-        setTagsDisponibles([]);
-        setActiverPresenceEnLigne(true);
-        setFeatures(null);
+        resolveCanonicalGroupFromFirestore(db, activeGroupId).then((res) => {
+          if (res.exists && res.canonicalId && res.data) {
+            applyAssociationPayload(res.canonicalId, res.data, cachedAssoForGroup);
+            return;
+          }
+          if (docSnap.exists()) {
+            applyAssociationPayload(docSnap.id, docSnap.data(), cachedAssoForGroup);
+            return;
+          }
+          setAssociationData(null);
+          setBranding(null);
+          setAssociationName(cachedAssoForGroup || '');
+          setMajoriteFeminine(false);
+          setSequenceurUrl('');
+          setPermissionsMatrice(null);
+          setEnabledModules(null);
+          setTagsDisponibles([]);
+          setActiverPresenceEnLigne(true);
+          setFeatures(null);
+        }).catch(() => {});
       }
     }, (error) => {
       console.error("App - Erreur onSnapshot branding :", error);
@@ -766,13 +716,17 @@ export default function App() {
     });
 
     return () => unsubscribe();
-  }, [profileData?.groupId, profileData?.uid, user?.uid, urlGroupId, appMode]);
+  }, [profileData?.groupId, profileData?.uid, user?.uid, urlGroupId, appMode, loginSelectedGroupId, isVitrineMode]);
 
-  // Déclenchement automatique de l'assistant d'onboarding pour l'administrateur/mestre lors du premier démarrage
+  // Déclenchement automatique de l'assistant d'onboarding uniquement pour une association neuve non encore configurée
   useEffect(() => {
-    const isSamambaiaGroup = String(associationData?.groupId || associationData?.id || '').toLowerCase() === 'samambaia' ||
-      String(associationData?.nom || associationData?.name || '').toLowerCase().includes('samambaia');
-    if (user && isAdministrativeUser && associationData && associationData.onboardingCompleted === false && !isSamambaiaGroup && !hasTriggeredOnboardingAuto) {
+    const hasConfiguredIdentity = Boolean(
+      associationData?.branding?.logoUrl ||
+      associationData?.logoUrl ||
+      associationData?.combinedLogoUrl ||
+      (Array.isArray(associationData?.customDomains) && associationData.customDomains.length > 0)
+    );
+    if (user && isAdministrativeUser && associationData && associationData.onboardingCompleted === false && !hasConfiguredIdentity && !hasTriggeredOnboardingAuto) {
       setShowOnboardingWizard(true);
       setHasTriggeredOnboardingAuto(true);
     }
@@ -1227,11 +1181,12 @@ export default function App() {
                 const resolvedRole = isFounderOrSuperAdmin ? (data.role || 'mestre') : (migration.needsMigration ? migration.newRole : data.role);
 
                 // 3. Injection immédiate dans le state React (zéro latence)
+                const adminFallbackGroup = resolveAdminFallbackGroupId(data, urlGroupId);
                 const resolvedProfile = {
                   uid: docSnap.id,
                   id: docSnap.id,
                   ...data,
-                  groupId: canonicalGroup || data.groupId || (isFounderOrSuperAdmin ? 'Samambaia' : null),
+                  groupId: canonicalGroup || data.groupId || (isFounderOrSuperAdmin ? (adminFallbackGroup || null) : null),
                   role: resolvedRole,
                   tags: mergedTags,
                   isSystemAdmin: isFounderOrSuperAdmin ? true : Boolean(data.isSystemAdmin),
@@ -1241,6 +1196,7 @@ export default function App() {
                   isCotisationExoneree: (isFounderOrSuperAdmin || isExonere) ? true : Boolean(data.isCotisationExoneree),
                   onboardingCompleted: isFounderOrSuperAdmin ? true : Boolean(data.onboardingCompleted)
                 };
+                if (resolvedProfile.groupId) saveLastKnownTenantId(resolvedProfile.groupId);
                 setProfileData(resolvedProfile);
                 setProfileExists(true);
                 setProfileNetworkWaiting(false);
@@ -1248,98 +1204,32 @@ export default function App() {
                   markKnownCompletedProfile(currentUser.uid);
                 }
 
-                // 4. Auto-guérison silencieuse de l'onboarding pour le Mestre / Admin dans Firestore
                 if (isFounderOrSuperAdmin && data.onboardingCompleted !== true) {
-                  updateDoc(profileRef, { onboardingCompleted: true }).catch(err => {
-                    console.warn("App - Auto-guérison onboardingCompleted profil (non-bloquant) :", err?.message);
-                  });
+                  updateDoc(profileRef, { onboardingCompleted: true }).catch(() => {});
                 }
 
-                // 5. Auto-guérison de la casse de groupId en arrière-plan (non-bloquant)
-                if (data.groupId && data.groupId !== canonicalGroup && canonicalGroup) {
-                  updateDoc(profileRef, { groupId: canonicalGroup }).catch(err => {
-                    console.warn("App - Avertissement auto-heal groupId (non-bloquant) :", err);
-                  });
+                if (data.groupId && data.groupId !== canonicalGroup && canonicalGroup && isSameGroupCaseInsensitive(data.groupId, canonicalGroup)) {
+                  updateDoc(profileRef, { groupId: canonicalGroup }).catch(() => {});
                 }
 
-                // 6. Migration des rôles et tags en arrière-plan (non-bloquant)
-                // STRICTEMENT DÉSACTIVÉ pour le Fondateur / Super-Admin afin d'éviter tout écrasement descendant
                 if (!isFounderOrSuperAdmin && migration.needsMigration) {
-                  updateDoc(profileRef, {
-                    role: migration.newRole,
-                    tags: mergedTags
-                  }).catch(err => {
-                    console.warn("App - Avertissement migration profil utilisateur (non-bloquant) :", err);
-                  });
+                  updateDoc(profileRef, { role: migration.newRole, tags: mergedTags }).catch(() => {});
                 }
                 setCheckingProfile(false);
                 setLoading(false);
               } else {
-                // Sécurité Fondateur : si Julian se connecte mais que son document est sous l'UID historique
                 const isFounderAccount = currentUser.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' || (currentUser.email || '').toLowerCase() === 'julian.bzh@gmail.com';
                 if (isFounderAccount) {
                   getDoc(doc(db, 'users', 'iA0SweEHyOPzAPGIDVZdeKAV2mk1')).then((founderSnap) => {
-                    if (founderSnap.exists()) {
-                      const fData = founderSnap.data();
-                      const canonicalGroup = canonicalizeGroupId(fData.groupId) || 'Samambaia';
-                      setProfileData({
-                        uid: currentUser.uid,
-                        id: currentUser.uid,
-                        ...fData,
-                        groupId: canonicalGroup,
-                        role: 'mestre',
-                        isSystemAdmin: true,
-                        canViewAll: true,
-                        paymentStatus: 'exempt',
-                        cotisationStatus: 'exonere',
-                        isCotisationExoneree: true,
-                        onboardingCompleted: true
-                      });
-                      setProfileExists(true);
-                    } else {
-                      setProfileData({
-                        uid: currentUser.uid,
-                        id: currentUser.uid,
-                        email: currentUser.email,
-                        firstName: 'Julian',
-                        lastName: 'Biblocq',
-                        prenom: 'Julian',
-                        nom: 'Biblocq',
-                        groupId: 'Samambaia',
-                        role: 'mestre',
-                        isSystemAdmin: true,
-                        canViewAll: true,
-                        paymentStatus: 'exempt',
-                        cotisationStatus: 'exonere',
-                        isCotisationExoneree: true,
-                        onboardingCompleted: true,
-                        isNew: false
-                      });
-                      setProfileExists(true);
-                    }
+                    const fData = founderSnap.exists() ? founderSnap.data() : null;
+                    setProfileData(buildFounderEmergencyProfile({ currentUser, profileDoc: fData, resolvedTenantId: urlGroupId }));
+                    setProfileExists(true);
                     updateDoc(doc(db, 'users', currentUser.uid), { onboardingCompleted: true }).catch(() => {});
                     setCheckingProfile(false);
                     setLoading(false);
                   }).catch((err) => {
                     console.warn("App - Erreur lecture secours profil fondateur :", err);
-                    setProfileData({
-                      uid: currentUser.uid,
-                      id: currentUser.uid,
-                      email: currentUser.email,
-                      firstName: 'Julian',
-                      lastName: 'Biblocq',
-                      prenom: 'Julian',
-                      nom: 'Biblocq',
-                      groupId: 'Samambaia',
-                      role: 'mestre',
-                      isSystemAdmin: true,
-                      canViewAll: true,
-                      paymentStatus: 'exempt',
-                      cotisationStatus: 'exonere',
-                      isCotisationExoneree: true,
-                      onboardingCompleted: true,
-                      isNew: false
-                    });
+                    setProfileData(buildFounderEmergencyProfile({ currentUser, resolvedTenantId: urlGroupId }));
                     setProfileExists(true);
                     setCheckingProfile(false);
                     setLoading(false);
@@ -1420,28 +1310,7 @@ export default function App() {
             }
 
             if (isFounderAccount) {
-              setProfileData(prev => prev || {
-                uid: currentUser.uid,
-                id: currentUser.uid,
-                email: currentUser.email,
-                firstName: 'Julian',
-                lastName: 'Biblocq',
-                prenom: 'Julian',
-                nom: 'Biblocq',
-                displayName: 'Julian Biblocq',
-                groupId: 'Samambaia',
-                groupName: 'Samambaia',
-                role: 'mestre',
-                isSystemAdmin: true,
-                canViewAll: true,
-                paymentStatus: 'exempt',
-                cotisationStatus: 'exonere',
-                isCotisationExoneree: true,
-                onboardingCompleted: true,
-                isNew: false,
-                tags: ['Visiteur', 'Mestre', 'Direction', 'Bureau', 'CA', 'Exonéré', 'Fondateur', 'Webmaster'],
-                photoURL: currentUser.photoURL || 'https://firebasestorage.googleapis.com/v0/b/o-girador-7828c.firebasestorage.app/o/avatars%2FiA0SweEHyOPzAPGIDVZdeKAV2mk1%2Fprofile_pic_1784300672361.jpg?alt=media&token=a19cfe69-6066-4e58-af9c-1b0665ef08be'
-              });
+              setProfileData((prev) => prev || buildFounderEmergencyProfile({ currentUser, resolvedTenantId: urlGroupId }));
               setProfileExists(true);
             } else {
               // Ne jamais basculer profileExists à false sur erreur réseau : maintenir null pour afficher l'écran d'attente réseau
@@ -1486,27 +1355,7 @@ export default function App() {
       const currentUser = auth.currentUser;
       const isFounder = currentUser?.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' || (currentUser?.email || '').toLowerCase() === 'julian.bzh@gmail.com';
       if (currentUser && isFounder && !profileData) {
-        setProfileData({
-          uid: currentUser.uid,
-          id: currentUser.uid,
-          email: currentUser.email,
-          firstName: 'Julian',
-          lastName: 'Biblocq',
-          prenom: 'Julian',
-          nom: 'Biblocq',
-          displayName: 'Julian Biblocq',
-          groupId: 'Samambaia',
-          groupName: 'Samambaia',
-          role: 'mestre',
-          isSystemAdmin: true,
-          canViewAll: true,
-          paymentStatus: 'exempt',
-          cotisationStatus: 'exonere',
-          isCotisationExoneree: true,
-          onboardingCompleted: true,
-          isNew: false,
-          tags: ['Visiteur', 'Mestre', 'Direction', 'Bureau', 'CA', 'Exonéré', 'Fondateur', 'Webmaster']
-        });
+        setProfileData(buildFounderEmergencyProfile({ currentUser, resolvedTenantId: urlGroupId }));
         setProfileExists(true);
       } else if (currentUser && !profileData) {
         setProfileNetworkWaiting(true);
@@ -1543,28 +1392,9 @@ export default function App() {
     (profileData?.email || '').toLowerCase() === 'julian.bzh@gmail.com'
   );
 
-  const effectiveProfileData = profileData || (isPrivilegedUser ? {
-    uid: user?.uid || 'iA0SweEHyOPzAPGIDVZdeKAV2mk1',
-    id: user?.uid || 'iA0SweEHyOPzAPGIDVZdeKAV2mk1',
-    email: user?.email || 'julian.bzh@gmail.com',
-    firstName: 'Julian',
-    lastName: 'Biblocq',
-    prenom: 'Julian',
-    nom: 'Biblocq',
-    displayName: user?.displayName || 'Julian Biblocq',
-    groupId: 'Samambaia',
-    groupName: 'Samambaia',
-    role: 'mestre',
-    isSystemAdmin: true,
-    canViewAll: true,
-    paymentStatus: 'exempt',
-    cotisationStatus: 'exonere',
-    isCotisationExoneree: true,
-    onboardingCompleted: true,
-    isNew: false,
-    tags: ['Visiteur', 'Mestre', 'Direction', 'Bureau', 'CA', 'Exonéré', 'Fondateur', 'Webmaster'],
-    photoURL: user?.photoURL || 'https://firebasestorage.googleapis.com/v0/b/o-girador-7828c.firebasestorage.app/o/avatars%2FiA0SweEHyOPzAPGIDVZdeKAV2mk1%2Fprofile_pic_1784300672361.jpg?alt=media&token=a19cfe69-6066-4e58-af9c-1b0665ef08be'
-  } : null);
+  const effectiveProfileData = profileData || (isPrivilegedUser
+    ? buildFounderEmergencyProfile({ currentUser: user, resolvedTenantId: urlGroupId, associationName })
+    : null);
 
   const hasAccessMestre = isMasterKeyActive || 
     effectiveProfileData?.role === 'mestre' || 
@@ -1818,17 +1648,16 @@ export default function App() {
     );
   }
 
-  // 1b. Filet de sécurité inter-domaines : Si un utilisateur accède à /app, /login ou toute route privée
-  // depuis le domaine de vitrine publique exclusive (samambaia-maracatu.fr), redirection automatique vers Organizador
-  const isDedicatedVitrineHost = typeof window !== 'undefined' && 
-    (window.location.hostname === 'samambaia-maracatu.fr' || window.location.hostname === 'www.samambaia-maracatu.fr');
+  // 1b. Filet de sécurité inter-domaines : accès à /app, /login ou route privée depuis un domaine vitrine personnalisé
+  const isDedicatedVitrineHost = typeof window !== 'undefined' && isCustomDomainHost(window.location.hostname);
 
   if (isDedicatedVitrineHost) {
     const rawPath = currentRoute || (typeof window !== 'undefined' ? window.location.pathname : '');
     const isAppAccess = rawPath.startsWith('/app') || rawPath.startsWith('/login') || rawPath.startsWith('/events') || rawPath.startsWith('/agenda');
     if (isAppAccess) {
-      if (typeof window !== 'undefined') {
-        window.location.replace('https://organizador.o-girador.com/?tenant=samambaia');
+      if (typeof window !== 'undefined' && !isTenantLoading) {
+        const tenantSlug = (urlGroupId || getCachedDomainGroupId(window.location.hostname) || '').toLowerCase();
+        window.location.replace(tenantSlug ? `https://organizador.o-girador.com/?tenant=${encodeURIComponent(tenantSlug)}` : 'https://organizador.o-girador.com/');
       }
       return (
         <div style={brandingStyle} className="min-h-screen flex flex-col justify-center items-center py-12 bg-[#f4ecd8]">
@@ -1891,20 +1720,11 @@ export default function App() {
       );
     }
 
-    const isProtectedTenant = typeof window !== 'undefined' && 
-      (window.location.hostname === 'samambaia-maracatu.fr' || 
-       window.location.hostname === 'www.samambaia-maracatu.fr' ||
-       window.location.hostname.includes('samambaia') ||
-       window.location.hostname.includes('sambabulles') ||
-       (urlGroupId && (urlGroupId.toLowerCase() === 'samambaia' || urlGroupId.toLowerCase() === 'sambabulles')) ||
-       (vitrineGroupId && (vitrineGroupId.toLowerCase() === 'samambaia' || vitrineGroupId.toLowerCase() === 'sambabulles')) ||
-       window.location.pathname.toLowerCase().includes('sambabulles'));
-
-    if (tenantError && !isProtectedTenant) {
+    if (tenantError) {
       return <TenantNotFound />;
     }
 
-    if (appMode === 'orchestrador' && isRootPath) {
+    if (appMode === 'orquestrador' && isRootPath) {
       return <HubRootRedirector brandingStyle={brandingStyle} />;
     }
 
@@ -1932,13 +1752,13 @@ export default function App() {
             if (isDemoMode()) {
               window.location.href = '/demo?app=organizador';
             } else {
-              const isLocal = typeof window !== 'undefined' && 
+              const isLocal = typeof window !== 'undefined' &&
                 (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
               if (isLocal) {
                 navigateToRoute(user ? '/app' : '/login');
               } else {
-                const targetTenant = (publicGroupId || 'samambaia').toLowerCase();
-                window.location.href = `https://organizador.o-girador.com/?tenant=${encodeURIComponent(targetTenant)}`;
+                const targetTenant = (publicGroupId || urlGroupId || '').trim().toLowerCase();
+                window.location.href = targetTenant ? `https://organizador.o-girador.com/?tenant=${encodeURIComponent(targetTenant)}` : 'https://organizador.o-girador.com/';
               }
             }
           }}
@@ -1946,13 +1766,13 @@ export default function App() {
             if (isDemoMode()) {
               window.location.href = '/demo?app=organizador';
             } else {
-              const isLocal = typeof window !== 'undefined' && 
+              const isLocal = typeof window !== 'undefined' &&
                 (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
               if (isLocal) {
                 navigateToRoute('/login');
               } else {
-                const targetTenant = (publicGroupId || 'samambaia').toLowerCase();
-                window.location.href = `https://organizador.o-girador.com/login?tenant=${encodeURIComponent(targetTenant)}`;
+                const targetTenant = (publicGroupId || urlGroupId || '').trim().toLowerCase();
+                window.location.href = targetTenant ? `https://organizador.o-girador.com/login?tenant=${encodeURIComponent(targetTenant)}` : 'https://organizador.o-girador.com/login';
               }
             }
           }}
@@ -1966,7 +1786,7 @@ export default function App() {
   if (!user) {
     return (
       <>
-        <Login branding={branding} onSuccess={() => navigateToRoute('/app')} />
+        <Login branding={branding} associationName={associationName} onGroupChange={setLoginSelectedGroupId} onSuccess={() => navigateToRoute('/app')} />
         <ReloadPrompt />
       </>
     );
@@ -3207,7 +3027,7 @@ export default function App() {
                   </div>
                 ) : (currentTab === 'mestre-repertoire' && hasAccessMestre) ? (
                   <MestreRepertoireView 
-                    groupId={profileData?.groupId || 'Samambaia'} 
+                    groupId={profileData?.groupId || urlGroupId || ''} 
                     user={user}
                     profileData={profileData}
                     sequenceurUrl={sequenceurUrl}
@@ -3421,7 +3241,7 @@ export default function App() {
                   sharedPayload={sharedPayload}
                   user={user}
                   profileData={effectiveProfileData || profileData}
-                  groupId={profileData?.groupId || urlGroupId || 'Samambaia'}
+                  groupId={profileData?.groupId || urlGroupId || ''}
                   canPublishAnnonce={canPublishAnnonces(
                     effectiveProfileData || profileData,
                     permissionsMatrice,

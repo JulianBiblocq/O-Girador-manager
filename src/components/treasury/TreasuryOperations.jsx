@@ -122,10 +122,10 @@ export default function TreasuryOperations({
       variant: "danger"
     });
     if (!isOk) return;
-
     setIsPurgingDuplicates(true);
     try {
-      const targetGroupId = associationSettings?.id || associationSettings?.groupId || 'samambaia';
+      const targetGroupId = associationSettings?.id || associationSettings?.groupId || '';
+      if (!targetGroupId) throw new Error("Association introuvable : impossible de purger sans identifiant de groupe.");
       const res = await purgeAndRebuildHelloAssoTransactions(db, targetGroupId);
       if (res.success) {
         alert(`Journal des Opérations assaini avec succès !\n- ${res.deletedCount} écriture(s) corrompue(s) ou en double supprimée(s)\n- ${res.rebuiltCount} écriture(s) unitaire(s) reconstruite(s).`);

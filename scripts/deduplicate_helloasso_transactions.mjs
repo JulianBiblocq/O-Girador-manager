@@ -19,7 +19,7 @@ console.log("===============================================================");
 const mockTransactions = [
   {
     id: 'tx_legacy_1',
-    groupId: 'samambaia',
+    groupId: 'baque_sol',
     date: '2026-10-01T10:00:00Z',
     montant: 150,
     libelle: 'Paiement HelloAsso - Alice Martin (Cotisation Annuelle)',
@@ -28,7 +28,7 @@ const mockTransactions = [
   },
   {
     id: 'helloasso_order_998877',
-    groupId: 'samambaia',
+    groupId: 'baque_sol',
     date: '2026-10-01T10:00:05Z',
     montant: 150,
     libelle: 'Paiement HelloAsso - Alice Martin (Formule Percussion)',
@@ -37,7 +37,7 @@ const mockTransactions = [
   },
   {
     id: 'tx_bob_unique',
-    groupId: 'samambaia',
+    groupId: 'baque_sol',
     date: '2026-10-01T11:00:00Z',
     montant: 150,
     libelle: 'Paiement HelloAsso - Bob Dupont (Cotisation)',
@@ -46,7 +46,7 @@ const mockTransactions = [
   },
   {
     id: 'tx_manual_don',
-    groupId: 'samambaia',
+    groupId: 'baque_sol',
     date: '2026-10-01T12:00:00Z',
     montant: 50,
     libelle: 'Don manuel',

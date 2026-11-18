@@ -51,7 +51,7 @@ const transactionsTest = [
   // Paire de doublons (Order puis Payment arrivés pour le même adhérent et montant)
   {
     id: 'tx_old_auto_id_1',
-    groupId: 'samambaia',
+    groupId: 'baque_sol',
     date: '2026-10-04T14:30:00.000Z',
     montant: 180,
     libelle: 'Paiement HelloAsso - Marie Curie (Cotisation Annuelle)',
@@ -60,7 +60,7 @@ const transactionsTest = [
   },
   {
     id: 'helloasso_order_445566',
-    groupId: 'samambaia',
+    groupId: 'baque_sol',
     date: '2026-10-04T14:30:10.000Z',
     montant: 180,
     libelle: 'Paiement HelloAsso - Marie Curie (Formule Percussion)',
@@ -70,7 +70,7 @@ const transactionsTest = [
   // Transaction différente même adhérent mais montant distinct
   {
     id: 'tx_curie_autre',
-    groupId: 'samambaia',
+    groupId: 'baque_sol',
     date: '2026-10-04T15:00:00.000Z',
     montant: 20,
     libelle: 'Paiement HelloAsso - Marie Curie (Adhésion)',
@@ -80,7 +80,7 @@ const transactionsTest = [
   // Transaction différente autre adhérent même montant
   {
     id: 'tx_paul_unique',
-    groupId: 'samambaia',
+    groupId: 'baque_sol',
     date: '2026-10-04T14:30:00.000Z',
     montant: 180,
     libelle: 'Paiement HelloAsso - Paul Langevin (Cotisation)',

@@ -96,7 +96,7 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
   } = useEventDetailsController(event, onClose, t, user?.uid);
 
   const targetEvent = activeEvent || event;
-  const resolvedGroupId = propGroupId || targetEvent?.groupId || event?.groupId || profileData?.groupId || 'Samambaia';
+  const resolvedGroupId = propGroupId || targetEvent?.groupId || event?.groupId || profileData?.groupId || '';
 
   const [allUsers, setAllUsers] = useState([]);
 

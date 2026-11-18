@@ -834,11 +834,11 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
       const mediaUrls = mediaList.map(m => m.url).filter(Boolean);
       const visualUrl = uploadedVisualUrl || mediaUrls[0] || selectedEvent?.imageUrl || '';
 
-      // 2. Recherche robuste du salon ('Validation Comm', 'Validation', 'Bureau', 'CA', ou repli sécurisé)
-      let targetChannelId = `${groupId || 'Samambaia'}_bureau`;
+      if (!groupId) throw new Error("Association introuvable : impossible de soumettre la publication.");
+      let targetChannelId = `${groupId}_bureau`;
       try {
         const channelsRef = collection(db, 'forum_channels');
-        const qChan = query(channelsRef, where('groupId', '==', groupId || 'Samambaia'));
+        const qChan = query(channelsRef, where('groupId', '==', groupId));
         const chanSnap = await getDocs(qChan);
         const channelsList = [];
         chanSnap.forEach(d => channelsList.push({ id: d.id, ...d.data() }));
@@ -847,27 +847,15 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
           const n = (c.name || '').toLowerCase();
           return n === 'validation comm' || n === 'validation' || n.includes('validation');
         });
-
-        const bureauCaChan = channelsList.find(c => {
-          const n = (c.name || '').toLowerCase();
-          return n === 'bureau' || n === 'ca';
-        });
-
-        const privateChan = channelsList.find(c => {
-          return Array.isArray(c.readRoles) && !c.readRoles.includes('all') && c.readRoles.length > 0;
-        });
-
-        const generalChan = channelsList.find(c => {
-          const n = (c.name || '').toLowerCase();
-          return n === 'général' || n === 'general';
-        });
-
+        const bureauCaChan = channelsList.find(c => ['bureau', 'ca'].includes((c.name || '').toLowerCase()));
+        const privateChan = channelsList.find(c => Array.isArray(c.readRoles) && !c.readRoles.includes('all') && c.readRoles.length > 0);
+        const generalChan = channelsList.find(c => ['général', 'general'].includes((c.name || '').toLowerCase()));
         const fallbackChan = channelsList[0];
 
-        targetChannelId = validationChan?.id || bureauCaChan?.id || privateChan?.id || generalChan?.id || fallbackChan?.id || `${groupId || 'Samambaia'}_bureau`;
+        targetChannelId = validationChan?.id || bureauCaChan?.id || privateChan?.id || generalChan?.id || fallbackChan?.id || `${groupId}_bureau`;
       } catch (cErr) {
         console.warn("StudioSocial - Erreur recherche salon forum :", cErr);
-        targetChannelId = `${groupId || 'Samambaia'}_bureau`;
+        targetChannelId = `${groupId}_bureau`;
       }
 
       const nowIso = new Date().toISOString();
@@ -893,7 +881,7 @@ export default function StudioSocial({ groupId, branding, onBack, role, isSystem
       const threadDocRef = await addDoc(collection(db, 'forum'), {
         titre: `[Validation Comm'] ${eventTitle}`,
         categorie: 'Général',
-        groupId: groupId || 'Samambaia',
+        groupId,
         channelId: targetChannelId,
         auteurId: user?.uid || 'system',
         auteurNom: authorName,

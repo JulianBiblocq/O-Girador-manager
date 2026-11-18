@@ -20,7 +20,7 @@ const initialJalon = {
   deadline: '2026-06-20',
   status: 'a_faire',
   assigneA: 'user_julien',
-  notes: '14h VraKKA\n15h Guirá\n17h Samambaia',
+  notes: '14h VraKKA\n15h Guirá\n17h Baque_Sol',
   creeLe: new Date().toISOString()
 };
 
@@ -46,7 +46,7 @@ function simulateSaveEdit(jalonId, updatedFields) {
 // Modification d'une heure et du titre
 simulateSaveEdit('jalon_test_1', {
   titre: 'Ordre de passage officiel',
-  notes: '14h30 VraKKA\n15h30 Guirá\n17h30 Samambaia'
+  notes: '14h30 VraKKA\n15h30 Guirá\n17h30 Baque_Sol'
 });
 
 assert.strictEqual(jalonsList.length, 2, 'Le nombre de jalons doit rester identique (pas de recréation)');

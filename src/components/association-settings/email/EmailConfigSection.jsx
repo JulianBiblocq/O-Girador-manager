@@ -62,14 +62,14 @@ export default function EmailConfigSection({ formData, handleChange, saving, t: 
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-extrabold uppercase tracking-wider text-stone-700 flex items-center justify-between">
             <span>{t('studio.communication.nomDExpediteurDynamique')}</span>
-            <span className="text-[10px] text-stone-400 font-normal">{t('studio.communication.exSamambaiaMaracatu')}</span>
+            <span className="text-[10px] text-stone-400 font-normal">{t('studio.communication.exAssoMaracatu')}</span>
           </label>
           <input
             type="text"
             value={emailSenderName}
             onChange={(e) => updateField('emailSenderName', e.target.value)}
             disabled={saving}
-            placeholder={formData.nom || "Samambaia Maracatu"}
+            placeholder={formData.nom || "Baque do Sol"}
             className="text-xs px-3 py-2 border border-stone-300 rounded bg-white font-bold text-stone-900 focus:border-[var(--color-cordel-vert,#2d6a4f)] outline-none"
           />
         </div>

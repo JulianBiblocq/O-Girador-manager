@@ -48,7 +48,7 @@ export default function useDynamicFavicon(associationData, options = {}) {
     let activeImg = null;
 
     const logoUrl = associationData?.branding?.logoUrl || associationData?.logoUrl || null;
-    const combinedLogoUrl = associationData?.branding?.combinedLogoUrl || null;
+    const combinedLogoUrl = associationData?.branding?.combinedLogoUrl || associationData?.combinedLogoUrl || null;
     const name = (associationData?.nom || associationData?.name || associationData?.associationName || '').trim();
     const colors = associationData?.branding?.colors || {};
 

@@ -1,40 +1,28 @@
 import { collection, doc, setDoc, deleteDoc, query, where, getDocs, arrayUnion } from 'firebase/firestore';
 import { db } from '../firebase';
-import { canonicalizeGroupId } from '../utils/tenantUtils';
+import { canonicalizeGroupId, isValidTenantIdentifier, resolveCanonicalGroupFromFirestore } from '../utils/tenantUtils';
 
 /**
- * Service de gestion et réconciliation des membres créés manuellement par le Bureau
- */
-
-/**
- * Crée manuellement un document adhérent dans Firestore par le Bureau (Secrétariat / Mestre / Admin)
- * Le membre est créé avec le statut actif direct (isNew: false, statutActuel: 'active').
- *
- * @param {Object} memberData Données saisies dans la modale
- * @param {string} memberData.prenom Prénom de l'adhérent (obligatoire)
- * @param {string} memberData.nom Nom de l'adhérent (obligatoire)
- * @param {string} [memberData.email] Email (optionnel)
- * @param {string} [memberData.telephone] Téléphone (optionnel)
- * @param {boolean} [memberData.pratiquePercussion] Pratique la percussion
- * @param {boolean} [memberData.pratiqueDanse] Pratique la danse
- * @param {string} [memberData.instrument] Pupitre principal
- * @param {boolean} [memberData.cotisationAjour] Cotisation à jour
- * @param {string} groupId Identifiant de l'association
- * @param {Object} authorProfile Profil de l'utilisateur ayant saisi le membre
- * @returns {Promise<{ id: string, success: boolean }>}
+ * Service de gestion et réconciliation des membres créés manuellement par le Bureau.
+ * Interdit formellement toute écriture d'un profil sans identifiant d'association canonique valide.
  */
 export async function createManualMember(memberData, groupId, authorProfile) {
   if (!memberData?.prenom?.trim() || !memberData?.nom?.trim()) {
     throw new Error("Le prénom et le nom sont obligatoires pour inscrire un membre.");
   }
 
-  const canonicalGroup = canonicalizeGroupId(groupId) || 'Samambaia';
+  const rawTargetGroup = groupId || authorProfile?.groupId || '';
+  const resolved = await resolveCanonicalGroupFromFirestore(db, rawTargetGroup, { persistLastTenant: false });
+  const canonicalGroup = resolved.canonicalId || (isValidTenantIdentifier(rawTargetGroup) ? canonicalizeGroupId(rawTargetGroup) : '');
+  if (!canonicalGroup) {
+    throw new Error("Association introuvable : un identifiant de groupe valide est obligatoire pour inscrire un membre.");
+  }
+
   const cleanEmail = (memberData.email || '').trim().toLowerCase();
   const cleanPhone = (memberData.telephone || '').trim();
   const mainInst = (memberData.instrument || '').trim();
   const isPaid = Boolean(memberData.cotisationAjour);
 
-  // Génération d'une référence Firestore avec identifiant unique
   const usersCollection = collection(db, 'users');
   const newMemberRef = doc(usersCollection);
 
@@ -54,7 +42,7 @@ export async function createManualMember(memberData, groupId, authorProfile) {
     isCotisationExoneree: false,
     statutActuel: 'active',
     status: 'active',
-    isNew: false, // Actif direct : pas de sas d'attente
+    isNew: false,
     onboardingCompleted: true,
     role: 'membre',
     tags: ['Inscrit manuellement'],
@@ -65,11 +53,8 @@ export async function createManualMember(memberData, groupId, authorProfile) {
     dateCreationManuelle: new Date().toISOString()
   };
 
-  // Sécurité anti-undefined pour Firestore
-  Object.keys(payload).forEach(key => {
-    if (payload[key] === undefined) {
-      delete payload[key];
-    }
+  Object.keys(payload).forEach((key) => {
+    if (payload[key] === undefined) delete payload[key];
   });
 
   await setDoc(newMemberRef, payload);
@@ -78,16 +63,7 @@ export async function createManualMember(memberData, groupId, authorProfile) {
 
 /**
  * Réconcilie automatiquement un compte Auth utilisateur avec une fiche membre pré-existante
- * créée manuellement par le Bureau avec la même adresse email.
- *
- * Si un document existe sous un identifiant distinct de authUser.uid :
- * 1. Transfère l'ensemble des données du membre vers users/${authUser.uid}
- * 2. Marque la fiche réconciliée avec authUser.uid
- * 3. Supprime l'ancien document temporaire pour ne laisser aucun doublon dans l'annuaire
- *
- * @param {Object} authUser Utilisateur Firebase Auth connecté (currentUser)
- * @param {string} [groupId] Identifiant de groupe (optionnel pour filtrage)
- * @returns {Promise<Object|null>} Le profil réconcilié, ou null si aucune réconciliation nécessaire
+ * créée manuellement par le Bureau avec la même adresse e-mail (uniquement si un groupId valide existe).
  */
 export async function reconcilePreExistingMember(authUser, groupId = null) {
   if (!authUser?.uid || !authUser?.email) return null;
@@ -95,21 +71,20 @@ export async function reconcilePreExistingMember(authUser, groupId = null) {
 
   try {
     const usersRef = collection(db, 'users');
-    let q = query(usersRef, where('email', '==', cleanEmail));
-    const snapshot = await getDocs(q);
-
+    const snapshot = await getDocs(query(usersRef, where('email', '==', cleanEmail)));
     if (snapshot.empty) return null;
 
-    // Rechercher s'il existe une fiche dont l'ID Firestore diffère de l'UID Auth actuel
-    const preExistingDoc = snapshot.docs.find(d => d.id !== authUser.uid);
+    const preExistingDoc = snapshot.docs.find((d) => d.id !== authUser.uid);
     if (!preExistingDoc) return null;
 
     const preExistingData = preExistingDoc.data();
-    console.info(`memberService - Réconciliation trouvée pour ${cleanEmail} (ID temporaire: ${preExistingDoc.id} -> UID: ${authUser.uid})`);
+    const rawCandidate = preExistingData.groupId || groupId || '';
+    if (!isValidTenantIdentifier(rawCandidate)) return null;
 
-    const canonicalGroup = canonicalizeGroupId(preExistingData.groupId || groupId) || 'Samambaia';
+    const resolved = await resolveCanonicalGroupFromFirestore(db, rawCandidate, { persistLastTenant: true });
+    const canonicalGroup = resolved.canonicalId || canonicalizeGroupId(rawCandidate);
+    if (!canonicalGroup) return null;
 
-    // Préparation de la fiche unifiée sur l'UID Auth officiel
     const preTokens = Array.isArray(preExistingData.fcmTokens)
       ? preExistingData.fcmTokens.filter(Boolean)
       : [];
@@ -119,31 +94,26 @@ export async function reconcilePreExistingMember(authUser, groupId = null) {
       id: authUser.uid,
       email: cleanEmail,
       groupId: canonicalGroup,
-      isNew: false, // Maintien du statut validé actif accordé par le Bureau
+      isNew: false,
       statutActuel: 'active',
       status: 'active',
       reconciledAt: new Date().toISOString(),
       reconciledFromDocId: preExistingDoc.id
     };
-    // Blindage : ne jamais écraser fcmTokens par un tableau brut lors d'un setDoc merge
     delete unifiedPayload.fcmTokens;
     if (preTokens.length > 0) {
       unifiedPayload.fcmTokens = arrayUnion(...preTokens);
       unifiedPayload.pushOptInContract = true;
     }
 
-    // Enregistrement sur users/${authUser.uid}
-    const targetRef = doc(db, 'users', authUser.uid);
-    await setDoc(targetRef, unifiedPayload, { merge: true });
+    await setDoc(doc(db, 'users', authUser.uid), unifiedPayload, { merge: true });
 
-    // Suppression de l'ancienne fiche temporaire pour éradiquer tout doublon dans l'annuaire
     try {
       await deleteDoc(preExistingDoc.ref);
     } catch (delErr) {
-      console.warn("memberService - Nettoyage ancien doc différé (droits non-admin) :", delErr?.message || delErr);
+      console.warn('memberService - Nettoyage ancien doc différé (droits non-admin) :', delErr?.message || delErr);
     }
 
-    console.info(`memberService - Réconciliation réussie avec succès pour ${cleanEmail}`);
     return unifiedPayload;
   } catch (err) {
     console.error("memberService - Erreur lors de la réconciliation de l'adhérent :", err);

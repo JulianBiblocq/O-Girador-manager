@@ -23,10 +23,11 @@ export default function UsageStatsBanner({
   useEffect(() => {
     syncUsageStatsToOrquestrador(groupId, stats, canSyncOrquestrador);
   }, [groupId, stats, canSyncOrquestrador]);
-  const magicSetupUrl = `https://organizador.o-girador.com/app?groupe=${encodeURIComponent(groupId || 'Samambaia')}&setup-push=1`;
+  const groupQuery = groupId ? `groupe=${encodeURIComponent(groupId)}&` : '';
+  const magicSetupUrl = `https://organizador.o-girador.com/app?${groupQuery}setup-push=1`;
 
   const handleRemindInApp = async () => {
-    if (remindingInApp || stats.unreachableMembers.length === 0) return;
+    if (remindingInApp || stats.unreachableMembers.length === 0 || !groupId) return;
     setRemindingInApp(true);
     try {
       await dispatchBulkInAppAndPushNotification({
@@ -34,7 +35,7 @@ export default function UsageStatsBanner({
         groupId, type: 'push_reminder',
         titre: '🔔 Active tes alertes en 1 clic !',
         message: 'Ne manque aucune convocation ou annonce du groupe : clique ici pour activer les notifications sur ton appareil.',
-        targetUrl: `/app?groupe=${encodeURIComponent(groupId || 'Samambaia')}&setup-push=1`,
+        targetUrl: `/app?${groupQuery}setup-push=1`,
         sendPush: false
       });
       setReminderFeedback(`✅ Relance envoyée à ${stats.unreachableMembers.length} membre(s).`);

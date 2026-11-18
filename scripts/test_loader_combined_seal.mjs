@@ -9,10 +9,14 @@ const loadingSealPath = path.resolve('src/components/common/LoadingSeal.jsx');
 assert(fs.existsSync(loadingSealPath), 'Le composant LoadingSeal.jsx doit exister');
 const loadingSealContent = fs.readFileSync(loadingSealPath, 'utf-8');
 
-// Vérification de la prise en charge du cas Samambaia
+// Vérification de la résolution générique du sceau combiné sans nom d'association en dur
 assert(
-  loadingSealContent.includes('/brandings/logoOGSamambaia.png'),
-  'LoadingSeal doit utiliser le blason fusionné /brandings/logoOGSamambaia.png pour Samambaia'
+  !loadingSealContent.toLowerCase().includes('samambaia'),
+  'LoadingSeal ne doit contenir aucun nom de groupe codé en dur'
+);
+assert(
+  loadingSealContent.includes('combinedLogoUrl'),
+  'LoadingSeal doit utiliser dynamiquement combinedLogoUrl depuis Firestore / branding'
 );
 
 // Vérification de la prise en charge du cache localStorage

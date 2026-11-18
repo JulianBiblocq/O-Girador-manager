@@ -52,11 +52,13 @@ console.log('🧪 Lancement des tests de résolution automatique de la Vitrine (
   console.log('✅ Test 3 validé : Premier domaine de customDomains pris en compte');
 }
 
-// 4. Test résolution prioritaire pour Samambaia vers son domaine officiel configuré
+// 4. Test résolution multi-associations : customDomains prioritaire, sinon chemin Mostrador /:groupId
 {
-  const urlSamambaia = getVitrineUrl('samambaia', {});
-  assert.equal(urlSamambaia, 'https://samambaia-maracatu.fr', 'Échec résolution domaine officiel Samambaia');
-  console.log('✅ Test 4 validé : Résolution prioritaire de Samambaia vers https://samambaia-maracatu.fr');
+  const urlWithDomains = getVitrineUrl('baque_sol', { customDomains: ['baque-do-sol.fr', 'www.baque-do-sol.fr'] });
+  assert.equal(urlWithDomains, 'https://baque-do-sol.fr', 'Échec résolution customDomains');
+  const urlWithoutDomains = getVitrineUrl('baque_sol', {});
+  assert.equal(urlWithoutDomains, 'https://mostrador.o-girador.com/baque_sol', 'Échec repli Mostrador /:groupId');
+  console.log('✅ Test 4 validé : Résolution 100 % dynamique via customDomains ou Mostrador');
 }
 
 // 5. Test inspection des query params pour useTenantResolver et usePublicTheme

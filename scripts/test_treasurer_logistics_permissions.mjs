@@ -25,7 +25,7 @@ console.log('▶ Test 2 : Droits de Boris (Trésorier)');
 const borisProfile = {
   uid: 'boris-test-uid',
   role: 'membre',
-  groupId: 'Samambaia',
+  groupId: 'Baque_Sol',
   tags: ['Trésorier']
 };
 
@@ -51,7 +51,7 @@ console.log('▶ Test 3 : Droits du rôle Admin standard');
 const adminProfile = {
   uid: 'admin-test-uid',
   role: 'admin',
-  groupId: 'samambaia',
+  groupId: 'baque_sol',
   tags: []
 };
 

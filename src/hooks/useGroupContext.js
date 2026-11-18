@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { canonicalizeGroupId } from '../utils/tenantUtils';
+import { canonicalizeGroupId, LAST_TENANT_STORAGE_KEY, saveLastKnownTenantId } from '../utils/tenantUtils';
 
 const STORAGE_GROUP_KEY = 'girador_saved_group_id';
-const LEGACY_STORAGE_KEYS = ['girador_group_id', 'o_girador_tenant', 'savedGroupId'];
+const LEGACY_STORAGE_KEYS = [LAST_TENANT_STORAGE_KEY, 'girador_group_id', 'o_girador_tenant', 'savedGroupId', 'ogirador_last_group_id'];
 
 export const RESERVED_SUBDOMAINS = Object.freeze([
   'orquestrador', 'organizador', 'sequenciador', 'cantador', 'dancador',
@@ -38,10 +38,12 @@ export function setStoredGroupId(groupId) {
   if (typeof window === 'undefined') return;
   try {
     if (!groupId) {
-      localStorage.removeItem(STORAGE_GROUP_KEY);
+      saveLastKnownTenantId(null);
+      localStorage.removeItem('selected_group_id');
+      localStorage.removeItem('girador_group_id');
     } else {
       const canonical = canonicalizeGroupId(groupId);
-      localStorage.setItem(STORAGE_GROUP_KEY, canonical);
+      saveLastKnownTenantId(canonical);
     }
   } catch (err) {
     console.warn("useGroupContext - Erreur lors de l'enregistrement dans le localStorage :", err);
@@ -77,30 +79,16 @@ export function extractGroupIdFromHost() {
 }
 
 /**
- * Détermine le groupId avec résilience maximale :
- * 1. Paramètre URL (?groupe=, ?group=, ?tenant=, ?assoc=) avec mémorisation immédiate
- * 2. Code stocké en localStorage
- * 3. Déduction par l'hôte / sous-domaine
- * 4. Configuration d'environnement par défaut
- *
- * @returns {{ groupId: string|null, source: 'url'|'storage'|'host'|'env'|'none' }}
+ * Détermine le groupId avec résilience maximale (URL -> localStorage -> hôte -> variable d'env).
  */
 export function resolveResilientGroupId() {
-  if (typeof window === 'undefined') {
-    return { groupId: null, source: 'none' };
-  }
+  if (typeof window === 'undefined') return { groupId: null, source: 'none' };
 
-  // 1. Paramètre dans l'URL
   try {
     const searchParams = new URLSearchParams(window.location.search);
-    const urlParam = searchParams.get('groupe') || 
-                     searchParams.get('group') || 
-                     searchParams.get('tenant') || 
-                     searchParams.get('assoc');
-
+    const urlParam = searchParams.get('groupe') || searchParams.get('group') || searchParams.get('tenant') || searchParams.get('assoc');
     if (urlParam && urlParam.trim()) {
       const canonical = canonicalizeGroupId(urlParam.trim());
-      // Mémorisation immédiate dans le localStorage pour immunité contre les pertes de paramètres
       setStoredGroupId(canonical);
       return { groupId: canonical, source: 'url' };
     }
@@ -167,7 +155,7 @@ export default function useGroupContext(profileData = null) {
     return () => window.removeEventListener('popstate', handleUrlChange);
   }, [resolved.groupId]);
 
-  // Définition manuelle du groupe (suite à l'étape bienveillante)
+  // Définition manuelle ou réinitialisation du groupe actif
   const setManualGroupId = useCallback((customGroupId) => {
     if (!customGroupId || !customGroupId.trim()) return;
     const canonical = canonicalizeGroupId(customGroupId.trim());
@@ -175,17 +163,17 @@ export default function useGroupContext(profileData = null) {
     setResolved({ groupId: canonical, source: 'manual' });
   }, []);
 
-  // Réinitialisation du groupe
   const clearGroup = useCallback(() => {
     setStoredGroupId(null);
+    if (typeof window !== 'undefined') {
+      try {
+        const u = new URL(window.location.href);
+        ['groupe', 'group', 'tenant', 'assoc', 'groupId'].forEach((k) => u.searchParams.delete(k));
+        window.history.replaceState({}, '', `${u.pathname}${u.search}${u.hash}`);
+      } catch { /* Ignorer */ }
+    }
     setResolved({ groupId: null, source: 'none' });
   }, []);
 
-  return {
-    groupId: resolved.groupId,
-    source: resolved.source,
-    needsGroupSelection: !resolved.groupId,
-    setManualGroupId,
-    clearGroup
-  };
+  return { groupId: resolved.groupId, source: resolved.source, needsGroupSelection: !resolved.groupId, setManualGroupId, clearGroup };
 }

@@ -51,7 +51,7 @@ const projectDocs = [
 const allEventsMap = {
   [eventId]: {
     id: eventId,
-    titre: 'Les 30 ans de Samambaia',
+    titre: 'Les 30 ans de Baque_Sol',
     commissions: [
       { id: 'c2', title: 'Logistique', referents: [{ uid: 'user_ref_2' }] }
     ]
@@ -119,7 +119,7 @@ const unsortedDocs = [
   { id: 'doc_album', titre: 'Photos repérage', type: 'dossier_externe', createdAt: 4000 },
   {
     id: 'doc_pres',
-    titre: 'Les 30 ans de Samambaia — Le Grand Projet',
+    titre: 'Les 30 ans de Baque_Sol — Le Grand Projet',
     type: 'projet_presentation',
     isPinnedFirst: true,
     createdAt: 1000

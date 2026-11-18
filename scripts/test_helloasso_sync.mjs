@@ -210,7 +210,7 @@ function simulateAddTransaction(tx) {
 }
 
 const tx1 = {
-  groupId: "samambaia",
+  groupId: "baque_sol",
   type: "recette",
   categorie: "Cotisation",
   justificatif: "HelloAsso",

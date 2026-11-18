@@ -162,7 +162,11 @@ const testScripts = [
   'scripts/test_mestre_vocal_synthesis.mjs',
   'scripts/test_toada_measure_editor_and_serializer.mjs',
   'scripts/test_mission5_cadavre_dancador_overrides.mjs',
-  'scripts/test_push_contract_and_diagnostics.mjs'
+  'scripts/test_push_contract_and_diagnostics.mjs',
+  'scripts/test_vitrine_url_resolution.mjs',
+  'scripts/test_sidebar_header_and_seal.mjs',
+  'scripts/test_default_colors_samambaia.mjs',
+  'scripts/test_zero_samambaia_and_multitenant_guards.mjs'
 ];
 
 console.log("===============================================================");

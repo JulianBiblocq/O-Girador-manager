@@ -36,7 +36,7 @@ console.log('🧪 Démarrage des tests de notifications in-app pour les discussi
 {
   const mockEvent = {
     id: 'evt-123',
-    titre: 'Carnaval Samambaia',
+    titre: 'Carnaval Baque_Sol',
     createdBy: 'uid-createur',
     auteurId: 'uid-auteur',
     contactsJourJ: {
@@ -120,7 +120,7 @@ console.log('🧪 Démarrage des tests de notifications in-app pour les discussi
     event: testEvent,
     authorName: 'Jean Dupont',
     text: 'Pensez à apporter de l’eau et vos sangles pour les tambours.',
-    groupId: 'samambaia',
+    groupId: 'baque_sol',
     createdAtIso: '2026-09-30T16:00:00.000Z'
   });
 
@@ -133,7 +133,7 @@ console.log('🧪 Démarrage des tests de notifications in-app pour les discussi
   assert.equal(payload.eventId, 'stage-maracatu-2026');
   assert.equal(payload.read, false);
   assert.equal(payload.isRead, false);
-  assert.equal(payload.groupId, 'samambaia');
+  assert.equal(payload.groupId, 'baque_sol');
   assert.equal(payload.createdAt, '2026-09-30T16:00:00.000Z');
 
   console.log('✅ Test 4 (Génération via buildEventDiscussionNotificationPayload) réussi.');

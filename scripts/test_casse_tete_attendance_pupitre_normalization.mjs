@@ -19,7 +19,7 @@ console.log("===================================================================
 console.log("🧪 DÉBUT DU TEST : CASSE-TÊTE - NORMALISATION PUPITRES & RÉSOLUTION CASCADE");
 console.log("=================================================================================\n");
 
-// Configuration représentative de l'association (ex: Samambaia)
+// Configuration représentative de l'association (ex: Baque_Sol)
 const pupitresAssociation = ['Alfaias', 'Caixas', 'Gonguês', 'Agbês', 'Mineiros', 'Danse'];
 const linkedInstruments = [
   { name: 'Agbê & Mineiro', instruments: ['Agbê', 'Mineiro'] }

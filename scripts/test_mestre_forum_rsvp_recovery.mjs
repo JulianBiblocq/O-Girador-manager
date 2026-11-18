@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import assert from 'assert';
 import { fileURLToPath } from 'url';
-import { canonicalizeGroupId, isSameGroupCaseInsensitive } from '../src/utils/tenantUtils.js';
+import { canonicalizeGroupId, registerCanonicalGroupId, buildGroupVariants, isSameGroupCaseInsensitive } from '../src/utils/tenantUtils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,17 +12,20 @@ console.log("===============================================================");
 console.log("🧪 DÉBUT DU TEST : DÉBLOCAGE DES PERMISSIONS FIRESTORE & FRONTEND");
 console.log("===============================================================\n");
 
-// 1. Test canonicalizeGroupId & isSameGroupCaseInsensitive
-console.log("📌 Module 1 : Normalisation canonique de groupId (tenantUtils)");
-assert.strictEqual(canonicalizeGroupId('samambaia'), 'Samambaia', "samambaia doit être normalisé en Samambaia");
-assert.strictEqual(canonicalizeGroupId('Samambaia'), 'Samambaia', "Samambaia doit rester Samambaia");
-assert.strictEqual(canonicalizeGroupId('SAMAMBAIA'), 'Samambaia', "SAMAMBAIA tout en majuscules doit être normalisé en Samambaia");
-assert.strictEqual(canonicalizeGroupId('autreGroupe'), 'autreGroupe', "Un autre groupe doit être préservé");
+// 1. Test canonicalizeGroupId, buildGroupVariants & isSameGroupCaseInsensitive
+console.log("📌 Module 1 : Normalisation canonique dynamique de groupId (tenantUtils)");
+registerCanonicalGroupId('BaqueSol');
+assert.strictEqual(canonicalizeGroupId('baquesol'), 'BaqueSol', "baquesol doit être normalisé vers la casse enregistrée BaqueSol");
+assert.strictEqual(canonicalizeGroupId('BaqueSol'), 'BaqueSol', "BaqueSol doit rester BaqueSol");
+assert.strictEqual(canonicalizeGroupId('BAQUESOL'), 'BaqueSol', "BAQUESOL en majuscules doit être normalisé en BaqueSol");
+assert.strictEqual(canonicalizeGroupId('baque_sol'), 'baque_sol', "Un groupe non mis en cache doit être préservé tel quel");
 assert.strictEqual(canonicalizeGroupId(null), null, "null doit être préservé");
 assert.strictEqual(canonicalizeGroupId(undefined), undefined, "undefined doit être préservé");
 
-assert.strictEqual(isSameGroupCaseInsensitive('samambaia', 'Samambaia'), true, "samambaia et Samambaia doivent être reconnus comme identiques");
-assert.strictEqual(isSameGroupCaseInsensitive('Samambaia', 'Autre'), false, "Samambaia et Autre doivent être distincts");
+const variants = buildGroupVariants('baque_sol');
+assert.ok(variants.includes('baque_sol') && variants.includes('Baque_sol') && variants.includes('BAQUE_SOL'), "buildGroupVariants doit générer les variantes de casse");
+assert.strictEqual(isSameGroupCaseInsensitive('baquesol', 'BaqueSol'), true, "baquesol et BaqueSol doivent être reconnus comme identiques");
+assert.strictEqual(isSameGroupCaseInsensitive('BaqueSol', 'Autre'), false, "BaqueSol et Autre doivent être distincts");
 console.log("  ✅ [PASS] Normalisation canonique et comparaison insensible à la casse validées");
 
 // 2. Test ogirador-backend/firestore.rules
@@ -37,7 +40,8 @@ const rulesContent = fs.readFileSync(rulesPath, 'utf8');
 
 // Forum paternity bilingue
 assert.ok(
-  rulesContent.includes("resource.data.get('auteurId', resource.data.get('authorId', ''))"),
+  rulesContent.includes("resource.data.get('authorId', '') == request.auth.uid") &&
+  rulesContent.includes("resource.data.get('auteurId', '') == request.auth.uid"),
   "Les règles Firestore doivent tester indifféremment auteurId et authorId pour le forum"
 );
 
@@ -61,12 +65,12 @@ assert.ok(
 
 // Inventaire signalement de casse et retour
 assert.ok(
-  rulesContent.includes("pendingMovement"),
-  "Les règles Firestore pour inventory doivent autoriser pendingMovement"
+  rulesContent.includes("canManageInventory()"),
+  "Les règles Firestore pour inventory doivent vérifier canManageInventory()"
 );
 assert.ok(
-  rulesContent.includes("'À réparer'"),
-  "Les règles Firestore doivent autoriser l'état 'À réparer' pour les signalements de casse"
+  rulesContent.includes("'à réparer'") || rulesContent.includes("'À réparer'"),
+  "Les règles Firestore doivent autoriser l'état 'à réparer' pour les signalements de casse"
 );
 
 // Onboarding tolérance paiement et normalisation groupId
@@ -75,6 +79,7 @@ assert.ok(
   "Les règles Firestore doivent autoriser paymentStatus in ['unpaid', 'paid'] lors de l'onboarding"
 );
 assert.ok(
+  rulesContent.includes("resource.data.get('groupId', '').lower() == u.get('groupId', '').lower()") ||
   rulesContent.includes("resource.data.get('groupId', '').lower() == getUserData().get('groupId', '').lower()"),
   "Les règles Firestore users doivent comparer groupId avec .lower() pour la tolérance de casse"
 );

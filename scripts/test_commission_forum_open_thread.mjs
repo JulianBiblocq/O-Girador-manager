@@ -68,7 +68,7 @@ async function simulatedOpenOrCreateThread({ eventId, commission, eventTitle, us
   const payload = {
     titre: `${commIcone} ${commTitre} — ${eventTitle}`,
     categorie: 'Projets',
-    groupId: groupId || 'Samambaia',
+    groupId: groupId || 'Baque_Sol',
     dateCreation: nowIso,
     derniereModification: nowIso,
     reponses: [
@@ -96,7 +96,7 @@ async function simulatedOpenOrCreateThread({ eventId, commission, eventTitle, us
 // -------------------------------------------------------------
 console.log('▶️ Scénario 1 : Premier clic sur « Salon Débat » (Commission programmation musicale)');
 
-const event = { id: 'evt_fest_01', titre: 'Grand Concert Cordel', groupId: 'Samambaia' };
+const event = { id: 'evt_fest_01', titre: 'Grand Concert Cordel', groupId: 'Baque_Sol' };
 const commission = { id: 'comm_prog_01', titre: 'Programmation musicale', icone: '🎵', threadId: null };
 inMemoryStore.events.set('evt_fest_01', { id: 'evt_fest_01', commissions: { comm_prog_01: commission } });
 

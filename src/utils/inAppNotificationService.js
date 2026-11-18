@@ -46,7 +46,7 @@ const DEFAULT_ICONS = {
 };
 
 /**
- * Construit les variantes de casse d'un `groupId` (`['Samambaia', 'samambaia']`).
+ * Construit les variantes de casse d'un `groupId` (`['BaqueSol', 'baquesol']`).
  */
 export function buildGroupIdCaseVariants(groupId) {
   const raw = String(groupId || '').trim();

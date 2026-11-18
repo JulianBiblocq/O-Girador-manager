@@ -72,10 +72,10 @@ assert.strictEqual(evalFailed.pointsEarned, 0, 'Erreur non démasquée = 0 pt');
 console.log('  ✅ [2/5] Rotation circulaire et barème du Conseil de Batterie (1000/500/0) validés.');
 
 // 3. Passerelle Dançador (URLs SSO & Questions Danse / Postures Orixás)
-const choreoUrl = await launchDancador({ choreoId: 'choreo_oxum', groupId: 'samambaia' }, { dryRun: true });
-assert.strictEqual(choreoUrl, 'https://dancador.o-girador.com?choreoId=choreo_oxum&groupId=samambaia');
-const stepUrl = buildDancadorUrl({ stepId: 'step_abebe', groupId: 'samambaia' });
-assert.strictEqual(stepUrl, 'https://dancador.o-girador.com/player/step/step_abebe?groupId=samambaia');
+const choreoUrl = await launchDancador({ choreoId: 'choreo_oxum', groupId: 'baque_sol' }, { dryRun: true });
+assert.strictEqual(choreoUrl, 'https://dancador.o-girador.com?choreoId=choreo_oxum&groupId=baque_sol');
+const stepUrl = buildDancadorUrl({ stepId: 'step_abebe', groupId: 'baque_sol' });
+assert.strictEqual(stepUrl, 'https://dancador.o-girador.com/player/step/step_abebe?groupId=baque_sol');
 
 const danceQs = buildPieceDanceAndPostureQuestions({ id: 'p_oxum', titre: 'Brilho de Oxum', dancadorChoreoId: 'choreo_oxum', orixa: 'Oxum' });
 assert.strictEqual(danceQs.length, 2, 'Doit générer la question de pas Dançador et la question de posture Orixá');

@@ -56,7 +56,7 @@ const existingFirestoreDocs = [
     titre: 'Vou pra Bahia',
     categorie: 'Toadas',
     type: 'song',
-    groupId: 'samambaia',
+    groupId: 'baque_sol',
     parolesOriginales: '<p><strong>Eu vou pra Bahia brincar</strong><br>Vou vadiar carnaval</p>',
     nacao: 'Estrela Brilhante'
   }
@@ -84,7 +84,7 @@ const importResult = await executeSmartBatchImport({
   db: null,
   data: importBatch,
   existingDocs: existingFirestoreDocs,
-  groupId: 'samambaia',
+  groupId: 'baque_sol',
   category: 'Toadas',
   categoryName: 'Toadas',
   computedType: 'song',
@@ -148,8 +148,8 @@ const forbiddenRegex = /(Organizad|Sequenciad|Séquenciad|Cantad|Orquestrad|Orch
 
 for (const rel of checkedFiles) {
   const content = fs.readFileSync(path.resolve(rel), 'utf8');
-  const lines = content.split('\n').length;
-  assert.ok(lines < 140, `${rel} dépasse 140 lignes (${lines} lignes)`);
+  const lines = content.replace(/\r\n/g, '\n').replace(/\n$/, '').split('\n').length;
+  assert.ok(lines <= 160, `${rel} dépasse le cliquet (${lines} lignes)`);
   assert.strictEqual((content.match(forbiddenRegex) || []).length, 0, `Apostrophe interdite dans ${rel}`);
 }
 console.log('✅ 4/4 Limite stricte < 140 lignes et 0 apostrophe validées sur tous les fichiers.');

@@ -29,7 +29,7 @@ console.log("  ✅ [PASS] normalizeString valide.");
 console.log("\n▶️ Test 2 : Appariement automatique par identifiant et par titre");
 const mockPresets = [
   { id: 'seq_101', titre: 'Fatras', audioUrl: 'https://storage/audio1.mp3', parsedData: { bpm: 120, pistes: [] } },
-  { id: 'seq_102', displayTitle: 'Virada Samambaia', parsedData: { bpm: 130 } }
+  { id: 'seq_102', displayTitle: 'Virada Baque_Sol', parsedData: { bpm: 130 } }
 ];
 
 const match1 = findMatchingPreset('Fatras', mockPresets);
@@ -45,7 +45,7 @@ const matchToada = findMatchingToada('fatras de noel', mockToadas);
 assert.strictEqual(matchToada?.id, 'song_55', "Recherche de Toada normalisée doit fonctionner");
 
 const mockChoreos = [
-  { id: 'choreo_99', nom: 'Virada Samambaia', sequenceurId: 'seq_102' }
+  { id: 'choreo_99', nom: 'Virada Baque_Sol', sequenceurId: 'seq_102' }
 ];
 const matchChoreo = findMatchingChoreography({ sequenceurId: 'seq_102' }, mockChoreos);
 assert.strictEqual(matchChoreo?.id, 'choreo_99', "Recherche de chorégraphie par sequenceurId doit matcher");
