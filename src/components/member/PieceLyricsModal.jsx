@@ -1,14 +1,11 @@
+// Modale de consultation intégrale des Paroles / Toadas avec accès fiche et Carnet (< 95 lignes).
 import React from 'react';
 import SongCard from '../SongCard';
 import ErrorBoundary from '../ErrorBoundary';
 import { useTranslation } from '../LanguageContext';
 import RepertoireVocalActionsBar from '../repertoire/RepertoireVocalActionsBar';
+import { useRepertoireVaralDocs } from '../../hooks/useRepertoireVaralDocs';
 
-/**
- * Modale de consultation intégrale des Paroles / Toadas (< 95 lignes).
- * Ouvre directement la SongCard habituelle complète (paroles, phonétique, traduction).
- * En lecture seule, sans mode masqué et sans quiz.
- */
 export default function PieceLyricsModal({
   isOpen,
   onClose,
@@ -19,6 +16,8 @@ export default function PieceLyricsModal({
   onNavigateToView = null
 }) {
   const { t } = useTranslation();
+  const effectiveGroupId = groupId || profileData?.groupId || song?.groupId || null;
+  const { toadasList } = useRepertoireVaralDocs(isOpen ? effectiveGroupId : null);
 
   if (!isOpen) return null;
 
@@ -35,16 +34,15 @@ export default function PieceLyricsModal({
     );
   }
 
-  const songTitle = song.titre || piece?.titre || 'Chant';
+  const songTitle = song.titre || piece?.titre || '';
   const isMestreRole = Boolean(
     profileData?.canWriteCantador || ['mestre', 'admin', 'super-admin'].includes(profileData?.role)
   );
 
   return (
-    <ErrorBoundary compact title="Paroles du Morceau">
+    <ErrorBoundary compact title={songTitle}>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/60 backdrop-blur-xs">
         <div className="relative w-full max-w-3xl max-h-[92vh] flex flex-col bg-[#fdfaf2] rounded-lg shadow-2xl overflow-hidden border-2 border-encre-noire text-left mt-2 sm:mt-0">
-          {/* En-tête Cordel épuré */}
           <div className="w-full flex justify-between items-center gap-3 p-3 sm:p-4 bg-stone-100/90 border-b-2 border-dashed border-cordel-master-dark/20 shrink-0">
             <div className="flex-1 min-w-0 pr-2">
               <span className="text-xs sm:text-sm font-black uppercase text-cordel-wood tracking-wider break-words block">
@@ -52,12 +50,12 @@ export default function PieceLyricsModal({
               </span>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <RepertoireVocalActionsBar piece={piece} toadaDoc={song} groupId={groupId} isMestreView={isMestreRole} />
+              <RepertoireVocalActionsBar piece={piece} toadaDoc={song} groupId={effectiveGroupId} isMestreView={isMestreRole} />
               <button
                 type="button"
                 onClick={onClose}
                 className="min-w-[44px] min-h-[44px] flex items-center justify-center -mr-2 rounded-lg text-white hover:bg-black/5 active:bg-black/10 transition-colors cursor-pointer shrink-0 select-none touch-manipulation"
-                title={t('repertoire.closeModal') || "Fermer"}
+                title={t('repertoire.closeModal')}
               >
                 <span className="w-8 h-8 rounded-full bg-encre-noire text-white font-black text-sm flex items-center justify-center border-2 border-white hover:bg-red-700 transition-colors shadow-2xs pointer-events-none">
                   ✕
@@ -66,15 +64,14 @@ export default function PieceLyricsModal({
             </div>
           </div>
 
-          {/* Corps : Affichage direct de la SongCard complète (sans doublon du bouton Cantador) */}
           <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-4 bg-cordel-bg-light flex flex-col items-center">
             <div className="w-full max-w-3xl">
               <SongCard
                 song={song}
-                defaultOpen={true}
                 defaultRevisionMode={false}
-                groupId={groupId}
+                groupId={effectiveGroupId}
                 profileData={profileData}
+                allDocsToPrint={toadasList}
                 onNavigateToView={onNavigateToView}
                 hideCantadorButton={true}
               />

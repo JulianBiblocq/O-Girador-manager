@@ -94,6 +94,26 @@ function newsletterApiPlugin() {
           }
         });
       });
+
+      const handleDevManifest = (req, res) => {
+        try {
+          const fallbackManifest = JSON.parse(readFileSync('./public/manifest.json', 'utf-8'));
+          const reqUrl = new URL(req.url || '/', 'http://localhost:5175');
+          const grp = (reqUrl.searchParams.get('groupe') || reqUrl.searchParams.get('tenant') || '').trim();
+          if (grp) {
+            fallbackManifest.start_url = `/?groupe=${encodeURIComponent(grp)}`;
+            fallbackManifest.id = fallbackManifest.start_url;
+          }
+          res.statusCode = 200;
+          res.setHeader('Content-Type', 'application/manifest+json; charset=utf-8');
+          res.end(JSON.stringify(fallbackManifest, null, 2));
+        } catch {
+          res.statusCode = 500;
+          res.end('{}');
+        }
+      };
+      server.middlewares.use('/api/manifest.webmanifest', handleDevManifest);
+      server.middlewares.use('/manifest.webmanifest', handleDevManifest);
     }
   };
 }
@@ -118,7 +138,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
-      includeAssets: ['icon-192-v2.png', 'icon-512-v2.png', 'icon-192-maskable-v2.png', 'icon-512-maskable-v2.png', 'apple-touch-icon.png', 'og-image.png', 'manifest.json'],
+      includeAssets: ['icon-192-v2.png', 'icon-512-v2.png', 'icon-192-maskable-v2.png', 'icon-512-maskable-v2.png', 'icons/badge-alfaia-mono.png', 'apple-touch-icon.png', 'og-image.png', 'manifest.json'],
       manifest: false,
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
@@ -135,7 +155,7 @@ export default defineConfig({
           }
         ],
         navigateFallback: 'app.html',
-        navigateFallbackDenylist: [/^\/__/, /^\/robots\.txt$/, /^\/sitemap\.xml$/, /^\/version\.json$/],
+        navigateFallbackDenylist: [/^\/__/, /^\/robots\.txt$/, /^\/sitemap\.xml$/, /^\/version\.json$/, /^\/api\/manifest\.webmanifest/, /^\/manifest\.webmanifest/, /^\/manifest\.json$/],
         importScripts: ['/firebase-messaging-sw.js', '/share-target-sw.js'],
         cleanupOutdatedCaches: true,
         skipWaiting: true,

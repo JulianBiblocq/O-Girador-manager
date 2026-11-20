@@ -32,11 +32,12 @@ const danceFiltered = mixedCategories
 assert.deepStrictEqual(danceFiltered, ['Intermédiaire', 'Confirmé', 'Avancé']);
 console.log("  ✅ [PASS] Le filtrage Danse ne crashe plus même avec des objets { name, color } ou valeurs nulles");
 
-console.log("\n▶️ Test 3 : Contrôle statique dans MestreOrientationCasting.jsx");
+console.log("\n▶️ Test 3 : Contrôle statique dans MestreOrientationCasting.jsx et categoryUtils.js");
 const fileContent = fs.readFileSync('src/components/mestre/MestreOrientationCasting.jsx', 'utf8');
+const catUtilsContent = fs.readFileSync('src/utils/categoryUtils.js', 'utf8');
 assert(!fileContent.includes('cat => cat.toLowerCase()'), "Aucun appel direct cat.toLowerCase() ne doit exister");
-assert(fileContent.includes('getCategoryName(cat)'), "getCategoryName(cat) doit être utilisé pour sécuriser les accès");
-assert(fileContent.includes('setCustomCategories(getCustomCategories(data))'), "customCategories doit être initialisé avec getCustomCategories");
+assert(catUtilsContent.includes('getCategoryName(cat)') || fileContent.includes('getCategoryName(cat)'), "getCategoryName(cat) doit être utilisé pour sécuriser les accès");
+assert(fileContent.includes('getCustomCategories(data)'), "customCategories doit être initialisé avec getCustomCategories");
 console.log("  ✅ [PASS] MestreOrientationCasting.jsx est totalement sécurisé contre les objets Firestore");
 
 console.log("\n========================================================================");

@@ -124,7 +124,10 @@ console.log("\n▶️ Module 2 : Moteur de données useSequencerFirestoreData.js
 const fsDataCode = fs.readFileSync(path.join(rootDir, 'src/hooks/useSequencerFirestoreData.js'), 'utf-8');
 
 // 2.1 Absence de ReferenceError sur groupVariants
-assert.ok(fsDataCode.includes('const groupVariants = Array.from('), "groupVariants doit être déclaré dans fetchData");
+assert.ok(
+  fsDataCode.includes('const groupVariants = buildGroupQueryVariants(') || fsDataCode.includes('const groupVariants = Array.from('),
+  "groupVariants doit être déclaré dans fetchData"
+);
 assert.ok(fsDataCode.includes('canonicalizeGroupId(groupId)'), "canonicalizeGroupId doit être utilisé pour normaliser la casse");
 console.log("  ✅ [PASS] Définition robuste de groupVariants confirmée.");
 

@@ -166,7 +166,10 @@ const testScripts = [
   'scripts/test_vitrine_url_resolution.mjs',
   'scripts/test_sidebar_header_and_seal.mjs',
   'scripts/test_default_colors_samambaia.mjs',
-  'scripts/test_zero_samambaia_and_multitenant_guards.mjs'
+  'scripts/test_zero_samambaia_and_multitenant_guards.mjs',
+  'scripts/test_vitrine_custom_domain_seo.mjs',
+  'scripts/test_toada_adaptive_print_and_songbook.mjs',
+  'scripts/test_toada_print_margins.mjs'
 ];
 
 console.log("===============================================================");

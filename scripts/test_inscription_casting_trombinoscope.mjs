@@ -75,11 +75,16 @@ assert.ok(systemAdminContent.includes("isNew: false"), "SystemAdminPanel doit pa
 assert.ok(systemAdminContent.includes("statutActuel: 'active'"), "SystemAdminPanel doit passer statutActuel à active lors de la validation");
 console.log("  ✅ [PASS] Validation admin libère le sas et active le compte.");
 
-// --- Test 4 : Contrôle Trombinoscope.jsx (Lot 2) ---
-console.log("\n▶️ Module 4 : Contrôle de la section 'En cours d'orientation' dans Trombinoscope.jsx");
-const trombiContent = fs.readFileSync(path.resolve('src/components/Trombinoscope.jsx'), 'utf-8');
+// --- Test 4 : Contrôle Trombinoscope.jsx et TrombinoscopeSectionsGrid.jsx (Lot 2) ---
+console.log("\n▶️ Module 4 : Contrôle de la section 'En cours d'orientation' dans Trombinoscope");
+const trombiContent =
+  fs.readFileSync(path.resolve('src/components/Trombinoscope.jsx'), 'utf-8') + '\n' +
+  fs.readFileSync(path.resolve('src/components/trombinoscope/TrombinoscopeSectionsGrid.jsx'), 'utf-8');
 assert.ok(trombiContent.includes("'en-orientation': []"), "Trombinoscope doit déclarer le pupitre en-orientation");
-assert.ok(trombiContent.includes("🌱 En cours d'orientation"), "Trombinoscope doit comporter le titre de section 'En cours d'orientation'");
+assert.ok(
+  trombiContent.includes("🌱 En cours d'orientation") || trombiContent.includes("🌱 En cours d&apos;orientation"),
+  "Trombinoscope doit comporter le titre de section 'En cours d'orientation'"
+);
 console.log("  ✅ [PASS] Trombinoscope isole la section 'En cours d'orientation' tout en bas du défilé.");
 
 // --- Test 5 : Contrôle Dashboard.jsx (Lot 3) ---

@@ -12,11 +12,11 @@ assert(appContent.includes("id: 'config-profile'"), "config-profile doit être d
 assert(appContent.includes("currentTab === 'config-agenda'"), "Aiguillage config-agenda doit être présent dans App.jsx");
 assert(appContent.includes("checkTabAccess('config-agenda', 'config')"), "checkTabAccess doit inclure config-agenda");
 
-// Secrétariat strict (4 tabs)
+// Secrétariat strict (4 tabs, ca-reports ayant rejoint gouvernance)
 const secretariatMatch = appContent.match(/id:\s*'secretariat'[\s\S]*?tabs:\s*\[([\s\S]*?)\]/);
 assert(secretariatMatch, "Section secretariat trouvée");
 const secTabs = (secretariatMatch[1].match(/id:\s*'([^']+)'/g) || []).map(s => s.replace(/id:\s*'|'/g, ''));
-assert.deepStrictEqual(secTabs, ['export-annu', 'secretariat-reports', 'studio-events', 'varal-secretariat', 'secretariat-documents'], "Secrétariat doit avoir exactement ses onglets opérationnels");
+assert.deepStrictEqual(secTabs, ['export-annu', 'studio-events', 'varal-secretariat', 'secretariat-documents'], "Secrétariat doit avoir exactement ses 4 onglets opérationnels");
 
 // Logistique strict (4 tabs)
 const logistiqueMatch = appContent.match(/id:\s*'logistique'[\s\S]*?tabs:\s*\[([\s\S]*?)\]/);
@@ -37,7 +37,10 @@ assert(tabConfigCommsContent.includes("<TabAutomations"), "TabConfigComms doit i
 
 // 3. Vérification de TabLieux.jsx (adresse du local)
 const tabLieuxContent = fs.readFileSync('src/components/association-settings/TabLieux.jsx', 'utf8');
-assert(tabLieuxContent.includes("Local Associatif & Référence Kilométrique"), "TabLieux doit intégrer l'encart Local & frais km");
+assert(
+  tabLieuxContent.includes("Local Associatif & Référence Kilométrique") || tabLieuxContent.includes("settings.agenda.tabLieux"),
+  "TabLieux doit intégrer l'encart Local & frais km (ou ses clés i18n)"
+);
 assert(tabLieuxContent.includes("adresseLocal"), "TabLieux doit gérer le champ adresseLocal");
 
 // 4. Vérification de TabOrganization.jsx et PupitresNomenclatureAccordion.jsx

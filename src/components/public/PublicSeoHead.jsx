@@ -1,67 +1,135 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { isCustomDomainHost } from '../../utils/tenantUtils';
 
 /**
- * Composant de Référencement SEO Dynamique et d'Injection Forcée de la Marque "O Girador" (Stratégie Écosystème).
- * 
- * Injecte dynamiquement dans le <head> du document HTML les balises <title>, <meta> et Open Graph
- * à partir des données de l'association, tout en appliquant les contraintes non-éditables d'écosystème SaaS :
- * 1. Suffixe " | O Girador" forcé sur le titre.
- * 2. Concaténation obligatoire des mots-clés de la plateforme O Girador.
- * 3. Balises <meta name="generator" content="O Girador" /> et <meta name="author" content="O Girador" /> non-éditables.
- * 4. Open Graph avec og:site_name = "O Girador" et og:image liée à l'image de couverture Hero ou Logo.
- * 
- * @param {Object} props
- * @param {Object} props.publicTheme - Données de configuration dynamique du thème vitrine
- * @param {string} [props.associationName] - Nom de l'association
- * @param {Object} [props.branding] - Identité visuelle (logo)
+ * Synchronise une balise `<meta>` unique dans `document.head` sans interférer avec `data-rh` (`react-helmet-async`).
+ */
+function upsertSingleMetaTag(attrKey, attrVal, content) {
+  if (typeof document === 'undefined' || content === undefined || content === null) return;
+  const selector = `meta[${attrKey}="${attrVal}"]`;
+  const helmetManaged = document.head.querySelector(`${selector}[data-rh="true"]`);
+  if (helmetManaged) {
+    document.head.querySelectorAll(`${selector}:not([data-rh])`).forEach((el) => el.remove());
+    return;
+  }
+  const existing = Array.from(document.head.querySelectorAll(selector));
+  if (existing.length === 0) {
+    const meta = document.createElement('meta');
+    meta.setAttribute(attrKey, attrVal);
+    meta.setAttribute('content', String(content));
+    document.head.appendChild(meta);
+    return;
+  }
+  existing[0].setAttribute('content', String(content));
+  existing.slice(1).forEach((el) => el.remove());
+}
+
+/**
+ * Synchronise la balise `<link rel="canonical">` unique dans `document.head`.
+ */
+function upsertCanonicalLink(href) {
+  if (typeof document === 'undefined' || !href) return;
+  const helmetManaged = document.head.querySelector('link[rel="canonical"][data-rh="true"]');
+  if (helmetManaged) {
+    document.head.querySelectorAll('link[rel="canonical"]:not([data-rh])').forEach((el) => el.remove());
+    return;
+  }
+  const existing = Array.from(document.head.querySelectorAll('link[rel="canonical"]'));
+  if (existing.length === 0) {
+    const link = document.createElement('link');
+    link.setAttribute('rel', 'canonical');
+    link.setAttribute('href', href);
+    document.head.appendChild(link);
+    return;
+  }
+  existing[0].setAttribute('href', href);
+  existing.slice(1).forEach((el) => el.remove());
+}
+
+/**
+ * Calcule l'URL canonique publique alignée sur `serveDynamicApp` (sans `www.` sur domaine dédié).
+ */
+function resolveClientCanonicalUrl() {
+  if (typeof window === 'undefined') return '';
+  const rawHost = (window.location.hostname || '').trim().toLowerCase();
+  if (!rawHost) return '';
+  const cleanHost = rawHost.replace(/^www\./, '');
+  const path = window.location.pathname || '/';
+  if (isCustomDomainHost(cleanHost)) {
+    const normPath = (!path || path === '/' || path === '/vitrine' || path === '/mostrador') ? '/' : path;
+    return `https://${cleanHost}${normPath}`;
+  }
+  return `${window.location.protocol}//${rawHost}${path}`;
+}
+
+/**
+ * Synchronisation SEO côté client (`react-helmet-async` + dédoublonnage `<head>`) pour la Vitrine (Mostrador).
  */
 export default function PublicSeoHead({ publicTheme = {}, associationName = '', branding = {} }) {
-  // 1. Titre Google (Uniquement le nom de l'association pour la Vitrine / Mostrador)
-  const displayTitle = publicTheme?.seoTitle?.trim() || associationName || "Notre Association";
+  const cleanName = (associationName || publicTheme?.associationName || '').trim();
+  const displayTitle = publicTheme?.seoTitle?.trim() || (cleanName ? `${cleanName} | Site Officiel` : 'O Girador');
+  const displayDescription = publicTheme?.seoDescription?.trim()
+    || publicTheme?.publicCatchphrase?.trim()
+    || (cleanName
+      ? `Découvrez ${cleanName} : actualités, prochaines dates, prestations et vie associative.`
+      : 'Découvrez notre association sur O Girador, la plateforme dédiée aux groupes de percussions brésiliennes.');
 
-  // 2. Méta-description
-  const displayDescription = publicTheme?.seoDescription?.trim() 
-    || publicTheme?.publicCatchphrase?.trim() 
-    || "Découvrez notre association sur O Girador, la plateforme dédiée aux groupes de Maracatu et percussions brésiliennes.";
-
-  // 3. Concaténation forcée des mots-clés avec la marque O Girador & les piliers écosystème
-  const userKeywords = publicTheme?.seoKeywords ? publicTheme.seoKeywords.trim() : "";
-  const forcedSaasKeywords = "O Girador, application de gestion associative, séquenceur musical, site vitrine, percussions brésiliennes, maracatu";
+  const userKeywords = publicTheme?.seoKeywords ? publicTheme.seoKeywords.trim() : '';
+  const forcedSaasKeywords = 'O Girador, application de gestion associative, séquenceur musical, site vitrine, percussions brésiliennes, maracatu';
   const finalKeywords = userKeywords ? `${userKeywords}, ${forcedSaasKeywords}` : forcedSaasKeywords;
-
-  // 4. Image de couverture Open Graph (og:image)
-  const ogImage = publicTheme?.publicHeroImage || branding?.combinedLogoUrl || branding?.logoUrl || '/og-girador-frame.png';
-
-  // 5. Favicon pur de l'association (pour le site vitrine Mostrador)
+  const ogImage = publicTheme?.publicHeroImage || branding?.logoUrl || publicTheme?.logoUrl || branding?.combinedLogoUrl || '/og-girador-frame.png';
   const faviconUrl = branding?.logoUrl || publicTheme?.logoUrl || publicTheme?.branding?.logoUrl || '';
+  const canonicalUrl = resolveClientCanonicalUrl();
+  const siteName = cleanName || 'O Girador';
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    document.title = displayTitle;
+    upsertSingleMetaTag('name', 'title', displayTitle);
+    upsertSingleMetaTag('name', 'description', displayDescription);
+    upsertSingleMetaTag('property', 'og:site_name', siteName);
+    upsertSingleMetaTag('property', 'og:title', displayTitle);
+    upsertSingleMetaTag('property', 'og:description', displayDescription);
+    upsertSingleMetaTag('property', 'og:image', ogImage);
+    upsertSingleMetaTag('name', 'twitter:title', displayTitle);
+    upsertSingleMetaTag('name', 'twitter:description', displayDescription);
+    upsertSingleMetaTag('name', 'twitter:image', ogImage);
+    if (canonicalUrl) {
+      upsertCanonicalLink(canonicalUrl);
+      upsertSingleMetaTag('property', 'og:url', canonicalUrl);
+      upsertSingleMetaTag('name', 'twitter:url', canonicalUrl);
+    }
+    if (faviconUrl) {
+      const fav = document.getElementById('favicon') || document.querySelector('link[rel="icon"]');
+      if (fav) fav.setAttribute('href', faviconUrl);
+      const apple = document.querySelector('link[rel="apple-touch-icon"]');
+      if (apple) apple.setAttribute('href', faviconUrl);
+    }
+  }, [displayTitle, displayDescription, ogImage, faviconUrl, siteName, canonicalUrl]);
 
   return (
-    <Helmet>
-      {/* Balise Title & Description Google */}
+    <Helmet prioritizeSeoTags>
       <title>{displayTitle}</title>
+      <meta name="title" content={displayTitle} />
       <meta name="description" content={displayDescription} />
       <meta name="keywords" content={finalKeywords} />
-
-      {/* Favicon pur de l'association sur Mostrador */}
-      {faviconUrl && (
-        <>
-          <link rel="icon" href={faviconUrl} />
-          <link rel="apple-touch-icon" href={faviconUrl} />
-          <link rel="shortcut icon" href={faviconUrl} />
-        </>
-      )}
-
-      {/* Balises Non-Éditables Forcées (Contrainte Écosystème O Girador) */}
       <meta name="generator" content="O Girador" />
       <meta name="author" content="O Girador" />
-
-      {/* Balises Open Graph (Partage Réseaux Sociaux : Facebook, WhatsApp, LinkedIn, X...) */}
+      {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
+      <meta property="og:type" content="website" />
+      <meta property="og:site_name" content={siteName} />
       <meta property="og:title" content={displayTitle} />
       <meta property="og:description" content={displayDescription} />
       <meta property="og:image" content={ogImage} />
-      <meta property="og:type" content="website" />
-      <meta property="og:site_name" content="O Girador" />
+      <meta property="og:image:secure_url" content={ogImage} />
+      <meta property="og:image:alt" content={displayTitle} />
+      {canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content={displayTitle} />
+      <meta name="twitter:description" content={displayDescription} />
+      <meta name="twitter:image" content={ogImage} />
+      {canonicalUrl && <meta name="twitter:url" content={canonicalUrl} />}
     </Helmet>
   );
 }

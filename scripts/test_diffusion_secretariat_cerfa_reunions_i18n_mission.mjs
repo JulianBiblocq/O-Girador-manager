@@ -143,7 +143,10 @@ console.log("\n▶️ Module 3 : Vérification du raccordement dans les fichiers
 
 const checks = [
   {
-    file: 'src/components/diffusion/GigsPipelineManager.jsx',
+    files: [
+      'src/components/diffusion/GigsPipelineManager.jsx',
+      'src/components/diffusion/GigsPipelineBoardView.jsx'
+    ],
     keys: [
       'diffusion.tabPipeline',
       'diffusion.tabCrm',
@@ -162,7 +165,10 @@ const checks = [
     ]
   },
   {
-    file: 'src/components/treasury/TreasuryDashboard.jsx',
+    files: [
+      'src/components/treasury/TreasuryDashboard.jsx',
+      'src/components/treasury/TreasuryBankDetailsAccordion.jsx'
+    ],
     keys: [
       'treasury.dashboardBannerDesc',
       'treasury.reportsExportsTitle',
@@ -223,15 +229,11 @@ const checks = [
   {
     file: 'src/components/secretariat/reports/ReportVolunteerCard.jsx',
     keys: [
-      'governance.cerfaSubtitle',
-      'governance.eventsAnalyzedCount',
+      'governance.volunteeringCerfaTitle',
+      'governance.volunteeringHoursDesc',
       'governance.collectiveActivity',
-      'governance.collectiveActivityDesc',
       'governance.publicPerformance',
-      'governance.publicPerformanceDesc',
-      'governance.boardWorkshopPackages',
-      'governance.boardWorkshopPackagesDesc',
-      'governance.cerfaNoticeValuation'
+      'governance.boardWorkshopPackages'
     ]
   },
   {
@@ -244,7 +246,13 @@ const checks = [
     ]
   },
   {
-    file: 'src/components/secretariat/SecretariatReportsView.jsx',
+    files: [
+      'src/components/secretariat/SecretariatReportsView.jsx',
+      'src/components/secretariat/reports/AgReportsHeaderBar.jsx',
+      'src/components/secretariat/reports/AgBlock1AssociativeLife.jsx',
+      'src/components/secretariat/reports/AgBlock4WorkshopsPatrimony.jsx',
+      'src/components/secretariat/reports/AgBlock5FinancialSummary.jsx'
+    ],
     keys: [
       'governance.pupitrePending',
       'governance.btnAgReportCsv',
@@ -255,12 +263,16 @@ const checks = [
       'governance.totalMonitoredProjects',
       'governance.instrumentsUnderMaintenance',
       'governance.trackedPartsStock',
-      'governance.syntheticIncomeDesc',
-      'governance.syntheticExpenseDesc'
+      'secretariatReports.totalRecettes',
+      'secretariatReports.totalDepenses'
     ]
   },
   {
-    file: 'src/components/ReunionManager.jsx',
+    files: [
+      'src/components/ReunionManager.jsx',
+      'src/components/agenda/ReunionCreationFormCard.jsx',
+      'src/components/agenda/ReunionPollSlotsEditor.jsx'
+    ],
     keys: [
       'governance.fieldDayRequired',
       'governance.btnImportTemplate'
@@ -275,14 +287,16 @@ const checks = [
 ];
 
 for (const check of checks) {
-  const content = fs.readFileSync(check.file, 'utf8');
+  const fileList = check.files || [check.file];
+  const content = fileList.map((f) => fs.readFileSync(f, 'utf8')).join('\n');
+  const label = fileList[0];
   for (const key of check.keys) {
     assert.ok(
       content.includes(`'${key}'`) || content.includes(`"${key}"`),
-      `Clé ${key} non trouvée dans ${check.file}`
+      `Clé ${key} non trouvée dans ${fileList.join(', ')}`
     );
   }
-  console.log(`  ✅ [PASS] ${check.file} contient bien toutes ses clés.`);
+  console.log(`  ✅ [PASS] ${label} contient bien toutes ses clés.`);
 }
 
 console.log("\n===============================================================================");

@@ -15,15 +15,43 @@ const appHtmlPath = path.join(distDir, 'app.html');
 console.log('=== PRÉPARATION POST-BUILD FIREBASE HOSTING ===');
 
 if (fs.existsSync(indexHtmlPath)) {
-  // 1. Copie vers dist/app.html (sécurise la coexistence physique de index.html et app.html)
+  // 1. Copie vers dist/app.html (lu dynamiquement par serveDynamicApp et le Service Worker Workbox)
   fs.copyFileSync(indexHtmlPath, appHtmlPath);
-  console.log('✅ dist/index.html copié vers dist/app.html (coexistence de index.html et app.html garantie)');
+  console.log('✅ dist/index.html copié vers dist/app.html');
+
+  // 2. Suppression de dist/index.html pour que Firebase Hosting délègue / à la Cloud Function serveDynamicApp
+  fs.unlinkSync(indexHtmlPath);
+  console.log('✅ dist/index.html supprimé (active l\'injection SEO serveur serveDynamicApp sur /)');
 } else if (fs.existsSync(appHtmlPath)) {
-  // Réciproque si app.html existe sans index.html
-  fs.copyFileSync(appHtmlPath, indexHtmlPath);
-  console.log('✅ dist/app.html copié vers dist/index.html (coexistence garantie)');
+  console.log('✅ dist/app.html est déjà en place (sans dist/index.html statique)');
 } else {
   console.warn('⚠️ Aucun index.html ou app.html trouvé dans dist/ !');
+}
+
+// 2b. Suppression de sitemap.xml et manifest.webmanifest statiques éventuels dans dist/
+// (Note : conserver dist/robots.txt statique car Firebase Hosting n'applique jamais les rewrites sur /robots.txt)
+const staticSitemapPath = path.join(distDir, 'sitemap.xml');
+if (fs.existsSync(staticSitemapPath)) {
+  fs.unlinkSync(staticSitemapPath);
+  console.log('✅ dist/sitemap.xml supprimé (délégué à la Cloud Function serveSitemap par domaine)');
+}
+const staticWebmanifestPath = path.join(distDir, 'manifest.webmanifest');
+if (fs.existsSync(staticWebmanifestPath)) {
+  fs.unlinkSync(staticWebmanifestPath);
+  console.log('✅ dist/manifest.webmanifest supprimé (délégué à la Cloud Function serveDynamicManifest)');
+}
+
+// 2c. Garantie explicite de conservation du badge monochrome tambour Alfaia pour Android
+const srcAlfaiaBadge = path.resolve('public/icons/badge-alfaia-mono.png');
+const distIconsDir = path.join(distDir, 'icons');
+const distAlfaiaBadge = path.join(distIconsDir, 'badge-alfaia-mono.png');
+if (fs.existsSync(srcAlfaiaBadge)) {
+  fs.mkdirSync(distIconsDir, { recursive: true });
+  fs.copyFileSync(srcAlfaiaBadge, distAlfaiaBadge);
+  console.log('✅ Badge Android monochrome synchronisé : dist/icons/badge-alfaia-mono.png');
+} else {
+  console.error('❌ ERREUR CRITIQUE : public/icons/badge-alfaia-mono.png introuvable !');
+  process.exit(1);
 }
 
 // 3. Vérification des assets de branding

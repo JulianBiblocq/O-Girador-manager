@@ -135,7 +135,8 @@ console.log('✅ MemberDetailCardContent.jsx filtre visibleTags avant affichage.
 // ==========================================
 console.log('\n--- Test 5 : items-stretch sur les grilles de Trombinoscope.jsx ---');
 const trombiPath = path.join(projectRoot, 'src/components/Trombinoscope.jsx');
-const trombiStr = fs.readFileSync(trombiPath, 'utf8');
+const trombiGridPath = path.join(projectRoot, 'src/components/trombinoscope/TrombinoscopeSectionsGrid.jsx');
+const trombiStr = fs.readFileSync(trombiPath, 'utf8') + '\n' + fs.readFileSync(trombiGridPath, 'utf8');
 
 assert.ok(
   trombiStr.includes('gap-2 sm:gap-3 items-stretch'),

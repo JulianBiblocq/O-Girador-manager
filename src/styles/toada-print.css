@@ -1,0 +1,115 @@
+/* Styles d'impression adaptative des Toadas et du Carnet de chants Cordel (< 130 lignes) */
+
+.toada-lyrics-two-cols {
+  column-rule: 1px solid #e7e5e4;
+  column-fill: balance;
+}
+
+.songbook-cover-frame {
+  border: 5px double var(--cordel-primary, var(--color-cordel-rouge, #8b2a1a));
+  background-color: #ffffff;
+  color: var(--encre-noire, #1a1a1a);
+}
+
+.songbook-cover-frame-bw {
+  border: 5px double #262626;
+  background-color: #ffffff;
+  color: #000000;
+}
+
+@media print {
+  body.printing-song #root { display: none !important; }
+  body.printing-song * { visibility: visible !important; }
+  body.printing-song {
+    background-color: #ffffff !important;
+    color: #000000;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Échelle par format A5 / A4 / A3 et hauteur utile dynamique selon les marges @page */
+  body.print-format-A5 { --toada-format-scale: 0.842; --songbook-cover-min-h: calc(208mm - var(--toada-print-v-margin, 24mm)); font-size: 11px; }
+  body.print-format-A5 .max-w-\[600px\], body.print-format-A5 .max-w-\[560px\] { max-width: 100% !important; }
+  body.print-format-A4 { --toada-format-scale: 1; --songbook-cover-min-h: calc(295mm - var(--toada-print-v-margin, 24mm)); font-size: 14px; }
+  body.print-format-A3 { --toada-format-scale: 1.26; --songbook-cover-min-h: calc(418mm - var(--toada-print-v-margin, 24mm)); font-size: 18px; }
+
+  /* Zoom Confort dynamique selon la densité de sections cochées */
+  .toada-density-pupitre {
+    --toada-lyrics-size: calc(19px * var(--toada-format-scale, 1));
+    --toada-lyrics-leading: 1.625;
+    --toada-details-trans-size: calc(14px * var(--toada-format-scale, 1));
+    --toada-details-notes-size: calc(13px * var(--toada-format-scale, 1));
+  }
+  .toada-density-comfort {
+    --toada-lyrics-size: calc(15px * var(--toada-format-scale, 1));
+    --toada-lyrics-leading: 1.5;
+    --toada-details-trans-size: calc(13.5px * var(--toada-format-scale, 1));
+    --toada-details-notes-size: calc(13px * var(--toada-format-scale, 1));
+  }
+  .toada-density-compact {
+    --toada-lyrics-size: calc(12px * var(--toada-format-scale, 1));
+    --toada-lyrics-leading: 1.375;
+    --toada-details-trans-size: calc(11.5px * var(--toada-format-scale, 1));
+    --toada-details-notes-size: calc(10px * var(--toada-format-scale, 1));
+  }
+
+  .toada-print-lyrics-text {
+    font-size: var(--toada-lyrics-size, 12px) !important;
+    line-height: var(--toada-lyrics-leading, 1.4) !important;
+  }
+  .toada-print-translation-text {
+    font-size: var(--toada-details-trans-size, 11.5px) !important;
+    line-height: 1.45 !important;
+  }
+  .toada-print-notes-text {
+    font-size: var(--toada-details-notes-size, 10px) !important;
+    line-height: 1.4 !important;
+  }
+
+  /* Couverture et pagination propre sans page blanche finale */
+  .songbook-cover-page {
+    min-height: var(--songbook-cover-min-h, 262mm);
+    box-sizing: border-box;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .toada-print-portal,
+  .print-song-page {
+    width: 100% !important;
+    box-sizing: border-box;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  .print-song-page {
+    page-break-after: always;
+    break-after: page;
+  }
+  .print-song-page-odd {
+    page-break-after: right;
+    break-after: right;
+  }
+  .print-song-page:last-child, .print-song-page-odd:last-child {
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+
+  /* Protection des paroles en Page 1 et répétition de l'en-tête en Page 2 */
+  .toada-print-table thead { display: table-header-group; }
+  .toada-lyrics-print-guard { break-inside: avoid; page-break-inside: avoid; }
+}
+
+/* Mode économique Noir & Blanc */
+body.print-bw {
+  --color-cordel-ocre: #000000 !important;
+  --color-cordel-vert: #000000 !important;
+  --color-cordel-rouge: #262626 !important;
+  --color-cordel-wood: #000000 !important;
+  --cordel-primary: #262626 !important;
+  --encre-noire: #000000 !important;
+  --cordel-master-dark: #000000 !important;
+}
+body.print-bw .toada-lyrics-two-cols { column-rule-color: #525252; }
+body.print-bw .bg-\[\#f5f0e6\], body.print-bw .dark\:bg-\[\#2a2622\], body.print-bw .bg-\[\#fdfaf2\] {
+  background-color: transparent !important;
+  border-color: #262626 !important;
+}

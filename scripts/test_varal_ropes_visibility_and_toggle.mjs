@@ -12,8 +12,8 @@ import path from 'path';
 
 console.log("✂️ TEST SUITE : VISIBILITÉ ET TOGGLES DES CORDES DU VARAL ✂️");
 
-// 1. Vérification du modèle de données (DEFAULT_VARAL_CATEGORIES)
-const varalDataContent = fs.readFileSync('src/hooks/useVaralData.js', 'utf8');
+// 1. Vérification du modèle de données (DEFAULT_VARAL_CATEGORIES ré-exporté par useVaralData depuis varalClassificationUtils)
+const varalDataContent = fs.readFileSync('src/hooks/useVaralData.js', 'utf8') + '\n' + fs.readFileSync('src/utils/varalClassificationUtils.js', 'utf8');
 const settingsContent = fs.readFileSync('src/hooks/useAssociationSettings.js', 'utf8');
 
 // Extraction des objets DEFAULT_VARAL_CATEGORIES
@@ -149,7 +149,9 @@ if (fs.existsSync('src/components/VaralManager.jsx')) {
   assert(varalManagerSource.includes('Afficher cette corde'), "VaralManager.jsx doit proposer le toggle 'Afficher cette corde'");
 }
 
-const widgetDocsSource = fs.readFileSync('src/components/WidgetDocuments.jsx', 'utf8');
+const widgetDocsSource =
+  fs.readFileSync('src/components/WidgetDocuments.jsx', 'utf8') + '\n' +
+  fs.readFileSync('src/components/documents/varal/VaralCategoryEditModal.jsx', 'utf8');
 assert(widgetDocsSource.includes('displayedCategories'), "WidgetDocuments.jsx doit utiliser displayedCategories pour filtrer intelligemment");
 assert(widgetDocsSource.includes('editingCategory.actif !== false'), "WidgetDocuments.jsx doit permettre de modifier le statut actif dans sa modale");
 

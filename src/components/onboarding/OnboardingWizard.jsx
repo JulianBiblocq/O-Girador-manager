@@ -5,7 +5,7 @@ import imageCompression from 'browser-image-compression';
 import { db, storage } from '../../firebase';
 import { seedNewTenant } from '../../services/seedTenantService';
 import { DEFAULT_BRANDING } from '../../hooks/useAssociationSettings';
-import { generateCombinedSealBlob, updateDocumentOpenGraphTags } from '../../utils/shareUtils.js';
+import { uploadDualCombinedSealsToStorage } from '../../utils/shareUtils.js';
 import CordelButton from '../CordelButton';
 
 import WizardProgressBar from './wizard/WizardProgressBar';
@@ -109,48 +109,30 @@ export default function OnboardingWizard({
         finalLogoUrl = await getDownloadURL(snapshot.ref);
       }
 
-      // Génération et persistance du Sceau Combiné officiel
+      // Génération et persistance du Double Sceau Combiné officiel (`any` détouré + `maskable` plein #8B2A1A)
       let finalCombinedLogoUrl = wizardData.branding?.combinedLogoUrl || '';
+      let finalCombinedLogoMaskableUrl = wizardData.branding?.combinedLogoMaskableUrl || '';
       if (finalLogoUrl) {
-        try {
-          const sealBlob = await generateCombinedSealBlob({
-            nom: wizardData.nom || associationSettings.nom || '',
-            branding: {
-              colors: wizardData.branding?.colors || DEFAULT_BRANDING.colors,
-              logoUrl: finalLogoUrl
-            }
-          }, { size: 512 });
-
-          if (sealBlob) {
-            const combinedStorageRef = storageRef(storage, `brandings/${groupId}/combined-logo.png`);
-            const combinedSnapshot = await uploadBytes(combinedStorageRef, sealBlob, { contentType: 'image/png' });
-            finalCombinedLogoUrl = await getDownloadURL(combinedSnapshot.ref);
-
-            // Miroir de compatibilité
-            try {
-              const mirrorRef = storageRef(storage, `associations/${groupId}/brandings/combined-logo.png`);
-              await uploadBytes(mirrorRef, sealBlob, { contentType: 'image/png' });
-            } catch (mirrorErr) {
-              console.warn("Miroir stockage sceau combiné wizard :", mirrorErr);
-            }
-
-            updateDocumentOpenGraphTags({
-              title: `Rejoindre ${wizardData.nom || associationSettings.nom || 'notre groupe'} sur O Girador`,
-              description: 'Espace adhérents : agenda, répétitions, vestiaire et vie du groupe.',
-              image: finalCombinedLogoUrl
-            });
+        const dualSeals = await uploadDualCombinedSealsToStorage(groupId, {
+          nom: wizardData.nom || associationSettings.nom || '',
+          branding: {
+            colors: wizardData.branding?.colors || DEFAULT_BRANDING.colors,
+            logoUrl: finalLogoUrl
           }
-        } catch (sealErr) {
-          console.warn("Erreur génération/sauvegarde du sceau combiné dans le wizard :", sealErr);
-        }
+        }, { size: 512, updateFirestore: false, updateMetaTags: true });
+        if (dualSeals.combinedLogoUrl) finalCombinedLogoUrl = dualSeals.combinedLogoUrl;
+        if (dualSeals.combinedLogoMaskableUrl) finalCombinedLogoMaskableUrl = dualSeals.combinedLogoMaskableUrl;
       }
 
       const assocRef = doc(db, 'associations', groupId);
       await setDoc(assocRef, {
         nom: wizardData.nom || associationSettings.nom || '',
+        combinedLogoUrl: finalCombinedLogoUrl,
+        combinedLogoMaskableUrl: finalCombinedLogoMaskableUrl,
         branding: {
           logoUrl: finalLogoUrl,
           combinedLogoUrl: finalCombinedLogoUrl,
+          combinedLogoMaskableUrl: finalCombinedLogoMaskableUrl,
           colors: wizardData.branding?.colors || DEFAULT_BRANDING.colors
         },
         instrumentsDisponibles: wizardData.instrumentsDisponibles,

@@ -177,7 +177,13 @@ const clickAwayFiles = [
 ];
 
 for (const relPath of clickAwayFiles) {
-  const content = fs.readFileSync(path.join(rootDir, relPath), 'utf8');
+  let content = fs.readFileSync(path.join(rootDir, relPath), 'utf8');
+  if (relPath === 'src/components/notifications/NotificationCenter.jsx') {
+    content += '\n' + fs.readFileSync(path.join(rootDir, 'src/hooks/useNotificationPanelPosition.js'), 'utf8');
+  } else if (relPath === 'src/components/PrivateChatView.jsx') {
+    content += '\n' + fs.readFileSync(path.join(rootDir, 'src/components/forum/ChatComposerPlusMenu.jsx'), 'utf8')
+      + '\n' + fs.readFileSync(path.join(rootDir, 'src/hooks/useDismissOnOutsideOrEscape.js'), 'utf8');
+  }
   assert.ok(
     content.includes('isConnected'),
     `Le composant ${relPath} doit vérifier isConnected avant d'exécuter son click outside`

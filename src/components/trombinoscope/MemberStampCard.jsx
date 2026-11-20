@@ -8,31 +8,18 @@ import {
   resolvePedagogicalRoles
 } from './trombinoscopeUtils';
 
-/**
- * Vignette timbre ultra-dense pour la planche du Trombinoscope (Mosaïque dense).
- * Format timbre xylographique optimisé pour afficher jusqu'à 8 membres par ligne sur grand écran
- * et 3 membres de front sur smartphone. Hauteur 100% harmonisée avec alignement rigoureux.
- */
+// Vignette timbre ultra-dense pour la planche du Trombinoscope (Mosaïque dense à hauteur harmonisée).
 function MemberStampCard({
   member, isOnline = false, isCurrentUser = false, canSeePushStatus = false, pupitreColor = '#181716', onClick, onEditPhoto, t = (key) => key
 }) {
   const { prenom = '', nom = '', surnom = '', photoURL = null, role = 'membre', isDependent = false, isGhost = false, primaryInstrumentName = '' } = member;
   const isPushReachable = Array.isArray(member.fcmTokens) && member.fcmTokens.length > 0;
-
   const fullName = `${prenom} ${nom}`.trim() || 'Membre';
   const initialName = `${prenom} ${nom ? `${nom[0].toUpperCase()}.` : ''}`.trim();
-
-  // Pupitre / instrument officiel unifié sous la photo
   const instrumentSubtitle = resolveMemberInstrumentSubtitle(member);
   const memberLevel = resolveMemberLevel(member);
-
-  // Confidentialité stricte de l'anniversaire : consentement explicite requis
   const isBirthdateConsent = Boolean(member.afficherDateNaissance ?? member.publierDateNaissance);
-  const formattedBirthday = (isBirthdateConsent && member.dateNaissance)
-    ? formatBirthdayShort(member.dateNaissance)
-    : null;
-
-  // Distinctions visuelles sous forme de micro-tampons d'encre
+  const formattedBirthday = (isBirthdateConsent && member.dateNaissance) ? formatBirthdayShort(member.dateNaissance) : null;
   const { isMestreBatucada, isMestreDanse, pedagogicalTitle } = resolvePedagogicalRoles(member);
   const memberTags = Array.isArray(member.tags) ? member.tags : [];
   const isBureauOrCA = ['bureau', 'ca', 'admin', 'super-admin', 'president', 'tresorier', 'secretaire'].includes(role) ||
@@ -40,52 +27,28 @@ function MemberStampCard({
 
   return (
     <div
-      role="button"
-      tabIndex={0}
-      onClick={() => onClick && onClick(member)}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          if (onClick) onClick(member);
-        }
-      }}
+      role="button" tabIndex={0} onClick={() => onClick && onClick(member)}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (onClick) onClick(member); } }}
       className={`group relative h-full flex flex-col justify-between rounded-md border-2 border-[var(--color-cordel-encre,#181716)] bg-[var(--color-cordel-kraft-sombre,#e2d6b5)] shadow-[2px_2px_0px_0px_#181716] overflow-hidden cursor-pointer transition-transform hover:-translate-y-0.5 active:translate-y-0 select-none ${
         isGhost ? 'opacity-65 hover:opacity-100 grayscale-[0.25] hover:grayscale-0' : ''
       }`}
       title={`${fullName}${surnom ? ` ("${surnom}")` : ''} - Cliquer pour ouvrir la fiche`}
     >
-      {/* 1. Zone Photo (Aspect Square dense verrouillé) */}
-      {/* aspect-square w-full overflow-hidden bg-neutral-900 */}
+      {/* 1. Zone Photo : aspect-square w-full overflow-hidden bg-neutral-900 */}
       <div className="aspect-square w-full shrink-0 overflow-hidden bg-neutral-900 relative flex items-center justify-center">
-        <XiloAvatar
-          src={photoURL}
-          name={fullName}
-          size="100%"
-          className="w-full h-full rounded-none border-none shadow-none"
-        />
+        <XiloAvatar src={photoURL} name={fullName} size="100%" className="w-full h-full rounded-none border-none shadow-none" />
 
         {/* Pastille de présence en ligne et voyant Push Bureau/CA (Haut Gauche) */}
         <div className="absolute top-1 left-1 z-20 flex items-center gap-1">
           {isOnline && (
-            <span
-              className="w-2.5 h-2.5 bg-emerald-500 border border-white rounded-full shadow-xs flex items-center justify-center"
-              title={t('trombinoscope.onlineNow') || 'Actuellement en ligne'}
-            >
+            <span className="w-2.5 h-2.5 bg-emerald-500 border border-white rounded-full shadow-xs flex items-center justify-center" title={t('trombinoscope.onlineNow') || 'Actuellement en ligne'}>
               <span className="w-1 h-1 bg-white rounded-full animate-ping" />
             </span>
           )}
           {canSeePushStatus && !isDependent && !isGhost && (
             <span
-              className={`text-[8px] leading-none px-1 py-0.5 rounded border shadow-xs font-black ${
-                isPushReachable
-                  ? 'bg-[var(--color-cordel-vert,#2d6a4f)] text-white border-stone-900'
-                  : 'bg-stone-200/90 text-stone-600 border-stone-400'
-              }`}
-              title={
-                isPushReachable
-                  ? (t('trombinoscope.pushReachableTitle') || 'Notifications Push activées (joignable)')
-                  : (t('trombinoscope.pushUnreachableTitle') || 'Notifications Push non activées')
-              }
+              className={`text-[8px] leading-none px-1 py-0.5 rounded border shadow-xs font-black ${isPushReachable ? 'bg-[var(--color-cordel-vert,#2d6a4f)] text-white border-stone-900' : 'bg-stone-200/90 text-stone-600 border-stone-400'}`}
+              title={isPushReachable ? (t('trombinoscope.pushReachableTitle') || 'Notifications Push activées (joignable)') : (t('trombinoscope.pushUnreachableTitle') || 'Notifications Push non activées')}
             >
               {isPushReachable ? '🔔' : '🔕'}
             </span>

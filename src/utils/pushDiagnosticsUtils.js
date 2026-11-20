@@ -1,8 +1,4 @@
-/**
- * Utilitaire de télé-diagnostic des notifications Push et du Contrat Permanent (`pushOptInContract`).
- * Identifie pourquoi un membre ne reçoit pas les alertes Push et synchronise cet état dans `users/{uid}`.
- */
-
+// Utilitaire de télé-diagnostic des notifications Push et du Contrat Permanent (`pushOptInContract`).
 import { doc, updateDoc } from 'firebase/firestore';
 import { db, messaging } from '../firebase';
 import { getTimestampMs } from './readReceiptUtils';
@@ -10,9 +6,7 @@ import { getTimestampMs } from './readReceiptUtils';
 const sessionDiagnosticsCache = new Map();
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
-/**
- * Vérifie si le membre a signé le Contrat Permanent de notifications Push.
- */
+// Vérifie si le membre a signé le Contrat Permanent de notifications Push.
 export function hasSignedPushContract(uid, profileData) {
   if (profileData?.pushOptInContract === false) return false;
   if (profileData?.pushOptInContract === true) return true;
@@ -25,13 +19,9 @@ export function hasSignedPushContract(uid, profileData) {
   return false;
 }
 
-/**
- * Analyse l'appareil et l'environnement navigateur AVANT tout filtrage sur `messaging` ou `Notification`.
- */
+// Analyse l'appareil et l'environnement navigateur avant tout filtrage sur `messaging` ou `Notification`.
 export function collectClientPushDiagnostics({
-  hasActiveTokenInDb = false,
-  lastError = null,
-  isMessagingSupported = Boolean(messaging)
+  hasActiveTokenInDb = false, lastError = null, isMessagingSupported = Boolean(messaging)
 } = {}) {
   const updatedAt = new Date().toISOString();
   if (typeof window === 'undefined' || typeof navigator === 'undefined') {
@@ -48,9 +38,7 @@ export function collectClientPushDiagnostics({
   const userAgentSummary = ua.slice(0, 140);
   const isIos = /iPad|iPhone|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const platform = isIos ? 'iOS' : /Android/i.test(ua) ? 'Android' : 'Desktop';
-  const isStandalonePwa = Boolean(
-    window.matchMedia?.('(display-mode: standalone)')?.matches || window.navigator?.standalone === true
-  );
+  const isStandalonePwa = Boolean(window.matchMedia?.('(display-mode: standalone)')?.matches || window.navigator?.standalone === true);
   const isInAppBrowser = /WhatsApp|FBAN|FBAV|Instagram|FB_IAB|Messenger|Line\//i.test(ua);
   const hasNotificationApi = 'Notification' in window;
   const permission = hasNotificationApi ? Notification.permission : 'unsupported';
@@ -70,23 +58,17 @@ export function collectClientPushDiagnostics({
   } else if (permission === 'default') {
     status = 'prompt_pending'; label = '⏳ Connecté · N’a pas encore cliqué sur Activer'; blockerReason = 'NEVER_ANSWERED';
   } else if (permission === 'granted' && !hasActiveTokenInDb) {
-    status = 'token_error';
-    label = '⚠️ ERREUR NAVIGATEUR (SW)';
-    blockerReason = 'TOKEN_SYNC_ERROR';
+    status = 'token_error'; label = '⚠️ ERREUR NAVIGATEUR (SW)'; blockerReason = 'TOKEN_SYNC_ERROR';
   } else if (permission === 'granted' && hasActiveTokenInDb) {
     status = 'active'; label = '🔔 PUSH'; blockerReason = 'OK';
   }
 
-  const diagnostics = {
-    status, label, permission, platform, isStandalonePwa, isInAppBrowser, blockerReason, userAgentSummary, updatedAt
-  };
+  const diagnostics = { status, label, permission, platform, isStandalonePwa, isInAppBrowser, blockerReason, userAgentSummary, updatedAt };
   if (lastError) diagnostics.lastError = String(lastError).slice(0, 220);
   return diagnostics;
 }
 
-/**
- * Enregistre systématiquement `pushDiagnostics` dans `users/{uid}` dès que `status` change ou manque en base.
- */
+// Synchronise `pushDiagnostics` dans `users/{uid}` dès que l'état change ou manque en base.
 export async function syncPushDiagnosticsToFirestore(
   uid, profileData, { lastError = null, force = false, hasActiveTokenOverride = null } = {}
 ) {
@@ -111,9 +93,7 @@ export async function syncPushDiagnosticsToFirestore(
   return diagnostics;
 }
 
-/**
- * Retourne le badge explicite de télé-diagnostic d'un membre en croisant `pushDiagnostics`, `lastActive` et `lastPushDelivery`.
- */
+// Retourne le badge explicite de télé-diagnostic d'un membre (`pushDiagnostics`, `lastActive`, `lastPushDelivery`).
 export function getMemberPushDiagnosticBadge(member) {
   if (Array.isArray(member?.fcmTokens) && member.fcmTokens.length > 0) {
     const d = member?.lastPushDelivery;
@@ -128,22 +108,10 @@ export function getMemberPushDiagnosticBadge(member) {
   }
   const diag = member?.pushDiagnostics;
   if (diag?.label) {
-    const isSwTokenError =
-      diag.status === 'token_error' ||
-      /erreur de jeton|failed to execute|pushmanager|erreur navigateur|aborterror/i.test(diag.label || '');
+    const isSwTokenError = diag.status === 'token_error' || /erreur de jeton|failed to execute|pushmanager|erreur navigateur|aborterror/i.test(diag.label || '');
     if (isSwTokenError) {
-      const fullTooltip = diag.lastError
-        ? `⚠️ Erreur navigateur (SW) — ${diag.lastError} (${diag.platform || 'Appareil'})`
-        : diag.label;
-      return {
-        code: 'TOKEN_ERROR',
-        status: 'token_error',
-        icon: '🔕',
-        shortLabel: '⚠️ ERREUR NAVIGATEUR (SW)',
-        label: '🔕 MUET · ⚠️ ERREUR NAVIGATEUR (SW)',
-        tooltip: fullTooltip,
-        isReachable: false
-      };
+      const fullTooltip = diag.lastError ? `⚠️ Erreur navigateur (SW) — ${diag.lastError} (${diag.platform || 'Appareil'})` : diag.label;
+      return { code: 'TOKEN_ERROR', status: 'token_error', icon: '🔕', shortLabel: '⚠️ ERREUR NAVIGATEUR (SW)', label: '🔕 MUET · ⚠️ ERREUR NAVIGATEUR (SW)', tooltip: fullTooltip, isReachable: false };
     }
     const fullTooltip = diag.lastError ? `${diag.label} — ${diag.lastError}` : diag.label;
     return { code: diag.status || 'DIAG', status: diag.status || 'diag', icon: '🔕', shortLabel: diag.label, label: diag.label, tooltip: fullTooltip, isReachable: false };

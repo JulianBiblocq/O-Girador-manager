@@ -1,7 +1,19 @@
 import { doc, updateDoc } from 'firebase/firestore';
-import { getEffectiveEventVotes } from './pollVoteUtils';
-import { notifyMembersByTag } from './inAppNotificationService';
-import { checkRegistrationDeadlinePassed } from '../hooks/useEventRSVP';
+import { getEffectiveEventVotes } from './pollVoteUtils.js';
+import { notifyMembersByTag } from './inAppNotificationService.js';
+
+// Vérifie de manière autonome si la date limite d'inscription d'un événement est échue.
+function isDeadlinePassed(deadline, fallbackEventStart = null) {
+  if (deadline) {
+    const d = (typeof deadline === 'string' && deadline.length === 10) ? new Date(`${deadline}T23:59:59`) : new Date(deadline);
+    if (!isNaN(d.getTime())) return new Date() > d;
+  }
+  if (fallbackEventStart) {
+    const s = new Date(fallbackEventStart);
+    if (!isNaN(s.getTime())) return new Date() > s;
+  }
+  return false;
+}
 
 /**
  * Construit le résumé chiffré des inscrits (ou votes 'dispo' d'un sondage) par pupitre.
@@ -57,7 +69,7 @@ export async function evaluateDeadlineSummaryForEvent({
   if (!ev?.dateLimiteInscription || ev.deadlineSummarySent === true) {
     return 0;
   }
-  if (!checkRegistrationDeadlinePassed(ev.dateLimiteInscription, ev.dateDebut || ev.date)) {
+  if (!isDeadlinePassed(ev.dateLimiteInscription, ev.dateDebut || ev.date)) {
     return 0;
   }
 

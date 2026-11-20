@@ -136,7 +136,8 @@ console.log('✅ Détection rigoureuse des étiquettes institutionnelles validé
 // ==========================================
 console.log('\n--- Test 3 : Structure Barre de Recherche & Filtrage dans Trombinoscope.jsx ---');
 const trombiPath = path.join(projectRoot, 'src/components/Trombinoscope.jsx');
-const trombiContent = fs.readFileSync(trombiPath, 'utf8');
+const trombiFilterPath = path.join(projectRoot, 'src/components/trombinoscope/TrombinoscopeFilterBar.jsx');
+const trombiContent = fs.readFileSync(trombiPath, 'utf8') + '\n' + fs.readFileSync(trombiFilterPath, 'utf8');
 
 // 3.1 Utilisation de getEffectiveMemberTags
 assert.ok(

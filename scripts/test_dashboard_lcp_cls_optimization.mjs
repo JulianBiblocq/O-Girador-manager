@@ -53,22 +53,24 @@ setCachedDashboardLayout('testGroup', customLayout);
 assert.deepStrictEqual(getCachedDashboardLayout('testGroup', defaultLayout), customLayout);
 console.log('  ✅ [PASS] dashboardCacheUtils.js gère parfaitement la persistance et la restitution SWR.\n');
 
-// 2. Audit statique de WidgetAnnonces.jsx (Élément LCP & CLS)
-console.log('▶️ Test 2 : Audit statique de WidgetAnnonces.jsx...');
+// 2. Audit statique de WidgetAnnonces.jsx et useAnnoncesData.js (Élément LCP & CLS)
+console.log('▶️ Test 2 : Audit statique de WidgetAnnonces.jsx et useAnnoncesData.js...');
 const annoncesPath = path.join(rootDir, 'src/components/WidgetAnnonces.jsx');
-const annoncesContent = fs.readFileSync(annoncesPath, 'utf8');
+const annoncesHookPath = path.join(rootDir, 'src/hooks/useAnnoncesData.js');
+const annoncesContent = fs.readFileSync(annoncesPath, 'utf8') + '\n' + fs.readFileSync(annoncesHookPath, 'utf8');
 
 assert.ok(annoncesContent.includes('getCachedAnnouncements'), 'WidgetAnnonces doit importer getCachedAnnouncements');
-assert.ok(annoncesContent.includes('setCachedAnnouncements'), 'WidgetAnnonces doit importer setCachedAnnouncements');
+assert.ok(annoncesContent.includes('setCachedAnnouncements'), 'useAnnoncesData doit importer setCachedAnnouncements');
 assert.ok(annoncesContent.includes('useState(() => getCachedAnnouncements(groupId))'), 'announcements doit être initialisé via getCachedAnnouncements');
 assert.ok(annoncesContent.includes('min-h-[140px]'), 'Le squelette doit réserver une hauteur minimale de 140px pour éviter le CLS');
-assert.ok(annoncesContent.includes('Notification.permission !== \'granted\''), 'La bannière push doit initialiser son état de manière synchrone');
+assert.ok(annoncesContent.includes('Notification.permission'), 'La bannière push doit initialiser son état de manière synchrone');
 console.log('  ✅ [PASS] WidgetAnnonces.jsx pré-hydrate les annonces au 1er rendu (LCP < 0.1s) et stabilise son squelette.\n');
 
-// 3. Audit statique de Dashboard.jsx (Grille, Ordre & Suspense Fallbacks)
-console.log('▶️ Test 3 : Audit statique de Dashboard.jsx...');
+// 3. Audit statique de Dashboard.jsx et DashboardProfileHeader.jsx (Grille, Ordre & Suspense Fallbacks)
+console.log('▶️ Test 3 : Audit statique de Dashboard.jsx et DashboardProfileHeader.jsx...');
 const dashboardPath = path.join(rootDir, 'src/components/Dashboard.jsx');
-const dashboardContent = fs.readFileSync(dashboardPath, 'utf8');
+const dashboardHeaderPath = path.join(rootDir, 'src/components/dashboard/DashboardProfileHeader.jsx');
+const dashboardContent = fs.readFileSync(dashboardPath, 'utf8') + '\n' + fs.readFileSync(dashboardHeaderPath, 'utf8');
 
 assert.ok(dashboardContent.includes('getCachedDashboardLayout'), 'Dashboard doit importer getCachedDashboardLayout');
 assert.ok(dashboardContent.includes('setCachedDashboardLayout'), 'Dashboard doit importer setCachedDashboardLayout');

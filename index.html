@@ -8,23 +8,25 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="O Girador" />
+    <meta name="apple-mobile-web-app-title" content="Organizador" />
     
     <!-- Primary Meta Tags -->
-    <title>O Girador</title>
-    <meta name="title" content="O Girador" />
+    <title>Organizador</title>
+    <meta name="title" content="Organizador" />
     <meta name="description" content="Rejoignez notre association : agenda, répétitions, vestiaire, matériel et espace d'échange." />
     <script>
       // Titre d'onglet immédiat (avant React et Firestore) lu dans le cache local du groupe actif : zéro saut de nom au rechargement
       (function () {
         try {
           var sp = new URLSearchParams(window.location.search);
-          var gid = (sp.get('groupe') || sp.get('tenant') || sp.get('assoc') || localStorage.getItem('ogirador_last_group_id') || '').trim().toLowerCase();
+          var rawGid = (sp.get('groupe') || sp.get('tenant') || sp.get('assoc') || localStorage.getItem('og_last_tenant_id') || localStorage.getItem('ogirador_last_group_id') || '').trim();
+          var gid = rawGid.toLowerCase();
           var name = gid ? localStorage.getItem('ogirador_asso_name_' + gid) : '';
-          if (name) {
-            document.title = name;
-            var apple = document.querySelector('meta[name="apple-mobile-web-app-title"]');
-            if (apple) apple.setAttribute('content', name);
+          if (name && (document.title === 'Organizador' || document.title === 'O Girador')) {
+            document.title = 'Organizador — ' + name;
+          }
+          if (rawGid) {
+            window.__OG_EARLY_MANIFEST_GROUP__ = rawGid;
           }
         } catch (_) {}
       })();
@@ -54,7 +56,21 @@
     <link rel="preload" href="/fonts/Cactus%20Regular.otf" as="font" type="font/otf" crossorigin />
     <link id="favicon" rel="icon" type="image/png" sizes="192x192" href="/icon-192-v2.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <link id="app-manifest" rel="manifest" href="/manifest.json" />
+    <link id="app-manifest" rel="manifest" href="/manifest.webmanifest" />
+    <script>
+      (function () {
+        try {
+          var gid = window.__OG_EARLY_MANIFEST_GROUP__;
+          var manifestEl = document.getElementById('app-manifest');
+          if (gid && manifestEl) {
+            var nextHref = '/manifest.webmanifest?groupe=' + encodeURIComponent(gid);
+            if (manifestEl.getAttribute('href') !== nextHref) {
+              manifestEl.setAttribute('href', nextHref);
+            }
+          }
+        } catch (_) {}
+      })();
+    </script>
     <script>
       // Détection de secours : si la feuille de style Tailwind/Cordel est bloquée par un cache HTTP corrompu
       window.addEventListener('DOMContentLoaded', function() {

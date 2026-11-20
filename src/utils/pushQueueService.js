@@ -4,8 +4,8 @@
  */
 
 import { collection, addDoc } from 'firebase/firestore';
-import { db } from '../firebase';
-import { createInAppNotification, NOTIFICATION_TYPES } from './inAppNotificationService';
+import { db } from '../firebase.js';
+import { createInAppNotification, NOTIFICATION_TYPES } from './inAppNotificationService.js';
 
 /**
  * Enregistre directement une notification dans `notifications_queue` pour FCM push.

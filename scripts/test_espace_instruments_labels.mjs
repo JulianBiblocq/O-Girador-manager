@@ -58,8 +58,8 @@ console.log("✅ Test 3 validé : App.jsx et LayoutShell.jsx à jour.\n");
 console.log("▶️ Test 4 : Vérification du composant UserMateriel.jsx...");
 const userMaterielContent = fs.readFileSync('src/components/profile/UserMateriel.jsx', 'utf8');
 assert(
-  userMaterielContent.includes("translate('userProfile.instrumentsHeading', 'Instruments & Assignations')"),
-  "UserMateriel.jsx doit utiliser 'Instruments & Assignations' comme texte de secours"
+  userMaterielContent.includes("t('logistics.myInstrumentsNotice')") || userMaterielContent.includes("translate('userProfile.instrumentsHeading', 'Instruments & Assignations')"),
+  "UserMateriel.jsx doit être branché sur les traductions de l'espace instruments"
 );
 console.log("✅ Test 4 validé : UserMateriel.jsx à jour.\n");
 

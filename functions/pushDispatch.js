@@ -7,20 +7,26 @@ const { FieldValue } = require("firebase-admin/firestore");
 const { getMessaging } = require("firebase-admin/messaging");
 const { collectPushTargets } = require("./pushRecipients");
 const { buildMulticastMessage } = require("./pushMessage");
+const { findAssociationByGroupId } = require("./seoDynamicHelper");
 
 const BATCH_SIZE = 500;
 const INVALID_TOKEN_CODES = ["messaging/invalid-registration-token", "messaging/registration-token-not-registered"];
 
-/** Récupère le nom et le logo de l'association (marque blanche) pour personnaliser l'alerte. */
+/** Récupère le nom et le sceau couleur de l'association (marque blanche) pour personnaliser l'alerte. */
 async function loadAssociationBranding(db, groupId) {
-  const branding = { assoName: "", assoIcon: "/icon-192x192.png" };
+  const branding = { assoName: "", assoIcon: "https://organizador.o-girador.com/icon-192-v2.png" };
   if (!groupId) return branding;
   try {
-    const assoDoc = await db.collection("associations").doc(groupId).get();
-    if (assoDoc.exists) {
+    const assoDoc = await findAssociationByGroupId(db, groupId);
+    if (assoDoc && assoDoc.exists) {
       const assoData = assoDoc.data() || {};
-      branding.assoName = assoData.nom || "";
-      branding.assoIcon = (assoData.branding && assoData.branding.logoUrl) || assoData.logoUrl || branding.assoIcon;
+      branding.assoName = assoData.nom || assoData.name || "";
+      branding.assoIcon =
+        assoData.branding?.combinedLogoUrl ||
+        assoData.combinedLogoUrl ||
+        assoData.branding?.logoUrl ||
+        assoData.logoUrl ||
+        branding.assoIcon;
     }
   } catch (e) {
     console.warn("sendPushToUsers - Erreur lors de la récupération de l'association", e);

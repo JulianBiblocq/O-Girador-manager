@@ -1,39 +1,35 @@
+// Vue de progression des Toadas côté élève avec accès direct à l'impression du Carnet de chants (< 130 lignes).
 import { useTranslation } from '../LanguageContext';
 import React, { useState, useEffect } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
+import PrintableSongbook from '../pedagogy/print/PrintableSongbook';
 import { calculateToadaScore, calculateGlobalNacaoScore, getProgressColor } from '../../utils/toadaProgressEngine';
 
 export default function StudentToadasProgress({ profileData, allSongs = [], allSheets: _allSheets = [], onSelectToada = null }) {
   const { t } = useTranslation();
   const [quizHistory, setQuizHistory] = useState([]);
+  const [songbookOpen, setSongbookOpen] = useState(false);
 
   useEffect(() => {
-    if (!profileData?.uid) return;
+    if (!profileData?.uid) return undefined;
     const userRef = doc(db, 'users', profileData.uid);
     const unsub = onSnapshot(userRef, (docSnap) => {
       if (docSnap.exists() && docSnap.data().quizHistory) {
         setQuizHistory(docSnap.data().quizHistory);
       }
-    }, (err) => {
-      console.warn("StudentToadasProgress - Erreur lecture progression toadas :", err);
-    });
+    }, () => {});
     return () => unsub();
   }, [profileData?.uid]);
 
-  // Les chansons ont déjà été filtrées par excludeFromPedagogy dans MonParcours
   const activeSongs = allSongs;
-  
-  // Calcul global
   const globalScore = calculateGlobalNacaoScore(activeSongs, quizHistory);
   const globalColor = getProgressColor(globalScore);
 
   return (
     <div className="flex flex-col gap-8 w-full max-w-none py-4 select-none">
-      
-      {/* HEADER & JAUGE GLOBALE */}
       <CordelCard className="p-6 md:p-8 flex flex-col gap-6 text-center border-2 border-dashed border-cordel-wood/30">
         <h2 className="text-2xl md:text-3xl font-heading uppercase text-cordel-wood tracking-widest">
           {t('pedagogy.student.maitriseDeLaNacao')}
@@ -45,12 +41,12 @@ export default function StudentToadasProgress({ profileData, allSongs = [], allS
           <p className="text-xs font-bold text-cordel-master-dark flex items-start gap-2">
             <span className="text-base">💡</span>
             <span>
-              <strong>{t('pedagogy.student.ouEcouterEtLire')}</strong><br/>
+              <strong>{t('pedagogy.student.ouEcouterEtLire')}</strong><br />
               {t('pedagogy.student.avantDeTesterTes')} <strong>{t('pedagogy.student.varalDesToadas')}</strong>{t('pedagogy.student.situeToutEnBas')}
             </span>
           </p>
         </div>
-        
+
         <div className="w-full max-w-2xl mx-auto flex flex-col gap-2">
           <div className="flex justify-between items-end mb-1">
             <span className="text-[10px] font-black uppercase text-encre-noire/50">{t('pedagogy.student.novice')}</span>
@@ -58,34 +54,38 @@ export default function StudentToadasProgress({ profileData, allSongs = [], allS
             <span className="text-[10px] font-black uppercase text-encre-noire/50">Mestre</span>
           </div>
           <div className="h-4 w-full bg-encre-noire/5 rounded-full overflow-hidden border border-encre-noire/10">
-            <div 
-              className="h-full transition-all duration-1000 ease-out"
-              style={{ width: `${globalScore}%`, backgroundColor: globalColor }}
-            />
+            <div className="h-full transition-all duration-1000 ease-out" style={{ width: `${globalScore}%`, backgroundColor: globalColor }} />
           </div>
         </div>
       </CordelCard>
 
-      {/* GRILLE DES TOADAS */}
       <div className="flex flex-col gap-4">
-        <h3 className="font-black text-sm uppercase tracking-widest text-cordel-wood border-b-2 border-dashed border-cordel-master-dark/30 pb-2">
-          {t('pedagogy.student.detailDuRepertoire')}{activeSongs.length} {t('pedagogy.student.chants')}
-        </h3>
-        
+        <div className="flex items-center justify-between gap-2 flex-wrap border-b-2 border-dashed border-cordel-master-dark/30 pb-2">
+          <h3 className="font-black text-sm uppercase tracking-widest text-cordel-wood">
+            {t('pedagogy.student.detailDuRepertoire')}{activeSongs.length} {t('pedagogy.student.chants')}
+          </h3>
+          {activeSongs.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setSongbookOpen(true)}
+              className="px-3 py-1 text-xs font-black uppercase tracking-wider bg-white border-2 border-encre-noire rounded shadow-[2px_2px_0px_0px_#181716] hover:bg-amber-50 cursor-pointer flex items-center gap-1.5"
+            >
+              <span>🖨️</span>
+              <span>{t('toadaPrint.btnOpenSongbook')}</span>
+            </button>
+          )}
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {activeSongs.map(song => {
+          {activeSongs.map((song) => {
             const { score, level, badge } = calculateToadaScore(song.id, quizHistory);
             const color = getProgressColor(score);
-            
             return (
               <div key={song.id} className="bg-white p-4 rounded-xl border-2 border-encre-noire/10 flex flex-col justify-between gap-4 hover:border-cordel-wood/50 transition-colors">
                 <div className="flex justify-between items-start gap-2">
-                  <h4 className="font-black text-sm text-encre-noire leading-tight">
-                    {song.titre}
-                  </h4>
+                  <h4 className="font-black text-sm text-encre-noire leading-tight">{song.titre}</h4>
                   <span className="text-xl" title={level}>{badge}</span>
                 </div>
-                
                 <div className="flex flex-col gap-2">
                   <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-wider">
                     <span style={{ color }}>{level}</span>
@@ -95,19 +95,14 @@ export default function StudentToadasProgress({ profileData, allSongs = [], allS
                     <div className="h-full" style={{ width: `${score}%`, backgroundColor: color }} />
                   </div>
                 </div>
-
-                <CordelButton 
-                  variant="secondary" 
-                  onClick={() => onSelectToada && onSelectToada(song.id)}
-                  className="w-full text-[10px] py-1.5 mt-2 font-black uppercase"
-                >
+                <CordelButton variant="secondary" onClick={() => onSelectToada && onSelectToada(song.id)} className="w-full text-[10px] py-1.5 mt-2 font-black uppercase">
                   {t('pedagogy.student.reviserCeChant')}
                 </CordelButton>
               </div>
             );
           })}
         </div>
-        
+
         {activeSongs.length === 0 && (
           <div className="text-center p-8 bg-[#fdfaf2] border-2 border-dashed border-encre-noire/20 rounded opacity-60">
             <p className="text-sm font-bold">{t('pedagogy.student.aucuneToadaTrouveeDans')}</p>
@@ -115,6 +110,7 @@ export default function StudentToadasProgress({ profileData, allSongs = [], allS
         )}
       </div>
 
+      <PrintableSongbook isOpen={songbookOpen} onClose={() => setSongbookOpen(false)} songs={activeSongs} groupId={profileData?.groupId} userProfile={profileData} />
     </div>
   );
 }

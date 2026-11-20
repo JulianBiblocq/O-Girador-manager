@@ -109,7 +109,10 @@ assert.equal(
 console.log('✅ Test 2 validé : Cycle de vie de la corde de projet 100% conforme.');
 
 console.log('🧪 Test 3: Éradication de l’icône djembé & masquage conditionnel des Renforts dans Trombinoscope.jsx...');
-const trombiContent = fs.readFileSync(path.resolve('src/components/Trombinoscope.jsx'), 'utf8');
+const trombiContent =
+  fs.readFileSync(path.resolve('src/components/Trombinoscope.jsx'), 'utf8') + '\n' +
+  fs.readFileSync(path.resolve('src/components/trombinoscope/TrombinoscopeFilterBar.jsx'), 'utf8') + '\n' +
+  fs.readFileSync(path.resolve('src/components/trombinoscope/TrombinoscopeSectionsGrid.jsx'), 'utf8');
 
 // 3a. Vérification de la suppression de l'émoji djembé (🪘) dans le filtre déroulant
 assert.ok(trombiContent.includes('<option value="all">Tous les pupitres</option>') || trombiContent.includes('<option value="all">{t(\'trombi.allPupitres\')}</option>'), 'Option globale doit être "Tous les pupitres" sans émoji djembé');
@@ -124,8 +127,10 @@ assert.ok(trombiContent.includes('{hasRenforts && renfortsList.length > 0 && (')
 
 console.log('✅ Test 3 validé : Nettoyage Trombinoscope (Djembé & Renforts conditionnels) validé.');
 
-console.log('🧪 Test 4: Vérification du cycle de vie dans WidgetDocuments.jsx...');
-const varalWidgetContent = fs.readFileSync(path.resolve('src/components/WidgetDocuments.jsx'), 'utf8');
+console.log('🧪 Test 4: Vérification du cycle de vie dans WidgetDocuments.jsx et varalVisibilityUtils.js...');
+const varalWidgetContent =
+  fs.readFileSync(path.resolve('src/components/WidgetDocuments.jsx'), 'utf8') + '\n' +
+  fs.readFileSync(path.resolve('src/utils/varalVisibilityUtils.js'), 'utf8');
 assert.ok(varalWidgetContent.includes('isProjectRopeActive'), 'WidgetDocuments doit importer et utiliser isProjectRopeActive');
 assert.ok(varalWidgetContent.includes('allEventsMap'), 'WidgetDocuments doit utiliser allEventsMap pour les événements');
 assert.ok(varalWidgetContent.includes('effectiveTargetEventId'), 'WidgetDocuments doit maintenir l’accès pour un événement ciblé');

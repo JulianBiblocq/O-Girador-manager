@@ -53,8 +53,9 @@ const buildThemeData = (data) => {
     afficherGalerie: data.publicTheme?.afficherGalerie !== false,
     afficherAgenda: data.publicTheme?.afficherAgenda !== false,
     afficherNewsletter: data.publicTheme?.afficherNewsletter !== false,
-    seoTitle: data.publicTheme?.seoTitle || '',
-    seoDescription: data.publicTheme?.seoDescription || '',
+    customDomains: Array.isArray(data.customDomains) ? data.customDomains : [],
+    seoTitle: data.seoTitle || data.publicTheme?.seoTitle || '',
+    seoDescription: data.seoDescription || data.publicTheme?.seoDescription || '',
     seoKeywords: data.publicTheme?.seoKeywords || '',
     titreRecrutement: data.publicTheme?.titreRecrutement || "Rejoignez la troupe !",
     texteRecrutement: data.publicTheme?.texteRecrutement || '',
@@ -223,9 +224,5 @@ export function usePublicTheme(groupId, themeOverride = null) {
 
   }, [publicTheme]);
 
-  return {
-    publicTheme,
-    loading,
-    error
-  };
+  return { publicTheme, loading, error };
 }

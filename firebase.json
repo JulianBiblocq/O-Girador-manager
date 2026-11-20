@@ -99,6 +99,14 @@
           "function": "serveRobotsTxt"
         },
         {
+          "source": "/api/manifest.webmanifest",
+          "function": "serveDynamicManifest"
+        },
+        {
+          "source": "/manifest.webmanifest",
+          "function": "serveDynamicManifest"
+        },
+        {
           "source": "**",
           "function": "serveDynamicApp"
         }
@@ -199,6 +207,14 @@
           "function": "serveRobotsTxt"
         },
         {
+          "source": "/api/manifest.webmanifest",
+          "function": "serveDynamicManifest"
+        },
+        {
+          "source": "/manifest.webmanifest",
+          "function": "serveDynamicManifest"
+        },
+        {
           "source": "**",
           "function": "serveDynamicApp"
         }
@@ -297,6 +313,14 @@
         {
           "source": "/robots.txt",
           "function": "serveRobotsTxt"
+        },
+        {
+          "source": "/api/manifest.webmanifest",
+          "function": "serveDynamicManifest"
+        },
+        {
+          "source": "/manifest.webmanifest",
+          "function": "serveDynamicManifest"
         },
         {
           "source": "**",

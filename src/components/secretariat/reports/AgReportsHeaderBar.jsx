@@ -81,7 +81,7 @@ export default function AgReportsHeaderBar({
                 className="w-full px-3 py-2 text-[10.5px] font-black text-encre-noire hover:bg-amber-100 flex items-center gap-2 text-left cursor-pointer border-b border-dashed border-encre-noire/15"
               >
                 <span>📊</span>
-                <span>Exporter Bilan AG (CSV)</span>
+                <span>{t('governance.btnAgReportCsv') || 'Exporter Bilan AG (CSV)'}</span>
               </button>
               <button
                 type="button"
@@ -89,7 +89,7 @@ export default function AgReportsHeaderBar({
                 className="w-full px-3 py-2 text-[10.5px] font-black text-encre-noire hover:bg-amber-100 flex items-center gap-2 text-left cursor-pointer border-b border-dashed border-encre-noire/15"
               >
                 <span>📋</span>
-                <span>Exporter Assiduité & Présences (CSV)</span>
+                <span>{t('governance.btnAttendanceCsv') || 'Exporter Assiduité & Présences (CSV)'}</span>
               </button>
               <button
                 type="button"

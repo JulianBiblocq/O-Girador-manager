@@ -1,9 +1,11 @@
+// Vue Répertoire côté Adhérent / Élève avec accordéon, suivi confort et Carnet de chants (< 138 lignes).
 import React, { useState, useEffect, useMemo } from 'react';
 import { collection, onSnapshot, doc, updateDoc, setDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import MemberRepertoireHeader from './MemberRepertoireHeader';
 import MemberPieceCard from './MemberPieceCard';
 import MemberMediaModals from './MemberMediaModals';
+import PrintableSongbook from '../pedagogy/print/PrintableSongbook';
 import { useSequencerFirestoreData } from '../../hooks/useSequencerFirestoreData';
 import { useDancadorChoreographies } from '../../hooks/useDancadorData';
 import { useRepertoireVaralDocs } from '../../hooks/useRepertoireVaralDocs';
@@ -13,10 +15,6 @@ import { subscribeGroupTrainings, subscribeUserAisance } from '../../services/ai
 import { savePieceComfortAndVocal } from '../../utils/aisanceAutoSync';
 import { useTranslation } from '../LanguageContext';
 
-/**
- * Vue Répertoire côté Adhérent / Élève (< 130 lignes).
- * Présentation en grille responsive 2 colonnes (PC) / 1 colonne (mobile) avec suivi confort et vocal unifié.
- */
 export default function MemberRepertoireView({ groupId, user, profileData, sequenceurUrl, onNavigateToView = null }) {
   const { t } = useTranslation();
   const effectiveUserId = user?.uid || profileData?.uid || profileData?.id;
@@ -32,6 +30,7 @@ export default function MemberRepertoireView({ groupId, user, profileData, seque
   const [activeTablaturePiece, setActiveTablaturePiece] = useState(null);
   const [activeToadaToView, setActiveToadaToView] = useState(null);
   const [activeCultureDocToView, setActiveCultureDocToView] = useState(null);
+  const [songbookOpen, setSongbookOpen] = useState(false);
 
   const { rhythms } = useSequencerFirestoreData(groupId);
   const { choreographies } = useDancadorChoreographies(groupId);
@@ -39,30 +38,30 @@ export default function MemberRepertoireView({ groupId, user, profileData, seque
   const { toadaPacks } = useCantadorToadas(groupId);
 
   useEffect(() => {
-    if (!groupId) return;
+    if (!groupId) return undefined;
     return onSnapshot(collection(db, 'associations', groupId, 'repertoire'), (snap) => {
       const fetched = [];
       snap.forEach((d) => { if (d.data().statutSaison === 'saison') fetched.push({ id: d.id, ...d.data() }); });
       fetched.sort((a, b) => (a.titre || '').localeCompare(b.titre || ''));
       setPieces(fetched);
       setLoading(false);
-    }, (err) => { console.error('Erreur écoute répertoire adhérent :', err); setLoading(false); });
+    }, () => setLoading(false));
   }, [groupId]);
 
   useEffect(() => {
-    if (!groupId) return;
-    const unsubTrainings = subscribeGroupTrainings(groupId, setTrainings);
-    const unsubAisance = subscribeUserAisance(effectiveUserId, setAisanceMap);
-    return () => { unsubTrainings(); unsubAisance(); };
+    if (!groupId) return undefined;
+    const u1 = subscribeGroupTrainings(groupId, setTrainings);
+    const u2 = subscribeUserAisance(effectiveUserId, setAisanceMap);
+    return () => { u1(); u2(); };
   }, [groupId, effectiveUserId]);
 
   useEffect(() => {
-    if (!effectiveUserId || !groupId) return;
+    if (!effectiveUserId || !groupId) return undefined;
     return onSnapshot(doc(db, 'users', effectiveUserId, 'parcours', groupId), (snap) => {
       const pData = snap.exists() ? snap.data() : {};
       setRevisionsDemandees(pData.revisionsDemandees || {});
       setPiecesProgress(pData.piecesProgress || {});
-    }, (err) => console.warn('MemberRepertoireView - Erreur lecture parcours adhérent :', err));
+    }, () => {});
   }, [effectiveUserId, groupId]);
 
   useEffect(() => {
@@ -111,12 +110,12 @@ export default function MemberRepertoireView({ groupId, user, profileData, seque
 
   return (
     <div className="flex flex-col gap-4 text-left select-none w-full max-w-none pb-8">
-      <MemberRepertoireHeader searchQuery={searchQuery} setSearchQuery={setSearchQuery} allExpanded={allExpanded} onToggleAllExpanded={handleToggleAllExpanded} hasPieces={resolvedPieces.length > 0} />
+      <MemberRepertoireHeader searchQuery={searchQuery} setSearchQuery={setSearchQuery} allExpanded={allExpanded} onToggleAllExpanded={handleToggleAllExpanded} hasPieces={resolvedPieces.length > 0} onOpenSongbook={toadasList.length > 0 ? () => setSongbookOpen(true) : null} />
       {loading ? (
         <div className="p-8 text-center text-xs font-bold text-stone-500 animate-pulse">{t('pedagogy.modals.chargementDuRepertoire')}</div>
       ) : resolvedPieces.length === 0 ? (
         <div className="p-8 text-center bg-white/70 border-2 border-dashed border-cordel-master-dark/30 rounded-lg text-xs font-bold text-stone-600">
-          {searchQuery ? (t('repertoire.noPiecesFound') || 'Aucun morceau ne correspond à votre recherche.') : t('pedagogy.modals.aucunMorceauNEst')}
+          {searchQuery ? t('repertoire.noPiecesFound') : t('pedagogy.modals.aucunMorceauNEst')}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
@@ -133,6 +132,7 @@ export default function MemberRepertoireView({ groupId, user, profileData, seque
         </div>
       )}
       <MemberMediaModals activeTablaturePiece={activeTablaturePiece} onCloseTablature={() => setActiveTablaturePiece(null)} activeToadaToView={activeToadaToView} onCloseToada={() => setActiveToadaToView(null)} activeCultureDocToView={activeCultureDocToView} onCloseCulture={() => setActiveCultureDocToView(null)} groupId={groupId} profileData={profileData} onNavigateToView={onNavigateToView} />
+      <PrintableSongbook isOpen={songbookOpen} onClose={() => setSongbookOpen(false)} songs={toadasList} groupId={groupId} userProfile={profileData} />
     </div>
   );
 }

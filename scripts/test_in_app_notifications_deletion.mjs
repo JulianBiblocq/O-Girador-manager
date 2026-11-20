@@ -44,7 +44,7 @@ assert(
   "NotificationItem.jsx doit appeler e.stopPropagation() sur le bouton de suppression."
 );
 assert(
-  itemContent.includes('onDelete(notification.notifId || notification.id)'),
+  itemContent.includes('onDelete(exactDocId)') || itemContent.includes('onDelete(notification.notifId || notification.id)'),
   "NotificationItem.jsx doit déclencher onDelete avec l'identifiant de la notification."
 );
 

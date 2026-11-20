@@ -4,10 +4,34 @@
  */
 
 import { canonicalizeGroupId } from './tenantUtils.js';
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { doc, setDoc } from 'firebase/firestore';
-import { db, storage } from '../firebase.js';
-import { MATRICE_ZONE, loadMatriceImage, drawSealMatrice, drawSealLogoZone } from './sealMatrice.js';
+import {
+  MATRICE_SRC,
+  MATRICE_MASKABLE_SRC,
+  MATRICE_MASKABLE_SCALE,
+  MATRICE_ZONE,
+  MATRICE_MASKABLE_ZONE,
+  loadMatriceImage,
+  drawSealMatrice,
+  drawSealLogoZone,
+  enforceOpaqueMaskableCanvas
+} from './sealMatrice.js';
+export {
+  uploadCombinedSealToStorage,
+  uploadDualCombinedSealsToStorage,
+  ensureDualCombinedSealsIfMissing
+} from './sealStorageSync.js';
+
+/**
+ * Construit les chemins Firebase Storage standardisés pour les variantes `any` et `maskable` d'une association.
+ */
+export function getCombinedSealStoragePaths(groupId) {
+  return {
+    anyPrimary: `brandings/${groupId}/combined-logo.png`,
+    anyMirror: `associations/${groupId}/brandings/combined-logo.png`,
+    maskablePrimary: `brandings/${groupId}/combined-logo-maskable.png`,
+    maskableMirror: `associations/${groupId}/brandings/combined-logo-maskable.png`
+  };
+}
 
 /**
  * Extrait les initiales d'un nom d'association (ex: "Samb'à Bulles" -> "SB", "Baque do Sol" -> "BS").
@@ -28,27 +52,28 @@ export function getAssociationInitials(name = '') {
 }
 
 /**
- * Peint le fond officiel « Matrice » O Girador (anneau ★ O GIRADOR ★ sur parchemin) sur un contexte Canvas.
- * L'image doit être pré-chargée (voir loadMatriceImage) ; aucun tracé procédural n'est effectué.
+ * Peint le fond officiel « Matrice » O Girador (`any` détouré ou `maskable` plein `#8B2A1A`) sur un contexte Canvas.
  */
-export function drawSealNeutralFrame(ctx, size = 512, matriceImg = null) {
-  drawSealMatrice(ctx, size, matriceImg);
+export function drawSealNeutralFrame(ctx, size = 512, matriceImg = null, options = {}) {
+  drawSealMatrice(ctx, size, matriceImg, options);
 }
 
 /**
- * Centre le logo de l'association dans la zone de parchemin libre de la Matrice.
+ * Centre le logo de l'association dans la zone de parchemin libre de la Matrice (`any` ou `maskable`).
  */
-export function drawSealLogoCenter(ctx, size = 512, img) {
-  drawSealLogoZone(ctx, size, img);
+export function drawSealLogoCenter(ctx, size = 512, img, options = {}) {
+  drawSealLogoZone(ctx, size, img, options);
 }
 
 /**
  * Dessine les initiales artistiques au centre en cas d'absence de logo image.
  */
-export function drawSealInitialsCenter(ctx, size = 512, name = '', primaryCol = '#8B2A1A') {
-  const scale = size / 512;
+export function drawSealInitialsCenter(ctx, size = 512, name = '', primaryCol = '#8B2A1A', options = {}) {
+  const isMaskable = Boolean(options?.maskable);
+  const zone = isMaskable ? MATRICE_MASKABLE_ZONE : MATRICE_ZONE;
+  const scale = (size / 512) * (isMaskable ? MATRICE_MASKABLE_SCALE : 1);
   const cx = size / 2;
-  const innerCy = size * MATRICE_ZONE.cy;
+  const innerCy = size * zone.cy;
   const initials = getAssociationInitials(name);
 
   ctx.save();
@@ -76,16 +101,11 @@ function createCompatibleCanvas(size, customCanvasFactory = null) {
 }
 
 /**
- * Génère le Canvas du Sceau Combiné O Girador × Association de façon asynchrone.
- * 
- * @param {Object} associationData - Données complètes de l'association (nom, branding, logoUrl...)
- * @param {Object} [options]
- * @param {number} [options.size=512] - Résolution en pixels (carré)
- * @param {Function} [options.canvasFactory] - Factory pour tests Node.js
- * @returns {Promise<{ canvas: HTMLCanvasElement, dataUrl: string, blob: Blob }>}
+ * Génère le Canvas du Sceau Combiné O Girador × Association (`any` détouré par défaut, ou `maskable` carré `#8B2A1A`).
  */
 export async function generateCombinedSealCanvas(associationData = {}, options = {}) {
   const size = options.size || 512;
+  const isMaskable = Boolean(options.maskable);
   const canvas = createCompatibleCanvas(size, options.canvasFactory);
   if (!canvas) {
     throw new Error("Impossible d'initialiser le Canvas : environnement non supporté.");
@@ -94,39 +114,38 @@ export async function generateCombinedSealCanvas(associationData = {}, options =
   const ctx = canvas.getContext('2d');
   const branding = associationData?.branding || {};
   const primaryCol = branding.colors?.primary || '#8B2A1A';
-
   const name = associationData?.nom || associationData?.name || associationData?.associationName || '';
   const logoUrl = branding.logoUrl || associationData?.logoUrl || null;
 
-  // 1. Fond Matrice officiel (image pré-chargée ; `options.matriceImage` pour Node.js)
-  const matriceImg = options.matriceImage || await loadMatriceImage();
-  drawSealNeutralFrame(ctx, size, matriceImg);
+  // 1. Fond Matrice officiel (`organizador-matrice.png` ou `organizador-matrice-maskable.png`)
+  const targetMatriceSrc = isMaskable ? MATRICE_MASKABLE_SRC : MATRICE_SRC;
+  const matriceImg = options.matriceImage || await loadMatriceImage(targetMatriceSrc);
+  drawSealNeutralFrame(ctx, size, matriceImg, { maskable: isMaskable });
 
-  // 2. Si un logo image est configuré, tenter de le charger
+  // 2. Si un logo image est configuré, le centrer dans le parchemin intérieur
   if (logoUrl) {
     try {
-      await new Promise((resolve, _reject) => {
-        const img = (typeof window !== 'undefined' && window.Image) 
-          ? new window.Image() 
+      await new Promise((resolve) => {
+        const img = (typeof window !== 'undefined' && window.Image)
+          ? new window.Image()
           : (options.imageFactory ? options.imageFactory() : null);
 
         if (!img) {
-          drawSealInitialsCenter(ctx, size, name, primaryCol);
+          drawSealInitialsCenter(ctx, size, name, primaryCol, { maskable: isMaskable });
           return resolve();
         }
 
         img.crossOrigin = 'anonymous';
         img.onload = () => {
           try {
-            drawSealLogoCenter(ctx, size, img);
-            resolve();
+            drawSealLogoCenter(ctx, size, img, { maskable: isMaskable });
           } catch {
-            drawSealInitialsCenter(ctx, size, name, primaryCol);
-            resolve();
+            drawSealInitialsCenter(ctx, size, name, primaryCol, { maskable: isMaskable });
           }
+          resolve();
         };
         img.onerror = () => {
-          drawSealInitialsCenter(ctx, size, name, primaryCol);
+          drawSealInitialsCenter(ctx, size, name, primaryCol, { maskable: isMaskable });
           resolve();
         };
 
@@ -136,20 +155,23 @@ export async function generateCombinedSealCanvas(associationData = {}, options =
         img.src = safeSrc;
       });
     } catch {
-      drawSealInitialsCenter(ctx, size, name, primaryCol);
+      drawSealInitialsCenter(ctx, size, name, primaryCol, { maskable: isMaskable });
     }
   } else {
-    // Si aucun logo n'existe, graver les initiales de l'association
-    drawSealInitialsCenter(ctx, size, name, primaryCol);
+    drawSealInitialsCenter(ctx, size, name, primaryCol, { maskable: isMaskable });
   }
 
-  // 3. Export DataURL et Blob
+  // 3. Garantie stricte d'opacité alpha = 255 sur toute la surface 512x512 en mode maskable Android
+  if (isMaskable) {
+    enforceOpaqueMaskableCanvas(ctx, size);
+  }
+
+  // 4. Export DataURL et Blob PNG
   const dataUrl = canvas.toDataURL ? canvas.toDataURL('image/png') : '';
   const blob = await new Promise((resolve) => {
     if (canvas.toBlob) {
       canvas.toBlob((b) => resolve(b), 'image/png');
     } else if (canvas.toBuffer) {
-      // Cas Node-canvas
       const buf = canvas.toBuffer('image/png');
       resolve(typeof Blob !== 'undefined' ? new Blob([buf], { type: 'image/png' }) : buf);
     } else {
@@ -160,25 +182,19 @@ export async function generateCombinedSealCanvas(associationData = {}, options =
   return { canvas, dataUrl, blob };
 }
 
-/**
- * Génère directement le Blob PNG du Sceau Combiné.
- */
+/** Génère directement le Blob PNG du Sceau Combiné (`any` ou `maskable` via `options.maskable`). */
 export async function generateCombinedSealBlob(associationData, options = {}) {
   const result = await generateCombinedSealCanvas(associationData, options);
   return result.blob;
 }
 
-/**
- * Génère directement la DataURL PNG du Sceau Combiné.
- */
+/** Génère directement la DataURL PNG du Sceau Combiné. */
 export async function generateCombinedSealDataUrl(associationData, options = {}) {
   const result = await generateCombinedSealCanvas(associationData, options);
   return result.dataUrl;
 }
 
-/**
- * Prépare un objet File prêt pour navigator.share({ files: [file] }).
- */
+/** Prépare un objet File prêt pour `navigator.share({ files: [file] })`. */
 export async function generateCombinedSealFile(associationData, fileName = 'invitation-o-girador.png', options = {}) {
   const blob = await generateCombinedSealBlob(associationData, options);
   if (!blob) return null;
@@ -188,12 +204,10 @@ export async function generateCombinedSealFile(associationData, fileName = 'invi
   return blob;
 }
 
-/**
- * Calcule tous les paramètres d'invitation au groupe (URL, textes, canonical ID).
- */
+/** Calcule tous les paramètres d'invitation au groupe (URL, textes, canonical ID). */
 export function getGroupInvitationDetails(associationData = {}, groupId = null) {
   const isLocal = typeof window !== 'undefined' && (
-    window.location.hostname === 'localhost' || 
+    window.location.hostname === 'localhost' ||
     window.location.hostname === '127.0.0.1'
   );
   const baseUrl = isLocal ? window.location.origin : 'https://organizador.o-girador.com';
@@ -214,63 +228,41 @@ export function getGroupInvitationDetails(associationData = {}, groupId = null) 
 }
 
 /**
- * Partage dynamique intelligent de l'invitation de groupe.
- * Tente d'abord le partage natif avec fichier image (macaron combiné).
- * Repli sur le partage de texte/lien natif, puis sur la copie dans le presse-papier.
- * 
- * @param {Object} params
- * @param {Object} params.associationData
- * @param {string} [params.groupId]
- * @param {Function} [params.t]
- * @returns {Promise<{ success: boolean, method: 'share-file' | 'share-link' | 'clipboard' }>}
+ * Partage dynamique intelligent de l'invitation de groupe (fichier image natif, lien texte ou presse-papier).
  */
 export async function shareGroupInvitation({ associationData = {}, groupId = null, t: _t = null }) {
-  const { invitationUrl, groupName: _groupName, shareTitle, shareText } = getGroupInvitationDetails(associationData, groupId);
+  const { invitationUrl, shareTitle, shareText } = getGroupInvitationDetails(associationData, groupId);
 
-  // 1. Tenter de générer le fichier Sceau Combiné pour les réseaux supportant le partage de fichiers
   let sealFile = null;
   try {
     sealFile = await generateCombinedSealFile(associationData, `sceau-${canonicalizeGroupId(groupId || associationData?.id || 'groupe')}.png`);
   } catch (err) {
-    console.warn("Génération du fichier de sceau pour le partage ignorée :", err);
+    console.warn('Génération du fichier de sceau pour le partage ignorée :', err);
   }
 
-  // 2. Partage via navigator.share avec image
   if (typeof navigator !== 'undefined' && navigator.share && sealFile && navigator.canShare) {
     try {
-      const shareDataWithFile = {
-        title: shareTitle,
-        text: shareText,
-        url: invitationUrl,
-        files: [sealFile]
-      };
+      const shareDataWithFile = { title: shareTitle, text: shareText, url: invitationUrl, files: [sealFile] };
       if (navigator.canShare(shareDataWithFile)) {
         await navigator.share(shareDataWithFile);
         return { success: true, method: 'share-file' };
       }
     } catch (err) {
       if (err.name === 'AbortError') return { success: false, aborted: true };
-      console.warn("Échec partage fichier, tentative sans fichier :", err);
+      console.warn('Échec partage fichier, tentative sans fichier :', err);
     }
   }
 
-  // 3. Partage via navigator.share texte & lien
   if (typeof navigator !== 'undefined' && navigator.share) {
     try {
-      const shareDataText = {
-        title: shareTitle,
-        text: shareText,
-        url: invitationUrl
-      };
-      await navigator.share(shareDataText);
+      await navigator.share({ title: shareTitle, text: shareText, url: invitationUrl });
       return { success: true, method: 'share-link' };
     } catch (err) {
       if (err.name === 'AbortError') return { success: false, aborted: true };
-      console.warn("Échec partage texte, repli sur presse-papier :", err);
+      console.warn('Échec partage texte, repli sur presse-papier :', err);
     }
   }
 
-  // 4. Repli universel : copie dans le presse-papier
   if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
     await navigator.clipboard.writeText(shareText);
     return { success: true, method: 'clipboard' };
@@ -279,9 +271,7 @@ export async function shareGroupInvitation({ associationData = {}, groupId = nul
   return { success: false, method: 'none' };
 }
 
-/**
- * Met à jour dynamiquement les balises Meta Open Graph et Twitter du document HTML.
- */
+/** Met à jour dynamiquement les balises Meta Open Graph et Twitter du document HTML. */
 export function updateDocumentOpenGraphTags({ title, description, image, url, updateDocumentTitle = true }) {
   if (typeof document === 'undefined') return;
 
@@ -318,65 +308,3 @@ export function updateDocumentOpenGraphTags({ title, description, image, url, up
     setMetaTag('twitter:url', url, true);
   }
 }
-
-/**
- * Génère le Sceau Combiné Officiel Asso × O Girador et le sauvegarde dans Firebase Storage
- * sous `brandings/{groupId}/combined-logo.png` puis enregistre son URL dans Firestore
- * sous `branding.combinedLogoUrl`.
- * 
- * @param {string} groupId - L'identifiant du groupe (ex: 'sambabulles' ou 'baque-do-sol')
- * @param {Object} associationData - Données de l'association (nom, branding.logoUrl, colors, etc.)
- * @param {Object} [options]
- * @param {number} [options.size=512]
- * @param {boolean} [options.updateFirestore=true]
- * @param {boolean} [options.updateMetaTags=true]
- * @returns {Promise<string|null>} - L'URL publique de téléchargement du sceau combiné
- */
-export async function uploadCombinedSealToStorage(groupId, associationData, options = {}) {
-  const { size = 512, updateFirestore = true, updateMetaTags = true } = options;
-  if (!groupId) return null;
-
-  try {
-    const sealBlob = await generateCombinedSealBlob(associationData, { size });
-    if (!sealBlob) return null;
-
-    // Chemin Firebase Storage standardisé : brandings/{groupId}/combined-logo.png
-    let downloadUrl = null;
-    try {
-      const fileRef = storageRef(storage, `brandings/${groupId}/combined-logo.png`);
-      const snapshot = await uploadBytes(fileRef, sealBlob, { contentType: 'image/png' });
-      downloadUrl = await getDownloadURL(snapshot.ref);
-    } catch (primaryErr) {
-      console.warn("Chemin brandings restreint, bascule sur associations/... :", primaryErr);
-      const mirrorRef = storageRef(storage, `associations/${groupId}/brandings/combined-logo.png`);
-      const snapshot = await uploadBytes(mirrorRef, sealBlob, { contentType: 'image/png' });
-      downloadUrl = await getDownloadURL(snapshot.ref);
-    }
-
-    // Persistance dans le document Firestore du groupe : branding.combinedLogoUrl
-    if (updateFirestore) {
-      const groupDocRef = doc(db, 'associations', groupId);
-      await setDoc(groupDocRef, {
-        branding: {
-          combinedLogoUrl: downloadUrl
-        }
-      }, { merge: true });
-    }
-
-    // Mise à jour immédiate des balises Open Graph du document
-    if (updateMetaTags) {
-      const groupName = associationData?.nom || associationData?.name || '';
-      updateDocumentOpenGraphTags({
-        title: `Rejoindre ${groupName || 'notre groupe'} sur O Girador`,
-        description: 'Espace adhérents : agenda, répétitions, vestiaire et vie du groupe.',
-        image: downloadUrl
-      });
-    }
-
-    return downloadUrl;
-  } catch (err) {
-    console.warn("Erreur lors de la génération et sauvegarde du sceau combiné :", err);
-    return null;
-  }
-}
-

@@ -8,8 +8,9 @@ import path from 'path';
 
 console.log("=== VÉRIFICATION DU PADDING DE RECHERCHE TROMBINOSCOPE ===\n");
 
-const filePath = path.resolve('src/components/Trombinoscope.jsx');
-const content = fs.readFileSync(filePath, 'utf8');
+const content =
+  fs.readFileSync(path.resolve('src/components/Trombinoscope.jsx'), 'utf8') + '\n' +
+  fs.readFileSync(path.resolve('src/components/trombinoscope/TrombinoscopeFilterBar.jsx'), 'utf8');
 
 let errors = 0;
 
@@ -23,7 +24,7 @@ if (content.includes('pl-10') && (content.includes('placeholder="Prénom, nom, s
 
 // 2. Vérification du centrage et verrouillage de la loupe
 if (
-  content.includes('absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-500')
+  /absolute left-3(?:\.5)? top-1\/2 -translate-y-1\/2 pointer-events-none text-neutral-500/.test(content)
 ) {
   console.log("  ✅ [PASS] Loupe calée avec 'absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-500'");
 } else {

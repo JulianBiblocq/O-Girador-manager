@@ -1,4 +1,4 @@
-import { getCanonicalTagKey, getEffectiveMemberTags, isMemberCaOrBureau } from './memberUtils';
+import { getCanonicalTagKey, getEffectiveMemberTags, isMemberCaOrBureau } from './memberUtils.js';
 
 /**
  * Résout la configuration de confidentialité d'une réunion ou d'un document de compte-rendu

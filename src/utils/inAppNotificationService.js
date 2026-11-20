@@ -4,9 +4,9 @@
  */
 
 import { collection, addDoc, getDocs, query, where, serverTimestamp } from 'firebase/firestore';
-import { db } from '../firebase';
-import { isMemberArchived } from './memberUtils';
-import { queuePushNotification, queueBulkPushNotification } from './pushQueueService';
+import { db } from '../firebase.js';
+import { isMemberArchived } from './memberUtils.js';
+import { queuePushNotification, queueBulkPushNotification } from './pushQueueService.js';
 
 export { queuePushNotification, queueBulkPushNotification };
 

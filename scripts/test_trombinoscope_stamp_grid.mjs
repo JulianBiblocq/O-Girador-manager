@@ -93,9 +93,11 @@ assert.ok(modalContentSub.includes('tel:'), 'Le lien téléphonique sécurisé d
 
 console.log('✅ Test 3 validé : Modale détaillée conforme et respectueuse de la confidentialité.\n');
 
-// 4. Vérification de la grille et intégration dans Trombinoscope.jsx
+// 4. Vérification de la grille et intégration dans Trombinoscope.jsx et TrombinoscopeSectionsGrid.jsx
 console.log('▶️ Test 4 : Vérification de la grille dense et intégration dans Trombinoscope.jsx...');
-const trombiContent = fs.readFileSync(path.resolve(process.cwd(), 'src/components/Trombinoscope.jsx'), 'utf8');
+const trombiContent =
+  fs.readFileSync(path.resolve(process.cwd(), 'src/components/Trombinoscope.jsx'), 'utf8') + '\n' +
+  fs.readFileSync(path.resolve(process.cwd(), 'src/components/trombinoscope/TrombinoscopeSectionsGrid.jsx'), 'utf8');
 
 // Grille resserrée
 assert.ok(

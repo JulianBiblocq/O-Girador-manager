@@ -12,16 +12,14 @@
 
 import assert from 'assert';
 import fs from 'fs';
+import { DEFAULT_VARAL_CATEGORIES as defaultCats, isAdministrativeDoc } from '../src/utils/varalClassificationUtils.js';
 
 console.log("✂️ TEST SUITE : RÉDUCTION ET RÉORGANISATION DU VARAL (5 CORDES CIBLES) ✂️\n");
 
 // 1. Ordre strict et statut par défaut des catégories
 console.log("▶️ Test 1 : Vérification de l'ordre strict des 5 cordes et désactivation de TutorielsVideo...");
 const varalDataCode = fs.readFileSync('src/hooks/useVaralData.js', 'utf8');
-
-const match = varalDataCode.match(/export const DEFAULT_VARAL_CATEGORIES = (\[[\s\S]*?\]);/);
-assert(match, "DEFAULT_VARAL_CATEGORIES doit être exporté dans useVaralData.js");
-const defaultCats = (new Function(`return ${match[1]}`))();
+assert(varalDataCode.includes('DEFAULT_VARAL_CATEGORIES') && varalDataCode.includes('isAdministrativeDoc'), "DEFAULT_VARAL_CATEGORIES et isAdministrativeDoc doivent être ré-exportés dans useVaralData.js");
 
 const expectedOrder = ['Toadas', 'Culture', 'TutosFabrication', 'PhotosPrestations', 'ComptesRendus'];
 for (let i = 0; i < expectedOrder.length; i++) {
@@ -45,10 +43,7 @@ console.log("✅ Test 1 validé : 5 cordes principales ordonnées et TutorielsVi
 
 // 2. Vérification de la fonction isAdministrativeDoc
 console.log("▶️ Test 2 : Détection des documents administratifs fixes...");
-// Extraction de la fonction isAdministrativeDoc
-const adminDocFuncMatch = varalDataCode.match(/export const isAdministrativeDoc = ([\s\S]*?\n\};)/);
-assert(adminDocFuncMatch, "isAdministrativeDoc doit être exportée dans useVaralData.js");
-const isAdministrativeDoc = (new Function(`return ${adminDocFuncMatch[1]}`))();
+assert(typeof isAdministrativeDoc === 'function', "isAdministrativeDoc doit être exportée");
 
 // Cas positifs
 assert.strictEqual(isAdministrativeDoc({ categoryId: 'Administratif' }), true);

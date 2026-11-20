@@ -80,10 +80,15 @@ assert(isRenfortMember(renfortByStatus) === true, 'Julien avec statutActuel=renf
 assert(isRenfortMember(renfortByTag) === true, 'Camille avec tag renfort est un renfort');
 assert(isRenfortMember(regularMember) === false, 'Adhérent actif régulier n\'est PAS un renfort');
 
-console.log('\n--- 🧪 TEST 6 : Vérification du code JSX de Trombinoscope.jsx ---');
-const trombiCode = fs.readFileSync(path.resolve('src/components/Trombinoscope.jsx'), 'utf8');
+console.log('\n--- 🧪 TEST 6 : Vérification du code JSX de Trombinoscope.jsx et TrombinoscopeSectionsGrid.jsx ---');
+const trombiCode =
+  fs.readFileSync(path.resolve('src/components/Trombinoscope.jsx'), 'utf8') + '\n' +
+  fs.readFileSync(path.resolve('src/components/trombinoscope/TrombinoscopeSectionsGrid.jsx'), 'utf8');
 assert(!trombiCode.includes("id: 'chant_danse'"), 'Aucune section orpheline chant_danse dans le code');
-assert(trombiCode.includes('🎪 Renforts & Musiciens extérieurs'), 'Section dédiée "🎪 Renforts & Musiciens extérieurs" présente');
+assert(
+  trombiCode.includes('🎪 Renforts & Musiciens extérieurs') || trombiCode.includes('🎪 Renforts &amp; Musiciens extérieurs'),
+  'Section dédiée "🎪 Renforts & Musiciens extérieurs" présente'
+);
 assert(trombiCode.includes('FIVE_PUPITRES.map'), 'Itération sur les 5 pupitres SaaS');
 
 console.log(`\n========================================`);

@@ -1,21 +1,14 @@
+// Hook d'auto-synchronisation silencieuse du jeton FCM, écoute premier plan et enregistrement de `pushDiagnostics`.
 import { useEffect, useRef } from 'react';
 import { doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { db, messaging } from '../firebase';
-import {
-  resolveActiveMessagingSwRegistration,
-  getTokenWithPushManagerAutoRepair
-} from '../utils/pushNotificationHelper';
+import { resolveActiveMessagingSwRegistration, getTokenWithPushManagerAutoRepair, subscribeForegroundPushMessages } from '../utils/pushNotificationHelper';
 import { collectClientPushDiagnostics, syncPushDiagnosticsToFirestore } from '../utils/pushDiagnosticsUtils';
 
 const FOREGROUND_SYNC_THROTTLE_MS = 5 * 60 * 1000;
-const DEVICE_TOKEN_KEY = 'ogirador_device_fcm_token', DEVICE_UID_KEY = 'ogirador_device_fcm_uid'; // Jeton courant de cet appareil
+const DEVICE_TOKEN_KEY = 'ogirador_device_fcm_token';
+const DEVICE_UID_KEY = 'ogirador_device_fcm_uid';
 
-/**
- * Hook d'auto-synchronisation silencieuse du jeton FCM et d'enregistrement inconditionnel de `pushDiagnostics` :
- * - Calcule et enregistre `pushDiagnostics` AVANT tout `return` lié à `!messaging` ou `!('Notification' in window)`.
- * - Tente une auto-réparation `PushManager` (`unsubscribe()` + nouvel essai à +300 ms) en cas d'erreur d'abonnement.
- * - S'exécute à l'ouverture de session et au retour au premier plan (`visibilitychange` visible & `focus`).
- */
 export function useAutoSyncPushToken(user, profileData, onTokenSynced, onTokenError) {
   const lastSyncTimeByUidRef = useRef({});
   const isSyncingRef = useRef(false);
@@ -34,6 +27,11 @@ export function useAutoSyncPushToken(user, profileData, onTokenSynced, onTokenEr
   const tokensCount = Array.isArray(profileData?.fcmTokens) ? profileData.fcmTokens.length : 0;
 
   useEffect(() => {
+    if (!uid || !hasProfile || profileData?.pushOptInContract === false) return undefined;
+    return subscribeForegroundPushMessages();
+  }, [uid, hasProfile, profileData?.pushOptInContract]);
+
+  useEffect(() => {
     if (!uid || !hasProfile || typeof window === 'undefined') return;
     const state = { cancelled: false };
 
@@ -42,7 +40,6 @@ export function useAutoSyncPushToken(user, profileData, onTokenSynced, onTokenEr
       const currentProfile = latestProfileRef.current;
       const existingTokens = Array.isArray(currentProfile?.fcmTokens) ? currentProfile.fcmTokens : [];
 
-      // 1. Calcul inconditionnel du diagnostic AVANT tout return sur !messaging ou !('Notification' in window)
       const preDiag = collectClientPushDiagnostics({
         hasActiveTokenInDb: existingTokens.length > 0,
         isMessagingSupported: Boolean(messaging)
@@ -50,9 +47,7 @@ export function useAutoSyncPushToken(user, profileData, onTokenSynced, onTokenEr
 
       const permission = 'Notification' in window ? Notification.permission : 'unsupported';
       if (
-        preDiag.status === 'webview_blocked' ||
-        preDiag.status === 'ios_not_installed' ||
-        preDiag.status === 'unsupported' ||
+        ['webview_blocked', 'ios_not_installed', 'unsupported'].includes(preDiag.status) ||
         permission !== 'granted' ||
         !messaging ||
         currentProfile?.pushOptInContract === false
@@ -97,17 +92,13 @@ export function useAutoSyncPushToken(user, profileData, onTokenSynced, onTokenEr
           prevLocalUid = localStorage.getItem(DEVICE_UID_KEY);
         } catch { /* Ignorer */ }
 
-        // Jeton renouvelé sur ce même navigateur : retirer l'ancien (arrayRemove idempotent) avant d'ajouter le nouveau
         if (prevLocalToken && prevLocalToken !== currentToken) {
-          const ownerUid = prevLocalUid || uid;
-          await updateDoc(doc(db, 'users', ownerUid), { fcmTokens: arrayRemove(prevLocalToken) }).catch(() => {});
+          await updateDoc(doc(db, 'users', prevLocalUid || uid), { fcmTokens: arrayRemove(prevLocalToken) }).catch(() => {});
         }
 
         if (!latestTokens.includes(currentToken) || latestProfile?.pushOptInContract !== true || latestProfile?.pushDiagnostics?.status !== 'active') {
           const activeDiag = collectClientPushDiagnostics({ hasActiveTokenInDb: true, isMessagingSupported: true });
-          await updateDoc(doc(db, 'users', uid), {
-            fcmTokens: arrayUnion(currentToken), pushOptInContract: true, pushDiagnostics: activeDiag
-          });
+          await updateDoc(doc(db, 'users', uid), { fcmTokens: arrayUnion(currentToken), pushOptInContract: true, pushDiagnostics: activeDiag });
         }
 
         try {
@@ -120,9 +111,7 @@ export function useAutoSyncPushToken(user, profileData, onTokenSynced, onTokenEr
       } catch (err) {
         const errMsg = err?.message || 'Erreur getToken SW';
         lastSyncTimeByUidRef.current[uid] = 0;
-        await syncPushDiagnosticsToFirestore(uid, latestProfileRef.current, {
-          lastError: errMsg, force: true, hasActiveTokenOverride: false
-        });
+        await syncPushDiagnosticsToFirestore(uid, latestProfileRef.current, { lastError: errMsg, force: true, hasActiveTokenOverride: false });
         if (onTokenErrorRef.current) onTokenErrorRef.current(errMsg);
       } finally {
         isSyncingRef.current = false;

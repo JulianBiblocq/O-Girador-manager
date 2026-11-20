@@ -11,8 +11,7 @@ import { LicenseProvider } from './context/LicenseContext';
 import { ViewSimulatorProvider } from './context/ViewSimulatorContext';
 import ReloadPrompt from './components/ReloadPrompt';
 import ErrorBoundary from './components/ErrorBoundary';
-import PublicHome from './components/PublicHome';
-import PublicThemeProvider from './components/PublicThemeProvider';
+import VitrineRouteShell from './components/public/VitrineRouteShell';
 import { tracker } from './utils/O-Girador-Tracker';
 import { useAppUpdate } from './hooks/useAppUpdate';
 import { useConversations } from './hooks/useConversations';
@@ -27,21 +26,16 @@ import { getMigratedRoleAndTags } from './utils/roleMigration';
 import { canAccessPole, canAccessTabPermission, canAccessMestre, canPublishAnnonces } from './utils/permissionUtils';
 import PendingValidationScreen from './components/auth/PendingValidationScreen';
 import ArchivedAccountScreen from './components/auth/ArchivedAccountScreen';
-import ProfileNetworkRetryScreen, {
-  hasKnownCompletedProfile,
-  markKnownCompletedProfile,
-  checkIsProfileComplete
-} from './components/auth/ProfileNetworkRetryScreen';
+import ProfileNetworkRetryScreen, { hasKnownCompletedProfile, markKnownCompletedProfile, checkIsProfileComplete } from './components/auth/ProfileNetworkRetryScreen';
+import { ensureDualCombinedSealsIfMissing } from './utils/sealStorageSync';
 import { isMemberArchived } from './utils/memberUtils';
 import { useTenantContext } from './context/TenantContext';
-import TenantNotFound from './components/TenantNotFound';
-import { DEFAULT_VARAL_CATEGORIES } from './hooks/useAssociationSettings';
+import DemoTopBanner from './components/demo/DemoTopBanner';
 import { canonicalizeGroupId, isSameGroupCaseInsensitive, isCustomDomainHost, registerCanonicalGroupId, saveLastKnownTenantId, getLastKnownTenantId, getCachedDomainGroupId, resolveCanonicalGroupFromFirestore } from './utils/tenantUtils';
+import { isLockedVitrineHost, sanitizeLockedVitrinePathname, resolveIsVitrineMode } from './utils/vitrineLockUtils';
 import { buildFounderEmergencyProfile, resolveAdminFallbackGroupId } from './utils/founderFallbackUtils';
 import { reconcilePreExistingMember } from './services/memberService';
 import { isDemoMode, initDemoSession, getDemoAuthUser, getDemoProfileData } from './demo/demoManager';
-import { DEMO_GROUP_ID } from './data/demoData';
-import DemoTopBanner from './components/demo/DemoTopBanner';
 import { resolveInternalDestination, extractDeepLinkTarget, INTERNAL_APP_ROUTE_PREFIXES, isExternalActionLink } from './utils/megaphoneNavigationUtils';
 
 const Onboarding = lazyWithRetry(() => import('./components/Onboarding'));
@@ -256,74 +250,38 @@ const POLES_CONFIG = [
   }
 ];
 
-function OrganizadorRedirector({ user, navigateToRoute, brandingStyle }) {
-  useEffect(() => {
-    const target = user ? '/app' : '/login';
-    navigateToRoute(target);
-    const timer = setTimeout(() => {
-      if (typeof window !== 'undefined' && (window.location.pathname === '/' || window.location.pathname === '')) {
-        window.location.replace(target + window.location.search);
-      }
-    }, 1200);
-    return () => clearTimeout(timer);
-  }, [user, navigateToRoute]);
-
-  return (
-    <div style={brandingStyle} className="min-h-screen flex flex-col justify-center items-center py-12 bg-[#f4ecd8]">
-      <div className="animate-spin text-4xl mb-4 select-none">⏳</div>
-      <span className="font-bold text-xs uppercase tracking-widest text-[#8b2a1a] mb-4">
-        Redirection vers l'application...
-      </span>
-      <button
-        type="button"
-        onClick={() => navigateToRoute(user ? '/app' : '/login')}
-        className="px-4 py-2 bg-[#8b2a1a] text-white text-xs font-bold uppercase rounded shadow hover:bg-[#6b1f13] transition-colors cursor-pointer"
-      >
-        Accéder à l'application
-      </button>
-    </div>
-  );
-}
-
-function HubRootRedirector({ brandingStyle }) {
-  useEffect(() => {
-    window.location.href = 'https://www.o-girador.com';
-  }, []);
-
-  return (
-    <div style={brandingStyle} className="min-h-screen flex flex-col justify-center items-center py-12 bg-[#f4ecd8]">
-      <div className="animate-spin text-4xl mb-4 select-none">⏳</div>
-      <span className="font-bold text-xs uppercase tracking-widest text-[#8b2a1a]">
-        Redirection vers le Hub...
-      </span>
-    </div>
-  );
-}
-
 export default function App() {
   useAppUpdate();
-
-  // Nettoyage silencieux de l'URL au montage (suppression du paramètre de cache-busting _upd)
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const url = new URL(window.location.href);
-        if (url.searchParams.has('_upd')) {
-          url.searchParams.delete('_upd');
-          const cleanUrl = url.pathname + (url.search ? url.search : '') + url.hash;
-          window.history.replaceState({}, document.title, cleanUrl);
-        }
-      } catch {}
-    }
-  }, []);
 
   // Gestion du routage dynamique (/ vitrine public, /app espace membre, /login connexion)
   const [currentRoute, setCurrentRoute] = useState(() => {
     if (typeof window !== 'undefined') {
-      return window.location.pathname || '/';
+      return sanitizeLockedVitrinePathname(window.location.hostname, window.location.pathname || '/');
     }
     return '/';
   });
+
+  // Nettoyage silencieux de l'URL au montage (_upd et routes privées résiduelles sur domaine Vitrine verrouillé)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const url = new URL(window.location.href);
+        let mutated = false;
+        if (url.searchParams.has('_upd')) {
+          url.searchParams.delete('_upd');
+          mutated = true;
+        }
+        const safePath = sanitizeLockedVitrinePathname(url.hostname, url.pathname);
+        if (safePath !== url.pathname) {
+          url.pathname = safePath;
+          mutated = true;
+        }
+        if (mutated) {
+          window.history.replaceState({}, document.title, url.pathname + (url.search || '') + url.hash);
+        }
+      } catch {}
+    }
+  }, []);
 
   // ✂️ Rétrocompatibilité Mostrador : migration automatique et silencieuse de ?tenant=xxx vers /xxx
   useEffect(() => {
@@ -498,49 +456,22 @@ export default function App() {
   const [showOnboardingWizard, setShowOnboardingWizard] = useState(false);
   const [hasTriggeredOnboardingAuto, setHasTriggeredOnboardingAuto] = useState(false);
 
-  // Détection exhaustive du mode Vitrine Publique (Mostrador)
+  // Détection stricte et verrouillage inconditionnel du mode Vitrine Publique (Mostrador)
   const isVitrineMode = useMemo(() => {
     if (typeof window === 'undefined') return false;
     const hostname = window.location.hostname || '';
-    const path = currentRoute || window.location.pathname || '';
-    const searchParams = new URLSearchParams(window.location.search || '');
-
-    // Requête explicite de vitrine
-    const isExplicitVitrineRequest = searchParams.get('app') === 'mostrador' ||
-      path.startsWith('/vitrine') || path.startsWith('/mostrador') || path.includes('/vitrine') || path.includes('/mostrador');
-
-    // Sur les hôtes d'Organizador (production ou dev), c'est TOUJOURS Organizador sauf demande explicite de vitrine
-    if (hostname.includes('organizador') || hostname.includes('manager')) {
-      return isExplicitVitrineRequest;
+    if (resolveIsVitrineMode({
+      hostname,
+      pathname: currentRoute || window.location.pathname || '',
+      search: window.location.search || '',
+      appMode
+    })) {
+      return true;
     }
-
-    if (appMode === 'mostrador') return true;
-
-    // Si la route est explicitement une page interne d'administration ou setup/login
-    if (
-      path.startsWith('/app') ||
-      INTERNAL_APP_ROUTE_PREFIXES.some((prefix) => path === prefix || path.startsWith(`${prefix}/`) || path.startsWith(`${prefix}?`))
-    ) {
-      return false;
-    }
-    if (['/setup', '/login'].includes(path)) return false;
-
-    // 1. Sous-domaine Mostrador (ex: mostrador.o-girador.com)
-    if (hostname.includes('mostrador')) return true;
-
-    // 2. Domaine personnalisé de l'association (résolu dynamiquement hors domaines O Girador)
-    if (isCustomDomainHost(hostname)) return true;
     const customDomainList = [];
     if (associationData?.customDomain) customDomainList.push(associationData.customDomain);
     if (Array.isArray(associationData?.customDomains)) customDomainList.push(...associationData.customDomains);
-    if (customDomainList.some(d => d && (hostname === d || hostname.replace(/^www\./, '') === d.replace(/^www\./, '')))) {
-      return true;
-    }
-
-    // 3. Paramètre de test (?app=mostrador)
-    if (isExplicitVitrineRequest) return true;
-
-    return false;
+    return customDomainList.some(d => d && (hostname === d || hostname.replace(/^www\./, '') === d.replace(/^www\./, '')));
   }, [appMode, currentRoute, associationData]);
 
   // Hook modulaire générant dynamiquement le favicon :
@@ -589,51 +520,33 @@ export default function App() {
     });
   }, [profileData?.groupId]);
 
-  // Tracking du cycle de vie et de session
+  // Tracking du cycle de vie et de session (désactivé en mode Vitrine publique)
   useEffect(() => {
-    if (user && profileData) {
-      // Démarrer la session
+    if (!isVitrineMode && user && profileData) {
       tracker.startSession(profileData, 'manager', profileData.groupId);
-
       const handleVisibilityChange = () => {
-        if (document.visibilityState === 'hidden') {
-          tracker.endSession('manager', profileData.groupId);
-        } else if (document.visibilityState === 'visible') {
-          tracker.startSession(profileData, 'manager', profileData.groupId);
-        }
+        if (document.visibilityState === 'hidden') tracker.endSession('manager', profileData.groupId);
+        else if (document.visibilityState === 'visible') tracker.startSession(profileData, 'manager', profileData.groupId);
       };
-
-      const handleBeforeUnload = () => {
-        tracker.endSession('manager', profileData.groupId);
-      };
-
+      const handleBeforeUnload = () => tracker.endSession('manager', profileData.groupId);
       document.addEventListener('visibilitychange', handleVisibilityChange);
       window.addEventListener('beforeunload', handleBeforeUnload);
-
-      // Nettoyage lors du démontage ou changement d'utilisateur
       return () => {
         document.removeEventListener('visibilitychange', handleVisibilityChange);
         window.removeEventListener('beforeunload', handleBeforeUnload);
         tracker.endSession('manager', profileData.groupId);
       };
     }
-  }, [user, profileData]);
+  }, [user, profileData, isVitrineMode]);
 
-  // Charger branding en temps réel (profil connecté, URL, customDomains ou dernier groupe PWA mémorisé)
+  // Charger branding en temps réel (domaine Vitrine prioritaire en Mostrador, sinon profil connecté ou URL)
   useEffect(() => {
-    let activeGroupId = canonicalizeGroupId(profileData?.groupId || loginSelectedGroupId || null);
-
-    if (!activeGroupId) {
-      const searchParams = new URLSearchParams(window.location.search);
-      activeGroupId = canonicalizeGroupId(
-        searchParams.get('groupe') ||
-        searchParams.get('tenant') ||
-        searchParams.get('assoc') ||
-        urlGroupId ||
-        (!user && !isVitrineMode ? getLastKnownTenantId() : null) ||
-        null
-      );
-    }
+    const sp = new URLSearchParams(window.location.search);
+    const host = typeof window !== 'undefined' ? (window.location.hostname || '') : '';
+    const urlResolved = sp.get('groupe') || sp.get('tenant') || sp.get('assoc') || urlGroupId;
+    let activeGroupId = isVitrineMode
+      ? canonicalizeGroupId((isCustomDomainHost(host) ? (urlGroupId || getCachedDomainGroupId(host)) : null) || urlResolved || null)
+      : canonicalizeGroupId(profileData?.groupId || loginSelectedGroupId || urlResolved || (!user ? getLastKnownTenantId() : null) || null);
 
     if (!activeGroupId) {
       setAssociationData(null);
@@ -649,8 +562,8 @@ export default function App() {
       registerCanonicalGroupId(docId);
       saveLastKnownTenantId(docId);
       setAssociationData({ id: docId, groupId: docId, ...data });
-      if (data.branding) setBranding({ ...data.branding, combinedLogoUrl: data.branding.combinedLogoUrl || data.combinedLogoUrl || '' });
-      else if (data.logoUrl || data.combinedLogoUrl) setBranding({ logoUrl: data.logoUrl || '', combinedLogoUrl: data.combinedLogoUrl || '' });
+      if (data.branding) setBranding({ ...data.branding, combinedLogoUrl: data.branding.combinedLogoUrl || data.combinedLogoUrl || '', combinedLogoMaskableUrl: data.branding.combinedLogoMaskableUrl || data.combinedLogoMaskableUrl || '' });
+      else if (data.logoUrl || data.combinedLogoUrl) setBranding({ logoUrl: data.logoUrl || '', combinedLogoUrl: data.combinedLogoUrl || '', combinedLogoMaskableUrl: data.combinedLogoMaskableUrl || '' });
       else setBranding(null);
       const resolvedAssoName = data.nom || data.name || cachedFallbackName || '';
       setAssociationName(resolvedAssoName);
@@ -720,28 +633,22 @@ export default function App() {
 
   // Déclenchement automatique de l'assistant d'onboarding uniquement pour une association neuve non encore configurée
   useEffect(() => {
-    const hasConfiguredIdentity = Boolean(
-      associationData?.branding?.logoUrl ||
-      associationData?.logoUrl ||
-      associationData?.combinedLogoUrl ||
-      (Array.isArray(associationData?.customDomains) && associationData.customDomains.length > 0)
-    );
-    if (user && isAdministrativeUser && associationData && associationData.onboardingCompleted === false && !hasConfiguredIdentity && !hasTriggeredOnboardingAuto) {
-      setShowOnboardingWizard(true);
-      setHasTriggeredOnboardingAuto(true);
+    const hasConfiguredIdentity = Boolean(associationData?.branding?.logoUrl || associationData?.logoUrl || associationData?.combinedLogoUrl || associationData?.customDomains?.length);
+    if (!isVitrineMode && user && isAdministrativeUser && associationData) {
+      ensureDualCombinedSealsIfMissing(associationData.id, associationData, true);
+      if (associationData.onboardingCompleted === false && !hasConfiguredIdentity && !hasTriggeredOnboardingAuto) {
+        setShowOnboardingWizard(true); setHasTriggeredOnboardingAuto(true);
+      }
     }
-  }, [user, isAdministrativeUser, associationData, hasTriggeredOnboardingAuto]);
+  }, [isVitrineMode, user, isAdministrativeUser, associationData, hasTriggeredOnboardingAuto]);
 
-  // Titre dynamique multi-associations ("Organizador · [Asso]" ou "Organizador") et manifest statique neutre
+  // Titre dynamique multi-associations ("Organizador — [Asso]" ou "Organizador") et manifest HTTPS dynamique
   const resolvedManifestGroupId = useMemo(() => {
-    const fromProfile = canonicalizeGroupId(profileData?.groupId || null);
-    if (fromProfile) return fromProfile;
-    if (typeof window !== 'undefined') {
-      const sp = new URLSearchParams(window.location.search);
-      return canonicalizeGroupId(sp.get('groupe') || sp.get('tenant') || sp.get('assoc') || urlGroupId || null) || '';
-    }
-    return canonicalizeGroupId(urlGroupId || null) || '';
-  }, [profileData?.groupId, urlGroupId]);
+    const fromActive = !isVitrineMode ? (associationData?.id || canonicalizeGroupId(profileData?.groupId || loginSelectedGroupId || null) || '') : '';
+    if (fromActive) return fromActive;
+    const sp = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    return canonicalizeGroupId(urlGroupId || sp?.get('groupe') || sp?.get('tenant') || sp?.get('assoc') || null) || '';
+  }, [isVitrineMode, associationData?.id, profileData?.groupId, loginSelectedGroupId, urlGroupId]);
   useDynamicManifest({ groupId: resolvedManifestGroupId, associationName, currentRoute, isVitrineMode });
 
   const brandingStyle = branding?.colors ? {
@@ -781,8 +688,7 @@ export default function App() {
 
     window.addEventListener('popstate', handlePopState);
     
-    // Remplacer l'état initial pour que le bouton retour ramène à l'accueil
-    if (!window.history.state) {
+    if (!isVitrineMode && !window.history.state) {
       window.history.replaceState(
         { currentPole: currentPole || 'accueil', currentTab: currentTab || 'dashboard' },
         '',
@@ -793,19 +699,16 @@ export default function App() {
     return () => {
       window.removeEventListener('popstate', handlePopState);
     };
-  }, []);
+  }, [isVitrineMode]);
 
-  // Pousser l'état de navigation dans l'historique lors d'un changement d'onglet ou pôle
+  // Pousser l'état de navigation dans l'historique lors d'un changement d'onglet ou pôle (hors Vitrine)
   useEffect(() => {
+    if (isVitrineMode) return;
     const currentState = window.history.state;
     if (!currentState || currentState.currentPole !== currentPole || currentState.currentTab !== currentTab) {
-      window.history.pushState(
-        { currentPole, currentTab },
-        '',
-        window.location.pathname + window.location.search
-      );
+      window.history.pushState({ currentPole, currentTab }, '', window.location.pathname + window.location.search);
     }
-  }, [currentPole, currentTab]);
+  }, [currentPole, currentTab, isVitrineMode]);
 
   // Écoute de l'événement global de passerelle vers une fiche Répertoire
   useEffect(() => {
@@ -845,10 +748,9 @@ export default function App() {
     setInstallPromptAvailable(false);
   };
 
-  // Automatically associate or switch the user's group if they open the app via an invitation URL
-  // containing a different groupId than their current profileData.groupId
+  // Bascule automatique d'association sur lien d'invitation d'Organizador (strictement inactif sur la Vitrine)
   useEffect(() => {
-    if (user && profileData) {
+    if (!isVitrineMode && user && profileData) {
       const searchParams = new URLSearchParams(window.location.search);
       const rawUrlGroupId = searchParams.get('groupe') || searchParams.get('tenant') || searchParams.get('assoc');
       if (rawUrlGroupId) {
@@ -879,20 +781,18 @@ export default function App() {
         }
       }
     }
-  }, [user, profileData]);
+  }, [isVitrineMode, user, profileData]);
 
-  // Gestion du Deep Linking automatique pour la navigation via les notifications Push FCM et Mégaphone
+  // Gestion du Deep Linking automatique pour les notifications Push FCM (désactivé sur tout domaine Vitrine)
   useEffect(() => {
-    if (!user || !profileData) return;
-
+    if (isVitrineMode || (typeof window !== 'undefined' && isLockedVitrineHost(window.location.hostname)) || !user || !profileData) return;
     const canUserAccessTresorerie = Boolean(
-      isSystemOrSuperAdminOrMestre ||
-      isMasterKeyActive ||
+      isSystemOrSuperAdminOrMestre || isMasterKeyActive ||
       canAccessPole('tresorerie', profileData, permissionsMatrice, resolveEffectiveUserTags(profileData?.tags || [], tagsDisponibles)) ||
       canAccessTabPermission('dashboard-finance', 'tresorerie', profileData, permissionsMatrice, resolveEffectiveUserTags(profileData?.tags || [], tagsDisponibles))
     );
-
     const handleDeepLinkNavigation = (overridePath) => {
+      if (typeof window !== 'undefined' && isLockedVitrineHost(window.location.hostname)) return;
       const currentBrowserUrl = typeof window !== 'undefined' ? (window.location.pathname + window.location.search) : '';
       const rawPath = overridePath || initialDeepLinkRef.current || currentBrowserUrl;
       if (!rawPath) return;
@@ -965,11 +865,11 @@ export default function App() {
       window.removeEventListener('popstate', handlePopState);
       navigator.serviceWorker?.removeEventListener('message', handleSWMessage);
     };
-  }, [user, profileData, isSystemOrSuperAdminOrMestre, isMasterKeyActive, permissionsMatrice, tagsDisponibles]);
+  }, [isVitrineMode, user, profileData, isSystemOrSuperAdminOrMestre, isMasterKeyActive, permissionsMatrice, tagsDisponibles]);
 
-  // Synchroniser le compteur de messages non lus (conversations modernes et messages directs historiques)
+  // Synchroniser le compteur de messages non lus (hors Vitrine publique)
   useEffect(() => {
-    if (!user?.uid) {
+    if (isVitrineMode || !user?.uid) {
       setUnreadPrivateMessagesCount(0);
       setLatestUnreadSenderId(null);
       return;
@@ -1604,18 +1504,11 @@ export default function App() {
     }
   };
 
-  // 1. Écran de chargement (Authentification ou chargement Firestore)
-  // Sécurisation anti-bascule prématurée : tant qu'un compte Auth est actif et que le profil
-  // Firestore n'est pas encore résolu, maintenir impérativement l'écran de chargement
-  if (loading || checkingProfile || isWaitingForProfile) {
-    // Résolution dynamique du visuel : logo de l'association si résolu, sinon macaron neutre O Girador
-    const activeLogo = branding?.logoUrl || associationData?.logoUrl || null;
-    const logoSrc = activeLogo || '/og-girador-frame.svg';
-    void logoSrc;
+  // 1. Écran de chargement (uniquement pour l'application privée Organizador, jamais bloquant sur la Vitrine)
+  if (!isVitrineMode && (loading || checkingProfile || isWaitingForProfile)) {
     return (
       <div style={brandingStyle} className="min-h-screen w-full flex flex-col justify-center items-center p-6 bg-[var(--cordel-bg)] text-[var(--cordel-text)] transition-colors duration-300">
         <div className="flex flex-col items-center gap-4 text-center max-w-xs sm:max-w-sm w-full">
-          {/* Sceau combiné O Girador × Asso (object-contain select-none garantissant le centrage sans layout shift) */}
           <LoadingSeal
             associationData={associationData}
             branding={branding}
@@ -1624,7 +1517,6 @@ export default function App() {
             size="large"
             className="mb-2 mx-auto"
           />
-          {/* Spinner stylisé Cordel */}
           <div className="relative w-16 h-16 select-none animate-spin">
             <div className="absolute inset-0 rounded-full border-4 border-[var(--cordel-border)]/20 animate-pulse"></div>
             <div className="absolute inset-0 rounded-full border-4 border-t-cordel-wood border-r-transparent border-b-transparent border-l-transparent"></div>
@@ -1648,51 +1540,23 @@ export default function App() {
     );
   }
 
-  // 1b. Filet de sécurité inter-domaines : accès à /app, /login ou route privée depuis un domaine vitrine personnalisé
-  const isDedicatedVitrineHost = typeof window !== 'undefined' && isCustomDomainHost(window.location.hostname);
-
-  if (isDedicatedVitrineHost) {
-    const rawPath = currentRoute || (typeof window !== 'undefined' ? window.location.pathname : '');
-    const isAppAccess = rawPath.startsWith('/app') || rawPath.startsWith('/login') || rawPath.startsWith('/events') || rawPath.startsWith('/agenda');
-    if (isAppAccess) {
-      if (typeof window !== 'undefined' && !isTenantLoading) {
-        const tenantSlug = (urlGroupId || getCachedDomainGroupId(window.location.hostname) || '').toLowerCase();
-        window.location.replace(tenantSlug ? `https://organizador.o-girador.com/?tenant=${encodeURIComponent(tenantSlug)}` : 'https://organizador.o-girador.com/');
-      }
-      return (
-        <div style={brandingStyle} className="min-h-screen flex flex-col justify-center items-center py-12 bg-[#f4ecd8]">
-          <div className="animate-spin text-4xl mb-4 select-none">⏳</div>
-          <span className="font-bold text-xs uppercase tracking-widest text-[#8b2a1a]">Redirection vers l'Espace Membre...</span>
-        </div>
-      );
-    }
-  }
-
-  // 2. Routage dynamique : Vitrine Publique One-Page, Racine, Setup
-
-  // Détection explicite du mode Vitrine (Mostrador)
+  // 2. Routage dynamique : Vitrine Publique One-Page (Mostrador), Racine, Setup
   const isDemoVitrine = isDemoMode() && isVitrineMode;
-
   const isDemoPath = (currentRoute === '/demo' || currentRoute === '/demo/' || currentRoute.startsWith('/demo/') || isDemoMode()) && !isVitrineMode;
   const isRootPath = (!currentRoute || currentRoute === '/' || currentRoute === '' || currentRoute === '/index.html' || currentRoute.startsWith('/?') || currentRoute.startsWith('/#')) && !isDemoPath && !isVitrineMode;
-  const isSetupPath = currentRoute.startsWith('/setup');
+  const isSetupPath = !isVitrineMode && currentRoute.startsWith('/setup');
   const isLoginPath = (currentRoute === '/login' || currentRoute === '/login/') && !isDemoPath && !isVitrineMode;
 
-  // Préfixes des routes internes d'Organizador pour ne jamais les confondre avec une vitrine publique
-  const INTERNAL_APP_PREFIXES = INTERNAL_APP_ROUTE_PREFIXES;
-  const isInternalPath = INTERNAL_APP_PREFIXES.some(prefix => currentRoute === prefix || currentRoute.startsWith(prefix + '/') || currentRoute.startsWith(prefix + '?'));
+  const isInternalPath = INTERNAL_APP_ROUTE_PREFIXES.some(prefix => currentRoute === prefix || currentRoute.startsWith(prefix + '/') || currentRoute.startsWith(prefix + '?'));
   const isAppPath = !isVitrineMode && (currentRoute.startsWith('/app') || isInternalPath || isDemoPath || (Boolean(user) && !isLoginPath && !isSetupPath));
-  
-  // Toute autre route (ex: /asso-01 ou vitrine démo ou isVitrineMode) est traitée comme une route vitrine
   const isVitrinePath = isVitrineMode || isDemoVitrine || (!isRootPath && !isSetupPath && !isAppPath && !isLoginPath);
-  const vitrineGroupId = isDemoMode() ? DEMO_GROUP_ID : (isVitrinePath ? (currentRoute.startsWith('/vitrine') || currentRoute.startsWith('/mostrador') ? currentRoute.split('/')[2]?.split('?')[0] : currentRoute.split('/')[1]?.split('?')[0]) : null);
 
   if (isSetupPath) {
     return (
       <React.Suspense fallback={
-        <div style={brandingStyle} className="min-h-screen flex flex-col justify-center items-center py-12 bg-[#f4ecd8]">
+        <div style={brandingStyle} className="min-h-screen flex flex-col justify-center items-center py-12 bg-cordel-bg">
           <div className="animate-spin text-4xl mb-4 select-none">⏳</div>
-          <span className="font-bold text-xs uppercase tracking-widest text-[#8b2a1a]">Chargement de l'assistant...</span>
+          <span className="font-bold text-xs uppercase tracking-widest text-cordel-wood">Chargement de l&apos;assistant...</span>
         </div>
       }>
         <HubSetupWizard brandingStyle={brandingStyle} onComplete={() => navigateToRoute('/app')} />
@@ -1702,83 +1566,27 @@ export default function App() {
   }
 
   if (isRootPath || isVitrinePath) {
-
-    if (isTenantLoading) {
-      return (
-        <div style={brandingStyle} className="min-h-screen flex flex-col justify-center items-center py-12 bg-[#f4ecd8]">
-          <LoadingSeal
-            associationData={associationData}
-            branding={branding}
-            associationName={associationName}
-            currentGroupId={urlGroupId}
-            size="small"
-            className="mb-3"
-          />
-          <div className="animate-spin text-3xl mb-3 select-none">⏳</div>
-          <span className="font-bold text-xs uppercase tracking-widest text-[#8b2a1a]">Chargement de la plateforme...</span>
-        </div>
-      );
-    }
-
-    if (tenantError) {
-      return <TenantNotFound />;
-    }
-
-    if (appMode === 'orquestrador' && isRootPath) {
-      return <HubRootRedirector brandingStyle={brandingStyle} />;
-    }
-
-    if (appMode === 'organizador' && isRootPath && !isVitrineMode) {
-      return <OrganizadorRedirector user={user} navigateToRoute={navigateToRoute} brandingStyle={brandingStyle} />;
-    }
-
-    const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-    const queryTenant = searchParams ? (searchParams.get('tenant') || searchParams.get('groupe') || searchParams.get('groupId') || searchParams.get('assoc')) : null;
-    const publicGroupId = isDemoMode() ? DEMO_GROUP_ID : (queryTenant || vitrineGroupId || urlGroupId || profileData?.groupId || null);
-
     return (
-      <PublicThemeProvider groupId={publicGroupId}>
-        {isDemoMode() && <DemoTopBanner isVitrine={isDemoVitrine} />}
-        <PublicHome
-          groupId={publicGroupId}
-          user={user}
-          profileData={profileData}
-          permissionsMatrice={permissionsMatrice}
-          effectiveUserTags={userTags}
-          isAdministrativeUser={isAdministrativeUser}
-          associationName={associationName || (isDemoMode() ? 'Maracatu Na Chuva' : '')}
-          branding={branding}
-          onNavigateToApp={() => {
-            if (isDemoMode()) {
-              window.location.href = '/demo?app=organizador';
-            } else {
-              const isLocal = typeof window !== 'undefined' &&
-                (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-              if (isLocal) {
-                navigateToRoute(user ? '/app' : '/login');
-              } else {
-                const targetTenant = (publicGroupId || urlGroupId || '').trim().toLowerCase();
-                window.location.href = targetTenant ? `https://organizador.o-girador.com/?tenant=${encodeURIComponent(targetTenant)}` : 'https://organizador.o-girador.com/';
-              }
-            }
-          }}
-          onNavigateToLogin={() => {
-            if (isDemoMode()) {
-              window.location.href = '/demo?app=organizador';
-            } else {
-              const isLocal = typeof window !== 'undefined' &&
-                (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-              if (isLocal) {
-                navigateToRoute('/login');
-              } else {
-                const targetTenant = (publicGroupId || urlGroupId || '').trim().toLowerCase();
-                window.location.href = targetTenant ? `https://organizador.o-girador.com/login?tenant=${encodeURIComponent(targetTenant)}` : 'https://organizador.o-girador.com/login';
-              }
-            }
-          }}
-        />
-        <ReloadPrompt />
-      </PublicThemeProvider>
+      <VitrineRouteShell
+        appMode={appMode}
+        isRootPath={isRootPath}
+        isVitrineMode={isVitrineMode}
+        isDemoVitrine={isDemoVitrine}
+        currentRoute={currentRoute}
+        isTenantLoading={isTenantLoading}
+        tenantError={tenantError}
+        urlGroupId={urlGroupId}
+        user={user}
+        profileData={profileData}
+        permissionsMatrice={permissionsMatrice}
+        userTags={userTags}
+        isAdministrativeUser={isAdministrativeUser}
+        associationData={associationData}
+        associationName={associationName}
+        branding={branding}
+        brandingStyle={brandingStyle}
+        navigateToRoute={navigateToRoute}
+      />
     );
   }
 

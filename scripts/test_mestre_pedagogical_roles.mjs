@@ -48,7 +48,7 @@ if (julianRoles.pedagogicalTitle !== 'Mestre') {
   throw new Error(`❌ ÉCHEC : Titre attendu 'Mestre', reçu '${julianRoles.pedagogicalTitle}'`);
 }
 const julianSubtitle = resolveMemberInstrumentSubtitle(julian);
-if (!julianSubtitle.includes('Mestre')) {
+if (!julianSubtitle.toLowerCase().includes('mestre')) {
   throw new Error(`❌ ÉCHEC : Le sous-titre de Julian doit contenir 'Mestre', reçu: '${julianSubtitle}'`);
 }
 console.log(`✅ 2. Julian reconnu Mestre de batucada : titre='${julianRoles.pedagogicalTitle}', sous-titre='${julianSubtitle}', icône='${julianRoles.icon}'`);

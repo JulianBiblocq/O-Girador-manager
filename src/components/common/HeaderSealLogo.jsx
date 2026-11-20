@@ -47,9 +47,8 @@ export default function HeaderSealLogo({
   return (
     <div
       onClick={onClick}
-      className={`relative ${dimensionClasses} select-none drop-shadow-md transition-all duration-300 ${
-        onClick ? 'cursor-pointer hover:scale-[1.04] hover:rotate-[-4deg] active:translate-x-[0.5px] active:translate-y-[0.5px]' : ''
-      } ${isLogoTilting ? 'animate-logo-tilt' : ''} ${className}`}
+      className={`relative ${dimensionClasses} select-none drop-shadow-md transition-all duration-300 ${onClick ? 'cursor-pointer hover:scale-[1.04] hover:rotate-[-4deg] active:translate-x-[0.5px] active:translate-y-[0.5px]' : ''
+        } ${isLogoTilting ? 'animate-logo-tilt' : ''} ${className}`}
       title={associationName || 'O Girador'}
     >
       {useCompositeFallback ? (

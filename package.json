@@ -1,7 +1,7 @@
 {
   "name": "o-girador-manager",
   "private": true,
-  "version": "1.7.4",
+  "version": "1.7.6",
   "license": "MIT",
   "type": "module",
   "scripts": {

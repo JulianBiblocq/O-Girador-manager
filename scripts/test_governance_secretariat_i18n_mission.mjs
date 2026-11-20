@@ -152,7 +152,10 @@ assert(frTotal === ptTotal, `Symétrie stricte des dictionnaires : FR (${frTotal
 // -----------------------------------------------------------------------------
 console.log('\n▶️ Test 3 : Contrôle des branchements useTranslation dans les composants');
 
-const reunionManagerCode = fs.readFileSync(path.resolve('src/components/ReunionManager.jsx'), 'utf-8');
+const reunionManagerCode =
+  fs.readFileSync(path.resolve('src/components/ReunionManager.jsx'), 'utf-8') + '\n' +
+  fs.readFileSync(path.resolve('src/components/agenda/ReunionCreationFormCard.jsx'), 'utf-8') + '\n' +
+  fs.readFileSync(path.resolve('src/components/agenda/ReunionPollSlotsEditor.jsx'), 'utf-8');
 assert(reunionManagerCode.includes("t('governance.studioTitle')"), "ReunionManager utilise t('governance.studioTitle')");
 assert(reunionManagerCode.includes("t('governance.btnNewMeeting')"), "ReunionManager utilise t('governance.btnNewMeeting')");
 assert(reunionManagerCode.includes("t('governance.btnReportsArchives')"), "ReunionManager utilise t('governance.btnReportsArchives')");
@@ -186,7 +189,15 @@ assert(infoPoleBannerCode.includes("t('governance.step4')"), "InfoPoleBanner uti
 assert(infoPoleBannerCode.includes("t('governance.btnNewMeeting')"), "InfoPoleBanner utilise t('governance.btnNewMeeting')");
 assert(infoPoleBannerCode.includes("t('governance.btnReportsArchives')"), "InfoPoleBanner utilise t('governance.btnReportsArchives')");
 
-const secretariatReportsCode = fs.readFileSync(path.resolve('src/components/secretariat/SecretariatReportsView.jsx'), 'utf-8');
+const secretariatReportsCode = [
+  'src/components/secretariat/SecretariatReportsView.jsx',
+  'src/components/secretariat/reports/AgBlock1AssociativeLife.jsx',
+  'src/components/secretariat/reports/AgBlock2ScenicActivity.jsx',
+  'src/components/secretariat/reports/AgBlock4WorkshopsPatrimony.jsx',
+  'src/components/secretariat/reports/AgBlock5FinancialSummary.jsx',
+  'src/components/secretariat/reports/AgBlock6WebAndDigitalUsage.jsx',
+  'src/components/secretariat/reports/AgReportsHeaderBar.jsx'
+].map((p) => fs.readFileSync(path.resolve(p), 'utf-8')).join('\n');
 assert(secretariatReportsCode.includes("t('governance.metricCotisations')"), "SecretariatReportsView utilise t('governance.metricCotisations')");
 assert(secretariatReportsCode.includes("t('governance.metricActifs')"), "SecretariatReportsView utilise t('governance.metricActifs')");
 assert(secretariatReportsCode.includes("t('governance.metricAJour')"), "SecretariatReportsView utilise t('governance.metricAJour')");

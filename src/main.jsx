@@ -1,5 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { HelmetProvider } from 'react-helmet-async';
 import './index.css';
 import App from './App.jsx';
 import { LanguageProvider } from './components/LanguageContext.jsx';
@@ -86,11 +87,13 @@ if (rootElement) {
     <StrictMode>
       <ErrorBoundary title="Initialisation de l'application">
         <TenantProvider>
-          <LanguageProvider>
-            <ConfirmProvider>
-              <App />
-            </ConfirmProvider>
-          </LanguageProvider>
+          <HelmetProvider>
+            <LanguageProvider>
+              <ConfirmProvider>
+                <App />
+              </ConfirmProvider>
+            </LanguageProvider>
+          </HelmetProvider>
         </TenantProvider>
       </ErrorBoundary>
     </StrictMode>,

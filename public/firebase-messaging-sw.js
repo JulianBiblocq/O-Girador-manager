@@ -3,65 +3,62 @@
 // Sinon, Firebase SDK intercepte l'événement, appelle event.stopImmediatePropagation()
 // et notre gestionnaire n'est jamais exécuté !
 // -----------------------------------------------------------------------------
+const ALFAIA_MONO_BADGE_PATH = '/icons/badge-alfaia-mono.png';
+
 self.addEventListener('notificationclick', (event) => {
-  // On arrête la propagation pour être sûr que Firebase ne prendra pas le dessus si jamais il l'interceptait
   event.stopImmediatePropagation();
-  
-  console.log('[firebase-messaging-sw.js] Clic sur la notification :', event.notification);
   event.notification.close();
 
-  // Extraction de l'URL de destination depuis les données de notification
-  // Les données peuvent être à différents niveaux selon comment Firebase SDK structure le message :
-  // 1. Directement dans event.notification.data (webpush.notification.data côté backend)
-  // 2. Imbriquées dans FCM_MSG.data (structure interne Firebase SDK)
-  // 3. Imbriquées dans FCM_MSG.notification.data
   let data = event.notification.data || {};
-
-  // Firebase SDK imbrique souvent les données dans FCM_MSG lors de la création automatique de la notification
   if (data.FCM_MSG) {
-    // Fusionner les données du payload FCM avec les données de notification
     const fcmData = data.FCM_MSG.data || {};
     const fcmNotifData = (data.FCM_MSG.notification && data.FCM_MSG.notification.data) || {};
     data = Object.assign({}, data, fcmData, fcmNotifData);
   }
 
-  // Construction de l'URL cible complète à partir du chemin relatif
   const rawTargetPath = data.url || data.link || data.click_action || '/app';
-  
-  // Normalisation : toutes les routes applicatives privées résident sous /app
   let targetPath = rawTargetPath;
-  if (!targetPath.startsWith('http') && !targetPath.startsWith('/app') && targetPath !== '/' && !targetPath.startsWith('/login') && !targetPath.startsWith('/setup') && !targetPath.startsWith('/demo')) {
+  if (
+    !targetPath.startsWith('http') &&
+    !targetPath.startsWith('/app') &&
+    targetPath !== '/' &&
+    !targetPath.startsWith('/login') &&
+    !targetPath.startsWith('/setup') &&
+    !targetPath.startsWith('/demo')
+  ) {
     targetPath = targetPath.startsWith('/') ? `/app${targetPath}` : `/app/${targetPath}`;
   }
 
   const baseOrigin = self.location.origin;
   const targetUrl = targetPath.startsWith('http') ? targetPath : baseOrigin + targetPath;
-  console.log('[firebase-messaging-sw.js] Redirection vers :', targetUrl);
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      // 1. Si l'application est déjà ouverte en arrière-plan, basculer vers la fenêtre active et naviguer
       for (const client of clientList) {
-        // Vérifier que le client appartient bien à la même origine
         if (new URL(client.url).origin === baseOrigin) {
           return client.focus().then((focusedClient) => {
-            // Envoyer un message au client pour déclencher la navigation interne React
             if (focusedClient) {
-              focusedClient.postMessage({
-                type: 'NOTIFICATION_CLICK',
-                url: targetPath
-              });
+              focusedClient.postMessage({ type: 'NOTIFICATION_CLICK', url: targetPath });
             }
             return focusedClient;
           });
         }
       }
-
-      // 2. Sinon, ouvrir directement l'application sur l'URL cible
       return clients.openWindow(targetUrl);
     })
   );
 });
+
+// Garantit que tout appel à showNotification (y compris l'affichage natif interne du SDK Firebase)
+// utilise systématiquement la silhouette monochrome du tambour Alfaia dans la barre d'état Android.
+if (self.registration && typeof self.registration.showNotification === 'function') {
+  const nativeShowNotification = self.registration.showNotification.bind(self.registration);
+  self.registration.showNotification = (title, options = {}) => {
+    const rawBadge = options && typeof options.badge === 'string' ? options.badge : '';
+    const effectiveBadge = rawBadge.includes('badge-alfaia-mono.png') ? rawBadge : ALFAIA_MONO_BADGE_PATH;
+    return nativeShowNotification(title, Object.assign({}, options, { badge: effectiveBadge }));
+  };
+}
 
 importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js');
@@ -78,53 +75,50 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
-  console.log('[firebase-messaging-sw.js] Message d\'arrière-plan reçu :', payload);
-
-  // Allumer la pastille sur l'icône de l'application (App Badging API)
   if ('setAppBadge' in self.navigator) {
     self.navigator.setAppBadge().catch(() => {});
   }
 
-  // ANTI-DOUBLON : si le payload FCM contient déjà `notification: { title, body }` (cas de functions/),
-  // le SDK Firebase affiche nativement l'alerte en arrière-plan. Un second showNotification() créerait
-  // une seconde alerte : on ne l'affiche manuellement que pour un message « data-only ».
+  // ANTI-DOUBLON : si `payload.notification` est présent, le SDK Firebase affiche déjà l'alerte
+  // (enrichie de webpush.notification.badge et sécurisée par le wrapper showNotification ci-dessus).
   if (payload.notification) {
     return;
   }
 
-  const notificationTitle = payload.notification?.title || payload.data?.title || "O Girador";
-  
-  // Priorité absolue à l'icône transmise dans le payload (logo dynamique d'association ou repli)
-  const iconUrl = payload.notification?.icon 
-               || payload.data?.icon 
-               || '/icon-192x192.png';
+  const notificationTitle = payload.data?.title || 'Organizador';
+  const iconUrl = payload.data?.icon || '/icon-192-v2.png';
+  const badgeUrl = '/icons/badge-alfaia-mono.png';
 
-  // Badge monochrome (blanc + alpha) pour la barre d'état Android ; icon reste en couleur pour le volet déroulé
-  const badgeUrl = '/badge-notif.png';
-
-  // Tag déterministe (`notif_${eventId || queueDocId}`) pour fusionner tout doublon éventuel
-  const tag = payload.data?.tag || (payload.data?.eventId ? `notif_${payload.data.eventId}` : (payload.data?.notifId ? `notif_${payload.data.notifId}` : (payload.data?.announcementId ? `notif_${payload.data.announcementId}` : (payload.data?.threadId ? `notif_${payload.data.threadId}` : undefined))));
+  const tag = payload.data?.tag || (
+    payload.data?.eventId
+      ? `notif_${payload.data.eventId}`
+      : (payload.data?.notifId
+        ? `notif_${payload.data.notifId}`
+        : (payload.data?.announcementId
+          ? `notif_${payload.data.announcementId}`
+          : (payload.data?.threadId ? `notif_${payload.data.threadId}` : undefined)))
+  );
 
   const rawNotifUrl = payload.data?.url || payload.fcmOptions?.link || '/app';
-  const resolvedNotifUrl = (!rawNotifUrl.startsWith('http') && !rawNotifUrl.startsWith('/app') && rawNotifUrl !== '/' && !rawNotifUrl.startsWith('/login') && !rawNotifUrl.startsWith('/setup') && !rawNotifUrl.startsWith('/demo'))
+  const resolvedNotifUrl = (
+    !rawNotifUrl.startsWith('http') &&
+    !rawNotifUrl.startsWith('/app') &&
+    rawNotifUrl !== '/' &&
+    !rawNotifUrl.startsWith('/login') &&
+    !rawNotifUrl.startsWith('/setup') &&
+    !rawNotifUrl.startsWith('/demo')
+  )
     ? (rawNotifUrl.startsWith('/') ? `/app${rawNotifUrl}` : `/app/${rawNotifUrl}`)
     : rawNotifUrl;
 
-  const notificationData = Object.assign({}, payload.data, {
-    url: resolvedNotifUrl,
-    icon: iconUrl
-  });
-
   const notificationOptions = {
-    body: payload.notification?.body || payload.data?.body || "",
+    body: payload.data?.body || '',
     icon: iconUrl,
     badge: badgeUrl,
     sound: '/sounds/notif.ogg',
     ...(tag ? { tag } : {}),
-    data: notificationData
+    data: Object.assign({}, payload.data, { url: resolvedNotifUrl, icon: iconUrl })
   };
 
   return self.registration.showNotification(notificationTitle, notificationOptions);
 });
-
-

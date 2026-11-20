@@ -1,30 +1,35 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { LAST_TENANT_STORAGE_KEY } from '../utils/tenantUtils.js';
 
 export const CACHED_ASSO_NAME_PREFIX = 'ogirador_asso_name_';
 export const LAST_GROUP_ID_KEY = 'ogirador_last_group_id';
 export const PWA_THEME_COLOR = '#8B2A1A';
-export const NEUTRAL_APP_TITLE = 'O Girador';
+export const NEUTRAL_APP_TITLE = 'Organizador';
 
-/**
- * Normalise l'identifiant d'association pour l'indexation étanche dans `localStorage`.
- */
+/** Normalise l'identifiant d'association pour l'indexation étanche dans `localStorage`. */
 function normalizeGroupKey(groupId) {
   if (!groupId || typeof groupId !== 'string') return '';
   return groupId.trim().toLowerCase();
 }
 
-/**
- * Nettoie un nom d'association affiché sans aucun fallback codé en dur.
- */
+/** Nettoie un nom d'association affiché sans aucun fallback codé en dur. */
 function sanitizeAssoDisplayName(rawName) {
   if (!rawName || typeof rawName !== 'string') return '';
   return rawName.trim();
 }
 
-/**
- * Lit le nom d'association mémorisé localement pour un `groupId` précis (`ogirador_asso_name_${groupId}`).
- * Retourne `""` si aucun `groupId` n'est actif ou si aucun cache n'existe pour ce groupe.
- */
+/** Extrait le paramètre d'association directement depuis une query string (`?groupe=...`). */
+export function extractGroupFromSearch(search = '') {
+  if (!search || typeof search !== 'string') return '';
+  try {
+    const sp = new URLSearchParams(search);
+    return (sp.get('groupe') || sp.get('tenant') || sp.get('groupId') || sp.get('assoc') || '').trim();
+  } catch {
+    return '';
+  }
+}
+
+/** Lit le nom d'association mémorisé localement pour un `groupId` précis (`ogirador_asso_name_${groupId}`). */
 export function getCachedAssoName(groupId) {
   const key = normalizeGroupKey(groupId);
   if (!key || typeof window === 'undefined') return '';
@@ -35,40 +40,45 @@ export function getCachedAssoName(groupId) {
   }
 }
 
-/**
- * Mémorise dans `localStorage` le nom d'une association indexé par son `groupId`,
- * ainsi que le dernier `groupId` actif (`ogirador_last_group_id`).
- */
+/** Mémorise dans `localStorage` le nom d'une association indexé par son `groupId` ainsi que le dernier `groupId` actif. */
 export function saveCachedAssoName(groupId, name) {
   const key = normalizeGroupKey(groupId);
   const clean = sanitizeAssoDisplayName(name);
   if (!key || !clean || typeof window === 'undefined') return;
   try {
     localStorage.setItem(`${CACHED_ASSO_NAME_PREFIX}${key}`, clean);
-    localStorage.setItem(LAST_GROUP_ID_KEY, key);
+    localStorage.setItem(LAST_GROUP_ID_KEY, groupId.trim());
   } catch {
     // Ignorer les restrictions de stockage privé
   }
 }
 
-/**
- * Lit le dernier `groupId` actif mémorisé (utilisé avant toute réponse Firestore pour éviter un saut de nom).
- */
+/** Lit le dernier `groupId` actif mémorisé (en préservant sa casse canonique si disponible). */
 export function getLastGroupId() {
   if (typeof window === 'undefined') return '';
   try {
-    return normalizeGroupKey(localStorage.getItem(LAST_GROUP_ID_KEY) || '');
+    return (
+      localStorage.getItem(LAST_TENANT_STORAGE_KEY) ||
+      localStorage.getItem(LAST_GROUP_ID_KEY) ||
+      ''
+    ).trim();
   } catch {
     return '';
   }
 }
 
+/** Construit l'URL HTTPS du manifest dynamique (zéro `blob:` URL pour compatibilité WebAPK Android). */
+export function buildDynamicManifestHref(groupId) {
+  const clean = typeof groupId === 'string' ? groupId.trim() : '';
+  return clean
+    ? `/manifest.webmanifest?groupe=${encodeURIComponent(clean)}`
+    : '/manifest.webmanifest';
+}
+
 /**
- * Hook d'identité 100 % SaaS Multi-Associations :
- * - Garde `<link rel="manifest" href="/manifest.json">` strictement statique (zéro `blob:`).
- * - `document.title = assoName` (ex. « Baque do Sol », « Samb'à Bulles ») : nom lu depuis Firestore ou depuis le cache
- *   `ogirador_asso_name_${groupId}`, avec repli sur le dernier groupe actif pour éviter tout saut au rechargement.
- * - Titre neutre « O Girador » uniquement si aucun groupe n'est connu.
+ * Hook d'identité PWA 100 % SaaS Multi-Associations :
+ * - Pointe `<link rel="manifest">` vers `/manifest.webmanifest?groupe=${encodeURIComponent(groupId)}` (HTTPS, zéro `blob:`).
+ * - Réagit aux navigations client (`popstate` / `?groupe=...`) et maintient `apple-mobile-web-app-title` sur `"Organizador"`.
  */
 export default function useDynamicManifest({
   groupId = '',
@@ -76,26 +86,36 @@ export default function useDynamicManifest({
   currentRoute = '/app',
   isVitrineMode = false
 } = {}) {
+  const [urlSearchGroup, setUrlSearchGroup] = useState(() =>
+    typeof window !== 'undefined' ? extractGroupFromSearch(window.location.search) : ''
+  );
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const syncFromLocation = () => setUrlSearchGroup(extractGroupFromSearch(window.location.search));
+    window.addEventListener('popstate', syncFromLocation);
+    return () => window.removeEventListener('popstate', syncFromLocation);
+  }, []);
+
   useEffect(() => {
     if (typeof window === 'undefined' || typeof document === 'undefined') return;
 
-    const explicitGroupId = normalizeGroupKey(groupId);
-    const cleanGroupId = explicitGroupId || getLastGroupId();
-    const resolvedFromProps = explicitGroupId ? sanitizeAssoDisplayName(associationName) : '';
+    const explicitRawGroup = typeof groupId === 'string' ? groupId.trim() : '';
+    const liveUrlGroup = extractGroupFromSearch(window.location.search) || urlSearchGroup;
+    const effectiveRawGroup = explicitRawGroup || liveUrlGroup || getLastGroupId();
+    const lookupKey = normalizeGroupKey(effectiveRawGroup);
+    const resolvedFromProps = explicitRawGroup ? sanitizeAssoDisplayName(associationName) : '';
 
-    // La persistance du nom (`ogirador_asso_name_${groupId}`) est faite par App.jsx à la réponse Firestore
-    // (donnée issue du bon groupe), jamais ici, afin de ne jamais mélanger deux associations.
-
-    const effectiveAssoName = cleanGroupId ? (resolvedFromProps || getCachedAssoName(cleanGroupId)) : '';
-    const dynamicTitle = effectiveAssoName || NEUTRAL_APP_TITLE;
+    const effectiveAssoName = lookupKey ? (resolvedFromProps || getCachedAssoName(lookupKey)) : '';
+    const dynamicTitle = effectiveAssoName ? `Organizador — ${effectiveAssoName}` : NEUTRAL_APP_TITLE;
 
     if (!isVitrineMode && currentRoute !== '/') {
       document.title = dynamicTitle;
     }
 
     const appleTitleMeta = document.querySelector('meta[name="apple-mobile-web-app-title"]');
-    if (appleTitleMeta) {
-      appleTitleMeta.setAttribute('content', dynamicTitle);
+    if (appleTitleMeta && !isVitrineMode) {
+      appleTitleMeta.setAttribute('content', 'Organizador');
     }
 
     const themeMeta = document.querySelector('meta[name="theme-color"]');
@@ -103,10 +123,16 @@ export default function useDynamicManifest({
       themeMeta.setAttribute('content', PWA_THEME_COLOR);
     }
 
-    // Garantir que le lien manifest reste strictement statique (/manifest.json) sans jamais créer de blob:
-    const manifestLink = document.getElementById('app-manifest') || document.querySelector('link[rel="manifest"]');
-    if (manifestLink && manifestLink.getAttribute('href') !== '/manifest.json') {
-      manifestLink.setAttribute('href', '/manifest.json');
+    const targetHref = buildDynamicManifestHref(effectiveRawGroup);
+    let manifestLink = document.getElementById('app-manifest') || document.querySelector('link[rel="manifest"]');
+    if (!manifestLink) {
+      manifestLink = document.createElement('link');
+      manifestLink.id = 'app-manifest';
+      manifestLink.rel = 'manifest';
+      document.head.appendChild(manifestLink);
     }
-  }, [groupId, associationName, currentRoute, isVitrineMode]);
+    if (manifestLink.getAttribute('href') !== targetHref) {
+      manifestLink.setAttribute('href', targetHref);
+    }
+  }, [groupId, associationName, currentRoute, isVitrineMode, urlSearchGroup]);
 }

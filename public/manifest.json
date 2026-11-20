@@ -1,9 +1,9 @@
 {
   "id": "/",
-  "name": "O Girador",
-  "short_name": "O Girador",
-  "description": "Application de gestion associative et musicale O Girador",
-  "start_url": "/app",
+  "name": "Organizador",
+  "short_name": "Organizador",
+  "description": "Application de gestion associative et musicale Organizador — O Girador",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "display_override": ["standalone", "window-controls-overlay"],

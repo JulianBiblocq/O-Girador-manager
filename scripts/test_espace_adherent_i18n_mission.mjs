@@ -100,15 +100,15 @@ assert(pt.documents.filterArchivedWithCount === "Arquivados ({{count}})", "PT fi
 // -----------------------------------------------------------------------------
 // 2. Contrôle de MonCarnetAisance.jsx
 // -----------------------------------------------------------------------------
-console.log('\n▶️ Test 2 : Contrôle des catégories culturelles dans MonCarnetAisance.jsx');
+console.log('\n▶️ Test 2 : Contrôle des clés i18n dans MonCarnetAisance.jsx');
 const carnetPath = path.resolve('src/components/pedagogy/MonCarnetAisance.jsx');
 assert(fs.existsSync(carnetPath), 'MonCarnetAisance.jsx existe');
 if (fs.existsSync(carnetPath)) {
   const src = fs.readFileSync(carnetPath, 'utf8');
-  assert(src.includes("t('pedagogy.categoryOrixas')"), "categoryOrixas branché");
-  assert(src.includes("t('pedagogy.categoryCuisine')"), "categoryCuisine branché");
-  assert(src.includes("t('pedagogy.categoryMusiqueStyles')"), "categoryMusiqueStyles branché");
-  assert(src.includes("t('pedagogy.categoryTerritoire')"), "categoryTerritoire branché");
+  assert(src.includes("t('pedagogy.comfortDiscovery')"), "comfortDiscovery branché");
+  assert(src.includes("t('pedagogy.carnet.badgeRhythm')"), "badgeRhythm branché");
+  assert(src.includes("t('pedagogy.carnet.badgeToada')"), "badgeToada branché");
+  assert(src.includes("t('pedagogy.requestRevisionBtn')"), "requestRevisionBtn branché");
 }
 
 // -----------------------------------------------------------------------------
@@ -136,13 +136,14 @@ if (fs.existsSync(materielPath)) {
 }
 
 // -----------------------------------------------------------------------------
-// 5. Contrôle de Trombinoscope.jsx
+// 5. Contrôle de Trombinoscope.jsx et TrombinoscopeFilterBar.jsx
 // -----------------------------------------------------------------------------
-console.log('\n▶️ Test 5 : Contrôle de Trombinoscope.jsx');
+console.log('\n▶️ Test 5 : Contrôle de Trombinoscope.jsx et TrombinoscopeFilterBar.jsx');
 const trombiPath = path.resolve('src/components/Trombinoscope.jsx');
-assert(fs.existsSync(trombiPath), 'Trombinoscope.jsx existe');
-if (fs.existsSync(trombiPath)) {
-  const src = fs.readFileSync(trombiPath, 'utf8');
+const trombiFilterPath = path.resolve('src/components/trombinoscope/TrombinoscopeFilterBar.jsx');
+assert(fs.existsSync(trombiPath) && fs.existsSync(trombiFilterPath), 'Trombinoscope.jsx et TrombinoscopeFilterBar.jsx existent');
+if (fs.existsSync(trombiPath) && fs.existsSync(trombiFilterPath)) {
+  const src = fs.readFileSync(trombiPath, 'utf8') + '\n' + fs.readFileSync(trombiFilterPath, 'utf8');
   assert(src.includes("t('trombi.searchPlaceholder')"), "Placeholder recherche branché sur t(trombi.searchPlaceholder)");
   assert(src.includes("t('trombi.allPupitres')"), "Option tous pupitres branchée sur t(trombi.allPupitres)");
   assert(src.includes("t('trombi.allTags')"), "Option tous tags branchée sur t(trombi.allTags)");
@@ -150,16 +151,21 @@ if (fs.existsSync(trombiPath)) {
 }
 
 // -----------------------------------------------------------------------------
-// 6. Contrôle de Forum.jsx
+// 6. Contrôle de Forum.jsx et de ses sous-composants d'en-tête
 // -----------------------------------------------------------------------------
-console.log('\n▶️ Test 6 : Contrôle de Forum.jsx');
+console.log('\n▶️ Test 6 : Contrôle de Forum.jsx et sous-composants');
 const forumPath = path.resolve('src/components/Forum.jsx');
+const forumTabsPath = path.resolve('src/components/forum/ForumMainTabsBar.jsx');
+const forumChatHeaderPath = path.resolve('src/components/forum/PrivateChatHeader.jsx');
 assert(fs.existsSync(forumPath), 'Forum.jsx existe');
 if (fs.existsSync(forumPath)) {
-  const src = fs.readFileSync(forumPath, 'utf8');
+  const src =
+    fs.readFileSync(forumPath, 'utf8') + '\n' +
+    (fs.existsSync(forumTabsPath) ? fs.readFileSync(forumTabsPath, 'utf8') : '') + '\n' +
+    (fs.existsSync(forumChatHeaderPath) ? fs.readFileSync(forumChatHeaderPath, 'utf8') : '');
   assert(src.includes("t('forum.tabPrivateMessages')"), "Onglet Messages privés branché sur t(forum.tabPrivateMessages)");
   assert(src.includes("t('forum.tabGroups')"), "Onglet Groupes branché sur t(forum.tabGroups)");
-  assert(src.includes("t('forum.btnChannels')"), "Bouton Salons branché sur t(forum.btnChannels)");
+  assert(src.includes("forum.btnChannels"), "Bouton Salons branché sur forum.btnChannels");
   assert(src.includes("t('forum.defaultChannelGeneral')"), "Fallback Général branché sur t(forum.defaultChannelGeneral)");
 }
 

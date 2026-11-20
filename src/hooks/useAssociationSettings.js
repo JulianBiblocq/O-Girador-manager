@@ -16,9 +16,9 @@ import {
   getUniverseDefaultInstruments,
   normalizeUniverseId
 } from '../constants/universeDefaults';
-import { generateCombinedSealBlob, updateDocumentOpenGraphTags, uploadCombinedSealToStorage } from '../utils/shareUtils.js';
+import { uploadDualCombinedSealsToStorage } from '../utils/shareUtils.js';
 import { canonicalizeGroupId } from '../utils/tenantUtils';
-export { uploadCombinedSealToStorage } from '../utils/shareUtils.js';
+export { uploadCombinedSealToStorage, uploadDualCombinedSealsToStorage, generateCombinedSealBlob } from '../utils/shareUtils.js';
 
 export const DEFAULT_FIELDS_CONFIG = {
   telephone: { key: "telephone", label: "Téléphone", enabled: true, filledBy: "member", isRequired: false },
@@ -471,7 +471,9 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t, initial
           logisticsKits: Array.isArray(data.logisticsKits) ? data.logisticsKits : [],
           varalCategories: Array.isArray(data.varalCategories) ? data.varalCategories : DEFAULT_VARAL_CATEGORIES,
           branding: {
-            logoUrl: data.branding?.logoUrl || '',
+            logoUrl: data.branding?.logoUrl || data.logoUrl || '',
+            combinedLogoUrl: data.branding?.combinedLogoUrl || data.combinedLogoUrl || '',
+            combinedLogoMaskableUrl: data.branding?.combinedLogoMaskableUrl || data.combinedLogoMaskableUrl || '',
             colors: {
               primary: data.branding?.colors?.primary || DEFAULT_BRANDING.colors.primary,
               secondary: data.branding?.colors?.secondary || DEFAULT_BRANDING.colors.secondary,
@@ -528,8 +530,8 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t, initial
             afficherRecrutement: data.publicTheme?.afficherRecrutement !== false,
             afficherGalerie: data.publicTheme?.afficherGalerie !== false,
             afficherAgenda: data.publicTheme?.afficherAgenda !== false,
-            seoTitle: data.publicTheme?.seoTitle || '',
-            seoDescription: data.publicTheme?.seoDescription || '',
+            seoTitle: data.seoTitle || data.publicTheme?.seoTitle || '',
+            seoDescription: data.seoDescription || data.publicTheme?.seoDescription || '',
             seoKeywords: data.publicTheme?.seoKeywords || '',
             titreRecrutement: data.publicTheme?.titreRecrutement || "Rejoignez la troupe !",
             texteRecrutement: data.publicTheme?.texteRecrutement || '',
@@ -697,10 +699,12 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t, initial
 
     setSaving(true);
     try {
+      const isLogoUpdated = Boolean(logoFile && logoFile instanceof File);
       let finalLogoUrl = formData.branding?.logoUrl || '';
       let finalCombinedLogoUrl = formData.branding?.combinedLogoUrl || '';
+      let finalCombinedLogoMaskableUrl = formData.branding?.combinedLogoMaskableUrl || '';
 
-      if (logoFile && logoFile instanceof File) {
+      if (isLogoUpdated) {
         let fileToUpload = logoFile;
         const compressionOptions = { maxSizeMB: 0.3, maxWidthOrHeight: 800, useWebWorker: true };
         try {
@@ -715,41 +719,15 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t, initial
         setLogoFile(null);
       }
 
-      // Génération et persistance du Sceau Combiné O Girador × Association pour le partage et réseaux sociaux
-      if (finalLogoUrl && (logoFile || !finalCombinedLogoUrl)) {
-        try {
-          const sealBlob = await generateCombinedSealBlob({
-            ...formData,
-            nom: formData.nom,
-            branding: {
-              ...(formData.branding || {}),
-              logoUrl: finalLogoUrl
-            }
-          }, { size: 512 });
-
-          if (sealBlob) {
-            // Sauvegarde prioritaire sur le chemin standardisé pour les crawlers et réseaux sociaux
-            try {
-              const combinedStorageRef = storageRef(storage, `brandings/${groupId}/combined-logo.png`);
-              const combinedSnapshot = await uploadBytes(combinedStorageRef, sealBlob, { contentType: 'image/png' });
-              finalCombinedLogoUrl = await getDownloadURL(combinedSnapshot.ref);
-            } catch (primaryErr) {
-              console.warn("Chemin brandings restreint, bascule sur associations/... :", primaryErr);
-              const mirrorRef = storageRef(storage, `associations/${groupId}/brandings/combined-logo.png`);
-              const combinedSnapshot = await uploadBytes(mirrorRef, sealBlob, { contentType: 'image/png' });
-              finalCombinedLogoUrl = await getDownloadURL(combinedSnapshot.ref);
-            }
-
-            // Mise à jour immédiate des balises Open Graph du document
-            updateDocumentOpenGraphTags({
-              title: `Rejoindre ${formData.nom || 'notre groupe'} sur O Girador`,
-              description: "Espace adhérents : agenda, répétitions, vestiaire et vie du groupe.",
-              image: finalCombinedLogoUrl
-            });
-          }
-        } catch (sealErr) {
-          console.warn("Erreur génération/sauvegarde du sceau combiné :", sealErr);
-        }
+      // Génération et persistance du Double Sceau Combiné (`brandings/${groupId}/combined-logo.png` + `-maskable.png`)
+      if (finalLogoUrl && (isLogoUpdated || !finalCombinedLogoUrl || !finalCombinedLogoMaskableUrl)) {
+        const dualSeals = await uploadDualCombinedSealsToStorage(groupId, {
+          ...formData,
+          nom: formData.nom,
+          branding: { ...(formData.branding || {}), logoUrl: finalLogoUrl }
+        }, { size: 512, updateFirestore: false, updateMetaTags: true });
+        if (dualSeals.combinedLogoUrl) finalCombinedLogoUrl = dualSeals.combinedLogoUrl;
+        if (dualSeals.combinedLogoMaskableUrl) finalCombinedLogoMaskableUrl = dualSeals.combinedLogoMaskableUrl;
       }
 
       let finalPublicHeroImage = formData.publicTheme?.publicHeroImage || '';
@@ -899,11 +877,9 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t, initial
         lienDepotForum: formData.lienDepotForum || '',
         consignesDepotForum: formData.consignesDepotForum || '',
         customDomains: formData.customDomains || [],
-        branding: {
-          logoUrl: finalLogoUrl,
-          combinedLogoUrl: finalCombinedLogoUrl || '',
-          colors: formData.branding.colors
-        },
+        seoTitle: (formData.publicTheme?.seoTitle || '').trim(),
+        seoDescription: (formData.publicTheme?.seoDescription || '').trim(),
+        combinedLogoUrl: finalCombinedLogoUrl || '', combinedLogoMaskableUrl: finalCombinedLogoMaskableUrl || '', branding: { logoUrl: finalLogoUrl, combinedLogoUrl: finalCombinedLogoUrl || '', combinedLogoMaskableUrl: finalCombinedLogoMaskableUrl || '', colors: formData.branding.colors },
         // Sauvegarde de l'identité visuelle et du contenu de la vitrine publique
         publicTheme: {
           ...(formData.publicTheme || DEFAULT_PUBLIC_THEME),
@@ -1030,25 +1006,23 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t, initial
 
     try {
       setSaving(true);
-      const url = await uploadCombinedSealToStorage(groupId, {
+      const dual = await uploadDualCombinedSealsToStorage(groupId, {
         nom: formData.nom || '',
-        branding: {
-          ...(formData.branding || {}),
-          logoUrl
-        }
+        branding: { ...(formData.branding || {}), logoUrl }
       }, { size: 512, updateFirestore: true, updateMetaTags: true });
 
-      if (url) {
+      if (dual.combinedLogoUrl || dual.combinedLogoMaskableUrl) {
         setFormData(prev => ({
           ...prev,
           branding: {
             ...(prev.branding || {}),
-            combinedLogoUrl: url
+            ...(dual.combinedLogoUrl ? { combinedLogoUrl: dual.combinedLogoUrl } : {}),
+            ...(dual.combinedLogoMaskableUrl ? { combinedLogoMaskableUrl: dual.combinedLogoMaskableUrl } : {})
           }
         }));
-        showToast("✅ Sceau combiné généré et synchronisé pour les partages WhatsApp !");
+        showToast("✅ Sceaux combinés (PC + icône plein écran Android) synchronisés !");
       }
-      return url;
+      return dual.combinedLogoUrl || null;
     } catch (err) {
       console.warn("Erreur lors de la synchronisation manuelle du sceau :", err);
       return null;

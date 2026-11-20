@@ -13,9 +13,11 @@ console.log("===============================================================\n")
 // --- 1. Vérification de l'existence et des exports de EventTypeConfigCard.jsx ---
 console.log("▶️ Étape 1 : Validation du composant EventTypeConfigCard.jsx");
 const cardPath = path.resolve('src/components/association-settings/EventTypeConfigCard.jsx');
+const schedPath = path.resolve('src/components/association-settings/EventTypeScheduleConfigSection.jsx');
 assert(fs.existsSync(cardPath), "Le fichier EventTypeConfigCard.jsx doit exister");
+assert(fs.existsSync(schedPath), "Le fichier EventTypeScheduleConfigSection.jsx doit exister");
 
-const cardCode = fs.readFileSync(cardPath, 'utf-8');
+const cardCode = fs.readFileSync(cardPath, 'utf-8') + '\n' + fs.readFileSync(schedPath, 'utf-8');
 assert(cardCode.includes('getEventTypeEmoji'), "EventTypeConfigCard doit exporter getEventTypeEmoji");
 assert(cardCode.includes('resolveTypeEffectiveConfig'), "EventTypeConfigCard doit exporter resolveTypeEffectiveConfig");
 assert(cardCode.includes('buildConfigSummary'), "EventTypeConfigCard doit exporter buildConfigSummary");
@@ -91,9 +93,10 @@ console.log("  ✅ [PASS] Propagation des presets et calcul automatique de deadl
 // --- 5. Persistance dans WidgetAgenda et EventDetails ---
 console.log("▶️ Étape 5 : Persistance Firestore dans WidgetAgenda et EventDetails");
 const widgetAgendaPath = path.resolve('src/components/WidgetAgenda.jsx');
+const eventCreationUtilsPath = path.resolve('src/utils/eventCreationUtils.js');
 const eventDetailsPath = path.resolve('src/components/EventDetails.jsx');
 
-const widgetAgendaCode = fs.readFileSync(widgetAgendaPath, 'utf-8');
+const widgetAgendaCode = fs.readFileSync(widgetAgendaPath, 'utf-8') + '\n' + fs.readFileSync(eventCreationUtilsPath, 'utf-8');
 const eventDetailsCode = fs.readFileSync(eventDetailsPath, 'utf-8');
 
 assert(widgetAgendaCode.includes('enableRoadbook:'), "WidgetAgenda doit persister enableRoadbook");

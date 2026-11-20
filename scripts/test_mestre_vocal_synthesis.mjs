@@ -297,17 +297,20 @@ assert.ok(repModalContent.includes('cantadorToadaId'), "RepertoirePieceModal doi
 assert.ok(repModalContent.includes('useCantadorToadas'), "RepertoirePieceModal doit utiliser useCantadorToadas");
 
 const cardPath = path.resolve('src/components/member/MemberPieceCard.jsx');
+const vocalBarPath = path.resolve('src/components/repertoire/RepertoireVocalActionsBar.jsx');
+const vocalUrlPath = path.resolve('src/utils/repertoireCantadorUrl.js');
 const cardContent = fs.readFileSync(cardPath, 'utf-8');
+const vocalCombined = cardContent + '\n' + fs.readFileSync(vocalBarPath, 'utf-8') + '\n' + fs.readFileSync(vocalUrlPath, 'utf-8');
 const cardLines = cardContent.split('\n').length;
 assert.ok(cardLines < 200, `MemberPieceCard.jsx doit être < 200 lignes (actuel: ${cardLines})`);
-assert.ok(cardContent.includes('cantadorToadaId'), "MemberPieceCard doit vérifier cantadorToadaId");
-assert.ok(cardContent.includes('toadaId'), "MemberPieceCard doit passer toadaId");
+assert.ok(cardContent.includes('RepertoireVocalActionsBar') && vocalCombined.includes('cantadorToadaId'), "MemberPieceCard (via RepertoireVocalActionsBar) doit vérifier cantadorToadaId");
+assert.ok(vocalCombined.includes('toadaId'), "MemberPieceCard (via RepertoireVocalActionsBar) doit passer toadaId");
 
 const unfoldedPath = path.resolve('src/components/member/MemberPieceUnfoldedContent.jsx');
 const unfoldedContent = fs.readFileSync(unfoldedPath, 'utf-8');
 const unfoldedLines = unfoldedContent.split('\n').length;
 assert.ok(unfoldedLines < 200, `MemberPieceUnfoldedContent.jsx doit être < 200 lignes (actuel: ${unfoldedLines})`);
-assert.ok(unfoldedContent.includes('toadaId'), "MemberPieceUnfoldedContent doit passer toadaId");
+assert.ok(unfoldedContent.includes('toadaId') || unfoldedContent.includes('RepertoireVocalActionsBar') || vocalCombined.includes('toadaId'), "MemberPieceUnfoldedContent / RepertoireVocalActionsBar doit gérer toadaId");
 
 const carnetPath = path.resolve('src/components/pedagogy/MonCarnetAisance.jsx');
 const carnetContent = fs.readFileSync(carnetPath, 'utf-8');

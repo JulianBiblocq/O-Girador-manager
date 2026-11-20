@@ -18,7 +18,8 @@ for (const file of svgFiles) {
 const manifest = JSON.parse(fs.readFileSync(path.resolve('public/manifest.json'), 'utf-8'));
 assert(!manifest.name.toLowerCase().includes("organizad'or"), 'manifest.json name ne doit pas contenir "Organizad\'Or"');
 assert(!manifest.short_name.toLowerCase().includes("organizad'or"), 'manifest.json short_name ne doit pas contenir "Organizad\'Or"');
-assert(manifest.name.startsWith('O Girador'), 'manifest.json name doit débuter par "O Girador"');
+assert.strictEqual(manifest.name, 'Organizador', 'manifest.json name doit être "Organizador"');
+assert.strictEqual(manifest.short_name, 'Organizador', 'manifest.json short_name doit être "Organizador"');
 console.log('✅ public/manifest.json est conforme à la charte O Girador (sans mention Organizad\'Or)');
 
 // 3. Vérification de index.html
@@ -27,11 +28,13 @@ assert(!indexHtml.toLowerCase().includes('samambaia'), 'index.html ne doit pas c
 assert(indexHtml.includes('og-girador-frame.svg'), 'index.html doit référencer og-girador-frame.svg dans son pré-loader');
 console.log('✅ index.html possède un pré-chargeur statique neutre');
 
-// 4. Vérification de src/App.jsx
+// 4. Vérification de src/App.jsx et src/components/common/LoadingSeal.jsx
 const appJsx = fs.readFileSync(path.resolve('src/App.jsx'), 'utf-8');
-assert(appJsx.includes("const logoSrc = activeLogo || '/og-girador-frame.svg';"), 'App.jsx doit utiliser og-girador-frame.svg en fallback');
-assert(appJsx.includes('object-contain select-none'), 'App.jsx doit utiliser object-contain pour le centrage sans layout shift');
-console.log('✅ src/App.jsx dynamise correctement le loader avec fallback neutre O Girador');
+const loadingSealJsx = fs.readFileSync(path.resolve('src/components/common/LoadingSeal.jsx'), 'utf-8');
+assert(appJsx.includes('<LoadingSeal'), 'App.jsx doit rendre le composant modulaire LoadingSeal');
+assert(loadingSealJsx.includes('/og-girador-frame.svg'), 'LoadingSeal.jsx doit utiliser og-girador-frame.svg en fallback');
+assert(loadingSealJsx.includes('object-contain select-none'), 'LoadingSeal.jsx doit utiliser object-contain pour le centrage sans layout shift');
+console.log('✅ src/App.jsx et LoadingSeal.jsx dynamisent correctement le loader avec fallback neutre O Girador');
 
 // 5. Vérification des composants nettoyés
 const pendingValidation = fs.readFileSync(path.resolve('src/components/auth/PendingValidationScreen.jsx'), 'utf-8');

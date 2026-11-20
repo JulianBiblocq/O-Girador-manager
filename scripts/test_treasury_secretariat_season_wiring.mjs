@@ -66,15 +66,19 @@ assert(treasuryClaimsContent.includes('isPastSeason(claim.saison, currentSeason)
 const memberExpensePath = path.join(rootDir, 'src', 'components', 'expenses', 'MemberExpenseSection.jsx');
 const memberExpenseContent = fs.readFileSync(memberExpensePath, 'utf-8');
 assert(memberExpenseContent.includes('getCurrentSeason('), "MemberExpenseSection utilise getCurrentSeason");
-assert(memberExpenseContent.includes('saisonDebutMois={effectiveStartMonth}'), "MemberExpenseSection transmet la saison au modal");
+assert(
+  memberExpenseContent.includes('defaultSeason={selectedSeason || currentSeason}') || memberExpenseContent.includes('saisonDebutMois={effectiveStartMonth}'),
+  "MemberExpenseSection transmet la saison au modal"
+);
 
 // -------------------------------------------------------------
-// MODULE 2 : Pôle Secrétariat & AG (SecretariatReportsView & Slideshow)
+// MODULE 2 : Pôle Secrétariat & AG (SecretariatReportsView, useAgReportsData & Slideshow)
 // -------------------------------------------------------------
 console.log("\n▶️ Module 2 : Pôle Secrétariat & AG (SecretariatReportsView & AgSlideshowModal)");
 
 const secrReportsPath = path.join(rootDir, 'src', 'components', 'secretariat', 'SecretariatReportsView.jsx');
-const secrReportsContent = fs.readFileSync(secrReportsPath, 'utf-8');
+const agHookPath = path.join(rootDir, 'src', 'hooks', 'useAgReportsData.js');
+const secrReportsContent = fs.readFileSync(secrReportsPath, 'utf-8') + '\n' + fs.readFileSync(agHookPath, 'utf-8');
 
 assert(secrReportsContent.includes('getSeasonDateRange'), "SecretariatReportsView importe getSeasonDateRange");
 assert(secrReportsContent.includes('getFiscalYearDateRange'), "SecretariatReportsView importe getFiscalYearDateRange");

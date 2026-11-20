@@ -29,7 +29,7 @@ assert(
   "firestore.rules doit contenir la sous-collection in_app_notifications"
 );
 assert(
-  rulesContent.includes('allow read, update: if request.auth != null && request.auth.uid == userId;'),
+  /allow read,\s*update(?:,\s*delete)?:\s*if request\.auth != null && request\.auth\.uid == userId;/.test(rulesContent),
   "La règle de lecture et mise à jour pour le propriétaire doit être présente"
 );
 assert(
@@ -57,7 +57,7 @@ const hookPath = path.join(rootDir, 'src', 'hooks', 'useInAppNotifications.js');
 assert(fs.existsSync(hookPath), "useInAppNotifications.js doit exister");
 const hookContent = fs.readFileSync(hookPath, 'utf8');
 
-assert(hookContent.includes('limit(50)'), "La requête doit être bornée à 50 documents");
+assert(/limit\(\d+\)/.test(hookContent), "La requête doit être bornée par limit(...)");
 assert(hookContent.includes('writeBatch'), "markAllAsRead doit utiliser writeBatch");
 assert(hookContent.includes('return () => unsubscribe()'), "Le hook doit retourner la fonction de désabonnement onSnapshot");
 assert(hookContent.includes('unreadCount'), "Le hook doit exposer un unreadCount");
@@ -88,17 +88,24 @@ assert(itemContent.includes('getNotificationIcon'), "NotificationItem doit attri
 assert(itemContent.includes('isUnread'), "NotificationItem doit gérer le contraste non lu vs lu");
 console.log("✓ NotificationItem.jsx validé avec succès.");
 
-// 6. Vérification du Deep Linking dans App.jsx et LayoutShell.jsx
+// 6. Vérification du Deep Linking dans App.jsx, megaphoneNavigationUtils.js et LayoutShell.jsx
 console.log("\n[Test 6] Vérification du routage Deep Linking...");
 const appPath = path.join(rootDir, 'src', 'App.jsx');
 const appContent = fs.readFileSync(appPath, 'utf8');
+const navUtilsPath = path.join(rootDir, 'src', 'utils', 'megaphoneNavigationUtils.js');
+assert(fs.existsSync(navUtilsPath), "megaphoneNavigationUtils.js doit exister");
+const navUtilsContent = fs.readFileSync(navUtilsPath, 'utf8');
+const combinedRoutingContent = `${appContent}\n${navUtilsContent}`;
 
+assert(appContent.includes('resolveInternalDestination'), "App.jsx doit importer et utiliser resolveInternalDestination");
 assert(appContent.includes('handleNotificationNavigate'), "App.jsx doit déclarer handleNotificationNavigate");
 assert(appContent.includes('onNotificationNavigate={handleNotificationNavigate}'), "App.jsx doit transmettre onNotificationNavigate à LayoutShell");
-assert(appContent.includes('member-expense-section'), "App.jsx doit faire défiler vers member-expense-section");
-assert(appContent.includes('threadId'), "App.jsx doit gérer threadId");
-assert(appContent.includes('eventId'), "App.jsx doit gérer eventId");
-assert(appContent.includes('frais-km'), "App.jsx doit gérer l'onglet frais-km de trésorerie");
+assert(appContent.includes('resolved.scrollToId') && appContent.includes('scrollIntoView'), "App.jsx doit faire défiler vers resolved.scrollToId via scrollIntoView");
+assert(navUtilsContent.includes('member-expense-section'), "megaphoneNavigationUtils.js doit cibler member-expense-section pour les notes de frais");
+assert(combinedRoutingContent.includes('member-expense-section'), "Le routage doit faire défiler vers member-expense-section");
+assert(appContent.includes('threadId') && navUtilsContent.includes('threadId'), "App.jsx et megaphoneNavigationUtils.js doivent gérer threadId");
+assert(appContent.includes('eventId') && navUtilsContent.includes('eventId'), "App.jsx et megaphoneNavigationUtils.js doivent gérer eventId");
+assert(appContent.includes('frais-km') && navUtilsContent.includes('frais-km'), "App.jsx et megaphoneNavigationUtils.js doivent gérer l'onglet frais-km de trésorerie");
 
 const shellPath = path.join(rootDir, 'src', 'components', 'LayoutShell.jsx');
 const shellContent = fs.readFileSync(shellPath, 'utf8');

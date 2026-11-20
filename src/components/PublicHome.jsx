@@ -1,5 +1,4 @@
 import React from 'react';
-import { HelmetProvider } from 'react-helmet-async';
 import { doc, setDoc, updateDoc, increment } from 'firebase/firestore';
 import { db } from '../firebase';
 import { usePublicThemeContext } from './PublicThemeProvider';
@@ -18,6 +17,8 @@ import PublicMaintenancePage from './public/PublicMaintenancePage';
 import PublicBookingModal from './public/PublicBookingModal';
 import TenantNotFound from './TenantNotFound';
 import { canPreviewVitrineDraft } from '../utils/permissionUtils';
+import { isDemoMode } from '../demo/demoManager';
+import { buildOrganizadorMemberUrl } from '../utils/vitrineLockUtils';
 import { XiloMegaphone } from './XiloIcons';
 
 /**
@@ -120,10 +121,7 @@ export default function PublicHome({
     }
   };
 
-  // ==========================================
-  // ÉTAPE 1 : CHARGEMENT (Chargement de)
-  // Tant que le thème de l'association est en cours de chargement depuis Firestore
-  // ==========================================
+  // Écran de chargement tant que le thème de l'association est en cours de récupération Firestore
   if (loadingTheme) {
     return (
       <div 
@@ -146,18 +144,18 @@ export default function PublicHome({
     return <TenantNotFound />;
   }
 
-  // ==========================================
-  // ÉTAPE 2 & 3A : VÉRIFICATION & MODE BROUILLON (Public bloqué)
-  // Si isPublished === false ET que l'utilisateur n'est pas Admin -> Page "En construction"
-  // ==========================================
+  // Mode Brouillon : vitrine masquée au public non-administrateur (avec synchronisation SEO conservée)
   if (!isPublished && !isAdminUser) {
     return (
-      <PublicMaintenancePage
-        associationName={groupTitle}
-        logoUrl={logoSrc}
-        publicTheme={publicTheme}
-        onOpenLogin={onNavigateToLogin}
-      />
+      <>
+        <PublicSeoHead publicTheme={publicTheme} associationName={groupTitle} branding={branding} />
+        <PublicMaintenancePage
+          associationName={groupTitle}
+          logoUrl={logoSrc}
+          publicTheme={publicTheme}
+          onOpenLogin={onNavigateToLogin}
+        />
+      </>
     );
   }
 
@@ -205,20 +203,20 @@ export default function PublicHome({
 
   // Défilement fluide vers une section
   const scrollToSection = (id) => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+  };
+  const isLocalHost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  const memberSpaceHref = buildOrganizadorMemberUrl(groupId, { isLocal: isLocalHost, isDemo: isDemoMode() });
+  const handleMemberSpaceClick = (e) => {
+    if ((isLocalHost || isDemoMode()) && (onNavigateToApp || onNavigateToLogin)) {
+      e.preventDefault();
+      (onNavigateToApp || onNavigateToLogin)();
     }
   };
 
   return (
-    <HelmetProvider>
-      {/* Balises SEO & Référencement dynamique avec injection forcée O Girador */}
-      <PublicSeoHead 
-        publicTheme={publicTheme} 
-        associationName={groupTitle} 
-        branding={branding} 
-      />
+    <>
+      <PublicSeoHead publicTheme={publicTheme} associationName={groupTitle} branding={branding} />
 
       {/* Filigrane (Watermark) fixe et centré du logo de l'association */}
       <PublicWatermarkLogo logoSrc={logoSrc} altText={groupTitle} />
@@ -330,13 +328,13 @@ export default function PublicHome({
 
           {/* Espace Membre & Bouton Menu Mobile */}
           <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={onNavigateToApp || onNavigateToLogin}
+            <a
+              href={memberSpaceHref}
+              onClick={handleMemberSpaceClick}
               className="text-xs font-bold uppercase tracking-wider px-3.5 py-2 rounded-md border border-stone-300 text-stone-700 bg-stone-100 hover:bg-stone-200 transition-all cursor-pointer shadow-xs active:scale-95 flex items-center gap-1.5"
             >
               <span>🔒 Espace Membre</span>
-            </button>
+            </a>
 
             <button
               type="button"
@@ -1044,13 +1042,13 @@ export default function PublicHome({
                 Propulsé par <strong className="text-stone-300 font-semibold">O Girador</strong>
               </span>
               
-              <button
-                type="button"
-                onClick={onNavigateToApp || onNavigateToLogin}
+              <a
+                href={memberSpaceHref}
+                onClick={handleMemberSpaceClick}
                 className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded bg-stone-800 hover:bg-stone-700 text-stone-300 border border-stone-700 transition-colors cursor-pointer"
               >
                 🔒 Accès Membre
-              </button>
+              </a>
             </div>
           </div>
         </div>
@@ -1073,8 +1071,6 @@ export default function PublicHome({
         publicTheme={publicTheme}
       />
       </div>
-    </HelmetProvider>
+    </>
   );
 }
-
-

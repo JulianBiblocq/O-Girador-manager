@@ -64,7 +64,10 @@ assert(fr.pedagogy.challengeExquisiteCorpseTitle === "Cadavre exquis (Coopérati
 assert(pt.pedagogy.challengeExquisiteCorpseTitle === "Desafio em Cadeia (Cooperação)", "PT challengeExquisiteCorpseTitle conforme");
 
 assert(fr.pedagogy.challengeExquisiteCorpseDesc === "Relais polyrythmique en chaîne et délibération au Conseil de Batterie", "FR challengeExquisiteCorpseDesc conforme");
-assert(pt.pedagogy.challengeExquisiteCorpseDesc === "Revezamento polirrítmico em cadeia e deliberação no Conselho de Bateria", "PT challengeExquisiteCorpseDesc conforme");
+assert(
+  pt.pedagogy.challengeExquisiteCorpseDesc === "Revezamento polirrítmico em cadeia e deliberação no Conselho do Batuque",
+  "PT challengeExquisiteCorpseDesc conforme"
+);
 
 assert(fr.pedagogy.btnCancelChallenge === "Annuler", "FR btnCancelChallenge conforme");
 assert(pt.pedagogy.btnCancelChallenge === "Cancelar", "PT btnCancelChallenge conforme");

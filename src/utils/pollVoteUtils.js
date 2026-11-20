@@ -1,6 +1,6 @@
 import { doc, updateDoc, deleteField } from 'firebase/firestore';
-import { db } from '../firebase';
-import { cleanFirestorePayload } from './firestoreUtils';
+import { db } from '../firebase.js';
+import { cleanFirestorePayload } from './firestoreUtils.js';
 
 /**
  * Utilitaires de gestion des votes sur les sondages d'événements et d'ateliers.

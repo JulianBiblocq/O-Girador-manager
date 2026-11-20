@@ -24,7 +24,7 @@ const secTabs = (new Function(`return ${secMatch[1]}`))();
 
 assert(secTabs.length >= 4, `Le secrétariat doit comporter au moins 4 onglets (trouvé: ${secTabs.length})`);
 
-const expectedTabs = ['export-annu', 'secretariat-reports', 'studio-events', 'varal-secretariat', 'secretariat-documents'];
+const expectedTabs = ['export-annu', 'studio-events', 'varal-secretariat', 'secretariat-documents'];
 const actualTabs = secTabs.map(t => t.id);
 expectedTabs.forEach(tabId => {
   assert(actualTabs.includes(tabId), `L'onglet actif '${tabId}' doit figurer dans POLES_CONFIG`);
@@ -65,8 +65,8 @@ assert(forumCode.includes("manageChannels"), "Forum.jsx doit utiliser la clé de
 console.log("✅ Test 3 validé : Modale ForumChannelsManager intégrée directement au Porte-voix.\n");
 
 // 4. Annuaire & Modale d'export CSV
-console.log("▶️ Test 4 : Contrôle de AdminExport.jsx et AdminExportModal.jsx...");
-const adminExportCode = fs.readFileSync('src/components/AdminExport.jsx', 'utf8');
+console.log("▶️ Test 4 : Contrôle de AdminExport.jsx, AdminDirectoryFilterBar.jsx et AdminExportModal.jsx...");
+const adminExportCode = fs.readFileSync('src/components/AdminExport.jsx', 'utf8') + '\n' + fs.readFileSync('src/components/admin/AdminDirectoryFilterBar.jsx', 'utf8');
 assert(adminExportCode.includes('AdminExportModal'), "AdminExport.jsx doit importer et utiliser AdminExportModal");
 assert(adminExportCode.includes('isExportModalOpen'), "AdminExport.jsx doit gérer l'état isExportModalOpen");
 assert(adminExportCode.includes('roleFilter'), "AdminExport.jsx doit gérer le filtre par rôle");

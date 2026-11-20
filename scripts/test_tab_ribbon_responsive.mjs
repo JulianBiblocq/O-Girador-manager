@@ -34,7 +34,7 @@ assert(compCode.includes('export function HorizontalRibbonContainer'), "Horizont
 assert(compCode.includes('overflow-x-auto'), "Le conteneur doit avoir overflow-x-auto");
 assert(compCode.includes('flex-nowrap'), "Le conteneur doit avoir flex-nowrap");
 assert(compCode.includes('scroll-smooth'), "Le conteneur doit avoir scroll-smooth");
-assert(compCode.includes('pr-8'), "Le conteneur doit comporter le dégagement de sécurité pr-8");
+assert(compCode.includes('pr-12') || compCode.includes('pr-8'), "Le conteneur doit comporter le dégagement de sécurité pr-12 ou pr-8");
 assert(compCode.includes('pointer-events-none'), "Le dégradé indicateur doit impérativement avoir pointer-events-none");
 assert(compCode.includes('min-h-[40px]'), "Les boutons doivent avoir une hauteur minimale touch-target >= 40px");
 console.log("✅ Test 2 validé : HorizontalTabRibbon et HorizontalRibbonContainer conformes.\n");
@@ -47,20 +47,22 @@ assert(indexCss.includes('.no-scrollbar'), "index.css doit déclarer .no-scrollb
 assert(indexCss.includes('scrollbar-width: none'), "index.css doit masquer la scrollbar via scrollbar-width: none");
 console.log("✅ Test 3 validé : Classes de masquage de la barre de défilement déclarées.\n");
 
-// 4. Intégration dans LayoutShell.jsx
-console.log("▶️ Test 4 : Vérification de LayoutShell.jsx...");
-const layoutCode = fs.readFileSync('src/components/LayoutShell.jsx', 'utf8');
-assert(layoutCode.includes('HorizontalRibbonContainer'), "LayoutShell doit utiliser HorizontalRibbonContainer");
-assert(layoutCode.includes('min-h-[40px]'), "LayoutShell doit appliquer min-h-[40px] sur les boutons d'onglets");
-assert(layoutCode.includes('px-3.5 py-1.5 text-sm'), "LayoutShell doit appliquer px-3.5 py-1.5 text-sm");
-assert(layoutCode.includes('shrink-0 whitespace-nowrap'), "LayoutShell doit appliquer shrink-0 whitespace-nowrap");
-assert(layoutCode.includes('data-tab-active'), "LayoutShell doit renseigner data-tab-active");
-assert(layoutCode.includes('sticky top-0 z-20'), "L'en-tête de pôle dans LayoutShell doit être sticky top-0 z-20");
+// 4. Intégration dans LayoutShell.jsx et PoleStickyHeaderBar.jsx
+console.log("▶️ Test 4 : Vérification de LayoutShell.jsx et PoleStickyHeaderBar.jsx...");
+const layoutCode = fs.readFileSync('src/components/LayoutShell.jsx', 'utf8') + '\n' + fs.readFileSync('src/components/navigation/PoleStickyHeaderBar.jsx', 'utf8');
+assert(layoutCode.includes('HorizontalRibbonContainer'), "LayoutShell/PoleStickyHeaderBar doit utiliser HorizontalRibbonContainer");
+assert(layoutCode.includes('min-h-[40px]'), "LayoutShell/PoleStickyHeaderBar doit appliquer min-h-[40px] sur les boutons d'onglets");
+assert(layoutCode.includes('px-3.5 py-1.5 text-sm'), "LayoutShell/PoleStickyHeaderBar doit appliquer px-3.5 py-1.5 text-sm");
+assert(layoutCode.includes('shrink-0 whitespace-nowrap'), "LayoutShell/PoleStickyHeaderBar doit appliquer shrink-0 whitespace-nowrap");
+assert(layoutCode.includes('data-tab-active'), "LayoutShell/PoleStickyHeaderBar doit renseigner data-tab-active");
+assert(layoutCode.includes('sticky top-0 z-30') || layoutCode.includes('sticky top-0 z-20'), "L'en-tête de pôle doit être sticky top-0");
 console.log("✅ Test 4 validé : Ruban défilant intégré dans LayoutShell.jsx.\n");
 
-// 5. Intégration dans AssociationSettings.jsx
-console.log("▶️ Test 5 : Vérification de AssociationSettings.jsx...");
-const settingsCode = fs.readFileSync('src/components/AssociationSettings.jsx', 'utf8');
+// 5. Intégration dans AssociationSettings.jsx et AssociationSettingsTabRibbon.jsx
+console.log("▶️ Test 5 : Vérification de AssociationSettings.jsx et AssociationSettingsTabRibbon.jsx...");
+const settingsCode =
+  fs.readFileSync('src/components/AssociationSettings.jsx', 'utf8') + '\n' +
+  fs.readFileSync('src/components/association-settings/AssociationSettingsTabRibbon.jsx', 'utf8');
 assert(settingsCode.includes('HorizontalRibbonContainer'), "AssociationSettings doit utiliser HorizontalRibbonContainer");
 assert(!settingsCode.includes('flex flex-wrap gap-2 border-b border-dashed border-cordel-master-dark/20 pb-3 mb-1 select-none'), "Le flex-wrap initial doit avoir été supprimé");
 assert(settingsCode.includes('min-h-[40px]'), "AssociationSettings doit appliquer min-h-[40px] sur les boutons d'onglets");
@@ -88,8 +90,8 @@ assert(compCode.includes('lg:flex-wrap'), "HorizontalRibbonContainer doit compor
 assert(compCode.includes('lg:overflow-visible'), "HorizontalRibbonContainer doit comporter lg:overflow-visible pour ne pas tronquer la 2e ligne sur PC");
 assert(compCode.includes('gap-x-2 gap-y-2'), "HorizontalRibbonContainer doit appliquer un espacement régulier gap-x-2 gap-y-2");
 assert(compCode.includes('lg:hidden'), "Le dégradé indicateur fade doit être masqué sur desktop (lg:hidden)");
-assert(layoutCode.includes('lg:overflow-visible'), "LayoutShell doit comporter lg:overflow-visible sur le conteneur des sous-onglets");
-assert(layoutCode.includes('self-start pt-2'), "LayoutShell doit aligner les utilitaires en self-start pt-2 pour éviter tout chevauchement");
+assert(layoutCode.includes('lg:overflow-visible'), "LayoutShell/PoleStickyHeaderBar doit comporter lg:overflow-visible sur le conteneur des sous-onglets");
+assert(layoutCode.includes('shrink-0 pl-1.5') || layoutCode.includes('self-start pt-2'), "PoleStickyHeaderBar doit isoler le bouton d'aide à droite pour éviter tout chevauchement");
 console.log("✅ Test 7 validé : Multiligne sur PC (lg:flex-wrap) et défilement mobile préservés avec succès.\n");
 
 console.log("===============================================================");

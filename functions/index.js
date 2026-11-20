@@ -1871,21 +1871,21 @@ exports.createStripeCheckoutSession = onCall(
 // 🌍 PHASE 4 : SEO & RÉFÉRENCEMENT MULTI-TENANT (MOSTRADOR & INVITATIONS)
 // ============================================================================
 
-/**
- * Fonction utilitaire pour échapper les caractères spéciaux HTML dans les balises meta.
- */
-function escapeHtmlMeta(str) {
-  if (!str) return "";
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-}
+const {
+  escapeHtmlMeta,
+  stripHtmlTags,
+  resolveIncomingHost,
+  normalizeDomainHost,
+  isInternalPlatformHost,
+  findAssociationByCustomDomain,
+  findAssociationByGroupId,
+  extractInternalGroupId,
+  injectSeoIntoHtml
+} = require("./seoDynamicHelper");
+const { buildDynamicManifestPayload } = require("./manifestDynamicHelper");
 
 /**
- * Détecte si le User-Agent correspond à un robot d'indexation ou d'aperçu de partage
+ * Détecte si le User-Agent correspond à un robot d'aperçu de partage ou d'indexation
  * (WhatsApp, Facebook, Twitter/X, LinkedIn, Telegram, Discord, Skype, Googlebot, etc.).
  */
 function isSocialBotOrCrawler(userAgent = "") {
@@ -1894,156 +1894,156 @@ function isSocialBotOrCrawler(userAgent = "") {
   return /curl|wget|whatsapp|facebookexternalhit|facebot|twitterbot|slackbot|linkedinbot|telegrambot|discordbot|skypeuripreview|applebot|googlebot|bingbot|yandex|duckduckbot/i.test(ua);
 }
 
+// Cache mémoire court (15s) du template app.html par site Hosting pour temps de réponse instantané
+const appHtmlMemoryCache = new Map();
+const APP_HTML_CACHE_TTL_MS = 15000;
+
+async function fetchHostingAppHtml(candidateDomains) {
+  const now = Date.now();
+  for (const domain of candidateDomains) {
+    const cached = appHtmlMemoryCache.get(domain);
+    if (cached && now - cached.fetchedAt < APP_HTML_CACHE_TTL_MS) {
+      return cached.html;
+    }
+    try {
+      const res = await fetch(`https://${domain}/app.html?t=${now}`, {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache, no-store, must-revalidate" }
+      });
+      if (res.ok) {
+        const html = await res.text();
+        if (html && html.includes("<head>")) {
+          appHtmlMemoryCache.set(domain, { html, fetchedAt: now });
+          return html;
+        }
+      }
+    } catch (err) {
+      console.warn(`fetchHostingAppHtml - Échec sur ${domain}/app.html:`, err.message);
+    }
+  }
+  throw new Error("Impossible de récupérer le template HTML depuis Firebase Hosting.");
+}
+
 /**
  * Cloud Function HTTP (v2) : serveDynamicApp
- * Intercepte les requêtes Firebase Hosting, identifie le tenant (association),
- * et injecte dynamiquement les balises Meta SEO et Open Graph (Sceau combiné Asso × O Girador)
- * adaptées aux invitations et partages sur réseaux sociaux.
+ * Intercepte les requêtes Firebase Hosting, identifie l'association (domaine personnalisé ou sous-domaine),
+ * et injecte dynamiquement les balises SEO (<title>, <meta name="description">, <link rel="canonical">, Open Graph).
  */
 exports.serveDynamicApp = onRequest(async (req, res) => {
-  const hostname = req.hostname;
+  const rawHost = resolveIncomingHost(req);
+  const cleanHost = normalizeDomainHost(rawHost);
+  const isCustomDomain = Boolean(cleanHost) && !isInternalPlatformHost(cleanHost);
   const urlPath = req.path || "/";
   const userAgent = req.headers["user-agent"] || "";
   const isBot = isSocialBotOrCrawler(userAgent);
 
-  // Détermination du site Firebase Hosting source
-  const hostingDomain = (hostname.includes("mostrador") && !hostname.includes("organizador"))
-    ? "o-girador-mostrador.web.app"
-    : "o-girador-organizador.web.app";
+  // Détermination de l'ordre des sites Firebase Hosting sources pour app.html
+  const hostingCandidates = isCustomDomain
+    ? ["o-girador-7828c.web.app", "o-girador-mostrador.web.app", "o-girador-organizador.web.app"]
+    : (cleanHost.includes("mostrador") && !cleanHost.includes("organizador"))
+      ? ["o-girador-mostrador.web.app", "o-girador-7828c.web.app", "o-girador-organizador.web.app"]
+      : ["o-girador-organizador.web.app", "o-girador-7828c.web.app"];
+  const primaryHostingDomain = hostingCandidates[0];
 
-  // Valeurs O Girador par défaut
+  // Valeurs neutres par défaut (SaaS)
   let seoTitle = "O Girador | Plateforme de Gestion Associative";
   let seoDesc = "Espace adhérents : agenda, répétitions, vestiaire et vie du groupe.";
-  let seoImage = `https://${hostingDomain}/og-girador-frame.png`;
-  let seoUrl = `https://${hostname}${urlPath}${req.url && req.url.includes("?") ? req.url.slice(req.url.indexOf("?")) : ""}`;
+  let seoImage = `https://${primaryHostingDomain}/og-girador-frame.png`;
+  let siteName = "O Girador";
+  const effectiveHost = cleanHost || rawHost || "organizador.o-girador.com";
+  const queryString = req.url && req.url.includes("?") ? req.url.slice(req.url.indexOf("?")) : "";
+  const seoUrl = `https://${rawHost || effectiveHost}${urlPath}${queryString}`;
 
   try {
     const db = getFirestore();
-    let groupId = null;
     const query = req.query || {};
+    let groupId = null;
+    let assocDoc = null;
 
-    // 1. Détection du groupe via paramètres d'URL (?groupe=, ?tenant=, ?group=, ?groupId=)
-    if (query.groupe || query.tenant || query.group || query.groupId || query.assoc) {
-      groupId = query.groupe || query.tenant || query.group || query.groupId || query.assoc;
-    } 
-    // Détection via chemin d'accès (ex: /rejoindre/sambabulles ou /invite/sambabulles)
-    else if ((urlPath.startsWith("/rejoindre/") || urlPath.startsWith("/invite/")) && urlPath.split("/")[2]) {
-      groupId = urlPath.split("/")[2];
-    } else if (hostname.includes("mostrador.o-girador.com") || hostname.includes("mostrador")) {
-      const pathTenant = urlPath.split("/").filter(Boolean)[0];
-      const reserved = ["api", "login", "setup", "app", "vitrine", "mostrador", "demo", "agenda", "events", "invite", "rejoindre"];
-      if (pathTenant && !reserved.includes(pathTenant.toLowerCase())) {
-        groupId = pathTenant.toLowerCase();
+    // 1. Résolution de l'association : domaine personnalisé Vitrine prioritaire, sinon paramètres/routes internes
+    if (isCustomDomain) {
+      assocDoc = await findAssociationByCustomDomain(db, rawHost);
+      if (assocDoc && assocDoc.exists) {
+        groupId = assocDoc.id;
       }
-      const parts = hostname.split(".");
-      if (!groupId && parts.length > 3 && parts[0] !== "mostrador" && parts[0] !== "organizador") {
-        groupId = parts[0];
-      }
-    } else if (hostname.includes("organizador.o-girador.com")) {
-      const parts = hostname.split(".");
-      if (parts.length > 3 && parts[0] !== "mostrador" && parts[0] !== "organizador") {
-        groupId = parts[0];
-      }
-    } else if (!hostname.includes("o-girador.com") && !hostname.includes("web.app") && !hostname.includes("localhost")) {
-      const associationsRef = db.collection("associations");
-      const possibleHostnames = [hostname];
-      if (hostname.startsWith("www.")) possibleHostnames.push(hostname.replace(/^www\./, ""));
-      else possibleHostnames.push(`www.${hostname}`);
-
-      const snapshot = await associationsRef.where("customDomains", "array-contains-any", possibleHostnames).get();
-      if (!snapshot.empty) {
-        groupId = snapshot.docs[0].id;
+    }
+    if (!assocDoc || !assocDoc.exists) {
+      groupId = extractInternalGroupId({ cleanHost: rawHost || cleanHost, urlPath, query });
+      if (groupId) {
+        assocDoc = await findAssociationByGroupId(db, groupId);
+        if (assocDoc && assocDoc.exists) {
+          groupId = assocDoc.id;
+        }
       }
     }
 
-    // 2. Détection du mode invitation / adhésion
-    const isInviteOrSignup = query.mode === "signup" ||
-                             urlPath.startsWith("/rejoindre") ||
-                             urlPath.startsWith("/invite") ||
-                             query.invite === "true" ||
-                             Boolean(groupId && (query.mode || query.signup || query.invitation));
+    // 2. Détection du mode (Domaine personnalisé ou Mostrador => Vitrine inconditionnelle)
+    const isDedicatedMostrador = isCustomDomain || (cleanHost.includes("mostrador") && !cleanHost.includes("organizador"));
+    const isInviteRoute = !isDedicatedMostrador && (urlPath.startsWith("/rejoindre") || urlPath.startsWith("/invite"));
+    const isInviteOrSignup = !isDedicatedMostrador && (
+      query.mode === "signup" ||
+      isInviteRoute ||
+      query.invite === "true" ||
+      Boolean(groupId && (query.mode || query.signup || query.invitation))
+    );
+    const isInternalAppRoute = urlPath.startsWith("/app") || urlPath.startsWith("/login") || urlPath.startsWith("/setup");
+    const isVitrineRequest = isDedicatedMostrador || (!isInviteOrSignup && !isInternalAppRoute && (
+      urlPath.startsWith("/vitrine") ||
+      urlPath.startsWith("/mostrador") ||
+      query.app === "mostrador"
+    ));
 
-    // 3. Récupération des informations d'identité et de branding depuis Firestore
-    if (groupId) {
-      const cleanId = String(groupId).trim();
-      let assocDoc = await db.collection("associations").doc(cleanId).get();
+    // 3. Construction des métadonnées SEO depuis le document Firestore de l'association
+    if (assocDoc && assocDoc.exists) {
+      const data = assocDoc.data() || {};
+      const assoName = data.nom || data.name || data.branding?.name || groupId;
+      const combinedUrl = data.branding?.combinedLogoUrl || data.combinedLogoUrl;
 
-      // Tolérance multi-casse résiliente
-      if (!assocDoc.exists && cleanId.toLowerCase() !== cleanId) {
-        assocDoc = await db.collection("associations").doc(cleanId.toLowerCase()).get();
-      }
-      if (!assocDoc.exists) {
-        const capitalized = cleanId.charAt(0).toUpperCase() + cleanId.slice(1).toLowerCase();
-        assocDoc = await db.collection("associations").doc(capitalized).get();
-      }
-      if (!assocDoc.exists) {
-        const allAssocs = await db.collection("associations").get();
-        for (const docSnap of allAssocs.docs) {
-          if (docSnap.id.toLowerCase() === cleanId.toLowerCase() ||
-              docSnap.data()?.nom?.toLowerCase() === cleanId.toLowerCase() ||
-              docSnap.data()?.shortName?.toLowerCase() === cleanId.toLowerCase()) {
-            assocDoc = docSnap;
-            break;
-          }
-        }
-      }
+      if (isInviteOrSignup) {
+        seoTitle = `Rejoindre ${assoName} sur O Girador`;
+        seoDesc = "Espace adhérents : agenda, répétitions, vestiaire et vie du groupe.";
+        seoImage = combinedUrl || data.branding?.logoUrl || data.logoUrl || data.coverUrl || seoImage;
+      } else if (isVitrineRequest) {
+        const customSeoTitle = String(data.seoTitle || data.publicTheme?.seoTitle || "").trim();
+        seoTitle = customSeoTitle || `${assoName} | Site Officiel`;
 
-      if (assocDoc.exists) {
-        const data = assocDoc.data() || {};
-        const assoName = data.nom || data.name || data.branding?.name || cleanId;
-        const canonicalDocId = assocDoc.id;
+        const customSeoDesc = stripHtmlTags(
+          data.seoDescription ||
+          data.publicTheme?.seoDescription ||
+          data.publicTheme?.publicCatchphrase ||
+          data.publicTheme?.publicDescription ||
+          data.description ||
+          ""
+        );
+        seoDesc = customSeoDesc || `Découvrez ${assoName} : actualités, prochaines dates, prestations et vie associative.`;
 
-        if (isInviteOrSignup) {
-          seoTitle = `Rejoindre ${assoName} sur O Girador`;
-          seoDesc = "Espace adhérents : agenda, répétitions, vestiaire et vie du groupe.";
-        } else {
-          seoTitle = `${assoName} | O Girador`;
-          seoDesc = data.description
-            ? data.description.substring(0, 180)
-            : `Rejoignez ${assoName} : inscriptions, agenda, répétitions, vestiaire et vie de l'association.`;
-        }
-
-        const _ogTitle = isInviteOrSignup
-          ? `${assoName} — Espace Membre O Girador`
-          : `${assoName} | O Girador`;
-        const _ogDesc = `Rejoignez ${assoName} : inscriptions, agenda, répétitions, vestiaire et vie de l'association.`;
-
-        // Priorité absolue au Sceau Combiné officiel (anneau Cordel ★ O GIRADOR ★ + logo de l'asso)
-        let combinedUrl = data.branding?.combinedLogoUrl || data.combinedLogoUrl;
-        if (!combinedUrl) {
-          if (cleanId.toLowerCase() === "samambaia") {
-            combinedUrl = `https://${hostingDomain}/brandings/logoOGSamambaia.png`;
-            db.collection("associations").doc(canonicalDocId).set({
-              branding: { combinedLogoUrl: combinedUrl, customFaviconUrl: combinedUrl },
-              combinedLogoUrl: combinedUrl,
-              customFaviconUrl: combinedUrl
-            }, { merge: true }).catch(err => console.warn("Auto-sync Samambaia seal err:", err));
-          } else if (cleanId.toLowerCase() === "sambabulles") {
-            combinedUrl = `https://${hostingDomain}/brandings/logoOGSambabulles.png`;
-            db.collection("associations").doc(canonicalDocId).set({
-              branding: { combinedLogoUrl: combinedUrl, customFaviconUrl: combinedUrl },
-              combinedLogoUrl: combinedUrl,
-              customFaviconUrl: combinedUrl
-            }, { merge: true }).catch(err => console.warn("Auto-sync Sambabulles seal err:", err));
-          }
-        }
-
-        seoImage = combinedUrl ||
+        seoImage = data.publicTheme?.publicHeroImage ||
+                   data.coverUrl ||
                    data.branding?.logoUrl ||
                    data.logoUrl ||
-                   data.coverUrl ||
+                   combinedUrl ||
                    seoImage;
+        siteName = assoName || "O Girador";
+      } else {
+        seoTitle = `${assoName} | O Girador`;
+        seoDesc = data.description
+          ? stripHtmlTags(data.description).substring(0, 180)
+          : `Rejoignez ${assoName} : inscriptions, agenda, répétitions, vestiaire et vie de l'association.`;
+        seoImage = combinedUrl || data.branding?.logoUrl || data.logoUrl || data.coverUrl || seoImage;
       }
     }
 
-    // Détermination de l'URL cible de redirection pour les utilisateurs finaux
-    const targetRedirectUrl = (urlPath.startsWith("/rejoindre") || urlPath.startsWith("/invite"))
-      ? `https://${hostname}/?groupe=${encodeURIComponent(groupId || "")}&mode=signup`
+    // URL canonique propre (sans www. sur les domaines personnalisés, normalisée à / sur routes internes)
+    const isRootOrInternalOnCustom = !urlPath || ["/", "/app", "/dashboard", "/login", "/setup", "/vitrine", "/mostrador"].includes(urlPath);
+    const canonicalPath = (isCustomDomain && isRootOrInternalOnCustom) ? "/" : (urlPath || "/");
+    const canonicalUrl = `https://${effectiveHost}${canonicalPath}`;
+
+    const targetRedirectUrl = isInviteRoute
+      ? `https://${rawHost || effectiveHost}/?groupe=${encodeURIComponent(groupId || "")}&mode=signup`
       : seoUrl;
 
-    // 4. Si la requête provient d'un robot crawler (WhatsApp, Facebook, Twitter, curl...),
-    // renvoyer immédiatement un template HTML minimaliste et ultra-rapide (< 1KB)
-    if (isBot) {
+    // 4. Cas spécifique des liens d'invitation (/rejoindre, /invite, ?mode=signup) partagés sur messageries
+    if (isInviteOrSignup && isBot) {
       const safeTitle = escapeHtmlMeta(seoTitle);
       const safeDesc = escapeHtmlMeta(seoDesc);
       const safeImage = escapeHtmlMeta(seoImage);
@@ -2056,8 +2056,7 @@ exports.serveDynamicApp = onRequest(async (req, res) => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>${safeTitle}</title>
   <meta name="description" content="${safeDesc}" />
-
-  <!-- Open Graph / WhatsApp / Facebook / LinkedIn / Telegram -->
+  <link rel="canonical" href="${escapeHtmlMeta(canonicalUrl)}" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="O Girador" />
   <meta property="og:url" content="${safeUrl}" />
@@ -2069,8 +2068,6 @@ exports.serveDynamicApp = onRequest(async (req, res) => {
   <meta property="og:image:width" content="512" />
   <meta property="og:image:height" content="512" />
   <meta property="og:image:alt" content="${safeTitle}" />
-
-  <!-- Twitter / X Card -->
   <meta name="twitter:card" content="summary" />
   <meta name="twitter:title" content="${safeTitle}" />
   <meta name="twitter:description" content="${safeDesc}" />
@@ -2087,66 +2084,75 @@ exports.serveDynamicApp = onRequest(async (req, res) => {
 </html>`;
 
       res.set("Content-Type", "text/html; charset=utf-8");
-      res.set("Cache-Control", "public, max-age=300, s-maxage=600");
+      res.set("Vary", "Host, X-Forwarded-Host, x-fh-requested-host");
+      res.set("Cache-Control", "public, max-age=120, s-maxage=300");
       return res.status(200).send(botHtml);
     }
 
-    // 5. Redirection directe des navigateurs réels accédant à /rejoindre ou /invite
-    if ((urlPath.startsWith("/rejoindre") || urlPath.startsWith("/invite")) && groupId) {
+    // 5. Redirection directe des navigateurs accédant à /rejoindre ou /invite
+    if (isInviteRoute && groupId) {
       return res.redirect(302, `/?groupe=${encodeURIComponent(groupId)}&mode=signup`);
     }
 
-    // 6. Pour les vrais navigateurs : injection des métadonnées dynamiques dans app.html (ou index.html)
+    // 6. Rendu unifié (Googlebot, crawlers & navigateurs) : injection SEO + Manifest PWA dans le <head> de app.html
+    const resolvedCombinedUrl = (assocDoc && assocDoc.exists)
+      ? (assocDoc.data()?.branding?.combinedLogoUrl || assocDoc.data()?.combinedLogoUrl || "")
+      : "";
+    const manifestHref = groupId
+      ? `/manifest.webmanifest?groupe=${encodeURIComponent(groupId)}`
+      : "/manifest.webmanifest";
+    const appleWebAppTitle = isDedicatedMostrador
+      ? (siteName || "Mostrador")
+      : "Organizador";
+    const appleTouchIcon = !isDedicatedMostrador && resolvedCombinedUrl
+      ? resolvedCombinedUrl
+      : "";
+
     try {
-      let htmlResponse = await fetch(`https://${hostingDomain}/app.html?t=${Date.now()}`, {
-        cache: "no-store",
-        headers: { "Cache-Control": "no-cache, no-store, must-revalidate" }
+      const rawHtml = await fetchHostingAppHtml(hostingCandidates);
+      const htmlContent = injectSeoIntoHtml(rawHtml, {
+        seoTitle,
+        seoDesc,
+        seoImage,
+        canonicalUrl,
+        siteName,
+        manifestHref,
+        appleWebAppTitle,
+        appleTouchIcon
       });
-      if (!htmlResponse.ok) {
-        htmlResponse = await fetch(`https://${hostingDomain}/index.html?t=${Date.now()}`, {
-          cache: "no-store",
-          headers: { "Cache-Control": "no-cache, no-store, must-revalidate" }
-        });
-      }
-      if (!htmlResponse.ok && hostingDomain !== "o-girador-organizador.web.app") {
-        htmlResponse = await fetch(`https://o-girador-organizador.web.app/app.html?t=${Date.now()}`, {
-          cache: "no-store",
-          headers: { "Cache-Control": "no-cache, no-store, must-revalidate" }
-        });
-        if (!htmlResponse.ok) {
-          htmlResponse = await fetch(`https://o-girador-organizador.web.app/index.html?t=${Date.now()}`, {
-            cache: "no-store",
-            headers: { "Cache-Control": "no-cache, no-store, must-revalidate" }
-          });
-        }
-      }
-      if (!htmlResponse.ok) {
-        throw new Error(`Impossible de récupérer app.html ou index.html (status: ${htmlResponse.status})`);
-      }
-
-      let htmlContent = await htmlResponse.text();
-
-      htmlContent = htmlContent
-        .replace(/<title>.*?<\/title>/gi, `<title>${escapeHtmlMeta(seoTitle)}</title>`)
-        .replace(/<meta name="title" content=".*?" \/>/gi, `<meta name="title" content="${escapeHtmlMeta(seoTitle)}" />`)
-        .replace(/<meta name="description" content=".*?" \/>/gi, `<meta name="description" content="${escapeHtmlMeta(seoDesc)}" />`)
-        .replace(/<meta property="og:title" content=".*?" \/>/gi, `<meta property="og:title" content="${escapeHtmlMeta(seoTitle)}" />`)
-        .replace(/<meta property="og:description" content=".*?" \/>/gi, `<meta property="og:description" content="${escapeHtmlMeta(seoDesc)}" />`)
-        .replace(/<meta property="og:image" content=".*?" \/>/gi, `<meta property="og:image" content="${escapeHtmlMeta(seoImage)}" />`)
-        .replace(/<meta property="og:image:secure_url" content=".*?" \/>/gi, `<meta property="og:image:secure_url" content="${escapeHtmlMeta(seoImage)}" />`)
-        .replace(/<meta property="og:url" content=".*?" \/>/gi, `<meta property="og:url" content="${escapeHtmlMeta(seoUrl)}" />`)
-        .replace(/<meta name="twitter:title" content=".*?" \/>/gi, `<meta name="twitter:title" content="${escapeHtmlMeta(seoTitle)}" />`)
-        .replace(/<meta name="twitter:description" content=".*?" \/>/gi, `<meta name="twitter:description" content="${escapeHtmlMeta(seoDesc)}" />`)
-        .replace(/<meta name="twitter:image" content=".*?" \/>/gi, `<meta name="twitter:image" content="${escapeHtmlMeta(seoImage)}" />`);
 
       res.set("Content-Type", "text/html; charset=utf-8");
-      res.set("Cache-Control", "public, max-age=300, s-maxage=600");
+      res.set("Vary", "Host, X-Forwarded-Host, x-fh-requested-host");
+      res.set("Cache-Control", "public, max-age=60, s-maxage=120");
       return res.status(200).send(htmlContent);
     } catch (fetchErr) {
-      console.warn("serveDynamicApp - Erreur chargement HTML distant, secours local :", fetchErr);
-      return res.redirect(302, targetRedirectUrl);
+      console.warn("serveDynamicApp - Erreur chargement app.html, HTML SEO de secours :", fetchErr);
+      const safeTitle = escapeHtmlMeta(seoTitle);
+      const safeDesc = escapeHtmlMeta(seoDesc);
+      const safeCanonical = escapeHtmlMeta(canonicalUrl);
+      const safeImage = escapeHtmlMeta(seoImage);
+      const fallbackHtml = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${safeTitle}</title>
+  <meta name="description" content="${safeDesc}" />
+  <link rel="canonical" href="${safeCanonical}" />
+  <link id="app-manifest" rel="manifest" href="${escapeHtmlMeta(manifestHref)}" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="${escapeHtmlMeta(siteName)}" />
+  <meta property="og:url" content="${safeCanonical}" />
+  <meta property="og:title" content="${safeTitle}" />
+  <meta property="og:description" content="${safeDesc}" />
+  <meta property="og:image" content="${safeImage}" />
+</head>
+<body><h1>${safeTitle}</h1><p>${safeDesc}</p></body>
+</html>`;
+      res.set("Content-Type", "text/html; charset=utf-8");
+      res.set("Cache-Control", "no-store");
+      return res.status(200).send(fallbackHtml);
     }
-
   } catch (error) {
     console.error("serveDynamicApp - Erreur générale :", error);
     res.status(500).send("Erreur de génération SEO dynamique.");
@@ -2154,38 +2160,173 @@ exports.serveDynamicApp = onRequest(async (req, res) => {
 });
 
 /**
+ * Cloud Function HTTP (v2) : serveDynamicManifest
+ * Sert dynamiquement `/manifest.webmanifest` (et `/api/manifest.webmanifest`) en HTTPS pour le moteur WebAPK de Chrome Android :
+ * - Sur Organizador : `short_name` TOUJOURS `"Organizador"`, `name` `"Organizador — ${groupName}"` (ou `"Organizador"`).
+ * - Résout Firestore `associations/{groupId}` et injecte deux entrées séparées :
+ *   * `"purpose": "any"` -> `branding.combinedLogoUrl` (médaillon détouré à coins transparents)
+ *   * `"purpose": "maskable"` -> `branding.combinedLogoMaskableUrl` (carré 100 % opaque `#8B2A1A` calibré à ~84 %)
+ */
+exports.serveDynamicManifest = onRequest({ cors: true, invoker: "public" }, async (req, res) => {
+  const rawHost = resolveIncomingHost(req);
+  const cleanHost = normalizeDomainHost(rawHost);
+  const isCustomDomain = Boolean(cleanHost) && !isInternalPlatformHost(cleanHost);
+  const isDedicatedMostrador = isCustomDomain || (cleanHost.includes("mostrador") && !cleanHost.includes("organizador"));
+  const effectiveHost = cleanHost || rawHost || "organizador.o-girador.com";
+
+  try {
+    const db = getFirestore();
+    const query = req.query || {};
+    let groupId = "";
+    let assocData = null;
+
+    if (isCustomDomain) {
+      const domainDoc = await findAssociationByCustomDomain(db, rawHost);
+      if (domainDoc && domainDoc.exists) {
+        groupId = domainDoc.id;
+        assocData = domainDoc.data() || null;
+      }
+    }
+
+    if (!assocData) {
+      const requestedGroup = extractInternalGroupId({
+        cleanHost: rawHost || cleanHost,
+        urlPath: req.path || "/manifest.webmanifest",
+        query
+      });
+      if (requestedGroup) {
+        groupId = requestedGroup;
+        const assocDoc = await findAssociationByGroupId(db, requestedGroup);
+        if (assocDoc && assocDoc.exists) {
+          groupId = assocDoc.id;
+          assocData = assocDoc.data() || null;
+        }
+      }
+    }
+
+    const manifestPayload = buildDynamicManifestPayload({
+      effectiveHost,
+      isDedicatedMostrador,
+      isCustomDomain,
+      groupId,
+      assocData
+    });
+
+    res.set("Content-Type", "application/manifest+json; charset=utf-8");
+    res.set("Cache-Control", "no-cache, no-store, must-revalidate");
+    res.set("Vary", "Host, X-Forwarded-Host, x-fh-requested-host");
+    return res.status(200).send(JSON.stringify(manifestPayload, null, 2));
+  } catch (err) {
+    console.error("serveDynamicManifest - Erreur :", err);
+    const fallbackPayload = buildDynamicManifestPayload({
+      effectiveHost,
+      isDedicatedMostrador,
+      isCustomDomain
+    });
+    res.set("Content-Type", "application/manifest+json; charset=utf-8");
+    res.set("Cache-Control", "no-cache, no-store, must-revalidate");
+    return res.status(200).send(JSON.stringify(fallbackPayload, null, 2));
+  }
+});
+
+/**
  * Cloud Function HTTP (v2) : syncSealsAdmin
  * Endpoint d'administration pour synchroniser immédiatement les sceaux combinés dans Firestore.
  */
-exports.syncSealsAdmin = onRequest(async (req, res) => {
+exports.syncSealsAdmin = onRequest({ invoker: "public" }, async (req, res) => {
   try {
     const db = getFirestore();
-    const samambaiaUrl = "https://organizador.o-girador.com/brandings/logoOGSamambaia.png";
-    const sambabullesUrl = "https://organizador.o-girador.com/brandings/logoOGSambabulles.png";
+    const { getStorage } = require("firebase-admin/storage");
+    const bucket = getStorage().bucket();
+
+    const mirrorAssetToStorage = async (cdnUrl, objectPath) => {
+      try {
+        const resp = await fetch(`${cdnUrl}?t=${Date.now()}`, { cache: "no-store" });
+        if (!resp.ok) return cdnUrl;
+        const buf = Buffer.from(await resp.arrayBuffer());
+        const file = bucket.file(objectPath);
+        let token = crypto.randomUUID();
+        const [exists] = await file.exists();
+        if (exists) {
+          const [meta] = await file.getMetadata();
+          const existingTok = meta?.metadata?.firebaseStorageDownloadTokens;
+          if (existingTok) token = String(existingTok).split(",")[0];
+        }
+        await file.save(buf, {
+          resumable: false,
+          contentType: "image/png",
+          metadata: {
+            cacheControl: "public, max-age=86400",
+            metadata: { firebaseStorageDownloadTokens: token }
+          }
+        });
+        return `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(objectPath)}?alt=media&token=${token}`;
+      } catch (storageErr) {
+        console.warn(`syncSealsAdmin - Repli CDN pour ${objectPath}:`, storageErr.message);
+        return cdnUrl;
+      }
+    };
+
+    const samCdnAny = "https://organizador.o-girador.com/brandings/logoOGSamambaia.png";
+    const samCdnMask = "https://organizador.o-girador.com/brandings/logoOGSamambaia-maskable.png";
+    const sambaCdnAny = "https://organizador.o-girador.com/brandings/logoOGSambabulles.png";
+    const sambaCdnMask = "https://organizador.o-girador.com/brandings/logoOGSambabulles-maskable.png";
+
+    const [samambaiaUrl, samambaiaMaskableUrl, sambabullesUrl, sambabullesMaskableUrl] = await Promise.all([
+      mirrorAssetToStorage(samCdnAny, "brandings/Samambaia/combined-logo.png"),
+      mirrorAssetToStorage(samCdnMask, "brandings/Samambaia/combined-logo-maskable.png"),
+      mirrorAssetToStorage(sambaCdnAny, "brandings/sambabulles/combined-logo.png"),
+      mirrorAssetToStorage(sambaCdnMask, "brandings/sambabulles/combined-logo-maskable.png")
+    ]);
+
+    const samambaiaSeoTitle = "Samambaia — Maracatú & Percussions Brésiliennes | Association Répercussion (Auray)";
+    const samambaiaSeoDesc = "Depuis 1997 à Auray (Morbihan), l'association Répercussion fait vibrer vos événements avec Samambaia, groupe de Maracatú : percussions, chants et danses du Brésil.";
+    const samambaiaDomains = ["samambaia-maracatu.fr", "www.samambaia-maracatu.fr"];
 
     await db.collection("associations").doc("Samambaia").set({
       branding: {
         combinedLogoUrl: samambaiaUrl,
+        combinedLogoMaskableUrl: samambaiaMaskableUrl,
         customFaviconUrl: samambaiaUrl
       },
       combinedLogoUrl: samambaiaUrl,
+      combinedLogoMaskableUrl: samambaiaMaskableUrl,
       customFaviconUrl: samambaiaUrl
     }, { merge: true });
+
+    await db.collection("associations").doc("samambaia").set({
+      branding: {
+        combinedLogoUrl: samambaiaUrl,
+        combinedLogoMaskableUrl: samambaiaMaskableUrl
+      },
+      combinedLogoUrl: samambaiaUrl,
+      combinedLogoMaskableUrl: samambaiaMaskableUrl
+    }, { merge: true });
+
+    await db.collection("associations").doc("Samambaia").update({
+      customDomains: samambaiaDomains,
+      seoTitle: samambaiaSeoTitle,
+      seoDescription: samambaiaSeoDesc,
+      "publicTheme.seoTitle": samambaiaSeoTitle,
+      "publicTheme.seoDescription": samambaiaSeoDesc
+    });
 
     await db.collection("associations").doc("sambabulles").set({
       branding: {
         combinedLogoUrl: sambabullesUrl,
+        combinedLogoMaskableUrl: sambabullesMaskableUrl,
         customFaviconUrl: sambabullesUrl
       },
       combinedLogoUrl: sambabullesUrl,
+      combinedLogoMaskableUrl: sambabullesMaskableUrl,
       customFaviconUrl: sambabullesUrl
     }, { merge: true });
 
     res.json({
       success: true,
       updated: {
-        Samambaia: samambaiaUrl,
-        sambabulles: sambabullesUrl
+        Samambaia: { any: samambaiaUrl, maskable: samambaiaMaskableUrl },
+        sambabulles: { any: sambabullesUrl, maskable: sambabullesMaskableUrl }
       }
     });
   } catch (err) {
@@ -2196,41 +2337,46 @@ exports.syncSealsAdmin = onRequest(async (req, res) => {
 
 /**
  * Cloud Function HTTP (v2) : serveSitemap
- * Génère dynamiquement le sitemap.xml en fonction du domaine (tenant).
+ * Génère dynamiquement le sitemap.xml canonique en fonction du domaine entrant.
  */
 exports.serveSitemap = onRequest(async (req, res) => {
-  const hostname = req.hostname;
-  
-  // Implémentation basique : on liste l'accueil.
-  // Idéalement, on interrogerait Firestore pour lister les events publics du groupe.
+  const rawHost = resolveIncomingHost(req);
+  const cleanHost = normalizeDomainHost(rawHost);
+  const effectiveHost = (!isInternalPlatformHost(cleanHost) && cleanHost) ? cleanHost : (rawHost || "mostrador.o-girador.com");
+
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
    <url>
-      <loc>https://${hostname}/</loc>
-      <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
-      <changefreq>daily</changefreq>
+      <loc>https://${escapeHtmlMeta(effectiveHost)}/</loc>
+      <lastmod>${new Date().toISOString().split("T")[0]}</lastmod>
+      <changefreq>weekly</changefreq>
       <priority>1.0</priority>
    </url>
 </urlset>`;
 
-  res.set('Content-Type', 'text/xml');
-  res.set('Cache-Control', 'public, max-age=3600, s-maxage=86400');
+  res.set("Content-Type", "text/xml; charset=utf-8");
+  res.set("Vary", "Host, X-Forwarded-Host, x-fh-requested-host");
+  res.set("Cache-Control", "public, max-age=3600, s-maxage=86400");
   res.status(200).send(xml);
 });
 
 /**
  * Cloud Function HTTP (v2) : serveRobotsTxt
- * Autorise dynamiquement l'indexation.
+ * Autorise dynamiquement l'indexation et référence le sitemap du domaine courant.
  */
 exports.serveRobotsTxt = onRequest(async (req, res) => {
-  const hostname = req.hostname;
+  const rawHost = resolveIncomingHost(req);
+  const cleanHost = normalizeDomainHost(rawHost);
+  const effectiveHost = (!isInternalPlatformHost(cleanHost) && cleanHost) ? cleanHost : (rawHost || "mostrador.o-girador.com");
+
   const txt = `User-agent: *
 Allow: /
 
-Sitemap: https://${hostname}/sitemap.xml`;
+Sitemap: https://${effectiveHost}/sitemap.xml`;
 
-  res.set('Content-Type', 'text/plain');
-  res.set('Cache-Control', 'public, max-age=3600, s-maxage=86400');
+  res.set("Content-Type", "text/plain; charset=utf-8");
+  res.set("Vary", "Host, X-Forwarded-Host, x-fh-requested-host");
+  res.set("Cache-Control", "public, max-age=3600, s-maxage=86400");
   res.status(200).send(txt);
 });
 

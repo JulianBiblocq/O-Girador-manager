@@ -148,8 +148,10 @@ assert(frLeaves.length === ptLeaves.length, `Symétrie stricte confirmée : FR (
 // -----------------------------------------------------------------------------
 console.log('\n▶️ Test 3 : Contrôle des branchements useTranslation dans les composants');
 
-// Image 1 : TreasuryDashboard.jsx
-const dashSrc = fs.readFileSync(path.resolve('src/components/treasury/TreasuryDashboard.jsx'), 'utf8');
+// Image 1 : TreasuryDashboard.jsx & TreasuryBankDetailsAccordion.jsx
+const dashSrc =
+  fs.readFileSync(path.resolve('src/components/treasury/TreasuryDashboard.jsx'), 'utf8') + '\n' +
+  fs.readFileSync(path.resolve('src/components/treasury/TreasuryBankDetailsAccordion.jsx'), 'utf8');
 assert(dashSrc.includes("t('treasury.detailedFinancialBalance')"), "TreasuryDashboard branche t('treasury.detailedFinancialBalance')");
 assert(dashSrc.includes("t('treasury.catCotisationsAdhesions')"), "TreasuryDashboard branche t('treasury.catCotisationsAdhesions')");
 assert(dashSrc.includes("t('treasury.catRecettesEvents')"), "TreasuryDashboard branche t('treasury.catRecettesEvents')");

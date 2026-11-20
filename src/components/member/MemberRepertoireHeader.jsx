@@ -1,16 +1,14 @@
+// En-tête du Répertoire adhérent avec bascule accordéon, recherche et accès au Carnet de chants (< 85 lignes).
 import React from 'react';
 import { useTranslation } from '../LanguageContext';
 
-/**
- * En-tête et barre d'actions du Répertoire adhérent.
- * Affiche le titre de la saison, la bascule Tout déplier / replier et la recherche.
- */
 export default function MemberRepertoireHeader({
   searchQuery,
   setSearchQuery,
   allExpanded,
   onToggleAllExpanded,
-  hasPieces
+  hasPieces,
+  onOpenSongbook = null
 }) {
   const { t } = useTranslation();
 
@@ -25,7 +23,19 @@ export default function MemberRepertoireHeader({
         </p>
       </div>
 
-      <div className="flex items-center gap-2 w-full sm:w-auto">
+      <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap sm:flex-nowrap">
+        {onOpenSongbook && (
+          <button
+            type="button"
+            onClick={onOpenSongbook}
+            className="text-xs font-black uppercase tracking-wider bg-white border-2 border-encre-noire px-3 py-1.5 rounded shadow-[2px_2px_0px_0px_#181716] hover:bg-amber-50 shrink-0 transition-all cursor-pointer select-none flex items-center gap-1.5"
+            title={t('toadaPrint.modalTitleSongbook')}
+          >
+            <span>🖨️</span>
+            <span>{t('toadaPrint.btnOpenSongbook')}</span>
+          </button>
+        )}
+
         {hasPieces && (
           <button
             type="button"
@@ -40,7 +50,7 @@ export default function MemberRepertoireHeader({
         <div className="relative w-full sm:w-64">
           <input
             type="text"
-            placeholder={t('repertoire.searchPlaceholder') ? `🔍 ${t('repertoire.searchPlaceholder')}` : '🔍 Rechercher un morceau...'}
+            placeholder={`🔍 ${t('repertoire.searchPlaceholder')}`}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="theme-input w-full text-xs font-bold py-1.5 px-3 bg-cordel-bg-light border-2 border-encre-noire rounded"

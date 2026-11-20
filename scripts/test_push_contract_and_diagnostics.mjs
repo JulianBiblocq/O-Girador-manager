@@ -53,8 +53,11 @@ for (const code of [
   assert.ok(diagSource.includes(code), `pushDiagnosticsUtils.js doit gérer ${code}`);
 }
 
-// 4. Vérification du payload FCM et de lastPushDelivery dans functions/index.js
-const fnSource = fs.readFileSync(path.resolve(process.cwd(), 'functions/index.js'), 'utf8');
+// 4. Vérification du payload FCM et de lastPushDelivery dans functions/index.js, pushDispatch.js & pushMessage.js
+const fnSource =
+  fs.readFileSync(path.resolve(process.cwd(), 'functions/index.js'), 'utf8') + '\n' +
+  fs.readFileSync(path.resolve(process.cwd(), 'functions/pushDispatch.js'), 'utf8') + '\n' +
+  fs.readFileSync(path.resolve(process.cwd(), 'functions/pushMessage.js'), 'utf8');
 for (const token of ['channelId', 'apns-priority', 'lastPushDelivery', 'sendEachForMulticast']) {
   assert.ok(fnSource.includes(token), `functions/index.js doit contenir ${token}`);
 }
