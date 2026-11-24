@@ -7,6 +7,7 @@ import SeloAxeStamp from '../SeloAxeStamp';
 import { generateQuizFromSheet, generateQuizFromSong, generateQuizFromSequencerJson, generateQuizFromInstrumentModel, generateI18nTranslationQuiz } from '../../utils/quizGenerator';
 import { normalizePartSteps } from '../../utils/workshopProjectionUtils';
 import PatternVisualizer from './PatternVisualizer';
+import QuizOptionsGrid, { QuestionSignalImage, resolveCorrectChoiceLabel } from './QuizOptionsGrid';
 import FirestoreMediaRenderer from '../student/FirestoreMediaRenderer';
 import { useTranslation } from '../LanguageContext';
 import useMestreSignals from '../../hooks/useMestreSignals';
@@ -97,11 +98,19 @@ export default function AutoEvalQuiz({
   if (questions.length === 0) {
     const isAdmin = profileData?.isSystemAdmin || profileData?.role === 'super-admin' || profileData?.role === 'mestre' || profileData?.role === 'admin';
     const adminMsg = isTranslationQuiz
-      ? "Le dictionnaire i18n ne contient pas assez d'entrées pour générer ce quiz."
-      : (isSong ? "Impossible de générer un quiz pour ce chant avec la configuration actuelle." : (instrumentModelData ? "Ce modèle ne contient pas assez de pièces/matériels pour générer un quiz." : "Cette fiche ne contient pas assez de mots en gras ou de lexique pour générer un quiz."));
+      ? t('pedagogyQuiz.emptyAdminTranslation', "Le dictionnaire bilingue ne contient pas assez d'entrées pour générer ce quiz.")
+      : isSong
+        ? t('pedagogyQuiz.emptyAdminSong', 'Impossible de générer un quiz pour ce chant avec la configuration actuelle.')
+        : instrumentModelData
+          ? t('pedagogyQuiz.emptyAdminModel', 'Ce modèle ne contient pas assez de pièces ou matériels pour générer un quiz.')
+          : t('pedagogyQuiz.emptyAdminSheet', 'Cette fiche ne contient pas assez de termes ou de lexique pour générer un quiz.');
     const studentMsg = isTranslationQuiz
-      ? "Le quiz de traduction n'est pas disponible pour le moment."
-      : (isSong ? "Ce chant n'a pas de quiz associé pour le moment." : (instrumentModelData ? "Ce modèle n'a pas de quiz de fabrication pour le moment." : "Cette fiche n'a pas de quiz associé pour le moment."));
+      ? t('pedagogyQuiz.emptyStudentTranslation', "Le quiz de traduction n'est pas disponible pour le moment.")
+      : isSong
+        ? t('pedagogyQuiz.emptyStudentSong', "Ce chant n'a pas de quiz associé pour le moment.")
+        : instrumentModelData
+          ? t('pedagogyQuiz.emptyStudentModel', "Ce modèle n'a pas de quiz de fabrication pour le moment.")
+          : t('pedagogyQuiz.emptyStudentSheet', "Cette fiche n'a pas de quiz associé pour le moment.");
 
     return (
       <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
@@ -296,9 +305,10 @@ export default function AutoEvalQuiz({
               </span>
               
               {(currentQuestion.questionImage || currentQuestion.imageUrl) && (
-                <div className="w-full flex justify-center mb-4 mt-2">
-                  <img src={currentQuestion.questionImage || currentQuestion.imageUrl} alt={t('pedagogy.progress.illustrationDeLaQuestion')} className="max-h-48 rounded-lg shadow-md border-2 border-cordel-master-dark/20 object-contain bg-white/50 p-2" />
-                </div>
+                <QuestionSignalImage
+                  src={currentQuestion.questionImage || currentQuestion.imageUrl}
+                  alt={t('pedagogy.progress.illustrationDeLaQuestion')}
+                />
               )}
 
               {currentQuestion.audioUrl && currentQuestion.audioUrl.startsWith('firestore:') ? (
@@ -331,67 +341,14 @@ export default function AutoEvalQuiz({
               )}
             </div>
 
-            <div className={`mt-2 ${currentQuestion.type === 'image_options' ? 'grid grid-cols-2 gap-4' : 'flex flex-col gap-2'}`}>
-              {currentQuestion.choices.map((choice, idx) => {
-                let btnStyle = "bg-white border-encre-noire/20 text-encre-noire hover:bg-neutral-100";
-                if (showFeedback) {
-                  if (choice.isCorrect) {
-                    btnStyle = "bg-cordel-vert text-white border-cordel-vert shadow-md";
-                  } else if (selectedChoice === choice) {
-                    btnStyle = "bg-cordel-rouge text-white border-cordel-rouge shadow-md opacity-80";
-                  } else {
-                    btnStyle = "bg-white border-encre-noire/10 text-encre-noire/40 opacity-50";
-                  }
-                }
-
-                const isImageOption = currentQuestion.type === 'image_options' || (choice.text && choice.text.startsWith('http'));
-
-                if (isImageOption) {
-                  return (
-                    <button
-                      key={idx}
-                      onClick={() => handleChoice(choice)}
-                      disabled={showFeedback}
-                      className={`relative aspect-square overflow-hidden rounded-lg border-4 transition-all transform hover:scale-[1.02] active:scale-95 ${showFeedback ? (choice.isCorrect ? 'border-cordel-vert ring-4 ring-cordel-vert/30 shadow-lg z-10' : (selectedChoice === choice ? 'border-cordel-rouge opacity-70' : 'border-transparent opacity-40 grayscale')) : 'border-encre-noire/10 hover:border-cordel-ocre/50 hover:shadow-md'}`}
-                    >
-                      <img src={choice.text} alt={`Option ${idx + 1}`} className="w-full h-full object-cover" />
-                      {showFeedback && (
-                        <div className={`absolute inset-0 flex items-center justify-center bg-black/20 ${choice.isCorrect ? 'bg-cordel-vert/20' : (selectedChoice === choice ? 'bg-cordel-rouge/20' : '')}`}>
-                          <span className="text-4xl drop-shadow-md">
-                            {choice.isCorrect ? '✅' : (selectedChoice === choice ? '❌' : '')}
-                          </span>
-                        </div>
-                      )}
-                    </button>
-                  );
-                }
-
-                return (
-                  <button
-                    key={idx}
-                    onClick={() => handleChoice(choice)}
-                    disabled={showFeedback}
-                    className={`text-left px-4 py-3 rounded-lg border-2 font-bold transition-all flex items-center justify-between gap-4 ${btnStyle}`}
-                  >
-                    <span>{choice.text}</span>
-                    {choice.visualElement && choice.visualElement.type === 'orixaBadge' && (
-                      <div className="shrink-0 scale-75 origin-right">
-                        <SeloAxeStamp 
-                          size="md" 
-                          stampKey={choice.visualElement.stampKey} 
-                          couleurs={choice.visualElement.couleurs} 
-                        />
-                      </div>
-                    )}
-                    {choice.visualElement && choice.visualElement.type === 'pattern' && (
-                      <div className="shrink-0 w-full overflow-hidden scale-75 origin-right">
-                        <PatternVisualizer patternArray={choice.visualElement.patternData} />
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+            <QuizOptionsGrid
+              question={currentQuestion}
+              choices={currentQuestion.choices}
+              selectedChoice={selectedChoice}
+              showFeedback={showFeedback}
+              onSelectChoice={handleChoice}
+              columnsClass="mt-2 flex flex-col gap-2"
+            />
 
             {showFeedback && (
               <div className={`mt-4 p-4 rounded-lg border-2 flex flex-col gap-2 w-full animate-fadeIn text-left ${selectedChoice?.isCorrect ? 'bg-cordel-vert/10 border-cordel-vert' : 'bg-cordel-ocre/10 border-cordel-ocre'}`}>
@@ -399,8 +356,11 @@ export default function AutoEvalQuiz({
                   {selectedChoice?.isCorrect ? t('pedagogy.progress.bienJoue') : t('pedagogy.progress.presque')}
                 </h4>
                 {!selectedChoice?.isCorrect && (
-                  <p className="text-xs font-bold text-encre-noire/80">{t('pedagogy.progress.laBonneReponseEtait')}<span className="font-black">{currentQuestion.choices ? currentQuestion.choices.find(c => c.isCorrect)?.text : currentQuestion.correctAnswer}</span>
-                    {currentQuestion.correctAnswerExplanation ? ` - ${currentQuestion.correctAnswerExplanation}` : ''}
+                  <p className="text-xs font-bold text-encre-noire/80">
+                    {resolveCorrectChoiceLabel(currentQuestion) && (
+                      <>{t('pedagogy.progress.laBonneReponseEtait')}<span className="font-black">{resolveCorrectChoiceLabel(currentQuestion)}</span></>
+                    )}
+                    {currentQuestion.correctAnswerExplanation ? `${resolveCorrectChoiceLabel(currentQuestion) ? ' - ' : ''}${currentQuestion.correctAnswerExplanation}` : ''}
                   </p>
                 )}
                 {selectedChoice?.isCorrect && currentQuestion.correctAnswerExplanation && (
@@ -449,14 +409,20 @@ export default function AutoEvalQuiz({
 
             <div className="flex justify-center flex-wrap gap-4 mt-6">
               <CordelButton variant="default" onClick={onClose} className="px-6 py-2 text-xs font-bold">
-                {isSuccess ? t('pedagogy.progress.fermer') : (isTranslationQuiz ? "Réessayer" : (isSong ? "Relire le chant" : "Relire la fiche"))}
+                {isSuccess
+                  ? t('pedagogy.progress.fermer')
+                  : isTranslationQuiz
+                    ? t('pedagogyQuiz.retryBtn', 'Réessayer')
+                    : isSong
+                      ? t('pedagogyQuiz.rereadSongBtn', 'Relire le chant')
+                      : t('pedagogyQuiz.rereadSheetBtn', 'Relire la fiche')}
               </CordelButton>
               {seqUrl && (
                 <button 
                   type="button"
                   onClick={() => {
                     onClose();
-                    launchCrossApp(seqUrl, { appLabel: 'le Séquenceur' });
+                    launchCrossApp(seqUrl, { appLabel: 'Sequenciador' });
                   }}
                   className="px-6 py-2 text-xs font-black uppercase tracking-widest bg-[var(--color-cordel-vert,#2d6a4f)] text-white rounded border border-[#1b4332] shadow-[2px_2px_0px_0px_#1b4332] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none transition-all flex items-center justify-center cursor-pointer"
                 >{t('pedagogy.progress.sEntrainerSurLeSequenceur')}</button>

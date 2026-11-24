@@ -13,7 +13,7 @@ import { functions, auth } from '../firebase.js';
  * 
  * @param {string} targetUrl - URL brute de destination (ex: https://sequenciador.o-girador.com)
  * @param {Object} [options] - Paramètres optionnels de lancement
- * @param {string} [options.appLabel] - Nom convivial de l'application (ex: "le Séquenceur")
+ * @param {string} [options.appLabel] - Nom convivial de l'application (ex: "Sequenciador")
  * @param {boolean} [options.forceSameTab] - Forcer la navigation dans le même onglet
  */
 export async function launchCrossApp(targetUrl, options = {}) {

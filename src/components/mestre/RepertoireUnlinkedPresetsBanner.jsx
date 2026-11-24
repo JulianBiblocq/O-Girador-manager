@@ -3,10 +3,10 @@ import CordelButton from '../CordelButton';
 import { useTranslation } from '../LanguageContext';
 
 /**
- * Encart informatif et repliable pour afficher les presets complets du Séquenceur
+ * Encart informatif et repliable pour afficher les presets complets de Sequenciador
  * qui ne sont pas encore répertoriés dans le classeur artistique de la saison.
  *
- * @param {Array} unlinkedPresets - Liste des presets complets du Séquenceur non encore rattachés
+ * @param {Array} unlinkedPresets - Liste des presets complets de Sequenciador non encore rattachés
  * @param {Function} onImportPreset - Callback d'importation d'un preset dans le Répertoire
  * @param {string|null} importingPresetId - Identifiant du preset en cours d'importation
  */
@@ -57,7 +57,7 @@ export default function RepertoireUnlinkedPresetsBanner({
         <div className="mt-3 pt-3 border-t border-dashed border-[var(--color-cordel-ocre,#c05621)]/30 flex flex-col gap-2">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
             {unlinkedPresets.map((preset) => {
-              const pTitle = preset.titre || preset.name || 'Morceau Séquenceur';
+              const pTitle = preset.titre || preset.name || 'Morceau Sequenciador';
               const isImporting = importingPresetId === preset.id;
 
               return (

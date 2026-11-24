@@ -29,8 +29,7 @@ export function useThreadData({
   breakGlassActive = false,
   tagsDisponibles = [],
   effectiveUserTags = [],
-  onClose,
-  t
+  onClose, t, skipInitialScroll = false
 }) {
   const { confirm } = useConfirm();
   const {
@@ -247,16 +246,16 @@ export function useThreadData({
 
   const previousRepliesCountRef = useRef(0);
 
-  // Gestion du défilement initial vers le séparateur ou le bas (confiné au conteneur interne pour préserver la stabilité du viewport mobile)
+  // Gestion du défilement initial vers le séparateur ou le bas (suspendu en cas de saut vers un message précis)
   useEffect(() => {
     let timer = null;
     if (!loading && thread && !hasScrolledInitialRef.current) {
       hasScrolledInitialRef.current = true;
       previousRepliesCountRef.current = thread.reponses?.length || 0;
+      if (skipInitialScroll) return undefined;
       timer = setTimeout(() => {
         const container = messagesContainerRef.current;
         if (!container) return;
-
         if (unreadSeparatorRef.current) {
           const sepTop = unreadSeparatorRef.current.offsetTop - container.offsetTop;
           container.scrollTo({ top: Math.max(0, sepTop - 40), behavior: 'smooth' });
@@ -265,10 +264,8 @@ export function useThreadData({
         }
       }, 150);
     }
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [loading, thread]);
+    return () => { if (timer) clearTimeout(timer); };
+  }, [loading, thread, skipInitialScroll]);
 
   // Défilement automatique vers l'ancre finale à chaque nouveau message reçu
   useEffect(() => {

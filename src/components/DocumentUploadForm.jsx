@@ -547,18 +547,18 @@ export default function DocumentUploadForm({
               />
             </div>
 
-            {/* Champ Séquenceur (Optionnel) pour Signes */}
+            {/* Champ Sequenciador (Optionnel) pour Signes */}
             {(category.toLowerCase().includes('signe') || category === 'SignesMestre') && (
               <div className="flex flex-col gap-1 mt-2">
                 <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark">
-                  Lien Séquenceur (Optionnel)
+                  Lien Sequenciador (Optionnel)
                 </label>
                 <input
                   type="text"
                   value={lienSequenceurId}
                   onChange={(e) => setLienSequenceurId(e.target.value)}
                   disabled={isSubmitting}
-                  placeholder="ID ou URL du pattern dans le Séquenceur..."
+                  placeholder="ID ou URL du motif dans Sequenciador..."
                   className="theme-input w-full disabled:opacity-50 text-xs font-semibold"
                 />
               </div>

@@ -24,7 +24,7 @@ export default function WidgetForum({
   tagsDisponibles = [],
   onOpen
 }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const [threads, setThreads] = useState([]);
   const [channels, setChannels] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -158,11 +158,11 @@ export default function WidgetForum({
       {/* 1. Vue PC (>= 1024px) : 2 colonnes équilibrées côte à côte */}
       <div className="hidden lg:grid lg:grid-cols-2 lg:gap-6 w-full items-stretch">
         <CordelCard variant="default" useExtremeBorder={true} className="relative p-4 w-full h-full flex flex-col">
-          <WidgetZapPanel groupId={groupId} user={user} profileData={profileData} isMobile={false} onOpenZap={handleOpenZap} onUnreadCountChange={handleUnreadZapChange} t={t} />
+          <WidgetZapPanel groupId={groupId} user={user} profileData={profileData} isMobile={false} onOpenZap={handleOpenZap} onUnreadCountChange={handleUnreadZapChange} t={t} locale={locale} />
         </CordelCard>
 
         <CordelCard variant="default" useExtremeBorder={true} className="relative p-4 w-full h-full flex flex-col">
-          <WidgetPorteVoixPanel threads={visibleThreads} channels={activeChannels} loading={isLoading} isMobile={false} currentUserId={currentUserId} effectiveReadThreads={effectiveReadThreads} unreadThreadsCount={unreadThreadsCount} onOpenForum={() => onOpen && onOpen()} onOpenThread={(id) => onOpen && onOpen(id)} t={t} />
+          <WidgetPorteVoixPanel threads={visibleThreads} channels={activeChannels} loading={isLoading} isMobile={false} currentUserId={currentUserId} effectiveReadThreads={effectiveReadThreads} unreadThreadsCount={unreadThreadsCount} onOpenForum={() => onOpen && onOpen()} onOpenThread={(id) => onOpen && onOpen(id)} t={t} locale={locale} />
         </CordelCard>
       </div>
 
@@ -183,10 +183,10 @@ export default function WidgetForum({
 
           <div onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} className="w-full">
             <div className={activeMobileTab === 'zap' ? 'block' : 'hidden'}>
-              <WidgetZapPanel groupId={groupId} user={user} profileData={profileData} isMobile={true} onOpenZap={handleOpenZap} onUnreadCountChange={handleUnreadZapChange} t={t} />
+              <WidgetZapPanel groupId={groupId} user={user} profileData={profileData} isMobile={true} onOpenZap={handleOpenZap} onUnreadCountChange={handleUnreadZapChange} t={t} locale={locale} />
             </div>
             <div className={activeMobileTab === 'porte-voix' ? 'block' : 'hidden'}>
-              <WidgetPorteVoixPanel threads={visibleThreads} channels={activeChannels} loading={isLoading} isMobile={true} currentUserId={currentUserId} effectiveReadThreads={effectiveReadThreads} unreadThreadsCount={unreadThreadsCount} onOpenForum={() => onOpen && onOpen()} onOpenThread={(id) => onOpen && onOpen(id)} t={t} />
+              <WidgetPorteVoixPanel threads={visibleThreads} channels={activeChannels} loading={isLoading} isMobile={true} currentUserId={currentUserId} effectiveReadThreads={effectiveReadThreads} unreadThreadsCount={unreadThreadsCount} onOpenForum={() => onOpen && onOpen()} onOpenThread={(id) => onOpen && onOpen(id)} t={t} locale={locale} />
             </div>
           </div>
         </CordelCard>

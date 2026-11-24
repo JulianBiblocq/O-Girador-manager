@@ -22,7 +22,7 @@ export default function RodaQuizStatsBanner({ profileData }) {
       return;
     }
 
-    const parcoursRef = doc(db, 'users', userId, 'parcours', groupId || 'default');
+    const parcoursRef = doc(db, 'users', userId, 'parcours', groupId);
     const unsubscribe = onSnapshot(parcoursRef, (snapshot) => {
       setLoading(false);
       if (snapshot.exists()) {

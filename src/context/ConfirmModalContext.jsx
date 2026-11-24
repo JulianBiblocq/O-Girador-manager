@@ -6,21 +6,20 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react';
 import CordelConfirmModal from '../components/common/CordelConfirmModal';
 import CordelPromptModal from '../components/common/CordelPromptModal';
+import { useTranslation } from '../components/LanguageContext';
 
 export const ConfirmModalContext = createContext(null);
 export const ConfirmContext = ConfirmModalContext;
 
-/**
- * ConfirmModalProvider
- * Fournisseur de contexte global encapsulant les modales Cordel.
- */
 export function ConfirmModalProvider({ children }) {
+  const { t } = useTranslation();
+
   const [modalState, setModalState] = useState({
     isOpen: false,
     title: '',
     message: '',
-    confirmLabel: 'Confirmer',
-    cancelLabel: 'Annuler',
+    confirmLabel: '',
+    cancelLabel: '',
     variant: 'danger',
     isAlert: false,
     resolve: null
@@ -28,12 +27,12 @@ export function ConfirmModalProvider({ children }) {
 
   const [promptState, setPromptState] = useState({
     isOpen: false,
-    title: 'Saisie requise',
+    title: '',
     message: '',
     defaultValue: '',
     placeholder: '',
-    confirmLabel: 'Valider',
-    cancelLabel: 'Annuler',
+    confirmLabel: '',
+    cancelLabel: '',
     variant: 'vert',
     multiline: false,
     inputType: 'text',
@@ -46,71 +45,61 @@ export function ConfirmModalProvider({ children }) {
       if (typeof options === 'string') {
         setModalState({
           isOpen: true,
-          title: 'Confirmation de suppression',
+          title: t('cordelModal.deleteConfirmTitle', 'Confirmation de suppression'),
           message: options,
-          confirmLabel: 'Oui, supprimer',
-          cancelLabel: 'Annuler',
+          confirmLabel: t('common.yesDelete', 'Oui, supprimer'),
+          cancelLabel: t('common.cancel', 'Annuler'),
           variant: 'danger',
           isAlert: false,
           resolve
         });
       } else {
         const opts = options || {};
-        const variant = opts.variant || 'danger';
+        const variant = opts.variant || opts.confirmVariant || 'danger';
         const defaultTitle =
           variant === 'warning'
-            ? 'Avertissement'
+            ? t('cordelModal.warningTitle', 'Avertissement')
             : variant === 'success'
-            ? 'Succès'
-            : variant === 'info'
-            ? 'Information'
-            : 'Confirmation';
+              ? t('common.success', 'Succès')
+              : variant === 'info'
+                ? t('cordelModal.infoTitle', 'Information')
+                : t('cordelModal.confirmTitle', 'Confirmation');
 
         const defaultConfirm =
           variant === 'warning'
-            ? 'Confirmer'
+            ? t('common.confirm', 'Confirmer')
             : variant === 'success'
-            ? 'OK'
-            : variant === 'danger'
-            ? 'Supprimer'
-            : 'Confirmer';
+              ? t('cordelModal.ok', 'OK')
+              : variant === 'danger'
+                ? t('common.delete', 'Supprimer')
+                : t('common.confirm', 'Confirmer');
 
         setModalState({
           isOpen: true,
           title: opts.title || defaultTitle,
           message: opts.message || opts.prompt || '',
           confirmLabel: opts.confirmLabel || opts.confirmText || defaultConfirm,
-          cancelLabel: opts.cancelLabel || opts.cancelText || 'Annuler',
+          cancelLabel: opts.cancelLabel || opts.cancelText || t('common.cancel', 'Annuler'),
           variant,
           isAlert: Boolean(opts.isAlert),
           resolve
         });
       }
     });
-  }, []);
+  }, [t]);
 
   const alertModal = useCallback((options) => {
     return new Promise((resolve) => {
       if (typeof options === 'string') {
         const lower = options.toLowerCase();
-        const isSuccess =
-          lower.includes('succès') ||
-          lower.includes('réussi') ||
-          lower.includes('mis à jour') ||
-          lower.includes('validé') ||
-          lower.includes('enregistré') ||
-          lower.includes('créé');
-        const isError =
-          lower.includes('erreur') ||
-          lower.includes('impossible') ||
-          lower.includes('invalide') ||
-          lower.includes('échec');
+        const isSuccess = /succès|réussi|mis à jour|validé|enregistré|créé|sucesso|salvo|atualizado|validado|criado/.test(lower);
+        const isError = /erreur|impossible|invalide|échec|erro|impossível|inválido|falha/.test(lower);
 
         setModalState({
           isOpen: true,
-          title: isSuccess ? 'Succès' : isError ? 'Erreur' : 'Information',
+          title: isSuccess ? t('common.success', 'Succès') : isError ? t('common.error', 'Erreur') : t('cordelModal.infoTitle', 'Information'),
           message: options,
-          confirmLabel: 'OK',
+          confirmLabel: t('cordelModal.ok', 'OK'),
           cancelLabel: '',
           variant: isSuccess ? 'success' : isError ? 'danger' : 'info',
           isAlert: true,
@@ -120,9 +109,9 @@ export function ConfirmModalProvider({ children }) {
         const opts = options || {};
         setModalState({
           isOpen: true,
-          title: opts.title || (opts.variant === 'success' ? 'Succès' : opts.variant === 'danger' ? 'Erreur' : 'Information'),
+          title: opts.title || (opts.variant === 'success' ? t('common.success', 'Succès') : opts.variant === 'danger' ? t('common.error', 'Erreur') : t('cordelModal.infoTitle', 'Information')),
           message: opts.message || '',
-          confirmLabel: opts.confirmLabel || opts.confirmText || 'OK',
+          confirmLabel: opts.confirmLabel || opts.confirmText || t('cordelModal.ok', 'OK'),
           cancelLabel: '',
           variant: opts.variant || 'info',
           isAlert: true,
@@ -130,40 +119,40 @@ export function ConfirmModalProvider({ children }) {
         });
       }
     });
-  }, []);
+  }, [t]);
 
   const promptModal = useCallback((options, defaultVal = '') => {
     return new Promise((resolve) => {
       if (typeof options === 'string') {
         const lower = options.toLowerCase();
-        const isMsg = lower.includes('message');
-        const isLink = lower.includes('lien') || lower.includes('url');
-        const isRefus = lower.includes('rejet') || lower.includes('motif') || lower.includes('refus');
+        const isMsg = lower.includes('message') || lower.includes('mensagem');
+        const isLink = lower.includes('lien') || lower.includes('url') || lower.includes('link');
+        const isRefus = /rejet|motif|refus|rejei|motivo|recus/.test(lower);
 
         setPromptState({
           isOpen: true,
-          title: isMsg ? 'Message privé' : isLink ? 'Insérer un lien' : isRefus ? 'Motif de révision' : 'Saisie Cordel',
+          title: isMsg ? t('cordelModal.privateMessageTitle', 'Message privé') : isLink ? t('cordelModal.insertLinkTitle', 'Insérer un lien') : isRefus ? t('cordelModal.revisionReasonTitle', 'Motif de révision') : t('cordelModal.promptCordelTitle', 'Saisie Cordel'),
           message: options,
           defaultValue: defaultVal || '',
-          placeholder: isMsg ? 'Écrivez votre message ici...' : isLink ? 'https://...' : '',
-          confirmLabel: isMsg ? 'Envoyer' : isRefus ? 'Confirmer' : 'Valider',
-          cancelLabel: 'Annuler',
+          placeholder: isMsg ? t('cordelModal.writeMessagePlaceholder', 'Écrivez votre message ici...') : isLink ? 'https://...' : '',
+          confirmLabel: isMsg ? t('common.send', 'Envoyer') : isRefus ? t('common.confirm', 'Confirmer') : t('cordelModal.validate', 'Valider'),
+          cancelLabel: t('common.cancel', 'Annuler'),
           variant: isRefus ? 'danger' : 'vert',
           multiline: isMsg || isRefus,
           inputType: isLink ? 'url' : 'text',
-          badge: isMsg ? '💬 Message privé' : isLink ? '🔗 Lien web' : isRefus ? '⚠️ Motif requis' : '✏️ Saisie',
+          badge: isMsg ? t('cordelModal.badgePrivateMsg', '💬 Message privé') : isLink ? t('cordelModal.badgeWebLink', '🔗 Lien web') : isRefus ? t('cordelModal.badgeReasonRequired', '⚠️ Motif requis') : t('cordelModal.badgeInputShort', '✏️ Saisie'),
           resolve
         });
       } else {
         const opts = options || {};
         setPromptState({
           isOpen: true,
-          title: opts.title || 'Saisie requise',
+          title: opts.title || t('cordelModal.promptRequiredTitle', 'Saisie requise'),
           message: opts.message || opts.prompt || '',
           defaultValue: opts.defaultValue || defaultVal || '',
           placeholder: opts.placeholder || '',
-          confirmLabel: opts.confirmLabel || opts.confirmText || 'Valider',
-          cancelLabel: opts.cancelLabel || opts.cancelText || 'Annuler',
+          confirmLabel: opts.confirmLabel || opts.confirmText || t('cordelModal.validate', 'Valider'),
+          cancelLabel: opts.cancelLabel || opts.cancelText || t('common.cancel', 'Annuler'),
           variant: opts.variant || 'vert',
           multiline: Boolean(opts.multiline),
           inputType: opts.inputType || 'text',
@@ -172,15 +161,13 @@ export function ConfirmModalProvider({ children }) {
         });
       }
     });
-  }, []);
+  }, [t]);
 
-  // Surcharges globales sécurisées de window.alert et window.prompt
   useEffect(() => {
     if (typeof window !== 'undefined') {
       window.alert = (msg) => {
         alertModal(msg);
       };
-      // Permet aux fonctions asynchrones d'appeler window.prompt tout en bénéficiant de la modale Cordel
       window.prompt = (msg, def) => {
         return promptModal(msg, def);
       };
@@ -188,30 +175,22 @@ export function ConfirmModalProvider({ children }) {
   }, [alertModal, promptModal]);
 
   const handleConfirm = useCallback(() => {
-    if (modalState.resolve) {
-      modalState.resolve(true);
-    }
+    if (modalState.resolve) modalState.resolve(true);
     setModalState((prev) => ({ ...prev, isOpen: false, resolve: null }));
   }, [modalState]);
 
   const handleCancel = useCallback(() => {
-    if (modalState.resolve) {
-      modalState.resolve(false);
-    }
+    if (modalState.resolve) modalState.resolve(false);
     setModalState((prev) => ({ ...prev, isOpen: false, resolve: null }));
   }, [modalState]);
 
   const handleConfirmPrompt = useCallback((value) => {
-    if (promptState.resolve) {
-      promptState.resolve(value);
-    }
+    if (promptState.resolve) promptState.resolve(value);
     setPromptState((prev) => ({ ...prev, isOpen: false, resolve: null }));
   }, [promptState]);
 
   const handleCancelPrompt = useCallback(() => {
-    if (promptState.resolve) {
-      promptState.resolve(null);
-    }
+    if (promptState.resolve) promptState.resolve(null);
     setPromptState((prev) => ({ ...prev, isOpen: false, resolve: null }));
   }, [promptState]);
 
@@ -248,16 +227,12 @@ export function ConfirmModalProvider({ children }) {
   );
 }
 
-// Alias ConfirmProvider pour compatibilité immédiate avec l'existant
 export const ConfirmProvider = ConfirmModalProvider;
 
 function buildConfirmCallable(context) {
   const confirmFn = (options) => {
-    if (context?.confirm) {
-      return context.confirm(options);
-    }
-    // Repli de secours sécurisé si appelé pendant un rechargement HMR ou hors contexte
-    const msg = typeof options === 'string' ? options : (options?.message || options?.prompt || options?.title || 'Confirmer ?');
+    if (context?.confirm) return context.confirm(options);
+    const msg = typeof options === 'string' ? options : (options?.message || options?.prompt || options?.title || '?');
     const fallbackConfirm = typeof window !== 'undefined' ? window['confirm'] : null;
     return Promise.resolve(fallbackConfirm ? fallbackConfirm(msg) : true);
   };
@@ -282,21 +257,11 @@ function buildConfirmCallable(context) {
   return confirmFn;
 }
 
-/**
- * Hook useConfirm
- * Supporte à la fois l'appel direct `const confirm = useConfirm(); await confirm(...)`
- * et la déstructuration `const { confirm, alert, prompt } = useConfirm();`.
- * Intègre un repli sécurisé non-bloquant en cas d'appel temporaire hors Provider (HMR).
- */
 export function useConfirm() {
   const context = useContext(ConfirmModalContext);
   return useMemo(() => buildConfirmCallable(context), [context]);
 }
 
-/**
- * Hook usePrompt
- * Permet d'ouvrir directement une invite de saisie Cordel.
- */
 export function usePrompt() {
   const context = useContext(ConfirmModalContext);
   return context?.prompt || ((options, defaultVal) => {
@@ -308,4 +273,3 @@ export function usePrompt() {
 }
 
 export default ConfirmModalContext;
-

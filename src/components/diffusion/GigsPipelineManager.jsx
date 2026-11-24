@@ -137,7 +137,7 @@ export default function GigsPipelineManager({ groupId, associationSettings: prop
     <div className="flex flex-col gap-5 text-left select-none w-full max-w-none">
       {/* Barre de navigation interne Cordel : Pipeline vs Contacts CRM sous forme de ruban défilant pleine largeur */}
       <div className="flex items-center justify-between gap-3 border-b-2 border-dashed border-cordel-master-dark/30 pb-2 w-full">
-        <div className="flex items-center min-w-0 flex-1 max-w-full overflow-hidden lg:overflow-visible">
+        <div data-tour="gigs-crm-tabs" className="flex items-center min-w-0 flex-1 max-w-full overflow-hidden lg:overflow-visible">
           <HorizontalRibbonContainer activeTabId={activeTab} className="flex-1">
             <button
               type="button"

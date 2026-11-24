@@ -1,7 +1,7 @@
 /**
  * ToadaScoreSheetModal.jsx
  * Modale autonome A4 Portrait N&B (Partition 2 Portées Puxador/Coro ou Tablature 4 Étages)
- * et export MuseScore (.musicxml) depuis le Répertoire d'Organizador, compatible Jour / Nuit (< 138 lignes).
+ * et export MuseScore (.musicxml) depuis le Répertoire dans Organizador, compatible Jour / Nuit (< 138 lignes).
  */
 import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';

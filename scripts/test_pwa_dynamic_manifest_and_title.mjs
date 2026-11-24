@@ -132,7 +132,7 @@ console.log('✅ public/manifest.json : short_name="Organizador", start_url="/",
   }
   assert.deepStrictEqual([maskPx[0], maskPx[1], maskPx[2], maskPx[3]], [139, 42, 26, 255]);
 
-  for (const maskFile of ['public/brandings/logoOGSamambaia-maskable.png', 'public/brandings/logoOGSambabulles-maskable.png']) {
+  for (const maskFile of ['public/brandings/organizador-matrice-maskable.png', 'public/brandings/logoOGSambabulles-maskable.png']) {
     const img = await loadImage(path.resolve(maskFile));
     assert.strictEqual(img.width, 512, `${maskFile} doit faire 512px de large`);
     assert.strictEqual(img.height, 512, `${maskFile} doit faire 512px de haut`);
@@ -144,7 +144,7 @@ console.log('✅ public/manifest.json : short_name="Organizador", start_url="/",
     }
     assert.deepStrictEqual([d[0], d[1], d[2], d[3]], [139, 42, 26, 255], `${maskFile}: coin (0,0) doit être #8B2A1A`);
   }
-  console.log('✅ Génération Canvas duale & assets Samambaia/Sambabulles (any + maskable alpha=255 #8B2A1A) validés');
+  console.log('✅ Génération Canvas duale & assets maskable (alpha=255 #8B2A1A) validés');
 }
 
 // 5. Contrôle pixel par pixel du badge monochrome tambour Alfaia (96x96, #FFFFFF + rgba(0,0,0,0) exclusivement)

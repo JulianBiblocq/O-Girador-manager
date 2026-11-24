@@ -16,7 +16,8 @@ export default function PrivateChatHeader({
   tRole,
   t,
   onBackClick,
-  onOpenMembersModal
+  onOpenMembersModal,
+  onOpenSearch = null
 }) {
   const zapTitle = t?.('forum.zapTitle') && t('forum.zapTitle') !== 'forum.zapTitle'
     ? `💬 ${t('forum.zapTitle')}`
@@ -66,7 +67,7 @@ export default function PrivateChatHeader({
             </div>
             {isGroup ? (
               <span className="text-[9px] font-bold text-cordel-wood">
-                {participantsCount} participants
+                {(t?.('forum.participantsCountLabel') || '{count} participants').replace('{count}', String(participantsCount))}
               </span>
             ) : (
               <span className="theme-stamp-badge theme-stamp-badge-wood text-[7px] border-dashed mt-0.5 self-start scale-90 origin-left">
@@ -77,17 +78,30 @@ export default function PrivateChatHeader({
         </div>
       </div>
 
-      {isGroup && (
-        <button
-          type="button"
-          onClick={onOpenMembersModal}
-          className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider bg-cordel-bg hover:bg-white border border-encre-noire rounded shadow-xs flex items-center gap-1 cursor-pointer shrink-0"
-          title="Gérer les membres du groupe"
-        >
-          <span>⚙️</span>
-          <span className="hidden sm:inline">Membres</span>
-        </button>
-      )}
+      <div className="flex items-center gap-1.5 shrink-0">
+        {onOpenSearch && (
+          <button
+            type="button"
+            onClick={onOpenSearch}
+            className="px-2.5 py-1 text-[11px] font-black bg-cordel-bg hover:bg-white border border-encre-noire rounded shadow-xs flex items-center justify-center cursor-pointer shrink-0"
+            title={t?.('forum.searchOpenFromChat') || 'Rechercher un ancien message'}
+            aria-label={t?.('forum.searchOpenFromChat') || 'Rechercher un ancien message'}
+          >
+            🔍
+          </button>
+        )}
+        {isGroup && (
+          <button
+            type="button"
+            onClick={onOpenMembersModal}
+            className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider bg-cordel-bg hover:bg-white border border-encre-noire rounded shadow-xs flex items-center gap-1 cursor-pointer shrink-0"
+            title={t?.('forum.manageGroupMembersTitle') || 'Gérer les membres du groupe'}
+          >
+            <span>⚙️</span>
+            <span className="hidden sm:inline">{t?.('forum.membersBtnLabel') || 'Membres'}</span>
+          </button>
+        )}
+      </div>
     </div>
   );
 }

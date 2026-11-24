@@ -112,7 +112,7 @@ export default function PushActivationModal({ user, profileData }) {
         <p className="text-xs font-medium opacity-85 leading-relaxed">
           {isContractRecovery
             ? "Suite à une mise à jour du navigateur ou de l'application, un simple clic suffit pour reconnecter tes notifications instantanément."
-            : "Active les alertes sur ton téléphone ou ordinateur pour recevoir en temps réel les convocations, sondages, changements de lieu et messages d'Organizador."}
+            : "Active les alertes sur ton téléphone ou ordinateur pour recevoir en temps réel les convocations, sondages, changements de lieu et messages dans Organizador."}
         </p>
         {activatedSuccess ? (
           <div className="p-3 bg-[var(--color-cordel-vert,#2d6a4f)] text-white font-black text-xs rounded-[var(--theme-border-radius,6px)] text-center">

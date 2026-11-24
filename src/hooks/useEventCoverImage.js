@@ -58,10 +58,14 @@ export function useEventCoverImage({ groupId, setEditForm, translate, externalVa
 
   const internalHandleImageUpload = async (e) => {
     const file = e.target.files?.[0];
+    const targetGroup = String(groupId || '').trim();
     if (!file || !setEditForm) return;
+    if (!targetGroup) {
+      alert("Impossible de téléverser l'image : identifiant d'association manquant.");
+      return;
+    }
     setInternalUploadingImage(true);
     try {
-      const targetGroup = groupId || 'default';
       const storagePath = `documents/${targetGroup}/events/${Date.now()}_${file.name}`;
       const fileRef = ref(storage, storagePath);
       const snapshot = await uploadBytes(fileRef, file);

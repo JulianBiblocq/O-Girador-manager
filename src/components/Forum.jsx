@@ -18,9 +18,13 @@ import ForumThreadCard from './forum/ForumThreadCard';
 import ForumInboxTabsView from './forum/ForumInboxTabsView';
 import GeneralGroupBanner from './forum/GeneralGroupBanner';
 import ForumMainTabsBar from './forum/ForumMainTabsBar';
+import CreateChannelModal from './forum/CreateChannelModal';
+import UnifiedCommSearchBar from './forum/UnifiedCommSearchBar';
+import UnifiedCommSearchResults from './forum/UnifiedCommSearchResults';
 import NewDirectMessageModal from './forum/NewDirectMessageModal';
 import NewGroupModal from './forum/NewGroupModal';
 import { useConversations } from '../hooks/useConversations';
+import { useCommunicationSearch } from '../hooks/useCommunicationSearch';
 import { getGeneralConversationId, isGeneralGroupConversation } from '../utils/generalGroupChatUtils';
 import useHardwareBack from '../hooks/useHardwareBack';
 import ForumChannelsManager from './ForumChannelsManager';
@@ -33,12 +37,10 @@ export default function Forum({
   onClearActivePrivateChat, breakGlassActive = false, initialTab = 'discussions',
   initialThreadId = null, initialConversationId = null, onNavigateToView = null
 }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const { confirm } = useConfirm();
   const { actionLoading, moveThread, togglePinThread, deleteThread } = useForumModeration(profileData?.groupId);
-
-  const translate = (key, fallback) => { const val = t(key); return val === key ? fallback : val; };
-
+  const translate = (key, fallback) => { const val = t(key); return !val || val === key ? fallback : val; };
 
   const [threads, setThreads] = useState([]);
   const [threadLimit, setThreadLimit] = useState(300);
@@ -49,24 +51,20 @@ export default function Forum({
   const [isAdding, setIsAdding] = useState(false);
   const [selectedThread, setSelectedThread] = useState(null);
   const [movingThreadModal, setMovingThreadModal] = useState(null);
-  
-  // État de création de salon et sous-dossier par un membre
   const [isCreatingChannel, setIsCreatingChannel] = useState(false);
   const [isChannelsManagerOpen, setIsChannelsManagerOpen] = useState(false);
   const [newChannelName, setNewChannelName] = useState('');
   const [newChannelParentId, setNewChannelParentId] = useState('');
   const [savingChannel, setSavingChannel] = useState(false);
-  
-  // États d'ouverture des modales dédiées (message direct 1-à-1 et groupe privé)
   const [isNewDirectModalOpen, setIsNewDirectModalOpen] = useState(false);
   const [isNewGroupModalOpen, setIsNewGroupModalOpen] = useState(false);
   const [activeConversationId, setActiveConversationId] = useState(initialConversationId || null);
+  const [highlightChatTarget, setHighlightChatTarget] = useState(null);
+  const [highlightThreadReplyIdx, setHighlightThreadReplyIdx] = useState(null);
+  const searchInputRef = useRef(null);
 
-  // Synchronisation avec initialConversationId
   useEffect(() => {
-    if (initialConversationId) {
-      setActiveConversationId(initialConversationId);
-    }
+    if (initialConversationId) setActiveConversationId(initialConversationId);
   }, [initialConversationId]);
 
   // Synchronisation avec les paramètres de navigation URL pour conversationId et threadId (retour matériel / popstate)
@@ -752,63 +750,79 @@ export default function Forum({
     : null;
 
   const handleSelectThread = useCallback((thread, originChannelId = null) => {
-    // Mémorise le salon d'où venait l'utilisateur avant d'ouvrir le sujet
     previousChannelRef.current = originChannelId !== null ? originChannelId : activeChannelId;
     setSelectedThread(thread);
     setMobileView('discussion');
-
-    if (thread?.id) {
-      markThreadAsReadLocally(thread.id);
-    }
-
+    if (thread?.id) markThreadAsReadLocally(thread.id);
     const newUrl = new URL(window.location);
     newUrl.searchParams.set('threadId', thread.id);
-    window.history.pushState(
-      { ...window.history.state, threadId: thread.id },
-      '',
-      newUrl.toString()
-    );
+    window.history.pushState({ ...window.history.state, threadId: thread.id }, '', newUrl.toString());
   }, [activeChannelId, markThreadAsReadLocally]);
 
   const handleCloseThread = useCallback(() => {
-    // 1. Nettoyer l'URL de manière idempotente sans double popstate
     const newUrl = new URL(window.location);
     if (newUrl.searchParams.has('threadId')) {
       newUrl.searchParams.delete('threadId');
       window.history.replaceState({ ...window.history.state, threadId: null }, '', newUrl.toString());
     }
-
-    // 2. Restaurer le salon d'origine sans éjecter l'utilisateur vers l'accueil de l'application
     if (previousChannelRef.current !== null && previousChannelRef.current !== undefined) {
       setActiveChannelId(previousChannelRef.current);
     }
-    // Basculer directement sur la liste des salons principaux sur mobile
     setMobileView('channels');
     setSelectedThread(null);
   }, []);
 
-  const hasWriteAccess = useCallback((channel) => {
-    return canUserWriteInForumChannel(channel, profileData, tagsDisponibles, effectiveUserTags, breakGlassActive);
-  }, [profileData, tagsDisponibles, effectiveUserTags, breakGlassActive]);
+  const hasWriteAccess = useCallback(
+    (channel) => canUserWriteInForumChannel(channel, profileData, tagsDisponibles, effectiveUserTags, breakGlassActive),
+    [profileData, tagsDisponibles, effectiveUserTags, breakGlassActive]
+  );
+  const activeChannel = useMemo(() => channels.find((c) => c.id === activeChannelId), [channels, activeChannelId]);
 
-  const activeChannel = useMemo(() => {
-    return channels.find(c => c.id === activeChannelId);
-  }, [channels, activeChannelId]);
+  const {
+    searchQuery, setSearchQuery, categoryFilter, setCategoryFilter,
+    isSearchActive, filteredResults, counts: searchCounts,
+    loadingMessages: searchLoadingMsgs, hasLoadedCache: searchHasCache,
+    refreshCache: refreshSearchCache, clearSearch
+  } = useCommunicationSearch({
+    user, groupId: profileData?.groupId, accessibleThreads, channels,
+    allInboxConversations, privateMessages, usersMap,
+    zapLabel: t('forum.zapTitle'), groupLabel: t('forum.searchBadgeGroup'), directLabel: t('forum.searchBadgeDirect')
+  });
+
+  const handleSelectSearchResult = useCallback(async (item) => {
+    if (!item) return;
+    if (item.category === 'forum') {
+      const targetThread = accessibleThreads.find((th) => th.id === item.threadId);
+      if (!targetThread) return;
+      if (item.channelId) setActiveChannelId(item.channelId);
+      setHighlightThreadReplyIdx(item.replyIndex ?? 'root');
+      handleSelectThread(targetThread, item.channelId || activeChannelId);
+      return;
+    }
+    setHighlightChatTarget(item.messageId ? { id: item.messageId, doc: item.rawMessage || null } : null);
+    if (item.conversationId && !String(item.conversationId).startsWith('legacy_')) {
+      setActiveChatUserId(null);
+      setActiveConversationId(item.conversationId);
+    } else if (item.recipientId) {
+      const convId = await createDirectConversation(item.recipientId);
+      if (convId) {
+        setActiveChatUserId(null);
+        setActiveConversationId(convId);
+      } else {
+        setActiveChatUserId(item.recipientId);
+      }
+    }
+  }, [accessibleThreads, activeChannelId, handleSelectThread, createDirectConversation, setActiveChatUserId]);
 
   const handleDeleteThreadPrompt = async (thread) => {
     const ok = await confirm({
-      title: "Supprimer la discussion",
-      message: `Voulez-vous vraiment supprimer la discussion "${thread.titre}" ?`,
-      confirmText: "Oui, supprimer",
-      cancelText: "Annuler",
-      variant: "danger"
+      title: t('forumExtra.deleteThreadTitle', 'Supprimer la discussion'),
+      message: t('forumExtra.deleteThreadMessage', { title: thread.titre }),
+      confirmText: t('common.yesDelete', 'Oui, supprimer'), cancelText: t('common.cancel', 'Annuler'), variant: 'danger'
     });
-    if (ok) {
-      await deleteThread(thread.id);
-    }
+    if (ok) await deleteThread(thread.id);
   };
 
-  // Si une discussion privée (directe ou groupe) est active, afficher la vue de chat en pleine page
   if (activeConversationId || activeChatUserId) {
     const activeConv =
       modernConversations.find((c) => c.id === activeConversationId) ||
@@ -816,52 +830,43 @@ export default function Forum({
     const resolvedOtherId =
       activeChatUserId ||
       (activeConv?.type === 'direct' ? activeConv?.participantIds?.find((id) => id !== user?.uid) : null);
-    const resolvedOtherUser = resolvedOtherId
-      ? usersMap[resolvedOtherId] || { id: resolvedOtherId }
-      : null;
+    const resolvedOtherUser = resolvedOtherId ? usersMap[resolvedOtherId] || { id: resolvedOtherId } : null;
+    const closePrivateChat = () => {
+      setHighlightChatTarget(null);
+      setActiveConversationId(null);
+      setActiveChatUserId(null);
+      if (onClearActivePrivateChat) onClearActivePrivateChat();
+    };
+    const openSearchFromChat = () => {
+      const nextFilter = isGeneralGroupConversation(activeConv || activeConversationId, profileData?.groupId)
+        ? 'zap' : activeConv?.type === 'group' ? 'groups' : 'direct';
+      closePrivateChat();
+      setCategoryFilter(nextFilter);
+      setTimeout(() => searchInputRef.current?.focus(), 60);
+    };
 
     return (
       <PrivateChatView
-        user={user}
-        conversation={activeConv}
-        profileData={profileData}
-        recipientId={resolvedOtherId}
-        otherUser={resolvedOtherUser}
-        usersMap={usersMap}
-        initialText={initialPrivateMessage}
-        onMarkAsRead={markConversationAsRead}
-        onAddParticipants={addParticipantsToGroup}
-        onRemoveParticipant={removeParticipantFromGroup}
-        onRenameGroup={renameGroup}
-        onLeaveGroup={leaveGroup}
-        isSystemAdmin={isModeratorOrAdmin}
-        onClose={() => {
-          setActiveConversationId(null);
-          setActiveChatUserId(null);
-          if (onClearActivePrivateChat) onClearActivePrivateChat();
-        }}
-        onBack={() => {
-          setActiveConversationId(null);
-          setActiveChatUserId(null);
-          if (onClearActivePrivateChat) onClearActivePrivateChat();
-        }}
+        user={user} conversation={activeConv} profileData={profileData}
+        recipientId={resolvedOtherId} otherUser={resolvedOtherUser} usersMap={usersMap}
+        initialText={initialPrivateMessage} onMarkAsRead={markConversationAsRead}
+        onAddParticipants={addParticipantsToGroup} onRemoveParticipant={removeParticipantFromGroup}
+        onRenameGroup={renameGroup} onLeaveGroup={leaveGroup} isSystemAdmin={isModeratorOrAdmin}
+        highlightMessageId={highlightChatTarget?.id || null} highlightMessageDoc={highlightChatTarget?.doc || null}
+        onClearHighlightMessage={() => setHighlightChatTarget(null)} onOpenSearch={openSearchFromChat}
+        onClose={closePrivateChat} onBack={closePrivateChat}
       />
     );
   }
 
   if (activeThread) {
     return (
-      <ThreadView 
-        threadId={activeThread.id} 
-        user={user} 
-        profileData={profileData} 
-        channels={channels}
-        allThreads={accessibleThreads}
-        allUsers={Object.values(usersMap)}
-        breakGlassActive={breakGlassActive}
-        tagsDisponibles={tagsDisponibles}
-        effectiveUserTags={effectiveUserTags}
-        onClose={handleCloseThread}
+      <ThreadView
+        threadId={activeThread.id} user={user} profileData={profileData} channels={channels}
+        allThreads={accessibleThreads} allUsers={Object.values(usersMap)}
+        breakGlassActive={breakGlassActive} tagsDisponibles={tagsDisponibles} effectiveUserTags={effectiveUserTags}
+        highlightReplyIndex={highlightThreadReplyIdx} onClearHighlight={() => setHighlightThreadReplyIdx(null)}
+        onClose={() => { setHighlightThreadReplyIdx(null); handleCloseThread(); }}
         onNavigateToView={onNavigateToView}
       />
     );
@@ -869,19 +874,28 @@ export default function Forum({
 
   return (
     <div className="flex flex-col gap-3.5 text-left select-none">
-      {/* Barre de navigation principale (3 onglets racine : Discussions / Messages Privés / Groupes) */}
       <ForumMainTabsBar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        setIsAdding={setIsAdding}
-        unreadDirectCount={unreadDirectCount}
-        unreadGroupsCount={unreadGroupsCount}
-        t={t}
-        translate={translate}
+        activeTab={activeTab} setActiveTab={setActiveTab} setIsAdding={setIsAdding}
+        unreadDirectCount={unreadDirectCount} unreadGroupsCount={unreadGroupsCount}
+        t={t} translate={translate}
       />
 
-      {/* Bannière d'accès rapide prioritaire épinglée « 💬 Le Zap — Le tchat de toute l'asso » */}
-      {generalConversation && (
+      <UnifiedCommSearchBar
+        searchQuery={searchQuery} setSearchQuery={setSearchQuery}
+        categoryFilter={categoryFilter} setCategoryFilter={setCategoryFilter}
+        counts={searchCounts} loadingMessages={searchLoadingMsgs} hasLoadedCache={searchHasCache}
+        onRefreshCache={refreshSearchCache} onClearSearch={clearSearch}
+        inputRef={searchInputRef} t={t}
+      />
+
+      {isSearchActive && (
+        <UnifiedCommSearchResults
+          results={filteredResults} loadingMessages={searchLoadingMsgs}
+          locale={locale} onSelectResult={handleSelectSearchResult} t={t}
+        />
+      )}
+
+      {!isSearchActive && generalConversation && (
         <GeneralGroupBanner
           conversation={generalConversation}
           onOpenGeneralChat={() => setActiveConversationId(generalConversation.id)}
@@ -889,96 +903,71 @@ export default function Forum({
         />
       )}
 
-      {(activeTab === 'direct' || activeTab === 'groups') && (
+      {!isSearchActive && (activeTab === 'direct' || activeTab === 'groups') && (
         <ForumInboxTabsView
-          activeTab={activeTab}
-          directConversations={directConversations}
-          groupConversations={groupConversations}
-          user={user}
-          usersMap={usersMap}
-          createDirectConversation={createDirectConversation}
-          setActiveConversationId={setActiveConversationId}
-          setActiveChatUserId={setActiveChatUserId}
-          setIsNewDirectModalOpen={setIsNewDirectModalOpen}
-          setIsNewGroupModalOpen={setIsNewGroupModalOpen}
+          activeTab={activeTab} directConversations={directConversations} groupConversations={groupConversations}
+          user={user} usersMap={usersMap} createDirectConversation={createDirectConversation}
+          setActiveConversationId={setActiveConversationId} setActiveChatUserId={setActiveChatUserId}
+          setIsNewDirectModalOpen={setIsNewDirectModalOpen} setIsNewGroupModalOpen={setIsNewGroupModalOpen} t={t}
         />
       )}
 
-      {activeTab === 'discussions' && (
-        /* Onglet Discussions avec barre latérale des salons / vue des discussions */
+      {!isSearchActive && activeTab === 'discussions' && (
         <div className="flex flex-col md:flex-row gap-4">
-          {/* Colonne 1 : Liste des salons (Écran 1 sur Mobile, Barre latérale gauche sur PC) */}
           <div className={`${mobileView === 'channels' ? 'block' : 'hidden'} md:block w-full md:w-72 lg:w-80 shrink-0 flex flex-col gap-2 select-none`}>
             <div className="flex flex-col gap-2 p-3 bg-cordel-bg-light border-2 border-encre-noire rounded-[8px_6px_10px_7px] shadow-[2.5px_2.5px_0px_0px_#181716] min-w-0">
               <div className="flex justify-between items-center mb-2 border-b border-dashed border-cordel-master-dark/20 pb-1 min-w-0">
                 <div className="flex items-center gap-1.5 min-w-0">
                   <h3 className="text-xs font-black uppercase tracking-widest text-cordel-wood truncate">
-                    📂 {translate('forum.channelsHeader', "Salons")}
+                    📂 {translate('forum.channelsHeader', 'Salons')}
                   </h3>
-                  {/* Bouton Tout marquer comme lu */}
                   <button
-                    type="button"
-                    onClick={handleMarkAllAsRead}
+                    type="button" onClick={handleMarkAllAsRead}
                     className="text-[8.5px] font-black uppercase tracking-wider text-cordel-wood hover:text-encre-noire cursor-pointer flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-cordel-bg border border-cordel-master-dark/20 hover:border-encre-noire transition-all shadow-xs shrink-0"
-                    title="Marquer tous les sujets de la section comme lus"
+                    title={t('forumExtra.markAllReadTooltip', 'Marquer tous les sujets de la section comme lus')}
                   >
-                    ✓✓ {translate('forum.markAllAsRead', "Tout lire")}
+                    ✓✓ {t('notifications.markAllRead', 'Tout lire')}
                   </button>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
                   {isModeratorOrAdmin && (
                     <button
-                      type="button"
-                      onClick={() => setIsChannelsManagerOpen(true)}
+                      type="button" onClick={() => setIsChannelsManagerOpen(true)}
                       className="text-[9px] font-black uppercase tracking-wider text-cordel-wood hover:text-encre-noire bg-cordel-bg px-2 py-0.5 rounded border border-cordel-master-dark/30 hover:border-encre-noire transition-all cursor-pointer flex items-center gap-1 shadow-xs"
-                      title="Gérer les salons, droits d'accès et modération"
+                      title={t('forumExtra.manageChannelsTooltip', "Gérer les salons, droits d'accès et modération")}
                     >
-                      ⚙️ {translate('forum.manageChannels', "Gérer")}
+                      ⚙️ {translate('forum.manageChannels', 'Gérer')}
                     </button>
                   )}
                   <button
-                    type="button"
-                    onClick={() => setIsCreatingChannel(true)}
+                    type="button" onClick={() => setIsCreatingChannel(true)}
                     className="text-[9px] font-black uppercase text-cordel-wood hover:underline cursor-pointer flex items-center gap-0.5 shrink-0"
-                    title="Créer un salon ou un sous-dossier"
+                    title={t('forumExtra.createChannelTooltip', 'Créer un salon ou un sous-dossier')}
                   >
-                    ➕ {translate('forum.addChannelShort', "Salon")}
+                    ➕ {t('forumExtra.addChannelShort', 'Salon')}
                   </button>
                 </div>
               </div>
               <div className="flex flex-col gap-1 min-w-0">
-                {channels.filter(c => !c.parentId).map((ch) => (
+                {channels.filter((c) => !c.parentId).map((ch) => (
                   <ChannelTreeItem
-                    key={ch.id}
-                    channel={ch}
-                    channels={channels}
-                    allThreads={accessibleThreads}
-                    activeChannelId={activeChannelId}
-                    onSelectChannel={handleSelectChannel}
-                    onSelectThread={handleSelectThread}
-                    selectedThreadId={selectedThread?.id}
-                    hasWriteAccess={hasWriteAccess}
-                    profileData={profileData}
-                    effectiveReadThreads={effectiveReadThreads}
-                    currentUserId={currentUserId}
-                    channelStatsMap={channelStatsMap}
-                    level={0}
+                    key={ch.id} channel={ch} channels={channels} allThreads={accessibleThreads}
+                    activeChannelId={activeChannelId} onSelectChannel={handleSelectChannel} onSelectThread={handleSelectThread}
+                    selectedThreadId={selectedThread?.id} hasWriteAccess={hasWriteAccess} profileData={profileData}
+                    effectiveReadThreads={effectiveReadThreads} currentUserId={currentUserId} channelStatsMap={channelStatsMap} level={0}
                   />
                 ))}
               </div>
             </div>
           </div>
 
-          {/* Colonne 2 : Zone de discussion (Écran 2 sur Mobile, Panneau principal droit sur PC) */}
           <div className={`${mobileView === 'discussion' ? 'block' : 'hidden'} md:block flex-1 min-w-0`}>
-            {/* Bouton de retour mobile vers la liste des salons */}
             <div className="block md:hidden mb-3">
               <CordelButton
-                variant="default"
-                onClick={() => setMobileView('channels')}
+                variant="default" onClick={() => setMobileView('channels')}
                 className="w-full py-2 px-3 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 border-2 border-encre-noire bg-cordel-bg shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer"
               >
-                ⬅️ {translate('forum.backToChannels', "Retour aux salons")}
+                ⬅️ {translate('forum.backToChannels', 'Retour aux salons')}
               </CordelButton>
             </div>
 
@@ -987,32 +976,24 @@ export default function Forum({
                 <span className="text-xs uppercase tracking-widest font-black animate-pulse opacity-60">⏳ {t('common.loading')}</span>
               </div>
             ) : isAdding ? (
-              /* Formulaire de création de sujet */
-              <CreateThreadForm 
-                groupId={profileData.groupId} 
-                channelId={activeChannelId}
-                channels={channels}
-                user={user} 
-                profileData={profileData} 
-                allUsers={Object.values(usersMap)}
-                onClose={() => setIsAdding(false)} 
+              <CreateThreadForm
+                groupId={profileData.groupId} channelId={activeChannelId} channels={channels}
+                user={user} profileData={profileData} allUsers={Object.values(usersMap)} onClose={() => setIsAdding(false)}
               />
             ) : (
-              /* Liste des discussions */
               <div className="flex flex-col gap-4">
-                {/* Chemin de navigation (Fil d'Ariane) */}
                 {(() => {
                   const path = [];
-                  let current = channels.find(c => c.id === activeChannelId);
+                  let current = channels.find((c) => c.id === activeChannelId);
                   while (current) {
                     path.unshift(current);
                     if (!current.parentId) break;
-                    current = channels.find(c => c.id === current.parentId);
+                    current = channels.find((c) => c.id === current.parentId);
                   }
                   return (
                     <div className="flex items-center gap-1.5 text-xs font-black text-cordel-wood uppercase tracking-wider select-none flex-wrap bg-white/40 p-2 rounded border border-dashed border-cordel-master-dark/15">
                       <span className="text-encre-noire flex items-center gap-1">
-                        <XiloMegaphone size={12} className="text-cordel-wood" /> {translate('forum.title', "Porte-voix")}
+                        <XiloMegaphone size={12} className="text-cordel-wood" /> {translate('forum.title', 'Porte-voix')}
                       </span>
                       {path.map((item, idx) => {
                         const rawItemName = (item.name === 'Général' || item.name === 'Geral') ? t('forum.defaultChannelGeneral') : item.name;
@@ -1038,11 +1019,11 @@ export default function Forum({
                   </h2>
 
                   <div className="flex items-center gap-2">
-                    <CordelButton variant="default" onClick={() => setIsCreatingChannel(true)} className="text-xs px-2.5 py-1.5 font-bold uppercase tracking-wider" title="Créer une nouvelle catégorie ou un salon">
-                      + {translate('forum.newChannelBtn', "Nouveau Salon / Dossier")}
+                    <CordelButton variant="default" onClick={() => setIsCreatingChannel(true)} className="text-xs px-2.5 py-1.5 font-bold uppercase tracking-wider" title={t('forumExtra.newChannelTooltip', 'Créer une nouvelle catégorie ou un salon')}>
+                      + {t('forumExtra.newChannelBtn', 'Nouveau Salon / Dossier')}
                     </CordelButton>
                     {!hasWriteAccess(activeChannel) ? (
-                      <span className="text-[10px] font-black text-cordel-wood border-2 border-dashed border-cordel-wood/30 p-2 rounded bg-cordel-bg-light select-none">🔒 {translate('forum.readOnly', "Lecture seule")}</span>
+                      <span className="text-[10px] font-black text-cordel-wood border-2 border-dashed border-cordel-wood/30 p-2 rounded bg-cordel-bg-light select-none">🔒 {translate('forum.readOnly', 'Lecture seule')}</span>
                     ) : (
                       <CordelButton variant="ocre" useExtremeBorder={true} onClick={() => setIsAdding(true)} className="text-xs px-3 py-1.5 font-bold uppercase tracking-widest">+ {t('forum.newSubject')}</CordelButton>
                     )}
@@ -1051,36 +1032,25 @@ export default function Forum({
 
                 {activeChannelThreads.length === 0 ? (
                   <CordelCard variant="default" useExtremeBorder={false} className="p-8 text-center bg-cordel-bg select-none">
-                    <p className="text-xs opacity-75 font-semibold">{translate('forum.noThreads', "Aucune discussion lancée dans ce salon. Soyez le premier !")}</p>
+                    <p className="text-xs opacity-75 font-semibold">{translate('forum.noThreads', 'Aucune discussion lancée dans ce salon. Soyez le premier !')}</p>
                   </CordelCard>
                 ) : (
                   <>
                     <div className="flex flex-col gap-3">
                       {activeChannelThreads.map((thread) => (
                         <ForumThreadCard
-                          key={thread.id}
-                          thread={thread}
-                          user={user}
-                          profileData={profileData}
-                          effectiveReadThreads={effectiveReadThreads}
-                          onClick={handleSelectThread}
-                          isModeratorOrAdmin={isModeratorOrAdmin}
-                          onTogglePin={(id, currentStatus) => togglePinThread(id, currentStatus)}
-                          onMoveThread={setMovingThreadModal}
-                          onDeleteThread={handleDeleteThreadPrompt}
-                          t={t}
+                          key={thread.id} thread={thread} user={user} profileData={profileData}
+                          effectiveReadThreads={effectiveReadThreads} onClick={handleSelectThread}
+                          isModeratorOrAdmin={isModeratorOrAdmin} onTogglePin={(id, s) => togglePinThread(id, s)}
+                          onMoveThread={setMovingThreadModal} onDeleteThread={handleDeleteThreadPrompt} t={t}
                         />
                       ))}
                     </div>
 
                     {hasMoreThreads && (
                       <div className="flex justify-center p-3">
-                        <CordelButton
-                          variant="default"
-                          onClick={() => setThreadLimit(prev => prev + 30)}
-                          className="text-xs px-4 py-2 font-bold uppercase tracking-wider"
-                        >
-                          💬 {translate('forum.loadMoreThreads', "Charger les discussions précédentes (+30)")}
+                        <CordelButton variant="default" onClick={() => setThreadLimit((prev) => prev + 30)} className="text-xs px-4 py-2 font-bold uppercase tracking-wider">
+                          💬 {t('forumExtra.loadMoreThreads', 'Charger les discussions précédentes (+30)')}
                         </CordelButton>
                       </div>
                     )}
@@ -1092,12 +1062,9 @@ export default function Forum({
         </div>
       )}
 
-      {/* Modal de déplacement de sujet */}
       {movingThreadModal && (
         <MoveThreadModal
-          thread={movingThreadModal}
-          channels={channels}
-          isSubmitting={actionLoading}
+          thread={movingThreadModal} channels={channels} isSubmitting={actionLoading}
           onClose={() => setMovingThreadModal(null)}
           onConfirm={async (newChannelId, newCategory) => {
             const ok = await moveThread(movingThreadModal.id, newChannelId, newCategory);
@@ -1106,97 +1073,35 @@ export default function Forum({
         />
       )}
 
-      {/* Modal de création de salon / sous-dossier par les membres */}
-      {isCreatingChannel && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <CordelCard variant="default" useExtremeBorder={true} className="w-full max-w-md bg-cordel-bg p-6 relative select-none">
-            <h3 className="font-extrabold text-sm text-encre-noire uppercase tracking-wider mb-4 border-b border-dashed border-cordel-master-dark/20 pb-2 flex items-center gap-2">
-              📂 {translate('forum.createChannelTitle', "Créer un Salon ou Sous-dossier")}
-            </h3>
+      <CreateChannelModal
+        isOpen={isCreatingChannel} onClose={() => setIsCreatingChannel(false)} onSubmit={handleCreateChannelSubmit}
+        newChannelName={newChannelName} setNewChannelName={setNewChannelName}
+        newChannelParentId={newChannelParentId} setNewChannelParentId={setNewChannelParentId}
+        channels={channels} savingChannel={savingChannel} t={t} translate={translate}
+      />
 
-            <form onSubmit={handleCreateChannelSubmit} className="flex flex-col gap-4">
-              <div>
-                <label className="block text-xs font-black uppercase text-cordel-master-dark mb-1">
-                  {translate('forum.channelNameLabel', "Nom du salon ou du dossier")} *
-                </label>
-                <input
-                  type="text" required value={newChannelName}
-                  onChange={(e) => setNewChannelName(stripForbiddenMegaphones(e.target.value))}
-                  placeholder="ex: Toadas 2026, Percussions, Commission Fêtes..."
-                  className="w-full p-2.5 text-xs font-bold bg-white border-2 border-encre-noire rounded focus:outline-none focus:ring-2 focus:ring-cordel-wood"
-                  autoFocus
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-black uppercase text-cordel-master-dark mb-1">
-                  {translate('forum.channelParentLabel', "Emplacement (Parent)")}
-                </label>
-                <select
-                  value={newChannelParentId} onChange={(e) => setNewChannelParentId(e.target.value)}
-                  className="w-full p-2.5 text-xs font-bold bg-white border-2 border-encre-noire rounded focus:outline-none focus:ring-2 focus:ring-cordel-wood cursor-pointer"
-                >
-                  <option value="">📁 Racine (Nouvelle catégorie principale)</option>
-                  {channels.filter(c => !c.parentId).map((ch) => (
-                    <option key={ch.id} value={ch.id}>📂 Sous-dossier de : {stripForbiddenMegaphones(ch.name).trim() || ch.name}</option>
-                  ))}
-                </select>
-                <p className="text-[9px] italic opacity-60 mt-1">
-                  {newChannelParentId ? "Le salon apparaîtra comme un sous-dossier dans la catégorie choisie." : "Le salon sera créé comme une nouvelle rubrique principale."}
-                </p>
-              </div>
-
-              <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-dashed border-cordel-master-dark/20">
-                <CordelButton type="button" variant="default" onClick={() => setIsCreatingChannel(false)} className="px-3 py-1.5 text-xs font-bold">
-                  {t('common.cancel')}
-                </CordelButton>
-                <CordelButton type="submit" variant="ocre" disabled={savingChannel || !newChannelName.trim()} className="px-4 py-1.5 text-xs font-black uppercase">
-                  {savingChannel ? "Création..." : "Créer le salon"}
-                </CordelButton>
-              </div>
-            </form>
-          </CordelCard>
-        </div>
-      )}
-
-      {/* Modale dédiée pour démarrer un nouveau message direct (1-à-1) */}
       <NewDirectMessageModal
-        isOpen={isNewDirectModalOpen}
-        onClose={() => setIsNewDirectModalOpen(false)}
+        isOpen={isNewDirectModalOpen} onClose={() => setIsNewDirectModalOpen(false)}
         onStartDirectChat={async (targetUserId) => {
           try {
             const convId = await createDirectConversation(targetUserId);
-            if (convId) {
-              setActiveConversationId(convId);
-            } else {
-              setActiveChatUserId(targetUserId);
-            }
-          } catch (err) {
-            console.warn("Forum - Erreur démarrage message direct (repli legacy actif) :", err);
+            if (convId) setActiveConversationId(convId);
+            else setActiveChatUserId(targetUserId);
+          } catch {
             setActiveChatUserId(targetUserId);
           }
         }}
-        members={Object.values(usersMap)}
-        currentUserId={user?.uid}
-        existingDirectUserIds={new Set(
-          directConversations
-            .map((c) => (c.participantIds || []).find((id) => id !== user?.uid))
-            .filter(Boolean)
-        )}
+        members={Object.values(usersMap)} currentUserId={user?.uid}
+        existingDirectUserIds={new Set(directConversations.map((c) => (c.participantIds || []).find((id) => id !== user?.uid)).filter(Boolean))}
       />
 
-      {/* Modale dédiée à la création d'une boucle de discussion de groupe */}
       <NewGroupModal
-        isOpen={isNewGroupModalOpen}
-        onClose={() => setIsNewGroupModalOpen(false)}
+        isOpen={isNewGroupModalOpen} onClose={() => setIsNewGroupModalOpen(false)}
         onCreateGroupChat={async ({ name, participantIds, initialMessage }) => {
           const convId = await createGroupConversation({ name, participantIds, initialMessage });
-          if (convId) {
-            setActiveConversationId(convId);
-          }
+          if (convId) setActiveConversationId(convId);
         }}
-        members={Object.values(usersMap)}
-        currentUserId={user?.uid}
+        members={Object.values(usersMap)} currentUserId={user?.uid}
       />
 
       {/* Modale d'administration et de modération des salons du Porte-voix */}

@@ -1,28 +1,13 @@
 /**
  * Composant de confirmation et d'alerte modale style Cordel / Xilo.
- * Remplace avantageusement les boîtes de dialogue natives window.confirm et window.alert.
- * Conforme à la charte Cordel (fond papier kraft, bordures franches, encre noire).
+ * Remplace les boîtes de dialogue natives window.confirm et window.alert (charte Cordel).
  */
 
 import React, { useEffect } from 'react';
 import CordelButton from '../CordelButton';
 import { XiloShield, XiloSparkles, XiloClose } from '../XiloIcons';
+import { useTranslation } from '../LanguageContext';
 
-/**
- * CordelConfirmModal
- *
- * @param {boolean} isOpen Indique si la modale est visible
- * @param {string} title Titre affiché en en-tête
- * @param {string} message Message explicatif principal
- * @param {string} [confirmLabel] Texte du bouton d'action
- * @param {string} [confirmText] Alias pour confirmLabel
- * @param {string} [cancelLabel] Texte du bouton d'annulation
- * @param {string} [cancelText] Alias pour cancelLabel
- * @param {'danger' | 'warning' | 'info' | 'success'} [variant='danger'] Variante sémantique
- * @param {boolean} [isAlert=false] Si true, mode alerte simple sans bouton annuler
- * @param {Function} onConfirm Callback déclenché à la validation
- * @param {Function} onCancel Callback déclenché à l'annulation ou fermeture
- */
 export default function CordelConfirmModal({
   isOpen,
   title,
@@ -36,8 +21,9 @@ export default function CordelConfirmModal({
   onConfirm,
   onCancel
 }) {
-  const resolvedConfirmText = confirmLabel || confirmText || (isAlert ? 'OK' : 'Confirmer');
-  const resolvedCancelText = cancelLabel || cancelText || 'Annuler';
+  const { t } = useTranslation();
+  const resolvedConfirmText = confirmLabel || confirmText || (isAlert ? t('cordelModal.ok', 'OK') : t('common.confirm', 'Confirmer'));
+  const resolvedCancelText = cancelLabel ?? cancelText ?? t('common.cancel', 'Annuler');
 
   // Gestion des raccourcis clavier : Échap annule, Entrée confirme
   useEffect(() => {
@@ -62,14 +48,32 @@ export default function CordelConfirmModal({
   const isDanger = variant === 'danger';
   const isWarning = variant === 'warning';
   const isSuccess = variant === 'success';
-
   const showCancel = !isAlert && resolvedCancelText !== null && resolvedCancelText !== '';
+
+  const headerBadge = isSuccess
+    ? t('cordelModal.badgeSuccess', '✨ Confirmation')
+    : isAlert
+      ? isDanger
+        ? t('cordelModal.badgeError', '⚠️ Erreur')
+        : t('cordelModal.badgeInfoAlert', '⚠️ Information')
+      : isDanger
+        ? t('cordelModal.badgeIrreversible', '⚠️ Action irréversible')
+        : isWarning
+          ? t('cordelModal.badgeWarning', '📋 Attention')
+          : t('cordelModal.badgeInfo', 'ℹ️ Information');
+
+  const resolvedTitle = title || (
+    isSuccess
+      ? t('cordelModal.titleSuccess', 'Opération réussie')
+      : isDanger
+        ? t('cordelModal.titleConfirmRequired', 'Confirmation requise')
+        : t('cordelModal.infoTitle', 'Information')
+  );
 
   return (
     <div
       className="fixed inset-0 z-[9999] bg-black/65 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in select-none"
       onClick={(e) => {
-        // Fermeture sécurisée : uniquement si le clic provient directement du backdrop
         if (e.target === e.currentTarget) {
           onCancel?.();
         }
@@ -78,10 +82,7 @@ export default function CordelConfirmModal({
       aria-modal="true"
       aria-labelledby="cordel-modal-title"
     >
-      {/* Carte centrale Cordel avec texture kraft et bordures franches */}
       <div className="relative z-10 bg-cordel-bg dark:bg-[#1a1918] border-2 border-encre-noire shadow-[4px_4px_0px_0px_#181716] rounded-[8px_12px_7px_10px] p-5 max-w-md w-full text-left overflow-hidden flex flex-col gap-3.5 max-h-[90vh]">
-        
-        {/* En-tête avec icône gravée Xilo */}
         <div className="flex items-start justify-between gap-3 border-b-2 border-dashed border-cordel-master-dark/20 pb-3 shrink-0">
           <div className="flex items-center gap-2.5">
             <span
@@ -89,56 +90,44 @@ export default function CordelConfirmModal({
                 isSuccess
                   ? 'bg-[var(--color-cordel-vert)]/15 text-[var(--color-cordel-vert)] dark:text-emerald-400 border-[var(--color-cordel-vert)]/30'
                   : isDanger
-                  ? 'bg-[var(--color-cordel-rouge)]/15 text-[var(--color-cordel-rouge)] dark:text-red-400 border-[var(--color-cordel-rouge)]/30'
-                  : isWarning
-                  ? 'bg-[var(--color-cordel-ocre)]/15 text-[var(--color-cordel-ocre)] dark:text-amber-400 border-[var(--color-cordel-ocre)]/30'
-                  : 'bg-blue-100 dark:bg-blue-950/70 text-blue-800 dark:text-blue-300 border-blue-300 dark:border-blue-800'
+                    ? 'bg-[var(--color-cordel-rouge)]/15 text-[var(--color-cordel-rouge)] dark:text-red-400 border-[var(--color-cordel-rouge)]/30'
+                    : isWarning
+                      ? 'bg-[var(--color-cordel-ocre)]/15 text-[var(--color-cordel-ocre)] dark:text-amber-400 border-[var(--color-cordel-ocre)]/30'
+                      : 'bg-blue-100 dark:bg-blue-950/70 text-blue-800 dark:text-blue-300 border-blue-300 dark:border-blue-800'
               }`}
             >
               {isSuccess ? <XiloSparkles size={22} /> : <XiloShield size={22} />}
             </span>
             <div className="flex flex-col">
               <span className="text-[9px] font-black uppercase tracking-widest text-cordel-wood opacity-85">
-                {isSuccess
-                  ? '✨ Confirmation'
-                  : isAlert
-                  ? isDanger
-                    ? '⚠️ Erreur'
-                    : '⚠️ Information'
-                  : isDanger
-                  ? '⚠️ Action irréversible'
-                  : isWarning
-                  ? '📋 Attention'
-                  : 'ℹ️ Information'}
+                {headerBadge}
               </span>
               <h3
                 id="cordel-modal-title"
                 className="font-heading font-black text-base uppercase tracking-wider text-encre-noire dark:text-cordel-bg"
               >
-                {title || (isSuccess ? 'Opération réussie' : isDanger ? 'Confirmation requise' : 'Information')}
+                {resolvedTitle}
               </h3>
             </div>
           </div>
 
-          {/* Bouton de fermeture d'angle */}
           <button
             type="button"
             onClick={onCancel}
             className="p-1 text-cordel-master-dark/60 hover:text-cordel-master-dark transition-colors rounded hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
-            title="Fermer (Échap)"
+            title={t('cordelModal.closeEsc', 'Fermer (Échap)')}
+            aria-label={t('common.close', 'Fermer')}
           >
             <XiloClose size={18} />
           </button>
         </div>
 
-        {/* Corps du message explicatif */}
         <div className="bg-white/70 dark:bg-black/30 p-3.5 rounded border border-cordel-master-dark/15 flex-1 overflow-y-auto">
           <p className="text-xs font-semibold text-encre-noire dark:text-cordel-bg leading-relaxed whitespace-pre-line">
             {message}
           </p>
         </div>
 
-        {/* Boutons d'action Cordel */}
         <div className="flex items-center justify-end gap-2.5 pt-1 shrink-0">
           {showCancel && (
             <CordelButton
@@ -157,10 +146,10 @@ export default function CordelConfirmModal({
               isSuccess
                 ? 'bg-[var(--color-cordel-vert)] hover:brightness-110 text-white'
                 : isDanger
-                ? 'bg-[var(--color-cordel-rouge)] hover:brightness-110 text-white'
-                : isWarning
-                ? 'bg-[var(--color-cordel-ocre)] hover:brightness-110 text-white'
-                : 'bg-encre-noire hover:bg-neutral-800 text-white'
+                  ? 'bg-[var(--color-cordel-rouge)] hover:brightness-110 text-white'
+                  : isWarning
+                    ? 'bg-[var(--color-cordel-ocre)] hover:brightness-110 text-white'
+                    : 'bg-encre-noire hover:bg-neutral-800 text-white'
             }`}
           >
             {resolvedConfirmText}

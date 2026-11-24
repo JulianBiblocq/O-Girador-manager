@@ -5,31 +5,21 @@ import { getEffectiveEventVotes } from './pollVoteUtils';
  * Envoie une relance In-App + Push FCM aux membres n'ayant voté sur aucun créneau du sondage.
  */
 export async function sendPollUnansweredReminder({
-  groupId,
-  firstPollEventId,
-  eventTitle = 'Atelier',
-  pupitreLabel = 'Tous les pupitres',
-  unansweredMembers = []
+  groupId, firstPollEventId, eventTitle = 'Atelier', pupitreLabel = 'Tous les pupitres', unansweredMembers = [], t = null
 }) {
-  const recipientIds = Array.from(
-    new Set((unansweredMembers || []).map((m) => m?.uid || m?.id).filter(Boolean))
-  );
+  const recipientIds = Array.from(new Set((unansweredMembers || []).map((m) => m?.uid || m?.id).filter(Boolean)));
   if (!groupId || recipientIds.length === 0) return 0;
 
-  const cleanTitle = String(eventTitle || 'Atelier').replace(/\s*—\s*Option\s*\d+.*$/i, '').trim() || 'Atelier';
+  const defaultWorkshop = t ? t('pollMatrix.defaultWorkshopTitle', 'Atelier') : 'Atelier';
+  const cleanTitle = String(eventTitle || defaultWorkshop).replace(/\s*—\s*Option\s*\d+.*$/i, '').trim() || defaultWorkshop;
   const targetUrl = firstPollEventId ? `/app/agenda?eventId=${firstPollEventId}` : '/app/agenda';
 
   await dispatchBulkInAppAndPushNotification({
-    recipientIds,
-    groupId,
-    type: NOTIFICATION_TYPES.EVENT_NEW,
-    title: '⏳ Sondage de date : ton avis est attendu',
-    message: `Pense à indiquer tes disponibilités pour « ${cleanTitle} » (${pupitreLabel}).`,
-    targetUrl,
-    icon: '⏳',
-    sendPush: true
+    recipientIds, groupId, type: NOTIFICATION_TYPES.EVENT_NEW,
+    title: t ? t('pollMatrix.reminderNotifTitle') : '⏳ Sondage de date : ton avis est attendu',
+    message: t ? t('pollMatrix.reminderNotifBody', { title: cleanTitle, pupitre: pupitreLabel }) : `Pense à indiquer tes disponibilités pour « ${cleanTitle} » (${pupitreLabel}).`,
+    targetUrl, icon: '⏳', sendPush: true
   });
-
   return recipientIds.length;
 }
 

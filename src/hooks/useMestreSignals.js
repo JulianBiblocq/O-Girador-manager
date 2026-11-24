@@ -1,77 +1,56 @@
 import { useState, useEffect } from 'react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
+import { buildGroupVariants } from '../utils/tenantUtils';
 
 /**
  * Hook personnalisé pour récupérer les Signes de commandement du Mestre.
- * Cloisonne les signaux par organisation (groupId) avec repli vers les signaux globaux et historiques.
+ * Cloisonne strictement les signaux par association (`groupId` + variantes de casse) et signaux `'global'`.
  *
- * @param {string|null} groupId - Identifiant de l'association/groupe (optionnel)
+ * @param {string|null} groupId - Identifiant de l'association active
  * @returns {{ signals: Array, loading: boolean, error: Error|null }}
  */
 export default function useMestreSignals(groupId = null) {
   const [signals, setSignals] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(Boolean(groupId));
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    const cleanGroup = String(groupId || '').trim();
+    if (!cleanGroup) {
+      setSignals([]);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
     const fetchSignals = async () => {
       setLoading(true);
       try {
         const signalsMap = new Map();
+        const colRef = collection(db, 'mestre_signals');
 
-        if (groupId) {
-          // 1. Signaux spécifiques au groupe
-          const groupQuery = query(
-            collection(db, 'mestre_signals'),
-            where('groupId', '==', groupId)
-          );
-          const groupSnap = await getDocs(groupQuery);
-          groupSnap.forEach((docSnap) => {
-            signalsMap.set(docSnap.id, { id: docSnap.id, ...docSnap.data() });
-          });
+        // 1. Signaux spécifiques au groupe (exact + variantes de casse éventuelles)
+        const groupQuery = query(colRef, where('groupId', '==', groupId));
+        const extraVariants = buildGroupVariants(cleanGroup).filter((v) => v !== groupId).slice(0, 9);
+        const queries = [
+          getDocs(groupQuery),
+          extraVariants.length > 0 ? getDocs(query(colRef, where('groupId', 'in', extraVariants))) : Promise.resolve(null),
+          getDocs(query(colRef, where('groupId', '==', 'global')))
+        ];
 
-          // 2. Repli vers les signaux globaux partagés
-          try {
-            const globalQuery = query(
-              collection(db, 'mestre_signals'),
-              where('groupId', '==', 'global')
-            );
-            const globalSnap = await getDocs(globalQuery);
-            globalSnap.forEach((docSnap) => {
+        const results = await Promise.allSettled(queries);
+        results.forEach((res) => {
+          if (res.status === 'fulfilled' && res.value) {
+            res.value.forEach((docSnap) => {
               if (!signalsMap.has(docSnap.id)) {
                 signalsMap.set(docSnap.id, { id: docSnap.id, ...docSnap.data() });
               }
             });
-          } catch (globalErr) {
-            console.warn("Signaux globaux non disponibles :", globalErr);
           }
-
-          // 3. Repli si la base n'a pas encore de champ groupId sur les données historiques
-          if (signalsMap.size === 0) {
-            const snapAll = await getDocs(collection(db, 'mestre_signals'));
-            snapAll.forEach((docSnap) => {
-              const val = docSnap.data();
-              const valGroupId = val.groupId;
-              const isUniversal = !valGroupId || String(valGroupId).toLowerCase() === 'global';
-              const isCurrent = valGroupId && String(valGroupId).toLowerCase() === String(groupId).toLowerCase();
-              if (isUniversal || isCurrent) {
-                if (!signalsMap.has(docSnap.id)) {
-                  signalsMap.set(docSnap.id, { id: docSnap.id, ...val });
-                }
-              }
-            });
-          }
-        } else {
-          // Sans groupId spécifié (chargement direct de toute la bibliothèque)
-          const querySnapshot = await getDocs(collection(db, 'mestre_signals'));
-          querySnapshot.forEach((docSnap) => {
-            signalsMap.set(docSnap.id, { id: docSnap.id, ...docSnap.data() });
-          });
-        }
+        });
 
         const data = Array.from(signalsMap.values());
-        // Tri alphabétique par libellé
         data.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
         setSignals(data);
       } catch (err) {

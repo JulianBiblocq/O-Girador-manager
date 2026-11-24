@@ -1,38 +1,21 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import ThreadMessageItem from './ThreadMessageItem';
 import PollCard from '../PollCard';
 import { resolveEffectiveMessageLectures } from '../../../utils/forumThreadSyncUtils';
 
 /**
- * Conteneur scrollable des messages d'une discussion avec gestion du séparateur
- * de nouveaux messages, affichage des sondages interactifs et pastille de défilement.
+ * Conteneur scrollable des messages d'une discussion avec séparateur de non-lus,
+ * saut direct vers un message recherché et pastille de défilement (< 140 lignes).
  */
 export default function ThreadMessageList({
-  headerContent = null,
-  thread,
-  reponses: passedReponses,
-  firstUnreadIdx = -1,
-  userId,
-  profileData,
-  isModeratorOrAdmin = false,
-  allUsers = [],
-  messagesContainerRef,
-  messagesEndRef,
-  unreadSeparatorRef,
-  onScroll,
-  showScrollBottom = false,
-  onScrollToBottom,
-  onDeleteReply,
-  onMoveReply,
-  onEditReply,
-  onReplyToMessage,
-  onToggleReaction,
-  onVotePoll,
-  onOpenEditPoll,
-  votingPollId = null,
-  t
+  headerContent = null, thread, reponses: passedReponses, firstUnreadIdx = -1,
+  userId, profileData, isModeratorOrAdmin = false, allUsers = [],
+  messagesContainerRef, messagesEndRef, unreadSeparatorRef,
+  onScroll, showScrollBottom = false, onScrollToBottom,
+  onDeleteReply, onMoveReply, onEditReply, onReplyToMessage, onToggleReaction,
+  onVotePoll, onOpenEditPoll, votingPollId = null,
+  highlightReplyIndex = null, onClearHighlight = null, t
 }) {
-  // Prise en charge ultra-résiliente : prop direct reponses, champ thread.reponses ou repli thread.message
   const rawReponses = Array.isArray(passedReponses)
     ? passedReponses
     : Array.isArray(thread?.reponses)
@@ -40,96 +23,104 @@ export default function ThreadMessageList({
       : (thread?.reponses && typeof thread.reponses === 'object')
         ? (Array.isArray(thread.reponses._elements) ? thread.reponses._elements : Object.values(thread.reponses))
         : (thread?.message ? [{
-            auteurId: thread.auteurId,
-            auteurNom: thread.auteurNom || 'Auteur',
-            message: thread.message,
-            dateCreation: thread.dateCreation,
-            targetTag: thread.targetTag || null
+            auteurId: thread.auteurId, auteurNom: thread.auteurNom || 'Auteur',
+            message: thread.message, dateCreation: thread.dateCreation, targetTag: thread.targetTag || null
           }] : []);
   const reponses = Array.isArray(rawReponses) ? rawReponses : [];
 
+  const [activeHighlight, setActiveHighlight] = useState(highlightReplyIndex);
+
+  useEffect(() => {
+    if (highlightReplyIndex === null || highlightReplyIndex === undefined) return undefined;
+    setActiveHighlight(highlightReplyIndex);
+    const targetDomId = highlightReplyIndex === 'root' || highlightReplyIndex < 0
+      ? 'thread-msg-root'
+      : `thread-msg-${highlightReplyIndex}`;
+    const scrollTimer = setTimeout(() => {
+      document.getElementById(targetDomId)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 180);
+    const clearTimer = setTimeout(() => {
+      setActiveHighlight(null);
+      if (onClearHighlight) onClearHighlight();
+    }, 2600);
+    return () => {
+      clearTimeout(scrollTimer);
+      clearTimeout(clearTimer);
+    };
+  }, [highlightReplyIndex, thread?.id, reponses.length, onClearHighlight]);
+
+  const isRootHighlighted = activeHighlight === 'root' || activeHighlight === -1;
+
   return (
     <div className="relative flex flex-col flex-1 min-h-0 overflow-hidden">
-      {/* Étage 2 — Fil des messages : unique zone autorisée à défiler verticalement */}
       <div
         ref={messagesContainerRef}
         onScroll={onScroll}
         className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 py-2 pb-6 bg-cordel-bg-light select-text flex flex-col gap-3 touch-pan-y"
       >
-        {headerContent}
+        <div
+          id="thread-msg-root"
+          className={isRootHighlighted ? 'ring-2 ring-[var(--color-cordel-ocre)] bg-amber-100/50 rounded-lg p-1 transition-all duration-300' : ''}
+        >
+          {headerContent}
+        </div>
         {reponses.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full min-h-[160px] text-center text-xs opacity-60 font-semibold italic select-none py-8">
-            <span>📭 {(t && t('forum.noReplies')) || "Aucun message dans cette discussion pour le moment."}</span>
+            <span>📭 {(t && t('forum.noReplies')) || 'Aucun message dans cette discussion pour le moment.'}</span>
           </div>
         ) : (
           reponses.map((reply, index) => {
             const isFirstUnread = index === firstUnreadIdx;
             const dateMsg = new Date(reply.dateCreation);
-            const formattedTime = isNaN(dateMsg.getTime())
+            const formattedTime = Number.isNaN(dateMsg.getTime())
               ? ''
-              : ((t && t('forum.atTime')) || "{time} le {date}")
+              : ((t && t('forum.atTime')) || '{time} le {date}')
                   .replace('{time}', dateMsg.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }))
                   .replace('{date}', dateMsg.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }));
+            const isHighlighted = activeHighlight === index;
 
             return (
               <React.Fragment key={`${reply.dateCreation}-${index}`}>
-              {/* Ligne de repère de nouveaux messages */}
-              {isFirstUnread && (
-                <div
-                  ref={unreadSeparatorRef}
-                  className="flex items-center my-3 gap-2 select-none w-full"
-                >
-                  <div className="flex-1 h-[1.5px] bg-[var(--theme-primary)]/40" />
-                  <span className="text-[10px] font-black uppercase tracking-wider text-[var(--theme-primary)] bg-cordel-bg px-2.5 py-0.5 rounded border border-[var(--theme-primary)]/40 shadow-xs">
-                    ── Nouveaux messages ──
-                  </span>
-                  <div className="flex-1 h-[1.5px] bg-[var(--theme-primary)]/40" />
-                </div>
-              )}
+                {isFirstUnread && (
+                  <div ref={unreadSeparatorRef} className="flex items-center my-3 gap-2 select-none w-full">
+                    <div className="flex-1 h-[1.5px] bg-[var(--theme-primary)]/40" />
+                    <span className="text-[10px] font-black uppercase tracking-wider text-[var(--theme-primary)] bg-cordel-bg px-2.5 py-0.5 rounded border border-[var(--theme-primary)]/40 shadow-xs">
+                      ── Nouveaux messages ──
+                    </span>
+                    <div className="flex-1 h-[1.5px] bg-[var(--theme-primary)]/40" />
+                  </div>
+                )}
 
-              {(reply.type === 'poll' || (reply.options && reply.question)) ? (
-                <PollCard
-                  poll={reply}
-                  userId={userId}
-                  allUsers={allUsers}
-                  isAuthorOrAdmin={isModeratorOrAdmin || userId === reply.auteurId}
-                  onVote={onVotePoll}
-                  onOpenEdit={onOpenEditPoll}
-                  onDelete={onDeleteReply ? () => onDeleteReply(index) : null}
-                  voting={votingPollId === reply.id}
-                  t={t}
-                />
-              ) : (
-                <ThreadMessageItem
-                  reply={{
-                    ...reply,
-                    lectures: resolveEffectiveMessageLectures(thread, reply)
-                  }}
-                  index={index}
-                  threadId={thread?.id}
-                  collectionName="forum"
-                  userId={userId}
-                  profileData={profileData}
-                  isModeratorOrAdmin={isModeratorOrAdmin}
-                  onDeleteReply={onDeleteReply}
-                  onMoveReply={onMoveReply}
-                  onEditReply={onEditReply}
-                  onReplyToMessage={onReplyToMessage}
-                  onToggleReaction={onToggleReaction}
-                  allUsers={allUsers}
-                  t={t}
-                  formattedTime={formattedTime}
-                />
-              )}
-            </React.Fragment>
-          );
-        })
-      )}
-        {/* Coussin d'espacement (pb-6) et ancre invisible de fin de liste pour le scroll automatique */}
+                <div
+                  id={`thread-msg-${index}`}
+                  className={isHighlighted ? 'ring-2 ring-[var(--color-cordel-ocre)] bg-amber-100/50 rounded-lg p-1 transition-all duration-300' : ''}
+                >
+                  {(reply.type === 'poll' || (reply.options && reply.question)) ? (
+                    <PollCard
+                      poll={reply} userId={userId} allUsers={allUsers}
+                      isAuthorOrAdmin={isModeratorOrAdmin || userId === reply.auteurId}
+                      onVote={onVotePoll} onOpenEdit={onOpenEditPoll}
+                      onDelete={onDeleteReply ? () => onDeleteReply(index) : null}
+                      voting={votingPollId === reply.id} t={t}
+                    />
+                  ) : (
+                    <ThreadMessageItem
+                      reply={{ ...reply, lectures: resolveEffectiveMessageLectures(thread, reply) }}
+                      index={index} threadId={thread?.id} collectionName="forum"
+                      userId={userId} profileData={profileData} isModeratorOrAdmin={isModeratorOrAdmin}
+                      onDeleteReply={onDeleteReply} onMoveReply={onMoveReply} onEditReply={onEditReply}
+                      onReplyToMessage={onReplyToMessage} onToggleReaction={onToggleReaction}
+                      allUsers={allUsers} t={t} formattedTime={formattedTime}
+                    />
+                  )}
+                </div>
+              </React.Fragment>
+            );
+          })
+        )}
         <div ref={messagesEndRef} className="h-8 shrink-0 pb-6 pointer-events-none" aria-hidden="true" />
       </div>
 
-      {/* Pastille flottante de défilement rapide vers le bas (↓) */}
       {showScrollBottom && (
         <div className="absolute bottom-3 right-4 pointer-events-none z-10">
           <button

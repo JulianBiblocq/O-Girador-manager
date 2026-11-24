@@ -103,7 +103,7 @@ export function useEventRevisionData({ event, groupId, externalTrainingsList }) 
   const { rhythms: allSequencerRhythms } = useSequencerFirestoreData(groupId);
   const { choreographies: allChoreographies, loading: loadingChoreos } = useDancadorChoreographies(groupId);
   const { steps: allSteps, loading: loadingSteps } = useDancadorSteps(groupId);
-  const { toadaPacks } = useCantadorToadas();
+  const { toadaPacks } = useCantadorToadas(groupId);
 
   const resolutionDicts = useMemo(() => buildResolutionDictionaries({
     catalogRhythms: allSequencerRhythms || [],

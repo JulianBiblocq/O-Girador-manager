@@ -3,11 +3,16 @@ import path from 'path';
 import assert from 'assert';
 import {
   sanitizeQuizText,
+  normalizeQuizMediaUrl,
+  isQuizMediaUrl,
   hasLeak,
   filterDistractorsByLength,
+  generateQuizFromPieceSignals,
   generateQuizFromRepertoirePiece
 } from '../src/utils/quizGenerator.js';
 import { detectAlfaiaSticks } from '../src/utils/sequencerParser.js';
+import { fr } from '../src/locales/fr.js';
+import { pt } from '../src/locales/pt.js';
 
 console.log("===============================================================");
 console.log("🧪 DÉBUT DU TEST : SÉCURISATION DU GÉNÉRATEUR QCM & FOCUS RÉPERTOIRE");
@@ -200,6 +205,79 @@ assert(unfoldedContent.includes('Réviser ce morceau') || unfoldedContent.includ
 assert(unfoldedContent.includes('PieceQuizModal'), "PieceQuizModal doit être importé et rendu dans MemberPieceUnfoldedContent");
 
 console.log("  ✅ [PASS] Tous les composants respectent scrupuleusement la règle anti-monolithe (< 200 lignes).");
+
+// --- Module 7 : Non-régression QCM Signes du Mestre (interpolation {{name}} FR/PT + préservation URLs https://) ---
+console.log("\n▶️ Module 7 : Non-régression QCM Signes du Mestre (interpolation {{name}} + URLs https://)");
+const makeT = (dict) => (dotPath, fallbackOrParams, maybeParams) => {
+  const fb = typeof fallbackOrParams === 'string' ? fallbackOrParams : undefined;
+  const params = maybeParams !== undefined && maybeParams !== null ? maybeParams : (fb === undefined ? fallbackOrParams : undefined);
+  let val = dotPath.split('.').reduce((acc, k) => (acc && acc[k] !== undefined ? acc[k] : undefined), dict) ?? fb;
+  if (typeof val === 'string' && params && typeof params === 'object') {
+    for (const [k, v] of Object.entries(params)) {
+      if (v != null) val = val.replace(new RegExp(`\\{\\{?${k}\\}\\}?`, 'g'), String(v));
+    }
+  }
+  return val;
+};
+
+const storageUrl1 = "https://firebasestorage.googleapis.com/v0/b/o-girador-7828c.firebasestorage.app/o/sinais%2Fvirada_1_TokenAbC.png?alt=media&token=AbC123XyZ";
+const corruptedUrl2 = "Https://firebasestorage.googleapis.com/v0/b/o-girador-7828c.firebasestorage.app/o/sinais%2Fparada_2.png?alt=media&token=DeF456";
+const storageUrl3 = "https://firebasestorage.googleapis.com/v0/b/o-girador-7828c.firebasestorage.app/o/sinais%2Farrasto_3.png?alt=media&token=GhI789";
+const storageUrl4 = "https://firebasestorage.googleapis.com/v0/b/o-girador-7828c.firebasestorage.app/o/sinais%2Fbaque_4.png?alt=media&token=JkL012";
+
+assert.strictEqual(sanitizeQuizText(storageUrl1), storageUrl1, "sanitizeQuizText ne doit JAMAIS capitaliser ni tronquer une URL https://");
+assert.strictEqual(sanitizeQuizText(corruptedUrl2), corruptedUrl2.replace(/^Https:/, 'https:'), "sanitizeQuizText doit normaliser Https:// en https:// sans toucher au token");
+assert.strictEqual(isQuizMediaUrl(storageUrl1), true);
+assert.strictEqual(normalizeQuizMediaUrl(corruptedUrl2).startsWith('https://'), true);
+
+const pieceWithLabelSignals = {
+  id: 'piece_signes_test',
+  titre: 'Baque Virado Royal',
+  sinaisDoMestre: [
+    { id: 's1', label: 'Appel Virada Royale', action: 'Double roulement puis reprise', imageUrl: storageUrl1 },
+    { id: 's2', title: 'Coupure Sèche', action: 'Arrêt net sur le temps 4' }
+  ]
+};
+const catalogMocks = [
+  { id: 's2_cat', nom: 'Parada Geral', imageUrl: corruptedUrl2 },
+  { id: 's3_cat', name: 'Arrasto', imageUrl: storageUrl3 },
+  { id: 's4_cat', label: 'Retomada', imageUrl: storageUrl4 }
+];
+
+for (const [lang, dict] of [['FR', fr], ['PT', pt]]) {
+  const tFn = makeT(dict);
+  const sigQs = generateQuizFromPieceSignals(pieceWithLabelSignals, pieceWithLabelSignals.sinaisDoMestre, catalogMocks, { t: tFn });
+  assert(sigQs.length >= 3, `[${lang}] generateQuizFromPieceSignals doit produire les questions visuelles et consignes`);
+  for (const q of sigQs) {
+    assert(!/\{\{.*?\}\}|\{[a-zA-Z0-9_]+\}/.test(q.questionText), `[${lang}] Aucune balise {{...}} résiduelle dans : ${q.questionText}`);
+  }
+  const imgQ = sigQs.find((q) => q.type === 'image_options');
+  assert(imgQ, `[${lang}] Une question image_options doit être générée`);
+  assert(imgQ.questionText.includes('Appel Virada Royale'), `[${lang}] Le label du signe doit être interpolé dans l'énoncé : ${imgQ.questionText}`);
+  for (const c of imgQ.choices) {
+    assert.strictEqual(c.isImage, true, `[${lang}] Chaque option image doit porter isImage: true`);
+    assert(c.text.startsWith('https://'), `[${lang}] Aucune URL ne doit commencer par Https:// : ${c.text}`);
+  }
+
+  // Vérification de bout en bout via generateQuizFromRepertoirePiece (avec sanitizeQuizQuestions actif)
+  const fullPieceQuiz = generateQuizFromRepertoirePiece(pieceWithLabelSignals, { catalogSignals: catalogMocks, t: tFn }, { t: tFn });
+  const survivedImgOrSig = fullPieceQuiz.filter((q) => q.type === 'image_options' || q.type === 'mestre_signal_consigne');
+  assert(survivedImgOrSig.length >= 1, `[${lang}] Les questions Signes du Mestre survivent à sanitizeQuizQuestions sans faux positif hasAnswerLeak`);
+  for (const q of fullPieceQuiz) {
+    assert(!/\{\{.*?\}\}/.test(q.questionText), `[${lang}] Zéro {{...}} dans generateQuizFromRepertoirePiece`);
+    for (const c of q.choices || []) {
+      if (/^https?:\/\//i.test(c.text)) {
+        assert(c.text.startsWith('https://') || c.text.startsWith('http://'), `[${lang}] Casse intacte de l'URL dans les choix finaux : ${c.text}`);
+      }
+    }
+  }
+}
+
+const gridPath = path.resolve('src/components/pedagogy/QuizOptionsGrid.jsx');
+assert(fs.existsSync(gridPath), "QuizOptionsGrid.jsx doit exister");
+const gridSrc = fs.readFileSync(gridPath, 'utf8');
+assert(gridSrc.includes('loading="lazy"') && gridSrc.includes('object-contain') && gridSrc.includes('🖐️'), "QuizOptionsGrid.jsx doit rendre <img loading=\"lazy\" object-contain> avec repli 🖐️");
+console.log("  ✅ [PASS] Interpolation FR/PT de {{name}}, préservation https:// et grille 2x2 QuizOptionsGrid validées.");
 
 console.log("\n===============================================================");
 console.log("🏆 SUCCÈS TOTAL : LE GÉNÉRATEUR QCM ET LE MODE FOCUS SONT SÉCURISÉS !");

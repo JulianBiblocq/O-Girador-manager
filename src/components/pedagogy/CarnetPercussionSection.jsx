@@ -103,7 +103,7 @@ export default function CarnetPercussionSection({
                 <button
                   key={bpm}
                   type="button"
-                  onClick={() => launchCrossApp(buildSequencerUrl(piece, bpm), { appLabel: 'le Séquenceur' })}
+                  onClick={() => launchCrossApp(buildSequencerUrl(piece, bpm), { appLabel: 'Sequenciador' })}
                   className="text-[9px] font-bold bg-white border border-stone-300 px-2 py-0.5 rounded hover:bg-stone-50 cursor-pointer"
                 >
                   ⚡ {bpm} BPM

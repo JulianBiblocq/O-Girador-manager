@@ -1,77 +1,74 @@
 /**
  * Composant unitaire d'affichage d'une notification dans le centre de notifications (NotificationItem).
- * Différencie visuellement les statuts lu / non lu selon les règles de style Cordel.
+ * Différencie visuellement les statuts lu / non lu selon les règles de style Cordel (< 140 lignes).
  */
 
 import React from 'react';
 import TerracottaMegaphoneIcon from '../TerracottaMegaphoneIcon';
 import { isForbiddenMegaphone, stripForbiddenMegaphones } from '../../utils/sanitizeIcons';
+import { useTranslation } from '../LanguageContext';
 
-/** Formate un horodatage Firestore ou Date en texte temporel relatif en français. */
-function formatRelativeDate(timestamp) {
+/** Formate un horodatage Firestore ou Date en texte temporel relatif bilingue (FR / PT-BR). */
+function formatRelativeDate(timestamp, locale = 'fr', t) {
   if (!timestamp) return '';
-
   const date = timestamp?.toDate ? timestamp.toDate() : new Date(timestamp);
   if (isNaN(date.getTime())) return '';
 
+  const bcp47 = locale === 'pt' ? 'pt-BR' : 'fr-FR';
   const now = new Date();
   const diffSec = Math.floor((now - date) / 1000);
 
-  if (diffSec < 60) return "À l'instant";
-  if (diffSec < 3600) return `Il y a ${Math.floor(diffSec / 60)} min`;
-  
-  const isToday = now.toDateString() === date.toDateString();
-  const timeStr = date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  if (diffSec < 60) return t ? t('notifications.justNow') : "À l'instant";
+  if (diffSec < 3600) {
+    const min = Math.floor(diffSec / 60);
+    return t ? t('notifications.minutesAgo', { min }) : `Il y a ${min} min`;
+  }
 
-  if (isToday) return `Aujourd'hui à ${timeStr}`;
+  const timeStr = date.toLocaleTimeString(bcp47, { hour: '2-digit', minute: '2-digit' });
+  if (now.toDateString() === date.toDateString()) {
+    return t ? t('notifications.todayAt', { time: timeStr }) : `Aujourd'hui à ${timeStr}`;
+  }
 
   const yesterday = new Date(now);
   yesterday.setDate(now.getDate() - 1);
-  if (yesterday.toDateString() === date.toDateString()) return `Hier à ${timeStr}`;
+  if (yesterday.toDateString() === date.toDateString()) {
+    return t ? t('notifications.yesterdayAt', { time: timeStr }) : `Hier à ${timeStr}`;
+  }
 
-  return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) + ` à ${timeStr}`;
+  const datePart = date.toLocaleDateString(bcp47, { day: 'numeric', month: 'short' });
+  return t ? t('notifications.dateAt', { date: datePart, time: timeStr }) : `${datePart} à ${timeStr}`;
 }
 
-/**
- * Retourne l'icône illustrative appropriée selon la catégorie de l'alerte.
- * 
- * @param {string} type Catégorie de notification
- * @returns {string} Émoji ou symbole
- */
 function getNotificationIcon(type) {
   switch (type) {
-    case 'chat_direct':
-      return '✉️';
-    case 'chat_group':
-      return '👥';
-    case 'forum_mention':
-      return '🗣️';
+    case 'chat_direct': return '✉️';
+    case 'chat_group': return '👥';
+    case 'forum_mention': return '🗣️';
     case 'forum_reply':
     case 'forum_message':
-      return '💬';
+    case 'event_discussion': return '💬';
     case 'forum_new_thread':
-    case 'announcement':
-      return <TerracottaMegaphoneIcon className="w-4 h-4 inline-block shrink-0" />;
-    case 'event_discussion':
-      return '💬';
+    case 'announcement': return <TerracottaMegaphoneIcon className="w-4 h-4 inline-block shrink-0" />;
     case 'event_new':
-    case 'event_roadmap':
-      return '📅';
-    case 'expense_status':
-      return '💰';
-    default:
-      return '🔔';
+    case 'event_roadmap': return '📅';
+    case 'expense_status': return '💰';
+    default: return '🔔';
   }
 }
 
-export default function NotificationItem({ notification, onSelect, onDelete }) {
+export default function NotificationItem({ notification, onSelect, onDelete, locale: propLocale, t: propT }) {
+  const i18n = useTranslation();
+  const t = propT || i18n.t;
+  const locale = propLocale || i18n.locale;
+
   const isUnread = notification.isRead !== true && notification.read !== true;
-  const dateFormatted = formatRelativeDate(notification.createdAt);
+  const dateFormatted = formatRelativeDate(notification.createdAt, locale, t);
   const rawIcon = notification.icon;
   const icon = isForbiddenMegaphone(rawIcon)
     ? <TerracottaMegaphoneIcon className="w-4 h-4 inline-block shrink-0" />
     : (rawIcon || getNotificationIcon(notification.type));
-  const displayTitle = stripForbiddenMegaphones(notification.title || notification.titre || 'Notification').trim() || 'Notification';
+  const defaultTitle = t('notifications.defaultItemTitle', 'Notification');
+  const displayTitle = stripForbiddenMegaphones(notification.title || notification.titre || defaultTitle).trim() || defaultTitle;
   const exactDocId = notification.docId || notification.notifId || notification.id;
 
   return (
@@ -91,12 +88,10 @@ export default function NotificationItem({ notification, onSelect, onDelete }) {
           : 'bg-cordel-bg-light/80 border-encre-noire/20 shadow-none opacity-80 hover:opacity-100 hover:border-encre-noire/40'
       }`}
     >
-      {/* Icône thématique */}
       <div className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-base bg-white border border-encre-noire/20 shadow-xs">
         {icon}
       </div>
 
-      {/* Contenu textuel */}
       <div className="flex-1 min-w-0 pr-1">
         <div className="flex items-center justify-between gap-1 mb-0.5">
           <span className={`text-xs truncate ${isUnread ? 'font-black text-encre-noire' : 'font-bold text-encre-noire/80'}`}>
@@ -106,7 +101,7 @@ export default function NotificationItem({ notification, onSelect, onDelete }) {
             {isUnread && (
               <span
                 className="w-2 h-2 rounded-full shrink-0 bg-[var(--color-cordel-rouge,#8b2a1a)] animate-pulse"
-                title="Non lu"
+                title={t('notifications.unreadDotTooltip', 'Non lu')}
               />
             )}
             {onDelete && (
@@ -117,8 +112,8 @@ export default function NotificationItem({ notification, onSelect, onDelete }) {
                   onDelete(exactDocId);
                 }}
                 className="p-1 -mr-1 text-encre-noire/40 hover:text-[var(--color-cordel-rouge,#8b2a1a)] hover:bg-black/5 rounded cursor-pointer transition-colors text-xs leading-none"
-                title="Supprimer cette notification"
-                aria-label="Supprimer la notification"
+                title={t('notifications.deleteItemTooltip', 'Supprimer cette notification')}
+                aria-label={t('notifications.deleteItemAria', 'Supprimer la notification')}
               >
                 ✕
               </button>
@@ -133,11 +128,9 @@ export default function NotificationItem({ notification, onSelect, onDelete }) {
         )}
 
         <div className="flex items-center justify-between mt-1.5 pt-1 border-t border-dashed border-encre-noire/10">
-          <span className="text-[9px] font-bold text-encre-noire/55 uppercase tracking-wider">
-            {dateFormatted}
-          </span>
+          <span className="text-[9px] font-bold text-encre-noire/55 uppercase tracking-wider">{dateFormatted}</span>
           <span className="text-[10px] font-extrabold text-cordel-wood group-hover:translate-x-0.5 transition-transform">
-            Voir ➔
+            {t('notifications.viewBtn', 'Voir ➔')}
           </span>
         </div>
       </div>

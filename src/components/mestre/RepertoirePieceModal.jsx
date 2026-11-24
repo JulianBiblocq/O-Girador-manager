@@ -217,7 +217,7 @@ export default function RepertoirePieceModal({
   const { catalogRhythms, loadingRhythms } = useSequencerRhythms(groupId);
   const { choreographies, loading: loadingChoreos } = useDancadorChoreographies(groupId);
   const { toadasList, cultureDocsList, loadingDocs } = useRepertoireVaralDocs(groupId);
-  const { toadaPacks, loadingToadaPacks } = useCantadorToadas();
+  const { toadaPacks, loadingToadaPacks } = useCantadorToadas(groupId);
 
   // Détection du preset Séquenceur sélectionné en mémoire
   const selectedPreset = useMemo(() => {
@@ -1175,7 +1175,7 @@ export default function RepertoirePieceModal({
                 </label>
               </div>
 
-              {/* 2. Séquence / Préréglage Séquenceur */}
+              {/* 2. Séquence / Préréglage Sequenciador */}
               <div className="flex flex-col gap-1">
                 <label className="text-[9px] uppercase font-bold tracking-wider text-cordel-master-dark flex items-center justify-between">
                   <span className="flex items-center gap-1">
@@ -1256,7 +1256,7 @@ export default function RepertoirePieceModal({
                   className="theme-input text-xs font-semibold p-2 bg-cordel-bg-light border border-encre-noire/30 rounded cursor-pointer"
                 >
                   <option value="">
-                    {selectedPreset?.audioUrl ? `✓ Audio direct du preset Séquenceur (recommandé)` : `-- Aucun audio personnalisé --`}
+                    {selectedPreset?.audioUrl ? `✓ Audio direct du preset Sequenciador (recommandé)` : `-- Aucun audio personnalisé --`}
                   </option>
                   {audioMastersList.length > 0 && (
                     <optgroup label={t('mestre.repertoire.optGroupMastersAudio')}>

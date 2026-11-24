@@ -128,10 +128,9 @@ export function useEventCommissions(eventId, eventData = null) {
       ev = evSnap.exists() ? { id: evSnap.id, ...evSnap.data() } : { id: eid, titre: 'Événement' };
     }
 
-    return await syncCommissionToVaral({
-      event: ev, commission: comm, referentsNames: opts.referentsNames || [],
-      usersMap: opts.usersMap || {}, groupId: opts.groupId || ev.groupId || 'default'
-    });
+    const effGroupId = String(opts.groupId || ev?.groupId || comm?.groupId || '').trim();
+    if (!effGroupId) throw new Error("Identifiant d'association manquant pour publier au Varal");
+    return await syncCommissionToVaral({ event: ev, commission: comm, referentsNames: opts.referentsNames || [], usersMap: opts.usersMap || {}, groupId: effGroupId });
   }, [eventId, eventData, commissions]);
 
   // 5. Câblage Porte-Voix (Passerelle Commissions ➔ Forum)

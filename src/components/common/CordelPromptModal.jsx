@@ -1,39 +1,21 @@
 /**
  * Composant de boîte de dialogue de saisie (Prompt) style Cordel / Xilo.
  * Remplace de manière asynchrone et élégante le window.prompt natif du navigateur.
- * Conforme à la charte Cordel (papier kraft, bordures franches asymétriques, encre noire, typographie heading).
  */
 
 import React, { useState, useEffect, useRef } from 'react';
 import CordelButton from '../CordelButton';
 import { XiloChat, XiloQuill, XiloShield, XiloClose } from '../XiloIcons';
+import { useTranslation } from '../LanguageContext';
 
-/**
- * CordelPromptModal
- *
- * @param {Object} props
- * @param {boolean} props.isOpen Indique si la modale est visible
- * @param {string} props.title Titre en en-tête
- * @param {string} props.message Message explicatif / consigne
- * @param {string} [props.defaultValue=''] Valeur initiale dans le champ
- * @param {string} [props.placeholder=''] Texte indicatif
- * @param {string} [props.confirmLabel='Valider'] Texte du bouton de validation
- * @param {string} [props.cancelLabel='Annuler'] Texte du bouton d'annulation
- * @param {'vert'|'ocre'|'danger'|'info'|'default'} [props.variant='vert'] Variante sémantique de couleur
- * @param {boolean} [props.multiline=false] Si true, affiche un textarea au lieu d'un input
- * @param {string} [props.inputType='text'] Type HTML du champ (text, url, email...)
- * @param {string} [props.badge] Libellé du badge supérieur (ex. "💬 Message privé")
- * @param {Function} props.onConfirm Callback déclenché avec la valeur saisie
- * @param {Function} props.onCancel Callback déclenché à l'annulation (renvoie null)
- */
 export default function CordelPromptModal({
   isOpen,
-  title = 'Saisie requise',
+  title = '',
   message = '',
   defaultValue = '',
   placeholder = '',
-  confirmLabel = 'Valider',
-  cancelLabel = 'Annuler',
+  confirmLabel = '',
+  cancelLabel = '',
   variant = 'vert',
   multiline = false,
   inputType = 'text',
@@ -41,6 +23,7 @@ export default function CordelPromptModal({
   onConfirm,
   onCancel
 }) {
+  const { t } = useTranslation();
   const [inputValue, setInputValue] = useState(defaultValue || '');
   const inputRef = useRef(null);
 
@@ -81,9 +64,21 @@ export default function CordelPromptModal({
   const isWarning = variant === 'warning';
   const isVert = variant === 'vert' || variant === 'success';
 
-  // Détection du type de contenu pour l'icône et l'intitulé
-  const lowerMsg = (message + ' ' + title).toLowerCase();
-  const isChat = lowerMsg.includes('message') || lowerMsg.includes('écrire') || lowerMsg.includes('discussion');
+  const resolvedTitle = title || t('cordelModal.promptRequiredTitle', 'Saisie requise');
+  const resolvedConfirm = confirmLabel || t('cordelModal.validate', 'Valider');
+  const resolvedCancel = cancelLabel || t('common.cancel', 'Annuler');
+
+  const lowerMsg = `${message} ${resolvedTitle}`.toLowerCase();
+  const isChat = /message|écrire|discussion|mensagem|escrever|conversa/.test(lowerMsg);
+  const resolvedBadge = badge || (
+    isChat
+      ? t('cordelModal.badgePrivateMsg', '💬 Message privé')
+      : isDanger
+        ? t('cordelModal.badgeWarning', '⚠️ Attention')
+        : isWarning
+          ? t('cordelModal.badgeAdjust', '📋 Ajustement')
+          : t('cordelModal.badgeInputCordel', '✏️ Saisie Cordel')
+  );
 
   const handleSubmit = (e) => {
     if (e && e.preventDefault) e.preventDefault();
@@ -102,12 +97,8 @@ export default function CordelPromptModal({
       aria-modal="true"
       aria-labelledby="cordel-prompt-title"
     >
-      {/* Carte centrale Cordel avec texture kraft et bordures franches */}
       <div className="relative z-10 bg-cordel-bg dark:bg-[#1a1918] border-2 border-encre-noire shadow-[4px_4px_0px_0px_#181716] rounded-[8px_12px_7px_10px] p-4 sm:p-5 max-w-md w-full text-left overflow-hidden flex flex-col gap-3.5 max-h-[90vh]">
-        {/* Formulaire englobant pour prise en charge native de la touche Entrée */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-3.5 m-0 p-0">
-          
-          {/* En-tête avec icône gravée Xilo et titre */}
           <div className="flex items-start justify-between gap-3 border-b-2 border-dashed border-cordel-master-dark/20 pb-3 shrink-0">
             <div className="flex items-center gap-2.5">
               <span
@@ -115,47 +106,39 @@ export default function CordelPromptModal({
                   isDanger
                     ? 'bg-[var(--color-cordel-rouge)]/15 text-[var(--color-cordel-rouge)] dark:text-red-400 border-[var(--color-cordel-rouge)]/30'
                     : isWarning
-                    ? 'bg-[var(--color-cordel-ocre)]/15 text-[var(--color-cordel-ocre)] dark:text-amber-400 border-[var(--color-cordel-ocre)]/30'
-                    : isVert
-                    ? 'bg-[var(--color-cordel-vert)]/15 text-[var(--color-cordel-vert)] dark:text-emerald-400 border-[var(--color-cordel-vert)]/30'
-                    : 'bg-blue-100 dark:bg-blue-950/70 text-blue-800 dark:text-blue-300 border-blue-300 dark:border-blue-800'
+                      ? 'bg-[var(--color-cordel-ocre)]/15 text-[var(--color-cordel-ocre)] dark:text-amber-400 border-[var(--color-cordel-ocre)]/30'
+                      : isVert
+                        ? 'bg-[var(--color-cordel-vert)]/15 text-[var(--color-cordel-vert)] dark:text-emerald-400 border-[var(--color-cordel-vert)]/30'
+                        : 'bg-blue-100 dark:bg-blue-950/70 text-blue-800 dark:text-blue-300 border-blue-300 dark:border-blue-800'
                 }`}
               >
-                {isDanger ? (
-                  <XiloShield size={22} />
-                ) : isChat ? (
-                  <XiloChat size={22} />
-                ) : (
-                  <XiloQuill size={22} />
-                )}
+                {isDanger ? <XiloShield size={22} /> : isChat ? <XiloChat size={22} /> : <XiloQuill size={22} />}
               </span>
 
               <div className="flex flex-col">
                 <span className="text-[9px] font-black uppercase tracking-widest text-cordel-wood opacity-85">
-                  {badge || (isChat ? '💬 Message privé' : isDanger ? '⚠️ Attention' : isWarning ? '📋 Ajustement' : '✏️ Saisie Cordel')}
+                  {resolvedBadge}
                 </span>
                 <h3
                   id="cordel-prompt-title"
                   className="font-heading font-black text-base uppercase tracking-wider text-encre-noire dark:text-cordel-bg"
                 >
-                  {title}
+                  {resolvedTitle}
                 </h3>
               </div>
             </div>
 
-            {/* Bouton de fermeture d'angle */}
             <button
               type="button"
               onClick={onCancel}
               className="p-1 text-cordel-master-dark/60 hover:text-cordel-master-dark transition-colors rounded hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer shrink-0"
-              title="Fermer (Échap)"
-              aria-label="Fermer"
+              title={t('cordelModal.closeEsc', 'Fermer (Échap)')}
+              aria-label={t('common.close', 'Fermer')}
             >
               <XiloClose size={18} />
             </button>
           </div>
 
-          {/* Consigne / Message explicatif */}
           {message && (
             <div className="bg-white/70 dark:bg-black/30 p-3 rounded border border-cordel-master-dark/15 shrink-0">
               <p className="text-xs font-semibold text-encre-noire dark:text-cordel-bg leading-relaxed whitespace-pre-line">
@@ -164,7 +147,6 @@ export default function CordelPromptModal({
             </div>
           )}
 
-          {/* Champ de saisie Cordel (multiline ou single line) */}
           <div className="flex flex-col gap-1.5 shrink-0">
             {multiline ? (
               <textarea
@@ -200,12 +182,11 @@ export default function CordelPromptModal({
 
             {multiline && (
               <span className="text-[10px] text-cordel-master-dark/60 italic text-right">
-                Astuce : Ctrl + Entrée pour valider
+                {t('cordelModal.ctrlEnterHint', 'Astuce : Ctrl + Entrée pour valider')}
               </span>
             )}
           </div>
 
-          {/* Boutons d'action Cordel */}
           <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-dashed border-cordel-master-dark/20 shrink-0">
             <CordelButton
               variant="default"
@@ -213,7 +194,7 @@ export default function CordelPromptModal({
               onClick={onCancel}
               className="text-xs px-4 py-2 opacity-90 hover:opacity-100"
             >
-              {cancelLabel}
+              {resolvedCancel}
             </CordelButton>
 
             <button
@@ -222,11 +203,11 @@ export default function CordelPromptModal({
                 isDanger
                   ? 'bg-[var(--color-cordel-rouge)] hover:brightness-110 text-white'
                   : isWarning
-                  ? 'bg-[var(--color-cordel-ocre)] hover:brightness-110 text-white'
-                  : 'bg-[var(--color-cordel-vert)] hover:brightness-110 text-white'
+                    ? 'bg-[var(--color-cordel-ocre)] hover:brightness-110 text-white'
+                    : 'bg-[var(--color-cordel-vert)] hover:brightness-110 text-white'
               }`}
             >
-              {confirmLabel}
+              {resolvedConfirm}
             </button>
           </div>
         </form>

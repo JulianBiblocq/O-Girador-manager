@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import XiloAvatar from '../XiloAvatar';
+import { useTranslation } from '../LanguageContext';
 
 /**
  * Cellule de la matrice croisée (Date × Pupitre) avec compteurs cliquables
@@ -9,9 +10,11 @@ export default function PollPupitreMatrixCell({
   cell = {},
   isSelected = false,
   isSuperAdminOrMestre = false,
-  onSelectSlot
+  onSelectSlot,
+  t: propT
 }) {
-  // État local du tiroir déplié : null | 'indispo' | 'unanswered'
+  const i18n = useTranslation();
+  const t = propT || i18n.t;
   const [expandedTab, setExpandedTab] = useState(null);
 
   const availableMembers = cell.availableMembers || [];
@@ -43,74 +46,59 @@ export default function PollPupitreMatrixCell({
           : 'hover:bg-amber-50/50'
       }`}
     >
-      {/* En-tête de la cellule : compteur Dispo uniquement (sans badge Retenu avant validation) */}
       <div className="flex items-center justify-between gap-1">
         <span className={isSelected ? 'text-[var(--color-cordel-vert,#2d6a4f)] font-black' : 'font-bold text-encre-noire'}>
-          {count} / {totalPupitre} dispo ({percentage}%)
+          {t('pollMatrix.availableRatio', { count, total: totalPupitre, pct: percentage })}
         </span>
       </div>
 
-      {/* Pastilles des membres disponibles */}
       {availableMembers.length > 0 && (
         <div className="flex flex-wrap items-center gap-1 mt-1">
           {availableMembers.slice(0, 4).map((m) => (
-            <span
-              key={m.uid}
-              className="inline-flex items-center gap-0.5 text-[8.5px] bg-white/90 border border-encre-noire/20 px-1 py-0.2 rounded"
-            >
+            <span key={m.uid} className="inline-flex items-center gap-0.5 text-[8.5px] bg-white/90 border border-encre-noire/20 px-1 py-0.2 rounded">
               <XiloAvatar src={m.photoURL} name={m.name} size={11} /> <span>{m.prenom}</span>
             </span>
           ))}
-          {availableMembers.length > 4 && (
-            <span className="text-[8px] opacity-70">+{availableMembers.length - 4}</span>
-          )}
+          {availableMembers.length > 4 && <span className="text-[8px] opacity-70">+{availableMembers.length - 4}</span>}
         </div>
       )}
 
-      {/* Ligne des 2 mini-badges cliquables : Indispo & Sans réponse */}
       {(unavailableMembers.length > 0 || unansweredMembers.length > 0) && (
         <div className="flex flex-wrap items-center gap-1 mt-1.5 pt-1 border-t border-dashed border-encre-noire/10">
           <button
             type="button"
             disabled={unavailableMembers.length === 0}
             onClick={(e) => unavailableMembers.length > 0 && toggleTab(e, 'indispo')}
-            title={unavailableMembers.length > 0 ? 'Cliquer pour voir les indisponibles' : 'Aucun indisponible'}
+            title={unavailableMembers.length > 0 ? t('pollMatrix.unavailableTooltip') : t('pollMatrix.noneUnavailableTooltip')}
             className={`text-[8px] font-extrabold px-1.5 py-0.5 rounded border transition-all ${
               expandedTab === 'indispo'
                 ? 'bg-[var(--color-cordel-rouge,#8b2a1a)] text-white border-encre-noire'
                 : 'bg-red-50/80 text-[var(--color-cordel-rouge,#8b2a1a)] border-red-800/25 hover:bg-red-100/80'
             } ${unavailableMembers.length > 0 ? 'cursor-pointer' : 'opacity-40 cursor-default'}`}
           >
-            ✕ {unavailableMembers.length} indispo
+            {t('pollMatrix.unavailableShort', { count: unavailableMembers.length })}
           </button>
 
           <button
             type="button"
             disabled={unansweredMembers.length === 0}
             onClick={(e) => unansweredMembers.length > 0 && toggleTab(e, 'unanswered')}
-            title={unansweredMembers.length > 0 ? 'Cliquer pour voir les membres sans réponse sur ce créneau' : 'Tout le monde a répondu'}
+            title={unansweredMembers.length > 0 ? t('pollMatrix.unansweredCellTooltip') : t('pollMatrix.allAnsweredCellTooltip')}
             className={`text-[8px] font-extrabold px-1.5 py-0.5 rounded border transition-all ${
               expandedTab === 'unanswered'
                 ? 'bg-[var(--color-cordel-ocre,#c05621)] text-white border-encre-noire'
                 : 'bg-amber-50/80 text-[var(--color-cordel-ocre,#c05621)] border-amber-800/25 hover:bg-amber-100/80'
             } ${unansweredMembers.length > 0 ? 'cursor-pointer' : 'opacity-40 cursor-default'}`}
           >
-            ⏳ {unansweredMembers.length} sans rép.
+            {t('pollMatrix.unansweredShort', { count: unansweredMembers.length })}
           </button>
         </div>
       )}
 
-      {/* Tiroir compact déplié au clic uniquement */}
       {expandedTab && activeList.length > 0 && (
-        <div
-          onClick={(e) => e.stopPropagation()}
-          className="mt-1 p-1.5 rounded bg-white/95 dark:bg-black/50 border border-encre-noire/25 flex flex-wrap items-center gap-1"
-        >
+        <div onClick={(e) => e.stopPropagation()} className="mt-1 p-1.5 rounded bg-white/95 dark:bg-black/50 border border-encre-noire/25 flex flex-wrap items-center gap-1">
           {activeList.map((m) => (
-            <span
-              key={m.uid}
-              className="inline-flex items-center gap-0.5 text-[8px] font-semibold bg-cordel-bg-light border border-encre-noire/15 px-1 py-0.2 rounded text-encre-noire"
-            >
+            <span key={m.uid} className="inline-flex items-center gap-0.5 text-[8px] font-semibold bg-cordel-bg-light border border-encre-noire/15 px-1 py-0.2 rounded text-encre-noire">
               <XiloAvatar src={m.photoURL} name={m.name} size={10} /> <span>{m.prenom}</span>
             </span>
           ))}

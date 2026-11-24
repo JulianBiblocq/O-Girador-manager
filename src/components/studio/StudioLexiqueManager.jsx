@@ -225,25 +225,19 @@ export default function StudioLexiqueManager({
       </div>
 
       {/* 1. Section Mentions (@) */}
-      <MentionsSection
-        mentions={mentions}
-        onSaveMentions={handleSaveMentions}
-        disabled={saving}
-      />
+      <div data-tour="studio-lexique-mentions">
+        <MentionsSection mentions={mentions} onSaveMentions={handleSaveMentions} disabled={saving} />
+      </div>
 
       {/* 2. Section Vocabulaire & Guide culturel */}
-      <VocabSection
-        equivalences={equivalences}
-        onSaveEquivalences={handleSaveEquivalences}
-        disabled={saving}
-      />
+      <div data-tour="studio-lexique-vocab">
+        <VocabSection equivalences={equivalences} onSaveEquivalences={handleSaveEquivalences} disabled={saving} />
+      </div>
 
       {/* 3. Section Hashtags par défaut */}
-      <HashtagsSection
-        hashtags={hashtags}
-        onSaveHashtags={handleSaveHashtags}
-        disabled={saving}
-      />
+      <div data-tour="studio-lexique-hashtags">
+        <HashtagsSection hashtags={hashtags} onSaveHashtags={handleSaveHashtags} disabled={saving} />
+      </div>
     </div>
   );
 }

@@ -1,144 +1,69 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from '../LanguageContext';
+import { resolveLocalizedGuideText, resolveLocalizedGuideSteps } from '../../config/poleGuides';
+import {
+  findPoleTourTargetElement,
+  measureVisibleTargetRect,
+  computePoleTourLayout
+} from '../../utils/poleTourPositionUtils';
 
 /**
- * Composant : PoleTourOverlay
- * 
- * Visite guidée interactive pas-à-pas aux couleurs du Cordel.
- * Met en valeur les éléments interactifs de la vue active via un spotlight découpé dynamiquement,
- * et propose une infobulle pédagogique permettant de progresser dans les étapes de travail.
- * 
- * Caractéristiques :
- * - Montage dans document.body via createPortal avec un z-index élevé (z-[9999]).
- * - Spotlight avec halo d'assombrissement (box-shadow 9999px) et liseré en pointillés ocre (#c05621).
- * - Repli gracieux au centre en modale si l'élément cible est absent du DOM.
- * - Navigation clavier (Échap, Flèche Gauche, Flèche Droite) et scroll automatique fluide.
- * - Bouton "Terminer ✓" en Vert Validation officiel (#2d6a4f).
- * - Sauvegarde de complétion dans localStorage ('pole_tour_completed_${tabId}').
- * 
- * @param {Object} guide - Objet du guide issu de poleGuides.js ({ titre, description, etapes, targets })
- * @param {string} tabId - Identifiant de l'onglet actif (utilisé pour mémoriser la complétion)
- * @param {boolean} isOpen - Indique si la visite guidée est active
- * @param {Function} onClose - Callback invoqué à la fermeture ou à l'achèvement de la visite
- * @param {Function} [onComplete] - Callback optionnel d'achèvement
+ * Visite guidée interactive pas-à-pas bilingue (FR / PT-BR) aux variables sémantiques Cordel.
  */
 export default function PoleTourOverlay({ guide, tabId, isOpen, onClose, onComplete }) {
-  // Index de l'étape active (0-indexed)
+  const { t, locale, i18n } = useTranslation();
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
-  // Coordonnées rect de l'élément cible
   const [targetRect, setTargetRect] = useState(null);
-  // Indique si la cible a été trouvée pour l'étape active
   const [targetFound, setTargetFound] = useState(false);
-
   const popoverRef = useRef(null);
 
-  // Normalisation des étapes et cibles
-  const steps = guide?.etapes || guide?.steps || [];
+  const activeLang = (typeof i18n !== 'undefined' && i18n?.language) || locale || 'fr';
+  const isPt = activeLang === 'pt' || String(activeLang).toLowerCase().startsWith('pt');
+
+  const steps = useMemo(
+    () => resolveLocalizedGuideSteps(guide?.steps || guide?.etapes, isPt),
+    [guide, isPt]
+  );
   const targets = guide?.targets || [];
   const totalSteps = steps.length;
   const currentStepText = steps[currentStepIndex] || '';
   const currentTargetKey = targets[currentStepIndex] || null;
 
-  // Réinitialisation à la première étape lors de l'ouverture
   useEffect(() => {
-    if (isOpen) {
-      setCurrentStepIndex(0);
-    }
+    if (isOpen) setCurrentStepIndex(0);
   }, [isOpen, tabId]);
 
-  /**
-   * Calcul dynamique et détection du positionnement de l'élément cible
-   */
   const updateTargetPosition = useCallback(() => {
     if (!isOpen || totalSteps === 0) return;
-
-    let element = null;
-
-    // 1. Recherche par clé de cible déclarée dans le guide
-    if (currentTargetKey) {
-      element = document.querySelector(`[data-tour="${currentTargetKey}"]`);
-    }
-
-    // 2. Recherche par convention de secours tabId-step-${index+1}
-    if (!element && tabId) {
-      element = document.querySelector(`[data-tour="${tabId}-step-${currentStepIndex + 1}"]`);
-    }
-
-    // 3. Traitement selon présence et visibilité réelle de l'élément
-    if (element) {
-      const rect = element.getBoundingClientRect();
-      // Vérification que l'élément est réellement déployé (taille positive et non replié)
-      const isVisible = rect.width > 0 && rect.height > 0;
-      if (isVisible) {
-        setTargetRect({
-          top: rect.top,
-          left: rect.left,
-          width: rect.width,
-          height: rect.height,
-          bottom: rect.bottom,
-          right: rect.right
-        });
-        setTargetFound(true);
-      } else {
-        // Repli gracieux en modale centrée si la cible est temporairement repliée
-        setTargetRect(null);
-        setTargetFound(false);
-      }
-    } else {
-      setTargetRect(null);
-      setTargetFound(false);
-    }
+    const element = findPoleTourTargetElement(currentTargetKey, tabId, currentStepIndex);
+    const rect = measureVisibleTargetRect(element);
+    setTargetRect(rect);
+    setTargetFound(Boolean(rect));
   }, [isOpen, totalSteps, currentTargetKey, tabId, currentStepIndex]);
 
-  // Défilement automatique fluide vers l'élément et recalcul
   useEffect(() => {
-    if (!isOpen || totalSteps === 0) return;
-
-    let element = null;
-    if (currentTargetKey) {
-      element = document.querySelector(`[data-tour="${currentTargetKey}"]`);
+    if (!isOpen || totalSteps === 0) return undefined;
+    const element = findPoleTourTargetElement(currentTargetKey, tabId, currentStepIndex);
+    const rect = measureVisibleTargetRect(element);
+    if (element && rect) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
     }
-    if (!element && tabId) {
-      element = document.querySelector(`[data-tour="${tabId}-step-${currentStepIndex + 1}"]`);
-    }
-
-    if (element) {
-      const rect = element.getBoundingClientRect();
-      if (rect.width > 0 && rect.height > 0) {
-        // Défilement centré fluide uniquement si l'élément est visible
-        element.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
-      }
-      
-      // Recalcul immédiat puis ajustement après animation de défilement
-      updateTargetPosition();
-      const timer = setTimeout(updateTargetPosition, 320);
-      return () => clearTimeout(timer);
-    } else {
-      setTargetRect(null);
-      setTargetFound(false);
-    }
+    updateTargetPosition();
+    const timer = setTimeout(updateTargetPosition, 320);
+    return () => clearTimeout(timer);
   }, [isOpen, currentStepIndex, currentTargetKey, tabId, updateTargetPosition, totalSteps]);
 
-  // Écouteurs de redimensionnement et défilement pour maintenir le calage du halo
   useEffect(() => {
-    if (!isOpen) return;
-
-    const handleScrollOrResize = () => {
-      updateTargetPosition();
-    };
-
-    window.addEventListener('scroll', handleScrollOrResize, { passive: true, capture: true });
-    window.addEventListener('resize', handleScrollOrResize, { passive: true });
-
+    if (!isOpen) return undefined;
+    window.addEventListener('scroll', updateTargetPosition, { passive: true, capture: true });
+    window.addEventListener('resize', updateTargetPosition, { passive: true });
     return () => {
-      window.removeEventListener('scroll', handleScrollOrResize, { capture: true });
-      window.removeEventListener('resize', handleScrollOrResize);
+      window.removeEventListener('scroll', updateTargetPosition, { capture: true });
+      window.removeEventListener('resize', updateTargetPosition);
     };
   }, [isOpen, updateTargetPosition]);
 
-  /**
-   * Clôture et enregistrement de complétion dans le stockage local
-   */
   const handleFinish = useCallback(() => {
     if (tabId) {
       try {
@@ -153,22 +78,18 @@ export default function PoleTourOverlay({ guide, tabId, isOpen, onClose, onCompl
 
   const handleNext = useCallback(() => {
     if (currentStepIndex < totalSteps - 1) {
-      setCurrentStepIndex(prev => prev + 1);
+      setCurrentStepIndex((prev) => prev + 1);
     } else {
       handleFinish();
     }
   }, [currentStepIndex, totalSteps, handleFinish]);
 
   const handlePrev = useCallback(() => {
-    if (currentStepIndex > 0) {
-      setCurrentStepIndex(prev => prev - 1);
-    }
+    if (currentStepIndex > 0) setCurrentStepIndex((prev) => prev - 1);
   }, [currentStepIndex]);
 
-  // Support des touches clavier (Échap, Flèche Gauche, Flèche Droite)
   useEffect(() => {
-    if (!isOpen) return;
-
+    if (!isOpen) return undefined;
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
         e.preventDefault();
@@ -181,119 +102,44 @@ export default function PoleTourOverlay({ guide, tabId, isOpen, onClose, onCompl
         handlePrev();
       }
     };
-
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, handleNext, handlePrev, onClose]);
 
-  // Si le tour n'est pas ouvert ou que le guide ne contient aucune étape, ne rien afficher
-  if (!isOpen || !guide || totalSteps === 0) {
-    return null;
-  }
+  if (!isOpen || !guide || totalSteps === 0) return null;
 
   const isLastStep = currentStepIndex === totalSteps - 1;
   const isFirstStep = currentStepIndex === 0;
-  const guideTitle = guide.titre || guide.title || "Visite guidée";
+  const guideTitle = resolveLocalizedGuideText(guide.title || guide.titre, isPt) || t('poleGuides.tourDefaultTitle');
+  const guideDescription = resolveLocalizedGuideText(guide.description, isPt);
+  const { spotlightStyle, popoverStyle, placementClass } = computePoleTourLayout({ targetFound, targetRect });
 
-  // Marge de dégagement autour de l'élément cible
-  const PADDING = 6;
-
-  // Calcul du positionnement adaptatif de l'infobulle (popover)
-  let popoverStyle = {};
-  let placementClass = "";
-
-  if (targetFound && targetRect) {
-    const popoverWidth = Math.min(390, window.innerWidth - 24);
-    // Espace disponible sous l'élément
-    const spaceBelow = window.innerHeight - (targetRect.bottom + PADDING);
-    // Espace disponible au-dessus de l'élément
-    const spaceAbove = targetRect.top - PADDING;
-
-    // Centrage horizontal calé sur la cible, borné par les bords de l'écran
-    let idealLeft = targetRect.left + (targetRect.width / 2) - (popoverWidth / 2);
-    idealLeft = Math.max(12, Math.min(idealLeft, window.innerWidth - popoverWidth - 12));
-
-    // Si l'espace dessous est suffisant (> 220px) ou plus grand que l'espace dessus, placer en-dessous
-    if (spaceBelow >= 220 || spaceBelow > spaceAbove) {
-      popoverStyle = {
-        position: 'fixed',
-        top: `${Math.min(targetRect.bottom + PADDING + 12, window.innerHeight - 240)}px`,
-        left: `${idealLeft}px`,
-        width: `${popoverWidth}px`,
-        zIndex: 9999
-      };
-      placementClass = "popover-below";
-    } else {
-      // Sinon placer au-dessus
-      popoverStyle = {
-        position: 'fixed',
-        bottom: `${Math.max(12, window.innerHeight - (targetRect.top - PADDING) + 12)}px`,
-        left: `${idealLeft}px`,
-        width: `${popoverWidth}px`,
-        zIndex: 9999
-      };
-      placementClass = "popover-above";
-    }
-  } else {
-    // Mode modale centrée (repli gracieux si cible introuvable)
-    popoverStyle = {
-      position: 'fixed',
-      top: '50%',
-      left: '50%',
-      transform: 'translate(-50%, -50%)',
-      width: `${Math.min(420, window.innerWidth - 32)}px`,
-      zIndex: 9999
-    };
-    placementClass = "popover-centered";
-  }
-
-  // Rendu dans document.body via Portal
   return createPortal(
     <div className="fixed inset-0 select-none z-[9999] pointer-events-auto">
-      {/* 1. Halo découpé Cordel (Spotlight) ou fond assombri uni */}
-      {targetFound && targetRect ? (
-        <div
-          style={{
-            position: 'fixed',
-            top: `${targetRect.top - PADDING}px`,
-            left: `${targetRect.left - PADDING}px`,
-            width: `${targetRect.width + PADDING * 2}px`,
-            height: `${targetRect.height + PADDING * 2}px`,
-            borderRadius: '8px',
-            boxShadow: '0 0 0 9999px rgba(18, 14, 12, 0.74)',
-            border: '2px dashed #c05621',
-            pointerEvents: 'none',
-            zIndex: 9998,
-            transition: 'top 0.22s ease-out, left 0.22s ease-out, width 0.22s ease-out, height 0.22s ease-out'
-          }}
-        />
+      {spotlightStyle ? (
+        <div style={spotlightStyle} />
       ) : (
-        <div 
-          className="fixed inset-0 bg-[#120e0c]/74 z-[9998] transition-opacity duration-200"
-          onClick={onClose}
-        />
+        <div className="fixed inset-0 bg-encre-noire/75 z-[9998] transition-opacity duration-200" onClick={onClose} />
       )}
 
-      {/* 2. Infobulle Cordel (Popover pédagogique) */}
       <div
         ref={popoverRef}
         style={popoverStyle}
-        className={`bg-[var(--theme-bg)] text-[#120e0c] border-2 border-[#120e0c] rounded-[6px_14px_8px_12px] shadow-[3.5px_3.5px_0px_0px_#120e0c] p-4 sm:p-5 flex flex-col gap-3.5 transition-all duration-200 animate-fade-in ${placementClass}`}
+        className={`bg-cordel-card-bg text-encre-noire border-2 border-encre-noire rounded-[6px_14px_8px_12px] shadow-[3.5px_3.5px_0px_0px_var(--color-encre-noire)] p-4 sm:p-5 flex flex-col gap-3.5 transition-all duration-200 animate-fade-in ${placementClass}`}
         role="dialog"
         aria-modal="true"
         aria-label={guideTitle}
       >
-        {/* En-tête Cordel : titre de la visite, jauge d'étape et bouton fermer */}
-        <div className="flex items-center justify-between gap-2 border-b-2 border-dashed border-[#120e0c]/20 pb-2.5">
+        <div className="flex items-center justify-between gap-2 border-b-2 border-dashed border-encre-noire/20 pb-2.5">
           <div className="flex items-center gap-2 overflow-hidden">
             <span className="w-5 h-5 rounded-full bg-[var(--theme-primary)] text-[var(--theme-bg)] text-[10px] font-black flex items-center justify-center shrink-0">
               {currentStepIndex + 1}
             </span>
             <div className="truncate">
               <span className="text-[9px] font-black uppercase tracking-widest text-[var(--theme-primary)] block leading-none">
-                Étape {currentStepIndex + 1} sur {totalSteps}
+                {t('poleGuides.tourStepCounter', { current: currentStepIndex + 1, total: totalSteps })}
               </span>
-              <h4 className="text-xs font-black uppercase tracking-wide text-[#120e0c] truncate mt-0.5">
+              <h4 className="text-xs font-black uppercase tracking-wide text-encre-noire truncate mt-0.5">
                 {guideTitle}
               </h4>
             </div>
@@ -302,42 +148,34 @@ export default function PoleTourOverlay({ guide, tabId, isOpen, onClose, onCompl
           <button
             type="button"
             onClick={onClose}
-            className="w-6 h-6 rounded border border-[#120e0c]/40 hover:border-[#120e0c] bg-[var(--theme-bg)] hover:bg-amber-100 text-[#120e0c] text-xs font-black flex items-center justify-center cursor-pointer transition-all shrink-0"
-            title="Fermer la visite (Échap)"
+            className="w-6 h-6 rounded border border-encre-noire/40 hover:border-encre-noire bg-cordel-bg-light hover:bg-cordel-bg text-encre-noire text-xs font-black flex items-center justify-center cursor-pointer transition-all shrink-0"
+            title={t('poleGuides.tourCloseTooltip')}
+            aria-label={t('poleGuides.tourCloseTooltip')}
           >
             ✕
           </button>
         </div>
 
-        {/* Corps de l'étape active */}
         <div className="flex flex-col gap-2">
-          {/* Note explicative globale sur la première étape */}
-          {isFirstStep && guide.description && (
-            <p className="text-[11px] text-[#120e0c]/70 italic leading-snug border-l-2 border-[#c05621] pl-2 mb-1">
-              {guide.description}
+          {isFirstStep && guideDescription && (
+            <p className="text-[11px] text-encre-noire/75 italic leading-snug border-l-2 border-[var(--color-cordel-ocre)] pl-2 mb-1">
+              {guideDescription}
             </p>
           )}
 
-          {/* Consigne précise de l'étape courante */}
-          <div className="flex items-start gap-2.5 bg-[#fdfaf2] p-3 rounded-[4px_6px_3px_5px] border border-[#120e0c]/20">
-            <span className="text-base shrink-0 leading-none mt-0.5">
-              {isLastStep ? '🎯' : '👉'}
-            </span>
-            <p className="text-xs sm:text-[13px] font-bold text-[#120e0c] leading-relaxed">
-              {currentStepText}
-            </p>
+          <div className="flex items-start gap-2.5 bg-cordel-bg-light p-3 rounded-[4px_6px_3px_5px] border border-encre-noire/20">
+            <span className="text-base shrink-0 leading-none mt-0.5">{isLastStep ? '🎯' : '👉'}</span>
+            <p className="text-xs sm:text-[13px] font-bold text-encre-noire leading-relaxed">{currentStepText}</p>
           </div>
 
-          {/* Message informatif si la cible visuelle n'est pas encore présente à l'écran */}
           {!targetFound && (
             <span className="text-[10px] text-[var(--theme-primary)] font-medium italic">
-              ℹ️ Vue d'ensemble du module
+              {t('poleGuides.tourOverviewNotice')}
             </span>
           )}
         </div>
 
-        {/* Indicateurs de progression (petits rectangles ou ronds Cordel) */}
-        <div className="flex items-center justify-between pt-2 border-t border-dashed border-[#120e0c]/15">
+        <div className="flex items-center justify-between pt-2 border-t border-dashed border-encre-noire/15">
           <div className="flex items-center gap-1.5">
             {steps.map((_, idx) => (
               <button
@@ -348,10 +186,10 @@ export default function PoleTourOverlay({ guide, tabId, isOpen, onClose, onCompl
                   idx === currentStepIndex
                     ? 'w-5 bg-[var(--color-cordel-ocre)]'
                     : idx < currentStepIndex
-                    ? 'w-2 bg-[var(--color-cordel-vert)]'
-                    : 'w-2 bg-[#120e0c]/20'
+                      ? 'w-2 bg-[var(--color-cordel-vert)]'
+                      : 'w-2 bg-encre-noire/20'
                 }`}
-                title={`Aller à l'étape ${idx + 1}`}
+                title={t('poleGuides.tourGoToStep', { step: idx + 1 })}
               />
             ))}
           </div>
@@ -359,13 +197,12 @@ export default function PoleTourOverlay({ guide, tabId, isOpen, onClose, onCompl
           <button
             type="button"
             onClick={onClose}
-            className="text-[10px] font-bold uppercase tracking-wider text-[#120e0c]/60 hover:text-[#120e0c] cursor-pointer"
+            className="text-[10px] font-bold uppercase tracking-wider text-encre-noire/60 hover:text-encre-noire cursor-pointer"
           >
-            Passer
+            {t('poleGuides.tourSkipBtn')}
           </button>
         </div>
 
-        {/* Barre de navigation : Précédent / Suivant / Terminer */}
         <div className="flex items-center justify-between gap-2 pt-1">
           <button
             type="button"
@@ -373,30 +210,30 @@ export default function PoleTourOverlay({ guide, tabId, isOpen, onClose, onCompl
             disabled={isFirstStep}
             className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all flex items-center gap-1 ${
               isFirstStep
-                ? 'opacity-40 cursor-not-allowed border-[#120e0c]/20 text-[#120e0c]/40'
-                : 'bg-[var(--theme-bg)] hover:bg-amber-100 text-[#120e0c] border-[#120e0c] shadow-[1.5px_1.5px_0px_0px_#120e0c] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer'
+                ? 'opacity-40 cursor-not-allowed border-encre-noire/20 text-encre-noire/40'
+                : 'bg-cordel-bg-light hover:bg-cordel-bg text-encre-noire border-encre-noire shadow-[1.5px_1.5px_0px_0px_var(--color-encre-noire)] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer'
             }`}
           >
             <span>←</span>
-            <span>Précédent</span>
+            <span>{t('poleGuides.tourPrevBtn')}</span>
           </button>
 
           {isLastStep ? (
             <button
               type="button"
               onClick={handleFinish}
-              className="px-4 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 border-emerald-950 bg-[var(--color-cordel-vert)] hover:bg-emerald-800 text-white shadow-[1.5px_1.5px_0px_0px_#120e0c] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1.5 animate-pulse"
+              className="px-4 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 border-encre-noire bg-[var(--color-cordel-vert)] hover:brightness-110 text-white shadow-[1.5px_1.5px_0px_0px_var(--color-encre-noire)] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1.5 animate-pulse"
             >
-              <span>Terminer</span>
+              <span>{t('poleGuides.tourFinishBtn')}</span>
               <span>✓</span>
             </button>
           ) : (
             <button
               type="button"
               onClick={handleNext}
-              className="px-4 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 border-[#120e0c] bg-amber-300 hover:bg-amber-200 text-[#120e0c] shadow-[1.5px_1.5px_0px_0px_#120e0c] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1"
+              className="px-4 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 border-encre-noire theme-bg-ocre hover:brightness-105 text-encre-noire shadow-[1.5px_1.5px_0px_0px_var(--color-encre-noire)] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1"
             >
-              <span>Suivant</span>
+              <span>{t('poleGuides.tourNextBtn')}</span>
               <span>→</span>
             </button>
           )}

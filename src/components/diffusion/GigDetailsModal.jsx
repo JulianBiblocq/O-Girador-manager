@@ -50,25 +50,19 @@ export default function GigDetailsModal({
   // Action automatisée : Ouverture du générateur de Devis
   const handleOpenQuote = () => {
     onClose();
-    if (onOpenQuoteGeneratorModal) {
-      onOpenQuoteGeneratorModal(gig);
-    }
+    if (onOpenQuoteGeneratorModal) onOpenQuoteGeneratorModal(gig);
   };
 
   // Affichage d'une notification Toast temporaire
   const triggerWorkflowToast = (actionLabel) => {
     setToastMessage(`Fonctionnalité en cours d'intégration : Pôle Diffusion (${actionLabel})`);
-    setTimeout(() => {
-      setToastMessage(null);
-    }, 4000);
+    setTimeout(() => setToastMessage(null), 4000);
   };
 
   // Action automatisée : Ouverture du formulaire d'Option d'Agenda pré-rempli
   const handleCreateOption = () => {
     onClose();
-    if (onOpenAgendaOptionModal) {
-      onOpenAgendaOptionModal(gig);
-    }
+    if (onOpenAgendaOptionModal) onOpenAgendaOptionModal(gig);
   };
 
   // Action automatisée : Sauvegarde rapide des notes libres sans quitter la fiche
@@ -116,6 +110,12 @@ export default function GigDetailsModal({
       return;
     }
 
+    const effectiveGroupId = String(gig.groupId || associationSettings?.groupId || associationSettings?.id || '').trim();
+    if (!effectiveGroupId) {
+      alert("Impossible de valider le paiement : identifiant d'association manquant.");
+      return;
+    }
+
     const amount = parseFloat(gig.amount) || 0;
     const confirmText = `Confirmez-vous la réception du paiement de ${amount.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} € pour "${gig.eventName}" ?\n\nCela va automatiquement inscrire une recette en Trésorerie et verrouiller le dossier.`;
 
@@ -158,7 +158,7 @@ export default function GigDetailsModal({
         // 2. Inscription automatique de la recette dans la collection `transactions` (Trésorerie)
         const newTxRef = doc(collection(db, 'transactions'));
         transaction.set(newTxRef, {
-          groupId: gig.groupId || associationSettings.groupId || 'default',
+          groupId: effectiveGroupId,
           date: Timestamp.fromDate(new Date()),
           type: 'recette',
           montant: amount,

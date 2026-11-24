@@ -135,13 +135,10 @@ export async function createOrOpenDirectConversation({
 }
 
 export async function createGroupConversationDoc({
-  user,
-  groupId,
-  profileData,
-  name,
-  participantIds = [],
-  initialMessage = ''
+  user, groupId, profileData, name, participantIds = [], initialMessage = ''
 }) {
+  const normalizedGroupId = String(groupId || profileData?.groupId || '').trim().toLowerCase();
+  if (!normalizedGroupId) return null;
   const trimmedName = stripForbiddenMegaphones(name || '').trim();
   if (!user?.uid || !trimmedName) return null;
   const cleanInitial = stripForbiddenMegaphones(initialMessage || '').trim();
@@ -152,7 +149,7 @@ export async function createGroupConversationDoc({
     : user.displayName || 'Membre';
 
   const groupData = {
-    groupId, type: 'group', name: trimmedName, participantIds: allParticipants,
+    groupId: normalizedGroupId, type: 'group', name: trimmedName, participantIds: allParticipants,
     adminIds: [user.uid], createdBy: user.uid, createdAt: nowIso, updatedAt: nowIso,
     readStatus: { [user.uid]: nowIso }
   };
@@ -164,7 +161,7 @@ export async function createGroupConversationDoc({
   const convRef = await addDoc(collection(db, 'conversations'), groupData);
   if (cleanInitial) {
     await addDoc(collection(db, 'conversation_messages'), {
-      conversationId: convRef.id, groupId, participantIds: allParticipants,
+      conversationId: convRef.id, groupId: normalizedGroupId, participantIds: allParticipants,
       senderId: user.uid, senderName: senderFullName,
       senderAvatar: profileData?.photoURL || user?.photoURL || '',
       content: cleanInitial, timestamp: nowIso, reactions: {}

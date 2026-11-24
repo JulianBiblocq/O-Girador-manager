@@ -158,25 +158,20 @@ export default function TabAgenda({
 
       {/* SECTION 1 : Salles & Lieux Habituels */}
       {(activeSection === 'all' || activeSection === 'lieux') && (
-        <div className="flex flex-col gap-3 animate-fade-in">
+        <div data-tour="config-agenda-lieux" className="flex flex-col gap-3 animate-fade-in">
           <div className="flex items-center gap-2 border-b border-dashed border-cordel-master-dark/20 pb-2">
             <span className="text-base">📍</span>
             <h2 className="text-xs font-black uppercase tracking-wider text-cordel-wood break-words">
               {t('settings.agenda.tabAgenda.1RepertoireDesSallesReperes')}
             </h2>
           </div>
-          <TabLieux
-            formData={formData}
-            handleChange={handleChange}
-            saving={saving}
-            t={t}
-          />
+          <TabLieux formData={formData} handleChange={handleChange} saving={saving} t={t} />
         </div>
       )}
 
       {/* SECTION 2 : Types d'Événements & Presets */}
       {(activeSection === 'all' || activeSection === 'types') && (
-        <div className="flex flex-col gap-5 animate-fade-in">
+        <div data-tour="config-agenda-types" className="flex flex-col gap-5 animate-fade-in">
           <div className="flex items-center gap-2 border-b border-dashed border-cordel-master-dark/20 pb-2 pt-2">
             <span className="text-base">📅</span>
             <h2 className="text-xs font-black uppercase tracking-wider text-cordel-wood break-words">
@@ -263,8 +258,7 @@ export default function TabAgenda({
 
           {/* Options Générales de l'Agenda (Accordéon repliable, fermé par défaut) */}
           <CordelCard variant="default" useExtremeBorder={true} className="p-0 overflow-hidden">
-            <div
-              onClick={() => setIsGlobalOptionsOpen(prev => !prev)}
+            <div data-tour="config-agenda-options" onClick={() => setIsGlobalOptionsOpen(prev => !prev)}
               className="py-3 px-4 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 w-full cursor-pointer bg-cordel-bg-light/60 hover:bg-cordel-bg-light transition-colors select-none"
               role="button"
               tabIndex={0}

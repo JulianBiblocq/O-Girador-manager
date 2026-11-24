@@ -103,7 +103,7 @@ export function buildConfigSummary(config = {}) {
   if (config.activerRecolteMedias) badges.push('📸 Photos');
   if (config.enableVideoDrop || config.activerDepotVideo) badges.push('📹 Vidéos');
   if (config.enableStageLayout) badges.push('📐 Plan de scène');
-  if (config.enableRevisionProgram) badges.push('🎵 Séquenceur');
+  if (config.enableRevisionProgram) badges.push('🎵 Sequenciador');
   if (config.enableCarpool) badges.push('🚗 Covoit');
   if (config.includesPercussion) badges.push('🥁 Percu');
   if (config.includesDance) badges.push('💃 Danse');

@@ -4,8 +4,8 @@ import { launchGlobalSequencer, launchTrainingStage, resolveUserSequencerRole } 
 import RoleSelectorMiniModal from './RoleSelectorMiniModal';
 
 /**
- * Composant de découplage des accès vers le Séquenceur (< 115 lignes) :
- * - Bouton 1 : [ 🎧 Écouter dans le Séquenceur ] (PT : Ouvir no Sequenciador)
+ * Composant de découplage des accès vers Sequenciador (< 115 lignes) :
+ * - Bouton 1 : [ 🎧 Écouter dans Sequenciador ] (PT : Ouvir no Sequenciador)
  * - Bouton 2 : [ 🎯 S'entraîner (Jouer avec) ] (PT : Treinar (Tocar Junto))
  * Zéro anglicisme "play-along" garanti.
  */
@@ -40,7 +40,7 @@ export default function SequencerAccessButtons({
   };
 
   const isPt = locale === 'pt';
-  const labelListen = isPt ? "Ouvir no Sequenciador" : (t('repertoire.btnListenSequencer') || "Écouter dans le Séquenceur");
+  const labelListen = isPt ? "Ouvir no Sequenciador" : (t('repertoire.btnListenSequencer') || "Écouter dans Sequenciador");
   const labelTrain = isPt ? "Treinar (Tocar Junto)" : (t('repertoire.btnTrainTocarJunto') || "S'entraîner (Jouer avec)");
 
   return (
@@ -54,7 +54,7 @@ export default function SequencerAccessButtons({
             launchGlobalSequencer(presetId, { baseUrl: sequenceurUrl });
           }}
           className="px-2.5 py-1 text-xs font-black rounded border border-encre-noire/25 bg-white text-stone-700 hover:bg-stone-50 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs select-none"
-          title={isPt ? "Ouvrir a música completa com todas as faixas" : "Ouvrir le morceau intégral dans le Séquenceur"}
+          title={isPt ? "Ouvir a música completa com todas as faixas" : "Ouvrir le morceau intégral dans Sequenciador"}
         >
           <span>🎧</span>
           <span>{labelListen}</span>

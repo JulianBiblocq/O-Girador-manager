@@ -93,9 +93,9 @@ export function buildSequencerUrl(arg1 = 'https://sequenciador.o-girador.com', a
 }
 
 /**
- * Lance le Séquenceur avec SSO transparent et gestion des pop-ups navigateurs.
+ * Lance Sequenciador avec SSO transparent et gestion des pop-ups navigateurs.
  *
- * @param {string} [baseUrl] - URL de base du Séquenceur
+ * @param {string} [baseUrl] - URL de base de Sequenciador
  * @param {Object|string} item - Morceau ou identifiant de ressource à charger
  * @param {Object} [options] - Options supplémentaires transmises à launchCrossApp (inclut mode: 'danse' | 'percussion')
  * @returns {Promise<void>}
@@ -103,7 +103,7 @@ export function buildSequencerUrl(arg1 = 'https://sequenciador.o-girador.com', a
 export async function openSequencerWithCrossApp(baseUrl, item, options = {}) {
   const targetUrl = buildSequencerUrl(baseUrl, item, options);
   return launchCrossApp(targetUrl, {
-    appLabel: options.appLabel || 'le Séquenceur',
+    appLabel: options.appLabel || 'Sequenciador',
     ...options
   });
 }

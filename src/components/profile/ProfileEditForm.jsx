@@ -318,7 +318,7 @@ export default function ProfileEditForm({
                 3. Placement Scénique, Costumes & Santé (Confidentiel Mestre / Admin)
               </h4>
               <p className="text-[10px] text-sky-800 dark:text-sky-200 opacity-90 font-medium">
-                Réservé au Mestre (pour le placement sur scène dans le Séquenceur) et aux administrateurs. <strong>Ne sera jamais affiché dans le trombinoscope.</strong>
+                Réservé au Mestre (pour le placement sur scène dans Sequenciador) et aux administrateurs. <strong>Ne sera jamais affiché dans le trombinoscope.</strong>
               </p>
             </div>
           </div>
@@ -328,7 +328,7 @@ export default function ProfileEditForm({
         {isFieldVisible('lateralite') && (
           <div className="flex flex-col gap-1 text-left bg-cordel-bg-light/60 p-3 rounded border border-dashed border-cordel-master-dark/20">
             <label className="text-[10px] uppercase font-extrabold tracking-wider text-cordel-wood flex items-center gap-1">
-              <XiloHand size={12} /> {translate('userProfile.laterality', "Latéralité (Placement scène pour le Mestre & Séquenceur)")}
+              <XiloHand size={12} /> {translate('userProfile.laterality', "Latéralité (Placement scène pour le Mestre & Sequenciador)")}
               {isFieldRequired('lateralite') && <span className="text-red-500 font-bold ml-1">*</span>}
             </label>
             <select

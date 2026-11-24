@@ -8,27 +8,21 @@ import { useConversationMessages } from '../../hooks/useConversationMessages';
 import { useZapPhotoUpload } from '../../hooks/useZapPhotoUpload';
 import CordelPlusIcon from '../common/CordelPlusIcon';
 import { extractFirstYouTubeIdFromText } from './ChatYouTubePreview';
+import { useTranslation } from '../LanguageContext';
 
-/**
- * Sous-composant WidgetZapPanel (Accueil) :
- * Mini-tchat interactif branché en temps réel sur « 💬 Le Zap » (`general_${groupId}`).
- * Affiche 3 bulles en flux statique sur mobile (< 1024px) et 5 sur PC (`lg:h-[240px]`), avec barre de réponse directe.
- */
+/** Mini-tchat interactif branché en temps réel sur « 💬 Le Zap » (`general_${groupId}`). */
 export default function WidgetZapPanel({
-  groupId,
-  user,
-  profileData,
-  isMobile = false,
-  onOpenZap,
-  onUnreadCountChange,
-  t
+  groupId, user, profileData, isMobile = false, onOpenZap, onUnreadCountChange, t: propT, locale: propLocale
 }) {
+  const i18n = useTranslation();
+  const t = propT || i18n.t;
+  const bcp47 = (propLocale || i18n.locale) === 'pt' ? 'pt-BR' : 'fr-FR';
+
   const effectiveUser = useMemo(
     () => user || auth?.currentUser || (profileData?.uid ? { uid: profileData.uid } : null),
     [user, profileData]
   );
   const currentUserId = effectiveUser?.uid || profileData?.id || '';
-  // groupId obligatoire : sans association résolue, aucun salon general_${groupId} n'est interrogé ni créé
   const effectiveGroupId = (groupId || profileData?.groupId || '').trim();
   const generalConvId = useMemo(() => getGeneralConversationId(effectiveGroupId), [effectiveGroupId]);
 
@@ -66,16 +60,11 @@ export default function WidgetZapPanel({
     return 0;
   }, [messages, convDoc, currentUserId]);
 
-  useEffect(() => {
-    if (onUnreadCountChange) onUnreadCountChange(unreadZapCount);
-  }, [unreadZapCount, onUnreadCountChange]);
-
+  useEffect(() => { if (onUnreadCountChange) onUnreadCountChange(unreadZapCount); }, [unreadZapCount, onUnreadCountChange]);
   const displayedMessages = useMemo(() => messages.slice(isMobile ? -3 : -5), [messages, isMobile]);
 
   useEffect(() => {
-    if (!isMobile && desktopListRef.current) {
-      desktopListRef.current.scrollTop = desktopListRef.current.scrollHeight;
-    }
+    if (!isMobile && desktopListRef.current) desktopListRef.current.scrollTop = desktopListRef.current.scrollHeight;
   }, [displayedMessages.length, isMobile]);
 
   const handleOpen = () => { if (onOpenZap && generalConvId) onOpenZap(generalConvId); };
@@ -86,17 +75,12 @@ export default function WidgetZapPanel({
     const trimmed = inputText.trim();
     if (!trimmed || sending || uploadingPhoto) return;
     setSending(true);
-    try {
-      setInputText('');
-      await sendMessage({ content: trimmed });
-    } finally {
-      setSending(false);
-    }
+    try { setInputText(''); await sendMessage({ content: trimmed }); } finally { setSending(false); }
   };
 
   const formatTimeDiscrete = (isoStr) => {
     const d = isoStr ? new Date(isoStr) : null;
-    return d && !isNaN(d.getTime()) ? d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '';
+    return d && !isNaN(d.getTime()) ? d.toLocaleTimeString(bcp47, { hour: '2-digit', minute: '2-digit' }) : '';
   };
 
   return (
@@ -122,10 +106,7 @@ export default function WidgetZapPanel({
       </div>
 
       <div
-        ref={isMobile ? null : desktopListRef}
-        onClick={handleOpen}
-        role="button"
-        tabIndex={0}
+        ref={isMobile ? null : desktopListRef} onClick={handleOpen} role="button" tabIndex={0}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleOpen(); } }}
         className={`w-full flex flex-col justify-end gap-2 cursor-pointer rounded-[6px_8px_6px_8px] p-2 bg-cordel-bg-light/60 border border-encre-noire/15 hover:border-encre-noire/35 transition-colors ${isMobile ? '' : 'lg:h-[240px] lg:overflow-y-auto'}`}
       >
@@ -136,7 +117,7 @@ export default function WidgetZapPanel({
         ) : (
           displayedMessages.map((msg) => {
             const isMe = Boolean(currentUserId && msg.senderId === currentUserId);
-            const shortName = (msg.senderName || 'Membre').trim().split(/\s+/)[0];
+            const shortName = (msg.senderName || t('common.member', 'Membre')).trim().split(/\s+/)[0];
             const ytId = extractFirstYouTubeIdFromText(msg.content);
             const hasUrl = !ytId && /(https?:\/\/[^\s]+)/i.test(msg.content || '');
             return (
@@ -147,9 +128,9 @@ export default function WidgetZapPanel({
                     <span className={`text-[9.5px] font-black ${isMe ? 'text-[var(--color-cordel-vert)]' : 'text-cordel-wood'}`}>{shortName}</span>
                     <span className="text-[8px] font-bold opacity-60 shrink-0">{formatTimeDiscrete(msg.timestamp)}</span>
                   </div>
-                  {(msg.thumbnailUrl || msg.imageUrl) && <img src={msg.thumbnailUrl || msg.imageUrl} alt={msg.mediaName || 'Photo'} loading="lazy" className="mt-0.5 max-h-16 w-auto rounded border border-encre-noire/25 object-cover self-start" />}
+                  {(msg.thumbnailUrl || msg.imageUrl) && <img src={msg.thumbnailUrl || msg.imageUrl} alt={msg.mediaName || t('forum.sharedPhotoAlt', 'Photo')} loading="lazy" className="mt-0.5 max-h-16 w-auto rounded border border-encre-noire/25 object-cover self-start" />}
                   {ytId && <span className="text-[9.5px] font-extrabold text-cordel-wood">🎥 YouTube</span>}
-                  {hasUrl && <span className="text-[9.5px] font-extrabold text-cordel-wood">🔗 Lien</span>}
+                  {hasUrl && <span className="text-[9.5px] font-extrabold text-cordel-wood">🔗 {t('common.url', 'Lien')}</span>}
                   {msg.content && <p className="font-semibold leading-snug line-clamp-2 break-words">{msg.content}</p>}
                 </div>
               </div>
@@ -159,7 +140,7 @@ export default function WidgetZapPanel({
       </div>
 
       {photoError && (
-        <div role="alert" onClick={(e) => { e.stopPropagation(); clearPhotoError(); }} title="Fermer" className="flex items-center gap-1.5 px-2 py-1 text-[10px] font-bold rounded-[4px_6px_4px_6px] border border-[var(--color-cordel-rouge,#8b2a1a)] bg-[var(--color-cordel-rouge,#8b2a1a)]/10 text-[var(--color-cordel-rouge,#8b2a1a)] cursor-pointer">⚠️ {photoError}</div>
+        <div role="alert" onClick={(e) => { e.stopPropagation(); clearPhotoError(); }} title={t('common.close', 'Fermer')} className="flex items-center gap-1.5 px-2 py-1 text-[10px] font-bold rounded-[4px_6px_4px_6px] border border-[var(--color-cordel-rouge,#8b2a1a)] bg-[var(--color-cordel-rouge,#8b2a1a)]/10 text-[var(--color-cordel-rouge,#8b2a1a)] cursor-pointer">⚠️ {photoError}</div>
       )}
 
       <form onSubmit={handleSendText} onClick={(e) => e.stopPropagation()} className="flex items-center gap-1.5 pt-1 w-full">

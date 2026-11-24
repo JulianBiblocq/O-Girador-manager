@@ -17,14 +17,14 @@ export default function DailyRevisionSession({ profileData, allSongs = [], allSh
 
   useEffect(() => {
     const initSession = async () => {
-      if (!profileData?.uid) {
+      const groupId = String(profileData?.groupId || '').trim();
+      if (!profileData?.uid || !groupId) {
         setLoading(false);
         return;
       }
       setLoading(true);
       try {
         // 1. Récupérer l'historique Spaced Repetition de l'utilisateur
-        const groupId = profileData?.groupId || 'default';
         let srData = {};
         try {
           const srRef = doc(db, 'users', profileData.uid, 'spaced_repetition', groupId);

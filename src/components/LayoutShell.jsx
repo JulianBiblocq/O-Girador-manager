@@ -36,7 +36,7 @@ import FeedbackModal from './FeedbackModal';
 import MobileDrawerHeader from './navigation/MobileDrawerHeader';
 import CommandPaletteModal from './common/CommandPaletteModal';
 import { useTenantContext } from '../context/TenantContext';
-
+import { isSystemSuperAdminIdentity } from '../utils/founderFallbackUtils';
 import { useViewSimulator } from '../context/ViewSimulatorContext';
 import SimulationBanner from './navigation/SimulationBanner';
 import ViewSimulatorSelector from './navigation/ViewSimulatorSelector';
@@ -147,13 +147,7 @@ export default function LayoutShell({
   const effectiveBreakGlassActive = isSimulating ? false : breakGlassActive;
 
   // Droits réels de l'utilisateur pour l'accès aux outils de diagnostic et simulateur
-  const realIsSuperAdmin = Boolean(
-    profileData?.isSystemAdmin === true || 
-    (profileData?.role || '').toLowerCase() === 'super-admin' || 
-    profileData?.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
-    profileData?.id === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
-    profileData?.email === 'julian.bzh@gmail.com'
-  );
+  const realIsSuperAdmin = isSystemSuperAdminIdentity(profileData);
   const realIsSystemOrSuperAdminOrMestre = realIsSuperAdmin || (profileData?.role || '').toLowerCase() === 'mestre';
   const canUseViewSimulator = realIsSystemOrSuperAdminOrMestre || isSimulating;
 
@@ -553,7 +547,7 @@ export default function LayoutShell({
     { 
       id: 'vestiaire', 
       label: associationData?.wardrobeMemberMode === 'collective_workshop' ? 'Atelier Costumes' : 'Vestiaire', 
-      labelKey: associationData?.wardrobeMemberMode === 'collective_workshop' ? null : 'poles.tabVestiaire', 
+      labelKey: associationData?.wardrobeMemberMode === 'collective_workshop' ? 'shellUi.costumeWorkshopTab' : 'poles.tabVestiaire', 
       icon: associationData?.wardrobeMemberMode === 'collective_workshop' ? <XiloChisel size={12} /> : <XiloHanger size={12} />, 
       onClick: () => { 
         if (onNavigateToPole) onNavigateToPole('mon-espace', 'vestiaire'); 
@@ -710,10 +704,10 @@ export default function LayoutShell({
                 type="button"
                 onClick={() => setActiveGameRoomId(activeLobbyRoom.id)}
                 className="animate-pulse inline-flex items-center gap-1 px-2 py-1 min-h-[34px] bg-[var(--color-cordel-vert)] text-white border-2 border-encre-noire rounded-[6px_9px_7px_8px] shadow-[1.5px_1.5px_0px_0px_#181716] text-[10px] font-black uppercase tracking-wider cursor-pointer select-none hover:scale-105 active:scale-95 transition-all"
-                title="Défi ouvert ! Cliquer pour voir la table"
+                title={t('shellUi.openChallengeTooltip', 'Défi ouvert ! Cliquer pour rejoindre la table')}
               >
                 <span>🏆</span>
-                <span className="hidden sm:inline">Défi ouvert</span>
+                <span className="hidden sm:inline">{t('shellUi.openChallengeBadge', 'Défi ouvert')}</span>
               </button>
             )}
             <OnlineStatusWidget 
@@ -742,13 +736,13 @@ export default function LayoutShell({
               type="button"
               onClick={() => setIsDrawerOpen(true)}
               className="relative p-2 min-w-[38px] min-h-[38px] border-2 border-dashed border-encre-noire/20 hover:border-encre-noire text-encre-noire rounded-md cursor-pointer flex items-center justify-center transition-colors select-none"
-              title="Ouvrir le menu"
+              title={t('shellUi.openMenu', 'Ouvrir le menu')} aria-label={t('shellUi.openMenu', 'Ouvrir le menu')}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
               </svg>
               {hasPendingMembers && (
-                <span className="absolute -top-1 -right-1 flex h-3 w-3" title={`${pendingCount} nouveau(x) membre(s) en attente de validation`}>
+                <span className="absolute -top-1 -right-1 flex h-3 w-3" title={t('shellUi.pendingMembersTooltip', { count: pendingCount })}>
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600 border border-white"></span>
                 </span>
@@ -854,7 +848,7 @@ export default function LayoutShell({
                             }
                           }}
                           className="w-4 h-4 bg-red-600 hover:bg-red-700 text-white text-[9px] font-black rounded-full flex items-center justify-center animate-pulse shrink-0 cursor-pointer shadow-xs hover:scale-125 transition-transform"
-                          title={`${unreadPrivateMessagesCount} message(s) privé(s) non lu(s) - Cliquer pour ouvrir`}
+                          title={t('shellUi.unreadPrivateTooltip', { count: unreadPrivateMessagesCount })}
                         >
                           {unreadPrivateMessagesCount}
                         </span>
@@ -900,7 +894,7 @@ export default function LayoutShell({
                             }
                           }}
                           className="w-4 h-4 bg-red-600 hover:bg-red-700 text-white text-[9px] font-black rounded-full flex items-center justify-center animate-pulse shrink-0 cursor-pointer shadow-xs hover:scale-125 transition-transform"
-                          title={`${unreadPrivateMessagesCount} message(s) privé(s) non lu(s) - Cliquer pour ouvrir`}
+                          title={t('shellUi.unreadPrivateTooltip', { count: unreadPrivateMessagesCount })}
                         >
                           {unreadPrivateMessagesCount}
                         </span>
@@ -943,7 +937,7 @@ export default function LayoutShell({
                   onClick={onToggleBreakGlass}
                   className="bg-encre-noire text-white text-[9px] px-2.5 py-1 rounded font-black uppercase hover:bg-neutral-800 cursor-pointer shadow-xs shrink-0 ml-2"
                 >
-                  ✕ Désactiver
+                  ✕ {t('shellUi.deactivateBreakGlass', 'Désactiver')}
                 </button>
               </div>
             )}
@@ -968,7 +962,7 @@ export default function LayoutShell({
                     onClick={() => setIsCommandPaletteOpen(true)}
                     className="px-2.5 py-1 min-h-[34px] border-2 border-encre-noire bg-cordel-bg-light hover:bg-white text-encre-noire rounded-[6px_9px_7px_8px] shadow-[1.5px_1.5px_0px_0px_#181716] hover:scale-[1.03] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center gap-1.5 transition-all text-xs font-black select-none"
                     title={t('menu.quickSearchBtn')}
-                    aria-label="Palette de commande"
+                    aria-label={t('shellUi.commandPaletteAria', 'Palette de commande')}
                   >
                     <span>🔍</span>
                     <span className="text-[9.5px] font-mono opacity-60 bg-encre-noire/10 px-1 py-0.5 rounded hidden xl:inline">Ctrl K</span>
@@ -979,10 +973,10 @@ export default function LayoutShell({
                       type="button"
                       onClick={() => setActiveGameRoomId(activeLobbyRoom.id)}
                       className="animate-bounce inline-flex items-center gap-1.5 px-2.5 py-1 min-h-[34px] bg-[var(--color-cordel-vert)] text-white border-2 border-encre-noire rounded-[6px_9px_7px_8px] shadow-[1.5px_1.5px_0px_0px_#181716] text-[10px] font-black uppercase tracking-wider cursor-pointer select-none hover:scale-105 active:scale-95 transition-all"
-                      title="Défi ouvert ! Cliquer pour rejoindre la table"
+                      title={t('shellUi.openChallengeTooltip', 'Défi ouvert ! Cliquer pour rejoindre la table')}
                     >
                       <span className="text-xs">🏆</span>
-                      <span>Défi ouvert</span>
+                      <span>{t('shellUi.openChallengeBadge', 'Défi ouvert')}</span>
                       <span className="bg-white/20 text-white text-[9px] px-1.5 py-0.2 rounded-full font-mono">
                         {Object.keys(activeLobbyRoom.players || {}).length}/4
                       </span>
@@ -1104,7 +1098,7 @@ export default function LayoutShell({
                 type="button"
                 onClick={() => setIsDrawerOpen(false)}
                 className="absolute top-4 right-4 p-1.5 border border-encre-noire bg-cordel-bg hover:bg-neutral-200 text-encre-noire rounded-md shadow-[1.5px_1.5px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none cursor-pointer flex items-center justify-center"
-                title="Fermer le menu"
+                title={t('shellUi.closeMenu', 'Fermer le menu')} aria-label={t('shellUi.closeMenu', 'Fermer le menu')}
               >
                 ✕
               </button>
@@ -1198,7 +1192,7 @@ export default function LayoutShell({
                               }
                             }}
                             className="w-4 h-4 bg-red-600 hover:bg-red-700 text-white text-[9px] font-black rounded-full flex items-center justify-center animate-pulse shrink-0 cursor-pointer shadow-xs hover:scale-125 transition-transform"
-                            title={`${unreadPrivateMessagesCount} message(s) privé(s) non lu(s) - Cliquer pour ouvrir`}
+                            title={t('shellUi.unreadPrivateTooltip', { count: unreadPrivateMessagesCount })}
                           >
                             {unreadPrivateMessagesCount}
                           </span>
@@ -1249,7 +1243,7 @@ export default function LayoutShell({
                               }
                             }}
                             className="w-4 h-4 bg-red-600 hover:bg-red-700 text-white text-[9px] font-black rounded-full flex items-center justify-center animate-pulse shrink-0 cursor-pointer shadow-xs hover:scale-125 transition-transform"
-                            title={`${unreadPrivateMessagesCount} message(s) privé(s) non lu(s) - Cliquer pour ouvrir`}
+                            title={t('shellUi.unreadPrivateTooltip', { count: unreadPrivateMessagesCount })}
                           >
                             {unreadPrivateMessagesCount}
                           </span>
@@ -1324,7 +1318,7 @@ export default function LayoutShell({
                     type="button"
                     onClick={() => forceUpdateAndClearCache()}
                     className="hover:opacity-100 text-cordel-wood underline cursor-pointer flex items-center gap-1 font-black uppercase text-[8px]"
-                    title="Vider les caches et actualiser l'application"
+                    title={t('shellUi.refreshAppTooltip', "Vider les caches et actualiser l'application")}
                   >
                     🔄 {t('menu.refreshApp')}
                   </button>

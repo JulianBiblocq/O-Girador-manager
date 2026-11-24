@@ -20,33 +20,30 @@ import { stripForbiddenMegaphones } from '../utils/sanitizeIcons';
 export default function ThreadView({ 
   threadId, user, profileData, channels = [], allThreads = [], allUsers = [], 
   onClose, breakGlassActive = false, tagsDisponibles = [], effectiveUserTags = [],
-  onNavigateToView = null 
+  onNavigateToView = null, highlightReplyIndex = null, onClearHighlight = null
 }) {
   const { t } = useTranslation();
-
-  // Interception du bouton retour matériel (Android / navigateur) pour fermeture fluide
   useHardwareBack(Boolean(threadId), onClose);
 
   // Verrouillage étanche du débordement sur la fenêtre globale (élimination définitive du double scroll)
   useEffect(() => {
-    const originalBodyOverflow = document.body.style.overflow;
-    const originalHtmlOverflow = document.documentElement.style.overflow;
-    const originalBodyOverscroll = document.body.style.overscrollBehavior;
-
+    const origBody = document.body.style.overflow, origHtml = document.documentElement.style.overflow;
+    const origOver = document.body.style.overscrollBehavior;
     document.body.style.overflow = 'hidden';
     document.documentElement.style.overflow = 'hidden';
     document.body.style.overscrollBehavior = 'none';
-
     return () => {
-      document.body.style.overflow = originalBodyOverflow;
-      document.documentElement.style.overflow = originalHtmlOverflow;
-      document.body.style.overscrollBehavior = originalBodyOverscroll;
+      document.body.style.overflow = origBody;
+      document.documentElement.style.overflow = origHtml;
+      document.body.style.overscrollBehavior = origOver;
     };
   }, []);
 
+  const hasHighlightTarget = highlightReplyIndex !== null && highlightReplyIndex !== undefined;
   const threadData = useThreadData({
     threadId, user, profileData, channels, allUsers,
-    breakGlassActive, tagsDisponibles, effectiveUserTags, onClose, t
+    breakGlassActive, tagsDisponibles, effectiveUserTags, onClose, t,
+    skipInitialScroll: hasHighlightTarget
   });
 
   const [isMoveThreadOpen, setIsMoveThreadOpen] = useState(false);
@@ -233,7 +230,7 @@ export default function ThreadView({
             onVotePoll={pollManager.handleVote}
             onOpenEditPoll={(poll) => setEditingPoll(poll)}
             votingPollId={pollManager.votingPollId}
-            t={t}
+            highlightReplyIndex={highlightReplyIndex} onClearHighlight={onClearHighlight} t={t}
           />
 
           {/* Étage 3 — Barre de réponse (Input + Actions) : shrink-0 border-t bg-[var(--theme-bg)] pb-[max(env(safe-area-inset-bottom),0.75rem)] */}

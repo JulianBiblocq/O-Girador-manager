@@ -216,7 +216,7 @@ export default function ProgramPieceModal({
           <div className="flex items-center gap-1.5 flex-wrap pt-1 text-[9px] font-bold text-encre-noire/70">
             {(piece.sequenceurFileUrl || piece.sequenceurId) && (
               <span className="px-1.5 py-0.5 rounded bg-amber-50 border border-amber-200">
-                🥁 {piece.sequenceurType === 'presets' ? 'Preset lié' : piece.sequenceurType === 'sections' ? 'Séquence liée' : 'Séquenceur lié'}
+                🥁 {piece.sequenceurType === 'presets' ? 'Preset lié' : piece.sequenceurType === 'sections' ? 'Séquence liée' : 'Sequenciador lié'}
               </span>
             )}
             {piece.audioUrl && (

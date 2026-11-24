@@ -20,58 +20,43 @@ export default function QcmSignaux({ onExit, rhythms = [], rhythmsMetadata = {},
 
   // Récupération des signaux au montage filtrés par groupId avec repli global
   useEffect(() => {
+    if (!groupId || !String(groupId).trim()) {
+      setSignals([]);
+      setLoading(false);
+      return;
+    }
+
     const fetchSignals = async () => {
       try {
         setLoading(true);
         const signalsMap = new Map();
 
-        if (groupId) {
-          // 1. Signaux spécifiques au groupe
-          const qGroup = query(
+        // 1. Signaux spécifiques au groupe
+        const qGroup = query(
+          collection(db, 'mestre_signals'),
+          where('groupId', '==', groupId)
+        );
+        const snapGroup = await getDocs(qGroup);
+        snapGroup.forEach((d) => {
+          signalsMap.set(d.id, { id: d.id, ...d.data() });
+        });
+
+        // 2. Repli / complément avec les signaux globaux
+        try {
+          const qGlobal = query(
             collection(db, 'mestre_signals'),
-            where('groupId', '==', groupId)
+            where('groupId', '==', 'global')
           );
-          const snapGroup = await getDocs(qGroup);
-          snapGroup.forEach((d) => {
-            signalsMap.set(d.id, { id: d.id, ...d.data() });
+          const snapGlobal = await getDocs(qGlobal);
+          snapGlobal.forEach((d) => {
+            if (!signalsMap.has(d.id)) {
+              signalsMap.set(d.id, { id: d.id, ...d.data() });
+            }
           });
-
-          // 2. Repli / complément avec les signaux globaux
-          try {
-            const qGlobal = query(
-              collection(db, 'mestre_signals'),
-              where('groupId', '==', 'global')
-            );
-            const snapGlobal = await getDocs(qGlobal);
-            snapGlobal.forEach((d) => {
-              if (!signalsMap.has(d.id)) {
-                signalsMap.set(d.id, { id: d.id, ...d.data() });
-              }
-            });
-          } catch (globalErr) {
-            console.warn("Signaux globaux non disponibles :", globalErr);
-          }
-
-          // 3. Repli si la base n'a pas encore de champ groupId sur les données historiques
-          if (signalsMap.size === 0) {
-            const snapAll = await getDocs(collection(db, 'mestre_signals'));
-            snapAll.forEach((d) => {
-              const val = d.data();
-              if (!val.groupId || val.groupId === 'global' || val.groupId === groupId) {
-                if (!signalsMap.has(d.id)) {
-                  signalsMap.set(d.id, { id: d.id, ...val });
-                }
-              }
-            });
-          }
-        } else {
-          // Sans groupId spécifié
-          const querySnapshot = await getDocs(collection(db, 'mestre_signals'));
-          querySnapshot.forEach((d) => {
-            signalsMap.set(d.id, { id: d.id, ...d.data() });
-          });
+        } catch (globalErr) {
+          console.warn("Signaux globaux non disponibles :", globalErr);
         }
-        
+
         // Conserver uniquement les signaux avec image et nom
         const validSignals = Array.from(signalsMap.values()).filter(s => s.imageUrl && s.name);
         setSignals(validSignals);

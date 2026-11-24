@@ -7,8 +7,7 @@ import React, { useMemo, useState } from 'react';
 import { db } from '../../firebase';
 import CordelCard from '../CordelCard';
 import CordelButton from '../CordelButton';
-import SeloAxeStamp from '../SeloAxeStamp';
-import PatternVisualizer from './PatternVisualizer';
+import QuizOptionsGrid, { QuestionSignalImage } from './QuizOptionsGrid';
 import { generateQuizFromRepertoirePiece } from '../../utils/quizGenerator';
 import { isCantadorValidated } from '../../utils/repertoireMatcher';
 import { launchCantador, launchTrainingStage, resolveUserSequencerRole } from '../../utils/trainingLauncher';
@@ -106,16 +105,18 @@ export default function PieceRevisionRunner({
         <span className="text-xs font-black uppercase tracking-widest text-cordel-wood">🎼 {piece?.titre} — {t('pedagogy.questionProgress', { current: currentIndex + 1, total: questions.length })}</span>
         <button type="button" onClick={onExit} className="text-xs font-bold underline cursor-pointer">{t('pedagogy.btnQuitTraining')}</button>
       </div>
+      {(q.questionImage || q.imageUrl) && (
+        <QuestionSignalImage src={q.questionImage || q.imageUrl} alt={t('pedagogy.progress.illustrationDeLaQuestion')} />
+      )}
       <h4 className="text-base md:text-lg font-black text-encre-noire">{q.questionText || q.prompt}</h4>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {(q.choices || []).map((choice, idx) => (
-          <button key={idx} type="button" disabled={showFeedback} onClick={() => handleSelectChoice(choice)} className={`p-3.5 rounded-xl border-2 font-bold text-left flex items-center justify-between gap-3 cursor-pointer ${showFeedback ? (choice.isCorrect ? 'bg-[var(--color-cordel-vert)] text-white border-encre-noire' : (selectedChoice?.text === choice.text ? 'bg-[var(--color-cordel-rouge)] text-white border-encre-noire' : 'bg-white opacity-45 border-encre-noire/15')) : 'bg-white hover:bg-neutral-100 border-encre-noire/25'}`}>
-            <span className="text-sm">{choice.text}</span>
-            {choice.visualElement?.type === 'orixaBadge' && <SeloAxeStamp size="sm" stampKey={choice.visualElement.stampKey} couleurs={choice.visualElement.couleurs} />}
-            {choice.visualElement?.type === 'pattern' && <PatternVisualizer patternArray={choice.visualElement.patternData} />}
-          </button>
-        ))}
-      </div>
+      <QuizOptionsGrid
+        question={q}
+        choices={q.choices}
+        selectedChoice={selectedChoice}
+        showFeedback={showFeedback}
+        onSelectChoice={handleSelectChoice}
+        columnsClass="grid grid-cols-1 md:grid-cols-2 gap-3"
+      />
       {showFeedback && (
         <div className="p-3.5 rounded-lg border-2 border-cordel-wood/40 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <p className="text-xs font-bold text-encre-noire">{explanationText}</p>

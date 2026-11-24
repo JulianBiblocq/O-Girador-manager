@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from '../LanguageContext';
 import { collection, query, where, getDocs, doc, setDoc, updateDoc, getDoc } from 'firebase/firestore';
 import { ref, listAll, getDownloadURL } from 'firebase/storage';
@@ -8,6 +8,8 @@ import MestreQuizConfigManager from '../pedagogy/MestreQuizConfigManager';
 import QuizDistractorManager from '../pedagogy/QuizDistractorManager';
 import MestreSignalsManager from '../pedagogy/MestreSignalsManager';
 import CustomQuizConfigPanel from './CustomQuizConfigPanel';
+import useMestreSignals from '../../hooks/useMestreSignals';
+import { buildGroupVariants } from '../../utils/tenantUtils';
 
 export default function MestreAutoEvalConfig({ profileData, isEmbedded }) {
   const { t } = useTranslation();
@@ -22,7 +24,8 @@ export default function MestreAutoEvalConfig({ profileData, isEmbedded }) {
   const [fiches, setFiches] = useState([]);
   const [rhythms, setRhythms] = useState([]);
   const [rhythmsMetadata, setRhythmsMetadata] = useState({});
-  const [mestreSignals, setMestreSignals] = useState([]);
+  const { signals: rawSignals } = useMestreSignals(groupId);
+  const mestreSignals = useMemo(() => (rawSignals || []).filter(s => s.imageUrl && s.name), [rawSignals]);
   const [qcmGlobalConfig, setQcmGlobalConfig] = useState({
     askRythme: true,
     askNacao: true,
@@ -122,26 +125,34 @@ export default function MestreAutoEvalConfig({ profileData, isEmbedded }) {
         }
       });
 
-      // Récupération des patterns et sections depuis Firestore (le séquenceur utilise ownerId/visibility)
-      const qPatterns = query(collection(db, 'patterns'));
-      const qSections = query(collection(db, 'sections'));
-      const [patternsSnap, sectionsSnap] = await Promise.all([getDocs(qPatterns), getDocs(qSections)]);
-      
-      const firestoreMedia = [];
+      // Récupération ciblée des patterns et sections depuis Firestore (bornée au groupId et ownerId)
+      const variants = buildGroupVariants(groupId);
       const mestreId = profileData?.id || profileData?.uid || '';
-      
-      patternsSnap.forEach(d => {
-        const data = d.data();
-        if (data.ownerId !== mestreId && data.visibility !== 'public') return;
-        const itemName = data.name || data.title;
-        if (itemName) firestoreMedia.push({ id: d.id, data, type: 'pattern', prefix: 'Pattern: ' });
-      });
-      sectionsSnap.forEach(d => {
-        const data = d.data();
-        if (data.ownerId !== mestreId && data.visibility !== 'public') return;
-        const itemName = data.name || data.title;
-        if (itemName) firestoreMedia.push({ id: d.id, data, type: 'section', prefix: 'Section: ' });
-      });
+      const fetchScopedSeqItems = async (colName, type, prefix) => {
+        const colRef = collection(db, colName);
+        const reqs = [];
+        for (let i = 0; i < variants.length; i += 10) {
+          reqs.push(getDocs(query(colRef, where('groupId', 'in', variants.slice(i, i + 10)))));
+        }
+        if (mestreId) reqs.push(getDocs(query(colRef, where('ownerId', '==', mestreId))));
+        const settled = await Promise.allSettled(reqs);
+        const byId = new Map();
+        settled.forEach((r) => {
+          if (r.status === 'fulfilled' && r.value) {
+            r.value.forEach((d) => {
+              const data = d.data();
+              if (data.name || data.title) byId.set(d.id, { id: d.id, data, type, prefix });
+            });
+          }
+        });
+        return Array.from(byId.values());
+      };
+
+      const [patItems, secItems] = await Promise.all([
+        fetchScopedSeqItems('patterns', 'pattern', 'Pattern: '),
+        fetchScopedSeqItems('sections', 'section', 'Section: ')
+      ]);
+      const firestoreMedia = [...patItems, ...secItems];
 
       firestoreMedia.forEach(item => {
         const cleanName = item.data.name || item.data.title;
@@ -156,35 +167,19 @@ export default function MestreAutoEvalConfig({ profileData, isEmbedded }) {
         if (matchingRhythm) {
           matchingRhythm.media.push(mediaObj);
         } else {
-          groupedRhythms.push({
-            id: `fs_${item.type}_${item.id}`,
-            titre: cleanName,
-            media: [mediaObj]
-          });
+          groupedRhythms.push({ id: `fs_${item.type}_${item.id}`, titre: cleanName, media: [mediaObj] });
         }
       });
 
       groupedRhythms.sort((a, b) => a.titre.localeCompare(b.titre));
       setRhythms(groupedRhythms);
 
-      // Récupérer Rhythm Metadata for Custom Questions
+      // Récupérer Rhythm Metadata pour les questions personnalisées
       const qMeta = collection(db, 'associations', groupId, 'rhythmMetadata');
       const metaSnap = await getDocs(qMeta);
       const meta = {};
       metaSnap.forEach(d => { meta[d.id] = d.data(); });
       setRhythmsMetadata(meta);
-
-      // Récupérer Mestre Signals depuis Firestore
-      try {
-        const querySnapshot = await getDocs(collection(db, 'mestre_signals'));
-        const fetchedSignals = [];
-        querySnapshot.forEach((d) => {
-          fetchedSignals.push({ id: d.id, ...d.data() });
-        });
-        setMestreSignals(fetchedSignals.filter(s => s.imageUrl && s.name));
-      } catch (err) {
-        console.error("Erreur Mestre Signals:", err);
-      }
 
     } catch (e) {
       console.error(e);

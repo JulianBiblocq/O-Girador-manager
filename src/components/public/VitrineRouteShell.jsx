@@ -14,7 +14,7 @@ import {
   buildOrganizadorMemberUrl
 } from '../../utils/vitrineLockUtils';
 
-/** Redirection racine `/` d'Organizador vers `/app` ou `/login` (hors domaines Vitrine). */
+/** Redirection racine `/` dans Organizador vers `/app` ou `/login` (hors domaines Mostrador). */
 export function OrganizadorRedirector({ user, navigateToRoute, brandingStyle }) {
   useEffect(() => {
     if (typeof window !== 'undefined' && isLockedVitrineHost(window.location.hostname)) return;

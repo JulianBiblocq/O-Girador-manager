@@ -33,7 +33,7 @@ import { useTenantContext } from './context/TenantContext';
 import DemoTopBanner from './components/demo/DemoTopBanner';
 import { canonicalizeGroupId, isSameGroupCaseInsensitive, isCustomDomainHost, registerCanonicalGroupId, saveLastKnownTenantId, getLastKnownTenantId, getCachedDomainGroupId, resolveCanonicalGroupFromFirestore } from './utils/tenantUtils';
 import { isLockedVitrineHost, sanitizeLockedVitrinePathname, resolveIsVitrineMode } from './utils/vitrineLockUtils';
-import { buildFounderEmergencyProfile, resolveAdminFallbackGroupId } from './utils/founderFallbackUtils';
+import { buildFounderEmergencyProfile, resolveAdminFallbackGroupId, isSystemSuperAdminIdentity, isEmergencyFounderIdentity, EMERGENCY_FOUNDER_UID } from './utils/founderFallbackUtils';
 import { reconcilePreExistingMember } from './services/memberService';
 import { isDemoMode, initDemoSession, getDemoAuthUser, getDemoProfileData } from './demo/demoManager';
 import { resolveInternalDestination, extractDeepLinkTarget, INTERNAL_APP_ROUTE_PREFIXES, isExternalActionLink } from './utils/megaphoneNavigationUtils';
@@ -349,14 +349,9 @@ export default function App() {
   });
 
   const isSystemOrSuperAdminOrMestre = Boolean(
-    profileData?.isSystemAdmin || 
+    isSystemSuperAdminIdentity(profileData, user) ||
     profileData?.canViewAll ||
-    ['mestre', 'super-admin', 'admin'].includes((profileData?.role || '').toLowerCase()) ||
-    profileData?.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
-    profileData?.id === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
-    (profileData?.email || '').toLowerCase() === 'julian.bzh@gmail.com' ||
-    user?.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
-    (user?.email || '').toLowerCase() === 'julian.bzh@gmail.com'
+    ['mestre', 'admin'].includes((profileData?.role || '').toLowerCase())
   );
   const isMasterKeyActive = isSystemOrSuperAdminOrMestre && breakGlassActive;
 
@@ -748,7 +743,7 @@ export default function App() {
     setInstallPromptAvailable(false);
   };
 
-  // Bascule automatique d'association sur lien d'invitation d'Organizador (strictement inactif sur la Vitrine)
+  // Bascule automatique d'association sur lien d'invitation dans Organizador (strictement inactif sur Mostrador)
   useEffect(() => {
     if (!isVitrineMode && user && profileData) {
       const searchParams = new URLSearchParams(window.location.search);
@@ -1055,12 +1050,9 @@ export default function App() {
                 const canonicalGroup = canonicalizeGroupId(data.groupId);
 
                 // 1. Court-circuit Fondateur / Super-Admin / Mestre / Bureau
-                const isFounderOrSuperAdmin = docSnap.id === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' || 
-                  currentUser.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
-                  (currentUser.email || '').toLowerCase() === 'julian.bzh@gmail.com' ||
-                  (data.email || '').toLowerCase() === 'julian.bzh@gmail.com' ||
-                  data.isSystemAdmin === true || 
-                  ['super-admin', 'mestre', 'admin'].includes((data.role || '').toLowerCase());
+                const isFounderOrSuperAdmin =
+                  isSystemSuperAdminIdentity({ id: docSnap.id, ...data }, currentUser) ||
+                  ['mestre', 'admin'].includes((data.role || '').toLowerCase());
 
                 // 2. Fusion strictement additive des tags pour TOUS les utilisateurs
                 const existingTags = Array.isArray(data.tags) ? data.tags : [];
@@ -1118,9 +1110,9 @@ export default function App() {
                 setCheckingProfile(false);
                 setLoading(false);
               } else {
-                const isFounderAccount = currentUser.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' || (currentUser.email || '').toLowerCase() === 'julian.bzh@gmail.com';
+                const isFounderAccount = isEmergencyFounderIdentity(currentUser);
                 if (isFounderAccount) {
-                  getDoc(doc(db, 'users', 'iA0SweEHyOPzAPGIDVZdeKAV2mk1')).then((founderSnap) => {
+                  getDoc(doc(db, 'users', EMERGENCY_FOUNDER_UID)).then((founderSnap) => {
                     const fData = founderSnap.exists() ? founderSnap.data() : null;
                     setProfileData(buildFounderEmergencyProfile({ currentUser, profileDoc: fData, resolvedTenantId: urlGroupId }));
                     setProfileExists(true);
@@ -1197,7 +1189,7 @@ export default function App() {
             }
           }, (error) => {
             console.error("App - Erreur onSnapshot profil utilisateur :", error);
-            const isFounderAccount = currentUser?.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' || (currentUser?.email || '').toLowerCase() === 'julian.bzh@gmail.com';
+            const isFounderAccount = isEmergencyFounderIdentity(currentUser);
 
             // Si permission refusée, tenter de rafraîchir le jeton Firebase Auth en arrière-plan
             if (currentUser && error?.code === 'permission-denied') {
@@ -1253,7 +1245,7 @@ export default function App() {
     const watchdogTimer = setTimeout(() => {
       console.warn("App - Watchdog de sécurité déclenché : passage en attente réseau sécurisée.");
       const currentUser = auth.currentUser;
-      const isFounder = currentUser?.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' || (currentUser?.email || '').toLowerCase() === 'julian.bzh@gmail.com';
+      const isFounder = isEmergencyFounderIdentity(currentUser);
       if (currentUser && isFounder && !profileData) {
         setProfileData(buildFounderEmergencyProfile({ currentUser, resolvedTenantId: urlGroupId }));
         setProfileExists(true);
@@ -1284,12 +1276,7 @@ export default function App() {
   const isPrivilegedUser = Boolean(
     isSystemOrSuperAdminOrMestre ||
     isAdministrativeUser ||
-    ['mestre', 'super-admin', 'admin'].includes((profileData?.role || '').toLowerCase()) ||
-    user?.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
-    profileData?.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
-    profileData?.id === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
-    (user?.email || '').toLowerCase() === 'julian.bzh@gmail.com' ||
-    (profileData?.email || '').toLowerCase() === 'julian.bzh@gmail.com'
+    isSystemSuperAdminIdentity(profileData, user)
   );
 
   const effectiveProfileData = profileData || (isPrivilegedUser
@@ -1533,7 +1520,7 @@ export default function App() {
             }}
             className="mt-3 text-[11px] font-bold uppercase tracking-wider text-cordel-wood/80 hover:text-cordel-wood underline cursor-pointer transition-opacity"
           >
-            Accéder directement
+            {t('common.directAccessBtn', 'Accéder directement')}
           </button>
         </div>
       </div>
@@ -1556,7 +1543,7 @@ export default function App() {
       <React.Suspense fallback={
         <div style={brandingStyle} className="min-h-screen flex flex-col justify-center items-center py-12 bg-cordel-bg">
           <div className="animate-spin text-4xl mb-4 select-none">⏳</div>
-          <span className="font-bold text-xs uppercase tracking-widest text-cordel-wood">Chargement de l&apos;assistant...</span>
+          <span className="font-bold text-xs uppercase tracking-widest text-cordel-wood">{t('common.loadingAssistant', "Chargement de l'assistant...")}</span>
         </div>
       }>
         <HubSetupWizard brandingStyle={brandingStyle} onComplete={() => navigateToRoute('/app')} />
@@ -2232,7 +2219,7 @@ export default function App() {
             {isDemoMode() && <DemoTopBanner />}
             {accessDeniedToast && (
               <div className="fixed top-4 right-4 z-50 bg-amber-900 text-amber-100 font-extrabold text-xs px-4 py-3 rounded-[6px_10px_8px_12px] border-2 border-amber-600 shadow-[3px_3px_0px_0px_#181716] flex items-center gap-2 animate-bounce">
-                <span>🔒</span> Accès restreint : vous n'avez pas les droits nécessaires pour accéder à cet espace.
+                <span>🔒</span> {t('common.accessRestrictedToast', "Accès restreint : vous n'avez pas les droits nécessaires pour accéder à cet espace.")}
               </div>
             )}
             <LayoutShell 
@@ -2551,7 +2538,7 @@ export default function App() {
                   />
                 ) : (currentTab === 'instrument-models' && hasAccessLutherie) ? (
                   <div className="w-full max-w-none">
-                    <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement des modèles...</div>}>
+                    <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">{t('common.loading')}</div>}>
                       <InstrumentModelsManager 
                         groupId={profileData?.groupId}
                         isAuthorized={hasAccessLutherie}
@@ -2597,7 +2584,7 @@ export default function App() {
                   />
                 ) : (currentTab === 'varal-lutherie' && hasAccessLutherie) ? (
                   <div className="w-full max-w-none">
-                    <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement du Varal Lutherie...</div>}>
+                    <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">{t('common.loading')}</div>}>
                       <WidgetDocuments 
                         role={profileData?.role} 
                         isSystemAdmin={profileData?.isSystemAdmin} 
@@ -2624,7 +2611,7 @@ export default function App() {
                   />
                 ) : (currentTab === 'wardrobe-models' && hasAccessCostumerie) ? (
                   <div className="w-full max-w-none">
-                    <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement des modèles de costumes...</div>}>
+                    <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">{t('common.loading')}</div>}>
                       <CostumesAdminManager groupId={profileData?.groupId} />
                     </React.Suspense>
                   </div>
@@ -2674,7 +2661,7 @@ export default function App() {
                   />
                 ) : (currentTab === 'varal-costumerie' && hasAccessCostumerie) ? (
                   <div className="w-full max-w-none">
-                    <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement du Varal Costumerie...</div>}>
+                    <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">{t('common.loading')}</div>}>
                       <WidgetDocuments 
                         role={profileData?.role} 
                         isSystemAdmin={profileData?.isSystemAdmin} 
@@ -2730,7 +2717,7 @@ export default function App() {
                   />
                 ) : (currentTab === 'ca-documents' && hasAccessGouvernance) ? (
                   <div className="w-full max-w-none">
-                    <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement du Registre & Statuts...</div>}>
+                    <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">{t('common.loading')}</div>}>
                       <WidgetDocuments 
                         role={profileData?.role} 
                         isSystemAdmin={profileData?.isSystemAdmin} 
@@ -2778,7 +2765,7 @@ export default function App() {
                   />
                 ) : (currentTab === 'varal-secretariat' && (hasAccessSecretariat || hasAccessStudio)) ? (
                   <div className="w-full max-w-none">
-                    <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement du Varal Secrétariat...</div>}>
+                    <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">{t('common.loading')}</div>}>
                       <WidgetDocuments 
                         role={profileData?.role} 
                         isSystemAdmin={profileData?.isSystemAdmin} 
@@ -2794,7 +2781,7 @@ export default function App() {
                   </div>
                 ) : (currentTab === 'varal-photos' && hasAccessStudio) ? (
                   <div className="w-full max-w-none">
-                    <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement du Studio Photos...</div>}>
+                    <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">{t('common.loading')}</div>}>
                       <StudioPhotosView 
                         groupId={profileData?.groupId} 
                         user={user}
@@ -2819,7 +2806,7 @@ export default function App() {
                   />
                 ) : (['varal-manager', 'varal-pedagogy'].includes(currentTab) && hasAccessPedagogie) ? (
                   <div className="w-full max-w-none">
-                    <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement du Varal Pédagogique...</div>}>
+                    <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">{t('common.loading')}</div>}>
                       <WidgetDocuments 
                         role={profileData?.role} 
                         isSystemAdmin={profileData?.isSystemAdmin} 
@@ -2979,7 +2966,7 @@ export default function App() {
                   </div>
                 ) : currentTab === 'varal' ? (
                   <div className="w-full max-w-none">
-                    <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">Chargement du Varal...</div>}>
+                    <React.Suspense fallback={<div className="animate-pulse py-6 text-xs text-center opacity-65">{t('common.loading')}</div>}>
                       <WidgetDocuments 
                         role={profileData?.role} 
                         isSystemAdmin={profileData?.isSystemAdmin} 

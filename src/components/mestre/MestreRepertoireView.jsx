@@ -279,7 +279,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
         etatValidation: 'a_faire',
         notes: '',
         videos: presetVid
-          ? [{ id: `vid_${Date.now()}`, titre: 'Vidéo Séquenceur', url: presetVid.trim() }]
+          ? [{ id: `vid_${Date.now()}`, titre: 'Vidéo Sequenciador', url: presetVid.trim() }]
           : [],
         signalIds: [],
         sequenceurId: preset.id || null,
@@ -319,7 +319,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
     try {
       const match = piece.preset || findMatchingPreset(piece, catalogRhythms);
       if (!match) {
-        showToast(`Rythme associé introuvable dans le Séquenceur pour « ${piece.titre} ».`);
+        showToast(`Rythme associé introuvable dans Sequenciador pour « ${piece.titre} ».`);
         setSyncingPieceId(null);
         return;
       }
@@ -352,9 +352,9 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
       const pieceRef = doc(db, 'associations', groupId, 'repertoire', piece.id);
       await updateDoc(pieceRef, cleanFirestorePayload(updateData));
 
-      showToast(`« ${piece.titre} » synchronisé avec le Séquenceur !`);
+      showToast(`« ${piece.titre} » synchronisé avec Sequenciador !`);
     } catch (err) {
-      console.error("Erreur lors de la synchronisation avec le Séquenceur :", err);
+      console.error("Erreur lors de la synchronisation avec Sequenciador :", err);
       showToast(t('mestre.repertoire.errSyncSequencer'));
     } finally {
       setSyncingPieceId(null);
@@ -557,7 +557,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                     {piece.hasSequencer && (
                       <span
                         className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-amber-50 text-amber-900 border border-amber-300"
-                        title={piece.preset ? `Lié en direct au Preset : ${piece.preset.titre || piece.preset.name}` : 'Lié au Séquenceur'}
+                        title={piece.preset ? `Lié en direct au Preset : ${piece.preset.titre || piece.preset.name}` : 'Lié à Sequenciador'}
                       >
                         <span>🥁</span>
                         <span>
@@ -565,7 +565,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                             ? 'Preset vivant'
                             : piece.sequenceurType === 'sections'
                               ? 'Séquence'
-                              : 'Séquenceur'}
+                              : 'Sequenciador'}
                         </span>
                       </span>
                     )}
@@ -573,7 +573,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                     {piece.hasAudio && (
                       <span
                         className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase rounded bg-purple-50 text-purple-900 border border-purple-300"
-                        title={piece.preset?.audioUrl ? "Audio direct du Séquenceur" : "Audio de référence lié"}
+                        title={piece.preset?.audioUrl ? "Audio direct de Sequenciador" : "Audio de référence lié"}
                       >
                         <span>🎵</span>
                         <span>{t('mestre.repertoire.badgeAudio')}</span>
@@ -893,7 +893,7 @@ export default function MestreRepertoireView({ groupId, user: _user, profileData
                       disabled={syncingPieceId === piece.id}
                       onClick={() => handleSyncWithSequencer(piece)}
                       className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] bg-stone-100 hover:bg-stone-200 text-stone-800 border border-encre-noire/25 cursor-pointer shadow-2xs transition-all active:translate-y-[0.5px] disabled:opacity-50 select-none"
-                      title={piece.sequenceurId ? "Synchroniser les références et données vives du Séquenceur" : "Lier automatiquement au Preset Séquenceur correspondant"}
+                      title={piece.sequenceurId ? "Synchroniser les références et données vives de Sequenciador" : "Lier automatiquement au Preset Sequenciador correspondant"}
                     >
                       <span className={syncingPieceId === piece.id ? 'animate-spin inline-block' : ''}>🔄</span>
                       <span>

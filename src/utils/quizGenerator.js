@@ -2,6 +2,8 @@
 // Orchestre les générateurs spécialisés (Atelier, Culture, Toadas, Sequenciador, Dançador, Signes & Répertoire)
 
 import {
+  isQuizMediaUrl,
+  normalizeQuizMediaUrl,
   sanitizeQuizText,
   hasAnswerLeak,
   hasLeak,
@@ -29,6 +31,8 @@ import {
 } from './quiz/quizSequencerAndSignalsGenerator.js';
 
 export {
+  isQuizMediaUrl,
+  normalizeQuizMediaUrl,
   sanitizeQuizText,
   hasAnswerLeak,
   hasLeak,

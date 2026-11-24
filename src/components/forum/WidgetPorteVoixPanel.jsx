@@ -3,13 +3,18 @@ import CordelButton from '../CordelButton';
 import TerracottaMegaphoneIcon from '../TerracottaMegaphoneIcon';
 import { countThreadUnreadMessages } from '../../utils/forumUnreadUtils';
 import { isForbiddenMegaphone, stripForbiddenMegaphones } from '../../utils/sanitizeIcons';
+import { useTranslation } from '../LanguageContext';
 
-/** Sous-composant WidgetPorteVoixPanel (Accueil) : derniers sujets actifs du Porte-Voix. */
+/** Sous-composant Panneau Porte-Voix (Accueil) : derniers sujets actifs du Porte-Voix (< 145 lignes). */
 export default function WidgetPorteVoixPanel({
   threads = [], channels = [], loading = false, isMobile = false,
   currentUserId = '', effectiveReadThreads = {}, unreadThreadsCount = 0,
-  onOpenForum, onOpenThread, t
+  onOpenForum, onOpenThread, t: propT, locale: propLocale
 }) {
+  const i18n = useTranslation();
+  const t = propT || i18n.t;
+  const bcp47 = (propLocale || i18n.locale) === 'pt' ? 'pt-BR' : 'fr-FR';
+
   const recentThreads = threads.slice(0, isMobile ? 3 : 4);
   const displayCount = threads.length;
 
@@ -34,12 +39,11 @@ export default function WidgetPorteVoixPanel({
     if (!dateStr) return '';
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return '';
-    return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+    return d.toLocaleDateString(bcp47, { day: 'numeric', month: 'short' });
   };
 
   return (
     <div className="flex flex-col justify-between gap-2.5 w-full h-full text-left select-none">
-      {/* En-tête du panneau Porte-Voix */}
       <div className="flex items-center justify-between gap-2 pb-2 border-b border-dashed border-cordel-master-dark/20">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           {!isMobile && (
@@ -54,7 +58,7 @@ export default function WidgetPorteVoixPanel({
                   {t?.('widgetForum.title') || 'Le Porte-Voix'}
                 </h3>
                 <span className="opacity-70 text-[10px] font-bold shrink-0">
-                  ({displayCount} {t?.('widgetForum.subjectCountLabel') || 'sujet'}{displayCount > 1 ? 's' : ''})
+                  ({displayCount} {displayCount > 1 ? (t?.('forumExtra.subjectCountPlural') || 'sujets') : (t?.('widgetForum.subjectCountLabel') || 'sujet')})
                 </span>
                 {unreadThreadsCount > 0 && (
                   <span className="px-1.5 py-0.5 text-[9px] font-black rounded-full bg-red-600 text-white animate-pulse">
@@ -69,17 +73,11 @@ export default function WidgetPorteVoixPanel({
           </div>
         </div>
 
-        <CordelButton
-          type="button"
-          variant="default"
-          onClick={() => onOpenForum && onOpenForum()}
-          className="text-[10px] px-2.5 py-1 font-bold uppercase tracking-wider shrink-0"
-        >
+        <CordelButton type="button" variant="default" onClick={() => onOpenForum && onOpenForum()} className="text-[10px] px-2.5 py-1 font-bold uppercase tracking-wider shrink-0">
           {t?.('widgetForum.openBtn') || 'Ouvrir →'}
         </CordelButton>
       </div>
 
-      {/* Liste des 3 ou 4 derniers sujets actifs des salons */}
       {loading ? (
         <div className="flex-1 flex justify-center items-center py-6">
           <span className="text-xs uppercase tracking-widest font-black animate-pulse opacity-60">⏳</span>
@@ -104,8 +102,7 @@ export default function WidgetPorteVoixPanel({
             const cleanTitle = stripForbiddenMegaphones(thread.titre).trim() || thread.titre;
             const lastResponder = resolveLastResponder(thread);
             const dateFormatted = formatDateShort(thread.derniereModification || thread.dateCreation);
-            const unreadMsgs = countThreadUnreadMessages(thread, currentUserId, effectiveReadThreads?.[thread.id]);
-            const isUnread = unreadMsgs > 0;
+            const isUnread = countThreadUnreadMessages(thread, currentUserId, effectiveReadThreads?.[thread.id]) > 0;
 
             return (
               <div
@@ -122,7 +119,7 @@ export default function WidgetPorteVoixPanel({
                     {isUnread && (
                       <span
                         className="w-2.5 h-2.5 rounded-full bg-red-600 border border-white shrink-0 animate-pulse"
-                        title="Nouveaux messages non lus"
+                        title={t?.('forumExtra.unreadThreadsTooltip') || 'Nouveaux messages non lus'}
                       />
                     )}
                   </div>
@@ -133,9 +130,7 @@ export default function WidgetPorteVoixPanel({
                 </div>
 
                 <div className="flex items-center justify-between gap-2 text-[9.5px] font-semibold text-cordel-master-dark/75">
-                  <span className="truncate">
-                    {lastResponder ? `✍️ ${lastResponder}` : ''}
-                  </span>
+                  <span className="truncate">{lastResponder ? `✍️ ${lastResponder}` : ''}</span>
                   {dateFormatted && <span className="text-[8.5px] font-bold opacity-70 shrink-0">{dateFormatted}</span>}
                 </div>
               </div>

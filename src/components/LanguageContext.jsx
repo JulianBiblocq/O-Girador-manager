@@ -33,22 +33,28 @@ export function LanguageProvider({ children }) {
     setLocale(prev => (prev === 'fr' ? 'pt' : 'fr'));
   };
 
-  const t = (path, params) => {
+  const t = (path, fallbackOrParams, maybeParams) => {
+    const fallbackStr = typeof fallbackOrParams === 'string' ? fallbackOrParams : undefined;
+    const interpParams =
+      maybeParams !== undefined && maybeParams !== null
+        ? maybeParams
+        : fallbackStr === undefined
+          ? fallbackOrParams
+          : undefined;
+
     const keys = path.split('.');
     let value = translations[locale];
     for (const key of keys) {
       if (value && value[key] !== undefined) {
         value = value[key];
       } else {
-        // Option de repli vers le français si la clé de traduction est manquante
+        // Repli vers le français si la clé de traduction est manquante dans la langue active
         let fallbackValue = translations['fr'];
         for (const fKey of keys) {
           if (fallbackValue && fallbackValue[fKey] !== undefined) {
             fallbackValue = fallbackValue[fKey];
           } else {
-            // Si une chaîne de texte de repli est fournie en second argument, l'utiliser.
-            // Sinon, renvoyer undefined pour permettre l'évaluation des replis React `t('key') || 'Par défaut'`
-            fallbackValue = (typeof params === 'string' && params.trim().length > 0) ? params : undefined;
+            fallbackValue = fallbackStr && fallbackStr.trim().length > 0 ? fallbackStr : undefined;
             break;
           }
         }
@@ -57,14 +63,17 @@ export function LanguageProvider({ children }) {
       }
     }
 
-    // Remplacement dynamique des variables dans la chaîne (ex: {day} ou {{rate}})
-    if (typeof value === 'string' && params !== undefined && params !== null) {
-      if (typeof params === 'object') {
-        Object.keys(params).forEach((paramKey) => {
-          value = value.replace(new RegExp(`\\{\\{?${paramKey}\\}\\}?`, 'g'), params[paramKey]);
+    // Remplacement dynamique des variables dans la chaîne (ex: {name} ou {{name}})
+    if (typeof value === 'string' && interpParams !== undefined && interpParams !== null) {
+      if (typeof interpParams === 'object') {
+        Object.keys(interpParams).forEach((paramKey) => {
+          const replacement = interpParams[paramKey];
+          if (replacement !== undefined && replacement !== null) {
+            value = value.replace(new RegExp(`\\{\\{?${paramKey}\\}\\}?`, 'g'), String(replacement));
+          }
         });
       } else {
-        value = value.replace(/\{\{?(day|0)\}\}?/g, String(params));
+        value = value.replace(/\{\{?(day|0)\}\}?/g, String(interpParams));
       }
     }
 

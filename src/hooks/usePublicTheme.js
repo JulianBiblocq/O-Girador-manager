@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { doc, onSnapshot, collection, getDocs, limit, query } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import { DEFAULT_PUBLIC_THEME, DEFAULT_VITRINE_TEXTS } from './useAssociationSettings';
 import { canonicalizeGroupId } from '../utils/tenantUtils';
@@ -98,34 +98,18 @@ export function usePublicTheme(groupId, themeOverride = null) {
     const rawGroupId = groupId || urlTenant;
     const effectiveGroupId = canonicalizeGroupId(rawGroupId);
 
+    // Sans groupId résolu : appliquer immédiatement le thème neutre par défaut sans requête Firestore
+    if (!effectiveGroupId) {
+      setPublicTheme(DEFAULT_PUBLIC_THEME);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
     // Watchdog de sécurité anti-blocage : débloque loading après 2.5 secondes
     const safetyTimer = setTimeout(() => {
       setLoading(false);
     }, 2500);
-
-    const tryFetchDefaultAssociation = async () => {
-      try {
-        const q = query(collection(db, 'associations'), limit(1));
-        const querySnap = await getDocs(q);
-        if (!querySnap.empty) {
-          const firstDocData = querySnap.docs[0].data();
-          setPublicTheme(buildThemeData(firstDocData));
-        } else {
-          setPublicTheme(DEFAULT_PUBLIC_THEME);
-        }
-      } catch (err) {
-        console.error("usePublicTheme - Erreur lors de la récupération de l'association par défaut :", err);
-        setPublicTheme(DEFAULT_PUBLIC_THEME);
-      } finally {
-        clearTimeout(safetyTimer);
-        setLoading(false);
-      }
-    };
-
-    if (!effectiveGroupId) {
-      tryFetchDefaultAssociation();
-      return () => clearTimeout(safetyTimer);
-    }
 
     const assocRef = doc(db, 'associations', effectiveGroupId);
 

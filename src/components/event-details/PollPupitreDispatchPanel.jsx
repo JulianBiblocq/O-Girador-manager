@@ -4,14 +4,16 @@ import { sendPollUnansweredReminder } from '../../utils/pollNotificationUtils';
 import PollPupitreDispatchActions from './PollPupitreDispatchActions';
 import PollPupitreMatrixCell from './PollPupitreMatrixCell';
 import PollPupitreHeaderCell from './PollPupitreHeaderCell';
+import { useTranslation } from '../LanguageContext';
 
 const DEFAULT_PUPITRES = ['Alfaias', 'Caixas', 'Gonguê', 'Agbê'];
 
-/** Tableau de synthèse Mestre & Matrice croisée (Dates x Pupitres) (< 140 lignes) */
+/** Tableau de synthèse Mestre & Matrice croisée (Dates × Pupitres) (< 145 lignes). */
 export default function PollPupitreDispatchPanel({
   pollEvents = [], allUsers = [], targetPupitres = [], pupitresList = [], linkedInstruments = [],
   isSuperAdminOrMestre = false, isProcessing = false, formatDate, onConfirmSinglePupitre, onConfirmDispatch
 }) {
+  const { t } = useTranslation();
   const [allowLatecomers, setAllowLatecomers] = useState(true);
   const [manualOverrides, setManualOverrides] = useState({});
   const [expandedHeaderPupitre, setExpandedHeaderPupitre] = useState(null);
@@ -32,10 +34,7 @@ export default function PollPupitreDispatchPanel({
     () => computeOptimalPupitreAllocation(matrix, pollEvents, effectivePupitres),
     [matrix, pollEvents, effectivePupitres]
   );
-  const activeAllocation = useMemo(
-    () => ({ ...optimal.allocation, ...manualOverrides }),
-    [optimal.allocation, manualOverrides]
-  );
+  const activeAllocation = useMemo(() => ({ ...optimal.allocation, ...manualOverrides }), [optimal.allocation, manualOverrides]);
   const totalPresents = useMemo(
     () => effectivePupitres.reduce((acc, p) => acc + (matrix?.[activeAllocation[p]]?.[p]?.count || 0), 0),
     [effectivePupitres, matrix, activeAllocation]
@@ -44,9 +43,7 @@ export default function PollPupitreDispatchPanel({
   const allUnanswered = useMemo(() => {
     const map = new Map();
     effectivePupitres.forEach((p) => {
-      (matrix?.pupitreStats?.[p]?.totallyUnansweredMembers || []).forEach((m) => {
-        if (m?.uid) map.set(m.uid, m);
-      });
+      (matrix?.pupitreStats?.[p]?.totallyUnansweredMembers || []).forEach((m) => { if (m?.uid) map.set(m.uid, m); });
     });
     return Array.from(map.values());
   }, [effectivePupitres, matrix]);
@@ -67,9 +64,10 @@ export default function PollPupitreDispatchPanel({
     try {
       const count = await sendPollUnansweredReminder({
         groupId: firstEv.groupId, firstPollEventId: firstEv.id,
-        eventTitle: firstEv.titre || 'Atelier', pupitreLabel, unansweredMembers: membersList
+        eventTitle: firstEv.titre || t('pollMatrix.defaultWorkshopTitle', 'Atelier'),
+        pupitreLabel, unansweredMembers: membersList, t
       });
-      setReminderFeedback(`✅ Relance envoyée à ${count} membre(s) (${pupitreLabel})`);
+      setReminderFeedback(t('pollMatrix.reminderSentFeedback', { count, pupitre: pupitreLabel }));
       setTimeout(() => { setRemindingKey(null); setReminderFeedback(''); }, 4500);
     } catch {
       setRemindingKey(null);
@@ -83,21 +81,22 @@ export default function PollPupitreDispatchPanel({
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-dashed border-encre-noire/20 pb-2">
         <div>
           <h4 className="text-xs font-black uppercase tracking-wider text-cordel-wood flex items-center gap-1.5">
-            <span>🥁</span> <span>Matrice de répartition par pupitre (Dates × Pupitres)</span>
+            <span>🥁</span> <span>{t('pollMatrix.title')}</span>
           </h4>
           <p className="text-[10px] font-semibold text-encre-noire/75">
-            Proposition optimale calculée : <strong className="text-[var(--color-cordel-vert,#2d6a4f)]">{totalPresents} présent(s) cumulé(s)</strong>
+            {t('pollMatrix.optimalProposalPrefix')}{' '}
+            <strong className="text-[var(--color-cordel-vert,#2d6a4f)]">{t('pollMatrix.cumulatedPresentCount', { count: totalPresents })}</strong>
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
           {isSuperAdminOrMestre && allUnanswered.length > 0 && (
             <button type="button" disabled={Boolean(remindingKey)} onClick={() => handleTriggerRemind(effectivePupitres.join(', '), allUnanswered)} className="text-[9px] font-black uppercase px-2 py-1 rounded border border-encre-noire bg-amber-100 text-[var(--color-cordel-ocre,#c05621)] hover:brightness-95 disabled:opacity-50 cursor-pointer">
-              🔔 Relancer tous les sans-réponse ({allUnanswered.length})
+              {t('pollMatrix.remindAllBtn', { count: allUnanswered.length })}
             </button>
           )}
           {Object.keys(manualOverrides).length > 0 && isSuperAdminOrMestre && (
             <button type="button" onClick={() => setManualOverrides({})} className="text-[9px] font-black uppercase px-2 py-1 rounded border border-encre-noire bg-cordel-bg hover:brightness-95 cursor-pointer">
-              🔄 Réinitialiser l'optimum
+              {t('pollMatrix.resetOptimumBtn')}
             </button>
           )}
         </div>
@@ -113,12 +112,12 @@ export default function PollPupitreDispatchPanel({
         <table className="w-full text-[10px] border-collapse">
           <thead>
             <tr className="bg-cordel-bg-light border-b-2 border-encre-noire text-cordel-wood font-black uppercase">
-              <th className="p-2 text-left border-r border-encre-noire/20 align-top">Créneau proposé</th>
+              <th className="p-2 text-left border-r border-encre-noire/20 align-top">{t('pollMatrix.proposedSlotCol')}</th>
               {effectivePupitres.map((p) => (
                 <PollPupitreHeaderCell
                   key={p} pupitre={p} stats={matrix?.pupitreStats?.[p] || matrix?.[pollEvents[0]?.id]?.[p] || {}}
                   isOpen={expandedHeaderPupitre === p} onToggleOpen={() => setExpandedHeaderPupitre((prev) => (prev === p ? null : p))}
-                  isSuperAdminOrMestre={isSuperAdminOrMestre} isReminding={Boolean(remindingKey)} onRemindPupitre={handleTriggerRemind}
+                  isSuperAdminOrMestre={isSuperAdminOrMestre} isReminding={Boolean(remindingKey)} onRemindPupitre={handleTriggerRemind} t={t}
                 />
               ))}
             </tr>
@@ -127,13 +126,13 @@ export default function PollPupitreDispatchPanel({
             {pollEvents.map((ev, idx) => (
               <tr key={ev.id} className="border-b border-encre-noire/15">
                 <td className="p-2 font-extrabold text-encre-noire border-r border-encre-noire/20 whitespace-nowrap align-top">
-                  <span className="text-cordel-wood mr-1">Opt. {ev.optionIndex || idx + 1} :</span>
+                  <span className="text-cordel-wood mr-1">{t('pollMatrix.optionShort', { index: ev.optionIndex || idx + 1 })} :</span>
                   {formatDate ? formatDate(ev.date) : ev.date}
                 </td>
                 {effectivePupitres.map((p) => (
                   <PollPupitreMatrixCell
                     key={p} cell={matrix?.[ev.id]?.[p] || {}} isSelected={activeAllocation[p] === ev.id}
-                    isSuperAdminOrMestre={isSuperAdminOrMestre} onSelectSlot={() => setManualOverrides((prev) => ({ ...prev, [p]: ev.id }))}
+                    isSuperAdminOrMestre={isSuperAdminOrMestre} onSelectSlot={() => setManualOverrides((prev) => ({ ...prev, [p]: ev.id }))} t={t}
                   />
                 ))}
               </tr>
@@ -149,7 +148,7 @@ export default function PollPupitreDispatchPanel({
           sharedDates={sharedDates} totalPresents={totalPresents}
           allowLatecomers={allowLatecomers} setAllowLatecomers={setAllowLatecomers}
           isProcessing={isProcessing} formatDate={formatDate}
-          onConfirmSinglePupitre={onConfirmSinglePupitre} onConfirmDispatch={onConfirmDispatch}
+          onConfirmSinglePupitre={onConfirmSinglePupitre} onConfirmDispatch={onConfirmDispatch} t={t}
         />
       )}
     </div>

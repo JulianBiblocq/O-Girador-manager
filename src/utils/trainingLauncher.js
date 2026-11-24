@@ -120,13 +120,13 @@ export const resolveUserRole = resolveUserSequencerRole;
 export async function launchGlobalSequencer(sequenceurId, options = {}) {
   const {
     baseUrl = 'https://sequenciador.o-girador.com',
-    appLabel = 'sequenciador',
+    appLabel = 'Sequenciador',
     forceSameTab = false,
     mode
   } = options;
 
   if (!sequenceurId) {
-    console.warn("[trainingLauncher] Impossible de lancer le Séquenceur : sequenceurId manquant.");
+    console.warn("[trainingLauncher] Impossible de lancer Sequenciador : sequenceurId manquant.");
     return;
   }
 
@@ -175,7 +175,7 @@ export async function launchGlobalSequencer(sequenceurId, options = {}) {
 export async function launchTrainingStage(presetId, trainingId, stageIndex = 0, options = {}) {
   const {
     baseUrl = 'https://sequenciador.o-girador.com',
-    appLabel = 'sequenciador',
+    appLabel = 'Sequenciador',
     forceSameTab = false,
     role,
     tocarJunto = 1,

@@ -417,7 +417,7 @@ export default function MemberProfileEditModal({
                 </select>
               </div>
               <div>
-                <label className="block text-[9px] uppercase font-bold text-cordel-master-dark mb-0.5">Latéralité (Séquenceur)</label>
+                <label className="block text-[9px] uppercase font-bold text-cordel-master-dark mb-0.5">Latéralité (Sequenciador)</label>
                 <select
                   name="lateralite"
                   value={formData.lateralite}

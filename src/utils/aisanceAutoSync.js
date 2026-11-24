@@ -83,8 +83,9 @@ export function aggregateToadaVocalMetrics(song, usersList = [], piecesProgressM
  * Enregistre le confort et/ou le stade vocal d'un morceau dans users/{userId}/parcours/{groupId}.
  */
 export async function savePieceComfortAndVocal({ db, userId, groupId, pieceId, confort, vocalStage }) {
-  if (!db || !userId || !pieceId) return;
-  const parcoursRef = doc(db, 'users', userId, 'parcours', groupId || 'default');
+  const cleanGroup = String(groupId || '').trim();
+  if (!db || !userId || !pieceId || !cleanGroup) return;
+  const parcoursRef = doc(db, 'users', userId, 'parcours', cleanGroup);
   const payload = { piecesProgress: { [pieceId]: { updatedAt: Date.now() } } };
   if (confort !== undefined) {
     payload.evaluations = { [pieceId]: confort };

@@ -70,10 +70,9 @@ export default function SecretariatDocuments({ groupId, onBack, initialSubTab = 
       </div>
 
       {/* Sélecteur de sous-onglets */}
-      <div className="flex gap-2 border-b border-dashed border-cordel-master-dark/20 pb-2 mb-1 select-none">
+      <div data-tour="sec-resources-tabs" className="flex gap-2 border-b border-dashed border-cordel-master-dark/20 pb-2 mb-1 select-none">
         <button
-          type="button"
-          onClick={() => setSubTab('chartes')}
+          type="button" onClick={() => setSubTab('chartes')}
           className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
             subTab === 'chartes'
               ? 'bg-[var(--color-cordel-vert)] text-white border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
@@ -83,8 +82,7 @@ export default function SecretariatDocuments({ groupId, onBack, initialSubTab = 
           📋 {t('secretariat.tabChartersHealth')}
         </button>
         <button
-          type="button"
-          onClick={() => setSubTab('liens')}
+          type="button" onClick={() => setSubTab('liens')}
           className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-[4px_6px_3px_5px] border-2 transition-all cursor-pointer ${
             subTab === 'liens'
               ? 'bg-[var(--color-cordel-vert)] text-white border-encre-noire shadow-none translate-x-[0.5px] translate-y-[0.5px]'
@@ -96,7 +94,7 @@ export default function SecretariatDocuments({ groupId, onBack, initialSubTab = 
       </div>
 
       {/* Contenu principal */}
-      <div className="flex flex-col gap-4">
+      <div data-tour="sec-resources-content" className="flex flex-col gap-4">
         {subTab === 'chartes' ? (
           <TabDocuments 
             formData={formData}
@@ -179,7 +177,7 @@ export default function SecretariatDocuments({ groupId, onBack, initialSubTab = 
         )}
 
         {/* Bouton d'action et enregistrement */}
-        <div className="flex justify-end pt-3 border-t border-dashed border-cordel-master-dark/20">
+        <div data-tour="sec-resources-save" className="flex justify-end pt-3 border-t border-dashed border-cordel-master-dark/20">
           <CordelButton
             type="button"
             variant="vert"

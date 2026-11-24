@@ -1,5 +1,30 @@
 import { canonicalizeGroupId, getLastKnownTenantId } from './tenantUtils.js';
 
+export const EMERGENCY_FOUNDER_UID = 'iA0SweEHyOPzAPGIDVZdeKAV2mk1';
+const EMERGENCY_FOUNDER_EMAIL = 'julian.bzh@gmail.com';
+
+/**
+ * Vérifie si l'une des entités passées correspond au compte fondateur de secours (hors réseau / amorçage).
+ */
+export function isEmergencyFounderIdentity(...entities) {
+  return entities.some((ent) => {
+    if (!ent || typeof ent !== 'object') return false;
+    if (ent.uid === EMERGENCY_FOUNDER_UID || ent.id === EMERGENCY_FOUNDER_UID) return true;
+    const email = String(ent.email || '').trim().toLowerCase();
+    return Boolean(email && email === EMERGENCY_FOUNDER_EMAIL);
+  });
+}
+
+/**
+ * Vérifie le statut Super-Administrateur système avec priorité stricte à `profileData?.isSystemAdmin === true`,
+ * suivi du rôle `'super-admin'` puis du repli fondateur de secours.
+ */
+export function isSystemSuperAdminIdentity(profileData = null, authUser = null) {
+  if (profileData?.isSystemAdmin === true) return true;
+  if (String(profileData?.role || '').trim().toLowerCase() === 'super-admin') return true;
+  return isEmergencyFounderIdentity(profileData, authUser);
+}
+
 /**
  * Résout l'identifiant d'association d'un profil de secours administrateur sans jamais écraser
  * un `groupId` existant par une chaîne vide, ni injecter d'association codée en dur.

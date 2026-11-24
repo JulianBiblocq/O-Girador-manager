@@ -99,12 +99,12 @@ export default function CollectiveKitsManager({ groupId, user, profileData }) {
       {loading ? (
         <p className="text-xs italic text-neutral-500 py-6 text-center">Chargement des mallettes régie...</p>
       ) : kits.length === 0 ? (
-        <CordelCard variant="default" useExtremeBorder={false} className="py-6 px-4 text-center">
-          <span className="text-3xl block mb-2">🧰</span>
-          <p className="text-xs font-bold text-neutral-700">
-            {t('logistics.emptyCollectiveKitsNotice')}
-          </p>
-        </CordelCard>
+        <div data-tour="kits-grid">
+          <CordelCard variant="default" useExtremeBorder={false} className="py-6 px-4 text-center">
+            <span data-tour="kits-status-badge" className="text-3xl inline-block mb-2">🧰</span>
+            <p className="text-xs font-bold text-neutral-700">{t('logistics.emptyCollectiveKitsNotice')}</p>
+          </CordelCard>
+        </div>
       ) : (
         <div data-tour="kits-grid" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
           {kits.map((kit, kitIdx) => {
@@ -120,7 +120,7 @@ export default function CollectiveKitsManager({ groupId, user, profileData }) {
                       <span className="text-lg">{icon}</span>
                       <strong className="text-xs text-cordel-wood truncate">{kit.nom}</strong>
                     </div>
-                    <span {...(kitIdx === 0 ? { 'data-tour': 'kits-status-badge' } : {})} className={`text-[9px] font-black uppercase px-2 py-0.5 rounded border shrink-0 ${badgeClasses}`}>
+                    <span data-tour={kitIdx === 0 ? "kits-status-badge" : undefined} className={`text-[9px] font-black uppercase px-2 py-0.5 rounded border shrink-0 ${badgeClasses}`}>
                       {health.color === 'green' ? '✅ ' : health.color === 'red' ? '🚨 ' : '⚠️ '}{health.label}
                     </span>
                   </div>

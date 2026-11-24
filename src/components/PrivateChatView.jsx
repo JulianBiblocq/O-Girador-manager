@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { collection, query, where, onSnapshot, addDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import CordelButton from './CordelButton';
-import CordelCard from './CordelCard';
 import XiloAvatar from './XiloAvatar';
 import { useTerminologie } from '../hooks/useTerminologie';
 import { useTranslation } from './LanguageContext';
@@ -11,40 +10,28 @@ import useHardwareBack from '../hooks/useHardwareBack';
 import EmojiPickerPopover, { EmojiQuickRow } from './forum/EmojiPickerPopover';
 import GroupMembersModal from './forum/GroupMembersModal';
 import PrivateChatHeader from './forum/PrivateChatHeader';
+import PrivateChatModals from './forum/PrivateChatModals';
 import ChatComposerPlusMenu from './forum/ChatComposerPlusMenu';
 import { useConversationMessages } from '../hooks/useConversationMessages';
 import { uploadChatAttachment } from '../utils/attachmentUploadUtils';
 import { dispatchInAppAndPushNotification, NOTIFICATION_TYPES } from '../utils/inAppNotificationService';
-import VoiceDictationButton from './common/VoiceDictationButton';
 import MessageReadReceipt from './forum/MessageReadReceipt';
 import ChatYouTubePreview from './forum/ChatYouTubePreview';
 import { isMessageReadByAll, shouldMarkConversationAsRead, getTimestampMs } from '../utils/readReceiptUtils';
 import { isGeneralGroupConversation, resolveZapDisplayName } from '../utils/generalGroupChatUtils';
 
 /**
- * Composant PrivateChatView
- * Vue complète pour les échanges de discussion privée (Tête-à-tête direct ou Boucle de groupe).
- * Intègre les citations de réponse, les réactions emojis, l'envoi direct de photos (WebP compressé) et la gestion des participants pour les groupes.
+ * Composant PrivateChatView : discussion privée (1-à-1, Groupe ou Le Zap) avec saut direct vers un message recherché.
  */
 export default function PrivateChatView({ 
-  user, 
-  conversation, 
-  recipientId, 
-  otherUser, 
-  profileData, 
-  usersMap = {}, 
-  initialText = '', 
-  onClose, 
-  onBack,
-  onMarkAsRead,
-  onAddParticipants,
-  onRemoveParticipant,
-  onRenameGroup,
-  onLeaveGroup,
-  isSystemAdmin = false
+  user, conversation, recipientId, otherUser, profileData, usersMap = {}, initialText = '',
+  onClose, onBack, onMarkAsRead, onAddParticipants, onRemoveParticipant, onRenameGroup, onLeaveGroup,
+  isSystemAdmin = false, highlightMessageId = null, highlightMessageDoc = null,
+  onClearHighlightMessage = null, onOpenSearch = null
 }) {
   const { tRole } = useTerminologie();
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
+  const bcp47 = locale === 'pt' ? 'pt-BR' : 'fr-FR';
   const { confirm } = useConfirm();
   const conversationId = conversation?.id;
   const groupId = profileData?.groupId || conversation?.groupId || '';
@@ -59,30 +46,26 @@ export default function PrivateChatView({
   const [editingMessage, setEditingMessage] = useState(null);
   const [editText, setEditText] = useState('');
   const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
+  const [highlightedId, setHighlightedId] = useState(highlightMessageId || null);
   const messagesEndRef = useRef(null);
   const attachmentInputRef = useRef(null);
   const privateChatInputRef = useRef(null);
 
-  // Interception du bouton retour matériel (Android / navigateur)
   useHardwareBack(Boolean(conversationId || recipientId), () => {
     if (onBack) onBack();
     else if (onClose) onClose();
   });
 
-  // Verrouillage étanche du défilement global de la fenêtre (anti-double scroll)
   useEffect(() => {
-    const originalBodyOverflow = document.body.style.overflow;
-    const originalHtmlOverflow = document.documentElement.style.overflow;
-    const originalBodyOverscroll = document.body.style.overscrollBehavior;
-
+    const origBody = document.body.style.overflow, origHtml = document.documentElement.style.overflow;
+    const origOver = document.body.style.overscrollBehavior;
     document.body.style.overflow = 'hidden';
     document.documentElement.style.overflow = 'hidden';
     document.body.style.overscrollBehavior = 'none';
-
     return () => {
-      document.body.style.overflow = originalBodyOverflow;
-      document.documentElement.style.overflow = originalHtmlOverflow;
-      document.body.style.overscrollBehavior = originalBodyOverscroll;
+      document.body.style.overflow = origBody;
+      document.documentElement.style.overflow = origHtml;
+      document.body.style.overscrollBehavior = origOver;
     };
   }, []);
 
@@ -153,9 +136,9 @@ export default function PrivateChatView({
       return resolveZapDisplayName(effectiveConversation?.name, zapLabel);
     }
     if (isGroup) {
-      return effectiveConversation?.name || 'Groupe Privé';
+      return effectiveConversation?.name || t('forumExtra.privateGroupDefault', 'Groupe Privé');
     }
-    return `${effectiveOtherUser?.prenom || ''} ${effectiveOtherUser?.nom || ''}`.trim() || effectiveOtherUser?.email || "Membre";
+    return `${effectiveOtherUser?.prenom || ''} ${effectiveOtherUser?.nom || ''}`.trim() || effectiveOtherUser?.email || t('common.member', 'Membre');
   }, [isGeneralGroup, isGroup, effectiveConversation?.name, effectiveOtherUser, t]);
 
   // 2. Gestion des messages via le hook useConversationMessages
@@ -187,13 +170,12 @@ export default function PrivateChatView({
   // Suppression d'un de ses propres messages
   const handleDeleteMessage = async (msg) => {
     if (!isMsgAuthor(msg)) return;
-
     const ok = await confirm({
-      title: "Supprimer le message",
-      message: "Êtes-vous sûr de vouloir supprimer définitivement ce message ?",
-      confirmText: "Supprimer",
-      cancelText: "Annuler",
-      confirmVariant: "danger"
+      title: t('forumExtra.deleteMessageTitle', 'Supprimer le message'),
+      message: t('forumExtra.deleteMessagePrompt', 'Êtes-vous sûr de vouloir supprimer définitivement ce message ?'),
+      confirmText: t('common.delete', 'Supprimer'),
+      cancelText: t('common.cancel', 'Annuler'),
+      confirmVariant: 'danger'
     });
     if (!ok) return;
 
@@ -205,7 +187,7 @@ export default function PrivateChatView({
       }
     } catch (err) {
       console.error("PrivateChatView - Erreur lors de la suppression du message :", err);
-      alert("Erreur lors de la suppression du message : " + (err.message || err));
+      alert(t('forumExtra.errDeleteMessage', { error: err.message || err }));
     }
   };
 
@@ -239,7 +221,7 @@ export default function PrivateChatView({
       setEditText('');
     } catch (err) {
       console.error("PrivateChatView - Erreur lors de la modification du message :", err);
-      alert("Erreur lors de la modification du message : " + (err.message || err));
+      alert(t('forumExtra.errEditMessage', { error: err.message || err }));
     } finally {
       setIsSubmittingEdit(false);
     }
@@ -316,85 +298,72 @@ export default function PrivateChatView({
     };
   }, [isGroup, user?.uid, effectiveOtherUser?.id]);
 
-  // 4. Fusion unifiée des messages modernes et historiques (sans doublons, tri chronologique)
+  // 4. Fusion unifiée des messages modernes, historiques et du message ciblé par la recherche
   const activeMessages = useMemo(() => {
-    if (isGroup) {
-      return convMessages;
-    }
-
-    // Pour une discussion 1-à-1, combiner les messages de conversation_messages et private_messages
     const combined = [...convMessages];
-    const modernLegacyIds = new Set(
-      convMessages.map((m) => m.legacyMessageId || m.id).filter(Boolean)
-    );
-    const modernSignatures = new Set(
-      convMessages.map((m) => `${m.senderId}_${m.timestamp}_${m.content}`)
-    );
-
-    legacyMessages.forEach((legacyMsg) => {
-      const sig = `${legacyMsg.senderId}_${legacyMsg.timestamp}_${legacyMsg.content}`;
-      if (!modernLegacyIds.has(legacyMsg.id) && !modernSignatures.has(sig)) {
-        combined.push({
-          ...legacyMsg,
-          isLegacy: true,
-          senderName:
-            legacyMsg.senderName ||
-            (legacyMsg.senderId === user?.uid
-              ? (profileData?.prenom ? `${profileData.prenom} ${profileData.nom || ''}`.trim() : user.displayName || 'Membre')
-              : (effectiveOtherUser?.prenom
-                  ? `${effectiveOtherUser.prenom} ${effectiveOtherUser.nom || ''}`.trim()
-                  : effectiveOtherUser?.email || 'Membre')),
-          senderAvatar:
-            legacyMsg.senderAvatar ||
-            (legacyMsg.senderId === user?.uid
-              ? (profileData?.photoURL || user?.photoURL || '')
-              : (effectiveOtherUser?.photoURL || ''))
-        });
-      }
-    });
-
-    combined.sort((a, b) => new Date(a.timestamp || 0).getTime() - new Date(b.timestamp || 0).getTime());
-    return combined;
-  }, [isGroup, convMessages, legacyMessages, user?.uid, profileData, effectiveOtherUser]);
-
-  // Acquittement sécurisé de lecture de la conversation (avec garde-fou anti-boucle d'écriture)
-  const lastMarkedTimestampRef = useRef(0);
-
-  useEffect(() => {
-    if (!conversationId || !user?.uid) return;
-
-    const shouldMark = shouldMarkConversationAsRead({
-      activeMessages,
-      currentUserId: user.uid,
-      readStatus: effectiveReadStatus
-    });
-
-    if (shouldMark) {
-      const lastMsg = activeMessages[activeMessages.length - 1];
-      const lastMsgTime = getTimestampMs(
-        lastMsg?.timestamp || lastMsg?.dateCreation || lastMsg?.createdAt
-      );
-
-      if (lastMsgTime > lastMarkedTimestampRef.current) {
-        lastMarkedTimestampRef.current = lastMsgTime;
-        if (onMarkAsRead) {
-          onMarkAsRead(conversationId);
-        } else {
-          const nowIso = new Date().toISOString();
-          updateDoc(doc(db, 'conversations', conversationId), {
-            [`readStatus.${user.uid}`]: nowIso
-          }).catch((err) => {
-            console.warn('PrivateChatView - Erreur actualisation readStatus :', err);
+    if (!isGroup) {
+      const modernLegacyIds = new Set(convMessages.map((m) => m.legacyMessageId || m.id).filter(Boolean));
+      const modernSignatures = new Set(convMessages.map((m) => `${m.senderId}_${m.timestamp}_${m.content}`));
+      legacyMessages.forEach((legacyMsg) => {
+        const sig = `${legacyMsg.senderId}_${legacyMsg.timestamp}_${legacyMsg.content}`;
+        if (!modernLegacyIds.has(legacyMsg.id) && !modernSignatures.has(sig)) {
+          const isSelf = legacyMsg.senderId === user?.uid;
+          const fallbackName = isSelf
+            ? (profileData?.prenom ? `${profileData.prenom} ${profileData.nom || ''}`.trim() : user.displayName || 'Membre')
+            : (effectiveOtherUser?.prenom ? `${effectiveOtherUser.prenom} ${effectiveOtherUser.nom || ''}`.trim() : effectiveOtherUser?.email || 'Membre');
+          combined.push({
+            ...legacyMsg,
+            isLegacy: true,
+            senderName: legacyMsg.senderName || fallbackName,
+            senderAvatar: legacyMsg.senderAvatar || (isSelf ? (profileData?.photoURL || user?.photoURL || '') : (effectiveOtherUser?.photoURL || ''))
           });
         }
+      });
+    }
+    if (highlightMessageDoc?.id && !combined.some((m) => m.id === highlightMessageDoc.id)) {
+      combined.push(highlightMessageDoc);
+    }
+    combined.sort((a, b) => new Date(a.timestamp || 0).getTime() - new Date(b.timestamp || 0).getTime());
+    return combined;
+  }, [isGroup, convMessages, legacyMessages, highlightMessageDoc, user, profileData, effectiveOtherUser]);
+
+  // Acquittement sécurisé de lecture de la conversation
+  const lastMarkedTimestampRef = useRef(0);
+  useEffect(() => {
+    if (!conversationId || !user?.uid) return;
+    if (shouldMarkConversationAsRead({ activeMessages, currentUserId: user.uid, readStatus: effectiveReadStatus })) {
+      const lastMsg = activeMessages[activeMessages.length - 1];
+      const lastMsgTime = getTimestampMs(lastMsg?.timestamp || lastMsg?.dateCreation || lastMsg?.createdAt);
+      if (lastMsgTime > lastMarkedTimestampRef.current) {
+        lastMarkedTimestampRef.current = lastMsgTime;
+        if (onMarkAsRead) onMarkAsRead(conversationId);
+        else updateDoc(doc(db, 'conversations', conversationId), { [`readStatus.${user.uid}`]: new Date().toISOString() }).catch(() => {});
       }
     }
   }, [conversationId, activeMessages, effectiveReadStatus, user?.uid, onMarkAsRead]);
 
-  // Défilement automatique vers le bas
+  // Défilement automatique vers le bas (suspendu lors d'un saut de recherche vers un message précis)
   useEffect(() => {
+    if (highlightedId || highlightMessageId) return;
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [activeMessages]);
+  }, [activeMessages, highlightedId, highlightMessageId]);
+
+  // Saut direct et halo temporaire (2,5 s) vers le message trouvé par la recherche unifiée
+  useEffect(() => {
+    if (!highlightMessageId) return undefined;
+    setHighlightedId(highlightMessageId);
+    const scrollTimer = setTimeout(() => {
+      document.getElementById(`chat-msg-${highlightMessageId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 160);
+    const clearTimer = setTimeout(() => {
+      setHighlightedId(null);
+      if (onClearHighlightMessage) onClearHighlightMessage();
+    }, 2600);
+    return () => {
+      clearTimeout(scrollTimer);
+      clearTimeout(clearTimer);
+    };
+  }, [highlightMessageId, activeMessages.length, onClearHighlightMessage]);
 
   // Notification Push et In-App pour les messages legacy 1-à-1
   const notifyLegacyRecipient = async (textSnippet) => {
@@ -448,7 +417,7 @@ export default function PrivateChatView({
       setReplyingTo(null);
     } catch (err) {
       console.error("PrivateChatView - Erreur lors de l'envoi du message :", err);
-      alert("Erreur lors de l'envoi du message : " + (err.message || err));
+      alert(t('forumExtra.errSendMessage', { error: err.message || err }));
     } finally {
       setSending(false);
     }
@@ -460,7 +429,7 @@ export default function PrivateChatView({
     if (!file) return;
 
     if (file.size > 30 * 1024 * 1024) {
-      alert("Le fichier est trop volumineux (maximum 30 Mo).");
+      alert(t('forumExtra.errFileTooLarge30Mb', 'Le fichier est trop volumineux (maximum 30 Mo).'));
       return;
     }
 
@@ -524,18 +493,17 @@ export default function PrivateChatView({
       }
     } catch (err) {
       console.error("PrivateChatView - Erreur lors de l'envoi de la pièce jointe :", err);
-      alert("Erreur lors de l'envoi du fichier : " + (err.message || err));
+      alert(t('forumExtra.errUploadAttachment', { error: err.message || err }));
     } finally {
       setIsUploadingAttachment(false);
       if (attachmentInputRef.current) attachmentInputRef.current.value = '';
     }
   };
 
-
   const formatMessageTime = (isoString) => {
     const d = new Date(isoString);
     if (isNaN(d.getTime())) return '';
-    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return d.toLocaleTimeString(bcp47, { hour: '2-digit', minute: '2-digit' });
   };
 
   const handleBackClick = () => {
@@ -548,16 +516,11 @@ export default function PrivateChatView({
       
       {/* 1. En-tête de la discussion (shrink-0) */}
       <PrivateChatHeader
-        isGroup={isGroup}
-        isGeneralGroup={isGeneralGroup}
-        headerTitle={headerTitle}
-        effectiveOtherUser={effectiveOtherUser}
-        effectiveParticipantIds={effectiveParticipantIds}
-        totalUsersCount={Object.keys(usersMap).length}
-        tRole={tRole}
-        t={t}
-        onBackClick={handleBackClick}
-        onOpenMembersModal={() => setIsMembersModalOpen(true)}
+        isGroup={isGroup} isGeneralGroup={isGeneralGroup} headerTitle={headerTitle}
+        effectiveOtherUser={effectiveOtherUser} effectiveParticipantIds={effectiveParticipantIds}
+        totalUsersCount={Object.keys(usersMap).length} tRole={tRole} t={t}
+        onBackClick={handleBackClick} onOpenMembersModal={() => setIsMembersModalOpen(true)}
+        onOpenSearch={onOpenSearch}
       />
 
       {/* 2. Zone des messages : unique zone autorisée à défiler verticalement */}
@@ -566,19 +529,22 @@ export default function PrivateChatView({
           <div className="flex-1 flex flex-col justify-center items-center opacity-50 select-none">
             <span className="text-xl mb-2">{isGroup ? '👥' : '✉️'}</span>
             <span className="text-[10px] font-bold uppercase tracking-wider">
-              {isGroup ? 'Boucle créée ! Envoyez le premier message au groupe.' : 'Aucun message. Lancez la discussion !'}
+              {isGroup ? t('forumExtra.emptyGroupLoop', 'Boucle créée ! Envoyez le premier message au groupe.') : t('forumExtra.emptyDirectLoop', 'Aucun message. Lancez la discussion !')}
             </span>
           </div>
         ) : (
           activeMessages.map((msg) => {
             const isMe = isMsgAuthor(msg);
-            const senderProfile = usersMap[msg.senderId] || { prenom: msg.senderName || 'Membre' };
-            const senderDisplayName = msg.senderName || `${senderProfile.prenom || ''} ${senderProfile.nom || ''}`.trim() || 'Membre';
+            const defaultMember = t('common.member', 'Membre');
+            const senderProfile = usersMap[msg.senderId] || { prenom: msg.senderName || defaultMember };
+            const senderDisplayName = msg.senderName || `${senderProfile.prenom || ''} ${senderProfile.nom || ''}`.trim() || defaultMember;
+            const isHighlighted = highlightedId === msg.id;
 
             return (
               <div 
                 key={msg.id}
-                className={`flex flex-col w-full ${isMe ? 'items-end' : 'items-start'}`}
+                id={`chat-msg-${msg.id}`}
+                className={`flex flex-col w-full transition-all duration-300 ${isMe ? 'items-end' : 'items-start'} ${isHighlighted ? 'ring-2 ring-[var(--color-cordel-ocre)] bg-amber-100/50 rounded-lg p-1.5' : ''}`}
               >
                 {/* Nom et avatar de l'expéditeur dans les groupes pour les messages reçus */}
                 {isGroup && !isMe && (
@@ -620,11 +586,11 @@ export default function PrivateChatView({
                       <div 
                         className="mt-1 mb-1 rounded-[6px_8px_6px_7px] overflow-hidden border-2 border-encre-noire shadow-[2px_2px_0px_0px_#181716] cursor-pointer bg-black/10 group/img relative max-w-[240px] sm:max-w-[300px]"
                         onClick={() => setLightboxUrl(msg.imageUrl)}
-                        title="Cliquer pour afficher la photo en grand format"
+                        title={t('forumExtra.clickToZoomPhoto', 'Cliquer pour afficher la photo en grand format')}
                       >
                         <img
                           src={msg.thumbnailUrl || msg.imageUrl}
-                          alt={msg.mediaName || "Photo partagée"}
+                          alt={msg.mediaName || t('forum.sharedPhotoAlt', 'Photo partagée')}
                           loading="lazy"
                           decoding="async"
                           onError={(e) => {
@@ -635,7 +601,7 @@ export default function PrivateChatView({
                           className="w-full max-h-60 object-cover object-center block group-hover/img:scale-105 transition-transform duration-200"
                         />
                         <div className="absolute inset-0 bg-black/30 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1 select-none">
-                          <span>🔍 Agrandir</span>
+                          <span>{t('forumExtra.zoomBtn', '🔍 Agrandir')}</span>
                         </div>
                       </div>
                     )}
@@ -652,11 +618,11 @@ export default function PrivateChatView({
                               ? 'bg-amber-100/25 text-cordel-bg-light border-white/60 hover:bg-amber-100/35'
                               : 'bg-cordel-bg text-encre-noire border-encre-noire hover:bg-amber-50'
                           }`}
-                          title="Télécharger / Ouvrir la pièce jointe"
+                          title={t('forumExtra.downloadAttachmentTitle', 'Télécharger / Ouvrir la pièce jointe')}
                         >
                           <span className="text-sm shrink-0">📄</span>
                           <span className="truncate max-w-[190px] underline decoration-dashed">
-                            {msg.fileName || 'Document joint'}
+                            {msg.fileName || t('forumExtra.attachedDocDefault', 'Document joint')}
                           </span>
                           <span className="text-[10px] opacity-75 shrink-0 font-mono">↗</span>
                         </a>
@@ -678,15 +644,15 @@ export default function PrivateChatView({
                           type="button"
                           onClick={() => setReplyingTo({
                             id: msg.id,
-                            senderName: isMe ? 'Vous' : senderDisplayName,
-                            content: msg.content || (msg.imageUrl ? '📷 Photo' : (msg.fileUrl ? `📎 ${msg.fileName || 'Fichier'}` : ''))
+                            senderName: isMe ? t('common.you', 'Vous') : senderDisplayName,
+                            content: msg.content || (msg.imageUrl ? t('forumExtra.photoLabel', '📷 Photo') : (msg.fileUrl ? `📎 ${msg.fileName || t('common.file', 'Fichier')}` : ''))
                           })}
                           className={`text-[9px] font-bold cursor-pointer ${
                             isMe ? 'text-white/80 hover:text-white' : 'text-cordel-master-dark/70 hover:text-encre-noire'
                           }`}
-                          title="Répondre à ce message"
+                          title={t('forumExtra.replyTooltip', 'Répondre à ce message')}
                         >
-                          ↩️ Répondre
+                          {t('forumExtra.replyBtn', '↩️ Répondre')}
                         </button>
 
                         {/* Édition et suppression réservées exclusivement à l'auteur du message */}
@@ -697,18 +663,18 @@ export default function PrivateChatView({
                                 type="button"
                                 onClick={() => handleStartEdit(msg)}
                                 className="text-[9px] font-bold cursor-pointer text-amber-200 hover:text-white transition-colors"
-                                title="Modifier ce message"
+                                title={t('forumExtra.editTooltip', 'Modifier ce message')}
                               >
-                                ✏️ Éditer
+                                {t('forumExtra.editBtn', '✏️ Éditer')}
                               </button>
                             )}
                             <button
                               type="button"
                               onClick={() => handleDeleteMessage(msg)}
                               className="text-[9px] font-bold cursor-pointer text-red-200 hover:text-red-100 transition-colors"
-                              title="Supprimer ce message"
+                              title={t('forumExtra.deleteTooltip', 'Supprimer ce message')}
                             >
-                              🗑️ Supprimer
+                              {t('forumExtra.deleteBtn', '🗑️ Supprimer')}
                             </button>
                           </>
                         )}
@@ -717,7 +683,7 @@ export default function PrivateChatView({
                       <div className="flex items-center gap-1 shrink-0">
                         {msg.isEdited && (
                           <span className={`text-[7px] italic font-semibold ${isMe ? 'text-white/70' : 'text-encre-noire/60'}`}>
-                            (modifié)
+                            {t('forumExtra.editedTag', '(modifié)')}
                           </span>
                         )}
                         <span className={`text-[8px] font-black uppercase text-right opacity-60 ${
@@ -762,7 +728,7 @@ export default function PrivateChatView({
                                 ? 'bg-amber-200 border-encre-noire font-black shadow-xs scale-105'
                                 : 'bg-white/80 border-cordel-master-dark/20 text-encre-noire hover:bg-amber-50'
                             }`}
-                            title={`${uids.length} réaction(s)`}
+                            title={t('forumExtra.reactionsCountTooltip', { count: uids.length })}
                           >
                             <span>{emoji}</span>
                             <span className="text-[8px]">{uids.length}</span>
@@ -780,7 +746,7 @@ export default function PrivateChatView({
                         type="button"
                         onClick={() => toggleConvReaction && toggleConvReaction(msg.id, emoji)}
                         className="text-xs hover:scale-125 transition-transform p-0.5 cursor-pointer"
-                        title={`Réagir avec ${emoji}`}
+                        title={t('forumExtra.reactWithTooltip', { emoji })}
                       >
                         {emoji}
                       </button>
@@ -802,14 +768,14 @@ export default function PrivateChatView({
         {replyingTo && (
           <div className="mb-2 p-1.5 bg-amber-100/90 border border-encre-noire rounded flex items-center justify-between text-[10px]">
             <div className="flex items-center gap-1.5 min-w-0 flex-1">
-              <span className="font-bold text-cordel-wood shrink-0">↩️ En réponse à {replyingTo.senderName} :</span>
+              <span className="font-bold text-cordel-wood shrink-0">{t('forumExtra.replyingToPrefix', { name: replyingTo.senderName })}</span>
               <span className="truncate italic text-cordel-master-dark">{replyingTo.content}</span>
             </div>
             <button
               type="button"
               onClick={() => setReplyingTo(null)}
               className="text-xs font-bold text-cordel-wood hover:text-red-700 px-1 cursor-pointer shrink-0"
-              title="Annuler la réponse"
+              title={t('forumExtra.cancelReplyTooltip', 'Annuler la réponse')}
             >
               ✕
             </button>
@@ -819,7 +785,7 @@ export default function PrivateChatView({
         {/* Ligne d'accès direct aux émoticônes fréquents */}
         <div className="flex items-center gap-1.5 px-1 pb-1.5">
           <span className="text-[8px] font-black uppercase text-cordel-wood opacity-75 shrink-0">
-            Émojis :
+            {t('forumExtra.emojisLabel', 'Émojis :')}
           </span>
           <EmojiQuickRow
             onSelectEmoji={(emoji) => setInputText(prev => (prev || '') + emoji)}
@@ -882,7 +848,7 @@ export default function PrivateChatView({
               isGeneralGroup
                 ? (t?.('forum.zapPlaceholder') && t('forum.zapPlaceholder') !== 'forum.zapPlaceholder' ? t('forum.zapPlaceholder') : 'Écrire sur le Zap...')
                 : isGroup
-                  ? `Message au groupe ${conversation?.name || ''}...`
+                  ? t('forumExtra.groupMessagePlaceholder', { name: conversation?.name || '' })
                   : (t?.('forum.writeMessagePlaceholder') || 'Rédiger un message...')
             }
             disabled={sending}
@@ -895,7 +861,7 @@ export default function PrivateChatView({
             disabled={sending || !inputText.trim()}
             className="px-4 py-2 text-[10px] font-black uppercase tracking-wider min-h-[38px] shrink-0 mb-0.5"
           >
-            Envoyer
+            {t('common.send', 'Envoyer')}
           </CordelButton>
         </form>
       </div>
@@ -916,117 +882,20 @@ export default function PrivateChatView({
         />
       )}
 
-      {/* Lightbox d'agrandissement d'une photo partagée */}
-      {lightboxUrl && (
-        <div 
-          className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in select-none"
-          onClick={() => setLightboxUrl(null)}
-        >
-          <div className="relative max-w-4xl max-h-[90vh] flex flex-col items-center">
-            <img 
-              src={lightboxUrl} 
-              alt="Photo en grand format" 
-              className="max-w-full max-h-[82vh] object-contain rounded border-2 border-white shadow-2xl" 
-            />
-            <div className="flex items-center gap-3 mt-3">
-              <a 
-                href={lightboxUrl} 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="text-xs font-bold text-white bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded border border-white/40"
-                onClick={(e) => e.stopPropagation()}
-              >
-                Ouvrir l'original ↗
-              </a>
-              <button 
-                type="button" 
-                onClick={() => setLightboxUrl(null)}
-                className="text-xs font-bold text-white bg-[var(--color-cordel-rouge,#8b2a1a)] hover:brightness-110 px-3 py-1.5 rounded border border-white/40 cursor-pointer"
-              >
-                ✕ Fermer
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* Modale d'édition d'un message */}
-      {editingMessage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-encre-noire/70 backdrop-blur-sm animate-fade-in select-none">
-          <div className="relative w-full max-w-md">
-            <CordelCard variant="default" useExtremeBorder={true} className="p-5 flex flex-col gap-4 text-left bg-cordel-bg">
-              <div className="flex justify-between items-start border-b-2 border-dashed border-cordel-master-dark/25 pb-2">
-                <h3 className="font-heading font-black text-base text-encre-noire tracking-wider uppercase">
-                  ✏️ Modifier mon message
-                </h3>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditingMessage(null);
-                    setEditText('');
-                  }}
-                  className="text-base font-extrabold text-cordel-wood hover:text-red-600 cursor-pointer"
-                >
-                  ✕
-                </button>
-              </div>
-
-              <form onSubmit={handleSaveEdit} className="flex flex-col gap-4">
-                <div className="flex flex-col gap-1 text-left">
-                  <div className="flex items-center justify-between">
-                    <label className="text-[10px] font-black uppercase text-cordel-master-dark">
-                      Nouveau texte *
-                    </label>
-                    <VoiceDictationButton
-                      size="sm"
-                      onTranscript={(spokenText) => {
-                        setEditText(prev => {
-                          const trimmed = (prev || '').trim();
-                          return trimmed ? `${trimmed} ${spokenText}` : spokenText;
-                        });
-                      }}
-                      disabled={isSubmittingEdit}
-                      title="Dicter la modification à la voix"
-                    />
-                  </div>
-                  <textarea
-                    value={editText}
-                    onChange={(e) => setEditText(e.target.value)}
-                    disabled={isSubmittingEdit}
-                    placeholder="Votre message..."
-                    rows={4}
-                    className="theme-input text-xs font-medium p-2.5 bg-cordel-bg-light resize-none w-full"
-                    autoFocus
-                  />
-                </div>
-
-                <div className="flex justify-end gap-2 pt-3 border-t border-dashed border-cordel-master-dark/20">
-                  <CordelButton
-                    type="button"
-                    variant="default"
-                    onClick={() => {
-                      setEditingMessage(null);
-                      setEditText('');
-                    }}
-                    disabled={isSubmittingEdit}
-                    className="py-2 px-4 text-xs font-bold uppercase"
-                  >
-                    Annuler
-                  </CordelButton>
-                  <CordelButton
-                    type="submit"
-                    variant="ocre"
-                    useExtremeBorder={true}
-                    disabled={isSubmittingEdit || !editText.trim()}
-                    className="py-2 px-4 text-xs font-black uppercase tracking-wider"
-                  >
-                    {isSubmittingEdit ? "Enregistrement..." : "Enregistrer"}
-                  </CordelButton>
-                </div>
-              </form>
-            </CordelCard>
-          </div>
-        </div>
-      )}
+      <PrivateChatModals
+        lightboxUrl={lightboxUrl}
+        onCloseLightbox={() => setLightboxUrl(null)}
+        editingMessage={editingMessage}
+        editText={editText}
+        setEditText={setEditText}
+        isSubmittingEdit={isSubmittingEdit}
+        onSaveEdit={handleSaveEdit}
+        onCancelEdit={() => {
+          setEditingMessage(null);
+          setEditText('');
+        }}
+        t={t}
+      />
     </div>
   );
 }

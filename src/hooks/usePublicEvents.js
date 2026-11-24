@@ -18,26 +18,26 @@ export function usePublicEvents(groupId = null) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    setLoading(true);
+    const cleanGroupId = canonicalizeGroupId(groupId);
+    if (!cleanGroupId) {
+      setUpcomingEvents([]);
+      setPastEvents([]);
+      setEvents([]);
+      setError(null);
+      setLoading(false);
+      return;
+    }
 
+    setLoading(true);
     const safetyTimer = setTimeout(() => {
       setLoading(false);
     }, 2500);
 
-    const cleanGroupId = canonicalizeGroupId(groupId);
-    let q;
-    if (cleanGroupId) {
-      q = query(
-        collection(db, 'events'),
-        where('groupId', '==', cleanGroupId),
-        where('isPublic', '==', true)
-      );
-    } else {
-      q = query(
-        collection(db, 'events'),
-        where('isPublic', '==', true)
-      );
-    }
+    const q = query(
+      collection(db, 'events'),
+      where('groupId', '==', cleanGroupId),
+      where('isPublic', '==', true)
+    );
 
     const unsubscribe = onSnapshot(
       q,

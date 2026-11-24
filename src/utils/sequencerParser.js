@@ -165,8 +165,8 @@ export const detectAlfaiaSticks = (alfaiaTrackData, options = {}) => {
   const question = {
     id: options.id || `qcm_materiel_alfaia_${options.pieceId || 'piece'}`,
     type: 'materiel_alfaia',
-    instruction: options.t ? options.t('pedagogyQuiz.alfaiaSticksInstruction', 'Matériel & Baguettes') : 'Matériel & Baguettes',
-    questionText: options.t ? options.t('pedagogyQuiz.alfaiaSticksQuestion', questionText, { pieceTitle }) : questionText,
+    instruction: options.t ? (options.t('pedagogyQuiz.alfaiaSticksInstruction') || 'Matériel & Baguettes') : 'Matériel & Baguettes',
+    questionText: (options.t && pieceTitle) ? (options.t('pedagogyQuiz.alfaiaSticksQuestion', { pieceTitle }) || questionText) : questionText,
     choices,
     correctAnswer,
     correctAnswerExplanation: `Pour ce morceau, l'Alfaia se joue avec ${correctAnswer.toLowerCase()}.`,

@@ -1,14 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { collection, query, where, getDocs, doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, onSnapshot, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { XiloCompass } from '../XiloIcons';
 import { useSequencerFirestoreData } from '../../hooks/useSequencerFirestoreData';
 
-// New Sub-components
+// Sous-composants Mon Parcours
 import MonCarnetAisance from './MonCarnetAisance';
 import AtelierEntrainement from './AtelierEntrainement';
 import RodaQuizStatsBanner from './RodaQuizStatsBanner';
-import MonParcoursGuideBanner from './MonParcoursGuideBanner';
 import { useTranslation } from '../LanguageContext';
 
 export default function MonParcours({ profileData, sequenceurUrl, enabledModules = {} }) {
@@ -57,7 +56,7 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
     if (!groupId || !userId) return;
 
     // 1. Récupérer Evaluations et Demandes de révision en temps réel
-    const parcoursRef = doc(db, 'users', userId, 'parcours', groupId || 'default');
+    const parcoursRef = doc(db, 'users', userId, 'parcours', groupId);
     const unsubEval = onSnapshot(parcoursRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
@@ -140,10 +139,11 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
   }, [groupId, userId]);
 
   const handleSetEvaluation = async (itemId, level) => {
+    if (!groupId || !userId) return;
     setSaving(true);
     try {
       const newEvals = { ...evaluations, [itemId]: level };
-      const parcoursRef = doc(db, 'users', userId, 'parcours', groupId || 'default');
+      const parcoursRef = doc(db, 'users', userId, 'parcours', groupId);
       await setDoc(parcoursRef, { evaluations: newEvals }, { merge: true });
     } catch (error) {
       console.error("Error saving evaluation:", error);
@@ -154,24 +154,16 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
 
   // Bascule 1-clic de demande de révision par l'élève (atomique, sans boîte de dialogue)
   const handleToggleRevisionDemandee = async (itemId) => {
+    if (!groupId || !userId) return;
     try {
       const currentVal = !!revisionsDemandees[itemId];
       const newVal = !currentVal;
-      // Mise à jour optimiste locale immédiate
       setRevisionsDemandees(prev => ({ ...prev, [itemId]: newVal }));
-      const parcoursRef = doc(db, 'users', userId, 'parcours', groupId || 'default');
-      const { updateDoc } = await import('firebase/firestore');
+      const parcoursRef = doc(db, 'users', userId, 'parcours', groupId);
       try {
-        await updateDoc(parcoursRef, {
-          [`revisionsDemandees.${itemId}`]: newVal
-        });
+        await updateDoc(parcoursRef, { [`revisionsDemandees.${itemId}`]: newVal });
       } catch {
-        // Repli avec setDoc merge si le document n'est pas encore initialisé
-        await setDoc(parcoursRef, {
-          revisionsDemandees: {
-            [itemId]: newVal
-          }
-        }, { merge: true });
+        await setDoc(parcoursRef, { revisionsDemandees: { [itemId]: newVal } }, { merge: true });
       }
     } catch (error) {
       console.error("Erreur lors de la demande de révision :", error);
@@ -188,19 +180,20 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
         <p className="text-xs md:text-sm text-cordel-master-dark opacity-80 text-center max-w-2xl">
           {t('pedagogy.myJourneySubtitle')}
         </p>
-        <MonParcoursGuideBanner />
       </div>
 
       {/* Tableau de bord compact des résultats Roda Quiz & Défis en direct */}
-      <RodaQuizStatsBanner profileData={profileData} />
+      <div data-tour="mon-parcours-stats">
+        <RodaQuizStatsBanner profileData={profileData} />
+      </div>
 
-      {/* Switch Vues Principales */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full border-b-2 border-dashed border-cordel-master-dark/30 pb-6 mb-4">
+      {/* Commutateur des 2 vues principales */}
+      <div data-tour="mon-parcours-switch" className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full border-b-2 border-dashed border-cordel-master-dark/30 pb-6 mb-4">
         <button
           onClick={() => setMainView('CARNET')}
           className={`w-full px-6 py-3 text-sm md:text-base font-black uppercase tracking-widest rounded-lg transition-all border-2 cursor-pointer ${
             mainView === 'CARNET'
-              ? 'border-cordel-wood bg-cordel-wood text-[#fdfaf2] shadow-[4px_4px_0px_0px_#181716] -translate-y-0.5' 
+              ? 'border-cordel-wood bg-cordel-wood text-[var(--theme-bg)] shadow-[4px_4px_0px_0px_#181716] -translate-y-0.5'
               : 'border-encre-noire/20 text-encre-noire/60 bg-white hover:border-encre-noire/50 hover:text-encre-noire'
           }`}
         >
@@ -212,7 +205,7 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
           onClick={() => setMainView('ATELIER')}
           className={`w-full px-6 py-3 text-sm md:text-base font-black uppercase tracking-widest rounded-lg transition-all border-2 cursor-pointer ${
             mainView === 'ATELIER'
-              ? 'border-[var(--theme-primary)] bg-[var(--theme-primary)] text-[#fdfaf2] shadow-[4px_4px_0px_0px_#181716] -translate-y-0.5' 
+              ? 'border-[var(--theme-primary)] bg-[var(--theme-primary)] text-[var(--theme-bg)] shadow-[4px_4px_0px_0px_#181716] -translate-y-0.5'
               : 'border-encre-noire/20 text-encre-noire/60 bg-white hover:border-encre-noire/50 hover:text-encre-noire'
           }`}
         >
@@ -221,34 +214,21 @@ export default function MonParcours({ profileData, sequenceurUrl, enabledModules
         </button>
       </div>
 
-      {/* Vues */}
-      <div className="mt-4">
+      {/* Contenu actif */}
+      <div data-tour="mon-parcours-content" className="mt-4">
         {mainView === 'CARNET' ? (
-          <MonCarnetAisance 
-            evaluations={evaluations}
-            handleSetEvaluation={handleSetEvaluation}
-            revisionsDemandees={revisionsDemandees}
-            handleToggleRevisionDemandee={handleToggleRevisionDemandee}
-            rhythms={visibleRhythms}
-            rhythmsJsonData={rhythmsJsonData}
-            rhythmsMetadata={rhythmsMetadata}
-            songs={songs}
-            educationalSheets={educationalSheets}
-            repertoire={repertoire}
-            sequenceurUrl={sequenceurUrl}
-            enabledModules={enabledModules}
-            profileData={profileData}
+          <MonCarnetAisance
+            evaluations={evaluations} handleSetEvaluation={handleSetEvaluation}
+            revisionsDemandees={revisionsDemandees} handleToggleRevisionDemandee={handleToggleRevisionDemandee}
+            rhythms={visibleRhythms} rhythmsJsonData={rhythmsJsonData} rhythmsMetadata={rhythmsMetadata}
+            songs={songs} educationalSheets={educationalSheets} repertoire={repertoire}
+            sequenceurUrl={sequenceurUrl} enabledModules={enabledModules} profileData={profileData}
           />
         ) : (
-          <AtelierEntrainement 
-            profileData={profileData}
-            songs={songs}
-            educationalSheets={educationalSheets}
-            rhythms={visibleRhythms}
-            rhythmsJsonData={rhythmsJsonData}
-            rhythmsMetadata={rhythmsMetadata}
-            sequenceurUrl={sequenceurUrl}
-            qcmGlobalConfig={qcmGlobalConfig}
+          <AtelierEntrainement
+            profileData={profileData} songs={songs} educationalSheets={educationalSheets}
+            rhythms={visibleRhythms} rhythmsJsonData={rhythmsJsonData} rhythmsMetadata={rhythmsMetadata}
+            sequenceurUrl={sequenceurUrl} qcmGlobalConfig={qcmGlobalConfig}
           />
         )}
       </div>

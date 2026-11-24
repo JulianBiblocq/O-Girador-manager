@@ -40,7 +40,7 @@ export default function MonAtelier({ user, profileData, onBack, initialSubTab = 
   return (
     <div className="flex flex-col gap-5 w-full max-w-none">
       {/* En-tête de l'Atelier Cordel */}
-      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b-2 border-dashed border-cordel-master-dark/30 pb-3">
+      <div data-tour="atelier-header" className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b-2 border-dashed border-cordel-master-dark/30 pb-3">
         <div className="text-left">
           <div className="flex items-center gap-2">
             <span className="text-2xl">🛠️</span>
@@ -64,7 +64,7 @@ export default function MonAtelier({ user, profileData, onBack, initialSubTab = 
       </div>
 
       {/* Barre de navigation des sous-onglets d'atelier */}
-      <div className="flex items-center gap-2 border-b border-stone-200 overflow-x-auto pb-1">
+      <div data-tour="atelier-subtabs" className="flex items-center gap-2 border-b border-stone-200 overflow-x-auto pb-1">
         {subTabs.map(tab => {
           const isActive = activeSubTab === tab.id;
           return (
@@ -85,7 +85,7 @@ export default function MonAtelier({ user, profileData, onBack, initialSubTab = 
       </div>
 
       {/* Contenu du sous-onglet sélectionné */}
-      <div className="mt-1">
+      <div data-tour="atelier-content" className="mt-1">
         {activeSubTab === 'instruments' && isLutherieActive && (
           <StudentInstrumentsWorkshop
             user={user}

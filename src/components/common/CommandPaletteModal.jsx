@@ -1,37 +1,17 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { SETTINGS_INDEX } from '../../config/settingsSearchIndex';
+import {
+  SETTINGS_INDEX,
+  normalizeSearchToken,
+  resolveSearchText,
+  resolvePoleDisplayLabel
+} from '../../config/settingsSearchIndex';
 import { canAccessPole, canAccessTabPermission } from '../../utils/permissionUtils';
+import { isSystemSuperAdminIdentity } from '../../utils/founderFallbackUtils';
+import { useTranslation } from '../LanguageContext';
 
 /**
- * Normalise une chaîne de caractères en minuscules et sans accents
- * pour faciliter les recherches textuelles insensibles aux accents.
- * 
- * @param {string} text - Chaîne brute
- * @returns {string} - Chaîne normalisée
- */
-function normalizeText(text) {
-  if (!text || typeof text !== 'string') return '';
-  return text
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .trim();
-}
-
-/**
- * Composant : CommandPaletteModal
- * 
- * Palette de commande universelle (Spotlight / Raycast) pour O Girador.
- * Accessible via le raccourci Ctrl + K ou le bouton loupe dans l'en-tête.
- * Filtrage 100 % local et sécurisé selon les badges et permissions du profil connecté.
- * 
- * @param {boolean} isOpen - Indique si la modale est affichée
- * @param {Function} onClose - Callback de fermeture
- * @param {Function} onNavigate - Callback de navigation : (poleId, tabId) => void
- * @param {Object} profileData - Données du profil connecté
- * @param {Object} permissionsMatrice - Matrice des permissions de l'association
- * @param {Array} userTags - Étiquettes / badges effectifs de l'utilisateur
- * @param {boolean} [breakGlassActive=false] - Mode intervention d'urgence actif
+ * Palette de commande rapide bilingue (FR / PT-BR) dans Organizador (`Ctrl + K`).
+ * Filtrage 100 % local selon les permissions effectives du membre et affichage sans aucun mot de code.
  */
 export default function CommandPaletteModal({
   isOpen,
@@ -42,54 +22,33 @@ export default function CommandPaletteModal({
   userTags = [],
   breakGlassActive = false
 }) {
+  const { t, locale, i18n } = useTranslation();
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef(null);
   const listRef = useRef(null);
 
-  // 1. Autofocus et réinitialisation de l'état lors de l'ouverture
+  const activeLang = (typeof i18n !== 'undefined' && i18n?.language) || locale || 'fr';
+  const isPt = activeLang === 'pt' || String(activeLang).toLowerCase().startsWith('pt');
+
   useEffect(() => {
-    if (isOpen) {
-      setQuery('');
-      setSelectedIndex(0);
-      // Temporisation légère pour s'assurer du rendu complet avant le focus
-      const timer = setTimeout(() => {
-        inputRef.current?.focus();
-      }, 50);
-      return () => clearTimeout(timer);
-    }
+    if (!isOpen) return undefined;
+    setQuery('');
+    setSelectedIndex(0);
+    const timer = setTimeout(() => inputRef.current?.focus(), 50);
+    return () => clearTimeout(timer);
   }, [isOpen]);
 
-  // 2. Filtrage des entrées autorisées selon les droits de l'utilisateur
   const authorizedItems = useMemo(() => {
     if (!profileData) return [];
-
-    const isSuperAdmin = Boolean(
-      profileData?.isSystemAdmin ||
-      profileData?.role === 'super-admin' ||
-      profileData?.role === 'mestre' ||
-      profileData?.uid === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1' ||
-      profileData?.id === 'iA0SweEHyOPzAPGIDVZdeKAV2mk1'
-    );
+    const isSuperAdmin = Boolean(isSystemSuperAdminIdentity(profileData) || profileData?.role === 'mestre');
 
     return SETTINGS_INDEX.filter((item) => {
-      // Vérification spécifique pour les réglages système exclusifs
-      if (item.requiredPermission === 'systemAdmin') {
-        return isSuperAdmin;
+      if (item.requiredPermission === 'systemAdmin') return isSuperAdmin;
+      if (canAccessPole(item.requiredPole, profileData, permissionsMatrice, userTags, breakGlassActive)) {
+        return true;
       }
-
-      // Vérification des droits d'accès au pôle parent ou à l'onglet spécifique
-      const hasPoleAccess = canAccessPole(
-        item.requiredPole,
-        profileData,
-        permissionsMatrice,
-        userTags,
-        breakGlassActive
-      );
-
-      if (hasPoleAccess) return true;
-
-      const hasTabAccess = canAccessTabPermission(
+      return canAccessTabPermission(
         item.tabId,
         item.requiredPole,
         profileData,
@@ -97,72 +56,56 @@ export default function CommandPaletteModal({
         userTags,
         breakGlassActive
       );
-
-      return hasTabAccess;
     });
   }, [profileData, permissionsMatrice, userTags, breakGlassActive]);
 
-  // 3. Filtrage en direct selon le texte recherché
   const filteredItems = useMemo(() => {
-    const cleanQuery = normalizeText(query);
-    if (!cleanQuery) {
-      return authorizedItems;
-    }
-
+    const cleanQuery = normalizeSearchToken(query);
+    if (!cleanQuery) return authorizedItems;
     const queryTokens = cleanQuery.split(/\s+/).filter(Boolean);
 
     return authorizedItems.filter((item) => {
-      const normalizedTitle = normalizeText(item.title);
-      const normalizedDesc = normalizeText(item.description);
-      const normalizedPole = normalizeText(item.poleId);
-      const normalizedKeywords = (item.keywords || []).map(normalizeText).join(' ');
+      const frTitle = normalizeSearchToken(resolveSearchText(item.title, false));
+      const ptTitle = normalizeSearchToken(resolveSearchText(item.title, true));
+      const frDesc = normalizeSearchToken(resolveSearchText(item.description, false));
+      const ptDesc = normalizeSearchToken(resolveSearchText(item.description, true));
+      const poleLabel = normalizeSearchToken(resolvePoleDisplayLabel(item.poleId, t, isPt));
+      const kwList = Array.isArray(item.keywords)
+        ? item.keywords
+        : [...(item.keywords?.fr || []), ...(item.keywords?.pt || [])];
+      const kwText = kwList.map(normalizeSearchToken).join(' ');
 
-      const combinedSearchSpace = `${normalizedTitle} ${normalizedDesc} ${normalizedPole} ${normalizedKeywords}`;
-
-      // Toutes les sous-mots-clés de la recherche doivent être présents
-      return queryTokens.every((token) => combinedSearchSpace.includes(token));
+      const haystack = `${frTitle} ${ptTitle} ${frDesc} ${ptDesc} ${poleLabel} ${kwText}`;
+      return queryTokens.every((token) => haystack.includes(token));
     });
-  }, [authorizedItems, query]);
+  }, [authorizedItems, query, t, isPt]);
 
-  // Réinitialiser la sélection active si la liste change
   useEffect(() => {
     setSelectedIndex(0);
   }, [filteredItems.length, query]);
 
-  // Défilement automatique dans la liste pour suivre la sélection au clavier
   useEffect(() => {
     if (listRef.current && listRef.current.children[selectedIndex]) {
-      listRef.current.children[selectedIndex].scrollIntoView({
-        block: 'nearest',
-        behavior: 'smooth'
-      });
+      listRef.current.children[selectedIndex].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     }
   }, [selectedIndex]);
 
-  // Exécution de la navigation vers la destination sélectionnée
   const handleSelect = (item) => {
     if (!item) return;
     onClose();
-    if (onNavigate) {
-      onNavigate(item.poleId, item.tabId);
-    }
+    if (onNavigate) onNavigate(item.poleId, item.tabId);
   };
 
-  // Gestion des touches du clavier (Navigation & Validation)
   const handleKeyDown = (e) => {
     if (e.key === 'Escape') {
       e.preventDefault();
       onClose();
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
-      if (filteredItems.length > 0) {
-        setSelectedIndex((prev) => (prev + 1) % filteredItems.length);
-      }
+      if (filteredItems.length > 0) setSelectedIndex((prev) => (prev + 1) % filteredItems.length);
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      if (filteredItems.length > 0) {
-        setSelectedIndex((prev) => (prev - 1 + filteredItems.length) % filteredItems.length);
-      }
+      if (filteredItems.length > 0) setSelectedIndex((prev) => (prev - 1 + filteredItems.length) % filteredItems.length);
     } else if (e.key === 'Enter') {
       e.preventDefault();
       if (filteredItems.length > 0 && filteredItems[selectedIndex]) {
@@ -173,23 +116,27 @@ export default function CommandPaletteModal({
 
   if (!isOpen) return null;
 
+  const countLabel =
+    filteredItems.length <= 1
+      ? t('commandPalette.resultsSingular', { count: filteredItems.length })
+      : t('commandPalette.resultsPlural', { count: filteredItems.length });
+
   return (
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Palette de commande"
+      aria-label={t('commandPalette.ariaLabel')}
       tabIndex={-1}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
-      className="fixed inset-0 z-[100] flex items-start justify-center pt-14 sm:pt-20 p-3 sm:p-4 bg-black/65 backdrop-blur-xs animate-fade-in select-none outline-hidden"
+      className="fixed inset-0 z-[100] flex items-start justify-center pt-14 sm:pt-20 p-3 sm:p-4 bg-encre-noire/65 backdrop-blur-xs animate-fade-in select-none outline-hidden"
     >
-      <div 
-        className="max-w-xl w-full bg-[var(--color-cordel-papier,#f4ecd8)] text-encre-noire border-2 border-encre-noire rounded-[8px_12px_10px_9px] shadow-[6px_6px_0px_0px_#181716] overflow-hidden flex flex-col animate-scale-up"
+      <div
+        className="max-w-xl w-full bg-cordel-card-bg text-encre-noire border-2 border-encre-noire rounded-[8px_12px_10px_9px] shadow-[6px_6px_0px_0px_#181716] overflow-hidden flex flex-col animate-scale-up"
         onKeyDown={handleKeyDown}
       >
-        {/* Barre de recherche avec icône loupe */}
-        <div className="flex items-center gap-3 px-4 py-3.5 border-b-2 border-dashed border-cordel-master-dark/25 bg-white/60">
+        <div className="flex items-center gap-3 px-4 py-3.5 border-b-2 border-dashed border-cordel-master-dark/25 bg-cordel-bg-light">
           <span className="text-base sm:text-lg text-cordel-master-dark/75 select-none" aria-hidden="true">
             🔍
           </span>
@@ -199,8 +146,9 @@ export default function CommandPaletteModal({
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Rechercher un réglage, un pôle, une fonction..."
-            className="flex-1 bg-transparent text-xs sm:text-sm font-bold text-encre-noire placeholder:text-cordel-master-dark/50 placeholder:font-normal focus:outline-hidden"
+            placeholder={t('commandPalette.searchPlaceholder')}
+            aria-label={t('commandPalette.searchPlaceholder')}
+            className="flex-1 bg-transparent text-xs sm:text-sm font-bold text-encre-noire placeholder:text-cordel-master-dark/55 placeholder:font-normal focus:outline-hidden"
             autoComplete="off"
             spellCheck="false"
           />
@@ -213,36 +161,32 @@ export default function CommandPaletteModal({
                 inputRef.current?.focus();
               }}
               className="text-xs font-bold text-cordel-master-dark/60 hover:text-encre-noire px-1.5 py-0.5 rounded cursor-pointer"
-              title="Effacer la recherche"
+              title={t('commandPalette.clearSearchTitle')}
+              aria-label={t('commandPalette.clearSearchTitle')}
             >
               ✕
             </button>
           )}
 
-          <kbd className="hidden sm:inline-flex items-center gap-1 text-[9px] font-mono font-bold text-cordel-master-dark/65 bg-stone-200/80 px-1.5 py-0.5 rounded border border-cordel-master-dark/20 shadow-2xs">
-            Échap
+          <kbd className="hidden sm:inline-flex items-center gap-1 text-[9px] font-mono font-bold text-cordel-master-dark/70 bg-cordel-bg px-1.5 py-0.5 rounded border border-cordel-master-dark/20 shadow-2xs">
+            {t('commandPalette.escKey')}
           </kbd>
         </div>
 
-        {/* Liste des résultats filtrés */}
-        <div
-          ref={listRef}
-          role="listbox"
-          className="max-h-72 sm:max-h-80 overflow-y-auto p-2 flex flex-col gap-1 custom-scrollbar"
-        >
+        <div ref={listRef} role="listbox" className="max-h-72 sm:max-h-80 overflow-y-auto p-2 flex flex-col gap-1 custom-scrollbar">
           {filteredItems.length === 0 ? (
-            <div className="py-10 px-4 text-center flex flex-col items-center justify-center gap-1.5 text-cordel-master-dark/70">
+            <div className="py-10 px-4 text-center flex flex-col items-center justify-center gap-1.5 text-cordel-master-dark/75">
               <span className="text-2xl mb-1">📜</span>
-              <p className="text-xs font-bold text-encre-noire">
-                Aucun paramètre trouvé
-              </p>
-              <p className="text-[11px] max-w-xs">
-                Aucun réglage ne correspond à « <span className="font-semibold italic">{query}</span> » ou à vos droits d'accès.
-              </p>
+              <p className="text-xs font-bold text-encre-noire">{t('commandPalette.emptyTitle')}</p>
+              <p className="text-[11px] max-w-xs">{t('commandPalette.emptyDesc', { query })}</p>
             </div>
           ) : (
             filteredItems.map((item, index) => {
               const isSelected = index === selectedIndex;
+              const displayTitle = resolveSearchText(item.title, isPt);
+              const displayDesc = resolveSearchText(item.description, isPt);
+              const displayPole = resolvePoleDisplayLabel(item.poleId, t, isPt);
+
               return (
                 <div
                   key={item.id}
@@ -252,30 +196,22 @@ export default function CommandPaletteModal({
                   onMouseEnter={() => setSelectedIndex(index)}
                   className={`px-3 py-2.5 rounded-[4px_6px_3px_5px] cursor-pointer transition-all flex items-center justify-between gap-3 border ${
                     isSelected
-                      ? 'bg-amber-100/90 border-cordel-wood shadow-xs translate-x-0.5'
-                      : 'bg-transparent border-transparent hover:bg-white/50'
+                      ? 'bg-cordel-bg border-cordel-wood shadow-xs translate-x-0.5'
+                      : 'bg-transparent border-transparent hover:bg-cordel-bg/60'
                   }`}
                 >
                   <div className="flex flex-col min-w-0 flex-1 text-left">
-                    <div className="flex items-center gap-2">
-                      <span className={`text-xs font-black tracking-wide ${isSelected ? 'text-cordel-wood' : 'text-encre-noire'}`}>
-                        {item.title}
-                      </span>
-                    </div>
-                    <p className="text-[10px] text-cordel-master-dark/75 font-medium truncate mt-0.5">
-                      {item.description}
-                    </p>
+                    <span className={`text-xs font-black tracking-wide ${isSelected ? 'text-cordel-wood' : 'text-encre-noire'}`}>
+                      {displayTitle}
+                    </span>
+                    <p className="text-[10px] text-cordel-master-dark/75 font-medium truncate mt-0.5">{displayDesc}</p>
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-[3px_5px_3px_4px] bg-white/80 border border-cordel-master-dark/20 text-cordel-master-dark">
-                      {item.poleId}
+                    <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-[3px_5px_3px_4px] bg-cordel-bg-light border border-cordel-master-dark/25 text-cordel-wood">
+                      {displayPole}
                     </span>
-                    {isSelected && (
-                      <span className="text-xs font-bold text-cordel-wood">
-                        ↵
-                      </span>
-                    )}
+                    {isSelected && <span className="text-xs font-bold text-cordel-wood">↵</span>}
                   </div>
                 </div>
               );
@@ -283,23 +219,24 @@ export default function CommandPaletteModal({
           )}
         </div>
 
-        {/* Pied de modale : Raccourcis et aide à la navigation */}
-        <div className="px-4 py-2 border-t border-dashed border-cordel-master-dark/20 bg-cordel-bg/80 flex items-center justify-between text-[10px] text-cordel-master-dark/70 font-semibold select-none">
-          <div className="flex items-center gap-3">
+        <div className="px-4 py-2 border-t border-dashed border-cordel-master-dark/20 bg-cordel-bg/80 flex items-center justify-between text-[10px] text-cordel-master-dark/75 font-semibold select-none">
+          <div className="flex items-center gap-3 flex-wrap">
             <span className="inline-flex items-center gap-1">
-              <kbd className="font-mono bg-white px-1 py-0.5 rounded border border-cordel-master-dark/20 shadow-2xs text-[8px]">↑</kbd>
-              <kbd className="font-mono bg-white px-1 py-0.5 rounded border border-cordel-master-dark/20 shadow-2xs text-[8px]">↓</kbd>
-              <span className="ml-0.5">Naviguer</span>
+              <kbd className="font-mono bg-cordel-bg-light px-1 py-0.5 rounded border border-cordel-master-dark/20 shadow-2xs text-[8px]">↑</kbd>
+              <kbd className="font-mono bg-cordel-bg-light px-1 py-0.5 rounded border border-cordel-master-dark/20 shadow-2xs text-[8px]">↓</kbd>
+              <span className="ml-0.5">{t('commandPalette.navHint')}</span>
             </span>
             <span className="inline-flex items-center gap-1">
-              <kbd className="font-mono bg-white px-1 py-0.5 rounded border border-cordel-master-dark/20 shadow-2xs text-[8px]">↵</kbd>
-              <span className="ml-0.5">Ouvrir</span>
+              <kbd className="font-mono bg-cordel-bg-light px-1 py-0.5 rounded border border-cordel-master-dark/20 shadow-2xs text-[8px]">{t('commandPalette.enterKey')}</kbd>
+              <span className="ml-0.5">{t('commandPalette.openHint')}</span>
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <kbd className="font-mono bg-cordel-bg-light px-1 py-0.5 rounded border border-cordel-master-dark/20 shadow-2xs text-[8px]">{t('commandPalette.escKey')}</kbd>
+              <span className="ml-0.5">{t('commandPalette.closeHint')}</span>
             </span>
           </div>
 
-          <div className="flex items-center gap-1">
-            <span className="opacity-75">{filteredItems.length} résultat{filteredItems.length > 1 ? 's' : ''}</span>
-          </div>
+          <span className="opacity-80 shrink-0">{countLabel}</span>
         </div>
       </div>
     </div>
