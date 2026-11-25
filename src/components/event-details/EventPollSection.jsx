@@ -18,9 +18,8 @@ import {
 import ReunionPrivacyBadge from '../agenda/ReunionPrivacyBadge';
 
 export default function EventPollSection({
-  event, user, profileData, onNavigateToEventId, onDeletePoll,
-  allUsers: propAllUsers, pupitresList = [], linkedInstruments = [],
-  effectiveUserTags = [], tagsDisponibles = []
+  event, user, profileData, onNavigateToEventId, onDeletePoll, allUsers: propAllUsers,
+  pupitresList = [], linkedInstruments = [], workshopPollOtherPupitresPolicy = 'reconfirm', effectiveUserTags = [], tagsDisponibles = []
 }) {
   const { confirm } = useConfirm();
   const [pollEvents, setPollEvents] = useState([]);
@@ -240,21 +239,10 @@ export default function EventPollSection({
   };
 
   // Hook dédié aux actions de validation et aux notifications automatiques In-App + Push FCM
-  const {
-    handleConfirmWinningOption,
-    handleConfirmSinglePupitreSlot,
-    handleConfirmPupitreDispatch
-  } = usePollDispatchActions({
-    db,
-    event,
-    pollEvents,
-    openPollEvents,
-    allUsersMap,
-    isSuperAdminOrMestre,
-    isProcessing,
-    setIsProcessing,
-    confirm,
-    formatDate
+  const { handleConfirmWinningOption, handleConfirmSinglePupitreSlot, handleConfirmPupitreDispatch } = usePollDispatchActions({
+    db, event, pollEvents, openPollEvents, allUsersMap, pupitresList, linkedInstruments,
+    defaultWorkshopPolicy: workshopPollOtherPupitresPolicy,
+    isSuperAdminOrMestre, isProcessing, setIsProcessing, confirm, formatDate
   });
 
   if (!event?.isPoll && event?.status !== 'sondage') return null;
@@ -366,16 +354,11 @@ export default function EventPollSection({
       {/* Tableau de synthèse Mestre & Matrice croisée (Dates x Pupitres) en mode répartition */}
       {!loading && isPupitreDispatch && (
         <PollPupitreDispatchPanel
-          pollEvents={openPollEvents}
-          allUsers={effectiveUsers}
-          targetPupitres={effectiveTargetPupitres}
-          pupitresList={pupitresList}
-          linkedInstruments={linkedInstruments}
-          isSuperAdminOrMestre={isSuperAdminOrMestre}
-          isProcessing={isProcessing}
-          formatDate={formatDate}
-          onConfirmSinglePupitre={handleConfirmSinglePupitreSlot}
-          onConfirmDispatch={handleConfirmPupitreDispatch}
+          pollEvents={openPollEvents} allUsers={effectiveUsers} targetPupitres={effectiveTargetPupitres}
+          pupitresList={pupitresList} linkedInstruments={linkedInstruments}
+          workshopPollOtherPupitresPolicy={workshopPollOtherPupitresPolicy}
+          isSuperAdminOrMestre={isSuperAdminOrMestre} isProcessing={isProcessing} formatDate={formatDate}
+          onConfirmSinglePupitre={handleConfirmSinglePupitreSlot} onConfirmDispatch={handleConfirmPupitreDispatch}
         />
       )}
     </CordelCard>

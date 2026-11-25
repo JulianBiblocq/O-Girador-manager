@@ -4,6 +4,7 @@
 // et notre gestionnaire n'est jamais exécuté !
 // -----------------------------------------------------------------------------
 const ALFAIA_MONO_BADGE_PATH = '/icons/badge-alfaia-mono.png';
+const ORGANIZADOR_ALFAIA_TAG = 'organizador-alfaia';
 
 self.addEventListener('notificationclick', (event) => {
   event.stopImmediatePropagation();
@@ -50,13 +51,40 @@ self.addEventListener('notificationclick', (event) => {
 });
 
 // Garantit que tout appel à showNotification (y compris l'affichage natif interne du SDK Firebase)
-// utilise systématiquement la silhouette monochrome du tambour Alfaia dans la barre d'état Android.
+// utilise systématiquement la silhouette monochrome du tambour Alfaia et le tag unique `organizador-alfaia`
+// avec `renotify: true` pour empêcher tout regroupement Android (`GroupSummary` carré translucide).
 if (self.registration && typeof self.registration.showNotification === 'function') {
   const nativeShowNotification = self.registration.showNotification.bind(self.registration);
-  self.registration.showNotification = (title, options = {}) => {
+  self.registration.showNotification = async (title, options = {}) => {
     const rawBadge = options && typeof options.badge === 'string' ? options.badge : '';
     const effectiveBadge = rawBadge.includes('badge-alfaia-mono.png') ? rawBadge : ALFAIA_MONO_BADGE_PATH;
-    return nativeShowNotification(title, Object.assign({}, options, { badge: effectiveBadge }));
+    const latestBody = options && typeof options.body === 'string' ? options.body : '';
+    let hadUnreadNotification = false;
+
+    if (typeof self.registration.getNotifications === 'function') {
+      try {
+        const existingNotifs = await self.registration.getNotifications({ tag: ORGANIZADOR_ALFAIA_TAG });
+        hadUnreadNotification = Array.isArray(existingNotifs) && existingNotifs.length > 0;
+      } catch (_) {
+        // Ignorer si l'API getNotifications n'est pas disponible sur cet environnement
+      }
+    }
+
+    // Conserve le dernier message reçu en corps principal (les alertes détaillées restent dans la cloche interne)
+    const nextData = Object.assign({}, (options && options.data) || {}, {
+      replacedUnread: hadUnreadNotification
+    });
+
+    return nativeShowNotification(
+      title,
+      Object.assign({}, options, {
+        body: latestBody,
+        badge: effectiveBadge,
+        tag: ORGANIZADOR_ALFAIA_TAG,
+        renotify: true,
+        data: nextData
+      })
+    );
   };
 }
 
@@ -89,16 +117,6 @@ messaging.onBackgroundMessage((payload) => {
   const iconUrl = payload.data?.icon || '/icon-192-v2.png';
   const badgeUrl = '/icons/badge-alfaia-mono.png';
 
-  const tag = payload.data?.tag || (
-    payload.data?.eventId
-      ? `notif_${payload.data.eventId}`
-      : (payload.data?.notifId
-        ? `notif_${payload.data.notifId}`
-        : (payload.data?.announcementId
-          ? `notif_${payload.data.announcementId}`
-          : (payload.data?.threadId ? `notif_${payload.data.threadId}` : undefined)))
-  );
-
   const rawNotifUrl = payload.data?.url || payload.fcmOptions?.link || '/app';
   const resolvedNotifUrl = (
     !rawNotifUrl.startsWith('http') &&
@@ -116,7 +134,8 @@ messaging.onBackgroundMessage((payload) => {
     icon: iconUrl,
     badge: badgeUrl,
     sound: '/sounds/notif.ogg',
-    ...(tag ? { tag } : {}),
+    tag: ORGANIZADOR_ALFAIA_TAG,
+    renotify: true,
     data: Object.assign({}, payload.data, { url: resolvedNotifUrl, icon: iconUrl })
   };
 

@@ -1,16 +1,16 @@
 /**
  * Construction du message FCM multicast (module extrait de index.js).
- * - `tag` déterministe (`notif_${eventId || queueDocId}`) sur Android, Web et APNs pour fusionner tout doublon.
+ * - `tag` applicatif unique `organizador-alfaia` (+ `renotify: true`) sur Android, Web et APNs afin d'afficher
+ *   toujours une seule icône Alfaia dans la barre d'état Android (zéro regroupement `GroupSummary` carré blanc).
  * - Pastille Android Terracotta `#8B2A1A`.
  * - Badge barre d'état Android : `https://organizador.o-girador.com/icons/badge-alfaia-mono.png`
  *   (silhouette tambour Alfaia monochrome `#FFFFFF` sur fond transparent `rgba(0,0,0,0)`).
  */
-const crypto = require("crypto");
-
 const ANDROID_NOTIFICATION_COLOR = "#8B2A1A";
 const ORGANIZADOR_PUBLIC_ORIGIN = "https://organizador.o-girador.com";
 const ANDROID_ALFAIA_BADGE_URL = `${ORGANIZADOR_PUBLIC_ORIGIN}/icons/badge-alfaia-mono.png`;
 const DEFAULT_PUSH_ICON_URL = `${ORGANIZADOR_PUBLIC_ORIGIN}/icon-192-v2.png`;
+const UNIFIED_ALFAIA_NOTIF_TAG = "organizador-alfaia";
 
 /** Normalise l'URL de navigation interne sous `/app`. */
 function resolveNotificationUrl(rawUrl) {
@@ -28,14 +28,11 @@ function resolveNotificationIconUrl(assoIcon) {
 }
 
 /**
- * Tag déterministe : identifiant métier (événement, annonce, fil, file d'attente) sinon empreinte stable
- * du contenu, de sorte que deux envois identiques se fusionnent en une seule alerte.
+ * Tag fixe unique au niveau de l'application pour remplacer l'alerte active dans la barre Android
+ * au lieu d'empiler plusieurs notifications déclenchant un `GroupSummary` carré translucide.
  */
-function buildNotifTag(data, { groupId, title, body, url }) {
-  const businessId = data.eventId || data.announcementId || data.threadId || data.notifId || data.queueDocId;
-  if (businessId) return `notif_${businessId}`;
-  const fingerprint = `${groupId || ""}|${title}|${body}|${url}`;
-  return `notif_${crypto.createHash("sha1").update(fingerprint).digest("hex").slice(0, 20)}`;
+function buildNotifTag() {
+  return UNIFIED_ALFAIA_NOTIF_TAG;
 }
 
 /** Assemble le message multicast FCM pour un lot de jetons. */
@@ -43,7 +40,7 @@ function buildMulticastMessage({ dataPayload, groupId, title, body, assoIcon, to
   const rawData = dataPayload || {};
   const url = resolveNotificationUrl(rawData.url);
   const iconUrl = resolveNotificationIconUrl(assoIcon);
-  const tag = buildNotifTag(rawData, { groupId, title, body, url });
+  const tag = buildNotifTag();
 
   const fcmStringData = {};
   Object.entries({
@@ -55,7 +52,8 @@ function buildMulticastMessage({ dataPayload, groupId, title, body, assoIcon, to
     groupId: groupId || "",
     icon: iconUrl,
     badge: ANDROID_ALFAIA_BADGE_URL,
-    tag
+    tag,
+    renotify: "true"
   }).forEach(([k, v]) => {
     if (v !== undefined && v !== null) fcmStringData[k] = typeof v === "string" ? v : String(v);
   });
@@ -71,7 +69,7 @@ function buildMulticastMessage({ dataPayload, groupId, title, body, assoIcon, to
       notification: { channelId: "default", sound: "default", color: ANDROID_NOTIFICATION_COLOR, tag }
     },
     apns: {
-      headers: { "apns-priority": "10", ...(tag.length <= 64 ? { "apns-collapse-id": tag } : {}) },
+      headers: { "apns-priority": "10", "apns-collapse-id": tag },
       payload: { aps: { sound: "default", "content-available": 1 } }
     },
     webpush: {
@@ -82,6 +80,7 @@ function buildMulticastMessage({ dataPayload, groupId, title, body, assoIcon, to
         icon: iconUrl,
         badge: ANDROID_ALFAIA_BADGE_URL,
         tag,
+        renotify: true,
         data: fcmStringData
       },
       fcmOptions: { link: url }
@@ -97,5 +96,6 @@ module.exports = {
   resolveNotificationUrl,
   resolveNotificationIconUrl,
   ANDROID_NOTIFICATION_COLOR,
-  ANDROID_ALFAIA_BADGE_URL
+  ANDROID_ALFAIA_BADGE_URL,
+  UNIFIED_ALFAIA_NOTIF_TAG
 };

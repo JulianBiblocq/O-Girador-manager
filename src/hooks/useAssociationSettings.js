@@ -262,6 +262,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t, initial
       agendaEnableCarpool: true,
       agendaEnableFinance: true,
       agendaEnableInscriptions: true,
+      workshopPollOtherPupitresPolicy: 'reconfirm',
       pupitresColors: { Mestre: '#8b2a1a' },
       saisonDebutMois: 9,
       exerciceDebutMois: 1,
@@ -306,11 +307,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t, initial
     logisticsKits: [],
     defaultDropUrl: '',
     // Configuration de la vidéo à la une sur le tableau de bord (Accueil)
-    videoALaUne: {
-      url: '',
-      titre: '',
-      active: false
-    },
+    videoALaUne: { url: '', titre: '', active: false },
     // Registre dynamique des playlists YouTube de l'association
     youtubePlaylists: [],
     youtubeApiKey: ''
@@ -567,6 +564,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t, initial
           agendaEnableCarpool: data.agendaEnableCarpool !== false,
           agendaEnableFinance: data.agendaEnableFinance !== false,
           agendaEnableInscriptions: data.agendaEnableInscriptions !== false,
+          workshopPollOtherPupitresPolicy: data.workshopPollOtherPupitresPolicy === 'strict' ? 'strict' : 'reconfirm',
           pupitresColors: data.pupitresColors || { Mestre: '#8b2a1a' },
           saisonDebutMois: data.saisonDebutMois !== undefined ? Number(data.saisonDebutMois) : 9,
           exerciceDebutMois: data.exerciceDebutMois !== undefined ? Number(data.exerciceDebutMois) : 1,
@@ -654,15 +652,9 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t, initial
           customEmailDomain: data.customEmailDomain || '',
           defaultDropUrl: data.defaultDropUrl || '',
           // Vidéo à la une pour le Dashboard
-          videoALaUne: data.videoALaUne ? {
-            url: data.videoALaUne.url || '',
-            titre: data.videoALaUne.titre || '',
-            active: Boolean(data.videoALaUne.active)
-          } : {
-            url: '',
-            titre: '',
-            active: false
-          },
+          videoALaUne: data.videoALaUne
+            ? { url: data.videoALaUne.url || '', titre: data.videoALaUne.titre || '', active: Boolean(data.videoALaUne.active) }
+            : { url: '', titre: '', active: false },
           youtubePlaylists: Array.isArray(data.youtubePlaylists) ? data.youtubePlaylists : [],
           youtubeApiKey: data.youtubeApiKey || ''
         }));
@@ -928,6 +920,7 @@ export function useAssociationSettings(groupId, isAuthorized, onBack, t, initial
         agendaEnableStageLayout: formData.agendaEnableStageLayout !== undefined ? formData.agendaEnableStageLayout : true,
         agendaEnableMaybeStatus: formData.agendaEnableMaybeStatus !== undefined ? formData.agendaEnableMaybeStatus : true,
         agendaEnableRevisionProgram: formData.agendaEnableRevisionProgram !== undefined ? formData.agendaEnableRevisionProgram : true,
+        workshopPollOtherPupitresPolicy: formData.workshopPollOtherPupitresPolicy === 'strict' ? 'strict' : 'reconfirm',
         eventTypes: formData.eventTypes || [],
         eventTypeConfigs: formData.eventTypeConfigs || {},
         wardrobeMemberMode: formData.wardrobeMemberMode || 'personal',

@@ -34,6 +34,7 @@ import TabRsvp from './event-details/tabs/TabRsvp';
 import TabLogistics from './event-details/tabs/TabLogistics';
 import TabProgram from './event-details/tabs/TabProgram';
 import TabAdmin from './event-details/tabs/TabAdmin';
+import WorkshopPendingReconfirmBanner from './event-details/WorkshopPendingReconfirmBanner';
 import useHardwareBack from '../hooks/useHardwareBack';
 import { triggerEventStatusAutomation } from '../utils/automationEngine';
 import { canonicalizeGroupId } from '../utils/tenantUtils';
@@ -41,17 +42,15 @@ import { parseDateLinear, formatGoogleCalendarDate, openGoogleCalendar } from '.
 import { isMemberArchived, getEffectiveMemberTags } from '../utils/memberUtils';
 import { isPastEvent } from '../utils/dateUtils';
 import { resolveReunionPrivacyConfig, canUserSeeReunionReportAndAgenda } from '../utils/reunionPrivacyUtils';
+import { resolveEventTargetPupitres } from '../utils/workshopSanctuaryUtils';
 import ReunionPrivacyBadge from './agenda/ReunionPrivacyBadge';
 
 export default function EventDetails({ event, user, profileData, groupId: propGroupId, onNavigateToView, onClose, onPrev, onNext, viewMode: _viewMode, setViewMode: _setViewMode, onGoToStageLayoutEditor }) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState(() => {
     if (typeof window !== 'undefined') {
-      const searchParams = new URLSearchParams(window.location.search);
-      const tabParam = searchParams.get('tab');
-      if (tabParam && ['rsvp', 'logistics', 'program', 'admin', 'discussion'].includes(tabParam)) {
-        return tabParam;
-      }
+      const tabParam = new URLSearchParams(window.location.search).get('tab');
+      if (tabParam && ['rsvp', 'logistics', 'program', 'admin', 'discussion'].includes(tabParam)) return tabParam;
     }
     return 'rsvp';
   });
@@ -306,22 +305,10 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
   useHardwareBack(() => setIsMoreMenuOpen(false), Boolean(isMoreMenuOpen));
 
   const {
-    setlist,
-    newMorceauTitre,
-    setNewMorceauTitre,
-    selectedCatalogRhythmUrl,
-    setSelectedCatalogRhythmUrl,
-    setNewMorceauJsonFile,
-    fileInputKey,
-    newMorceauNotes,
-    setNewMorceauNotes,
-    updatingSetlist,
-    handleAddMorceau,
-    handleAddRepertoirePiece,
-    handleRemoveMorceau,
-    handleAddDancadorChoreo,
-    handleRemoveDancadorChoreo,
-    dancadorChoreoIds
+    setlist, newMorceauTitre, setNewMorceauTitre, selectedCatalogRhythmUrl, setSelectedCatalogRhythmUrl,
+    setNewMorceauJsonFile, fileInputKey, newMorceauNotes, setNewMorceauNotes, updatingSetlist,
+    handleAddMorceau, handleAddRepertoirePiece, handleRemoveMorceau, handleAddDancadorChoreo,
+    handleRemoveDancadorChoreo, dancadorChoreoIds
   } = useEventSetlist(event);
 
   const [assocSequenceurUrl, setAssocSequenceurUrl] = useState('');
@@ -333,6 +320,7 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
   const [agendaEnableInscriptions, setAgendaEnableInscriptions] = useState(true);
   const [agendaEnableCarpool, setAgendaEnableCarpool] = useState(true);
   const [agendaEnableVolunteerShifts, setAgendaEnableVolunteerShifts] = useState(true);
+  const [workshopPollOtherPupitresPolicy, setWorkshopPollOtherPupitresPolicy] = useState('reconfirm');
   const [associationEventTypes, setAssociationEventTypes] = useState(['prestation', 'repetition', 'stage', 'atelier', 'reunion']);
   const [eventTypeConfigs, setEventTypeConfigs] = useState({});
   const [associationName, setAssociationName] = useState('');
@@ -439,48 +427,21 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
 
   // useEventRSVP hook
   const {
-    status,
-    setStatus,
-    transport,
-    demandeRemboursementKm,
-    setDemandeRemboursementKm,
-    besoinTransportInstrument,
-    setBesoinTransportInstrument,
-    saving,
-    instrumentChoisi,
-    setInstrumentChoisi,
-    isInstrumentLocked,
-    existingResponse,
-    selectedManualUserId,
-    setSelectedManualUserId,
-    selectedManualInstrument,
-    setSelectedManualInstrument,
-    isManualRegisterOpen,
-    setIsManualRegisterOpen,
-    savingManualRegistration,
-    handleStatusChange,
-    handleSave,
-    handleValidatePending,
-    handleManualRegister,
-    handleManualUnregister,
-    handleUpdateStatus,
-    handleUpdateMemberInstrument,
-    handleAddInviteExterne,
-    handleRemoveInviteExterne,
-    handleRequestRegistrationChange,
-    handleCancelRegistrationChangeRequest,
-    handleProcessRegistrationChangeRequest,
-    handleLateCancellation,
-    handleLateRegistration,
-    handleCancelLateRegistration,
-    dependents,
-    familyMembers,
-    familyResponses,
-    handleToggleFamilyMemberSelection,
-    handleFamilyMemberStatusChange,
-    handleFamilyMemberInstrumentChange,
-    handleFamilySave
-  } = useEventRSVP(sanitizedEvent, user, profileData, effectiveAllUsers, isMusicLevelRestricted, setToastMessage);
+    status, setStatus, transport, demandeRemboursementKm, setDemandeRemboursementKm,
+    besoinTransportInstrument, setBesoinTransportInstrument, saving, instrumentChoisi, setInstrumentChoisi,
+    isInstrumentLocked, existingResponse, selectedManualUserId, setSelectedManualUserId,
+    selectedManualInstrument, setSelectedManualInstrument, isManualRegisterOpen, setIsManualRegisterOpen,
+    savingManualRegistration, handleStatusChange, handleSave, handleValidatePending,
+    handleManualRegister, handleManualUnregister, handleUpdateStatus, handleUpdateMemberInstrument,
+    handleAddInviteExterne, handleRemoveInviteExterne, handleRequestRegistrationChange,
+    handleCancelRegistrationChangeRequest, handleProcessRegistrationChangeRequest,
+    handleLateCancellation, handleLateRegistration, handleCancelLateRegistration, handleWithdrawReconfirm,
+    dependents, familyMembers, familyResponses, handleToggleFamilyMemberSelection,
+    handleFamilyMemberStatusChange, handleFamilyMemberInstrumentChange, handleFamilySave
+  } = useEventRSVP(
+    sanitizedEvent, user, profileData, effectiveAllUsers, isMusicLevelRestricted, setToastMessage,
+    { workshopPolicy: workshopPollOtherPupitresPolicy, pupitresList, linkedInstruments }
+  );
 
   // useEventCarpool hook
   const {
@@ -576,12 +537,9 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
         setAgendaEnableInscriptions(data.agendaEnableInscriptions !== false);
         setAgendaEnableCarpool(data.agendaEnableCarpool !== false);
         setAgendaEnableVolunteerShifts(data.agendaEnableVolunteerShifts !== false);
+        setWorkshopPollOtherPupitresPolicy(data.workshopPollOtherPupitresPolicy === 'strict' ? 'strict' : 'reconfirm');
         setEventTypeConfigs(data.eventTypeConfigs || {});
-        if (Array.isArray(data.eventTypes) && data.eventTypes.length > 0) {
-          setAssociationEventTypes(data.eventTypes);
-        } else {
-          setAssociationEventTypes(['prestation', 'repetition', 'stage', 'atelier', 'reunion']);
-        }
+        setAssociationEventTypes(Array.isArray(data.eventTypes) && data.eventTypes.length > 0 ? data.eventTypes : ['prestation', 'repetition', 'stage', 'atelier', 'reunion']);
         setDressCodes(data.dressCodes || []);
         if (Array.isArray(data.customCategories) && data.customCategories.length > 0) {
           setCustomCategories(data.customCategories);
@@ -1897,6 +1855,7 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
             <EventPollSection
               event={event} user={user} profileData={profileData} allUsers={effectiveAllUsers}
               pupitresList={pupitresList} linkedInstruments={linkedInstruments}
+              workshopPollOtherPupitresPolicy={workshopPollOtherPupitresPolicy}
               effectiveUserTags={effectiveUserTags} tagsDisponibles={tagsDisponibles}
               onDeletePoll={isAuthorized ? handleDeleteEvent : undefined}
               onNavigateToEventId={(targetId) => {
@@ -1911,88 +1870,59 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
             />
           )}
 
-          {/* Bandeau de simulation adhérent local supprimé — le simulateur global de la navbar le remplace */}
+          {existingResponse?.status === 'pending_reconfirm' && sanitizedEvent.status !== 'sondage' && !sanitizedEvent.isPoll && (
+            <WorkshopPendingReconfirmBanner
+              pupitreLabel={resolveEventTargetPupitres(sanitizedEvent, pupitresList, linkedInstruments).join(' & ') || 'retenu'}
+              saving={saving}
+              onConfirmParticipation={() => handleSave(null, 'present', { horsPupitre: true })}
+              onWithdrawParticipation={handleWithdrawReconfirm}
+            />
+          )}
 
           {/* Bandeau d'Identification de l'Événement (Nom, Date & Lieu) */}
           <div className="w-full bg-cordel-bg-light/90 border-2 border-encre-noire rounded-[8px_12px_7px_10px] p-3.5 sm:p-4 shadow-[2.5px_2.5px_0px_0px_#181716] flex flex-col gap-2 relative overflow-hidden">
             <div className="flex flex-wrap items-center gap-2 select-none">
-              {/* Badge Type d'événement */}
-              <span className={`text-[9.5px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-[4px_6px_3px_5px] border shadow-xs ${typeInfo.className}`}>
-                {typeInfo.label}
-              </span>
-
-              {/* Badges Disciplines (Percu / Danse) */}
+              <span className={`text-[9.5px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-[4px_6px_3px_5px] border shadow-xs ${typeInfo.className}`}>{typeInfo.label}</span>
               <EventDisciplineBadges includesPercussion={event.includesPercussion} includesDance={event.includesDance} size="normal" />
-
-              {/* Badge de confidentialité pour les réunions */}
               <ReunionPrivacyBadge event={activeEvent || event} tagsDisponibles={tagsDisponibles} />
-
-              {/* Badges de Statut */}
               {event.status === 'a_confirmer' && (
-                <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-[var(--color-cordel-ocre,#c05621)] text-white border border-encre-noire shadow-xs">
-                  ⚠️ {t('agenda.confirm') || 'À confirmer'}
-                </span>
+                <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-[var(--color-cordel-ocre,#c05621)] text-white border border-encre-noire shadow-xs">⚠️ {t('agenda.confirm') || 'À confirmer'}</span>
               )}
               {event.status === 'annule' && (
-                <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-[var(--color-cordel-rouge,#8b2a1a)] text-white border border-encre-noire shadow-xs">
-                  🚫 {t('agenda.canceledStamp') || 'Annulé'}
-                </span>
+                <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-[var(--color-cordel-rouge,#8b2a1a)] text-white border border-encre-noire shadow-xs">🚫 {t('agenda.canceledStamp') || 'Annulé'}</span>
               )}
               {event.status === 'confirme' && event.wasConfirmedLater && (
-                <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-[var(--color-cordel-vert,#2d6a4f)] text-white border border-encre-noire shadow-xs">
-                  ✓ {t('agenda.confirmedStamp') || 'Validé'}
-                </span>
+                <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-[var(--color-cordel-vert,#2d6a4f)] text-white border border-encre-noire shadow-xs">✓ {t('agenda.confirmedStamp') || 'Validé'}</span>
               )}
               {event.niveauRequis === 'confirme' && (
-                <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 bg-amber-200 text-amber-900 border border-amber-400 rounded">
-                  ⭐ {t('agenda.reservedConfirmed') || 'Confirmés'}
-                </span>
+                <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 bg-amber-200 text-amber-900 border border-amber-400 rounded">⭐ {t('agenda.reservedConfirmed') || 'Confirmés'}</span>
               )}
             </div>
 
-            {/* Titre en grand style Cordel */}
             <h2 className="text-lg sm:text-xl md:text-2xl font-black text-encre-noire leading-snug break-words">
               {event.titre || event.title || t('eventDetails.unnamedEvent') || "Événement"}
             </h2>
 
-            {/* Date & Heure et Lieu */}
             <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-x-4 gap-y-1 text-xs font-bold text-cordel-master-dark/90 pt-0.5">
               <div className="flex items-center gap-1.5 text-cordel-wood font-extrabold">
-                <span>📅</span>
-                <span>{formatEventHeaderDate(event.date || event.dateDebut, event.dateFin, event.horairesPassages)}</span>
+                <span>📅</span> <span>{formatEventHeaderDate(event.date || event.dateDebut, event.dateFin, event.horairesPassages)}</span>
               </div>
               {event.lieu && (
                 <div className="flex items-center gap-1.5 text-encre-noire">
-                  <span>📍</span>
-                  <span className="truncate max-w-md" title={event.lieu}>{event.lieu}</span>
+                  <span>📍</span> <span className="truncate max-w-md" title={event.lieu}>{event.lieu}</span>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Section Médias & Captations (Dépôt Vidéo Adhérent & Restitution YouTube) */}
-          {canSeeReunionDetails && (
-            <EventMediaCaptureSection
-              event={activeEvent || event}
-              defaultDropUrl={defaultDropUrl}
-            />
-          )}
+          {canSeeReunionDetails && <EventMediaCaptureSection event={activeEvent || event} defaultDropUrl={defaultDropUrl} />}
 
-          {/* Navigation par Onglets Thématiques Cordel */}
           {canSeeReunionDetails && (
             <EventTabsNav
-              activeTab={activeTab}
-              setActiveTab={handleSelectTab}
-              canAccessAdminTab={canAccessAdminTab}
+              activeTab={activeTab} setActiveTab={handleSelectTab} canAccessAdminTab={canAccessAdminTab}
               attendeesCount={((sanitizedEvent.inscriptions || []).filter(ins => ins.status === 'present').length) + ((sanitizedEvent.invitesExternes || []).length)}
               carsCount={(event.covoiturage?.voitures || []).length}
-              hasProgram={Boolean(
-                (event.linkedPatterns && event.linkedPatterns.length > 0) ||
-                (setlist && setlist.length > 0) ||
-                event.isStageLayoutPublished ||
-                (event.volunteerShifts && event.volunteerShifts.length > 0) ||
-                ((event.type === 'atelier' || event.type === 'stage') && event.specialiteAtelier === 'fabrication')
-              )}
+              hasProgram={Boolean((event.linkedPatterns && event.linkedPatterns.length > 0) || (setlist && setlist.length > 0) || event.isStageLayoutPublished || (event.volunteerShifts && event.volunteerShifts.length > 0) || ((event.type === 'atelier' || event.type === 'stage') && event.specialiteAtelier === 'fabrication'))}
             />
           )}
 
@@ -2000,73 +1930,46 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
           <div className="mt-2">
             {((activeTab === 'rsvp' && (event.status !== 'sondage' || event.type === 'reunion')) || !canSeeReunionDetails) && (
               <TabRsvp
-                event={sanitizedEvent}
-                user={user}
-                profileData={profileData}
-                status={status}
-                saving={saving}
-                isPrestationRestricted={isPrestationRestricted}
-                isMusicLevelRestricted={isMusicLevelRestricted}
-                isDanceLevelRestricted={isDanceLevelRestricted}
-                existingResponse={existingResponse}
-                instrumentChoisi={instrumentChoisi}
-                setInstrumentChoisi={setInstrumentChoisi}
-                isInstrumentLocked={isInstrumentLocked}
-                transport={transport}
-                demandeRemboursementKm={demandeRemboursementKm}
-                handleStatusChange={handleStatusChange}
-                handleSave={handleSave}
-                getMemberInstrumentOptions={getMemberInstrumentOptions}
-                getPupitreName={getPupitreName}
-                presentsByInstrument={presentsByInstrument}
-                allUsers={effectiveAllUsers}
-                unansweredUsers={unansweredUsers}
-                isAuthorized={isAuthorized}
-                handleValidatePending={handleValidatePending}
-                handleUpdateMemberInstrument={handleUpdateMemberInstrument}
-                isManualRegisterOpen={isManualRegisterOpen}
-                setIsManualRegisterOpen={setIsManualRegisterOpen}
-                unregisteredUsers={unregisteredUsers}
-                selectedManualUserId={selectedManualUserId}
-                setSelectedManualUserId={setSelectedManualUserId}
-                selectedManualInstrument={selectedManualInstrument}
-                setSelectedManualInstrument={setSelectedManualInstrument}
-                savingManualRegistration={savingManualRegistration}
-                handleManualRegister={handleManualRegister}
-                handleManualUnregister={handleManualUnregister}
-                handleUpdateStatus={handleUpdateStatus}
-                handleRequestRegistrationChange={handleRequestRegistrationChange}
+                event={sanitizedEvent} user={user} profileData={profileData} status={status} saving={saving}
+                isPrestationRestricted={isPrestationRestricted} isMusicLevelRestricted={isMusicLevelRestricted}
+                isDanceLevelRestricted={isDanceLevelRestricted} existingResponse={existingResponse}
+                instrumentChoisi={instrumentChoisi} setInstrumentChoisi={setInstrumentChoisi}
+                isInstrumentLocked={isInstrumentLocked} transport={transport}
+                demandeRemboursementKm={demandeRemboursementKm} handleStatusChange={handleStatusChange}
+                handleSave={handleSave} getMemberInstrumentOptions={getMemberInstrumentOptions}
+                getPupitreName={getPupitreName} presentsByInstrument={presentsByInstrument}
+                allUsers={effectiveAllUsers} unansweredUsers={unansweredUsers} isAuthorized={isAuthorized}
+                handleValidatePending={handleValidatePending} handleUpdateMemberInstrument={handleUpdateMemberInstrument}
+                isManualRegisterOpen={isManualRegisterOpen} setIsManualRegisterOpen={setIsManualRegisterOpen}
+                unregisteredUsers={unregisteredUsers} selectedManualUserId={selectedManualUserId}
+                setSelectedManualUserId={setSelectedManualUserId} selectedManualInstrument={selectedManualInstrument}
+                setSelectedManualInstrument={setSelectedManualInstrument} savingManualRegistration={savingManualRegistration}
+                handleManualRegister={handleManualRegister} handleManualUnregister={handleManualUnregister}
+                handleUpdateStatus={handleUpdateStatus} handleRequestRegistrationChange={handleRequestRegistrationChange}
                 handleCancelRegistrationChangeRequest={handleCancelRegistrationChangeRequest}
                 handleProcessRegistrationChangeRequest={handleProcessRegistrationChangeRequest}
-                handleLateCancellation={handleLateCancellation}
-                handleLateRegistration={handleLateRegistration}
+                handleLateCancellation={handleLateCancellation} handleLateRegistration={handleLateRegistration}
                 handleCancelLateRegistration={handleCancelLateRegistration}
-                isRegistrationDeadlinePassed={isRegistrationDeadlinePassed}
-                t={t}
-                currentConfig={currentConfig}
-                handleAddInviteExterne={handleAddInviteExterne}
-                handleRemoveInviteExterne={handleRemoveInviteExterne}
-                instrumentsDisponibles={instrumentsDisponibles}
-                besoinTransportInstrument={besoinTransportInstrument}
-                setBesoinTransportInstrument={setBesoinTransportInstrument}
-                dependents={dependents}
-                familyMembers={familyMembers}
-                familyResponses={familyResponses}
+                isRegistrationDeadlinePassed={isRegistrationDeadlinePassed} t={t} currentConfig={currentConfig}
+                handleAddInviteExterne={handleAddInviteExterne} handleRemoveInviteExterne={handleRemoveInviteExterne}
+                instrumentsDisponibles={instrumentsDisponibles} besoinTransportInstrument={besoinTransportInstrument}
+                setBesoinTransportInstrument={setBesoinTransportInstrument} dependents={dependents}
+                familyMembers={familyMembers} familyResponses={familyResponses}
                 handleToggleFamilyMemberSelection={handleToggleFamilyMemberSelection}
                 handleFamilyMemberStatusChange={handleFamilyMemberStatusChange}
                 handleFamilyMemberInstrumentChange={handleFamilyMemberInstrumentChange}
-                handleFamilySave={handleFamilySave}
-                handleAddToGoogleCalendar={handleAddToGoogleCalendar}
-                handleDownloadIcs={handleDownloadIcs}
-                onOpenQrCodeModal={handleOpenQrCodeModal}
-                hasQrCode={hasQrCode}
-                effectiveUserTags={effectiveUserTags}
-                tagsDisponibles={tagsDisponibles}
+                handleFamilySave={handleFamilySave} handleAddToGoogleCalendar={handleAddToGoogleCalendar}
+                handleDownloadIcs={handleDownloadIcs} onOpenQrCodeModal={handleOpenQrCodeModal} hasQrCode={hasQrCode}
+                effectiveUserTags={effectiveUserTags} tagsDisponibles={tagsDisponibles}
+                pupitresList={pupitresList} linkedInstruments={linkedInstruments}
+                workshopPollOtherPupitresPolicy={workshopPollOtherPupitresPolicy}
+                onToast={(msg) => { setToastMessage(msg); setTimeout(() => setToastMessage(null), 3500); }}
               />
             )}
 
             {activeTab === 'logistics' && (
               <TabLogistics
+                pupitresList={pupitresList} linkedInstruments={linkedInstruments}
                 event={sanitizedEvent}
                 user={user}
                 profileData={profileData}
@@ -2186,20 +2089,16 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
 
             {activeTab === 'admin' && canAccessAdminTab && (
               <TabAdmin
-                event={activeEvent || event}
-                user={user}
-                profileData={profileData}
-                isAuthorized={isAuthorized}
-                hasFinanceAccess={hasFinanceAccess}
-                handleUpdateEventStatus={handleUpdateEventStatus}
-                onNavigateToView={onNavigateToView}
+                event={activeEvent || event} user={user} profileData={profileData}
+                isAuthorized={isAuthorized} hasFinanceAccess={hasFinanceAccess}
+                handleUpdateEventStatus={handleUpdateEventStatus} onNavigateToView={onNavigateToView}
                 setIsSendContractModalOpen={setIsSendContractModalOpen}
-                handlePreparePublication={handlePreparePublication}
-                currentConfig={currentConfig}
-                onOpenQrCodeModal={handleOpenQrCodeModal}
-                hasQrCode={hasQrCode}
-                onEdit={() => setIsEditingEvent(true)}
-                onDelete={handleDeleteEvent}
+                handlePreparePublication={handlePreparePublication} currentConfig={currentConfig}
+                onOpenQrCodeModal={handleOpenQrCodeModal} hasQrCode={hasQrCode}
+                onEdit={() => setIsEditingEvent(true)} onDelete={handleDeleteEvent}
+                allUsers={effectiveAllUsers} pupitresList={pupitresList} linkedInstruments={linkedInstruments}
+                workshopPollOtherPupitresPolicy={workshopPollOtherPupitresPolicy}
+                onToast={(msg) => { setToastMessage(msg); setTimeout(() => setToastMessage(null), 3500); }}
                 t={t}
               />
             )}

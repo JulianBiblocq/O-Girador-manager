@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { buildPollPupitreMatrix, computeOptimalPupitreAllocation } from '../../utils/pollAllocationUtils';
 import { sendPollUnansweredReminder } from '../../utils/pollNotificationUtils';
+import { normalizeWorkshopPolicy } from '../../utils/workshopSanctuaryUtils';
 import PollPupitreDispatchActions from './PollPupitreDispatchActions';
 import PollPupitreMatrixCell from './PollPupitreMatrixCell';
 import PollPupitreHeaderCell from './PollPupitreHeaderCell';
@@ -11,49 +12,38 @@ const DEFAULT_PUPITRES = ['Alfaias', 'Caixas', 'Gonguê', 'Agbê'];
 /** Tableau de synthèse Mestre & Matrice croisée (Dates × Pupitres) (< 145 lignes). */
 export default function PollPupitreDispatchPanel({
   pollEvents = [], allUsers = [], targetPupitres = [], pupitresList = [], linkedInstruments = [],
+  workshopPollOtherPupitresPolicy = 'reconfirm',
   isSuperAdminOrMestre = false, isProcessing = false, formatDate, onConfirmSinglePupitre, onConfirmDispatch
 }) {
   const { t } = useTranslation();
   const [allowLatecomers, setAllowLatecomers] = useState(true);
+  const [otherPupitresPolicy, setOtherPupitresPolicy] = useState(() => normalizeWorkshopPolicy(workshopPollOtherPupitresPolicy));
   const [manualOverrides, setManualOverrides] = useState({});
   const [expandedHeaderPupitre, setExpandedHeaderPupitre] = useState(null);
   const [remindingKey, setRemindingKey] = useState(null);
   const [reminderFeedback, setReminderFeedback] = useState('');
 
+  useEffect(() => { setOtherPupitresPolicy(normalizeWorkshopPolicy(workshopPollOtherPupitresPolicy)); }, [workshopPollOtherPupitresPolicy]);
+
   const effectivePupitres = useMemo(() => {
     if (Array.isArray(targetPupitres) && targetPupitres.length > 0) return targetPupitres;
-    if (Array.isArray(pupitresList) && pupitresList.length > 0) return pupitresList.slice(0, 6);
-    return DEFAULT_PUPITRES;
+    return Array.isArray(pupitresList) && pupitresList.length > 0 ? pupitresList.slice(0, 6) : DEFAULT_PUPITRES;
   }, [targetPupitres, pupitresList]);
 
-  const matrix = useMemo(
-    () => buildPollPupitreMatrix({ pollEvents, allUsers, targetPupitres: effectivePupitres, linkedInstruments }),
-    [pollEvents, allUsers, effectivePupitres, linkedInstruments]
-  );
-  const optimal = useMemo(
-    () => computeOptimalPupitreAllocation(matrix, pollEvents, effectivePupitres),
-    [matrix, pollEvents, effectivePupitres]
-  );
+  const matrix = useMemo(() => buildPollPupitreMatrix({ pollEvents, allUsers, targetPupitres: effectivePupitres, linkedInstruments }), [pollEvents, allUsers, effectivePupitres, linkedInstruments]);
+  const optimal = useMemo(() => computeOptimalPupitreAllocation(matrix, pollEvents, effectivePupitres), [matrix, pollEvents, effectivePupitres]);
   const activeAllocation = useMemo(() => ({ ...optimal.allocation, ...manualOverrides }), [optimal.allocation, manualOverrides]);
-  const totalPresents = useMemo(
-    () => effectivePupitres.reduce((acc, p) => acc + (matrix?.[activeAllocation[p]]?.[p]?.count || 0), 0),
-    [effectivePupitres, matrix, activeAllocation]
-  );
+  const totalPresents = useMemo(() => effectivePupitres.reduce((acc, p) => acc + (matrix?.[activeAllocation[p]]?.[p]?.count || 0), 0), [effectivePupitres, matrix, activeAllocation]);
 
   const allUnanswered = useMemo(() => {
     const map = new Map();
-    effectivePupitres.forEach((p) => {
-      (matrix?.pupitreStats?.[p]?.totallyUnansweredMembers || []).forEach((m) => { if (m?.uid) map.set(m.uid, m); });
-    });
+    effectivePupitres.forEach((p) => (matrix?.pupitreStats?.[p]?.totallyUnansweredMembers || []).forEach((m) => { if (m?.uid) map.set(m.uid, m); }));
     return Array.from(map.values());
   }, [effectivePupitres, matrix]);
 
   const sharedDates = useMemo(() => {
     const byDate = {};
-    effectivePupitres.forEach((p) => {
-      const dId = activeAllocation[p];
-      if (dId) byDate[dId] = [...(byDate[dId] || []), p];
-    });
+    effectivePupitres.forEach((p) => { const dId = activeAllocation[p]; if (dId) byDate[dId] = [...(byDate[dId] || []), p]; });
     return Object.entries(byDate).filter(([, list]) => list.length > 1);
   }, [effectivePupitres, activeAllocation]);
 
@@ -64,14 +54,11 @@ export default function PollPupitreDispatchPanel({
     try {
       const count = await sendPollUnansweredReminder({
         groupId: firstEv.groupId, firstPollEventId: firstEv.id,
-        eventTitle: firstEv.titre || t('pollMatrix.defaultWorkshopTitle', 'Atelier'),
-        pupitreLabel, unansweredMembers: membersList, t
+        eventTitle: firstEv.titre || t('pollMatrix.defaultWorkshopTitle', 'Atelier'), pupitreLabel, unansweredMembers: membersList, t
       });
       setReminderFeedback(t('pollMatrix.reminderSentFeedback', { count, pupitre: pupitreLabel }));
       setTimeout(() => { setRemindingKey(null); setReminderFeedback(''); }, 4500);
-    } catch {
-      setRemindingKey(null);
-    }
+    } catch { setRemindingKey(null); }
   };
 
   if (pollEvents.length === 0 || effectivePupitres.length === 0) return null;
@@ -103,9 +90,7 @@ export default function PollPupitreDispatchPanel({
       </div>
 
       {reminderFeedback && (
-        <div className="px-2.5 py-1.5 rounded border border-emerald-600/40 bg-emerald-50 text-[10px] font-extrabold text-[var(--color-cordel-vert,#2d6a4f)]">
-          {reminderFeedback}
-        </div>
+        <div className="px-2.5 py-1.5 rounded border border-emerald-600/40 bg-emerald-50 text-[10px] font-extrabold text-[var(--color-cordel-vert,#2d6a4f)]">{reminderFeedback}</div>
       )}
 
       <div className="overflow-x-auto">
@@ -147,6 +132,7 @@ export default function PollPupitreDispatchPanel({
           activeAllocation={activeAllocation} setManualOverrides={setManualOverrides}
           sharedDates={sharedDates} totalPresents={totalPresents}
           allowLatecomers={allowLatecomers} setAllowLatecomers={setAllowLatecomers}
+          otherPupitresPolicy={otherPupitresPolicy} setOtherPupitresPolicy={setOtherPupitresPolicy}
           isProcessing={isProcessing} formatDate={formatDate}
           onConfirmSinglePupitre={onConfirmSinglePupitre} onConfirmDispatch={onConfirmDispatch} t={t}
         />

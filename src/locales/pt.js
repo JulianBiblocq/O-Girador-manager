@@ -6917,7 +6917,12 @@ export const pt = {
         notificationsDesCommentairesQuestionsLogistiques: "🔔 Notificações de Comentários & Dúvidas Logísticas",
         lorsquUnMembrePoseUne: "Quando um membro faz uma pergunta ou posta um comentário em um evento, o organizador é notificado. Escolha qual etiqueta (tag) também recebe essas notificações para responder rapidamente.",
         etiquetteTagDestinataireDesNotifications: "Etiqueta (Tag) destinatária das notificações de comentários",
-        aucuneEtiquetteSpecifiqueCreateurEt: "-- Nenhuma etiqueta específica (Criador e Mestre apenas) --"
+        aucuneEtiquetteSpecifiqueCreateurEt: "-- Nenhuma etiqueta específica (Criador e Mestre apenas) --",
+        workshopPollPolicyTitle: "Política fora do naipe nas enquetes de oficinas",
+        workshopPollPolicyDesc: "Define como tratar integrantes de outros naipes que votaram « Disponível » quando uma data de oficina é atribuída a um naipe específico.",
+        workshopPollPolicyLabel: "Gestão dos votantes fora do naipe alvo",
+        workshopPollPolicyReconfirm: "Titulares confirmados, outros naipes mediante reconfirmação (padrão)",
+        workshopPollPolicyStrict: "Estritamente reservado ao naipe selecionado"
       },
       tabLieux: {
         veuillezRenseignerAuMinimumLe: "Preencha ao menos o nome usual e o endereço completo.",
@@ -7537,7 +7542,10 @@ export const pt = {
     defaultWorkshopTitle: "Oficina",
     allPupitresLabel: "Todos os naipes",
     reminderNotifTitle: "⏳ Enquete de data: sua resposta é aguardada",
-    reminderNotifBody: "Lembre-se de indicar sua disponibilidade para « {{title}} » ({{pupitre}})."
+    reminderNotifBody: "Lembre-se de indicar sua disponibilidade para « {{title}} » ({{pupitre}}).",
+    otherPupitresPolicyLabel: "🥁 Política fora do naipe na validação:",
+    otherPupitresPolicyReconfirm: "Titulares confirmados, outros naipes mediante reconfirmação",
+    otherPupitresPolicyStrict: "Estritamente reservado ao naipe selecionado"
   }
 };
 

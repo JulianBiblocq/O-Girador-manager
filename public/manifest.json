@@ -16,7 +16,8 @@
     { "src": "/icon-192-v2.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "/icon-512-v2.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
     { "src": "/icon-192-maskable-v2.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
-    { "src": "/icon-512-maskable-v2.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "/icon-512-maskable-v2.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/badge-alfaia-mono.png", "sizes": "96x96", "type": "image/png", "purpose": "monochrome" }
   ],
   "share_target": {
     "action": "/app?share-target=1",

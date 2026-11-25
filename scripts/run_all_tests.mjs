@@ -169,7 +169,8 @@ const testScripts = [
   'scripts/test_zero_samambaia_and_multitenant_guards.mjs',
   'scripts/test_vitrine_custom_domain_seo.mjs',
   'scripts/test_toada_adaptive_print_and_songbook.mjs',
-  'scripts/test_toada_print_margins.mjs'
+  'scripts/test_toada_print_margins.mjs',
+  'scripts/test_workshop_sanctuary_and_alfaia_badge.mjs'
 ];
 
 console.log("===============================================================");

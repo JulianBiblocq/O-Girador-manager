@@ -7,33 +7,15 @@ import EventBudgetSection from '../EventBudgetSection';
 import ReunionAgendaManager from '../../ReunionAgendaManager';
 import EventReportSection from '../EventReportSection';
 import EventWardrobeSummaryCard from '../EventWardrobeSummaryCard';
+import WorkshopSanctuaryMestreCard from '../WorkshopSanctuaryMestreCard';
 import { isEventStrictlyPassed } from '../../../utils/dateUtils';
 import { useTranslation } from '../../LanguageContext';
 
-/**
- * Onglet 4 : Gestion, Budget & Bilan (TabAdmin)
- * Accessible exclusivement aux administrateurs, mestres et personnes habilitées trésorerie/gestion.
- * Regroupe le contrôle du statut de l'événement, la visibilité publique vitrine,
- * le bilan financier/devis et l'ordre du jour/PV pour les réunions.
- *
- * @param {Object} props Propriétés du composant
- */
 export default function TabAdmin({
-  event,
-  user,
-  profileData,
-  isAuthorized,
-  hasFinanceAccess,
-  handleUpdateEventStatus,
-  onNavigateToView,
-  setIsSendContractModalOpen,
-  handlePreparePublication,
-  currentConfig: _currentConfig,
-  onOpenQrCodeModal,
-  hasQrCode,
-  onEdit,
-  onDelete,
-  onDuplicate,
+  event, user, profileData, isAuthorized, hasFinanceAccess, handleUpdateEventStatus,
+  onNavigateToView, setIsSendContractModalOpen, handlePreparePublication,
+  currentConfig: _currentConfig, onOpenQrCodeModal, hasQrCode, onEdit, onDelete, onDuplicate,
+  allUsers = [], pupitresList = [], linkedInstruments = [], workshopPollOtherPupitresPolicy = 'reconfirm', onToast,
   t: propT
 }) {
   const { t: contextT } = useTranslation();
@@ -85,6 +67,14 @@ export default function TabAdmin({
 
   return (
     <div className="flex flex-col gap-4 text-left">
+      {/* Outil Mestre de sanctuarisation du pupitre cible & relance des hors-pupitre */}
+      {isAuthorized && (
+        <WorkshopSanctuaryMestreCard
+          event={event} allUsers={allUsers} pupitresList={pupitresList} linkedInstruments={linkedInstruments}
+          defaultPolicy={workshopPollOtherPupitresPolicy} onlyWhenDirty={false} onCompleted={onToast}
+        />
+      )}
+
       {/* 1. Statut de l'événement & Raccourcis Rapides Gestion */}
       <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-dashed border-cordel-master-dark/20 pb-1.5 mb-3 gap-2">

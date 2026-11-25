@@ -124,11 +124,13 @@ function buildDynamicManifestPayload({
   const maskableIcon512 = combinedLogoMaskableUrl || `${origin}/icon-512-maskable-v2.png`;
 
   // Jamais de cumul "any maskable" sur une même entrée : entrées strictement séparées pour WebAPK Android
+  const monochromeIcon = `${origin}/icons/badge-alfaia-mono.png`;
   const icons = [
     { src: anyIcon192, sizes: "192x192", type: "image/png", purpose: "any" },
     { src: anyIcon512, sizes: "512x512", type: "image/png", purpose: "any" },
     { src: maskableIcon192, sizes: "192x192", type: "image/png", purpose: "maskable" },
-    { src: maskableIcon512, sizes: "512x512", type: "image/png", purpose: "maskable" }
+    { src: maskableIcon512, sizes: "512x512", type: "image/png", purpose: "maskable" },
+    { src: monochromeIcon, sizes: "96x96", type: "image/png", purpose: "monochrome" }
   ];
 
   return {

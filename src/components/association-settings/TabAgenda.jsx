@@ -5,29 +5,19 @@ import useConfirm from '../../hooks/useConfirm';
 import { useTranslation } from '../LanguageContext';
 import EventTypeConfigCard from './EventTypeConfigCard';
 import TabLieux from './TabLieux';
+import WorkshopPollPolicyField from './WorkshopPollPolicyField';
 
-export default function TabAgenda({
-  formData = {},
-  handleChange,
-  saving,
-  groupId: _groupId,
-  t: propT
-}) {
+export default function TabAgenda({ formData = {}, handleChange, saving, groupId: _groupId, t: propT }) {
   const { t: contextT } = useTranslation();
   const t = propT || contextT;
   const { confirm } = useConfirm();
-  const [activeSection, setActiveSection] = useState('all'); // 'all' | 'lieux' | 'types'
+  const [activeSection, setActiveSection] = useState('all');
   const [isGlobalOptionsOpen, setIsGlobalOptionsOpen] = useState(false);
 
   const {
-    agendaRequireInstrument = false,
-    agendaEnableMaybeStatus = true,
-    agendaEnableStageLayout = true,
-    agendaEnableRevisionProgram = true,
-    agendaEnableCarpool = true,
-    agendaEnableFinance = true,
-    agendaEnableInscriptions = true,
-    agendaEnableVolunteerShifts = true,
+    agendaRequireInstrument = false, agendaEnableMaybeStatus = true, agendaEnableStageLayout = true,
+    agendaEnableRevisionProgram = true, agendaEnableCarpool = true, agendaEnableFinance = true,
+    agendaEnableInscriptions = true, agendaEnableVolunteerShifts = true,
     eventTypes = ['prestation', 'repetition', 'stage', 'atelier', 'reunion']
   } = formData;
 
@@ -121,39 +111,24 @@ export default function TabAgenda({
     <div className="flex flex-col gap-6 text-left">
       {/* Sélecteur de sous-sections rapide */}
       <div className="flex flex-wrap items-center gap-2 border-b border-dashed border-cordel-master-dark/20 pb-3 mb-1 select-none">
-        <button
-          type="button"
-          onClick={() => setActiveSection('all')}
-          className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded transition-all cursor-pointer ${
-            activeSection === 'all'
-              ? 'bg-[var(--color-cordel-vert,#2d6a4f)] text-white shadow-2xs'
-              : 'bg-white text-stone-700 border border-stone-300 hover:bg-stone-50'
-          }`}
-        >
-          {t('settings.agenda.tabAgenda.vueDEnsembleTout')}
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveSection('lieux')}
-          className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded transition-all cursor-pointer ${
-            activeSection === 'lieux'
-              ? 'bg-[var(--color-cordel-vert,#2d6a4f)] text-white shadow-2xs'
-              : 'bg-white text-stone-700 border border-stone-300 hover:bg-stone-50'
-          }`}
-        >
-          {t('settings.agenda.tabAgenda.sallesLieuxHabituels')}
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveSection('types')}
-          className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded transition-all cursor-pointer ${
-            activeSection === 'types'
-              ? 'bg-[var(--color-cordel-vert,#2d6a4f)] text-white shadow-2xs'
-              : 'bg-white text-stone-700 border border-stone-300 hover:bg-stone-50'
-          }`}
-        >
-          {t('settings.agenda.tabAgenda.typesDEvenementsPresets')}
-        </button>
+        {[
+          ['all', 'settings.agenda.tabAgenda.vueDEnsembleTout'],
+          ['lieux', 'settings.agenda.tabAgenda.sallesLieuxHabituels'],
+          ['types', 'settings.agenda.tabAgenda.typesDEvenementsPresets']
+        ].map(([secKey, labelKey]) => (
+          <button
+            key={secKey}
+            type="button"
+            onClick={() => setActiveSection(secKey)}
+            className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded transition-all cursor-pointer ${
+              activeSection === secKey
+                ? 'bg-[var(--color-cordel-vert,#2d6a4f)] text-white shadow-2xs'
+                : 'bg-white text-stone-700 border border-stone-300 hover:bg-stone-50'
+            }`}
+          >
+            {t(labelKey)}
+          </button>
+        ))}
       </div>
 
       {/* SECTION 1 : Salles & Lieux Habituels */}
@@ -458,36 +433,25 @@ export default function TabAgenda({
             )}
           </CordelCard>
 
+      {/* Politique SaaS hors-pupitre sur les sondages d'ateliers */}
+      <WorkshopPollPolicyField value={formData.workshopPollOtherPupitresPolicy || 'reconfirm'} onChange={handleChange} saving={saving} />
+
       {/* Notifications des Commentaires Événements */}
       <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
         <h3 className="text-xs uppercase font-extrabold tracking-wider text-cordel-wood mb-2 flex items-center gap-1.5">
           {t('settings.agenda.tabAgenda.notificationsDesCommentairesQuestionsLogistiques')}
         </h3>
-        <p className="text-[10px] text-cordel-master-dark opacity-80 leading-relaxed mb-3">
-          {t('settings.agenda.tabAgenda.lorsquUnMembrePoseUne')}
-        </p>
-
+        <p className="text-[10px] text-cordel-master-dark opacity-80 leading-relaxed mb-3">{t('settings.agenda.tabAgenda.lorsquUnMembrePoseUne')}</p>
         <div className="flex flex-col gap-1.5 text-left max-w-md">
           <label htmlFor="tagNotificationCommentairesEvenement" className="text-[9px] uppercase font-bold text-cordel-master-dark">
             {t('settings.agenda.tabAgenda.etiquetteTagDestinataireDesNotifications')}
           </label>
-          <select
-            id="tagNotificationCommentairesEvenement"
-            name="tagNotificationCommentairesEvenement"
-            value={formData.tagNotificationCommentairesEvenement || ''}
-            onChange={(e) => handleChange('tagNotificationCommentairesEvenement', e.target.value)}
-            disabled={saving}
-            className="theme-input text-xs font-bold py-1.5 px-2 bg-cordel-bg-light"
-          >
+          <select id="tagNotificationCommentairesEvenement" name="tagNotificationCommentairesEvenement" value={formData.tagNotificationCommentairesEvenement || ''} onChange={(e) => handleChange('tagNotificationCommentairesEvenement', e.target.value)} disabled={saving} className="theme-input text-xs font-bold py-1.5 px-2 bg-cordel-bg-light">
             <option value="">{t('settings.agenda.tabAgenda.aucuneEtiquetteSpecifiqueCreateurEt')}</option>
             {(formData.tagsDisponibles || []).map((tag) => {
               const tagId = typeof tag === 'string' ? tag : (tag.id || tag.nom);
               const tagLabel = typeof tag === 'string' ? tag : (tag.nom || tag.id);
-              return (
-                <option key={tagId} value={tagId}>
-                  🏷️ {tagLabel}
-                </option>
-              );
+              return <option key={tagId} value={tagId}>🏷️ {tagLabel}</option>;
             })}
           </select>
         </div>

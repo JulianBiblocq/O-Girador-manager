@@ -5,6 +5,7 @@ import { db, messaging } from '../firebase';
 import { collectClientPushDiagnostics, syncPushDiagnosticsToFirestore } from './pushDiagnosticsUtils';
 
 export const ALFAIA_MONO_BADGE_PATH = '/icons/badge-alfaia-mono.png';
+export const ORGANIZADOR_ALFAIA_TAG = 'organizador-alfaia';
 const DEFAULT_NOTIF_ICON = '/icon-192-v2.png';
 
 /** Résout la ServiceWorkerRegistration active contrôlant déjà l'application. */
@@ -96,7 +97,7 @@ export async function disablePushContract(uid) {
 export async function displaySystemNotification(title, options = {}, registration = undefined) {
   try {
     const reg = registration || (await resolveActiveMessagingSwRegistration());
-    const merged = { icon: DEFAULT_NOTIF_ICON, ...options, badge: '/icons/badge-alfaia-mono.png' };
+    const merged = { icon: DEFAULT_NOTIF_ICON, ...options, badge: '/icons/badge-alfaia-mono.png', tag: ORGANIZADOR_ALFAIA_TAG, renotify: true };
     if (reg && typeof reg.showNotification === 'function') {
       await reg.showNotification(title, merged);
       return true;
@@ -117,7 +118,8 @@ export async function showPushActivationConfirmation(registration) {
     body: 'Super, ton appareil est bien configuré pour recevoir les annonces et feuilles de route.',
     icon: DEFAULT_NOTIF_ICON,
     badge: '/icons/badge-alfaia-mono.png',
-    tag: 'activation-confirmation',
+    tag: ORGANIZADOR_ALFAIA_TAG,
+    renotify: true,
     data: { url: '/app/agenda' }
   }, registration);
 }
@@ -129,7 +131,6 @@ export function subscribeForegroundPushMessages() {
     const title = payload?.notification?.title || payload?.data?.title || 'Organizador';
     const body = payload?.notification?.body || payload?.data?.body || '';
     const icon = payload?.notification?.icon || payload?.data?.icon || DEFAULT_NOTIF_ICON;
-    const tag = payload?.data?.tag || undefined;
-    displaySystemNotification(title, { body, icon, badge: '/icons/badge-alfaia-mono.png', ...(tag ? { tag } : {}), data: payload?.data || {} });
+    displaySystemNotification(title, { body, icon, badge: '/icons/badge-alfaia-mono.png', tag: ORGANIZADOR_ALFAIA_TAG, renotify: true, data: payload?.data || {} });
   });
 }

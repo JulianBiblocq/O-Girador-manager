@@ -6917,7 +6917,12 @@ export const fr = {
         notificationsDesCommentairesQuestionsLogistiques: "🔔 Notifications des Commentaires & Questions Logistiques",
         lorsquUnMembrePoseUne: "Lorsqu'un membre pose une question ou publie un commentaire sur un événement, le créateur de l'événement est notifié. Choisissez quelle étiquette (tag) reçoit également ces notifications pour pouvoir y répondre rapidement.",
         etiquetteTagDestinataireDesNotifications: "Étiquette (Tag) destinataire des notifications de commentaires",
-        aucuneEtiquetteSpecifiqueCreateurEt: "-- Aucune étiquette spécifique (Créateur et Mestre uniquement) --"
+        aucuneEtiquetteSpecifiqueCreateurEt: "-- Aucune étiquette spécifique (Créateur et Mestre uniquement) --",
+        workshopPollPolicyTitle: "Politique hors-pupitre sur les sondages d'ateliers",
+        workshopPollPolicyDesc: "Définit comment traiter les membres d'autres pupitres ayant voté « Disponible » lorsqu'une date d'atelier est attribuée à un pupitre précis.",
+        workshopPollPolicyLabel: "Gestion des votants hors pupitre cible",
+        workshopPollPolicyReconfirm: "Titulaires confirmés, autres pupitres sur re-confirmation (par défaut)",
+        workshopPollPolicyStrict: "Strictement réservé au pupitre retenu"
       },
       tabLieux: {
         veuillezRenseignerAuMinimumLe: "Veuillez renseigner au minimum le nom usuel et l'adresse complète.",
@@ -7537,7 +7542,10 @@ export const fr = {
     defaultWorkshopTitle: "Atelier",
     allPupitresLabel: "Tous les pupitres",
     reminderNotifTitle: "⏳ Sondage de date : ton avis est attendu",
-    reminderNotifBody: "Pense à indiquer tes disponibilités pour « {{title}} » ({{pupitre}})."
+    reminderNotifBody: "Pense à indiquer tes disponibilités pour « {{title}} » ({{pupitre}}).",
+    otherPupitresPolicyLabel: "🥁 Politique hors-pupitre à la validation :",
+    otherPupitresPolicyReconfirm: "Titulaires confirmés, autres pupitres sur re-confirmation",
+    otherPupitresPolicyStrict: "Strictement réservé au pupitre retenu"
   }
 };
 

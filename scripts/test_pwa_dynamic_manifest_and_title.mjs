@@ -21,8 +21,15 @@ assert.strictEqual(manifestContent.name, 'Organizador', 'name statique doit êtr
 assert.strictEqual(manifestContent.start_url, '/', 'start_url statique doit être "/"');
 assert.strictEqual(manifestContent.theme_color, '#8B2A1A', 'theme_color statique doit être "#8B2A1A"');
 assert.strictEqual(manifestContent.background_color, '#F4ECD8', 'background_color statique doit être "#F4ECD8"');
-assert(manifestContent.icons.every((i) => i.purpose === 'any' || i.purpose === 'maskable'), 'Aucun cumul "any maskable" autorisé');
-console.log('✅ public/manifest.json : short_name="Organizador", start_url="/", entrées any/maskable séparées');
+assert(
+  manifestContent.icons.every((i) => ['any', 'maskable', 'monochrome'].includes(i.purpose)),
+  'Aucun cumul "any maskable" autorisé'
+);
+assert(
+  manifestContent.icons.some((i) => i.src === '/icons/badge-alfaia-mono.png' && i.purpose === 'monochrome'),
+  'public/manifest.json doit déclarer une entrée dédiée purpose="monochrome" vers /icons/badge-alfaia-mono.png'
+);
+console.log('✅ public/manifest.json : short_name="Organizador", start_url="/", entrées any/maskable/monochrome séparées');
 
 // 2. Contrôle du générateur serveur serveDynamicManifest (manifestDynamicHelper.js)
 {
@@ -35,9 +42,10 @@ console.log('✅ public/manifest.json : short_name="Organizador", start_url="/",
   assert.strictEqual(neutralManifest.start_url, '/');
   assert.strictEqual(neutralManifest.theme_color, '#8B2A1A');
   assert.strictEqual(neutralManifest.background_color, '#F4ECD8');
-  assert.strictEqual(neutralManifest.icons.length, 4);
+  assert.strictEqual(neutralManifest.icons.length, 5);
   assert(neutralManifest.icons.some((i) => i.src.endsWith('/icon-192-v2.png') && i.purpose === 'any'));
   assert(neutralManifest.icons.some((i) => i.src.endsWith('/icon-512-maskable-v2.png') && i.purpose === 'maskable'));
+  assert(neutralManifest.icons.some((i) => i.src.endsWith('/icons/badge-alfaia-mono.png') && i.purpose === 'monochrome'));
 
   const groupManifest = buildDynamicManifestPayload({
     effectiveHost: 'organizador.o-girador.com',
@@ -56,7 +64,7 @@ console.log('✅ public/manifest.json : short_name="Organizador", start_url="/",
   assert.strictEqual(groupManifest.start_url, '/?groupe=BaqueSol');
   assert.strictEqual(groupManifest.theme_color, '#8B2A1A');
   assert.strictEqual(groupManifest.background_color, '#F4ECD8');
-  assert.strictEqual(groupManifest.icons.length, 4);
+  assert.strictEqual(groupManifest.icons.length, 5);
   assert(groupManifest.icons.every((i) => !i.purpose.includes(' ')), 'Interdiction formelle de cumuler "any maskable"');
   assert.deepStrictEqual(groupManifest.icons, [
     {
@@ -82,6 +90,12 @@ console.log('✅ public/manifest.json : short_name="Organizador", start_url="/",
       sizes: '512x512',
       type: 'image/png',
       purpose: 'maskable'
+    },
+    {
+      src: 'https://organizador.o-girador.com/icons/badge-alfaia-mono.png',
+      sizes: '96x96',
+      type: 'image/png',
+      purpose: 'monochrome'
     }
   ]);
 
@@ -183,9 +197,14 @@ console.log('✅ public/manifest.json : short_name="Organizador", start_url="/",
   });
   assert.strictEqual(msg.webpush.notification.badge, 'https://organizador.o-girador.com/icons/badge-alfaia-mono.png');
   assert.strictEqual(msg.webpush.notification.icon, 'https://cdn.example.com/seal.png');
+  assert.strictEqual(msg.webpush.notification.tag, 'organizador-alfaia');
+  assert.strictEqual(msg.webpush.notification.renotify, true);
+  assert.strictEqual(msg.android.notification.tag, 'organizador-alfaia');
 
   const swContent = fs.readFileSync(path.resolve('public/firebase-messaging-sw.js'), 'utf-8');
   assert(swContent.includes("'/icons/badge-alfaia-mono.png'"), 'firebase-messaging-sw.js doit référencer /icons/badge-alfaia-mono.png');
+  assert(swContent.includes("'organizador-alfaia'"), 'firebase-messaging-sw.js doit imposer le tag unique organizador-alfaia');
+  assert(swContent.includes('renotify: true'), 'firebase-messaging-sw.js doit activer renotify: true');
 
   const helperContent = fs.readFileSync(path.resolve('src/utils/pushNotificationHelper.js'), 'utf-8');
   assert(helperContent.includes("badge: '/icons/badge-alfaia-mono.png'"), 'pushNotificationHelper.js doit renseigner /icons/badge-alfaia-mono.png');

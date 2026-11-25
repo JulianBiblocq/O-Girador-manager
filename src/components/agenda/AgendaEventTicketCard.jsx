@@ -11,14 +11,9 @@ import { getSeasonFromDate } from '../../utils/seasonUtils';
  */
 function isSameCalendarDay(dateA, dateB) {
   if (!dateA || !dateB) return false;
-  const dA = new Date(dateA);
-  const dB = new Date(dateB);
+  const dA = new Date(dateA), dB = new Date(dateB);
   if (!isNaN(dA.getTime()) && !isNaN(dB.getTime())) {
-    return (
-      dA.getFullYear() === dB.getFullYear() &&
-      dA.getMonth() === dB.getMonth() &&
-      dA.getDate() === dB.getDate()
-    );
+    return dA.getFullYear() === dB.getFullYear() && dA.getMonth() === dB.getMonth() && dA.getDate() === dB.getDate();
   }
   return String(dateA).slice(0, 10) === String(dateB).slice(0, 10);
 }
@@ -144,6 +139,8 @@ export default function AgendaEventTicketCard({
                 <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider bg-yellow-100 text-yellow-800 border border-yellow-300 leading-none select-none">{t('agenda.waitingResponse') || 'En attente'}</span>
               ) : userStatus === 'refused' || userStatus === 'absent' ? (
                 <span className="text-[8px] font-black px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-absent leading-none select-none">{userStatus === 'refused' ? (t('userProfile.refused') || 'Refusé') : t('agenda.absent')}</span>
+              ) : userStatus === 'pending_reconfirm' ? (
+                <span className="text-[8px] font-black px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-confirm leading-none select-none">🥁 À re-confirmer</span>
               ) : userStatus === 'confirm' ? (
                 <span className="text-[8px] font-black px-1.5 py-0.5 rounded-[4px_6px_3px_5px] uppercase tracking-wider badge-status-confirm leading-none select-none">{t('agenda.confirm')}</span>
               ) : (
@@ -151,9 +148,7 @@ export default function AgendaEventTicketCard({
               )}
             </div>
             {event.enableInscriptions !== false && presentCount > 0 && (
-              <span className="text-[8px] font-bold px-1.5 py-0.5 bg-encre-noire text-cordel-bg-light rounded-sm self-end shrink-0">
-                {presentCount} {t('common.presentCountLabel')}
-              </span>
+              <span className="text-[8px] font-bold px-1.5 py-0.5 bg-encre-noire text-cordel-bg-light rounded-sm self-end shrink-0">{presentCount} {t('common.presentCountLabel')}</span>
             )}
           </div>
         </div>

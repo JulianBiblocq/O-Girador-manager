@@ -1132,8 +1132,7 @@ export default function WidgetAgenda({
                       <td className="p-1.5 md:p-2.5 border-r border-encre-noire/15 truncate max-w-[180px]" title={event.lieu}>
                         {event.lieu ? (
                           <span className="inline-flex items-center gap-1 font-semibold text-encre-noire">
-                            <span>📍</span>
-                            <span>{formatLocationShort(event, lieuxImportants)}</span>
+                            <span>📍</span> <span>{formatLocationShort(event, lieuxImportants)}</span>
                           </span>
                         ) : '-'}
                       </td>
@@ -1142,6 +1141,7 @@ export default function WidgetAgenda({
                           if (event.enableInscriptions === false) return <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] uppercase font-bold bg-neutral-200 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"><XiloMegaphone size={11} className="text-cordel-wood" /> {t('widgetAgenda.informative', 'Informatif') || 'Informatif'}</span>;
                           if (userStatus === 'present') return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-black badge-status-present">{t('agenda.present')} ({presentCount})</span>;
                           if (userStatus === 'absent') return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-black badge-status-absent">{t('agenda.absent')} ({presentCount})</span>;
+                          if (userStatus === 'pending_reconfirm') return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-black badge-status-confirm">🥁 À re-confirmer ({presentCount})</span>;
                           if (userStatus === 'confirm') return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-black badge-status-confirm">{t('agenda.confirm')} ({presentCount})</span>;
                           if (userStatus === 'pending') return <span className="inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-bold badge-status-pending">{t('agenda.waitingResponse') || 'En attente'} ({presentCount})</span>;
                           return <span className="text-neutral-500 font-bold">{t('agenda.waitingResponse') || t('widgetAgenda.noAnswer', 'Sans réponse') || 'Sans réponse'} ({presentCount})</span>;

@@ -1,9 +1,11 @@
 import React from 'react';
 import CordelButton from '../CordelButton';
 import { useTranslation } from '../LanguageContext';
+import { normalizeWorkshopPolicy } from '../../utils/workshopSanctuaryUtils';
 
 /**
- * Sous-composant des actions de validation par pupitre (unitaire en entonnoir + globale) (< 125 lignes).
+ * Sous-composant des actions de validation par pupitre (unitaire en entonnoir + globale)
+ * incluant le sélecteur compact de politique SaaS hors-pupitre (< 140 lignes).
  */
 export default function PollPupitreDispatchActions({
   effectivePupitres = [],
@@ -15,6 +17,8 @@ export default function PollPupitreDispatchActions({
   totalPresents = 0,
   allowLatecomers = true,
   setAllowLatecomers,
+  otherPupitresPolicy = 'reconfirm',
+  setOtherPupitresPolicy,
   isProcessing = false,
   formatDate,
   onConfirmSinglePupitre,
@@ -23,6 +27,7 @@ export default function PollPupitreDispatchActions({
 }) {
   const i18n = useTranslation();
   const t = propT || i18n.t;
+  const cleanPolicy = normalizeWorkshopPolicy(otherPupitresPolicy);
 
   return (
     <div className="flex flex-col gap-2.5 pt-2 border-t border-dashed border-encre-noire/20">
@@ -80,7 +85,7 @@ export default function PollPupitreDispatchActions({
                 <button
                   type="button"
                   disabled={isProcessing}
-                  onClick={() => onConfirmSinglePupitre(p, selectedEventId, allowLatecomers, matrix)}
+                  onClick={() => onConfirmSinglePupitre(p, selectedEventId, allowLatecomers, matrix, cleanPolicy)}
                   className="mt-0.5 w-full text-[9.5px] font-black uppercase py-1.5 px-2 rounded border border-encre-noire bg-[var(--color-cordel-vert,#2d6a4f)] text-white shadow-[1.5px_1.5px_0px_0px_#181716] hover:brightness-105 active:translate-y-0.5 cursor-pointer disabled:opacity-50 transition-all text-center"
                 >
                   {t('pollMatrix.validateSingleSlotBtn', { pupitre: p, date: selectedDateLabel })}
@@ -97,6 +102,23 @@ export default function PollPupitreDispatchActions({
         </div>
       )}
 
+      {/* Sélecteur compact SaaS de gestion des hors-pupitre juste au-dessus du bouton de validation */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2 rounded bg-cordel-bg-light border border-dashed border-encre-noire/30">
+        <label htmlFor="pollDispatchOtherPupitresPolicy" className="text-[10px] font-extrabold text-cordel-wood">
+          {t('pollMatrix.otherPupitresPolicyLabel')}
+        </label>
+        <select
+          id="pollDispatchOtherPupitresPolicy"
+          value={cleanPolicy}
+          onChange={(e) => setOtherPupitresPolicy && setOtherPupitresPolicy(normalizeWorkshopPolicy(e.target.value))}
+          disabled={isProcessing}
+          className="theme-input text-[10px] font-bold py-1 px-2 bg-cordel-bg sm:max-w-sm"
+        >
+          <option value="reconfirm">{t('pollMatrix.otherPupitresPolicyReconfirm')}</option>
+          <option value="strict">{t('pollMatrix.otherPupitresPolicyStrict')}</option>
+        </select>
+      </div>
+
       <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-1">
         <span className="text-[11px] font-black text-encre-noire">
           {t('pollMatrix.totalRetainedPrefix')}{' '}
@@ -107,7 +129,7 @@ export default function PollPupitreDispatchActions({
           variant="vert"
           useExtremeBorder={true}
           disabled={isProcessing}
-          onClick={() => onConfirmDispatch && onConfirmDispatch(activeAllocation, matrix, effectivePupitres, allowLatecomers)}
+          onClick={() => onConfirmDispatch && onConfirmDispatch(activeAllocation, matrix, effectivePupitres, allowLatecomers, cleanPolicy)}
           className="text-xs font-black uppercase py-2 px-4 w-full sm:w-auto"
         >
           {isProcessing ? t('pollMatrix.validatingBtn') : t('pollMatrix.validateAllBtn')}

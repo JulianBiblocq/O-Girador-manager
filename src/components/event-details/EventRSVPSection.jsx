@@ -15,67 +15,20 @@ import { checkRegistrationDeadlinePassed } from '../../hooks/useEventRSVP';
 import { resolveParticipantInstrument } from '../../utils/tagUtils';
 
 export default function EventRSVPSection({
-  event,
-  user,
-  profileData,
-  status,
-  saving,
-  isPrestationRestricted,
-  isMusicLevelRestricted,
-  isDanceLevelRestricted,
-  existingResponse,
-  instrumentChoisi,
-  setInstrumentChoisi,
-  isInstrumentLocked,
-  transport,
-  demandeRemboursementKm: _demandeRemboursementKm,
-  handleStatusChange,
-  handleSave,
-  getMemberInstrumentOptions,
-  getPupitreName,
-  presentsByInstrument,
-  allUsers,
-  unansweredUsers = [],
-  isAuthorized,
-  handleValidatePending,
-  handleUpdateMemberInstrument,
-  isManualRegisterOpen,
-  setIsManualRegisterOpen,
-  unregisteredUsers,
-  selectedManualUserId,
-  setSelectedManualUserId,
-  selectedManualInstrument,
-  setSelectedManualInstrument,
-  savingManualRegistration,
-  handleManualRegister,
-  handleManualUnregister,
-  handleUpdateStatus,
-  handleRequestRegistrationChange,
-  handleCancelRegistrationChangeRequest,
-  handleProcessRegistrationChangeRequest,
-  handleLateCancellation,
-  handleLateRegistration,
-  handleCancelLateRegistration,
-  _isRegistrationDeadlinePassed,
-  t,
-  agendaRequireInstrument = false,
-  agendaEnableMaybeStatus = true,
-  handleAddInviteExterne,
-  handleRemoveInviteExterne,
+  event, user, profileData, status, saving, isPrestationRestricted, isMusicLevelRestricted, isDanceLevelRestricted,
+  existingResponse, instrumentChoisi, setInstrumentChoisi, isInstrumentLocked, transport,
+  demandeRemboursementKm: _demandeRemboursementKm, handleStatusChange, handleSave, getMemberInstrumentOptions,
+  getPupitreName, presentsByInstrument, allUsers, unansweredUsers = [], isAuthorized, handleValidatePending,
+  handleUpdateMemberInstrument, isManualRegisterOpen, setIsManualRegisterOpen, unregisteredUsers,
+  selectedManualUserId, setSelectedManualUserId, selectedManualInstrument, setSelectedManualInstrument,
+  savingManualRegistration, handleManualRegister, handleManualUnregister, handleUpdateStatus,
+  handleRequestRegistrationChange, handleCancelRegistrationChangeRequest, handleProcessRegistrationChangeRequest,
+  handleLateCancellation, handleLateRegistration, handleCancelLateRegistration, _isRegistrationDeadlinePassed, t,
+  agendaRequireInstrument = false, agendaEnableMaybeStatus = true, handleAddInviteExterne, handleRemoveInviteExterne,
   instrumentsDisponibles = ["Alfaia", "Caixa", "Tarol", "Gonguê", "Agbê", "Mineiro", "Timbal", "Chant", "Danse"],
-  besoinTransportInstrument = false,
-  setBesoinTransportInstrument,
-  enableCarpool = true,
-  _dependents = [],
-  familyMembers = [],
-  familyResponses = {},
-  handleToggleFamilyMemberSelection,
-  handleFamilyMemberStatusChange,
-  handleFamilyMemberInstrumentChange,
-  handleFamilySave,
-  handleAddToGoogleCalendar,
-  handleDownloadIcs,
-  mode // 'rsvp' | 'attendance' | undefined (both)
+  besoinTransportInstrument = false, setBesoinTransportInstrument, enableCarpool = true, _dependents = [],
+  familyMembers = [], familyResponses = {}, handleToggleFamilyMemberSelection, handleFamilyMemberStatusChange,
+  handleFamilyMemberInstrumentChange, handleFamilySave, handleAddToGoogleCalendar, handleDownloadIcs, mode
 }) {
   const { t: contextT } = useTranslation();
   const tr = typeof t === 'function' ? t : contextT;
@@ -458,6 +411,8 @@ export default function EventRSVPSection({
                       ? `✓ ${tr('agenda.present') || 'Présent'}`
                       : existingResponse.status === 'absent'
                       ? `✕ ${tr('agenda.absent') || 'Absent'}`
+                      : existingResponse.status === 'pending_reconfirm'
+                      ? '🥁 À re-confirmer'
                       : `⏳ ${tr('agenda.confirm') || 'À confirmer'}`}
                   </span>
                   {existingResponse.instrumentChoisi && (
@@ -1248,37 +1203,35 @@ export default function EventRSVPSection({
                         <XiloAvatar src={userInfo.photoURL} name={i.userName} size={18} />
                         <span>{i.userName}</span>
                         <div className="flex items-center gap-1 ml-1.5 border-l border-encre-noire/15 pl-1.5">
-                          <button
-                            type="button"
-                            onClick={() => handleUpdateStatus && handleUpdateStatus(i.userId, 'present')}
-                            className="text-[var(--color-cordel-vert)] hover:text-white text-[9px] font-black cursor-pointer px-1 py-0.5 bg-[var(--color-cordel-vert)]/10 hover:bg-[var(--color-cordel-vert)] border border-[#2d6a4f]/30 rounded transition-colors"
-                            title="Valider en Présent"
-                          >
-                            ✓
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleUpdateStatus && handleUpdateStatus(i.userId, 'absent')}
-                            className="text-cordel-wood hover:text-white text-[9px] font-black cursor-pointer px-1 py-0.5 bg-cordel-wood/10 hover:bg-cordel-wood border border-cordel-wood/30 rounded transition-colors"
-                            title="Marquer comme Absent"
-                          >
-                            ✗
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleManualUnregister(i.userId)}
-                            className="text-cordel-wood hover:text-red-800 text-[10px] font-black cursor-pointer ml-0.5"
-                            title="Désinscrire ce membre"
-                          >
-                            ✕
-                          </button>
+                          <button type="button" onClick={() => handleUpdateStatus && handleUpdateStatus(i.userId, 'present')} className="text-[var(--color-cordel-vert)] hover:text-white text-[9px] font-black cursor-pointer px-1 py-0.5 bg-[var(--color-cordel-vert)]/10 hover:bg-[var(--color-cordel-vert)] border border-[#2d6a4f]/30 rounded transition-colors" title="Valider en Présent">✓</button>
+                          <button type="button" onClick={() => handleUpdateStatus && handleUpdateStatus(i.userId, 'absent')} className="text-cordel-wood hover:text-white text-[9px] font-black cursor-pointer px-1 py-0.5 bg-cordel-wood/10 hover:bg-cordel-wood border border-cordel-wood/30 rounded transition-colors" title="Marquer comme Absent">✗</button>
+                          <button type="button" onClick={() => handleManualUnregister(i.userId)} className="text-cordel-wood hover:text-red-800 text-[10px] font-black cursor-pointer ml-0.5" title="Désinscrire ce membre">✕</button>
                         </div>
                       </div>
                     );
                   })}
-                  {(event.inscriptions || []).filter(i => i.status === 'confirm').length === 0 && (
-                    <span className="opacity-60 italic">Aucun membre en attente de confirmation</span>
-                  )}
+                  {(event.inscriptions || []).filter(i => i.status === 'confirm').length === 0 && <span className="opacity-60 italic">Aucun membre en attente de confirmation</span>}
+                </div>
+              </RSVPAccordionSection>
+            )}
+
+            {(event.inscriptions || []).some((i) => i.status === 'pending_reconfirm') && (
+              <RSVPAccordionSection title="En attente de re-confirmation (hors pupitre)" count={(event.inscriptions || []).filter((i) => i.status === 'pending_reconfirm').length} icon="🥁" colorVariant="ocre" isExpanded={Boolean(expandedSections.reconfirm)} onToggle={() => toggleSection('reconfirm')} emptyText="Aucun membre">
+                <div className="flex flex-wrap gap-1.5 items-center">
+                  {(event.inscriptions || []).filter((i) => i.status === 'pending_reconfirm').map((i) => {
+                    const uInfo = resolveMemberInfo(i.userId, i.userName);
+                    return (
+                      <div key={i.userId} className="inline-flex items-center gap-1.5 bg-cordel-bg-light px-2 py-1 rounded border border-dashed border-encre-noire/15 text-xs font-semibold text-encre-noire">
+                        <XiloAvatar src={uInfo.photoURL} name={i.userName} size={18} />
+                        <span>{i.userName}</span>
+                        {i.instrumentChoisi && <span className="text-[10px] opacity-75 font-normal">({i.instrumentChoisi})</span>}
+                        <div className="flex items-center gap-1 ml-1.5 border-l border-encre-noire/15 pl-1.5 font-bold">
+                          <button type="button" onClick={() => handleUpdateStatus && handleUpdateStatus(i.userId, 'present')} className="text-[var(--color-cordel-vert)] hover:text-white text-[9px] font-black cursor-pointer px-1.5 py-0.5 bg-[var(--color-cordel-vert)]/10 hover:bg-[var(--color-cordel-vert)] border border-[#2d6a4f]/30 rounded transition-colors" title="Confirmer en Présent">✓</button>
+                          <button type="button" onClick={() => handleManualUnregister(i.userId)} className="text-cordel-wood hover:text-red-800 text-[10px] font-black cursor-pointer ml-0.5" title="Retirer">✕</button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </RSVPAccordionSection>
             )}

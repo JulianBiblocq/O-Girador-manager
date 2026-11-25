@@ -1,43 +1,46 @@
 import { collection, doc, getDocs, query, where, writeBatch } from 'firebase/firestore';
 import { getEffectiveEventVotes } from './pollVoteUtils';
+import { cleanFirestorePayload } from './firestoreUtils';
+import { normalizeWorkshopPolicy, partitionWorkshopParticipants } from './workshopSanctuaryUtils';
 
-/** Valide unitairement un créneau de sondage pour un pupitre donné ("En entonnoir"). */
+function enrichUsersWithMatrix(allUsersMap, matrix, slotId, pupitres) {
+  const enriched = { ...allUsersMap };
+  (pupitres || []).forEach((p) => {
+    (matrix?.[slotId]?.[p]?.availableMembers || []).forEach((m) => {
+      if (m?.uid && !enriched[m.uid]) {
+        enriched[m.uid] = { id: m.uid, name: m.name || m.prenom || 'Membre', instrumentPrincipal: m.instrumentChoisi || p };
+      }
+    });
+  });
+  return enriched;
+}
+
+/** Valide unitairement un créneau de sondage pour un pupitre donné ("En entonnoir") avec tri par pupitre. */
 export async function confirmSinglePupitrePollSlot({
-  db, pupitre, targetEventId, allowLatecomers = true, matrix = {}, pollOptions = [], event = {}
+  db, pupitre, targetEventId, allowLatecomers = true, otherPupitresPolicy = 'reconfirm',
+  matrix = {}, pollOptions = [], event = {}, allUsersMap = {}, pupitresList = [], linkedInstruments = []
 }) {
   if (!db || !pupitre || !targetEventId) throw new Error('Paramètres manquants.');
   const slotEv = pollOptions.find((ev) => ev.id === targetEventId);
   if (!slotEv) throw new Error('Créneau cible introuvable.');
 
+  const cleanPolicy = normalizeWorkshopPolicy(otherPupitresPolicy);
   const baseTitre = String(event.titre || slotEv.titre || 'Atelier').replace(/\s*—\s*.*$/, '').trim();
-  const existingAssigned = Array.isArray(slotEv.pollAssignedPupitres) ? slotEv.pollAssignedPupitres : [];
-  const mergedAssigned = Array.from(new Set([...existingAssigned, pupitre]));
+  const mergedAssigned = Array.from(new Set([...(Array.isArray(slotEv.pollAssignedPupitres) ? slotEv.pollAssignedPupitres : []), pupitre]));
   const finalTitre = `${baseTitre} — ${mergedAssigned.join(' & ')}`;
-
-  const existingMap = new Map((slotEv.inscriptions || []).map((ins) => [ins.userId, ins]));
-  const members = matrix?.[targetEventId]?.[pupitre]?.availableMembers || [];
-  members.forEach((m) => {
-    if (!m.uid) return;
-    existingMap.set(m.uid, {
-      ...(existingMap.get(m.uid) || {}),
-      userId: m.uid,
-      userName: m.name || m.prenom || 'Membre',
-      instrument: m.instrument || m.instrumentChoisi || pupitre,
-      instrumentChoisi: m.instrumentChoisi || m.instrument || pupitre,
-      status: 'present',
-      timestamp: new Date().toISOString()
-    });
+  const enrichedUsers = enrichUsersWithMatrix(allUsersMap, matrix, targetEventId, mergedAssigned);
+  const triaged = partitionWorkshopParticipants({
+    event: slotEv, targetPupitres: mergedAssigned, policy: cleanPolicy, allUsersMap: enrichedUsers, pupitresList, linkedInstruments, mode: 'poll_validation'
   });
 
   const slotDateDebut = slotEv.dateDebut || slotEv.date || '';
   const batch = writeBatch(db);
-  const targetUpdate = {
+  batch.update(doc(db, 'events', targetEventId), cleanFirestorePayload({
     status: 'confirme', isPoll: false, requiresValidation: false, titre: finalTitre,
-    pollAssignedPupitres: mergedAssigned, inscriptions: Array.from(existingMap.values()),
-    allowLatecomersForAssignedPupitres: Boolean(allowLatecomers)
-  };
-  if (allowLatecomers && slotDateDebut) targetUpdate.dateLimiteInscription = slotDateDebut;
-  batch.update(doc(db, 'events', targetEventId), targetUpdate);
+    pollAssignedPupitres: mergedAssigned, inscriptions: triaged.inscriptions,
+    allowLatecomersForAssignedPupitres: Boolean(allowLatecomers), workshopPollOtherPupitresPolicy: cleanPolicy,
+    ...(allowLatecomers && slotDateDebut ? { dateLimiteInscription: slotDateDebut } : {})
+  }));
 
   const historyEntry = { pupitre, eventId: targetEventId, date: slotDateDebut, titre: finalTitre };
   pollOptions.forEach((opt) => {
@@ -51,15 +54,18 @@ export async function confirmSinglePupitrePollSlot({
   });
 
   await batch.commit();
-  return { validatedSlot: slotEv, finalTitre };
+  return { validatedSlot: slotEv, finalTitre, reconfirmRecipients: triaged.reconfirmRecipients, mergedAssigned };
 }
 
-/** Valide globalement la répartition par pupitre (tous les pupitres restants d'un coup). */
+/** Valide globalement la répartition par pupitre (tous les pupitres restants d'un coup) avec tri SaaS. */
 export async function executeBatchPupitreDispatch({
-  db, pollEvents = [], allocation = {}, matrix = {}, targetPupitres = [], allowLatecomers = true, baseTitre = 'Atelier'
+  db, pollEvents = [], allocation = {}, matrix = {}, targetPupitres = [],
+  allowLatecomers = true, otherPupitresPolicy = 'reconfirm', baseTitre = 'Atelier',
+  allUsersMap = {}, pupitresList = [], linkedInstruments = []
 }) {
   const batch = writeBatch(db);
-  const nowIso = new Date().toISOString();
+  const cleanPolicy = normalizeWorkshopPolicy(otherPupitresPolicy);
+  const reconfirmSlots = [];
 
   pollEvents.forEach((slotEv) => {
     if (slotEv.status && slotEv.status !== 'sondage') return;
@@ -67,66 +73,45 @@ export async function executeBatchPupitreDispatch({
     const slotRef = doc(db, 'events', slotEv.id);
     if (assignedPupitres.length === 0) { batch.delete(slotRef); return; }
 
-    const updatedInscriptions = [...(slotEv.inscriptions || [])];
-    assignedPupitres.forEach((p) => {
-      (matrix?.[slotEv.id]?.[p]?.availableMembers || []).forEach((m) => {
-        const idx = updatedInscriptions.findIndex((i) => i.userId === m.uid);
-        const entry = {
-          userId: m.uid, userName: m.name || 'Membre', status: 'present',
-          instrumentChoisi: m.instrumentChoisi || p || 'Autre', timestamp: nowIso
-        };
-        if (idx >= 0) updatedInscriptions[idx] = { ...updatedInscriptions[idx], ...entry };
-        else updatedInscriptions.push(entry);
-      });
+    const enrichedUsers = enrichUsersWithMatrix(allUsersMap, matrix, slotEv.id, assignedPupitres);
+    const triaged = partitionWorkshopParticipants({
+      event: slotEv, targetPupitres: assignedPupitres, policy: cleanPolicy, allUsersMap: enrichedUsers, pupitresList, linkedInstruments, mode: 'poll_validation'
     });
-
     const slotDateDebut = slotEv.dateDebut || slotEv.date || '';
-    const payload = {
-      titre: `${baseTitre} — ${assignedPupitres.join(' & ')}`,
-      status: 'confirme', isPoll: false, requiresValidation: false,
-      pollAssignedPupitres: assignedPupitres, inscriptions: updatedInscriptions,
-      allowLatecomersForAssignedPupitres: Boolean(allowLatecomers)
-    };
-    if (allowLatecomers && slotDateDebut) payload.dateLimiteInscription = slotDateDebut;
-    batch.update(slotRef, payload);
+    const pupitreLabel = assignedPupitres.join(' & ');
+    batch.update(slotRef, cleanFirestorePayload({
+      titre: `${baseTitre} — ${pupitreLabel}`, status: 'confirme', isPoll: false, requiresValidation: false,
+      pollAssignedPupitres: assignedPupitres, inscriptions: triaged.inscriptions,
+      allowLatecomersForAssignedPupitres: Boolean(allowLatecomers), workshopPollOtherPupitresPolicy: cleanPolicy,
+      ...(allowLatecomers && slotDateDebut ? { dateLimiteInscription: slotDateDebut } : {})
+    }));
+    if (cleanPolicy === 'reconfirm' && triaged.reconfirmRecipients.length > 0) {
+      reconfirmSlots.push({ eventId: slotEv.id, rawDate: slotDateDebut, pupitreLabel, recipientIds: triaged.reconfirmRecipients.map((r) => r.uid) });
+    }
   });
 
   await batch.commit();
+  return { reconfirmSlots, policy: cleanPolicy };
 }
 
 /** Valide définitivement l'option gagnante unique d'un sondage classique et supprime les autres options. */
 export async function executeSingleWinningPollOption({ db, winningOptionEvent, allUsersMap = {}, groupId }) {
   const batch = writeBatch(db);
   const votes = getEffectiveEventVotes(winningOptionEvent);
-  const dispoUserIds = Object.keys(votes).filter((uid) => votes[uid] === 'dispo');
   const updatedInscriptions = [...(winningOptionEvent.inscriptions || [])];
-
-  dispoUserIds.forEach((uid) => {
-    const existingIdx = updatedInscriptions.findIndex((i) => i.userId === uid);
-    const uInfo = allUsersMap[uid];
-    if (existingIdx >= 0) updatedInscriptions[existingIdx] = { ...updatedInscriptions[existingIdx], status: 'present' };
-    else updatedInscriptions.push({ userId: uid, userName: uInfo?.name || 'Membre', status: 'present', timestamp: new Date().toISOString() });
+  Object.keys(votes).filter((uid) => votes[uid] === 'dispo').forEach((uid) => {
+    const idx = updatedInscriptions.findIndex((i) => i.userId === uid);
+    if (idx >= 0) updatedInscriptions[idx] = { ...updatedInscriptions[idx], status: 'present' };
+    else updatedInscriptions.push({ userId: uid, userName: allUsersMap[uid]?.name || 'Membre', status: 'present', timestamp: new Date().toISOString() });
   });
-
-  const preservedPrivacyFields = {};
-  if (winningOptionEvent.targetGroup !== undefined) preservedPrivacyFields.targetGroup = winningOptionEvent.targetGroup;
-  if (winningOptionEvent.reunionPrivacyMode !== undefined) preservedPrivacyFields.reunionPrivacyMode = winningOptionEvent.reunionPrivacyMode;
-  if (winningOptionEvent.hideAgendaFromNonTarget !== undefined) preservedPrivacyFields.hideAgendaFromNonTarget = winningOptionEvent.hideAgendaFromNonTarget;
-  if (winningOptionEvent.audience !== undefined) preservedPrivacyFields.audience = winningOptionEvent.audience;
-  if (winningOptionEvent.portee !== undefined) preservedPrivacyFields.portee = winningOptionEvent.portee;
-
-  batch.update(doc(db, 'events', winningOptionEvent.id), {
-    status: 'confirme',
-    isPoll: false,
-    inscriptions: updatedInscriptions,
-    requiresValidation: false,
-    ...preservedPrivacyFields
+  const preserved = {};
+  ['targetGroup', 'reunionPrivacyMode', 'hideAgendaFromNonTarget', 'audience', 'portee'].forEach((k) => {
+    if (winningOptionEvent[k] !== undefined) preserved[k] = winningOptionEvent[k];
   });
+  batch.update(doc(db, 'events', winningOptionEvent.id), { status: 'confirme', isPoll: false, inscriptions: updatedInscriptions, requiresValidation: false, ...preserved });
   if (winningOptionEvent.pollGroupId && groupId) {
     const snap = await getDocs(query(collection(db, 'events'), where('pollGroupId', '==', winningOptionEvent.pollGroupId), where('groupId', '==', groupId)));
-    snap.forEach((docSnap) => {
-      if (docSnap.id !== winningOptionEvent.id && docSnap.data()?.status === 'sondage') batch.delete(docSnap.ref);
-    });
+    snap.forEach((d) => { if (d.id !== winningOptionEvent.id && d.data()?.status === 'sondage') batch.delete(d.ref); });
   }
   await batch.commit();
 }

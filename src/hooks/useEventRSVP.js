@@ -10,7 +10,7 @@ import {
   buildDriverDepartureWarningMessage,
   applyCarpoolAbsenceCascade
 } from '../utils/carpoolCascadeUtils';
-import { getMemberPrimaryPupitre } from '../utils/pollAllocationUtils';
+import { doesMemberMatchTargetPupitres, normalizeWorkshopPolicy, resolveEventTargetPupitres } from '../utils/workshopSanctuaryUtils';
 
 /**
  * Vérifie si les inscriptions sont closes pour un événement.
@@ -58,7 +58,7 @@ export const checkRegistrationDeadlinePassed = (eventOrDeadline, fallbackEventSt
   return false;
 };
 
-export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRestricted, setToastMessage) {
+export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRestricted, setToastMessage, workshopOptions = {}) {
   const { confirm } = useConfirm();
   const existingResponse = (event?.inscriptions || []).find(ins => ins.userId === user?.uid);
 
@@ -223,19 +223,16 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
       return;
     }
 
-    // Restriction d'inscription libre au(x) pupitre(s) assigné(s) lors d'un atelier issu d'un sondage en entonnoir
-    if (
-      !isAuthorized &&
-      targetStatus !== 'absent' &&
-      Array.isArray(event?.pollAssignedPupitres) &&
-      event.pollAssignedPupitres.length > 0
-    ) {
-      const matchedPupitre = getMemberPrimaryPupitre(profileData, event.pollAssignedPupitres);
-      if (!matchedPupitre || !event.pollAssignedPupitres.includes(matchedPupitre)) {
-        alert(`🔒 Cet atelier est réservé au(x) pupitre(s) : ${event.pollAssignedPupitres.join(', ')}.`);
-        setSaving(false);
-        return;
-      }
+    // Restriction d'inscription par pupitre uniquement lorsque la politique de l'atelier est 'strict'
+    const workshopTargetPupitres = resolveEventTargetPupitres(event, workshopOptions.pupitresList, workshopOptions.linkedInstruments);
+    const effectiveWorkshopPolicy = normalizeWorkshopPolicy(event?.workshopPollOtherPupitresPolicy || workshopOptions.workshopPolicy);
+    const isTargetPupitreMember = workshopTargetPupitres.length === 0 ||
+      doesMemberMatchTargetPupitres(profileData, workshopTargetPupitres, workshopOptions.pupitresList, workshopOptions.linkedInstruments);
+
+    if (!isAuthorized && targetStatus !== 'absent' && workshopTargetPupitres.length > 0 && effectiveWorkshopPolicy === 'strict' && !isTargetPupitreMember) {
+      alert(`🔒 Cet atelier est strictement réservé au(x) pupitre(s) : ${workshopTargetPupitres.join(', ')}.`);
+      setSaving(false);
+      return;
     }
 
     const defaultInstrument = profileData?.instrument || profileData?.instrumentsJoues?.[0] || 'Autre';
@@ -250,16 +247,11 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
     if (targetStatus === 'absent' && user?.uid) {
       const situation = inspectDriverCarpoolSituation(event, user.uid);
       if (situation.isDriver && situation.hasThirdParty) {
-        const warningMsg = buildDriverDepartureWarningMessage(situation);
         const isConfirmed = await confirm({
-          title: "Passagers dans votre véhicule",
-          message: warningMsg,
-          confirmText: "Confirmer l'absence",
-          cancelText: "Annuler",
-          variant: "warning"
+          title: "Passagers dans votre véhicule", message: buildDriverDepartureWarningMessage(situation),
+          confirmText: "Confirmer l'absence", cancelText: "Annuler", variant: "warning"
         });
         if (!isConfirmed) {
-          // Annulation : rétablir le statut d'origine et stopper l'opération
           if (existingResponse?.status) {
             setStatus(existingResponse.status === 'pending' || existingResponse.status === 'refused' ? 'present' : existingResponse.status);
           }
@@ -273,98 +265,57 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
       const eventRef = doc(db, 'events', event.id);
       const memberName = `${profileData?.prenom || ''} ${profileData?.nom || ''}`.trim() || user?.displayName || 'Membre';
       const finalStatus = (targetStatus === 'present' && event.requiresValidation) ? 'pending' : targetStatus;
+      const isHorsPupitre = workshopTargetPupitres.length > 0 && (Boolean(overrideOptions.horsPupitre) || !isTargetPupitreMember);
 
       await runTransaction(db, async (transaction) => {
         const eventDocSnap = await transaction.get(eventRef);
-        if (!eventDocSnap.exists()) {
-          throw new Error("L'événement n'existe plus !");
-        }
+        if (!eventDocSnap.exists()) throw new Error("L'événement n'existe plus !");
 
         const freshEvent = eventDocSnap.data();
         const currentInscriptions = freshEvent.inscriptions || [];
         const currentCovoit = freshEvent.covoiturage || { voitures: [], recherchePlace: [] };
-
-        let finalInscriptions = [];
-        let finalCovoit = currentCovoit;
+        let finalInscriptions = [], finalCovoit = currentCovoit;
 
         if (targetStatus === 'absent') {
-          // Cascade automatique de nettoyage covoiturage (libération passager, retrait voiture, bascule passagers/instruments orphelins)
           const cascade = applyCarpoolAbsenceCascade(currentCovoit, currentInscriptions, user.uid);
           finalCovoit = cascade.updatedCovoiturage;
           finalInscriptions = cascade.updatedInscriptions;
-
           const existingIdx = finalInscriptions.findIndex(ins => ins.userId === user.uid);
           const absentEntry = {
-            userId: user.uid,
-            userName: memberName,
-            status: finalStatus,
-            transport: null,
-            places: 0,
-            instruments: "",
-            instrumentChoisi: null,
-            instrumentImposeParMestre: false,
-            demandeRemboursementKm: false,
-            besoinTransportInstrument: false
+            userId: user.uid, userName: memberName, status: finalStatus, transport: null, places: 0,
+            instruments: "", instrumentChoisi: null, instrumentImposeParMestre: false,
+            demandeRemboursementKm: false, besoinTransportInstrument: false, horsPupitre: false
           };
-          if (existingIdx >= 0) {
-            finalInscriptions[existingIdx] = {
-              ...finalInscriptions[existingIdx],
-              ...absentEntry
-            };
-          } else {
-            finalInscriptions.push(absentEntry);
-          }
+          if (existingIdx >= 0) finalInscriptions[existingIdx] = { ...finalInscriptions[existingIdx], ...absentEntry };
+          else finalInscriptions.push(absentEntry);
         } else {
-          // Statut Présent ou À confirmer
           finalInscriptions = currentInscriptions.filter(ins => ins.userId !== user.uid);
-          const newResponse = {
-            userId: user.uid,
-            userName: memberName,
-            status: finalStatus,
-            transport: targetStatus === 'present' ? targetTransport : null,
-            places: 0,
-            instruments: "",
+          finalInscriptions.push({
+            userId: user.uid, userName: memberName, status: finalStatus,
+            transport: targetStatus === 'present' ? targetTransport : null, places: 0, instruments: "",
             instrumentChoisi: targetStatus === 'present' ? targetInstrument : null,
             instrumentImposeParMestre: targetStatus === 'present' ? isInstrumentLocked : false,
             demandeRemboursementKm: (targetStatus === 'present' && targetTransport === 'propose_voiture') ? targetDemandeRemb : false,
-            besoinTransportInstrument: targetStatus === 'present' ? targetBesoinTransp : false
-          };
-          finalInscriptions.push(newResponse);
+            besoinTransportInstrument: targetStatus === 'present' ? targetBesoinTransp : false,
+            ...(workshopTargetPupitres.length > 0 && targetStatus === 'present' ? {
+              horsPupitre: isHorsPupitre,
+              isTargetPupitreMember: !isHorsPupitre,
+              reconfirmedAt: isHorsPupitre ? new Date().toISOString() : null
+            } : {})
+          });
 
-          // Gestion de la file d'attente recherchePlace
           let recherchePlace = [...(currentCovoit.recherchePlace || [])];
           if (targetStatus === 'present' && targetTransport === 'cherche_place') {
             const existingIdx = recherchePlace.findIndex(p => p.uid === user.uid);
-            if (existingIdx >= 0) {
-              recherchePlace[existingIdx] = {
-                ...recherchePlace[existingIdx],
-                cherchePassager: true,
-                chercheInstrument: !!targetBesoinTransp
-              };
-            } else {
-              recherchePlace.push({
-                uid: user.uid,
-                nom: memberName,
-                cherchePassager: true,
-                chercheInstrument: !!targetBesoinTransp
-              });
-            }
+            if (existingIdx >= 0) recherchePlace[existingIdx] = { ...recherchePlace[existingIdx], cherchePassager: true, chercheInstrument: !!targetBesoinTransp };
+            else recherchePlace.push({ uid: user.uid, nom: memberName, cherchePassager: true, chercheInstrument: !!targetBesoinTransp });
           } else if (targetTransport === 'autonome' || targetStatus !== 'present') {
             recherchePlace = recherchePlace.filter(p => p.uid !== user.uid);
           }
-
-          finalCovoit = {
-            ...currentCovoit,
-            recherchePlace
-          };
+          finalCovoit = { ...currentCovoit, recherchePlace };
         }
 
-        const eventUpdates = {
-          inscriptions: finalInscriptions,
-          covoiturage: finalCovoit
-        };
-
-        transaction.update(eventRef, cleanFirestorePayload(eventUpdates));
+        transaction.update(eventRef, cleanFirestorePayload({ inscriptions: finalInscriptions, covoiturage: finalCovoit }));
       });
 
       // Synchronisation du state local après succès de la transaction
@@ -1104,7 +1055,6 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
 
       const eventRef = doc(db, 'events', event.id);
       await updateDoc(eventRef, cleanFirestorePayload(eventUpdates));
-
       setStatus('absent');
       triggerToast("Demande de place annulée.");
     } catch (error) {
@@ -1115,48 +1065,42 @@ export function useEventRSVP(event, user, profileData, allUsers, isMusicLevelRes
     }
   };
 
+  // Retrait immédiat de l'attente de re-confirmation hors-pupitre (passe en non-inscrit)
+  const handleWithdrawReconfirm = async () => {
+    if (!event?.id || !user?.uid) return;
+    setSaving(true);
+    try {
+      const eventRef = doc(db, 'events', event.id);
+      await runTransaction(db, async (tx) => {
+        const snap = await tx.get(eventRef);
+        if (!snap.exists()) return;
+        const fresh = snap.data();
+        const cascade = applyCarpoolAbsenceCascade(fresh.covoiturage || { voitures: [], recherchePlace: [] }, fresh.inscriptions || [], user.uid);
+        tx.update(eventRef, cleanFirestorePayload({
+          inscriptions: cascade.updatedInscriptions.filter((ins) => ins.userId !== user.uid),
+          covoiturage: cascade.updatedCovoiturage
+        }));
+      });
+      setStatus('confirm');
+      triggerToast("Vous vous êtes retiré(e) de cet atelier.");
+    } catch (error) {
+      console.error("useEventRSVP - Erreur retrait re-confirmation :", error);
+      alert("Erreur lors du retrait de votre participation.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return {
-    status,
-    setStatus,
-    transport,
-    setTransport,
-    demandeRemboursementKm,
-    setDemandeRemboursementKm,
-    besoinTransportInstrument,
-    setBesoinTransportInstrument,
-    saving,
-    instrumentChoisi,
-    setInstrumentChoisi,
-    isInstrumentLocked,
-    existingResponse,
-    dependents,
-    familyMembers,
-    familyResponses,
-    handleToggleFamilyMemberSelection,
-    handleFamilyMemberStatusChange,
-    handleFamilyMemberInstrumentChange,
-    handleFamilySave,
-    selectedManualUserId,
-    setSelectedManualUserId,
-    selectedManualInstrument,
-    setSelectedManualInstrument,
-    isManualRegisterOpen,
-    setIsManualRegisterOpen,
-    savingManualRegistration,
-    handleStatusChange,
-    handleSave,
-    handleValidatePending,
-    handleManualRegister,
-    handleManualUnregister,
-    handleUpdateStatus,
-    handleUpdateMemberInstrument,
-    handleAddInviteExterne,
-    handleRemoveInviteExterne,
-    handleRequestRegistrationChange,
-    handleCancelRegistrationChangeRequest,
-    handleProcessRegistrationChangeRequest,
-    handleLateCancellation,
-    handleLateRegistration,
-    handleCancelLateRegistration
+    status, setStatus, transport, setTransport, demandeRemboursementKm, setDemandeRemboursementKm,
+    besoinTransportInstrument, setBesoinTransportInstrument, saving, instrumentChoisi, setInstrumentChoisi,
+    isInstrumentLocked, existingResponse, dependents, familyMembers, familyResponses,
+    handleToggleFamilyMemberSelection, handleFamilyMemberStatusChange, handleFamilyMemberInstrumentChange, handleFamilySave,
+    selectedManualUserId, setSelectedManualUserId, selectedManualInstrument, setSelectedManualInstrument,
+    isManualRegisterOpen, setIsManualRegisterOpen, savingManualRegistration, handleStatusChange, handleSave,
+    handleValidatePending, handleManualRegister, handleManualUnregister, handleUpdateStatus, handleUpdateMemberInstrument,
+    handleAddInviteExterne, handleRemoveInviteExterne, handleRequestRegistrationChange, handleCancelRegistrationChangeRequest,
+    handleProcessRegistrationChangeRequest, handleLateCancellation, handleLateRegistration, handleCancelLateRegistration,
+    handleWithdrawReconfirm
   };
 }
