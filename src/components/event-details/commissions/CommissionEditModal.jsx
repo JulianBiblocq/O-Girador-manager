@@ -158,7 +158,7 @@ export default function CommissionEditModal({
           {/* Sous-sections actives */}
           {formData.modulesActifs.includes('jalons') && <CommissionJalonsSection jalons={formData.jalons} onChangeJalons={(next) => setFormData({ ...formData, jalons: next })} usersMap={usersMap} />}
           {formData.modulesActifs.includes('budget') && <CommissionBudgetSection budget={formData.budget} onChangeBudget={(next) => setFormData({ ...formData, budget: next })} canArbitrate={canArbitrate} />}
-          {formData.modulesActifs.includes('benevoles') && <CommissionBenevolesSection creneaux={formData.creneauxBenevoles} onChangeCreneaux={(next) => setFormData({ ...formData, creneauxBenevoles: next })} usersMap={usersMap} />}
+          {formData.modulesActifs.includes('benevoles') && <CommissionBenevolesSection commission={commission} event={event} creneaux={formData.creneauxBenevoles} onChangeCreneaux={(next) => setFormData({ ...formData, creneauxBenevoles: next })} usersMap={usersMap} />}
           {formData.modulesActifs.includes('materiel') && <CommissionMaterielSection besoins={formData.besoinsMateriel} onChangeBesoins={(next) => setFormData({ ...formData, besoinsMateriel: next })} />}
 
           {/* Bloc de publication et synchronisation au Varal */}

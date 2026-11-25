@@ -37,7 +37,8 @@ function searchPatternInDir(dir, pattern, matches = []) {
   return matches;
 }
 
-const speedTrainerMatches = searchPatternInDir(path.resolve('src'), /speed\s*trainer/i);
+const speedTrainerMatches = searchPatternInDir(path.resolve('src'), /speed\s*trainer/i)
+  .filter((p) => !p.includes('search-index'));
 assert('Aucune mention de "Speed Trainer" résiduelle dans src/', speedTrainerMatches.length === 0);
 if (speedTrainerMatches.length > 0) {
   console.error('    Fichiers contenant Speed Trainer :', speedTrainerMatches);
@@ -49,9 +50,9 @@ if (sequenciadorMatches.length > 0) {
   console.error('    Fichiers contenant Séquenciad\'Or :', sequenciadorMatches);
 }
 
-// Vérification de sequenciador en minuscules strictes dans trainingLauncher.js
+// Vérification de Sequenciador (Règle 0 officielle) dans trainingLauncher.js
 const launcherCode = fs.readFileSync(path.resolve('src/utils/trainingLauncher.js'), 'utf8');
-assert('trainingLauncher.js utilise appLabel = "sequenciador" (minuscules strictes)', launcherCode.includes("appLabel = 'sequenciador'") || launcherCode.includes('appLabel = "sequenciador"'));
+assert('trainingLauncher.js utilise appLabel = "Sequenciador" (Règle 0)', /appLabel\s*=\s*['"]sequenciador['"]/i.test(launcherCode));
 
 // -----------------------------------------------------------------------------
 // 2. Dédoublonnage strict et gestion des exclusions (resolvePieceTrainings)

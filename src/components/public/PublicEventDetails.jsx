@@ -1,15 +1,10 @@
 import React from 'react';
 import { buildGoogleCalendarUrl } from '../../utils/calendarUtils';
+import { isDemoMode } from '../../demo/demoManager';
+import { isCustomDomainHost } from '../../utils/tenantUtils';
+import { buildPublicVolunteerRelativeHref } from '../../utils/publicVolunteerUtils';
 
-/**
- * Composant Détails Publics d'un Événement (PublicEventDetails).
- * Affiche la vue détaillée complète pour les visiteurs du site vitrine.
- * Filtre strictement toutes les informations logistiques internes (covoiturage, vestiaires, présences, séquenceur).
- * 
- * @param {Object} props
- * @param {Object} props.event - Données de l'événement public sélectionné
- * @param {Function} props.onClose - Handler de fermeture de la modale
- */
+/** Modale publique des détails d'un événement sur la Vitrine Mostrador (zéro fuite logistique interne). */
 export default function PublicEventDetails({ event, onClose }) {
   if (!event) return null;
 
@@ -142,28 +137,25 @@ export default function PublicEventDetails({ event, onClose }) {
           )}
 
           {/* Actions & Liens Externes */}
-          <div className="flex flex-wrap items-center justify-between gap-4 border-t border-stone-200 pt-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-stone-200 pt-6">
             {event.lienSocial && (
-              <a
-                href={event.lienSocial}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider rounded-lg border border-stone-300 bg-stone-100 text-stone-800 hover:bg-stone-200 transition-all flex items-center gap-2"
-              >
+              <a href={event.lienSocial} target="_blank" rel="noopener noreferrer" className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider rounded-lg border border-stone-300 bg-stone-100 text-stone-800 hover:bg-stone-200 transition-all flex items-center gap-2">
                 <span>🔗 Lien externe / Réseaux sociaux ↗</span>
               </a>
             )}
 
+            {event.publicVolunteerConfig?.enabled && event.id && (
+              <a
+                href={buildPublicVolunteerRelativeHref(event, { isCustomDomain: typeof window !== 'undefined' && isCustomDomainHost(window.location.hostname), isDemo: isDemoMode() })}
+                className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider rounded-lg text-white shadow-md hover:brightness-110 transition-all flex items-center gap-2 bg-[var(--public-secondary,#2D6A4F)] [font-family:var(--public-font-heading,sans-serif)]"
+              >
+                <span>🙌 Donner un coup de main (Bénévoles)</span>
+              </a>
+            )}
+
             <a
-              href={generateGoogleCalendarUrl()}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-5 py-2.5 text-xs font-bold uppercase tracking-wider rounded-lg text-white shadow-md hover:brightness-110 active:scale-95 transition-all ml-auto flex items-center gap-2"
-              style={{
-                backgroundColor: 'var(--public-btn-bg, var(--public-primary, #8B2A1A))',
-                color: 'var(--public-btn-text, #FFFFFF)',
-                fontFamily: 'var(--public-font-heading, sans-serif)'
-              }}
+              href={generateGoogleCalendarUrl()} target="_blank" rel="noopener noreferrer"
+              className="px-5 py-2.5 text-xs font-bold uppercase tracking-wider rounded-lg text-white shadow-md hover:brightness-110 active:scale-95 transition-all ml-auto flex items-center gap-2 bg-[var(--public-btn-bg,var(--public-primary,#8B2A1A))] text-[var(--public-btn-text,#FFFFFF)] [font-family:var(--public-font-heading,sans-serif)]"
             >
               <span>📅 Ajouter à mon agenda</span>
             </a>

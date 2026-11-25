@@ -54,8 +54,9 @@ console.log('  ✅ Balise <main id="main-content"> présente avec espacement pt-
 // -----------------------------------------------------------------------------
 console.log('\n--- 2️⃣ Vérification de la Tour de Contrôle (EventCommissionsHub.jsx) ---');
 const hubPath = path.join(rootDir, 'src/components/event-details/commissions/EventCommissionsHub.jsx');
-const hubContent = fs.readFileSync(hubPath, 'utf8');
-const hubLines = hubContent.split('\n').length;
+const hubHeaderPath = path.join(rootDir, 'src/components/event-details/commissions/CommissionHubHeader.jsx');
+const hubContent = fs.readFileSync(hubPath, 'utf8') + (fs.existsSync(hubHeaderPath) ? '\n' + fs.readFileSync(hubHeaderPath, 'utf8') : '');
+const hubLines = fs.readFileSync(hubPath, 'utf8').split('\n').length;
 
 // Contrôle de la règle anti-monolithe (< 200 lignes)
 assert.ok(hubLines < 200, `EventCommissionsHub.jsx doit faire moins de 200 lignes (actuellement ${hubLines} lignes)`);

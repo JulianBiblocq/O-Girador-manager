@@ -32,7 +32,7 @@ import { isMemberArchived } from './utils/memberUtils';
 import { useTenantContext } from './context/TenantContext';
 import DemoTopBanner from './components/demo/DemoTopBanner';
 import { canonicalizeGroupId, isSameGroupCaseInsensitive, isCustomDomainHost, registerCanonicalGroupId, saveLastKnownTenantId, getLastKnownTenantId, getCachedDomainGroupId, resolveCanonicalGroupFromFirestore } from './utils/tenantUtils';
-import { isLockedVitrineHost, sanitizeLockedVitrinePathname, resolveIsVitrineMode } from './utils/vitrineLockUtils';
+import { isLockedVitrineHost, sanitizeLockedVitrinePathname, resolveIsVitrineMode, isPublicVolunteerRoute } from './utils/vitrineLockUtils';
 import { buildFounderEmergencyProfile, resolveAdminFallbackGroupId, isSystemSuperAdminIdentity, isEmergencyFounderIdentity, EMERGENCY_FOUNDER_UID } from './utils/founderFallbackUtils';
 import { reconcilePreExistingMember } from './services/memberService';
 import { isDemoMode, initDemoSession, getDemoAuthUser, getDemoProfileData } from './demo/demoManager';
@@ -290,24 +290,16 @@ export default function App() {
       const hostname = window.location.hostname || '';
       if (hostname.includes('mostrador')) {
         const url = new URL(window.location.href);
-        const legacyTenant = url.searchParams.get('tenant') || 
-                             url.searchParams.get('groupe') || 
-                             url.searchParams.get('groupId') || 
-                             url.searchParams.get('assoc');
-
-        if (legacyTenant) {
-          const cleanTenant = legacyTenant.trim().toLowerCase();
-          url.searchParams.delete('tenant');
-          url.searchParams.delete('groupe');
-          url.searchParams.delete('groupId');
-          url.searchParams.delete('assoc');
-
-          const remainingSearch = url.searchParams.toString();
-          const cleanPath = `/${encodeURIComponent(cleanTenant)}`;
-          const cleanUrl = cleanPath + (remainingSearch ? `?${remainingSearch}` : '') + url.hash;
-
-          window.history.replaceState({}, document.title, cleanUrl);
-          setCurrentRoute(cleanPath);
+        if (!isPublicVolunteerRoute(url.pathname)) {
+          const legacyTenant = url.searchParams.get('tenant') || url.searchParams.get('groupe') || url.searchParams.get('groupId') || url.searchParams.get('assoc');
+          if (legacyTenant) {
+            const cleanTenant = legacyTenant.trim().toLowerCase();
+            ['tenant', 'groupe', 'groupId', 'assoc'].forEach((k) => url.searchParams.delete(k));
+            const remainingSearch = url.searchParams.toString();
+            const cleanPath = `/${encodeURIComponent(cleanTenant)}`;
+            window.history.replaceState({}, document.title, cleanPath + (remainingSearch ? `?${remainingSearch}` : '') + url.hash);
+            setCurrentRoute(cleanPath);
+          }
         }
       }
     } catch {}

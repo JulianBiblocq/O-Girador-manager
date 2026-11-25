@@ -78,11 +78,12 @@ assert(dictationButtonContent.includes('🎙️'), "Icône microphone Cordel pr�
 // -------------------------------------------------------------
 console.log("\n▶️ Module 4 : Audit de l'intégration dans les espaces d'écriture");
 
-// 4.1 PrivateChatView.jsx
+// 4.1 PrivateChatView.jsx (+ sous-composant extrait ChatComposerPlusMenu.jsx)
 const privateChatPath = path.join(rootDir, 'src', 'components', 'PrivateChatView.jsx');
-const privateChatContent = fs.readFileSync(privateChatPath, 'utf8');
-assert(privateChatContent.includes('VoiceDictationButton'), "PrivateChatView importe VoiceDictationButton");
-assert(privateChatContent.includes('spokenText'), "PrivateChatView traite la dictée vocale dans la barre de saisie");
+const composerPlusPath = path.join(rootDir, 'src', 'components', 'forum', 'ChatComposerPlusMenu.jsx');
+const privateChatContent = fs.readFileSync(privateChatPath, 'utf8') + (fs.existsSync(composerPlusPath) ? '\n' + fs.readFileSync(composerPlusPath, 'utf8') : '');
+assert(privateChatContent.includes('VoiceDictationButton'), "PrivateChatView / ChatComposerPlusMenu importe VoiceDictationButton");
+assert(privateChatContent.includes('spokenText') || privateChatContent.includes('onInsertText'), "PrivateChatView traite la dictée vocale dans la barre de saisie");
 
 // 4.2 ThreadReplyBar.jsx
 const replyBarPath = path.join(rootDir, 'src', 'components', 'forum', 'thread', 'ThreadReplyBar.jsx');

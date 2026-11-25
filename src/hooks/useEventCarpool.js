@@ -210,10 +210,7 @@ export function useEventCarpool({
         });
 
         transaction.update(eventRef, {
-          covoiturage: {
-            voitures: [...voitures, newVoiture],
-            recherchePlace: recherchePlace
-          },
+          covoiturage: { ...currentCovoit, voitures: [...voitures, newVoiture], recherchePlace },
           inscriptions: updatedInscriptions
         });
       });
@@ -310,10 +307,7 @@ export function useEventCarpool({
         const recherchePlace = (currentCovoit.recherchePlace || []).filter(item => item.uid !== user.uid);
 
         transaction.update(eventRef, {
-          covoiturage: {
-            voitures: updatedVoitures,
-            recherchePlace: recherchePlace
-          }
+          covoiturage: { ...currentCovoit, voitures: updatedVoitures, recherchePlace }
         });
       });
 
@@ -464,10 +458,7 @@ export function useEventCarpool({
         });
 
         transaction.update(eventRef, {
-          covoiturage: {
-            voitures: updatedVoitures,
-            recherchePlace: recherchePlace
-          },
+          covoiturage: { ...currentCovoit, voitures: updatedVoitures, recherchePlace },
           inscriptions: updatedInscriptions
         });
       });
@@ -563,10 +554,7 @@ export function useEventCarpool({
         });
 
         transaction.update(eventRef, {
-          covoiturage: {
-            voitures: updatedVoitures,
-            recherchePlace: recherchePlace
-          },
+          covoiturage: { ...currentCovoit, voitures: updatedVoitures, recherchePlace },
           inscriptions: updatedInscriptions
         });
       });
@@ -681,10 +669,7 @@ export function useEventCarpool({
         }
 
         transaction.update(eventRef, {
-          covoiturage: {
-            voitures: updatedVoitures,
-            recherchePlace: updatedRecherchePlace
-          },
+          covoiturage: { ...currentCovoit, voitures: updatedVoitures, recherchePlace: updatedRecherchePlace },
           inscriptions: updatedInscriptions
         });
       });

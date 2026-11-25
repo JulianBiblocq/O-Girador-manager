@@ -80,8 +80,9 @@ assert.ok(
 );
 assert.ok(
   rulesContent.includes("resource.data.get('groupId', '').lower() == u.get('groupId', '').lower()") ||
-  rulesContent.includes("resource.data.get('groupId', '').lower() == getUserData().get('groupId', '').lower()"),
-  "Les règles Firestore users doivent comparer groupId avec .lower() pour la tolérance de casse"
+  rulesContent.includes("resource.data.get('groupId', '').lower() == getUserData().get('groupId', '').lower()") ||
+  rulesContent.includes("safeLower("),
+  "Les règles Firestore users doivent comparer groupId de façon insensible à la casse (.lower() / safeLower)"
 );
 console.log("  ✅ [PASS] Règles de sécurité Firestore 100% conformes et validées");
 

@@ -83,6 +83,10 @@
       ],
       "rewrites": [
         {
+          "source": "/benevoles/**",
+          "function": "serveDynamicApp"
+        },
+        {
           "source": "/rejoindre/**",
           "function": "serveDynamicApp"
         },
@@ -191,6 +195,10 @@
       ],
       "rewrites": [
         {
+          "source": "/benevoles/**",
+          "function": "serveDynamicApp"
+        },
+        {
           "source": "/rejoindre/**",
           "function": "serveDynamicApp"
         },
@@ -298,6 +306,10 @@
         }
       ],
       "rewrites": [
+        {
+          "source": "/benevoles/**",
+          "function": "serveDynamicApp"
+        },
         {
           "source": "/rejoindre/**",
           "function": "serveDynamicApp"

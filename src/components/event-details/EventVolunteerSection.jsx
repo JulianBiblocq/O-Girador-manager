@@ -1,249 +1,138 @@
-import React, { useState } from 'react';
-import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '../../firebase';
+import React, { useState, useMemo } from 'react';
 import CordelCard from '../CordelCard';
-import XiloAvatar from '../XiloAvatar';
 import { openGoogleCalendar } from '../../utils/calendarUtils';
+import { downloadVolunteersAndLogisticsCSV } from '../../utils/volunteerCsvExportUtils';
 import { useTranslation } from '../LanguageContext';
+import { useVolunteerShifts } from '../../hooks/useVolunteerShifts';
+import { useVolunteerApplications } from '../../hooks/useVolunteerApplications';
+import VolunteerShiftCard from './volunteers/VolunteerShiftCard';
+import VolunteerGuestModal from './volunteers/VolunteerGuestModal';
+import VolunteerPersonalMemoBanner from './volunteers/VolunteerPersonalMemoBanner';
+import VolunteerApplicationsInbox from './volunteers/VolunteerApplicationsInbox';
+import VolunteerShiftAssignModal from './volunteers/VolunteerShiftAssignModal';
+import VolunteerExternalManualModal from './volunteers/VolunteerExternalManualModal';
+import VolunteerExternalDetailsModal from './volunteers/VolunteerExternalDetailsModal';
+import VolunteerExternalDispatchModal from './volunteers/VolunteerExternalDispatchModal';
+import EventVolunteerShareModal from './volunteers/EventVolunteerShareModal';
 
-export default function EventVolunteerSection({ event, user, allUsers = [], t }) {
+/**
+ * Section consolidée des créneaux bénévoles d'un événement : mémo Jour J membre,
+ * sas de validation externe, envoi des mémos/remerciements, export CSV et partage QR.
+ */
+export default function EventVolunteerSection({ event, user, profileData = null, allUsers = [], isAuthorized = false, t }) {
   const { t: contextT } = useTranslation();
   const tr = typeof t === 'function' ? t : contextT;
-  const [loading, setLoading] = useState(false);
-  const [customNames, setCustomNames] = useState({});
+  const [guestModalShift, setGuestModalShift] = useState(null);
+  const [assignModalApp, setAssignModalApp] = useState(null);
+  const [isManualModalOpen, setIsManualModalOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [detailsTarget, setDetailsTarget] = useState(null);
+  const [dispatchAppId, setDispatchAppId] = useState(null);
 
-  const volunteerShifts = event.volunteerShifts || [];
-  if (volunteerShifts.length === 0) {
-    return (
-      <div className="text-center py-4 text-xs italic opacity-60">
-        {tr('agenda.noVolunteersNeeded') || "Aucun créneau bénévole requis pour cet événement."}
-      </div>
-    );
+  const {
+    commissions, consolidatedShifts, filteredShifts, coverage, isArtisticPresent,
+    activeFilter, setActiveFilter, loadingShiftId, canManageShift,
+    toggleSelfShift, addGuestToShift, addMemberByManager, removeInscrit
+  } = useVolunteerShifts({ event, user, profileData, allUsers, isAuthorized });
+
+  const {
+    canViewApplications, actionLoadingId, pendingApplications, acceptedApplications,
+    applicationsById, manageableShifts, acceptApplication, rejectApplication,
+    createManualExternalVolunteer, removeExternalFromShift
+  } = useVolunteerApplications({ event, commissions, consolidatedShifts, user, profileData, isAuthorized });
+
+  const shiftsById = useMemo(() => Object.fromEntries(consolidatedShifts.map((s) => [s.id, s])), [consolidatedShifts]);
+  const manageableShiftIds = useMemo(() => new Set(manageableShifts.map((s) => s.id)), [manageableShifts]);
+  const isPublicCallEnabled = Boolean(event?.publicVolunteerConfig?.enabled);
+
+  const commissionFilters = useMemo(() => {
+    const map = new Map();
+    (commissions || []).forEach((c) => { if (c?.id) map.set(c.id, { id: c.id, label: `${c.icone || '📋'} ${c.titre || 'Commission'}` }); });
+    consolidatedShifts.forEach((s) => { if (s.commissionId && !map.has(s.commissionId)) map.set(s.commissionId, { id: s.commissionId, label: `📋 ${s.commissionTitre || 'Commission'}` }); });
+    return Array.from(map.values()).filter((cf) => consolidatedShifts.some((s) => s.commissionId === cf.id));
+  }, [commissions, consolidatedShifts]);
+
+  const detailsApplications = useMemo(() => {
+    if (!detailsTarget) return [];
+    if (detailsTarget === 'all') return acceptedApplications;
+    const found = applicationsById[detailsTarget.applicationId];
+    return found ? [found] : [{ id: detailsTarget.applicationId || detailsTarget.id, prenom: detailsTarget.prenom, nom: detailsTarget.nom, lienAsso: detailsTarget.lienAsso, assignedShiftIds: [] }];
+  }, [detailsTarget, acceptedApplications, applicationsById]);
+
+  if (consolidatedShifts.length === 0 && !isPublicCallEnabled && (!canViewApplications || pendingApplications.length === 0)) {
+    return <div className="text-center py-4 text-xs italic opacity-60">{tr('agenda.noVolunteersNeeded') || 'Aucun créneau bénévole requis pour cet événement.'}</div>;
   }
 
-  // Ajout sécurisé d'une mission bénévole à Google Calendar via calendarUtils
-  const handleAddShiftToGoogleCalendar = (shift) => {
-    if (!event.date) {
-      alert("Impossible d'ajouter à l'agenda : date de l'événement inconnue.");
-      return;
-    }
-    // Construction des détails spécifiques au créneau bénévole
-    const shiftDetails = `Événement : ${event.titre || 'Événement Roda'}\nMission : ${shift.nomTache}\nHoraires : ${shift.horaires || 'Non précisés'}\n\nMerci pour ton aide !`;
-    openGoogleCalendar(event, {
-      titlePrefix: 'Bénévolat : ',
-      customDetails: shiftDetails,
-    });
+  const handleAddToCalendar = (sh) => {
+    if (!event?.date) return;
+    const details = [`Événement : ${event.titre || 'Événement'}`, `Mission : ${sh.nomTache}`, sh.horaires ? `Horaires : ${sh.horaires}` : '', sh.consigne ? `Consigne : ${sh.consigne}` : ''].filter(Boolean).join('\n');
+    openGoogleCalendar({ ...event, date: sh.dateJour || event.date }, { titlePrefix: 'Bénévolat : ', customDetails: details });
   };
 
-  const handleToggleJoin = async (shiftId) => {
-    if (!event.id || !user?.uid || loading) return;
-    setLoading(true);
-    try {
-      const eventRef = doc(db, 'events', event.id);
-      const updatedShifts = volunteerShifts.map((shift) => {
-        if (shift.id === shiftId) {
-          const inscrits = shift.inscrits || [];
-          const isRegistered = inscrits.includes(user.uid);
-          const newInscrits = isRegistered
-            ? inscrits.filter((uid) => uid !== user.uid)
-            : [...inscrits, user.uid];
-          return { ...shift, inscrits: newInscrits };
-        }
-        return shift;
-      });
-
-      await updateDoc(eventRef, { volunteerShifts: updatedShifts });
-    } catch (err) {
-      console.error("Error updating volunteer shift registrations:", err);
-      alert("Erreur lors de l'inscription / désinscription.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAddCustomName = async (shiftId, name) => {
-    if (!event.id || !name || !name.trim() || loading) return;
-    setLoading(true);
-    try {
-      const eventRef = doc(db, 'events', event.id);
-      const updatedShifts = volunteerShifts.map((shift) => {
-        if (shift.id === shiftId) {
-          const inscrits = shift.inscrits || [];
-          if (!inscrits.includes(name.trim())) {
-            return { ...shift, inscrits: [...inscrits, name.trim()] };
-          }
-        }
-        return shift;
-      });
-
-      await updateDoc(eventRef, { volunteerShifts: updatedShifts });
-      setCustomNames(prev => ({ ...prev, [shiftId]: '' }));
-    } catch (err) {
-      console.error("Error adding custom name:", err);
-      alert("Erreur lors de l'ajout.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRemoveName = async (shiftId, nameToRemove) => {
-    if (!event.id || loading) return;
-    setLoading(true);
-    try {
-      const eventRef = doc(db, 'events', event.id);
-      const updatedShifts = volunteerShifts.map((shift) => {
-        if (shift.id === shiftId) {
-          const inscrits = shift.inscrits || [];
-          return { ...shift, inscrits: inscrits.filter(n => n !== nameToRemove) };
-        }
-        return shift;
-      });
-
-      await updateDoc(eventRef, { volunteerShifts: updatedShifts });
-    } catch (err) {
-      console.error("Error removing name:", err);
-      alert("Erreur lors de la suppression.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const handleRemoveAnyInscrit = (sh, ins) => (ins?.type === 'external' ? removeExternalFromShift(sh.id, ins) : removeInscrit(sh, ins));
+  const handleExportCsv = () => downloadVolunteersAndLogisticsCSV({ event, consolidatedShifts, acceptedApplications, allUsers });
+  const hasCommissionTabs = commissionFilters.length > 0;
 
   return (
     <CordelCard variant="default" useExtremeBorder={true} className="py-4 px-5">
-      <div className="text-left w-full">
-        {/* Title */}
-        <h4 className="font-extrabold text-xs uppercase tracking-wider text-cordel-wood border-b border-dashed border-cordel-master-dark/15 pb-1.5 mb-4 flex items-center gap-1.5 select-none">
-          🤝 {tr('agenda.volunteerSlotsTitle') || 'Créneaux Bénévoles'}
-        </h4>
+      <div className="text-left w-full flex flex-col gap-3">
+        <div className="flex items-center justify-between gap-2 border-b border-dashed border-[var(--theme-border)]/20 pb-2 flex-wrap">
+          <h4 className="font-extrabold text-xs uppercase tracking-wider text-[var(--cordel-wood)] flex items-center gap-1.5">
+            🤝 {tr('agenda.volunteerSlotsTitle') || 'Créneaux Bénévoles'}
+          </h4>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {isPublicCallEnabled && (
+              <button type="button" onClick={() => setIsShareModalOpen(true)} className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded border border-[var(--theme-border)] bg-[var(--cordel-bg)] hover:bg-[var(--theme-hover-bg)] cursor-pointer">
+                🔗 {tr('agenda.volunteerShareCallBtn') || "Partager l'appel / QR Code"}
+              </button>
+            )}
+            {coverage.totalRequired > 0 && (
+              <span className={`text-[10px] font-black px-2 py-0.5 rounded border border-[var(--theme-border)] text-white ${coverage.isComplete ? 'bg-[var(--color-cordel-vert)]' : 'bg-[var(--color-cordel-ocre)]'}`}>
+                {coverage.filledPosts} / {coverage.totalRequired} {tr('agenda.volunteerPostsFilled') || 'postes pourvus'}
+              </span>
+            )}
+          </div>
+        </div>
 
-        {/* Shifts Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {volunteerShifts.map((shift) => {
-            const inscrits = shift.inscrits || [];
-            const isUserRegistered = user?.uid ? inscrits.includes(user.uid) : false;
-            const isFull = Boolean(shift.neededCount && inscrits.length >= shift.neededCount);
+        <VolunteerPersonalMemoBanner consolidatedShifts={consolidatedShifts} currentUserUid={user?.uid} event={event} commissions={commissions} allUsers={allUsers} tr={tr} />
 
-            return (
-              <div
-                key={shift.id}
-                className="flex flex-col justify-between bg-white/40 dark:bg-black/25 p-3 rounded-lg border border-dashed border-encre-noire/15 shadow-sm transition-all hover:scale-[1.01]"
-              >
-                <div>
-                  {/* Task Header */}
-                  <div className="flex justify-between items-start gap-2 mb-2">
-                    <div>
-                      <h5 className="font-black text-xs text-cordel-master-dark uppercase leading-tight">
-                        {shift.nomTache}
-                      </h5>
-                      <span className="text-[10px] opacity-75 font-semibold block mt-0.5">
-                        ⏱️ {tr('agenda.schedule') || 'Horaires'} : {shift.horaires}
-                      </span>
-                    </div>
+        {canViewApplications && (
+          <VolunteerApplicationsInbox
+            pendingApplications={pendingApplications} acceptedCount={acceptedApplications.length} hasAnyVolunteer={coverage.totalInscrits > 0}
+            shiftsById={shiftsById} manageableShifts={manageableShifts} actionLoadingId={actionLoadingId}
+            onQuickValidate={acceptApplication} onOpenAssign={setAssignModalApp} onReject={rejectApplication}
+            onOpenManualModal={() => setIsManualModalOpen(true)} onOpenAcceptedSummary={() => setDetailsTarget('all')}
+            onOpenDispatchModal={() => setDispatchAppId(acceptedApplications[0]?.id || 'all')} onExportCsv={handleExportCsv} tr={tr}
+          />
+        )}
 
-                    {/* Join/Leave Button & Calendar */}
-                    <div className="flex flex-col gap-1 items-end">
-                      <button
-                        type="button"
-                        disabled={loading || !user?.uid || (!isUserRegistered && isFull)}
-                        onClick={() => handleToggleJoin(shift.id)}
-                        className={`text-[9px] font-black uppercase border px-2.5 py-1 rounded transition-all shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:brightness-95 cursor-pointer disabled:opacity-50 select-none ${
-                          isUserRegistered
-                            ? 'bg-cordel-ocre text-encre-noire border-encre-noire'
-                            : isFull
-                            ? 'bg-neutral-200 text-neutral-500 border-neutral-400'
-                            : 'bg-cordel-vert text-encre-noire border-encre-noire'
-                        }`}
-                      >
-                        {isUserRegistered
-                          ? `✕ ${tr('agenda.volunteerLeave') || 'Me retirer'}`
-                          : isFull
-                          ? tr('agenda.volunteerFull') || 'Complet'
-                          : `＋ ${tr('agenda.volunteerJoin') || 'Je participe'}`}
-                      </button>
+        {hasCommissionTabs && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            {[{ id: 'all', label: tr('agenda.volunteerFilterAll') || 'Tous' }, { id: 'general', label: tr('agenda.volunteerGeneralShort') || 'Général' }, ...commissionFilters].map((pill) => (
+              <button key={pill.id} type="button" onClick={() => setActiveFilter(pill.id)} className={`px-2.5 py-1 rounded-full text-[10px] font-black border cursor-pointer transition-colors ${activeFilter === pill.id ? 'bg-[var(--cordel-wood)] text-white border-[var(--theme-border)]' : 'bg-[var(--cordel-bg)] border-[var(--theme-border)]/30 hover:bg-[var(--theme-hover-bg)]'}`}>{pill.label}</button>
+            ))}
+          </div>
+        )}
 
-                      {isUserRegistered && (
-                        <button
-                           type="button"
-                           onClick={() => handleAddShiftToGoogleCalendar(shift)}
-                           className="text-[9px] font-black uppercase bg-blue-100 text-blue-900 border border-blue-900 px-2 py-0.5 rounded shadow-[1px_1px_0px_0px_#181716] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:bg-blue-200 cursor-pointer flex items-center gap-1 transition-colors"
-                           title="Ajouter ma mission à Google Agenda"
-                        >
-                           📅 Agenda
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Registered Volunteers list */}
-                  <div className="border-t border-dashed border-encre-noire/10 pt-2 mt-2">
-                    <span className="text-[9px] uppercase font-extrabold text-cordel-wood/80 block mb-1.5">
-                      👥 Inscrits ({inscrits.length}) :
-                    </span>
-
-                    {inscrits.length === 0 ? (
-                      <span className="text-[10px] italic opacity-60">Aucun bénévole inscrit.</span>
-                    ) : (
-                      <div className="flex flex-wrap gap-1.5 mt-1">
-                        {inscrits.map((uidOrName) => {
-                          const member = allUsers.find((u) => u.id === uidOrName);
-                          const isCustomName = !member;
-                          const displayName = isCustomName 
-                            ? uidOrName 
-                            : (member.prenom ? `${member.prenom} ${member.nom ? member.nom.charAt(0) + '.' : ''}` : member.name || 'Membre');
-
-                          return (
-                            <div
-                              key={uidOrName}
-                              className="inline-flex items-center gap-1.5 bg-cordel-bg-light/35 border border-encre-noire/10 px-1.5 py-0.5 rounded text-[10px] font-semibold"
-                            >
-                              <XiloAvatar
-                                src={member?.photoURL || ''}
-                                name={displayName}
-                                size={18}
-                              />
-                              <span className="truncate max-w-[90px]">{displayName}</span>
-                              {isCustomName && (
-                                <button 
-                                  onClick={() => handleRemoveName(shift.id, uidOrName)}
-                                  className="ml-1 text-[var(--color-cordel-rouge,#8b2a1a)] font-bold hover:opacity-75"
-                                  title="Retirer"
-                                >
-                                  ×
-                                </button>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Ajouter Externe */}
-                  <div className="flex items-center gap-2 mt-3">
-                    <input 
-                      type="text" 
-                      placeholder="Inscrire par nom..."
-                      value={customNames[shift.id] || ''}
-                      onChange={(e) => setCustomNames(prev => ({ ...prev, [shift.id]: e.target.value }))}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleAddCustomName(shift.id, customNames[shift.id]);
-                      }}
-                      className="flex-1 text-[10px] p-1.5 border border-encre-noire/20 rounded focus:border-[var(--color-cordel-vert,#2d6a4f)] outline-none bg-white/50"
-                    />
-                    <button 
-                      onClick={() => handleAddCustomName(shift.id, customNames[shift.id])}
-                      disabled={loading || !customNames[shift.id]?.trim()}
-                      className="text-[10px] font-bold bg-encre-noire/5 hover:bg-encre-noire/10 px-2 py-1.5 rounded disabled:opacity-50 text-encre-noire transition-colors border border-transparent hover:border-encre-noire/20"
-                    >
-                      Ajouter
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+          {filteredShifts.map((shift) => (
+            <VolunteerShiftCard
+              key={shift.id} shift={shift} event={event} currentUserUid={user?.uid} allUsers={allUsers}
+              isArtisticPresent={isArtisticPresent} canManage={canManageShift(shift)} showCommissionBadge={hasCommissionTabs}
+              loading={loadingShiftId === shift.id || Boolean(actionLoadingId)} onToggleSelf={toggleSelfShift}
+              onOpenGuestModal={setGuestModalShift} onInspectExternal={(ins) => setDetailsTarget(ins)}
+              onRemoveInscrit={handleRemoveAnyInscrit} onAddMemberByManager={addMemberByManager} onAddToCalendar={handleAddToCalendar} tr={tr}
+            />
+          ))}
         </div>
       </div>
+
+      <VolunteerGuestModal shift={guestModalShift} isOpen={Boolean(guestModalShift)} saving={Boolean(guestModalShift && loadingShiftId === guestModalShift.id)} onClose={() => setGuestModalShift(null)} onSubmitGuest={addGuestToShift} tr={tr} />
+      <VolunteerShiftAssignModal application={assignModalApp} manageableShifts={manageableShifts} saving={Boolean(assignModalApp && actionLoadingId === assignModalApp.id)} onClose={() => setAssignModalApp(null)} onConfirmAssign={acceptApplication} tr={tr} />
+      <VolunteerExternalManualModal isOpen={isManualModalOpen} event={event} manageableShifts={manageableShifts} saving={actionLoadingId === 'manual'} onClose={() => setIsManualModalOpen(false)} onSubmitExternal={createManualExternalVolunteer} tr={tr} />
+      <VolunteerExternalDetailsModal isOpen={Boolean(detailsTarget)} applications={detailsApplications} shiftsById={shiftsById} manageableShiftIds={manageableShiftIds} actionLoadingId={actionLoadingId} onRemoveFromShift={removeExternalFromShift} onOpenDispatchForApp={(app) => { setDetailsTarget(null); setDispatchAppId(app.id); }} onClose={() => setDetailsTarget(null)} tr={tr} />
+      <VolunteerExternalDispatchModal isOpen={Boolean(dispatchAppId)} applications={acceptedApplications} initialAppId={dispatchAppId === 'all' ? null : dispatchAppId} event={event} shiftsById={shiftsById} commissions={commissions} allUsers={allUsers} onClose={() => setDispatchAppId(null)} tr={tr} />
+      <EventVolunteerShareModal isOpen={isShareModalOpen} event={event} onClose={() => setIsShareModalOpen(false)} tr={tr} />
     </CordelCard>
   );
 }

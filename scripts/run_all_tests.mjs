@@ -170,7 +170,11 @@ const testScripts = [
   'scripts/test_vitrine_custom_domain_seo.mjs',
   'scripts/test_toada_adaptive_print_and_songbook.mjs',
   'scripts/test_toada_print_margins.mjs',
-  'scripts/test_workshop_sanctuary_and_alfaia_badge.mjs'
+  'scripts/test_workshop_sanctuary_and_alfaia_badge.mjs',
+  'scripts/test_volunteer_shifts_mission1.mjs',
+  'scripts/test_volunteer_applications_mission2.mjs',
+  'scripts/test_public_volunteer_page_mission3.mjs',
+  'scripts/test_volunteer_dayof_and_cerfa_mission4.mjs'
 ];
 
 console.log("===============================================================");

@@ -1,16 +1,12 @@
 import React from 'react';
 import RoadbookCommissionsPrintSection from './RoadbookCommissionsPrintSection';
+import RoadbookVolunteersPrintSheet from './volunteers/RoadbookVolunteersPrintSheet';
 import { useTranslation } from '../LanguageContext';
 
-/**
- * Vue imprimable A4 de la feuille de route du concert / événement (Bloc 1 & 2).
- * Optimisée pour une page papier A4 avec contrastes élevés et zéro fond d'encre lourd.
- */
+/** Vue imprimable A4 de la feuille de route du concert / événement (contrastes nets, zéro aplat d'encre). */
 export default function RoadbookPrintView({
-  event = {},
-  allUsers = [],
-  presentsByInstrument = {},
-  commissions = []
+  event = {}, allUsers = [], presentsByInstrument = {}, commissions = [],
+  acceptedApplications = [], isManagerOrReferent = false
 }) {
   const { t } = useTranslation();
   const parcours = event.parcours || {};
@@ -176,15 +172,13 @@ export default function RoadbookPrintView({
         </div>
       </div>
 
-      {/* Section Postes Bénévoles & Régie issus des Commissions */}
-      {commissions.length > 0 && (
-        <RoadbookCommissionsPrintSection
-          commissions={commissions}
-          allUsers={allUsers}
-        />
+      {/* Section Postes Bénévoles, Régie & Feuille d'émargement QG Bénévoles */}
+      {(commissions.length > 0 || (event.volunteerShifts && event.volunteerShifts.length > 0) || (event.publicCommissionShifts && event.publicCommissionShifts.length > 0)) && (
+        <>
+          <RoadbookCommissionsPrintSection event={event} commissions={commissions} allUsers={allUsers} />
+          <RoadbookVolunteersPrintSheet event={event} commissions={commissions} allUsers={allUsers} acceptedApplications={acceptedApplications} isManagerOrReferent={isManagerOrReferent} isPrintMode={true} />
+        </>
       )}
-
-      {/* Pied de page A4 */}
       <div className="border-t border-neutral-400 mt-3 pt-1 text-center text-[8px] text-neutral-500 flex justify-between">
         <span>O Girador • {t('agenda.roadbookTitle') || 'Feuille de route officielle'} générée le {new Date().toLocaleDateString('fr-FR')}</span>
         <span>Document interne de concert</span>

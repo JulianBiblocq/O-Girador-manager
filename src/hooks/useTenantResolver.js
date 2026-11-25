@@ -9,7 +9,7 @@ import {
   resolveCanonicalGroupFromFirestore
 } from '../utils/tenantUtils';
 import {
-  isLockedVitrineHost, isMostradorPlatformHost,
+  isLockedVitrineHost, isMostradorPlatformHost, isPublicVolunteerRoute,
   extractVitrineSlugFromPath, buildOrganizadorMemberUrl
 } from '../utils/vitrineLockUtils';
 import { getVitrineUrl } from '../utils/urlUtils';
@@ -40,17 +40,11 @@ export default function useTenantResolver() {
           }
         }
       } else if (h.includes('organizador') || h.includes('manager') || h === 'localhost' || h === '127.0.0.1') {
-        initialMode = (s.get('app') === 'mostrador' || p.startsWith('/vitrine') || p.startsWith('/mostrador')) ? 'mostrador' : 'organizador';
-        if (urlTenant) {
-          initTenantId = urlTenant.trim().toLowerCase();
-          initGroup = canonicalizeGroupId(urlTenant);
-        }
-      } else if (s.get('app') === 'mostrador' || p.startsWith('/vitrine') || p.startsWith('/mostrador')) {
+        initialMode = (s.get('app') === 'mostrador' || p.startsWith('/vitrine') || p.startsWith('/mostrador') || isPublicVolunteerRoute(p)) ? 'mostrador' : 'organizador';
+        if (urlTenant) { initTenantId = urlTenant.trim().toLowerCase(); initGroup = canonicalizeGroupId(urlTenant); }
+      } else if (s.get('app') === 'mostrador' || p.startsWith('/vitrine') || p.startsWith('/mostrador') || isPublicVolunteerRoute(p)) {
         initialMode = 'mostrador';
-        if (urlTenant?.trim()) {
-          initTenantId = urlTenant.trim().toLowerCase();
-          initGroup = canonicalizeGroupId(urlTenant.trim());
-        }
+        if (urlTenant?.trim()) { initTenantId = urlTenant.trim().toLowerCase(); initGroup = canonicalizeGroupId(urlTenant.trim()); }
       }
     }
     return {
@@ -70,7 +64,7 @@ export default function useTenantResolver() {
 
       try {
         if (isDemoMode()) {
-          const isMostrador = urlParams.get('app') === 'mostrador' || pathname.includes('/vitrine') || pathname.includes('/mostrador');
+          const isMostrador = urlParams.get('app') === 'mostrador' || pathname.includes('/vitrine') || pathname.includes('/mostrador') || isPublicVolunteerRoute(pathname);
           setTenantState({
             appMode: isMostrador ? 'mostrador' : 'organizador', groupId: DEMO_GROUP_ID, tenantId: DEMO_GROUP_ID,
             isLocalhost: isLocal, isTenantLoading: false, tenantError: null, error: null, notFound: false,
@@ -111,7 +105,7 @@ export default function useTenantResolver() {
           currentMode = 'mostrador';
           extractedGroupId = pathSlug || tenantParam || null;
         } else if (isLocal) {
-          const isPathVitrine = pathname.startsWith('/vitrine') || pathname.startsWith('/mostrador');
+          const isPathVitrine = pathname.startsWith('/vitrine') || pathname.startsWith('/mostrador') || isPublicVolunteerRoute(pathname);
           currentMode = (urlParams.get('app') === 'mostrador' || isPathVitrine) ? 'mostrador' : (urlParams.get('app') || import.meta.env.VITE_DEFAULT_APP || 'organizador');
           extractedGroupId = (currentMode === 'mostrador' && pathSlug) ? pathSlug : (tenantParam || import.meta.env.VITE_DEFAULT_TENANT || null);
         } else if (hostname === 'o-girador.com' || hostname === 'www.o-girador.com') {
@@ -124,7 +118,7 @@ export default function useTenantResolver() {
           const parts = hostname.split('.');
           if (!extractedGroupId && parts.length > 2 && !RESERVED_SUBDOMAINS.includes(parts[0].toLowerCase())) extractedGroupId = parts[0];
           if (!extractedGroupId && tenantParam) extractedGroupId = tenantParam;
-          if (urlParams.get('app') === 'mostrador' || pathname.startsWith('/vitrine') || pathname.startsWith('/mostrador')) currentMode = 'mostrador';
+          if (urlParams.get('app') === 'mostrador' || pathname.startsWith('/vitrine') || pathname.startsWith('/mostrador') || isPublicVolunteerRoute(pathname)) currentMode = 'mostrador';
         }
 
         if (extractedGroupId && !resolvedAssocData) {

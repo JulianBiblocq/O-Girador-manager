@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import PublicHome from '../PublicHome';
+import PublicVolunteerCallPage from './volunteers/PublicVolunteerCallPage';
 import PublicThemeProvider from '../PublicThemeProvider';
 import TenantNotFound from '../TenantNotFound';
 import ReloadPrompt from '../ReloadPrompt';
@@ -9,9 +10,7 @@ import { isDemoMode } from '../../demo/demoManager';
 import { DEMO_GROUP_ID } from '../../data/demoData';
 import { isCustomDomainHost, getCachedDomainGroupId } from '../../utils/tenantUtils';
 import {
-  isLockedVitrineHost,
-  extractVitrineSlugFromPath,
-  buildOrganizadorMemberUrl
+  isLockedVitrineHost, extractVitrineSlugFromPath, extractPublicVolunteerEventId, buildOrganizadorMemberUrl
 } from '../../utils/vitrineLockUtils';
 
 /** Redirection racine `/` dans Organizador vers `/app` ou `/login` (hors domaines Mostrador). */
@@ -76,33 +75,34 @@ export default function VitrineRouteShell({
     );
   }
 
-  if (tenantError) return <TenantNotFound />;
+  const volunteerEventId = extractPublicVolunteerEventId(currentRoute);
+  if (tenantError && !volunteerEventId) return <TenantNotFound />;
 
   const hostname = typeof window !== 'undefined' ? (window.location.hostname || '') : '';
   const lockedVitrine = isLockedVitrineHost(hostname);
-
-  if (!lockedVitrine && appMode === 'orquestrador' && isRootPath) {
-    return <HubRootRedirector brandingStyle={brandingStyle} />;
-  }
-  if (!lockedVitrine && appMode === 'organizador' && isRootPath && !isVitrineMode) {
-    return <OrganizadorRedirector user={user} navigateToRoute={navigateToRoute} brandingStyle={brandingStyle} />;
-  }
+  if (!lockedVitrine && appMode === 'orquestrador' && isRootPath) return <HubRootRedirector brandingStyle={brandingStyle} />;
+  if (!lockedVitrine && appMode === 'organizador' && isRootPath && !isVitrineMode) return <OrganizadorRedirector user={user} navigateToRoute={navigateToRoute} brandingStyle={brandingStyle} />;
 
   const sp = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
   const queryTenant = sp ? (sp.get('tenant') || sp.get('groupe') || sp.get('groupId') || sp.get('assoc')) : null;
   const pathGroupId = extractVitrineSlugFromPath(currentRoute, hostname);
   const publicGroupId = isDemoMode()
     ? DEMO_GROUP_ID
-    : (isCustomDomainHost(hostname)
-      ? (urlGroupId || getCachedDomainGroupId(hostname) || queryTenant || null)
-      : (queryTenant || pathGroupId || urlGroupId || null));
+    : (isCustomDomainHost(hostname) ? (urlGroupId || getCachedDomainGroupId(hostname) || queryTenant || null) : (queryTenant || pathGroupId || urlGroupId || null));
+
+  if (volunteerEventId) {
+    return (
+      <>
+        {isDemoMode() && <DemoTopBanner isVitrine={true} />}
+        <PublicVolunteerCallPage eventId={volunteerEventId} initialGroupId={publicGroupId} user={user} navigateToRoute={navigateToRoute} />
+        <ReloadPrompt />
+      </>
+    );
+  }
 
   const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
   const handleOpenMemberSpace = () => {
-    if (isLocal && !isDemoMode()) {
-      navigateToRoute(user ? '/app' : '/login');
-      return;
-    }
+    if (isLocal && !isDemoMode()) { navigateToRoute(user ? '/app' : '/login'); return; }
     window.location.href = buildOrganizadorMemberUrl(publicGroupId || urlGroupId, { isLocal, isDemo: isDemoMode() });
   };
 

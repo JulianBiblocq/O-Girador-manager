@@ -10,15 +10,9 @@ import {
 import { notifyBudgetApprovalRequest, notifyBudgetVerdict } from '../utils/commissionNotificationService';
 import { syncCommissionToVaral } from '../utils/commissionVaralAdapter';
 import { getOrCreateCommissionForumThread } from '../utils/commissionForumAdapter';
+import { syncEventPublicCommissionShifts } from '../services/publicCommissionShiftsSync';
 
-/**
- * Hook personnalisé gérant la sous-collection des Commissions d'un Événement (Bloc 1 & 2)
- * Chemin Firestore : events/{eventId}/commissions/{commissionId}
- *
- * @param {string} eventId Identifiant unique de l'événement
- * @param {Object} [eventData] Métadonnées optionnelles de l'événement (groupId, titre, etc.)
- * @returns {Object} États, statistiques mémoïsées et méthodes CRUD
- */
+/** Hook gérant la sous-collection `events/{eventId}/commissions/{commissionId}` et son miroir public. */
 export function useEventCommissions(eventId, eventData = null) {
   const [commissions, setCommissions] = useState([]);
   const [loading, setLoading] = useState(Boolean(eventId));
@@ -53,24 +47,22 @@ export function useEventCommissions(eventId, eventData = null) {
   const getCommissionProgress = useCallback((comm) => calculateCommissionProgress(comm), []);
   const stats = useMemo(() => calculateGlobalCommissionStats(commissions), [commissions]);
 
-  // 3. Méthodes CRUD
+  // 3. Méthodes CRUD + synchronisation automatique du miroir public `publicCommissionShifts`
   const addCommission = useCallback(async (targetEventId, commissionData) => {
-    const eid = targetEventId || eventId;
-    if (!eid) throw new Error("ID d'événement manquant");
+    const eid = targetEventId || eventId; if (!eid) throw new Error("ID d'événement manquant");
     const docRef = await addDoc(collection(db, 'events', eid, 'commissions'), prepareCommissionData(commissionData));
-    return docRef.id;
+    await syncEventPublicCommissionShifts(eid); return docRef.id;
   }, [eventId]);
 
   const updateCommission = useCallback(async (targetEventId, commissionId, partialData) => {
-    const eid = targetEventId || eventId;
-    if (!eid || !commissionId) throw new Error("Identifiants manquants");
+    const eid = targetEventId || eventId; if (!eid || !commissionId) throw new Error("Identifiants manquants");
     await updateDoc(doc(db, 'events', eid, 'commissions', commissionId), { ...partialData, derniereModif: new Date().toISOString() });
+    await syncEventPublicCommissionShifts(eid);
   }, [eventId]);
 
   const deleteCommission = useCallback(async (targetEventId, commissionId) => {
-    const eid = targetEventId || eventId;
-    if (!eid || !commissionId) throw new Error("Identifiants manquants");
-    await deleteDoc(doc(db, 'events', eid, 'commissions', commissionId));
+    const eid = targetEventId || eventId; if (!eid || !commissionId) throw new Error("Identifiants manquants");
+    await deleteDoc(doc(db, 'events', eid, 'commissions', commissionId)); await syncEventPublicCommissionShifts(eid);
   }, [eventId]);
 
   const toggleJalonStatus = useCallback(async (targetEventId, commissionId, jalonId) => {

@@ -1,9 +1,4 @@
-import {
-  computeTerritorialStats,
-  computeVolunteeringAndActivity,
-  computeAudienceAndDiffusion,
-  resolveMemberReportPupitre
-} from './secretariatMetrics';
+import { computeTerritorialStats, computeVolunteeringAndActivity, computeAudienceAndDiffusion, resolveMemberReportPupitre } from './secretariatMetrics.js';
 
 /** Calcule les indicateurs consolidés du rapport d'AG sur la période sélectionnée. */
 export function computeAgReportIndicators({
@@ -99,6 +94,7 @@ export function exportAgSummaryCSV({ assocInfo, startDate, endDate, indicators }
     `TOTAL ÉVÉNEMENTS RÉALISÉS;${indicators.totalEvents}`, `Mobilisations cumulées (Présences réelles);${indicators.totalPresencesAll}`,
     `Moyenne de musiciens / sortie;${indicators.avgPresencePrestation}`, `Heures de jeu en public (scène);${vs.totalPublicPlayingHours} h`,
     `Heures-participants activité collective;${vs.totalCollectiveVolunteerHours} h`,
+    `Créneaux bénévoles & renforts (hors double comptage);${vs.totalShiftVolunteerHours || 0} h`,
     `Forfaits annuels statutaires bureau & atelier;${vs.forfaitHeuresAdmin + vs.forfaitHeuresArtisanat} h`,
     `TOTAL HEURES DE BÉNÉVOLAT VALORISÉES (CERFA);${vs.totalCerfaVolunteerHours} h`, '',
     `3. CHANTIERS, ATELIERS & PATRIMOINE`, `Indicateur;Valeur`,

@@ -1,10 +1,8 @@
+import { computeEventsVolunteerShiftHours } from './volunteerHoursMetrics.js';
+
 /**
- * Utilitaire : secretariatMetrics.js
- * 
- * Module de calcul pur (sans état ni appels réseau directs) pour les indicateurs consolidés du Secrétariat :
- * 1. Ancrage communal et répartition géographique (critère subvention Cerfa n° 12156).
- * 2. Cumul d'heures d'activité collective, de représentations publiques et valorisation du bénévolat Cerfa.
- * 3. Mesure d'audience, sollicitations et conversion issues de la Vitrine publique.
+ * Module de calcul pur pour les indicateurs consolidés du Secrétariat :
+ * ancrage communal (Cerfa 12156), heures d'activité & créneaux bénévoles, et audience Vitrine.
  */
 
 /**
@@ -26,7 +24,7 @@ export {
   normalizePupitreName,
   isMemberPracticingDance,
   resolveMemberReportPupitre
-} from './pupitreReportUtils';
+} from './pupitreReportUtils.js';
 
 /**
  * Extrait le code postal et le nom présumé de la commune depuis une adresse textuelle.
@@ -251,19 +249,16 @@ export const computeVolunteeringAndActivity = (events = [], activeMembersCount =
     }
   });
 
-  // Forfaits annuels déclaratifs valorisables dans le formulaire Cerfa 12156
-  const forfaitHeuresAdmin = Number(settings.forfaitHeuresAdmin) || 120; // Réunions de bureau, comptabilité, déclarations
-  const forfaitHeuresArtisanat = Number(settings.forfaitHeuresArtisanat) || 80; // Fabrication, accordage, couture bénévole
-
-  // Total général valorisé Cerfa
-  const totalCerfaVolunteerHours = Math.round(
-    (totalCollectiveVolunteerHours + forfaitHeuresAdmin + forfaitHeuresArtisanat) * 10
-  ) / 10;
+  const totalShiftVolunteerHours = computeEventsVolunteerShiftHours(validEvents, calculateEventDurationHours);
+  const forfaitHeuresAdmin = Number(settings.forfaitHeuresAdmin) || 120;
+  const forfaitHeuresArtisanat = Number(settings.forfaitHeuresArtisanat) || 80;
+  const totalCerfaVolunteerHours = Math.round((totalCollectiveVolunteerHours + totalShiftVolunteerHours + forfaitHeuresAdmin + forfaitHeuresArtisanat) * 10) / 10;
 
   return {
     totalPublicPlayingHours: Math.round(totalPublicPlayingHours * 10) / 10,
     totalCollectiveVolunteerHours: Math.round(totalCollectiveVolunteerHours * 10) / 10,
     totalPrestationVolunteerHours: Math.round(totalPrestationVolunteerHours * 10) / 10,
+    totalShiftVolunteerHours,
     forfaitHeuresAdmin,
     forfaitHeuresArtisanat,
     totalCerfaVolunteerHours,

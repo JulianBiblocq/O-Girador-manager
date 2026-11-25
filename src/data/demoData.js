@@ -1147,12 +1147,12 @@ export const INITIAL_DEMO_DATA = {
       statutPublication: 'approuve',
       cachet: 1500,
       imageUrl: '/brandings/logo-nachuva-girador.svg',
-      includesPercussion: true,
-      includesDance: true,
-      enableCarpool: true,
-      distanceAllerRetourKm: 42,
-      enableInscriptions: true,
-      isStageLayoutPublished: true,
+      includesPercussion: true, includesDance: true, enableCarpool: true, distanceAllerRetourKm: 42, enableInscriptions: true, isStageLayoutPublished: true,
+      publicVolunteerConfig: { enabled: true, welcomeMessage: 'Merci pour votre coup de main sur la Fête de la Ria ! Repas chaud et boissons offerts aux bénévoles.', askDietary: true, askTshirtSize: true, askVehicle: true, askAdultStatus: true },
+      volunteerShifts: [
+        { id: 'demo_shift_accueil', nomTache: 'Accueil public & espace info', dateJour: '2026-10-24', heureDebut: '16:30', heureFin: '19:00', horaires: '16:30 - 19:00', quotaRequis: 3, consigne: 'Rendez-vous au barnum principal à 16h15' },
+        { id: 'demo_shift_buvette', nomTache: 'Buvette associative face à la Ria', dateJour: '2026-10-24', heureDebut: '19:00', heureFin: '22:00', horaires: '19:00 - 22:00', quotaRequis: 4, consigne: 'Tabliers fournis sur place' }
+      ],
 
       // Covoiturage configuré avec 3 véhicules
       covoiturage: {

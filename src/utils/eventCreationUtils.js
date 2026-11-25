@@ -5,6 +5,7 @@ import {
   resolveSlotRegistrationDeadline
 } from './eventScheduleUtils';
 import { resolveReunionPrivacyConfig } from './reunionPrivacyUtils';
+import { normalizePublicVolunteerConfig } from './volunteerApplicationUtils';
 
 /**
  * Construit le payload Firestore complet pour la création d'un événement ou d'une option de sondage
@@ -92,6 +93,7 @@ export function buildEventCreationPayload({
         : (formData.dressCodePercussion || formData.dressCodeDanse || '')
     ),
     volunteerShifts: formData.volunteerShifts || [],
+    publicVolunteerConfig: normalizePublicVolunteerConfig(formData.publicVolunteerConfig),
     includesPercussion: formData.includesPercussion !== false,
     includesDance: formData.includesDance !== false,
     enableCarpool: formData.enableCarpool !== false,

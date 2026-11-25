@@ -43,9 +43,9 @@ import { isMemberArchived, getEffectiveMemberTags } from '../utils/memberUtils';
 import { isPastEvent } from '../utils/dateUtils';
 import { resolveReunionPrivacyConfig, canUserSeeReunionReportAndAgenda } from '../utils/reunionPrivacyUtils';
 import { resolveEventTargetPupitres } from '../utils/workshopSanctuaryUtils';
-import ReunionPrivacyBadge from './agenda/ReunionPrivacyBadge';
-
-export default function EventDetails({ event, user, profileData, groupId: propGroupId, onNavigateToView, onClose, onPrev, onNext, viewMode: _viewMode, setViewMode: _setViewMode, onGoToStageLayoutEditor }) {
+import { normalizePublicVolunteerConfig } from '../utils/volunteerApplicationUtils';
+import { syncEventPublicCommissionShifts } from '../services/publicCommissionShiftsSync';
+import ReunionPrivacyBadge from './agenda/ReunionPrivacyBadge'; export default function EventDetails({ event, user, profileData, groupId: propGroupId, onNavigateToView, onClose, onPrev, onNext, viewMode: _viewMode, setViewMode: _setViewMode, onGoToStageLayoutEditor }) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -103,8 +103,7 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
   const buildEditFormFromEvent = useCallback((evt) => {
     const reunionPrivacy = evt?.type === 'reunion' ? resolveReunionPrivacyConfig(evt) : null;
     return {
-    titre: evt?.titre || '',
-    type: evt?.type || 'repetition',
+    id: evt?.id || '', titre: evt?.titre || '', type: evt?.type || 'repetition',
     targetGroup: reunionPrivacy ? reunionPrivacy.targetGroup : (evt?.targetGroup || 'all'),
     reunionPrivacyMode: reunionPrivacy ? reunionPrivacy.reunionPrivacyMode : (evt?.reunionPrivacyMode || 'public'),
     hideAgendaFromNonTarget: reunionPrivacy ? reunionPrivacy.hideAgendaFromNonTarget : Boolean(evt?.hideAgendaFromNonTarget),
@@ -142,44 +141,20 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
     dressCodePercussion: evt?.dressCodePercussion || '',
     dressCodeDanse: evt?.dressCodeDanse || '',
     volunteerShifts: evt?.volunteerShifts || [],
+    publicVolunteerConfig: normalizePublicVolunteerConfig(evt?.publicVolunteerConfig),
     includesPercussion: evt?.includesPercussion !== false,
     includesDance: evt?.includesDance !== false,
     enableCarpool: evt?.enableCarpool !== false,
     enableInscriptions: evt?.enableInscriptions !== false,
-    activerRecolteMedias: evt?.activerRecolteMedias !== undefined 
-      ? Boolean(evt.activerRecolteMedias) 
-      : ['prestation', 'concert', 'spectacle', 'festival'].includes(evt?.type),
-    publierSurVaral: evt?.publierSurVaral !== undefined 
-      ? Boolean(evt.publierSurVaral) 
-      : ['prestation', 'concert', 'spectacle', 'festival'].includes(evt?.type),
-    description: evt?.description || '',
-    setlist: evt?.setlist || [],
-    linkedPatterns: evt?.linkedPatterns || [],
-    specialiteAtelier: evt?.specialiteAtelier || 'general',
-    programmeFabrication: evt?.programmeFabrication || null,
-    latitude: evt?.latitude || null,
-    longitude: evt?.longitude || null,
-    isPublic: Boolean(evt?.isPublic),
-    hasCommissions: Boolean(evt?.hasCommissions),
-    formatJeu: evt?.formatJeu || 'scene',
-    parcours: evt?.parcours || {
-      pointDepart: '',
-      itineraire: '',
-      pointArrivee: '',
-      ravitaillementEau: '',
-      urlFichierParcours: ''
-    },
-    hebergement: evt?.hebergement || {
-      type: '',
-      adresse: '',
-      codeAcces: '',
-      repartitionChambres: ''
-    },
-    logistiqueDepart: evt?.logistiqueDepart || {
-      maquillageRequis: false,
-      trousseSecoursBouchons: false,
-      reserveBaguettes: false
-    },
+    activerRecolteMedias: evt?.activerRecolteMedias !== undefined ? Boolean(evt.activerRecolteMedias) : ['prestation', 'concert', 'spectacle', 'festival'].includes(evt?.type),
+    publierSurVaral: evt?.publierSurVaral !== undefined ? Boolean(evt.publierSurVaral) : ['prestation', 'concert', 'spectacle', 'festival'].includes(evt?.type),
+    description: evt?.description || '', setlist: evt?.setlist || [], linkedPatterns: evt?.linkedPatterns || [],
+    specialiteAtelier: evt?.specialiteAtelier || 'general', programmeFabrication: evt?.programmeFabrication || null,
+    latitude: evt?.latitude || null, longitude: evt?.longitude || null,
+    isPublic: Boolean(evt?.isPublic), hasCommissions: Boolean(evt?.hasCommissions), formatJeu: evt?.formatJeu || 'scene',
+    parcours: evt?.parcours || { pointDepart: '', itineraire: '', pointArrivee: '', ravitaillementEau: '', urlFichierParcours: '' },
+    hebergement: evt?.hebergement || { type: '', adresse: '', codeAcces: '', repartitionChambres: '' },
+    logistiqueDepart: evt?.logistiqueDepart || { maquillageRequis: false, trousseSecoursBouchons: false, reserveBaguettes: false },
     logistiqueMalles: Array.isArray(evt?.logistiqueMalles) ? evt.logistiqueMalles : [],
     mallesSpecifiques: Array.isArray(evt?.mallesSpecifiques) ? evt.mallesSpecifiques : [],
     quotasPupitres: evt?.quotasPupitres || {},
@@ -501,9 +476,8 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
     activeEvent.montantDepense,
     JSON.stringify(activeEvent.budgetRecettes),
     JSON.stringify(activeEvent.budgetDepenses),
-    activeEvent.dateLimiteInscription,
-    activeEvent.tenueRequise,
-    activeEvent.volunteerShifts,
+    activeEvent.dateLimiteInscription, activeEvent.tenueRequise,
+    activeEvent.volunteerShifts, JSON.stringify(activeEvent.publicVolunteerConfig),
     activeEvent.imageUrl,
     activeEvent.includesPercussion,
     activeEvent.includesDance,
@@ -1110,8 +1084,8 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
             : (editForm.dressCodePercussion || editForm.dressCodeDanse || '')
         ),
         volunteerShifts: editForm.volunteerShifts || [],
-        includesPercussion: editForm.includesPercussion || false,
-        includesDance: editForm.includesDance || false,
+        publicVolunteerConfig: normalizePublicVolunteerConfig(editForm.publicVolunteerConfig),
+        includesPercussion: editForm.includesPercussion || false, includesDance: editForm.includesDance || false,
         enableCarpool: editForm.enableCarpool !== false,
         enableInscriptions: editForm.enableInscriptions !== false,
         hasCommissions: Boolean(editForm.hasCommissions),
@@ -1198,11 +1172,8 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
         return;
       }
 
-      await updateDoc(eventRef, {
-        ...sharedUpdates,
-        date: editForm.date,
-        dateDebut: editForm.date
-      });
+      await updateDoc(eventRef, { ...sharedUpdates, date: editForm.date, dateDebut: editForm.date });
+      if (editForm.hasCommissions) await syncEventPublicCommissionShifts(event.id);
 
       setEditForm(prev => ({
         ...prev,
@@ -1922,7 +1893,7 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
               activeTab={activeTab} setActiveTab={handleSelectTab} canAccessAdminTab={canAccessAdminTab}
               attendeesCount={((sanitizedEvent.inscriptions || []).filter(ins => ins.status === 'present').length) + ((sanitizedEvent.invitesExternes || []).length)}
               carsCount={(event.covoiturage?.voitures || []).length}
-              hasProgram={Boolean((event.linkedPatterns && event.linkedPatterns.length > 0) || (setlist && setlist.length > 0) || event.isStageLayoutPublished || (event.volunteerShifts && event.volunteerShifts.length > 0) || ((event.type === 'atelier' || event.type === 'stage') && event.specialiteAtelier === 'fabrication'))}
+              hasProgram={Boolean((event.linkedPatterns && event.linkedPatterns.length > 0) || (setlist && setlist.length > 0) || event.isStageLayoutPublished || (event.volunteerShifts && event.volunteerShifts.length > 0) || event.publicVolunteerConfig?.enabled || event.hasCommissions || ((event.type === 'atelier' || event.type === 'stage') && event.specialiteAtelier === 'fabrication'))}
             />
           )}
 
@@ -2063,9 +2034,7 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
                 profileData={profileData}
                 groupId={resolvedGroupId}
                 isAuthorized={isAuthorized}
-                currentConfig={currentConfig}
-                allUsers={allUsers}
-                t={t}
+                currentConfig={currentConfig} allUsers={effectiveAllUsers} t={t}
                 setlist={setlist}
                 updatingSetlist={updatingSetlist}
                 handleRemoveMorceau={handleRemoveMorceau}
@@ -2162,7 +2131,7 @@ export default function EventDetails({ event, user, profileData, groupId: propGr
       <RoadbookModal
         isOpen={showRoadbookModal} onClose={() => setShowRoadbookModal(false)}
         event={activeEvent || event} allUsers={effectiveAllUsers || allUsers}
-        presentsByInstrument={presentsByInstrument || {}} t={t}
+        user={user} isAuthorized={isAuthorized} presentsByInstrument={presentsByInstrument || {}} t={t}
         onNavigateToStageLayout={() => {
           setShowRoadbookModal(false);
           setActiveTab('program');

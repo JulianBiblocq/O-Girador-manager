@@ -1,17 +1,13 @@
 import React from 'react';
 import RoadbookKitsChecklist from './RoadbookKitsChecklist';
 import RoadbookCommissionsSection from './RoadbookCommissionsSection';
+import RoadbookVolunteersPrintSheet from './volunteers/RoadbookVolunteersPrintSheet';
 import { useTranslation } from '../LanguageContext';
 
-/**
- * Contenu interactif de la feuille de route pour affichage écran et smartphone.
- * Navigation rapide, numéros de téléphone cliquables (tel:...) et lien vers l'annexe PDF.
- */
+/** Contenu interactif de la feuille de route pour affichage écran et smartphone. */
 export default function RoadbookInteractiveContent({
-  event = {},
-  allUsers = [],
-  presentsByInstrument = {},
-  commissions = []
+  event = {}, allUsers = [], presentsByInstrument = {}, commissions = [],
+  acceptedApplications = [], isManagerOrReferent = false
 }) {
   const { t } = useTranslation();
   const parcours = event.parcours || {};
@@ -168,18 +164,14 @@ export default function RoadbookInteractiveContent({
       </div>
 
       {/* Bloc Matériel & Checklist dynamique (avec statut des trousses régie) */}
-      <RoadbookKitsChecklist
-        event={event}
-        logistique={logistique}
-        presentsByInstrument={presentsByInstrument}
-      />
+      <RoadbookKitsChecklist event={event} logistique={logistique} presentsByInstrument={presentsByInstrument} />
 
-      {/* Postes bénévoles & régie issus des commissions */}
-      {commissions.length > 0 && (
-        <RoadbookCommissionsSection
-          commissions={commissions}
-          allUsers={allUsers}
-        />
+      {/* Postes bénévoles & régie issus de l'événement et des commissions */}
+      {(commissions.length > 0 || (event.volunteerShifts && event.volunteerShifts.length > 0) || (event.publicCommissionShifts && event.publicCommissionShifts.length > 0)) && (
+        <>
+          <RoadbookCommissionsSection event={event} commissions={commissions} allUsers={allUsers} />
+          <RoadbookVolunteersPrintSheet event={event} commissions={commissions} allUsers={allUsers} acceptedApplications={acceptedApplications} isManagerOrReferent={isManagerOrReferent} isPrintMode={false} />
+        </>
       )}
     </div>
   );
