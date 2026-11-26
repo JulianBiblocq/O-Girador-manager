@@ -42,7 +42,7 @@ function PublicVolunteerCallContent({ event, loadingEvent, effectiveGroupId, use
 
   if (loadingEvent) return <div className="min-h-screen flex items-center justify-center p-6 bg-[var(--public-bg,#F4ECD8)] text-[var(--public-primary,#8B2A1A)] font-bold text-xs uppercase tracking-widest">⏳ {t('agenda.volunteerPublicLoading') || "Chargement de l'appel à bénévoles..."}</div>;
   if (!event || !cfg.enabled) return <PublicVolunteerStatusScreen mode="closed" eventTitle={event?.titre || ''} onBackToVitrine={handleBackToVitrine} />;
-  if (submittedSummary) return <PublicVolunteerStatusScreen mode="confirmed" eventTitle={event.titre} summary={submittedSummary} onBackToVitrine={handleBackToVitrine} />;
+  if (submittedSummary) return <PublicVolunteerStatusScreen mode="confirmed" event={event} eventTitle={event.titre} summary={submittedSummary} onBackToVitrine={handleBackToVitrine} />;
 
   const eventDateJour = /^\d{4}-\d{2}-\d{2}/.test(String(event.date || '')) ? String(event.date).slice(0, 10) : '';
   const formattedDate = event.date && !isNaN(new Date(event.date).getTime()) ? new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : (event.date || '');
@@ -58,8 +58,9 @@ function PublicVolunteerCallContent({ event, loadingEvent, effectiveGroupId, use
         ...form, groupId: effectiveGroupId, eventId: event.id, status: 'pending', source: 'public_form', requestedShiftIds: selectedShiftIds
       }, { groupId: effectiveGroupId, eventId: event.id });
       await addDoc(collection(db, 'volunteer_applications'), payload);
-      const shiftLabels = selectedShiftIds.map((id) => anonymousShifts.find((s) => s.id === id)?.nomTache || id);
-      setSubmittedSummary({ prenom: payload.prenom, nom: payload.nom, isFlexible: payload.isFlexible, disponibilitesNote: payload.disponibilitesNote, shiftLabels });
+      const selectedShifts = selectedShiftIds.map((id) => anonymousShifts.find((s) => s.id === id)).filter(Boolean);
+      const shiftLabels = selectedShifts.map((s) => s.nomTache);
+      setSubmittedSummary({ prenom: payload.prenom, nom: payload.nom, isFlexible: payload.isFlexible, disponibilitesNote: payload.disponibilitesNote, shiftLabels, selectedShifts });
     } catch (err) { console.error('Erreur envoi proposition bénévole :', err); }
     finally { setSubmitting(false); }
   };

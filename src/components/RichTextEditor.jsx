@@ -7,15 +7,13 @@ import Image from '@tiptap/extension-image';
 import ForumImageInsertModal from './forum/ForumImageInsertModal';
 import EmojiPickerPopover, { EmojiQuickRow } from './forum/EmojiPickerPopover';
 import { MentionDropdown, filterUsersByMentionQuery } from './forum/MentionAutocomplete';
-import { uploadForumAttachment } from '../utils/attachmentUploadUtils';
+import { uploadForumAttachment, formatAttachmentUploadError } from '../utils/attachmentUploadUtils';
+import { useTranslation } from './LanguageContext';
 import VoiceDictationButton from './common/VoiceDictationButton';
 import { useConfirm } from '../context/ConfirmContext';
 
 export default function RichTextEditor({ 
-  value = '', 
-  onChange, 
-  placeholder: _placeholder = 'Rédigez votre message...', 
-  groupId = '',
+  value = '', onChange, placeholder: _placeholder = 'Rédigez votre message...', groupId = '',
   lienDepotForum = '',
   consignesDepotForum = '',
   disabled = false,
@@ -28,7 +26,7 @@ export default function RichTextEditor({
   allUsers = [],
   onAddPoll = null
 }) {
-  const { prompt } = useConfirm();
+  const { t } = useTranslation(); const { prompt } = useConfirm();
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [isMentionListOpen, setIsMentionListOpen] = useState(false);
@@ -125,7 +123,7 @@ export default function RichTextEditor({
           })
           .catch((err) => {
             console.error("Échec du téléversement au collage :", err);
-            alert("Erreur lors de l'envoi de la pièce jointe collée : " + (err.message || 'Erreur réseau'));
+            alert(formatAttachmentUploadError(err, t));
           })
           .finally(() => {
             setIsUploadingPasteDrop(false);
@@ -158,7 +156,7 @@ export default function RichTextEditor({
           })
           .catch((err) => {
             console.error("Échec du téléversement au glisser-déposer :", err);
-            alert("Erreur lors de l'envoi du fichier déposé : " + (err.message || 'Erreur réseau'));
+            alert(formatAttachmentUploadError(err, t));
           })
           .finally(() => {
             setIsUploadingPasteDrop(false);

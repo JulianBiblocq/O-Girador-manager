@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import VolunteerInscritBadge from './VolunteerInscritBadge';
+import VolunteerCalendarExportMenu from './VolunteerCalendarExportMenu';
 import { isVolunteerShiftFull, detectStageScheduleConflict } from '../../../utils/volunteerShiftUtils';
 
 /**
@@ -7,9 +8,9 @@ import { isVolunteerShiftFull, detectStageScheduleConflict } from '../../../util
  * alerte douce de conflit scène/balance, inscrits (membre, proche, externe) et ajustement référent/admin.
  */
 export default function VolunteerShiftCard({
-  shift, event, currentUserUid, allUsers = [], isArtisticPresent = false,
+  shift, event, commissions = [], associationName = '', currentUserUid, allUsers = [], isArtisticPresent = false,
   canManage = false, showCommissionBadge = false, loading = false,
-  onToggleSelf, onOpenGuestModal, onInspectExternal, onRemoveInscrit, onAddMemberByManager, onAddToCalendar, tr
+  onToggleSelf, onOpenGuestModal, onInspectExternal, onRemoveInscrit, onAddMemberByManager, tr
 }) {
   const [selectedUid, setSelectedUid] = useState('');
   const t = typeof tr === 'function' ? tr : (k, fb) => fb || k;
@@ -89,9 +90,7 @@ export default function VolunteerShiftCard({
           )}
 
           {isUserRegistered && (
-            <button type="button" onClick={() => onAddToCalendar(shift)} className="text-[9.5px] font-bold border border-[var(--theme-border)]/40 px-2 py-1 rounded cursor-pointer">
-              📅 Agenda
-            </button>
+            <VolunteerCalendarExportMenu mode="single" shift={shift} event={event} commissions={commissions} allUsers={allUsers} associationName={associationName} tr={tr} />
           )}
         </div>
       </div>

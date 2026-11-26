@@ -6,6 +6,10 @@ import useModalEscape from '../../../hooks/useModalEscape';
 import { isDemoMode } from '../../../demo/demoManager';
 import { sendAssociationEmail } from '../../../utils/emailService';
 import { generateExternalVolunteerMessage } from '../../../utils/volunteerMemoUtils';
+import {
+  downloadVolunteerShiftsIcs,
+  buildVolunteerShiftGoogleCalendarUrl
+} from '../../../utils/volunteerCalendarUtils';
 
 /**
  * Modale Cordel d'envoi du « 📋 Mémo Jour J » et du « 🙏 Mot de remerciement » aux externes :
@@ -48,6 +52,9 @@ export default function VolunteerExternalDispatchModal({
     });
   }, [activeApp, mode, msgLocale, event, assocSettings, shiftsById, commissions, allUsers]);
 
+  const assignedShifts = useMemo(() => (activeApp?.assignedShiftIds || []).map((id) => shiftsById[id]).filter(Boolean), [activeApp, shiftsById]);
+  const firstGcalUrl = useMemo(() => (assignedShifts[0] ? buildVolunteerShiftGoogleCalendarUrl(assignedShifts[0], { event, commissions, allUsers }) : ''), [assignedShifts, event, commissions, allUsers]);
+
   useEffect(() => { setSubject(generated.subject); setBody(generated.body); setFeedback(''); }, [generated]);
 
   if (!isOpen || !activeApp) return null;
@@ -56,6 +63,9 @@ export default function VolunteerExternalDispatchModal({
   const liveWhatsapp = generated.whatsappUrl ? generated.whatsappUrl.replace(/\?text=.*$/, `?text=${encodeURIComponent(body)}`) : '';
   const replyTo = assocSettings.emailReplyTo || assocSettings.email || assocSettings.publicContactEmail || '';
   const hasBrevoReady = Boolean(!isDemoMode() && activeApp.email && replyTo);
+
+  const handleDownloadIcs = () => downloadVolunteerShiftsIcs(assignedShifts, { event, commissions, allUsers, associationName: assocSettings.nom || '', filename: `${activeApp.prenom || 'benevole'}_${event?.titre || 'evenement'}` });
+  const handleAppendGcalLink = () => { if (firstGcalUrl && !body.includes(firstGcalUrl)) setBody((prev) => `${prev}\n\n📅 Google Agenda : ${firstGcalUrl}`); };
 
   const handleCopy = async () => {
     try { await navigator.clipboard.writeText(body); setCopied(true); setTimeout(() => setCopied(false), 2200); } catch {}
@@ -107,6 +117,12 @@ export default function VolunteerExternalDispatchModal({
           <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-dashed border-[var(--theme-border)]/20">
             <button type="button" onClick={handleCopy} className="px-2.5 py-1.5 rounded border border-[var(--theme-border)] bg-[var(--cordel-bg)] text-[10.5px] font-black cursor-pointer">{copied ? `✓ ${t('agenda.volunteerCopiedMsg') || 'Message copié !'}` : `💬 ${t('agenda.volunteerCopyWhatsappBtn') || 'Copier pour WhatsApp / SMS'}`}</button>
             {liveWhatsapp && <a href={liveWhatsapp} target="_blank" rel="noopener noreferrer" className="px-2.5 py-1.5 rounded border border-[var(--theme-border)] bg-[var(--color-cordel-vert)] text-white text-[10.5px] font-black">📲 {t('agenda.volunteerOpenWhatsappBtn') || 'WhatsApp direct'} ↗</a>}
+            {assignedShifts.length > 0 && (
+              <>
+                <button type="button" onClick={handleDownloadIcs} className="px-2.5 py-1.5 rounded border border-[var(--theme-border)] bg-[var(--cordel-bg)] text-[10.5px] font-black cursor-pointer">📅 {t('agenda.volunteerDownloadHisIcsBtn') || 'Télécharger son .ics'}</button>
+                {mode === 'memo_jour_j' && firstGcalUrl && <button type="button" onClick={handleAppendGcalLink} className="px-2 py-1.5 rounded border border-[var(--theme-border)]/45 bg-[var(--cordel-bg)] text-[10px] font-bold cursor-pointer">＋ 📅 {t('agenda.volunteerInsertGcalLinkBtn') || 'Lien Google Agenda'}</button>}
+              </>
+            )}
             {activeApp.email && (
               <>
                 <button type="button" disabled={sendingEmail} onClick={handleSendEmail} className="px-2.5 py-1.5 rounded border border-[var(--theme-border)] bg-[var(--cordel-wood)] text-white text-[10.5px] font-black cursor-pointer disabled:opacity-45">{sendingEmail ? '...' : `✉️ ${t('agenda.volunteerSendBrevoEmailBtn') || 'Envoyer par e-mail'}`}</button>

@@ -16,12 +16,10 @@ import EventQuickTogglesGrid from './EventQuickTogglesGrid';
 import EventFormAdvancedDrawer from './EventFormAdvancedDrawer';
 import ReunionPrivacySelector from './ReunionPrivacySelector';
 import { resolveReunionPrivacyConfig } from '../../utils/reunionPrivacyUtils';
+import { resolveTypeEffectiveConfig } from '../../utils/eventTypeConfigUtils';
 import {
-  extractDayPart,
-  extractTimePart,
-  resolveDefaultTimesForForm,
-  applyScheduleTransitionOnFormChange,
-  computeRelativeDeadlineForSlot
+  extractDayPart, extractTimePart, resolveDefaultTimesForForm,
+  applyScheduleTransitionOnFormChange, computeRelativeDeadlineForSlot
 } from '../../utils/eventScheduleUtils';
 import { useTranslation } from '../LanguageContext';
 
@@ -33,23 +31,11 @@ import { useTranslation } from '../LanguageContext';
  * 3. Tiroir Avancé (Date limite, Budget, Bénévoles, Sondage de dates)
  */
 export default function EventFormFields({
-  formData,
-  setFormData,
-  handleChange,
-  saving = false,
-  isEdit = false,
-  eventTypeConfigs = {},
-  defaultLocationsByEventType = {},
-  lieuxImportants = [],
+  formData, setFormData, handleChange, saving = false, isEdit = false,
+  eventTypeConfigs = {}, defaultLocationsByEventType = {}, lieuxImportants = [],
   associationEventTypes = ['prestation', 'repetition', 'stage', 'atelier', 'reunion'],
-  adresseLocal = '',
-  combinedCostumeOptions = [],
-  customCategories = DEFAULT_CUSTOM_CATEGORIES,
-  createConfig = {},
-  groupId,
-  defaultDropUrl = '',
-  pupitresList = [],
-  t
+  adresseLocal = '', combinedCostumeOptions = [], customCategories = DEFAULT_CUSTOM_CATEGORIES,
+  createConfig = {}, groupId, defaultDropUrl = '', pupitresList = [], allUsers = [], t
 }) {
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
@@ -164,12 +150,10 @@ export default function EventFormFields({
           updated.enableRevisionProgram = Boolean(typePresets.enableRevisionProgram);
           updated.agendaEnableRevisionProgram = Boolean(typePresets.enableRevisionProgram);
         }
-        // Pré-remplissage du lien de dépôt cloud par défaut si renseigné
         if (typePresets.defaultDropUrl && (!isEdit || !prev.dropUrl)) {
           updated.dropUrl = typePresets.defaultDropUrl;
           updated.lienDepotMedias = typePresets.defaultDropUrl;
         }
-        // Calcul automatique de la date limite d'inscription selon le délai par défaut en heures
         const deadlineHours = Number(typePresets.defaultDeadlineHours);
         const targetDate = updated.date || prev.date;
         if (deadlineHours > 0 && targetDate && (!isEdit || !prev.dateLimiteInscription)) {
@@ -177,19 +161,16 @@ export default function EventFormFields({
             const eventStart = new Date(targetDate);
             if (!isNaN(eventStart.getTime())) {
               const deadlineDate = new Date(eventStart.getTime() - deadlineHours * 3600 * 1000);
-              const tzOffset = deadlineDate.getTimezoneOffset() * 60000;
-              updated.dateLimiteInscription = new Date(deadlineDate.getTime() - tzOffset).toISOString().slice(0, 16);
+              updated.dateLimiteInscription = new Date(deadlineDate.getTime() - deadlineDate.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
             }
-          } catch (err) {
-            console.warn("Calcul automatique dateLimiteInscription échoué :", err);
-          }
+          } catch (err) { console.warn("Calcul automatique dateLimiteInscription échoué :", err); }
         }
       }
 
-      // Préremplissage de l'interrupteur Commissions & Chantiers selon le preset du type
-      // Uniquement en mode création (nouvel événement sans ID)
       if (!isEdit && !prev.id) {
-        updated.hasCommissions = Boolean(eventTypeConfigs?.[newType]?.hasCommissionsByDefault);
+        const effPreset = resolveTypeEffectiveConfig(newType, eventTypeConfigs?.[newType] || {});
+        updated.hasCommissions = Boolean(effPreset.hasCommissionsByDefault);
+        updated.enableVolunteers = Boolean(effPreset.enableVolunteers);
       }
 
       // Gestion de la récolte photos / QR code (activerRecolteMedias) :
@@ -613,18 +594,10 @@ export default function EventFormFields({
           ÉTAGE 3 : TIROIR AVANCÉ (Replié par défaut)
           ========================================================================= */}
       <EventFormAdvancedDrawer
-        formData={formData}
-        setFormData={setFormData}
-        handleChange={handleChange}
-        saving={saving}
-        isEdit={isEdit}
-        createConfig={createConfig}
-        pupitresList={pupitresList}
-        eventTypeConfigs={eventTypeConfigs}
-        isAdvancedOpen={isAdvancedOpen}
-        setIsAdvancedOpen={setIsAdvancedOpen}
-        translate={translate}
-        tr={tr}
+        formData={formData} setFormData={setFormData} handleChange={handleChange} saving={saving}
+        isEdit={isEdit} createConfig={createConfig} pupitresList={pupitresList} eventTypeConfigs={eventTypeConfigs}
+        allUsers={allUsers} groupId={groupId} isAdvancedOpen={isAdvancedOpen} setIsAdvancedOpen={setIsAdvancedOpen}
+        translate={translate} tr={tr}
       />
     </div>
   );

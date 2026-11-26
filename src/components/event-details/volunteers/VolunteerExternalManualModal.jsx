@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import useModalEscape from '../../../hooks/useModalEscape';
 import { normalizePublicVolunteerConfig } from '../../../utils/volunteerApplicationUtils';
 import { isVolunteerShiftFull } from '../../../utils/volunteerShiftUtils';
@@ -14,11 +14,15 @@ const EMPTY_FORM = {
  * Enregistre directement le bénévole en `status: 'accepted'` et le synchronise sur les créneaux.
  */
 export default function VolunteerExternalManualModal({
-  isOpen = false, event = null, manageableShifts = [], saving = false, onClose, onSubmitExternal, tr
+  isOpen = false, initialShiftIds = [], event = null, manageableShifts = [], saving = false, onClose, onSubmitExternal, tr
 }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [selectedShiftIds, setSelectedShiftIds] = useState([]);
   useModalEscape(isOpen, onClose, saving);
+
+  useEffect(() => {
+    if (isOpen) setSelectedShiftIds(Array.isArray(initialShiftIds) ? initialShiftIds.filter(Boolean) : []);
+  }, [isOpen, initialShiftIds]);
 
   if (!isOpen) return null;
   const t = typeof tr === 'function' ? tr : (k, fb) => fb || k;

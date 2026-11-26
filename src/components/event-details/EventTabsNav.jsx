@@ -4,15 +4,7 @@ import { useTranslation } from '../LanguageContext';
 
 /**
  * Barre de navigation par onglets pour la fiche détaillée d'un événement (Navigation Hub Cordel).
- * Permet d'alterner de manière fluide entre les 4 piliers de l'événement.
- *
- * @param {Object} props
- * @param {string} props.activeTab Identifiant de l'onglet actif ('rsvp', 'logistics', 'program', 'admin')
- * @param {Function} props.setActiveTab Callback pour basculer d'onglet
- * @param {boolean} props.canAccessAdminTab Indique si l'utilisateur a accès aux outils de gestion
- * @param {number} [props.attendeesCount] Nombre de participants présents (badge)
- * @param {number} [props.carsCount] Nombre de véhicules déclarés (badge)
- * @param {boolean} [props.hasProgram] Indique si un programme artistique ou un plan de scène existe
+ * Affiche conditionnellement l'onglet « 🤝 Bénévoles » uniquement lorsque `showVolunteersTab` est actif.
  */
 export default function EventTabsNav({
   activeTab,
@@ -21,6 +13,9 @@ export default function EventTabsNav({
   attendeesCount = 0,
   _carsCount = 0,
   hasProgram = false,
+  showVolunteersTab = false,
+  volunteersBadge = null,
+  volunteersBadgeTone = 'ocre',
   commentsCount = 0
 }) {
   const { t } = useTranslation();
@@ -33,10 +28,17 @@ export default function EventTabsNav({
     },
     {
       id: 'logistics',
-      label: 'Convoi & Présences',
+      label: t('agenda.tabLogisticsLabel') || 'Convoi & Présences',
       icon: '🚗',
       badge: attendeesCount > 0 ? `${attendeesCount}` : null
     },
+    ...(showVolunteersTab ? [{
+      id: 'volunteers',
+      label: t('agenda.tabVolunteers') || 'Bénévoles',
+      icon: '🤝',
+      badge: volunteersBadge,
+      tone: volunteersBadgeTone
+    }] : []),
     {
       id: 'program',
       label: t('agenda.programToRevise') || 'Scène & Programme',
@@ -65,6 +67,11 @@ export default function EventTabsNav({
       <HorizontalRibbonContainer activeTabId={activeTab} ariaLabel="Navigation de l'événement">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
+          const inactiveBadgeCls = tab.tone === 'vert'
+            ? 'bg-[var(--color-cordel-vert)] text-white border-[var(--theme-border)]'
+            : tab.id === 'volunteers'
+              ? 'bg-[var(--color-cordel-ocre)] text-white border-[var(--theme-border)]'
+              : 'bg-amber-100 text-amber-900 border-amber-300';
 
           return (
             <button
@@ -85,15 +92,7 @@ export default function EventTabsNav({
               <span className="tracking-wide">{tab.label}</span>
 
               {tab.badge && (
-                <span
-                  className={`
-                    ml-1 text-[9px] font-black px-1.5 py-0.2 rounded-full border leading-none
-                    ${isActive
-                      ? 'bg-cordel-wood text-white border-encre-noire'
-                      : 'bg-amber-100 text-amber-900 border-amber-300'
-                    }
-                  `}
-                >
+                <span className={`ml-1 text-[9px] font-black px-1.5 py-0.2 rounded-full border leading-none ${isActive ? 'bg-cordel-wood text-white border-encre-noire' : inactiveBadgeCls}`}>
                   {tab.badge}
                 </span>
               )}

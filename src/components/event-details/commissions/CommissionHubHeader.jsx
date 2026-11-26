@@ -3,8 +3,8 @@ import { useTranslation } from '../../LanguageContext';
 
 /**
  * En-tête de la Tour de Contrôle des Commissions d'un événement :
- * affiche le compte à rebours, la jauge bénévole globale et le rappel du compteur
- * de propositions externes à valider (`pendingApplicationsCount`) pour les admins et référents.
+ * compte à rebours, jauge bénévole globale, compteur de propositions externes
+ * et bouton passerelle direct « 🤝 Grand Tableau Bénévoles (X/Y) » vers l'onglet Bénévoles.
  */
 export default function CommissionHubHeader({
   event,
@@ -13,11 +13,16 @@ export default function CommissionHubHeader({
   pendingApplicationsCount = 0,
   canDepositVaral = false,
   canCreate = false,
+  onOpenVolunteersSynoptic,
   onOpenVaralDeposit,
   onOpenCreate,
   onClose
 }) {
   const { t } = useTranslation();
+  const hasVolunteers = globalVolunteerCoverage.shiftsCount > 0 || Boolean(event?.enableVolunteers) || Boolean(event?.publicVolunteerConfig?.enabled);
+  const ratioLabel = globalVolunteerCoverage.totalRequired > 0
+    ? ` (${globalVolunteerCoverage.filledPosts}/${globalVolunteerCoverage.totalRequired})`
+    : (globalVolunteerCoverage.totalInscrits > 0 ? ` (${globalVolunteerCoverage.totalInscrits})` : '');
 
   return (
     <div className="px-3 sm:px-4 py-2.5 sm:py-3 border-b-2 border-[var(--theme-border)] bg-[var(--cordel-bg)] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 shrink-0">
@@ -32,15 +37,6 @@ export default function CommissionHubHeader({
               {countdownText && (
                 <span className="px-2 py-0.5 rounded text-[9.5px] sm:text-[10px] font-black border border-[var(--theme-border)] bg-[var(--color-cordel-ocre)] text-white shrink-0">
                   {countdownText}
-                </span>
-              )}
-              {globalVolunteerCoverage.shiftsCount > 0 && (
-                <span className={`px-2 py-0.5 rounded text-[9.5px] sm:text-[10px] font-black border border-[var(--theme-border)] text-white shrink-0 ${
-                  globalVolunteerCoverage.isComplete ? 'bg-[var(--color-cordel-vert)]' : 'bg-[var(--color-cordel-ocre)]'
-                }`}>
-                  🤝 {globalVolunteerCoverage.totalRequired > 0
-                    ? `${globalVolunteerCoverage.filledPosts} / ${globalVolunteerCoverage.totalRequired} ${t('agenda.volunteerPostsFilled') || 'postes pourvus'}`
-                    : `${globalVolunteerCoverage.totalInscrits} bénévole(s)`}
                 </span>
               )}
               {pendingApplicationsCount > 0 && (
@@ -58,6 +54,17 @@ export default function CommissionHubHeader({
       </div>
 
       <div className="flex items-center gap-2 shrink-0 justify-end w-full sm:w-auto flex-wrap">
+        {hasVolunteers && onOpenVolunteersSynoptic && (
+          <button
+            type="button"
+            onClick={onOpenVolunteersSynoptic}
+            className={`flex-1 sm:flex-initial px-3 py-1.5 font-black text-xs rounded border border-[var(--theme-border)] text-white hover:opacity-90 shadow-xs flex items-center justify-center gap-1 cursor-pointer ${
+              globalVolunteerCoverage.isComplete ? 'bg-[var(--color-cordel-vert)]' : 'bg-[var(--color-cordel-ocre)]'
+            }`}
+          >
+            <span>🤝 {t('agenda.volunteerOpenSynopticHubBtn') || 'Grand Tableau Bénévoles'}{ratioLabel}</span>
+          </button>
+        )}
         {canDepositVaral && (
           <button type="button" onClick={onOpenVaralDeposit} className="flex-1 sm:flex-initial px-3 py-1.5 font-black text-xs rounded border border-[var(--theme-border)] bg-[var(--color-cordel-ocre)] text-white hover:opacity-90 shadow-xs flex items-center justify-center gap-1 cursor-pointer">
             <span>📜 Présenter / Ajouter au Varal</span>

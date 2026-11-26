@@ -210,78 +210,39 @@ export default function TabAdmin({
           </span>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 select-none">
             {/* 1. Percussion */}
-            <button
-              type="button"
-              disabled={updatingField === 'includesPercussion'}
-              onClick={() => handleToggleEventField('includesPercussion', event.includesPercussion !== false)}
-              className={`flex items-center justify-between p-2 rounded text-xs font-bold uppercase border transition-all cursor-pointer ${
-                event.includesPercussion !== false
-                  ? 'bg-amber-100 text-amber-900 border-amber-400 shadow-xs'
-                  : 'bg-neutral-100 text-neutral-400 border-neutral-300'
-              }`}
-            >
+            <button type="button" disabled={updatingField === 'includesPercussion'} onClick={() => handleToggleEventField('includesPercussion', event.includesPercussion !== false)} className={`flex items-center justify-between p-2 rounded text-xs font-bold uppercase border transition-all cursor-pointer ${event.includesPercussion !== false ? 'bg-amber-100 text-amber-900 border-amber-400 shadow-xs' : 'bg-neutral-100 text-neutral-400 border-neutral-300'}`}>
               <span className="flex items-center gap-1.5">🥁 {t('agenda.modulePercussion')}</span>
               <span className="text-[10px] font-black">{event.includesPercussion !== false ? 'ON' : 'OFF'}</span>
             </button>
 
             {/* 2. Danse */}
-            <button
-              type="button"
-              disabled={updatingField === 'includesDance'}
-              onClick={() => handleToggleEventField('includesDance', event.includesDance !== false)}
-              className={`flex items-center justify-between p-2 rounded text-xs font-bold uppercase border transition-all cursor-pointer ${
-                event.includesDance !== false
-                  ? 'bg-pink-100 text-pink-900 border-pink-400 shadow-xs'
-                  : 'bg-neutral-100 text-neutral-400 border-neutral-300'
-              }`}
-            >
+            <button type="button" disabled={updatingField === 'includesDance'} onClick={() => handleToggleEventField('includesDance', event.includesDance !== false)} className={`flex items-center justify-between p-2 rounded text-xs font-bold uppercase border transition-all cursor-pointer ${event.includesDance !== false ? 'bg-pink-100 text-pink-900 border-pink-400 shadow-xs' : 'bg-neutral-100 text-neutral-400 border-neutral-300'}`}>
               <span className="flex items-center gap-1.5">💃 {t('agenda.moduleDanse')}</span>
               <span className="text-[10px] font-black">{event.includesDance !== false ? 'ON' : 'OFF'}</span>
             </button>
 
             {/* 3. Covoiturage */}
-            <button
-              type="button"
-              disabled={updatingField === 'enableCarpool'}
-              onClick={() => handleToggleEventField('enableCarpool', event.enableCarpool !== false)}
-              className={`flex items-center justify-between p-2 rounded text-xs font-bold uppercase border transition-all cursor-pointer ${
-                event.enableCarpool !== false
-                  ? 'bg-emerald-100 text-emerald-900 border-emerald-400 shadow-xs'
-                  : 'bg-neutral-100 text-neutral-400 border-neutral-300'
-              }`}
-            >
+            <button type="button" disabled={updatingField === 'enableCarpool'} onClick={() => handleToggleEventField('enableCarpool', event.enableCarpool !== false)} className={`flex items-center justify-between p-2 rounded text-xs font-bold uppercase border transition-all cursor-pointer ${event.enableCarpool !== false ? 'bg-emerald-100 text-emerald-900 border-emerald-400 shadow-xs' : 'bg-neutral-100 text-neutral-400 border-neutral-300'}`}>
               <span className="flex items-center gap-1.5">🚗 {t('agenda.moduleCarpool')}</span>
               <span className="text-[10px] font-black">{event.enableCarpool !== false ? 'ON' : 'OFF'}</span>
             </button>
 
             {/* 4. Inscriptions */}
-            <button
-              type="button"
-              disabled={updatingField === 'enableInscriptions'}
-              onClick={() => handleToggleEventField('enableInscriptions', event.enableInscriptions !== false)}
-              className={`flex items-center justify-between p-2 rounded text-xs font-bold uppercase border transition-all cursor-pointer ${
-                event.enableInscriptions !== false
-                  ? 'bg-blue-100 text-blue-900 border-blue-400 shadow-xs'
-                  : 'bg-neutral-100 text-neutral-400 border-neutral-300'
-              }`}
-            >
+            <button type="button" disabled={updatingField === 'enableInscriptions'} onClick={() => handleToggleEventField('enableInscriptions', event.enableInscriptions !== false)} className={`flex items-center justify-between p-2 rounded text-xs font-bold uppercase border transition-all cursor-pointer ${event.enableInscriptions !== false ? 'bg-blue-100 text-blue-900 border-blue-400 shadow-xs' : 'bg-neutral-100 text-neutral-400 border-neutral-300'}`}>
               <span className="flex items-center gap-1.5">📝 {t('agenda.moduleInscriptions')}</span>
               <span className="text-[10px] font-black">{event.enableInscriptions !== false ? 'ON' : 'OFF'}</span>
             </button>
 
             {/* 5. Validation admin */}
-            <button
-              type="button"
-              disabled={updatingField === 'requiresValidation'}
-              onClick={() => handleToggleEventField('requiresValidation', Boolean(event.requiresValidation))}
-              className={`flex items-center justify-between p-2 rounded text-xs font-bold uppercase border transition-all cursor-pointer ${
-                event.requiresValidation
-                  ? 'bg-purple-100 text-purple-900 border-purple-400 shadow-xs'
-                  : 'bg-neutral-100 text-neutral-400 border-neutral-300'
-              }`}
-            >
+            <button type="button" disabled={updatingField === 'requiresValidation'} onClick={() => handleToggleEventField('requiresValidation', Boolean(event.requiresValidation))} className={`flex items-center justify-between p-2 rounded text-xs font-bold uppercase border transition-all cursor-pointer ${event.requiresValidation ? 'bg-purple-100 text-purple-900 border-purple-400 shadow-xs' : 'bg-neutral-100 text-neutral-400 border-neutral-300'}`}>
               <span className="flex items-center gap-1.5">🔒 {t('agenda.moduleValidation')}</span>
               <span className="text-[10px] font-black">{event.requiresValidation ? 'ON' : 'OFF'}</span>
+            </button>
+
+            {/* 6. Bénévoles Jour J */}
+            <button type="button" disabled={updatingField === 'enableVolunteers'} onClick={() => handleToggleEventField('enableVolunteers', Boolean(event.enableVolunteers))} className={`flex items-center justify-between p-2 rounded text-xs font-bold uppercase border transition-all cursor-pointer ${event.enableVolunteers ? 'bg-emerald-100 text-emerald-900 border-[var(--color-cordel-vert)] shadow-xs' : 'bg-neutral-100 text-neutral-400 border-neutral-300'}`} title={t('agenda.toggleVolunteers') || 'Activer ou désactiver les créneaux bénévoles sur cet événement'}>
+              <span className="flex items-center gap-1.5">🤝 {t('agenda.toggleVolunteers') || 'Bénévoles'}</span>
+              <span className="text-[10px] font-black">{event.enableVolunteers ? 'ON' : 'OFF'}</span>
             </button>
 
             {/* 6. Boîte à photos / QR Code */}

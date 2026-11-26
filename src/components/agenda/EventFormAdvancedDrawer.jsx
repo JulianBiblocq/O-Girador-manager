@@ -20,6 +20,8 @@ export default function EventFormAdvancedDrawer({
   createConfig = {},
   pupitresList = [],
   eventTypeConfigs = {},
+  allUsers = [],
+  groupId = '',
   isAdvancedOpen = false,
   setIsAdvancedOpen,
   translate,
@@ -94,15 +96,15 @@ export default function EventFormAdvancedDrawer({
           </div>
         )}
 
-        {/* Créneaux Bénévoles */}
-        {createConfig.agendaEnableVolunteerShifts !== false && (
-          <EventVolunteerShiftsEditor
-            formData={formData}
-            setFormData={setFormData}
-            saving={saving}
-            tr={tr}
-          />
-        )}
+        {/* Créneaux Bénévoles & Référents Jour J */}
+        <EventVolunteerShiftsEditor
+          formData={formData}
+          setFormData={setFormData}
+          allUsers={allUsers}
+          groupId={groupId}
+          saving={saving}
+          tr={tr}
+        />
 
         {/* Sondage multi-dates (Création uniquement) */}
         {!isEdit && (

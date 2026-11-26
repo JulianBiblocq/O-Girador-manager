@@ -92,17 +92,14 @@ export function buildEventCreationPayload({
         ? `🥁 Percussion: ${formData.dressCodePercussion} | 💃 Danse: ${formData.dressCodeDanse}`
         : (formData.dressCodePercussion || formData.dressCodeDanse || '')
     ),
+    enableVolunteers: Boolean(formData.enableVolunteers || (formData.volunteerShifts && formData.volunteerShifts.length > 0) || formData.publicVolunteerConfig?.enabled),
+    volunteerReferentIds: Array.isArray(formData.volunteerReferentIds) ? formData.volunteerReferentIds.filter(Boolean).slice(0, 2) : [],
     volunteerShifts: formData.volunteerShifts || [],
     publicVolunteerConfig: normalizePublicVolunteerConfig(formData.publicVolunteerConfig),
-    includesPercussion: formData.includesPercussion !== false,
-    includesDance: formData.includesDance !== false,
-    enableCarpool: formData.enableCarpool !== false,
-    enableRoadbook: formData.enableRoadbook !== undefined
-      ? Boolean(formData.enableRoadbook)
-      : (rawConfig.enableRoadbook !== undefined ? Boolean(rawConfig.enableRoadbook) : ['prestation', 'stage'].includes(formData.type)),
-    isPublic: Boolean(formData.isPublic),
-    enableInscriptions: formData.enableInscriptions !== false,
-    hasCommissions: Boolean(formData.hasCommissions),
+    includesPercussion: formData.includesPercussion !== false, includesDance: formData.includesDance !== false,
+    enableCarpool: formData.enableCarpool !== false, isPublic: Boolean(formData.isPublic),
+    enableRoadbook: formData.enableRoadbook !== undefined ? Boolean(formData.enableRoadbook) : (rawConfig.enableRoadbook !== undefined ? Boolean(rawConfig.enableRoadbook) : ['prestation', 'stage'].includes(formData.type)),
+    enableInscriptions: formData.enableInscriptions !== false, hasCommissions: Boolean(formData.hasCommissions),
     activerRecolteMedias: isRecolteActiveForDoc,
     publierSurVaral: formData.publierSurVaral !== undefined ? Boolean(formData.publierSurVaral) : (isRecolteActiveForDoc !== false),
     sendPushNotification: formData.sendPushNotification !== false,

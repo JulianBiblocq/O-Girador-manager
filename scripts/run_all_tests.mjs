@@ -174,7 +174,8 @@ const testScripts = [
   'scripts/test_volunteer_shifts_mission1.mjs',
   'scripts/test_volunteer_applications_mission2.mjs',
   'scripts/test_public_volunteer_page_mission3.mjs',
-  'scripts/test_volunteer_dayof_and_cerfa_mission4.mjs'
+  'scripts/test_volunteer_dayof_and_cerfa_mission4.mjs',
+  'scripts/test_volunteer_tab_synoptic_and_calendar.mjs'
 ];
 
 console.log("===============================================================");

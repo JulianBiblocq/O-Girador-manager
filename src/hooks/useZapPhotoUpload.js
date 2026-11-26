@@ -1,41 +1,34 @@
 import { useState, useEffect, useCallback } from 'react';
-import { uploadChatAttachment } from '../utils/attachmentUploadUtils';
+import { uploadChatAttachment, formatAttachmentUploadError, getFirebaseErrorCode } from '../utils/attachmentUploadUtils';
 
 // Durée d'affichage du bandeau d'erreur avant disparition automatique (ms)
 const ERROR_DISPLAY_MS = 8000;
 
 /**
  * Traduit une erreur d'envoi (Firebase Storage ou validation) en message lisible.
- * @param {Error} err - Erreur capturée
- * @returns {string}
  */
-const toReadableError = (err) => {
-  const code = String(err?.code || '');
+const toReadableError = (err, t) => {
+  const code = getFirebaseErrorCode(err);
   if (code.includes('unauthorized') || code.includes('permission')) {
-    return "Envoi refusé : vous n'avez pas accès au stockage de cette association.";
+    return formatAttachmentUploadError(err, t);
   }
   if (code.includes('retry-limit') || code.includes('canceled') || err?.message === 'Failed to fetch') {
-    return 'Connexion instable : la photo n’a pas pu être envoyée. Réessayez.';
+    return typeof t === 'function'
+      ? t('forumExtra.errUploadNetwork', "Connexion instable : le fichier n'a pas pu être envoyé. Veuillez réessayer.")
+      : "Connexion instable : la photo n'a pas pu être envoyée. Réessayez.";
   }
   return err?.message || "La photo n'a pas pu être envoyée.";
 };
 
 /**
- * Hook d'envoi de photo pour le widget Le Zap (compression WebP + Firebase Storage).
- * @param {Object} params
- * @param {string} params.groupId - Identifiant de l'association (obligatoire)
- * @param {Function} params.sendMessage - Envoi d'un message de conversation
- * @param {string} params.caption - Légende saisie (optionnelle)
- * @param {Function} params.onSent - Callback après envoi réussi (ex: vider la saisie)
- * @returns {{ uploadingPhoto: boolean, photoError: string, clearPhotoError: Function, handlePhotoChange: Function }}
+ * Hook d'envoi de photo pour le widget Le Zap (compression WebP/JPEG + Firebase Storage).
  */
-export function useZapPhotoUpload({ groupId, sendMessage, caption, onSent }) {
+export function useZapPhotoUpload({ groupId, sendMessage, caption, onSent, t }) {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [photoError, setPhotoError] = useState('');
 
   const clearPhotoError = useCallback(() => setPhotoError(''), []);
 
-  // Disparition automatique du bandeau d'erreur
   useEffect(() => {
     if (!photoError) return undefined;
     const timer = setTimeout(() => setPhotoError(''), ERROR_DISPLAY_MS);
@@ -63,7 +56,7 @@ export function useZapPhotoUpload({ groupId, sendMessage, caption, onSent }) {
       }
     } catch (err) {
       console.error('useZapPhotoUpload - Erreur envoi photo :', err);
-      setPhotoError(toReadableError(err));
+      setPhotoError(toReadableError(err, t));
     } finally {
       setUploadingPhoto(false);
     }

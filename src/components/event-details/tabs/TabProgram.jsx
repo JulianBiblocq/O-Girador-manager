@@ -1,16 +1,13 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import CordelCard from '../../CordelCard';
 import EventRevisionProgram from '../EventRevisionProgram';
 import EventStageLayoutSection from '../EventStageLayoutSection';
-import EventVolunteerSection from '../EventVolunteerSection';
 import EventWorkshopProgram from '../EventWorkshopProgram';
-import { useEventCommissions } from '../../../hooks/useEventCommissions';
-import { consolidateVolunteerShifts } from '../../../utils/volunteerShiftUtils';
 
 /**
- * Onglet 3 : Artistique, Scène & Ateliers (TabProgram)
- * Regroupe le programme de révision lié au Sequenciador, le plan de scène,
- * les postes bénévoles consolidés (événement + commissions) et le programme de fabrication.
+ * Onglet Artistique, Scène & Ateliers (TabProgram)
+ * 100 % dédié au programme de révision lié au Sequenciador, au plan de scène
+ * et au programme de fabrication / lutherie (sans section Bénévoles, désormais dans TabVolunteers).
  */
 export default function TabProgram({
   event, activeEvent, user, profileData, groupId, isAuthorized, currentConfig, allUsers, t,
@@ -23,27 +20,20 @@ export default function TabProgram({
 }) {
   const targetEvent = activeEvent || event;
   const effectiveGroupId = groupId || targetEvent?.groupId || profileData?.groupId || user?.groupId || '';
-  const { commissions } = useEventCommissions(targetEvent?.hasCommissions ? targetEvent?.id : null, targetEvent);
-
-  const consolidatedShifts = useMemo(
-    () => consolidateVolunteerShifts(targetEvent, commissions),
-    [targetEvent, commissions]
-  );
 
   const showWorkshop = (event.type === 'atelier' || event.type === 'stage') && event.specialiteAtelier === 'fabrication';
   const showRevision = (event.includesPercussion !== false || (setlist && setlist.length > 0) || (event.linkedPatterns && event.linkedPatterns.length > 0)) && currentConfig?.agendaEnableRevisionProgram !== false;
   const showStageLayout = currentConfig?.agendaEnableStageLayout !== false && (event.isStageLayoutPublished || isAuthorized);
-  const showVolunteers = consolidatedShifts.length > 0 || Boolean(targetEvent?.publicVolunteerConfig?.enabled);
 
-  if (!showWorkshop && !showRevision && !showStageLayout && !showVolunteers) {
+  if (!showWorkshop && !showRevision && !showStageLayout) {
     return (
       <CordelCard variant="default" useExtremeBorder={true} className="py-8 px-5 text-center">
         <span className="text-3xl block mb-2 opacity-50">🎵</span>
         <h4 className="font-bold text-sm text-cordel-wood mb-1">
-          Aucun programme scénique ou atelier configuré
+          {t ? (t('agenda.noStageProgramTitle') || 'Aucun programme scénique ou atelier configuré') : 'Aucun programme scénique ou atelier configuré'}
         </h4>
         <p className="text-xs text-encre-noire/70 max-w-md mx-auto">
-          Cet événement ne comporte pas de morceaux à réviser, de plan de scène ou de créneaux bénévoles requis.
+          {t ? (t('agenda.noStageProgramDesc') || 'Cet événement ne comporte pas de morceaux à réviser, de plan de scène ou de programme de fabrication.') : 'Cet événement ne comporte pas de morceaux à réviser, de plan de scène ou de programme de fabrication.'}
         </p>
       </CordelCard>
     );
@@ -98,13 +88,6 @@ export default function TabProgram({
             isAuthorized={isAuthorized} t={t} readOnly={true} onGoToStageLayoutEditor={onGoToStageLayoutEditor}
           />
         </CordelCard>
-      )}
-
-      {showVolunteers && (
-        <EventVolunteerSection
-          event={targetEvent} user={user} profileData={profileData}
-          allUsers={allUsers} isAuthorized={isAuthorized} t={t}
-        />
       )}
     </div>
   );

@@ -134,23 +134,11 @@ export default function EventEditForm({
 
         {/* Champs unifiés en 3 étages */}
         <EventFormFields
-          formData={editForm}
-          setFormData={setEditForm}
-          handleChange={handleChange}
-          saving={savingEvent}
-          isEdit={true}
-          eventTypeConfigs={eventTypeConfigs || rawEditConfig}
-          defaultLocationsByEventType={defaultLocationsByEventType}
-          lieuxImportants={lieuxImportants}
-          associationEventTypes={associationEventTypes}
-          adresseLocal={adresseLocal}
-          combinedCostumeOptions={combinedCostumeOptions}
-          customCategories={customCategories}
-          createConfig={editConfig}
-          groupId={groupId}
-          defaultDropUrl={defaultDropUrl}
-          pupitresList={pupitresList}
-          t={t}
+          formData={editForm} setFormData={setEditForm} handleChange={handleChange} saving={savingEvent} isEdit={true}
+          eventTypeConfigs={eventTypeConfigs || rawEditConfig} defaultLocationsByEventType={defaultLocationsByEventType}
+          lieuxImportants={lieuxImportants} associationEventTypes={associationEventTypes} adresseLocal={adresseLocal}
+          combinedCostumeOptions={combinedCostumeOptions} customCategories={customCategories} createConfig={editConfig}
+          groupId={groupId} defaultDropUrl={defaultDropUrl} pupitresList={pupitresList} allUsers={allUsers} t={t}
         />
 
         {/* Section Feuille de route / Roadbook */}

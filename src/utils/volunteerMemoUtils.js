@@ -19,6 +19,15 @@ export function resolveShiftDayOfContacts(shift = {}, { event = {}, commissions 
     });
   }
 
+  if (contacts.length === 0 && Array.isArray(event?.volunteerReferentIds)) {
+    event.volunteerReferentIds.forEach((uid) => {
+      const u = usersById[uid];
+      const tel = String(u?.telephone || u?.phone || '').trim();
+      const prenom = String(u?.prenom || u?.displayName || '').trim();
+      if (prenom || tel) contacts.push({ prenom: prenom || 'Référent', nom: String(u?.nom || '').trim(), telephone: tel, role: 'Référent Bénévoles' });
+    });
+  }
+
   if (contacts.length === 0) {
     const cj = event?.contactsJourJ || {};
     const refGrp = cj.referentGroupeId ? usersById[cj.referentGroupeId] : null;

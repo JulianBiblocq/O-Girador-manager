@@ -862,7 +862,7 @@ export default function Forum({
   if (activeThread) {
     return (
       <ThreadView
-        threadId={activeThread.id} user={user} profileData={profileData} channels={channels}
+        threadId={activeThread.id} groupId={activeThread.groupId || profileData?.groupId || ''} user={user} profileData={profileData} channels={channels}
         allThreads={accessibleThreads} allUsers={Object.values(usersMap)}
         breakGlassActive={breakGlassActive} tagsDisponibles={tagsDisponibles} effectiveUserTags={effectiveUserTags}
         highlightReplyIndex={highlightThreadReplyIdx} onClearHighlight={() => setHighlightThreadReplyIdx(null)}
@@ -977,7 +977,7 @@ export default function Forum({
               </div>
             ) : isAdding ? (
               <CreateThreadForm
-                groupId={profileData.groupId} channelId={activeChannelId} channels={channels}
+                groupId={profileData?.groupId || activeChannel?.groupId || user?.groupId || ''} channelId={activeChannelId} channels={channels}
                 user={user} profileData={profileData} allUsers={Object.values(usersMap)} onClose={() => setIsAdding(false)}
               />
             ) : (

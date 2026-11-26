@@ -103,6 +103,16 @@ export default function CommissionBasicInfoFields({
           className="p-2 rounded border border-encre-noire/30 bg-white text-xs"
         />
       </div>
+
+      <label className="flex items-center gap-2 text-xs font-bold cursor-pointer pt-1">
+        <input
+          type="checkbox"
+          checked={Boolean(formData.isVolunteerCoordinator)}
+          onChange={(e) => setFormData((prev) => ({ ...prev, isVolunteerCoordinator: e.target.checked }))}
+          className="w-4 h-4 accent-[var(--color-cordel-vert)] rounded cursor-pointer"
+        />
+        <span>🤝 Commission coordinatrice générale des bénévoles</span>
+      </label>
     </div>
   );
 }

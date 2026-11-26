@@ -3,10 +3,11 @@ import {
   extractUserPersonalMemoEntries,
   resolveShiftDayOfContacts
 } from '../../../utils/volunteerMemoUtils';
+import VolunteerCalendarExportMenu from './VolunteerCalendarExportMenu';
 
 /**
  * Encart récapitulatif personnel « Mon Mémo Bénévole Jour J » côté membres.
- * Affiché uniquement si l'adhérent connecté est lui-même inscrit ou parrain d'un proche.
+ * Affiche ses créneaux + proches invités, le contact référent et l'export Google Agenda / .ics.
  */
 export default function VolunteerPersonalMemoBanner({
   consolidatedShifts = [],
@@ -14,6 +15,7 @@ export default function VolunteerPersonalMemoBanner({
   event = {},
   commissions = [],
   allUsers = [],
+  associationName = '',
   tr
 }) {
   const entries = useMemo(
@@ -44,6 +46,17 @@ export default function VolunteerPersonalMemoBanner({
         <h5 className="text-[11px] font-black uppercase tracking-wider text-[var(--color-cordel-vert)] flex items-center gap-1.5">
           📌 {t('agenda.volunteerMyDayOfMemoTitle') || 'Mon Mémo Bénévole Jour J'} ({entries.length})
         </h5>
+        {entries.length >= 2 && (
+          <VolunteerCalendarExportMenu
+            mode="bulk"
+            entries={entries}
+            event={event}
+            commissions={commissions}
+            allUsers={allUsers}
+            associationName={associationName}
+            tr={tr}
+          />
+        )}
       </div>
 
       <div className="flex flex-col gap-1.5">
@@ -61,12 +74,23 @@ export default function VolunteerPersonalMemoBanner({
                     {shift.commissionTitre}
                   </span>
                 )}
+                {kind === 'guest' && (
+                  <span className="text-[9.5px] font-bold px-1.5 py-0.5 rounded bg-[var(--cordel-bg)] border border-[var(--theme-border)]/30">
+                    🤝 {t('agenda.volunteerMemoForGuestPrefix') || 'Proche inscrit'} : {guestName}
+                  </span>
+                )}
               </div>
-              {kind === 'guest' && (
-                <span className="text-[9.5px] font-bold px-1.5 py-0.5 rounded bg-[var(--cordel-bg)] border border-[var(--theme-border)]/30">
-                  🤝 {t('agenda.volunteerMemoForGuestPrefix') || 'Proche inscrit'} : {guestName}
-                </span>
-              )}
+
+              <VolunteerCalendarExportMenu
+                mode="single"
+                shift={shift}
+                guestName={kind === 'guest' ? guestName : ''}
+                event={event}
+                commissions={commissions}
+                allUsers={allUsers}
+                associationName={associationName}
+                tr={tr}
+              />
             </div>
             {shift.consigne && <p className="text-[10px] italic opacity-80">💡 {shift.consigne}</p>}
           </div>

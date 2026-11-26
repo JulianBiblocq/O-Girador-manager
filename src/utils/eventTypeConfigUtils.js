@@ -34,8 +34,14 @@ export function resolveTypeEffectiveConfig(type = '', rawConfig = {}) {
   const isStage = norm.includes('stage');
   const isAtelier = norm.includes('atelier');
   const isReunion = norm.includes('reunion') || norm.includes('réunion');
+  const isVolEvent = isPresta || isStage || ['evenement', 'événement', 'forum', 'fete', 'fête'].some((k) => norm.includes(k));
 
   return {
+    enableVolunteers: rawConfig.enableVolunteers !== undefined
+      ? Boolean(rawConfig.enableVolunteers)
+      : (rawConfig.agendaEnableVolunteerShifts !== undefined
+        ? Boolean(rawConfig.agendaEnableVolunteerShifts)
+        : (!isRepet && !isReunion && !isAtelier && isVolEvent)),
     enableRoadbook: rawConfig.enableRoadbook !== undefined
       ? Boolean(rawConfig.enableRoadbook)
       : (isPresta || isStage),
@@ -108,6 +114,7 @@ export function buildConfigSummary(config = {}) {
   if (config.includesPercussion) badges.push('🥁 Percu');
   if (config.includesDance) badges.push('💃 Danse');
   if (config.hasCommissionsByDefault) badges.push('🎪 Commissions');
+  if (config.enableVolunteers) badges.push('🤝 Bénévoles');
   if (config.requiresValidation) badges.push('🔒 Valid. admin');
   if (config.defaultDeadlineHours && Number(config.defaultDeadlineHours) > 0) {
     badges.push(`⏳ Délai ${config.defaultDeadlineHours}h`);

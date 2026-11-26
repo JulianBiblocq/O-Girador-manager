@@ -13,7 +13,7 @@ import PrivateChatHeader from './forum/PrivateChatHeader';
 import PrivateChatModals from './forum/PrivateChatModals';
 import ChatComposerPlusMenu from './forum/ChatComposerPlusMenu';
 import { useConversationMessages } from '../hooks/useConversationMessages';
-import { uploadChatAttachment } from '../utils/attachmentUploadUtils';
+import { uploadChatAttachment, formatAttachmentUploadError } from '../utils/attachmentUploadUtils';
 import { dispatchInAppAndPushNotification, NOTIFICATION_TYPES } from '../utils/inAppNotificationService';
 import MessageReadReceipt from './forum/MessageReadReceipt';
 import ChatYouTubePreview from './forum/ChatYouTubePreview';
@@ -493,7 +493,7 @@ export default function PrivateChatView({
       }
     } catch (err) {
       console.error("PrivateChatView - Erreur lors de l'envoi de la pièce jointe :", err);
-      alert(t('forumExtra.errUploadAttachment', { error: err.message || err }));
+      alert(formatAttachmentUploadError(err, t));
     } finally {
       setIsUploadingAttachment(false);
       if (attachmentInputRef.current) attachmentInputRef.current.value = '';
@@ -812,7 +812,7 @@ export default function PrivateChatView({
           <input
             ref={attachmentInputRef}
             type="file"
-            accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.mp3,.ogg,.wav"
+            accept="image/*,image/heic,image/heif,.heic,.heif,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.mp3,.ogg,.wav"
             onChange={handleDirectFileUpload}
             disabled={sending || isUploadingAttachment || !groupId}
             className="hidden"

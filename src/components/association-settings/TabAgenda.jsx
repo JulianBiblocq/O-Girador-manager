@@ -37,37 +37,20 @@ export default function TabAgenda({ formData = {}, handleChange, saving, groupId
     const isStage = cleanType.includes('stage');
     const isAtelier = cleanType.includes('atelier');
     const isReunion = cleanType.includes('reunion') || cleanType.includes('réunion');
+    const enableVol = !isRepet && !isReunion && !isAtelier && (isPresta || isStage || ['evenement', 'événement', 'forum', 'fete', 'fête'].some((k) => cleanType.includes(k)));
 
     const newConfig = {
-      enableRoadbook: isPresta || isStage,
-      activerRecolteMedias: isPresta,
-      enableVideoDrop: isAtelier || isRepet || isStage,
-      activerDepotVideo: isAtelier || isRepet || isStage,
-      enableStageLayout: isPresta || isStage,
-      agendaEnableStageLayout: isPresta || isStage,
-      enableRevisionProgram: !isReunion,
-      agendaEnableRevisionProgram: !isReunion,
-      enableCarpool: !isReunion && !isAtelier,
-      agendaEnableCarpool: !isReunion && !isAtelier,
-      includesPercussion: !isReunion,
-      includesDance: isPresta || isRepet || isStage,
-      requiresValidation: false,
-      defaultDeadlineHours: '',
-      defaultDropUrl: '',
-      defaultStartTime: '20:00',
-      defaultEndTime: '22:00',
-      defaultDanceStartTime: '19:00',
-      defaultDanceEndTime: '20:00',
-      agendaRequireInstrument: false,
-      agendaEnableMaybeStatus: true,
-      agendaEnableFinance: true,
-      agendaEnableInscriptions: true,
-      agendaEnableImage: true,
-      agendaEnableOrdreDuJour: isReunion,
-      agendaEnableAdresse: true,
-      agendaEnableUrl: true,
-      agendaEnableVolunteerShifts: isPresta || isStage,
-      isPublic: isPresta,
+      enableVolunteers: enableVol, enableRoadbook: isPresta || isStage, activerRecolteMedias: isPresta,
+      enableVideoDrop: isAtelier || isRepet || isStage, activerDepotVideo: isAtelier || isRepet || isStage,
+      enableStageLayout: isPresta || isStage, agendaEnableStageLayout: isPresta || isStage,
+      enableRevisionProgram: !isReunion, agendaEnableRevisionProgram: !isReunion,
+      enableCarpool: !isReunion && !isAtelier, agendaEnableCarpool: !isReunion && !isAtelier,
+      includesPercussion: !isReunion, includesDance: isPresta || isRepet || isStage, requiresValidation: false,
+      defaultDeadlineHours: '', defaultDropUrl: '', defaultStartTime: '20:00', defaultEndTime: '22:00',
+      defaultDanceStartTime: '19:00', defaultDanceEndTime: '20:00', agendaRequireInstrument: false,
+      agendaEnableMaybeStatus: true, agendaEnableFinance: true, agendaEnableInscriptions: true,
+      agendaEnableImage: true, agendaEnableOrdreDuJour: isReunion, agendaEnableAdresse: true,
+      agendaEnableUrl: true, agendaEnableVolunteerShifts: enableVol, isPublic: isPresta,
       hasCommissionsByDefault: isPresta || isStage
     };
 

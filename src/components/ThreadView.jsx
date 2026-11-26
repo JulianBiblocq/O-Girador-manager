@@ -18,7 +18,7 @@ import { stripForbiddenMegaphones } from '../utils/sanitizeIcons';
 
 /** Vue principale d'un sujet de discussion (ThreadView). */
 export default function ThreadView({ 
-  threadId, user, profileData, channels = [], allThreads = [], allUsers = [], 
+  threadId, groupId = '', user, profileData, channels = [], allThreads = [], allUsers = [], 
   onClose, breakGlassActive = false, tagsDisponibles = [], effectiveUserTags = [],
   onNavigateToView = null, highlightReplyIndex = null, onClearHighlight = null
 }) {
@@ -189,7 +189,7 @@ export default function ThreadView({
                   <ThreadValidationCard
                     thread={threadData.thread}
                     userId={user?.uid}
-                    profileData={profileData}
+                    profileData={profileData} groupId={threadData.thread?.groupId || groupId || profileData?.groupId || user?.groupId || ''} user={user}
                     isModeratorOrAdmin={threadData.isModeratorOrAdmin}
                     allUsers={allUsers}
                   />
@@ -212,7 +212,7 @@ export default function ThreadView({
             thread={threadData.thread}
             reponses={threadData.thread?.reponses || []}
             userId={user?.uid}
-            profileData={profileData}
+            profileData={profileData} groupId={threadData.thread?.groupId || groupId || profileData?.groupId || user?.groupId || ''} user={user}
             isModeratorOrAdmin={threadData.isModeratorOrAdmin}
             allUsers={allUsers}
             firstUnreadIdx={threadData.firstUnreadIdx}
@@ -247,7 +247,7 @@ export default function ThreadView({
             lienDepotForum={threadData.lienDepotForum}
             allUsers={allUsers}
             thread={threadData.thread}
-            user={user}
+            groupId={threadData.thread?.groupId || groupId || profileData?.groupId || user?.groupId || ''} user={user}
             isModeratorOrAdmin={threadData.isModeratorOrAdmin}
             replyingTo={threadData.replyingTo}
             onCancelReply={threadData.cancelReply}
@@ -273,7 +273,7 @@ export default function ThreadView({
             thread={threadData.thread}
             channels={channels}
             availableThreads={allThreads}
-            profileData={profileData}
+            profileData={profileData} groupId={threadData.thread?.groupId || groupId || profileData?.groupId || user?.groupId || ''} user={user}
             actionLoading={threadData.actionLoading}
           />
 

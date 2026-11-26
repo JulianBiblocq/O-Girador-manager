@@ -45,13 +45,10 @@ export default function EventTypeConfigCard({
     } else if (key === 'activerDepotVideo') {
       updated.enableVideoDrop = value;
     }
-    // Synchronisation bidirectionnelle pour les alias plan de scène et révision
-    if (key === 'enableStageLayout') {
-      updated.agendaEnableStageLayout = value;
-    }
-    if (key === 'enableRevisionProgram') {
-      updated.agendaEnableRevisionProgram = value;
-    }
+    // Synchronisation bidirectionnelle pour les alias plan de scène, révision et bénévolat
+    if (key === 'enableStageLayout') updated.agendaEnableStageLayout = value;
+    if (key === 'enableRevisionProgram') updated.agendaEnableRevisionProgram = value;
+    if (key === 'enableVolunteers') updated.agendaEnableVolunteerShifts = value;
     onChangeConfig(type, updated);
   };
 
@@ -204,36 +201,23 @@ export default function EventTypeConfigCard({
               </label>
 
               <label className="flex items-center gap-2 p-1.5 rounded hover:bg-black/5 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={config.includesPercussion}
-                  onChange={(e) => handleToggle('includesPercussion', e.target.checked)}
-                  disabled={saving}
-                  className="w-4 h-4 accent-amber-600 rounded cursor-pointer shrink-0"
-                />
+                <input type="checkbox" checked={config.includesPercussion} onChange={(e) => handleToggle('includesPercussion', e.target.checked)} disabled={saving} className="w-4 h-4 accent-amber-600 rounded cursor-pointer shrink-0" />
                 <span className="text-[11px] leading-snug">{t('settings.agenda.eventTypeConfigCard.sectionPercussion')}</span>
               </label>
 
               <label className="flex items-center gap-2 p-1.5 rounded hover:bg-black/5 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={config.includesDance}
-                  onChange={(e) => handleToggle('includesDance', e.target.checked)}
-                  disabled={saving}
-                  className="w-4 h-4 accent-amber-600 rounded cursor-pointer shrink-0"
-                />
+                <input type="checkbox" checked={config.includesDance} onChange={(e) => handleToggle('includesDance', e.target.checked)} disabled={saving} className="w-4 h-4 accent-amber-600 rounded cursor-pointer shrink-0" />
                 <span className="text-[11px] leading-snug">{t('settings.agenda.eventTypeConfigCard.sectionDanse')}</span>
               </label>
 
               <label className="flex items-center gap-2 p-1.5 rounded hover:bg-black/5 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={Boolean(config.hasCommissionsByDefault)}
-                  onChange={(e) => handleToggle('hasCommissionsByDefault', e.target.checked)}
-                  disabled={saving}
-                  className="w-4 h-4 accent-amber-600 rounded cursor-pointer shrink-0"
-                />
+                <input type="checkbox" checked={Boolean(config.hasCommissionsByDefault)} onChange={(e) => handleToggle('hasCommissionsByDefault', e.target.checked)} disabled={saving} className="w-4 h-4 accent-amber-600 rounded cursor-pointer shrink-0" />
                 <span className="text-[11px] leading-snug">{t('settings.agenda.eventTypeConfigCard.activerLesCommissionsParDefaut')}</span>
+              </label>
+
+              <label className="flex items-center gap-2 p-1.5 rounded hover:bg-black/5 cursor-pointer">
+                <input type="checkbox" checked={Boolean(config.enableVolunteers)} onChange={(e) => handleToggle('enableVolunteers', e.target.checked)} disabled={saving} className="w-4 h-4 accent-amber-600 rounded cursor-pointer shrink-0" />
+                <span className="text-[11px] leading-snug">{t('settings.agenda.eventTypeConfigCard.creneauxBenevoles') || '🤝 Créneaux Bénévoles'}</span>
               </label>
             </div>
           </div>

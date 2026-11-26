@@ -9,6 +9,7 @@ import {
   isMemberArtisticPresent,
   normalizeShiftInscrit
 } from '../utils/volunteerShiftUtils';
+import { isEventVolunteerCoordinator } from '../utils/volunteerCoordinatorUtils';
 
 /**
  * Hook de gestion consolidée et transactionnelle des créneaux bénévoles.
@@ -32,12 +33,17 @@ export function useVolunteerShifts({ event, user, profileData, allUsers = [], is
   const coverage = useMemo(() => computeVolunteerCoverage(consolidatedShifts), [consolidatedShifts]);
   const isArtisticPresent = useMemo(() => isMemberArtisticPresent(event, user?.uid), [event, user?.uid]);
 
+  const isCoordinator = useMemo(
+    () => isEventVolunteerCoordinator({ user, profileData, event, commissions, canManageEvents: isAuthorized }),
+    [user, profileData, event, commissions, isAuthorized]
+  );
+
   const canManageShift = useCallback((shift) => {
-    if (isAuthorized) return true;
+    if (isAuthorized || isCoordinator) return true;
     if (!user?.uid || !shift?.commissionId) return false;
     const comm = commissions.find((c) => c.id === shift.commissionId);
-    return Boolean(comm?.referentsIds?.includes(user.uid));
-  }, [isAuthorized, user?.uid, commissions]);
+    return Boolean(comm?.referentsIds?.includes(user.uid) || comm?.referentIds?.includes(user.uid));
+  }, [isAuthorized, isCoordinator, user?.uid, commissions]);
 
   const filteredShifts = useMemo(() => {
     if (activeFilter === 'all') return consolidatedShifts;
@@ -122,7 +128,7 @@ export function useVolunteerShifts({ event, user, profileData, allUsers = [], is
   }, [canManageShift, user?.uid, mutateShiftInscrits]);
 
   return {
-    commissions, consolidatedShifts, filteredShifts, coverage, isArtisticPresent,
+    isCoordinator, commissions, consolidatedShifts, filteredShifts, coverage, isArtisticPresent,
     activeFilter, setActiveFilter, loadingShiftId, canManageShift,
     toggleSelfShift, addGuestToShift, addMemberByManager, removeInscrit
   };

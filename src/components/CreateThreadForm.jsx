@@ -26,12 +26,12 @@ export default function CreateThreadForm({ groupId, channelId, channels = [], us
   const [selectedTarget, setSelectedTarget] = useState('');
   const [saving, setSaving] = useState(false);
 
-  // Résolution du salon actif de destination
-  const targetChannelId = channelId || `${groupId}_general`;
+  // Résolution du salon actif de destination et de l'association
+  const baseGroupId = groupId || profileData?.groupId || user?.groupId || '';
+  const targetChannelId = channelId || `${baseGroupId}_general`;
   const currentChannel = (channels || []).find((c) => c.id === targetChannelId);
+  const effectiveGroupId = groupId || currentChannel?.groupId || profileData?.groupId || user?.groupId || '';
   const currentChannelName = stripForbiddenMegaphones(currentChannel?.name || 'Général').trim() || 'Général';
-
-  // État de notification Push FCM (coché par défaut)
   const [sendPushNotification, setSendPushNotification] = useState(true);
 
   // État du sondage
@@ -303,7 +303,7 @@ export default function CreateThreadForm({ groupId, channelId, channels = [], us
             onChange={setMessage}
             disabled={saving}
             placeholder={t('forum.messagePlaceholder')}
-            groupId={groupId || profileData?.groupId || user?.groupId || ''}
+            groupId={effectiveGroupId}
             lienDepotForum={lienDepotForum}
             consignesDepotForum={consignesDepotForum}
             allUsers={allUsers}

@@ -32,8 +32,10 @@ import RoadbookModal from './event-details/RoadbookModal';
 import EventCommissionsHub from './event-details/commissions/EventCommissionsHub';
 import TabRsvp from './event-details/tabs/TabRsvp';
 import TabLogistics from './event-details/tabs/TabLogistics';
+import TabVolunteers from './event-details/tabs/TabVolunteers';
 import TabProgram from './event-details/tabs/TabProgram';
 import TabAdmin from './event-details/tabs/TabAdmin';
+import { useEventVolunteerTabMeta } from '../hooks/useEventVolunteerTabMeta';
 import WorkshopPendingReconfirmBanner from './event-details/WorkshopPendingReconfirmBanner';
 import useHardwareBack from '../hooks/useHardwareBack';
 import { triggerEventStatusAutomation } from '../utils/automationEngine';
@@ -45,32 +47,28 @@ import { resolveReunionPrivacyConfig, canUserSeeReunionReportAndAgenda } from '.
 import { resolveEventTargetPupitres } from '../utils/workshopSanctuaryUtils';
 import { normalizePublicVolunteerConfig } from '../utils/volunteerApplicationUtils';
 import { syncEventPublicCommissionShifts } from '../services/publicCommissionShiftsSync';
-import ReunionPrivacyBadge from './agenda/ReunionPrivacyBadge'; export default function EventDetails({ event, user, profileData, groupId: propGroupId, onNavigateToView, onClose, onPrev, onNext, viewMode: _viewMode, setViewMode: _setViewMode, onGoToStageLayoutEditor }) {
+import ReunionPrivacyBadge from './agenda/ReunionPrivacyBadge';
+
+const ALLOWED_EVENT_TABS = ['rsvp', 'logistics', 'volunteers', 'program', 'admin', 'discussion'];
+const readUrlEventTab = () => (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('tab') : null);
+
+export default function EventDetails({ event, user, profileData, groupId: propGroupId, onNavigateToView, onClose, onPrev, onNext, viewMode: _viewMode, setViewMode: _setViewMode, onGoToStageLayoutEditor }) {
   const { t } = useTranslation();
+  const [volunteersSubView, setVolunteersSubView] = useState(null);
   const [activeTab, setActiveTab] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const tabParam = new URLSearchParams(window.location.search).get('tab');
-      if (tabParam && ['rsvp', 'logistics', 'program', 'admin', 'discussion'].includes(tabParam)) return tabParam;
-    }
-    return 'rsvp';
+    const initialTab = readUrlEventTab();
+    return initialTab && ALLOWED_EVENT_TABS.includes(initialTab) ? initialTab : 'rsvp';
   });
 
-  // Synchronisation dynamique de l'onglet actif avec les paramètres d'URL (ex: popstate, clics de notification)
   useEffect(() => {
     const handleUrlTabChange = () => {
-      if (typeof window === 'undefined') return;
-      const searchParams = new URLSearchParams(window.location.search);
-      const tabParam = searchParams.get('tab');
-      if (tabParam && ['rsvp', 'logistics', 'program', 'admin', 'discussion'].includes(tabParam)) {
-        setActiveTab(tabParam);
-      }
+      const nextTab = readUrlEventTab();
+      if (nextTab && ALLOWED_EVENT_TABS.includes(nextTab)) setActiveTab(nextTab);
     };
-
     window.addEventListener('popstate', handleUrlTabChange);
     return () => window.removeEventListener('popstate', handleUrlTabChange);
   }, []);
 
-  // Gestionnaire de changement d'onglet avec synchronisation de l'historique d'URL
   const handleSelectTab = useCallback((newTab) => {
     setActiveTab(newTab);
     if (typeof window !== 'undefined') {
@@ -103,75 +101,65 @@ import ReunionPrivacyBadge from './agenda/ReunionPrivacyBadge'; export default f
   const buildEditFormFromEvent = useCallback((evt) => {
     const reunionPrivacy = evt?.type === 'reunion' ? resolveReunionPrivacyConfig(evt) : null;
     return {
-    id: evt?.id || '', titre: evt?.titre || '', type: evt?.type || 'repetition',
-    targetGroup: reunionPrivacy ? reunionPrivacy.targetGroup : (evt?.targetGroup || 'all'),
-    reunionPrivacyMode: reunionPrivacy ? reunionPrivacy.reunionPrivacyMode : (evt?.reunionPrivacyMode || 'public'),
-    hideAgendaFromNonTarget: reunionPrivacy ? reunionPrivacy.hideAgendaFromNonTarget : Boolean(evt?.hideAgendaFromNonTarget),
-    audience: reunionPrivacy ? reunionPrivacy.audience : (evt?.audience || 'publique'),
-    portee: reunionPrivacy ? reunionPrivacy.portee : (evt?.portee || 'publique'),
-    pollRestrictionType: evt?.pollRestrictionType || (reunionPrivacy && reunionPrivacy.targetGroup !== 'all' ? 'tag' : 'aucun'),
-    pollTarget: evt?.pollTarget || (reunionPrivacy && reunionPrivacy.targetGroup !== 'all' ? (reunionPrivacy.targetGroup === 'ca' ? 'CA' : (reunionPrivacy.targetGroup === 'bureau' ? 'Bureau' : reunionPrivacy.targetGroup)) : ''),
-    date: evt?.date || '',
-    dateFin: evt?.dateFin || '',
-    lieu: evt?.lieu || '',
-    horairesPassages: evt?.horairesPassages || '',
-    horaireCovoiturage: evt?.horaireCovoiturage || '',
-    niveauRequis: evt?.niveauRequis || 'tous',
-    niveauDanseRequis: evt?.niveauDanseRequis || 'aucun',
-    lienDocument: evt?.lienDocument || '',
-    lienDepotMedias: (evt?.dropUrl || evt?.lienDepotMedias || ''),
-    dropUrl: (evt?.dropUrl || evt?.lienDepotMedias || ''),
-    videoUrl: evt?.videoUrl || '',
-    enableVideoDrop: evt?.enableVideoDrop !== undefined
-      ? Boolean(evt.enableVideoDrop)
-      : ['atelier', 'repetition', 'stage'].includes(evt?.type),
-    distanceAllerRetourKm: evt?.distanceAllerRetourKm || '',
-    lienSocial: evt?.lienSocial || '',
-    imageUrl: evt?.imageUrl || '',
-    stampIcon: evt?.stampIcon || 'auto',
-    requiresValidation: evt?.requiresValidation || false,
-    montantRecette: evt?.montantRecette !== undefined ? evt.montantRecette.toString() : '',
-    montantDepense: evt?.montantDepense !== undefined ? evt.montantDepense.toString() : '',
-    budgetRecettes: evt?.budgetRecettes || [],
-    budgetDepenses: evt?.budgetDepenses || [],
-    dateLimiteInscription: evt?.dateLimiteInscription || '',
-    registrationDeadlineMode: evt?.registrationDeadlineMode || (evt?.dateLimiteInscription ? 'fixed' : 'none'),
-    registrationDeadlineDaysBefore: Number(evt?.registrationDeadlineDaysBefore) || 7,
-    tenueRequise: evt?.tenueRequise || '',
-    dressCodePercussion: evt?.dressCodePercussion || '',
-    dressCodeDanse: evt?.dressCodeDanse || '',
-    volunteerShifts: evt?.volunteerShifts || [],
-    publicVolunteerConfig: normalizePublicVolunteerConfig(evt?.publicVolunteerConfig),
-    includesPercussion: evt?.includesPercussion !== false,
-    includesDance: evt?.includesDance !== false,
-    enableCarpool: evt?.enableCarpool !== false,
-    enableInscriptions: evt?.enableInscriptions !== false,
-    activerRecolteMedias: evt?.activerRecolteMedias !== undefined ? Boolean(evt.activerRecolteMedias) : ['prestation', 'concert', 'spectacle', 'festival'].includes(evt?.type),
-    publierSurVaral: evt?.publierSurVaral !== undefined ? Boolean(evt.publierSurVaral) : ['prestation', 'concert', 'spectacle', 'festival'].includes(evt?.type),
-    description: evt?.description || '', setlist: evt?.setlist || [], linkedPatterns: evt?.linkedPatterns || [],
-    specialiteAtelier: evt?.specialiteAtelier || 'general', programmeFabrication: evt?.programmeFabrication || null,
-    latitude: evt?.latitude || null, longitude: evt?.longitude || null,
-    isPublic: Boolean(evt?.isPublic), hasCommissions: Boolean(evt?.hasCommissions), formatJeu: evt?.formatJeu || 'scene',
-    parcours: evt?.parcours || { pointDepart: '', itineraire: '', pointArrivee: '', ravitaillementEau: '', urlFichierParcours: '' },
-    hebergement: evt?.hebergement || { type: '', adresse: '', codeAcces: '', repartitionChambres: '' },
-    logistiqueDepart: evt?.logistiqueDepart || { maquillageRequis: false, trousseSecoursBouchons: false, reserveBaguettes: false },
-    logistiqueMalles: Array.isArray(evt?.logistiqueMalles) ? evt.logistiqueMalles : [],
-    mallesSpecifiques: Array.isArray(evt?.mallesSpecifiques) ? evt.mallesSpecifiques : [],
-    quotasPupitres: evt?.quotasPupitres || {},
-    status: evt?.status || 'confirme',
-    isPoll: Boolean(evt?.isPoll || evt?.status === 'sondage' || evt?.pollGroupId),
-    pollGroupId: evt?.pollGroupId || null,
-    pollMode: evt?.pollMode || 'single_winner',
-    pollTargetPupitres: Array.isArray(evt?.pollTargetPupitres) ? evt.pollTargetPupitres : [],
-    pollDates: evt?.pollGroupId ? [String(evt?.dateDebut || evt?.date || '').slice(0, 16)] : [],
-    pollOptionIds: evt?.pollGroupId && evt?.id ? [evt.id] : [],
-    deletedPollOptionIds: [],
-    contactsJourJ: evt?.contactsJourJ || {
-      referentOrgaNom: '',
-      referentOrgaTel: '',
-      referentGroupeId: '',
-      referentsPupitres: []
-    }
+      id: evt?.id || '', titre: evt?.titre || '', type: evt?.type || 'repetition',
+      targetGroup: reunionPrivacy ? reunionPrivacy.targetGroup : (evt?.targetGroup || 'all'),
+      reunionPrivacyMode: reunionPrivacy ? reunionPrivacy.reunionPrivacyMode : (evt?.reunionPrivacyMode || 'public'),
+      hideAgendaFromNonTarget: reunionPrivacy ? reunionPrivacy.hideAgendaFromNonTarget : Boolean(evt?.hideAgendaFromNonTarget),
+      audience: reunionPrivacy ? reunionPrivacy.audience : (evt?.audience || 'publique'),
+      portee: reunionPrivacy ? reunionPrivacy.portee : (evt?.portee || 'publique'),
+      pollRestrictionType: evt?.pollRestrictionType || (reunionPrivacy && reunionPrivacy.targetGroup !== 'all' ? 'tag' : 'aucun'),
+      pollTarget: evt?.pollTarget || (reunionPrivacy && reunionPrivacy.targetGroup !== 'all' ? (reunionPrivacy.targetGroup === 'ca' ? 'CA' : (reunionPrivacy.targetGroup === 'bureau' ? 'Bureau' : reunionPrivacy.targetGroup)) : ''),
+      date: evt?.date || '',
+      dateFin: evt?.dateFin || '',
+      lieu: evt?.lieu || '',
+      horairesPassages: evt?.horairesPassages || '',
+      horaireCovoiturage: evt?.horaireCovoiturage || '',
+      niveauRequis: evt?.niveauRequis || 'tous',
+      niveauDanseRequis: evt?.niveauDanseRequis || 'aucun',
+      lienDocument: evt?.lienDocument || '',
+      lienDepotMedias: (evt?.dropUrl || evt?.lienDepotMedias || ''),
+      dropUrl: (evt?.dropUrl || evt?.lienDepotMedias || ''),
+      videoUrl: evt?.videoUrl || '',
+      enableVideoDrop: evt?.enableVideoDrop !== undefined
+        ? Boolean(evt.enableVideoDrop)
+        : ['atelier', 'repetition', 'stage'].includes(evt?.type),
+      distanceAllerRetourKm: evt?.distanceAllerRetourKm || '',
+      lienSocial: evt?.lienSocial || '',
+      imageUrl: evt?.imageUrl || '',
+      stampIcon: evt?.stampIcon || 'auto',
+      requiresValidation: evt?.requiresValidation || false,
+      montantRecette: evt?.montantRecette !== undefined ? evt.montantRecette.toString() : '',
+      montantDepense: evt?.montantDepense !== undefined ? evt.montantDepense.toString() : '',
+      budgetRecettes: evt?.budgetRecettes || [],
+      budgetDepenses: evt?.budgetDepenses || [],
+      dateLimiteInscription: evt?.dateLimiteInscription || '',
+      registrationDeadlineMode: evt?.registrationDeadlineMode || (evt?.dateLimiteInscription ? 'fixed' : 'none'),
+      registrationDeadlineDaysBefore: Number(evt?.registrationDeadlineDaysBefore) || 7,
+      tenueRequise: evt?.tenueRequise || '', dressCodePercussion: evt?.dressCodePercussion || '', dressCodeDanse: evt?.dressCodeDanse || '',
+      enableVolunteers: evt?.enableVolunteers !== undefined ? Boolean(evt.enableVolunteers) : Boolean((evt?.volunteerShifts?.length > 0) || evt?.publicVolunteerConfig?.enabled),
+      volunteerReferentIds: Array.isArray(evt?.volunteerReferentIds) ? evt.volunteerReferentIds : [],
+      volunteerShifts: evt?.volunteerShifts || [],
+      publicVolunteerConfig: normalizePublicVolunteerConfig(evt?.publicVolunteerConfig),
+      includesPercussion: evt?.includesPercussion !== false, includesDance: evt?.includesDance !== false,
+      enableCarpool: evt?.enableCarpool !== false, enableInscriptions: evt?.enableInscriptions !== false,
+      activerRecolteMedias: evt?.activerRecolteMedias !== undefined ? Boolean(evt.activerRecolteMedias) : ['prestation', 'concert', 'spectacle', 'festival'].includes(evt?.type),
+      publierSurVaral: evt?.publierSurVaral !== undefined ? Boolean(evt.publierSurVaral) : ['prestation', 'concert', 'spectacle', 'festival'].includes(evt?.type),
+      description: evt?.description || '', setlist: evt?.setlist || [], linkedPatterns: evt?.linkedPatterns || [],
+      specialiteAtelier: evt?.specialiteAtelier || 'general', programmeFabrication: evt?.programmeFabrication || null,
+      latitude: evt?.latitude || null, longitude: evt?.longitude || null,
+      isPublic: Boolean(evt?.isPublic), hasCommissions: Boolean(evt?.hasCommissions), formatJeu: evt?.formatJeu || 'scene',
+      parcours: evt?.parcours || { pointDepart: '', itineraire: '', pointArrivee: '', ravitaillementEau: '', urlFichierParcours: '' },
+      hebergement: evt?.hebergement || { type: '', adresse: '', codeAcces: '', repartitionChambres: '' },
+      logistiqueDepart: evt?.logistiqueDepart || { maquillageRequis: false, trousseSecoursBouchons: false, reserveBaguettes: false },
+      logistiqueMalles: Array.isArray(evt?.logistiqueMalles) ? evt.logistiqueMalles : [],
+      mallesSpecifiques: Array.isArray(evt?.mallesSpecifiques) ? evt.mallesSpecifiques : [],
+      quotasPupitres: evt?.quotasPupitres || {}, status: evt?.status || 'confirme',
+      isPoll: Boolean(evt?.isPoll || evt?.status === 'sondage' || evt?.pollGroupId),
+      pollGroupId: evt?.pollGroupId || null, pollMode: evt?.pollMode || 'single_winner',
+      pollTargetPupitres: Array.isArray(evt?.pollTargetPupitres) ? evt.pollTargetPupitres : [],
+      pollDates: evt?.pollGroupId ? [String(evt?.dateDebut || evt?.date || '').slice(0, 16)] : [],
+      pollOptionIds: evt?.pollGroupId && evt?.id ? [evt.id] : [], deletedPollOptionIds: [],
+      contactsJourJ: evt?.contactsJourJ || { referentOrgaNom: '', referentOrgaTel: '', referentGroupeId: '', referentsPupitres: [] }
     };
   }, []);
 
@@ -305,7 +293,7 @@ import ReunionPrivacyBadge from './agenda/ReunionPrivacyBadge'; export default f
 
   // 1. Vérification du Niveau Musique / Catégorie de pratique
   const eventRequiredPublic = resolveCategory(event.niveauRequis || event.publicCible, customCategories);
-  
+
   let isMusicLevelRestricted = true;
   if (profileData?.niveauxParInstrument && Object.keys(profileData.niveauxParInstrument).length > 0) {
     // S'il y a des niveaux granulaires, on vérifie si au moins un instrument a le niveau requis
@@ -570,7 +558,7 @@ import ReunionPrivacyBadge from './agenda/ReunionPrivacyBadge'; export default f
 
     // 2. Dépendants / Ayants droit familiaux
     if (Array.isArray(familyMembers) && familyMembers.length > 0) {
-      const fam = familyMembers.find(f => 
+      const fam = familyMembers.find(f =>
         (userId && (f.id === userId || f.uid === userId)) ||
         (userName && `${f.prenom || ''} ${f.nom || ''}`.trim().toLowerCase() === userName.trim().toLowerCase())
       );
@@ -579,7 +567,7 @@ import ReunionPrivacyBadge from './agenda/ReunionPrivacyBadge'; export default f
 
     // 3. Recherche multicritères dans la liste globale des utilisateurs
     if (Array.isArray(effectiveAllUsers) && effectiveAllUsers.length > 0) {
-      const found = effectiveAllUsers.find(u => 
+      const found = effectiveAllUsers.find(u =>
         (userId && (u.id === userId || u.uid === userId || u.email === userId)) ||
         (userName && `${u.prenom || ''} ${u.nom || ''}`.trim().toLowerCase() === userName.trim().toLowerCase()) ||
         (userName && u.displayName && u.displayName.trim().toLowerCase() === userName.trim().toLowerCase())
@@ -675,9 +663,9 @@ import ReunionPrivacyBadge from './agenda/ReunionPrivacyBadge'; export default f
           cancelText: "Annuler",
           variant: "danger"
         });
-        
+
         if (!isOk) return; // User cancelled
-        
+
         updates.wasConfirmedLater = true;
         isConfirmingNow = true;
       } else if (event.status !== 'annule' && newStatus === 'annule') {
@@ -688,7 +676,7 @@ import ReunionPrivacyBadge from './agenda/ReunionPrivacyBadge'; export default f
           cancelText: "Retour",
           variant: "danger"
         });
-        
+
         if (!isOk) return;
         isCancellingNow = true;
       }
@@ -699,26 +687,26 @@ import ReunionPrivacyBadge from './agenda/ReunionPrivacyBadge'; export default f
         // Run automation and await result to provide accurate feedback
         const result = await triggerEventStatusAutomation(event.groupId, { ...event, ...updates }, 'eventConfirmed');
         if (setToastMessage) {
-           if (result.triggeredCount > 0) {
-             setToastMessage(`Événement validé ! ${result.triggeredCount} notification(s) envoyée(s).`);
-           } else {
-             setToastMessage("Événement validé ! (0 notification : aucune règle active ou aucun membre concerné)");
-           }
-           setTimeout(() => setToastMessage(null), 4500);
-           return;
+          if (result.triggeredCount > 0) {
+            setToastMessage(`Événement validé ! ${result.triggeredCount} notification(s) envoyée(s).`);
+          } else {
+            setToastMessage("Événement validé ! (0 notification : aucune règle active ou aucun membre concerné)");
+          }
+          setTimeout(() => setToastMessage(null), 4500);
+          return;
         }
       }
 
       if (isCancellingNow && event.groupId) {
         const result = await triggerEventStatusAutomation(event.groupId, { ...event, ...updates }, 'eventCancelled');
         if (setToastMessage) {
-           if (result.triggeredCount > 0) {
-             setToastMessage(`Événement annulé ! ${result.triggeredCount} notification(s) envoyée(s).`);
-           } else {
-             setToastMessage("Événement annulé ! (0 notification : aucune règle active ou aucun membre concerné)");
-           }
-           setTimeout(() => setToastMessage(null), 4500);
-           return;
+          if (result.triggeredCount > 0) {
+            setToastMessage(`Événement annulé ! ${result.triggeredCount} notification(s) envoyée(s).`);
+          } else {
+            setToastMessage("Événement annulé ! (0 notification : aucune règle active ou aucun membre concerné)");
+          }
+          setTimeout(() => setToastMessage(null), 4500);
+          return;
         }
       }
 
@@ -804,8 +792,8 @@ import ReunionPrivacyBadge from './agenda/ReunionPrivacyBadge'; export default f
   }, [isAuthorized, profileData?.role, permissionsMatrice, effectiveUserTags, tagsDisponibles]);
 
   const canAccessAdminTab = isAuthorized || hasFinanceAccess;
-  const canSeeReunionDetails = (activeEvent || event)?.type !== 'reunion' ||
-    canUserSeeReunionReportAndAgenda(activeEvent || event, profileData, effectiveUserTags);
+  const canSeeReunionDetails = (activeEvent || event)?.type !== 'reunion' || canUserSeeReunionReportAndAgenda(activeEvent || event, profileData, effectiveUserTags);
+  const { showVolunteersTab, isVolunteerCoordinator, volunteersBadge, volunteersBadgeTone } = useEventVolunteerTabMeta({ event: activeEvent || event, user, profileData, isAuthorized });
 
   const getPupitreName = (inst) => {
     if (!inst) return null;
@@ -833,7 +821,7 @@ import ReunionPrivacyBadge from './agenda/ReunionPrivacyBadge'; export default f
     let rawUserInstruments = [];
     const isDanse = Boolean(mInfo?.pratiqueDanse);
     const isPercussion = Boolean(mInfo?.pratiquePercussion);
-    
+
     // Si percussion, on prend ses instruments de percussion
     if (isPercussion) {
       const percs = (mInfo?.instrumentsJoues && mInfo.instrumentsJoues.length > 0)
@@ -902,14 +890,14 @@ import ReunionPrivacyBadge from './agenda/ReunionPrivacyBadge'; export default f
     if (event.horaireCovoiturage) detailsText += `\n🚗 ${t('agenda.departure') || 'Départ / Covoiturage'} : ${event.horaireCovoiturage}`;
     if (event.niveauRequis) {
       const musLvl = event.niveauRequis === 'aucun' ? 'Pas de musicien' :
-                     event.niveauRequis === 'debutant' ? 'Débutant' :
-                     event.niveauRequis === 'confirme' ? 'Confirmé' : 'Tout le monde';
+        event.niveauRequis === 'debutant' ? 'Débutant' :
+          event.niveauRequis === 'confirme' ? 'Confirmé' : 'Tout le monde';
       detailsText += `\n🎯 Niveau requis (Musique) : ${musLvl}`;
     }
     if (event.niveauDanseRequis) {
       const danseLvl = event.niveauDanseRequis === 'aucun' ? 'Pas de danse' :
-                       event.niveauDanseRequis === 'debutant' ? 'Débutant' :
-                       event.niveauDanseRequis === 'confirme' ? 'Confirmé' : 'Tout le monde';
+        event.niveauDanseRequis === 'debutant' ? 'Débutant' :
+          event.niveauDanseRequis === 'confirme' ? 'Confirmé' : 'Tout le monde';
       detailsText += `\n💃 Danse (Niveau requis) : ${danseLvl}`;
     }
     if (event.lienDocument) detailsText += `\n📄 Document / Ordre du jour : ${event.lienDocument}`;
@@ -1028,8 +1016,8 @@ import ReunionPrivacyBadge from './agenda/ReunionPrivacyBadge'; export default f
       const savedEnableVideoDrop = editForm.enableVideoDrop !== undefined
         ? Boolean(editForm.enableVideoDrop)
         : (rawEditConfig.enableVideoDrop !== undefined
-            ? Boolean(rawEditConfig.enableVideoDrop)
-            : ['atelier', 'repetition', 'stage'].includes(editForm.type));
+          ? Boolean(rawEditConfig.enableVideoDrop)
+          : ['atelier', 'repetition', 'stage'].includes(editForm.type));
       const savedDropUrl = (editForm.dropUrl || editForm.lienDepotMedias || '').trim();
       const savedVideoUrl = (editForm.videoUrl || '').trim();
       const savedReunionPrivacy = editForm.type === 'reunion'
@@ -1083,23 +1071,16 @@ import ReunionPrivacyBadge from './agenda/ReunionPrivacyBadge'; export default f
             ? `🥁 Percussion: ${editForm.dressCodePercussion} | 💃 Danse: ${editForm.dressCodeDanse}`
             : (editForm.dressCodePercussion || editForm.dressCodeDanse || '')
         ),
+        enableVolunteers: Boolean(editForm.enableVolunteers),
+        volunteerReferentIds: Array.isArray(editForm.volunteerReferentIds) ? editForm.volunteerReferentIds.filter(Boolean).slice(0, 2) : [],
         volunteerShifts: editForm.volunteerShifts || [],
         publicVolunteerConfig: normalizePublicVolunteerConfig(editForm.publicVolunteerConfig),
         includesPercussion: editForm.includesPercussion || false, includesDance: editForm.includesDance || false,
-        enableCarpool: editForm.enableCarpool !== false,
-        enableInscriptions: editForm.enableInscriptions !== false,
+        enableCarpool: editForm.enableCarpool !== false, enableInscriptions: editForm.enableInscriptions !== false,
         hasCommissions: Boolean(editForm.hasCommissions),
-        enableRoadbook: editForm.enableRoadbook !== undefined
-          ? Boolean(editForm.enableRoadbook)
-          : (rawEditConfig.enableRoadbook !== undefined
-              ? Boolean(rawEditConfig.enableRoadbook)
-              : ['prestation', 'stage'].includes(editForm.type)),
-        activerRecolteMedias: editForm.activerRecolteMedias !== undefined 
-          ? Boolean(editForm.activerRecolteMedias) 
-          : ['prestation', 'concert', 'spectacle', 'festival'].includes(editForm.type),
-        publierSurVaral: editForm.publierSurVaral !== undefined 
-          ? Boolean(editForm.publierSurVaral) 
-          : (editForm.activerRecolteMedias !== false),
+        enableRoadbook: editForm.enableRoadbook !== undefined ? Boolean(editForm.enableRoadbook) : (rawEditConfig.enableRoadbook !== undefined ? Boolean(rawEditConfig.enableRoadbook) : ['prestation', 'stage'].includes(editForm.type)),
+        activerRecolteMedias: editForm.activerRecolteMedias !== undefined ? Boolean(editForm.activerRecolteMedias) : ['prestation', 'concert', 'spectacle', 'festival'].includes(editForm.type),
+        publierSurVaral: editForm.publierSurVaral !== undefined ? Boolean(editForm.publierSurVaral) : (editForm.activerRecolteMedias !== false),
         description: updatedDescription,
         latitude: editForm.latitude ? Number(editForm.latitude) : null,
         longitude: editForm.longitude ? Number(editForm.longitude) : null,
@@ -1356,16 +1337,16 @@ import ReunionPrivacyBadge from './agenda/ReunionPrivacyBadge'; export default f
         if (isFutureEvent && isMemberArchived(u)) return false;
         const hasIdentity = Boolean(u.prenom || u.nom || u.displayName || u.email);
         if (!hasIdentity) return false;
-        const currentInscription = (sanitizedEvent.inscriptions || []).find(ins => 
-          ins.userId === u.id || ins.userId === u.uid || 
+        const currentInscription = (sanitizedEvent.inscriptions || []).find(ins =>
+          ins.userId === u.id || ins.userId === u.uid ||
           (u.email && ins.email && ins.email === u.email)
         );
         // Inclure les non-inscrits ainsi que les membres actuellement notés absents ou à confirmer
         return !currentInscription || currentInscription.status !== 'present';
       })
       .map(u => {
-        const currentInscription = (sanitizedEvent.inscriptions || []).find(ins => 
-          ins.userId === u.id || ins.userId === u.uid || 
+        const currentInscription = (sanitizedEvent.inscriptions || []).find(ins =>
+          ins.userId === u.id || ins.userId === u.uid ||
           (u.email && ins.email && ins.email === u.email)
         );
         return {
@@ -1502,8 +1483,8 @@ import ReunionPrivacyBadge from './agenda/ReunionPrivacyBadge'; export default f
   // Priorité absolue au lien de dépôt Framaspace direct de l'événement, avec repli sur le Google Form asso
   // Uniquement si la récolte de médias / QR Code est activée pour cet événement
   const isTargetPrestation = ['prestation', 'concert', 'spectacle', 'festival'].includes(event?.type);
-  const isRecolteActive = (activeEvent?.activerRecolteMedias !== undefined 
-    ? Boolean(activeEvent.activerRecolteMedias) 
+  const isRecolteActive = (activeEvent?.activerRecolteMedias !== undefined
+    ? Boolean(activeEvent.activerRecolteMedias)
     : (event?.activerRecolteMedias !== undefined ? Boolean(event.activerRecolteMedias) : isTargetPrestation));
 
   const currentLienDepot = ((activeEvent?.lienDepotMedias || event.lienDepotMedias || '')).trim();
@@ -1890,16 +1871,18 @@ import ReunionPrivacyBadge from './agenda/ReunionPrivacyBadge'; export default f
 
           {canSeeReunionDetails && (
             <EventTabsNav
-              activeTab={activeTab} setActiveTab={handleSelectTab} canAccessAdminTab={canAccessAdminTab}
+              activeTab={activeTab === 'volunteers' && !showVolunteersTab ? 'rsvp' : activeTab}
+              setActiveTab={handleSelectTab} canAccessAdminTab={canAccessAdminTab}
               attendeesCount={((sanitizedEvent.inscriptions || []).filter(ins => ins.status === 'present').length) + ((sanitizedEvent.invitesExternes || []).length)}
               carsCount={(event.covoiturage?.voitures || []).length}
-              hasProgram={Boolean((event.linkedPatterns && event.linkedPatterns.length > 0) || (setlist && setlist.length > 0) || event.isStageLayoutPublished || (event.volunteerShifts && event.volunteerShifts.length > 0) || event.publicVolunteerConfig?.enabled || event.hasCommissions || ((event.type === 'atelier' || event.type === 'stage') && event.specialiteAtelier === 'fabrication'))}
+              showVolunteersTab={showVolunteersTab} volunteersBadge={volunteersBadge} volunteersBadgeTone={volunteersBadgeTone}
+              hasProgram={Boolean((event.linkedPatterns && event.linkedPatterns.length > 0) || (setlist && setlist.length > 0) || event.isStageLayoutPublished || ((event.type === 'atelier' || event.type === 'stage') && event.specialiteAtelier === 'fabrication'))}
             />
           )}
 
           {/* Contenu de l'Onglet Actif */}
           <div className="mt-2">
-            {((activeTab === 'rsvp' && (event.status !== 'sondage' || event.type === 'reunion')) || !canSeeReunionDetails) && (
+            {(((activeTab === 'rsvp' || (activeTab === 'volunteers' && !showVolunteersTab)) && (event.status !== 'sondage' || event.type === 'reunion')) || !canSeeReunionDetails) && (
               <TabRsvp
                 event={sanitizedEvent} user={user} profileData={profileData} status={status} saving={saving}
                 isPrestationRestricted={isPrestationRestricted} isMusicLevelRestricted={isMusicLevelRestricted}
@@ -1940,119 +1923,71 @@ import ReunionPrivacyBadge from './agenda/ReunionPrivacyBadge'; export default f
 
             {activeTab === 'logistics' && (
               <TabLogistics
-                pupitresList={pupitresList} linkedInstruments={linkedInstruments}
-                event={sanitizedEvent}
-                user={user}
-                profileData={profileData}
-                isAuthorized={isAuthorized}
-                currentConfig={currentConfig}
-                enableCarpoolReimbursement={enableCarpoolReimbursement}
-                indemniteKilometrique={indemniteKilometrique}
-                convoiDrivers={convoiDrivers}
-                individualDrivers={individualDrivers}
-                submittingCovoit={submittingCovoit}
-                joiningVoitureId={joiningVoitureId}
-                setJoiningVoitureId={setJoiningVoitureId}
-                joinForm={joinForm}
-                setJoinForm={setJoinForm}
-                demandeRemboursementKm={demandeRemboursementKm}
-                handleToggleRemboursement={handleToggleRemboursement}
-                handleRetirerVoiture={handleRetirerVoiture}
-                handleQuitterVoiture={handleQuitterVoiture}
-                handleConfirmJoin={handleConfirmJoin}
-                handleChercherPlace={handleChercherPlace}
-                handleAnnulerCherchePlace={handleAnnulerCherchePlace}
-                showProposerForm={showProposerForm}
-                setShowProposerForm={setShowProposerForm}
-                voitureForm={voitureForm}
-                setVoitureForm={setVoitureForm}
-                handleProposerVoiture={handleProposerVoiture}
-                reimbursementRule={reimbursementRule}
-                handleAssignPassenger={handleAssignPassenger}
-                handleRemovePassenger={handleRemovePassenger}
-                handleSendCarMessage={handleSendCarMessage}
-                status={status}
-                saving={saving}
-                isPrestationRestricted={isPrestationRestricted}
-                isMusicLevelRestricted={isMusicLevelRestricted}
-                isDanceLevelRestricted={isDanceLevelRestricted}
-                existingResponse={existingResponse}
-                instrumentChoisi={instrumentChoisi}
-                setInstrumentChoisi={setInstrumentChoisi}
-                isInstrumentLocked={isInstrumentLocked}
-                transport={transport}
-                handleStatusChange={handleStatusChange}
-                handleSave={handleSave}
-                getMemberInstrumentOptions={getMemberInstrumentOptions}
-                getPupitreName={getPupitreName}
-                presentsByInstrument={presentsByInstrument}
-                allUsers={effectiveAllUsers}
-                unansweredUsers={unansweredUsers}
-                handleValidatePending={handleValidatePending}
-                handleUpdateMemberInstrument={handleUpdateMemberInstrument}
-                isManualRegisterOpen={isManualRegisterOpen}
-                setIsManualRegisterOpen={setIsManualRegisterOpen}
-                unregisteredUsers={unregisteredUsers}
-                selectedManualUserId={selectedManualUserId}
-                setSelectedManualUserId={setSelectedManualUserId}
-                selectedManualInstrument={selectedManualInstrument}
-                setSelectedManualInstrument={setSelectedManualInstrument}
-                savingManualRegistration={savingManualRegistration}
-                handleManualRegister={handleManualRegister}
-                handleManualUnregister={handleManualUnregister}
-                handleUpdateStatus={handleUpdateStatus}
-                handleRequestRegistrationChange={handleRequestRegistrationChange}
+                pupitresList={pupitresList} linkedInstruments={linkedInstruments} event={sanitizedEvent}
+                user={user} profileData={profileData} isAuthorized={isAuthorized} currentConfig={currentConfig}
+                enableCarpoolReimbursement={enableCarpoolReimbursement} indemniteKilometrique={indemniteKilometrique}
+                convoiDrivers={convoiDrivers} individualDrivers={individualDrivers} submittingCovoit={submittingCovoit}
+                joiningVoitureId={joiningVoitureId} setJoiningVoitureId={setJoiningVoitureId}
+                joinForm={joinForm} setJoinForm={setJoinForm} demandeRemboursementKm={demandeRemboursementKm}
+                handleToggleRemboursement={handleToggleRemboursement} handleRetirerVoiture={handleRetirerVoiture}
+                handleQuitterVoiture={handleQuitterVoiture} handleConfirmJoin={handleConfirmJoin}
+                handleChercherPlace={handleChercherPlace} handleAnnulerCherchePlace={handleAnnulerCherchePlace}
+                showProposerForm={showProposerForm} setShowProposerForm={setShowProposerForm}
+                voitureForm={voitureForm} setVoitureForm={setVoitureForm} handleProposerVoiture={handleProposerVoiture}
+                reimbursementRule={reimbursementRule} handleAssignPassenger={handleAssignPassenger}
+                handleRemovePassenger={handleRemovePassenger} handleSendCarMessage={handleSendCarMessage}
+                status={status} saving={saving} isPrestationRestricted={isPrestationRestricted}
+                isMusicLevelRestricted={isMusicLevelRestricted} isDanceLevelRestricted={isDanceLevelRestricted}
+                existingResponse={existingResponse} instrumentChoisi={instrumentChoisi}
+                setInstrumentChoisi={setInstrumentChoisi} isInstrumentLocked={isInstrumentLocked}
+                transport={transport} handleStatusChange={handleStatusChange} handleSave={handleSave}
+                getMemberInstrumentOptions={getMemberInstrumentOptions} getPupitreName={getPupitreName}
+                presentsByInstrument={presentsByInstrument} allUsers={effectiveAllUsers} unansweredUsers={unansweredUsers}
+                handleValidatePending={handleValidatePending} handleUpdateMemberInstrument={handleUpdateMemberInstrument}
+                isManualRegisterOpen={isManualRegisterOpen} setIsManualRegisterOpen={setIsManualRegisterOpen}
+                unregisteredUsers={unregisteredUsers} selectedManualUserId={selectedManualUserId}
+                setSelectedManualUserId={setSelectedManualUserId} selectedManualInstrument={selectedManualInstrument}
+                setSelectedManualInstrument={setSelectedManualInstrument} savingManualRegistration={savingManualRegistration}
+                handleManualRegister={handleManualRegister} handleManualUnregister={handleManualUnregister}
+                handleUpdateStatus={handleUpdateStatus} handleRequestRegistrationChange={handleRequestRegistrationChange}
                 handleCancelRegistrationChangeRequest={handleCancelRegistrationChangeRequest}
                 handleProcessRegistrationChangeRequest={handleProcessRegistrationChangeRequest}
-                handleLateCancellation={handleLateCancellation}
-                handleLateRegistration={handleLateRegistration}
+                handleLateCancellation={handleLateCancellation} handleLateRegistration={handleLateRegistration}
                 handleCancelLateRegistration={handleCancelLateRegistration}
-                isRegistrationDeadlinePassed={isRegistrationDeadlinePassed}
-                t={t}
-                handleAddInviteExterne={handleAddInviteExterne}
-                handleRemoveInviteExterne={handleRemoveInviteExterne}
-                instrumentsDisponibles={instrumentsDisponibles}
-                besoinTransportInstrument={besoinTransportInstrument}
-                setBesoinTransportInstrument={setBesoinTransportInstrument}
-                dependents={dependents}
-                familyMembers={familyMembers}
-                familyResponses={familyResponses}
+                isRegistrationDeadlinePassed={isRegistrationDeadlinePassed} t={t}
+                handleAddInviteExterne={handleAddInviteExterne} handleRemoveInviteExterne={handleRemoveInviteExterne}
+                instrumentsDisponibles={instrumentsDisponibles} besoinTransportInstrument={besoinTransportInstrument}
+                setBesoinTransportInstrument={setBesoinTransportInstrument} dependents={dependents}
+                familyMembers={familyMembers} familyResponses={familyResponses}
                 handleToggleFamilyMemberSelection={handleToggleFamilyMemberSelection}
                 handleFamilyMemberStatusChange={handleFamilyMemberStatusChange}
                 handleFamilyMemberInstrumentChange={handleFamilyMemberInstrumentChange}
-                handleFamilySave={handleFamilySave}
-                handleAddToGoogleCalendar={handleAddToGoogleCalendar}
+                handleFamilySave={handleFamilySave} handleAddToGoogleCalendar={handleAddToGoogleCalendar}
                 handleDownloadIcs={handleDownloadIcs}
+              />
+            )}
+
+            {activeTab === 'volunteers' && showVolunteersTab && (
+              <TabVolunteers
+                event={activeEvent || event} user={user} profileData={profileData}
+                allUsers={effectiveAllUsers} isAuthorized={isAuthorized}
+                associationName={associationName} initialSubView={volunteersSubView} t={t}
               />
             )}
 
             {activeTab === 'program' && (
               <TabProgram
-                event={sanitizedEvent}
-                activeEvent={activeEvent}
-                user={user}
-                profileData={profileData}
-                groupId={resolvedGroupId}
-                isAuthorized={isAuthorized}
-                currentConfig={currentConfig} allUsers={effectiveAllUsers} t={t}
-                setlist={setlist}
-                updatingSetlist={updatingSetlist}
-                handleRemoveMorceau={handleRemoveMorceau}
-                assocSequenceurUrl={assocSequenceurUrl}
-                handleAddMorceau={handleAddMorceau}
-                handleAddRepertoirePiece={handleAddRepertoirePiece}
-                newMorceauTitre={newMorceauTitre}
-                setNewMorceauTitre={setNewMorceauTitre}
-                selectedCatalogRhythmUrl={selectedCatalogRhythmUrl}
-                setSelectedCatalogRhythmUrl={setSelectedCatalogRhythmUrl}
-                fileInputKey={fileInputKey}
-                setNewMorceauJsonFile={setNewMorceauJsonFile}
-                newMorceauNotes={newMorceauNotes}
-                setNewMorceauNotes={setNewMorceauNotes}
-                dancadorChoreoIds={dancadorChoreoIds}
-                handleAddDancadorChoreo={handleAddDancadorChoreo}
-                handleRemoveDancadorChoreo={handleRemoveDancadorChoreo}
-                onGoToStageLayoutEditor={onGoToStageLayoutEditor}
+                event={sanitizedEvent} activeEvent={activeEvent} user={user} profileData={profileData}
+                groupId={resolvedGroupId} isAuthorized={isAuthorized} currentConfig={currentConfig}
+                allUsers={effectiveAllUsers} t={t} setlist={setlist} updatingSetlist={updatingSetlist}
+                handleRemoveMorceau={handleRemoveMorceau} assocSequenceurUrl={assocSequenceurUrl}
+                handleAddMorceau={handleAddMorceau} handleAddRepertoirePiece={handleAddRepertoirePiece}
+                newMorceauTitre={newMorceauTitre} setNewMorceauTitre={setNewMorceauTitre}
+                selectedCatalogRhythmUrl={selectedCatalogRhythmUrl} setSelectedCatalogRhythmUrl={setSelectedCatalogRhythmUrl}
+                fileInputKey={fileInputKey} setNewMorceauJsonFile={setNewMorceauJsonFile}
+                newMorceauNotes={newMorceauNotes} setNewMorceauNotes={setNewMorceauNotes}
+                dancadorChoreoIds={dancadorChoreoIds} handleAddDancadorChoreo={handleAddDancadorChoreo}
+                handleRemoveDancadorChoreo={handleRemoveDancadorChoreo} onGoToStageLayoutEditor={onGoToStageLayoutEditor}
               />
             )}
 
@@ -2083,8 +2018,8 @@ import ReunionPrivacyBadge from './agenda/ReunionPrivacyBadge'; export default f
               </div>
             )}
           </div>
-      </>
-    )}
+        </>
+      )}
 
       {/* SECTION : Discussion & Questions Logistiques (affichée en pied de fiche si un autre onglet est actif) */}
       {canSeeReunionDetails && activeTab !== 'discussion' && (
@@ -2151,21 +2086,21 @@ import ReunionPrivacyBadge from './agenda/ReunionPrivacyBadge'; export default f
       {/* MODALE : Tour de Contrôle des Commissions (Bloc 1) */}
       {showCommissionsHub && (
         <EventCommissionsHub
-          event={activeEvent || event}
-          allUsers={effectiveAllUsers || allUsers}
-          usersMap={usersMap}
-          currentUserId={user?.uid}
-          userProfile={profileData || user}
-          onNavigateToView={onNavigateToView}
+          event={activeEvent || event} allUsers={effectiveAllUsers || allUsers} usersMap={usersMap}
+          currentUserId={user?.uid} userProfile={profileData || user} onNavigateToView={onNavigateToView}
           isAdmin={Boolean(profileData?.role === 'admin' || isAuthorized)}
           isMestre={Boolean(profileData?.role === 'mestre' || profileData?.isMestre || isAuthorized)}
+          onOpenVolunteersSynoptic={() => {
+            setShowCommissionsHub(false);
+            setVolunteersSubView(isVolunteerCoordinator ? 'synoptic' : 'cards');
+            handleSelectTab('volunteers');
+          }}
           onClose={() => {
-            console.trace("⚠️ FERMETURE MODALE DÉCLENCHÉE PAR : EventCommissionsHub onClose prop");
+            console.trace('⚠️ FERMETURE MODALE DÉCLENCHÉE PAR : EventCommissionsHub onClose prop');
             if (typeof window !== 'undefined') {
               const url = new URL(window.location);
               if (url.searchParams.has('openHub') || url.searchParams.has('openCommissions')) {
-                url.searchParams.delete('openHub');
-                url.searchParams.delete('openCommissions');
+                url.searchParams.delete('openHub'); url.searchParams.delete('openCommissions');
                 window.history.replaceState({ ...window.history.state, openHub: null, openCommissions: null }, '', url.toString());
               }
             }

@@ -7,6 +7,7 @@ import {
   resolveManageableShiftIds,
   filterApplicationsForViewer
 } from '../utils/volunteerApplicationUtils';
+import { isEventVolunteerCoordinator } from '../utils/volunteerCoordinatorUtils';
 import {
   acceptVolunteerApplicationTx,
   rejectVolunteerApplicationTx,
@@ -34,9 +35,14 @@ export function useVolunteerApplications({
   const eventId = String(event?.id || '').trim();
   const groupId = String(event?.groupId || '').trim();
 
+  const isCoordinator = useMemo(
+    () => isEventVolunteerCoordinator({ user, profileData, event, commissions, canManageEvents: isAuthorized }),
+    [user, profileData, event, commissions, isAuthorized]
+  );
+
   const canViewApplications = useMemo(
-    () => canAccessVolunteerApplications({ isGlobalManager: isAuthorized, commissions, userUid: user?.uid }),
-    [isAuthorized, commissions, user?.uid]
+    () => canAccessVolunteerApplications({ isGlobalManager: isCoordinator, event, commissions, userUid: user?.uid }),
+    [isCoordinator, event, commissions, user?.uid]
   );
 
   useEffect(() => {
@@ -62,8 +68,8 @@ export function useVolunteerApplications({
   }, [groupId, eventId, canViewApplications]);
 
   const viewerScope = useMemo(
-    () => ({ isGlobalManager: isAuthorized, commissions, allShifts: consolidatedShifts, userUid: user?.uid }),
-    [isAuthorized, commissions, consolidatedShifts, user?.uid]
+    () => ({ isGlobalManager: isCoordinator, event, commissions, allShifts: consolidatedShifts, userUid: user?.uid }),
+    [isCoordinator, event, commissions, consolidatedShifts, user?.uid]
   );
 
   const visibleApplications = useMemo(() => filterApplicationsForViewer(rawApplications, viewerScope), [rawApplications, viewerScope]);
@@ -106,7 +112,7 @@ export function useVolunteerApplications({
   );
 
   return {
-    canViewApplications, loading, actionLoadingId, visibleApplications, pendingApplications,
+    isCoordinator, canViewApplications, loading, actionLoadingId, visibleApplications, pendingApplications,
     acceptedApplications, applicationsById, manageableShifts,
     acceptApplication, rejectApplication, createManualExternalVolunteer, removeExternalFromShift
   };

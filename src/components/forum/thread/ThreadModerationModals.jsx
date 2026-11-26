@@ -4,11 +4,13 @@ import MoveReplyModal from '../../MoveReplyModal';
 import ThreadEditReplyModal from './ThreadEditReplyModal';
 
 /**
- * Sous-composant regroupant l'ensemble des modales de modération et d'édition d'une discussion
+ * Sous-composant regroupant l'ensemble des modales de modération et d'édition d'une discussion.
  */
 export default function ThreadModerationModals({
   thread,
   threadId: _threadId,
+  groupId = '',
+  user = null,
   channels = [],
   availableThreads = [],
   profileData,
@@ -25,6 +27,8 @@ export default function ThreadModerationModals({
   onChangeEditText,
   onSaveEditReply
 }) {
+  const effectiveGroupId = thread?.groupId || groupId || profileData?.groupId || user?.groupId || '';
+
   return (
     <>
       {/* Modale de déplacement du sujet */}
@@ -76,7 +80,7 @@ export default function ThreadModerationModals({
         onChangeText={onChangeEditText}
         onSave={onSaveEditReply}
         disabled={actionLoading}
-        groupId={profileData?.groupId}
+        groupId={effectiveGroupId}
       />
     </>
   );

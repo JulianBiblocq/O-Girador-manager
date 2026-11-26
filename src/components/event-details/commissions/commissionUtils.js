@@ -96,16 +96,10 @@ export function prepareCommissionData(commissionData = {}) {
     description: commissionData.description || '',
     referentsIds: commissionData.referentsIds || [],
     membresIds: commissionData.membresIds || [],
+    isVolunteerCoordinator: Boolean(commissionData.isVolunteerCoordinator),
     modulesActifs: commissionData.modulesActifs || ['jalons'],
     jalons: commissionData.jalons || [],
-    budget: commissionData.budget || {
-      demande: 0,
-      alloue: 0,
-      statusArbitrage: 'en_etude',
-      motifRefus: '',
-      depensesReelles: 0,
-      devis: []
-    },
+    budget: commissionData.budget || { demande: 0, alloue: 0, statusArbitrage: 'en_etude', motifRefus: '', depensesReelles: 0, devis: [] },
     creneauxBenevoles: commissionData.creneauxBenevoles || [],
     besoinsMateriel: commissionData.besoinsMateriel || [],
     dateCreation: commissionData.dateCreation || now,

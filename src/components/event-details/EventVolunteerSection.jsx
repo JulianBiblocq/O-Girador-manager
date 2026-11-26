@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react';
 import CordelCard from '../CordelCard';
-import { openGoogleCalendar } from '../../utils/calendarUtils';
 import { downloadVolunteersAndLogisticsCSV } from '../../utils/volunteerCsvExportUtils';
 import { useTranslation } from '../LanguageContext';
 import { useVolunteerShifts } from '../../hooks/useVolunteerShifts';
@@ -63,12 +62,6 @@ export default function EventVolunteerSection({ event, user, profileData = null,
     return <div className="text-center py-4 text-xs italic opacity-60">{tr('agenda.noVolunteersNeeded') || 'Aucun créneau bénévole requis pour cet événement.'}</div>;
   }
 
-  const handleAddToCalendar = (sh) => {
-    if (!event?.date) return;
-    const details = [`Événement : ${event.titre || 'Événement'}`, `Mission : ${sh.nomTache}`, sh.horaires ? `Horaires : ${sh.horaires}` : '', sh.consigne ? `Consigne : ${sh.consigne}` : ''].filter(Boolean).join('\n');
-    openGoogleCalendar({ ...event, date: sh.dateJour || event.date }, { titlePrefix: 'Bénévolat : ', customDetails: details });
-  };
-
   const handleRemoveAnyInscrit = (sh, ins) => (ins?.type === 'external' ? removeExternalFromShift(sh.id, ins) : removeInscrit(sh, ins));
   const handleExportCsv = () => downloadVolunteersAndLogisticsCSV({ event, consolidatedShifts, acceptedApplications, allUsers });
   const hasCommissionTabs = commissionFilters.length > 0;
@@ -121,7 +114,7 @@ export default function EventVolunteerSection({ event, user, profileData = null,
               isArtisticPresent={isArtisticPresent} canManage={canManageShift(shift)} showCommissionBadge={hasCommissionTabs}
               loading={loadingShiftId === shift.id || Boolean(actionLoadingId)} onToggleSelf={toggleSelfShift}
               onOpenGuestModal={setGuestModalShift} onInspectExternal={(ins) => setDetailsTarget(ins)}
-              onRemoveInscrit={handleRemoveAnyInscrit} onAddMemberByManager={addMemberByManager} onAddToCalendar={handleAddToCalendar} tr={tr}
+              onRemoveInscrit={handleRemoveAnyInscrit} onAddMemberByManager={addMemberByManager} commissions={commissions} tr={tr}
             />
           ))}
         </div>

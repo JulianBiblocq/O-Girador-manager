@@ -11,12 +11,13 @@ import { consolidateVolunteerShifts, computeVolunteerCoverage } from '../../../u
 
 /**
  * Tour de Contrôle des Commissions d'un Événement
- * Hub centralisé : baromètre de santé, jauge bénévole consolidée, rappel des candidatures externes,
+ * Hub centralisé : baromètre de santé, passerelle Grand Tableau Bénévoles,
  * grille des commissions et modale d'édition.
  */
 export default function EventCommissionsHub({
   event, allUsers = [], usersMap = {}, currentUserId = null,
-  userProfile = null, onNavigateToView = null, isAdmin = false, isMestre = false, onClose
+  userProfile = null, onNavigateToView = null, onOpenVolunteersSynoptic = null,
+  isAdmin = false, isMestre = false, onClose
 }) {
   const eventId = event?.id;
   const {
@@ -54,28 +55,20 @@ export default function EventCommissionsHub({
     const rawDate = event?.date || event?.startDate;
     if (!rawDate) return null;
     const diffDays = Math.ceil((new Date(rawDate).getTime() - new Date().setHours(0, 0, 0, 0)) / (1000 * 60 * 60 * 24));
-    if (diffDays > 0) return `J-${diffDays}`;
-    return diffDays === 0 ? "C'est aujourd'hui !" : `J+${Math.abs(diffDays)}`;
+    return diffDays > 0 ? `J-${diffDays}` : (diffDays === 0 ? "C'est aujourd'hui !" : `J+${Math.abs(diffDays)}`);
   }, [event]);
 
   const handleOpenCreate = () => { setEditingCommissionId(null); setEditingCommissionData(null); setIsCreatingCommission(true); };
   const handleOpenEdit = (comm) => { setEditingCommissionId(comm?.id || null); setEditingCommissionData(comm || null); setIsCreatingCommission(false); };
   const handleCloseModal = () => { console.trace('⚠️ FERMETURE MODALE : handleCloseModal'); setEditingCommissionId(null); setEditingCommissionData(null); setIsCreatingCommission(false); };
   const isModalOpen = isCreatingCommission || Boolean(editingCommissionId);
-  const handleSaveCommission = async (formData) => {
-    if (editingCommissionId) await updateCommission(eventId, editingCommissionId, formData);
-    else await addCommission(eventId, formData);
-  };
+  const handleSaveCommission = async (formData) => (editingCommissionId ? updateCommission(eventId, editingCommissionId, formData) : addCommission(eventId, formData));
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs select-none overflow-y-auto"
       onMouseDown={(e) => { backdropMouseDownRef.current = (e.target === e.currentTarget); }}
-      onClick={(e) => {
-        if (!e.target?.isConnected) return;
-        if (backdropMouseDownRef.current && e.target === e.currentTarget) onClose();
-        backdropMouseDownRef.current = false;
-      }}
+      onClick={(e) => { if (e.target?.isConnected && backdropMouseDownRef.current && e.target === e.currentTarget) onClose(); backdropMouseDownRef.current = false; }}
     >
       <div
         className="w-full max-w-5xl bg-cordel-bg-light border-0 sm:border-3 border-[var(--theme-border)] rounded-none sm:rounded-[10px_14px_9px_12px] shadow-none sm:shadow-[6px_6px_0px_0px_var(--theme-border)] flex flex-col h-full sm:h-auto max-h-[100dvh] sm:max-h-[95vh] overflow-hidden my-auto"
@@ -84,7 +77,7 @@ export default function EventCommissionsHub({
         <CommissionHubHeader
           event={event} countdownText={countdownText} globalVolunteerCoverage={globalVolunteerCoverage}
           pendingApplicationsCount={event?.hasCommissions !== false && canViewApplications ? pendingApplications.length : 0}
-          canDepositVaral={canDepositVaral} canCreate={canCreate}
+          canDepositVaral={canDepositVaral} canCreate={canCreate} onOpenVolunteersSynoptic={onOpenVolunteersSynoptic}
           onOpenVaralDeposit={handleOpenVaralDeposit} onOpenCreate={handleOpenCreate} onClose={onClose}
         />
 
@@ -106,20 +99,17 @@ export default function EventCommissionsHub({
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {commissions.map((comm) => {
-                  const commShifts = allVolunteerShifts.filter((s) => s.commissionId === comm.id);
-                  return (
-                    <CommissionCard
-                      key={comm.id} commission={comm} event={event} groupId={event?.groupId}
-                      usersMap={usersMap} progress={getCommissionProgress(comm)}
-                      volunteerCoverage={computeVolunteerCoverage(commShifts)}
-                      canManage={canCreate || (comm.referentsIds || []).includes(currentUserId)}
-                      onManage={() => handleOpenEdit(comm)} onView={() => handleOpenEdit(comm)}
-                      onNavigateToView={onNavigateToView} openOrCreateCommissionThread={openOrCreateCommissionThread}
-                      getOrCreateCommissionThread={getOrCreateCommissionThread} userProfile={userProfile} onCloseHub={onClose}
-                    />
-                  );
-                })}
+                {commissions.map((comm) => (
+                  <CommissionCard
+                    key={comm.id} commission={comm} event={event} groupId={event?.groupId}
+                    usersMap={usersMap} progress={getCommissionProgress(comm)}
+                    volunteerCoverage={computeVolunteerCoverage(allVolunteerShifts.filter((s) => s.commissionId === comm.id))}
+                    canManage={canCreate || (comm.referentsIds || []).includes(currentUserId)}
+                    onManage={() => handleOpenEdit(comm)} onView={() => handleOpenEdit(comm)}
+                    onNavigateToView={onNavigateToView} openOrCreateCommissionThread={openOrCreateCommissionThread}
+                    getOrCreateCommissionThread={getOrCreateCommissionThread} userProfile={userProfile} onCloseHub={onClose}
+                  />
+                ))}
               </div>
             )}
           </div>

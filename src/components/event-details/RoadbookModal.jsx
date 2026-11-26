@@ -37,7 +37,7 @@ export default function RoadbookModal({
     [isOpen, event, commissions]
   );
 
-  const { canViewApplications, acceptedApplications } = useVolunteerApplications({
+  const { isCoordinator, canViewApplications, acceptedApplications } = useVolunteerApplications({
     event: isOpen ? event : null,
     commissions,
     consolidatedShifts,
@@ -46,6 +46,7 @@ export default function RoadbookModal({
   });
 
   if (!isOpen) return null;
+  const effectiveManagerOrReferent = Boolean(isCoordinator || canViewApplications);
 
   const isStageLayoutPublished = Boolean(event.isStageLayoutPublished || event.stageLayout?.isPublished);
   const handlePrint = () => { window.print(); };
@@ -104,7 +105,7 @@ export default function RoadbookModal({
         <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6">
           <RoadbookInteractiveContent
             event={event} allUsers={allUsers} presentsByInstrument={presentsByInstrument}
-            commissions={commissions} acceptedApplications={acceptedApplications} isManagerOrReferent={canViewApplications}
+            commissions={commissions} acceptedApplications={acceptedApplications} isManagerOrReferent={effectiveManagerOrReferent}
           />
         </div>
 
@@ -124,7 +125,7 @@ export default function RoadbookModal({
       <div className="hidden print:block w-full">
         <RoadbookPrintView
           event={event} allUsers={allUsers} presentsByInstrument={presentsByInstrument}
-          commissions={commissions} acceptedApplications={acceptedApplications} isManagerOrReferent={canViewApplications}
+          commissions={commissions} acceptedApplications={acceptedApplications} isManagerOrReferent={effectiveManagerOrReferent}
         />
       </div>
     </div>

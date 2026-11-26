@@ -45,7 +45,7 @@ export default function WidgetZapPanel({
     generalConvId, effectiveGroupId, effectiveUser, profileData, convDoc?.participantIds || [], convDoc
   );
   const { uploadingPhoto, photoError, clearPhotoError, handlePhotoChange } = useZapPhotoUpload({
-    groupId: effectiveGroupId, sendMessage, caption: inputText, onSent: () => setInputText('')
+    groupId: effectiveGroupId, sendMessage, caption: inputText, onSent: () => setInputText(''), t
   });
 
   const unreadZapCount = useMemo(() => {
@@ -144,7 +144,7 @@ export default function WidgetZapPanel({
       )}
 
       <form onSubmit={handleSendText} onClick={(e) => e.stopPropagation()} className="flex items-center gap-1.5 pt-1 w-full">
-        <input ref={fileInputRef} type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" />
+        <input ref={fileInputRef} type="file" accept="image/*,image/heic,image/heif,.heic,.heif" onChange={handlePhotoChange} className="hidden" />
         <button type="button" disabled={uploadingPhoto || sending || !effectiveGroupId} onClick={() => fileInputRef.current?.click()} title={t?.('widgetForum.sendPhotoTitle') || 'Envoyer une photo sur le Zap'} aria-label={t?.('widgetForum.sendPhotoTitle') || 'Envoyer une photo sur le Zap'} className="w-8 h-8 rounded-[5px_7px_4px_6px] border-2 border-encre-noire bg-cordel-wood text-cordel-bg-light hover:opacity-90 flex items-center justify-center text-xs shadow-[1px_1px_0px_0px_#181716] cursor-pointer shrink-0 disabled:opacity-50">
           {uploadingPhoto ? '⏳' : <CordelPlusIcon size={16} />}
         </button>

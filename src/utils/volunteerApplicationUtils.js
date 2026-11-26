@@ -1,6 +1,8 @@
+import { isEventVolunteerCoordinator, extractCommissionReferentIds } from './volunteerCoordinatorUtils.js';
+
 /**
  * Utilitaires purs pour l'appel public à bénévoles et le sas `volunteer_applications`.
- * Garantit zéro valeur `undefined`, le filtrage par périmètre référent et l'absence
+ * Garantit zéro valeur `undefined`, le filtrage par périmètre référent/coordinateur et l'absence
  * totale de fuite de données personnelles sensibles dans le document `events`.
  */
 
@@ -53,20 +55,20 @@ export function resolveUserReferentCommissionIds(commissions = [], userUid = '')
   const uid = String(userUid || '').trim();
   if (!uid) return [];
   return (commissions || [])
-    .filter((c) => c?.id && (
-      (Array.isArray(c.referentsIds) && c.referentsIds.includes(uid)) ||
-      (Array.isArray(c.referentIds) && c.referentIds.includes(uid))
-    ))
+    .filter((c) => c?.id && extractCommissionReferentIds(c).includes(uid))
     .map((c) => c.id);
 }
 
-export function canAccessVolunteerApplications({ isGlobalManager = false, commissions = [], userUid = '' } = {}) {
+export function canAccessVolunteerApplications({ isGlobalManager = false, event = null, commissions = [], userUid = '' } = {}) {
   if (isGlobalManager) return true;
+  if (isEventVolunteerCoordinator({ userUid, event, commissions, canManageEvents: false })) return true;
   return resolveUserReferentCommissionIds(commissions, userUid).length > 0;
 }
 
-export function resolveManageableShiftIds({ isGlobalManager = false, commissions = [], allShifts = [], userUid = '' } = {}) {
-  if (isGlobalManager) return new Set((allShifts || []).map((s) => s.id).filter(Boolean));
+export function resolveManageableShiftIds({ isGlobalManager = false, event = null, commissions = [], allShifts = [], userUid = '' } = {}) {
+  if (isGlobalManager || isEventVolunteerCoordinator({ userUid, event, commissions, canManageEvents: false })) {
+    return new Set((allShifts || []).map((s) => s.id).filter(Boolean));
+  }
   const refCommIds = new Set(resolveUserReferentCommissionIds(commissions, userUid));
   if (refCommIds.size === 0) return new Set();
   const ids = new Set();
@@ -80,7 +82,9 @@ export function resolveManageableShiftIds({ isGlobalManager = false, commissions
 export function filterApplicationsForViewer(applications = [], options = {}) {
   if (!canAccessVolunteerApplications(options)) return [];
   const sorted = [...(applications || [])].sort((a, b) => String(b?.createdAt || '').localeCompare(String(a?.createdAt || '')));
-  if (options.isGlobalManager) return sorted;
+  if (options.isGlobalManager || isEventVolunteerCoordinator({ userUid: options.userUid, event: options.event, commissions: options.commissions, canManageEvents: false })) {
+    return sorted;
+  }
   const manageableIds = resolveManageableShiftIds(options);
   return sorted.filter((app) => (
     Boolean(app?.isFlexible) ||

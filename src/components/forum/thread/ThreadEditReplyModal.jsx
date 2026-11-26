@@ -12,7 +12,7 @@ export default function ThreadEditReplyModal({
   onChangeText,
   onSave,
   disabled = false,
-  groupId = null
+  groupId = ''
 }) {
   if (!editingData) return null;
 

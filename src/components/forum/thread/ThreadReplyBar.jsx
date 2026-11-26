@@ -31,8 +31,7 @@ export default function ThreadReplyBar({
   profileData,
   lienDepotForum = '',
   allUsers = [],
-  thread,
-  user,
+  thread, groupId = '', user,
   isModeratorOrAdmin: _isModeratorOrAdmin = false,
   replyingTo = null,
   onCancelReply,
@@ -455,7 +454,7 @@ export default function ThreadReplyBar({
             onChange={setReplyText}
             disabled={sending}
             placeholder={t && t('forum.writeReplyPlaceholder')}
-            groupId={thread?.groupId || profileData?.groupId || user?.groupId || ''}
+            groupId={thread?.groupId || profileData?.groupId || user?.groupId || groupId || ''}
             lienDepotForum={lienDepotForum}
             allUsers={allUsers}
             minHeight="85px"
